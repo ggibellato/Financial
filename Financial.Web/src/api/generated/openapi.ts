@@ -178,11 +178,11 @@ export interface paths {
                 path?: never;
                 cookie?: never;
             };
-            requestBody: {
+            requestBody?: {
                 content: {
-                    "application/*+json": components["schemas"]["ArchiveAssetRequestDTO"];
-                    "application/json": components["schemas"]["ArchiveAssetRequestDTO"];
-                    "text/json": components["schemas"]["ArchiveAssetRequestDTO"];
+                    "application/*+json": null | components["schemas"]["ArchiveAssetRequestDTO"];
+                    "application/json": null | components["schemas"]["ArchiveAssetRequestDTO"];
+                    "text/json": null | components["schemas"]["ArchiveAssetRequestDTO"];
                 };
             };
             responses: {
@@ -247,11 +247,11 @@ export interface paths {
                 path?: never;
                 cookie?: never;
             };
-            requestBody: {
+            requestBody?: {
                 content: {
-                    "application/*+json": components["schemas"]["MoveAssetRequestDTO"];
-                    "application/json": components["schemas"]["MoveAssetRequestDTO"];
-                    "text/json": components["schemas"]["MoveAssetRequestDTO"];
+                    "application/*+json": null | components["schemas"]["MoveAssetRequestDTO"];
+                    "application/json": null | components["schemas"]["MoveAssetRequestDTO"];
+                    "text/json": null | components["schemas"]["MoveAssetRequestDTO"];
                 };
             };
             responses: {
@@ -1206,11 +1206,11 @@ export interface paths {
                 path?: never;
                 cookie?: never;
             };
-            requestBody: {
+            requestBody?: {
                 content: {
-                    "application/*+json": components["schemas"]["CreditUpdateDTO"];
-                    "application/json": components["schemas"]["CreditUpdateDTO"];
-                    "text/json": components["schemas"]["CreditUpdateDTO"];
+                    "application/*+json": null | components["schemas"]["CreditUpdateDTO"];
+                    "application/json": null | components["schemas"]["CreditUpdateDTO"];
+                    "text/json": null | components["schemas"]["CreditUpdateDTO"];
                 };
             };
             responses: {
@@ -1242,11 +1242,11 @@ export interface paths {
                 path?: never;
                 cookie?: never;
             };
-            requestBody: {
+            requestBody?: {
                 content: {
-                    "application/*+json": components["schemas"]["CreditCreateDTO"];
-                    "application/json": components["schemas"]["CreditCreateDTO"];
-                    "text/json": components["schemas"]["CreditCreateDTO"];
+                    "application/*+json": null | components["schemas"]["CreditCreateDTO"];
+                    "application/json": null | components["schemas"]["CreditCreateDTO"];
+                    "text/json": null | components["schemas"]["CreditCreateDTO"];
                 };
             };
             responses: {
@@ -1278,11 +1278,11 @@ export interface paths {
                 path?: never;
                 cookie?: never;
             };
-            requestBody: {
+            requestBody?: {
                 content: {
-                    "application/*+json": components["schemas"]["CreditDeleteDTO"];
-                    "application/json": components["schemas"]["CreditDeleteDTO"];
-                    "text/json": components["schemas"]["CreditDeleteDTO"];
+                    "application/*+json": null | components["schemas"]["CreditDeleteDTO"];
+                    "application/json": null | components["schemas"]["CreditDeleteDTO"];
+                    "text/json": null | components["schemas"]["CreditDeleteDTO"];
                 };
             };
             responses: {
@@ -2538,11 +2538,11 @@ export interface paths {
                 path?: never;
                 cookie?: never;
             };
-            requestBody: {
+            requestBody?: {
                 content: {
-                    "application/*+json": components["schemas"]["SetAssetPriceDTO"];
-                    "application/json": components["schemas"]["SetAssetPriceDTO"];
-                    "text/json": components["schemas"]["SetAssetPriceDTO"];
+                    "application/*+json": null | components["schemas"]["SetAssetPriceDTO"];
+                    "application/json": null | components["schemas"]["SetAssetPriceDTO"];
+                    "text/json": null | components["schemas"]["SetAssetPriceDTO"];
                 };
             };
             responses: {
@@ -2575,11 +2575,11 @@ export interface paths {
                 path?: never;
                 cookie?: never;
             };
-            requestBody: {
+            requestBody?: {
                 content: {
-                    "application/*+json": components["schemas"]["DeleteAssetPriceDTO"];
-                    "application/json": components["schemas"]["DeleteAssetPriceDTO"];
-                    "text/json": components["schemas"]["DeleteAssetPriceDTO"];
+                    "application/*+json": null | components["schemas"]["DeleteAssetPriceDTO"];
+                    "application/json": null | components["schemas"]["DeleteAssetPriceDTO"];
+                    "text/json": null | components["schemas"]["DeleteAssetPriceDTO"];
                 };
             };
             responses: {
@@ -3295,11 +3295,11 @@ export interface paths {
                 path?: never;
                 cookie?: never;
             };
-            requestBody: {
+            requestBody?: {
                 content: {
-                    "application/*+json": components["schemas"]["TransactionUpdateDTO"];
-                    "application/json": components["schemas"]["TransactionUpdateDTO"];
-                    "text/json": components["schemas"]["TransactionUpdateDTO"];
+                    "application/*+json": null | components["schemas"]["TransactionUpdateDTO"];
+                    "application/json": null | components["schemas"]["TransactionUpdateDTO"];
+                    "text/json": null | components["schemas"]["TransactionUpdateDTO"];
                 };
             };
             responses: {
@@ -3331,11 +3331,11 @@ export interface paths {
                 path?: never;
                 cookie?: never;
             };
-            requestBody: {
+            requestBody?: {
                 content: {
-                    "application/*+json": components["schemas"]["TransactionCreateDTO"];
-                    "application/json": components["schemas"]["TransactionCreateDTO"];
-                    "text/json": components["schemas"]["TransactionCreateDTO"];
+                    "application/*+json": null | components["schemas"]["TransactionCreateDTO"];
+                    "application/json": null | components["schemas"]["TransactionCreateDTO"];
+                    "text/json": null | components["schemas"]["TransactionCreateDTO"];
                 };
             };
             responses: {
@@ -3367,11 +3367,11 @@ export interface paths {
                 path?: never;
                 cookie?: never;
             };
-            requestBody: {
+            requestBody?: {
                 content: {
-                    "application/*+json": components["schemas"]["TransactionDeleteDTO"];
-                    "application/json": components["schemas"]["TransactionDeleteDTO"];
-                    "text/json": components["schemas"]["TransactionDeleteDTO"];
+                    "application/*+json": null | components["schemas"]["TransactionDeleteDTO"];
+                    "application/json": null | components["schemas"]["TransactionDeleteDTO"];
+                    "text/json": null | components["schemas"]["TransactionDeleteDTO"];
                 };
             };
             responses: {

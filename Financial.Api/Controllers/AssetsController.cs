@@ -58,7 +58,7 @@ public sealed class AssetsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<AssetDetailsDTO>> MoveAsset([FromBody] MoveAssetRequestDTO request)
+    public async Task<ActionResult<AssetDetailsDTO>> MoveAsset([FromBody] MoveAssetRequestDTO? request)
     {
         if (request is null)
         {
@@ -85,7 +85,7 @@ public sealed class AssetsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<AssetDetailsDTO>> ArchiveAsset([FromBody] ArchiveAssetRequestDTO request)
+    public async Task<ActionResult<AssetDetailsDTO>> ArchiveAsset([FromBody] ArchiveAssetRequestDTO? request)
     {
         if (request is null)
         {

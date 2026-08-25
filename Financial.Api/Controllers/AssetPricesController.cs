@@ -76,7 +76,7 @@ public sealed class AssetPricesController : ApiControllerBase
     [HttpPut]
     [ProducesResponseType(typeof(AssetDetailsDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<AssetDetailsDTO>> SetPrice([FromBody] SetAssetPriceDTO request)
+    public async Task<ActionResult<AssetDetailsDTO>> SetPrice([FromBody] SetAssetPriceDTO? request)
     {
         if (request is null)
         {
@@ -93,7 +93,7 @@ public sealed class AssetPricesController : ApiControllerBase
     [HttpDelete]
     [ProducesResponseType(typeof(AssetDetailsDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<AssetDetailsDTO>> DeletePrice([FromBody] DeleteAssetPriceDTO request)
+    public async Task<ActionResult<AssetDetailsDTO>> DeletePrice([FromBody] DeleteAssetPriceDTO? request)
     {
         if (request is null)
         {

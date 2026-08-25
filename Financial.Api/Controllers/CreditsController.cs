@@ -27,7 +27,7 @@ public sealed class CreditsController : ApiControllerBase
     [HttpPost]
     [ProducesResponseType(typeof(AssetDetailsDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<AssetDetailsDTO>> AddCredit([FromBody] CreditCreateDTO request)
+    public async Task<ActionResult<AssetDetailsDTO>> AddCredit([FromBody] CreditCreateDTO? request)
     {
         if (request is null)
         {
@@ -44,7 +44,7 @@ public sealed class CreditsController : ApiControllerBase
     [HttpPut]
     [ProducesResponseType(typeof(AssetDetailsDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<AssetDetailsDTO>> UpdateCredit([FromBody] CreditUpdateDTO request)
+    public async Task<ActionResult<AssetDetailsDTO>> UpdateCredit([FromBody] CreditUpdateDTO? request)
     {
         if (request is null)
         {
@@ -61,7 +61,7 @@ public sealed class CreditsController : ApiControllerBase
     [HttpDelete]
     [ProducesResponseType(typeof(AssetDetailsDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<AssetDetailsDTO>> DeleteCredit([FromBody] CreditDeleteDTO request)
+    public async Task<ActionResult<AssetDetailsDTO>> DeleteCredit([FromBody] CreditDeleteDTO? request)
     {
         if (request is null)
         {

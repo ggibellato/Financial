@@ -27,7 +27,7 @@ public sealed class TransactionsController : ApiControllerBase
     [HttpPost]
     [ProducesResponseType(typeof(AssetDetailsDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<AssetDetailsDTO>> AddTransaction([FromBody] TransactionCreateDTO request)
+    public async Task<ActionResult<AssetDetailsDTO>> AddTransaction([FromBody] TransactionCreateDTO? request)
     {
         if (request is null)
         {
@@ -44,7 +44,7 @@ public sealed class TransactionsController : ApiControllerBase
     [HttpPut]
     [ProducesResponseType(typeof(AssetDetailsDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<AssetDetailsDTO>> UpdateTransaction([FromBody] TransactionUpdateDTO request)
+    public async Task<ActionResult<AssetDetailsDTO>> UpdateTransaction([FromBody] TransactionUpdateDTO? request)
     {
         if (request is null)
         {
@@ -61,7 +61,7 @@ public sealed class TransactionsController : ApiControllerBase
     [HttpDelete]
     [ProducesResponseType(typeof(AssetDetailsDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<AssetDetailsDTO>> DeleteTransaction([FromBody] TransactionDeleteDTO request)
+    public async Task<ActionResult<AssetDetailsDTO>> DeleteTransaction([FromBody] TransactionDeleteDTO? request)
     {
         if (request is null)
         {
