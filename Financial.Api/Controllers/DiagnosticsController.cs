@@ -1,9 +1,9 @@
 using Financial.Api.DTOs;
+using Financial.Api.Helpers;
 using Financial.CashFlow.Application.Configuration;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.Investment.Application.Configuration;
 using Financial.Investment.Application.Interfaces;
-using Financial.Shared.Abstractions.Sync;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
@@ -63,15 +63,9 @@ public sealed class DiagnosticsController : ControllerBase
         });
     }
 
-    /// <summary>
-    /// A repository whose storage writes straight through, rather than through the debounced path
-    /// that tracks status, reports Idle instead of failing the whole health response.
-    /// </summary>
     private static HealthContextDTO BuildContextHealth(string? provider, object repository)
     {
-        var status = repository is ISyncStatusProvider syncStatusProvider
-            ? syncStatusProvider.GetStatus()
-            : new SyncStatus(SyncState.Idle, null, null);
+        var status = SyncStatusResolver.Resolve(repository);
 
         return new HealthContextDTO
         {

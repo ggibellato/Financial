@@ -1,4 +1,5 @@
 using Financial.Api.DTOs;
+using Financial.Api.Helpers;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.Investment.Application.Interfaces;
 using Financial.Shared.Abstractions.Sync;
@@ -30,15 +31,10 @@ public sealed class SyncStatusController : ControllerBase
     {
         return Ok(new SyncStatusResponseDTO
         {
-            CashFlow = ToDto(ResolveStatus(_cashFlowRepository)),
-            Investment = ToDto(ResolveStatus(_investmentRepository))
+            CashFlow = ToDto(SyncStatusResolver.Resolve(_cashFlowRepository)),
+            Investment = ToDto(SyncStatusResolver.Resolve(_investmentRepository))
         });
     }
-
-    private static SyncStatus ResolveStatus(object repository) =>
-        repository is ISyncStatusProvider syncStatusProvider
-            ? syncStatusProvider.GetStatus()
-            : new SyncStatus(SyncState.Idle, null, null);
 
     private static SyncStatusDTO ToDto(SyncStatus status) => new()
     {
