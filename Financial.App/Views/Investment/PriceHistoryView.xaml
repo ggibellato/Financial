@@ -29,7 +29,7 @@
         </Grid.RowDefinitions>
 
         <ItemsControl Grid.Row="0"
-                      ItemsSource="{Binding AssetDetails.PriceHistoryFilters}"
+                      ItemsSource="{Binding AssetDetails.PriceHistory.PriceHistoryFilters}"
                       HorizontalAlignment="Left"
                       Margin="0,0,0,8">
             <ItemsControl.ItemsPanel>
@@ -39,7 +39,7 @@
             </ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                    <Button Command="{Binding DataContext.AssetDetails.SelectPriceHistoryFilterCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                    <Button Command="{Binding DataContext.AssetDetails.PriceHistory.SelectPriceHistoryFilterCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                             CommandParameter="{Binding}"
                             Background="Transparent"
                             BorderThickness="0"
@@ -82,7 +82,7 @@
                 <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,8">
                     <ui:Button Content="New" Appearance="Primary" Icon="{ui:SymbolIcon Symbol=Add20}"
                                ToolTip="New price"
-                               Command="{Binding AssetDetails.AddPriceCommand}"/>
+                               Command="{Binding AssetDetails.PriceHistory.AddPriceCommand}"/>
                 </StackPanel>
 
                 <!--
@@ -93,26 +93,26 @@
                     the form would never collapse. See docs/ui/wpf.md.
                 -->
                 <Grid Grid.Row="1"
-                      Visibility="{Binding AssetDetails.IsPriceFormOpen, Converter={StaticResource BoolToVisibilityConverter}}">
-                    <local:PriceFormView DataContext="{Binding AssetDetails.PriceFormViewModel}"/>
+                      Visibility="{Binding AssetDetails.PriceHistory.IsPriceFormOpen, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <local:PriceFormView DataContext="{Binding AssetDetails.PriceHistory.PriceFormViewModel}"/>
                 </Grid>
 
                 <DataGrid Grid.Row="2"
-                          ItemsSource="{Binding AssetDetails.PriceHistory}"
-                          SelectedItem="{Binding AssetDetails.SelectedPriceEntry, Mode=TwoWay}"
+                          ItemsSource="{Binding AssetDetails.PriceHistory.PriceHistory}"
+                          SelectedItem="{Binding AssetDetails.PriceHistory.SelectedPriceEntry, Mode=TwoWay}"
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"
                           IsReadOnly="True">
                     <DataGrid.InputBindings>
                         <MouseBinding MouseAction="LeftDoubleClick"
-                                      Command="{Binding AssetDetails.UpdatePriceCommand}"/>
+                                      Command="{Binding AssetDetails.PriceHistory.UpdatePriceCommand}"/>
                     </DataGrid.InputBindings>
                     <DataGrid.Columns>
                         <DataGridTemplateColumn Header="" Width="Auto">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <StackPanel Orientation="Horizontal">
-                                        <Button Command="{Binding DataContext.AssetDetails.UpdatePriceCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                        <Button Command="{Binding DataContext.AssetDetails.PriceHistory.UpdatePriceCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                 CommandParameter="{Binding}"
                                                 ToolTip="Update"
                                                 Padding="2"
@@ -120,7 +120,7 @@
                                                 Visibility="{Binding IsManual, Converter={StaticResource BoolToVisibilityConverter}}">
                                             <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE70F;"/>
                                         </Button>
-                                        <Button Command="{Binding DataContext.AssetDetails.DeletePriceCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                        <Button Command="{Binding DataContext.AssetDetails.PriceHistory.DeletePriceCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                 CommandParameter="{Binding}"
                                                 ToolTip="Delete"
                                                 Padding="2"
@@ -179,7 +179,7 @@
 
             <oxy:PlotView Grid.Column="2"
                           Background="Transparent"
-                          Model="{Binding AssetDetails.PriceHistoryPlotModel}"/>
+                          Model="{Binding AssetDetails.PriceHistory.PriceHistoryPlotModel}"/>
         </Grid>
     </Grid>
 </UserControl>

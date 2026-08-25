@@ -5,6 +5,7 @@ using Financial.Investment.Domain.Entities;
 using Financial.Presentation.App.ViewModels;
 using Financial.Presentation.App.ViewModels.Investment;
 using FluentAssertions;
+using System.Windows;
 
 namespace Financial.Presentation.Tests.ViewModels;
 
@@ -508,6 +509,9 @@ public class MainNavigationViewModelBaseTests
         public bool WasPortfolioTransactionsLoaded { get; private set; }
         public bool IsPortfolioView => false;
         public bool IsBrokerView => false;
+        public PriceHistoryTabViewModel PriceHistory { get; } = new(
+            null, () => false, () => string.Empty, () => string.Empty, () => string.Empty,
+            _ => { }, (_, _, _) => { });
         public AssetDetailsDTO? LastAssetDetails { get; private set; }
         public decimal? LastRealizedPortfolioWeight { get; private set; }
 
