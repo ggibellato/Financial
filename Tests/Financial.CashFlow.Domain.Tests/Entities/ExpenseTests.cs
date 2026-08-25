@@ -157,6 +157,24 @@ public class ExpenseTests
         act.Should().Throw<ArgumentException>().WithMessage("*marking its card statement paid*");
     }
 
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Create_WithBlankDescription_Throws(string description)
+    {
+        var act = () => Expense.Create(new DateOnly(2026, 7, 1), description, 10m, Casa, Chase, null);
+
+        act.Should().Throw<ArgumentException>().WithMessage("*Description is required*");
+    }
+
+    [Fact]
+    public void Create_WithZeroValue_Throws()
+    {
+        var act = () => Expense.Create(new DateOnly(2026, 7, 1), "Zero value", 0m, Casa, Chase, null);
+
+        act.Should().Throw<ArgumentException>().WithMessage("*Value must not be zero*");
+    }
+
     [Fact]
     public void UpdateDetails_MutatesEveryFieldWithoutChangingId()
     {
@@ -236,6 +254,28 @@ public class ExpenseTests
             expense.Date, "Updated", 20m, Casa, Chase, BaAmex);
 
         act.Should().Throw<ArgumentException>().WithMessage("*marking its card statement paid*");
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void UpdateDetails_WithBlankDescription_Throws(string description)
+    {
+        var expense = CreateImmediateExpense();
+
+        var act = () => expense.UpdateDetails(expense.Date, description, 20m, Casa, Chase, null);
+
+        act.Should().Throw<ArgumentException>().WithMessage("*Description is required*");
+    }
+
+    [Fact]
+    public void UpdateDetails_WithZeroValue_Throws()
+    {
+        var expense = CreateImmediateExpense();
+
+        var act = () => expense.UpdateDetails(expense.Date, "Updated", 0m, Casa, Chase, null);
+
+        act.Should().Throw<ArgumentException>().WithMessage("*Value must not be zero*");
     }
 
     [Fact]

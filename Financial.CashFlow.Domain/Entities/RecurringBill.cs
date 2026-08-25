@@ -5,6 +5,9 @@ namespace Financial.CashFlow.Domain.Entities;
 
 public class RecurringBill
 {
+    public const int MinDueDay = 1;
+    public const int MaxDueDay = 31;
+
     public Guid Id { get; private set; }
     public int DueDay { get; private set; }
     public string Description { get; private set; } = string.Empty;
@@ -24,8 +27,11 @@ public class RecurringBill
         Area area,
         string note,
         string? nitNumber,
-        decimal? minimumWageValue) =>
-        new()
+        decimal? minimumWageValue)
+    {
+        Validate(dueDay, description);
+
+        return new()
         {
             Id = Guid.NewGuid(),
             DueDay = dueDay,
@@ -37,6 +43,7 @@ public class RecurringBill
             MinimumWageValue = minimumWageValue,
             Status = BillStatus.Unset
         };
+    }
 
     public void Update(BillStatus status, decimal value)
     {
@@ -45,4 +52,17 @@ public class RecurringBill
     }
 
     public void ResetToUnset() => Status = BillStatus.Unset;
+
+    private static void Validate(int dueDay, string description)
+    {
+        if (dueDay < MinDueDay || dueDay > MaxDueDay)
+        {
+            throw new ArgumentException($"Due day must be between {MinDueDay} and {MaxDueDay}.");
+        }
+
+        if (string.IsNullOrWhiteSpace(description))
+        {
+            throw new ArgumentException("Description is required.");
+        }
+    }
 }

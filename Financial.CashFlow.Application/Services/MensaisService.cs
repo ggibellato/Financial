@@ -10,8 +10,6 @@ namespace Financial.CashFlow.Application.Services;
 
 public sealed class MensaisService : IMensaisService
 {
-    private const int MinDueDay = 1;
-    private const int MaxDueDay = 31;
     private const string EntityType = "RecurringBill";
 
     private readonly ICashFlowRepository _repository;
@@ -31,16 +29,6 @@ public sealed class MensaisService : IMensaisService
         try
         {
             ArgumentNullException.ThrowIfNull(request);
-
-            if (request.DueDay < MinDueDay || request.DueDay > MaxDueDay)
-            {
-                throw new ArgumentException($"Due day must be between {MinDueDay} and {MaxDueDay}.");
-            }
-
-            if (string.IsNullOrWhiteSpace(request.Description))
-            {
-                throw new ArgumentException("Description is required.");
-            }
 
             if (!AreaParser.TryParse(request.Area, out var area))
             {
