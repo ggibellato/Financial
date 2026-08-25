@@ -65,13 +65,13 @@ public class MonthlyViewModelCategoriesTests
     {
         var (viewModel, expenses) = CreateViewModel();
         await viewModel.RefreshAsync();
-        viewModel.ShowCreateExpenseFormCommand.Execute("bank");
-        viewModel.ExpenseFormDate = DateTime.Today;
-        viewModel.ExpenseFormDescription = "Groceries";
-        viewModel.ExpenseFormValue = "10";
-        viewModel.ExpenseFormCategoryId = MercadoId;
+        viewModel.Expense.ShowCreateExpenseFormCommand.Execute("bank");
+        viewModel.Expense.ExpenseFormDate = DateTime.Today;
+        viewModel.Expense.ExpenseFormDescription = "Groceries";
+        viewModel.Expense.ExpenseFormValue = "10";
+        viewModel.Expense.ExpenseFormCategoryId = MercadoId;
 
-        await viewModel.SaveExpenseAsync();
+        await viewModel.Expense.SaveExpenseAsync();
 
         expenses.LastCreateRequest.Should().NotBeNull();
         expenses.LastCreateRequest!.CategoryId.Should().Be(MercadoId);
@@ -83,8 +83,8 @@ public class MonthlyViewModelCategoriesTests
         var (viewModel, _) = CreateViewModel();
         await viewModel.RefreshAsync();
 
-        viewModel.ShowCreateExpenseFormCommand.Execute("bank");
+        viewModel.Expense.ShowCreateExpenseFormCommand.Execute("bank");
 
-        viewModel.ExpenseFormCategoryId.Should().Be(MercadoId);
+        viewModel.Expense.ExpenseFormCategoryId.Should().Be(MercadoId);
     }
 }

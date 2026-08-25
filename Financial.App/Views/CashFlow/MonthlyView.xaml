@@ -34,7 +34,7 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     <local:BanksGridView Grid.Row="0"/>
-                    <local:ExpenseSectionView Grid.Row="1"/>
+                    <local:ExpenseSectionView Grid.Row="1" DataContext="{Binding Expense}"/>
                 </Grid>
             </TabItem>
             <TabItem Header="Credit Card">
@@ -44,7 +44,7 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     <local:CardsGridView Grid.Row="0" ShowCardManagementColumns="True"/>
-                    <local:CreditCardExpensesView Grid.Row="1"/>
+                    <local:CreditCardExpensesView Grid.Row="1" DataContext="{Binding Expense}"/>
                 </Grid>
             </TabItem>
             <TabItem Header="Income">

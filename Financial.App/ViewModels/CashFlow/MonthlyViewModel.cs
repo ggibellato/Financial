@@ -18,7 +18,6 @@ public class MonthlyViewModel : ViewModelBase
     private readonly ICardStatementService _cardStatementService;
     private readonly ICreditCardService _creditCardService;
     private readonly ICategoryService _categoryService;
-    private readonly ITelemetryTracer _tracer;
 
     private int _year;
     private int _month;
@@ -78,8 +77,6 @@ public class MonthlyViewModel : ViewModelBase
 
     public bool ShowContent => !IsLoading && !HasError;
 
-    public ObservableCollection<ExpenseDTO> Expenses { get; } = [];
-    public ObservableCollection<ExpenseDTO> UnpaidCardCharges { get; } = [];
     public ObservableCollection<CategoryTotalDTO> CategoryTotals { get; } = [];
     public ObservableCollection<BankDTO> Banks { get; } = [];
     public ObservableCollection<BankTotalRow> BankTotals { get; } = [];
@@ -117,6 +114,8 @@ public class MonthlyViewModel : ViewModelBase
 
     public IncomeWorkflowViewModel Income { get; }
 
+    public ExpenseWorkflowViewModel Expense { get; }
+
     private readonly Func<string, bool> _confirm;
 
     public MonthlyViewModel(
@@ -144,7 +143,6 @@ public class MonthlyViewModel : ViewModelBase
         _creditCardService = creditCardService ?? throw new ArgumentNullException(nameof(creditCardService));
         _categoryService = categoryService ?? throw new ArgumentNullException(nameof(categoryService));
         _confirm = confirm ?? throw new ArgumentNullException(nameof(confirm));
-        _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
 
         var today = DateTime.Today;
         _year = today.Year;
@@ -152,7 +150,7 @@ public class MonthlyViewModel : ViewModelBase
 
         RetryCommand = new RelayCommand(async () => await RefreshAsync());
         Income = new IncomeWorkflowViewModel(incomeService, confirm, RefreshAsync);
-        InitializeExpenseCommands();
+        Expense = new ExpenseWorkflowViewModel(expenseService, Categories, Banks, CreditCards, confirm, tracer, RefreshAsync);
         InitializeBankCommands();
         InitializeTransferCommands();
         InitializeAdjustmentCommands();
@@ -217,8 +215,7 @@ public class MonthlyViewModel : ViewModelBase
                 return;
             }
 
-            ReplaceAll(Expenses, expenses);
-            ReplaceAll(UnpaidCardCharges, unpaidCardCharges);
+            Expense.ApplyRefresh(expenses, unpaidCardCharges);
             ReplaceAll(CategoryTotals, categoryTotals);
             ReplaceAll(Banks, banks);
             Income.ApplyRefresh(incomes, incomeSources, banks);
@@ -240,9 +237,11 @@ public class MonthlyViewModel : ViewModelBase
             ReplaceAll(CreditCards, creditCards);
             OnPropertyChanged(nameof(ActiveCreditCards));
             OnPropertyChanged(nameof(CreditCardManagementRows));
+            Expense.NotifyCreditCardsChanged();
 
             ReplaceAll(Categories, categories);
             OnPropertyChanged(nameof(ActiveCategories));
+            Expense.NotifyCategoriesChanged();
 
             ReplaceAll(IncomeTotals, BuildIncomeTotals(incomes));
             OnPropertyChanged(nameof(TotalIncoming));
@@ -316,383 +315,6 @@ public class MonthlyViewModel : ViewModelBase
     /// <summary>Options for the Bank tab's filter dropdown: "All Banks" plus each configured bank name.</summary>
     private static IReadOnlyList<string> BuildBankFilterOptions(IReadOnlyList<BankDTO> banks) =>
         new[] { AllBanksFilter }.Concat(banks.Select(b => b.Name)).ToList();
-
-    private const string SettledStatus = "CreditCardSettled";
-
-    private bool _isExpenseFormOpen;
-    private Guid? _editingExpenseId;
-    private DateTime? _expenseFormDate;
-    private string _expenseFormDescription = string.Empty;
-    private Guid? _expenseFormCategoryId;
-    private string _expenseFormValue = string.Empty;
-    private bool _isCardPaymentMode;
-    private Guid? _expenseFormPaymentSource;
-    private Guid? _expenseFormCreditCardId;
-    private string _expenseFormCreditCardName = string.Empty;
-    private string _expenseFormRoundUpAmount = string.Empty;
-    private bool _expenseFormCountsAsTithe = true;
-    private bool _expenseFormIsSettled;
-    private int _expenseFormInvoiceYear;
-    private int _expenseFormInvoiceMonth;
-    private bool _invoiceDateTouchedByUser;
-    private bool _isSavingExpense;
-    private string? _expenseSaveError;
-    private string? _deletingExpenseError;
-
-    public bool IsExpenseFormOpen
-    {
-        get => _isExpenseFormOpen;
-        private set => SetProperty(ref _isExpenseFormOpen, value);
-    }
-
-    public bool IsEditingExpense => _editingExpenseId != null;
-
-    public DateTime? ExpenseFormDate
-    {
-        get => _expenseFormDate;
-        set
-        {
-            if (SetProperty(ref _expenseFormDate, value) && value.HasValue && IsCardPaymentMode && !_invoiceDateTouchedByUser)
-            {
-                SetDefaultInvoiceDate(value.Value.Year, value.Value.Month);
-            }
-        }
-    }
-
-    public string ExpenseFormDescription
-    {
-        get => _expenseFormDescription;
-        set => SetProperty(ref _expenseFormDescription, value);
-    }
-
-    public Guid? ExpenseFormCategoryId
-    {
-        get => _expenseFormCategoryId;
-        set
-        {
-            if (SetProperty(ref _expenseFormCategoryId, value))
-            {
-                OnPropertyChanged(nameof(ShowCountsAsTitheField));
-            }
-        }
-    }
-
-    public bool ShowCountsAsTitheField =>
-        Categories.FirstOrDefault(c => c.Id == ExpenseFormCategoryId)?.IsTithe == true;
-
-    public bool ExpenseFormCountsAsTithe
-    {
-        get => _expenseFormCountsAsTithe;
-        set => SetProperty(ref _expenseFormCountsAsTithe, value);
-    }
-
-    public string ExpenseFormValue
-    {
-        get => _expenseFormValue;
-        set => SetProperty(ref _expenseFormValue, value);
-    }
-
-    public bool IsCardPaymentMode
-    {
-        get => _isCardPaymentMode;
-        private set
-        {
-            if (SetProperty(ref _isCardPaymentMode, value))
-            {
-                OnPropertyChanged(nameof(IsBankPaymentMode));
-                OnPropertyChanged(nameof(ShowRoundUpField));
-            }
-        }
-    }
-
-    public bool IsBankPaymentMode => !IsCardPaymentMode;
-
-    public Guid? ExpenseFormPaymentSource
-    {
-        get => _expenseFormPaymentSource;
-        set
-        {
-            if (SetProperty(ref _expenseFormPaymentSource, value))
-            {
-                OnPropertyChanged(nameof(ShowRoundUpField));
-                if (ShowRoundUpField)
-                {
-                    ExpenseFormRoundUpAmount = SuggestRoundUpAmount();
-                }
-            }
-        }
-    }
-
-    public Guid? ExpenseFormCreditCardId
-    {
-        get => _expenseFormCreditCardId;
-        set => SetProperty(ref _expenseFormCreditCardId, value);
-    }
-
-    public string ExpenseFormCreditCardName
-    {
-        get => _expenseFormCreditCardName;
-        private set => SetProperty(ref _expenseFormCreditCardName, value);
-    }
-
-    public string ExpenseFormRoundUpAmount
-    {
-        get => _expenseFormRoundUpAmount;
-        set => SetProperty(ref _expenseFormRoundUpAmount, value);
-    }
-
-    public bool ShowRoundUpField =>
-        !IsCardPaymentMode
-        && Banks.FirstOrDefault(b => b.Id == ExpenseFormPaymentSource) is { RoundUpEnabled: true };
-
-    public bool ExpenseFormIsSettled
-    {
-        get => _expenseFormIsSettled;
-        private set
-        {
-            if (SetProperty(ref _expenseFormIsSettled, value))
-            {
-                OnPropertyChanged(nameof(ShowPaymentModeFields));
-            }
-        }
-    }
-
-    public bool ShowPaymentModeFields => !ExpenseFormIsSettled;
-
-    public int ExpenseFormInvoiceYear
-    {
-        get => _expenseFormInvoiceYear;
-        set
-        {
-            if (SetProperty(ref _expenseFormInvoiceYear, value))
-            {
-                _invoiceDateTouchedByUser = true;
-            }
-        }
-    }
-
-    public int ExpenseFormInvoiceMonth
-    {
-        get => _expenseFormInvoiceMonth;
-        set
-        {
-            if (SetProperty(ref _expenseFormInvoiceMonth, value))
-            {
-                _invoiceDateTouchedByUser = true;
-            }
-        }
-    }
-
-    /// <summary>
-    /// Sets the invoice year/month without marking it as user-touched, so ExpenseFormDate's
-    /// setter keeps resyncing the default until the user actually edits the invoice picker.
-    /// </summary>
-    private void SetDefaultInvoiceDate(int year, int month)
-    {
-        SetProperty(ref _expenseFormInvoiceYear, year, nameof(ExpenseFormInvoiceYear));
-        SetProperty(ref _expenseFormInvoiceMonth, month, nameof(ExpenseFormInvoiceMonth));
-    }
-
-    public bool IsSavingExpense
-    {
-        get => _isSavingExpense;
-        private set => SetProperty(ref _isSavingExpense, value);
-    }
-
-    public string? ExpenseSaveError
-    {
-        get => _expenseSaveError;
-        private set => SetProperty(ref _expenseSaveError, value);
-    }
-
-    public string? DeletingExpenseError
-    {
-        get => _deletingExpenseError;
-        private set => SetProperty(ref _deletingExpenseError, value);
-    }
-
-    public RelayCommand<string> ShowCreateExpenseFormCommand { get; private set; } = null!;
-    public RelayCommand CancelExpenseFormCommand { get; private set; } = null!;
-    public RelayCommand SaveExpenseCommand { get; private set; } = null!;
-    public RelayCommand<ExpenseDTO> EditExpenseCommand { get; private set; } = null!;
-    public RelayCommand<ExpenseDTO> DeleteExpenseCommand { get; private set; } = null!;
-
-    private void InitializeExpenseCommands()
-    {
-        ShowCreateExpenseFormCommand = new RelayCommand<string>(ShowCreateExpenseForm);
-        CancelExpenseFormCommand = new RelayCommand(CloseExpenseForm);
-        SaveExpenseCommand = new RelayCommand(async () => await SaveExpenseAsync(), () => !IsSavingExpense);
-        EditExpenseCommand = new RelayCommand<ExpenseDTO>(ShowEditExpenseForm);
-        DeleteExpenseCommand = new RelayCommand<ExpenseDTO>(
-            async expense => await DeleteExpenseAsync(expense),
-            expense => expense?.PaymentStatus != SettledStatus);
-    }
-
-    private void ShowCreateExpenseForm(string? mode)
-    {
-        _editingExpenseId = null;
-        ExpenseFormDate = DateTime.Today;
-        ExpenseFormDescription = string.Empty;
-        ExpenseFormCategoryId = ActiveCategories.FirstOrDefault()?.Id;
-        ExpenseFormValue = string.Empty;
-        IsCardPaymentMode = mode == "card";
-        ExpenseFormPaymentSource = IsCardPaymentMode
-            ? null
-            : (Banks.Count > 0 ? Banks[0].Id : null);
-        ExpenseFormCreditCardId = null;
-        ExpenseFormCreditCardName = string.Empty;
-        ExpenseFormRoundUpAmount = string.Empty;
-        ExpenseFormCountsAsTithe = true;
-        ExpenseFormIsSettled = false;
-        _invoiceDateTouchedByUser = false;
-        if (IsCardPaymentMode)
-        {
-            SetDefaultInvoiceDate(ExpenseFormDate!.Value.Year, ExpenseFormDate.Value.Month);
-        }
-        ExpenseSaveError = null;
-        OnPropertyChanged(nameof(IsEditingExpense));
-        IsExpenseFormOpen = true;
-    }
-
-    private void ShowEditExpenseForm(ExpenseDTO? expense)
-    {
-        if (expense is null)
-        {
-            return;
-        }
-
-        _editingExpenseId = expense.Id;
-        ExpenseFormDate = expense.Date.ToDateTime(TimeOnly.MinValue);
-        ExpenseFormDescription = expense.Description;
-        ExpenseFormCategoryId = expense.CategoryId;
-        ExpenseFormValue = expense.Value.ToString("0.##");
-        IsCardPaymentMode = expense.CreditCardId != null;
-        ExpenseFormPaymentSource = expense.PaymentSourceBankId;
-        ExpenseFormCreditCardId = expense.CreditCardId;
-        ExpenseFormCreditCardName = expense.CreditCardName ?? string.Empty;
-        ExpenseFormRoundUpAmount = expense.RoundUpAmount?.ToString("0.##") ?? string.Empty;
-        ExpenseFormCountsAsTithe = expense.CountsAsTithe;
-        ExpenseFormIsSettled = expense.PaymentStatus == SettledStatus;
-        _invoiceDateTouchedByUser = false;
-        if (IsCardPaymentMode)
-        {
-            var invoiceDate = expense.InvoiceDate ?? expense.ChargeDate ?? expense.Date;
-            SetDefaultInvoiceDate(invoiceDate.Year, invoiceDate.Month);
-        }
-        ExpenseSaveError = null;
-        OnPropertyChanged(nameof(IsEditingExpense));
-        IsExpenseFormOpen = true;
-    }
-
-    private void CloseExpenseForm()
-    {
-        IsExpenseFormOpen = false;
-        _editingExpenseId = null;
-        ExpenseSaveError = null;
-    }
-
-    private string SuggestRoundUpAmount()
-    {
-        if (!decimal.TryParse(ExpenseFormValue, out var value) || value <= 0)
-        {
-            return string.Empty;
-        }
-
-        var suggestion = Math.Round((Math.Ceiling(value) - value) * 100, MidpointRounding.AwayFromZero) / 100;
-        return suggestion.ToString("0.##");
-    }
-
-    internal async Task SaveExpenseAsync()
-    {
-        using var span = _tracer.StartSpan("App.MonthlyViewModel.SaveExpense");
-
-        // ExecuteSaveAsync never throws - it reports validation rejections and save failures
-        // through its return value (and the bound error property for the UI). Only the outcome
-        // reaches the span, never the message, which may echo user-entered text (FR-014).
-        var saved = await SaveExpenseCoreAsync();
-        span.SetAttribute(
-            TelemetryAttributeKeys.OperationResult,
-            saved ? TelemetryOperationResults.Success : TelemetryOperationResults.Failed);
-    }
-
-    private Task<bool> SaveExpenseCoreAsync() => ExecuteSaveAsync(
-        () => ExpenseFormValidation.BuildValidationMessage(
-            ExpenseFormDate, ExpenseFormDescription, ExpenseFormCategoryId, ExpenseFormValue,
-            IsCardPaymentMode, ExpenseFormPaymentSource, ExpenseFormCreditCardId, ShowRoundUpField, ExpenseFormRoundUpAmount),
-        error => ExpenseSaveError = error,
-        saving => IsSavingExpense = saving,
-        async () =>
-        {
-            var date = DateOnly.FromDateTime(ExpenseFormDate!.Value);
-            var value = decimal.Parse(ExpenseFormValue);
-            var paymentSource = IsCardPaymentMode ? null : ExpenseFormPaymentSource;
-            var creditCardId = IsCardPaymentMode ? ExpenseFormCreditCardId : null;
-            var categoryId = ExpenseFormCategoryId!.Value;
-            DateOnly? invoiceDate = IsCardPaymentMode ? new DateOnly(ExpenseFormInvoiceYear, ExpenseFormInvoiceMonth, 1) : null;
-            decimal? roundUpAmount = ShowRoundUpField && decimal.TryParse(ExpenseFormRoundUpAmount, out var parsedRoundUp)
-                ? parsedRoundUp
-                : null;
-
-            if (_editingExpenseId is { } id)
-            {
-                await _expenseService.UpdateExpenseAsync(id, new ExpenseUpdateDTO
-                {
-                    Date = date,
-                    Description = ExpenseFormDescription,
-                    Value = value,
-                    CategoryId = categoryId,
-                    PaymentSourceBankId = paymentSource,
-                    CreditCardId = creditCardId,
-                    InvoiceDate = invoiceDate,
-                    RoundUpAmount = roundUpAmount,
-                    CountsAsTithe = ExpenseFormCountsAsTithe,
-                });
-            }
-            else
-            {
-                await _expenseService.AddExpenseAsync(new ExpenseCreateDTO
-                {
-                    Date = date,
-                    Description = ExpenseFormDescription,
-                    Value = value,
-                    CategoryId = categoryId,
-                    PaymentSourceBankId = paymentSource,
-                    CreditCardId = creditCardId,
-                    InvoiceDate = invoiceDate,
-                    RoundUpAmount = roundUpAmount,
-                    CountsAsTithe = ExpenseFormCountsAsTithe,
-                });
-            }
-
-            CloseExpenseForm();
-            await RefreshAsync();
-        },
-        SaveExpenseCommand.RaiseCanExecuteChanged);
-
-    internal async Task DeleteExpenseAsync(ExpenseDTO? expense)
-    {
-        if (expense is null)
-        {
-            return;
-        }
-
-        if (!_confirm($"Delete \"{expense.Description}\"? This removes it for good."))
-        {
-            return;
-        }
-
-        DeletingExpenseError = null;
-
-        try
-        {
-            await _expenseService.DeleteExpenseAsync(expense.Id);
-            await RefreshAsync();
-        }
-        catch (Exception ex)
-        {
-            DeletingExpenseError = ex.Message;
-        }
-    }
 
     public const string AllBanksFilter = "All Banks";
 
