@@ -15,6 +15,8 @@ public class Credit
 
     private Credit(Guid id, DateTime date, CreditType type, decimal value)
     {
+        ValidateValue(value);
+
         Id = id;
         Date = date;
         Type = type;
@@ -27,4 +29,11 @@ public class Credit
     public static Credit CreateWithId(Guid id, DateTime date, CreditType type, decimal value) =>
         new(id, date, type, value);
 
+    private static void ValidateValue(decimal value)
+    {
+        if (value <= 0)
+        {
+            throw new ArgumentException("Value must be greater than zero.");
+        }
+    }
 }

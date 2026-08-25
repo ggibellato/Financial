@@ -97,4 +97,44 @@ public class TransactionTests
         transaction.TotalPrice.Should().Be(recordedTotal);
     }
 
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void Create_WithAZeroOrNegativeQuantity_Throws(decimal quantity)
+    {
+        var act = () => Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, quantity, 10m, 0m);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void Create_WithAZeroOrNegativeUnitPrice_Throws(decimal unitPrice)
+    {
+        var act = () => Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 2m, unitPrice, 0m);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void CreateWithId_WithAZeroOrNegativeQuantity_Throws(decimal quantity)
+    {
+        var act = () => Transaction.CreateWithId(Guid.NewGuid(), new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, quantity, 10m, 0m);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void CreateWithId_WithAZeroOrNegativeUnitPrice_Throws(decimal unitPrice)
+    {
+        var act = () => Transaction.CreateWithId(Guid.NewGuid(), new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 2m, unitPrice, 0m);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
 }
