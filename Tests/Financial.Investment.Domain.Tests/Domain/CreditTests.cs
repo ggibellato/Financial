@@ -30,4 +30,24 @@ public class CreditTests
 
         credit.Id.Should().Be(Guid.Empty);
     }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void Create_WithAZeroOrNegativeValue_Throws(decimal value)
+    {
+        var act = () => Credit.Create(new DateTime(2024, 1, 1), Credit.CreditType.Dividend, value);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void CreateWithId_WithAZeroOrNegativeValue_Throws(decimal value)
+    {
+        var act = () => Credit.CreateWithId(Guid.NewGuid(), new DateTime(2024, 1, 1), Credit.CreditType.Dividend, value);
+
+        act.Should().Throw<ArgumentException>();
+    }
 }

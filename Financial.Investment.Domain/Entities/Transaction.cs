@@ -39,6 +39,9 @@ public class Transaction
     /// </summary>
     private Transaction(Guid id, DateTime date, TransactionType type, decimal quantity, decimal unitPrice, decimal fees)
     {
+        ValidateQuantity(quantity);
+        ValidateUnitPrice(unitPrice);
+
         Id = id == Guid.Empty ? Guid.NewGuid() : id;
         Date = date;
         Type = type;
@@ -52,4 +55,20 @@ public class Transaction
 
     public static Transaction CreateWithId(Guid id, DateTime date, TransactionType type, decimal quantity, decimal unitPrice, decimal fees) =>
         new(id, date, type, quantity, unitPrice, fees);
+
+    private static void ValidateQuantity(decimal quantity)
+    {
+        if (quantity <= 0)
+        {
+            throw new ArgumentException("Quantity must be greater than zero.");
+        }
+    }
+
+    private static void ValidateUnitPrice(decimal unitPrice)
+    {
+        if (unitPrice <= 0)
+        {
+            throw new ArgumentException("Unit price must be greater than zero.");
+        }
+    }
 }
