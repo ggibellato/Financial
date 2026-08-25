@@ -33,7 +33,6 @@ public sealed class ExpenseService : IExpenseService
 
             var (category, paymentSource, creditCard) = ValidateFields(
                 request.Description, request.CategoryId, request.PaymentSourceBankId, request.CreditCardId);
-            ValidateRoundUpEligibility(request.RoundUpAmount, paymentSource);
 
             var expense = Expense.Create(request.Date, request.Description, request.Value, category, paymentSource, creditCard, request.InvoiceDate, request.CountsAsTithe);
             expense.SetRoundUpAmount(request.RoundUpAmount);
@@ -67,7 +66,6 @@ public sealed class ExpenseService : IExpenseService
 
             var (category, paymentSource, creditCard) = ValidateFields(
                 request.Description, request.CategoryId, request.PaymentSourceBankId, request.CreditCardId);
-            ValidateRoundUpEligibility(request.RoundUpAmount, paymentSource);
 
             await _repository.ApplyAndSaveAsync(() =>
             {
@@ -253,19 +251,6 @@ public sealed class ExpenseService : IExpenseService
         }
 
         return (category, parsedPaymentSourceBank, parsedCreditCard);
-    }
-
-    private static void ValidateRoundUpEligibility(decimal? roundUpAmount, Bank? paymentSourceBank)
-    {
-        if (roundUpAmount is null || paymentSourceBank is null)
-        {
-            return;
-        }
-
-        if (!paymentSourceBank.RoundUpEnabled)
-        {
-            throw new ArgumentException($"Bank '{paymentSourceBank.Name}' does not support round-up.");
-        }
     }
 
     private static ExpenseDTO ToDto(Expense expense) => new()

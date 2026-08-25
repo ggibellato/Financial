@@ -540,6 +540,16 @@ public class ExpenseTests
     }
 
     [Fact]
+    public void SetRoundUpAmount_OnNonRoundUpBank_ThrowsNamingTheBank()
+    {
+        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Immediate", 10m, Casa, Barclays, null);
+
+        var act = () => expense.SetRoundUpAmount(0.50m);
+
+        act.Should().Throw<ArgumentException>().WithMessage("*Barclays*does not support round-up*");
+    }
+
+    [Fact]
     public void SetRoundUpAmount_Null_AlwaysSucceedsRegardlessOfShape()
     {
         var immediate = CreateImmediateExpense();
