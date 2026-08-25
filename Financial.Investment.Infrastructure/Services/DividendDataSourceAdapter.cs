@@ -8,7 +8,8 @@ public sealed class DividendDataSourceAdapter : IDividendDataSource
 {
     private readonly Func<string, List<DividendValue>> _lookup;
 
-    public DividendDataSourceAdapter() : this(DadosMercadoDividend.GetDividendInfo)
+    public DividendDataSourceAdapter()
+        : this(ticker => WebPageParserMappers.ToDividendValues(DadosMercadoDividend.GetDividendInfo(ticker)))
     {
     }
 

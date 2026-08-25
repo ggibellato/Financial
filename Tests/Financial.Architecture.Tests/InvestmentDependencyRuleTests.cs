@@ -29,4 +29,15 @@ public class InvestmentDependencyRuleTests
         ProjectAssembly.GetReferencedAssemblyNames(ApplicationAssembly)
             .Should().NotContain("Financial.Investment.Infrastructure");
     }
+
+    [Fact]
+    public void WebPageParser_Should_Not_Reference_Investment_Domain()
+    {
+        var webPageParserAssembly = ProjectAssembly.Load("Financial.Integrations.WebPageParser");
+
+        ProjectAssembly.GetReferencedAssemblyNames(webPageParserAssembly)
+            .Should().NotContain(
+                "Financial.Investment.Domain",
+                "Integrations/ projects carry no bounded-context types (CLAUDE.md); WebPageParser returns its own WebAssetQuote/WebDividendRecord and Financial.Investment.Infrastructure maps them into Domain value objects");
+    }
 }
