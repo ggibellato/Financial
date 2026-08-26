@@ -10,6 +10,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import { DeleteRegular } from '@fluentui/react-icons'
 import type { TransactionDto } from '../api/types'
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
@@ -56,10 +57,7 @@ function TransactionRow({ transaction, onEdit, onDelete }: TransactionRowProps) 
           aria-label="Delete transaction"
           onClick={() => onDelete(transaction.id)}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M20 20H7L3 16a2 2 0 0 1 0-2.83L14.59 1.58a2 2 0 0 1 2.83 0l4 4a2 2 0 0 1 0 2.83L8 20" />
-            <path d="M6.5 15.5 15 7" />
-          </svg>
+          <DeleteRegular />
         </button>
       </td>
       <td>{formatShortDate(transaction.date)}</td>
