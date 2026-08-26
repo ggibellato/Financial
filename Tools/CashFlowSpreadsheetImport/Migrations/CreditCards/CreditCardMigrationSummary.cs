@@ -2,19 +2,18 @@ using System.Text;
 
 namespace Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.CreditCards;
 
-public sealed class CreditCardMigrationSummary
+public sealed class CreditCardMigrationSummary : MigrationSummaryBase
 {
-    public int CardsSeededCount { get; private set; }
-    public int CardsAlreadyPresentCount { get; private set; }
+    public int CardsSeededCount => SeededCount;
+    public int CardsAlreadyPresentCount => AlreadyPresentCount;
 
-    public void CountCardSeeded() => CardsSeededCount++;
-    public void CountCardAlreadyPresent() => CardsAlreadyPresentCount++;
+    public void CountCardSeeded() => CountSeeded();
+    public void CountCardAlreadyPresent() => CountAlreadyPresent();
 
     public string Render()
     {
         var builder = new StringBuilder();
-        builder.AppendLine("Credit card migration summary");
-        builder.AppendLine($"  Credit cards: {CardsSeededCount} seeded, {CardsAlreadyPresentCount} already present");
+        AppendHeader(builder, "Credit card", "Credit cards");
 
         return builder.ToString();
     }

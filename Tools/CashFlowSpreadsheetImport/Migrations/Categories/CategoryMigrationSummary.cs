@@ -2,19 +2,18 @@ using System.Text;
 
 namespace Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.Categories;
 
-public sealed class CategoryMigrationSummary
+public sealed class CategoryMigrationSummary : MigrationSummaryBase
 {
-    public int CategoriesSeededCount { get; private set; }
-    public int CategoriesAlreadyPresentCount { get; private set; }
+    public int CategoriesSeededCount => SeededCount;
+    public int CategoriesAlreadyPresentCount => AlreadyPresentCount;
 
-    public void CountCategorySeeded() => CategoriesSeededCount++;
-    public void CountCategoryAlreadyPresent() => CategoriesAlreadyPresentCount++;
+    public void CountCategorySeeded() => CountSeeded();
+    public void CountCategoryAlreadyPresent() => CountAlreadyPresent();
 
     public string Render()
     {
         var builder = new StringBuilder();
-        builder.AppendLine("Category migration summary");
-        builder.AppendLine($"  Categories: {CategoriesSeededCount} seeded, {CategoriesAlreadyPresentCount} already present");
+        AppendHeader(builder, "Category", "Categories");
 
         return builder.ToString();
     }

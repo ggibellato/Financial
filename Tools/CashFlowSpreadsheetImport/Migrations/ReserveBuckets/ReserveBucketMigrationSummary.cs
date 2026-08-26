@@ -8,15 +8,15 @@ namespace Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migr
 /// reserve movement's bucket name audited against them, and whether the active buckets' split
 /// percentages sum to ~100% - reported as a warning, never a failure.
 /// </summary>
-public sealed class ReserveBucketMigrationSummary
+public sealed class ReserveBucketMigrationSummary : MigrationSummaryBase
 {
     private const decimal ExpectedActiveSplitPercentageSum = 100m;
     private const decimal SplitPercentageTolerance = 0.01m;
 
     private readonly List<ReserveMovement> _unresolvedMovements = new();
 
-    public int BucketsSeededCount { get; private set; }
-    public int BucketsAlreadyPresentCount { get; private set; }
+    public int BucketsSeededCount => SeededCount;
+    public int BucketsAlreadyPresentCount => AlreadyPresentCount;
     public int MovementsResolvedCount { get; private set; }
     public decimal ActiveSplitPercentageSum { get; private set; }
 
@@ -25,8 +25,8 @@ public sealed class ReserveBucketMigrationSummary
 
     public IReadOnlyList<ReserveMovement> UnresolvedMovements => _unresolvedMovements;
 
-    public void CountBucketSeeded() => BucketsSeededCount++;
-    public void CountBucketAlreadyPresent() => BucketsAlreadyPresentCount++;
+    public void CountBucketSeeded() => CountSeeded();
+    public void CountBucketAlreadyPresent() => CountAlreadyPresent();
     public void CountMovementResolved() => MovementsResolvedCount++;
 
     public void FlagUnresolvedMovement(ReserveMovement movement) => _unresolvedMovements.Add(movement);
@@ -36,8 +36,7 @@ public sealed class ReserveBucketMigrationSummary
     public string Render()
     {
         var builder = new StringBuilder();
-        builder.AppendLine("Reserve bucket migration summary");
-        builder.AppendLine($"  Reserve buckets: {BucketsSeededCount} seeded, {BucketsAlreadyPresentCount} already present");
+        AppendHeader(builder, "Reserve bucket", "Reserve buckets");
         builder.AppendLine($"  Reserve movements: {MovementsResolvedCount} resolved");
 
         if (!ActiveSplitPercentageIsBalanced)
@@ -46,15 +45,9 @@ public sealed class ReserveBucketMigrationSummary
             builder.AppendLine($"  WARNING: active buckets' split percentages sum to {ActiveSplitPercentageSum:F2}%, not 100%.");
         }
 
-        if (_unresolvedMovements.Count > 0)
-        {
-            builder.AppendLine();
-            builder.AppendLine("Reserve movements whose bucket name does not match any seeded bucket (review manually):");
-            foreach (var movement in _unresolvedMovements)
-            {
-                builder.AppendLine($"  {movement.Id} {movement.Date:yyyy-MM-dd} [{movement.Bucket}]");
-            }
-        }
+        AppendUnresolvedSection(builder,
+            "Reserve movements whose bucket name does not match any seeded bucket (review manually):",
+            _unresolvedMovements, movement => $"{movement.Id} {movement.Date:yyyy-MM-dd} [{movement.Bucket}]");
 
         return builder.ToString();
     }
