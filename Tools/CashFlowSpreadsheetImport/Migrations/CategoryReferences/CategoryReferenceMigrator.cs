@@ -48,23 +48,12 @@ public static class CategoryReferenceMigrator
         var creditCards = DeserializeCollection<CreditCard>(root, "CreditCards", unresolvedOptions);
         var categories = ResolveCategories(root, unresolvedOptions, summary);
 
-        var context = new ReferenceResolutionContext();
-        foreach (var bank in banks) context.Banks[bank.Id] = bank;
-        foreach (var incomeSource in incomeSources) context.IncomeSources[incomeSource.Id] = incomeSource;
-        foreach (var account in investmentAccounts) context.InvestmentAccounts[account.Id] = account;
-        foreach (var bucket in reserveBuckets) context.ReserveBuckets[bucket.Id] = bucket;
-        foreach (var card in creditCards) context.CreditCards[card.Id] = card;
-        foreach (var category in categories) context.Categories[category.Id] = category;
+        var context = BuildContext(banks, incomeSources, investmentAccounts, reserveBuckets, creditCards, categories);
 
         var resolvedOptions = CreateElementOptions(context);
 
         var data = CashFlowData.Create();
-        foreach (var bank in banks) data.AddBank(bank);
-        foreach (var incomeSource in incomeSources) data.AddIncomeSource(incomeSource);
-        foreach (var account in investmentAccounts) data.AddInvestmentAccount(account);
-        foreach (var bucket in reserveBuckets) data.AddReserveBucket(bucket);
-        foreach (var card in creditCards) data.AddCreditCard(card);
-        foreach (var category in categories) data.AddCategory(category);
+        AddBaseCollections(data, banks, incomeSources, investmentAccounts, reserveBuckets, creditCards, categories);
 
         foreach (var movement in DeserializeCollection<ReserveMovement>(root, "ReserveMovements", resolvedOptions)) data.AddReserveMovement(movement);
         foreach (var statement in DeserializeCollection<CardStatement>(root, "CardStatements", resolvedOptions)) data.AddCardStatement(statement);
@@ -78,11 +67,7 @@ public static class CategoryReferenceMigrator
         var categoriesByName = categories.ToDictionary(c => c.Name, c => c, StringComparer.OrdinalIgnoreCase);
         MigrateExpenses(root, categoriesByName, resolvedOptions, data, summary);
 
-        MigrationBackup.Create(dataPath);
-        var serializer = new CashFlowSerializerAdapter();
-        File.WriteAllText(dataPath, serializer.Serialize(data));
-
-        return summary;
+        return SaveAndReturn(dataPath, data, summary);
     }
 
     private static bool NeedsMigration(JsonElement root) => HasLegacyField(root, "Expenses", "Category");

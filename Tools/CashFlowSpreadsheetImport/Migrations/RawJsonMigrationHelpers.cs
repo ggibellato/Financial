@@ -51,4 +51,46 @@ internal static class RawJsonMigrationHelpers
 
     public static void SetId(object entity, Guid id) =>
         entity.GetType().GetProperty("Id")!.SetMethod!.Invoke(entity, [id]);
+
+    /// <summary>Builds a resolution context from the base reference collections. Pass an empty list
+    /// for any collection a migrator doesn't have (e.g. one that predates it, or one it's itself
+    /// migrating and resolves by name instead) - iterating an empty list is a no-op.</summary>
+    public static ReferenceResolutionContext BuildContext(
+        IEnumerable<Bank> banks, IEnumerable<IncomeSource> incomeSources, IEnumerable<InvestmentAccount> investmentAccounts,
+        IEnumerable<ReserveBucket> reserveBuckets, IEnumerable<CreditCard> creditCards, IEnumerable<Category> categories)
+    {
+        var context = new ReferenceResolutionContext();
+        foreach (var bank in banks) context.Banks[bank.Id] = bank;
+        foreach (var incomeSource in incomeSources) context.IncomeSources[incomeSource.Id] = incomeSource;
+        foreach (var account in investmentAccounts) context.InvestmentAccounts[account.Id] = account;
+        foreach (var bucket in reserveBuckets) context.ReserveBuckets[bucket.Id] = bucket;
+        foreach (var card in creditCards) context.CreditCards[card.Id] = card;
+        foreach (var category in categories) context.Categories[category.Id] = category;
+        return context;
+    }
+
+    /// <summary>Adds the base reference collections into a freshly created <see cref="CashFlowData"/>.
+    /// Same empty-list convention as <see cref="BuildContext"/>.</summary>
+    public static void AddBaseCollections(
+        CashFlowData data,
+        IEnumerable<Bank> banks, IEnumerable<IncomeSource> incomeSources, IEnumerable<InvestmentAccount> investmentAccounts,
+        IEnumerable<ReserveBucket> reserveBuckets, IEnumerable<CreditCard> creditCards, IEnumerable<Category> categories)
+    {
+        foreach (var bank in banks) data.AddBank(bank);
+        foreach (var incomeSource in incomeSources) data.AddIncomeSource(incomeSource);
+        foreach (var account in investmentAccounts) data.AddInvestmentAccount(account);
+        foreach (var bucket in reserveBuckets) data.AddReserveBucket(bucket);
+        foreach (var card in creditCards) data.AddCreditCard(card);
+        foreach (var category in categories) data.AddCategory(category);
+    }
+
+    /// <summary>Backs up the original file, serializes the rewritten data over it, and returns the
+    /// migration summary unchanged - the shared tail every rewriting migrator ends with.</summary>
+    public static TSummary SaveAndReturn<TSummary>(string dataPath, CashFlowData data, TSummary summary)
+    {
+        MigrationBackup.Create(dataPath);
+        var serializer = new CashFlowSerializerAdapter();
+        File.WriteAllText(dataPath, serializer.Serialize(data));
+        return summary;
+    }
 }
