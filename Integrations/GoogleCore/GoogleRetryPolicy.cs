@@ -3,53 +3,38 @@ using Google;
 using System;
 using System.Net;
 using System.Net.Http;
-using System.Threading;
 using System.Threading.Tasks;
+using Financial.Shared.Abstractions.Resilience;
 
 namespace Financial.Integrations.GoogleCore;
 
 public static class GoogleRetryPolicy
 {
-    private const int InitialDelayMs = 2000;
-
-    public static Task<T> ExecuteWithRetryAsync<T>(Func<Task<T>> action, int maxRetries = 5, Action<string>? logger = null) =>
-        ExecuteWithRetryCoreAsync(action, maxRetries, logger, Task.Delay);
-
-    public static T ExecuteWithRetry<T>(Func<T> action, int maxRetries = 5, Action<string>? logger = null) =>
-        ExecuteWithRetryCoreAsync(() => Task.FromResult(action()), maxRetries, logger, SleepAsync)
-            .GetAwaiter().GetResult();
-
-    private static async Task<T> ExecuteWithRetryCoreAsync<T>(
-        Func<Task<T>> action, int maxRetries, Action<string>? logger, Func<int, Task> wait)
+    public static async Task<T> ExecuteWithRetryAsync<T>(Func<Task<T>> action, int maxRetries = 5, Action<string>? logger = null)
     {
-        int retryCount = 0;
-
-        while (true)
+        try
         {
-            try
-            {
-                return await action();
-            }
-            catch (GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.TooManyRequests && retryCount < maxRetries)
-            {
-                retryCount++;
-                var waitTime = CalculateWaitTimeMs(retryCount);
-                logger?.Invoke($"Rate limit hit. Retry {retryCount}/{maxRetries}. Waiting {waitTime}ms...");
-                await wait(waitTime);
-            }
-            catch (GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.TooManyRequests)
-            {
-                throw new HttpRequestException(
-                    $"API rate limit exceeded after {maxRetries} retries. Please wait a few minutes and try again.", ex);
-            }
+            return await RetryPolicy.ExecuteWithRetryAsync(action, IsRetryable, maxRetries, logger);
+        }
+        catch (GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.TooManyRequests)
+        {
+            throw new HttpRequestException(
+                $"API rate limit exceeded after {maxRetries} retries. Please wait a few minutes and try again.", ex);
         }
     }
 
-    private static Task SleepAsync(int milliseconds)
+    public static T ExecuteWithRetry<T>(Func<T> action, int maxRetries = 5, Action<string>? logger = null)
     {
-        Thread.Sleep(milliseconds);
-        return Task.CompletedTask;
+        try
+        {
+            return RetryPolicy.ExecuteWithRetry(action, IsRetryable, maxRetries, logger);
+        }
+        catch (GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.TooManyRequests)
+        {
+            throw new HttpRequestException(
+                $"API rate limit exceeded after {maxRetries} retries. Please wait a few minutes and try again.", ex);
+        }
     }
 
-    private static int CalculateWaitTimeMs(int retryCount) => InitialDelayMs * (int)Math.Pow(2, retryCount - 1);
+    private static bool IsRetryable(Exception ex) => ex is GoogleApiException { HttpStatusCode: HttpStatusCode.TooManyRequests };
 }
