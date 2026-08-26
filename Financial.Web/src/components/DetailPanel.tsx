@@ -1,7 +1,6 @@
 import { useCallback, useState } from 'react'
-import { apiClient } from '../api/financialApiClient'
-import { getErrorMessage } from '../utils/formatters'
 import { useSelectedNode } from '../context/SelectedNodeContext'
+import { usePortfolioDeletion } from '../hooks/usePortfolioDeletion'
 import { POSITION_TYPE_STATUS_CLASS } from '../utils/positionType'
 import AggregatedSummaryTab from './AggregatedSummaryTab'
 import AssetSummaryTab from './AssetSummaryTab'
@@ -28,10 +27,10 @@ function nodeKey(n: ReturnType<typeof useSelectedNode>['selectedNode']): string 
 
 export default function DetailPanel() {
   const { selectedNode, setSelectedNode, scope, reload } = useSelectedNode()
+  const { deleteError, deletePortfolio } = usePortfolioDeletion()
   const [activeTab, setActiveTab] = useState<TabId>('summary')
   const [prevKey, setPrevKey] = useState('')
   const [isMoving, setIsMoving] = useState(false)
-  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   const currentKey = nodeKey(selectedNode)
   if (currentKey !== prevKey) {
@@ -59,17 +58,7 @@ export default function DetailPanel() {
   // assetCount is -1 when the tree did not carry it, so an unknown count never offers deletion.
   const canDeletePortfolio = isPortfolio && selectedNode.assetCount === 0
 
-  const handleDeletePortfolio = async () => {
-    setDeleteError(null)
-    try {
-      await apiClient.deleteEmptyPortfolio(selectedNode.brokerName, selectedNode.portfolioName ?? '', scope)
-      // The portfolio is gone, so nothing here describes anything any more.
-      setSelectedNode(null)
-      reload()
-    } catch (err: unknown) {
-      setDeleteError(getErrorMessage(err, 'The portfolio could not be deleted.'))
-    }
-  }
+  const handleDeletePortfolio = () => deletePortfolio(selectedNode.brokerName, selectedNode.portfolioName ?? '')
 
   const breadcrumb = isAsset
     ? `${selectedNode.ticker} · ${selectedNode.exchange} · ${selectedNode.brokerName} · ${selectedNode.portfolioName}`
