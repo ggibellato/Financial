@@ -57,8 +57,8 @@ describe('useIncomeForm', () => {
 
     act(() => result.current.showCreateIncomeForm())
 
-    expect(result.current.createIncomeSource).toBe('1')
-    expect(result.current.createIncomeBank).toBe('')
+    expect(result.current.incomeSource).toBe('1')
+    expect(result.current.incomeBank).toBe('')
   })
 
   it('leaves the default source unset when there are no income sources', () => {
@@ -66,17 +66,17 @@ describe('useIncomeForm', () => {
 
     act(() => result.current.showCreateIncomeForm())
 
-    expect(result.current.createIncomeSource).toBe('')
+    expect(result.current.incomeSource).toBe('')
   })
 
   it('submits a create request with a null bankId and null description when both are left blank', () => {
     createIncomeMock.mockResolvedValue({} as Awaited<ReturnType<FinancialApiClient['createIncome']>>)
     const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved))
     act(() => result.current.showCreateIncomeForm())
-    act(() => result.current.setCreateIncomeField('createIncomeDate', '2026-07-25'))
-    act(() => result.current.setCreateIncomeField('createIncomeNetValue', '42.50'))
+    act(() => result.current.setIncomeField('date', '2026-07-25'))
+    act(() => result.current.setIncomeField('netValue', '42.50'))
 
-    act(() => result.current.submitCreateIncome())
+    act(() => result.current.submitIncome())
 
     expect(createIncomeMock).toHaveBeenCalledWith(
       expect.objectContaining({ bankId: null, description: null }),
@@ -87,11 +87,11 @@ describe('useIncomeForm', () => {
     createIncomeMock.mockResolvedValue({} as Awaited<ReturnType<FinancialApiClient['createIncome']>>)
     const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved))
     act(() => result.current.showCreateIncomeForm())
-    act(() => result.current.setCreateIncomeField('createIncomeDate', '2026-07-25'))
-    act(() => result.current.setCreateIncomeField('createIncomeNetValue', '42.50'))
-    act(() => result.current.setCreateIncomeField('createIncomeDescription', 'Chip ISA dividend'))
+    act(() => result.current.setIncomeField('date', '2026-07-25'))
+    act(() => result.current.setIncomeField('netValue', '42.50'))
+    act(() => result.current.setIncomeField('description', 'Chip ISA dividend'))
 
-    act(() => result.current.submitCreateIncome())
+    act(() => result.current.submitIncome())
 
     expect(createIncomeMock).toHaveBeenCalledWith(
       expect.objectContaining({ description: 'Chip ISA dividend' }),
@@ -103,30 +103,30 @@ describe('useIncomeForm', () => {
 
     act(() => result.current.showCreateIncomeForm())
 
-    expect(result.current.createIncomeSource).toBe('1') // Gleison - not eligible
-    expect(result.current.createIncomeSplitToReserve).toBe('false')
+    expect(result.current.incomeSource).toBe('1') // Gleison - not eligible
+    expect(result.current.incomeSplitToReserve).toBe('false')
   })
 
   it('switching to an eligible source sets splitToReserve to true', () => {
     const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved))
     act(() => result.current.showCreateIncomeForm())
 
-    act(() => result.current.setCreateIncomeField('createIncomeSource', '2')) // Ariana
+    act(() => result.current.setIncomeField('incomeSource', '2')) // Ariana
 
-    expect(result.current.createIncomeSplitToReserve).toBe('true')
+    expect(result.current.incomeSplitToReserve).toBe('true')
   })
 
   it('switching back to an ineligible source sets splitToReserve to false', () => {
     const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved))
     act(() => result.current.showCreateIncomeForm())
-    act(() => result.current.setCreateIncomeField('createIncomeSource', '2')) // Ariana
+    act(() => result.current.setIncomeField('incomeSource', '2')) // Ariana
 
-    act(() => result.current.setCreateIncomeField('createIncomeSource', '1')) // Gleison
+    act(() => result.current.setIncomeField('incomeSource', '1')) // Gleison
 
-    expect(result.current.createIncomeSplitToReserve).toBe('false')
+    expect(result.current.incomeSplitToReserve).toBe('false')
   })
 
-  it('populates editIncomeSplitToReserve as true for a split income', () => {
+  it('populates incomeSplitToReserve as true for a split income', () => {
     const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved))
     const income: IncomeDto = {
       id: 'i1', date: '2026-07-25', incomeSourceId: '2', incomeSourceName: 'Ariana',
@@ -136,10 +136,10 @@ describe('useIncomeForm', () => {
 
     act(() => result.current.showEditIncomeForm(income))
 
-    expect(result.current.editIncomeSplitToReserve).toBe('true')
+    expect(result.current.incomeSplitToReserve).toBe('true')
   })
 
-  it('populates editIncomeSplitToReserve as false for an unsplit income', () => {
+  it('populates incomeSplitToReserve as false for an unsplit income', () => {
     const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved))
     const income: IncomeDto = {
       id: 'i1', date: '2026-07-25', incomeSourceId: '2', incomeSourceName: 'Ariana',
@@ -149,18 +149,18 @@ describe('useIncomeForm', () => {
 
     act(() => result.current.showEditIncomeForm(income))
 
-    expect(result.current.editIncomeSplitToReserve).toBe('false')
+    expect(result.current.incomeSplitToReserve).toBe('false')
   })
 
   it('submits a create request with splitToReserve true when checked', () => {
     createIncomeMock.mockResolvedValue({} as Awaited<ReturnType<FinancialApiClient['createIncome']>>)
     const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved))
     act(() => result.current.showCreateIncomeForm())
-    act(() => result.current.setCreateIncomeField('createIncomeSource', '2')) // Ariana, defaults checked
-    act(() => result.current.setCreateIncomeField('createIncomeDate', '2026-07-25'))
-    act(() => result.current.setCreateIncomeField('createIncomeNetValue', '2450'))
+    act(() => result.current.setIncomeField('incomeSource', '2')) // Ariana, defaults checked
+    act(() => result.current.setIncomeField('date', '2026-07-25'))
+    act(() => result.current.setIncomeField('netValue', '2450'))
 
-    act(() => result.current.submitCreateIncome())
+    act(() => result.current.submitIncome())
 
     expect(createIncomeMock).toHaveBeenCalledWith(expect.objectContaining({ splitToReserve: true }))
   })
@@ -169,11 +169,11 @@ describe('useIncomeForm', () => {
     createIncomeMock.mockResolvedValue({ splitToReserve: true } as Awaited<ReturnType<FinancialApiClient['createIncome']>>)
     const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved))
     act(() => result.current.showCreateIncomeForm())
-    act(() => result.current.setCreateIncomeField('createIncomeDate', '2026-07-25'))
-    act(() => result.current.setCreateIncomeField('createIncomeNetValue', '2450'))
+    act(() => result.current.setIncomeField('date', '2026-07-25'))
+    act(() => result.current.setIncomeField('netValue', '2450'))
 
     await act(async () => {
-      result.current.submitCreateIncome()
+      result.current.submitIncome()
     })
 
     expect(result.current.splitConfirmationMessage).toBe('Income saved and split to reserve')
@@ -183,11 +183,11 @@ describe('useIncomeForm', () => {
     createIncomeMock.mockResolvedValue({ splitToReserve: false } as Awaited<ReturnType<FinancialApiClient['createIncome']>>)
     const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved))
     act(() => result.current.showCreateIncomeForm())
-    act(() => result.current.setCreateIncomeField('createIncomeDate', '2026-07-25'))
-    act(() => result.current.setCreateIncomeField('createIncomeNetValue', '2450'))
+    act(() => result.current.setIncomeField('date', '2026-07-25'))
+    act(() => result.current.setIncomeField('netValue', '2450'))
 
     await act(async () => {
-      result.current.submitCreateIncome()
+      result.current.submitIncome()
     })
 
     expect(result.current.splitConfirmationMessage).toBeNull()
@@ -197,10 +197,10 @@ describe('useIncomeForm', () => {
     createIncomeMock.mockResolvedValue({ splitToReserve: true } as Awaited<ReturnType<FinancialApiClient['createIncome']>>)
     const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved))
     act(() => result.current.showCreateIncomeForm())
-    act(() => result.current.setCreateIncomeField('createIncomeDate', '2026-07-25'))
-    act(() => result.current.setCreateIncomeField('createIncomeNetValue', '2450'))
+    act(() => result.current.setIncomeField('date', '2026-07-25'))
+    act(() => result.current.setIncomeField('netValue', '2450'))
     await act(async () => {
-      result.current.submitCreateIncome()
+      result.current.submitIncome()
     })
     expect(result.current.splitConfirmationMessage).toBe('Income saved and split to reserve')
 

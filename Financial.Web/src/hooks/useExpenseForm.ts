@@ -1,5 +1,6 @@
 import { useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
+import type { ExpenseFormField } from '../components/ExpenseForm'
 import type { BankDto, CategoryDto, ExpenseDto } from '../api/types'
 import { getErrorMessage, parseValidatedNumber } from '../utils/formatters'
 
@@ -25,174 +26,103 @@ function suggestRoundUpAmount(banks: BankDto[], bankId: string, value: string): 
   return computeRoundUpSuggestion(parsedValue).toFixed(2)
 }
 
-export type CreateFormField =
-  | 'createDate'
-  | 'createDescription'
-  | 'createValue'
-  | 'createCategoryId'
-  | 'createPaymentSource'
-  | 'createCreditCardId'
-  | 'createInvoiceDate'
-  | 'createRoundUpAmount'
-  | 'createCountsAsTithe'
-export type EditField =
-  | 'editDate'
-  | 'editDescription'
-  | 'editValue'
-  | 'editCategoryId'
-  | 'editPaymentSource'
-  | 'editCreditCardId'
-  | 'editInvoiceDate'
-  | 'editRoundUpAmount'
-  | 'editCountsAsTithe'
-
 interface ExpenseFormState {
-  isCreateFormOpen: boolean
-  createDate: string
-  createDescription: string
-  createValue: string
-  createCategoryId: string
-  createPaymentSource: string
-  createCreditCardId: string
-  createInvoiceDate: string
-  createRoundUpAmount: string
-  createCountsAsTithe: string
-  createPaymentMode: PaymentMode
-  isCreating: boolean
-  createError: string | null
+  isOpen: boolean
+  isEditing: boolean
   editingId: string | null
-  editDate: string
-  editDescription: string
-  editValue: string
-  editCategoryId: string
-  editPaymentSource: string
-  editCreditCardId: string
-  editCreditCardName: string
-  editInvoiceDate: string
-  editRoundUpAmount: string
-  editCountsAsTithe: string
-  editPaymentMode: PaymentMode
-  editIsSettled: boolean
+  date: string
+  description: string
+  value: string
+  categoryId: string
+  paymentSource: string
+  creditCardId: string
+  creditCardName: string
+  invoiceDate: string
+  roundUpAmount: string
+  countsAsTithe: string
+  paymentMode: PaymentMode
+  isSettled: boolean
   isSaving: boolean
   saveError: string | null
 }
 
 type ExpenseFormAction =
   | { type: 'SHOW_CREATE_FORM'; payload: { mode: PaymentMode; paymentSource: string; roundUpAmount: string; categoryId: string } }
-  | { type: 'CANCEL_CREATE_FORM' }
-  | { type: 'SET_CREATE_FIELD'; payload: { field: CreateFormField; value: string } }
-  | { type: 'CREATE_START' }
-  | { type: 'CREATE_SUCCESS' }
-  | { type: 'CREATE_ERROR'; payload: string }
   | { type: 'SHOW_EDIT_FORM'; payload: ExpenseDto }
-  | { type: 'CANCEL_EDIT' }
-  | { type: 'SET_EDIT_FIELD'; payload: { field: EditField; value: string } }
+  | { type: 'CANCEL_FORM' }
+  | { type: 'SET_FIELD'; payload: { field: ExpenseFormField; value: string } }
   | { type: 'SAVE_START' }
   | { type: 'SAVE_SUCCESS' }
   | { type: 'SAVE_ERROR'; payload: string }
 
-const BLANK_CREATE_FORM = {
-  createDate: '',
-  createDescription: '',
-  createValue: '',
-  createCategoryId: '',
-  createPaymentSource: '',
-  createCreditCardId: '',
-  createInvoiceDate: '',
-  createRoundUpAmount: '',
-  createCountsAsTithe: 'true',
-  createPaymentMode: 'bank',
+const BLANK_FORM = {
+  date: '',
+  description: '',
+  value: '',
+  categoryId: '',
+  paymentSource: '',
+  creditCardId: '',
+  creditCardName: '',
+  invoiceDate: '',
+  roundUpAmount: '',
+  countsAsTithe: 'true',
+  paymentMode: 'bank' as PaymentMode,
+  isSettled: false,
 } as const
 
 const INITIAL_STATE: ExpenseFormState = {
-  isCreateFormOpen: false,
-  ...BLANK_CREATE_FORM,
-  isCreating: false,
-  createError: null,
+  isOpen: false,
+  isEditing: false,
   editingId: null,
-  editDate: '',
-  editDescription: '',
-  editValue: '',
-  editCategoryId: '',
-  editPaymentSource: '',
-  editCreditCardId: '',
-  editCreditCardName: '',
-  editInvoiceDate: '',
-  editRoundUpAmount: '',
-  editCountsAsTithe: 'true',
-  editPaymentMode: 'bank',
-  editIsSettled: false,
+  ...BLANK_FORM,
   isSaving: false,
   saveError: null,
 }
-
-const BLANK_EDIT_FORM = {
-  editingId: null,
-  editDate: '',
-  editDescription: '',
-  editValue: '',
-  editCategoryId: '',
-  editPaymentSource: '',
-  editCreditCardId: '',
-  editCreditCardName: '',
-  editInvoiceDate: '',
-  editRoundUpAmount: '',
-  editCountsAsTithe: 'true',
-  editPaymentMode: 'bank',
-  editIsSettled: false,
-} as const
 
 function reducer(state: ExpenseFormState, action: ExpenseFormAction): ExpenseFormState {
   switch (action.type) {
     case 'SHOW_CREATE_FORM':
       return {
         ...state,
-        ...BLANK_EDIT_FORM,
-        isCreateFormOpen: true,
+        ...BLANK_FORM,
+        isOpen: true,
+        isEditing: false,
+        editingId: null,
         saveError: null,
-        createPaymentMode: action.payload.mode,
-        createPaymentSource: action.payload.paymentSource,
-        createCreditCardId: '',
-        createRoundUpAmount: action.payload.roundUpAmount,
-        createCategoryId: action.payload.categoryId,
+        paymentMode: action.payload.mode,
+        paymentSource: action.payload.paymentSource,
+        creditCardId: '',
+        roundUpAmount: action.payload.roundUpAmount,
+        categoryId: action.payload.categoryId,
       }
-    case 'CANCEL_CREATE_FORM':
-      return { ...state, ...BLANK_CREATE_FORM, isCreateFormOpen: false, createError: null }
-    case 'SET_CREATE_FIELD':
-      return { ...state, [action.payload.field]: action.payload.value }
-    case 'CREATE_START':
-      return { ...state, isCreating: true, createError: null }
-    case 'CREATE_SUCCESS':
-      return { ...state, ...BLANK_CREATE_FORM, isCreateFormOpen: false, isCreating: false }
-    case 'CREATE_ERROR':
-      return { ...state, isCreating: false, createError: action.payload }
     case 'SHOW_EDIT_FORM':
       return {
         ...state,
-        isCreateFormOpen: false,
+        isOpen: true,
+        isEditing: true,
         editingId: action.payload.id,
-        editDate: action.payload.date,
-        editDescription: action.payload.description,
-        editValue: String(action.payload.value),
-        editCategoryId: action.payload.categoryId,
-        editPaymentSource: action.payload.paymentSourceBankId ?? '',
-        editCreditCardId: action.payload.creditCardId ?? '',
-        editCreditCardName: action.payload.creditCardName ?? '',
-        editInvoiceDate: action.payload.invoiceDate ? action.payload.invoiceDate.slice(0, 7) : '',
-        editRoundUpAmount: action.payload.roundUpAmount != null ? String(action.payload.roundUpAmount) : '',
-        editCountsAsTithe: String(action.payload.countsAsTithe),
-        editPaymentMode: action.payload.paymentStatus === CHARGE_STATUS ? 'card' : 'bank',
-        editIsSettled: action.payload.paymentStatus === SETTLED_STATUS,
+        date: action.payload.date,
+        description: action.payload.description,
+        value: String(action.payload.value),
+        categoryId: action.payload.categoryId,
+        paymentSource: action.payload.paymentSourceBankId ?? '',
+        creditCardId: action.payload.creditCardId ?? '',
+        creditCardName: action.payload.creditCardName ?? '',
+        invoiceDate: action.payload.invoiceDate ? action.payload.invoiceDate.slice(0, 7) : '',
+        roundUpAmount: action.payload.roundUpAmount != null ? String(action.payload.roundUpAmount) : '',
+        countsAsTithe: String(action.payload.countsAsTithe),
+        paymentMode: action.payload.paymentStatus === CHARGE_STATUS ? 'card' : 'bank',
+        isSettled: action.payload.paymentStatus === SETTLED_STATUS,
         saveError: null,
       }
-    case 'CANCEL_EDIT':
-      return { ...state, ...BLANK_EDIT_FORM, saveError: null }
-    case 'SET_EDIT_FIELD':
+    case 'CANCEL_FORM':
+      return { ...state, ...BLANK_FORM, isOpen: false, isEditing: false, editingId: null, saveError: null }
+    case 'SET_FIELD':
       return { ...state, [action.payload.field]: action.payload.value }
     case 'SAVE_START':
       return { ...state, isSaving: true, saveError: null }
     case 'SAVE_SUCCESS':
-      return { ...state, ...BLANK_EDIT_FORM, isSaving: false }
+      return { ...state, ...BLANK_FORM, isOpen: false, isEditing: false, editingId: null, isSaving: false }
     case 'SAVE_ERROR':
       return { ...state, isSaving: false, saveError: action.payload }
     default:
@@ -201,42 +131,28 @@ function reducer(state: ExpenseFormState, action: ExpenseFormAction): ExpenseFor
 }
 
 export interface UseExpenseFormResult {
-  isCreateFormOpen: boolean
-  createDate: string
-  createDescription: string
-  createValue: string
-  createCategoryId: string
-  createPaymentSource: string
-  createCreditCardId: string
-  createInvoiceDate: string
-  createRoundUpAmount: string
-  createCountsAsTithe: string
-  createPaymentMode: PaymentMode
-  isCreating: boolean
-  createError: string | null
-  showCreateForm: (mode: PaymentMode) => void
-  cancelCreateForm: () => void
-  setCreateField: (field: CreateFormField, value: string) => void
-  submitCreate: () => void
+  isOpen: boolean
+  isEditing: boolean
   editingId: string | null
-  editDate: string
-  editDescription: string
-  editValue: string
-  editCategoryId: string
-  editPaymentSource: string
-  editCreditCardId: string
-  editCreditCardName: string
-  editInvoiceDate: string
-  editRoundUpAmount: string
-  editCountsAsTithe: string
-  editPaymentMode: PaymentMode
-  editIsSettled: boolean
+  date: string
+  description: string
+  value: string
+  categoryId: string
+  paymentSource: string
+  creditCardId: string
+  creditCardName: string
+  invoiceDate: string
+  roundUpAmount: string
+  countsAsTithe: string
+  paymentMode: PaymentMode
+  isSettled: boolean
   isSaving: boolean
   saveError: string | null
-  setEditField: (field: EditField, value: string) => void
+  showCreateForm: (mode: PaymentMode) => void
   showEditForm: (expense: ExpenseDto) => void
-  cancelEdit: () => void
-  saveEdit: () => void
+  cancelForm: () => void
+  setField: (field: ExpenseFormField, value: string) => void
+  submit: () => void
 }
 
 export function useExpenseForm(banks: BankDto[], categories: CategoryDto[], onSaved: () => void): UseExpenseFormResult {
@@ -244,147 +160,71 @@ export function useExpenseForm(banks: BankDto[], categories: CategoryDto[], onSa
 
   function showCreateForm(mode: PaymentMode) {
     const paymentSource = mode === 'bank' ? (banks[0]?.id ?? '') : ''
-    const suggestion = mode === 'bank' ? suggestRoundUpAmount(banks, paymentSource, state.createValue) : null
-    const categoryId = state.createCategoryId || (categories.find((c) => c.active)?.id ?? '')
+    const suggestion = mode === 'bank' ? suggestRoundUpAmount(banks, paymentSource, state.value) : null
+    const categoryId = state.categoryId || (categories.find((c) => c.active)?.id ?? '')
     dispatch({
       type: 'SHOW_CREATE_FORM',
       payload: { mode, paymentSource, roundUpAmount: suggestion ?? '', categoryId },
     })
   }
 
-  const cancelCreateForm = () => dispatch({ type: 'CANCEL_CREATE_FORM' })
+  const showEditForm = (expense: ExpenseDto) => dispatch({ type: 'SHOW_EDIT_FORM', payload: expense })
 
-  function setCreateField(field: CreateFormField, value: string) {
-    dispatch({ type: 'SET_CREATE_FIELD', payload: { field, value } })
-    if (field === 'createPaymentSource' && state.createRoundUpAmount.trim() === '') {
-      const suggestion = suggestRoundUpAmount(banks, value, state.createValue)
+  const cancelForm = () => dispatch({ type: 'CANCEL_FORM' })
+
+  function setField(field: ExpenseFormField, value: string) {
+    dispatch({ type: 'SET_FIELD', payload: { field, value } })
+    if (field === 'paymentSource' && state.roundUpAmount.trim() === '') {
+      const suggestion = suggestRoundUpAmount(banks, value, state.value)
       if (suggestion !== null) {
-        dispatch({ type: 'SET_CREATE_FIELD', payload: { field: 'createRoundUpAmount', value: suggestion } })
+        dispatch({ type: 'SET_FIELD', payload: { field: 'roundUpAmount', value: suggestion } })
       }
     }
   }
 
-  function submitCreate() {
-    const {
-      createDate,
-      createDescription,
-      createValue,
-      createCategoryId,
-      createPaymentMode,
-      createPaymentSource,
-      createCreditCardId,
-      createInvoiceDate,
-      createRoundUpAmount,
-      createCountsAsTithe,
-    } = state
+  function submit() {
+    if (!state.isEditing) {
+      if (!state.date.trim()) {
+        dispatch({ type: 'SAVE_ERROR', payload: 'Date is required' })
+        return
+      }
 
-    if (!createDate.trim()) {
-      dispatch({ type: 'CREATE_ERROR', payload: 'Date is required' })
-      return
-    }
-
-    if (!createDescription.trim()) {
-      dispatch({ type: 'CREATE_ERROR', payload: 'Description is required' })
-      return
-    }
-
-    const value = parseValidatedNumber(createValue)
-    if (value === null || value === 0) {
-      dispatch({ type: 'CREATE_ERROR', payload: 'Value must be a non-zero number' })
-      return
-    }
-
-    if (createPaymentMode === 'card' && createCreditCardId.trim() === '') {
-      dispatch({ type: 'CREATE_ERROR', payload: 'Card is required' })
-      return
-    }
-
-    const selectedBank = banks.find((b) => b.id === createPaymentSource)
-    const roundUpEligible = createPaymentMode === 'bank' && selectedBank?.roundUpEnabled === true
-
-    let roundUpAmount: number | null = null
-    if (roundUpEligible && createRoundUpAmount.trim() !== '') {
-      roundUpAmount = parseValidatedNumber(createRoundUpAmount, { min: MIN_ROUND_UP_AMOUNT, max: MAX_ROUND_UP_AMOUNT })
-      if (roundUpAmount === null) {
-        dispatch({
-          type: 'CREATE_ERROR',
-          payload: `Round-up amount must be between £${MIN_ROUND_UP_AMOUNT.toFixed(2)} and £${MAX_ROUND_UP_AMOUNT.toFixed(2)}`,
-        })
+      if (!state.description.trim()) {
+        dispatch({ type: 'SAVE_ERROR', payload: 'Description is required' })
         return
       }
     }
 
-    dispatch({ type: 'CREATE_START' })
-
-    void apiClient
-      .createExpense({
-        date: createDate,
-        description: createDescription,
-        value,
-        categoryId: createCategoryId,
-        paymentSourceBankId: createPaymentMode === 'bank' ? createPaymentSource : null,
-        creditCardId: createPaymentMode === 'card' ? createCreditCardId : null,
-        invoiceDate: createPaymentMode === 'card' && createInvoiceDate ? `${createInvoiceDate}-01` : null,
-        roundUpAmount,
-        countsAsTithe: createCountsAsTithe === 'true',
-      })
-      .then(() => {
-        dispatch({ type: 'CREATE_SUCCESS' })
-        onSaved()
-      })
-      .catch((err: unknown) => {
-        dispatch({ type: 'CREATE_ERROR', payload: getErrorMessage(err, 'Failed to create expense') })
-      })
-  }
-
-  const setEditField = (field: EditField, value: string) => {
-    dispatch({ type: 'SET_EDIT_FIELD', payload: { field, value } })
-    if (field === 'editPaymentSource' && state.editRoundUpAmount.trim() === '') {
-      const suggestion = suggestRoundUpAmount(banks, value, state.editValue)
-      if (suggestion !== null) {
-        dispatch({ type: 'SET_EDIT_FIELD', payload: { field: 'editRoundUpAmount', value: suggestion } })
-      }
-    }
-  }
-
-  const showEditForm = (expense: ExpenseDto) => dispatch({ type: 'SHOW_EDIT_FORM', payload: expense })
-
-  const cancelEdit = () => dispatch({ type: 'CANCEL_EDIT' })
-
-  function saveEdit() {
-    if (!state.editingId) return
-
-    const value = parseValidatedNumber(state.editValue)
+    const value = parseValidatedNumber(state.value)
     if (value === null || value === 0) {
       dispatch({ type: 'SAVE_ERROR', payload: 'Value must be a non-zero number' })
       return
     }
 
-    if (!state.editIsSettled && state.editPaymentMode === 'card' && state.editCreditCardId.trim() === '') {
+    if (!state.isSettled && state.paymentMode === 'card' && state.creditCardId.trim() === '') {
       dispatch({ type: 'SAVE_ERROR', payload: 'Card is required' })
       return
     }
 
     // A settled expense's payment fields are frozen: send them back unchanged so only
     // the editable fields move; the server rejects any payment-field change until the
-    // statement is unmarked paid.
-    const paymentFields = state.editIsSettled
+    // statement is unmarked paid. isSettled is always false while creating.
+    const paymentFields = state.isSettled
       ? {
-          paymentSourceBankId: state.editPaymentSource.trim() === '' ? null : state.editPaymentSource,
-          creditCardId: state.editCreditCardId.trim() === '' ? null : state.editCreditCardId,
+          paymentSourceBankId: state.paymentSource.trim() === '' ? null : state.paymentSource,
+          creditCardId: state.creditCardId.trim() === '' ? null : state.creditCardId,
         }
       : {
-          paymentSourceBankId: state.editPaymentMode === 'bank' ? state.editPaymentSource : null,
-          creditCardId: state.editPaymentMode === 'card' ? state.editCreditCardId : null,
+          paymentSourceBankId: state.paymentMode === 'bank' ? state.paymentSource : null,
+          creditCardId: state.paymentMode === 'card' ? state.creditCardId : null,
         }
 
-    const selectedBank = banks.find((b) => b.id === state.editPaymentSource)
-    const roundUpEligible =
-      !state.editIsSettled && state.editPaymentMode === 'bank' && selectedBank?.roundUpEnabled === true
+    const selectedBank = banks.find((b) => b.id === state.paymentSource)
+    const roundUpEligible = !state.isSettled && state.paymentMode === 'bank' && selectedBank?.roundUpEnabled === true
 
     let roundUpAmount: number | null = null
-    if (roundUpEligible && state.editRoundUpAmount.trim() !== '') {
-      roundUpAmount = parseValidatedNumber(state.editRoundUpAmount, { min: MIN_ROUND_UP_AMOUNT, max: MAX_ROUND_UP_AMOUNT })
+    if (roundUpEligible && state.roundUpAmount.trim() !== '') {
+      roundUpAmount = parseValidatedNumber(state.roundUpAmount, { min: MIN_ROUND_UP_AMOUNT, max: MAX_ROUND_UP_AMOUNT })
       if (roundUpAmount === null) {
         dispatch({
           type: 'SAVE_ERROR',
@@ -396,62 +236,52 @@ export function useExpenseForm(banks: BankDto[], categories: CategoryDto[], onSa
 
     dispatch({ type: 'SAVE_START' })
 
-    void apiClient
-      .updateExpense(state.editingId, {
-        date: state.editDate,
-        description: state.editDescription,
-        value,
-        categoryId: state.editCategoryId,
-        ...paymentFields,
-        invoiceDate: state.editPaymentMode === 'card' && state.editInvoiceDate ? `${state.editInvoiceDate}-01` : null,
-        roundUpAmount,
-        countsAsTithe: state.editCountsAsTithe === 'true',
-      })
+    const payload = {
+      date: state.date,
+      description: state.description,
+      value,
+      categoryId: state.categoryId,
+      ...paymentFields,
+      invoiceDate: state.paymentMode === 'card' && state.invoiceDate ? `${state.invoiceDate}-01` : null,
+      roundUpAmount,
+      countsAsTithe: state.countsAsTithe === 'true',
+    }
+
+    const request =
+      state.isEditing && state.editingId ? apiClient.updateExpense(state.editingId, payload) : apiClient.createExpense(payload)
+
+    void request
       .then(() => {
         dispatch({ type: 'SAVE_SUCCESS' })
         onSaved()
       })
       .catch((err: unknown) => {
-        dispatch({ type: 'SAVE_ERROR', payload: getErrorMessage(err, 'Failed to update expense') })
+        dispatch({ type: 'SAVE_ERROR', payload: getErrorMessage(err, state.isEditing ? 'Failed to update expense' : 'Failed to create expense') })
       })
   }
 
   return {
-    isCreateFormOpen: state.isCreateFormOpen,
-    createDate: state.createDate,
-    createDescription: state.createDescription,
-    createValue: state.createValue,
-    createCategoryId: state.createCategoryId,
-    createPaymentSource: state.createPaymentSource,
-    createCreditCardId: state.createCreditCardId,
-    createInvoiceDate: state.createInvoiceDate,
-    createRoundUpAmount: state.createRoundUpAmount,
-    createCountsAsTithe: state.createCountsAsTithe,
-    createPaymentMode: state.createPaymentMode,
-    isCreating: state.isCreating,
-    createError: state.createError,
-    showCreateForm,
-    cancelCreateForm,
-    setCreateField,
-    submitCreate,
+    isOpen: state.isOpen,
+    isEditing: state.isEditing,
     editingId: state.editingId,
-    editDate: state.editDate,
-    editDescription: state.editDescription,
-    editValue: state.editValue,
-    editCategoryId: state.editCategoryId,
-    editPaymentSource: state.editPaymentSource,
-    editCreditCardId: state.editCreditCardId,
-    editCreditCardName: state.editCreditCardName,
-    editInvoiceDate: state.editInvoiceDate,
-    editRoundUpAmount: state.editRoundUpAmount,
-    editCountsAsTithe: state.editCountsAsTithe,
-    editPaymentMode: state.editPaymentMode,
-    editIsSettled: state.editIsSettled,
+    date: state.date,
+    description: state.description,
+    value: state.value,
+    categoryId: state.categoryId,
+    paymentSource: state.paymentSource,
+    creditCardId: state.creditCardId,
+    creditCardName: state.creditCardName,
+    invoiceDate: state.invoiceDate,
+    roundUpAmount: state.roundUpAmount,
+    countsAsTithe: state.countsAsTithe,
+    paymentMode: state.paymentMode,
+    isSettled: state.isSettled,
     isSaving: state.isSaving,
     saveError: state.saveError,
-    setEditField,
+    showCreateForm,
     showEditForm,
-    cancelEdit,
-    saveEdit,
+    cancelForm,
+    setField,
+    submit,
   }
 }
