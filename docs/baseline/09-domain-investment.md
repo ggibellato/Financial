@@ -66,7 +66,7 @@ See legend in [README.md](README.md). Covers business capabilities implemented i
 
 **Relationship:** `Asset.RealizedGainLoss = Transactions.RealizedCapitalGain + Credits.Sum(Value)` — deliberate composition (explicit code comment: Transactions has no knowledge of Credits).
 
-**Rules:** `CreditType` limited to Dividend/Rent — **OBSERVED**. Update/Delete require a non-empty Guid — **OBSERVED**.
+**Rules:** `CreditType` limited to Dividend/Rent/JCP — **OBSERVED**. Update/Delete require a non-empty Guid — **OBSERVED**.
 
 **Application services:** `CreditService` (via `AssetMutationHelper`), `CreditTypeParser`.
 

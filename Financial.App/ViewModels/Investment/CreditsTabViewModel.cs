@@ -179,7 +179,7 @@ public class CreditsTabViewModel : ViewModelBase
 
         if (!CreditTypeParser.TryNormalize(dialogData.Value.Type, out var normalizedType))
         {
-            ShowWarning("Credit type must be 'Dividend' or 'Rent'.");
+            ShowWarning("Credit type must be 'Dividend', 'Rent', or 'JCP'.");
             return;
         }
 
@@ -223,7 +223,7 @@ public class CreditsTabViewModel : ViewModelBase
 
         if (!CreditTypeParser.TryNormalize(dialogData.Value.Type, out var normalizedType))
         {
-            ShowWarning("Credit type must be 'Dividend' or 'Rent'.");
+            ShowWarning("Credit type must be 'Dividend', 'Rent', or 'JCP'.");
             return;
         }
 

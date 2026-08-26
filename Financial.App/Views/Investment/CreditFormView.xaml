@@ -60,6 +60,7 @@
                           IsEnabled="{Binding IsEditable}">
                     <ComboBoxItem Content="Dividend"/>
                     <ComboBoxItem Content="Rent"/>
+                    <ComboBoxItem Content="JCP"/>
                 </ComboBox>
             </StackPanel>
 

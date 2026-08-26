@@ -238,6 +238,32 @@ public class GoogleSheetsAssetReaderTests
     }
 
     [Fact]
+    public async Task ReadCreditsAsync_JcpType_MapsToJcpCreditType()
+    {
+        _dataSource.Rows = new List<IList<object>>
+        {
+            new List<object> { 45000L, "100", "", "JUROS S/ CAPITAL DE CLIENTES" }
+        };
+
+        var result = await _sut.ReadCreditsAsync("file1", "Sheet1");
+
+        result.Should().ContainSingle().Which.Type.Should().Be(Credit.CreditType.JCP);
+    }
+
+    [Fact]
+    public async Task ReadCreditsAsync_JcpTypeLowercaseVariant_MapsToJcpCreditType()
+    {
+        _dataSource.Rows = new List<IList<object>>
+        {
+            new List<object> { 45000L, "100", "", "juros sobre capital próprio" }
+        };
+
+        var result = await _sut.ReadCreditsAsync("file1", "Sheet1");
+
+        result.Should().ContainSingle().Which.Type.Should().Be(Credit.CreditType.JCP);
+    }
+
+    [Fact]
     public async Task ReadCreditsAsync_RowWithBlankDate_IsSkipped()
     {
         _dataSource.Rows = new List<IList<object>>

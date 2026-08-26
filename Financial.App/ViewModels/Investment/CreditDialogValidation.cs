@@ -20,7 +20,7 @@ public static class CreditDialogValidation
 
         if (!IsValidCreditType(type))
         {
-            errors.Add("Type must be Dividend or Rent.");
+            errors.Add("Type must be Dividend, Rent, or JCP.");
         }
 
         if (value <= 0)

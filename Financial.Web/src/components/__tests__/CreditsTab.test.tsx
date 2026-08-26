@@ -50,6 +50,13 @@ const CREDIT_RENT: CreditDto = {
   value: 350.0,
 }
 
+const CREDIT_JCP: CreditDto = {
+  id: 'ccc',
+  date: '2024-02-20T00:00:00',
+  type: 'JCP',
+  value: 75.0,
+}
+
 const DEFAULT_HOOK: CreditsData = {
   credits: [],
   chartData: [],
@@ -168,6 +175,13 @@ describe('CreditsTab', () => {
     expect(typeCell).toHaveClass('credits-tab__type--rent')
   })
 
+  it('renders_jcp_type_with_jcp_class', () => {
+    setMock({ credits: [CREDIT_JCP] })
+    render(<CreditsTab />)
+    const typeCell = screen.getByText('JCP')
+    expect(typeCell).toHaveClass('credits-tab__type--jcp')
+  })
+
   it('renders_value_in_n2_bold', () => {
     setMock({ credits: [CREDIT_DIVIDEND] })
     render(<CreditsTab />)
@@ -199,6 +213,14 @@ describe('CreditsTab', () => {
     expect(screen.getByLabelText('Date')).toBeInTheDocument()
     expect(screen.getByLabelText('Type')).toBeInTheDocument()
     expect(screen.getByLabelText('Value')).toBeInTheDocument()
+  })
+
+  it('type_select_includes_jcp_option', () => {
+    setMock({ isFormVisible: true })
+    render(<CreditsTab />)
+    const select = screen.getByLabelText('Type') as HTMLSelectElement
+    const optionValues = Array.from(select.options).map((o) => o.value)
+    expect(optionValues).toEqual(['Dividend', 'Rent', 'JCP'])
   })
 
   it('form_title_is_new_credit_when_no_editing_id', () => {

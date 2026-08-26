@@ -25,6 +25,7 @@ internal sealed class GoogleSheetsAssetReader
     private const int CreditValueColumn = 1;
     private const int CreditTypeColumn = 3;
     private const string RentCreditType = "Aluguel";
+    private const string JcpCreditTypeKeyword = "JUROS";
 
     private readonly IGoogleSheetsDataSource _service;
 
@@ -108,9 +109,14 @@ internal sealed class GoogleSheetsAssetReader
             if (value.Count > 0 && !string.IsNullOrWhiteSpace(value[CreditDateColumn].ToString()))
             {
                 var type = value.Count > CreditTypeColumn ? (string)value[CreditTypeColumn] : string.Empty;
+                var creditType = type == RentCreditType
+                    ? Credit.CreditType.Rent
+                    : type.Contains(JcpCreditTypeKeyword, StringComparison.OrdinalIgnoreCase)
+                        ? Credit.CreditType.JCP
+                        : Credit.CreditType.Dividend;
                 credits.Add(Credit.Create(
                     DateTime.FromOADate((long)value[CreditDateColumn]),
-                    type == RentCreditType ? Credit.CreditType.Rent : Credit.CreditType.Dividend,
+                    creditType,
                     GoogleSheetValueParser.ToDecimal(value[CreditValueColumn])));
             }
         }

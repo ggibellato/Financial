@@ -24,6 +24,14 @@ public class CreditTests
     }
 
     [Fact]
+    public void Create_WithJcpType_AssignsType()
+    {
+        var credit = Credit.Create(new DateTime(2024, 1, 1), Credit.CreditType.JCP, 10m);
+
+        credit.Type.Should().Be(Credit.CreditType.JCP);
+    }
+
+    [Fact]
     public void CreateWithId_EmptyGuid_StoresEmptyId()
     {
         var credit = Credit.CreateWithId(Guid.Empty, new DateTime(2024, 1, 1), Credit.CreditType.Dividend, 10m);

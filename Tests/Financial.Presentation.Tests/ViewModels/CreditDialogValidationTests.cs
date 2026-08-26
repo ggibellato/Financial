@@ -41,7 +41,7 @@ public class CreditDialogValidationTests
         var result = CreditDialogValidation.BuildValidationMessage(
             isDeleteMode: false, date: ValidDate, type: "Invalid", value: 10);
 
-        result.Should().Contain("Type must be Dividend or Rent.");
+        result.Should().Contain("Type must be Dividend, Rent, or JCP.");
     }
 
     [Theory]
@@ -62,13 +62,14 @@ public class CreditDialogValidationTests
             isDeleteMode: false, date: DateTime.MinValue, type: null, value: 0);
 
         result.Should().Contain("Date is required.");
-        result.Should().Contain("Type must be Dividend or Rent.");
+        result.Should().Contain("Type must be Dividend, Rent, or JCP.");
         result.Should().Contain("Value must be greater than zero.");
     }
 
     [Theory]
     [InlineData("Dividend", true)]
     [InlineData("rent", true)]
+    [InlineData("JCP", true)]
     [InlineData("Invalid", false)]
     [InlineData(null, false)]
     public void IsValidCreditType_ReturnsExpectedResult(string? value, bool expected)

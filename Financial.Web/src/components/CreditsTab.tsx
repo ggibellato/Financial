@@ -54,11 +54,14 @@ interface CreditRowProps {
   onDelete: (id: string) => void
 }
 
+const TYPE_CLASSES: Record<string, string> = {
+  Dividend: 'credits-tab__type--dividend',
+  Rent: 'credits-tab__type--rent',
+  JCP: 'credits-tab__type--jcp',
+}
+
 function CreditRow({ credit, onEdit, onDelete }: CreditRowProps) {
-  const typeClass =
-    credit.type === 'Dividend'
-      ? 'credits-tab__type--dividend'
-      : 'credits-tab__type--rent'
+  const typeClass = TYPE_CLASSES[credit.type] ?? 'credits-tab__type--dividend'
 
   return (
     <tr>
@@ -137,6 +140,7 @@ function InlineForm({
           >
             <option value="Dividend">Dividend</option>
             <option value="Rent">Rent</option>
+            <option value="JCP">JCP</option>
           </select>
         </div>
         <div className="credits-tab__form-field">
