@@ -4,14 +4,14 @@ namespace Financial.Integrations.GoogleSheets;
 
 public static class GoogleSheetValueParser
 {
-    public static decimal ToDecimal(object toDecimal)
+    public static decimal ToDecimal(object rawCellValue)
     {
-        if (toDecimal is ExtendedValue extendedValue && extendedValue.NumberValue != null)
+        if (rawCellValue is ExtendedValue extendedValue && extendedValue.NumberValue != null)
         {
             return (decimal)extendedValue.NumberValue;
         }
 
-        var value = toDecimal.ToString().Replace(",", "");
+        var value = rawCellValue.ToString().Replace(",", "");
         return decimal.Parse(value);
     }
 }
