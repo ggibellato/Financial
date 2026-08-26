@@ -1,4 +1,3 @@
-using System.Text;
 using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -77,14 +76,13 @@ public static class ObservabilityServiceCollectionExtensions
     /// go only into the exporter header, never into logs or telemetry attributes (FR-014).</summary>
     internal static void ConfigureOtlpExporter(ObservabilityOptions options, OtlpExporterOptions exporter)
     {
-        exporter.Endpoint = new Uri(options.Endpoint);
+        var settings = OtlpExporterSettingsResolver.Resolve(options);
+        exporter.Endpoint = new Uri(settings.Endpoint);
 
-        if (options.Backend == ObservabilityBackend.Langfuse)
+        if (settings.UseHttpProtobuf)
         {
-            var credentials = Convert.ToBase64String(
-                Encoding.UTF8.GetBytes($"{options.Langfuse.PublicKey}:{options.Langfuse.SecretKey}"));
             exporter.Protocol = OtlpExportProtocol.HttpProtobuf;
-            exporter.Headers = $"Authorization=Basic {credentials}";
+            exporter.Headers = $"Authorization={settings.AuthorizationHeaderValue}";
         }
     }
 }

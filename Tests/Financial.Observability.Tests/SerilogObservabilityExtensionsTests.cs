@@ -40,6 +40,25 @@ public class SerilogObservabilityExtensionsTests
     }
 
     [Fact]
+    public void WriteToObservability_WhenEnabledWithLangfuseBackend_DoesNotThrowAndReturnsUsableLogger()
+    {
+        var configuration = BuildConfiguration(new Dictionary<string, string?>
+        {
+            ["Observability:Enabled"] = "true",
+            ["Observability:Backend"] = "Langfuse",
+            ["Observability:Endpoint"] = "http://langfuse:4318",
+            ["Observability:Langfuse:PublicKey"] = "pub-key",
+            ["Observability:Langfuse:SecretKey"] = "secret-key"
+        });
+
+        var act = () => new LoggerConfiguration()
+            .WriteToObservability(configuration)
+            .CreateLogger();
+
+        act.Should().NotThrow();
+    }
+
+    [Fact]
     public void WriteToObservability_WhenEnabled_LoggingDoesNotThrowEvenWithoutAReachableCollector()
     {
         var configuration = BuildConfiguration(new Dictionary<string, string?>
