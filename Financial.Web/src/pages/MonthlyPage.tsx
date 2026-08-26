@@ -5,9 +5,9 @@ import BanksGrid from '../components/BanksGrid'
 import CardsGrid from '../components/CardsGrid'
 import CategoryTotalsGrid from '../components/CategoryTotalsGrid'
 import ErrorState from '../components/ErrorState'
-import ExpenseForm, { type ExpenseFormField } from '../components/ExpenseForm'
+import ExpenseForm from '../components/ExpenseForm'
 import ExpensesSection from '../components/ExpensesSection'
-import IncomeForm, { type IncomeFormField } from '../components/IncomeForm'
+import IncomeForm from '../components/IncomeForm'
 import IncomeSection from '../components/IncomeSection'
 import IncomingGrid from '../components/IncomingGrid'
 import LoadingState from '../components/LoadingState'
@@ -15,8 +15,8 @@ import TransferForm from '../components/TransferForm'
 import { useBalanceAdjustmentForm } from '../hooks/useBalanceAdjustmentForm'
 import { useBankOperations } from '../hooks/useBankOperations'
 import { useCreditCards } from '../hooks/useCreditCards'
-import { useExpenseForm, type CreateFormField, type EditField } from '../hooks/useExpenseForm'
-import { useIncomeForm, type CreateIncomeField, type EditIncomeField } from '../hooks/useIncomeForm'
+import { useExpenseForm } from '../hooks/useExpenseForm'
+import { useIncomeForm } from '../hooks/useIncomeForm'
 import { useMonthly } from '../hooks/useMonthly'
 import { useTransferForm } from '../hooks/useTransferForm'
 import './MonthlyPage.css'
@@ -30,50 +30,6 @@ const MONTHLY_TABS: { id: MonthlyTabId; label: string }[] = [
   { id: 'incoming', label: 'Income' },
   { id: 'bank', label: 'Bank' },
 ]
-
-const CREATE_FIELD_BY_FORM_FIELD: Record<ExpenseFormField, CreateFormField> = {
-  date: 'createDate',
-  description: 'createDescription',
-  value: 'createValue',
-  categoryId: 'createCategoryId',
-  paymentSource: 'createPaymentSource',
-  creditCardId: 'createCreditCardId',
-  invoiceDate: 'createInvoiceDate',
-  roundUpAmount: 'createRoundUpAmount',
-  countsAsTithe: 'createCountsAsTithe',
-}
-
-const EDIT_FIELD_BY_FORM_FIELD: Record<ExpenseFormField, EditField> = {
-  date: 'editDate',
-  description: 'editDescription',
-  value: 'editValue',
-  categoryId: 'editCategoryId',
-  paymentSource: 'editPaymentSource',
-  creditCardId: 'editCreditCardId',
-  invoiceDate: 'editInvoiceDate',
-  roundUpAmount: 'editRoundUpAmount',
-  countsAsTithe: 'editCountsAsTithe',
-}
-
-const CREATE_INCOME_FIELD_BY_FORM_FIELD: Record<IncomeFormField, CreateIncomeField> = {
-  date: 'createIncomeDate',
-  incomeSource: 'createIncomeSource',
-  grossValue: 'createIncomeGrossValue',
-  netValue: 'createIncomeNetValue',
-  bank: 'createIncomeBank',
-  description: 'createIncomeDescription',
-  splitToReserve: 'createIncomeSplitToReserve',
-}
-
-const EDIT_INCOME_FIELD_BY_FORM_FIELD: Record<IncomeFormField, EditIncomeField> = {
-  date: 'editIncomeDate',
-  incomeSource: 'editIncomeSource',
-  grossValue: 'editIncomeGrossValue',
-  netValue: 'editIncomeNetValue',
-  bank: 'editIncomeBank',
-  description: 'editIncomeDescription',
-  splitToReserve: 'editIncomeSplitToReserve',
-}
 
 export default function MonthlyPage() {
   const {
@@ -136,74 +92,47 @@ export default function MonthlyPage() {
   }
 
   const {
-    isCreateFormOpen,
-    createDate,
-    createDescription,
-    createValue,
-    createCategoryId,
-    createPaymentSource,
-    createCreditCardId,
-    createInvoiceDate,
-    createRoundUpAmount,
-    createCountsAsTithe,
-    createPaymentMode,
-    isCreating,
-    createError,
-    showCreateForm,
-    cancelCreateForm,
-    setCreateField,
-    submitCreate,
-    editingId,
-    editDate,
-    editDescription,
-    editValue,
-    editCategoryId,
-    editPaymentSource,
-    editCreditCardId,
-    editCreditCardName,
-    editInvoiceDate,
-    editRoundUpAmount,
-    editCountsAsTithe,
-    editPaymentMode,
-    editIsSettled,
+    isOpen: isExpenseFormOpen,
+    isEditing,
+    date,
+    description,
+    value,
+    categoryId,
+    paymentSource,
+    creditCardId,
+    creditCardName,
+    invoiceDate,
+    roundUpAmount,
+    countsAsTithe,
+    paymentMode,
+    isSettled,
     isSaving,
     saveError,
-    setEditField,
+    showCreateForm,
     showEditForm,
-    cancelEdit,
-    saveEdit,
+    cancelForm,
+    setField,
+    submit,
   } = useExpenseForm(banks, categories, retry)
 
   const {
-    isIncomeCreateFormOpen,
-    createIncomeDate,
-    createIncomeSource,
-    createIncomeGrossValue,
-    createIncomeNetValue,
-    createIncomeBank,
-    createIncomeDescription,
-    createIncomeSplitToReserve,
-    isCreatingIncome,
-    createIncomeError,
-    showCreateIncomeForm,
-    cancelCreateIncomeForm,
-    setCreateIncomeField,
-    submitCreateIncome,
-    editingIncomeId,
-    editIncomeDate,
-    editIncomeSource,
-    editIncomeGrossValue,
-    editIncomeNetValue,
-    editIncomeBank,
-    editIncomeDescription,
-    editIncomeSplitToReserve,
+    isIncomeFormOpen,
+    isIncomeEditing,
+    incomeDate,
+    incomeSource,
+    incomeGrossValue,
+    incomeNetValue,
+    incomeBank,
+    incomeDescription,
+    incomeSplitToReserve,
     isSavingIncome,
     saveIncomeError,
-    setEditIncomeField,
-    showEditIncomeForm,
-    cancelEditIncome,
-    saveEditIncome,
     splitConfirmationMessage,
+    showCreateIncomeForm,
+    showEditIncomeForm,
+    cancelIncomeForm,
+    setIncomeField,
+    submitIncome,
   } = useIncomeForm(incomeSources, retry)
 
   const bankOperations = useBankOperations(year, month, banks, retry)
@@ -221,50 +150,40 @@ export default function MonthlyPage() {
 
   const [activeTab, setActiveTab] = useState<MonthlyTabId>('summary')
 
-  const isEditing = editingId !== null
-  const isFormVisible = isCreateFormOpen || isEditing
-  const isIncomeEditing = editingIncomeId !== null
-  const isIncomeFormVisible = isIncomeCreateFormOpen || isIncomeEditing
   const isBankFormVisible = transferForm.isOpen || adjustmentForm.isOpen
 
-  const expenseFormElement = isFormVisible && (
+  const expenseFormElement = isExpenseFormOpen && (
     <ExpenseForm
       isEditing={isEditing}
-      date={isEditing ? editDate : createDate}
-      description={isEditing ? editDescription : createDescription}
-      value={isEditing ? editValue : createValue}
-      categoryId={isEditing ? editCategoryId : createCategoryId}
-      paymentSource={isEditing ? editPaymentSource : createPaymentSource}
-      creditCardId={isEditing ? editCreditCardId : createCreditCardId}
-      creditCardName={isEditing ? editCreditCardName : ''}
-      invoiceDate={isEditing ? editInvoiceDate : createInvoiceDate}
-      roundUpAmount={isEditing ? editRoundUpAmount : createRoundUpAmount}
-      countsAsTithe={(isEditing ? editCountsAsTithe : createCountsAsTithe) === 'true'}
-      paymentMode={isEditing ? editPaymentMode : createPaymentMode}
+      date={date}
+      description={description}
+      value={value}
+      categoryId={categoryId}
+      paymentSource={paymentSource}
+      creditCardId={creditCardId}
+      creditCardName={creditCardName}
+      invoiceDate={invoiceDate}
+      roundUpAmount={roundUpAmount}
+      countsAsTithe={countsAsTithe === 'true'}
+      paymentMode={paymentMode}
       banks={banks}
       categories={activeCategories}
       creditCards={activeCreditCards}
-      isSettled={isEditing && editIsSettled}
-      isSaving={isEditing ? isSaving : isCreating}
-      saveError={isEditing ? saveError : createError}
-      onFieldChange={(field, value) =>
-        isEditing
-          ? setEditField(EDIT_FIELD_BY_FORM_FIELD[field], value)
-          : setCreateField(CREATE_FIELD_BY_FORM_FIELD[field], value)
-      }
-      onSave={isEditing ? saveEdit : submitCreate}
-      onCancel={isEditing ? cancelEdit : cancelCreateForm}
+      isSettled={isSettled}
+      isSaving={isSaving}
+      saveError={saveError}
+      onFieldChange={setField}
+      onSave={submit}
+      onCancel={cancelForm}
     />
   )
 
   const handleTabClick = (tabId: MonthlyTabId) => {
-    if ((activeTab === 'expense' || activeTab === 'card') && isFormVisible) {
-      if (isEditing) cancelEdit()
-      else cancelCreateForm()
+    if ((activeTab === 'expense' || activeTab === 'card') && isExpenseFormOpen) {
+      cancelForm()
     }
-    if (activeTab === 'incoming' && isIncomeFormVisible) {
-      if (isIncomeEditing) cancelEditIncome()
-      else cancelCreateIncomeForm()
+    if (activeTab === 'incoming' && isIncomeFormOpen) {
+      cancelIncomeForm()
     }
     if (activeTab === 'bank' && isBankFormVisible) {
       if (transferForm.isOpen) transferForm.cancel()
@@ -375,27 +294,23 @@ export default function MonthlyPage() {
             <>
               <IncomingGrid incomeTotals={incomeTotals} totalIncoming={totalIncoming} titheSummary={titheSummary} />
 
-              {isIncomeFormVisible && (
+              {isIncomeFormOpen && (
                 <IncomeForm
                   isEditing={isIncomeEditing}
-                  date={isIncomeEditing ? editIncomeDate : createIncomeDate}
-                  incomeSource={isIncomeEditing ? editIncomeSource : createIncomeSource}
-                  grossValue={isIncomeEditing ? editIncomeGrossValue : createIncomeGrossValue}
-                  netValue={isIncomeEditing ? editIncomeNetValue : createIncomeNetValue}
-                  bank={isIncomeEditing ? editIncomeBank : createIncomeBank}
-                  description={isIncomeEditing ? editIncomeDescription : createIncomeDescription}
-                  splitToReserve={(isIncomeEditing ? editIncomeSplitToReserve : createIncomeSplitToReserve) === 'true'}
+                  date={incomeDate}
+                  incomeSource={incomeSource}
+                  grossValue={incomeGrossValue}
+                  netValue={incomeNetValue}
+                  bank={incomeBank}
+                  description={incomeDescription}
+                  splitToReserve={incomeSplitToReserve === 'true'}
                   banks={banks}
                   incomeSources={incomeSources}
-                  isSaving={isIncomeEditing ? isSavingIncome : isCreatingIncome}
-                  saveError={isIncomeEditing ? saveIncomeError : createIncomeError}
-                  onFieldChange={(field, value) =>
-                    isIncomeEditing
-                      ? setEditIncomeField(EDIT_INCOME_FIELD_BY_FORM_FIELD[field], value)
-                      : setCreateIncomeField(CREATE_INCOME_FIELD_BY_FORM_FIELD[field], value)
-                  }
-                  onSave={isIncomeEditing ? saveEditIncome : submitCreateIncome}
-                  onCancel={isIncomeEditing ? cancelEditIncome : cancelCreateIncomeForm}
+                  isSaving={isSavingIncome}
+                  saveError={saveIncomeError}
+                  onFieldChange={setIncomeField}
+                  onSave={submitIncome}
+                  onCancel={cancelIncomeForm}
                 />
               )}
 
