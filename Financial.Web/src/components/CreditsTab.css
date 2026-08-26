@@ -233,6 +233,10 @@
   color: #0277bd;
 }
 
+.credits-tab__type--jcp {
+  color: #00838f;
+}
+
 .credits-tab__value {
   font-weight: bold;
 }

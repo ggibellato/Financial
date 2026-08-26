@@ -4,7 +4,7 @@ namespace Financial.Investment.Domain.Entities;
 
 public class Credit
 {
-    public enum CreditType { Dividend, Rent }
+    public enum CreditType { Dividend, Rent, JCP }
 
     public Guid Id { get; private set; }
     public DateTime Date { get; private set; }

@@ -43,6 +43,7 @@
                   IsEnabled="{Binding IsEditable}">
             <ComboBoxItem Content="Dividend"/>
             <ComboBoxItem Content="Rent"/>
+            <ComboBoxItem Content="JCP"/>
         </ComboBox>
 
         <TextBlock Grid.Row="3" Grid.Column="0" Text="Value:" VerticalAlignment="Center"/>
