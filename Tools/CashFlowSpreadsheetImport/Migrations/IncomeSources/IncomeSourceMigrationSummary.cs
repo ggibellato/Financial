@@ -3,18 +3,18 @@ using Financial.CashFlow.Domain.Entities;
 
 namespace Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.IncomeSources;
 
-public sealed class IncomeSourceMigrationSummary
+public sealed class IncomeSourceMigrationSummary : MigrationSummaryBase
 {
     private readonly List<Income> _unresolvedIncomes = new();
 
-    public int SourcesSeededCount { get; private set; }
-    public int SourcesAlreadyPresentCount { get; private set; }
+    public int SourcesSeededCount => SeededCount;
+    public int SourcesAlreadyPresentCount => AlreadyPresentCount;
     public int IncomesResolvedCount { get; private set; }
 
     public IReadOnlyList<Income> UnresolvedIncomes => _unresolvedIncomes;
 
-    public void CountSourceSeeded() => SourcesSeededCount++;
-    public void CountSourceAlreadyPresent() => SourcesAlreadyPresentCount++;
+    public void CountSourceSeeded() => CountSeeded();
+    public void CountSourceAlreadyPresent() => CountAlreadyPresent();
     public void CountIncomeResolved() => IncomesResolvedCount++;
 
     public void FlagUnresolvedIncome(Income income) => _unresolvedIncomes.Add(income);
@@ -22,19 +22,12 @@ public sealed class IncomeSourceMigrationSummary
     public string Render()
     {
         var builder = new StringBuilder();
-        builder.AppendLine("Income source migration summary");
-        builder.AppendLine($"  Income sources: {SourcesSeededCount} seeded, {SourcesAlreadyPresentCount} already present");
+        AppendHeader(builder, "Income source", "Income sources");
         builder.AppendLine($"  Incomes: {IncomesResolvedCount} resolved");
 
-        if (_unresolvedIncomes.Count > 0)
-        {
-            builder.AppendLine();
-            builder.AppendLine("Incomes whose source name does not match any seeded income source (review manually):");
-            foreach (var income in _unresolvedIncomes)
-            {
-                builder.AppendLine($"  {income.Id} {income.Date:yyyy-MM-dd} [{income.IncomeSource.Name}]");
-            }
-        }
+        AppendUnresolvedSection(builder,
+            "Incomes whose source name does not match any seeded income source (review manually):",
+            _unresolvedIncomes, income => $"{income.Id} {income.Date:yyyy-MM-dd} [{income.IncomeSource.Name}]");
 
         return builder.ToString();
     }
