@@ -2,16 +2,19 @@ using System.Globalization;
 using System.Net.Http.Json;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Domain.Enums;
+using Microsoft.Extensions.Logging;
 
 namespace Financial.CashFlow.Infrastructure.Services;
 
 public sealed class FrankfurterExchangeRateProvider : IExchangeRateProvider
 {
     private readonly HttpClient _httpClient;
+    private readonly ILogger<FrankfurterExchangeRateProvider> _logger;
 
-    public FrankfurterExchangeRateProvider(HttpClient httpClient)
+    public FrankfurterExchangeRateProvider(HttpClient httpClient, ILogger<FrankfurterExchangeRateProvider> logger)
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public async Task<decimal?> GetHistoricalRateAsync(DateOnly date, Currency from, Currency to)
@@ -28,8 +31,11 @@ public sealed class FrankfurterExchangeRateProvider : IExchangeRateProvider
 
             return rate;
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogWarning(
+                "Failed to fetch exchange rate {From}->{To} for {Date} with {ErrorType}",
+                from, to, date, ex.GetType().Name);
             return null;
         }
     }

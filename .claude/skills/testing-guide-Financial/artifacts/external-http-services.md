@@ -40,7 +40,7 @@ public async Task GetHistoricalRateAsync_WithSuccessfulResponse_ParsesTheRate()
         Content = new StringContent("""{"amount":1,"base":"BRL","date":"2026-07-01","rates":{"GBP":0.146}}""")
     });
     var client = new HttpClient(handler) { BaseAddress = new Uri("https://api.frankfurter.app/") };
-    var provider = new FrankfurterExchangeRateProvider(client);
+    var provider = new FrankfurterExchangeRateProvider(client, NullLogger<FrankfurterExchangeRateProvider>.Instance);
 
     var rate = await provider.GetHistoricalRateAsync(new DateOnly(2026, 7, 1), Currency.BRL, Currency.GBP);
 
