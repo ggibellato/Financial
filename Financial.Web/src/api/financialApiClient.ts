@@ -490,3 +490,5 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
     getSyncStatus: () => request<SyncStatusResponseDto>('/sync-status'),
   }
 }
+
+export const apiClient: FinancialApiClient = createFinancialApiClient()

@@ -5,14 +5,16 @@ import { ApiError } from '../../api/apiError'
 import type { BankDto, TransferDto } from '../../api/types'
 import { useTransferForm } from '../useTransferForm'
 
-const createTransferMock = vi.fn<FinancialApiClient['createTransfer']>()
-const updateTransferMock = vi.fn<FinancialApiClient['updateTransfer']>()
+const { createTransferMock, updateTransferMock } = vi.hoisted(() => ({
+  createTransferMock: vi.fn<FinancialApiClient['createTransfer']>(),
+  updateTransferMock: vi.fn<FinancialApiClient['updateTransfer']>(),
+}))
 
 vi.mock('../../api/financialApiClient', () => ({
-  createFinancialApiClient: (): Partial<FinancialApiClient> => ({
+  apiClient: {
     createTransfer: createTransferMock,
     updateTransfer: updateTransferMock,
-  }),
+  } as Partial<FinancialApiClient>,
 }))
 
 const BANKS: BankDto[] = [

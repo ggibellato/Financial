@@ -5,12 +5,14 @@ import type { PortfolioBreakdownItemDto, SelectedNode } from '../../api/types'
 import { createSelectedNodeWrapper } from '../../test-utils/selectedNodeTestWrapper'
 import { useBrokerBreakdown } from '../useBrokerBreakdown'
 
-const getBrokerBreakdownMock = vi.fn<FinancialApiClient['getBrokerBreakdown']>()
+const { getBrokerBreakdownMock } = vi.hoisted(() => ({
+  getBrokerBreakdownMock: vi.fn<FinancialApiClient['getBrokerBreakdown']>(),
+}))
 
 vi.mock('../../api/financialApiClient', () => ({
-  createFinancialApiClient: (): Partial<FinancialApiClient> => ({
+  apiClient: {
     getBrokerBreakdown: getBrokerBreakdownMock,
-  }),
+  } as Partial<FinancialApiClient>,
 }))
 
 const BROKER_NODE: SelectedNode = {

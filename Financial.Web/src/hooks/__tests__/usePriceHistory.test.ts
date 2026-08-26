@@ -5,16 +5,18 @@ import type { AssetDetailsDto, AssetPriceSnapshotDto, SelectedNode } from '../..
 import { createSelectedNodeWrapper } from '../../test-utils/selectedNodeTestWrapper'
 import { usePriceHistory } from '../usePriceHistory'
 
-const getAssetDetailsMock = vi.fn<FinancialApiClient['getAssetDetails']>()
-const setAssetPriceMock = vi.fn<FinancialApiClient['setAssetPrice']>()
-const deleteAssetPriceMock = vi.fn<FinancialApiClient['deleteAssetPrice']>()
+const { getAssetDetailsMock, setAssetPriceMock, deleteAssetPriceMock } = vi.hoisted(() => ({
+  getAssetDetailsMock: vi.fn<FinancialApiClient['getAssetDetails']>(),
+  setAssetPriceMock: vi.fn<FinancialApiClient['setAssetPrice']>(),
+  deleteAssetPriceMock: vi.fn<FinancialApiClient['deleteAssetPrice']>(),
+}))
 
 vi.mock('../../api/financialApiClient', () => ({
-  createFinancialApiClient: (): Partial<FinancialApiClient> => ({
+  apiClient: {
     getAssetDetails: getAssetDetailsMock,
     setAssetPrice: setAssetPriceMock,
     deleteAssetPrice: deleteAssetPriceMock,
-  }),
+  } as Partial<FinancialApiClient>,
 }))
 
 

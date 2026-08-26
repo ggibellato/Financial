@@ -4,16 +4,18 @@ import CurrentValuesPage from '../CurrentValuesPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AssetPriceDto, BrokerNodeDto, PortfolioReferenceDto } from '../../api/types'
 
-const getBrokersMock = vi.fn<FinancialApiClient['getBrokers']>()
-const getCurrentPriceMock = vi.fn<FinancialApiClient['getCurrentPrice']>()
-const getAssetPriceFetchScopeMock = vi.fn<FinancialApiClient['getAssetPriceFetchScope']>()
+const { getBrokersMock, getCurrentPriceMock, getAssetPriceFetchScopeMock } = vi.hoisted(() => ({
+  getBrokersMock: vi.fn<FinancialApiClient['getBrokers']>(),
+  getCurrentPriceMock: vi.fn<FinancialApiClient['getCurrentPrice']>(),
+  getAssetPriceFetchScopeMock: vi.fn<FinancialApiClient['getAssetPriceFetchScope']>(),
+}))
 
 vi.mock('../../api/financialApiClient', () => ({
-  createFinancialApiClient: (): Partial<FinancialApiClient> => ({
+  apiClient: {
     getBrokers: getBrokersMock,
     getCurrentPrice: getCurrentPriceMock,
     getAssetPriceFetchScope: getAssetPriceFetchScopeMock,
-  }),
+  } as Partial<FinancialApiClient>,
 }))
 
 const makeBroker = (

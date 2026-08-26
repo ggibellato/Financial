@@ -4,12 +4,14 @@ import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { SyncStatusResponseDto } from '../../api/types'
 import { useSyncStatus } from '../useSyncStatus'
 
-const getSyncStatusMock = vi.fn<FinancialApiClient['getSyncStatus']>()
+const { getSyncStatusMock } = vi.hoisted(() => ({
+  getSyncStatusMock: vi.fn<FinancialApiClient['getSyncStatus']>(),
+}))
 
 vi.mock('../../api/financialApiClient', () => ({
-  createFinancialApiClient: (): Partial<FinancialApiClient> => ({
+  apiClient: {
     getSyncStatus: getSyncStatusMock,
-  }),
+  } as Partial<FinancialApiClient>,
 }))
 
 const IDLE_STATUS: SyncStatusResponseDto = {

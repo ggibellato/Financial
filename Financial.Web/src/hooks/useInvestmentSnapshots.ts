@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
-import { createFinancialApiClient } from '../api/financialApiClient'
+import { apiClient } from '../api/financialApiClient'
 import type { InvestmentSnapshotDto } from '../api/types'
 import {
   currentYearMonth,
@@ -98,7 +98,6 @@ export interface InvestmentSnapshotsData {
 }
 
 export function useInvestmentSnapshots(): InvestmentSnapshotsData {
-  const apiClient = useMemo(() => createFinancialApiClient(), [])
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
   useEffect(() => {
@@ -112,7 +111,7 @@ export function useInvestmentSnapshots(): InvestmentSnapshotsData {
           payload: getErrorMessage(err, 'Unable to load investment snapshots'),
         })
       })
-  }, [apiClient, state.year, state.month, state.retryCount])
+  }, [state.year, state.month, state.retryCount])
 
   const totalValue = useMemo(
     () => state.snapshots.reduce((sum, s) => sum + (s.isLiability ? -s.value : s.value), 0),

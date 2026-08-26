@@ -4,14 +4,16 @@ import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { IncomeDto, IncomeSourceDto } from '../../api/types'
 import { SPLIT_CONFIRMATION_DELAY_MS, selectActiveIncomeSources, useIncomeForm } from '../useIncomeForm'
 
-const createIncomeMock = vi.fn<FinancialApiClient['createIncome']>()
-const updateIncomeMock = vi.fn<FinancialApiClient['updateIncome']>()
+const { createIncomeMock, updateIncomeMock } = vi.hoisted(() => ({
+  createIncomeMock: vi.fn<FinancialApiClient['createIncome']>(),
+  updateIncomeMock: vi.fn<FinancialApiClient['updateIncome']>(),
+}))
 
 vi.mock('../../api/financialApiClient', () => ({
-  createFinancialApiClient: (): Partial<FinancialApiClient> => ({
+  apiClient: {
     createIncome: createIncomeMock,
     updateIncome: updateIncomeMock,
-  }),
+  } as Partial<FinancialApiClient>,
 }))
 
 const INCOME_SOURCES: IncomeSourceDto[] = [

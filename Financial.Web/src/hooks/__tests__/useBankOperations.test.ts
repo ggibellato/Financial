@@ -4,18 +4,25 @@ import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { BalanceAdjustmentDto, BankDto, TransferDto } from '../../api/types'
 import { ALL_BANKS_FILTER, useBankOperations } from '../useBankOperations'
 
-const getTransfersByMonthMock = vi.fn<FinancialApiClient['getTransfersByMonth']>()
-const deleteTransferMock = vi.fn<FinancialApiClient['deleteTransfer']>()
-const getAdjustmentsByBankMock = vi.fn<FinancialApiClient['getAdjustmentsByBank']>()
-const deleteBalanceAdjustmentMock = vi.fn<FinancialApiClient['deleteBalanceAdjustment']>()
+const {
+  getTransfersByMonthMock,
+  deleteTransferMock,
+  getAdjustmentsByBankMock,
+  deleteBalanceAdjustmentMock,
+} = vi.hoisted(() => ({
+  getTransfersByMonthMock: vi.fn<FinancialApiClient['getTransfersByMonth']>(),
+  deleteTransferMock: vi.fn<FinancialApiClient['deleteTransfer']>(),
+  getAdjustmentsByBankMock: vi.fn<FinancialApiClient['getAdjustmentsByBank']>(),
+  deleteBalanceAdjustmentMock: vi.fn<FinancialApiClient['deleteBalanceAdjustment']>(),
+}))
 
 vi.mock('../../api/financialApiClient', () => ({
-  createFinancialApiClient: (): Partial<FinancialApiClient> => ({
+  apiClient: {
     getTransfersByMonth: getTransfersByMonthMock,
     deleteTransfer: deleteTransferMock,
     getAdjustmentsByBank: getAdjustmentsByBankMock,
     deleteBalanceAdjustment: deleteBalanceAdjustmentMock,
-  }),
+  } as Partial<FinancialApiClient>,
 }))
 
 const BANKS: BankDto[] = [

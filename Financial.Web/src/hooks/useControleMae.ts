@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useReducer } from 'react'
-import { createFinancialApiClient } from '../api/financialApiClient'
+import { useCallback, useEffect, useReducer } from 'react'
+import { apiClient } from '../api/financialApiClient'
 import type { MaeLedgerEntryDto, MaeLedgerTotalsDto } from '../api/types'
 import { getErrorMessage, previousYearJanuaryFirst } from '../utils/formatters'
 
@@ -172,7 +172,6 @@ export interface ControleMaeData {
 }
 
 export function useControleMae(): ControleMaeData {
-  const apiClient = useMemo(() => createFinancialApiClient(), [])
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
   useEffect(() => {
@@ -183,7 +182,7 @@ export function useControleMae(): ControleMaeData {
       .catch((err: unknown) => {
         dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, 'Unable to load Controle Mae data') })
       })
-  }, [apiClient, state.fromDate, state.retryCount])
+  }, [state.fromDate, state.retryCount])
 
   useEffect(() => {
     void apiClient
@@ -192,7 +191,7 @@ export function useControleMae(): ControleMaeData {
       .catch(() => {
         // Totals are supplementary to the ledger list; a failed refresh just keeps the last known values.
       })
-  }, [apiClient, state.retryCount])
+  }, [state.retryCount])
 
   const setFromDateInputValue = useCallback((value: string) => {
     if (!value) return

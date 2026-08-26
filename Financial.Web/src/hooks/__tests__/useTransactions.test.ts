@@ -6,22 +6,31 @@ import { createSelectedNodeWrapper } from '../../test-utils/selectedNodeTestWrap
 import { formatMonthKey } from '../../utils/formatters'
 import { buildMonthlyNetInvested, useTransactions } from '../useTransactions'
 
-const getAssetDetailsMock = vi.fn<FinancialApiClient['getAssetDetails']>()
-const addTransactionMock = vi.fn<FinancialApiClient['addTransaction']>()
-const updateTransactionMock = vi.fn<FinancialApiClient['updateTransaction']>()
-const deleteTransactionMock = vi.fn<FinancialApiClient['deleteTransaction']>()
-const getTransactionsByBrokerMock = vi.fn<FinancialApiClient['getTransactionsByBroker']>()
-const getTransactionsByPortfolioMock = vi.fn<FinancialApiClient['getTransactionsByPortfolio']>()
+const {
+  getAssetDetailsMock,
+  addTransactionMock,
+  updateTransactionMock,
+  deleteTransactionMock,
+  getTransactionsByBrokerMock,
+  getTransactionsByPortfolioMock,
+} = vi.hoisted(() => ({
+  getAssetDetailsMock: vi.fn<FinancialApiClient['getAssetDetails']>(),
+  addTransactionMock: vi.fn<FinancialApiClient['addTransaction']>(),
+  updateTransactionMock: vi.fn<FinancialApiClient['updateTransaction']>(),
+  deleteTransactionMock: vi.fn<FinancialApiClient['deleteTransaction']>(),
+  getTransactionsByBrokerMock: vi.fn<FinancialApiClient['getTransactionsByBroker']>(),
+  getTransactionsByPortfolioMock: vi.fn<FinancialApiClient['getTransactionsByPortfolio']>(),
+}))
 
 vi.mock('../../api/financialApiClient', () => ({
-  createFinancialApiClient: (): Partial<FinancialApiClient> => ({
+  apiClient: {
     getAssetDetails: getAssetDetailsMock,
     addTransaction: addTransactionMock,
     updateTransaction: updateTransactionMock,
     deleteTransaction: deleteTransactionMock,
     getTransactionsByBroker: getTransactionsByBrokerMock,
     getTransactionsByPortfolio: getTransactionsByPortfolioMock,
-  }),
+  } as Partial<FinancialApiClient>,
 }))
 
 

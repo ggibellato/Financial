@@ -4,14 +4,16 @@ import InvestmentSnapshotsPage from '../InvestmentSnapshotsPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { InvestmentSnapshotDto } from '../../api/types'
 
-const getInvestmentSnapshotsMock = vi.fn<FinancialApiClient['getInvestmentSnapshots']>()
-const updateInvestmentSnapshotValueMock = vi.fn<FinancialApiClient['updateInvestmentSnapshotValue']>()
+const { getInvestmentSnapshotsMock, updateInvestmentSnapshotValueMock } = vi.hoisted(() => ({
+  getInvestmentSnapshotsMock: vi.fn<FinancialApiClient['getInvestmentSnapshots']>(),
+  updateInvestmentSnapshotValueMock: vi.fn<FinancialApiClient['updateInvestmentSnapshotValue']>(),
+}))
 
 vi.mock('../../api/financialApiClient', () => ({
-  createFinancialApiClient: (): Partial<FinancialApiClient> => ({
+  apiClient: {
     getInvestmentSnapshots: getInvestmentSnapshotsMock,
     updateInvestmentSnapshotValue: updateInvestmentSnapshotValueMock,
-  }),
+  } as Partial<FinancialApiClient>,
 }))
 
 const SNAPSHOTS: InvestmentSnapshotDto[] = Array.from({ length: 11 }, (_, i) => ({

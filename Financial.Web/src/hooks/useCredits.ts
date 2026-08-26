@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
-import { createFinancialApiClient } from '../api/financialApiClient'
+import { apiClient } from '../api/financialApiClient'
 import type { CreditDto, SelectedNode } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
 import type { PeriodFilterOption } from '../utils/periodFilter'
@@ -245,7 +245,6 @@ export interface CreditsData {
 
 export function useCredits(): CreditsData {
   const { selectedNode, scope } = useSelectedNode()
-  const apiClient = useMemo(() => createFinancialApiClient(), [])
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
   useEffect(() => {
@@ -290,7 +289,7 @@ export function useCredits(): CreditsData {
           })
         })
     }
-  }, [selectedNode, apiClient, scope, state.retryCount])
+  }, [selectedNode, scope, state.retryCount])
 
   const credits = useMemo(
     () =>
@@ -387,7 +386,7 @@ export function useCredits(): CreditsData {
           payload: getErrorMessage(err, 'Failed to save credit'),
         })
       })
-  }, [selectedNode, state, apiClient])
+  }, [selectedNode, state])
 
   const deleteCredit = useCallback(
     (id: string) => {
@@ -408,7 +407,7 @@ export function useCredits(): CreditsData {
           })
         })
     },
-    [selectedNode, apiClient],
+    [selectedNode],
   )
 
   return {

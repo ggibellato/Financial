@@ -5,18 +5,20 @@ import type { AssetDetailsDto, AssetPriceDto, PortfolioAssetSummaryItemDto, Sele
 import { createSelectedNodeWrapper } from '../../test-utils/selectedNodeTestWrapper'
 import { useAssetSummary } from '../useAssetSummary'
 
-const getAssetDetailsMock = vi.fn<FinancialApiClient['getAssetDetails']>()
-const getCurrentPriceMock = vi.fn<FinancialApiClient['getCurrentPrice']>()
-const calculateXirrMock = vi.fn<FinancialApiClient['calculateXirr']>()
-const getPortfolioAssetsSummaryMock = vi.fn<FinancialApiClient['getPortfolioAssetsSummary']>()
+const { getAssetDetailsMock, getCurrentPriceMock, calculateXirrMock, getPortfolioAssetsSummaryMock } = vi.hoisted(() => ({
+  getAssetDetailsMock: vi.fn<FinancialApiClient['getAssetDetails']>(),
+  getCurrentPriceMock: vi.fn<FinancialApiClient['getCurrentPrice']>(),
+  calculateXirrMock: vi.fn<FinancialApiClient['calculateXirr']>(),
+  getPortfolioAssetsSummaryMock: vi.fn<FinancialApiClient['getPortfolioAssetsSummary']>(),
+}))
 
 vi.mock('../../api/financialApiClient', () => ({
-  createFinancialApiClient: (): Partial<FinancialApiClient> => ({
+  apiClient: {
     getAssetDetails: getAssetDetailsMock,
     getCurrentPrice: getCurrentPriceMock,
     calculateXirr: calculateXirrMock,
     getPortfolioAssetsSummary: getPortfolioAssetsSummaryMock,
-  }),
+  } as Partial<FinancialApiClient>,
 }))
 
 const ASSET_NODE: SelectedNode = {

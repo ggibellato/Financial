@@ -4,14 +4,16 @@ import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { CreditCardDto } from '../../api/types'
 import { useCreditCards } from '../useCreditCards'
 
-const getCreditCardsMock = vi.fn<FinancialApiClient['getCreditCards']>()
-const updateCreditCardMock = vi.fn<FinancialApiClient['updateCreditCard']>()
+const { getCreditCardsMock, updateCreditCardMock } = vi.hoisted(() => ({
+  getCreditCardsMock: vi.fn<FinancialApiClient['getCreditCards']>(),
+  updateCreditCardMock: vi.fn<FinancialApiClient['updateCreditCard']>(),
+}))
 
 vi.mock('../../api/financialApiClient', () => ({
-  createFinancialApiClient: (): Partial<FinancialApiClient> => ({
+  apiClient: {
     getCreditCards: getCreditCardsMock,
     updateCreditCard: updateCreditCardMock,
-  }),
+  } as Partial<FinancialApiClient>,
 }))
 
 const CREDIT_CARDS: CreditCardDto[] = [

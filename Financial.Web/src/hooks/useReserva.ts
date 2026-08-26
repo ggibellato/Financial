@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { ApiError } from '../api/apiError'
-import { createFinancialApiClient } from '../api/financialApiClient'
+import { apiClient } from '../api/financialApiClient'
 import type { IncomeSplitResultDto, ReserveBucketBalanceDto, ReserveBucketDto, ReserveMovementDto } from '../api/types'
 import { getErrorMessage } from '../utils/formatters'
 
@@ -337,7 +337,6 @@ function defaultBucketId(buckets: ReserveBucketDto[]): string {
 }
 
 export function useReserva(): ReservaData {
-  const apiClient = useMemo(() => createFinancialApiClient(), [])
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
   const fetchReservaData = useCallback((options?: { includeBuckets?: boolean }) => {
@@ -352,7 +351,7 @@ export function useReserva(): ReservaData {
       .catch((err: unknown) => {
         dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, 'Unable to load Reserva data') })
       })
-  }, [apiClient])
+  }, [])
 
   useEffect(() => {
     fetchReservaData()

@@ -6,17 +6,28 @@ import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { SelectedNode } from '../../api/types'
 import { ApiError } from '../../api/apiError'
 
-const getAssetDetailsMock = vi.fn()
-const getCurrentPriceMock = vi.fn()
-const getSummaryByBrokerMock = vi.fn()
-const getSummaryByPortfolioMock = vi.fn()
-const getPortfolioAssetsSummaryMock = vi.fn()
-const getTransactionsByBrokerMock = vi.fn().mockResolvedValue([])
-const getTransactionsByPortfolioMock = vi.fn().mockResolvedValue([])
-const deleteEmptyPortfolioMock = vi.fn()
+const {
+  getAssetDetailsMock,
+  getCurrentPriceMock,
+  getSummaryByBrokerMock,
+  getSummaryByPortfolioMock,
+  getPortfolioAssetsSummaryMock,
+  getTransactionsByBrokerMock,
+  getTransactionsByPortfolioMock,
+  deleteEmptyPortfolioMock,
+} = vi.hoisted(() => ({
+  getAssetDetailsMock: vi.fn(),
+  getCurrentPriceMock: vi.fn(),
+  getSummaryByBrokerMock: vi.fn(),
+  getSummaryByPortfolioMock: vi.fn(),
+  getPortfolioAssetsSummaryMock: vi.fn(),
+  getTransactionsByBrokerMock: vi.fn().mockResolvedValue([]),
+  getTransactionsByPortfolioMock: vi.fn().mockResolvedValue([]),
+  deleteEmptyPortfolioMock: vi.fn(),
+}))
 
 vi.mock('../../api/financialApiClient', () => ({
-  createFinancialApiClient: (): Partial<FinancialApiClient> => ({
+  apiClient: {
     getAssetDetails: getAssetDetailsMock,
     getCurrentPrice: getCurrentPriceMock,
     getSummaryByBroker: getSummaryByBrokerMock,
@@ -25,7 +36,7 @@ vi.mock('../../api/financialApiClient', () => ({
     getTransactionsByBroker: getTransactionsByBrokerMock,
     getTransactionsByPortfolio: getTransactionsByPortfolioMock,
     deleteEmptyPortfolio: deleteEmptyPortfolioMock,
-  }),
+  } as Partial<FinancialApiClient>,
 }))
 
 function NodeSetter({ node }: { node: SelectedNode | null }) {

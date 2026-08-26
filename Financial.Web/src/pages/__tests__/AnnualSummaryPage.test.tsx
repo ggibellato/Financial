@@ -4,16 +4,22 @@ import AnnualSummaryPage from '../AnnualSummaryPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { CategoryAnnualAverageDto, CategoryTotalsAnnualDto, InvestmentAnnualResultDto } from '../../api/types'
 
-const getCategoryTotalsAnnualForYearMock = vi.fn<FinancialApiClient['getCategoryTotalsAnnualForYear']>()
-const getInvestmentAnnualResultForYearMock = vi.fn<FinancialApiClient['getInvestmentAnnualResultForYear']>()
-const getHistoricSummaryAverageFromYearMock = vi.fn<FinancialApiClient['getHistoricSummaryAverageFromYear']>()
+const {
+  getCategoryTotalsAnnualForYearMock,
+  getInvestmentAnnualResultForYearMock,
+  getHistoricSummaryAverageFromYearMock,
+} = vi.hoisted(() => ({
+  getCategoryTotalsAnnualForYearMock: vi.fn<FinancialApiClient['getCategoryTotalsAnnualForYear']>(),
+  getInvestmentAnnualResultForYearMock: vi.fn<FinancialApiClient['getInvestmentAnnualResultForYear']>(),
+  getHistoricSummaryAverageFromYearMock: vi.fn<FinancialApiClient['getHistoricSummaryAverageFromYear']>(),
+}))
 
 vi.mock('../../api/financialApiClient', () => ({
-  createFinancialApiClient: (): Partial<FinancialApiClient> => ({
+  apiClient: {
     getCategoryTotalsAnnualForYear: getCategoryTotalsAnnualForYearMock,
     getInvestmentAnnualResultForYear: getInvestmentAnnualResultForYearMock,
     getHistoricSummaryAverageFromYear: getHistoricSummaryAverageFromYearMock,
-  }),
+  } as Partial<FinancialApiClient>,
 }))
 
 const CATEGORY_TOTALS_ANNUAL: CategoryTotalsAnnualDto = {

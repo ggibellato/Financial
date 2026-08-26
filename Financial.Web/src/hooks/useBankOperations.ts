@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useReducer, useState } from 'react'
-import { createFinancialApiClient } from '../api/financialApiClient'
+import { useEffect, useReducer, useState } from 'react'
+import { apiClient } from '../api/financialApiClient'
 import type { BalanceAdjustmentDto, BankDto, TransferDto } from '../api/types'
 import { getErrorMessage } from '../utils/formatters'
 
@@ -125,7 +125,6 @@ export function useBankOperations(
   banks: BankDto[],
   onChanged: () => void,
 ): UseBankOperationsResult {
-  const apiClient = useMemo(() => createFinancialApiClient(), [])
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
   const [bankFilter, setBankFilter] = useState<string>(ALL_BANKS_FILTER)
 

@@ -5,20 +5,28 @@ import HistoricInvestmentsPage from '../HistoricInvestmentsPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { TreeNodeDto } from '../../api/types'
 
-const getNavigationTreeMock = vi.fn()
-const getAssetDetailsMock = vi.fn()
-const getPortfolioAssetsSummaryMock = vi.fn()
-const getSummaryByBrokerMock = vi.fn()
-const getSummaryByPortfolioMock = vi.fn()
+const {
+  getNavigationTreeMock,
+  getAssetDetailsMock,
+  getPortfolioAssetsSummaryMock,
+  getSummaryByBrokerMock,
+  getSummaryByPortfolioMock,
+} = vi.hoisted(() => ({
+  getNavigationTreeMock: vi.fn(),
+  getAssetDetailsMock: vi.fn(),
+  getPortfolioAssetsSummaryMock: vi.fn(),
+  getSummaryByBrokerMock: vi.fn(),
+  getSummaryByPortfolioMock: vi.fn(),
+}))
 
 vi.mock('../../api/financialApiClient', () => ({
-  createFinancialApiClient: (): Partial<FinancialApiClient> => ({
+  apiClient: {
     getNavigationTree: getNavigationTreeMock,
     getAssetDetails: getAssetDetailsMock,
     getPortfolioAssetsSummary: getPortfolioAssetsSummaryMock,
     getSummaryByBroker: getSummaryByBrokerMock,
     getSummaryByPortfolio: getSummaryByPortfolioMock,
-  }),
+  } as Partial<FinancialApiClient>,
 }))
 
 const stubTree: TreeNodeDto = {

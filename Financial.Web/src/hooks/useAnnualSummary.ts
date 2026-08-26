@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useReducer } from 'react'
-import { createFinancialApiClient } from '../api/financialApiClient'
+import { useCallback, useEffect, useReducer } from 'react'
+import { apiClient } from '../api/financialApiClient'
 import type { CategoryAnnualAverageDto, CategoryAnnualTotalDto, IncomeAnnualSummaryDto, InvestmentAnnualResultDto } from '../api/types'
 import { getErrorMessage } from '../utils/formatters'
 
@@ -107,7 +107,6 @@ export interface AnnualSummaryData {
 }
 
 export function useAnnualSummary(): AnnualSummaryData {
-  const apiClient = useMemo(() => createFinancialApiClient(), [])
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
   useEffect(() => {
@@ -140,7 +139,7 @@ export function useAnnualSummary(): AnnualSummaryData {
           payload: getErrorMessage(err, 'Unable to load Annual Summary data'),
         })
       })
-  }, [apiClient, state.year, state.retryCount])
+  }, [state.year, state.retryCount])
 
   const setYear = useCallback((year: number) => {
     if (!Number.isFinite(year)) return

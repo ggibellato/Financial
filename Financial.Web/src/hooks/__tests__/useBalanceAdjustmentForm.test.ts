@@ -6,14 +6,16 @@ import type { BalanceAdjustmentDto } from '../../api/types'
 import type { BankTotal } from '../useMonthly'
 import { useBalanceAdjustmentForm } from '../useBalanceAdjustmentForm'
 
-const createBalanceAdjustmentMock = vi.fn<FinancialApiClient['createBalanceAdjustment']>()
-const updateBalanceAdjustmentMock = vi.fn<FinancialApiClient['updateBalanceAdjustment']>()
+const { createBalanceAdjustmentMock, updateBalanceAdjustmentMock } = vi.hoisted(() => ({
+  createBalanceAdjustmentMock: vi.fn<FinancialApiClient['createBalanceAdjustment']>(),
+  updateBalanceAdjustmentMock: vi.fn<FinancialApiClient['updateBalanceAdjustment']>(),
+}))
 
 vi.mock('../../api/financialApiClient', () => ({
-  createFinancialApiClient: (): Partial<FinancialApiClient> => ({
+  apiClient: {
     createBalanceAdjustment: createBalanceAdjustmentMock,
     updateBalanceAdjustment: updateBalanceAdjustmentMock,
-  }),
+  } as Partial<FinancialApiClient>,
 }))
 
 const BANK_TOTALS: BankTotal[] = [

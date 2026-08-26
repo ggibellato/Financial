@@ -5,14 +5,16 @@ import type { AggregatedSummaryDto, SelectedNode } from '../../api/types'
 import { createSelectedNodeWrapper } from '../../test-utils/selectedNodeTestWrapper'
 import { useAggregatedSummary } from '../useAggregatedSummary'
 
-const getSummaryByBrokerMock = vi.fn<FinancialApiClient['getSummaryByBroker']>()
-const getSummaryByPortfolioMock = vi.fn<FinancialApiClient['getSummaryByPortfolio']>()
+const { getSummaryByBrokerMock, getSummaryByPortfolioMock } = vi.hoisted(() => ({
+  getSummaryByBrokerMock: vi.fn<FinancialApiClient['getSummaryByBroker']>(),
+  getSummaryByPortfolioMock: vi.fn<FinancialApiClient['getSummaryByPortfolio']>(),
+}))
 
 vi.mock('../../api/financialApiClient', () => ({
-  createFinancialApiClient: (): Partial<FinancialApiClient> => ({
+  apiClient: {
     getSummaryByBroker: getSummaryByBrokerMock,
     getSummaryByPortfolio: getSummaryByPortfolioMock,
-  }),
+  } as Partial<FinancialApiClient>,
 }))
 
 const BROKER_NODE: SelectedNode = {

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
-import { createFinancialApiClient } from '../api/financialApiClient'
+import { apiClient } from '../api/financialApiClient'
 import type { AssetDetailsDto, TransactionDto, TransactionSummaryItemDto } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
 import { buildSelectionKey } from './useCredits'
@@ -251,7 +251,6 @@ export interface TransactionsData {
 
 export function useTransactions(): TransactionsData {
   const { selectedNode, scope } = useSelectedNode()
-  const apiClient = useMemo(() => createFinancialApiClient(), [])
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
   useEffect(() => {
@@ -299,7 +298,7 @@ export function useTransactions(): TransactionsData {
     } else {
       dispatch({ type: 'RESET' })
     }
-  }, [selectedNode, apiClient, scope, state.retryCount])
+  }, [selectedNode, scope, state.retryCount])
 
   const transactions = useMemo(() => {
     if (!state.asset) return []
@@ -397,7 +396,7 @@ export function useTransactions(): TransactionsData {
           payload: getErrorMessage(err, 'Failed to save transaction'),
         })
       })
-  }, [selectedNode, state, apiClient])
+  }, [selectedNode, state])
 
   const deleteTransaction = useCallback(
     (id: string) => {
@@ -418,7 +417,7 @@ export function useTransactions(): TransactionsData {
           })
         })
     },
-    [selectedNode, apiClient],
+    [selectedNode],
   )
 
   return {

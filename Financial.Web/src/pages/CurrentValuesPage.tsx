@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { createFinancialApiClient } from '../api/financialApiClient'
+import { apiClient } from '../api/financialApiClient'
 import type { BrokerNodeDto, PortfolioReferenceDto } from '../api/types'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
@@ -16,7 +16,6 @@ interface PriceResult {
 }
 
 export default function CurrentValuesPage() {
-  const apiClient = useMemo(() => createFinancialApiClient(), [])
   const [brokers, setBrokers] = useState<BrokerNodeDto[]>([])
   const [scope, setScope] = useState<PortfolioReferenceDto[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -39,7 +38,7 @@ export default function CurrentValuesPage() {
         setError(message)
       })
       .finally(() => setIsLoading(false))
-  }, [apiClient, retryCount])
+  }, [retryCount])
 
   const handleRetry = useCallback(() => {
     setIsLoading(true)
@@ -122,7 +121,7 @@ export default function CurrentValuesPage() {
 
     setProgressText(`Completed! Loaded ${assetsToCheck.length} assets.`)
     setIsRunning(false)
-  }, [apiClient, assetsToCheck])
+  }, [assetsToCheck])
 
   if (isLoading) {
     return <LoadingState message="Loading data..." />
