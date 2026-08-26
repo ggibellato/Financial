@@ -93,4 +93,51 @@ internal static class RawJsonMigrationHelpers
         File.WriteAllText(dataPath, serializer.Serialize(data));
         return summary;
     }
+
+    /// <summary>Rewrites one legacy string-named JSON property to a new Guid-valued property (e.g.
+    /// "Category" -> "CategoryId"), copying every other property through unchanged. Writes the new
+    /// field even if the legacy key was never present at all (as opposed to present with a null
+    /// value) - the new field is required on read.</summary>
+    public static string RewriteField(JsonElement item, string legacyFieldName, string newFieldName, Guid? newValue)
+    {
+        using var stream = new MemoryStream();
+        using (var writer = new Utf8JsonWriter(stream))
+        {
+            writer.WriteStartObject();
+            var wroteNewField = false;
+            foreach (var property in item.EnumerateObject())
+            {
+                if (property.NameEquals(legacyFieldName))
+                {
+                    WriteGuidOrNull(writer, newFieldName, newValue);
+                    wroteNewField = true;
+                    continue;
+                }
+
+                property.WriteTo(writer);
+            }
+
+            if (!wroteNewField)
+            {
+                WriteGuidOrNull(writer, newFieldName, newValue);
+            }
+
+            writer.WriteEndObject();
+        }
+
+        return System.Text.Encoding.UTF8.GetString(stream.ToArray());
+    }
+
+    private static void WriteGuidOrNull(Utf8JsonWriter writer, string propertyName, Guid? value)
+    {
+        writer.WritePropertyName(propertyName);
+        if (value is null)
+        {
+            writer.WriteNullValue();
+        }
+        else
+        {
+            writer.WriteStringValue(value.Value);
+        }
+    }
 }
