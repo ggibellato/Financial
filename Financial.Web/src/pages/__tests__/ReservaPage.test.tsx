@@ -141,7 +141,7 @@ describe('ReservaPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Post Income Split' }))
 
     await waitFor(() => expect(screen.getByText('Income Split Posted')).toBeInTheDocument())
-    const resultPanel = screen.getByText('Income Split Posted').closest('.reserva-page__form-panel') as HTMLElement
+    const resultPanel = screen.getByTestId('income-split-form-panel')
     expect(within(resultPanel).getAllByText('654.33')).toHaveLength(2)
     expect(within(resultPanel).getByText('1,963.00')).toBeInTheDocument()
 
@@ -305,7 +305,7 @@ describe('ReservaPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Post Income Split' }))
 
     await waitFor(() => expect(screen.getByText('Income Split Posted')).toBeInTheDocument())
-    const resultPanel = screen.getByText('Income Split Posted').closest('.reserva-page__form-panel') as HTMLElement
+    const resultPanel = screen.getByTestId('income-split-form-panel')
     expect(within(resultPanel).getAllByText('981.50')).toHaveLength(2)
     expect(within(resultPanel).queryByText('Ariana')).not.toBeInTheDocument()
   })
