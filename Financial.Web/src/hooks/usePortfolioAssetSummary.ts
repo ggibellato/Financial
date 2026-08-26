@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useReducer } from 'react'
-import { createFinancialApiClient } from '../api/financialApiClient'
+import { useCallback, useEffect, useReducer } from 'react'
+import { apiClient } from '../api/financialApiClient'
 import type { AssetCashFlowDto, PortfolioAssetSummaryItemDto } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
 import { getErrorMessage } from '../utils/formatters'
@@ -99,7 +99,6 @@ export interface PortfolioAssetSummaryData {
 
 export function usePortfolioAssetSummary(): PortfolioAssetSummaryData {
   const { selectedNode, scope } = useSelectedNode()
-  const apiClient = useMemo(() => createFinancialApiClient(), [])
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
   const isPortfolio = selectedNode?.nodeType === 'Portfolio'
@@ -167,7 +166,7 @@ export function usePortfolioAssetSummary(): PortfolioAssetSummaryData {
           payload: getErrorMessage(err, 'Unable to load portfolio assets'),
         })
       })
-  }, [selectedNode, isPortfolio, apiClient, scope, state.retryCount])
+  }, [selectedNode, isPortfolio, scope, state.retryCount])
 
   const retry = useCallback(() => dispatch({ type: 'RETRY' }), [])
 

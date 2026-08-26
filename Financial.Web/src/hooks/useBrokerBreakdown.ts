@@ -1,5 +1,4 @@
-import { useMemo } from 'react'
-import { createFinancialApiClient } from '../api/financialApiClient'
+import { apiClient } from '../api/financialApiClient'
 import type { PortfolioBreakdownItemDto } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
 import { useAsyncResource } from './useAsyncResource'
@@ -13,7 +12,6 @@ export interface BrokerBreakdownData {
 
 export function useBrokerBreakdown(): BrokerBreakdownData {
   const { selectedNode, scope } = useSelectedNode()
-  const apiClient = useMemo(() => createFinancialApiClient(), [])
 
   const isBroker = selectedNode?.nodeType === 'Broker'
 

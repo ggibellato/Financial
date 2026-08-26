@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useReducer } from 'react'
-import { createFinancialApiClient } from '../api/financialApiClient'
+import { useEffect, useReducer } from 'react'
+import { apiClient } from '../api/financialApiClient'
 import type { SyncStatusResponseDto } from '../api/types'
 
 const POLL_INTERVAL_MS = 15000
@@ -28,7 +28,6 @@ export interface SyncStatusData {
 }
 
 export function useSyncStatus(): SyncStatusData {
-  const apiClient = useMemo(() => createFinancialApiClient(), [])
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
   useEffect(() => {
@@ -54,7 +53,7 @@ export function useSyncStatus(): SyncStatusData {
       cancelled = true
       clearInterval(intervalId)
     }
-  }, [apiClient])
+  }, [])
 
   return { status: state.status }
 }

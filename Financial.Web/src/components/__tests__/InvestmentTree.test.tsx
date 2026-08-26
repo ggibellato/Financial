@@ -5,12 +5,14 @@ import { SelectedNodeProvider, useSelectedNode } from '../../context/SelectedNod
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { PositionType, TreeNodeDto } from '../../api/types'
 
-const getNavigationTreeMock = vi.fn()
+const { getNavigationTreeMock } = vi.hoisted(() => ({
+  getNavigationTreeMock: vi.fn(),
+}))
 
 vi.mock('../../api/financialApiClient', () => ({
-  createFinancialApiClient: (): Partial<FinancialApiClient> => ({
+  apiClient: {
     getNavigationTree: getNavigationTreeMock,
-  }),
+  } as Partial<FinancialApiClient>,
 }))
 
 function makeAsset(

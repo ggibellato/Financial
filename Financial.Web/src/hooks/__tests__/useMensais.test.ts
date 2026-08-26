@@ -12,20 +12,28 @@ const NEXT_MONTH = CURRENT_MONTH === 12 ? 1 : CURRENT_MONTH + 1
 const NEXT_MONTH_YEAR = CURRENT_MONTH === 12 ? CURRENT_YEAR + 1 : CURRENT_YEAR
 const NEXT_MONTH_INPUT = `${NEXT_MONTH_YEAR}-${String(NEXT_MONTH).padStart(2, '0')}`
 
-const getMensaisBillsMock = vi.fn<FinancialApiClient['getMensaisBills']>()
-const createMensaisBillMock = vi.fn<FinancialApiClient['createMensaisBill']>()
-const updateMensaisBillMock = vi.fn<FinancialApiClient['updateMensaisBill']>()
-const deleteMensaisBillMock = vi.fn<FinancialApiClient['deleteMensaisBill']>()
-const resetMensaisToUnsetMock = vi.fn<FinancialApiClient['resetMensaisToUnset']>()
+const {
+  getMensaisBillsMock,
+  createMensaisBillMock,
+  updateMensaisBillMock,
+  deleteMensaisBillMock,
+  resetMensaisToUnsetMock,
+} = vi.hoisted(() => ({
+  getMensaisBillsMock: vi.fn<FinancialApiClient['getMensaisBills']>(),
+  createMensaisBillMock: vi.fn<FinancialApiClient['createMensaisBill']>(),
+  updateMensaisBillMock: vi.fn<FinancialApiClient['updateMensaisBill']>(),
+  deleteMensaisBillMock: vi.fn<FinancialApiClient['deleteMensaisBill']>(),
+  resetMensaisToUnsetMock: vi.fn<FinancialApiClient['resetMensaisToUnset']>(),
+}))
 
 vi.mock('../../api/financialApiClient', () => ({
-  createFinancialApiClient: (): Partial<FinancialApiClient> => ({
+  apiClient: {
     getMensaisBills: getMensaisBillsMock,
     createMensaisBill: createMensaisBillMock,
     updateMensaisBill: updateMensaisBillMock,
     deleteMensaisBill: deleteMensaisBillMock,
     resetMensaisToUnset: resetMensaisToUnsetMock,
-  }),
+  } as Partial<FinancialApiClient>,
 }))
 
 const BILLS: RecurringBillDto[] = [

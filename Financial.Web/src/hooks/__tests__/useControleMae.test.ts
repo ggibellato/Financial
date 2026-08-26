@@ -8,20 +8,28 @@ const CURRENT_YEAR = new Date().getFullYear()
 const DEFAULT_FROM_DATE = `${CURRENT_YEAR - 1}-01-01`
 const OTHER_FROM_DATE = `${CURRENT_YEAR - 2}-06-01`
 
-const getMaeLedgerEntriesFromDateMock = vi.fn<FinancialApiClient['getMaeLedgerEntriesFromDate']>()
-const getMaeLedgerTotalsMock = vi.fn<FinancialApiClient['getMaeLedgerTotals']>()
-const createMaeLedgerEntryMock = vi.fn<FinancialApiClient['createMaeLedgerEntry']>()
-const updateMaeLedgerEntryValuesMock = vi.fn<FinancialApiClient['updateMaeLedgerEntryValues']>()
-const deleteMaeLedgerEntryMock = vi.fn<FinancialApiClient['deleteMaeLedgerEntry']>()
+const {
+  getMaeLedgerEntriesFromDateMock,
+  getMaeLedgerTotalsMock,
+  createMaeLedgerEntryMock,
+  updateMaeLedgerEntryValuesMock,
+  deleteMaeLedgerEntryMock,
+} = vi.hoisted(() => ({
+  getMaeLedgerEntriesFromDateMock: vi.fn<FinancialApiClient['getMaeLedgerEntriesFromDate']>(),
+  getMaeLedgerTotalsMock: vi.fn<FinancialApiClient['getMaeLedgerTotals']>(),
+  createMaeLedgerEntryMock: vi.fn<FinancialApiClient['createMaeLedgerEntry']>(),
+  updateMaeLedgerEntryValuesMock: vi.fn<FinancialApiClient['updateMaeLedgerEntryValues']>(),
+  deleteMaeLedgerEntryMock: vi.fn<FinancialApiClient['deleteMaeLedgerEntry']>(),
+}))
 
 vi.mock('../../api/financialApiClient', () => ({
-  createFinancialApiClient: (): Partial<FinancialApiClient> => ({
+  apiClient: {
     getMaeLedgerEntriesFromDate: getMaeLedgerEntriesFromDateMock,
     getMaeLedgerTotals: getMaeLedgerTotalsMock,
     createMaeLedgerEntry: createMaeLedgerEntryMock,
     updateMaeLedgerEntryValues: updateMaeLedgerEntryValuesMock,
     deleteMaeLedgerEntry: deleteMaeLedgerEntryMock,
-  }),
+  } as Partial<FinancialApiClient>,
 }))
 
 const ENTRIES: MaeLedgerEntryDto[] = [

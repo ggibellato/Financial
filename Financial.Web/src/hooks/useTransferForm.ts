@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react'
-import { createFinancialApiClient } from '../api/financialApiClient'
+import { useState } from 'react'
+import { apiClient } from '../api/financialApiClient'
 import type { BankDto, TransferDto } from '../api/types'
 import { mapTransferErrorToField, type TransferFormField } from './mapTransferErrorToField'
 import { getErrorMessage, parseValidatedNumber, todayIsoDate } from '../utils/formatters'
@@ -51,7 +51,6 @@ export interface UseTransferFormResult {
 }
 
 export function useTransferForm(banks: BankDto[], onSaved: () => void): UseTransferFormResult {
-  const apiClient = useMemo(() => createFinancialApiClient(), [])
   const [state, setState] = useState<TransferFormState>(BLANK_STATE)
 
   function openCreateForm(preselectedSourceBank?: string) {

@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useReducer } from 'react'
-import { createFinancialApiClient } from '../api/financialApiClient'
+import { useCallback, useEffect, useReducer } from 'react'
+import { apiClient } from '../api/financialApiClient'
 import type {
   BankBalanceDto,
   BankDto,
@@ -155,7 +155,6 @@ export interface MonthlyData {
 }
 
 export function useMonthly(): MonthlyData {
-  const apiClient = useMemo(() => createFinancialApiClient(), [])
   const [state, dispatch] = useReducer(reducer, undefined, buildInitialState)
 
   useEffect(() => {
@@ -204,7 +203,7 @@ export function useMonthly(): MonthlyData {
       .catch((err: unknown) => {
         dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, 'Unable to load Monthly data') })
       })
-  }, [apiClient, state.year, state.month, state.retryCount])
+  }, [state.year, state.month, state.retryCount])
 
   const monthInputValue = formatMonthInputValue(state.year, state.month)
 
@@ -225,7 +224,7 @@ export function useMonthly(): MonthlyData {
           dispatch({ type: 'LIST_ACTION_ERROR', payload: getErrorMessage(err, 'Failed to delete expense') })
         })
     },
-    [apiClient],
+    [],
   )
 
   const setMarkPaidSource = useCallback(
@@ -245,7 +244,7 @@ export function useMonthly(): MonthlyData {
           dispatch({ type: 'LIST_ACTION_ERROR', payload: getErrorMessage(err, 'Failed to mark statement paid') })
         })
     },
-    [apiClient],
+    [],
   )
 
   const unmarkStatementPaid = useCallback(
@@ -260,7 +259,7 @@ export function useMonthly(): MonthlyData {
           dispatch({ type: 'LIST_ACTION_ERROR', payload: getErrorMessage(err, 'Failed to unmark statement paid') })
         })
     },
-    [apiClient],
+    [],
   )
 
   const deleteIncome = useCallback(
@@ -272,7 +271,7 @@ export function useMonthly(): MonthlyData {
           dispatch({ type: 'LIST_ACTION_ERROR', payload: getErrorMessage(err, 'Failed to delete income') })
         })
     },
-    [apiClient],
+    [],
   )
 
   const adjustmentTotal = state.cardStatements.reduce((sum, statement) => sum + statement.outstandingTotal, 0)

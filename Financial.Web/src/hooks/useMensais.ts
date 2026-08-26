@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
-import { createFinancialApiClient } from '../api/financialApiClient'
+import { apiClient } from '../api/financialApiClient'
 import type { CreateRecurringBillDto, RecurringBillDto } from '../api/types'
 import {
   currentYearMonth,
@@ -192,7 +192,6 @@ export interface MensaisData {
 }
 
 export function useMensais(): MensaisData {
-  const apiClient = useMemo(() => createFinancialApiClient(), [])
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
   useEffect(() => {
@@ -203,7 +202,7 @@ export function useMensais(): MensaisData {
       .catch((err: unknown) => {
         dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, 'Unable to load Mensais data') })
       })
-  }, [apiClient, state.retryCount])
+  }, [state.retryCount])
 
   const monthInputValue = formatMonthInputValue(state.displayYear, state.displayMonth)
 

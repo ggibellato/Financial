@@ -5,22 +5,31 @@ import type { AssetDetailsDto, CreditDto, SelectedNode } from '../../api/types'
 import { createSelectedNodeWrapper } from '../../test-utils/selectedNodeTestWrapper'
 import { useCredits } from '../useCredits'
 
-const getAssetDetailsMock = vi.fn<FinancialApiClient['getAssetDetails']>()
-const getCreditsByBrokerMock = vi.fn<FinancialApiClient['getCreditsByBroker']>()
-const getCreditsByPortfolioMock = vi.fn<FinancialApiClient['getCreditsByPortfolio']>()
-const addCreditMock = vi.fn<FinancialApiClient['addCredit']>()
-const updateCreditMock = vi.fn<FinancialApiClient['updateCredit']>()
-const deleteCreditMock = vi.fn<FinancialApiClient['deleteCredit']>()
+const {
+  getAssetDetailsMock,
+  getCreditsByBrokerMock,
+  getCreditsByPortfolioMock,
+  addCreditMock,
+  updateCreditMock,
+  deleteCreditMock,
+} = vi.hoisted(() => ({
+  getAssetDetailsMock: vi.fn<FinancialApiClient['getAssetDetails']>(),
+  getCreditsByBrokerMock: vi.fn<FinancialApiClient['getCreditsByBroker']>(),
+  getCreditsByPortfolioMock: vi.fn<FinancialApiClient['getCreditsByPortfolio']>(),
+  addCreditMock: vi.fn<FinancialApiClient['addCredit']>(),
+  updateCreditMock: vi.fn<FinancialApiClient['updateCredit']>(),
+  deleteCreditMock: vi.fn<FinancialApiClient['deleteCredit']>(),
+}))
 
 vi.mock('../../api/financialApiClient', () => ({
-  createFinancialApiClient: (): Partial<FinancialApiClient> => ({
+  apiClient: {
     getAssetDetails: getAssetDetailsMock,
     getCreditsByBroker: getCreditsByBrokerMock,
     getCreditsByPortfolio: getCreditsByPortfolioMock,
     addCredit: addCreditMock,
     updateCredit: updateCreditMock,
     deleteCredit: deleteCreditMock,
-  }),
+  } as Partial<FinancialApiClient>,
 }))
 
 

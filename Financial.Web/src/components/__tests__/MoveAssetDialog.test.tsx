@@ -5,18 +5,20 @@ import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AssetDetailsDto, TreeNodeDto } from '../../api/types'
 import { ApiError } from '../../api/apiError'
 
-const getNavigationTreeMock = vi.fn()
-const moveAssetMock = vi.fn()
-const archiveAssetMock = vi.fn()
-const deleteEmptyPortfolioMock = vi.fn()
+const { getNavigationTreeMock, moveAssetMock, archiveAssetMock, deleteEmptyPortfolioMock } = vi.hoisted(() => ({
+  getNavigationTreeMock: vi.fn(),
+  moveAssetMock: vi.fn(),
+  archiveAssetMock: vi.fn(),
+  deleteEmptyPortfolioMock: vi.fn(),
+}))
 
 vi.mock('../../api/financialApiClient', () => ({
-  createFinancialApiClient: (): Partial<FinancialApiClient> => ({
+  apiClient: {
     getNavigationTree: getNavigationTreeMock,
     moveAsset: moveAssetMock,
     archiveAsset: archiveAssetMock,
     deleteEmptyPortfolio: deleteEmptyPortfolioMock,
-  }),
+  } as Partial<FinancialApiClient>,
 }))
 
 function portfolio(name: string, assetCount?: number): TreeNodeDto {

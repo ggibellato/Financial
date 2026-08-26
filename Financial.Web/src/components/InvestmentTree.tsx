@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { createFinancialApiClient } from '../api/financialApiClient'
+import { useCallback, useEffect, useState } from 'react'
+import { apiClient } from '../api/financialApiClient'
 import type { PositionType, SelectedNode, TreeNodeDto } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
 import { getErrorMessage } from '../utils/formatters'
@@ -315,7 +315,6 @@ function BrokerNode({ node, filterClass, drag }: BrokerNodeProps) {
 }
 
 export default function InvestmentTree() {
-  const apiClient = useMemo(() => createFinancialApiClient(), [])
   const { scope, reloadToken, reload, setSelectedNode } = useSelectedNode()
   const [tree, setTree] = useState<TreeNodeDto | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -336,7 +335,7 @@ export default function InvestmentTree() {
         setError(getErrorMessage(err, 'Unable to load investments.'))
       })
       .finally(() => setIsLoading(false))
-  }, [apiClient, scope, retryCount, reloadToken])
+  }, [scope, retryCount, reloadToken])
 
   const handleRetry = useCallback(() => {
     setIsLoading(true)

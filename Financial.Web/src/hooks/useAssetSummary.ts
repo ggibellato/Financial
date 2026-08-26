@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useReducer } from 'react'
-import { createFinancialApiClient } from '../api/financialApiClient'
+import { useCallback, useEffect, useReducer } from 'react'
+import { apiClient } from '../api/financialApiClient'
 import type { AssetDetailsDto, AssetPriceDto } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
 import { getErrorMessage } from '../utils/formatters'
@@ -114,7 +114,6 @@ export interface AssetSummaryData {
 
 export function useAssetSummary(): AssetSummaryData {
   const { selectedNode, scope } = useSelectedNode()
-  const apiClient = useMemo(() => createFinancialApiClient(), [])
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
   const isAsset =
@@ -143,7 +142,7 @@ export function useAssetSummary(): AssetSummaryData {
           })
         })
     },
-    [apiClient],
+    [],
   )
 
   useEffect(() => {
@@ -187,7 +186,7 @@ export function useAssetSummary(): AssetSummaryData {
           dispatch({ type: 'PORTFOLIO_WEIGHT_SUCCESS', portfolioWeight: null })
         })
     }
-  }, [selectedNode, isAsset, apiClient, fetchPrice, scope, state.assetRetryCount])
+  }, [selectedNode, isAsset, fetchPrice, scope, state.assetRetryCount])
 
   const retryAsset = useCallback(() => dispatch({ type: 'ASSET_RETRY' }), [])
 
@@ -246,7 +245,7 @@ export function useAssetSummary(): AssetSummaryData {
     return () => {
       cancelled = true
     }
-  }, [state.asset, state.price, scope, apiClient])
+  }, [state.asset, state.price, scope])
 
   const canRefresh = !state.isLoadingPrice
 

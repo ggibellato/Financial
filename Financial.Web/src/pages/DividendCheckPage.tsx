@@ -1,5 +1,5 @@
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
-import { createFinancialApiClient } from '../api/financialApiClient'
+import { apiClient } from '../api/financialApiClient'
 import type { DividendHistoryItemDto, DividendSummaryDto, WatchlistItemDto } from '../api/types'
 import ErrorState from '../components/ErrorState'
 import TickerCombobox, { type TickerGroup } from '../components/TickerCombobox'
@@ -19,7 +19,6 @@ function toTickerGroups(items: WatchlistItemDto[]): TickerGroup[] {
 }
 
 export default function DividendCheckPage() {
-  const apiClient = useMemo(() => createFinancialApiClient(), [])
   const [groups, setGroups] = useState<TickerGroup[]>([])
   const [ticker, setTicker] = useState('')
 
@@ -28,7 +27,7 @@ export default function DividendCheckPage() {
       setGroups(toTickerGroups(items))
       setTicker((prev) => (prev === '' && items.length > 0 ? items[0].name : prev))
     })
-  }, [apiClient])
+  }, [])
   const [summary, setSummary] = useState<DividendSummaryDto | null>(null)
   const [history, setHistory] = useState<DividendHistoryItemDto[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -58,7 +57,7 @@ export default function DividendCheckPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [apiClient, ticker])
+  }, [ticker])
 
   const handleSubmit = useCallback(
     (event: FormEvent<HTMLFormElement>) => {

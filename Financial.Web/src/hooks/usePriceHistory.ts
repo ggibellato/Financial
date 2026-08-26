@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
-import { createFinancialApiClient } from '../api/financialApiClient'
+import { apiClient } from '../api/financialApiClient'
 import type { AssetPriceSnapshotDto, SelectedNode } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
 import type { PeriodFilterOption } from '../utils/periodFilter'
@@ -163,7 +163,6 @@ export interface PriceHistoryData {
 // the selected node is an Asset.
 export function usePriceHistory(): PriceHistoryData {
   const { selectedNode, scope } = useSelectedNode()
-  const apiClient = useMemo(() => createFinancialApiClient(), [])
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
   useEffect(() => {
@@ -189,7 +188,7 @@ export function usePriceHistory(): PriceHistoryData {
           payload: getErrorMessage(err, 'Unable to load price history'),
         })
       })
-  }, [selectedNode, apiClient, scope, state.retryCount])
+  }, [selectedNode, scope, state.retryCount])
 
   const entries = useMemo(
     () => [...state.entries].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
@@ -258,7 +257,7 @@ export function usePriceHistory(): PriceHistoryData {
           payload: getErrorMessage(err, 'Failed to save price'),
         })
       })
-  }, [selectedNode, state, apiClient])
+  }, [selectedNode, state])
 
   const deleteEntry = useCallback(
     (date: string) => {
@@ -279,7 +278,7 @@ export function usePriceHistory(): PriceHistoryData {
           })
         })
     },
-    [selectedNode, apiClient],
+    [selectedNode],
   )
 
   return {

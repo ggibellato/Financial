@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react'
-import { createFinancialApiClient } from '../api/financialApiClient'
+import { useState } from 'react'
+import { apiClient } from '../api/financialApiClient'
 import type { BalanceAdjustmentDto } from '../api/types'
 import type { BankTotal } from './useMonthly'
 import { mapBalanceAdjustmentErrorToField, type BalanceAdjustmentFormField } from './mapBalanceAdjustmentErrorToField'
@@ -67,7 +67,6 @@ export function useBalanceAdjustmentForm(
   bankTotals: BankTotal[],
   onSaved: () => void,
 ): UseBalanceAdjustmentFormResult {
-  const apiClient = useMemo(() => createFinancialApiClient(), [])
   const [state, setState] = useState<BalanceAdjustmentFormState>(BLANK_STATE)
 
   function openCreateForm() {

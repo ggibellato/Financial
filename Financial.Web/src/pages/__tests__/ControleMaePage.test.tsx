@@ -4,20 +4,28 @@ import ControleMaePage from '../ControleMaePage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { MaeLedgerEntryDto, MaeLedgerTotalsDto } from '../../api/types'
 
-const getMaeLedgerEntriesFromDateMock = vi.fn<FinancialApiClient['getMaeLedgerEntriesFromDate']>()
-const getMaeLedgerTotalsMock = vi.fn<FinancialApiClient['getMaeLedgerTotals']>()
-const createMaeLedgerEntryMock = vi.fn<FinancialApiClient['createMaeLedgerEntry']>()
-const updateMaeLedgerEntryValuesMock = vi.fn<FinancialApiClient['updateMaeLedgerEntryValues']>()
-const deleteMaeLedgerEntryMock = vi.fn<FinancialApiClient['deleteMaeLedgerEntry']>()
+const {
+  getMaeLedgerEntriesFromDateMock,
+  getMaeLedgerTotalsMock,
+  createMaeLedgerEntryMock,
+  updateMaeLedgerEntryValuesMock,
+  deleteMaeLedgerEntryMock,
+} = vi.hoisted(() => ({
+  getMaeLedgerEntriesFromDateMock: vi.fn<FinancialApiClient['getMaeLedgerEntriesFromDate']>(),
+  getMaeLedgerTotalsMock: vi.fn<FinancialApiClient['getMaeLedgerTotals']>(),
+  createMaeLedgerEntryMock: vi.fn<FinancialApiClient['createMaeLedgerEntry']>(),
+  updateMaeLedgerEntryValuesMock: vi.fn<FinancialApiClient['updateMaeLedgerEntryValues']>(),
+  deleteMaeLedgerEntryMock: vi.fn<FinancialApiClient['deleteMaeLedgerEntry']>(),
+}))
 
 vi.mock('../../api/financialApiClient', () => ({
-  createFinancialApiClient: (): Partial<FinancialApiClient> => ({
+  apiClient: {
     getMaeLedgerEntriesFromDate: getMaeLedgerEntriesFromDateMock,
     getMaeLedgerTotals: getMaeLedgerTotalsMock,
     createMaeLedgerEntry: createMaeLedgerEntryMock,
     updateMaeLedgerEntryValues: updateMaeLedgerEntryValuesMock,
     deleteMaeLedgerEntry: deleteMaeLedgerEntryMock,
-  }),
+  } as Partial<FinancialApiClient>,
 }))
 
 const ENTRIES: MaeLedgerEntryDto[] = [

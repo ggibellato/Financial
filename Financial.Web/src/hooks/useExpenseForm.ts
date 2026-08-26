@@ -1,5 +1,5 @@
-import { useMemo, useReducer } from 'react'
-import { createFinancialApiClient } from '../api/financialApiClient'
+import { useReducer } from 'react'
+import { apiClient } from '../api/financialApiClient'
 import type { BankDto, CategoryDto, ExpenseDto } from '../api/types'
 import { getErrorMessage, parseValidatedNumber } from '../utils/formatters'
 
@@ -240,7 +240,6 @@ export interface UseExpenseFormResult {
 }
 
 export function useExpenseForm(banks: BankDto[], categories: CategoryDto[], onSaved: () => void): UseExpenseFormResult {
-  const apiClient = useMemo(() => createFinancialApiClient(), [])
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
   function showCreateForm(mode: PaymentMode) {

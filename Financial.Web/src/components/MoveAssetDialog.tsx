@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { createFinancialApiClient } from '../api/financialApiClient'
+import { useEffect, useRef, useState } from 'react'
+import { apiClient } from '../api/financialApiClient'
 import type { AssetDetailsDto, InvestmentScope, TreeNodeDto } from '../api/types'
 import { getErrorMessage } from '../utils/formatters'
 import './MoveAssetDialog.css'
@@ -59,7 +59,6 @@ export default function MoveAssetDialog({
   onCancel,
   onMoved,
 }: MoveAssetDialogProps) {
-  const apiClient = useMemo(() => createFinancialApiClient(), [])
   const [samePortfolios, setSamePortfolios] = useState<string[]>([])
   const [historicPortfolios, setHistoricPortfolios] = useState<string[]>([])
   const [archiveToHistoric, setArchiveToHistoric] = useState(false)
@@ -89,7 +88,7 @@ export default function MoveAssetDialog({
         setHistoricPortfolios(historicTree ? portfolioNamesOf(historicTree, brokerName) : [])
       })
       .catch((err: unknown) => setError(getErrorMessage(err, 'Unable to load portfolios.')))
-  }, [apiClient, scope, brokerName, portfolioName, canArchive, newPortfolioOnly])
+  }, [scope, brokerName, portfolioName, canArchive, newPortfolioOnly])
 
   const destinations = archiveToHistoric ? historicPortfolios : samePortfolios
 

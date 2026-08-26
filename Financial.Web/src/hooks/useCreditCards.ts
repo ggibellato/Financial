@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useReducer } from 'react'
-import { createFinancialApiClient } from '../api/financialApiClient'
+import { useCallback, useEffect, useReducer } from 'react'
+import { apiClient } from '../api/financialApiClient'
 import type { CreditCardDto, UpdateCreditCardDto } from '../api/types'
 import { getErrorMessage } from '../utils/formatters'
 
@@ -62,7 +62,6 @@ export interface CreditCardsData {
 }
 
 export function useCreditCards(): CreditCardsData {
-  const apiClient = useMemo(() => createFinancialApiClient(), [])
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
   useEffect(() => {
@@ -73,7 +72,7 @@ export function useCreditCards(): CreditCardsData {
       .catch((err: unknown) => {
         dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, 'Unable to load credit cards') })
       })
-  }, [apiClient, state.retryCount])
+  }, [state.retryCount])
 
   const retry = useCallback(() => dispatch({ type: 'RETRY' }), [])
 
@@ -94,7 +93,7 @@ export function useCreditCards(): CreditCardsData {
           })
         })
     },
-    [apiClient],
+    [],
   )
 
   return {

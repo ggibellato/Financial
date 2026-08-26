@@ -5,16 +5,26 @@ import { ApiError } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { ReserveBucketBalanceDto, ReserveBucketDto, ReserveMovementDto } from '../../api/types'
 
-const getReserveBalancesMock = vi.fn<FinancialApiClient['getReserveBalances']>()
-const getReserveMovementsMock = vi.fn<FinancialApiClient['getReserveMovements']>()
-const getReserveBucketsMock = vi.fn<FinancialApiClient['getReserveBuckets']>()
-const postIncomeSplitMock = vi.fn<FinancialApiClient['postIncomeSplit']>()
-const postWithdrawalMock = vi.fn<FinancialApiClient['postWithdrawal']>()
-const updateReserveMovementMock = vi.fn<FinancialApiClient['updateReserveMovement']>()
-const deleteReserveMovementMock = vi.fn<FinancialApiClient['deleteReserveMovement']>()
+const {
+  getReserveBalancesMock,
+  getReserveMovementsMock,
+  getReserveBucketsMock,
+  postIncomeSplitMock,
+  postWithdrawalMock,
+  updateReserveMovementMock,
+  deleteReserveMovementMock,
+} = vi.hoisted(() => ({
+  getReserveBalancesMock: vi.fn<FinancialApiClient['getReserveBalances']>(),
+  getReserveMovementsMock: vi.fn<FinancialApiClient['getReserveMovements']>(),
+  getReserveBucketsMock: vi.fn<FinancialApiClient['getReserveBuckets']>(),
+  postIncomeSplitMock: vi.fn<FinancialApiClient['postIncomeSplit']>(),
+  postWithdrawalMock: vi.fn<FinancialApiClient['postWithdrawal']>(),
+  updateReserveMovementMock: vi.fn<FinancialApiClient['updateReserveMovement']>(),
+  deleteReserveMovementMock: vi.fn<FinancialApiClient['deleteReserveMovement']>(),
+}))
 
 vi.mock('../../api/financialApiClient', () => ({
-  createFinancialApiClient: (): Partial<FinancialApiClient> => ({
+  apiClient: {
     getReserveBalances: getReserveBalancesMock,
     getReserveMovements: getReserveMovementsMock,
     getReserveBuckets: getReserveBucketsMock,
@@ -22,7 +32,7 @@ vi.mock('../../api/financialApiClient', () => ({
     postWithdrawal: postWithdrawalMock,
     updateReserveMovement: updateReserveMovementMock,
     deleteReserveMovement: deleteReserveMovementMock,
-  }),
+  } as Partial<FinancialApiClient>,
 }))
 
 const BALANCES: ReserveBucketBalanceDto[] = [

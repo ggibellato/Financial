@@ -22,23 +22,40 @@ const NEXT_MONTH = CURRENT_MONTH === 12 ? 1 : CURRENT_MONTH + 1
 const NEXT_MONTH_YEAR = CURRENT_MONTH === 12 ? CURRENT_YEAR + 1 : CURRENT_YEAR
 const NEXT_MONTH_INPUT = `${NEXT_MONTH_YEAR}-${String(NEXT_MONTH).padStart(2, '0')}`
 
-const getExpensesByMonthMock = vi.fn<FinancialApiClient['getExpensesByMonth']>()
-const getUnpaidCardChargesByMonthMock = vi.fn<FinancialApiClient['getUnpaidCardChargesByMonth']>()
-const getCategoryTotalsByMonthMock = vi.fn<FinancialApiClient['getCategoryTotalsByMonth']>()
-const getCardStatementsByMonthMock = vi.fn<FinancialApiClient['getCardStatementsByMonth']>()
-const getBanksMock = vi.fn<FinancialApiClient['getBanks']>()
-const getIncomeSourcesMock = vi.fn<FinancialApiClient['getIncomeSources']>()
-const getCategoriesMock = vi.fn<FinancialApiClient['getCategories']>()
-const deleteExpenseMock = vi.fn<FinancialApiClient['deleteExpense']>()
-const markCardStatementPaidMock = vi.fn<FinancialApiClient['markCardStatementPaid']>()
-const unmarkCardStatementPaidMock = vi.fn<FinancialApiClient['unmarkCardStatementPaid']>()
-const getIncomesByMonthMock = vi.fn<FinancialApiClient['getIncomesByMonth']>()
-const deleteIncomeMock = vi.fn<FinancialApiClient['deleteIncome']>()
-const getBankBalancesByMonthMock = vi.fn<FinancialApiClient['getBankBalancesByMonth']>()
-const getTitheSummaryByMonthMock = vi.fn<FinancialApiClient['getTitheSummaryByMonth']>()
+const {
+  getExpensesByMonthMock,
+  getUnpaidCardChargesByMonthMock,
+  getCategoryTotalsByMonthMock,
+  getCardStatementsByMonthMock,
+  getBanksMock,
+  getIncomeSourcesMock,
+  getCategoriesMock,
+  deleteExpenseMock,
+  markCardStatementPaidMock,
+  unmarkCardStatementPaidMock,
+  getIncomesByMonthMock,
+  deleteIncomeMock,
+  getBankBalancesByMonthMock,
+  getTitheSummaryByMonthMock,
+} = vi.hoisted(() => ({
+  getExpensesByMonthMock: vi.fn<FinancialApiClient['getExpensesByMonth']>(),
+  getUnpaidCardChargesByMonthMock: vi.fn<FinancialApiClient['getUnpaidCardChargesByMonth']>(),
+  getCategoryTotalsByMonthMock: vi.fn<FinancialApiClient['getCategoryTotalsByMonth']>(),
+  getCardStatementsByMonthMock: vi.fn<FinancialApiClient['getCardStatementsByMonth']>(),
+  getBanksMock: vi.fn<FinancialApiClient['getBanks']>(),
+  getIncomeSourcesMock: vi.fn<FinancialApiClient['getIncomeSources']>(),
+  getCategoriesMock: vi.fn<FinancialApiClient['getCategories']>(),
+  deleteExpenseMock: vi.fn<FinancialApiClient['deleteExpense']>(),
+  markCardStatementPaidMock: vi.fn<FinancialApiClient['markCardStatementPaid']>(),
+  unmarkCardStatementPaidMock: vi.fn<FinancialApiClient['unmarkCardStatementPaid']>(),
+  getIncomesByMonthMock: vi.fn<FinancialApiClient['getIncomesByMonth']>(),
+  deleteIncomeMock: vi.fn<FinancialApiClient['deleteIncome']>(),
+  getBankBalancesByMonthMock: vi.fn<FinancialApiClient['getBankBalancesByMonth']>(),
+  getTitheSummaryByMonthMock: vi.fn<FinancialApiClient['getTitheSummaryByMonth']>(),
+}))
 
 vi.mock('../../api/financialApiClient', () => ({
-  createFinancialApiClient: (): Partial<FinancialApiClient> => ({
+  apiClient: {
     getExpensesByMonth: getExpensesByMonthMock,
     getUnpaidCardChargesByMonth: getUnpaidCardChargesByMonthMock,
     getCategoryTotalsByMonth: getCategoryTotalsByMonthMock,
@@ -53,7 +70,7 @@ vi.mock('../../api/financialApiClient', () => ({
     deleteIncome: deleteIncomeMock,
     getBankBalancesByMonth: getBankBalancesByMonthMock,
     getTitheSummaryByMonth: getTitheSummaryByMonthMock,
-  }),
+  } as Partial<FinancialApiClient>,
 }))
 
 const BANKS: BankDto[] = [

@@ -4,14 +4,16 @@ import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { BankDto, CategoryDto, ExpenseDto } from '../../api/types'
 import { useExpenseForm } from '../useExpenseForm'
 
-const createExpenseMock = vi.fn<FinancialApiClient['createExpense']>()
-const updateExpenseMock = vi.fn<FinancialApiClient['updateExpense']>()
+const { createExpenseMock, updateExpenseMock } = vi.hoisted(() => ({
+  createExpenseMock: vi.fn<FinancialApiClient['createExpense']>(),
+  updateExpenseMock: vi.fn<FinancialApiClient['updateExpense']>(),
+}))
 
 vi.mock('../../api/financialApiClient', () => ({
-  createFinancialApiClient: (): Partial<FinancialApiClient> => ({
+  apiClient: {
     createExpense: createExpenseMock,
     updateExpense: updateExpenseMock,
-  }),
+  } as Partial<FinancialApiClient>,
 }))
 
 const BANKS: BankDto[] = [

@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useState } from 'react'
-import { createFinancialApiClient } from '../api/financialApiClient'
+import { useCallback, useState } from 'react'
+import { apiClient } from '../api/financialApiClient'
 import { getErrorMessage } from '../utils/formatters'
 import { useSelectedNode } from '../context/SelectedNodeContext'
 import { POSITION_TYPE_STATUS_CLASS } from '../utils/positionType'
@@ -32,7 +32,6 @@ export default function DetailPanel() {
   const [prevKey, setPrevKey] = useState('')
   const [isMoving, setIsMoving] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
-  const apiClient = useMemo(() => createFinancialApiClient(), [])
 
   const currentKey = nodeKey(selectedNode)
   if (currentKey !== prevKey) {

@@ -12,14 +12,16 @@ const NEXT_MONTH = CURRENT_MONTH === 12 ? 1 : CURRENT_MONTH + 1
 const NEXT_MONTH_YEAR = CURRENT_MONTH === 12 ? CURRENT_YEAR + 1 : CURRENT_YEAR
 const NEXT_MONTH_INPUT = `${NEXT_MONTH_YEAR}-${String(NEXT_MONTH).padStart(2, '0')}`
 
-const getInvestmentSnapshotsMock = vi.fn<FinancialApiClient['getInvestmentSnapshots']>()
-const updateInvestmentSnapshotValueMock = vi.fn<FinancialApiClient['updateInvestmentSnapshotValue']>()
+const { getInvestmentSnapshotsMock, updateInvestmentSnapshotValueMock } = vi.hoisted(() => ({
+  getInvestmentSnapshotsMock: vi.fn<FinancialApiClient['getInvestmentSnapshots']>(),
+  updateInvestmentSnapshotValueMock: vi.fn<FinancialApiClient['updateInvestmentSnapshotValue']>(),
+}))
 
 vi.mock('../../api/financialApiClient', () => ({
-  createFinancialApiClient: (): Partial<FinancialApiClient> => ({
+  apiClient: {
     getInvestmentSnapshots: getInvestmentSnapshotsMock,
     updateInvestmentSnapshotValue: updateInvestmentSnapshotValueMock,
-  }),
+  } as Partial<FinancialApiClient>,
 }))
 
 const SNAPSHOTS: InvestmentSnapshotDto[] = [

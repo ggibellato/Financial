@@ -4,16 +4,18 @@ import DividendCheckPage from '../DividendCheckPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { DividendHistoryItemDto, DividendSummaryDto } from '../../api/types'
 
-const getDividendSummaryMock = vi.fn<FinancialApiClient['getDividendSummary']>()
-const getDividendHistoryMock = vi.fn<FinancialApiClient['getDividendHistory']>()
-const getWatchlistMock = vi.fn<FinancialApiClient['getWatchlist']>()
+const { getDividendSummaryMock, getDividendHistoryMock, getWatchlistMock } = vi.hoisted(() => ({
+  getDividendSummaryMock: vi.fn<FinancialApiClient['getDividendSummary']>(),
+  getDividendHistoryMock: vi.fn<FinancialApiClient['getDividendHistory']>(),
+  getWatchlistMock: vi.fn<FinancialApiClient['getWatchlist']>(),
+}))
 
 vi.mock('../../api/financialApiClient', () => ({
-  createFinancialApiClient: (): Partial<FinancialApiClient> => ({
+  apiClient: {
     getDividendSummary: getDividendSummaryMock,
     getDividendHistory: getDividendHistoryMock,
     getWatchlist: getWatchlistMock,
-  }),
+  } as Partial<FinancialApiClient>,
 }))
 
 const baseSummary: DividendSummaryDto = {
