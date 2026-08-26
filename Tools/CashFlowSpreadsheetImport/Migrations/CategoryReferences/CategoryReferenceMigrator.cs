@@ -118,7 +118,7 @@ public static class CategoryReferenceMigrator
                 continue;
             }
 
-            var expense = JsonSerializer.Deserialize<Expense>(RewriteCategoryField(item, category.Id), resolvedOptions)!;
+            var expense = JsonSerializer.Deserialize<Expense>(RewriteField(item, "Category", "CategoryId", category.Id), resolvedOptions)!;
             data.AddExpense(expense);
             summary.CountExpenseMigrated();
         }
@@ -131,26 +131,4 @@ public static class CategoryReferenceMigrator
         }
     }
 
-    private static string RewriteCategoryField(JsonElement item, Guid categoryId)
-    {
-        using var stream = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(stream))
-        {
-            writer.WriteStartObject();
-            foreach (var property in item.EnumerateObject())
-            {
-                if (property.NameEquals("Category"))
-                {
-                    writer.WriteString("CategoryId", categoryId);
-                    continue;
-                }
-
-                property.WriteTo(writer);
-            }
-
-            writer.WriteEndObject();
-        }
-
-        return System.Text.Encoding.UTF8.GetString(stream.ToArray());
-    }
 }

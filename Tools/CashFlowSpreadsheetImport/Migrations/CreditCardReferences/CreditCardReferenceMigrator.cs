@@ -127,7 +127,7 @@ public static class CreditCardReferenceMigrator
                 continue;
             }
 
-            var expense = JsonSerializer.Deserialize<Expense>(RewriteCardField(item, "CardTag", creditCard?.Id), resolvedOptions)!;
+            var expense = JsonSerializer.Deserialize<Expense>(RewriteField(item, "CardTag", "CreditCardId", creditCard?.Id), resolvedOptions)!;
             data.AddExpense(expense);
             if (creditCard is not null)
             {
@@ -190,49 +190,4 @@ public static class CreditCardReferenceMigrator
         }
     }
 
-    private static string RewriteCardField(JsonElement item, string legacyFieldName, Guid? creditCardId)
-    {
-        using var stream = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(stream))
-        {
-            writer.WriteStartObject();
-            var wroteCreditCardId = false;
-            foreach (var property in item.EnumerateObject())
-            {
-                if (property.NameEquals(legacyFieldName))
-                {
-                    WriteCreditCardId(writer, creditCardId);
-                    wroteCreditCardId = true;
-                    continue;
-                }
-
-                property.WriteTo(writer);
-            }
-
-            // A legacy record with no card association at all may never have carried the
-            // CardTag key (as opposed to carrying it with a null value) - CreditCardId is
-            // required on read, so it must still be added even when there was nothing to rename.
-            if (!wroteCreditCardId)
-            {
-                WriteCreditCardId(writer, creditCardId);
-            }
-
-            writer.WriteEndObject();
-        }
-
-        return System.Text.Encoding.UTF8.GetString(stream.ToArray());
-    }
-
-    private static void WriteCreditCardId(Utf8JsonWriter writer, Guid? creditCardId)
-    {
-        writer.WritePropertyName("CreditCardId");
-        if (creditCardId is null)
-        {
-            writer.WriteNullValue();
-        }
-        else
-        {
-            writer.WriteStringValue(creditCardId.Value);
-        }
-    }
 }
