@@ -1,8 +1,10 @@
 import { Fragment } from 'react'
+import EditMovementForm from '../components/EditMovementForm'
 import ErrorState from '../components/ErrorState'
+import IncomeSplitForm from '../components/IncomeSplitForm'
 import LoadingState from '../components/LoadingState'
+import WithdrawalForm from '../components/WithdrawalForm'
 import { LOCKED_MOVEMENT_MESSAGE, useReserva } from '../hooks/useReserva'
-import type { EditMovementField, WithdrawalFormField } from '../hooks/useReserva'
 import { formatN2, formatShortDate } from '../utils/formatters'
 import './ReservaPage.css'
 
@@ -92,20 +94,6 @@ export default function ReservaPage() {
     return <ErrorState message={error} onRetry={retry} />
   }
 
-  const withdrawalValues: Record<WithdrawalFormField, string> = {
-    withdrawalBucketId,
-    withdrawalAmount,
-    withdrawalDate,
-    withdrawalDescription,
-  }
-
-  const editMovementValues: Record<EditMovementField, string> = {
-    editMovementBucketId,
-    editMovementAmount,
-    editMovementDate,
-    editMovementDescription,
-  }
-
   return (
     <div className="reserva-page">
       <div className="reserva-page__header">
@@ -121,195 +109,49 @@ export default function ReservaPage() {
 
       {splitPercentageWarning && <p className="reserva-page__warning" role="alert">{splitPercentageWarning}</p>}
 
-      {isSplitFormOpen && (
-        <div className="reserva-page__form-panel">
-          <p className="reserva-page__form-title">Post Monthly Income Split</p>
-          <div className="reserva-page__form">
-            <div className="reserva-page__form-field">
-              <label htmlFor="split-date">Date</label>
-              <input
-                id="split-date"
-                type="date"
-                value={splitDate}
-                required
-                onChange={(e) => setSplitField('splitDate', e.target.value)}
-              />
-            </div>
-            <div className="reserva-page__form-field">
-              <label htmlFor="split-amount">Amount to Split</label>
-              <input
-                id="split-amount"
-                type="number"
-                step="0.01"
-                value={splitAmount}
-                onChange={(e) => setSplitField('splitAmount', e.target.value)}
-              />
-            </div>
-            <div className="reserva-page__form-field">
-              <label htmlFor="split-description">Description</label>
-              <input
-                id="split-description"
-                type="text"
-                value={splitDescription}
-                onChange={(e) => setSplitField('splitDescription', e.target.value)}
-              />
-            </div>
-          </div>
-          <div className="reserva-page__form-actions">
-            <button className="reserva-page__submit-btn" type="button" disabled={isSubmittingSplit} onClick={submitIncomeSplit}>
-              {isSubmittingSplit ? 'Posting...' : 'Post Income Split'}
-            </button>
-            <button className="reserva-page__cancel-btn" type="button" onClick={cancelSplitForm}>
-              Cancel
-            </button>
-          </div>
-          {splitError && <p className="reserva-page__error">{splitError}</p>}
-        </div>
-      )}
-
-      {lastSplitResult && (
-        <div className="reserva-page__form-panel">
-          <p className="reserva-page__form-title">Income Split Posted</p>
-          <table className="reserva-page__table reserva-page__split-result-table data-table">
-            <BalanceColumns />
-            <tbody>
-              {lastSplitResult.buckets.map((entry) => (
-                <tr key={entry.bucketId}>
-                  <td>{entry.bucketName}</td>
-                  <td className="data-table__col--numeric">{formatN2(entry.amount)}</td>
-                </tr>
-              ))}
-              <tr className="reserva-page__totals-row">
-                <td>Total</td>
-                <td className="data-table__col--numeric">{formatN2(lastSplitResult.total)}</td>
-              </tr>
-            </tbody>
-          </table>
-          <div className="reserva-page__form-actions">
-            <button className="reserva-page__cancel-btn" type="button" onClick={dismissSplitResult}>
-              Dismiss
-            </button>
-          </div>
-        </div>
+      {(isSplitFormOpen || lastSplitResult) && (
+        <IncomeSplitForm
+          date={splitDate}
+          amount={splitAmount}
+          description={splitDescription}
+          isSubmitting={isSubmittingSplit}
+          error={splitError}
+          lastResult={lastSplitResult}
+          onFieldChange={setSplitField}
+          onSubmit={submitIncomeSplit}
+          onCancel={cancelSplitForm}
+          onDismissResult={dismissSplitResult}
+        />
       )}
 
       {isWithdrawalFormOpen && (
-        <div className="reserva-page__form-panel">
-          <p className="reserva-page__form-title">Record a Withdrawal</p>
-          <div className="reserva-page__form">
-            <div className="reserva-page__form-field">
-              <label htmlFor="withdrawal-bucket">Bucket</label>
-              <select
-                id="withdrawal-bucket"
-                value={withdrawalValues.withdrawalBucketId}
-                onChange={(e) => setWithdrawalField('withdrawalBucketId', e.target.value)}
-              >
-                {buckets.map((bucket) => (
-                  <option key={bucket.id} value={bucket.id}>
-                    {bucket.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="reserva-page__form-field">
-              <label htmlFor="withdrawal-amount">Amount</label>
-              <input
-                id="withdrawal-amount"
-                type="number"
-                step="0.01"
-                min="0"
-                value={withdrawalValues.withdrawalAmount}
-                onChange={(e) => setWithdrawalField('withdrawalAmount', e.target.value)}
-              />
-            </div>
-            <div className="reserva-page__form-field">
-              <label htmlFor="withdrawal-date">Date</label>
-              <input
-                id="withdrawal-date"
-                type="date"
-                value={withdrawalValues.withdrawalDate}
-                onChange={(e) => setWithdrawalField('withdrawalDate', e.target.value)}
-              />
-            </div>
-            <div className="reserva-page__form-field">
-              <label htmlFor="withdrawal-description">Description</label>
-              <input
-                id="withdrawal-description"
-                type="text"
-                value={withdrawalValues.withdrawalDescription}
-                onChange={(e) => setWithdrawalField('withdrawalDescription', e.target.value)}
-              />
-            </div>
-          </div>
-          <div className="reserva-page__form-actions">
-            <button className="reserva-page__submit-btn" type="button" disabled={isSubmittingWithdrawal} onClick={() => submitWithdrawal(confirmProceedWithWithdrawal)}>
-              {isSubmittingWithdrawal ? 'Saving...' : 'Record Withdrawal'}
-            </button>
-            <button className="reserva-page__cancel-btn" type="button" onClick={cancelWithdrawalForm}>
-              Cancel
-            </button>
-          </div>
-          {withdrawalError && <p className="reserva-page__error">{withdrawalError}</p>}
-        </div>
+        <WithdrawalForm
+          bucketId={withdrawalBucketId}
+          amount={withdrawalAmount}
+          date={withdrawalDate}
+          description={withdrawalDescription}
+          buckets={buckets}
+          isSubmitting={isSubmittingWithdrawal}
+          error={withdrawalError}
+          onFieldChange={setWithdrawalField}
+          onSubmit={() => submitWithdrawal(confirmProceedWithWithdrawal)}
+          onCancel={cancelWithdrawalForm}
+        />
       )}
 
       {editingMovementId && (
-        <div className="reserva-page__form-panel">
-          <p className="reserva-page__form-title">Edit Movement</p>
-          <div className="reserva-page__form">
-            <div className="reserva-page__form-field">
-              <label htmlFor="edit-movement-bucket">Bucket</label>
-              <select
-                id="edit-movement-bucket"
-                value={editMovementValues.editMovementBucketId}
-                onChange={(e) => setEditMovementField('editMovementBucketId', e.target.value)}
-              >
-                {buckets.map((bucket) => (
-                  <option key={bucket.id} value={bucket.id}>
-                    {bucket.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="reserva-page__form-field">
-              <label htmlFor="edit-movement-amount">Amount</label>
-              <input
-                id="edit-movement-amount"
-                type="number"
-                step="0.01"
-                value={editMovementValues.editMovementAmount}
-                onChange={(e) => setEditMovementField('editMovementAmount', e.target.value)}
-              />
-            </div>
-            <div className="reserva-page__form-field">
-              <label htmlFor="edit-movement-date">Date</label>
-              <input
-                id="edit-movement-date"
-                type="date"
-                value={editMovementValues.editMovementDate}
-                onChange={(e) => setEditMovementField('editMovementDate', e.target.value)}
-              />
-            </div>
-            <div className="reserva-page__form-field">
-              <label htmlFor="edit-movement-description">Description</label>
-              <input
-                id="edit-movement-description"
-                type="text"
-                value={editMovementValues.editMovementDescription}
-                onChange={(e) => setEditMovementField('editMovementDescription', e.target.value)}
-              />
-            </div>
-          </div>
-          <div className="reserva-page__form-actions">
-            <button className="reserva-page__submit-btn" type="button" disabled={isSavingMovement} onClick={saveMovementEdit}>
-              {isSavingMovement ? 'Saving...' : 'Save'}
-            </button>
-            <button className="reserva-page__cancel-btn" type="button" onClick={cancelEditMovement}>
-              Cancel
-            </button>
-          </div>
-          {saveMovementError && <p className="reserva-page__error">{saveMovementError}</p>}
-        </div>
+        <EditMovementForm
+          bucketId={editMovementBucketId}
+          amount={editMovementAmount}
+          date={editMovementDate}
+          description={editMovementDescription}
+          buckets={buckets}
+          isSaving={isSavingMovement}
+          error={saveMovementError}
+          onFieldChange={setEditMovementField}
+          onSave={saveMovementEdit}
+          onCancel={cancelEditMovement}
+        />
       )}
 
       {deleteMovementError && <p className="reserva-page__error">{deleteMovementError}</p>}
