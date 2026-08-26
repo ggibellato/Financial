@@ -1,6 +1,7 @@
-import { Button, Checkbox, Field, Input, MessageBar, MessageBarBody, Select, Text, makeStyles, tokens } from '@fluentui/react-components'
+import { Button, Checkbox, Field, Input, MessageBar, MessageBarBody, Select, Text } from '@fluentui/react-components'
 import type { BankDto, CategoryDto, CreditCardDto } from '../api/types'
 import type { PaymentMode } from '../hooks/useExpenseForm'
+import { useFormPanelStyles } from './formPanelStyles'
 
 export type ExpenseFormField =
   | 'date'
@@ -37,47 +38,6 @@ interface ExpenseFormProps {
   onCancel: () => void
 }
 
-const useStyles = makeStyles({
-  panel: {
-    flexShrink: 0,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: tokens.spacingVerticalM,
-    padding: tokens.spacingVerticalM,
-    border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
-    borderRadius: tokens.borderRadiusMedium,
-    backgroundColor: tokens.colorNeutralBackground2,
-  },
-  grid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
-    gap: tokens.spacingVerticalM,
-    '@media (max-width: 1023px)': {
-      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-    },
-    '@media (max-width: 639px)': {
-      gridTemplateColumns: '1fr',
-    },
-  },
-  spanTwo: {
-    gridColumnEnd: 'span 2',
-  },
-  spanAll: {
-    gridColumnEnd: 'span 4',
-    '@media (max-width: 1023px)': {
-      gridColumnEnd: 'span 2',
-    },
-    '@media (max-width: 639px)': {
-      gridColumnEnd: 'span 1',
-    },
-  },
-  actions: {
-    display: 'flex',
-    gap: tokens.spacingHorizontalS,
-    alignItems: 'center',
-  },
-})
-
 export default function ExpenseForm({
   isEditing,
   date,
@@ -101,7 +61,7 @@ export default function ExpenseForm({
   onSave,
   onCancel,
 }: ExpenseFormProps) {
-  const styles = useStyles()
+  const styles = useFormPanelStyles()
   const selectedBank = banks.find((b) => b.id === paymentSource)
   const showRoundUpField = paymentMode === 'bank' && selectedBank?.roundUpEnabled === true
   const selectedCategory = categories.find((c) => c.id === categoryId)

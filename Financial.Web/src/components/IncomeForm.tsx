@@ -1,6 +1,7 @@
-import { Button, Checkbox, Field, Input, MessageBar, MessageBarBody, Select, Text, makeStyles, tokens } from '@fluentui/react-components'
+import { Button, Checkbox, Field, Input, MessageBar, MessageBarBody, Select, Text } from '@fluentui/react-components'
 import type { BankDto, IncomeSourceDto } from '../api/types'
 import { INCOME_SOURCES_WITH_GROSS_VALUE, selectActiveIncomeSources } from '../hooks/useIncomeForm'
+import { useFormPanelStyles } from './formPanelStyles'
 
 export type IncomeFormField = 'date' | 'incomeSource' | 'grossValue' | 'netValue' | 'bank' | 'description' | 'splitToReserve'
 
@@ -22,35 +23,6 @@ interface IncomeFormProps {
   onCancel: () => void
 }
 
-const useStyles = makeStyles({
-  panel: {
-    flexShrink: 0,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: tokens.spacingVerticalM,
-    padding: tokens.spacingVerticalM,
-    border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
-    borderRadius: tokens.borderRadiusMedium,
-    backgroundColor: tokens.colorNeutralBackground2,
-  },
-  grid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
-    gap: tokens.spacingVerticalM,
-    '@media (max-width: 1023px)': {
-      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-    },
-    '@media (max-width: 639px)': {
-      gridTemplateColumns: '1fr',
-    },
-  },
-  actions: {
-    display: 'flex',
-    gap: tokens.spacingHorizontalS,
-    alignItems: 'center',
-  },
-})
-
 export default function IncomeForm({
   isEditing,
   date,
@@ -68,7 +40,7 @@ export default function IncomeForm({
   onSave,
   onCancel,
 }: IncomeFormProps) {
-  const styles = useStyles()
+  const styles = useFormPanelStyles()
   const activeIncomeSources = selectActiveIncomeSources(incomeSources)
   const showGrossValueField = INCOME_SOURCES_WITH_GROSS_VALUE.includes(
     incomeSources.find((s) => s.id === incomeSource)?.name ?? '',

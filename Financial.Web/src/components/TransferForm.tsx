@@ -1,6 +1,7 @@
-import { Button, Field, Input, MessageBar, MessageBarBody, Select, Text, makeStyles, tokens } from '@fluentui/react-components'
+import { Button, Field, Input, MessageBar, MessageBarBody, Select, Text } from '@fluentui/react-components'
 import type { BankDto } from '../api/types'
 import type { TransferFormField } from '../hooks/mapTransferErrorToField'
+import { useFormPanelStyles } from './formPanelStyles'
 
 interface TransferFormProps {
   isEditing: boolean
@@ -18,35 +19,6 @@ interface TransferFormProps {
   onCancel: () => void
 }
 
-const useStyles = makeStyles({
-  panel: {
-    flexShrink: 0,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: tokens.spacingVerticalM,
-    padding: tokens.spacingVerticalM,
-    border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
-    borderRadius: tokens.borderRadiusMedium,
-    backgroundColor: tokens.colorNeutralBackground2,
-  },
-  grid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
-    gap: tokens.spacingVerticalM,
-    '@media (max-width: 1023px)': {
-      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-    },
-    '@media (max-width: 639px)': {
-      gridTemplateColumns: '1fr',
-    },
-  },
-  actions: {
-    display: 'flex',
-    gap: tokens.spacingHorizontalS,
-    alignItems: 'center',
-  },
-})
-
 export default function TransferForm({
   isEditing,
   date,
@@ -62,7 +34,7 @@ export default function TransferForm({
   onSave,
   onCancel,
 }: TransferFormProps) {
-  const styles = useStyles()
+  const styles = useFormPanelStyles()
   const sameBankError =
     sourceBank !== '' && destinationBank !== '' && sourceBank === destinationBank
       ? 'Source and destination must be different banks.'
