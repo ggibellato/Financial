@@ -1,7 +1,10 @@
 using System.Net;
 using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Infrastructure.Services;
+using Financial.TestUtilities;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Financial.CashFlow.Infrastructure.Tests.Services;
 
@@ -10,7 +13,7 @@ public class FrankfurterExchangeRateProviderTests
     /// <summary>Builds the provider over a stubbed transport; the response each test wants back is
     /// the only thing that differs.</summary>
     private static FrankfurterExchangeRateProvider CreateProvider(Func<HttpRequestMessage, HttpResponseMessage> respond) =>
-        new(CreateClient(new FakeHttpMessageHandler(respond)));
+        new(CreateClient(new FakeHttpMessageHandler(respond)), NullLogger<FrankfurterExchangeRateProvider>.Instance);
 
     [Fact]
     public async Task GetHistoricalRateAsync_WithSuccessfulResponse_ParsesTheRate()
@@ -56,6 +59,19 @@ public class FrankfurterExchangeRateProviderTests
         var rate = await provider.GetHistoricalRateAsync(new DateOnly(2026, 7, 1), Currency.BRL, Currency.GBP);
 
         rate.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetHistoricalRateAsync_WhenHttpRequestThrows_LogsTheExceptionType()
+    {
+        var logger = new RecordingLogger<FrankfurterExchangeRateProvider>();
+        var provider = new FrankfurterExchangeRateProvider(
+            CreateClient(new FakeHttpMessageHandler(_ => throw new HttpRequestException("network down"))), logger);
+
+        await provider.GetHistoricalRateAsync(new DateOnly(2026, 7, 1), Currency.BRL, Currency.GBP);
+
+        logger.Entries.Should().ContainSingle(e =>
+            e.Level == LogLevel.Warning && e.Message.Contains(nameof(HttpRequestException)));
     }
 
     [Fact]
