@@ -61,19 +61,11 @@ public static class EntityReferenceMigrator
         // are bootstrapped here too, mirroring the identical CreditCard bootstrap above.
         var categories = ResolveCategories(root, elementOptions);
         var categoriesByName = categories.ToDictionary(c => c.Name, c => c, StringComparer.OrdinalIgnoreCase);
-        var referenceContext = new ReferenceResolutionContext();
-        foreach (var bucket in reserveBuckets) referenceContext.ReserveBuckets[bucket.Id] = bucket;
-        foreach (var card in creditCards) referenceContext.CreditCards[card.Id] = card;
-        foreach (var category in categories) referenceContext.Categories[category.Id] = category;
+        var referenceContext = BuildContext([], [], [], reserveBuckets, creditCards, categories);
         var resolvedOptions = CreateElementOptions(referenceContext);
 
         var data = CashFlowData.Create();
-        foreach (var bank in banks) data.AddBank(bank);
-        foreach (var incomeSource in incomeSources) data.AddIncomeSource(incomeSource);
-        foreach (var account in investmentAccounts) data.AddInvestmentAccount(account);
-        foreach (var bucket in reserveBuckets) data.AddReserveBucket(bucket);
-        foreach (var card in creditCards) data.AddCreditCard(card);
-        foreach (var category in categories) data.AddCategory(category);
+        AddBaseCollections(data, banks, incomeSources, investmentAccounts, reserveBuckets, creditCards, categories);
         foreach (var movement in DeserializeCollection<ReserveMovement>(root, "ReserveMovements", resolvedOptions)) data.AddReserveMovement(movement);
         foreach (var statement in DeserializeCollection<CardStatement>(root, "CardStatements", resolvedOptions)) data.AddCardStatement(statement);
         foreach (var bill in DeserializeCollection<RecurringBill>(root, "RecurringBills", elementOptions)) data.AddRecurringBill(bill);
@@ -85,11 +77,7 @@ public static class EntityReferenceMigrator
         MigrateBalanceAdjustments(root, banksByName, data, summary);
         MigrateInvestmentSnapshots(root, investmentAccountsByName, data, summary);
 
-        MigrationBackup.Create(dataPath);
-        var serializer = new CashFlowSerializerAdapter();
-        File.WriteAllText(dataPath, serializer.Serialize(data));
-
-        return summary;
+        return SaveAndReturn(dataPath, data, summary);
     }
 
     private static bool NeedsMigration(JsonElement root)
