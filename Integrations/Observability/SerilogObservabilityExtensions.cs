@@ -17,10 +17,15 @@ public static class SerilogObservabilityExtensions
             return loggerConfiguration;
         }
 
+        var settings = OtlpExporterSettingsResolver.Resolve(options);
         return loggerConfiguration.WriteTo.OpenTelemetry(otlp =>
         {
-            otlp.Endpoint = options.Endpoint;
-            otlp.Protocol = OtlpProtocol.Grpc;
+            otlp.Endpoint = settings.Endpoint;
+            otlp.Protocol = settings.UseHttpProtobuf ? OtlpProtocol.HttpProtobuf : OtlpProtocol.Grpc;
+            if (settings.AuthorizationHeaderValue is not null)
+            {
+                otlp.Headers = new Dictionary<string, string> { ["Authorization"] = settings.AuthorizationHeaderValue };
+            }
         });
     }
 }
