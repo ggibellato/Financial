@@ -15,9 +15,9 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <DataGrid Grid.Row="0" ItemsSource="{Binding CreditCardManagementRows}" AutoGenerateColumns="False">
+        <DataGrid Grid.Row="0" ItemsSource="{Binding FilteredCreditCardManagementRows}" AutoGenerateColumns="False">
             <DataGrid.Columns>
-                <DataGridTextColumn Binding="{Binding CreditCardName}" Header="Card" Width="180"
+                <DataGridTextColumn x:Name="CardColumn" Binding="{Binding CreditCardName}" Header="Card" Width="180"
                                      ElementStyle="{StaticResource PlainColumnTextStyle}"/>
                 <DataGridTemplateColumn Header="Outstanding" SortMemberPath="OutstandingTotal" Width="110">
                     <DataGridTemplateColumn.CellTemplate>

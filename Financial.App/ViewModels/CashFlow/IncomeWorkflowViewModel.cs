@@ -37,7 +37,10 @@ public class IncomeWorkflowViewModel : ViewModelBase
     private IReadOnlyList<IncomeBankOptionViewModel> _incomeBankOptions = BuildIncomeBankOptions([]);
 
     public ObservableCollection<IncomeDTO> Incomes { get; } = [];
+    public ObservableCollection<IncomeDTO> FilteredIncomes { get; } = [];
     public ObservableCollection<IncomeSourceDTO> IncomeSources { get; } = [];
+
+    public ColumnFilterViewModel<IncomeDTO> BankFilter { get; }
 
     public IReadOnlyList<IncomeSourceDTO> IncomeSourceOptions =>
         IncomeSources
@@ -156,16 +159,23 @@ public class IncomeWorkflowViewModel : ViewModelBase
         SaveIncomeCommand = new RelayCommand(async () => await SaveIncomeAsync(), () => !IsSavingIncome);
         EditIncomeCommand = new RelayCommand<IncomeDTO>(ShowEditIncomeForm);
         DeleteIncomeCommand = new RelayCommand<IncomeDTO>(async income => await DeleteIncomeAsync(income));
+
+        BankFilter = new ColumnFilterViewModel<IncomeDTO>("Bank", i => [i.BankName], ApplyBankFilter);
     }
 
     /// <summary>Applies data the coordinator's own refresh already fetched — this workflow never fetches on its own.</summary>
     public void ApplyRefresh(IReadOnlyList<IncomeDTO> incomes, IReadOnlyList<IncomeSourceDTO> incomeSources, IReadOnlyList<BankDTO> banks)
     {
         ReplaceAll(Incomes, incomes);
+        BankFilter.Refresh(Incomes);
+        ApplyBankFilter();
+
         ReplaceAll(IncomeSources, incomeSources);
         OnPropertyChanged(nameof(IncomeSourceOptions));
         IncomeBankOptions = BuildIncomeBankOptions(banks);
     }
+
+    private void ApplyBankFilter() => ReplaceAll(FilteredIncomes, Incomes.Where(BankFilter.Matches));
 
     private static int IncomeSourceRank(string name)
     {

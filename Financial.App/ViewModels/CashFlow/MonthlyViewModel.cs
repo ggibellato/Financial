@@ -78,11 +78,16 @@ public class MonthlyViewModel : ViewModelBase
     public bool ShowContent => !IsLoading && !HasError;
 
     public ObservableCollection<CategoryTotalDTO> CategoryTotals { get; } = [];
+    public ObservableCollection<CategoryTotalDTO> FilteredCategoryTotals { get; } = [];
     public ObservableCollection<BankDTO> Banks { get; } = [];
     public ObservableCollection<BankTotalRow> BankTotals { get; } = [];
+    public ObservableCollection<BankTotalRow> FilteredBankTotals { get; } = [];
     public ObservableCollection<IncomeTotalRow> IncomeTotals { get; } = [];
     public ObservableCollection<CreditCardDTO> CreditCards { get; } = [];
     public ObservableCollection<CategoryDTO> Categories { get; } = [];
+
+    public ColumnFilterViewModel<BankTotalRow> BankFilter { get; }
+    public ColumnFilterViewModel<CategoryTotalDTO> CategoryFilter { get; }
 
     public IEnumerable<CategoryDTO> ActiveCategories => Categories.Where(c => c.Active);
 
@@ -146,7 +151,14 @@ public class MonthlyViewModel : ViewModelBase
         Expense = new ExpenseWorkflowViewModel(expenseService, Categories, Banks, CreditCards, confirm, tracer, RefreshAsync);
         Cards = new CardsWorkflowViewModel(cardStatementService, creditCardService, Banks, CreditCards, RefreshAsync);
         BankOperations = new BankOperationsWorkflowViewModel(transferService, balanceAdjustmentService, Banks, BankTotals, confirm, RefreshAsync);
+
+        BankFilter = new ColumnFilterViewModel<BankTotalRow>("Bank", row => [row.Bank], ApplyBankFilter);
+        CategoryFilter = new ColumnFilterViewModel<CategoryTotalDTO>("Category", c => [c.Category], ApplyCategoryFilter);
     }
+
+    private void ApplyBankFilter() => ReplaceAll(FilteredBankTotals, BankTotals.Where(BankFilter.Matches));
+
+    private void ApplyCategoryFilter() => ReplaceAll(FilteredCategoryTotals, CategoryTotals.Where(CategoryFilter.Matches));
 
     private int _refreshRequestId;
 
@@ -211,11 +223,15 @@ public class MonthlyViewModel : ViewModelBase
             Income.ApplyRefresh(incomes, incomeSources, banks);
             TitheSummary = titheSummary;
             OnPropertyChanged(nameof(CategoryTotalsSum));
+            CategoryFilter.Refresh(CategoryTotals);
+            ApplyCategoryFilter();
 
             var newBankTotals = BuildBankTotals(banks, expenses, bankBalances);
             ReplaceAll(BankTotals, newBankTotals);
             OnPropertyChanged(nameof(BankTotalsSum));
             OnPropertyChanged(nameof(RoundUpTotalsSum));
+            BankFilter.Refresh(BankTotals);
+            ApplyBankFilter();
 
             BankOperations.ApplyRefresh(transfers, adjustmentsByBank, year, month, banks);
 

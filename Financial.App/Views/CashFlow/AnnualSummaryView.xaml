@@ -29,10 +29,10 @@
 
             <TabControl Grid.Row="1">
                 <TabItem Header="Category Totals">
-                    <DataGrid ItemsSource="{Binding CategoryTotalRows}" AutoGenerateColumns="False" IsReadOnly="True"
+                    <DataGrid ItemsSource="{Binding FilteredCategoryTotalRows}" AutoGenerateColumns="False" IsReadOnly="True"
                               behaviors:SortableColumnsBehavior.IsEnabled="False">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Binding="{Binding Label}" Header="Category" Width="180"
+                            <DataGridTextColumn x:Name="CategoryTotalsColumn" Binding="{Binding Label}" Header="Category" Width="180"
                                                  ElementStyle="{StaticResource PlainColumnTextStyle}"/>
                             <DataGridTextColumn Binding="{Binding MonthlyValues[0], StringFormat=N2}" Header="Jan" Width="70" ElementStyle="{StaticResource NumericColumnTextStyle}"/>
                             <DataGridTextColumn Binding="{Binding MonthlyValues[1], StringFormat=N2}" Header="Feb" Width="70" ElementStyle="{StaticResource NumericColumnTextStyle}"/>
@@ -120,10 +120,10 @@
                 </TabItem>
 
                 <TabItem Header="Historic Summary Average">
-                    <DataGrid x:Name="historicSummaryGrid" ItemsSource="{Binding HistoricSummaryRows}" AutoGenerateColumns="False" IsReadOnly="True"
+                    <DataGrid x:Name="historicSummaryGrid" ItemsSource="{Binding FilteredHistoricSummaryRows}" AutoGenerateColumns="False" IsReadOnly="True"
                               behaviors:SortableColumnsBehavior.IsEnabled="False">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Binding="{Binding Category}" Header="Category" Width="180"
+                            <DataGridTextColumn x:Name="HistoricSummaryCategoryColumn" Binding="{Binding Category}" Header="Category" Width="180"
                                                  ElementStyle="{StaticResource PlainColumnTextStyle}"/>
                         </DataGrid.Columns>
                         <DataGrid.RowStyle>

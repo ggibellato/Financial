@@ -29,6 +29,10 @@ public class CardsWorkflowViewModel : ViewModelBase
             Statement = CardStatements.FirstOrDefault(s => s.CreditCardId == c.Id),
         });
 
+    public IEnumerable<CreditCardManagementRow> FilteredCreditCardManagementRows => CreditCardManagementRows.Where(CardFilter.Matches);
+
+    public ColumnFilterViewModel<CreditCardManagementRow> CardFilter { get; }
+
     public decimal AdjustmentTotal => CardStatements.Sum(s => s.OutstandingTotal);
 
     public string? CardStatementError
@@ -82,7 +86,11 @@ public class CardsWorkflowViewModel : ViewModelBase
             async statement => await MarkStatementPaidAsync(statement),
             statement => statement != null && MarkPaidSources.ContainsKey(statement.Id));
         UnmarkStatementPaidCommand = new RelayCommand<CardStatementDTO>(async statement => await UnmarkStatementPaidAsync(statement));
+
+        CardFilter = new ColumnFilterViewModel<CreditCardManagementRow>("Card", row => [row.CreditCardName], NotifyCardFilterChanged);
     }
+
+    private void NotifyCardFilterChanged() => OnPropertyChanged(nameof(FilteredCreditCardManagementRows));
 
     /// <summary>Applies data the coordinator's own refresh already fetched — this workflow never fetches on its own.</summary>
     public void ApplyRefresh(IReadOnlyList<CardStatementDTO> cardStatements)
@@ -93,7 +101,12 @@ public class CardsWorkflowViewModel : ViewModelBase
 
     /// <summary>CreditCards is the coordinator's own shared collection, mutated in place - it calls
     /// this after replacing it so CreditCardManagementRows re-queries, mirroring how it used to notify itself.</summary>
-    internal void NotifyCreditCardsChanged() => OnPropertyChanged(nameof(CreditCardManagementRows));
+    internal void NotifyCreditCardsChanged()
+    {
+        OnPropertyChanged(nameof(CreditCardManagementRows));
+        CardFilter.Refresh(CreditCardManagementRows);
+        OnPropertyChanged(nameof(FilteredCreditCardManagementRows));
+    }
 
     public void SetMarkPaidSource(Guid statementId, Guid bankId)
     {

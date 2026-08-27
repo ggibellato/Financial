@@ -18,9 +18,9 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <DataGrid Grid.Row="0" ItemsSource="{Binding CategoryTotals}" MaxHeight="320">
+            <DataGrid Grid.Row="0" ItemsSource="{Binding FilteredCategoryTotals}" MaxHeight="320">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Binding="{Binding Category}" Header="Category" Width="*"
+                    <DataGridTextColumn x:Name="CategoryColumn" Binding="{Binding Category}" Header="Category" Width="*"
                                          ElementStyle="{StaticResource PlainColumnTextStyle}"/>
                     <DataGridTextColumn Binding="{Binding TotalValue, StringFormat=N2}" Header="Total" Width="140"
                                          ElementStyle="{StaticResource NumericColumnTextStyle}"/>

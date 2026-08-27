@@ -1,4 +1,5 @@
 using Financial.CashFlow.Application.DTOs;
+using Financial.Presentation.App.ViewModels;
 using Financial.Presentation.App.ViewModels.CashFlow;
 using Financial.TestUtilities;
 using FluentAssertions;
@@ -11,6 +12,16 @@ public class MonthlyViewModelBanksCardsTests
     private static readonly Guid ChaseId = Guid.NewGuid();
     private static readonly Guid BaAmexId = Guid.NewGuid();
     private static readonly Guid ChaseCardId = Guid.NewGuid();
+
+    /// <summary>Unchecks every filter option except the given values, mirroring how a user would
+    /// narrow the header checklist down to a single bank.</summary>
+    private static void SelectOnly(ColumnFilterViewModel<BankTotalRow> filter, params string[] values)
+    {
+        foreach (var option in filter.Options)
+        {
+            option.IsChecked = values.Contains(option.Value);
+        }
+    }
 
     private static (
         MonthlyViewModel ViewModel,
@@ -61,6 +72,50 @@ public class MonthlyViewModelBanksCardsTests
         viewModel.BankTotals.Single(b => b.Bank == "Chase").RoundUpTotal.Should().Be(0m);
         viewModel.BankTotalsSum.Should().Be(260m);
         viewModel.RoundUpTotalsSum.Should().Be(0.50m);
+    }
+
+    [Fact]
+    public async Task BankFilter_AvailableValuesComeFromFullUnfilteredData()
+    {
+        var (viewModel, _, banks, _, _, _) = CreateViewModel();
+        banks.BankBalances = [new BankBalanceDTO { Bank = "Barclays", Balance = 250m }, new BankBalanceDTO { Bank = "Chase", Balance = 10m }];
+
+        await viewModel.RefreshAsync();
+
+        viewModel.BankFilter.Options.Select(o => o.Value).Should().BeEquivalentTo(["Barclays", "Chase"]);
+    }
+
+    [Fact]
+    public async Task BankFilter_UncheckingBank_ExcludesItFromFilteredBankTotals()
+    {
+        var (viewModel, _, banks, _, _, _) = CreateViewModel();
+        banks.BankBalances = [new BankBalanceDTO { Bank = "Barclays", Balance = 250m }, new BankBalanceDTO { Bank = "Chase", Balance = 10m }];
+        await viewModel.RefreshAsync();
+
+        SelectOnly(viewModel.BankFilter, "Barclays");
+
+        viewModel.FilteredBankTotals.Should().ContainSingle(b => b.Bank == "Barclays");
+        viewModel.FilteredBankTotals.Should().NotContain(b => b.Bank == "Chase");
+    }
+
+    [Fact]
+    public async Task BankFilter_ActiveFilter_DoesNotAffectFooterSums()
+    {
+        var (viewModel, expenses, banks, _, _, _) = CreateViewModel();
+        banks.BankBalances = [new BankBalanceDTO { Bank = "Barclays", Balance = 250m }, new BankBalanceDTO { Bank = "Chase", Balance = 10m }];
+        expenses.Expenses =
+        [
+            new ExpenseDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "A", Value = 20m, CategoryId = Guid.NewGuid(), CategoryName = "Mercado", PaymentSourceBankId = BarclaysId, PaymentSourceBankName = "Barclays", PaymentStatus = "ImmediatePayment", RoundUpAmount = 0.30m },
+        ];
+        await viewModel.RefreshAsync();
+        var sumBefore = viewModel.BankTotalsSum;
+        var roundUpBefore = viewModel.RoundUpTotalsSum;
+
+        SelectOnly(viewModel.BankFilter, "Barclays");
+
+        viewModel.BankTotalsSum.Should().Be(sumBefore);
+        viewModel.RoundUpTotalsSum.Should().Be(roundUpBefore);
+        viewModel.FilteredBankTotals.Should().HaveCount(1);
     }
 
     [Fact]

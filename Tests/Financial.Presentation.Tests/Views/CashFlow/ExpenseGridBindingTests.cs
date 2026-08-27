@@ -25,7 +25,7 @@ public class ExpenseGridBindingTests
         File.Exists(xamlPath).Should().BeTrue($"expected to find {xamlPath}");
         var xaml = File.ReadAllText(xamlPath);
 
-        var dataGridMatch = Regex.Match(xaml, @"<DataGrid\s+[^>]*ItemsSource=""\{Binding (Expenses|UnpaidCardCharges)\}""[\s\S]*?</DataGrid>");
+        var dataGridMatch = Regex.Match(xaml, @"<DataGrid\s+[^>]*ItemsSource=""\{Binding (Filtered)?(Expenses|UnpaidCardCharges)\}""[\s\S]*?</DataGrid>");
         dataGridMatch.Success.Should().BeTrue($"expected to find the expense DataGrid in {xamlFileName}");
 
         var expenseDtoProperties = typeof(ExpenseDTO).GetProperties().Select(p => p.Name).ToHashSet();

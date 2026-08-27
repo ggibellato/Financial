@@ -19,6 +19,18 @@ public partial class CardsGridView : UserControl
     public CardsGridView()
     {
         InitializeComponent();
+        DataContextChanged += OnDataContextChanged;
+    }
+
+    // DataGridColumn isn't part of the visual tree, so its Header can't bind to the ambient
+    // DataContext - it's assigned directly to the filter ViewModel instance here instead, and
+    // renders through the FilterableColumnHeader implicit DataTemplate in App.xaml.
+    private void OnDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        if (e.NewValue is CardsWorkflowViewModel viewModel)
+        {
+            CardColumn.Header = viewModel.CardFilter;
+        }
     }
 
     private void OnBankComboBoxSelectionChanged(object sender, SelectionChangedEventArgs e)

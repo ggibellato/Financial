@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using Financial.CashFlow.Application.DTOs;
+using Financial.Presentation.App.ViewModels;
 using Financial.Presentation.App.ViewModels.CashFlow;
 using Financial.TestUtilities;
 using FluentAssertions;
@@ -15,6 +16,16 @@ public class CardsWorkflowViewModelTests
     private static readonly Guid BaAmexId = Guid.NewGuid();
     private static readonly Guid ChaseId = Guid.NewGuid();
     private static readonly Guid PaypalId = Guid.NewGuid();
+
+    /// <summary>Unchecks every filter option except the given values, mirroring how a user would
+    /// narrow the header checklist down to a single card.</summary>
+    private static void SelectOnly(ColumnFilterViewModel<CreditCardManagementRow> filter, params string[] values)
+    {
+        foreach (var option in filter.Options)
+        {
+            option.IsChecked = values.Contains(option.Value);
+        }
+    }
 
     private static (CardsWorkflowViewModel ViewModel, StubCardStatementService CardStatementService, StubCreditCardService CreditCardService, ObservableCollection<BankDTO> Banks, ObservableCollection<CreditCardDTO> CreditCards) CreateViewModel(
         Func<Task>? refresh = null)
@@ -80,6 +91,32 @@ public class CardsWorkflowViewModelTests
 
         var paypalRow = viewModel.CreditCardManagementRows.Single(r => r.CreditCardName == "PaypalCredit");
         paypalRow.CreditCard.IsActive.Should().BeFalse();
+    }
+
+    [Fact]
+    public void CardFilter_AvailableValuesComeFromFullUnfilteredData()
+    {
+        var (viewModel, _, _, _, creditCards) = CreateViewModel();
+        creditCards.Add(new() { Id = BaAmexId, Name = "BaAmex", IsActive = true, NextInvoiceDueDate = null });
+        creditCards.Add(new() { Id = ChaseId, Name = "ChaseMaster4023", IsActive = true, NextInvoiceDueDate = null });
+
+        viewModel.NotifyCreditCardsChanged();
+
+        viewModel.CardFilter.Options.Select(o => o.Value).Should().BeEquivalentTo(["BaAmex", "ChaseMaster4023"]);
+    }
+
+    [Fact]
+    public void CardFilter_UncheckingCard_ExcludesItFromFilteredCreditCardManagementRows()
+    {
+        var (viewModel, _, _, _, creditCards) = CreateViewModel();
+        creditCards.Add(new() { Id = BaAmexId, Name = "BaAmex", IsActive = true, NextInvoiceDueDate = null });
+        creditCards.Add(new() { Id = ChaseId, Name = "ChaseMaster4023", IsActive = true, NextInvoiceDueDate = null });
+        viewModel.NotifyCreditCardsChanged();
+
+        SelectOnly(viewModel.CardFilter, "BaAmex");
+
+        viewModel.FilteredCreditCardManagementRows.Should().ContainSingle(r => r.CreditCardName == "BaAmex");
+        viewModel.FilteredCreditCardManagementRows.Should().NotContain(r => r.CreditCardName == "ChaseMaster4023");
     }
 
     [Fact]
