@@ -2,6 +2,8 @@ import { DeleteRegular } from '@fluentui/react-icons'
 import type { MaeLedgerEntryDto } from '../api/types'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
+import SortableColumnHeader from '../components/grid/SortableColumnHeader'
+import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { useControleMae } from '../hooks/useControleMae'
 import { formatN2, formatShortDate } from '../utils/formatters'
 import './ControleMaePage.css'
@@ -101,6 +103,15 @@ export default function ControleMaePage() {
 
   const isEditing = editingId !== null
   const isFormVisible = isCreateFormOpen || isEditing
+
+  const entryAccessors: Record<string, SortAccessor<MaeLedgerEntryDto>> = {
+    date: (entry) => new Date(entry.date),
+    description: (entry) => entry.description,
+    note: (entry) => entry.note,
+    brl: (entry) => entry.brlValue,
+    gbp: (entry) => entry.gbpValue,
+  }
+  const { sortedRows: sortedEntries, sortState, requestSort } = useSortableRows(entries, entryAccessors)
 
   return (
     <div className="controle-mae-page">
@@ -231,15 +242,42 @@ export default function ControleMaePage() {
                 <tr>
                   <th />
                   <th />
-                  <th>Date</th>
-                  <th>Description</th>
-                  <th>Note</th>
-                  <th className="data-table__col--numeric">BRL</th>
-                  <th className="data-table__col--numeric">GBP</th>
+                  <SortableColumnHeader
+                    label="Date"
+                    columnKey="date"
+                    sortDirection={sortState?.columnKey === 'date' ? sortState.direction : undefined}
+                    onSort={requestSort}
+                  />
+                  <SortableColumnHeader
+                    label="Description"
+                    columnKey="description"
+                    sortDirection={sortState?.columnKey === 'description' ? sortState.direction : undefined}
+                    onSort={requestSort}
+                  />
+                  <SortableColumnHeader
+                    label="Note"
+                    columnKey="note"
+                    sortDirection={sortState?.columnKey === 'note' ? sortState.direction : undefined}
+                    onSort={requestSort}
+                  />
+                  <SortableColumnHeader
+                    label="BRL"
+                    columnKey="brl"
+                    numeric
+                    sortDirection={sortState?.columnKey === 'brl' ? sortState.direction : undefined}
+                    onSort={requestSort}
+                  />
+                  <SortableColumnHeader
+                    label="GBP"
+                    columnKey="gbp"
+                    numeric
+                    sortDirection={sortState?.columnKey === 'gbp' ? sortState.direction : undefined}
+                    onSort={requestSort}
+                  />
                 </tr>
               </thead>
               <tbody>
-                {entries.map((entry) => (
+                {sortedEntries.map((entry) => (
                   <EntryRow
                     key={entry.id}
                     entry={entry}

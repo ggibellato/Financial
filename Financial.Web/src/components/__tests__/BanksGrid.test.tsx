@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import BanksGrid from '../BanksGrid'
 import type { BankTotal } from '../../hooks/useMonthly'
@@ -22,10 +22,10 @@ describe('BanksGrid', () => {
     expect(screen.getByText('51.30')).toBeInTheDocument()
   })
 
-  it('renders no expand control and no action buttons', () => {
+  it('renders no expand control and no row-level action buttons, only the three header sort buttons', () => {
     render(<BanksGrid bankTotals={BANK_TOTALS} bankTotalsSum={51.3} roundUpTotalsSum={0.6} />)
 
-    expect(screen.queryByRole('button')).not.toBeInTheDocument()
+    expect(screen.getAllByRole('button')).toHaveLength(3)
   })
 
   it('renders exactly three data columns in the header', () => {
@@ -35,5 +35,15 @@ describe('BanksGrid', () => {
     expect(screen.getByRole('columnheader', { name: 'Bank' })).toBeInTheDocument()
     expect(screen.getByRole('columnheader', { name: 'Bank Balance' })).toBeInTheDocument()
     expect(screen.getByRole('columnheader', { name: 'Round-Up' })).toBeInTheDocument()
+  })
+
+  it('sorts rows by Bank Balance ascending when its header is clicked', () => {
+    render(<BanksGrid bankTotals={BANK_TOTALS} bankTotalsSum={51.3} roundUpTotalsSum={0.6} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Bank Balance' }))
+
+    const dataRows = screen.getAllByRole('row').slice(1)
+    expect(within(dataRows[0]).getByText('Trading212')).toBeInTheDocument()
+    expect(within(dataRows[1]).getByText('Barclays')).toBeInTheDocument()
   })
 })

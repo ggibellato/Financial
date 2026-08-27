@@ -109,4 +109,24 @@ describe('IncomeSection', () => {
 
     expect(screen.queryByText('Income saved and split to reserve')).not.toBeInTheDocument()
   })
+
+  it('sorts rows by Net when the Net column header is clicked', () => {
+    render(<IncomeSection incomes={INCOMES} onEdit={vi.fn()} onDelete={vi.fn()} onNewIncome={vi.fn()} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Net' }))
+
+    const sourceCells = screen
+      .getAllByRole('row')
+      .slice(1)
+      .map((row) => row.querySelectorAll('td')[3].textContent)
+    expect(sourceCells).toEqual(['Lottery', 'Gleison'])
+
+    fireEvent.click(screen.getByRole('button', { name: 'Net' }))
+
+    const sourceCellsDescending = screen
+      .getAllByRole('row')
+      .slice(1)
+      .map((row) => row.querySelectorAll('td')[3].textContent)
+    expect(sourceCellsDescending).toEqual(['Gleison', 'Lottery'])
+  })
 })

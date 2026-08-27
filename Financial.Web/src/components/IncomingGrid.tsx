@@ -13,14 +13,26 @@ export default function IncomingGrid({ incomeTotals, totalIncoming, titheSummary
   return (
     <TotalsGrid
       columns={[
-        { key: 'source', header: 'Source', render: (i: IncomeTotal) => i.source },
+        {
+          key: 'source',
+          header: 'Source',
+          render: (i: IncomeTotal) => i.source,
+          sortAccessor: (i: IncomeTotal) => i.source,
+        },
         {
           key: 'gross',
           header: 'Gross',
           numeric: true,
           render: (i: IncomeTotal) => (i.grossValue != null ? formatN2(i.grossValue) : '—'),
+          sortAccessor: (i: IncomeTotal) => i.grossValue,
         },
-        { key: 'net', header: 'Net', numeric: true, render: (i: IncomeTotal) => formatN2(i.netValue) },
+        {
+          key: 'net',
+          header: 'Net',
+          numeric: true,
+          render: (i: IncomeTotal) => formatN2(i.netValue),
+          sortAccessor: (i: IncomeTotal) => i.netValue,
+        },
       ]}
       rows={incomeTotals}
       rowKey={(i) => i.source}

@@ -1,6 +1,8 @@
 import type { InvestmentSnapshotDto } from '../api/types'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
+import SortableColumnHeader from '../components/grid/SortableColumnHeader'
+import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { useInvestmentSnapshots } from '../hooks/useInvestmentSnapshots'
 import { formatN2 } from '../utils/formatters'
 import './InvestmentSnapshotsPage.css'
@@ -62,6 +64,12 @@ export default function InvestmentSnapshotsPage() {
 
   const isEditing = editingId !== null
 
+  const snapshotAccessors: Record<string, SortAccessor<InvestmentSnapshotDto>> = {
+    account: (snapshot) => snapshot.accountName,
+    value: (snapshot) => snapshot.value,
+  }
+  const { sortedRows: sortedSnapshots, sortState, requestSort } = useSortableRows(snapshots, snapshotAccessors)
+
   return (
     <div className="investment-snapshots-page">
       <div className="investment-snapshots-page__month-picker">
@@ -114,12 +122,23 @@ export default function InvestmentSnapshotsPage() {
               <thead>
                 <tr>
                   <th />
-                  <th>Account</th>
-                  <th className="data-table__col--numeric">Value</th>
+                  <SortableColumnHeader
+                    label="Account"
+                    columnKey="account"
+                    sortDirection={sortState?.columnKey === 'account' ? sortState.direction : undefined}
+                    onSort={requestSort}
+                  />
+                  <SortableColumnHeader
+                    label="Value"
+                    columnKey="value"
+                    numeric
+                    sortDirection={sortState?.columnKey === 'value' ? sortState.direction : undefined}
+                    onSort={requestSort}
+                  />
                 </tr>
               </thead>
               <tbody>
-                {snapshots.map((snapshot) => (
+                {sortedSnapshots.map((snapshot) => (
                   <SnapshotRow key={snapshot.id} snapshot={snapshot} onEdit={showEditForm} />
                 ))}
               </tbody>

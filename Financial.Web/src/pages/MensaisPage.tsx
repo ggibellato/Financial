@@ -2,6 +2,8 @@ import { DeleteRegular } from '@fluentui/react-icons'
 import type { RecurringBillDto } from '../api/types'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
+import SortableColumnHeader from '../components/grid/SortableColumnHeader'
+import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { useMensais } from '../hooks/useMensais'
 import { formatN2 } from '../utils/formatters'
 import './MensaisPage.css'
@@ -65,6 +67,17 @@ interface BillTableProps {
 }
 
 function BillTable({ bills, showBrasilFields, deletingBillId, onEdit, onDelete }: BillTableProps) {
+  const accessors: Record<string, SortAccessor<RecurringBillDto>> = {
+    dueDay: (bill) => bill.dueDay,
+    description: (bill) => bill.description,
+    note: (bill) => bill.note,
+    nit: (bill) => bill.nitNumber,
+    minWage: (bill) => bill.minimumWageValue,
+    value: (bill) => bill.value,
+    status: (bill) => bill.status,
+  }
+  const { sortedRows: sortedBills, sortState, requestSort } = useSortableRows(bills, accessors)
+
   return (
     <section className="mensais-page__section">
       <div className="mensais-page__table-scroll">
@@ -73,17 +86,58 @@ function BillTable({ bills, showBrasilFields, deletingBillId, onEdit, onDelete }
             <tr>
               <th />
               <th />
-              <th>Due Day</th>
-              <th>Description</th>
-              <th>Note</th>
-              {showBrasilFields && <th>NIT</th>}
-              {showBrasilFields && <th className="data-table__col--numeric">Min. Wage</th>}
-              <th className="data-table__col--numeric">Value</th>
-              <th>Status</th>
+              <SortableColumnHeader
+                label="Due Day"
+                columnKey="dueDay"
+                sortDirection={sortState?.columnKey === 'dueDay' ? sortState.direction : undefined}
+                onSort={requestSort}
+              />
+              <SortableColumnHeader
+                label="Description"
+                columnKey="description"
+                sortDirection={sortState?.columnKey === 'description' ? sortState.direction : undefined}
+                onSort={requestSort}
+              />
+              <SortableColumnHeader
+                label="Note"
+                columnKey="note"
+                sortDirection={sortState?.columnKey === 'note' ? sortState.direction : undefined}
+                onSort={requestSort}
+              />
+              {showBrasilFields && (
+                <SortableColumnHeader
+                  label="NIT"
+                  columnKey="nit"
+                  sortDirection={sortState?.columnKey === 'nit' ? sortState.direction : undefined}
+                  onSort={requestSort}
+                />
+              )}
+              {showBrasilFields && (
+                <SortableColumnHeader
+                  label="Min. Wage"
+                  columnKey="minWage"
+                  numeric
+                  sortDirection={sortState?.columnKey === 'minWage' ? sortState.direction : undefined}
+                  onSort={requestSort}
+                />
+              )}
+              <SortableColumnHeader
+                label="Value"
+                columnKey="value"
+                numeric
+                sortDirection={sortState?.columnKey === 'value' ? sortState.direction : undefined}
+                onSort={requestSort}
+              />
+              <SortableColumnHeader
+                label="Status"
+                columnKey="status"
+                sortDirection={sortState?.columnKey === 'status' ? sortState.direction : undefined}
+                onSort={requestSort}
+              />
             </tr>
           </thead>
           <tbody>
-            {bills.map((bill) => (
+            {sortedBills.map((bill) => (
               <BillRow
                 key={bill.id}
                 bill={bill}

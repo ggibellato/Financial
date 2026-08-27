@@ -241,4 +241,35 @@ describe('CardsGrid (merged with creditCards — Credit Card tab)', () => {
 
     expect(screen.getByText('Credit card was not found.')).toBeInTheDocument()
   })
+
+  it('sorts rows by clicking the Card column header, keeping the footer total fixed', () => {
+    render(<CardsGrid {...baseProps} />)
+
+    const rowsBefore = screen.getAllByRole('row').slice(1)
+    expect(rowsBefore.map((r) => r.textContent)).toEqual([
+      expect.stringContaining('BaAmex'),
+      expect.stringContaining('ChaseMaster4023'),
+      expect.stringContaining('PaypalCredit'),
+    ])
+
+    fireEvent.click(screen.getByRole('button', { name: 'Card' }))
+
+    const rowsAfterAsc = screen.getAllByRole('row').slice(1)
+    expect(rowsAfterAsc.map((r) => r.textContent)).toEqual([
+      expect.stringContaining('BaAmex'),
+      expect.stringContaining('ChaseMaster4023'),
+      expect.stringContaining('PaypalCredit'),
+    ])
+
+    fireEvent.click(screen.getByRole('button', { name: 'Card' }))
+
+    const rowsAfterDesc = screen.getAllByRole('row').slice(1)
+    expect(rowsAfterDesc.map((r) => r.textContent)).toEqual([
+      expect.stringContaining('PaypalCredit'),
+      expect.stringContaining('ChaseMaster4023'),
+      expect.stringContaining('BaAmex'),
+    ])
+
+    expect(screen.getByText(/Combined adjustment figure/)).toBeInTheDocument()
+  })
 })

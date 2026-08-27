@@ -494,4 +494,70 @@ describe('AnnualSummaryPage', () => {
 
     await waitFor(() => expect(screen.getByRole('cell', { name: 'Salary' })).toBeInTheDocument())
   })
+
+  it('sorts the Category Totals data rows by Annual Total, without moving the fixed Salary/Resultado/Total despesas rows', async () => {
+    getCategoryTotalsAnnualForYearMock.mockResolvedValue({
+      ...CATEGORY_TOTALS_ANNUAL,
+      categoryTotals: [
+        { category: 'Mercado', monthlyTotals: new Array(12).fill(155), annualTotal: 1860, average: 155 },
+        { category: 'Casa', monthlyTotals: new Array(12).fill(500), annualTotal: 6000, average: 500 },
+      ],
+    })
+    render(<AnnualSummaryPage />)
+
+    await waitFor(() => expect(screen.getByRole('cell', { name: 'Mercado' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'Annual Total' }))
+
+    const rowLabels = screen
+      .getAllByRole('row')
+      .map((row) => row.querySelector('td')?.textContent ?? '')
+      .filter((label) => label !== '')
+
+    expect(rowLabels).toEqual([
+      'Salary',
+      'Salary after taxes',
+      'Tax difference',
+      'Dividendo/Juros',
+      'Mercado',
+      'Casa',
+      'Resultado (R-D-Inv)',
+      'Total despesas',
+    ])
+  })
+
+  it('sorts the Investments accounts by a monthly column, without moving the fixed Total/Month Result rows', async () => {
+    render(<AnnualSummaryPage />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
+    await waitFor(() => expect(screen.getByRole('cell', { name: 'ChaseSave' })).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Jan' }))
+
+    const rows = screen.getAllByRole('row')
+    const dataRows = rows.slice(1, -2)
+    expect(within(dataRows[0]).getByText('PlatinumVisa8003 (-)')).toBeInTheDocument()
+    expect(within(dataRows[1]).getByText('ChaseSave')).toBeInTheDocument()
+
+    const lastTwoRows = rows.slice(-2)
+    expect(within(lastTwoRows[0]).getByRole('cell', { name: 'Total' })).toBeInTheDocument()
+    expect(within(lastTwoRows[1]).getByRole('cell', { name: 'Month Result' })).toBeInTheDocument()
+  })
+
+  it('sorts every row of the Historic Summary Average table alphabetically by Category when its header is clicked', async () => {
+    render(<AnnualSummaryPage />)
+
+    await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'Historic Summary Average' }))
+    await waitFor(() => expect(screen.getByRole('columnheader', { name: '2025' })).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Category' }))
+
+    const rowLabels = screen
+      .getAllByRole('row')
+      .slice(1)
+      .map((row) => row.querySelector('td')?.textContent ?? '')
+      .filter((label) => label !== '')
+
+    expect(rowLabels).toEqual([...rowLabels].sort((a, b) => a.localeCompare(b)))
+  })
 })

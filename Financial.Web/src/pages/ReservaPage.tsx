@@ -5,9 +5,17 @@ import ErrorState from '../components/ErrorState'
 import IncomeSplitForm from '../components/IncomeSplitForm'
 import LoadingState from '../components/LoadingState'
 import WithdrawalForm from '../components/WithdrawalForm'
+import SortableColumnHeader from '../components/grid/SortableColumnHeader'
+import { useSortableRows } from '../hooks/useSortableRows'
+import type { ReserveBucketBalanceDto } from '../api/types'
 import { LOCKED_MOVEMENT_MESSAGE, useReserva } from '../hooks/useReserva'
 import { formatN2, formatShortDate } from '../utils/formatters'
 import './ReservaPage.css'
+
+const BALANCE_ACCESSORS = {
+  bucket: (b: ReserveBucketBalanceDto) => b.bucketName,
+  balance: (b: ReserveBucketBalanceDto) => b.balance,
+}
 
 function BalanceColumns() {
   return (
@@ -80,6 +88,9 @@ export default function ReservaPage() {
     deleteMovementError,
     deleteMovement,
   } = useReserva()
+
+  const { sortedRows: sortedBalances, sortState: balanceSortState, requestSort: requestBalanceSort } =
+    useSortableRows(balances, BALANCE_ACCESSORS)
 
   // useReserva asks whether to proceed when the server rejects a withdrawal with 409; how to ask,
   // and in what words, is presentation and belongs here. This page already owned its other
@@ -165,12 +176,23 @@ export default function ReservaPage() {
                 <BalanceColumns />
                 <thead>
                   <tr>
-                    <th>Bucket</th>
-                    <th className="data-table__col--numeric">Balance</th>
+                    <SortableColumnHeader
+                      label="Bucket"
+                      columnKey="bucket"
+                      sortDirection={balanceSortState?.columnKey === 'bucket' ? balanceSortState.direction : undefined}
+                      onSort={requestBalanceSort}
+                    />
+                    <SortableColumnHeader
+                      label="Balance"
+                      columnKey="balance"
+                      numeric
+                      sortDirection={balanceSortState?.columnKey === 'balance' ? balanceSortState.direction : undefined}
+                      onSort={requestBalanceSort}
+                    />
                   </tr>
                 </thead>
                 <tbody>
-                  {balances.map((b) => (
+                  {sortedBalances.map((b) => (
                     <tr key={b.bucketId}>
                       <td>{b.bucketName}</td>
                       <td className="data-table__col--numeric">{formatN2(b.balance)}</td>

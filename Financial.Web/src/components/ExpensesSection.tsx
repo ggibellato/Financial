@@ -1,6 +1,8 @@
 import { Button, makeStyles, tokens } from '@fluentui/react-components'
 import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import type { ExpenseDto } from '../api/types'
+import SortableColumnHeader from './grid/SortableColumnHeader'
+import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { formatN2, formatShortDate } from '../utils/formatters'
 import './ExpensesSection.css'
 
@@ -57,8 +59,19 @@ interface ExpensesSectionProps {
   onNewExpense: () => void
 }
 
+const SORT_ACCESSORS: Record<string, SortAccessor<ExpenseDto>> = {
+  date: (expense) => new Date(expense.date),
+  description: (expense) => expense.description,
+  category: (expense) => expense.categoryName,
+  value: (expense) => expense.value,
+  paymentSource: (expense) => expense.paymentSourceBankName,
+  card: (expense) => expense.creditCardName,
+}
+
 export default function ExpensesSection({ expenses, onEdit, onDelete, onNewExpense }: ExpensesSectionProps) {
   const styles = useStyles()
+  const { sortedRows, sortState, requestSort } = useSortableRows(expenses, SORT_ACCESSORS)
+
   return (
     <section className="expenses-section">
       <div className={styles.header}>
@@ -72,16 +85,47 @@ export default function ExpensesSection({ expenses, onEdit, onDelete, onNewExpen
             <tr>
               <th />
               <th />
-              <th>Date</th>
-              <th>Description</th>
-              <th>Category</th>
-              <th className="data-table__col--numeric">Value</th>
-              <th>Payment Source</th>
-              <th>Card</th>
+              <SortableColumnHeader
+                label="Date"
+                columnKey="date"
+                sortDirection={sortState?.columnKey === 'date' ? sortState.direction : undefined}
+                onSort={requestSort}
+              />
+              <SortableColumnHeader
+                label="Description"
+                columnKey="description"
+                sortDirection={sortState?.columnKey === 'description' ? sortState.direction : undefined}
+                onSort={requestSort}
+              />
+              <SortableColumnHeader
+                label="Category"
+                columnKey="category"
+                sortDirection={sortState?.columnKey === 'category' ? sortState.direction : undefined}
+                onSort={requestSort}
+              />
+              <SortableColumnHeader
+                label="Value"
+                columnKey="value"
+                numeric
+                sortDirection={sortState?.columnKey === 'value' ? sortState.direction : undefined}
+                onSort={requestSort}
+              />
+              <SortableColumnHeader
+                label="Payment Source"
+                columnKey="paymentSource"
+                sortDirection={sortState?.columnKey === 'paymentSource' ? sortState.direction : undefined}
+                onSort={requestSort}
+              />
+              <SortableColumnHeader
+                label="Card"
+                columnKey="card"
+                sortDirection={sortState?.columnKey === 'card' ? sortState.direction : undefined}
+                onSort={requestSort}
+              />
             </tr>
           </thead>
           <tbody>
-            {expenses.map((expense) => (
+            {sortedRows.map((expense) => (
               <ExpenseRow key={expense.id} expense={expense} onEdit={onEdit} onDelete={onDelete} />
             ))}
           </tbody>

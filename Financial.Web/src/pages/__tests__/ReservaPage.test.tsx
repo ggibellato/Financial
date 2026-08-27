@@ -369,4 +369,26 @@ describe('ReservaPage', () => {
       expect(button).toBeEnabled()
     }
   })
+
+  it('sorts the Balances grid by Balance ascending when its header is clicked', async () => {
+    render(<ReservaPage />)
+
+    await waitFor(() => expect(screen.getAllByText('Ramsay').length).toBe(4))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Balance' }))
+
+    const balancesSection = screen.getByRole('columnheader', { name: 'Balance' }).closest('section') as HTMLElement
+    const balancesTable = within(balancesSection).getByRole('columnheader', { name: 'Bucket' }).closest('table') as HTMLElement
+    const dataRows = within(balancesTable).getAllByRole('row').slice(1)
+    expect(within(dataRows[0]).getByText('Ariana')).toBeInTheDocument()
+  })
+
+  it('keeps the Movements grid headers non-interactive — sorting is excluded for this grid', async () => {
+    render(<ReservaPage />)
+
+    await waitFor(() => expect(screen.getAllByText('Ramsay').length).toBe(4))
+
+    const dateHeader = screen.getByRole('columnheader', { name: 'Date' })
+    expect(within(dateHeader).queryByRole('button')).not.toBeInTheDocument()
+  })
 })
