@@ -560,4 +560,39 @@ describe('AnnualSummaryPage', () => {
 
     expect(rowLabels).toEqual([...rowLabels].sort((a, b) => a.localeCompare(b)))
   })
+
+  it('filters the Category Totals data rows by Category, without hiding the fixed Salary/Resultado/Total despesas rows', async () => {
+    getCategoryTotalsAnnualForYearMock.mockResolvedValue({
+      ...CATEGORY_TOTALS_ANNUAL,
+      categoryTotals: [
+        { category: 'Mercado', monthlyTotals: new Array(12).fill(155), annualTotal: 1860, average: 155 },
+        { category: 'Casa', monthlyTotals: new Array(12).fill(500), annualTotal: 6000, average: 500 },
+      ],
+    })
+    render(<AnnualSummaryPage />)
+
+    await waitFor(() => expect(screen.getByRole('cell', { name: 'Mercado' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'Filter by Category' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Casa' }))
+
+    expect(screen.queryByRole('cell', { name: 'Casa' })).not.toBeInTheDocument()
+    expect(screen.getByRole('cell', { name: 'Mercado' })).toBeInTheDocument()
+    expect(screen.getByRole('cell', { name: 'Salary' })).toBeInTheDocument()
+    expect(screen.getByRole('cell', { name: 'Resultado (R-D-Inv)' })).toBeInTheDocument()
+    expect(screen.getByRole('cell', { name: 'Total despesas' })).toBeInTheDocument()
+  })
+
+  it('filters the Historic Summary Average table by Category', async () => {
+    render(<AnnualSummaryPage />)
+
+    await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'Historic Summary Average' }))
+    await waitFor(() => expect(screen.getByRole('columnheader', { name: '2025' })).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filter by Category' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Mercado' }))
+
+    expect(screen.queryByRole('cell', { name: 'Mercado' })).not.toBeInTheDocument()
+    expect(screen.getByRole('cell', { name: 'Salary' })).toBeInTheDocument()
+  })
 })

@@ -209,14 +209,14 @@ graph TD
 - [ ] Annual Summary's spacer/emphasis rows and every grid's totals/footer row stay pinned in place regardless of the active sort
 
 ### F03. CashFlow Column Filtering — Web
-- [ ] A filter icon appears only in the header of Bank, Category, and Card columns on the grids listed in Section 6 under F03
-- [ ] Opening the filter menu shows every distinct value present in that column's data, each with a checkbox, all checked by default
-- [ ] Unchecking one or more values hides the corresponding rows and visibly marks the column's filter icon as active
-- [ ] Applying filters on two different columns of the same grid (e.g. Category and Card on Expenses) shows only rows matching both
-- [ ] A filter menu for a column with more than 10 distinct values includes a working search box that narrows the checklist
-- [ ] A filter combination that excludes every row shows an inline "no rows match" message instead of a blank grid
-- [ ] Clearing a column's filter (via "(All)" or a clear action) restores every row for that column
-- [ ] Reloading the page resets every filter to its default (all values checked)
+- [x] A filter icon appears only in the header of Bank, Category, and Card columns on the grids listed in Section 6 under F03
+- [x] Opening the filter menu shows every distinct value present in that column's data, each with a checkbox, all checked by default
+- [x] Unchecking one or more values hides the corresponding rows and visibly marks the column's filter icon as active
+- [x] Applying filters on two different columns of the same grid (e.g. Category and Card on Expenses) shows only rows matching both
+- [x] A filter menu for a column with more than 10 distinct values includes a working search box that narrows the checklist
+- [x] A filter combination that excludes every row shows an inline "no rows match" message instead of a blank grid
+- [x] Clearing a column's filter (via "(All)" or a clear action) restores every row for that column
+- [x] Reloading the page resets every filter to its default (all values checked)
 
 ### F04. CashFlow Column Filtering — WPF
 - [ ] All F03 acceptance criteria hold true for the WPF equivalents of each grid listed in Section 6 under F04
@@ -224,5 +224,5 @@ graph TD
 - [ ] Restarting the application resets every filter to its default (all values checked)
 
 ### Cross-Feature Integration
-- [ ] On a Web grid in scope for both F01 and F03 (e.g. Expenses), the Category/Card filter icon renders inside the same header cell as the sort control from F01, and clicking the sort area still sorts while clicking the filter icon still opens the filter menu, without either interaction interfering with the other
+- [x] On a Web grid in scope for both F01 and F03 (e.g. Expenses), the Category/Card filter icon renders inside the same header cell as the sort control from F01, and clicking the sort area still sorts while clicking the filter icon still opens the filter menu, without either interaction interfering with the other
 - [ ] On a WPF grid in scope for both F02 and F04 (e.g. Expense Section), the same coexistence holds: the filter menu from F04 is hosted in the sortable header cell provided by F02, and both interactions work independently

@@ -1,5 +1,10 @@
 .sortable-column-header {
   padding: 0;
+  position: relative;
+}
+
+.sortable-column-header:has(.column-filter-menu__trigger) .sortable-column-header__button {
+  padding-right: 28px;
 }
 
 .sortable-column-header__button {

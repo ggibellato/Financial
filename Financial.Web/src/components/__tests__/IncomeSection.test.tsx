@@ -129,4 +129,18 @@ describe('IncomeSection', () => {
       .map((row) => row.querySelectorAll('td')[3].textContent)
     expect(sourceCellsDescending).toEqual(['Gleison', 'Lottery'])
   })
+
+  it('filters rows by Bank via the header checklist, and shows the empty message when nothing matches', () => {
+    render(<IncomeSection incomes={INCOMES} onEdit={vi.fn()} onDelete={vi.fn()} onNewIncome={vi.fn()} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filter by Bank' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Chase' }))
+
+    expect(screen.queryByText('Lottery')).not.toBeInTheDocument()
+    expect(screen.getByText('Gleison')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Barclays' }))
+
+    expect(screen.getByText('No rows match the current filters')).toBeInTheDocument()
+  })
 })

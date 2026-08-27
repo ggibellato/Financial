@@ -22,10 +22,31 @@ describe('BanksGrid', () => {
     expect(screen.getByText('51.30')).toBeInTheDocument()
   })
 
-  it('renders no expand control and no row-level action buttons, only the three header sort buttons', () => {
+  it('renders no expand control and no row-level action buttons, only the sort and filter buttons', () => {
     render(<BanksGrid bankTotals={BANK_TOTALS} bankTotalsSum={51.3} roundUpTotalsSum={0.6} />)
 
-    expect(screen.getAllByRole('button')).toHaveLength(3)
+    // 3 header sort buttons (Bank, Bank Balance, Round-Up) + 1 filter button (Bank).
+    expect(screen.getAllByRole('button')).toHaveLength(4)
+  })
+
+  it('filters rows by Bank via the header checklist', () => {
+    render(<BanksGrid bankTotals={BANK_TOTALS} bankTotalsSum={51.3} roundUpTotalsSum={0.6} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filter by Bank' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Trading212' }))
+
+    expect(screen.queryByRole('cell', { name: 'Trading212' })).not.toBeInTheDocument()
+    expect(screen.getByRole('cell', { name: 'Barclays' })).toBeInTheDocument()
+  })
+
+  it('shows the "no rows match" message when every value is unchecked', () => {
+    render(<BanksGrid bankTotals={BANK_TOTALS} bankTotalsSum={51.3} roundUpTotalsSum={0.6} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filter by Bank' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Barclays' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Trading212' }))
+
+    expect(screen.getByText('No rows match the current filters')).toBeInTheDocument()
   })
 
   it('renders exactly three data columns in the header', () => {

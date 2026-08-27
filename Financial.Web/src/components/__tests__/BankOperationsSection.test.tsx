@@ -2,13 +2,7 @@ import { fireEvent, screen } from '@testing-library/react'
 import { render } from '../../test/renderWithFluent'
 import { describe, expect, it, vi } from 'vitest'
 import BankOperationsSection from '../BankOperationsSection'
-import type { BankDto } from '../../api/types'
-import { ALL_BANKS_FILTER, type BankOperationEntry } from '../../hooks/useBankOperations'
-
-const BANKS: BankDto[] = [
-  { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01' },
-  { id: 'bank-trading212', name: 'Trading212', roundUpEnabled: true, openingBalance: 0, openingBalanceDate: '2026-01-01' },
-]
+import type { BankOperationEntry } from '../../hooks/useBankOperations'
 
 const TRANSFER_ENTRY = {
   kind: 'transfer',
@@ -51,9 +45,6 @@ const ADJUSTMENT_ENTRY = {
 
 const baseProps = {
   operations: [] as BankOperationEntry[],
-  bankFilter: ALL_BANKS_FILTER,
-  banks: BANKS,
-  onBankFilterChange: vi.fn(),
   onNewTransfer: vi.fn(),
   onNewBalanceCorrection: vi.fn(),
   onEditTransfer: vi.fn(),
@@ -63,12 +54,18 @@ const baseProps = {
 }
 
 describe('BankOperationsSection', () => {
-  it('renders both entry-point buttons and the filter dropdown with All Banks default', () => {
+  it('renders both entry-point buttons', () => {
     render(<BankOperationsSection {...baseProps} />)
 
     expect(screen.getByRole('button', { name: 'New Transfer' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'New Balance Correction' })).toBeInTheDocument()
-    expect(screen.getByLabelText('Filter by Bank')).toHaveValue(ALL_BANKS_FILTER)
+  })
+
+  it('no longer renders the old select-based Bank filter', () => {
+    render(<BankOperationsSection {...baseProps} operations={[TRANSFER_ENTRY]} />)
+
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Filter by Bank' })).toBeInTheDocument()
   })
 
   it('calls onNewTransfer and onNewBalanceCorrection', () => {
@@ -83,15 +80,6 @@ describe('BankOperationsSection', () => {
 
     expect(onNewTransfer).toHaveBeenCalledOnce()
     expect(onNewBalanceCorrection).toHaveBeenCalledOnce()
-  })
-
-  it('calls onBankFilterChange with the selected bank', () => {
-    const onBankFilterChange = vi.fn()
-    render(<BankOperationsSection {...baseProps} onBankFilterChange={onBankFilterChange} />)
-
-    fireEvent.change(screen.getByLabelText('Filter by Bank'), { target: { value: 'Trading212' } })
-
-    expect(onBankFilterChange).toHaveBeenCalledWith('Trading212')
   })
 
   it('renders a row per operation with the correct columns', () => {
@@ -146,16 +134,10 @@ describe('BankOperationsSection', () => {
     expect(onDeleteAdjustment).toHaveBeenCalledWith('bank-barclays', 'a1')
   })
 
-  it('shows the unfiltered empty state message when there are no operations and no filter', () => {
-    render(<BankOperationsSection {...baseProps} operations={[]} bankFilter={ALL_BANKS_FILTER} />)
+  it('shows the empty state message when there are no operations at all', () => {
+    render(<BankOperationsSection {...baseProps} operations={[]} />)
 
     expect(screen.getByText('No transfers or balance corrections this month.')).toBeInTheDocument()
-  })
-
-  it('shows the filtered-by-bank empty state message when a bank filter is active', () => {
-    render(<BankOperationsSection {...baseProps} operations={[]} bankFilter="Barclays" />)
-
-    expect(screen.getByText('No transfers or balance corrections this month for Barclays.')).toBeInTheDocument()
   })
 
   it('sorts rows by Amount/Delta when the column header is clicked', () => {
@@ -176,5 +158,27 @@ describe('BankOperationsSection', () => {
       .slice(1)
       .map((row) => row.querySelectorAll('td')[3].textContent)
     expect(typeCellsDescending).toEqual(['Transfer', 'Adjustment'])
+  })
+
+  it('filters by Bank via the header checklist, matching a transfer by its other bank even when one is unchecked', () => {
+    render(<BankOperationsSection {...baseProps} operations={[TRANSFER_ENTRY, ADJUSTMENT_ENTRY]} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filter by Bank' }))
+    // Start all-checked; uncheck Barclays. The transfer (Barclays -> Trading212) stays visible
+    // because Trading212 is still checked (OR within the column); the Barclays-only adjustment
+    // is excluded.
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Barclays' }))
+
+    expect(screen.getByText('Transfer').closest('tr')).toBeInTheDocument()
+    expect(screen.queryByText('Adjustment')).not.toBeInTheDocument()
+  })
+
+  it('shows the "no rows match" message when the Bank filter excludes every operation', () => {
+    render(<BankOperationsSection {...baseProps} operations={[ADJUSTMENT_ENTRY]} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filter by Bank' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Barclays' }))
+
+    expect(screen.getByText('No rows match the current filters')).toBeInTheDocument()
   })
 })

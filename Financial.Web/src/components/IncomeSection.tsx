@@ -2,7 +2,9 @@ import { Button, MessageBar, MessageBarBody, makeStyles, tokens } from '@fluentu
 import { AddRegular, DeleteRegular } from '@fluentui/react-icons'
 import type { IncomeDto } from '../api/types'
 import SortableColumnHeader from './grid/SortableColumnHeader'
+import ColumnFilterMenu from './grid/ColumnFilterMenu'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
+import { useColumnFilters } from '../hooks/useColumnFilters'
 import { formatN2, formatShortDate } from '../utils/formatters'
 import './IncomeSection.css'
 
@@ -73,6 +75,10 @@ const SORT_ACCESSORS: Record<string, SortAccessor<IncomeDto>> = {
   description: (income) => income.description,
 }
 
+const FILTER_ACCESSORS = {
+  bank: (income: IncomeDto) => income.bankName,
+}
+
 export default function IncomeSection({
   incomes,
   onEdit,
@@ -81,7 +87,9 @@ export default function IncomeSection({
   splitConfirmationMessage,
 }: IncomeSectionProps) {
   const styles = useStyles()
-  const { sortedRows, sortState, requestSort } = useSortableRows(incomes, SORT_ACCESSORS)
+  const { filteredRows, availableValues, selectedValues, toggleValue, toggleAll, isColumnFiltered } =
+    useColumnFilters(incomes, FILTER_ACCESSORS)
+  const { sortedRows, sortState, requestSort } = useSortableRows(filteredRows, SORT_ACCESSORS)
 
   return (
     <section className="income-section">
@@ -132,7 +140,17 @@ export default function IncomeSection({
                 columnKey="bank"
                 sortDirection={sortState?.columnKey === 'bank' ? sortState.direction : undefined}
                 onSort={requestSort}
-              />
+              >
+                <ColumnFilterMenu
+                  columnKey="bank"
+                  label="Bank"
+                  availableValues={availableValues.bank}
+                  selectedValues={selectedValues.bank}
+                  onToggleValue={toggleValue}
+                  onToggleAll={toggleAll}
+                  isFiltered={isColumnFiltered('bank')}
+                />
+              </SortableColumnHeader>
               <SortableColumnHeader
                 label="Description"
                 columnKey="description"
@@ -142,9 +160,15 @@ export default function IncomeSection({
             </tr>
           </thead>
           <tbody>
-            {sortedRows.map((income) => (
-              <IncomeRow key={income.id} income={income} onEdit={onEdit} onDelete={onDelete} />
-            ))}
+            {sortedRows.length === 0 && isColumnFiltered('bank') ? (
+              <tr>
+                <td colSpan={8}>No rows match the current filters</td>
+              </tr>
+            ) : (
+              sortedRows.map((income) => (
+                <IncomeRow key={income.id} income={income} onEdit={onEdit} onDelete={onDelete} />
+              ))
+            )}
           </tbody>
         </table>
       </div>

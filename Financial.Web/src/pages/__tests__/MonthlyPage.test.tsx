@@ -687,8 +687,9 @@ describe('MonthlyPage', () => {
     expect(banksSection.getByRole('cell', { name: 'Barclays' })).toBeInTheDocument()
     expect(banksSection.getByRole('cell', { name: 'Trading212' })).toBeInTheDocument()
     expect(banksSection.getByRole('cell', { name: 'Chase' })).toBeInTheDocument()
-    // Only the 3 column-sort header buttons (Bank, Bank Balance, Round-Up) — no expand/edit/delete controls.
-    expect(banksSection.getAllByRole('button')).toHaveLength(3)
+    // The 3 column-sort header buttons (Bank, Bank Balance, Round-Up) plus the Bank column's
+    // filter button — no expand/edit/delete controls.
+    expect(banksSection.getAllByRole('button')).toHaveLength(4)
 
     // The single expense (42.50) is on Barclays with no round-up amount, so its balance
     // is unchanged and every round-up figure (per-bank and the footer) is zero.
@@ -1364,9 +1365,14 @@ describe('MonthlyPage', () => {
     const transfersCallsBefore = getTransfersByMonthMock.mock.calls.length
     const adjustmentsCallsBefore = getAdjustmentsByBankMock.mock.calls.length
 
-    fireEvent.change(screen.getByLabelText('Filter by Bank'), { target: { value: 'Chase' } })
+    // The Bank tab renders both BanksGrid and BankOperationsSection, each with its own "Bank"
+    // column filter — scope to the operations table (identified by its Amount/Delta header).
+    const operationsSection = screen.getByRole('columnheader', { name: 'Amount/Delta' }).closest('section') as HTMLElement
+    fireEvent.click(within(operationsSection).getByRole('button', { name: 'Filter by Bank' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Barclays' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Trading212' }))
 
-    expect(screen.getByText('No transfers or balance corrections this month for Chase.')).toBeInTheDocument()
+    expect(screen.getByText('No rows match the current filters')).toBeInTheDocument()
     expect(getTransfersByMonthMock.mock.calls.length).toBe(transfersCallsBefore)
     expect(getAdjustmentsByBankMock.mock.calls.length).toBe(adjustmentsCallsBefore)
   })

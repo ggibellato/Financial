@@ -1,0 +1,31 @@
+.column-filter-menu__trigger {
+  position: absolute;
+  top: 50%;
+  right: 2px;
+  transform: translateY(-50%);
+  z-index: 1;
+  min-width: auto;
+}
+
+.column-filter-menu__trigger--active {
+  color: var(--accent, #0f6cbd);
+}
+
+.column-filter-menu__surface {
+  padding: 8px;
+  min-width: 180px;
+  max-width: 260px;
+}
+
+.column-filter-menu__search {
+  margin-bottom: 8px;
+  width: 100%;
+}
+
+.column-filter-menu__list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 240px;
+  overflow-y: auto;
+}

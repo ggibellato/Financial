@@ -1,6 +1,8 @@
 import type { BankDto, CardStatementDto, CreditCardDto, UpdateCreditCardDto } from '../api/types'
 import SortableColumnHeader from './grid/SortableColumnHeader'
+import ColumnFilterMenu from './grid/ColumnFilterMenu'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
+import { useColumnFilters } from '../hooks/useColumnFilters'
 import { formatN2 } from '../utils/formatters'
 
 interface CardsGridProps {
@@ -74,6 +76,9 @@ export default function CardsGrid({
   const showCardManagementColumns = creditCards !== undefined
   const rows = buildRows(cardStatements, creditCards)
 
+  const { filteredRows, availableValues, selectedValues, toggleValue, toggleAll, isColumnFiltered } =
+    useColumnFilters(rows, { card: (row: CardRow) => row.creditCardName })
+
   const accessors: Record<string, SortAccessor<CardRow>> = {
     card: (row) => row.creditCardName,
     outstanding: (row) => row.statement?.outstandingTotal,
@@ -81,7 +86,7 @@ export default function CardsGrid({
     nextInvoiceDueDate: (row) => (row.nextInvoiceDueDate ? new Date(row.nextInvoiceDueDate) : undefined),
     active: (row) => (row.isActive ? 1 : 0),
   }
-  const { sortedRows, sortState, requestSort } = useSortableRows(rows, accessors)
+  const { sortedRows, sortState, requestSort } = useSortableRows(filteredRows, accessors)
 
   return (
     <section className="monthly-page__section monthly-page__section--grid">
@@ -104,7 +109,17 @@ export default function CardsGrid({
                 columnKey="card"
                 sortDirection={sortState?.columnKey === 'card' ? sortState.direction : undefined}
                 onSort={requestSort}
-              />
+              >
+                <ColumnFilterMenu
+                  columnKey="card"
+                  label="Card"
+                  availableValues={availableValues.card}
+                  selectedValues={selectedValues.card}
+                  onToggleValue={toggleValue}
+                  onToggleAll={toggleAll}
+                  isFiltered={isColumnFiltered('card')}
+                />
+              </SortableColumnHeader>
               <SortableColumnHeader
                 label="Outstanding"
                 columnKey="outstanding"
@@ -138,6 +153,11 @@ export default function CardsGrid({
             </tr>
           </thead>
           <tbody>
+            {sortedRows.length === 0 && isColumnFiltered('card') && (
+              <tr>
+                <td colSpan={showCardManagementColumns ? 6 : 4}>No rows match the current filters</td>
+              </tr>
+            )}
             {sortedRows.map((row) => (
               <tr key={row.key}>
                 <td>{row.creditCardName}</td>

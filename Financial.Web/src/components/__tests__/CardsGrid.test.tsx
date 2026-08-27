@@ -272,4 +272,16 @@ describe('CardsGrid (merged with creditCards — Credit Card tab)', () => {
 
     expect(screen.getByText(/Combined adjustment figure/)).toBeInTheDocument()
   })
+
+  it('filters rows by Card via the header checklist', () => {
+    render(<CardsGrid {...baseProps} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filter by Card' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'ChaseMaster4023' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'PaypalCredit' }))
+
+    expect(screen.queryByRole('cell', { name: 'ChaseMaster4023' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('cell', { name: 'PaypalCredit' })).not.toBeInTheDocument()
+    expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument()
+  })
 })

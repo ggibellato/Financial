@@ -8,6 +8,7 @@ interface TotalsGridColumn<T> {
   numeric?: boolean
   render: (row: T) => ReactNode
   sortAccessor: SortAccessor<T>
+  filterSlot?: ReactNode
 }
 
 interface TotalsGridFooterItem {
@@ -20,9 +21,11 @@ interface TotalsGridProps<T> {
   rows: T[]
   rowKey: (row: T) => string
   footerItems: TotalsGridFooterItem[]
+  /** True when `rows` has already been narrowed by an active column filter (used only to pick the empty-state message). */
+  isFiltered?: boolean
 }
 
-export default function TotalsGrid<T>({ columns, rows, rowKey, footerItems }: TotalsGridProps<T>) {
+export default function TotalsGrid<T>({ columns, rows, rowKey, footerItems, isFiltered }: TotalsGridProps<T>) {
   const accessors = Object.fromEntries(columns.map((col) => [col.key, col.sortAccessor]))
   const { sortedRows, sortState, requestSort } = useSortableRows(rows, accessors)
 
@@ -40,20 +43,28 @@ export default function TotalsGrid<T>({ columns, rows, rowKey, footerItems }: To
                   numeric={col.numeric}
                   sortDirection={sortState?.columnKey === col.key ? sortState.direction : undefined}
                   onSort={requestSort}
-                />
+                >
+                  {col.filterSlot}
+                </SortableColumnHeader>
               ))}
             </tr>
           </thead>
           <tbody>
-            {sortedRows.map((row) => (
-              <tr key={rowKey(row)}>
-                {columns.map((col) => (
-                  <td key={col.key} className={col.numeric ? 'data-table__col--numeric' : undefined}>
-                    {col.render(row)}
-                  </td>
-                ))}
+            {rows.length === 0 && isFiltered ? (
+              <tr>
+                <td colSpan={columns.length}>No rows match the current filters</td>
               </tr>
-            ))}
+            ) : (
+              sortedRows.map((row) => (
+                <tr key={rowKey(row)}>
+                  {columns.map((col) => (
+                    <td key={col.key} className={col.numeric ? 'data-table__col--numeric' : undefined}>
+                      {col.render(row)}
+                    </td>
+                  ))}
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

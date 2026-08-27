@@ -2,7 +2,9 @@ import { Fragment, useState, type ReactNode } from 'react'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
 import SortableColumnHeader from '../components/grid/SortableColumnHeader'
+import ColumnFilterMenu from '../components/grid/ColumnFilterMenu'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
+import { useColumnFilters } from '../hooks/useColumnFilters'
 import { useAnnualSummary } from '../hooks/useAnnualSummary'
 import type { CategoryAnnualAverageDto, CategoryAnnualTotalDto, InvestmentAnnualResultDto } from '../api/types'
 import { formatN2 } from '../utils/formatters'
@@ -106,13 +108,22 @@ export default function AnnualSummaryPage() {
   const HISTORIC_SUMMARY_AVERAGE_EMPHASIZED = new Set(['Resultado (R-D-Inv)', 'Total despesas'])
 
   // Only the homogeneous data rows (category totals / accounts / historic categories) are
-  // sortable; the fixed income-summary lines, spacer rows, and emphasized total rows on the
-  // Category Totals and Investments tabs render outside these arrays and stay pinned in place.
+  // sortable/filterable; the fixed income-summary lines, spacer rows, and emphasized total rows
+  // on the Category Totals and Investments tabs render outside these arrays and stay pinned in
+  // place regardless of sort or filter state.
+  const {
+    filteredRows: filteredCategoryTotals,
+    availableValues: categoryTotalsAvailableValues,
+    selectedValues: categoryTotalsSelectedValues,
+    toggleValue: toggleCategoryTotalsValue,
+    toggleAll: toggleCategoryTotalsAll,
+    isColumnFiltered: isCategoryTotalsColumnFiltered,
+  } = useColumnFilters(categoryTotals, { category: (c: CategoryAnnualTotalDto) => c.category })
   const {
     sortedRows: sortedCategoryTotals,
     sortState: categoryTotalsSortState,
     requestSort: requestCategoryTotalsSort,
-  } = useSortableRows<CategoryAnnualTotalDto>(categoryTotals, {
+  } = useSortableRows<CategoryAnnualTotalDto>(filteredCategoryTotals, {
     category: (c) => c.category,
     average: (c) => c.average,
     annualTotal: (c) => c.annualTotal,
@@ -131,10 +142,18 @@ export default function AnnualSummaryPage() {
 
   const historicCategoryRows = historicSummaryAverage[0]?.annualAverages ?? []
   const {
+    filteredRows: filteredHistoricCategoryRows,
+    availableValues: historicAvailableValues,
+    selectedValues: historicSelectedValues,
+    toggleValue: toggleHistoricValue,
+    toggleAll: toggleHistoricAll,
+    isColumnFiltered: isHistoricColumnFiltered,
+  } = useColumnFilters(historicCategoryRows, { category: (row: HistoricCategoryRow) => row.category })
+  const {
     sortedRows: sortedHistoricCategoryRows,
     sortState: historicSortState,
     requestSort: requestHistoricSort,
-  } = useSortableRows<HistoricCategoryRow>(historicCategoryRows, {
+  } = useSortableRows<HistoricCategoryRow>(filteredHistoricCategoryRows, {
     category: (row) => row.category,
     ...Object.fromEntries(
       historicSummaryAverage.map((y) => [
@@ -185,7 +204,17 @@ export default function AnnualSummaryPage() {
                       columnKey="category"
                       sortDirection={categoryTotalsSortState?.columnKey === 'category' ? categoryTotalsSortState.direction : undefined}
                       onSort={requestCategoryTotalsSort}
-                    />
+                    >
+                      <ColumnFilterMenu
+                        columnKey="category"
+                        label="Category"
+                        availableValues={categoryTotalsAvailableValues.category}
+                        selectedValues={categoryTotalsSelectedValues.category}
+                        onToggleValue={toggleCategoryTotalsValue}
+                        onToggleAll={toggleCategoryTotalsAll}
+                        isFiltered={isCategoryTotalsColumnFiltered('category')}
+                      />
+                    </SortableColumnHeader>
                     {MONTH_LABELS.map((m, i) => (
                       <SortableColumnHeader
                         key={m}
@@ -253,15 +282,21 @@ export default function AnnualSummaryPage() {
                     <td colSpan={SPACER_COL_SPAN} />
                   </tr>
 
-                  {sortedCategoryTotals.map((c) => (
-                    <AnnualSummaryRow
-                      key={c.category}
-                      label={c.category}
-                      monthlyValues={c.monthlyTotals}
-                      average={c.average}
-                      annualTotal={c.annualTotal}
-                    />
-                  ))}
+                  {sortedCategoryTotals.length === 0 && isCategoryTotalsColumnFiltered('category') ? (
+                    <tr>
+                      <td colSpan={SPACER_COL_SPAN}>No rows match the current filters</td>
+                    </tr>
+                  ) : (
+                    sortedCategoryTotals.map((c) => (
+                      <AnnualSummaryRow
+                        key={c.category}
+                        label={c.category}
+                        monthlyValues={c.monthlyTotals}
+                        average={c.average}
+                        annualTotal={c.annualTotal}
+                      />
+                    ))
+                  )}
 
                   <tr>
                     <td colSpan={SPACER_COL_SPAN} />
@@ -357,7 +392,17 @@ export default function AnnualSummaryPage() {
                       columnKey="category"
                       sortDirection={historicSortState?.columnKey === 'category' ? historicSortState.direction : undefined}
                       onSort={requestHistoricSort}
-                    />
+                    >
+                      <ColumnFilterMenu
+                        columnKey="category"
+                        label="Category"
+                        availableValues={historicAvailableValues.category}
+                        selectedValues={historicSelectedValues.category}
+                        onToggleValue={toggleHistoricValue}
+                        onToggleAll={toggleHistoricAll}
+                        isFiltered={isHistoricColumnFiltered('category')}
+                      />
+                    </SortableColumnHeader>
                     {historicSummaryAverage && (
                       historicSummaryAverage.map((y) => (
                         <SortableColumnHeader
@@ -375,26 +420,34 @@ export default function AnnualSummaryPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {historicSummaryAverage && sortedHistoricCategoryRows.map((a) => {
-                    const isEmphasized = HISTORIC_SUMMARY_AVERAGE_EMPHASIZED.has(a.category)
-                    return (
-                      <Fragment key={a.category}>
-                        <tr className={isEmphasized ? 'annual-summary-page__emphasized-row' : undefined}>
-                          <td>{optionalEmphasize(a.category, isEmphasized)}</td>
-                          {historicSummaryAverage.map((y) => (
-                            <td key={y.year} className="data-table__col--numeric">
-                              {optionalEmphasize(formatN2(y.annualAverages.find((d) => d.category === a.category)?.value ?? 0), 
-                                isEmphasized)}
-                            </td>
-                          ))}
-                        </tr>
-                        {HISTORIC_SUMMARY_AVERAGE_SPACER_AFTER.has(a.category) && (
-                          <tr>
-                            <td colSpan={historicSummaryAverage.length + 1} />
+                  {historicSummaryAverage && sortedHistoricCategoryRows.length === 0 && isHistoricColumnFiltered('category') ? (
+                    <tr>
+                      <td colSpan={historicSummaryAverage.length + 1}>No rows match the current filters</td>
+                    </tr>
+                  ) : (
+                    historicSummaryAverage &&
+                    sortedHistoricCategoryRows.map((a) => {
+                      const isEmphasized = HISTORIC_SUMMARY_AVERAGE_EMPHASIZED.has(a.category)
+                      return (
+                        <Fragment key={a.category}>
+                          <tr className={isEmphasized ? 'annual-summary-page__emphasized-row' : undefined}>
+                            <td>{optionalEmphasize(a.category, isEmphasized)}</td>
+                            {historicSummaryAverage.map((y) => (
+                              <td key={y.year} className="data-table__col--numeric">
+                                {optionalEmphasize(formatN2(y.annualAverages.find((d) => d.category === a.category)?.value ?? 0),
+                                  isEmphasized)}
+                              </td>
+                            ))}
                           </tr>
-                        )}
-                      </Fragment>
-                  )})}
+                          {HISTORIC_SUMMARY_AVERAGE_SPACER_AFTER.has(a.category) && (
+                            <tr>
+                              <td colSpan={historicSummaryAverage.length + 1} />
+                            </tr>
+                          )}
+                        </Fragment>
+                      )
+                    })
+                  )}
                 </tbody>
               </table>  
             </section>

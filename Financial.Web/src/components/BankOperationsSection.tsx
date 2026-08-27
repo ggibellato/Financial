@@ -1,9 +1,11 @@
 import { Button } from '@fluentui/react-components'
 import { AddRegular, DeleteRegular } from '@fluentui/react-icons'
-import type { BalanceAdjustmentDto, BankDto, TransferDto } from '../api/types'
-import { ALL_BANKS_FILTER, type BankOperationEntry } from '../hooks/useBankOperations'
+import type { BalanceAdjustmentDto, TransferDto } from '../api/types'
+import type { BankOperationEntry } from '../hooks/useBankOperations'
 import SortableColumnHeader from './grid/SortableColumnHeader'
+import ColumnFilterMenu from './grid/ColumnFilterMenu'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
+import { useColumnFilters } from '../hooks/useColumnFilters'
 import { formatN2, formatShortDate } from '../utils/formatters'
 import './BankOperationsSection.css'
 
@@ -57,17 +59,13 @@ const SORT_ACCESSORS: Record<string, SortAccessor<BankOperationEntry>> = {
   note: (entry) => entry.note,
 }
 
-function emptyStateMessage(bankFilter: string): string {
-  return bankFilter === ALL_BANKS_FILTER
-    ? 'No transfers or balance corrections this month.'
-    : `No transfers or balance corrections this month for ${bankFilter}.`
+const FILTER_ACCESSORS = {
+  bank: (entry: BankOperationEntry) =>
+    entry.kind === 'transfer' ? [entry.sourceBank, entry.destinationBank] : [entry.bank],
 }
 
 interface BankOperationsSectionProps {
   operations: BankOperationEntry[]
-  bankFilter: string
-  banks: BankDto[]
-  onBankFilterChange: (bankFilter: string) => void
   onNewTransfer: () => void
   onNewBalanceCorrection: () => void
   onEditTransfer: (transfer: TransferDto) => void
@@ -78,9 +76,6 @@ interface BankOperationsSectionProps {
 
 export default function BankOperationsSection({
   operations,
-  bankFilter,
-  banks,
-  onBankFilterChange,
   onNewTransfer,
   onNewBalanceCorrection,
   onEditTransfer,
@@ -88,7 +83,9 @@ export default function BankOperationsSection({
   onDeleteTransfer,
   onDeleteAdjustment,
 }: BankOperationsSectionProps) {
-  const { sortedRows, sortState, requestSort } = useSortableRows(operations, SORT_ACCESSORS)
+  const { filteredRows, availableValues, selectedValues, toggleValue, toggleAll, isColumnFiltered } =
+    useColumnFilters(operations, FILTER_ACCESSORS)
+  const { sortedRows, sortState, requestSort } = useSortableRows(filteredRows, SORT_ACCESSORS)
 
   return (
     <section className="bank-operations-section">
@@ -101,25 +98,10 @@ export default function BankOperationsSection({
             New Balance Correction
           </Button>
         </div>
-        <div className="bank-operations-section__filter">
-          <label htmlFor="bank-operations-filter">Filter by Bank</label>
-          <select
-            id="bank-operations-filter"
-            value={bankFilter}
-            onChange={(e) => onBankFilterChange(e.target.value)}
-          >
-            <option value={ALL_BANKS_FILTER}>{ALL_BANKS_FILTER}</option>
-            {banks.map((b) => (
-              <option key={b.name} value={b.name}>
-                {b.name}
-              </option>
-            ))}
-          </select>
-        </div>
       </div>
 
       {operations.length === 0 ? (
-        <p className="bank-operations-section__empty">{emptyStateMessage(bankFilter)}</p>
+        <p className="bank-operations-section__empty">No transfers or balance corrections this month.</p>
       ) : (
         <div className="bank-operations-section__table-wrapper">
           <table className="bank-operations-section__table data-table">
@@ -144,7 +126,17 @@ export default function BankOperationsSection({
                   columnKey="bank"
                   sortDirection={sortState?.columnKey === 'bank' ? sortState.direction : undefined}
                   onSort={requestSort}
-                />
+                >
+                  <ColumnFilterMenu
+                    columnKey="bank"
+                    label="Bank"
+                    availableValues={availableValues.bank}
+                    selectedValues={selectedValues.bank}
+                    onToggleValue={toggleValue}
+                    onToggleAll={toggleAll}
+                    isFiltered={isColumnFiltered('bank')}
+                  />
+                </SortableColumnHeader>
                 <SortableColumnHeader
                   label="Amount/Delta"
                   columnKey="amount"
@@ -161,16 +153,22 @@ export default function BankOperationsSection({
               </tr>
             </thead>
             <tbody>
-              {sortedRows.map((entry) => (
-                <OperationRow
-                  key={`${entry.kind}-${entry.id}`}
-                  entry={entry}
-                  onEditTransfer={onEditTransfer}
-                  onEditAdjustment={onEditAdjustment}
-                  onDeleteTransfer={onDeleteTransfer}
-                  onDeleteAdjustment={onDeleteAdjustment}
-                />
-              ))}
+              {sortedRows.length === 0 ? (
+                <tr>
+                  <td colSpan={7}>No rows match the current filters</td>
+                </tr>
+              ) : (
+                sortedRows.map((entry) => (
+                  <OperationRow
+                    key={`${entry.kind}-${entry.id}`}
+                    entry={entry}
+                    onEditTransfer={onEditTransfer}
+                    onEditAdjustment={onEditAdjustment}
+                    onDeleteTransfer={onDeleteTransfer}
+                    onDeleteAdjustment={onDeleteAdjustment}
+                  />
+                ))
+              )}
             </tbody>
           </table>
         </div>

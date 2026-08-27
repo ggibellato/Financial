@@ -1,4 +1,4 @@
-import { fireEvent, screen } from '@testing-library/react'
+import { fireEvent, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { render } from '../../test/renderWithFluent'
 import ExpensesSection from '../ExpensesSection'
@@ -107,5 +107,41 @@ describe('ExpensesSection', () => {
       .slice(1)
       .map((row) => row.querySelectorAll('td')[3].textContent)
     expect(descriptionCellsDescending).toEqual(['Lidl UK', 'Amazon'])
+  })
+
+  it('filters rows by Category via the header checklist', () => {
+    render(<ExpensesSection expenses={EXPENSES} onEdit={vi.fn()} onDelete={vi.fn()} onNewExpense={vi.fn()} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filter by Category' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Extras' }))
+
+    expect(screen.queryByText('Amazon')).not.toBeInTheDocument()
+    expect(screen.getByText('Lidl UK')).toBeInTheDocument()
+  })
+
+  it('combines Category and Card filters with AND', () => {
+    render(<ExpensesSection expenses={EXPENSES} onEdit={vi.fn()} onDelete={vi.fn()} onNewExpense={vi.fn()} />)
+
+    // Keep only Mercado (excludes Amazon) and only BarclaysPlatinumVisa8003 (excludes Lidl UK,
+    // whose card is null) — the two filters combined should leave zero rows.
+    fireEvent.click(screen.getByRole('button', { name: 'Filter by Category' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Extras' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Filter by Card' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'BarclaysPlatinumVisa8003' }))
+
+    expect(screen.getByText('No rows match the current filters')).toBeInTheDocument()
+  })
+
+  it('the Category filter icon and the Category sort control coexist in the same header cell without interfering', () => {
+    render(<ExpensesSection expenses={EXPENSES} onEdit={vi.fn()} onDelete={vi.fn()} onNewExpense={vi.fn()} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Value' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Filter by Category' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Extras' }))
+
+    // Sort (by Value, ascending) still applied, and the filter (excluding Amazon/Extras) still applied.
+    expect(screen.queryByText('Amazon')).not.toBeInTheDocument()
+    const dataRows = screen.getAllByRole('row').slice(1)
+    expect(within(dataRows[0]).getByText('Lidl UK')).toBeInTheDocument()
   })
 })
