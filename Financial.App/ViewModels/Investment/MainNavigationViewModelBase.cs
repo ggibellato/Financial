@@ -2,7 +2,7 @@ using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.Entities;
-using Financial.Presentation.App.Views.Investment;
+using Financial.Presentation.App.Services;
 using Financial.Investment.Domain.Exceptions;
 using System.Collections.ObjectModel;
 
@@ -17,6 +17,7 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
     private readonly IPortfolioAssetSummaryService _portfolioAssetSummaryService;
     private readonly IAssetMoveService _assetMoveService;
     private readonly IPortfolioService _portfolioService;
+    private readonly IDialogService _dialogService;
     private readonly InvestmentScope _scope;
     private TreeNodeViewModel? _selectedNode;
     private TreeNodeViewModel? _highlightedDropTarget;
@@ -67,7 +68,8 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
         TAssetDetailsViewModel assetDetails,
         InvestmentScope scope,
         IAssetMoveService assetMoveService,
-        IPortfolioService portfolioService)
+        IPortfolioService portfolioService,
+        IDialogService dialogService)
     {
         _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
         _creditQueryService = creditQueryService ?? throw new ArgumentNullException(nameof(creditQueryService));
@@ -76,6 +78,7 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
         AssetDetails = assetDetails ?? throw new ArgumentNullException(nameof(assetDetails));
         _assetMoveService = assetMoveService ?? throw new ArgumentNullException(nameof(assetMoveService));
         _portfolioService = portfolioService ?? throw new ArgumentNullException(nameof(portfolioService));
+        _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
         _scope = scope;
         MoveAssetCommand = new RelayCommand(async () => await MoveSelectedAssetAsync(), CanMoveSelectedAsset);
         DeletePortfolioCommand = new RelayCommand(async () => await DeleteSelectedPortfolioAsync(), CanDeleteSelectedPortfolio);
@@ -348,27 +351,19 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
 
     /// <summary>Seam for tests, which have no message pump to show a modal on.</summary>
     protected virtual bool ConfirmDeleteEmptiedPortfolio(string portfolioName) =>
-        System.Windows.MessageBox.Show(
-            $"\"{portfolioName}\" is now empty. Delete it?",
-            "Move Asset",
-            System.Windows.MessageBoxButton.YesNo,
-            System.Windows.MessageBoxImage.Question) == System.Windows.MessageBoxResult.Yes;
+        _dialogService.Confirm($"\"{portfolioName}\" is now empty. Delete it?", "Move Asset");
 
     /// <summary>Seam for tests, for the same reason.</summary>
     protected virtual bool ConfirmDeletePortfolio(string portfolioName) =>
-        System.Windows.MessageBox.Show(
-            $"Delete the empty portfolio \"{portfolioName}\"?",
-            "Delete Portfolio",
-            System.Windows.MessageBoxButton.YesNo,
-            System.Windows.MessageBoxImage.Question) == System.Windows.MessageBoxResult.Yes;
+        _dialogService.Confirm($"Delete the empty portfolio \"{portfolioName}\"?", "Delete Portfolio");
 
     /// <summary>Seam for tests, which have no message pump to show a modal on.</summary>
     protected virtual bool ShowMoveAssetDialog(MoveAssetDialogViewModel viewModel) =>
-        new MoveAssetDialog(viewModel) { Owner = System.Windows.Application.Current?.MainWindow }.ShowDialog() == true;
+        _dialogService.ShowMoveAssetDialog(viewModel);
 
     /// <summary>Seam for tests, for the same reason.</summary>
     protected virtual void ShowMoveFailed(string message) =>
-        System.Windows.MessageBox.Show(message, "Move Asset", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+        _dialogService.ShowWarning(message, "Move Asset");
 
     private bool CanMoveSelectedAsset() =>
         SelectedNode?.NodeType == TreeNodeType.Asset && SelectedNode.Parent?.Parent is not null;

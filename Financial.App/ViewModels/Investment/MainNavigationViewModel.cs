@@ -1,5 +1,6 @@
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
+using Financial.Presentation.App.Services;
 
 namespace Financial.Presentation.App.ViewModels.Investment;
 
@@ -20,7 +21,8 @@ public class MainNavigationViewModel : MainNavigationViewModelBase<AssetDetailsV
         IAssetPriceLookupService priceLookupService,
         IAssetPriceHistoryService priceHistoryService,
         IAssetMoveService assetMoveService,
-        IPortfolioService portfolioService)
+        IPortfolioService portfolioService,
+        IDialogService dialogService)
         : base(
             navigationService ?? throw new ArgumentNullException(nameof(navigationService)),
             creditQueryService ?? throw new ArgumentNullException(nameof(creditQueryService)),
@@ -38,7 +40,8 @@ public class MainNavigationViewModel : MainNavigationViewModelBase<AssetDetailsV
                 priceHistoryService: priceHistoryService ?? throw new ArgumentNullException(nameof(priceHistoryService))),
             InvestmentScope.Active,
             assetMoveService ?? throw new ArgumentNullException(nameof(assetMoveService)),
-            portfolioService ?? throw new ArgumentNullException(nameof(portfolioService)))
+            portfolioService ?? throw new ArgumentNullException(nameof(portfolioService)),
+            dialogService ?? throw new ArgumentNullException(nameof(dialogService)))
     {
     }
 }

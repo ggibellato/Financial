@@ -7,6 +7,7 @@ using Financial.Investment.Application.DependencyInjection;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Infrastructure.DependencyInjection;
 using Financial.Integrations.GoogleDrive;
+using Financial.Presentation.App.Services;
 using Financial.Presentation.App.ViewModels.CashFlow;
 using Financial.Presentation.App.Views.CashFlow;
 using Financial.Presentation.App.Views.Investment;
@@ -55,6 +56,7 @@ namespace Financial.Presentation.App
                     services.Configure<WatchlistOptions>(context.Configuration.GetSection(WatchlistOptions.SectionName));
                     services.Configure<AssetPriceFetchOptions>(context.Configuration.GetSection(AssetPriceFetchOptions.SectionName));
                     services.Configure<DividendOptions>(context.Configuration.GetSection(DividendOptions.SectionName));
+                    services.AddSingleton<IDialogService, DialogService>();
                     services.AddTransient<MainNavigationViewModel>();
                     services.AddTransient<MainNavigationViewModelHistoric>();
                     services.AddTransient<DividendCheckViewModel>();
