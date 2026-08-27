@@ -57,7 +57,7 @@ public class PriceHistoryTabViewModel : ViewModelBase
     }
 
     public ObservableCollection<AssetPriceSnapshotDTO> PriceHistory { get; } = new();
-    public ObservableCollection<PriceHistoryFilterOptionViewModel> PriceHistoryFilters { get; } = new();
+    public ObservableCollection<SelectableOptionViewModel<PeriodFilter>> PriceHistoryFilters { get; } = new();
 
     public PlotModel? PriceHistoryPlotModel { get => _priceHistoryPlotModel; private set => SetProperty(ref _priceHistoryPlotModel, value); }
 
@@ -192,13 +192,13 @@ public class PriceHistoryTabViewModel : ViewModelBase
     {
         PriceHistoryFilters.Clear();
         foreach (var (label, filter) in PeriodFilterHelper.Options)
-            PriceHistoryFilters.Add(new PriceHistoryFilterOptionViewModel(label, filter));
+            PriceHistoryFilters.Add(new SelectableOptionViewModel<PeriodFilter>(label, filter));
         SetPriceHistoryFilter(PeriodFilter.Last12Months, rebuild: false);
     }
 
     private void SelectPriceHistoryFilter(object? parameter)
     {
-        if (parameter is PriceHistoryFilterOptionViewModel option) { SetPriceHistoryFilter(option.Filter); return; }
+        if (parameter is SelectableOptionViewModel<PeriodFilter> option) { SetPriceHistoryFilter(option.Value); return; }
         if (parameter is PeriodFilter filter) SetPriceHistoryFilter(filter);
     }
 
@@ -218,7 +218,7 @@ public class PriceHistoryTabViewModel : ViewModelBase
     private void UpdatePriceHistoryFilterSelection()
     {
         foreach (var option in PriceHistoryFilters)
-            option.IsSelected = option.Filter == _selectedPriceHistoryFilter;
+            option.IsSelected = option.Value == _selectedPriceHistoryFilter;
     }
 
     private void ApplyPriceHistoryFilter()
