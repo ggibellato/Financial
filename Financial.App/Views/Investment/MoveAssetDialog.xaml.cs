@@ -9,17 +9,6 @@ public partial class MoveAssetDialog : Window
     {
         InitializeComponent();
         DataContext = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
-        viewModel.CloseRequested += OnCloseRequested;
-    }
-
-    private void OnCloseRequested(object? sender, bool? dialogResult)
-    {
-        if (sender is MoveAssetDialogViewModel viewModel)
-        {
-            viewModel.CloseRequested -= OnCloseRequested;
-        }
-
-        DialogResult = dialogResult;
-        Close();
+        DialogCloser.Attach(this, h => viewModel.CloseRequested += h, h => viewModel.CloseRequested -= h);
     }
 }
