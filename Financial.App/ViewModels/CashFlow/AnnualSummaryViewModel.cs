@@ -110,13 +110,12 @@ public class AnnualSummaryViewModel : ViewModelBase
     /// calls (e.g. the constructor's initial load racing a rapid Year change) by discarding a
     /// completion whose request has been superseded.
     /// </summary>
-    internal async Task RefreshAsync()
-    {
-        var requestId = ++_refreshRequestId;
-        IsLoading = true;
-        Error = null;
-
-        try
+    internal Task RefreshAsync() => ExecuteRefreshAsync(
+        () => ++_refreshRequestId,
+        id => id == _refreshRequestId,
+        loading => IsLoading = loading,
+        error => Error = error,
+        async isCurrent =>
         {
             var year = Year;
             var categoryTotalsTask = Task.Run(() => _categorySummaryService.GetCategoryTotalsAnnualForYear(year));
@@ -125,7 +124,7 @@ public class AnnualSummaryViewModel : ViewModelBase
 
             await Task.WhenAll(categoryTotalsTask, investmentResultTask, historicSummaryTask);
 
-            if (requestId != _refreshRequestId)
+            if (!isCurrent())
             {
                 return;
             }
@@ -141,22 +140,7 @@ public class AnnualSummaryViewModel : ViewModelBase
             var historicSummary = historicSummaryTask.Result;
             ReplaceAll(AvailableYears, historicSummary.Select(y => y.Year));
             ReplaceAll(HistoricSummaryRows, BuildHistoricSummaryRows(historicSummary));
-        }
-        catch (Exception ex)
-        {
-            if (requestId == _refreshRequestId)
-            {
-                Error = ex.Message;
-            }
-        }
-        finally
-        {
-            if (requestId == _refreshRequestId)
-            {
-                IsLoading = false;
-            }
-        }
-    }
+        });
 
     private static List<AnnualSummaryRow> BuildCategoryTotalRows(CategoryTotalsAnnualDTO dto)
     {

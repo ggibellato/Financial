@@ -66,6 +66,47 @@ public abstract class ViewModelBase : INotifyPropertyChanged
             notifyCommandsChanged?.Invoke();
         }
     }
+
+    /// <summary>
+    /// Runs the request-id-guarded refresh sequence shared by every page-level refresh: bump the
+    /// request id, set loading/clear error, run <paramref name="refresh"/> (which checks
+    /// <c>isCurrent</c> itself once its own fetch completes, since a multi-stage fetch may need to
+    /// check more than once or partway through), and on the way out only the request that is still
+    /// current is allowed to set Error or clear IsLoading - an older overlapping call must not
+    /// clobber a newer one's state.
+    /// </summary>
+    protected static async Task ExecuteRefreshAsync(
+        Func<int> beginRequest,
+        Func<int, bool> isCurrentRequest,
+        Action<bool> setLoading,
+        Action<string?> setError,
+        Func<Func<bool>, Task> refresh,
+        Action<Exception>? logError = null)
+    {
+        var requestId = beginRequest();
+        setLoading(true);
+        setError(null);
+
+        try
+        {
+            await refresh(() => isCurrentRequest(requestId));
+        }
+        catch (Exception ex)
+        {
+            logError?.Invoke(ex);
+            if (isCurrentRequest(requestId))
+            {
+                setError(ex.Message);
+            }
+        }
+        finally
+        {
+            if (isCurrentRequest(requestId))
+            {
+                setLoading(false);
+            }
+        }
+    }
 }
 
 

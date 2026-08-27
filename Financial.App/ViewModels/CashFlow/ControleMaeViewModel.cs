@@ -102,41 +102,25 @@ public class ControleMaeViewModel : ViewModelBase
     /// the constructor's initial load racing a rapid FromDate change) by discarding a
     /// completion whose request has been superseded.
     /// </summary>
-    internal async Task RefreshEntriesAsync()
-    {
-        var requestId = ++_refreshEntriesRequestId;
-        IsLoading = true;
-        Error = null;
-
-        try
+    internal Task RefreshEntriesAsync() => ExecuteRefreshAsync(
+        () => ++_refreshEntriesRequestId,
+        id => id == _refreshEntriesRequestId,
+        loading => IsLoading = loading,
+        error => Error = error,
+        async isCurrent =>
         {
             var fromDate = DateOnly.FromDateTime(FromDate);
             var entries = await Task.Run(() => _controleMaeService.GetEntriesFromDate(fromDate));
 
-            if (requestId != _refreshEntriesRequestId)
+            if (!isCurrent())
             {
                 return;
             }
 
             ReplaceAll(Entries, entries);
-        }
-        catch (Exception ex)
-        {
-            // error.type only - the message may embed ledger values (FR-014).
-            _logger.LogError("ControleMae entries refresh failed with {ErrorType}", ex.GetType().Name);
-            if (requestId == _refreshEntriesRequestId)
-            {
-                Error = ex.Message;
-            }
-        }
-        finally
-        {
-            if (requestId == _refreshEntriesRequestId)
-            {
-                IsLoading = false;
-            }
-        }
-    }
+        },
+        // error.type only - the message may embed ledger values (FR-014).
+        ex => _logger.LogError("ControleMae entries refresh failed with {ErrorType}", ex.GetType().Name));
 
     /// <summary>
     /// Reloads the all-time totals. Deliberately independent of FromDate — see class summary.
