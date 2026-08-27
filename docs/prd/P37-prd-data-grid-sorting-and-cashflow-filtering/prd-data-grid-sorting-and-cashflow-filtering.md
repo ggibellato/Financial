@@ -193,14 +193,14 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Sortable Columns — Web
-- [ ] Clicking an unsorted column header sorts the grid ascending by that column and shows an ascending arrow indicator
-- [ ] Clicking the same header again sorts descending and updates the indicator
-- [ ] Clicking the same header a third time returns the grid to its original, unsorted order and removes the indicator
-- [ ] Clicking a different column's header resets the previously sorted column and starts a fresh ascending sort on the new column
-- [ ] A currency column (e.g. Expenses' Value) sorts by numeric value, not by the formatted string
-- [ ] A date column (e.g. Transactions' Date) sorts chronologically, not alphabetically by displayed string
-- [ ] Every grid listed in Section 6 under F01, except the excluded Reserva Movements grid, supports this click-to-sort behavior on every visible column
-- [ ] A grid with a totals/footer row keeps that row fixed at the bottom regardless of the active sort
+- [x] Clicking an unsorted column header sorts the grid ascending by that column and shows an ascending arrow indicator
+- [x] Clicking the same header again sorts descending and updates the indicator
+- [x] Clicking the same header a third time returns the grid to its original, unsorted order and removes the indicator
+- [x] Clicking a different column's header resets the previously sorted column and starts a fresh ascending sort on the new column
+- [x] A currency column (e.g. Expenses' Value) sorts by numeric value, not by the formatted string
+- [x] A date column (e.g. Transactions' Date) sorts chronologically, not alphabetically by displayed string
+- [x] Every grid listed in Section 6 under F01, except the excluded Reserva Movements grid, supports this click-to-sort behavior on every visible column
+- [x] A grid with a totals/footer row keeps that row fixed at the bottom regardless of the active sort
 
 ### F02. Sortable Columns — WPF
 - [ ] Clicking an unsorted column header sorts the grid ascending and shows an ascending arrow indicator, matching Web's behavior
