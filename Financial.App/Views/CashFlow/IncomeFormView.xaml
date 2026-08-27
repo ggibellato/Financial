@@ -1,7 +1,8 @@
 <UserControl x:Class="Financial.Presentation.App.Views.CashFlow.IncomeFormView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:behaviors="clr-namespace:Financial.Presentation.App.Behaviors">
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -76,18 +77,14 @@
                 <TextBlock Text="Gross Value" Style="{StaticResource FieldLabelStyle}"/>
                 <TextBox AutomationProperties.Name="Gross value"
                          Text="{Binding IncomeFormGrossValue, UpdateSourceTrigger=LostFocus}"
-                         PreviewTextInput="OnDecimalTextBoxPreviewTextInput"
-                         DataObject.Pasting="OnDecimalTextBoxPasting"
-                         LostFocus="OnDecimalTextBoxLostFocus"/>
+                         behaviors:DecimalInputBehavior.IsEnabled="True"/>
             </StackPanel>
 
             <StackPanel Grid.Row="1" Grid.Column="3" Margin="0,0,0,8">
                 <TextBlock Text="Net Value" Style="{StaticResource FieldLabelStyle}"/>
                 <TextBox AutomationProperties.Name="Net value"
                          Text="{Binding IncomeFormNetValue, UpdateSourceTrigger=LostFocus}"
-                         PreviewTextInput="OnDecimalTextBoxPreviewTextInput"
-                         DataObject.Pasting="OnDecimalTextBoxPasting"
-                         LostFocus="OnDecimalTextBoxLostFocus"/>
+                         behaviors:DecimalInputBehavior.IsEnabled="True"/>
             </StackPanel>
 
             <!-- Row 2: Bank | Description (spans 3) -->

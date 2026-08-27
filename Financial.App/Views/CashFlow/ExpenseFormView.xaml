@@ -2,7 +2,8 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-             xmlns:components="clr-namespace:Financial.Presentation.App.Components">
+             xmlns:components="clr-namespace:Financial.Presentation.App.Components"
+             xmlns:behaviors="clr-namespace:Financial.Presentation.App.Behaviors">
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -92,9 +93,8 @@
                 <TextBlock Text="Value" Style="{StaticResource FieldLabelStyle}"/>
                 <TextBox AutomationProperties.Name="Value"
                          Text="{Binding ExpenseFormValue, UpdateSourceTrigger=LostFocus}"
-                         PreviewTextInput="OnSignedDecimalTextBoxPreviewTextInput"
-                         DataObject.Pasting="OnSignedDecimalTextBoxPasting"
-                         LostFocus="OnDecimalTextBoxLostFocus"/>
+                         behaviors:DecimalInputBehavior.IsEnabled="True"
+                         behaviors:DecimalInputBehavior.AllowSign="True"/>
             </StackPanel>
 
             <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,0,8,8"
@@ -128,9 +128,7 @@
                     <TextBlock Text="Round-Up" Style="{StaticResource FieldLabelStyle}"/>
                     <TextBox AutomationProperties.Name="Round-up amount"
                              Text="{Binding ExpenseFormRoundUpAmount, UpdateSourceTrigger=LostFocus}"
-                             PreviewTextInput="OnDecimalTextBoxPreviewTextInput"
-                             DataObject.Pasting="OnDecimalTextBoxPasting"
-                             LostFocus="OnDecimalTextBoxLostFocus"/>
+                             behaviors:DecimalInputBehavior.IsEnabled="True"/>
                 </StackPanel>
             </StackPanel>
 

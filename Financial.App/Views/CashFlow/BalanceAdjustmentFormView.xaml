@@ -1,7 +1,8 @@
 <UserControl x:Class="Financial.Presentation.App.Views.CashFlow.BalanceAdjustmentFormView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:behaviors="clr-namespace:Financial.Presentation.App.Behaviors">
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -116,9 +117,7 @@
                         <TextBlock Text="Target Balance" Style="{StaticResource FieldLabelStyle}"/>
                         <TextBox AutomationProperties.Name="Target balance"
                                  Text="{Binding AdjustmentFormTargetBalance, UpdateSourceTrigger=LostFocus}"
-                                 PreviewTextInput="OnDecimalTextBoxPreviewTextInput"
-                                 DataObject.Pasting="OnDecimalTextBoxPasting"
-                                 LostFocus="OnDecimalTextBoxLostFocus"/>
+                                 behaviors:DecimalInputBehavior.IsEnabled="True"/>
                     </StackPanel>
 
                     <StackPanel Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="2" Margin="0,0,0,8">
