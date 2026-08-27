@@ -4,6 +4,8 @@
              xmlns:local="clr-namespace:Financial.Presentation.App"
              xmlns:converters="clr-namespace:Financial.Presentation.App.Converters"
              xmlns:behaviors="clr-namespace:Financial.Presentation.App.Behaviors"
+             xmlns:vm="clr-namespace:Financial.Presentation.App.ViewModels"
+             xmlns:controls="clr-namespace:Financial.Presentation.App.Controls"
              xmlns:primitives="clr-namespace:System.Windows.Controls.Primitives;assembly=PresentationFramework">
     <Application.Resources>
         <converters:PositionTypeToColorConverter x:Key="PositionTypeToColorConverter"/>
@@ -19,6 +21,13 @@
         <converters:CategoryHasSelectedChildConverter x:Key="CategoryHasSelectedChildConverter"/>
         <converters:EqualityToBoolConverter x:Key="EqualityToBoolConverter"/>
         <converters:DateOnlyToDateTimeConverter x:Key="DateOnlyToDateTimeConverter"/>
+
+        <!-- Assigning a DataGridColumn.Header to a ColumnFilterViewModelBase instance (in a
+             view's code-behind, since DataGridColumn isn't part of the visual tree and can't
+             itself host an ambient-DataContext binding) renders it through this template. -->
+        <DataTemplate DataType="{x:Type vm:ColumnFilterViewModelBase}">
+            <controls:FilterableColumnHeader/>
+        </DataTemplate>
 
         <DrawingImage x:Key="AppIcon">
             <DrawingImage.Drawing>

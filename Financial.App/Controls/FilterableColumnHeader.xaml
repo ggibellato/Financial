@@ -1,0 +1,56 @@
+<UserControl x:Class="Financial.Presentation.App.Controls.FilterableColumnHeader"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:Financial.Presentation.App.ViewModels"
+             d:DataContext="{d:DesignInstance Type=vm:ColumnFilterViewModelBase}"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008/design"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d">
+    <UserControl.Resources>
+        <Style x:Key="FilterToggleButtonStyle" TargetType="ToggleButton">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="2"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="#666666"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsFiltered}" Value="True">
+                    <Setter Property="Foreground" Value="#0F6CBD"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+    <StackPanel Orientation="Horizontal">
+        <TextBlock Text="{Binding Label}" VerticalAlignment="Center" FontWeight="Bold"/>
+        <ToggleButton x:Name="FilterToggle" Style="{StaticResource FilterToggleButtonStyle}"
+                      Margin="4,0,0,0"
+                      ToolTip="{Binding Label, StringFormat='Filter by {0}'}"
+                      AutomationProperties.Name="{Binding Label, StringFormat='Filter by {0}'}">
+            <TextBlock Text="&#xE71C;" FontFamily="Segoe MDL2 Assets" FontSize="12"/>
+        </ToggleButton>
+        <Popup x:Name="FilterPopup"
+               PlacementTarget="{Binding ElementName=FilterToggle}"
+               IsOpen="{Binding IsChecked, ElementName=FilterToggle, Mode=TwoWay}"
+               StaysOpen="False" Placement="Bottom" AllowsTransparency="True">
+            <Border Background="White" BorderBrush="#CCCCCC" BorderThickness="1" Padding="8" MinWidth="160" MaxWidth="260">
+                <StackPanel>
+                    <TextBox x:Name="SearchBox" Margin="0,0,0,6"
+                             Visibility="{Binding ShowSearch, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                    <CheckBox Content="(All)"
+                              IsChecked="{Binding IsAllChecked, Mode=OneWay}"
+                              Command="{Binding ToggleAllCommand}"
+                              Margin="0,0,0,4"/>
+                    <ScrollViewer MaxHeight="240" VerticalScrollBarVisibility="Auto">
+                        <ItemsControl x:Name="OptionsItemsControl">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <CheckBox Content="{Binding Value}" IsChecked="{Binding IsChecked, Mode=TwoWay}" Margin="0,2"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </StackPanel>
+            </Border>
+        </Popup>
+    </StackPanel>
+</UserControl>
