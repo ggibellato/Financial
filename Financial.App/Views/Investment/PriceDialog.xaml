@@ -1,6 +1,7 @@
 <Window x:Class="Financial.Presentation.App.Views.Investment.PriceDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:behaviors="clr-namespace:Financial.Presentation.App.Behaviors"
         Title="{Binding Title}"
         Height="260"
         Width="420"
@@ -38,9 +39,7 @@
         <TextBox Grid.Row="2" Grid.Column="1"
                  Text="{Binding Price, UpdateSourceTrigger=LostFocus}"
                  IsReadOnly="{Binding IsReadOnly}"
-                 PreviewTextInput="OnDecimalTextBoxPreviewTextInput"
-                 DataObject.Pasting="OnDecimalTextBoxPasting"
-                 LostFocus="OnDecimalTextBoxLostFocus"/>
+                 behaviors:DecimalInputBehavior.IsEnabled="True"/>
 
         <TextBlock Grid.Row="3" Grid.ColumnSpan="2"
                    Foreground="Red"
