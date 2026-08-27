@@ -67,6 +67,10 @@ namespace Financial.Presentation.App
                         msg => MessageBox.Show(msg, "Error", MessageBoxButton.OK, MessageBoxImage.Error)));
                     services.AddTransient<DividendCheckView>();
                     services.AddTransient<AssetPriceView>();
+
+                    Func<string, bool> confirm = msg =>
+                        MessageBox.Show(msg, "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
+
                     services.AddTransient<MonthlyViewModel>(sp => new MonthlyViewModel(
                         sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.IExpenseService>(),
                         sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.IIncomeService>(),
@@ -78,23 +82,23 @@ namespace Financial.Presentation.App
                         sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.ICardStatementService>(),
                         sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.ICreditCardService>(),
                         sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.ICategoryService>(),
-                        msg => MessageBox.Show(msg, "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes,
+                        confirm,
                         sp.GetRequiredService<ITelemetryTracer>()));
                     services.AddTransient<MonthlyView>();
                     services.AddTransient<ReservaViewModel>(sp => new ReservaViewModel(
                         sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.IReserveService>(),
                         sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.IReserveBucketService>(),
-                        msg => MessageBox.Show(msg, "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes,
+                        confirm,
                         sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<ReservaViewModel>>()));
                     services.AddTransient<ReservaView>();
                     services.AddTransient<MensaisViewModel>(sp => new MensaisViewModel(
                         sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.IMensaisService>(),
-                        msg => MessageBox.Show(msg, "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes,
+                        confirm,
                         sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<MensaisViewModel>>()));
                     services.AddTransient<MensaisView>();
                     services.AddTransient<ControleMaeViewModel>(sp => new ControleMaeViewModel(
                         sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.IControleMaeService>(),
-                        msg => MessageBox.Show(msg, "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes,
+                        confirm,
                         sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<ControleMaeViewModel>>()));
                     services.AddTransient<ControleMaeView>();
                     services.AddTransient<InvestmentSnapshotsViewModel>();
