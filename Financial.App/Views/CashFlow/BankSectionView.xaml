@@ -44,12 +44,6 @@
                                               Visibility="{Binding IsAdjustmentFormOpen, Converter={StaticResource BoolToVisibilityConverter}}"/>
         </StackPanel>
 
-        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,8">
-            <TextBlock Text="Bank:" VerticalAlignment="Center" Margin="0,0,8,0"/>
-            <ComboBox Width="180" ItemsSource="{Binding BankFilterOptions}"
-                      SelectedItem="{Binding SelectedBankFilter}"/>
-        </StackPanel>
-
         <TextBlock Grid.Row="3" Foreground="Red" TextWrapping="Wrap" Margin="0,0,0,8"
                    Text="{Binding BankOperationsError}"/>
 
@@ -59,9 +53,27 @@
                 <Style TargetType="TextBlock">
                     <Setter Property="Visibility" Value="Collapsed"/>
                     <Style.Triggers>
-                        <DataTrigger Binding="{Binding HasBankOperations}" Value="False">
+                        <DataTrigger Binding="{Binding HasAnyBankOperationsBeforeFilter}" Value="False">
                             <Setter Property="Visibility" Value="Visible"/>
                         </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </TextBlock.Style>
+        </TextBlock>
+
+        <TextBlock Grid.Row="4" FontStyle="Italic" VerticalAlignment="Top" HorizontalAlignment="Left" Panel.ZIndex="1"
+                   Text="No rows match the current filters">
+            <TextBlock.Style>
+                <Style TargetType="TextBlock">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                    <Style.Triggers>
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                                <Condition Binding="{Binding HasAnyBankOperationsBeforeFilter}" Value="True"/>
+                                <Condition Binding="{Binding HasBankOperations}" Value="False"/>
+                            </MultiDataTrigger.Conditions>
+                            <Setter Property="Visibility" Value="Visible"/>
+                        </MultiDataTrigger>
                     </Style.Triggers>
                 </Style>
             </TextBlock.Style>
@@ -72,7 +84,7 @@
                 <Style TargetType="DataGrid">
                     <Setter Property="Visibility" Value="Visible"/>
                     <Style.Triggers>
-                        <DataTrigger Binding="{Binding HasBankOperations}" Value="False">
+                        <DataTrigger Binding="{Binding HasAnyBankOperationsBeforeFilter}" Value="False">
                             <Setter Property="Visibility" Value="Collapsed"/>
                         </DataTrigger>
                     </Style.Triggers>
@@ -128,7 +140,7 @@
                                      ElementStyle="{StaticResource PlainColumnTextStyle}"/>
                 <DataGridTextColumn Binding="{Binding Kind}" Header="Type" Width="100"
                                      ElementStyle="{StaticResource PlainColumnTextStyle}"/>
-                <DataGridTextColumn Binding="{Binding BankLabel}" Header="Bank(s)" Width="180"
+                <DataGridTextColumn x:Name="BankColumn" Binding="{Binding BankLabel}" Header="Bank(s)" Width="180"
                                      ElementStyle="{StaticResource PlainColumnTextStyle}"/>
                 <DataGridTextColumn Binding="{Binding DisplayAmount, StringFormat=N2}" Header="Amount/Delta" Width="120"
                                      ElementStyle="{StaticResource NumericColumnTextStyle}"/>

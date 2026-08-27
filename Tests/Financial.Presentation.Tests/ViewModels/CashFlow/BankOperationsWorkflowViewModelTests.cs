@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using Financial.CashFlow.Application.DTOs;
+using Financial.Presentation.App.ViewModels;
 using Financial.Presentation.App.ViewModels.CashFlow;
 using Financial.TestUtilities;
 using FluentAssertions;
@@ -21,6 +22,16 @@ public class BankOperationsWorkflowViewModelTests
     ];
 
     private static DateOnly Today => DateOnly.FromDateTime(DateTime.Today);
+
+    /// <summary>Unchecks every filter option except the given values, mirroring how a user would
+    /// narrow the header checklist down to a single bank.</summary>
+    private static void SelectOnly(ColumnFilterViewModel<BankOperationRow> filter, params string[] values)
+    {
+        foreach (var option in filter.Options)
+        {
+            option.IsChecked = values.Contains(option.Value);
+        }
+    }
 
     private static (BankOperationsWorkflowViewModel ViewModel, StubTransferService Transfers, StubBalanceAdjustmentService Adjustments, Func<int> RefreshCallCount) CreateViewModel(bool confirmDeletes = true)
     {
@@ -108,7 +119,7 @@ public class BankOperationsWorkflowViewModelTests
     }
 
     [Fact]
-    public void BankFilter_DefaultsToAllBanks_ShowsEveryRow()
+    public void BankFilter_DefaultsToUnfiltered_ShowsEveryRow()
     {
         var (viewModel, _, _, _) = CreateViewModel();
         List<TransferDTO> transfers = [new() { Id = Guid.NewGuid(), Date = Today, SourceBankId = BarclaysId, SourceBankName = "Barclays", DestinationBankId = ChaseId, DestinationBankName = "Chase", Amount = 50m }];
@@ -116,7 +127,7 @@ public class BankOperationsWorkflowViewModelTests
 
         viewModel.ApplyRefresh(transfers, adjustmentsByBank, Today.Year, Today.Month, DefaultBanks);
 
-        viewModel.SelectedBankFilter.Should().Be(BankOperationsWorkflowViewModel.AllBanksFilter);
+        viewModel.BankFilter.IsFiltered.Should().BeFalse();
         viewModel.FilteredBankOperations.Count.Should().Be(viewModel.BankOperations.Count);
     }
 
@@ -131,7 +142,7 @@ public class BankOperationsWorkflowViewModelTests
         ];
         viewModel.ApplyRefresh(transfers, [], Today.Year, Today.Month, DefaultBanks);
 
-        viewModel.SelectedBankFilter = "Barclays";
+        SelectOnly(viewModel.BankFilter, "Barclays");
 
         viewModel.FilteredBankOperations.Should().HaveCount(2);
         viewModel.FilteredBankOperations.Should().OnlyContain(r => r.SourceBank == "Barclays" || r.DestinationBank == "Barclays");
@@ -148,23 +159,23 @@ public class BankOperationsWorkflowViewModelTests
         ];
         viewModel.ApplyRefresh([], adjustmentsByBank, Today.Year, Today.Month, DefaultBanks);
 
-        viewModel.SelectedBankFilter = "Barclays";
+        SelectOnly(viewModel.BankFilter, "Barclays");
 
         var row = viewModel.FilteredBankOperations.Single();
         row.Bank.Should().Be("Barclays");
     }
 
     [Fact]
-    public void BankFilter_SelectingAllBanks_RestoresFullList()
+    public void BankFilter_ToggleAll_RestoresFullList()
     {
         var (viewModel, _, _, _) = CreateViewModel();
         List<TransferDTO> transfers = [new() { Id = Guid.NewGuid(), Date = Today, SourceBankId = BarclaysId, SourceBankName = "Barclays", DestinationBankId = ChaseId, DestinationBankName = "Chase", Amount = 10m }];
         viewModel.ApplyRefresh(transfers, [], Today.Year, Today.Month, DefaultBanks);
 
-        viewModel.SelectedBankFilter = "Chase";
+        SelectOnly(viewModel.BankFilter, "Chase");
         viewModel.FilteredBankOperations.Should().HaveCount(1);
 
-        viewModel.SelectedBankFilter = BankOperationsWorkflowViewModel.AllBanksFilter;
+        viewModel.BankFilter.ToggleAllCommand.Execute(null);
 
         viewModel.FilteredBankOperations.Count.Should().Be(viewModel.BankOperations.Count);
     }
@@ -177,9 +188,9 @@ public class BankOperationsWorkflowViewModelTests
         viewModel.ApplyRefresh(transfers, [], Today.Year, Today.Month, DefaultBanks);
         var callsBefore = refreshCallCount();
 
-        viewModel.SelectedBankFilter = "Chase";
-        viewModel.SelectedBankFilter = "Barclays";
-        viewModel.SelectedBankFilter = BankOperationsWorkflowViewModel.AllBanksFilter;
+        SelectOnly(viewModel.BankFilter, "Chase");
+        SelectOnly(viewModel.BankFilter, "Barclays");
+        viewModel.BankFilter.ToggleAllCommand.Execute(null);
 
         refreshCallCount().Should().Be(callsBefore);
     }
@@ -222,26 +233,27 @@ public class BankOperationsWorkflowViewModelTests
     }
 
     [Fact]
-    public void BankOperationsEmptyMessage_Unfiltered_ShowsGenericMessage()
+    public void BankOperationsEmptyMessage_NoOperationsAtAll_ShowsGenericMessage()
     {
         var (viewModel, _, _, _) = CreateViewModel();
         viewModel.ApplyRefresh([], [], Today.Year, Today.Month, DefaultBanks);
 
-        viewModel.SelectedBankFilter.Should().Be(BankOperationsWorkflowViewModel.AllBanksFilter);
+        viewModel.HasAnyBankOperationsBeforeFilter.Should().BeFalse();
         viewModel.HasBankOperations.Should().BeFalse();
         viewModel.BankOperationsEmptyMessage.Should().Be("No transfers or balance corrections this month.");
     }
 
     [Fact]
-    public void BankOperationsEmptyMessage_Filtered_IncludesSelectedBankName()
+    public void BankFilter_ExcludingEveryRow_LeavesUnderlyingOperationsIntact()
     {
         var (viewModel, _, _, _) = CreateViewModel();
         List<TransferDTO> transfers = [new() { Id = Guid.NewGuid(), Date = Today, SourceBankId = BarclaysId, SourceBankName = "Barclays", DestinationBankId = BarclaysId, DestinationBankName = "Barclays", Amount = 10m }];
         viewModel.ApplyRefresh(transfers, [], Today.Year, Today.Month, DefaultBanks);
 
-        viewModel.SelectedBankFilter = "Chase";
+        SelectOnly(viewModel.BankFilter, "Chase");
 
+        viewModel.HasAnyBankOperationsBeforeFilter.Should().BeTrue();
         viewModel.HasBankOperations.Should().BeFalse();
-        viewModel.BankOperationsEmptyMessage.Should().Contain("Chase");
+        viewModel.BankOperations.Should().HaveCount(1);
     }
 }
