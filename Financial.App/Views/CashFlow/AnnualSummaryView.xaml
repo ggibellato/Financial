@@ -1,6 +1,7 @@
 <UserControl x:Class="Financial.Presentation.App.Views.CashFlow.AnnualSummaryView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:behaviors="clr-namespace:Financial.Presentation.App.Behaviors"
              x:Name="root">
     <Grid Margin="20">
         <Grid.RowDefinitions>
@@ -28,7 +29,8 @@
 
             <TabControl Grid.Row="1">
                 <TabItem Header="Category Totals">
-                    <DataGrid ItemsSource="{Binding CategoryTotalRows}" AutoGenerateColumns="False" IsReadOnly="True">
+                    <DataGrid ItemsSource="{Binding CategoryTotalRows}" AutoGenerateColumns="False" IsReadOnly="True"
+                              behaviors:SortableColumnsBehavior.IsEnabled="False">
                         <DataGrid.Columns>
                             <DataGridTextColumn Binding="{Binding Label}" Header="Category" Width="180"
                                                  ElementStyle="{StaticResource PlainColumnTextStyle}"/>
@@ -71,7 +73,8 @@
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
-                        <DataGrid Grid.Row="0" ItemsSource="{Binding InvestmentRows}" AutoGenerateColumns="False" IsReadOnly="True">
+                        <DataGrid Grid.Row="0" ItemsSource="{Binding InvestmentRows}" AutoGenerateColumns="False" IsReadOnly="True"
+                                  behaviors:SortableColumnsBehavior.IsEnabled="False">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Binding="{Binding Label}" Header="Account" Width="200"
                                                      ElementStyle="{StaticResource PlainColumnTextStyle}"/>
@@ -117,7 +120,8 @@
                 </TabItem>
 
                 <TabItem Header="Historic Summary Average">
-                    <DataGrid x:Name="historicSummaryGrid" ItemsSource="{Binding HistoricSummaryRows}" AutoGenerateColumns="False" IsReadOnly="True">
+                    <DataGrid x:Name="historicSummaryGrid" ItemsSource="{Binding HistoricSummaryRows}" AutoGenerateColumns="False" IsReadOnly="True"
+                              behaviors:SortableColumnsBehavior.IsEnabled="False">
                         <DataGrid.Columns>
                             <DataGridTextColumn Binding="{Binding Category}" Header="Category" Width="180"
                                                  ElementStyle="{StaticResource PlainColumnTextStyle}"/>

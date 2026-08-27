@@ -19,7 +19,7 @@
             <DataGrid.Columns>
                 <DataGridTextColumn Binding="{Binding CreditCardName}" Header="Card" Width="180"
                                      ElementStyle="{StaticResource PlainColumnTextStyle}"/>
-                <DataGridTemplateColumn Header="Outstanding" Width="110">
+                <DataGridTemplateColumn Header="Outstanding" SortMemberPath="OutstandingTotal" Width="110">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBlock VerticalAlignment="Center" Padding="8,0">
@@ -37,7 +37,7 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="Status" Width="80">
+                <DataGridTemplateColumn Header="Status" SortMemberPath="IsPaid" Width="80">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBlock VerticalAlignment="Center" Padding="8,0">
@@ -108,7 +108,7 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="Next Invoice Due Date" Width="160"
+                <DataGridTemplateColumn Header="Next Invoice Due Date" SortMemberPath="CreditCard.NextInvoiceDueDate" Width="160"
                                          Visibility="{Binding Data, Source={StaticResource ShowCardManagementColumnsProxy}, Converter={StaticResource BoolToVisibilityConverter}}">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
@@ -117,7 +117,7 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="Active" Width="60"
+                <DataGridTemplateColumn Header="Active" SortMemberPath="CreditCard.IsActive" Width="60"
                                          Visibility="{Binding Data, Source={StaticResource ShowCardManagementColumnsProxy}, Converter={StaticResource BoolToVisibilityConverter}}">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
