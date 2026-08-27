@@ -1,5 +1,4 @@
 using OxyPlot;
-using OxyPlot.Annotations;
 using OxyPlot.Axes;
 using OxyPlot.Series;
 
@@ -9,7 +8,6 @@ internal static class TransactionsChartBuilder
 {
     private const string TransactionsValueLabelTag = "TransactionsValueLabel";
     private const double BarWidth = 0.8;
-    private const double MinLabelWidth = 52;
     // Matches CreditsChartBuilder/PriceHistoryChartBuilder's OxyColors.SteelBlue
     // (docs/ui/forms-data-and-visualisations.md's "Series color" rule) — not a
     // neutral/grey, single-series charts are blue on both platforms.
@@ -40,16 +38,7 @@ internal static class TransactionsChartBuilder
         var categoryAxis = model.Axes.OfType<CategoryAxis>().FirstOrDefault();
         if (categoryAxis == null || categoryAxis.Labels.Count == 0) return;
 
-        // plotWidth is 0 until the PlotView's first SizeChanged fires, which can
-        // happen after this is first called from Build(). Every month gets a
-        // label (step=1) until a real width arrives to thin them by density,
-        // rather than showing none at all in the meantime.
-        var step = 1;
-        if (plotWidth > 0)
-        {
-            var maxVisibleLabels = Math.Max(1, (int)Math.Floor(plotWidth / MinLabelWidth));
-            step = Math.Max(1, (int)Math.Ceiling((double)categoryAxis.Labels.Count / maxVisibleLabels));
-        }
+        var step = OxyPlotChartBuilderHelpers.ComputeLabelStep(plotWidth, categoryAxis.Labels.Count);
         categoryAxis.MajorStep = step;
         categoryAxis.MinorStep = 1;
         UpdateValueLabels(model, step, months);
@@ -59,23 +48,9 @@ internal static class TransactionsChartBuilder
     private static (PlotModel model, CategoryAxis categoryAxis) CreateModelWithAxes()
     {
         var model = new PlotModel { Title = "Net Invested by Month" };
-        var categoryAxis = new CategoryAxis
-        {
-            Position = AxisPosition.Bottom,
-            GapWidth = 0.2,
-            IsPanEnabled = false,
-            IsZoomEnabled = false
-        };
-        var valueAxis = new LinearAxis
-        {
-            Position = AxisPosition.Left,
-            MajorGridlineStyle = LineStyle.Solid,
-            MinorGridlineStyle = LineStyle.Dot,
-            IsPanEnabled = false,
-            IsZoomEnabled = false,
-            MaximumPadding = 0.1,
-            MinimumPadding = 0.1
-        };
+        var categoryAxis = OxyPlotChartBuilderHelpers.CreateCategoryAxis();
+        var valueAxis = OxyPlotChartBuilderHelpers.CreateValueAxis();
+        valueAxis.MinimumPadding = 0.1;
         model.Axes.Add(categoryAxis);
         model.Axes.Add(valueAxis);
         return (model, categoryAxis);
@@ -123,14 +98,7 @@ internal static class TransactionsChartBuilder
 
     private static void UpdateValueLabels(PlotModel model, int step, IReadOnlyList<TransactionMonthNet> months)
     {
-        for (var index = model.Annotations.Count - 1; index >= 0; index--)
-        {
-            if (model.Annotations[index].Tag is string tag &&
-                string.Equals(tag, TransactionsValueLabelTag, StringComparison.Ordinal))
-            {
-                model.Annotations.RemoveAt(index);
-            }
-        }
+        OxyPlotChartBuilderHelpers.RemoveAnnotationsByTag(model, TransactionsValueLabelTag);
 
         if (months.Count == 0) return;
 
@@ -142,21 +110,6 @@ internal static class TransactionsChartBuilder
         }
     }
 
-    private static void AddValueLabel(PlotModel model, double x, decimal value)
-    {
-        var y = (double)value;
-        model.Annotations.Add(new TextAnnotation
-        {
-            Text = value.ToString("N2"),
-            TextPosition = new DataPoint(x, y),
-            TextHorizontalAlignment = OxyPlot.HorizontalAlignment.Center,
-            TextVerticalAlignment = value >= 0 ? OxyPlot.VerticalAlignment.Bottom : OxyPlot.VerticalAlignment.Top,
-            Offset = value >= 0 ? new ScreenVector(0, -6) : new ScreenVector(0, 6),
-            TextColor = OxyColors.Black,
-            Stroke = OxyColors.Undefined,
-            Tag = TransactionsValueLabelTag,
-            ClipByXAxis = true,
-            ClipByYAxis = false
-        });
-    }
+    private static void AddValueLabel(PlotModel model, double x, decimal value) =>
+        OxyPlotChartBuilderHelpers.AddValueLabelAnnotation(model, x, (double)value, value, TransactionsValueLabelTag);
 }

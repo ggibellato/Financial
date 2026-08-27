@@ -1,5 +1,4 @@
 using OxyPlot;
-using OxyPlot.Annotations;
 using OxyPlot.Axes;
 using OxyPlot.Series;
 
@@ -9,7 +8,6 @@ internal static class CreditsChartBuilder
 {
     private const string CreditsValueLabelTag = "CreditsValueLabel";
     private const double BarGroupWidth = 0.8;
-    private const double MinLabelWidth = 52;
 
     public static PlotModel Build(
         IReadOnlyList<CreditsMonthTypeTotals> grouped,
@@ -54,16 +52,7 @@ internal static class CreditsChartBuilder
         var categoryAxis = model.Axes.OfType<CategoryAxis>().FirstOrDefault();
         if (categoryAxis == null || categoryAxis.Labels.Count == 0) return;
 
-        // plotWidth is 0 until the PlotView's first SizeChanged fires, which can
-        // happen after this is first called from Build(). Every month gets a
-        // label (step=1) until a real width arrives to thin them by density,
-        // rather than showing none at all in the meantime.
-        var step = 1;
-        if (plotWidth > 0)
-        {
-            var maxVisibleLabels = Math.Max(1, (int)Math.Floor(plotWidth / MinLabelWidth));
-            step = Math.Max(1, (int)Math.Ceiling((double)categoryAxis.Labels.Count / maxVisibleLabels));
-        }
+        var step = OxyPlotChartBuilderHelpers.ComputeLabelStep(plotWidth, categoryAxis.Labels.Count);
         categoryAxis.MajorStep = step;
         categoryAxis.MinorStep = 1;
         UpdateValueLabels(model, step, chartMonths, chartTypes, mode, chartType);
@@ -73,22 +62,8 @@ internal static class CreditsChartBuilder
     private static (PlotModel model, CategoryAxis categoryAxis) CreateModelWithAxes()
     {
         var model = new PlotModel { Title = "Credits by Month" };
-        var categoryAxis = new CategoryAxis
-        {
-            Position = AxisPosition.Bottom,
-            GapWidth = 0.2,
-            IsPanEnabled = false,
-            IsZoomEnabled = false
-        };
-        var valueAxis = new LinearAxis
-        {
-            Position = AxisPosition.Left,
-            MajorGridlineStyle = LineStyle.Solid,
-            MinorGridlineStyle = LineStyle.Dot,
-            IsPanEnabled = false,
-            IsZoomEnabled = false,
-            MaximumPadding = 0.1
-        };
+        var categoryAxis = OxyPlotChartBuilderHelpers.CreateCategoryAxis();
+        var valueAxis = OxyPlotChartBuilderHelpers.CreateValueAxis();
         model.Axes.Add(categoryAxis);
         model.Axes.Add(valueAxis);
         return (model, categoryAxis);
@@ -225,14 +200,7 @@ internal static class CreditsChartBuilder
         CreditsTypeChartMode mode,
         CreditsChartType chartType)
     {
-        for (var index = model.Annotations.Count - 1; index >= 0; index--)
-        {
-            if (model.Annotations[index].Tag is string tag &&
-                string.Equals(tag, CreditsValueLabelTag, StringComparison.Ordinal))
-            {
-                model.Annotations.RemoveAt(index);
-            }
-        }
+        OxyPlotChartBuilderHelpers.RemoveAnnotationsByTag(model, CreditsValueLabelTag);
 
         if (chartMonths.Count == 0 || chartTypes.Count == 0) return;
 
@@ -269,23 +237,8 @@ internal static class CreditsChartBuilder
         }
     }
 
-    private static void AddValueLabel(PlotModel model, double x, decimal value, decimal labelYValue)
-    {
-        var y = (double)labelYValue;
-        model.Annotations.Add(new TextAnnotation
-        {
-            Text = value.ToString("N2"),
-            TextPosition = new DataPoint(x, y),
-            TextHorizontalAlignment = OxyPlot.HorizontalAlignment.Center,
-            TextVerticalAlignment = value >= 0 ? OxyPlot.VerticalAlignment.Bottom : OxyPlot.VerticalAlignment.Top,
-            Offset = value >= 0 ? new ScreenVector(0, -6) : new ScreenVector(0, 6),
-            TextColor = OxyColors.Black,
-            Stroke = OxyColors.Undefined,
-            Tag = CreditsValueLabelTag,
-            ClipByXAxis = true,
-            ClipByYAxis = false
-        });
-    }
+    private static void AddValueLabel(PlotModel model, double x, decimal value, decimal labelYValue) =>
+        OxyPlotChartBuilderHelpers.AddValueLabelAnnotation(model, x, (double)labelYValue, value, CreditsValueLabelTag);
 
     private static IReadOnlyList<OxyColor> BuildBluePalette(int count)
     {

@@ -64,15 +64,7 @@ internal static class PriceHistoryChartBuilder
             IsPanEnabled = false,
             IsZoomEnabled = false
         };
-        var valueAxis = new LinearAxis
-        {
-            Position = AxisPosition.Left,
-            MajorGridlineStyle = LineStyle.Solid,
-            MinorGridlineStyle = LineStyle.Dot,
-            IsPanEnabled = false,
-            IsZoomEnabled = false,
-            MaximumPadding = 0.1
-        };
+        var valueAxis = OxyPlotChartBuilderHelpers.CreateValueAxis();
         model.Axes.Add(dateAxis);
         model.Axes.Add(valueAxis);
         return model;
