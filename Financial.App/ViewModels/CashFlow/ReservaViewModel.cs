@@ -1,6 +1,5 @@
 using System.Collections.ObjectModel;
 using Financial.CashFlow.Application.DTOs;
-using Financial.CashFlow.Application.Exceptions;
 using Financial.CashFlow.Application.Interfaces;
 using Microsoft.Extensions.Logging;
 using static Financial.Presentation.App.Helpers.ObservableCollectionHelper;
@@ -76,8 +75,8 @@ public class ReservaViewModel : ViewModelBase
         }
     }
 
-    private Guid? DefaultBucketId() =>
-        (ActiveBuckets.FirstOrDefault() ?? Buckets.FirstOrDefault())?.Id;
+    public IncomeSplitViewModel Split { get; }
+    public WithdrawalViewModel Withdrawal { get; }
 
     public RelayCommand RetryCommand { get; }
 
@@ -88,9 +87,10 @@ public class ReservaViewModel : ViewModelBase
         _confirm = confirm ?? throw new ArgumentNullException(nameof(confirm));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
+        Split = new IncomeSplitViewModel(_reserveService, CloseAllForms, () => RefreshAsync(includeBuckets: false));
+        Withdrawal = new WithdrawalViewModel(_reserveService, Buckets, _confirm, CloseAllForms, () => RefreshAsync(includeBuckets: false));
+
         RetryCommand = new RelayCommand(async () => await RefreshAsync());
-        InitializeSplitCommands();
-        InitializeWithdrawalCommands();
         InitializeEditDeleteCommands();
 
         _ = RefreshAsync();
@@ -146,9 +146,9 @@ public class ReservaViewModel : ViewModelBase
             {
                 ReplaceAll(Buckets, bucketsTask.Result);
                 OnPropertyChanged(nameof(SplitPercentageWarning));
-                if (WithdrawalBucketId is null)
+                if (Withdrawal.WithdrawalBucketId is null)
                 {
-                    WithdrawalBucketId = DefaultBucketId();
+                    Withdrawal.WithdrawalBucketId = Withdrawal.DefaultBucketId();
                 }
             }
         }
@@ -188,254 +188,10 @@ public class ReservaViewModel : ViewModelBase
     /// <summary>Closes all inline forms — only one form panel may be open at a time.</summary>
     private void CloseAllForms()
     {
-        CloseSplitForm();
-        CloseWithdrawalForm();
+        Split.CloseSplitForm();
+        Withdrawal.CloseWithdrawalForm();
         CloseEditForm();
     }
-
-    #region Income Split
-
-    private bool _isSplitFormOpen;
-    private DateTime? _splitDate;
-    private string _splitAmount = string.Empty;
-    private string _splitDescription = string.Empty;
-    private bool _isSubmittingSplit;
-    private string? _splitSaveError;
-    private IncomeSplitResultDTO? _lastSplitResult;
-
-    public bool IsSplitFormOpen
-    {
-        get => _isSplitFormOpen;
-        private set
-        {
-            if (SetProperty(ref _isSplitFormOpen, value))
-            {
-                OnPropertyChanged(nameof(ShowSplitFormFields));
-            }
-        }
-    }
-
-    public DateTime? SplitDate
-    {
-        get => _splitDate;
-        set => SetProperty(ref _splitDate, value);
-    }
-
-    public string SplitAmount
-    {
-        get => _splitAmount;
-        set => SetProperty(ref _splitAmount, value);
-    }
-
-    public string SplitDescription
-    {
-        get => _splitDescription;
-        set => SetProperty(ref _splitDescription, value);
-    }
-
-    public bool IsSubmittingSplit
-    {
-        get => _isSubmittingSplit;
-        private set => SetProperty(ref _isSubmittingSplit, value);
-    }
-
-    public string? SplitSaveError
-    {
-        get => _splitSaveError;
-        private set => SetProperty(ref _splitSaveError, value);
-    }
-
-    public IncomeSplitResultDTO? LastSplitResult
-    {
-        get => _lastSplitResult;
-        private set
-        {
-            if (SetProperty(ref _lastSplitResult, value))
-            {
-                OnPropertyChanged(nameof(HasSplitResult));
-                OnPropertyChanged(nameof(ShowSplitFormFields));
-            }
-        }
-    }
-
-    public bool HasSplitResult => LastSplitResult != null;
-
-    public bool ShowSplitFormFields => IsSplitFormOpen && LastSplitResult == null;
-
-    public RelayCommand ShowSplitFormCommand { get; private set; } = null!;
-    public RelayCommand CancelSplitFormCommand { get; private set; } = null!;
-    public RelayCommand SubmitSplitCommand { get; private set; } = null!;
-    public RelayCommand DismissSplitResultCommand { get; private set; } = null!;
-
-    private void InitializeSplitCommands()
-    {
-        ShowSplitFormCommand = new RelayCommand(ShowSplitForm);
-        CancelSplitFormCommand = new RelayCommand(CloseSplitForm);
-        SubmitSplitCommand = new RelayCommand(async () => await SubmitSplitAsync());
-        DismissSplitResultCommand = new RelayCommand(CloseSplitForm);
-    }
-
-    private void ShowSplitForm()
-    {
-        CloseAllForms();
-        SplitDate = DateTime.Today;
-        SplitAmount = string.Empty;
-        SplitDescription = string.Empty;
-        SplitSaveError = null;
-        LastSplitResult = null;
-        IsSplitFormOpen = true;
-    }
-
-    private void CloseSplitForm()
-    {
-        IsSplitFormOpen = false;
-        SplitSaveError = null;
-        LastSplitResult = null;
-    }
-
-    internal Task SubmitSplitAsync() => ExecuteSaveAsync(
-        () => IncomeSplitFormValidation.BuildValidationMessage(SplitDate, SplitAmount, SplitDescription),
-        error => SplitSaveError = error,
-        saving => IsSubmittingSplit = saving,
-        async () =>
-        {
-            var result = await _reserveService.PostIncomeSplitAsync(new IncomeSplitRequestDTO
-            {
-                Date = DateOnly.FromDateTime(SplitDate!.Value),
-                Amount = decimal.Parse(SplitAmount),
-                Description = SplitDescription,
-            });
-
-            LastSplitResult = result;
-            await RefreshAsync(includeBuckets: false);
-        });
-
-    #endregion
-
-    #region Withdrawal
-
-    private bool _isWithdrawalFormOpen;
-    private Guid? _withdrawalBucketId;
-    private string _withdrawalAmount = string.Empty;
-    private DateTime? _withdrawalDate;
-    private string _withdrawalDescription = string.Empty;
-    private bool _isSubmittingWithdrawal;
-    private string? _withdrawalSaveError;
-
-    public bool IsWithdrawalFormOpen
-    {
-        get => _isWithdrawalFormOpen;
-        private set => SetProperty(ref _isWithdrawalFormOpen, value);
-    }
-
-    public Guid? WithdrawalBucketId
-    {
-        get => _withdrawalBucketId;
-        set => SetProperty(ref _withdrawalBucketId, value);
-    }
-
-    public string WithdrawalAmount
-    {
-        get => _withdrawalAmount;
-        set => SetProperty(ref _withdrawalAmount, value);
-    }
-
-    public DateTime? WithdrawalDate
-    {
-        get => _withdrawalDate;
-        set => SetProperty(ref _withdrawalDate, value);
-    }
-
-    public string WithdrawalDescription
-    {
-        get => _withdrawalDescription;
-        set => SetProperty(ref _withdrawalDescription, value);
-    }
-
-    public bool IsSubmittingWithdrawal
-    {
-        get => _isSubmittingWithdrawal;
-        private set => SetProperty(ref _isSubmittingWithdrawal, value);
-    }
-
-    public string? WithdrawalSaveError
-    {
-        get => _withdrawalSaveError;
-        private set => SetProperty(ref _withdrawalSaveError, value);
-    }
-
-    public RelayCommand ShowWithdrawalFormCommand { get; private set; } = null!;
-    public RelayCommand CancelWithdrawalFormCommand { get; private set; } = null!;
-    public RelayCommand SubmitWithdrawalCommand { get; private set; } = null!;
-
-    private void InitializeWithdrawalCommands()
-    {
-        ShowWithdrawalFormCommand = new RelayCommand(ShowWithdrawalForm);
-        CancelWithdrawalFormCommand = new RelayCommand(CloseWithdrawalForm);
-        SubmitWithdrawalCommand = new RelayCommand(async () => await SubmitWithdrawalAsync());
-    }
-
-    private void ShowWithdrawalForm()
-    {
-        CloseAllForms();
-        WithdrawalBucketId = DefaultBucketId();
-        WithdrawalAmount = string.Empty;
-        WithdrawalDate = DateTime.Today;
-        WithdrawalDescription = string.Empty;
-        WithdrawalSaveError = null;
-        IsWithdrawalFormOpen = true;
-    }
-
-    private void CloseWithdrawalForm()
-    {
-        IsWithdrawalFormOpen = false;
-        WithdrawalSaveError = null;
-    }
-
-    internal Task SubmitWithdrawalAsync() => ExecuteSaveAsync(
-        () => WithdrawalFormValidation.BuildValidationMessage(WithdrawalBucketId, WithdrawalAmount, WithdrawalDate, WithdrawalDescription),
-        error => WithdrawalSaveError = error,
-        saving => IsSubmittingWithdrawal = saving,
-        async () =>
-        {
-            await PostWithdrawalWithOverdraftHandlingAsync(confirmed: false);
-            CloseWithdrawalForm();
-            await RefreshAsync(includeBuckets: false);
-        });
-
-    /// <summary>
-    /// Posts the withdrawal; on an overdraft conflict, asks the user to confirm and resubmits
-    /// with the override flag set. Declining re-throws the server's conflict message so the
-    /// caller's catch block surfaces it as WithdrawalSaveError. Mirrors useReserva.ts's
-    /// ApiError(409) + window.confirm flow.
-    /// </summary>
-    private async Task PostWithdrawalWithOverdraftHandlingAsync(bool confirmed)
-    {
-        var request = new WithdrawalRequestDTO
-        {
-            BucketId = WithdrawalBucketId!.Value,
-            Amount = decimal.Parse(WithdrawalAmount),
-            Date = DateOnly.FromDateTime(WithdrawalDate!.Value),
-            Description = WithdrawalDescription,
-            Confirmed = confirmed,
-        };
-
-        try
-        {
-            await _reserveService.PostWithdrawalAsync(request);
-        }
-        catch (OverdraftConfirmationRequiredException ex) when (!confirmed)
-        {
-            if (!_confirm($"{ex.Message}\n\nProceed anyway?"))
-            {
-                throw;
-            }
-
-            await PostWithdrawalWithOverdraftHandlingAsync(confirmed: true);
-        }
-    }
-
-    #endregion
 
     #region Edit and Delete Movement
 
