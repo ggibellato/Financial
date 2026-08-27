@@ -112,13 +112,12 @@ public class ReservaViewModel : ViewModelBase
     /// clearing the user's in-progress bucket selection. Buckets are seeded-only and never change
     /// mid-session, so skipping the reload there loses nothing.
     /// </param>
-    internal async Task RefreshAsync(bool includeBuckets = true)
-    {
-        var requestId = ++_refreshRequestId;
-        IsLoading = true;
-        Error = null;
-
-        try
+    internal Task RefreshAsync(bool includeBuckets = true) => ExecuteRefreshAsync(
+        () => ++_refreshRequestId,
+        id => id == _refreshRequestId,
+        loading => IsLoading = loading,
+        error => Error = error,
+        async isCurrent =>
         {
             var balancesTask = Task.Run(() => _reserveService.GetBucketBalances());
             var movementsTask = Task.Run(() => _reserveService.GetMovementHistory());
@@ -132,7 +131,7 @@ public class ReservaViewModel : ViewModelBase
             var balances = balancesTask.Result;
             var movements = movementsTask.Result;
 
-            if (requestId != _refreshRequestId)
+            if (!isCurrent())
             {
                 return;
             }
@@ -151,24 +150,9 @@ public class ReservaViewModel : ViewModelBase
                     Withdrawal.WithdrawalBucketId = Withdrawal.DefaultBucketId();
                 }
             }
-        }
-        catch (Exception ex)
-        {
-            // error.type only - the message may embed bucket names/balances (FR-014).
-            _logger.LogError("Reserva refresh failed with {ErrorType}", ex.GetType().Name);
-            if (requestId == _refreshRequestId)
-            {
-                Error = ex.Message;
-            }
-        }
-        finally
-        {
-            if (requestId == _refreshRequestId)
-            {
-                IsLoading = false;
-            }
-        }
-    }
+        },
+        // error.type only - the message may embed bucket names/balances (FR-014).
+        ex => _logger.LogError("Reserva refresh failed with {ErrorType}", ex.GetType().Name));
 
     /// <summary>Bucket metadata is optional display data: a failure here degrades to an empty list instead of failing the whole refresh.</summary>
     private IReadOnlyList<ReserveBucketDTO> TryGetReserveBuckets()

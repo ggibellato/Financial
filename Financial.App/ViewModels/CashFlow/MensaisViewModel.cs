@@ -93,40 +93,24 @@ public class MensaisViewModel : ViewModelBase
     /// (e.g. the constructor's initial load racing a manual retry) by discarding a completion
     /// whose request has been superseded.
     /// </summary>
-    internal async Task RefreshAsync()
-    {
-        var requestId = ++_refreshRequestId;
-        IsLoading = true;
-        Error = null;
-
-        try
+    internal Task RefreshAsync() => ExecuteRefreshAsync(
+        () => ++_refreshRequestId,
+        id => id == _refreshRequestId,
+        loading => IsLoading = loading,
+        error => Error = error,
+        async isCurrent =>
         {
             var bills = await Task.Run(() => _mensaisService.GetBills());
 
-            if (requestId != _refreshRequestId)
+            if (!isCurrent())
             {
                 return;
             }
 
             ApplyBills(bills);
-        }
-        catch (Exception ex)
-        {
-            // error.type only - the message may embed bill values (FR-014).
-            _logger.LogError("Mensais refresh failed with {ErrorType}", ex.GetType().Name);
-            if (requestId == _refreshRequestId)
-            {
-                Error = ex.Message;
-            }
-        }
-        finally
-        {
-            if (requestId == _refreshRequestId)
-            {
-                IsLoading = false;
-            }
-        }
-    }
+        },
+        // error.type only - the message may embed bill values (FR-014).
+        ex => _logger.LogError("Mensais refresh failed with {ErrorType}", ex.GetType().Name));
 
     private void ApplyBills(IReadOnlyList<RecurringBillDTO> bills)
     {

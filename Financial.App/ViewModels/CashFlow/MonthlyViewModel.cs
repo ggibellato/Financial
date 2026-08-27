@@ -156,13 +156,12 @@ public class MonthlyViewModel : ViewModelBase
     /// Guards against overlapping calls (e.g. a rapid year/month change racing a manual retry)
     /// by discarding a completion whose request has been superseded.
     /// </summary>
-    internal async Task RefreshAsync()
-    {
-        var requestId = ++_refreshRequestId;
-        IsLoading = true;
-        Error = null;
-
-        try
+    internal Task RefreshAsync() => ExecuteRefreshAsync(
+        () => ++_refreshRequestId,
+        id => id == _refreshRequestId,
+        loading => IsLoading = loading,
+        error => Error = error,
+        async isCurrent =>
         {
             var year = Year;
             var month = Month;
@@ -201,7 +200,7 @@ public class MonthlyViewModel : ViewModelBase
             var adjustmentsByBank = await Task.WhenAll(banks.Select(bank =>
                 Task.Run(() => _balanceAdjustmentService.GetAdjustmentsByBank(bank.Id))));
 
-            if (requestId != _refreshRequestId)
+            if (!isCurrent())
             {
                 return;
             }
@@ -232,22 +231,7 @@ public class MonthlyViewModel : ViewModelBase
 
             ReplaceAll(IncomeTotals, BuildIncomeTotals(incomes));
             OnPropertyChanged(nameof(TotalIncoming));
-        }
-        catch (Exception ex)
-        {
-            if (requestId == _refreshRequestId)
-            {
-                Error = ex.Message;
-            }
-        }
-        finally
-        {
-            if (requestId == _refreshRequestId)
-            {
-                IsLoading = false;
-            }
-        }
-    }
+        });
 
     /// <summary>Mirrors useMonthly.ts's bankTotals: balance from the month's running total, round-up summed client-side from that bank's expenses.</summary>
     private static List<BankTotalRow> BuildBankTotals(
