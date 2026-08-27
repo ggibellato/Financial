@@ -2,7 +2,8 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:sys="clr-namespace:System;assembly=mscorlib"
-             xmlns:local="clr-namespace:Financial.Presentation.App.Views.CashFlow">
+             xmlns:local="clr-namespace:Financial.Presentation.App.Views.CashFlow"
+             xmlns:behaviors="clr-namespace:Financial.Presentation.App.Behaviors">
     <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
@@ -53,7 +54,8 @@
 
             <TextBlock Grid.Row="2" Foreground="Red" TextWrapping="Wrap" Margin="0,0,0,4" Text="{Binding DeleteMovementError}"/>
 
-            <DataGrid Grid.Row="3" ItemsSource="{Binding Movements}" AutoGenerateColumns="False" IsReadOnly="True">
+            <DataGrid Grid.Row="3" ItemsSource="{Binding Movements}" AutoGenerateColumns="False" IsReadOnly="True"
+                      behaviors:SortableColumnsBehavior.IsEnabled="False">
                 <DataGrid.Resources>
                     <sys:String x:Key="LockedMovementMessage">This reserve movement is linked to an income and can only be changed by editing that income.</sys:String>
                 </DataGrid.Resources>

@@ -148,7 +148,7 @@
                                 </Style>
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
-                        <DataGridTemplateColumn Header="Source" Width="*">
+                        <DataGridTemplateColumn Header="Source" SortMemberPath="IsManual" Width="*">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock>

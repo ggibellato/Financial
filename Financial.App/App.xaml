@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:Financial.Presentation.App"
              xmlns:converters="clr-namespace:Financial.Presentation.App.Converters"
+             xmlns:behaviors="clr-namespace:Financial.Presentation.App.Behaviors"
              xmlns:primitives="clr-namespace:System.Windows.Controls.Primitives;assembly=PresentationFramework">
     <Application.Resources>
         <converters:PositionTypeToColorConverter x:Key="PositionTypeToColorConverter"/>
@@ -65,6 +66,7 @@
             <Setter Property="SelectionMode" Value="Single"/>
             <Setter Property="CanUserResizeRows" Value="False"/>
             <Setter Property="CanUserSortColumns" Value="True"/>
+            <Setter Property="behaviors:SortableColumnsBehavior.IsEnabled" Value="True"/>
         </Style>
 
         <Style TargetType="DataGridColumnHeader">

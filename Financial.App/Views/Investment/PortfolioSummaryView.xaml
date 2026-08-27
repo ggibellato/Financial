@@ -417,7 +417,7 @@
                                         <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTemplateColumn Header="Current Value" Width="{Binding Source={StaticResource ColWidths}, Path=CurrentValue, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
+                                <DataGridTemplateColumn Header="Current Value" SortMemberPath="CurrentValue" Width="{Binding Source={StaticResource ColWidths}, Path=CurrentValue, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="8" VerticalAlignment="Center">
@@ -452,7 +452,7 @@
                                         <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTemplateColumn Header="Current Price" Width="{Binding Source={StaticResource ColWidths}, Path=CurrentPrice, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
+                                <DataGridTemplateColumn Header="Current Price" SortMemberPath="CurrentPrice" Width="{Binding Source={StaticResource ColWidths}, Path=CurrentPrice, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock TextAlignment="Right" Padding="8" VerticalAlignment="Center">
@@ -470,7 +470,7 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTemplateColumn Header="%" Width="{Binding Source={StaticResource ColWidths}, Path=Profit, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
+                                <DataGridTemplateColumn Header="%" SortMemberPath="ProfitPercent" Width="{Binding Source={StaticResource ColWidths}, Path=Profit, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock TextAlignment="Right" Padding="8" VerticalAlignment="Center">
@@ -494,7 +494,7 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTemplateColumn Header="w/ Credits" Width="{Binding Source={StaticResource ColWidths}, Path=ProfitWithCredits, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
+                                <DataGridTemplateColumn Header="w/ Credits" SortMemberPath="ProfitWithCreditsPercent" Width="{Binding Source={StaticResource ColWidths}, Path=ProfitWithCredits, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock TextAlignment="Right" Padding="8" VerticalAlignment="Center">
@@ -518,7 +518,7 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTemplateColumn Header="XIRR" Width="{Binding Source={StaticResource ColWidths}, Path=Xirr, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
+                                <DataGridTemplateColumn Header="XIRR" SortMemberPath="Xirr" Width="{Binding Source={StaticResource ColWidths}, Path=Xirr, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock TextAlignment="Right" Padding="8" VerticalAlignment="Center">
@@ -731,7 +731,7 @@
                                         <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTemplateColumn Header="Realized Gain/Loss" Width="{Binding Source={StaticResource ColWidths}, Path=CurrentValue, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
+                                <DataGridTemplateColumn Header="Realized Gain/Loss" SortMemberPath="RealizedGainLoss" Width="{Binding Source={StaticResource ColWidths}, Path=CurrentValue, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock Text="{Binding DisplayRealizedGainLoss}" TextAlignment="Right" Padding="8" VerticalAlignment="Center">
@@ -766,7 +766,7 @@
                                         <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTemplateColumn Header="%" Width="{Binding Source={StaticResource ColWidths}, Path=Profit, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
+                                <DataGridTemplateColumn Header="%" SortMemberPath="HistoricProfitPercent" Width="{Binding Source={StaticResource ColWidths}, Path=Profit, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock Text="{Binding DisplayHistoricProfitPercent}" TextAlignment="Right" Padding="8" VerticalAlignment="Center">
@@ -786,7 +786,7 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTemplateColumn Header="w/ Credits" Width="{Binding Source={StaticResource ColWidths}, Path=ProfitWithCredits, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
+                                <DataGridTemplateColumn Header="w/ Credits" SortMemberPath="HistoricProfitWithCreditsPercent" Width="{Binding Source={StaticResource ColWidths}, Path=ProfitWithCredits, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock Text="{Binding DisplayHistoricProfitWithCreditsPercent}" TextAlignment="Right" Padding="8" VerticalAlignment="Center">
@@ -806,7 +806,7 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTemplateColumn Header="XIRR" Width="{Binding Source={StaticResource ColWidths}, Path=Xirr, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
+                                <DataGridTemplateColumn Header="XIRR" SortMemberPath="HistoricXirr" Width="{Binding Source={StaticResource ColWidths}, Path=Xirr, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock Text="{Binding DisplayHistoricXirr}" TextAlignment="Right" Padding="8" VerticalAlignment="Center">

@@ -203,8 +203,8 @@ graph TD
 - [x] A grid with a totals/footer row keeps that row fixed at the bottom regardless of the active sort
 
 ### F02. Sortable Columns — WPF
-- [ ] Clicking an unsorted column header sorts the grid ascending and shows an ascending arrow indicator, matching Web's behavior
-- [ ] A `DataGridTemplateColumn` that did not sort before this feature (e.g. Portfolio Summary's Profit %, Cards' Outstanding/Status) now sorts correctly by its underlying value
+- [x] Clicking an unsorted column header sorts the grid ascending and shows an ascending arrow indicator, matching Web's behavior
+- [x] A `DataGridTemplateColumn` that did not sort before this feature (e.g. Portfolio Summary's Profit %, Cards' Outstanding/Status) now sorts correctly by its underlying value
 - [ ] Every grid listed in Section 6 under F02, except the excluded Reserva Movements grid, supports click-to-sort on every visible column, including previously-unsortable template columns
 - [ ] Annual Summary's spacer/emphasis rows and every grid's totals/footer row stay pinned in place regardless of the active sort
 
