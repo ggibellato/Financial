@@ -375,4 +375,22 @@ describe('CreditsTab', () => {
     expect(lines).toHaveLength(2)
     expect(lines.map((l) => l.getAttribute('data-name'))).toEqual(['Dividend', 'Rent'])
   })
+
+  it('clicking_value_header_sorts_rows_ascending_then_descending', () => {
+    setMock({ credits: [CREDIT_DIVIDEND, CREDIT_RENT, CREDIT_JCP] })
+    render(<CreditsTab />)
+    const table = screen.getByRole('table')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Value' }))
+    let dataRows = within(table).getAllByRole('row').slice(1)
+    expect(within(dataRows[0]).getByText('75.00')).toBeInTheDocument()
+    expect(within(dataRows[1]).getByText('120.50')).toBeInTheDocument()
+    expect(within(dataRows[2]).getByText('350.00')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Value' }))
+    dataRows = within(table).getAllByRole('row').slice(1)
+    expect(within(dataRows[0]).getByText('350.00')).toBeInTheDocument()
+    expect(within(dataRows[1]).getByText('120.50')).toBeInTheDocument()
+    expect(within(dataRows[2]).getByText('75.00')).toBeInTheDocument()
+  })
 })

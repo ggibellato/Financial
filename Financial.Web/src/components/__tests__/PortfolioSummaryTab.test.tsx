@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AggregatedSummaryData } from '../../hooks/useAggregatedSummary'
 import type { PortfolioAssetSummaryData, RowPriceState } from '../../hooks/usePortfolioAssetSummary'
@@ -736,6 +736,56 @@ describe('PortfolioSummaryTab', () => {
     renderComponent()
     expect(screen.getByDisplayValue(/100[.,]00/)).toBeInTheDocument()
     expect(screen.queryByText('excludes assets with pending prices')).not.toBeInTheDocument()
+  })
+
+  it('sorts_rows_by_quantity_ascending_when_the_quantity_header_button_is_clicked', () => {
+    const item1: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'AAA11', currentQuantity: 25 }
+    const item2: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'BBB11', currentQuantity: 5 }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item1, item2], rowPrices: [IDLE_ROW_PRICE, IDLE_ROW_PRICE] })
+    renderComponent()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Quantity' }))
+
+    // rows[0]/[1] are the two header rows; rows[2]/[3] are the data rows.
+    const rows = screen.getAllByRole('row')
+    expect(within(rows[2]).getAllByRole('cell')[0].textContent).toBe('BBB11')
+    expect(within(rows[3]).getAllByRole('cell')[0].textContent).toBe('AAA11')
+  })
+
+  it('sorts_rows_by_quantity_descending_on_a_second_click_of_the_same_header', () => {
+    const item1: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'AAA11', currentQuantity: 25 }
+    const item2: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'BBB11', currentQuantity: 5 }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item1, item2], rowPrices: [IDLE_ROW_PRICE, IDLE_ROW_PRICE] })
+    renderComponent()
+
+    const quantityHeaderButton = screen.getByRole('button', { name: 'Quantity' })
+    fireEvent.click(quantityHeaderButton)
+    fireEvent.click(quantityHeaderButton)
+
+    const rows = screen.getAllByRole('row')
+    expect(within(rows[2]).getAllByRole('cell')[0].textContent).toBe('AAA11')
+    expect(within(rows[3]).getAllByRole('cell')[0].textContent).toBe('BBB11')
+  })
+
+  it('sorts_rows_by_a_derived_column_using_the_underlying_current_value_not_display_text', () => {
+    // currentValue = currentPrice x quantity: item1 = 10 x 5 = 50; item2 = 2 x 100 = 200.
+    // Sorting ascending by Current Value must put item1 first even though its formatted
+    // string ("50.00") would sort after item2's ("200.00") under a naive string compare.
+    const item1: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'AAA11', currentQuantity: 5 }
+    const item2: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'BBB11', currentQuantity: 100 }
+    const price1: RowPriceState = { isLoading: false, currentPrice: 10, fetchFailed: false, isManual: false, xirr: null, isLoadingXirr: false }
+    const price2: RowPriceState = { isLoading: false, currentPrice: 2, fetchFailed: false, isManual: false, xirr: null, isLoadingXirr: false }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item1, item2], rowPrices: [price1, price2] })
+    renderComponent()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Current Value' }))
+
+    const rows = screen.getAllByRole('row')
+    expect(within(rows[2]).getAllByRole('cell')[0].textContent).toBe('AAA11')
+    expect(within(rows[3]).getAllByRole('cell')[0].textContent).toBe('BBB11')
   })
 
   it('footer_panel_is_not_inside_table_element', () => {

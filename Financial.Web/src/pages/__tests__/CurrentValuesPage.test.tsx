@@ -239,6 +239,33 @@ describe('CurrentValuesPage', () => {
     expect(priceCells[1]).toHaveTextContent('20.00')
   })
 
+  it('sorts results by Price ascending when the Price header button is clicked', async () => {
+    getBrokersMock.mockResolvedValue([
+      makeBroker([
+        {
+          name: 'Default',
+          assets: [
+            { name: 'BCIA11', ticker: 'BCIA11' },
+            { name: 'KLBN4', ticker: 'KLBN4' },
+          ],
+        },
+      ]),
+    ])
+    getCurrentPriceMock
+      .mockResolvedValueOnce(makePrice('BCIA11', 85.5))
+      .mockResolvedValueOnce(makePrice('KLBN4', 10.0))
+
+    render(<CurrentValuesPage />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Check Prices' }))
+    await waitFor(() => expect(screen.queryByText(/Completed!/)).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Price' }))
+
+    const rows = screen.getAllByRole('row')
+    expect(rows[1]).toHaveTextContent('KLBN4')
+    expect(rows[2]).toHaveTextContent('BCIA11')
+  })
+
   it('shows error state with Retry when broker tree fails to load', async () => {
     getBrokersMock.mockRejectedValue(new Error('Network error'))
 

@@ -16,6 +16,8 @@ import type { CreditDto } from '../api/types'
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
 import SplitPanel from './SplitPanel'
+import SortableColumnHeader from './grid/SortableColumnHeader'
+import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import type { ChartType, CreditFormField, MonthBucket, ViewMode } from '../hooks/useCredits'
 import { useCredits } from '../hooks/useCredits'
 import { PERIOD_FILTER_OPTIONS } from '../utils/periodFilter'
@@ -46,6 +48,12 @@ function buildPalette(count: number): string[] {
     colors.push(`rgb(${r}, ${g}, ${b})`)
   }
   return colors
+}
+
+const SORT_ACCESSORS: Record<string, SortAccessor<CreditDto>> = {
+  date: (c) => new Date(c.date),
+  type: (c) => c.type,
+  value: (c) => c.value,
 }
 
 interface CreditRowProps {
@@ -287,6 +295,8 @@ export default function CreditsTab() {
     deleteCredit,
   } = useCredits()
 
+  const { sortedRows, sortState, requestSort } = useSortableRows(credits, SORT_ACCESSORS)
+
   // Confirmation belongs to the caller, not to the data hook. A hook that calls window.confirm
   // can only be tested by stubbing a browser global, and it decides for every caller that a
   // prompt is wanted at all. Same reasoning as ControleMaePage and MensaisPage, which already
@@ -390,13 +400,29 @@ export default function CreditsTab() {
             <tr>
               <th />
               <th />
-              <th>Date</th>
-              <th>Type</th>
-              <th className="data-table__col--numeric credits-tab__value">Value</th>
+              <SortableColumnHeader
+                label="Date"
+                columnKey="date"
+                sortDirection={sortState?.columnKey === 'date' ? sortState.direction : undefined}
+                onSort={requestSort}
+              />
+              <SortableColumnHeader
+                label="Type"
+                columnKey="type"
+                sortDirection={sortState?.columnKey === 'type' ? sortState.direction : undefined}
+                onSort={requestSort}
+              />
+              <SortableColumnHeader
+                label="Value"
+                columnKey="value"
+                numeric
+                sortDirection={sortState?.columnKey === 'value' ? sortState.direction : undefined}
+                onSort={requestSort}
+              />
             </tr>
           </thead>
           <tbody>
-            {credits.map((c) => (
+            {sortedRows.map((c) => (
               <CreditRow key={c.id} credit={c} onEdit={showEditForm} onDelete={confirmAndDeleteCredit} />
             ))}
           </tbody>

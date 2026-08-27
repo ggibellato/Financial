@@ -3,6 +3,8 @@ import { apiClient } from '../api/financialApiClient'
 import type { BrokerNodeDto, PortfolioReferenceDto } from '../api/types'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
+import SortableColumnHeader from '../components/grid/SortableColumnHeader'
+import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { formatN2, getErrorMessage } from '../utils/formatters'
 import './CurrentValuesPage.css'
 
@@ -123,6 +125,13 @@ export default function CurrentValuesPage() {
     setIsRunning(false)
   }, [assetsToCheck])
 
+  const priceAccessors: Record<string, SortAccessor<PriceResult>> = {
+    ticker: (r) => r.ticker,
+    name: (r) => r.name,
+    price: (r) => r.price,
+  }
+  const { sortedRows, sortState, requestSort } = useSortableRows(results, priceAccessors)
+
   if (isLoading) {
     return <LoadingState message="Loading data..." />
   }
@@ -159,13 +168,29 @@ export default function CurrentValuesPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Ticker</th>
-                <th>Name</th>
-                <th className="current-values__col--price data-table__col--numeric">Price</th>
+                <SortableColumnHeader
+                  label="Ticker"
+                  columnKey="ticker"
+                  sortDirection={sortState?.columnKey === 'ticker' ? sortState.direction : undefined}
+                  onSort={requestSort}
+                />
+                <SortableColumnHeader
+                  label="Name"
+                  columnKey="name"
+                  sortDirection={sortState?.columnKey === 'name' ? sortState.direction : undefined}
+                  onSort={requestSort}
+                />
+                <SortableColumnHeader
+                  label="Price"
+                  columnKey="price"
+                  numeric
+                  sortDirection={sortState?.columnKey === 'price' ? sortState.direction : undefined}
+                  onSort={requestSort}
+                />
               </tr>
             </thead>
             <tbody>
-              {results.map((result) => (
+              {sortedRows.map((result) => (
                 <tr key={`${result.exchange}-${result.ticker}-${result.assetName}`}>
                   <td>{result.ticker}</td>
                   <td>{result.name}</td>

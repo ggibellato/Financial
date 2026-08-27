@@ -150,6 +150,50 @@ describe('DividendCheckPage', () => {
     expect(yearRows[2]).toHaveTextContent('2022')
   })
 
+  it('sorts dividend history by date ascending when the Date header button is clicked', async () => {
+    getDividendSummaryMock.mockResolvedValue(baseSummary)
+    getDividendHistoryMock.mockResolvedValue([
+      { type: 'Dividend', date: '2023-12-10T00:00:00Z', value: 0.87 },
+      { type: 'Dividend', date: '2024-06-15T00:00:00Z', value: 1.23 },
+    ])
+
+    render(<DividendCheckPage />)
+    await screen.findByDisplayValue('KLBN4')
+    fireEvent.click(screen.getByRole('button', { name: 'Check' }))
+    await screen.findByText('Dividend History')
+
+    const tables = screen.getAllByRole('table')
+    fireEvent.click(within(tables[0]).getByRole('button', { name: 'Date' }))
+
+    const historyRows = within(tables[0]).getAllByRole('row')
+    expect(historyRows[1]).toHaveTextContent('10/12/2023')
+    expect(historyRows[2]).toHaveTextContent('15/06/2024')
+  })
+
+  it('sorts by-year totals by year ascending when the Year header button is clicked', async () => {
+    const summary = {
+      ...baseSummary,
+      yearTotals: [
+        { year: 2022, total: 3 },
+        { year: 2024, total: 5 },
+      ],
+    }
+    getDividendSummaryMock.mockResolvedValue(summary)
+    getDividendHistoryMock.mockResolvedValue(baseHistory)
+
+    render(<DividendCheckPage />)
+    await screen.findByDisplayValue('KLBN4')
+    fireEvent.click(screen.getByRole('button', { name: 'Check' }))
+    await screen.findByText('By Year')
+
+    const tables = screen.getAllByRole('table')
+    fireEvent.click(within(tables[1]).getByRole('button', { name: 'Year' }))
+
+    const yearRows = within(tables[1]).getAllByRole('row')
+    expect(yearRows[1]).toHaveTextContent('2022')
+    expect(yearRows[2]).toHaveTextContent('2024')
+  })
+
   it('shows Checking... and disables button during fetch', async () => {
     getDividendSummaryMock.mockReturnValue(new Promise(() => {}))
     getDividendHistoryMock.mockReturnValue(new Promise(() => {}))

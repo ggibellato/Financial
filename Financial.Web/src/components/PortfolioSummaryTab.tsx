@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react'
+import { ArrowSortDownRegular, ArrowSortUpRegular } from '@fluentui/react-icons'
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
+import { useSortableRows, type SortAccessor, type SortDirection } from '../hooks/useSortableRows'
 import { usePortfolioAssetSummary } from '../hooks/usePortfolioAssetSummary'
 import type { RowPriceState } from '../hooks/usePortfolioAssetSummary'
 import type { PortfolioAssetSummaryItemDto } from '../api/types'
@@ -9,13 +11,109 @@ import { formatMonthYear, formatN2, formatN8, formatPercent1, formatShortDate, s
 import AggregatedSummaryTab from './AggregatedSummaryTab'
 import './PortfolioSummaryTab.css'
 
-function formatCreditMonth(yearMonth: string): string {
+function parseCreditMonth(yearMonth: string): Date {
   const [year, month] = yearMonth.split('-').map(Number)
-  return formatMonthYear(new Date(year, month - 1, 1))
+  return new Date(year, month - 1, 1)
+}
+
+function formatCreditMonth(yearMonth: string): string {
+  return formatMonthYear(parseCreditMonth(yearMonth))
 }
 
 function getProfitClass(value: number): string {
   return signClass(value, 'portfolio-summary__profit')
+}
+
+function computeCostBasis(item: PortfolioAssetSummaryItemDto): number {
+  return item.currentQuantity * item.averagePrice
+}
+
+function computeCurrentValue(
+  item: PortfolioAssetSummaryItemDto,
+  rowPrice: RowPriceState,
+  isHistoric: boolean,
+): number | null {
+  return !isHistoric && rowPrice.currentPrice !== null ? rowPrice.currentPrice * item.currentQuantity : null
+}
+
+// Historic positions are closed: "Profit %" reflects the realized capital gain alone
+// (credits excluded, matching the active-scope semantic where credits are a separate
+// "w/ Credits" column), while "Profit % w/ Credits" uses the full realized gain/loss.
+function computeProfitPercent(
+  item: PortfolioAssetSummaryItemDto,
+  currentValue: number | null,
+  isHistoric: boolean,
+): number | null {
+  if (isHistoric) {
+    return item.totalBought !== 0 ? ((item.realizedGainLoss - item.totalCredits) / item.totalBought) * 100 : null
+  }
+  const costBasis = computeCostBasis(item)
+  return currentValue !== null && costBasis !== 0 ? ((currentValue - costBasis) / costBasis) * 100 : null
+}
+
+function computeProfitWithCreditsPercent(
+  item: PortfolioAssetSummaryItemDto,
+  currentValue: number | null,
+  isHistoric: boolean,
+): number | null {
+  if (isHistoric) {
+    return item.totalBought !== 0 ? (item.realizedGainLoss / item.totalBought) * 100 : null
+  }
+  const costBasis = computeCostBasis(item)
+  return currentValue !== null && costBasis !== 0
+    ? ((currentValue + item.totalCredits - costBasis) / costBasis) * 100
+    : null
+}
+
+interface AssetTableRow {
+  item: PortfolioAssetSummaryItemDto
+  rowPrice: RowPriceState
+}
+
+const DEFAULT_ROW_PRICE: RowPriceState = {
+  isLoading: false,
+  currentPrice: null,
+  fetchFailed: false,
+  isManual: false,
+  xirr: null,
+  isLoadingXirr: false,
+}
+
+interface SortableHeaderCellProps {
+  label: ReactNode
+  columnKey: string
+  sortDirection?: SortDirection
+  onSort: (columnKey: string) => void
+  numeric?: boolean
+  rowSpan?: number
+  className?: string
+}
+
+// This table's header spans two <tr> rows (rowSpan cells alongside grouped sub-column
+// headers), which the shared SortableColumnHeader has no prop for, and its "Last Month"
+// group uses a credits-separator accent class SortableColumnHeader can't accept either.
+// This mirrors SortableColumnHeader's markup/classes exactly (so its CSS still applies)
+// while supporting rowSpan and an extra className.
+function SortableHeaderCell({ label, columnKey, sortDirection, onSort, numeric, rowSpan, className }: SortableHeaderCellProps) {
+  return (
+    <th
+      rowSpan={rowSpan}
+      className={['sortable-column-header', numeric ? 'data-table__col--numeric' : '', className ?? '']
+        .filter(Boolean)
+        .join(' ')}
+      aria-sort={sortDirection ?? 'none'}
+    >
+      <button type="button" className="sortable-column-header__button" onClick={() => onSort(columnKey)}>
+        <span className="sortable-column-header__label">{label}</span>
+        {sortDirection === 'ascending' && (
+          <ArrowSortUpRegular className="sortable-column-header__icon" aria-hidden="true" />
+        )}
+        {sortDirection === 'descending' && (
+          <ArrowSortDownRegular className="sortable-column-header__icon" aria-hidden="true" />
+        )}
+      </button>
+    </th>
+  )
 }
 
 function renderGatedCell(
@@ -36,29 +134,9 @@ interface AssetRowProps {
 }
 
 function AssetRow({ item, rowPrice, isHistoric }: AssetRowProps) {
-  const currentValue =
-    !isHistoric && rowPrice.currentPrice !== null ? rowPrice.currentPrice * item.currentQuantity : null
-
-  const costBasis = item.currentQuantity * item.averagePrice
-
-  // Historic positions are closed: "Profit %" reflects the realized capital gain alone
-  // (credits excluded, matching the active-scope semantic where credits are a separate
-  // "w/ Credits" column), while "Profit % w/ Credits" uses the full realized gain/loss.
-  const profitPercent = isHistoric
-    ? item.totalBought !== 0
-      ? ((item.realizedGainLoss - item.totalCredits) / item.totalBought) * 100
-      : null
-    : currentValue !== null && costBasis !== 0
-      ? ((currentValue - costBasis) / costBasis) * 100
-      : null
-
-  const profitWithCreditsPercent = isHistoric
-    ? item.totalBought !== 0
-      ? (item.realizedGainLoss / item.totalBought) * 100
-      : null
-    : currentValue !== null && costBasis !== 0
-      ? ((currentValue + item.totalCredits - costBasis) / costBasis) * 100
-      : null
+  const currentValue = computeCurrentValue(item, rowPrice, isHistoric)
+  const profitPercent = computeProfitPercent(item, currentValue, isHistoric)
+  const profitWithCreditsPercent = computeProfitWithCreditsPercent(item, currentValue, isHistoric)
 
   // Solved server-side by POST /xirr/calculate, the same solver the asset tab uses, so a
   // correction to it cannot reach one surface and miss the other.
@@ -149,6 +227,37 @@ export default function PortfolioSummaryTab() {
   const isHistoric = scope === 'historic'
   const { items, rowPrices, isLoading, error, retry } = usePortfolioAssetSummary()
 
+  const tableRows: AssetTableRow[] = (items ?? []).map((item, index) => ({
+    item,
+    rowPrice: rowPrices[index] ?? DEFAULT_ROW_PRICE,
+  }))
+
+  const sortAccessors: Record<string, SortAccessor<AssetTableRow>> = {
+    assetName: (r) => r.item.assetName,
+    firstInvestment: (r) => (r.item.firstInvestmentDate === null ? null : new Date(r.item.firstInvestmentDate)),
+    quantity: (r) => r.item.currentQuantity,
+    portfolioWeight: (r) => r.item.portfolioWeight,
+    totalInvested: (r) => r.item.totalInvested,
+    realizedGainLoss: (r) => r.item.realizedGainLoss,
+    currentValue: (r) => computeCurrentValue(r.item, r.rowPrice, isHistoric),
+    totalCredits: (r) => r.item.totalCredits,
+    averagePrice: (r) => r.item.averagePrice,
+    price: (r) => (isHistoric ? r.item.averageSellPrice : r.rowPrice.currentPrice),
+    profitPercent: (r) => computeProfitPercent(r.item, computeCurrentValue(r.item, r.rowPrice, isHistoric), isHistoric),
+    profitWithCreditsPercent: (r) =>
+      computeProfitWithCreditsPercent(r.item, computeCurrentValue(r.item, r.rowPrice, isHistoric), isHistoric),
+    xirr: (r) => r.rowPrice.xirr,
+    lastMonthCredits: (r) => (r.item.lastCreditMonth === null ? null : r.item.lastMonthCredits),
+    lastCreditMonth: (r) => (r.item.lastCreditMonth === null ? null : parseCreditMonth(r.item.lastCreditMonth)),
+    lastMonthCreditsPercent: (r) => r.item.lastMonthCreditsPercent,
+    estimatedAnnualCredits: (r) => r.item.estimatedAnnualCredits,
+    estimatedAnnualPercent: (r) => r.item.estimatedAnnualPercent,
+  }
+
+  const { sortedRows, sortState, requestSort } = useSortableRows(tableRows, sortAccessors)
+  const sortDirectionFor = (columnKey: string): SortDirection | undefined =>
+    sortState?.columnKey === columnKey ? sortState.direction : undefined
+
   const creditsLabel = `Credits ${formatMonthYear(new Date())}`
 
   const footer =
@@ -180,48 +289,38 @@ export default function PortfolioSummaryTab() {
           <table className="portfolio-summary__table data-table">
             <thead>
               <tr>
-                <th rowSpan={2}>Asset Name</th>
-                <th rowSpan={2}>First Investment</th>
-                <th rowSpan={2}>Quantity</th>
-                <th rowSpan={2}>% Portfolio</th>
-                <th rowSpan={2}>Total Invested</th>
-                {isHistoric && <th rowSpan={2}>Realized Gain/Loss</th>}
-                {!isHistoric && <th rowSpan={2}>Current Value</th>}
-                <th rowSpan={2}>Total Credits</th>
-                <th rowSpan={2}>Average Price</th>
-                <th rowSpan={2}>{isHistoric ? 'Sold Price' : 'Current Price'}</th>
+                <SortableHeaderCell rowSpan={2} label="Asset Name" columnKey="assetName" sortDirection={sortDirectionFor('assetName')} onSort={requestSort} />
+                <SortableHeaderCell rowSpan={2} label="First Investment" columnKey="firstInvestment" sortDirection={sortDirectionFor('firstInvestment')} onSort={requestSort} />
+                <SortableHeaderCell rowSpan={2} numeric label="Quantity" columnKey="quantity" sortDirection={sortDirectionFor('quantity')} onSort={requestSort} />
+                <SortableHeaderCell rowSpan={2} numeric label="% Portfolio" columnKey="portfolioWeight" sortDirection={sortDirectionFor('portfolioWeight')} onSort={requestSort} />
+                <SortableHeaderCell rowSpan={2} numeric label="Total Invested" columnKey="totalInvested" sortDirection={sortDirectionFor('totalInvested')} onSort={requestSort} />
+                {isHistoric && (
+                  <SortableHeaderCell rowSpan={2} numeric label="Realized Gain/Loss" columnKey="realizedGainLoss" sortDirection={sortDirectionFor('realizedGainLoss')} onSort={requestSort} />
+                )}
+                {!isHistoric && (
+                  <SortableHeaderCell rowSpan={2} numeric label="Current Value" columnKey="currentValue" sortDirection={sortDirectionFor('currentValue')} onSort={requestSort} />
+                )}
+                <SortableHeaderCell rowSpan={2} numeric label="Total Credits" columnKey="totalCredits" sortDirection={sortDirectionFor('totalCredits')} onSort={requestSort} />
+                <SortableHeaderCell rowSpan={2} numeric label="Average Price" columnKey="averagePrice" sortDirection={sortDirectionFor('averagePrice')} onSort={requestSort} />
+                <SortableHeaderCell rowSpan={2} numeric label={isHistoric ? 'Sold Price' : 'Current Price'} columnKey="price" sortDirection={sortDirectionFor('price')} onSort={requestSort} />
                 <th colSpan={2} className="portfolio-summary__group-header">Profit</th>
-                <th rowSpan={2}>XIRR</th>
+                <SortableHeaderCell rowSpan={2} numeric label="XIRR" columnKey="xirr" sortDirection={sortDirectionFor('xirr')} onSort={requestSort} />
                 <th colSpan={3} className="portfolio-summary__group-header portfolio-summary__credits-separator">Last Month</th>
                 <th colSpan={2} className="portfolio-summary__group-header">Est. Annual</th>
               </tr>
               <tr>
-                <th>%</th>
-                <th>w/ Credits</th>
-                <th className="portfolio-summary__credits-separator">Credits</th>
-                <th>Month</th>
-                <th>%</th>
-                <th>Credits</th>
-                <th>%</th>
+                <SortableHeaderCell numeric label="%" columnKey="profitPercent" sortDirection={sortDirectionFor('profitPercent')} onSort={requestSort} />
+                <SortableHeaderCell numeric label="w/ Credits" columnKey="profitWithCreditsPercent" sortDirection={sortDirectionFor('profitWithCreditsPercent')} onSort={requestSort} />
+                <SortableHeaderCell numeric label="Credits" columnKey="lastMonthCredits" sortDirection={sortDirectionFor('lastMonthCredits')} onSort={requestSort} className="portfolio-summary__credits-separator" />
+                <SortableHeaderCell numeric label="Month" columnKey="lastCreditMonth" sortDirection={sortDirectionFor('lastCreditMonth')} onSort={requestSort} />
+                <SortableHeaderCell numeric label="%" columnKey="lastMonthCreditsPercent" sortDirection={sortDirectionFor('lastMonthCreditsPercent')} onSort={requestSort} />
+                <SortableHeaderCell numeric label="Credits" columnKey="estimatedAnnualCredits" sortDirection={sortDirectionFor('estimatedAnnualCredits')} onSort={requestSort} />
+                <SortableHeaderCell numeric label="%" columnKey="estimatedAnnualPercent" sortDirection={sortDirectionFor('estimatedAnnualPercent')} onSort={requestSort} />
               </tr>
             </thead>
             <tbody>
-              {items.map((item, index) => (
-                <AssetRow
-                  key={item.assetName}
-                  item={item}
-                  rowPrice={
-                    rowPrices[index] ?? {
-                      isLoading: false,
-                      currentPrice: null,
-                      fetchFailed: false,
-                      isManual: false,
-                      xirr: null,
-                      isLoadingXirr: false,
-                    }
-                  }
-                  isHistoric={isHistoric}
-                />
+              {sortedRows.map((row) => (
+                <AssetRow key={row.item.assetName} item={row.item} rowPrice={row.rowPrice} isHistoric={isHistoric} />
               ))}
             </tbody>
           </table>
