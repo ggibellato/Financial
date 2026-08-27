@@ -2,6 +2,8 @@ import { Button } from '@fluentui/react-components'
 import { AddRegular, DeleteRegular } from '@fluentui/react-icons'
 import type { BalanceAdjustmentDto, BankDto, TransferDto } from '../api/types'
 import { ALL_BANKS_FILTER, type BankOperationEntry } from '../hooks/useBankOperations'
+import SortableColumnHeader from './grid/SortableColumnHeader'
+import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { formatN2, formatShortDate } from '../utils/formatters'
 import './BankOperationsSection.css'
 
@@ -47,6 +49,14 @@ function OperationRow({ entry, onEditTransfer, onEditAdjustment, onDeleteTransfe
   )
 }
 
+const SORT_ACCESSORS: Record<string, SortAccessor<BankOperationEntry>> = {
+  date: (entry) => new Date(entry.date),
+  type: (entry) => (entry.kind === 'transfer' ? 'Transfer' : 'Adjustment'),
+  bank: (entry) => (entry.kind === 'transfer' ? `${entry.sourceBank} → ${entry.destinationBank}` : entry.bank),
+  amount: (entry) => (entry.kind === 'transfer' ? entry.amount : entry.delta),
+  note: (entry) => entry.note,
+}
+
 function emptyStateMessage(bankFilter: string): string {
   return bankFilter === ALL_BANKS_FILTER
     ? 'No transfers or balance corrections this month.'
@@ -78,6 +88,8 @@ export default function BankOperationsSection({
   onDeleteTransfer,
   onDeleteAdjustment,
 }: BankOperationsSectionProps) {
+  const { sortedRows, sortState, requestSort } = useSortableRows(operations, SORT_ACCESSORS)
+
   return (
     <section className="bank-operations-section">
       <div className="bank-operations-section__header">
@@ -115,15 +127,41 @@ export default function BankOperationsSection({
               <tr>
                 <th />
                 <th />
-                <th>Date</th>
-                <th>Type</th>
-                <th>Bank(s)</th>
-                <th className="data-table__col--numeric">Amount/Delta</th>
-                <th>Note</th>
+                <SortableColumnHeader
+                  label="Date"
+                  columnKey="date"
+                  sortDirection={sortState?.columnKey === 'date' ? sortState.direction : undefined}
+                  onSort={requestSort}
+                />
+                <SortableColumnHeader
+                  label="Type"
+                  columnKey="type"
+                  sortDirection={sortState?.columnKey === 'type' ? sortState.direction : undefined}
+                  onSort={requestSort}
+                />
+                <SortableColumnHeader
+                  label="Bank(s)"
+                  columnKey="bank"
+                  sortDirection={sortState?.columnKey === 'bank' ? sortState.direction : undefined}
+                  onSort={requestSort}
+                />
+                <SortableColumnHeader
+                  label="Amount/Delta"
+                  columnKey="amount"
+                  numeric
+                  sortDirection={sortState?.columnKey === 'amount' ? sortState.direction : undefined}
+                  onSort={requestSort}
+                />
+                <SortableColumnHeader
+                  label="Note"
+                  columnKey="note"
+                  sortDirection={sortState?.columnKey === 'note' ? sortState.direction : undefined}
+                  onSort={requestSort}
+                />
               </tr>
             </thead>
             <tbody>
-              {operations.map((entry) => (
+              {sortedRows.map((entry) => (
                 <OperationRow
                   key={`${entry.kind}-${entry.id}`}
                   entry={entry}

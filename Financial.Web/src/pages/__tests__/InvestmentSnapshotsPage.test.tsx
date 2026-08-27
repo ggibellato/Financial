@@ -83,4 +83,27 @@ describe('InvestmentSnapshotsPage', () => {
     await waitFor(() => expect(updateInvestmentSnapshotValueMock).toHaveBeenCalledWith('s0', { value: 999 }))
     await waitFor(() => expect(screen.getByText('999.00')).toBeInTheDocument())
   })
+
+  it('sorts rows by clicking the Value column header, keeping the totals row fixed as the last row', async () => {
+    const { container } = render(<InvestmentSnapshotsPage />)
+
+    await waitFor(() => expect(screen.getByText('Account0')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Value' }))
+
+    const dataRows = container.querySelectorAll('.investment-snapshots-page__section tbody tr')
+    expect(dataRows).toHaveLength(11)
+    expect(dataRows[0]).toHaveTextContent('Account0')
+    expect(dataRows[10]).toHaveTextContent('Account10')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Value' }))
+
+    const dataRowsDesc = container.querySelectorAll('.investment-snapshots-page__section tbody tr')
+    expect(dataRowsDesc[0]).toHaveTextContent('Account10')
+    expect(dataRowsDesc[10]).toHaveTextContent('Account0')
+
+    const allRows = screen.getAllByRole('row')
+    expect(allRows).toHaveLength(13) // header + 11 accounts + totals row
+    expect(allRows[allRows.length - 1]).toHaveTextContent('5,300.00')
+  })
 })

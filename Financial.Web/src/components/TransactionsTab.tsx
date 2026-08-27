@@ -14,6 +14,8 @@ import { DeleteRegular } from '@fluentui/react-icons'
 import type { TransactionDto } from '../api/types'
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
+import SortableColumnHeader from './grid/SortableColumnHeader'
+import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import type { ChartDisplayMode, TransactionFormField, TransactionMonthBucket } from '../hooks/useTransactions'
 import { useTransactions } from '../hooks/useTransactions'
 import { PERIOD_FILTER_OPTIONS } from '../utils/periodFilter'
@@ -25,6 +27,15 @@ import './TransactionsTab.css'
 // (docs/ui/forms-data-and-visualisations.md's "Series color" rule) — not a
 // neutral/grey, single-series charts are blue on both platforms.
 const CHART_COLOR = '#4682b4'
+
+const SORT_ACCESSORS: Record<string, SortAccessor<TransactionDto>> = {
+  date: (t) => new Date(t.date),
+  type: (t) => t.type,
+  quantity: (t) => t.quantity,
+  unitPrice: (t) => t.unitPrice,
+  fees: (t) => t.fees,
+  total: (t) => t.totalPrice,
+}
 
 interface TransactionRowProps {
   transaction: TransactionDto
@@ -296,6 +307,8 @@ export default function TransactionsTab() {
     deleteTransaction,
   } = useTransactions()
 
+  const { sortedRows, sortState, requestSort } = useSortableRows(transactions, SORT_ACCESSORS)
+
   // Confirmation belongs to the caller, not to the data hook. A hook that calls window.confirm
   // can only be tested by stubbing a browser global, and it decides for every caller that a
   // prompt is wanted at all. Same reasoning as ControleMaePage and MensaisPage, which already
@@ -365,16 +378,50 @@ export default function TransactionsTab() {
             <tr>
               <th />
               <th />
-              <th>Date</th>
-              <th>Type</th>
-              <th className="data-table__col--numeric">Quantity</th>
-              <th className="data-table__col--numeric">Unit Price</th>
-              <th className="data-table__col--numeric">Fees</th>
-              <th className="data-table__col--numeric transactions-tab__total">Total</th>
+              <SortableColumnHeader
+                label="Date"
+                columnKey="date"
+                sortDirection={sortState?.columnKey === 'date' ? sortState.direction : undefined}
+                onSort={requestSort}
+              />
+              <SortableColumnHeader
+                label="Type"
+                columnKey="type"
+                sortDirection={sortState?.columnKey === 'type' ? sortState.direction : undefined}
+                onSort={requestSort}
+              />
+              <SortableColumnHeader
+                label="Quantity"
+                columnKey="quantity"
+                numeric
+                sortDirection={sortState?.columnKey === 'quantity' ? sortState.direction : undefined}
+                onSort={requestSort}
+              />
+              <SortableColumnHeader
+                label="Unit Price"
+                columnKey="unitPrice"
+                numeric
+                sortDirection={sortState?.columnKey === 'unitPrice' ? sortState.direction : undefined}
+                onSort={requestSort}
+              />
+              <SortableColumnHeader
+                label="Fees"
+                columnKey="fees"
+                numeric
+                sortDirection={sortState?.columnKey === 'fees' ? sortState.direction : undefined}
+                onSort={requestSort}
+              />
+              <SortableColumnHeader
+                label="Total"
+                columnKey="total"
+                numeric
+                sortDirection={sortState?.columnKey === 'total' ? sortState.direction : undefined}
+                onSort={requestSort}
+              />
             </tr>
           </thead>
           <tbody>
-            {transactions.map((t) => (
+            {sortedRows.map((t) => (
               <TransactionRow
                 key={t.id}
                 transaction={t}

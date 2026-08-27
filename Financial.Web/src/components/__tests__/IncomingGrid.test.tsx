@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import IncomingGrid from '../IncomingGrid'
 import type { IncomeTotal } from '../../hooks/useMonthly'
@@ -31,5 +31,15 @@ describe('IncomingGrid', () => {
 
     expect(screen.getByText(/Calculated Tithe:/)).toBeInTheDocument()
     expect(screen.getByText(/Tithe Balance:/)).toBeInTheDocument()
+  })
+
+  it('sorts rows by Net ascending when its header is clicked', () => {
+    render(<IncomingGrid incomeTotals={INCOME_TOTALS} totalIncoming={2550} titheSummary={null} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Net' }))
+
+    const dataRows = screen.getAllByRole('row').slice(1)
+    expect(within(dataRows[0]).getByText('Lottery')).toBeInTheDocument()
+    expect(within(dataRows[1]).getByText('Gleison')).toBeInTheDocument()
   })
 })

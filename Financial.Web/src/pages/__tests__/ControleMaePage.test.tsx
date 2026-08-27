@@ -142,4 +142,27 @@ describe('ControleMaePage', () => {
 
     expect(deleteMaeLedgerEntryMock).not.toHaveBeenCalled()
   })
+
+  it('sorts entries by clicking the Description column header, keeping the totals row fixed', async () => {
+    const entries: MaeLedgerEntryDto[] = [
+      { id: 'e1', date: '2026-07-15', description: 'Zebra item', note: '', sourceCurrency: 'BRL', brlValue: 350, gbpValue: 51.1 },
+      { id: 'e2', date: '2026-07-20', description: 'Apple item', note: '', sourceCurrency: 'BRL', brlValue: 100, gbpValue: 20 },
+    ]
+    getMaeLedgerEntriesFromDateMock.mockResolvedValue(entries)
+
+    const { container } = render(<ControleMaePage />)
+
+    await waitFor(() => expect(screen.getByText('Zebra item')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Description' }))
+
+    const dataRows = container.querySelectorAll('.controle-mae-page__section tbody tr')
+    expect(dataRows).toHaveLength(2)
+    expect(dataRows[0]).toHaveTextContent('Apple item')
+    expect(dataRows[1]).toHaveTextContent('Zebra item')
+
+    const totalsRow = container.querySelector('.controle-mae-page__totals-row')
+    expect(totalsRow).toHaveTextContent('5,000.00')
+    expect(totalsRow).toHaveTextContent('720.45')
+  })
 })

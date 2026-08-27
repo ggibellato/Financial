@@ -288,4 +288,20 @@ describe('TransactionsTab', () => {
     const rows = within(screen.getByRole('table')).getAllByRole('row')
     expect(rows).toHaveLength(1) // header row only, no data rows
   })
+
+  it('clicking_total_header_sorts_rows_ascending_then_descending', () => {
+    setMock({ transactions: [TRANSACTION_BUY, TRANSACTION_SELL] })
+    render(<TransactionsTab />)
+    const table = screen.getByRole('table')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Total' }))
+    let dataRows = within(table).getAllByRole('row').slice(1)
+    expect(within(dataRows[0]).getByText('251.00')).toBeInTheDocument()
+    expect(within(dataRows[1]).getByText('420.50')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Total' }))
+    dataRows = within(table).getAllByRole('row').slice(1)
+    expect(within(dataRows[0]).getByText('420.50')).toBeInTheDocument()
+    expect(within(dataRows[1]).getByText('251.00')).toBeInTheDocument()
+  })
 })

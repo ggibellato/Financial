@@ -1,6 +1,8 @@
 import { Button, MessageBar, MessageBarBody, makeStyles, tokens } from '@fluentui/react-components'
 import { AddRegular, DeleteRegular } from '@fluentui/react-icons'
 import type { IncomeDto } from '../api/types'
+import SortableColumnHeader from './grid/SortableColumnHeader'
+import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { formatN2, formatShortDate } from '../utils/formatters'
 import './IncomeSection.css'
 
@@ -62,6 +64,15 @@ interface IncomeSectionProps {
   splitConfirmationMessage?: string | null
 }
 
+const SORT_ACCESSORS: Record<string, SortAccessor<IncomeDto>> = {
+  date: (income) => new Date(income.date),
+  source: (income) => income.incomeSourceName,
+  gross: (income) => income.grossValue,
+  net: (income) => income.netValue,
+  bank: (income) => income.bankName,
+  description: (income) => income.description,
+}
+
 export default function IncomeSection({
   incomes,
   onEdit,
@@ -70,6 +81,8 @@ export default function IncomeSection({
   splitConfirmationMessage,
 }: IncomeSectionProps) {
   const styles = useStyles()
+  const { sortedRows, sortState, requestSort } = useSortableRows(incomes, SORT_ACCESSORS)
+
   return (
     <section className="income-section">
       <div className={styles.header}>
@@ -88,16 +101,48 @@ export default function IncomeSection({
             <tr>
               <th />
               <th />
-              <th>Date</th>
-              <th>Source</th>
-              <th className="data-table__col--numeric">Gross</th>
-              <th className="data-table__col--numeric">Net</th>
-              <th>Bank</th>
-              <th>Description</th>
+              <SortableColumnHeader
+                label="Date"
+                columnKey="date"
+                sortDirection={sortState?.columnKey === 'date' ? sortState.direction : undefined}
+                onSort={requestSort}
+              />
+              <SortableColumnHeader
+                label="Source"
+                columnKey="source"
+                sortDirection={sortState?.columnKey === 'source' ? sortState.direction : undefined}
+                onSort={requestSort}
+              />
+              <SortableColumnHeader
+                label="Gross"
+                columnKey="gross"
+                numeric
+                sortDirection={sortState?.columnKey === 'gross' ? sortState.direction : undefined}
+                onSort={requestSort}
+              />
+              <SortableColumnHeader
+                label="Net"
+                columnKey="net"
+                numeric
+                sortDirection={sortState?.columnKey === 'net' ? sortState.direction : undefined}
+                onSort={requestSort}
+              />
+              <SortableColumnHeader
+                label="Bank"
+                columnKey="bank"
+                sortDirection={sortState?.columnKey === 'bank' ? sortState.direction : undefined}
+                onSort={requestSort}
+              />
+              <SortableColumnHeader
+                label="Description"
+                columnKey="description"
+                sortDirection={sortState?.columnKey === 'description' ? sortState.direction : undefined}
+                onSort={requestSort}
+              />
             </tr>
           </thead>
           <tbody>
-            {incomes.map((income) => (
+            {sortedRows.map((income) => (
               <IncomeRow key={income.id} income={income} onEdit={onEdit} onDelete={onDelete} />
             ))}
           </tbody>

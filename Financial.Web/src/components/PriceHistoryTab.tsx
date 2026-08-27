@@ -12,6 +12,8 @@ import type { AssetPriceSnapshotDto } from '../api/types'
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
 import SplitPanel from './SplitPanel'
+import SortableColumnHeader from './grid/SortableColumnHeader'
+import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import type { PriceHistoryFormField } from '../hooks/usePriceHistory'
 import { usePriceHistory } from '../hooks/usePriceHistory'
 import { PERIOD_FILTER_OPTIONS } from '../utils/periodFilter'
@@ -23,6 +25,12 @@ const MIN_LEFT_WIDTH = 200
 const LINE_COLOR = '#4682b4'
 const MANUAL_DOT_COLOR = '#e65100'
 const AUTOMATIC_DOT_COLOR = '#4682b4'
+
+const SORT_ACCESSORS: Record<string, SortAccessor<AssetPriceSnapshotDto>> = {
+  date: (entry) => new Date(entry.date),
+  price: (entry) => entry.price,
+  source: (entry) => (entry.isManual ? 'Manual' : 'Automatic'),
+}
 
 interface PriceRowProps {
   entry: AssetPriceSnapshotDto
@@ -209,6 +217,8 @@ export default function PriceHistoryTab() {
     deleteEntry,
   } = usePriceHistory()
 
+  const { sortedRows, sortState, requestSort } = useSortableRows(entries, SORT_ACCESSORS)
+
   // Confirmation belongs to the caller, not to the data hook. A hook that calls window.confirm
   // can only be tested by stubbing a browser global, and it decides for every caller that a
   // prompt is wanted at all. Same reasoning as ControleMaePage and MensaisPage, which already
@@ -269,13 +279,29 @@ export default function PriceHistoryTab() {
             <tr>
               <th />
               <th />
-              <th>Date</th>
-              <th className="data-table__col--numeric price-history-tab__price">Price</th>
-              <th>Source</th>
+              <SortableColumnHeader
+                label="Date"
+                columnKey="date"
+                sortDirection={sortState?.columnKey === 'date' ? sortState.direction : undefined}
+                onSort={requestSort}
+              />
+              <SortableColumnHeader
+                label="Price"
+                columnKey="price"
+                numeric
+                sortDirection={sortState?.columnKey === 'price' ? sortState.direction : undefined}
+                onSort={requestSort}
+              />
+              <SortableColumnHeader
+                label="Source"
+                columnKey="source"
+                sortDirection={sortState?.columnKey === 'source' ? sortState.direction : undefined}
+                onSort={requestSort}
+              />
             </tr>
           </thead>
           <tbody>
-            {entries.map((entry) => (
+            {sortedRows.map((entry) => (
               <PriceRow key={entry.date} entry={entry} onEdit={showEditForm} onDelete={confirmAndDeleteEntry} />
             ))}
           </tbody>

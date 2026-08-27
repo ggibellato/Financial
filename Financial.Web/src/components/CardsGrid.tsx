@@ -1,4 +1,6 @@
 import type { BankDto, CardStatementDto, CreditCardDto, UpdateCreditCardDto } from '../api/types'
+import SortableColumnHeader from './grid/SortableColumnHeader'
+import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { formatN2 } from '../utils/formatters'
 
 interface CardsGridProps {
@@ -72,6 +74,15 @@ export default function CardsGrid({
   const showCardManagementColumns = creditCards !== undefined
   const rows = buildRows(cardStatements, creditCards)
 
+  const accessors: Record<string, SortAccessor<CardRow>> = {
+    card: (row) => row.creditCardName,
+    outstanding: (row) => row.statement?.outstandingTotal,
+    status: (row) => (row.statement ? (row.statement.isPaid ? 'Paid' : 'Unpaid') : undefined),
+    nextInvoiceDueDate: (row) => (row.nextInvoiceDueDate ? new Date(row.nextInvoiceDueDate) : undefined),
+    active: (row) => (row.isActive ? 1 : 0),
+  }
+  const { sortedRows, sortState, requestSort } = useSortableRows(rows, accessors)
+
   return (
     <section className="monthly-page__section monthly-page__section--grid">
       {statementActionError && (
@@ -88,20 +99,46 @@ export default function CardsGrid({
         <table className="monthly-page__table data-table">
           <thead>
             <tr>
-              <th>Card</th>
-              <th className="data-table__col--numeric">Outstanding</th>
-              <th>Status</th>
+              <SortableColumnHeader
+                label="Card"
+                columnKey="card"
+                sortDirection={sortState?.columnKey === 'card' ? sortState.direction : undefined}
+                onSort={requestSort}
+              />
+              <SortableColumnHeader
+                label="Outstanding"
+                columnKey="outstanding"
+                numeric
+                sortDirection={sortState?.columnKey === 'outstanding' ? sortState.direction : undefined}
+                onSort={requestSort}
+              />
+              <SortableColumnHeader
+                label="Status"
+                columnKey="status"
+                sortDirection={sortState?.columnKey === 'status' ? sortState.direction : undefined}
+                onSort={requestSort}
+              />
               <th />
               {showCardManagementColumns && (
                 <>
-                  <th>Next Invoice Due Date</th>
-                  <th>Active</th>
+                  <SortableColumnHeader
+                    label="Next Invoice Due Date"
+                    columnKey="nextInvoiceDueDate"
+                    sortDirection={sortState?.columnKey === 'nextInvoiceDueDate' ? sortState.direction : undefined}
+                    onSort={requestSort}
+                  />
+                  <SortableColumnHeader
+                    label="Active"
+                    columnKey="active"
+                    sortDirection={sortState?.columnKey === 'active' ? sortState.direction : undefined}
+                    onSort={requestSort}
+                  />
                 </>
               )}
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => (
+            {sortedRows.map((row) => (
               <tr key={row.key}>
                 <td>{row.creditCardName}</td>
                 <td className="data-table__col--numeric">

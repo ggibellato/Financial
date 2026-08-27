@@ -12,9 +12,21 @@ export default function BanksGrid({ bankTotals, bankTotalsSum, roundUpTotalsSum 
   return (
     <TotalsGrid
       columns={[
-        { key: 'bank', header: 'Bank', render: (b: BankTotal) => b.bank },
-        { key: 'balance', header: 'Bank Balance', numeric: true, render: (b: BankTotal) => formatN2(b.balance) },
-        { key: 'roundUp', header: 'Round-Up', numeric: true, render: (b: BankTotal) => formatN2(b.roundUpTotal) },
+        { key: 'bank', header: 'Bank', render: (b: BankTotal) => b.bank, sortAccessor: (b: BankTotal) => b.bank },
+        {
+          key: 'balance',
+          header: 'Bank Balance',
+          numeric: true,
+          render: (b: BankTotal) => formatN2(b.balance),
+          sortAccessor: (b: BankTotal) => b.balance,
+        },
+        {
+          key: 'roundUp',
+          header: 'Round-Up',
+          numeric: true,
+          render: (b: BankTotal) => formatN2(b.roundUpTotal),
+          sortAccessor: (b: BankTotal) => b.roundUpTotal,
+        },
       ]}
       rows={bankTotals}
       rowKey={(b) => b.bank}

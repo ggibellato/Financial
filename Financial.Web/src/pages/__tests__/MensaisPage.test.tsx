@@ -222,4 +222,49 @@ describe('MensaisPage', () => {
 
     expect(resetMensaisToUnsetMock).not.toHaveBeenCalled()
   })
+
+  it('sorts the Brasil and UK grids independently by clicking their Description column headers', async () => {
+    const bills: RecurringBillDto[] = [
+      { id: 'b1', dueDay: 10, description: 'INSS', area: 'Brasil', note: '', nitNumber: null, minimumWageValue: null, value: 850, status: 'Unset' },
+      { id: 'b2', dueDay: 5, description: 'Aluguel', area: 'Brasil', note: '', nitNumber: null, minimumWageValue: null, value: 1200, status: 'Unset' },
+      { id: 'b3', dueDay: 15, description: 'Council Tax', area: 'UK', note: '', nitNumber: null, minimumWageValue: null, value: 120, status: 'Unset' },
+      { id: 'b4', dueDay: 1, description: 'Broadband', area: 'UK', note: '', nitNumber: null, minimumWageValue: null, value: 40, status: 'Unset' },
+    ]
+    getMensaisBillsMock.mockResolvedValue(bills)
+
+    render(<MensaisPage />)
+
+    await waitFor(() => expect(screen.getByText('INSS')).toBeInTheDocument())
+
+    const tables = screen.getAllByRole('table')
+    const [brasilDescriptionHeader, ukDescriptionHeader] = screen.getAllByRole('button', { name: 'Description' })
+
+    fireEvent.click(brasilDescriptionHeader)
+
+    let brasilRows = within(tables[0]).getAllByRole('row').slice(1)
+    expect(brasilRows.map((r) => r.textContent)).toEqual([
+      expect.stringContaining('Aluguel'),
+      expect.stringContaining('INSS'),
+    ])
+    // UK grid is unaffected by the Brasil grid's sort.
+    let ukRows = within(tables[1]).getAllByRole('row').slice(1)
+    expect(ukRows.map((r) => r.textContent)).toEqual([
+      expect.stringContaining('Council Tax'),
+      expect.stringContaining('Broadband'),
+    ])
+
+    fireEvent.click(ukDescriptionHeader)
+
+    ukRows = within(tables[1]).getAllByRole('row').slice(1)
+    expect(ukRows.map((r) => r.textContent)).toEqual([
+      expect.stringContaining('Broadband'),
+      expect.stringContaining('Council Tax'),
+    ])
+    // Brasil grid's own sort is untouched by sorting the UK grid.
+    brasilRows = within(tables[0]).getAllByRole('row').slice(1)
+    expect(brasilRows.map((r) => r.textContent)).toEqual([
+      expect.stringContaining('Aluguel'),
+      expect.stringContaining('INSS'),
+    ])
+  })
 })

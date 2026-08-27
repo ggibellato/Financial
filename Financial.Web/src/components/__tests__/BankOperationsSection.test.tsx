@@ -157,4 +157,24 @@ describe('BankOperationsSection', () => {
 
     expect(screen.getByText('No transfers or balance corrections this month for Barclays.')).toBeInTheDocument()
   })
+
+  it('sorts rows by Amount/Delta when the column header is clicked', () => {
+    render(<BankOperationsSection {...baseProps} operations={[TRANSFER_ENTRY, ADJUSTMENT_ENTRY]} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Amount/Delta' }))
+
+    const typeCells = screen
+      .getAllByRole('row')
+      .slice(1)
+      .map((row) => row.querySelectorAll('td')[3].textContent)
+    expect(typeCells).toEqual(['Adjustment', 'Transfer'])
+
+    fireEvent.click(screen.getByRole('button', { name: 'Amount/Delta' }))
+
+    const typeCellsDescending = screen
+      .getAllByRole('row')
+      .slice(1)
+      .map((row) => row.querySelectorAll('td')[3].textContent)
+    expect(typeCellsDescending).toEqual(['Transfer', 'Adjustment'])
+  })
 })

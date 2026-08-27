@@ -338,10 +338,13 @@ describe('MonthlyPage', () => {
   })
 
   it('lists Summary, Expense, Credit Card, Income, Bank in order in the tab strip', async () => {
-    render(<MonthlyPage />)
+    const { container } = render(<MonthlyPage />)
 
     await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
-    const tabLabels = screen
+    // Scoped to the tab strip itself — the Summary tab's Banks grid also renders a "Bank"
+    // column-sort header button, which a page-wide query would otherwise also match.
+    const tabStrip = container.querySelector('.monthly-page__tabs') as HTMLElement
+    const tabLabels = within(tabStrip)
       .getAllByRole('button', { name: /Summary|Expense|Credit Card|Income|Bank/ })
       .map((b) => b.textContent)
     expect(tabLabels).toEqual(['Summary', 'Expense', 'Credit Card', 'Income', 'Bank'])
@@ -675,7 +678,7 @@ describe('MonthlyPage', () => {
     expect(screen.getByText('Lidl UK')).toBeInTheDocument()
   })
 
-  it('renders a Banks grid with a row per payment source and its own total, alongside the other grids, with no expand or action controls', async () => {
+  it('renders a Banks grid with a row per payment source and its own total, alongside the other grids, with no expand or row-action controls', async () => {
     render(<MonthlyPage />)
 
     await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
@@ -684,7 +687,8 @@ describe('MonthlyPage', () => {
     expect(banksSection.getByRole('cell', { name: 'Barclays' })).toBeInTheDocument()
     expect(banksSection.getByRole('cell', { name: 'Trading212' })).toBeInTheDocument()
     expect(banksSection.getByRole('cell', { name: 'Chase' })).toBeInTheDocument()
-    expect(banksSection.queryByRole('button')).not.toBeInTheDocument()
+    // Only the 3 column-sort header buttons (Bank, Bank Balance, Round-Up) — no expand/edit/delete controls.
+    expect(banksSection.getAllByRole('button')).toHaveLength(3)
 
     // The single expense (42.50) is on Barclays with no round-up amount, so its balance
     // is unchanged and every round-up figure (per-bank and the footer) is zero.
@@ -1283,7 +1287,7 @@ describe('MonthlyPage', () => {
 
   it('shows the Bank tab operations list combining transfers and adjustments for the month, newest-first', async () => {
     render(<MonthlyPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Bank' }))
+    fireEvent.click(screen.getAllByRole('button', { name: 'Bank' })[0])
 
     await waitFor(() => expect(screen.getByText('Transfer')).toBeInTheDocument())
     expect(screen.getByText('Adjustment')).toBeInTheDocument()
@@ -1292,7 +1296,7 @@ describe('MonthlyPage', () => {
 
   it('shows the same bank balances grid on the Bank tab as on the Summary tab', async () => {
     render(<MonthlyPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Bank' }))
+    fireEvent.click(screen.getAllByRole('button', { name: 'Bank' })[0])
 
     await waitFor(() => expect(screen.getByText(/Bank Balance:/)).toBeInTheDocument())
     const banksSection = within(screen.getByText(/Bank Balance:/).closest('section')!)
@@ -1303,7 +1307,7 @@ describe('MonthlyPage', () => {
   it('opens the New Transfer form with no bank pre-selected, creates a transfer, and refreshes balances and the operations list', async () => {
     createTransferMock.mockResolvedValue(TRANSFERS[0])
     render(<MonthlyPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Bank' }))
+    fireEvent.click(screen.getAllByRole('button', { name: 'Bank' })[0])
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Transfer' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Transfer' }))
@@ -1326,7 +1330,7 @@ describe('MonthlyPage', () => {
   it('gates New Balance Correction on a bank being chosen, then shows the resulting delta', async () => {
     createBalanceAdjustmentMock.mockResolvedValue({ ...ADJUSTMENTS[0], id: 'a2', delta: 2.5 })
     render(<MonthlyPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Bank' }))
+    fireEvent.click(screen.getAllByRole('button', { name: 'Bank' })[0])
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Balance Correction' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Balance Correction' }))
@@ -1354,7 +1358,7 @@ describe('MonthlyPage', () => {
 
   it('narrows the operations list via the bank filter with no additional network request', async () => {
     render(<MonthlyPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Bank' }))
+    fireEvent.click(screen.getAllByRole('button', { name: 'Bank' })[0])
 
     await waitFor(() => expect(screen.getByText('Transfer')).toBeInTheDocument())
     const transfersCallsBefore = getTransfersByMonthMock.mock.calls.length
@@ -1370,7 +1374,7 @@ describe('MonthlyPage', () => {
   it('edits a transfer from the operations list, opening TransferForm pre-filled with its values, and persists the change', async () => {
     updateTransferMock.mockResolvedValue(TRANSFERS[0])
     render(<MonthlyPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Bank' }))
+    fireEvent.click(screen.getAllByRole('button', { name: 'Bank' })[0])
 
     await waitFor(() => expect(screen.getByText('Transfer')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Edit transfer' }))
@@ -1390,7 +1394,7 @@ describe('MonthlyPage', () => {
   it('edits an adjustment from the operations list with the bank fixed, and persists the change', async () => {
     updateBalanceAdjustmentMock.mockResolvedValue({ ...ADJUSTMENTS[0], delta: 7.5 })
     render(<MonthlyPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Bank' }))
+    fireEvent.click(screen.getAllByRole('button', { name: 'Bank' })[0])
 
     await waitFor(() => expect(screen.getByText('Adjustment')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Edit balance adjustment' }))
@@ -1413,7 +1417,7 @@ describe('MonthlyPage', () => {
   it('does not delete a transfer when the user cancels the confirmation', async () => {
     vi.spyOn(window, 'confirm').mockReturnValue(false)
     render(<MonthlyPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Bank' }))
+    fireEvent.click(screen.getAllByRole('button', { name: 'Bank' })[0])
 
     await waitFor(() => expect(screen.getByText('Transfer')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Delete transfer' }))
@@ -1424,7 +1428,7 @@ describe('MonthlyPage', () => {
   it('deletes a transfer from the operations list after confirmation, and refreshes balances', async () => {
     deleteTransferMock.mockResolvedValue(undefined)
     render(<MonthlyPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Bank' }))
+    fireEvent.click(screen.getAllByRole('button', { name: 'Bank' })[0])
 
     await waitFor(() => expect(screen.getByText('Transfer')).toBeInTheDocument())
     const balancesCallsBefore = getBankBalancesByMonthMock.mock.calls.length
@@ -1437,7 +1441,7 @@ describe('MonthlyPage', () => {
   it('deletes an adjustment from the operations list after confirmation, and refreshes balances', async () => {
     deleteBalanceAdjustmentMock.mockResolvedValue(undefined)
     render(<MonthlyPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Bank' }))
+    fireEvent.click(screen.getAllByRole('button', { name: 'Bank' })[0])
 
     await waitFor(() => expect(screen.getByText('Adjustment')).toBeInTheDocument())
     const balancesCallsBefore = getBankBalancesByMonthMock.mock.calls.length
@@ -1450,7 +1454,7 @@ describe('MonthlyPage', () => {
   it('shows an error state with retry when the Bank tab operations fetch fails', async () => {
     getTransfersByMonthMock.mockRejectedValue(new Error('Operations down'))
     render(<MonthlyPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Bank' }))
+    fireEvent.click(screen.getAllByRole('button', { name: 'Bank' })[0])
 
     await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument())
     expect(screen.getByText('Operations down')).toBeInTheDocument()
@@ -1463,14 +1467,14 @@ describe('MonthlyPage', () => {
 
   it('cancels an open create form when switching away from the Bank tab and back', async () => {
     render(<MonthlyPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Bank' }))
+    fireEvent.click(screen.getAllByRole('button', { name: 'Bank' })[0])
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Transfer' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Transfer' }))
     expect(screen.getByText('Move Money', { selector: 'h2' })).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Summary' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Bank' }))
+    fireEvent.click(screen.getAllByRole('button', { name: 'Bank' })[0])
 
     expect(screen.queryByText('Move Money', { selector: 'h2' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'New Transfer' })).toBeInTheDocument()

@@ -88,4 +88,24 @@ describe('ExpensesSection', () => {
 
     expect(onNewExpense).toHaveBeenCalledOnce()
   })
+
+  it('sorts rows by Value when the Value column header is clicked', () => {
+    render(<ExpensesSection expenses={EXPENSES} onEdit={vi.fn()} onDelete={vi.fn()} onNewExpense={vi.fn()} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Value' }))
+
+    const descriptionCells = screen
+      .getAllByRole('row')
+      .slice(1)
+      .map((row) => row.querySelectorAll('td')[3].textContent)
+    expect(descriptionCells).toEqual(['Amazon', 'Lidl UK'])
+
+    fireEvent.click(screen.getByRole('button', { name: 'Value' }))
+
+    const descriptionCellsDescending = screen
+      .getAllByRole('row')
+      .slice(1)
+      .map((row) => row.querySelectorAll('td')[3].textContent)
+    expect(descriptionCellsDescending).toEqual(['Lidl UK', 'Amazon'])
+  })
 })

@@ -256,4 +256,20 @@ describe('PriceHistoryTab', () => {
     const rows = within(screen.getByRole('table')).getAllByRole('row')
     expect(rows).toHaveLength(1) // header row only, no data rows
   })
+
+  it('clicking_price_header_sorts_rows_ascending_then_descending', () => {
+    setMock({ entries: [MANUAL_ENTRY, AUTOMATIC_ENTRY] })
+    render(<PriceHistoryTab />)
+    const table = screen.getByRole('table')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Price' }))
+    let dataRows = within(table).getAllByRole('row').slice(1)
+    expect(within(dataRows[0]).getByText('120.50')).toBeInTheDocument()
+    expect(within(dataRows[1]).getByText('350.00')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Price' }))
+    dataRows = within(table).getAllByRole('row').slice(1)
+    expect(within(dataRows[0]).getByText('350.00')).toBeInTheDocument()
+    expect(within(dataRows[1]).getByText('120.50')).toBeInTheDocument()
+  })
 })
