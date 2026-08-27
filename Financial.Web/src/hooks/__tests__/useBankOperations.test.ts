@@ -2,7 +2,7 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { BalanceAdjustmentDto, BankDto, TransferDto } from '../../api/types'
-import { ALL_BANKS_FILTER, useBankOperations } from '../useBankOperations'
+import { useBankOperations } from '../useBankOperations'
 
 const {
   getTransfersByMonthMock,
@@ -112,43 +112,12 @@ describe('useBankOperations', () => {
     expect(t1).toMatchObject({ kind: 'transfer', sourceBank: 'Barclays', destinationBank: 'Trading212' })
   })
 
-  it('defaults the bank filter to All Banks', async () => {
+  it('returns every operation regardless of bank — filtering is the component/UI\'s job now', async () => {
     const { result } = renderHook(() => useBankOperations(2026, 7, BANKS, vi.fn()))
 
     await waitFor(() => expect(result.current.isLoading).toBe(false))
-
-    expect(result.current.bankFilter).toBe(ALL_BANKS_FILTER)
-    expect(result.current.operations).toHaveLength(3)
-  })
-
-  it('matches a transfer by source or destination bank when filtered', async () => {
-    const { result } = renderHook(() => useBankOperations(2026, 7, BANKS, vi.fn()))
-    await waitFor(() => expect(result.current.isLoading).toBe(false))
-
-    act(() => result.current.setBankFilter('Trading212'))
-
-    expect(result.current.operations.map((e) => e.id).sort()).toEqual(['t1', 't2'])
-  })
-
-  it('matches an adjustment by its bank only when filtered', async () => {
-    const { result } = renderHook(() => useBankOperations(2026, 7, BANKS, vi.fn()))
-    await waitFor(() => expect(result.current.isLoading).toBe(false))
-
-    act(() => result.current.setBankFilter('Barclays'))
 
     expect(result.current.operations.map((e) => e.id).sort()).toEqual(['a1', 't1', 't2'])
-  })
-
-  it('All Banks restores the full list with no additional fetch', async () => {
-    const { result } = renderHook(() => useBankOperations(2026, 7, BANKS, vi.fn()))
-    await waitFor(() => expect(result.current.isLoading).toBe(false))
-    const fetchCallsBefore = getTransfersByMonthMock.mock.calls.length
-
-    act(() => result.current.setBankFilter('Barclays'))
-    act(() => result.current.setBankFilter(ALL_BANKS_FILTER))
-
-    expect(result.current.operations).toHaveLength(3)
-    expect(getTransfersByMonthMock.mock.calls.length).toBe(fetchCallsBefore)
   })
 
   it('deleteTransfer calls the client, refetches, and calls onChanged', async () => {

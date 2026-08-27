@@ -2,7 +2,9 @@ import { Button, makeStyles, tokens } from '@fluentui/react-components'
 import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import type { ExpenseDto } from '../api/types'
 import SortableColumnHeader from './grid/SortableColumnHeader'
+import ColumnFilterMenu from './grid/ColumnFilterMenu'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
+import { useColumnFilters } from '../hooks/useColumnFilters'
 import { formatN2, formatShortDate } from '../utils/formatters'
 import './ExpensesSection.css'
 
@@ -68,9 +70,17 @@ const SORT_ACCESSORS: Record<string, SortAccessor<ExpenseDto>> = {
   card: (expense) => expense.creditCardName,
 }
 
+const FILTER_ACCESSORS = {
+  category: (expense: ExpenseDto) => expense.categoryName,
+  card: (expense: ExpenseDto) => expense.creditCardName,
+}
+
 export default function ExpensesSection({ expenses, onEdit, onDelete, onNewExpense }: ExpensesSectionProps) {
   const styles = useStyles()
-  const { sortedRows, sortState, requestSort } = useSortableRows(expenses, SORT_ACCESSORS)
+  const { filteredRows, availableValues, selectedValues, toggleValue, toggleAll, isColumnFiltered } =
+    useColumnFilters(expenses, FILTER_ACCESSORS)
+  const { sortedRows, sortState, requestSort } = useSortableRows(filteredRows, SORT_ACCESSORS)
+  const hasActiveFilter = isColumnFiltered('category') || isColumnFiltered('card')
 
   return (
     <section className="expenses-section">
@@ -102,7 +112,17 @@ export default function ExpensesSection({ expenses, onEdit, onDelete, onNewExpen
                 columnKey="category"
                 sortDirection={sortState?.columnKey === 'category' ? sortState.direction : undefined}
                 onSort={requestSort}
-              />
+              >
+                <ColumnFilterMenu
+                  columnKey="category"
+                  label="Category"
+                  availableValues={availableValues.category}
+                  selectedValues={selectedValues.category}
+                  onToggleValue={toggleValue}
+                  onToggleAll={toggleAll}
+                  isFiltered={isColumnFiltered('category')}
+                />
+              </SortableColumnHeader>
               <SortableColumnHeader
                 label="Value"
                 columnKey="value"
@@ -121,13 +141,29 @@ export default function ExpensesSection({ expenses, onEdit, onDelete, onNewExpen
                 columnKey="card"
                 sortDirection={sortState?.columnKey === 'card' ? sortState.direction : undefined}
                 onSort={requestSort}
-              />
+              >
+                <ColumnFilterMenu
+                  columnKey="card"
+                  label="Card"
+                  availableValues={availableValues.card}
+                  selectedValues={selectedValues.card}
+                  onToggleValue={toggleValue}
+                  onToggleAll={toggleAll}
+                  isFiltered={isColumnFiltered('card')}
+                />
+              </SortableColumnHeader>
             </tr>
           </thead>
           <tbody>
-            {sortedRows.map((expense) => (
-              <ExpenseRow key={expense.id} expense={expense} onEdit={onEdit} onDelete={onDelete} />
-            ))}
+            {sortedRows.length === 0 && hasActiveFilter ? (
+              <tr>
+                <td colSpan={8}>No rows match the current filters</td>
+              </tr>
+            ) : (
+              sortedRows.map((expense) => (
+                <ExpenseRow key={expense.id} expense={expense} onEdit={onEdit} onDelete={onDelete} />
+              ))
+            )}
           </tbody>
         </table>
       </div>

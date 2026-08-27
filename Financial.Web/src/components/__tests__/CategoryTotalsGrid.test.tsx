@@ -28,4 +28,18 @@ describe('CategoryTotalsGrid', () => {
     expect(within(dataRows[0]).getByText('Casa')).toBeInTheDocument()
     expect(within(dataRows[1]).getByText('Mercado')).toBeInTheDocument()
   })
+
+  it('filters rows by Category via the header checklist, and shows the empty message when nothing matches', () => {
+    render(<CategoryTotalsGrid categoryTotals={CATEGORY_TOTALS} categoryTotalsSum={142.5} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filter by Category' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Mercado' }))
+
+    expect(screen.queryByRole('cell', { name: 'Mercado' })).not.toBeInTheDocument()
+    expect(screen.getByRole('cell', { name: 'Casa' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Casa' }))
+
+    expect(screen.getByText('No rows match the current filters')).toBeInTheDocument()
+  })
 })

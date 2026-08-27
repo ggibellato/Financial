@@ -1,10 +1,7 @@
-import { useEffect, useReducer, useState } from 'react'
+import { useEffect, useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { BalanceAdjustmentDto, BankDto, TransferDto } from '../api/types'
 import { getErrorMessage } from '../utils/formatters'
-
-/** Sentinel bank-filter value meaning "show every bank's operations, unfiltered". */
-export const ALL_BANKS_FILTER = 'All Banks'
 
 export type BankOperationEntry =
   | {
@@ -62,14 +59,6 @@ function buildOperations(
   return [...transferEntries, ...adjustmentEntries].sort((a, b) => b.date.localeCompare(a.date))
 }
 
-function matchesBankFilter(entry: BankOperationEntry, bankFilter: string): boolean {
-  if (bankFilter === ALL_BANKS_FILTER) return true
-
-  return entry.kind === 'transfer'
-    ? entry.sourceBank === bankFilter || entry.destinationBank === bankFilter
-    : entry.bank === bankFilter
-}
-
 interface BankOperationsState {
   operations: BankOperationEntry[]
   isLoading: boolean
@@ -110,8 +99,6 @@ function reducer(state: BankOperationsState, action: BankOperationsAction): Bank
 
 export interface UseBankOperationsResult {
   operations: BankOperationEntry[]
-  bankFilter: string
-  setBankFilter: (bankFilter: string) => void
   isLoading: boolean
   error: string | null
   retry: () => void
@@ -126,7 +113,6 @@ export function useBankOperations(
   onChanged: () => void,
 ): UseBankOperationsResult {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
-  const [bankFilter, setBankFilter] = useState<string>(ALL_BANKS_FILTER)
 
   const bankNames = banks.map((bank) => bank.name).join(',')
 
@@ -187,12 +173,8 @@ export function useBankOperations(
       })
   }
 
-  const operations = state.operations.filter((entry) => matchesBankFilter(entry, bankFilter))
-
   return {
-    operations,
-    bankFilter,
-    setBankFilter,
+    operations: state.operations,
     isLoading: state.isLoading,
     error: state.error,
     retry,

@@ -373,9 +373,6 @@ export default function MonthlyPage() {
 
               <BankOperationsSection
                 operations={bankOperations.operations}
-                bankFilter={bankOperations.bankFilter}
-                banks={banks}
-                onBankFilterChange={bankOperations.setBankFilter}
                 onNewTransfer={() => transferForm.openCreateForm()}
                 onNewBalanceCorrection={() => adjustmentForm.openCreateForm()}
                 onEditTransfer={transferForm.openEditForm}
