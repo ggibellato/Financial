@@ -99,8 +99,8 @@ public class TransactionsTabViewModel : ViewModelBase
 
     public bool HasTransactionsError => TransactionsError != null;
 
-    public ObservableCollection<TransactionsFilterOptionViewModel> TransactionsFilters { get; } = new();
-    public ObservableCollection<ChartTypeModeOptionViewModel> ChartTypeModes { get; } = new();
+    public ObservableCollection<SelectableOptionViewModel<PeriodFilter>> TransactionsFilters { get; } = new();
+    public ObservableCollection<SelectableOptionViewModel<ChartTypeMode>> ChartTypeModes { get; } = new();
 
     public TransactionDTO? SelectedTransaction
     {
@@ -447,27 +447,27 @@ public class TransactionsTabViewModel : ViewModelBase
     {
         TransactionsFilters.Clear();
         foreach (var (label, filter) in PeriodFilterHelper.Options)
-            TransactionsFilters.Add(new TransactionsFilterOptionViewModel(label, filter));
+            TransactionsFilters.Add(new SelectableOptionViewModel<PeriodFilter>(label, filter));
         SetTransactionsFilter(PeriodFilter.Last12Months, rebuild: false);
     }
 
     private void InitializeChartTypeModes()
     {
         ChartTypeModes.Clear();
-        ChartTypeModes.Add(new ChartTypeModeOptionViewModel("Bar", ChartTypeMode.Bar));
-        ChartTypeModes.Add(new ChartTypeModeOptionViewModel("Line", ChartTypeMode.Line));
+        ChartTypeModes.Add(new SelectableOptionViewModel<ChartTypeMode>("Bar", ChartTypeMode.Bar));
+        ChartTypeModes.Add(new SelectableOptionViewModel<ChartTypeMode>("Line", ChartTypeMode.Line));
         SetTransactionsChartMode(ChartTypeMode.Bar, rebuild: false);
     }
 
     private void SelectTransactionsFilter(object? parameter)
     {
-        if (parameter is TransactionsFilterOptionViewModel option) { SetTransactionsFilter(option.Filter); return; }
+        if (parameter is SelectableOptionViewModel<PeriodFilter> option) { SetTransactionsFilter(option.Value); return; }
         if (parameter is PeriodFilter filter) SetTransactionsFilter(filter);
     }
 
     private void SelectTransactionsChartMode(object? parameter)
     {
-        if (parameter is ChartTypeModeOptionViewModel option) { SetTransactionsChartMode(option.Mode); return; }
+        if (parameter is SelectableOptionViewModel<ChartTypeMode> option) { SetTransactionsChartMode(option.Value); return; }
         if (parameter is ChartTypeMode mode) SetTransactionsChartMode(mode);
     }
 
@@ -500,13 +500,13 @@ public class TransactionsTabViewModel : ViewModelBase
     private void UpdateTransactionsFilterSelection()
     {
         foreach (var option in TransactionsFilters)
-            option.IsSelected = option.Filter == _selectedTransactionsFilter;
+            option.IsSelected = option.Value == _selectedTransactionsFilter;
     }
 
     private void UpdateTransactionsChartModeSelection()
     {
         foreach (var option in ChartTypeModes)
-            option.IsSelected = option.Mode == _selectedTransactionsChartMode;
+            option.IsSelected = option.Value == _selectedTransactionsChartMode;
     }
 
     private void ApplyTransactionsFilter()

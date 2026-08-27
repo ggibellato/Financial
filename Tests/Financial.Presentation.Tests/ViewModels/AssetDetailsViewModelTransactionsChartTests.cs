@@ -172,13 +172,13 @@ public class AssetDetailsViewModelTransactionsChartTests
         vm.LoadBrokerSummary("BrokerA", new AggregatedSummaryDTO(), []);
 
         vm.Transactions.SelectTransactionsFilterCommand.Execute(PeriodFilter.Ytd);
-        vm.Transactions.TransactionsFilters.First(f => f.Filter == PeriodFilter.Ytd).IsSelected.Should().BeTrue();
+        vm.Transactions.TransactionsFilters.First(f => f.Value == PeriodFilter.Ytd).IsSelected.Should().BeTrue();
 
         vm.LoadBrokerSummary("BrokerB", new AggregatedSummaryDTO(), []);
-        vm.Transactions.TransactionsFilters.First(f => f.Filter == PeriodFilter.Last12Months).IsSelected.Should().BeTrue();
+        vm.Transactions.TransactionsFilters.First(f => f.Value == PeriodFilter.Last12Months).IsSelected.Should().BeTrue();
 
         vm.LoadBrokerSummary("BrokerA", new AggregatedSummaryDTO(), []);
-        vm.Transactions.TransactionsFilters.First(f => f.Filter == PeriodFilter.Ytd).IsSelected.Should().BeTrue();
+        vm.Transactions.TransactionsFilters.First(f => f.Value == PeriodFilter.Ytd).IsSelected.Should().BeTrue();
     }
 
     [Fact]
@@ -188,13 +188,13 @@ public class AssetDetailsViewModelTransactionsChartTests
         vm.LoadBrokerSummary("BrokerA", new AggregatedSummaryDTO(), []);
 
         vm.Transactions.SelectTransactionsChartModeCommand.Execute(ChartTypeMode.Line);
-        vm.Transactions.ChartTypeModes.First(m => m.Mode == ChartTypeMode.Line).IsSelected.Should().BeTrue();
+        vm.Transactions.ChartTypeModes.First(m => m.Value == ChartTypeMode.Line).IsSelected.Should().BeTrue();
 
         vm.LoadBrokerSummary("BrokerB", new AggregatedSummaryDTO(), []);
-        vm.Transactions.ChartTypeModes.First(m => m.Mode == ChartTypeMode.Bar).IsSelected.Should().BeTrue();
+        vm.Transactions.ChartTypeModes.First(m => m.Value == ChartTypeMode.Bar).IsSelected.Should().BeTrue();
 
         vm.LoadBrokerSummary("BrokerA", new AggregatedSummaryDTO(), []);
-        vm.Transactions.ChartTypeModes.First(m => m.Mode == ChartTypeMode.Line).IsSelected.Should().BeTrue();
+        vm.Transactions.ChartTypeModes.First(m => m.Value == ChartTypeMode.Line).IsSelected.Should().BeTrue();
     }
 
     [Fact]
@@ -205,7 +205,7 @@ public class AssetDetailsViewModelTransactionsChartTests
 
         vm.Transactions.SelectTransactionsFilterCommand.Execute(PeriodFilter.Ytd);
 
-        vm.Credits.CreditsFilters.First(f => f.Filter == PeriodFilter.Last12Months).IsSelected.Should().BeTrue();
+        vm.Credits.CreditsFilters.First(f => f.Value == PeriodFilter.Last12Months).IsSelected.Should().BeTrue();
     }
 
     [Fact]

@@ -38,7 +38,7 @@ public class AssetDetailsViewModelPriceHistoryChartTests
 
         vm.LoadAssetDetails(BuildAssetDetails("XPI", "TEST", []));
 
-        vm.PriceHistory.PriceHistoryFilters.First(f => f.Filter == PeriodFilter.Last12Months).IsSelected.Should().BeTrue();
+        vm.PriceHistory.PriceHistoryFilters.First(f => f.Value == PeriodFilter.Last12Months).IsSelected.Should().BeTrue();
     }
 
     [Fact]
@@ -63,13 +63,13 @@ public class AssetDetailsViewModelPriceHistoryChartTests
         vm.LoadAssetDetails(BuildAssetDetails("XPI", "AssetA", []));
 
         vm.PriceHistory.SelectPriceHistoryFilterCommand.Execute(PeriodFilter.AllTime);
-        vm.PriceHistory.PriceHistoryFilters.First(f => f.Filter == PeriodFilter.AllTime).IsSelected.Should().BeTrue();
+        vm.PriceHistory.PriceHistoryFilters.First(f => f.Value == PeriodFilter.AllTime).IsSelected.Should().BeTrue();
 
         vm.LoadAssetDetails(BuildAssetDetails("XPI", "AssetB", []));
-        vm.PriceHistory.PriceHistoryFilters.First(f => f.Filter == PeriodFilter.Last12Months).IsSelected.Should().BeTrue();
+        vm.PriceHistory.PriceHistoryFilters.First(f => f.Value == PeriodFilter.Last12Months).IsSelected.Should().BeTrue();
 
         vm.LoadAssetDetails(BuildAssetDetails("XPI", "AssetA", []));
-        vm.PriceHistory.PriceHistoryFilters.First(f => f.Filter == PeriodFilter.AllTime).IsSelected.Should().BeTrue();
+        vm.PriceHistory.PriceHistoryFilters.First(f => f.Value == PeriodFilter.AllTime).IsSelected.Should().BeTrue();
     }
 
     [Fact]

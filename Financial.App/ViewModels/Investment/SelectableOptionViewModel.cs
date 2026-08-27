@@ -1,19 +1,17 @@
-using Financial.Presentation.App.Helpers;
-
 namespace Financial.Presentation.App.ViewModels.Investment;
 
-public sealed class CreditsFilterOptionViewModel : ViewModelBase
+public sealed class SelectableOptionViewModel<T> : ViewModelBase
 {
     private bool _isSelected;
 
-    public CreditsFilterOptionViewModel(string label, PeriodFilter filter)
+    public SelectableOptionViewModel(string label, T value)
     {
         Label = label;
-        Filter = filter;
+        Value = value;
     }
 
     public string Label { get; }
-    public PeriodFilter Filter { get; }
+    public T Value { get; }
 
     public bool IsSelected
     {
