@@ -2,6 +2,7 @@ using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.Entities;
+using Financial.Presentation.App.Services;
 using Financial.Presentation.App.ViewModels;
 using Financial.Presentation.App.ViewModels.Investment;
 using FluentAssertions;
@@ -444,7 +445,7 @@ public class MainNavigationViewModelBaseTests
             ICreditQueryService? _creditQueryService,
             IAssetMoveService assetMoveService,
             IPortfolioService portfolioService)
-            : base(_navigationService, _creditQueryService ?? new StubCreditQueryService(), summaryService, portfolioAssetSummaryService ?? new StubPortfolioAssetSummaryService(), spy, scope, assetMoveService, portfolioService)
+            : base(_navigationService, _creditQueryService ?? new StubCreditQueryService(), summaryService, portfolioAssetSummaryService ?? new StubPortfolioAssetSummaryService(), spy, scope, assetMoveService, portfolioService, new StubDialogService())
         {
             NavigationService = _navigationService;
         }
@@ -489,6 +490,14 @@ public class MainNavigationViewModelBaseTests
         {
             public Task DeleteEmptyPortfolioAsync(string brokerName, string portfolioName, InvestmentScope scope) =>
                 throw new NotImplementedException();
+        }
+
+        /// <summary>Never invoked: every seam that would call it is overridden above.</summary>
+        private sealed class StubDialogService : IDialogService
+        {
+            public bool Confirm(string message, string caption) => throw new NotImplementedException();
+            public void ShowWarning(string message, string caption) => throw new NotImplementedException();
+            public bool ShowMoveAssetDialog(MoveAssetDialogViewModel viewModel) => throw new NotImplementedException();
         }
     }
 
