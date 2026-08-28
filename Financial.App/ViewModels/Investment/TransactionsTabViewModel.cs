@@ -28,12 +28,12 @@ public class TransactionsTabViewModel : ViewModelBase
     private readonly RelayCommand _selectTransactionsFilterCommand;
     private readonly RelayCommand _selectTransactionsChartModeCommand;
 
+    private readonly SelectableOptionGroup<PeriodFilter> _transactionsFilterGroup;
+    private readonly SelectableOptionGroup<ChartTypeMode> _transactionsChartModeGroup;
     private TransactionDialogViewModel? _transactionFormViewModel;
     private bool _isTransactionFormOpen;
     private TransactionDTO? _selectedTransaction;
     private PlotModel? _transactionsPlotModel;
-    private PeriodFilter _selectedTransactionsFilter = PeriodFilter.Last12Months;
-    private ChartTypeMode _selectedTransactionsChartMode = ChartTypeMode.Bar;
     private const string DefaultTransactionsContextKey = "default";
     private readonly Dictionary<string, TransactionsViewState> _transactionsViewStateByKey = new(StringComparer.OrdinalIgnoreCase);
     private string _transactionsContextKey = DefaultTransactionsContextKey;
@@ -71,8 +71,10 @@ public class TransactionsTabViewModel : ViewModelBase
         _deleteTransactionCommand = new RelayCommand(DeleteTransaction, CanDeleteTransaction);
         _selectTransactionsFilterCommand = new RelayCommand(SelectTransactionsFilter);
         _selectTransactionsChartModeCommand = new RelayCommand(SelectTransactionsChartMode);
-        InitializeTransactionsFilters();
-        InitializeChartTypeModes();
+        _transactionsFilterGroup = new SelectableOptionGroup<PeriodFilter>(PeriodFilterHelper.Options, PeriodFilter.Last12Months);
+        _transactionsChartModeGroup = new SelectableOptionGroup<ChartTypeMode>(
+            [("Bar", ChartTypeMode.Bar), ("Line", ChartTypeMode.Line)],
+            ChartTypeMode.Bar);
     }
 
     public ObservableCollection<TransactionDTO> Transactions { get; } = new();
@@ -99,8 +101,8 @@ public class TransactionsTabViewModel : ViewModelBase
 
     public bool HasTransactionsError => TransactionsError != null;
 
-    public ObservableCollection<SelectableOptionViewModel<PeriodFilter>> TransactionsFilters { get; } = new();
-    public ObservableCollection<SelectableOptionViewModel<ChartTypeMode>> ChartTypeModes { get; } = new();
+    public ObservableCollection<SelectableOptionViewModel<PeriodFilter>> TransactionsFilters => _transactionsFilterGroup.Options;
+    public ObservableCollection<SelectableOptionViewModel<ChartTypeMode>> ChartTypeModes => _transactionsChartModeGroup.Options;
 
     public TransactionDTO? SelectedTransaction
     {
@@ -443,70 +445,28 @@ public class TransactionsTabViewModel : ViewModelBase
         _transactionsChartMonths = Array.Empty<TransactionMonthNet>();
     }
 
-    private void InitializeTransactionsFilters()
-    {
-        TransactionsFilters.Clear();
-        foreach (var (label, filter) in PeriodFilterHelper.Options)
-            TransactionsFilters.Add(new SelectableOptionViewModel<PeriodFilter>(label, filter));
-        SetTransactionsFilter(PeriodFilter.Last12Months, rebuild: false);
-    }
-
-    private void InitializeChartTypeModes()
-    {
-        ChartTypeModes.Clear();
-        ChartTypeModes.Add(new SelectableOptionViewModel<ChartTypeMode>("Bar", ChartTypeMode.Bar));
-        ChartTypeModes.Add(new SelectableOptionViewModel<ChartTypeMode>("Line", ChartTypeMode.Line));
-        SetTransactionsChartMode(ChartTypeMode.Bar, rebuild: false);
-    }
-
     private void SelectTransactionsFilter(object? parameter)
     {
-        if (parameter is SelectableOptionViewModel<PeriodFilter> option) { SetTransactionsFilter(option.Value); return; }
-        if (parameter is PeriodFilter filter) SetTransactionsFilter(filter);
+        if (SelectableOptionGroup<PeriodFilter>.TryResolve(parameter, out var filter)) SetTransactionsFilter(filter);
     }
 
     private void SelectTransactionsChartMode(object? parameter)
     {
-        if (parameter is SelectableOptionViewModel<ChartTypeMode> option) { SetTransactionsChartMode(option.Value); return; }
-        if (parameter is ChartTypeMode mode) SetTransactionsChartMode(mode);
+        if (SelectableOptionGroup<ChartTypeMode>.TryResolve(parameter, out var mode)) SetTransactionsChartMode(mode);
     }
 
     private void SetTransactionsFilter(PeriodFilter filter, bool rebuild = true)
     {
-        if (_selectedTransactionsFilter == filter && TransactionsFilters.Count > 0)
-        {
-            UpdateTransactionsFilterSelection();
-            return;
-        }
-        _selectedTransactionsFilter = filter;
-        UpdateTransactionsFilterSelection();
+        if (!_transactionsFilterGroup.Set(filter)) return;
         UpdateTransactionsViewState();
         if (rebuild) ApplyTransactionsFilter();
     }
 
     private void SetTransactionsChartMode(ChartTypeMode mode, bool rebuild = true)
     {
-        if (_selectedTransactionsChartMode == mode && ChartTypeModes.Count > 0)
-        {
-            UpdateTransactionsChartModeSelection();
-            return;
-        }
-        _selectedTransactionsChartMode = mode;
-        UpdateTransactionsChartModeSelection();
+        if (!_transactionsChartModeGroup.Set(mode)) return;
         UpdateTransactionsViewState();
         if (rebuild) ApplyTransactionsFilter();
-    }
-
-    private void UpdateTransactionsFilterSelection()
-    {
-        foreach (var option in TransactionsFilters)
-            option.IsSelected = option.Value == _selectedTransactionsFilter;
-    }
-
-    private void UpdateTransactionsChartModeSelection()
-    {
-        foreach (var option in ChartTypeModes)
-            option.IsSelected = option.Value == _selectedTransactionsChartMode;
     }
 
     private void ApplyTransactionsFilter()
@@ -515,9 +475,9 @@ public class TransactionsTabViewModel : ViewModelBase
             ? _brokerPortfolioTransactions.Select(t => (t.Date, t.Type, t.TotalPrice))
             : Transactions.Select(t => (t.Date, t.Type, t.TotalPrice));
 
-        var months = TransactionsMonthlyAggregator.BuildMonthlyNetInvested(source, _selectedTransactionsFilter, DateTime.Today);
+        var months = TransactionsMonthlyAggregator.BuildMonthlyNetInvested(source, _transactionsFilterGroup.SelectedValue, DateTime.Today);
         _transactionsChartMonths = months;
-        TransactionsPlotModel = TransactionsChartBuilder.Build(months, _selectedTransactionsChartMode);
+        TransactionsPlotModel = TransactionsChartBuilder.Build(months, _transactionsChartModeGroup.SelectedValue);
         if (TransactionsPlotModel != null)
             TransactionsChartBuilder.ApplyLabelDensity(TransactionsPlotModel, _transactionsPlotWidth, months);
     }
@@ -548,7 +508,7 @@ public class TransactionsTabViewModel : ViewModelBase
     private void UpdateTransactionsViewState()
     {
         if (!string.IsNullOrWhiteSpace(_transactionsContextKey))
-            _transactionsViewStateByKey[_transactionsContextKey] = new TransactionsViewState(_selectedTransactionsFilter, _selectedTransactionsChartMode);
+            _transactionsViewStateByKey[_transactionsContextKey] = new TransactionsViewState(_transactionsFilterGroup.SelectedValue, _transactionsChartModeGroup.SelectedValue);
     }
 }
 

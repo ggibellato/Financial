@@ -26,10 +26,10 @@ public class CreditsTabViewModel : ViewModelBase
     private readonly RelayCommand _selectCreditsTypeModeCommand;
     private readonly RelayCommand _selectCreditsChartTypeCommand;
 
+    private readonly SelectableOptionGroup<PeriodFilter> _creditsFilterGroup;
+    private readonly SelectableOptionGroup<CreditsTypeChartMode> _creditsTypeModeGroup;
+    private readonly SelectableOptionGroup<CreditsChartType> _creditsChartTypeGroup;
     private PlotModel? _creditsPlotModel;
-    private PeriodFilter _selectedCreditsFilter = PeriodFilter.Last12Months;
-    private CreditsTypeChartMode _selectedCreditsTypeMode = CreditsTypeChartMode.Stacked;
-    private CreditsChartType _selectedCreditsChartType = CreditsChartType.Bar;
     private const string DefaultCreditsContextKey = "default";
     private readonly Dictionary<string, CreditsViewState> _creditsViewStateByKey = new(StringComparer.OrdinalIgnoreCase);
     private string _creditsContextKey = DefaultCreditsContextKey;
@@ -64,16 +64,20 @@ public class CreditsTabViewModel : ViewModelBase
         _selectCreditsFilterCommand = new RelayCommand(SelectCreditsFilter);
         _selectCreditsTypeModeCommand = new RelayCommand(SelectCreditsTypeMode);
         _selectCreditsChartTypeCommand = new RelayCommand(SelectCreditsChartType);
-        InitializeCreditsFilters();
-        InitializeCreditsTypeModes();
-        InitializeCreditsChartTypes();
+        _creditsFilterGroup = new SelectableOptionGroup<PeriodFilter>(PeriodFilterHelper.Options, PeriodFilter.Last12Months);
+        _creditsTypeModeGroup = new SelectableOptionGroup<CreditsTypeChartMode>(
+            [("Stacked", CreditsTypeChartMode.Stacked), ("Grouped", CreditsTypeChartMode.Grouped)],
+            CreditsTypeChartMode.Stacked);
+        _creditsChartTypeGroup = new SelectableOptionGroup<CreditsChartType>(
+            [("Bar", CreditsChartType.Bar), ("Line", CreditsChartType.Line)],
+            CreditsChartType.Bar);
     }
 
     public ObservableCollection<CreditDTO> Credits { get; } = new();
     public ObservableCollection<KeyValuePair<string, decimal>> CreditsByMonthChart { get; } = new();
-    public ObservableCollection<SelectableOptionViewModel<PeriodFilter>> CreditsFilters { get; } = new();
-    public ObservableCollection<SelectableOptionViewModel<CreditsTypeChartMode>> CreditsTypeModes { get; } = new();
-    public ObservableCollection<SelectableOptionViewModel<CreditsChartType>> CreditsChartTypes { get; } = new();
+    public ObservableCollection<SelectableOptionViewModel<PeriodFilter>> CreditsFilters => _creditsFilterGroup.Options;
+    public ObservableCollection<SelectableOptionViewModel<CreditsTypeChartMode>> CreditsTypeModes => _creditsTypeModeGroup.Options;
+    public ObservableCollection<SelectableOptionViewModel<CreditsChartType>> CreditsChartTypes => _creditsChartTypeGroup.Options;
 
     public PlotModel? CreditsPlotModel { get => _creditsPlotModel; private set => SetProperty(ref _creditsPlotModel, value); }
 
@@ -155,7 +159,7 @@ public class CreditsTabViewModel : ViewModelBase
     {
         if (plotWidth <= 0 || CreditsPlotModel == null) return;
         _creditsPlotWidth = plotWidth;
-        CreditsChartBuilder.ApplyLabelDensity(CreditsPlotModel, _creditsPlotWidth, _creditsChartMonths, _creditsChartTypes, _selectedCreditsTypeMode, _selectedCreditsChartType);
+        CreditsChartBuilder.ApplyLabelDensity(CreditsPlotModel, _creditsPlotWidth, _creditsChartMonths, _creditsChartTypes, _creditsTypeModeGroup.SelectedValue, _creditsChartTypeGroup.SelectedValue);
     }
 
     public async Task Add(Func<Task<CreditDialogData?>> showForm)
@@ -349,108 +353,45 @@ public class CreditsTabViewModel : ViewModelBase
         return dialog.ShowDialog() == true;
     }
 
-    private void InitializeCreditsFilters()
-    {
-        CreditsFilters.Clear();
-        foreach (var (label, filter) in PeriodFilterHelper.Options)
-            CreditsFilters.Add(new SelectableOptionViewModel<PeriodFilter>(label, filter));
-        SetCreditsFilter(PeriodFilter.Last12Months, rebuild: false);
-    }
-
-    private void InitializeCreditsTypeModes()
-    {
-        CreditsTypeModes.Clear();
-        CreditsTypeModes.Add(new SelectableOptionViewModel<CreditsTypeChartMode>("Stacked", CreditsTypeChartMode.Stacked));
-        CreditsTypeModes.Add(new SelectableOptionViewModel<CreditsTypeChartMode>("Grouped", CreditsTypeChartMode.Grouped));
-        SetCreditsTypeMode(CreditsTypeChartMode.Stacked, rebuild: false);
-    }
-
-    private void InitializeCreditsChartTypes()
-    {
-        CreditsChartTypes.Clear();
-        CreditsChartTypes.Add(new SelectableOptionViewModel<CreditsChartType>("Bar", CreditsChartType.Bar));
-        CreditsChartTypes.Add(new SelectableOptionViewModel<CreditsChartType>("Line", CreditsChartType.Line));
-        SetCreditsChartType(CreditsChartType.Bar, rebuild: false);
-    }
-
     private void SelectCreditsFilter(object? parameter)
     {
-        if (parameter is SelectableOptionViewModel<PeriodFilter> option) { SetCreditsFilter(option.Value); return; }
-        if (parameter is PeriodFilter filter) SetCreditsFilter(filter);
+        if (SelectableOptionGroup<PeriodFilter>.TryResolve(parameter, out var filter)) SetCreditsFilter(filter);
     }
 
     private void SelectCreditsTypeMode(object? parameter)
     {
-        if (parameter is SelectableOptionViewModel<CreditsTypeChartMode> option) { SetCreditsTypeMode(option.Value); return; }
-        if (parameter is CreditsTypeChartMode mode) SetCreditsTypeMode(mode);
+        if (SelectableOptionGroup<CreditsTypeChartMode>.TryResolve(parameter, out var mode)) SetCreditsTypeMode(mode);
     }
 
     private void SelectCreditsChartType(object? parameter)
     {
-        if (parameter is SelectableOptionViewModel<CreditsChartType> option) { SetCreditsChartType(option.Value); return; }
-        if (parameter is CreditsChartType chartType) SetCreditsChartType(chartType);
+        if (SelectableOptionGroup<CreditsChartType>.TryResolve(parameter, out var chartType)) SetCreditsChartType(chartType);
     }
 
     private void SetCreditsFilter(PeriodFilter filter, bool rebuild = true)
     {
-        if (_selectedCreditsFilter == filter && CreditsFilters.Count > 0)
-        {
-            UpdateCreditsFilterSelection();
-            return;
-        }
-        _selectedCreditsFilter = filter;
-        UpdateCreditsFilterSelection();
+        if (!_creditsFilterGroup.Set(filter)) return;
         UpdateCreditsViewState();
         if (rebuild) ApplyCreditsFilter();
     }
 
     private void SetCreditsTypeMode(CreditsTypeChartMode mode, bool rebuild = true)
     {
-        if (_selectedCreditsTypeMode == mode && CreditsTypeModes.Count > 0)
-        {
-            UpdateCreditsTypeModeSelection();
-            return;
-        }
-        _selectedCreditsTypeMode = mode;
-        UpdateCreditsTypeModeSelection();
+        if (!_creditsTypeModeGroup.Set(mode)) return;
         UpdateCreditsViewState();
         if (rebuild) ApplyCreditsFilter();
     }
 
     private void SetCreditsChartType(CreditsChartType chartType, bool rebuild = true)
     {
-        if (_selectedCreditsChartType == chartType && CreditsChartTypes.Count > 0)
-        {
-            UpdateCreditsChartTypeSelection();
-            return;
-        }
-        _selectedCreditsChartType = chartType;
-        UpdateCreditsChartTypeSelection();
+        if (!_creditsChartTypeGroup.Set(chartType)) return;
         UpdateCreditsViewState();
         if (rebuild) ApplyCreditsFilter();
     }
 
-    private void UpdateCreditsFilterSelection()
-    {
-        foreach (var option in CreditsFilters)
-            option.IsSelected = option.Value == _selectedCreditsFilter;
-    }
-
-    private void UpdateCreditsTypeModeSelection()
-    {
-        foreach (var option in CreditsTypeModes)
-            option.IsSelected = option.Value == _selectedCreditsTypeMode;
-    }
-
-    private void UpdateCreditsChartTypeSelection()
-    {
-        foreach (var option in CreditsChartTypes)
-            option.IsSelected = option.Value == _selectedCreditsChartType;
-    }
-
     private void ApplyCreditsFilter()
     {
-        RefreshCreditsByMonthChart(FilterCredits(Credits, _selectedCreditsFilter));
+        RefreshCreditsByMonthChart(FilterCredits(Credits, _creditsFilterGroup.SelectedValue));
     }
 
     private static IEnumerable<CreditDTO> FilterCredits(IEnumerable<CreditDTO> credits, PeriodFilter filter)
@@ -489,9 +430,9 @@ public class CreditsTabViewModel : ViewModelBase
         foreach (var group in grouped)
             CreditsByMonthChart.Add(new KeyValuePair<string, decimal>(group.Month.ToString("MM/yyyy"), group.Total));
 
-        CreditsPlotModel = CreditsChartBuilder.Build(grouped, _creditsChartTypes, _selectedCreditsTypeMode, _selectedCreditsChartType);
+        CreditsPlotModel = CreditsChartBuilder.Build(grouped, _creditsChartTypes, _creditsTypeModeGroup.SelectedValue, _creditsChartTypeGroup.SelectedValue);
         if (CreditsPlotModel != null)
-            CreditsChartBuilder.ApplyLabelDensity(CreditsPlotModel, _creditsPlotWidth, _creditsChartMonths, _creditsChartTypes, _selectedCreditsTypeMode, _selectedCreditsChartType);
+            CreditsChartBuilder.ApplyLabelDensity(CreditsPlotModel, _creditsPlotWidth, _creditsChartMonths, _creditsChartTypes, _creditsTypeModeGroup.SelectedValue, _creditsChartTypeGroup.SelectedValue);
     }
 
     private void SetCreditsContext(string contextKey, bool rebuild = true)
@@ -521,7 +462,7 @@ public class CreditsTabViewModel : ViewModelBase
     private void UpdateCreditsViewState()
     {
         if (!string.IsNullOrWhiteSpace(_creditsContextKey))
-            _creditsViewStateByKey[_creditsContextKey] = new CreditsViewState(_selectedCreditsFilter, _selectedCreditsTypeMode, _selectedCreditsChartType);
+            _creditsViewStateByKey[_creditsContextKey] = new CreditsViewState(_creditsFilterGroup.SelectedValue, _creditsTypeModeGroup.SelectedValue, _creditsChartTypeGroup.SelectedValue);
     }
 }
 
