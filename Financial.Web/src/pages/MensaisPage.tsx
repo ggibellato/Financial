@@ -5,6 +5,7 @@ import LoadingState from '../components/LoadingState'
 import SortableColumnHeader from '../components/grid/SortableColumnHeader'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { useMensais } from '../hooks/useMensais'
+import { confirmThenRun } from '../utils/confirmThenRun'
 import { formatN2 } from '../utils/formatters'
 import './MensaisPage.css'
 
@@ -38,11 +39,9 @@ function BillRow({ bill, showBrasilFields, isDeleting, onEdit, onDelete }: BillR
           type="button"
           aria-label={isDeleting ? 'Deleting bill' : 'Delete bill'}
           disabled={isDeleting}
-          onClick={() => {
-            if (window.confirm(`Delete "${bill.description}"? This removes it for good.`)) {
-              onDelete(bill.id)
-            }
-          }}
+          onClick={() =>
+            confirmThenRun(`Delete "${bill.description}"? This removes it for good.`, () => onDelete(bill.id))
+          }
         >
           <DeleteRegular />
         </button>
@@ -214,11 +213,7 @@ export default function MensaisPage() {
             className="mensais-page__new-btn"
             type="button"
             disabled={isResetting}
-            onClick={() => {
-              if (window.confirm('Reset every bill back to Unset for the new month?')) {
-                resetAllToUnset()
-              }
-            }}
+            onClick={() => confirmThenRun('Reset every bill back to Unset for the new month?', resetAllToUnset)}
           >
             {isResetting ? 'Resetting...' : 'Reset All to Unset'}
           </button>

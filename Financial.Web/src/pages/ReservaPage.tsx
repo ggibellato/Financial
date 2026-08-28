@@ -9,6 +9,7 @@ import SortableColumnHeader from '../components/grid/SortableColumnHeader'
 import { useSortableRows } from '../hooks/useSortableRows'
 import type { ReserveBucketBalanceDto } from '../api/types'
 import { LOCKED_MOVEMENT_MESSAGE, useReserva } from '../hooks/useReserva'
+import { confirmThenRun } from '../utils/confirmThenRun'
 import { formatN2, formatShortDate } from '../utils/formatters'
 import './ReservaPage.css'
 
@@ -266,9 +267,7 @@ export default function ReservaPage() {
                               const warning = m.isPartOfGroup
                                 ? `Delete "${m.description}"? This is part of a split and will delete all 4 lines.`
                                 : `Delete "${m.description}"? This removes it for good.`
-                              if (window.confirm(warning)) {
-                                deleteMovement(m.id)
-                              }
+                              confirmThenRun(warning, () => deleteMovement(m.id))
                             }}
                           >
                             <DeleteRegular />

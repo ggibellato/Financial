@@ -20,6 +20,7 @@ import SortableColumnHeader from './grid/SortableColumnHeader'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import type { ChartType, CreditFormField, MonthBucket, ViewMode } from '../hooks/useCredits'
 import { useCredits } from '../hooks/useCredits'
+import { confirmThenRun } from '../utils/confirmThenRun'
 import { PERIOD_FILTER_OPTIONS } from '../utils/periodFilter'
 import { formatN2, formatShortDate } from '../utils/formatters'
 import './CreditsTab.css'
@@ -297,13 +298,7 @@ export default function CreditsTab() {
 
   const { sortedRows, sortState, requestSort } = useSortableRows(credits, SORT_ACCESSORS)
 
-  // Confirmation belongs to the caller, not to the data hook. A hook that calls window.confirm
-  // can only be tested by stubbing a browser global, and it decides for every caller that a
-  // prompt is wanted at all. Same reasoning as ControleMaePage and MensaisPage, which already
-  // did it this way.
-  const confirmAndDeleteCredit = (id: string) => {
-    if (window.confirm('Delete this credit?')) deleteCredit(id)
-  }
+  const confirmAndDeleteCredit = (id: string) => confirmThenRun('Delete this credit?', () => deleteCredit(id))
 
   if (isLoading) {
     return <LoadingState />

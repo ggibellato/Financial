@@ -16,6 +16,7 @@ import SortableColumnHeader from './grid/SortableColumnHeader'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import type { PriceHistoryFormField } from '../hooks/usePriceHistory'
 import { usePriceHistory } from '../hooks/usePriceHistory'
+import { confirmThenRun } from '../utils/confirmThenRun'
 import { PERIOD_FILTER_OPTIONS } from '../utils/periodFilter'
 import { formatN2, formatShortDate } from '../utils/formatters'
 import './PriceHistoryTab.css'
@@ -219,13 +220,7 @@ export default function PriceHistoryTab() {
 
   const { sortedRows, sortState, requestSort } = useSortableRows(entries, SORT_ACCESSORS)
 
-  // Confirmation belongs to the caller, not to the data hook. A hook that calls window.confirm
-  // can only be tested by stubbing a browser global, and it decides for every caller that a
-  // prompt is wanted at all. Same reasoning as ControleMaePage and MensaisPage, which already
-  // did it this way.
-  const confirmAndDeleteEntry = (date: string) => {
-    if (window.confirm('Delete this price entry?')) deleteEntry(date)
-  }
+  const confirmAndDeleteEntry = (date: string) => confirmThenRun('Delete this price entry?', () => deleteEntry(date))
 
   if (isLoading) {
     return <LoadingState />
