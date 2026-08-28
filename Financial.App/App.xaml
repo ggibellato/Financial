@@ -12,6 +12,7 @@
         <converters:DateFormatConverter x:Key="DateFormatConverter"/>
         <converters:TransactionTypeToColorConverter x:Key="TransactionTypeToColorConverter"/>
         <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        <converters:SortDirectionToArrowConverter x:Key="SortDirectionToArrowConverter"/>
         <converters:NodeTypeToVisibilityConverter x:Key="NodeTypeToVisibilityConverter"/>
         <converters:SignedValueToBrushConverter x:Key="SignedValueToBrushConverter"/>
         <converters:BetweenTextSeparatorConverter x:Key="BetweenTextSeparatorConverter"/>
@@ -86,6 +87,24 @@
             <Setter Property="BorderBrush" Value="#CCCCCC"/>
             <Setter Property="BorderThickness" Value="0,0,1,1"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <!--
+                DataGridColumnHeader's built-in sort glyph is easy to miss against this theme,
+                and the FilterableColumnHeader UserControl used on filterable columns overrides
+                the header's Content entirely, bypassing it. Rendering an explicit arrow here -
+                driven by the header's own SortDirection, outside whatever Content is hosted -
+                keeps the indicator working for every column uniformly (see P37-F04 follow-up).
+            -->
+            <Setter Property="ContentTemplate">
+                <Setter.Value>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                            <ContentPresenter VerticalAlignment="Center"/>
+                            <TextBlock Margin="4,0,0,0" VerticalAlignment="Center" FontSize="10"
+                                       Text="{Binding SortDirection, RelativeSource={RelativeSource AncestorType=DataGridColumnHeader}, Converter={StaticResource SortDirectionToArrowConverter}}"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <Style TargetType="DataGridRow">

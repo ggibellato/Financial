@@ -150,10 +150,13 @@ public class AnnualSummaryViewModel : ViewModelBase
             SumOfMonthResults = investmentResult.NetPosition.SumOfMonthResults;
 
             var historicSummary = historicSummaryTask.Result;
-            ReplaceAll(AvailableYears, historicSummary.Select(y => y.Year));
+            // HistoricSummaryRows/FilteredHistoricSummaryRows must be fully in place BEFORE AvailableYears
+            // changes: the view rebuilds the grid's per-year columns off AvailableYears, and a row missing
+            // a just-added year's key throws a binding KeyNotFoundException if the columns arrive first.
             ReplaceAll(HistoricSummaryRows, BuildHistoricSummaryRows(historicSummary));
             HistoricSummaryFilter.Refresh(HistoricSummaryRows);
             ApplyHistoricSummaryFilter();
+            ReplaceAll(AvailableYears, historicSummary.Select(y => y.Year));
         });
 
     private void ApplyCategoryTotalsFilter()

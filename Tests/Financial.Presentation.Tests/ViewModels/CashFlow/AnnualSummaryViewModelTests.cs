@@ -160,6 +160,36 @@ public class AnnualSummaryViewModelTests
     }
 
     [Fact]
+    public async Task RefreshAsync_EveryHistoricSummaryRow_HasAValueForEveryAvailableYear()
+    {
+        var (viewModel, _, _, historicService) = CreateViewModel();
+        historicService.HistoricSummaryAverage =
+        [
+            new CategoryAnnualGroupValueDTO
+            {
+                Year = 2017,
+                AnnualAverages = [new CategoryGroupValueDTO { Category = "Tax difference", Value = 50m }],
+            },
+            new CategoryAnnualGroupValueDTO
+            {
+                Year = 2025,
+                AnnualAverages = [new CategoryGroupValueDTO { Category = "Tax difference", Value = 90m }],
+            },
+        ];
+
+        await viewModel.RefreshAsync();
+
+        foreach (var year in viewModel.AvailableYears)
+        {
+            foreach (var row in viewModel.FilteredHistoricSummaryRows.Where(r => !r.IsSpacer))
+            {
+                row.ValuesByYear.Should().ContainKey(year,
+                    $"the {row.Category} row must have a value for every year the grid's dynamic columns expose, or binding throws a KeyNotFoundException");
+            }
+        }
+    }
+
+    [Fact]
     public async Task RefreshAsync_ExposesAvailableYearsFromHistoricSummaryResponse()
     {
         var (viewModel, _, _, historicService) = CreateViewModel();

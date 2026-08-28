@@ -22,7 +22,6 @@ public partial class FilterableColumnHeader : UserControl
     public FilterableColumnHeader()
     {
         InitializeComponent();
-        OptionsItemsControl.SetBinding(ItemsControl.ItemsSourceProperty, new Binding { Source = _optionsView, Path = new PropertyPath("View") });
         _optionsView.Filter += OnFilterOptions;
         DataContextChanged += OnDataContextChanged;
         SearchBox.TextChanged += OnSearchTextChanged;
@@ -37,7 +36,11 @@ public partial class FilterableColumnHeader : UserControl
             return;
         }
 
+        // CollectionViewSource.View isn't a notifying property, so a Binding{Path="View"} set up once
+        // in the constructor (before Source exists) never picks up the real view later - assign
+        // ItemsSource directly here, every time Source changes, instead of relying on data binding.
         _optionsView.Source = viewModel.Options;
+        OptionsItemsControl.ItemsSource = _optionsView.View;
         _searchText = string.Empty;
         SearchBox.Text = string.Empty;
     }
