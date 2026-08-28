@@ -31,7 +31,7 @@ public sealed class HistoricAverageService : IHistoricAverageService
         _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
-    public IReadOnlyList<CategoryAnnualGroupValueDTO> GetHistoricSummaryAverageFromYear(int year)
+    public IReadOnlyList<CategoryAnnualAverageDTO> GetHistoricSummaryAverageFromYear(int year)
     {
         using var span = StartSpan("GetHistoricSummaryAverageFromYear");
         try
@@ -60,10 +60,10 @@ public sealed class HistoricAverageService : IHistoricAverageService
         return _tracer.StartServiceSpan("CashFlow", nameof(HistoricAverageService), operationName, EntityType);
     }
 
-    private static IList<CategoryAnnualGroupValueDTO> AddMissingCategories(
-        IList<CategoryAnnualGroupValueDTO> categoryAverages, IReadOnlyList<Category> categories)
+    private static IList<CategoryAnnualAverageDTO> AddMissingCategories(
+        IList<CategoryAnnualAverageDTO> categoryAverages, IReadOnlyList<Category> categories)
     {
-        var result = new List<CategoryAnnualGroupValueDTO>();
+        var result = new List<CategoryAnnualAverageDTO>();
 
         // Preserves the enum's old declaration order, since CategoryMigrator seeds the 14
         // categories in that exact same order and this list reflects the seeded order as-is.
@@ -78,14 +78,14 @@ public sealed class HistoricAverageService : IHistoricAverageService
             {
                 if (!yearAverage.AnnualAverages.Any(c => c.Category == category))
                 {
-                    yearAverage.AnnualAverages.Add(new CategoryGroupValueDTO
+                    yearAverage.AnnualAverages.Add(new CategoryAverageDTO
                     {
                         Category = category,
                         Value = 0m
                     });
                 }
             }
-            result.Add(new CategoryAnnualGroupValueDTO{
+            result.Add(new CategoryAnnualAverageDTO{
                 Year = yearAverage.Year,
                 AnnualAverages = yearAverage.AnnualAverages.OrderBy(c => orderIndex.GetValueOrDefault(c.Category, int.MaxValue)).ToList()
             });
@@ -94,7 +94,7 @@ public sealed class HistoricAverageService : IHistoricAverageService
     }
 
     private static void AddCategoryTotal(
-        IList<IncomeAnnualAverageDTO> incomeAverages, IList<CategoryAnnualGroupValueDTO> categoryAverages, IReadOnlyList<Category> categories)
+        IList<IncomeAnnualAverageDTO> incomeAverages, IList<CategoryAnnualAverageDTO> categoryAverages, IReadOnlyList<Category> categories)
     {
         var investmentCategoryName = categories.FirstOrDefault(c => c.IsInvestment)?.Name;
 
@@ -105,13 +105,13 @@ public sealed class HistoricAverageService : IHistoricAverageService
 
             var salaryAfterTaxes = incomeAverages.FirstOrDefault(i => i.Year == yearAverage.Year)?.SalaryAfterTaxesAverage ?? 0m;
 
-            yearAverage.AnnualAverages.Add(new CategoryGroupValueDTO
+            yearAverage.AnnualAverages.Add(new CategoryAverageDTO
             {
                 Category = "Resultado (R-D-Inv)",
                 Value = AnnualResultCalculator.ComputeResultado(salaryAfterTaxes, totalCategory, investmentCategory)
             });
 
-            yearAverage.AnnualAverages.Add(new CategoryGroupValueDTO
+            yearAverage.AnnualAverages.Add(new CategoryAverageDTO
             {
                 Category = "Total despesas",
                 Value = totalCategory
@@ -128,7 +128,7 @@ public sealed class HistoricAverageService : IHistoricAverageService
     /// <paramref name="categoryAverages"/> yet) still gets its own row, added separately below.
     /// </summary>
     private static void AddIncomeToFinalResult(IList<IncomeAnnualAverageDTO> incomeAverages,
-        IList<CategoryAnnualGroupValueDTO> categoryAverages)
+        IList<CategoryAnnualAverageDTO> categoryAverages)
     {
         foreach (var yearAverage in categoryAverages)
         {
@@ -143,25 +143,25 @@ public sealed class HistoricAverageService : IHistoricAverageService
                 continue;
             }
 
-            var yearAverage = new CategoryAnnualGroupValueDTO
+            var yearAverage = new CategoryAnnualAverageDTO
             {
                 Year = incomeAverage.Year,
-                AnnualAverages = new List<CategoryGroupValueDTO>()
+                AnnualAverages = new List<CategoryAverageDTO>()
             };
             InsertIncomeRows(yearAverage, incomeAverage);
             categoryAverages.Add(yearAverage);
         }
     }
 
-    private static void InsertIncomeRows(CategoryAnnualGroupValueDTO yearAverage, IncomeAnnualAverageDTO? incomeAverage)
+    private static void InsertIncomeRows(CategoryAnnualAverageDTO yearAverage, IncomeAnnualAverageDTO? incomeAverage)
     {
         var salary = incomeAverage?.SalaryAverage ?? 0m;
         var salaryAfterTaxes = incomeAverage?.SalaryAfterTaxesAverage ?? 0m;
 
-        yearAverage.AnnualAverages.Insert(0, new CategoryGroupValueDTO { Category = "Salary", Value = salary });
-        yearAverage.AnnualAverages.Insert(1, new CategoryGroupValueDTO { Category = "Salary after taxes", Value = salaryAfterTaxes });
-        yearAverage.AnnualAverages.Insert(2, new CategoryGroupValueDTO { Category = "Tax difference", Value = salary - salaryAfterTaxes });
-        yearAverage.AnnualAverages.Insert(3, new CategoryGroupValueDTO
+        yearAverage.AnnualAverages.Insert(0, new CategoryAverageDTO { Category = "Salary", Value = salary });
+        yearAverage.AnnualAverages.Insert(1, new CategoryAverageDTO { Category = "Salary after taxes", Value = salaryAfterTaxes });
+        yearAverage.AnnualAverages.Insert(2, new CategoryAverageDTO { Category = "Tax difference", Value = salary - salaryAfterTaxes });
+        yearAverage.AnnualAverages.Insert(3, new CategoryAverageDTO
         {
             Category = "Dividendo/Juros",
             Value = incomeAverage?.DividendoJurosAverage ?? 0m
@@ -257,7 +257,7 @@ public sealed class HistoricAverageService : IHistoricAverageService
             });
     }
 
-    private IList<CategoryAnnualGroupValueDTO> GetHistoricCategoriesAverageFromYear(int year)
+    private IList<CategoryAnnualAverageDTO> GetHistoricCategoriesAverageFromYear(int year)
     {
         var now = _timeProvider.GetUtcNow();
         var expenses = _repository.GetExpenses()
@@ -287,14 +287,14 @@ public sealed class HistoricAverageService : IHistoricAverageService
                     .Select(month => sumByYearMonthCategory.GetValueOrDefault((yearGroup.Key, month, categoryId)))
                     .ToArray());
 
-                return new CategoryGroupValueDTO
+                return new CategoryAverageDTO
                 {
                     Category = categoryNameById[categoryId],
                     Value = series.Average(monthsElapsed, AverageDecimalPlaces)
                 };
             }).ToList();
 
-            return new CategoryAnnualGroupValueDTO { Year = yearGroup.Key, AnnualAverages = annualAverages };
+            return new CategoryAnnualAverageDTO { Year = yearGroup.Key, AnnualAverages = annualAverages };
         });
 
         return [.. result.OrderByDescending(a => a.Year)];

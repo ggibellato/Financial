@@ -20,7 +20,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     private readonly IGoogleDriveFileSource? _driveFiles;
     private readonly IGoogleSheetsDataSource? _sheets;
-    private readonly IInvestmentsSerializer _serializer;
+    private readonly IInvestmentSerializer _serializer;
     private readonly RelayCommand _connectCommand;
     private readonly RelayCommand _generateCommand;
     private bool _isBusy;
@@ -69,7 +69,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public MainViewModel(
         IGoogleDriveFileSource? driveFiles,
         IGoogleSheetsDataSource? sheets,
-        IInvestmentsSerializer serializer)
+        IInvestmentSerializer serializer)
     {
         _driveFiles = driveFiles;
         _sheets = sheets;

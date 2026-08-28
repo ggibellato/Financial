@@ -10,14 +10,14 @@ namespace Financial.Investment.Infrastructure.Repositories;
 public sealed class InvestmentJsonRepository : IInvestmentRepository, ISyncStatusProvider
 {
     private readonly IJsonStorage _storage;
-    private readonly IInvestmentsSerializer _serializer;
+    private readonly IInvestmentSerializer _serializer;
     private readonly Investments _investiments;
 
     /// <summary>Serializing the document walks every collection in the graph, so one writer at a
     /// time. A semaphore rather than a lock because the critical section awaits the storage.</summary>
     private readonly SemaphoreSlim _writeGate = new(1, 1);
 
-    public InvestmentJsonRepository(Investments investments, IJsonStorage storage, IInvestmentsSerializer serializer)
+    public InvestmentJsonRepository(Investments investments, IJsonStorage storage, IInvestmentSerializer serializer)
     {
         _investiments = investments ?? throw new ArgumentNullException(nameof(investments));
         _storage = storage ?? throw new ArgumentNullException(nameof(storage));

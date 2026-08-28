@@ -126,7 +126,7 @@ public class CardsWorkflowViewModel : ViewModelBase
 
         try
         {
-            var result = await _cardStatementService.MarkStatementPaidAsync(statement.Id, new MarkStatementPaidDTO { PaymentSourceBankId = paymentSource });
+            var result = await _cardStatementService.MarkStatementPaidAsync(statement.Id, new MarkCardStatementPaidDTO { PaymentSourceBankId = paymentSource });
             CardStatementWarning = result.Warning;
             MarkPaidSources.Remove(statement.Id);
             await _refresh();

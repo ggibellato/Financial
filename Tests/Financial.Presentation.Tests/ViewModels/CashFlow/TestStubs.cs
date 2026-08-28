@@ -249,7 +249,7 @@ internal sealed class StubBalanceAdjustmentService : IBalanceAdjustmentService
 internal sealed class StubCardStatementService : ICardStatementService
 {
     public List<CardStatementDTO> Statements { get; set; } = [];
-    public (Guid Id, MarkStatementPaidDTO Request)? LastMarkPaidRequest { get; private set; }
+    public (Guid Id, MarkCardStatementPaidDTO Request)? LastMarkPaidRequest { get; private set; }
     public Guid? LastUnmarkedId { get; private set; }
 
     /// <summary>Server-supplied warning to hand back from the next mark/unmark call.</summary>
@@ -258,7 +258,7 @@ internal sealed class StubCardStatementService : ICardStatementService
     public Task<IReadOnlyList<CardStatementDTO>> GetStatementsForMonthAsync(int year, int month) =>
         Task.FromResult<IReadOnlyList<CardStatementDTO>>(Statements);
 
-    public Task<CardStatementDTO> MarkStatementPaidAsync(Guid id, MarkStatementPaidDTO request)
+    public Task<CardStatementDTO> MarkStatementPaidAsync(Guid id, MarkCardStatementPaidDTO request)
     {
         LastMarkPaidRequest = (id, request);
         var existing = Statements.First(s => s.Id == id);
@@ -345,7 +345,7 @@ internal sealed class StubReserveService : IReserveService
     public bool ThrowOverdraftOnUnconfirmedWithdrawal { get; set; }
     public string OverdraftMessage { get; set; } = "This withdrawal exceeds the bucket's balance.";
     public Exception? ThrowOnWithdrawal { get; set; }
-    public (Guid Id, UpdateReserveMovementDTO Request)? LastUpdateRequest { get; private set; }
+    public (Guid Id, ReserveMovementUpdateDTO Request)? LastUpdateRequest { get; private set; }
     public Guid? LastDeletedId { get; private set; }
 
     public Task<IncomeSplitResultDTO> PostIncomeSplitAsync(IncomeSplitRequestDTO request)
@@ -379,7 +379,7 @@ internal sealed class StubReserveService : IReserveService
 
     public IReadOnlyList<ReserveMovementDTO> GetMovementHistory() => Movements;
 
-    public Task<ReserveMovementDTO> UpdateMovementAsync(Guid id, UpdateReserveMovementDTO request)
+    public Task<ReserveMovementDTO> UpdateMovementAsync(Guid id, ReserveMovementUpdateDTO request)
     {
         LastUpdateRequest = (id, request);
         return Task.FromResult(new ReserveMovementDTO
@@ -419,12 +419,12 @@ internal sealed class StubReserveBucketService : IReserveBucketService
 internal sealed class StubMensaisService : IMensaisService
 {
     public List<RecurringBillDTO> Bills { get; set; } = [];
-    public CreateRecurringBillDTO? LastCreateRequest { get; private set; }
-    public (Guid Id, UpdateRecurringBillDTO Request)? LastUpdateRequest { get; private set; }
+    public RecurringBillCreateDTO? LastCreateRequest { get; private set; }
+    public (Guid Id, RecurringBillUpdateDTO Request)? LastUpdateRequest { get; private set; }
     public Guid? LastDeletedId { get; private set; }
     public int ResetAllToUnsetCallCount { get; private set; }
 
-    public Task<RecurringBillDTO> CreateBillAsync(CreateRecurringBillDTO request)
+    public Task<RecurringBillDTO> CreateBillAsync(RecurringBillCreateDTO request)
     {
         LastCreateRequest = request;
         var bill = new RecurringBillDTO
@@ -456,7 +456,7 @@ internal sealed class StubMensaisService : IMensaisService
         return Bills;
     }
 
-    public Task<RecurringBillDTO> UpdateBillAsync(Guid id, UpdateRecurringBillDTO request)
+    public Task<RecurringBillDTO> UpdateBillAsync(Guid id, RecurringBillUpdateDTO request)
     {
         LastUpdateRequest = (id, request);
         var existing = Bills.First(b => b.Id == id);
@@ -487,14 +487,14 @@ internal sealed class StubControleMaeService : IControleMaeService
 {
     public List<MaeLedgerEntryDTO> Entries { get; set; } = [];
     public MaeLedgerTotalsDTO Totals { get; set; } = new() { TotalBrlValue = 0m, TotalGbpValue = 0m };
-    public CreateMaeLedgerEntryDTO? LastCreateRequest { get; private set; }
-    public (Guid Id, UpdateMaeLedgerEntryValuesDTO Request)? LastUpdateRequest { get; private set; }
+    public MaeLedgerEntryCreateDTO? LastCreateRequest { get; private set; }
+    public (Guid Id, MaeLedgerEntryValuesUpdateDTO Request)? LastUpdateRequest { get; private set; }
     public Guid? LastDeletedId { get; private set; }
     public int GetEntriesFromDateCallCount { get; private set; }
     public int GetTotalsCallCount { get; private set; }
     public DateOnly? LastFromDate { get; private set; }
 
-    public Task<MaeLedgerEntryDTO> CreateEntryAsync(CreateMaeLedgerEntryDTO request)
+    public Task<MaeLedgerEntryDTO> CreateEntryAsync(MaeLedgerEntryCreateDTO request)
     {
         LastCreateRequest = request;
         var entry = new MaeLedgerEntryDTO
@@ -528,7 +528,7 @@ internal sealed class StubControleMaeService : IControleMaeService
         return Totals;
     }
 
-    public Task<MaeLedgerEntryDTO> UpdateEntryValuesAsync(Guid id, UpdateMaeLedgerEntryValuesDTO request)
+    public Task<MaeLedgerEntryDTO> UpdateEntryValuesAsync(Guid id, MaeLedgerEntryValuesUpdateDTO request)
     {
         LastUpdateRequest = (id, request);
         var existing = Entries.First(e => e.Id == id);
@@ -553,7 +553,7 @@ internal sealed class StubInvestmentSnapshotService : IInvestmentSnapshotService
 {
     public List<InvestmentSnapshotDTO> Snapshots { get; set; } = [];
     public int GetSnapshotsForMonthCallCount { get; private set; }
-    public (Guid Id, UpdateInvestmentSnapshotValueDTO Request)? LastUpdateRequest { get; private set; }
+    public (Guid Id, InvestmentSnapshotValueUpdateDTO Request)? LastUpdateRequest { get; private set; }
     public Exception? ThrowOnUpdate { get; set; }
 
     public Task<IReadOnlyList<InvestmentSnapshotDTO>> GetSnapshotsForMonthAsync(int year, int month)
@@ -563,7 +563,7 @@ internal sealed class StubInvestmentSnapshotService : IInvestmentSnapshotService
             Snapshots.Where(s => s.Year == year && s.Month == month).ToList());
     }
 
-    public Task<InvestmentSnapshotDTO> UpdateSnapshotValueAsync(Guid id, UpdateInvestmentSnapshotValueDTO request)
+    public Task<InvestmentSnapshotDTO> UpdateSnapshotValueAsync(Guid id, InvestmentSnapshotValueUpdateDTO request)
     {
         if (ThrowOnUpdate is { } ex)
         {
@@ -632,11 +632,11 @@ internal sealed class StubInvestmentAnnualResultService : IInvestmentAnnualResul
 
 internal sealed class StubHistoricAverageService : IHistoricAverageService
 {
-    public List<CategoryAnnualGroupValueDTO> HistoricSummaryAverage { get; set; } = [];
+    public List<CategoryAnnualAverageDTO> HistoricSummaryAverage { get; set; } = [];
 
     public int GetHistoricSummaryAverageFromYearCallCount { get; private set; }
 
-    public IReadOnlyList<CategoryAnnualGroupValueDTO> GetHistoricSummaryAverageFromYear(int year)
+    public IReadOnlyList<CategoryAnnualAverageDTO> GetHistoricSummaryAverageFromYear(int year)
     {
         GetHistoricSummaryAverageFromYearCallCount++;
         return HistoricSummaryAverage;

@@ -4,13 +4,13 @@ using System.Text.Json.Serialization;
 
 namespace Financial.Investment.Infrastructure.Persistence;
 
-public sealed class InvestmentsSerializerAdapter : IInvestmentsSerializer
+public sealed class InvestmentSerializerAdapter : IInvestmentSerializer
 {
     private static readonly JsonSerializerOptions Options = new()
     {
         Converters = { new JsonStringEnumConverter() },
         WriteIndented = true,
-        TypeInfoResolver = new InvestmentsTypeInfoResolver()
+        TypeInfoResolver = new InvestmentTypeInfoResolver()
     };
 
     public string Serialize(Investments investments) =>

@@ -29,8 +29,8 @@ public sealed class AnnualSummaryController : ControllerBase
     /// <param name="year">The year to compute averages up to.</param>
     /// <returns>200 OK with the historic averages.</returns>
     [HttpGet("{year:int}/historic-summary-averages")]
-    [ProducesResponseType(typeof(IReadOnlyList<CategoryAnnualGroupValueDTO>), StatusCodes.Status200OK)]
-    public ActionResult<IReadOnlyList<CategoryAnnualGroupValueDTO>> GetHistoricSummaryAverages(int year)
+    [ProducesResponseType(typeof(IReadOnlyList<CategoryAnnualAverageDTO>), StatusCodes.Status200OK)]
+    public ActionResult<IReadOnlyList<CategoryAnnualAverageDTO>> GetHistoricSummaryAverages(int year)
     {
         return Ok(_historicAverageService.GetHistoricSummaryAverageFromYear(year));
     }

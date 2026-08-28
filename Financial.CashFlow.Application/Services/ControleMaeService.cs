@@ -25,7 +25,7 @@ public sealed class ControleMaeService : IControleMaeService
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task<MaeLedgerEntryDTO> CreateEntryAsync(CreateMaeLedgerEntryDTO request)
+    public async Task<MaeLedgerEntryDTO> CreateEntryAsync(MaeLedgerEntryCreateDTO request)
     {
         using var span = StartSpan("CreateEntry");
         try
@@ -126,7 +126,7 @@ public sealed class ControleMaeService : IControleMaeService
         }
     }
 
-    public async Task<MaeLedgerEntryDTO> UpdateEntryValuesAsync(Guid id, UpdateMaeLedgerEntryValuesDTO request)
+    public async Task<MaeLedgerEntryDTO> UpdateEntryValuesAsync(Guid id, MaeLedgerEntryValuesUpdateDTO request)
     {
         using var span = StartSpan("UpdateEntryValues");
         span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());

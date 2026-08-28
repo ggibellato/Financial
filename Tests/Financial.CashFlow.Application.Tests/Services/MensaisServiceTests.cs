@@ -73,7 +73,7 @@ public class MensaisServiceTests
     public async Task CreateBillAsync_WithInvalidDueDay_Throws(int dueDay)
     {
         var request = ValidBrasilRequest();
-        var invalidRequest = new CreateRecurringBillDTO
+        var invalidRequest = new RecurringBillCreateDTO
         {
             DueDay = dueDay,
             Description = request.Description,
@@ -90,7 +90,7 @@ public class MensaisServiceTests
     [Fact]
     public async Task CreateBillAsync_WithBlankDescription_Throws()
     {
-        var act = async () => await _sut.CreateBillAsync(new CreateRecurringBillDTO
+        var act = async () => await _sut.CreateBillAsync(new RecurringBillCreateDTO
         {
             DueDay = 10,
             Description = "   ",
@@ -105,7 +105,7 @@ public class MensaisServiceTests
     [Fact]
     public async Task CreateBillAsync_WithUnrecognizedArea_Throws()
     {
-        var act = async () => await _sut.CreateBillAsync(new CreateRecurringBillDTO
+        var act = async () => await _sut.CreateBillAsync(new RecurringBillCreateDTO
         {
             DueDay = 10,
             Description = "Test",
@@ -154,7 +154,7 @@ public class MensaisServiceTests
         var bill = RecurringBill.Create(10, "INSS", 850m, Area.Brasil, string.Empty, null, null);
         _repository.RecurringBills.Add(bill);
 
-        var result = await _sut.UpdateBillAsync(bill.Id, new UpdateRecurringBillDTO
+        var result = await _sut.UpdateBillAsync(bill.Id, new RecurringBillUpdateDTO
         {
             Status = "Paid",
             Value = 900m
@@ -167,7 +167,7 @@ public class MensaisServiceTests
     [Fact]
     public async Task UpdateBillAsync_WithUnknownId_ThrowsKeyNotFoundException()
     {
-        var act = async () => await _sut.UpdateBillAsync(Guid.NewGuid(), new UpdateRecurringBillDTO
+        var act = async () => await _sut.UpdateBillAsync(Guid.NewGuid(), new RecurringBillUpdateDTO
         {
             Status = "Paid",
             Value = 100m
@@ -182,7 +182,7 @@ public class MensaisServiceTests
         var bill = RecurringBill.Create(10, "INSS", 850m, Area.Brasil, string.Empty, null, null);
         _repository.RecurringBills.Add(bill);
 
-        var act = async () => await _sut.UpdateBillAsync(bill.Id, new UpdateRecurringBillDTO
+        var act = async () => await _sut.UpdateBillAsync(bill.Id, new RecurringBillUpdateDTO
         {
             Status = "NotAStatus",
             Value = 100m
@@ -208,7 +208,7 @@ public class MensaisServiceTests
         _repository.SaveChangesCallCount.Should().Be(1);
     }
 
-    private static CreateRecurringBillDTO ValidBrasilRequest() => new()
+    private static RecurringBillCreateDTO ValidBrasilRequest() => new()
     {
         DueDay = 10,
         Description = "INSS",

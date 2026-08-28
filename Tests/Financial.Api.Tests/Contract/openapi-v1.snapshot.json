@@ -260,21 +260,6 @@
         ],
         "type": "object"
       },
-      "AssetPriceFetch": {
-        "properties": {
-          "brokerName": {
-            "type": "string"
-          },
-          "portfolioName": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "brokerName",
-          "portfolioName"
-        ],
-        "type": "object"
-      },
       "AssetPriceSnapshotDTO": {
         "properties": {
           "date": {
@@ -553,11 +538,11 @@
         ],
         "type": "object"
       },
-      "CategoryAnnualGroupValueDTO": {
+      "CategoryAnnualAverageDTO": {
         "properties": {
           "annualAverages": {
             "items": {
-              "$ref": "#/components/schemas/CategoryGroupValueDTO"
+              "$ref": "#/components/schemas/CategoryAverageDTO"
             },
             "type": "array"
           },
@@ -601,6 +586,22 @@
         ],
         "type": "object"
       },
+      "CategoryAverageDTO": {
+        "properties": {
+          "category": {
+            "type": "string"
+          },
+          "value": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "category",
+          "value"
+        ],
+        "type": "object"
+      },
       "CategoryDTO": {
         "properties": {
           "active": {
@@ -626,22 +627,6 @@
           "active",
           "isInvestment",
           "isTithe"
-        ],
-        "type": "object"
-      },
-      "CategoryGroupValueDTO": {
-        "properties": {
-          "category": {
-            "type": "string"
-          },
-          "value": {
-            "format": "double",
-            "type": "number"
-          }
-        },
-        "required": [
-          "category",
-          "value"
         ],
         "type": "object"
       },
@@ -722,62 +707,6 @@
           "US",
           "UK"
         ]
-      },
-      "CreateMaeLedgerEntryDTO": {
-        "properties": {
-          "date": {
-            "format": "date",
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "note": {
-            "type": "string"
-          },
-          "sourceCurrency": {
-            "type": "string"
-          },
-          "sourceValue": {
-            "format": "double",
-            "type": "number"
-          }
-        },
-        "required": [
-          "date",
-          "description",
-          "sourceCurrency",
-          "sourceValue"
-        ],
-        "type": "object"
-      },
-      "CreateRecurringBillDTO": {
-        "properties": {
-          "area": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "dueDay": {
-            "format": "int32",
-            "type": "integer"
-          },
-          "note": {
-            "type": "string"
-          },
-          "value": {
-            "format": "double",
-            "type": "number"
-          }
-        },
-        "required": [
-          "dueDay",
-          "description",
-          "value",
-          "area"
-        ],
-        "type": "object"
       },
       "CreditCardDTO": {
         "properties": {
@@ -1756,6 +1685,46 @@
         ],
         "type": "object"
       },
+      "InvestmentSnapshotValueUpdateDTO": {
+        "properties": {
+          "value": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "value"
+        ],
+        "type": "object"
+      },
+      "MaeLedgerEntryCreateDTO": {
+        "properties": {
+          "date": {
+            "format": "date",
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          },
+          "sourceCurrency": {
+            "type": "string"
+          },
+          "sourceValue": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "date",
+          "description",
+          "sourceCurrency",
+          "sourceValue"
+        ],
+        "type": "object"
+      },
       "MaeLedgerEntryDTO": {
         "properties": {
           "brlValue": {
@@ -1799,6 +1768,25 @@
         ],
         "type": "object"
       },
+      "MaeLedgerEntryValuesUpdateDTO": {
+        "properties": {
+          "brlValue": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "gbpValue": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "type": "object"
+      },
       "MaeLedgerTotalsDTO": {
         "properties": {
           "totalBrlValue": {
@@ -1816,7 +1804,7 @@
         ],
         "type": "object"
       },
-      "MarkStatementPaidDTO": {
+      "MarkCardStatementPaidDTO": {
         "properties": {
           "paymentSourceBankId": {
             "format": "uuid",
@@ -2046,6 +2034,21 @@
         ],
         "type": "object"
       },
+      "PortfolioReferenceDTO": {
+        "properties": {
+          "brokerName": {
+            "type": "string"
+          },
+          "portfolioName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "brokerName",
+          "portfolioName"
+        ],
+        "type": "object"
+      },
       "PositionType": {
         "enum": [
           "Long",
@@ -2087,6 +2090,34 @@
             ]
           }
         },
+        "type": "object"
+      },
+      "RecurringBillCreateDTO": {
+        "properties": {
+          "area": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "dueDay": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "note": {
+            "type": "string"
+          },
+          "value": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "dueDay",
+          "description",
+          "value",
+          "area"
+        ],
         "type": "object"
       },
       "RecurringBillDTO": {
@@ -2137,6 +2168,22 @@
           "area",
           "note",
           "status"
+        ],
+        "type": "object"
+      },
+      "RecurringBillUpdateDTO": {
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "value": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "status",
+          "value"
         ],
         "type": "object"
       },
@@ -2222,6 +2269,32 @@
           "id",
           "bucketId",
           "bucketName",
+          "amount",
+          "date",
+          "description"
+        ],
+        "type": "object"
+      },
+      "ReserveMovementUpdateDTO": {
+        "properties": {
+          "amount": {
+            "format": "double",
+            "type": "number"
+          },
+          "bucketId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "date": {
+            "format": "date",
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "bucketId",
           "amount",
           "date",
           "description"
@@ -2623,80 +2696,7 @@
           "Asset"
         ]
       },
-      "UpdateInvestmentSnapshotValueDTO": {
-        "properties": {
-          "value": {
-            "format": "double",
-            "type": "number"
-          }
-        },
-        "required": [
-          "value"
-        ],
-        "type": "object"
-      },
-      "UpdateMaeLedgerEntryValuesDTO": {
-        "properties": {
-          "brlValue": {
-            "format": "double",
-            "type": [
-              "null",
-              "number"
-            ]
-          },
-          "gbpValue": {
-            "format": "double",
-            "type": [
-              "null",
-              "number"
-            ]
-          }
-        },
-        "type": "object"
-      },
-      "UpdateRecurringBillDTO": {
-        "properties": {
-          "status": {
-            "type": "string"
-          },
-          "value": {
-            "format": "double",
-            "type": "number"
-          }
-        },
-        "required": [
-          "status",
-          "value"
-        ],
-        "type": "object"
-      },
-      "UpdateReserveMovementDTO": {
-        "properties": {
-          "amount": {
-            "format": "double",
-            "type": "number"
-          },
-          "bucketId": {
-            "format": "uuid",
-            "type": "string"
-          },
-          "date": {
-            "format": "date",
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "bucketId",
-          "amount",
-          "date",
-          "description"
-        ],
-        "type": "object"
-      },
-      "WatchlistItem": {
+      "WatchlistItemDTO": {
         "properties": {
           "group": {
             "type": "string"
@@ -2815,7 +2815,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/CategoryAnnualGroupValueDTO"
+                    "$ref": "#/components/schemas/CategoryAnnualAverageDTO"
                   },
                   "type": "array"
                 }
@@ -2871,7 +2871,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/AssetPriceFetch"
+                    "$ref": "#/components/schemas/PortfolioReferenceDTO"
                   },
                   "type": "array"
                 }
@@ -3584,17 +3584,17 @@
           "content": {
             "application/*\u002Bjson": {
               "schema": {
-                "$ref": "#/components/schemas/MarkStatementPaidDTO"
+                "$ref": "#/components/schemas/MarkCardStatementPaidDTO"
               }
             },
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/MarkStatementPaidDTO"
+                "$ref": "#/components/schemas/MarkCardStatementPaidDTO"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/MarkStatementPaidDTO"
+                "$ref": "#/components/schemas/MarkCardStatementPaidDTO"
               }
             }
           },
@@ -3761,7 +3761,7 @@
                     "type": "null"
                   },
                   {
-                    "$ref": "#/components/schemas/CreateMaeLedgerEntryDTO"
+                    "$ref": "#/components/schemas/MaeLedgerEntryCreateDTO"
                   }
                 ]
               }
@@ -3773,7 +3773,7 @@
                     "type": "null"
                   },
                   {
-                    "$ref": "#/components/schemas/CreateMaeLedgerEntryDTO"
+                    "$ref": "#/components/schemas/MaeLedgerEntryCreateDTO"
                   }
                 ]
               }
@@ -3785,7 +3785,7 @@
                     "type": "null"
                   },
                   {
-                    "$ref": "#/components/schemas/CreateMaeLedgerEntryDTO"
+                    "$ref": "#/components/schemas/MaeLedgerEntryCreateDTO"
                   }
                 ]
               }
@@ -3933,7 +3933,7 @@
                     "type": "null"
                   },
                   {
-                    "$ref": "#/components/schemas/UpdateMaeLedgerEntryValuesDTO"
+                    "$ref": "#/components/schemas/MaeLedgerEntryValuesUpdateDTO"
                   }
                 ]
               }
@@ -3945,7 +3945,7 @@
                     "type": "null"
                   },
                   {
-                    "$ref": "#/components/schemas/UpdateMaeLedgerEntryValuesDTO"
+                    "$ref": "#/components/schemas/MaeLedgerEntryValuesUpdateDTO"
                   }
                 ]
               }
@@ -3957,7 +3957,7 @@
                     "type": "null"
                   },
                   {
-                    "$ref": "#/components/schemas/UpdateMaeLedgerEntryValuesDTO"
+                    "$ref": "#/components/schemas/MaeLedgerEntryValuesUpdateDTO"
                   }
                 ]
               }
@@ -5194,7 +5194,7 @@
                     "type": "null"
                   },
                   {
-                    "$ref": "#/components/schemas/UpdateInvestmentSnapshotValueDTO"
+                    "$ref": "#/components/schemas/InvestmentSnapshotValueUpdateDTO"
                   }
                 ]
               }
@@ -5206,7 +5206,7 @@
                     "type": "null"
                   },
                   {
-                    "$ref": "#/components/schemas/UpdateInvestmentSnapshotValueDTO"
+                    "$ref": "#/components/schemas/InvestmentSnapshotValueUpdateDTO"
                   }
                 ]
               }
@@ -5218,7 +5218,7 @@
                     "type": "null"
                   },
                   {
-                    "$ref": "#/components/schemas/UpdateInvestmentSnapshotValueDTO"
+                    "$ref": "#/components/schemas/InvestmentSnapshotValueUpdateDTO"
                   }
                 ]
               }
@@ -5342,7 +5342,7 @@
                     "type": "null"
                   },
                   {
-                    "$ref": "#/components/schemas/CreateRecurringBillDTO"
+                    "$ref": "#/components/schemas/RecurringBillCreateDTO"
                   }
                 ]
               }
@@ -5354,7 +5354,7 @@
                     "type": "null"
                   },
                   {
-                    "$ref": "#/components/schemas/CreateRecurringBillDTO"
+                    "$ref": "#/components/schemas/RecurringBillCreateDTO"
                   }
                 ]
               }
@@ -5366,7 +5366,7 @@
                     "type": "null"
                   },
                   {
-                    "$ref": "#/components/schemas/CreateRecurringBillDTO"
+                    "$ref": "#/components/schemas/RecurringBillCreateDTO"
                   }
                 ]
               }
@@ -5480,7 +5480,7 @@
                     "type": "null"
                   },
                   {
-                    "$ref": "#/components/schemas/UpdateRecurringBillDTO"
+                    "$ref": "#/components/schemas/RecurringBillUpdateDTO"
                   }
                 ]
               }
@@ -5492,7 +5492,7 @@
                     "type": "null"
                   },
                   {
-                    "$ref": "#/components/schemas/UpdateRecurringBillDTO"
+                    "$ref": "#/components/schemas/RecurringBillUpdateDTO"
                   }
                 ]
               }
@@ -5504,7 +5504,7 @@
                     "type": "null"
                   },
                   {
-                    "$ref": "#/components/schemas/UpdateRecurringBillDTO"
+                    "$ref": "#/components/schemas/RecurringBillUpdateDTO"
                   }
                 ]
               }
@@ -6104,7 +6104,7 @@
                     "type": "null"
                   },
                   {
-                    "$ref": "#/components/schemas/UpdateReserveMovementDTO"
+                    "$ref": "#/components/schemas/ReserveMovementUpdateDTO"
                   }
                 ]
               }
@@ -6116,7 +6116,7 @@
                     "type": "null"
                   },
                   {
-                    "$ref": "#/components/schemas/UpdateReserveMovementDTO"
+                    "$ref": "#/components/schemas/ReserveMovementUpdateDTO"
                   }
                 ]
               }
@@ -6128,7 +6128,7 @@
                     "type": "null"
                   },
                   {
-                    "$ref": "#/components/schemas/UpdateReserveMovementDTO"
+                    "$ref": "#/components/schemas/ReserveMovementUpdateDTO"
                   }
                 ]
               }
@@ -7141,7 +7141,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/WatchlistItem"
+                    "$ref": "#/components/schemas/WatchlistItemDTO"
                   },
                   "type": "array"
                 }

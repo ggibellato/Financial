@@ -520,8 +520,8 @@ public class AssetPriceLookupServiceTests
         var tempFile = Path.Combine(Path.GetTempPath(), $"data.test.{Guid.NewGuid():N}.json");
         File.Copy(TestDataPaths.DataJsonFile, tempFile, true);
 
-        var serializer = new InvestmentsSerializerAdapter();
-        var investments = InvestmentsLoader.LoadSync(new LocalJsonStorage(tempFile), serializer);
+        var serializer = new InvestmentSerializerAdapter();
+        var investments = InvestmentLoader.LoadSync(new LocalJsonStorage(tempFile), serializer);
         var storage = new WriteFailingJsonStorage(new LocalJsonStorage(tempFile));
 
         var tracer = new RecordingTelemetryTracer();
@@ -536,8 +536,8 @@ public class AssetPriceLookupServiceTests
     private static Asset? ReloadAssetFromDisk(string tempFile)
     {
         var storage = new LocalJsonStorage(tempFile);
-        var serializer = new InvestmentsSerializerAdapter();
-        var repository = new InvestmentJsonRepository(InvestmentsLoader.LoadSync(storage, serializer), storage, serializer);
+        var serializer = new InvestmentSerializerAdapter();
+        var repository = new InvestmentJsonRepository(InvestmentLoader.LoadSync(storage, serializer), storage, serializer);
         return repository.GetAsset(BrokerName, PortfolioName, AssetName);
     }
 
@@ -548,8 +548,8 @@ public class AssetPriceLookupServiceTests
         File.Copy(TestDataPaths.DataJsonFile, tempFile, true);
 
         IJsonStorage storage = new LocalJsonStorage(tempFile);
-        var serializer = new InvestmentsSerializerAdapter();
-        var investments = InvestmentsLoader.LoadSync(storage, serializer);
+        var serializer = new InvestmentSerializerAdapter();
+        var investments = InvestmentLoader.LoadSync(storage, serializer);
         if (failWrites)
         {
             storage = new WriteFailingJsonStorage(storage);
@@ -592,8 +592,8 @@ public class AssetPriceLookupServiceTests
         File.Copy(TestDataPaths.DataJsonFile, tempFile, true);
 
         var storage = new LocalJsonStorage(tempFile);
-        var serializer = new InvestmentsSerializerAdapter();
-        return (new InvestmentJsonRepository(InvestmentsLoader.LoadSync(storage, serializer), storage, serializer),
+        var serializer = new InvestmentSerializerAdapter();
+        return (new InvestmentJsonRepository(InvestmentLoader.LoadSync(storage, serializer), storage, serializer),
             new RecordingTelemetryTracer(), tempFile);
     }
 

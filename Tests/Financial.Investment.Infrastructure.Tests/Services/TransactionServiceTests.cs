@@ -136,8 +136,8 @@ public class TransactionServiceTests
         File.Copy(TestDataPaths.DataJsonFile, tempFile, true);
 
         var storage = new LocalJsonStorage(tempFile);
-        var serializer = new InvestmentsSerializerAdapter();
-        var repository = new InvestmentJsonRepository(InvestmentsLoader.LoadSync(storage, serializer), storage, serializer);
+        var serializer = new InvestmentSerializerAdapter();
+        var repository = new InvestmentJsonRepository(InvestmentLoader.LoadSync(storage, serializer), storage, serializer);
         var tracer = new RecordingTelemetryTracer();
         var navigationService = new NavigationService(repository, tracer, NullLogger<NavigationService>.Instance);
         var service = new TransactionService(repository, navigationService, tracer, NullLogger<TransactionService>.Instance);

@@ -23,7 +23,7 @@ public sealed class MensaisService : IMensaisService
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task<RecurringBillDTO> CreateBillAsync(CreateRecurringBillDTO request)
+    public async Task<RecurringBillDTO> CreateBillAsync(RecurringBillCreateDTO request)
     {
         using var span = StartSpan("CreateBill");
         try
@@ -100,7 +100,7 @@ public sealed class MensaisService : IMensaisService
         }
     }
 
-    public async Task<RecurringBillDTO> UpdateBillAsync(Guid id, UpdateRecurringBillDTO request)
+    public async Task<RecurringBillDTO> UpdateBillAsync(Guid id, RecurringBillUpdateDTO request)
     {
         using var span = StartSpan("UpdateBill");
         span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());

@@ -15,15 +15,15 @@ import type {
   CategoryDto,
   CategoryTotalDto,
   CategoryTotalsAnnualDto,
-  CreateExpenseDto,
-  CreateMaeLedgerEntryDto,
-  CreateRecurringBillDto,
+  ExpenseCreateDto,
+  MaeLedgerEntryCreateDto,
+  RecurringBillCreateDto,
   CreditCardDto,
   CreditCreateDto,
   CreditDeleteDto,
   CreditDto,
   CreditUpdateDto,
-  CreateIncomeDto,
+  IncomeCreateDto,
   DeleteAssetPriceDto,
   DividendHistoryItemDto,
   DividendSummaryDto,
@@ -54,19 +54,19 @@ import type {
   TransactionSummaryItemDto,
   TransactionUpdateDto,
   TransferDto,
-  CreateTransferDto,
-  UpdateCreditCardDto,
-  UpdateTransferDto,
+  TransferCreateDto,
+  CreditCardUpdateDto,
+  TransferUpdateDto,
   BalanceAdjustmentDto,
-  CreateBalanceAdjustmentDto,
-  UpdateBalanceAdjustmentDto,
+  BalanceAdjustmentCreateDto,
+  BalanceAdjustmentUpdateDto,
   TreeNodeDto,
-  UpdateExpenseDto,
-  UpdateIncomeDto,
-  UpdateInvestmentSnapshotValueDto,
-  UpdateMaeLedgerEntryValuesDto,
-  UpdateRecurringBillDto,
-  UpdateReserveMovementDto,
+  ExpenseUpdateDto,
+  IncomeUpdateDto,
+  InvestmentSnapshotValueUpdateDto,
+  MaeLedgerEntryValuesUpdateDto,
+  RecurringBillUpdateDto,
+  ReserveMovementUpdateDto,
   WatchlistItemDto,
   WithdrawalRequestDto,
   XirrResultDto,
@@ -114,20 +114,20 @@ export interface FinancialApiClient {
   getReserveBuckets: () => Promise<ReserveBucketDto[]>
   postIncomeSplit: (request: IncomeSplitRequestDto) => Promise<IncomeSplitResultDto>
   postWithdrawal: (request: WithdrawalRequestDto) => Promise<ReserveMovementDto>
-  updateReserveMovement: (id: string, request: UpdateReserveMovementDto) => Promise<ReserveMovementDto>
+  updateReserveMovement: (id: string, request: ReserveMovementUpdateDto) => Promise<ReserveMovementDto>
   deleteReserveMovement: (id: string) => Promise<void>
   getMensaisBills: () => Promise<RecurringBillDto[]>
-  createMensaisBill: (request: CreateRecurringBillDto) => Promise<RecurringBillDto>
-  updateMensaisBill: (id: string, request: UpdateRecurringBillDto) => Promise<RecurringBillDto>
+  createMensaisBill: (request: RecurringBillCreateDto) => Promise<RecurringBillDto>
+  updateMensaisBill: (id: string, request: RecurringBillUpdateDto) => Promise<RecurringBillDto>
   deleteMensaisBill: (id: string) => Promise<void>
   resetMensaisToUnset: () => Promise<RecurringBillDto[]>
-  createMaeLedgerEntry: (request: CreateMaeLedgerEntryDto) => Promise<MaeLedgerEntryDto>
+  createMaeLedgerEntry: (request: MaeLedgerEntryCreateDto) => Promise<MaeLedgerEntryDto>
   getMaeLedgerEntriesFromDate: (fromDate: string) => Promise<MaeLedgerEntryDto[]>
   getMaeLedgerTotals: () => Promise<MaeLedgerTotalsDto>
-  updateMaeLedgerEntryValues: (id: string, request: UpdateMaeLedgerEntryValuesDto) => Promise<MaeLedgerEntryDto>
+  updateMaeLedgerEntryValues: (id: string, request: MaeLedgerEntryValuesUpdateDto) => Promise<MaeLedgerEntryDto>
   deleteMaeLedgerEntry: (id: string) => Promise<void>
   getInvestmentSnapshots: (year: number, month: number) => Promise<InvestmentSnapshotDto[]>
-  updateInvestmentSnapshotValue: (id: string, request: UpdateInvestmentSnapshotValueDto) => Promise<InvestmentSnapshotDto>
+  updateInvestmentSnapshotValue: (id: string, request: InvestmentSnapshotValueUpdateDto) => Promise<InvestmentSnapshotDto>
   getExpensesByMonth: (year: number, month: number) => Promise<ExpenseDto[]>
   getUnpaidCardChargesByMonth: (year: number, month: number) => Promise<ExpenseDto[]>
   getCategoryTotalsByMonth: (year: number, month: number) => Promise<CategoryTotalDto[]>
@@ -135,23 +135,23 @@ export interface FinancialApiClient {
   getIncomeSources: () => Promise<IncomeSourceDto[]>
   getCategories: () => Promise<CategoryDto[]>
   getCreditCards: () => Promise<CreditCardDto[]>
-  updateCreditCard: (id: string, request: UpdateCreditCardDto) => Promise<CreditCardDto>
+  updateCreditCard: (id: string, request: CreditCardUpdateDto) => Promise<CreditCardDto>
   getBankBalancesByMonth: (year: number, month: number) => Promise<BankBalanceDto[]>
-  createExpense: (request: CreateExpenseDto) => Promise<ExpenseDto>
-  updateExpense: (id: string, request: UpdateExpenseDto) => Promise<ExpenseDto>
+  createExpense: (request: ExpenseCreateDto) => Promise<ExpenseDto>
+  updateExpense: (id: string, request: ExpenseUpdateDto) => Promise<ExpenseDto>
   deleteExpense: (id: string) => Promise<void>
   getIncomesByMonth: (year: number, month: number) => Promise<IncomeDto[]>
   getTitheSummaryByMonth: (year: number, month: number) => Promise<TitheSummaryDto>
-  createIncome: (request: CreateIncomeDto) => Promise<IncomeDto>
-  updateIncome: (id: string, request: UpdateIncomeDto) => Promise<IncomeDto>
+  createIncome: (request: IncomeCreateDto) => Promise<IncomeDto>
+  updateIncome: (id: string, request: IncomeUpdateDto) => Promise<IncomeDto>
   deleteIncome: (id: string) => Promise<void>
-  createTransfer: (request: CreateTransferDto) => Promise<TransferDto>
-  updateTransfer: (id: string, request: UpdateTransferDto) => Promise<TransferDto>
-  createBalanceAdjustment: (bankId: string, request: CreateBalanceAdjustmentDto) => Promise<BalanceAdjustmentDto>
+  createTransfer: (request: TransferCreateDto) => Promise<TransferDto>
+  updateTransfer: (id: string, request: TransferUpdateDto) => Promise<TransferDto>
+  createBalanceAdjustment: (bankId: string, request: BalanceAdjustmentCreateDto) => Promise<BalanceAdjustmentDto>
   updateBalanceAdjustment: (
     bankId: string,
     id: string,
-    request: UpdateBalanceAdjustmentDto,
+    request: BalanceAdjustmentUpdateDto,
   ) => Promise<BalanceAdjustmentDto>
   getTransfersByMonth: (year: number, month: number) => Promise<TransferDto[]>
   deleteTransfer: (id: string) => Promise<void>

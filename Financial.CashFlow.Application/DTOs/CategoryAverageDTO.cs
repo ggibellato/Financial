@@ -1,7 +1,7 @@
 namespace Financial.CashFlow.Application.DTOs;
 
-public sealed class UpdateRecurringBillDTO
+public sealed class CategoryAverageDTO
 {
-    public required string Status { get; init; }
+    public required string Category { get; init; } 
     public required decimal Value { get; init; }
 }

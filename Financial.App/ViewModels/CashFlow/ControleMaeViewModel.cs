@@ -242,7 +242,7 @@ public class ControleMaeViewModel : ViewModelBase
         saving => IsCreating = saving,
         async () =>
         {
-            await _controleMaeService.CreateEntryAsync(new CreateMaeLedgerEntryDTO
+            await _controleMaeService.CreateEntryAsync(new MaeLedgerEntryCreateDTO
             {
                 Date = DateOnly.FromDateTime(CreateDate!.Value),
                 Description = CreateDescription,
@@ -351,7 +351,7 @@ public class ControleMaeViewModel : ViewModelBase
             saving => IsSaving = saving,
             async () =>
             {
-                await _controleMaeService.UpdateEntryValuesAsync(id, new UpdateMaeLedgerEntryValuesDTO
+                await _controleMaeService.UpdateEntryValuesAsync(id, new MaeLedgerEntryValuesUpdateDTO
                 {
                     BrlValue = string.IsNullOrWhiteSpace(EditBrlValue) ? null : decimal.Parse(EditBrlValue),
                     GbpValue = string.IsNullOrWhiteSpace(EditGbpValue) ? null : decimal.Parse(EditGbpValue),

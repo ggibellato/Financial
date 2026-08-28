@@ -21,11 +21,11 @@ public class InvestmentRepositoryFactoryTests
     public InvestmentRepositoryFactoryTests()
     {
         _stubbedFactory = new InvestmentRepositoryFactory(
-            new InvestmentsSerializerAdapter(), new JsonStorageFactory(new StubRemoteFileClientFactory(), NoOpTelemetryTracer.Instance));
+            new InvestmentSerializerAdapter(), new JsonStorageFactory(new StubRemoteFileClientFactory(), NoOpTelemetryTracer.Instance));
     }
 
     private static readonly InvestmentRepositoryFactory Factory =
-        new(new InvestmentsSerializerAdapter(), new JsonStorageFactory(new GoogleFileClientFactory(), NoOpTelemetryTracer.Instance));
+        new(new InvestmentSerializerAdapter(), new JsonStorageFactory(new GoogleFileClientFactory(), NoOpTelemetryTracer.Instance));
 
     [Fact]
     public void Constructor_WithNullSerializer_Throws()
@@ -37,7 +37,7 @@ public class InvestmentRepositoryFactoryTests
     [Fact]
     public void Constructor_WithNullStorageFactory_Throws()
     {
-        Action act = () => new InvestmentRepositoryFactory(new InvestmentsSerializerAdapter(), null!);
+        Action act = () => new InvestmentRepositoryFactory(new InvestmentSerializerAdapter(), null!);
         act.Should().Throw<ArgumentNullException>().WithParameterName("storageFactory");
     }
 
@@ -129,7 +129,7 @@ public class InvestmentRepositoryFactoryTests
     public void Create_WithGoogleDriveProvider_NoRemoteFileClientFactoryRegistered_ThrowsInvalidOperationException()
     {
         var factoryWithoutRemoteFileClient = new InvestmentRepositoryFactory(
-            new InvestmentsSerializerAdapter(), new JsonStorageFactory(null, NoOpTelemetryTracer.Instance));
+            new InvestmentSerializerAdapter(), new JsonStorageFactory(null, NoOpTelemetryTracer.Instance));
         var options = new InvestmentRepositorySelectionOptions(
             InvestmentRepositoryProvider.GoogleDriveJson,
             null,
@@ -199,7 +199,7 @@ public class InvestmentRepositoryFactoryTests
     {
         var remoteFileClient = new RecordingRemoteFileClient();
         var factory = new InvestmentRepositoryFactory(
-            new InvestmentsSerializerAdapter(), new JsonStorageFactory(new RecordingRemoteFileClientFactory(remoteFileClient), NoOpTelemetryTracer.Instance));
+            new InvestmentSerializerAdapter(), new JsonStorageFactory(new RecordingRemoteFileClientFactory(remoteFileClient), NoOpTelemetryTracer.Instance));
         var options = new InvestmentRepositorySelectionOptions(
             InvestmentRepositoryProvider.GoogleDriveJson,
             null,
@@ -251,7 +251,7 @@ public class InvestmentRepositoryFactoryTests
         var remoteFileClient = new RecordingRemoteFileClient();
         var tracer = new RecordingTelemetryTracer();
         var factory = new InvestmentRepositoryFactory(
-            new InvestmentsSerializerAdapter(), new JsonStorageFactory(new RecordingRemoteFileClientFactory(remoteFileClient), tracer));
+            new InvestmentSerializerAdapter(), new JsonStorageFactory(new RecordingRemoteFileClientFactory(remoteFileClient), tracer));
         var options = new InvestmentRepositorySelectionOptions(
             InvestmentRepositoryProvider.GoogleDriveJson,
             null,
@@ -291,7 +291,7 @@ public class InvestmentRepositoryFactoryTests
     private sealed class StubRemoteFileClient : IRemoteFileClient
     {
         public string DownloadFileContent(string path) =>
-            new InvestmentsSerializerAdapter().Serialize(Investments.Create());
+            new InvestmentSerializerAdapter().Serialize(Investments.Create());
 
         public void UploadFileContent(string path, string content) => throw new NotSupportedException();
     }
@@ -310,7 +310,7 @@ public class InvestmentRepositoryFactoryTests
         public int UploadCallCount { get; private set; }
 
         public string DownloadFileContent(string path) =>
-            new InvestmentsSerializerAdapter().Serialize(Investments.Create());
+            new InvestmentSerializerAdapter().Serialize(Investments.Create());
 
         public void UploadFileContent(string path, string content) => UploadCallCount++;
     }

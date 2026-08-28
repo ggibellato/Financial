@@ -414,7 +414,7 @@ public class ExpenseEndpointsTests : ApiEndpointTests
 
         await Client.PostAsJsonAsync(
             $"/api/v1/financial/card-statements/{statement.Id}/mark-paid",
-            new MarkStatementPaidDTO { PaymentSourceBankId = Trading212Id });
+            new MarkCardStatementPaidDTO { PaymentSourceBankId = Trading212Id });
         var response = await Client.GetAsync("/api/v1/financial/expenses/month/2026/7");
 
         var items = await response.Content.ReadFromJsonAsync<List<ExpenseDTO>>();
@@ -436,7 +436,7 @@ public class ExpenseEndpointsTests : ApiEndpointTests
         var statement = await GetStatementAsync(Client, "BarclaysPlatinumVisa8003");
         await Client.PostAsJsonAsync(
             $"/api/v1/financial/card-statements/{statement.Id}/mark-paid",
-            new MarkStatementPaidDTO { PaymentSourceBankId = Trading212Id });
+            new MarkCardStatementPaidDTO { PaymentSourceBankId = Trading212Id });
 
         await Client.PostAsync($"/api/v1/financial/card-statements/{statement.Id}/unmark-paid", null);
         var response = await Client.GetAsync("/api/v1/financial/expenses/month/2026/7");
@@ -492,7 +492,7 @@ public class ExpenseEndpointsTests : ApiEndpointTests
         var statement = await GetStatementAsync(Client, "BarclaysPlatinumVisa8003");
         await Client.PostAsJsonAsync(
             $"/api/v1/financial/card-statements/{statement.Id}/mark-paid",
-            new MarkStatementPaidDTO { PaymentSourceBankId = Trading212Id });
+            new MarkCardStatementPaidDTO { PaymentSourceBankId = Trading212Id });
 
         var response = await Client.GetAsync("/api/v1/financial/expenses/month/2026/7/unpaid-card-charges");
 

@@ -32,7 +32,7 @@ public class CardStatementServiceTests
     private static CreditCard Card(StubCashFlowRepository repository, string name) =>
         repository.CreditCards.First(c => c.Name == name);
 
-    private static MarkStatementPaidDTO PaidBy(StubCashFlowRepository repository, string? bankName) =>
+    private static MarkCardStatementPaidDTO PaidBy(StubCashFlowRepository repository, string? bankName) =>
         new() { PaymentSourceBankId = repository.Banks.FirstOrDefault(b => b.Name == bankName)?.Id };
 
     private static Expense AddCharge(

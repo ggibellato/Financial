@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
-import type { CreditCardDto, UpdateCreditCardDto } from '../api/types'
+import type { CreditCardDto, CreditCardUpdateDto } from '../api/types'
 import { getErrorMessage } from '../utils/formatters'
 
 interface CreditCardsState {
@@ -58,7 +58,7 @@ export interface CreditCardsData {
   retry: () => void
   updatingCardId: string | null
   updateError: string | null
-  updateCreditCard: (id: string, request: UpdateCreditCardDto) => void
+  updateCreditCard: (id: string, request: CreditCardUpdateDto) => void
 }
 
 export function useCreditCards(): CreditCardsData {
@@ -77,7 +77,7 @@ export function useCreditCards(): CreditCardsData {
   const retry = useCallback(() => dispatch({ type: 'RETRY' }), [])
 
   const updateCreditCard = useCallback(
-    (id: string, request: UpdateCreditCardDto) => {
+    (id: string, request: CreditCardUpdateDto) => {
       dispatch({ type: 'UPDATE_START', payload: id })
 
       void apiClient

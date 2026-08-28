@@ -6,11 +6,11 @@ using System.Text.Json.Serialization.Metadata;
 
 namespace Financial.Investment.Infrastructure.Tests.Persistence;
 
-public class InvestmentsTypeInfoResolverTests
+public class InvestmentTypeInfoResolverTests
 {
     private static JsonSerializerOptions CreateOptions() => new()
     {
-        TypeInfoResolver = new InvestmentsTypeInfoResolver()
+        TypeInfoResolver = new InvestmentTypeInfoResolver()
     };
 
     [Fact]

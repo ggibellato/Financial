@@ -24,7 +24,7 @@ public sealed class ControleMaeController : ControllerBase
     [HttpPost("entries")]
     [ProducesResponseType(typeof(MaeLedgerEntryDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<MaeLedgerEntryDTO>> CreateEntry([FromBody] CreateMaeLedgerEntryDTO? request)
+    public async Task<ActionResult<MaeLedgerEntryDTO>> CreateEntry([FromBody] MaeLedgerEntryCreateDTO? request)
     {
         if (request is null)
         {
@@ -61,7 +61,7 @@ public sealed class ControleMaeController : ControllerBase
     [HttpPut("entries/{id:guid}/values")]
     [ProducesResponseType(typeof(MaeLedgerEntryDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<MaeLedgerEntryDTO>> UpdateEntryValues(Guid id, [FromBody] UpdateMaeLedgerEntryValuesDTO? request)
+    public async Task<ActionResult<MaeLedgerEntryDTO>> UpdateEntryValues(Guid id, [FromBody] MaeLedgerEntryValuesUpdateDTO? request)
     {
         if (request is null)
         {

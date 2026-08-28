@@ -2,7 +2,7 @@
 
 # Serialization (`*Serializer.cs`, `*Adapter.cs`)
 
-Examples: `InvestmentsSerializerAdapter`/`InvestmentsJsonSerializer` (Investment) and CashFlow's equivalent JSON adapters.
+Examples: `InvestmentSerializerAdapter` (Investment) and `CashFlowSerializerAdapter` (CashFlow).
 
 ## What to test
 

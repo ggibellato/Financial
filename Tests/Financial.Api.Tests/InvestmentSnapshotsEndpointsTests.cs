@@ -37,7 +37,7 @@ public class InvestmentSnapshotsEndpointsTests : ApiEndpointTests
         var snapshots = await monthResponse.Content.ReadFromJsonAsync<List<InvestmentSnapshotDTO>>();
         var target = snapshots!.First(s => s.AccountName == "ChaseSave");
 
-        var response = await Client.PutAsJsonAsync($"/api/v1/financial/investment-snapshots/{target.Id}", new UpdateInvestmentSnapshotValueDTO
+        var response = await Client.PutAsJsonAsync($"/api/v1/financial/investment-snapshots/{target.Id}", new InvestmentSnapshotValueUpdateDTO
         {
             Value = 500m
         });
@@ -58,7 +58,7 @@ public class InvestmentSnapshotsEndpointsTests : ApiEndpointTests
         var snapshots = await monthResponse.Content.ReadFromJsonAsync<List<InvestmentSnapshotDTO>>();
         var target = snapshots!.First();
 
-        var response = await Client.PutAsJsonAsync($"/api/v1/financial/investment-snapshots/{target.Id}", new UpdateInvestmentSnapshotValueDTO
+        var response = await Client.PutAsJsonAsync($"/api/v1/financial/investment-snapshots/{target.Id}", new InvestmentSnapshotValueUpdateDTO
         {
             Value = -10m
         });
@@ -71,7 +71,7 @@ public class InvestmentSnapshotsEndpointsTests : ApiEndpointTests
     [Fact]
     public async Task UpdateSnapshotValue_UnknownId_ReturnsNotFound()
     {
-        var response = await Client.PutAsJsonAsync($"/api/v1/financial/investment-snapshots/{Guid.NewGuid()}", new UpdateInvestmentSnapshotValueDTO
+        var response = await Client.PutAsJsonAsync($"/api/v1/financial/investment-snapshots/{Guid.NewGuid()}", new InvestmentSnapshotValueUpdateDTO
         {
             Value = 10m
         });

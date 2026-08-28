@@ -4,5 +4,5 @@ namespace Financial.CashFlow.Application.Interfaces;
 
 public interface IHistoricAverageService
 {
-    IReadOnlyList<CategoryAnnualGroupValueDTO> GetHistoricSummaryAverageFromYear(int year);
+    IReadOnlyList<CategoryAnnualAverageDTO> GetHistoricSummaryAverageFromYear(int year);
 }

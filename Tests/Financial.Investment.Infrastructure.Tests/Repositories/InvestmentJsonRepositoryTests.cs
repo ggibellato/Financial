@@ -15,7 +15,7 @@ public class InvestmentJsonRepositoryTests
 {
     /// <summary>Every test round-trips through the same stateless serializer; only the backing
     /// storage differs. Static because the repository factories below are static too.</summary>
-    private static readonly InvestmentsSerializerAdapter Serializer = new();
+    private static readonly InvestmentSerializerAdapter Serializer = new();
 
     /// <summary>Storage over the shared read-only test data file, which several tests open verbatim.</summary>
     private static readonly LocalJsonStorage TestDataStorage = new(TestDataPaths.DataJsonFile);
@@ -25,7 +25,7 @@ public class InvestmentJsonRepositoryTests
     private static InvestmentJsonRepository CreateRepository(string dataFile)
     {
         var storage = new LocalJsonStorage(dataFile);
-        return new InvestmentJsonRepository(InvestmentsLoader.LoadSync(storage, Serializer), storage, Serializer);
+        return new InvestmentJsonRepository(InvestmentLoader.LoadSync(storage, Serializer), storage, Serializer);
     }
 
     [Fact]
@@ -39,9 +39,9 @@ public class InvestmentJsonRepositoryTests
     [Fact]
     public void Constructor_WithNullStorage_Throws()
     {
-        var investments = InvestmentsLoader.LoadSync(TestDataStorage, Serializer);
+        var investments = InvestmentLoader.LoadSync(TestDataStorage, Serializer);
 
-        Action act = () => new InvestmentJsonRepository(investments, null!, new InvestmentsSerializerAdapter());
+        Action act = () => new InvestmentJsonRepository(investments, null!, new InvestmentSerializerAdapter());
 
         act.Should().Throw<ArgumentNullException>().WithParameterName("storage");
     }
@@ -49,7 +49,7 @@ public class InvestmentJsonRepositoryTests
     [Fact]
     public void Constructor_WithNullSerializer_Throws()
     {
-        var investments = InvestmentsLoader.LoadSync(TestDataStorage, new InvestmentsSerializerAdapter());
+        var investments = InvestmentLoader.LoadSync(TestDataStorage, new InvestmentSerializerAdapter());
 
         Action act = () => new InvestmentJsonRepository(investments, TestDataStorage, null!);
 
@@ -69,7 +69,7 @@ public class InvestmentJsonRepositoryTests
     {
         var expectedStatus = new SyncStatus(SyncState.Failed, "Drive unreachable", null);
         var storage = new FakeSyncStatusStorage { Status = expectedStatus };
-        var repository = new InvestmentJsonRepository(Investments.Create(), storage, new InvestmentsSerializerAdapter());
+        var repository = new InvestmentJsonRepository(Investments.Create(), storage, new InvestmentSerializerAdapter());
 
         var status = ((ISyncStatusProvider)repository).GetStatus();
 
@@ -88,7 +88,7 @@ public class InvestmentJsonRepositoryTests
     public async Task FlushAsync_WhenStorageIsASyncStatusProvider_DelegatesToIt()
     {
         var storage = new FakeSyncStatusStorage();
-        var repository = new InvestmentJsonRepository(Investments.Create(), storage, new InvestmentsSerializerAdapter());
+        var repository = new InvestmentJsonRepository(Investments.Create(), storage, new InvestmentSerializerAdapter());
 
         await ((ISyncStatusProvider)repository).FlushAsync();
 

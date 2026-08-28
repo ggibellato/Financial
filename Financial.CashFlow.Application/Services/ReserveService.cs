@@ -197,7 +197,7 @@ public sealed class ReserveService : IReserveService
         }
     }
 
-    public async Task<ReserveMovementDTO> UpdateMovementAsync(Guid id, UpdateReserveMovementDTO request)
+    public async Task<ReserveMovementDTO> UpdateMovementAsync(Guid id, ReserveMovementUpdateDTO request)
     {
         using var span = StartSpan("UpdateMovement");
         span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());

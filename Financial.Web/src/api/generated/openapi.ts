@@ -69,7 +69,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["CategoryAnnualGroupValueDTO"][];
+                        "application/json": components["schemas"]["CategoryAnnualAverageDTO"][];
                     };
                 };
             };
@@ -144,7 +144,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["AssetPriceFetch"][];
+                        "application/json": components["schemas"]["PortfolioReferenceDTO"][];
                     };
                 };
             };
@@ -699,9 +699,9 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/*+json": components["schemas"]["MarkStatementPaidDTO"];
-                    "application/json": components["schemas"]["MarkStatementPaidDTO"];
-                    "text/json": components["schemas"]["MarkStatementPaidDTO"];
+                    "application/*+json": components["schemas"]["MarkCardStatementPaidDTO"];
+                    "application/json": components["schemas"]["MarkCardStatementPaidDTO"];
+                    "text/json": components["schemas"]["MarkCardStatementPaidDTO"];
                 };
             };
             responses: {
@@ -884,9 +884,9 @@ export interface paths {
             };
             requestBody?: {
                 content: {
-                    "application/*+json": null | components["schemas"]["CreateMaeLedgerEntryDTO"];
-                    "application/json": null | components["schemas"]["CreateMaeLedgerEntryDTO"];
-                    "text/json": null | components["schemas"]["CreateMaeLedgerEntryDTO"];
+                    "application/*+json": null | components["schemas"]["MaeLedgerEntryCreateDTO"];
+                    "application/json": null | components["schemas"]["MaeLedgerEntryCreateDTO"];
+                    "text/json": null | components["schemas"]["MaeLedgerEntryCreateDTO"];
                 };
             };
             responses: {
@@ -1058,9 +1058,9 @@ export interface paths {
             };
             requestBody?: {
                 content: {
-                    "application/*+json": null | components["schemas"]["UpdateMaeLedgerEntryValuesDTO"];
-                    "application/json": null | components["schemas"]["UpdateMaeLedgerEntryValuesDTO"];
-                    "text/json": null | components["schemas"]["UpdateMaeLedgerEntryValuesDTO"];
+                    "application/*+json": null | components["schemas"]["MaeLedgerEntryValuesUpdateDTO"];
+                    "application/json": null | components["schemas"]["MaeLedgerEntryValuesUpdateDTO"];
+                    "text/json": null | components["schemas"]["MaeLedgerEntryValuesUpdateDTO"];
                 };
             };
             responses: {
@@ -2101,9 +2101,9 @@ export interface paths {
             };
             requestBody?: {
                 content: {
-                    "application/*+json": null | components["schemas"]["UpdateInvestmentSnapshotValueDTO"];
-                    "application/json": null | components["schemas"]["UpdateInvestmentSnapshotValueDTO"];
-                    "text/json": null | components["schemas"]["UpdateInvestmentSnapshotValueDTO"];
+                    "application/*+json": null | components["schemas"]["InvestmentSnapshotValueUpdateDTO"];
+                    "application/json": null | components["schemas"]["InvestmentSnapshotValueUpdateDTO"];
+                    "text/json": null | components["schemas"]["InvestmentSnapshotValueUpdateDTO"];
                 };
             };
             responses: {
@@ -2223,9 +2223,9 @@ export interface paths {
             };
             requestBody?: {
                 content: {
-                    "application/*+json": null | components["schemas"]["CreateRecurringBillDTO"];
-                    "application/json": null | components["schemas"]["CreateRecurringBillDTO"];
-                    "text/json": null | components["schemas"]["CreateRecurringBillDTO"];
+                    "application/*+json": null | components["schemas"]["RecurringBillCreateDTO"];
+                    "application/json": null | components["schemas"]["RecurringBillCreateDTO"];
+                    "text/json": null | components["schemas"]["RecurringBillCreateDTO"];
                 };
             };
             responses: {
@@ -2312,9 +2312,9 @@ export interface paths {
             };
             requestBody?: {
                 content: {
-                    "application/*+json": null | components["schemas"]["UpdateRecurringBillDTO"];
-                    "application/json": null | components["schemas"]["UpdateRecurringBillDTO"];
-                    "text/json": null | components["schemas"]["UpdateRecurringBillDTO"];
+                    "application/*+json": null | components["schemas"]["RecurringBillUpdateDTO"];
+                    "application/json": null | components["schemas"]["RecurringBillUpdateDTO"];
+                    "text/json": null | components["schemas"]["RecurringBillUpdateDTO"];
                 };
             };
             responses: {
@@ -2862,9 +2862,9 @@ export interface paths {
             };
             requestBody?: {
                 content: {
-                    "application/*+json": null | components["schemas"]["UpdateReserveMovementDTO"];
-                    "application/json": null | components["schemas"]["UpdateReserveMovementDTO"];
-                    "text/json": null | components["schemas"]["UpdateReserveMovementDTO"];
+                    "application/*+json": null | components["schemas"]["ReserveMovementUpdateDTO"];
+                    "application/json": null | components["schemas"]["ReserveMovementUpdateDTO"];
+                    "text/json": null | components["schemas"]["ReserveMovementUpdateDTO"];
                 };
             };
             responses: {
@@ -3751,7 +3751,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["WatchlistItem"][];
+                        "application/json": components["schemas"]["WatchlistItemDTO"][];
                     };
                 };
             };
@@ -3907,10 +3907,6 @@ export interface components {
             price?: number;
             ticker: string;
         };
-        AssetPriceFetch: {
-            brokerName: string;
-            portfolioName: string;
-        };
         AssetPriceSnapshotDTO: {
             /** Format: date */
             date: string;
@@ -4003,8 +3999,8 @@ export interface components {
             /** Format: int32 */
             year: number;
         };
-        CategoryAnnualGroupValueDTO: {
-            annualAverages: components["schemas"]["CategoryGroupValueDTO"][];
+        CategoryAnnualAverageDTO: {
+            annualAverages: components["schemas"]["CategoryAverageDTO"][];
             /** Format: int32 */
             year: number;
         };
@@ -4016,6 +4012,11 @@ export interface components {
             category: string;
             monthlyTotals: number[];
         };
+        CategoryAverageDTO: {
+            category: string;
+            /** Format: double */
+            value: number;
+        };
         CategoryDTO: {
             active: boolean;
             /** Format: uuid */
@@ -4023,11 +4024,6 @@ export interface components {
             isInvestment: boolean;
             isTithe: boolean;
             name: string;
-        };
-        CategoryGroupValueDTO: {
-            category: string;
-            /** Format: double */
-            value: number;
         };
         CategoryTotalDTO: {
             category: string;
@@ -4050,24 +4046,6 @@ export interface components {
         };
         /** @enum {unknown} */
         CountryCode: "Unknown" | "BR" | "US" | "UK";
-        CreateMaeLedgerEntryDTO: {
-            /** Format: date */
-            date: string;
-            description: string;
-            note?: string;
-            sourceCurrency: string;
-            /** Format: double */
-            sourceValue: number;
-        };
-        CreateRecurringBillDTO: {
-            area: string;
-            description: string;
-            /** Format: int32 */
-            dueDay: number;
-            note?: string;
-            /** Format: double */
-            value: number;
-        };
         CreditCardDTO: {
             /** Format: uuid */
             id: string;
@@ -4384,6 +4362,19 @@ export interface components {
             /** Format: int32 */
             year: number;
         };
+        InvestmentSnapshotValueUpdateDTO: {
+            /** Format: double */
+            value: number;
+        };
+        MaeLedgerEntryCreateDTO: {
+            /** Format: date */
+            date: string;
+            description: string;
+            note?: string;
+            sourceCurrency: string;
+            /** Format: double */
+            sourceValue: number;
+        };
         MaeLedgerEntryDTO: {
             /** Format: double */
             brlValue?: null | number;
@@ -4397,13 +4388,19 @@ export interface components {
             note: string;
             sourceCurrency: string;
         };
+        MaeLedgerEntryValuesUpdateDTO: {
+            /** Format: double */
+            brlValue: null | number;
+            /** Format: double */
+            gbpValue: null | number;
+        };
         MaeLedgerTotalsDTO: {
             /** Format: double */
             totalBrlValue: number;
             /** Format: double */
             totalGbpValue: number;
         };
-        MarkStatementPaidDTO: {
+        MarkCardStatementPaidDTO: {
             /** Format: uuid */
             paymentSourceBankId: null | string;
         };
@@ -4476,6 +4473,10 @@ export interface components {
             assets?: components["schemas"]["AssetNodeDTO"][];
             name: string;
         };
+        PortfolioReferenceDTO: {
+            brokerName: string;
+            portfolioName: string;
+        };
         /** @enum {unknown} */
         PositionType: "Long" | "Flat" | "Short";
         ProblemDetails: {
@@ -4485,6 +4486,15 @@ export interface components {
             status: null | number;
             title: null | string;
             type: null | string;
+        };
+        RecurringBillCreateDTO: {
+            area: string;
+            description: string;
+            /** Format: int32 */
+            dueDay: number;
+            note?: string;
+            /** Format: double */
+            value: number;
         };
         RecurringBillDTO: {
             area: string;
@@ -4497,6 +4507,11 @@ export interface components {
             minimumWageValue?: null | number;
             nitNumber?: null | string;
             note: string;
+            status: string;
+            /** Format: double */
+            value: number;
+        };
+        RecurringBillUpdateDTO: {
             status: string;
             /** Format: double */
             value: number;
@@ -4529,6 +4544,15 @@ export interface components {
             id: string;
             /** Format: uuid */
             incomeId?: null | string;
+        };
+        ReserveMovementUpdateDTO: {
+            /** Format: double */
+            amount: number;
+            /** Format: uuid */
+            bucketId: string;
+            /** Format: date */
+            date: string;
+            description: string;
         };
         SetAssetPriceDTO: {
             assetName: string;
@@ -4667,31 +4691,7 @@ export interface components {
         };
         /** @enum {unknown} */
         TreeNodeType: "Investments" | "Broker" | "Portfolio" | "Asset";
-        UpdateInvestmentSnapshotValueDTO: {
-            /** Format: double */
-            value: number;
-        };
-        UpdateMaeLedgerEntryValuesDTO: {
-            /** Format: double */
-            brlValue: null | number;
-            /** Format: double */
-            gbpValue: null | number;
-        };
-        UpdateRecurringBillDTO: {
-            status: string;
-            /** Format: double */
-            value: number;
-        };
-        UpdateReserveMovementDTO: {
-            /** Format: double */
-            amount: number;
-            /** Format: uuid */
-            bucketId: string;
-            /** Format: date */
-            date: string;
-            description: string;
-        };
-        WatchlistItem: {
+        WatchlistItemDTO: {
             group: string;
             name: string;
         };

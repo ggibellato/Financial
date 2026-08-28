@@ -5,7 +5,7 @@ using System.Text.Json.Serialization.Metadata;
 
 namespace Financial.Investment.Infrastructure.Persistence;
 
-public class InvestmentsTypeInfoResolver : DefaultJsonTypeInfoResolver
+public class InvestmentTypeInfoResolver : DefaultJsonTypeInfoResolver
 {
     private static readonly HashSet<Type> ManagedTypes =
     [

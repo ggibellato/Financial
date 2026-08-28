@@ -28,7 +28,7 @@ public class AssetPriceFetchViewModelTests
         new(_navigationService, _priceService,
             Options.Create(new AssetPriceFetchOptions
             {
-                Portfolios = [new AssetPriceFetch { BrokerName = brokerName, PortfolioName = portfolioName }]
+                Portfolios = [new PortfolioReferenceDTO { BrokerName = brokerName, PortfolioName = portfolioName }]
             }),
             _ => { });
 

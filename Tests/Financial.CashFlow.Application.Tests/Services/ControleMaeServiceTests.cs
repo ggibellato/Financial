@@ -57,7 +57,7 @@ public class ControleMaeServiceTests
         var provider = new StubExchangeRateProvider(0.146m);
         var service = CreateService(exchangeRateProvider: provider);
 
-        var result = await service.CreateEntryAsync(new CreateMaeLedgerEntryDTO
+        var result = await service.CreateEntryAsync(new MaeLedgerEntryCreateDTO
         {
             Date = new DateOnly(2026, 7, 1),
             Description = "School supplies",
@@ -81,7 +81,7 @@ public class ControleMaeServiceTests
         var provider = new StubExchangeRateProvider(null);
         var service = CreateService(exchangeRateProvider: provider);
 
-        var result = await service.CreateEntryAsync(new CreateMaeLedgerEntryDTO
+        var result = await service.CreateEntryAsync(new MaeLedgerEntryCreateDTO
         {
             Date = new DateOnly(2026, 7, 1),
             Description = "Medical appointment",
@@ -104,7 +104,7 @@ public class ControleMaeServiceTests
         var service = CreateService(exchangeRateProvider: provider);
         var futureDate = DateOnly.FromDateTime(DateTime.Now.AddDays(1));
 
-        var act = async () => await service.CreateEntryAsync(new CreateMaeLedgerEntryDTO
+        var act = async () => await service.CreateEntryAsync(new MaeLedgerEntryCreateDTO
         {
             Date = futureDate,
             Description = "Future entry",
@@ -123,7 +123,7 @@ public class ControleMaeServiceTests
     [Fact]
     public async Task CreateEntryAsync_WithBlankDescription_Throws()
     {
-        var act = async () => await _sut.CreateEntryAsync(new CreateMaeLedgerEntryDTO
+        var act = async () => await _sut.CreateEntryAsync(new MaeLedgerEntryCreateDTO
         {
             Date = new DateOnly(2026, 7, 1),
             Description = "   ",
@@ -137,7 +137,7 @@ public class ControleMaeServiceTests
     [Fact]
     public async Task CreateEntryAsync_WithUnrecognizedCurrency_Throws()
     {
-        var act = async () => await _sut.CreateEntryAsync(new CreateMaeLedgerEntryDTO
+        var act = async () => await _sut.CreateEntryAsync(new MaeLedgerEntryCreateDTO
         {
             Date = new DateOnly(2026, 7, 1),
             Description = "Test",
@@ -151,7 +151,7 @@ public class ControleMaeServiceTests
     [Fact]
     public async Task CreateEntryAsync_WithZeroValue_Throws()
     {
-        var act = async () => await _sut.CreateEntryAsync(new CreateMaeLedgerEntryDTO
+        var act = async () => await _sut.CreateEntryAsync(new MaeLedgerEntryCreateDTO
         {
             Date = new DateOnly(2026, 7, 1),
             Description = "Test",
@@ -193,7 +193,7 @@ public class ControleMaeServiceTests
         var entry = MaeLedgerEntry.Create(new DateOnly(2026, 7, 1), "Medical appointment", "Note", Currency.GBP, null, 40m);
         _repository.MaeLedgerEntries.Add(entry);
 
-        var result = await _sut.UpdateEntryValuesAsync(entry.Id, new UpdateMaeLedgerEntryValuesDTO
+        var result = await _sut.UpdateEntryValuesAsync(entry.Id, new MaeLedgerEntryValuesUpdateDTO
         {
             BrlValue = 320.50m,
             GbpValue = 40m
@@ -212,7 +212,7 @@ public class ControleMaeServiceTests
     [Fact]
     public async Task UpdateEntryValuesAsync_WithUnknownId_ThrowsKeyNotFoundException()
     {
-        var act = async () => await _sut.UpdateEntryValuesAsync(Guid.NewGuid(), new UpdateMaeLedgerEntryValuesDTO
+        var act = async () => await _sut.UpdateEntryValuesAsync(Guid.NewGuid(), new MaeLedgerEntryValuesUpdateDTO
         {
             BrlValue = 10m,
             GbpValue = 1m

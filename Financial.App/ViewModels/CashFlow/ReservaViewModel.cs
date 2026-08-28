@@ -288,7 +288,7 @@ public class ReservaViewModel : ViewModelBase
             saving => IsSavingMovement = saving,
             async () =>
             {
-                await _reserveService.UpdateMovementAsync(id, new UpdateReserveMovementDTO
+                await _reserveService.UpdateMovementAsync(id, new ReserveMovementUpdateDTO
                 {
                     BucketId = EditBucketId!.Value,
                     Amount = decimal.Parse(EditAmount),

@@ -472,7 +472,7 @@ public class ControllerGuardClauseTests
 
     private sealed class StubHistoricAverageService : IHistoricAverageService
     {
-        public IReadOnlyList<Financial.CashFlow.Application.DTOs.CategoryAnnualGroupValueDTO> GetHistoricSummaryAverageFromYear(int year) => throw new NotImplementedException();
+        public IReadOnlyList<Financial.CashFlow.Application.DTOs.CategoryAnnualAverageDTO> GetHistoricSummaryAverageFromYear(int year) => throw new NotImplementedException();
     }
 
     private sealed class StubBankService : IBankService

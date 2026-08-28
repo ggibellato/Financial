@@ -8,6 +8,6 @@ public interface IReserveService
     Task<ReserveMovementDTO> PostWithdrawalAsync(WithdrawalRequestDTO request);
     IReadOnlyList<ReserveBucketBalanceDTO> GetBucketBalances();
     IReadOnlyList<ReserveMovementDTO> GetMovementHistory();
-    Task<ReserveMovementDTO> UpdateMovementAsync(Guid id, UpdateReserveMovementDTO request);
+    Task<ReserveMovementDTO> UpdateMovementAsync(Guid id, ReserveMovementUpdateDTO request);
     Task DeleteMovementAsync(Guid id);
 }

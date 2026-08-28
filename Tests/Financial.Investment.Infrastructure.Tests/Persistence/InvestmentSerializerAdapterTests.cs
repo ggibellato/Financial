@@ -4,9 +4,9 @@ using FluentAssertions;
 
 namespace Financial.Investment.Infrastructure.Tests.Persistence;
 
-public class InvestmentsJsonSerializerTests
+public class InvestmentSerializerAdapterTests
 {
-    private static readonly InvestmentsSerializerAdapter Serializer = new();
+    private static readonly InvestmentSerializerAdapter Serializer = new();
 
     [Fact]
     public void SerializeDeserialize_RoundTripPreservesActiveAndHistoricStructure()
