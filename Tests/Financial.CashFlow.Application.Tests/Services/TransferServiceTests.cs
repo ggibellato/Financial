@@ -23,8 +23,6 @@ public class TransferServiceTests
         _sut = CreateService();
     }
 
-    /// <summary>Wires the SUT exactly as the test constructor does, so a test needing a differently
-    /// seeded repository does not repeat the whole construction sequence.</summary>
     private TransferService CreateService(StubCashFlowRepository? repository = null) =>
         new(repository ?? _repository, _tracer, NullLogger<TransferService>.Instance);
 

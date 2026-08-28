@@ -67,7 +67,6 @@
                 </TextBlock.Style>
             </TextBlock>
 
-            <!-- Row 1: Date | Category | Description (spans 2) -->
             <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,8,8">
                 <TextBlock Text="Date" Style="{StaticResource FieldLabelStyle}"/>
                 <DatePicker AutomationProperties.Name="Expense date"
@@ -88,7 +87,6 @@
                          Text="{Binding ExpenseFormDescription, UpdateSourceTrigger=PropertyChanged}"/>
             </StackPanel>
 
-            <!-- Row 2: Value | Card-or-PaymentSource | InvoiceMonth-or-RoundUp | Tithe -->
             <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,8,8">
                 <TextBlock Text="Value" Style="{StaticResource FieldLabelStyle}"/>
                 <TextBox AutomationProperties.Name="Value"
@@ -137,7 +135,7 @@
                       Visibility="{Binding ShowCountsAsTitheField, Converter={StaticResource BoolToVisibilityConverter}}"
                       IsChecked="{Binding ExpenseFormCountsAsTithe, UpdateSourceTrigger=PropertyChanged}"/>
 
-            <!-- Row 3: settled note, replaces the card/payment-source fields once the charge is locked -->
+            <!-- Replaces the card/payment-source fields once the charge is locked -->
             <TextBlock Grid.Row="3" Grid.ColumnSpan="4" TextWrapping="Wrap" Margin="0,0,0,8"
                        Visibility="{Binding ExpenseFormIsSettled, Converter={StaticResource BoolToVisibilityConverter}}">
                 <Run Text="Paid via "/>

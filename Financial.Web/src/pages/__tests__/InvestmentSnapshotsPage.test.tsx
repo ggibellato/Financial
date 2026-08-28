@@ -52,7 +52,7 @@ describe('InvestmentSnapshotsPage', () => {
     render(<InvestmentSnapshotsPage />)
 
     await waitFor(() => expect(screen.getByText('Account0')).toBeInTheDocument())
-    expect(screen.getAllByRole('row')).toHaveLength(13) // header + 11 accounts + totals row
+    expect(screen.getAllByRole('row')).toHaveLength(13)
     expect(screen.getByText('Account1 (liability)')).toBeInTheDocument()
   })
 
@@ -103,7 +103,7 @@ describe('InvestmentSnapshotsPage', () => {
     expect(dataRowsDesc[10]).toHaveTextContent('Account0')
 
     const allRows = screen.getAllByRole('row')
-    expect(allRows).toHaveLength(13) // header + 11 accounts + totals row
+    expect(allRows).toHaveLength(13)
     expect(allRows[allRows.length - 1]).toHaveTextContent('5,300.00')
   })
 })

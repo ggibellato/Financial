@@ -29,8 +29,6 @@ public class BalanceAdjustmentServiceTests
         _sut = CreateService();
     }
 
-    /// <summary>Wires the SUT exactly as the test constructor does, so a test needing a differently
-    /// seeded repository or dependency does not repeat the whole construction sequence.</summary>
     private BalanceAdjustmentService CreateService(StubCashFlowRepository? repository = null, BankService? bankService = null) =>
         new(repository ?? _repository, bankService ?? new BankService(repository ?? _repository, _tracer, BankLogger), _tracer, Logger);
 

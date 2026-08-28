@@ -7,14 +7,14 @@ import './BrokerBreakdownCharts.css'
 
 // Validated categorical palette (fixed hue order, CVD-safe adjacency).
 const CATEGORICAL_PALETTE = [
-  '#2a78d6', // blue
-  '#1baf7a', // aqua
-  '#eda100', // yellow
-  '#008300', // green
-  '#4a3aa7', // violet
-  '#e34948', // red
-  '#e87ba4', // magenta
-  '#eb6834', // orange
+  '#2a78d6',
+  '#1baf7a',
+  '#eda100',
+  '#008300',
+  '#4a3aa7',
+  '#e34948',
+  '#e87ba4',
+  '#eb6834',
 ]
 
 interface PieSliceDatum {

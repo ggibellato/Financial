@@ -10,7 +10,6 @@ namespace Financial.CashFlow.Infrastructure.Tests.Persistence;
 
 public class CashFlowSerializerAdapterTests
 {
-    /// <summary>Every test drives the same CashFlowSerializerAdapter, so it is wired once here.</summary>
     private readonly CashFlowSerializerAdapter _sut;
 
     public CashFlowSerializerAdapterTests()

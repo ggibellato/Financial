@@ -322,7 +322,7 @@ describe('CreditsTab', () => {
     setMock({ credits: [] })
     render(<CreditsTab />)
     const rows = within(screen.getByRole('table')).getAllByRole('row')
-    expect(rows).toHaveLength(1) // header row only, no data rows
+    expect(rows).toHaveLength(1)
   })
 
   it('renders_bar_line_toggle_defaulting_to_bar', () => {

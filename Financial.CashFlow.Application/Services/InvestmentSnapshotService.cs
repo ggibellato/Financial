@@ -37,8 +37,6 @@ public sealed class InvestmentSnapshotService : IInvestmentSnapshotService
                 .Where(s => s.Year == year && s.Month == month && scopedIds.Contains(s.Account.Id))
                 .ToList();
 
-            // "Did anything change?" is exactly what the save wants to know, so the flag that used
-            // to guard the call is now the delegate's return value.
             await _repository.ApplyAndSaveAsync(() =>
             {
                 var created = false;

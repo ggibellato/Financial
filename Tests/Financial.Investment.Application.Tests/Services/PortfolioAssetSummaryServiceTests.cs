@@ -332,8 +332,6 @@ public class PortfolioAssetSummaryServiceTests
         result[0].CashFlows[0].Amount.Should().Be(-155m);
     }
 
-    // ── Phase 3: Credits-analysis unit tests ─────────────────────────────────
-
     [Fact]
     public void GetPortfolioAssetsSummary_ReturnsLastMonthCredits_SumOfMostRecentMonthCredits()
     {

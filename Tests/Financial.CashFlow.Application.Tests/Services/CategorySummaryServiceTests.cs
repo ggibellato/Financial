@@ -37,11 +37,9 @@ public class CategorySummaryServiceTests
         _sut = CreateService();
     }
 
-    /// <summary>Wires the SUT exactly as the test constructor does, so a test needing a differently
-    /// seeded repository or dependency does not repeat the whole construction sequence. The
-    /// internal IIncomeSummaryService collaborator gets its own throwaway tracer, so a composite
-    /// call's spans stay attributable to CategorySummaryService alone in _tracer.Spans - matching
-    /// what the single pre-split class recorded.</summary>
+    /// <summary>The internal IIncomeSummaryService collaborator gets its own throwaway tracer, so a
+    /// composite call's spans stay attributable to CategorySummaryService alone in _tracer.Spans -
+    /// matching what the single pre-split class recorded.</summary>
     private CategorySummaryService CreateService(StubCashFlowRepository? repository = null, TimeProvider? timeProvider = null)
     {
         var repo = repository ?? _repository;
