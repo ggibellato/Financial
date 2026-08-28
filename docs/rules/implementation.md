@@ -62,6 +62,15 @@ catch (Exception ex)
 
 Assert the failure path in tests with `RecordingLogger<T>` and `RecordingTelemetryTracer` — they exist to prove what *is not* logged as much as what is.
 
+## API endpoint parameters — query string vs. request body
+
+- **GET / safe reads: query-string parameters, never a body.** Per RFC 9110 §9.3.1, a payload on GET has no defined semantics — proxies, CDNs, some HTTP clients, and OpenAPI/Swagger tooling handle it inconsistently or drop it. Many optional filter scalars on a GET is normal REST/OpenAPI practice (`in: query` parameters), not a smell by itself.
+- **POST/PUT/PATCH/DELETE-with-payload: JSON body**, as every mutating endpoint in this codebase already does (a single `[FromBody] SomeDTO`). Keep doing that.
+- **Do not collapse a GET's individual `[FromQuery]` scalars into one `[FromQuery]` complex-object parameter just to shorten the method signature.** This codebase's `AddOpenApi()` generator does not read per-property XML `<summary>` docs when flattening a complex query type back into `in: query` parameters — it applies one generic description (the method parameter's own doc) to every flattened field, and parameter names shift to the object's PascalCase property names, breaking the camelCase convention every other endpoint's OpenAPI doc uses. `OpenApiContractTests` catches this: it was tried against `GetCurrentPrice` and reverted because the resulting snapshot diff was a real documentation regression, not a cosmetic one. If the OpenAPI generator's XML-doc handling changes to support this, this note is stale — verify against a fresh contract-test diff before revisiting.
+- **If a GET's scalar count keeps growing** (rule of thumb: past ~5-6, or the filter shape needs nesting/arrays that don't serialize cleanly to a query string) and the plain-scalar signature is genuinely unmanageable, the option that preserves contract quality is a dedicated POST "search" endpoint with a `[FromBody]` DTO — and say so explicitly, since that trades away GET's cacheability/idempotence on purpose. Never bind a `[FromBody]` DTO onto a GET to work around a long signature.
+
+As of 2026-08-28, `AssetPricesController.GetCurrentPrice` (7 scalars) is the only endpoint in the codebase with more than 2 query-string scalars, and it stays as individual `[FromQuery] string?` parameters — this is a decision rule for the future, not a signal of a broader problem today.
+
 ## Tests — check for a common initializer first
 
 Before adding a test class, check whether the setup you need already exists. Reuse beats re-creating, and it means the next change to that setup happens in one place.
