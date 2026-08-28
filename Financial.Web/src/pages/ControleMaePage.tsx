@@ -5,6 +5,7 @@ import LoadingState from '../components/LoadingState'
 import SortableColumnHeader from '../components/grid/SortableColumnHeader'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { useControleMae } from '../hooks/useControleMae'
+import { confirmThenRun } from '../utils/confirmThenRun'
 import { formatN2, formatShortDate } from '../utils/formatters'
 import './ControleMaePage.css'
 
@@ -48,11 +49,9 @@ function EntryRow({ entry, isDeleting, onEdit, onDelete }: EntryRowProps) {
           type="button"
           aria-label={isDeleting ? 'Deleting entry' : 'Delete entry'}
           disabled={isDeleting}
-          onClick={() => {
-            if (window.confirm(`Delete "${entry.description}"? This removes it for good.`)) {
-              onDelete(entry.id)
-            }
-          }}
+          onClick={() =>
+            confirmThenRun(`Delete "${entry.description}"? This removes it for good.`, () => onDelete(entry.id))
+          }
         >
           <DeleteRegular />
         </button>
