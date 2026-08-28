@@ -93,12 +93,18 @@
                 the header's Content entirely, bypassing it. Rendering an explicit arrow here -
                 driven by the header's own SortDirection, outside whatever Content is hosted -
                 keeps the indicator working for every column uniformly (see P37-F04 follow-up).
+
+                The inner ContentPresenter MUST pin Content/ContentTemplate explicitly: a bare
+                <ContentPresenter/> inside a ContentControl's own ContentTemplate re-inherits both
+                Content and ContentTemplate from the nearest ContentControl ancestor (this header),
+                which - left unset - reapplies this very template to itself forever
+                (StackOverflowException in WindowsBase.dll).
             -->
             <Setter Property="ContentTemplate">
                 <Setter.Value>
                     <DataTemplate>
                         <StackPanel Orientation="Horizontal">
-                            <ContentPresenter VerticalAlignment="Center"/>
+                            <ContentPresenter Content="{Binding}" ContentTemplate="{x:Null}" VerticalAlignment="Center"/>
                             <TextBlock Margin="4,0,0,0" VerticalAlignment="Center" FontSize="10"
                                        Text="{Binding SortDirection, RelativeSource={RelativeSource AncestorType=DataGridColumnHeader}, Converter={StaticResource SortDirectionToArrowConverter}}"/>
                         </StackPanel>
