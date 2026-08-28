@@ -11,7 +11,7 @@ public static class GoogleSheetValueParser
             return (decimal)extendedValue.NumberValue;
         }
 
-        var value = rawCellValue.ToString().Replace(",", "");
+        var value = (rawCellValue.ToString() ?? string.Empty).Replace(",", "");
         return decimal.Parse(value);
     }
 }

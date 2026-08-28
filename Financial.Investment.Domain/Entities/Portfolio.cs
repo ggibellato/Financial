@@ -5,7 +5,7 @@ namespace Financial.Investment.Domain.Entities;
 
 public class Portfolio
 {
-    public string Name { get; private set; }
+    public string Name { get; private set; } = string.Empty;
 
     /// <summary>Derived rather than stored: a persisted flag would be a second source of truth
     /// that could disagree with <see cref="Assets"/>.</summary>

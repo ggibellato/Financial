@@ -7,8 +7,8 @@ namespace Financial.Investment.Domain.Entities;
 
 public class Broker
 {
-    public string Name { get; private set; }
-    public string Currency { get; private set; }
+    public string Name { get; private set; } = string.Empty;
+    public string Currency { get; private set; } = string.Empty;
 
     private List<Portfolio> _portfolios = new List<Portfolio>();
     public IReadOnlyCollection<Portfolio> Portfolios { get => _portfolios.AsReadOnly(); private set => SetPortfolios(value); }

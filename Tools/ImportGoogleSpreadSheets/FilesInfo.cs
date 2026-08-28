@@ -4,8 +4,8 @@ namespace Financial.Investment.Infrastructure.Tools.ImportGoogleSpreadSheets;
 
 public class FilesInfo : INotifyPropertyChanged
 {
-    public string Id { get; set; }
-    public string Name { get; set; }
+    public required string Id { get; set; }
+    public required string Name { get; set; }
 
     private bool _isSelected;
     public bool IsSelected

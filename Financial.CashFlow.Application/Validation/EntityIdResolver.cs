@@ -1,8 +1,10 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Financial.CashFlow.Application.Validation;
 
 public static class EntityIdResolver
 {
-    public static bool TryResolve<T>(Guid? id, IEnumerable<T> items, Func<T, Guid> idSelector, out T? result)
+    public static bool TryResolve<T>(Guid? id, IEnumerable<T> items, Func<T, Guid> idSelector, [NotNullWhen(true)] out T? result)
     {
         if (id is null)
         {
