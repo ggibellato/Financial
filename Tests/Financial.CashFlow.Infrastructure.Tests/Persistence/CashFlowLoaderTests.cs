@@ -6,7 +6,6 @@ namespace Financial.CashFlow.Infrastructure.Tests.Persistence;
 
 public class CashFlowLoaderTests
 {
-    /// <summary>Every test loads through the same serializer; only the backing file differs.</summary>
     private readonly CashFlowSerializerAdapter _serializer;
 
     public CashFlowLoaderTests()

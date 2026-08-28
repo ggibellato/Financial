@@ -31,14 +31,10 @@ public class ExpenseServiceTests
         _sut = CreateService();
     }
 
-    /// <summary>The seeding nearly every test needs; the flags let the few tests that must start without
-    /// a seeded credit card or category opt out without repeating the whole construction sequence.</summary>
     private static StubCashFlowRepository CreateRepository(
         bool seedDefaultCreditCards = true, bool seedDefaultCategories = true) =>
         new(seedDefaultBanks: true, seedDefaultCreditCards: seedDefaultCreditCards, seedDefaultCategories: seedDefaultCategories);
 
-    /// <summary>Wires the SUT exactly as the test constructor does, letting a test swap in the single
-    /// dependency it needs to differ on.</summary>
     private ExpenseService CreateService(
         StubCashFlowRepository? repository = null,
         Microsoft.Extensions.Logging.ILogger<ExpenseService>? logger = null) =>

@@ -10,8 +10,6 @@ namespace Financial.CashFlow.Infrastructure.Tests.Services;
 
 public class FrankfurterExchangeRateProviderTests
 {
-    /// <summary>Builds the provider over a stubbed transport; the response each test wants back is
-    /// the only thing that differs.</summary>
     private static FrankfurterExchangeRateProvider CreateProvider(Func<HttpRequestMessage, HttpResponseMessage> respond) =>
         new(CreateClient(new FakeHttpMessageHandler(respond)), NullLogger<FrankfurterExchangeRateProvider>.Instance);
 
