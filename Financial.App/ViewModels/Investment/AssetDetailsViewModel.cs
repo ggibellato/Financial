@@ -47,6 +47,8 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private bool _hasCreditsContext;
     private bool _isPortfolioView;
     private bool _isBrokerView;
+    private bool _isAssetView;
+    private int _selectedDetailTabIndex;
     private decimal _totalInvested;
     private PlotModel? _overallBreakdownPlotModel;
     private bool _isBreakdownLoading;
@@ -182,6 +184,25 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         get => _isBrokerView;
         private set => SetProperty(ref _isBrokerView, value);
     }
+
+    public bool IsAssetView
+    {
+        get => _isAssetView;
+        private set
+        {
+            var wasAssetView = _isAssetView;
+            if (SetProperty(ref _isAssetView, value) && wasAssetView && !value)
+            {
+                // The Price History tab is only offered for an asset (index 3, see NavigationView.xaml);
+                // leaving it selected while it silently hides behind a broker/portfolio node would leave
+                // its stale content on screen with no visible tab header pointing at it.
+                _selectedDetailTabIndex = 0;
+                OnPropertyChanged(nameof(SelectedDetailTabIndex));
+            }
+        }
+    }
+
+    public int SelectedDetailTabIndex => _selectedDetailTabIndex;
 
     public decimal TotalInvested
     {
@@ -349,6 +370,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     {
         IsPortfolioView = false;
         IsBrokerView = false;
+        IsAssetView = true;
         CancelAndResetBreakdownFetch();
         var assetKey = BuildAssetKey(details.BrokerName, details.PortfolioName, details.Name);
         _todayInfo.UpdateAssetKey(assetKey);
@@ -395,6 +417,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         OnPropertyChanged(nameof(FooterCurrentValueDisplay));
         IsPortfolioView = false;
         IsBrokerView = false;
+        IsAssetView = false;
         TotalInvested = 0m;
         CancelAndResetBreakdownFetch();
         ClearAssetContext();
@@ -509,6 +532,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     {
         IsPortfolioView = false;
         IsBrokerView = false;
+        IsAssetView = false;
         CancelAndResetBreakdownFetch();
         ClearAssetContext();
         TotalBought = summary.TotalBought;

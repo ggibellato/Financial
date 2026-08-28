@@ -513,6 +513,8 @@ public class MainNavigationViewModelBaseTests
         public bool WasBrokerBreakdownLoaded { get; private set; }
         public bool IsPortfolioView => false;
         public bool IsBrokerView => false;
+        public bool IsAssetView => false;
+        public int SelectedDetailTabIndex => 0;
         public SpyTransactionsTabViewModel TransactionsSpy { get; } = new();
         public TransactionsTabViewModel Transactions => TransactionsSpy;
         public CreditsTabViewModel Credits { get; } = new(

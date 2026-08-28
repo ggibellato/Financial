@@ -147,6 +147,57 @@ public class AssetDetailsViewModelBrokerSummaryTests
     }
 
     [Fact]
+    public void LoadBrokerSummary_SetsIsAssetViewFalse()
+    {
+        var vm = BuildViewModel();
+        vm.LoadBrokerSummary("XPI", new AggregatedSummaryDTO(), []);
+        vm.IsAssetView.Should().BeFalse();
+    }
+
+    [Fact]
+    public void LoadAssetDetails_SetsIsAssetViewTrue()
+    {
+        var vm = BuildViewModel();
+        vm.LoadAssetDetails(new AssetDetailsDTO
+        {
+            Name = "Asset A", BrokerName = "XPI", PortfolioName = "Portfolio",
+            Ticker = "T", ISIN = "", Exchange = "LSE",
+            Country = Financial.Investment.Domain.Entities.CountryCode.Unknown,
+            LocalTypeCode = "", Class = Financial.Investment.Domain.Entities.GlobalAssetClass.Unknown,
+            Quantity = 0m, AveragePrice = 0m,
+            TotalBought = 0m, TotalSold = 0m, TotalCredits = 0m,
+            Transactions = [], Credits = []
+        });
+        vm.IsAssetView.Should().BeTrue();
+    }
+
+    [Fact]
+    public void LoadBrokerSummary_AfterAssetDetails_ResetsSelectedDetailTabIndex()
+    {
+        var vm = BuildViewModel();
+        vm.LoadAssetDetails(new AssetDetailsDTO
+        {
+            Name = "Asset A", BrokerName = "XPI", PortfolioName = "Portfolio",
+            Ticker = "T", ISIN = "", Exchange = "LSE",
+            Country = Financial.Investment.Domain.Entities.CountryCode.Unknown,
+            LocalTypeCode = "", Class = Financial.Investment.Domain.Entities.GlobalAssetClass.Unknown,
+            Quantity = 0m, AveragePrice = 0m,
+            TotalBought = 0m, TotalSold = 0m, TotalCredits = 0m,
+            Transactions = [], Credits = []
+        });
+
+        var raised = false;
+        vm.PropertyChanged += (_, args) => raised |= args.PropertyName == nameof(AssetDetailsViewModel.SelectedDetailTabIndex);
+        vm.LoadBrokerSummary("XPI", new AggregatedSummaryDTO(), []);
+
+        // The Price History tab (index 3) only exists in asset view; leaving it selected while it
+        // silently disappears behind a broker/portfolio node would leave its stale content on
+        // screen with no visible tab header pointing at it - so the switch must force a reset.
+        raised.Should().BeTrue();
+        vm.SelectedDetailTabIndex.Should().Be(0);
+    }
+
+    [Fact]
     public void LoadBrokerBreakdown_SetsIsBreakdownLoadingTrue_Synchronously()
     {
         // Uses a blocking stub rather than StubBrokerBreakdownService: the latter returns
