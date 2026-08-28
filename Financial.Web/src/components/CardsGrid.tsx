@@ -1,4 +1,4 @@
-import type { BankDto, CardStatementDto, CreditCardDto, UpdateCreditCardDto } from '../api/types'
+import type { BankDto, CardStatementDto, CreditCardDto, CreditCardUpdateDto } from '../api/types'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import ColumnFilterMenu from './grid/ColumnFilterMenu'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
@@ -24,7 +24,7 @@ interface CardsGridProps {
   creditCards?: CreditCardDto[]
   updatingCardId?: string | null
   updateError?: string | null
-  onUpdateCreditCard?: (id: string, request: UpdateCreditCardDto) => void
+  onUpdateCreditCard?: (id: string, request: CreditCardUpdateDto) => void
 }
 
 interface CardRow {

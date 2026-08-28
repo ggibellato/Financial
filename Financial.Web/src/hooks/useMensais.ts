@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
-import type { CreateRecurringBillDto, RecurringBillDto } from '../api/types'
+import type { RecurringBillCreateDto, RecurringBillDto } from '../api/types'
 import {
   currentYearMonth,
   formatMonthInputValue,
@@ -278,7 +278,7 @@ export function useMensais(): MensaisData {
 
     dispatch({ type: 'ADD_START' })
 
-    const request: CreateRecurringBillDto = {
+    const request: RecurringBillCreateDto = {
       dueDay,
       description: state.newDescription,
       value,

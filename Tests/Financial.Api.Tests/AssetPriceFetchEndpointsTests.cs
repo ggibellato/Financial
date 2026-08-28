@@ -26,8 +26,8 @@ public class AssetPriceFetchEndpointsTests
         {
             options.Portfolios =
             [
-                new AssetPriceFetch { BrokerName = "XPI", PortfolioName = "FII" },
-                new AssetPriceFetch { BrokerName = "XPI", PortfolioName = "Acoes" },
+                new PortfolioReferenceDTO { BrokerName = "XPI", PortfolioName = "FII" },
+                new PortfolioReferenceDTO { BrokerName = "XPI", PortfolioName = "Acoes" },
             ];
         });
 
@@ -36,7 +36,7 @@ public class AssetPriceFetchEndpointsTests
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var portfolios = await response.Content.ReadFromJsonAsync<AssetPriceFetch[]>(CaseInsensitiveJson);
+        var portfolios = await response.Content.ReadFromJsonAsync<PortfolioReferenceDTO[]>(CaseInsensitiveJson);
         portfolios.Should().HaveCount(2);
         portfolios![0].BrokerName.Should().Be("XPI");
         portfolios[0].PortfolioName.Should().Be("FII");
@@ -53,7 +53,7 @@ public class AssetPriceFetchEndpointsTests
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var portfolios = await response.Content.ReadFromJsonAsync<AssetPriceFetch[]>(CaseInsensitiveJson);
+        var portfolios = await response.Content.ReadFromJsonAsync<PortfolioReferenceDTO[]>(CaseInsensitiveJson);
         portfolios.Should().BeEmpty();
     }
 
@@ -62,7 +62,7 @@ public class AssetPriceFetchEndpointsTests
     {
         await using var factory = CreateFactory(options =>
         {
-            options.Portfolios = [new AssetPriceFetch { BrokerName = "XPI", PortfolioName = "FII" }];
+            options.Portfolios = [new PortfolioReferenceDTO { BrokerName = "XPI", PortfolioName = "FII" }];
         });
 
         using var client = factory.CreateClient();

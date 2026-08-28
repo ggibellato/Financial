@@ -1,6 +1,6 @@
 namespace Financial.CashFlow.Application.DTOs;
 
-public sealed class CreateMaeLedgerEntryDTO
+public sealed class MaeLedgerEntryCreateDTO
 {
     public required DateOnly Date { get; init; }
     public required string Description { get; init; }

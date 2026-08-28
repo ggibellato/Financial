@@ -7,10 +7,10 @@ import type {
   AssetPriceDto,
   BalanceAdjustmentDto,
   CategoryDto,
-  CreateBalanceAdjustmentDto,
-  CreateMaeLedgerEntryDto,
-  CreateRecurringBillDto,
-  CreateTransferDto,
+  BalanceAdjustmentCreateDto,
+  MaeLedgerEntryCreateDto,
+  RecurringBillCreateDto,
+  TransferCreateDto,
   CreditCardDto,
   IncomeSplitRequestDto,
   IncomeSplitResultDto,
@@ -24,13 +24,13 @@ import type {
   SyncStatusResponseDto,
   TransferDto,
   TreeNodeDto,
-  UpdateBalanceAdjustmentDto,
-  UpdateCreditCardDto,
-  UpdateInvestmentSnapshotValueDto,
-  UpdateMaeLedgerEntryValuesDto,
-  UpdateRecurringBillDto,
-  UpdateReserveMovementDto,
-  UpdateTransferDto,
+  BalanceAdjustmentUpdateDto,
+  CreditCardUpdateDto,
+  InvestmentSnapshotValueUpdateDto,
+  MaeLedgerEntryValuesUpdateDto,
+  RecurringBillUpdateDto,
+  ReserveMovementUpdateDto,
+  TransferUpdateDto,
   WithdrawalRequestDto,
   XirrResultDto,
 } from '../types'
@@ -559,7 +559,7 @@ describe('financialApiClient', () => {
   })
 
   it('puts a reserve movement update', async () => {
-    const requestBody: UpdateReserveMovementDto = {
+    const requestBody: ReserveMovementUpdateDto = {
       bucketId: 'b3',
       amount: -45,
       date: '2026-07-03',
@@ -620,7 +620,7 @@ describe('financialApiClient', () => {
   })
 
   it('posts a mensais bill create request', async () => {
-    const requestBody: CreateRecurringBillDto = {
+    const requestBody: RecurringBillCreateDto = {
       dueDay: 10,
       description: 'INSS',
       value: 850,
@@ -647,7 +647,7 @@ describe('financialApiClient', () => {
   })
 
   it('puts a mensais bill update', async () => {
-    const requestBody: UpdateRecurringBillDto = { status: 'Paid', value: 900 }
+    const requestBody: RecurringBillUpdateDto = { status: 'Paid', value: 900 }
     const responseBody: RecurringBillDto = {
       id: 'b1',
       dueDay: 10,
@@ -708,7 +708,7 @@ describe('financialApiClient', () => {
   })
 
   it('posts a mae ledger entry create request', async () => {
-    const requestBody: CreateMaeLedgerEntryDto = {
+    const requestBody: MaeLedgerEntryCreateDto = {
       date: '2026-07-01',
       description: 'School supplies',
       note: 'Term start',
@@ -769,7 +769,7 @@ describe('financialApiClient', () => {
   })
 
   it('puts a mae ledger entry values update', async () => {
-    const requestBody: UpdateMaeLedgerEntryValuesDto = { brlValue: 355, gbpValue: 51.6 }
+    const requestBody: MaeLedgerEntryValuesUpdateDto = { brlValue: 355, gbpValue: 51.6 }
     const responseBody: MaeLedgerEntryDto = {
       id: 'e1',
       date: '2026-07-01',
@@ -816,7 +816,7 @@ describe('financialApiClient', () => {
   })
 
   it('puts an investment snapshot value update', async () => {
-    const requestBody: UpdateInvestmentSnapshotValueDto = { value: 1200 }
+    const requestBody: InvestmentSnapshotValueUpdateDto = { value: 1200 }
     const responseBody: InvestmentSnapshotDto = {
       id: 's1',
       accountId: 'a1',
@@ -869,7 +869,7 @@ describe('financialApiClient', () => {
   })
 
   it('puts a credit card update', async () => {
-    const requestBody: UpdateCreditCardDto = { nextInvoiceDueDate: '2026-09-05', isActive: false }
+    const requestBody: CreditCardUpdateDto = { nextInvoiceDueDate: '2026-09-05', isActive: false }
     const responseBody: CreditCardDto = { id: 'card-baamex', name: 'BaAmex', ...requestBody }
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
@@ -884,7 +884,7 @@ describe('financialApiClient', () => {
   })
 
   it('posts a transfer create request', async () => {
-    const requestBody: CreateTransferDto = {
+    const requestBody: TransferCreateDto = {
       date: '2026-07-25',
       sourceBankId: 'bank-barclays',
       destinationBankId: 'bank-trading212',
@@ -910,7 +910,7 @@ describe('financialApiClient', () => {
   })
 
   it('puts a transfer update', async () => {
-    const requestBody: UpdateTransferDto = {
+    const requestBody: TransferUpdateDto = {
       date: '2026-07-25',
       sourceBankId: 'bank-chase',
       destinationBankId: 'bank-trading212',
@@ -936,7 +936,7 @@ describe('financialApiClient', () => {
   })
 
   it('posts a balance adjustment create request', async () => {
-    const requestBody: CreateBalanceAdjustmentDto = {
+    const requestBody: BalanceAdjustmentCreateDto = {
       date: '2026-07-25',
       targetBalance: 2340.17,
       note: 'Matched against July statement',
@@ -961,7 +961,7 @@ describe('financialApiClient', () => {
   })
 
   it('puts a balance adjustment update', async () => {
-    const requestBody: UpdateBalanceAdjustmentDto = {
+    const requestBody: BalanceAdjustmentUpdateDto = {
       date: '2026-07-25',
       targetBalance: 120,
       note: 'Corrected',

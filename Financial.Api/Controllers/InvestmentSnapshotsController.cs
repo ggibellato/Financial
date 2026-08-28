@@ -38,7 +38,7 @@ public sealed class InvestmentSnapshotsController : ControllerBase
     [ProducesResponseType(typeof(InvestmentSnapshotDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<InvestmentSnapshotDTO>> UpdateSnapshotValue(Guid id, [FromBody] UpdateInvestmentSnapshotValueDTO? request)
+    public async Task<ActionResult<InvestmentSnapshotDTO>> UpdateSnapshotValue(Guid id, [FromBody] InvestmentSnapshotValueUpdateDTO? request)
     {
         if (request is null)
         {

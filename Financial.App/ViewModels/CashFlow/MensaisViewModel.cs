@@ -213,7 +213,7 @@ public class MensaisViewModel : ViewModelBase
         saving => IsAdding = saving,
         async () =>
         {
-            await _mensaisService.CreateBillAsync(new CreateRecurringBillDTO
+            await _mensaisService.CreateBillAsync(new RecurringBillCreateDTO
             {
                 Description = NewDescription,
                 DueDay = int.Parse(NewDueDay),
@@ -323,7 +323,7 @@ public class MensaisViewModel : ViewModelBase
             saving => IsSaving = saving,
             async () =>
             {
-                await _mensaisService.UpdateBillAsync(id, new UpdateRecurringBillDTO
+                await _mensaisService.UpdateBillAsync(id, new RecurringBillUpdateDTO
                 {
                     Status = EditStatus,
                     Value = decimal.Parse(EditValue),

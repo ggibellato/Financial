@@ -190,7 +190,7 @@ public class InvestmentSnapshotsViewModel : ViewModelBase
             saving => IsSaving = saving,
             async () =>
             {
-                await _investmentSnapshotService.UpdateSnapshotValueAsync(id, new UpdateInvestmentSnapshotValueDTO
+                await _investmentSnapshotService.UpdateSnapshotValueAsync(id, new InvestmentSnapshotValueUpdateDTO
                 {
                     Value = decimal.Parse(EditValue),
                 });

@@ -4,9 +4,9 @@ namespace Financial.CashFlow.Application.Interfaces;
 
 public interface IControleMaeService
 {
-    Task<MaeLedgerEntryDTO> CreateEntryAsync(CreateMaeLedgerEntryDTO request);
+    Task<MaeLedgerEntryDTO> CreateEntryAsync(MaeLedgerEntryCreateDTO request);
     IReadOnlyList<MaeLedgerEntryDTO> GetEntriesFromDate(DateOnly fromDate);
     MaeLedgerTotalsDTO GetTotals();
-    Task<MaeLedgerEntryDTO> UpdateEntryValuesAsync(Guid id, UpdateMaeLedgerEntryValuesDTO request);
+    Task<MaeLedgerEntryDTO> UpdateEntryValuesAsync(Guid id, MaeLedgerEntryValuesUpdateDTO request);
     Task DeleteEntryAsync(Guid id);
 }

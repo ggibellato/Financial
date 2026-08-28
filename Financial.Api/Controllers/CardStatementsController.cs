@@ -38,7 +38,7 @@ public sealed class CardStatementsController : ControllerBase
     [ProducesResponseType(typeof(CardStatementDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<CardStatementDTO>> MarkStatementPaid(Guid id, [FromBody] MarkStatementPaidDTO request)
+    public async Task<ActionResult<CardStatementDTO>> MarkStatementPaid(Guid id, [FromBody] MarkCardStatementPaidDTO request)
     {
         var result = await _cardStatementService.MarkStatementPaidAsync(id, request);
         return Ok(result);

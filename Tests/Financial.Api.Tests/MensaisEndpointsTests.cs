@@ -24,7 +24,7 @@ public class MensaisEndpointsTests : ApiEndpointTests
     public async Task CreateBill_InvalidDueDay_ReturnsBadRequestWithMessage()
     {
         var request = ValidBrasilBillRequest();
-        request = new CreateRecurringBillDTO
+        request = new RecurringBillCreateDTO
         {
             DueDay = 32,
             Description = request.Description,
@@ -90,7 +90,7 @@ public class MensaisEndpointsTests : ApiEndpointTests
         var created = await Client.PostAsJsonAsync("/api/v1/financial/mensais", ValidBrasilBillRequest());
         var bill = await created.Content.ReadFromJsonAsync<RecurringBillDTO>();
 
-        var response = await Client.PutAsJsonAsync($"/api/v1/financial/mensais/{bill!.Id}", new UpdateRecurringBillDTO
+        var response = await Client.PutAsJsonAsync($"/api/v1/financial/mensais/{bill!.Id}", new RecurringBillUpdateDTO
         {
             Status = "Paid",
             Value = 900m
@@ -105,7 +105,7 @@ public class MensaisEndpointsTests : ApiEndpointTests
     [Fact]
     public async Task UpdateBill_UnknownId_ReturnsNotFound()
     {
-        var response = await Client.PutAsJsonAsync($"/api/v1/financial/mensais/{Guid.NewGuid()}", new UpdateRecurringBillDTO
+        var response = await Client.PutAsJsonAsync($"/api/v1/financial/mensais/{Guid.NewGuid()}", new RecurringBillUpdateDTO
         {
             Status = "Paid",
             Value = 100m
@@ -119,7 +119,7 @@ public class MensaisEndpointsTests : ApiEndpointTests
     {
         var created = await Client.PostAsJsonAsync("/api/v1/financial/mensais", ValidBrasilBillRequest());
         var bill = await created.Content.ReadFromJsonAsync<RecurringBillDTO>();
-        await Client.PutAsJsonAsync($"/api/v1/financial/mensais/{bill!.Id}", new UpdateRecurringBillDTO { Status = "Paid", Value = 900m });
+        await Client.PutAsJsonAsync($"/api/v1/financial/mensais/{bill!.Id}", new RecurringBillUpdateDTO { Status = "Paid", Value = 900m });
 
         var response = await Client.PostAsync("/api/v1/financial/mensais/reset", null);
 
@@ -128,7 +128,7 @@ public class MensaisEndpointsTests : ApiEndpointTests
         bills.Should().ContainSingle().Which.Status.Should().Be("Unset");
     }
 
-    private static CreateRecurringBillDTO ValidBrasilBillRequest() => new()
+    private static RecurringBillCreateDTO ValidBrasilBillRequest() => new()
     {
         DueDay = 10,
         Description = "INSS",

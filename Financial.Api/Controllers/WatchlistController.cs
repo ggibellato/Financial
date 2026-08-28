@@ -21,6 +21,6 @@ public sealed class WatchlistController : ControllerBase
     /// <summary>Lists the configured watchlist items.</summary>
     /// <returns>200 OK with the watchlist items.</returns>
     [HttpGet]
-    [ProducesResponseType(typeof(IReadOnlyList<WatchlistItem>), StatusCodes.Status200OK)]
-    public ActionResult<IReadOnlyList<WatchlistItem>> Get() => Ok(_options.Items);
+    [ProducesResponseType(typeof(IReadOnlyList<WatchlistItemDTO>), StatusCodes.Status200OK)]
+    public ActionResult<IReadOnlyList<WatchlistItemDTO>> Get() => Ok(_options.Items);
 }

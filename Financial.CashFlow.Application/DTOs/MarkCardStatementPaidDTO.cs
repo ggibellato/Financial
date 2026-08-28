@@ -1,6 +1,6 @@
 namespace Financial.CashFlow.Application.DTOs;
 
-public sealed class MarkStatementPaidDTO
+public sealed class MarkCardStatementPaidDTO
 {
     public Guid? PaymentSourceBankId { get; init; }
 }

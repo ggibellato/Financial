@@ -24,7 +24,7 @@ public sealed class MensaisController : ControllerBase
     [HttpPost]
     [ProducesResponseType(typeof(RecurringBillDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<RecurringBillDTO>> CreateBill([FromBody] CreateRecurringBillDTO? request)
+    public async Task<ActionResult<RecurringBillDTO>> CreateBill([FromBody] RecurringBillCreateDTO? request)
     {
         if (request is null)
         {
@@ -64,7 +64,7 @@ public sealed class MensaisController : ControllerBase
     [ProducesResponseType(typeof(RecurringBillDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<RecurringBillDTO>> UpdateBill(Guid id, [FromBody] UpdateRecurringBillDTO? request)
+    public async Task<ActionResult<RecurringBillDTO>> UpdateBill(Guid id, [FromBody] RecurringBillUpdateDTO? request)
     {
         if (request is null)
         {

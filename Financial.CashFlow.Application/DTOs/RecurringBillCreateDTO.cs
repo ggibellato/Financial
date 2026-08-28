@@ -1,6 +1,6 @@
 namespace Financial.CashFlow.Application.DTOs;
 
-public sealed class CreateRecurringBillDTO
+public sealed class RecurringBillCreateDTO
 {
     public required int DueDay { get; init; }
     public required string Description { get; init; }

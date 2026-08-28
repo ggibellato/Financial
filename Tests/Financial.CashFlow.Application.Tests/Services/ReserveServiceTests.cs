@@ -314,7 +314,7 @@ public class ReserveServiceTests
         _repository.Seed("Investimento", 100m, new DateOnly(2026, 7, 1));
         var movement = _repository.ReserveMovements[0];
 
-        var result = await _sut.UpdateMovementAsync(movement.Id, new UpdateReserveMovementDTO
+        var result = await _sut.UpdateMovementAsync(movement.Id, new ReserveMovementUpdateDTO
         {
             BucketId = BucketId("HouseTreats"),
             Amount = 150m,
@@ -336,7 +336,7 @@ public class ReserveServiceTests
     [Fact]
     public async Task UpdateMovementAsync_WithUnknownId_ThrowsKeyNotFoundException()
     {
-        var act = async () => await _sut.UpdateMovementAsync(Guid.NewGuid(), new UpdateReserveMovementDTO
+        var act = async () => await _sut.UpdateMovementAsync(Guid.NewGuid(), new ReserveMovementUpdateDTO
         {
             BucketId = BucketId("Investimento"),
             Amount = 10m,
@@ -352,7 +352,7 @@ public class ReserveServiceTests
     {
         _repository.Seed("Investimento", 100m);
 
-        var act = async () => await _sut.UpdateMovementAsync(_repository.ReserveMovements[0].Id, new UpdateReserveMovementDTO
+        var act = async () => await _sut.UpdateMovementAsync(_repository.ReserveMovements[0].Id, new ReserveMovementUpdateDTO
         {
             BucketId = Guid.NewGuid(),
             Amount = 10m,
@@ -422,7 +422,7 @@ public class ReserveServiceTests
         var linked = ReserveMovement.Create(bucket, 100m, new DateOnly(2026, 7, 1), "August salary", LinkedIncome());
         _repository.ReserveMovements.Add(linked);
 
-        var act = async () => await _sut.UpdateMovementAsync(linked.Id, new UpdateReserveMovementDTO
+        var act = async () => await _sut.UpdateMovementAsync(linked.Id, new ReserveMovementUpdateDTO
         {
             BucketId = BucketId("HouseTreats"),
             Amount = 150m,

@@ -20,7 +20,7 @@ public sealed class GoogleGenerator
     private readonly IGoogleDriveFileSource _driveFiles;
     private readonly IGoogleSheetsDataSource _sheets;
     private readonly IJsonStorage _storage;
-    private readonly IInvestmentsSerializer _serializer;
+    private readonly IInvestmentSerializer _serializer;
     private readonly GoogleSheetsAssetReader _sheetsReader;
     private readonly AssetMetadataResolver _metadataResolver;
 
@@ -29,7 +29,7 @@ public sealed class GoogleGenerator
         IGoogleSheetsDataSource sheets,
         IJsonStorage storage,
         GoogleGeneratorOptions options,
-        IInvestmentsSerializer serializer)
+        IInvestmentSerializer serializer)
     {
         _driveFiles = driveFiles ?? throw new ArgumentNullException(nameof(driveFiles));
         _sheets = sheets ?? throw new ArgumentNullException(nameof(sheets));

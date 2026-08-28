@@ -1,6 +1,6 @@
 namespace Financial.CashFlow.Application.DTOs;
 
-public sealed class UpdateReserveMovementDTO
+public sealed class ReserveMovementUpdateDTO
 {
     public required Guid BucketId { get; init; }
     public required decimal Amount { get; init; }

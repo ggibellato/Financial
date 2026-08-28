@@ -34,9 +34,9 @@ public class ExampleDataFileTests
     public void ExampleFile_DeserializesThroughTheRealSerializer()
     {
         var storage = new LocalJsonStorage(ExampleFilePath);
-        var serializer = new InvestmentsSerializerAdapter();
+        var serializer = new InvestmentSerializerAdapter();
 
-        var act = () => InvestmentsLoader.LoadSync(storage, serializer);
+        var act = () => InvestmentLoader.LoadSync(storage, serializer);
 
         act.Should().NotThrow(
             "a fresh checkout seeds from this file, so anything it cannot deserialize stops the app at startup");
@@ -50,9 +50,9 @@ public class ExampleDataFileTests
     public void ExampleFile_ContainsAWorkedExampleRatherThanAnEmptyShell()
     {
         var storage = new LocalJsonStorage(ExampleFilePath);
-        var serializer = new InvestmentsSerializerAdapter();
+        var serializer = new InvestmentSerializerAdapter();
 
-        var investments = InvestmentsLoader.LoadSync(storage, serializer);
+        var investments = InvestmentLoader.LoadSync(storage, serializer);
 
         investments.ActiveBrokers.Should().NotBeEmpty();
         investments.ActiveBrokers.SelectMany(b => b.Portfolios).SelectMany(p => p.Assets).Should().NotBeEmpty();

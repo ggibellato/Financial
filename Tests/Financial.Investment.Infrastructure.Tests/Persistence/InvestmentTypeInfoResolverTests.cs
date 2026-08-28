@@ -10,7 +10,7 @@ public class InvestmentsTypeInfoResolverTests
 {
     private static JsonSerializerOptions CreateOptions() => new()
     {
-        TypeInfoResolver = new InvestmentsTypeInfoResolver()
+        TypeInfoResolver = new InvestmentTypeInfoResolver()
     };
 
     [Fact]

@@ -106,7 +106,7 @@ public class AnnualSummaryEndpointsTests : ApiEndpointTests
         var response = await client.GetAsync($"/api/v1/financial/annual-summary/{currentYear}/historic-summary-averages");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var result = await response.Content.ReadFromJsonAsync<List<CategoryAnnualGroupValueDTO>>();
+        var result = await response.Content.ReadFromJsonAsync<List<CategoryAnnualAverageDTO>>();
         result.Should().HaveCount(2);
         result![0].Year.Should().Be(currentYear);
         result[1].Year.Should().Be(pastYear);
@@ -203,11 +203,11 @@ public class AnnualSummaryEndpointsTests : ApiEndpointTests
         var januarySnapshots = await Client.GetAsync("/api/v1/financial/investment-snapshots/2026/1");
         var january = await januarySnapshots.Content.ReadFromJsonAsync<List<InvestmentSnapshotDTO>>();
         var chaseSaveJan = january!.First(s => s.AccountName == "ChaseSave");
-        await Client.PutAsJsonAsync($"/api/v1/financial/investment-snapshots/{chaseSaveJan.Id}", new UpdateInvestmentSnapshotValueDTO { Value = 1000m });
+        await Client.PutAsJsonAsync($"/api/v1/financial/investment-snapshots/{chaseSaveJan.Id}", new InvestmentSnapshotValueUpdateDTO { Value = 1000m });
         var februarySnapshots = await Client.GetAsync("/api/v1/financial/investment-snapshots/2026/2");
         var february = await februarySnapshots.Content.ReadFromJsonAsync<List<InvestmentSnapshotDTO>>();
         var chaseSaveFeb = february!.First(s => s.AccountName == "ChaseSave");
-        await Client.PutAsJsonAsync($"/api/v1/financial/investment-snapshots/{chaseSaveFeb.Id}", new UpdateInvestmentSnapshotValueDTO { Value = 1200m });
+        await Client.PutAsJsonAsync($"/api/v1/financial/investment-snapshots/{chaseSaveFeb.Id}", new InvestmentSnapshotValueUpdateDTO { Value = 1200m });
 
         var response = await Client.GetAsync("/api/v1/financial/annual-summary/2026/investment-annual-result");
 

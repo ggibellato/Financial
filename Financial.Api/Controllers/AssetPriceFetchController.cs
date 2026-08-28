@@ -21,6 +21,6 @@ public sealed class AssetPriceFetchController : ControllerBase
     /// <summary>Lists the portfolios configured for automatic asset price fetching.</summary>
     /// <returns>200 OK with the configured portfolios.</returns>
     [HttpGet]
-    [ProducesResponseType(typeof(IReadOnlyList<AssetPriceFetch>), StatusCodes.Status200OK)]
-    public ActionResult<IReadOnlyList<AssetPriceFetch>> Get() => Ok(_options.Portfolios);
+    [ProducesResponseType(typeof(IReadOnlyList<PortfolioReferenceDTO>), StatusCodes.Status200OK)]
+    public ActionResult<IReadOnlyList<PortfolioReferenceDTO>> Get() => Ok(_options.Portfolios);
 }

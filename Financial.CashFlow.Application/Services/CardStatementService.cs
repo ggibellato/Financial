@@ -68,7 +68,7 @@ public sealed class CardStatementService : ICardStatementService
         }
     }
 
-    public async Task<CardStatementDTO> MarkStatementPaidAsync(Guid id, MarkStatementPaidDTO request)
+    public async Task<CardStatementDTO> MarkStatementPaidAsync(Guid id, MarkCardStatementPaidDTO request)
     {
         using var span = StartSpan("MarkStatementPaid");
         span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());

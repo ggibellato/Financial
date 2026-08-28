@@ -26,7 +26,7 @@ public static class InvestmentInfrastructureServiceCollectionExtensions
             options.GoogleDriveCredentialsPath = configuration[InvestmentRepositoryConfigurationKeys.GoogleDriveCredentialsPath];
             options.GoogleDriveFilePath = configuration[InvestmentRepositoryConfigurationKeys.GoogleDriveFilePath];
         });
-        services.AddSingleton<IInvestmentsSerializer, InvestmentsSerializerAdapter>();
+        services.AddSingleton<IInvestmentSerializer, InvestmentSerializerAdapter>();
         services.AddSingleton<IDividendDataSource, DividendDataSourceAdapter>();
         services.AddSingleton<IAssetSnapshotSource, AssetSnapshotSourceAdapter>();
         services.AddSingleton<GoogleFinanceService>();
@@ -45,7 +45,7 @@ public static class InvestmentInfrastructureServiceCollectionExtensions
             var settings = sp.GetRequiredService<IOptions<InvestmentRepositorySettingsOptions>>().Value;
             var options = BuildRepositoryOptions(settings);
             return new InvestmentRepositoryFactory(
-                sp.GetRequiredService<IInvestmentsSerializer>(),
+                sp.GetRequiredService<IInvestmentSerializer>(),
                 sp.GetRequiredService<IJsonStorageFactory>()).Create(options);
         });
         services.AddSingleton<IAssetPriceService, AssetPriceService>();

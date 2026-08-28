@@ -19,8 +19,8 @@ public class NavigationServiceTests
     private static IInvestmentRepository CreateRepository()
     {
         var storage = new LocalJsonStorage(TestDataPaths.DataJsonFile);
-        var serializer = new InvestmentsSerializerAdapter();
-        return new InvestmentJsonRepository(InvestmentsLoader.LoadSync(storage, serializer), storage, serializer);
+        var serializer = new InvestmentSerializerAdapter();
+        return new InvestmentJsonRepository(InvestmentLoader.LoadSync(storage, serializer), storage, serializer);
     }
     private readonly ITelemetryTracer _tracer = new RecordingTelemetryTracer();
     private readonly NavigationService _sut;

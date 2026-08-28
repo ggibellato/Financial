@@ -246,7 +246,7 @@ public class AnnualSummaryViewModel : ViewModelBase
         return rows;
     }
 
-    private static List<HistoricSummaryRow> BuildHistoricSummaryRows(IReadOnlyList<CategoryAnnualGroupValueDTO> historicSummary)
+    private static List<HistoricSummaryRow> BuildHistoricSummaryRows(IReadOnlyList<CategoryAnnualAverageDTO> historicSummary)
     {
         var rows = new List<HistoricSummaryRow>();
         if (historicSummary.Count == 0)

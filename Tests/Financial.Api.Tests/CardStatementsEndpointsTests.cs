@@ -58,7 +58,7 @@ public class CardStatementsEndpointsTests : ApiEndpointTests
 
         var response = await Client.PostAsJsonAsync(
             $"/api/v1/financial/card-statements/{target.Id}/mark-paid",
-            new MarkStatementPaidDTO { PaymentSourceBankId = Trading212Id });
+            new MarkCardStatementPaidDTO { PaymentSourceBankId = Trading212Id });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var updated = await response.Content.ReadFromJsonAsync<CardStatementDTO>();
@@ -89,7 +89,7 @@ public class CardStatementsEndpointsTests : ApiEndpointTests
 
         var response = await Client.PostAsJsonAsync(
             $"/api/v1/financial/card-statements/{target.Id}/mark-paid",
-            new MarkStatementPaidDTO { PaymentSourceBankId = null });
+            new MarkCardStatementPaidDTO { PaymentSourceBankId = null });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         var unchanged = await GetStatementAsync(Client, "BarclaysPlatinumVisa8003");
@@ -105,7 +105,7 @@ public class CardStatementsEndpointsTests : ApiEndpointTests
 
         var response = await Client.PostAsJsonAsync(
             $"/api/v1/financial/card-statements/{target.Id}/mark-paid",
-            new MarkStatementPaidDTO { PaymentSourceBankId = BarclaysId });
+            new MarkCardStatementPaidDTO { PaymentSourceBankId = BarclaysId });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
@@ -115,7 +115,7 @@ public class CardStatementsEndpointsTests : ApiEndpointTests
     {
         var response = await Client.PostAsJsonAsync(
             $"/api/v1/financial/card-statements/{Guid.NewGuid()}/mark-paid",
-            new MarkStatementPaidDTO { PaymentSourceBankId = BarclaysId });
+            new MarkCardStatementPaidDTO { PaymentSourceBankId = BarclaysId });
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
@@ -181,5 +181,5 @@ public class CardStatementsEndpointsTests : ApiEndpointTests
     private static Task<HttpResponseMessage> MarkPaidAsync(HttpClient client, Guid id, Guid paymentSourceBankId) =>
         client.PostAsJsonAsync(
             $"/api/v1/financial/card-statements/{id}/mark-paid",
-            new MarkStatementPaidDTO { PaymentSourceBankId = paymentSourceBankId });
+            new MarkCardStatementPaidDTO { PaymentSourceBankId = paymentSourceBankId });
 }

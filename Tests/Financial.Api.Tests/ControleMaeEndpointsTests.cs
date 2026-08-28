@@ -21,7 +21,7 @@ public class ControleMaeEndpointsTests() : ApiEndpointTests(new StubExchangeRate
         await using var factory = CreateFactory(0.146m);
         using var client = factory.CreateClient();
 
-        var response = await client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new CreateMaeLedgerEntryDTO
+        var response = await client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new MaeLedgerEntryCreateDTO
         {
             Date = new DateOnly(2026, 7, 1),
             Description = "School supplies",
@@ -43,7 +43,7 @@ public class ControleMaeEndpointsTests() : ApiEndpointTests(new StubExchangeRate
         await using var factory = CreateFactory(null);
         using var client = factory.CreateClient();
 
-        var response = await client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new CreateMaeLedgerEntryDTO
+        var response = await client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new MaeLedgerEntryCreateDTO
         {
             Date = new DateOnly(2026, 7, 1),
             Description = "Medical appointment",
@@ -60,7 +60,7 @@ public class ControleMaeEndpointsTests() : ApiEndpointTests(new StubExchangeRate
     [Fact]
     public async Task CreateEntry_UnrecognizedCurrency_ReturnsBadRequestWithMessage()
     {
-        var response = await Client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new CreateMaeLedgerEntryDTO
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new MaeLedgerEntryCreateDTO
         {
             Date = new DateOnly(2026, 7, 1),
             Description = "Test",
@@ -76,7 +76,7 @@ public class ControleMaeEndpointsTests() : ApiEndpointTests(new StubExchangeRate
     [Fact]
     public async Task CreateEntry_FutureDate_ReturnsBadRequestWithMessage()
     {
-        var response = await Client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new CreateMaeLedgerEntryDTO
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new MaeLedgerEntryCreateDTO
         {
             Date = DateOnly.FromDateTime(DateTime.Now.AddDays(1)),
             Description = "Future",
@@ -92,14 +92,14 @@ public class ControleMaeEndpointsTests() : ApiEndpointTests(new StubExchangeRate
     [Fact]
     public async Task GetEntriesFromDate_ReturnsOnlyEntriesOnOrAfterDate()
     {
-        await Client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new CreateMaeLedgerEntryDTO
+        await Client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new MaeLedgerEntryCreateDTO
         {
             Date = new DateOnly(2026, 6, 10),
             Description = "June entry",
             SourceCurrency = "BRL",
             SourceValue = 10m
         });
-        await Client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new CreateMaeLedgerEntryDTO
+        await Client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new MaeLedgerEntryCreateDTO
         {
             Date = new DateOnly(2026, 7, 10),
             Description = "July entry",
@@ -117,14 +117,14 @@ public class ControleMaeEndpointsTests() : ApiEndpointTests(new StubExchangeRate
     [Fact]
     public async Task GetTotals_SumsBrlAndGbpAcrossAllEntries()
     {
-        await Client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new CreateMaeLedgerEntryDTO
+        await Client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new MaeLedgerEntryCreateDTO
         {
             Date = new DateOnly(2020, 1, 1),
             Description = "Old entry",
             SourceCurrency = "BRL",
             SourceValue = 100m
         });
-        await Client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new CreateMaeLedgerEntryDTO
+        await Client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new MaeLedgerEntryCreateDTO
         {
             Date = new DateOnly(2026, 7, 10),
             Description = "Recent entry",
@@ -144,7 +144,7 @@ public class ControleMaeEndpointsTests() : ApiEndpointTests(new StubExchangeRate
     {
         await using var factory = CreateFactory(null);
         using var client = factory.CreateClient();
-        var created = await client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new CreateMaeLedgerEntryDTO
+        var created = await client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new MaeLedgerEntryCreateDTO
         {
             Date = new DateOnly(2026, 7, 16),
             Description = "Medical appointment",
@@ -153,7 +153,7 @@ public class ControleMaeEndpointsTests() : ApiEndpointTests(new StubExchangeRate
         });
         var createdEntry = await created.Content.ReadFromJsonAsync<MaeLedgerEntryDTO>();
 
-        var response = await client.PutAsJsonAsync($"/api/v1/financial/controle-mae/entries/{createdEntry!.Id}/values", new UpdateMaeLedgerEntryValuesDTO
+        var response = await client.PutAsJsonAsync($"/api/v1/financial/controle-mae/entries/{createdEntry!.Id}/values", new MaeLedgerEntryValuesUpdateDTO
         {
             BrlValue = 320.50m,
             GbpValue = 40m
@@ -168,7 +168,7 @@ public class ControleMaeEndpointsTests() : ApiEndpointTests(new StubExchangeRate
     [Fact]
     public async Task UpdateEntryValues_UnknownId_ReturnsNotFound()
     {
-        var response = await Client.PutAsJsonAsync($"/api/v1/financial/controle-mae/entries/{Guid.NewGuid()}/values", new UpdateMaeLedgerEntryValuesDTO
+        var response = await Client.PutAsJsonAsync($"/api/v1/financial/controle-mae/entries/{Guid.NewGuid()}/values", new MaeLedgerEntryValuesUpdateDTO
         {
             BrlValue = 10m,
             GbpValue = 1m
@@ -180,7 +180,7 @@ public class ControleMaeEndpointsTests() : ApiEndpointTests(new StubExchangeRate
     [Fact]
     public async Task DeleteEntry_ExistingId_RemovesEntry()
     {
-        var created = await Client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new CreateMaeLedgerEntryDTO
+        var created = await Client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new MaeLedgerEntryCreateDTO
         {
             Date = new DateOnly(2026, 7, 1),
             Description = "School supplies",

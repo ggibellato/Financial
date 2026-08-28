@@ -19,7 +19,7 @@ public partial class MainWindow : Window
 
         var credentialsPath = ResolveCredentialsPath();
         var (driveFiles, sheets) = TryCreateClients(credentialsPath);
-        DataContext = new MainViewModel(driveFiles, sheets, new InvestmentsSerializerAdapter());
+        DataContext = new MainViewModel(driveFiles, sheets, new InvestmentSerializerAdapter());
     }
 
     private (IGoogleDriveFileSource?, IGoogleSheetsDataSource?) TryCreateClients(string? credentialsPath)

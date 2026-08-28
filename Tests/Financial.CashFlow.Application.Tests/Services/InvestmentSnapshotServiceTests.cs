@@ -126,7 +126,7 @@ public class InvestmentSnapshotServiceTests
         var augustSnapshot = _repository.InvestmentSnapshots.Single(s => s.Month == 8 && s.Account.Name == "ChaseSave");
         var otherAccountSnapshot = _repository.InvestmentSnapshots.Single(s => s.Month == 7 && s.Account.Name == "PlatinumVisa8003");
 
-        var result = await _sut.UpdateSnapshotValueAsync(julySnapshot.Id, new UpdateInvestmentSnapshotValueDTO { Value = 500m });
+        var result = await _sut.UpdateSnapshotValueAsync(julySnapshot.Id, new InvestmentSnapshotValueUpdateDTO { Value = 500m });
 
         using (new AssertionScope())
         {
@@ -142,7 +142,7 @@ public class InvestmentSnapshotServiceTests
         await _sut.GetSnapshotsForMonthAsync(CurrentYear, 7);
         var snapshot = _repository.InvestmentSnapshots.First();
 
-        var act = async () => await _sut.UpdateSnapshotValueAsync(snapshot.Id, new UpdateInvestmentSnapshotValueDTO { Value = -1m });
+        var act = async () => await _sut.UpdateSnapshotValueAsync(snapshot.Id, new InvestmentSnapshotValueUpdateDTO { Value = -1m });
 
         await act.Should().ThrowAsync<ArgumentException>();
     }
@@ -150,7 +150,7 @@ public class InvestmentSnapshotServiceTests
     [Fact]
     public async Task UpdateSnapshotValueAsync_WithUnknownId_ThrowsKeyNotFoundException()
     {
-        var act = async () => await _sut.UpdateSnapshotValueAsync(Guid.NewGuid(), new UpdateInvestmentSnapshotValueDTO { Value = 10m });
+        var act = async () => await _sut.UpdateSnapshotValueAsync(Guid.NewGuid(), new InvestmentSnapshotValueUpdateDTO { Value = 10m });
 
         await act.Should().ThrowAsync<KeyNotFoundException>();
     }

@@ -260,8 +260,8 @@ public class AssetPriceHistoryServiceTests
         File.Copy(TestDataPaths.DataJsonFile, tempFile, true);
 
         var storage = new LocalJsonStorage(tempFile);
-        var serializer = new InvestmentsSerializerAdapter();
-        return (new InvestmentJsonRepository(InvestmentsLoader.LoadSync(storage, serializer), storage, serializer),
+        var serializer = new InvestmentSerializerAdapter();
+        return (new InvestmentJsonRepository(InvestmentLoader.LoadSync(storage, serializer), storage, serializer),
             new RecordingTelemetryTracer(), tempFile);
     }
 

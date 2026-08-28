@@ -67,7 +67,7 @@ public sealed class InvestmentSnapshotService : IInvestmentSnapshotService
         }
     }
 
-    public async Task<InvestmentSnapshotDTO> UpdateSnapshotValueAsync(Guid id, UpdateInvestmentSnapshotValueDTO request)
+    public async Task<InvestmentSnapshotDTO> UpdateSnapshotValueAsync(Guid id, InvestmentSnapshotValueUpdateDTO request)
     {
         using var span = StartSpan("UpdateSnapshotValue");
         span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());

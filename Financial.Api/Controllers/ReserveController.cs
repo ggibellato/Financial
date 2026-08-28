@@ -79,7 +79,7 @@ public sealed class ReserveController : ControllerBase
     [ProducesResponseType(typeof(ReserveMovementDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ReserveMovementDTO>> UpdateMovement(Guid id, [FromBody] UpdateReserveMovementDTO? request)
+    public async Task<ActionResult<ReserveMovementDTO>> UpdateMovement(Guid id, [FromBody] ReserveMovementUpdateDTO? request)
     {
         if (request is null)
         {

@@ -17,7 +17,7 @@ public partial class DividendCheckView : UserControl
         InitializeComponent();
         DataContext = viewModel;
 
-        var groupedOptions = new ListCollectionView(new List<WatchlistItem>(watchlistOptions.Value.Items));
+        var groupedOptions = new ListCollectionView(new List<WatchlistItemDTO>(watchlistOptions.Value.Items));
         groupedOptions.GroupDescriptions.Add(new PropertyGroupDescription("Group"));
         txtTicker.ItemsSource = groupedOptions;
     }

@@ -9,10 +9,10 @@ public sealed class InvestmentRepositoryFactory
 {
     private const string DefaultDataFileName = "data-investment.json";
 
-    private readonly IInvestmentsSerializer _serializer;
+    private readonly IInvestmentSerializer _serializer;
     private readonly IJsonStorageFactory _storageFactory;
 
-    public InvestmentRepositoryFactory(IInvestmentsSerializer serializer, IJsonStorageFactory storageFactory)
+    public InvestmentRepositoryFactory(IInvestmentSerializer serializer, IJsonStorageFactory storageFactory)
     {
         _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
         _storageFactory = storageFactory ?? throw new ArgumentNullException(nameof(storageFactory));
@@ -26,7 +26,7 @@ public sealed class InvestmentRepositoryFactory
         }
 
         var storage = CreateStorage(options);
-        var investments = InvestmentsLoader.LoadSync(storage, _serializer);
+        var investments = InvestmentLoader.LoadSync(storage, _serializer);
         return new InvestmentJsonRepository(investments, storage, _serializer);
     }
 

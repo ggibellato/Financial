@@ -123,24 +123,24 @@ public class AnnualSummaryViewModelTests
         var (viewModel, _, _, historicService) = CreateViewModel();
         historicService.HistoricSummaryAverage =
         [
-            new CategoryAnnualGroupValueDTO
+            new CategoryAnnualAverageDTO
             {
                 Year = 2024,
                 AnnualAverages =
                 [
-                    new CategoryGroupValueDTO { Category = "Tax difference", Value = 100m },
-                    new CategoryGroupValueDTO { Category = "Reserva", Value = 200m },
-                    new CategoryGroupValueDTO { Category = "Resultado (R-D-Inv)", Value = 300m },
+                    new CategoryAverageDTO { Category = "Tax difference", Value = 100m },
+                    new CategoryAverageDTO { Category = "Reserva", Value = 200m },
+                    new CategoryAverageDTO { Category = "Resultado (R-D-Inv)", Value = 300m },
                 ],
             },
-            new CategoryAnnualGroupValueDTO
+            new CategoryAnnualAverageDTO
             {
                 Year = 2025,
                 AnnualAverages =
                 [
-                    new CategoryGroupValueDTO { Category = "Tax difference", Value = 110m },
-                    new CategoryGroupValueDTO { Category = "Reserva", Value = 210m },
-                    new CategoryGroupValueDTO { Category = "Resultado (R-D-Inv)", Value = 310m },
+                    new CategoryAverageDTO { Category = "Tax difference", Value = 110m },
+                    new CategoryAverageDTO { Category = "Reserva", Value = 210m },
+                    new CategoryAverageDTO { Category = "Resultado (R-D-Inv)", Value = 310m },
                 ],
             },
         ];
@@ -165,15 +165,15 @@ public class AnnualSummaryViewModelTests
         var (viewModel, _, _, historicService) = CreateViewModel();
         historicService.HistoricSummaryAverage =
         [
-            new CategoryAnnualGroupValueDTO
+            new CategoryAnnualAverageDTO
             {
                 Year = 2017,
-                AnnualAverages = [new CategoryGroupValueDTO { Category = "Tax difference", Value = 50m }],
+                AnnualAverages = [new CategoryAverageDTO { Category = "Tax difference", Value = 50m }],
             },
-            new CategoryAnnualGroupValueDTO
+            new CategoryAnnualAverageDTO
             {
                 Year = 2025,
-                AnnualAverages = [new CategoryGroupValueDTO { Category = "Tax difference", Value = 90m }],
+                AnnualAverages = [new CategoryAverageDTO { Category = "Tax difference", Value = 90m }],
             },
         ];
 
@@ -195,9 +195,9 @@ public class AnnualSummaryViewModelTests
         var (viewModel, _, _, historicService) = CreateViewModel();
         historicService.HistoricSummaryAverage =
         [
-            new CategoryAnnualGroupValueDTO { Year = 2023, AnnualAverages = [] },
-            new CategoryAnnualGroupValueDTO { Year = 2024, AnnualAverages = [] },
-            new CategoryAnnualGroupValueDTO { Year = 2025, AnnualAverages = [] },
+            new CategoryAnnualAverageDTO { Year = 2023, AnnualAverages = [] },
+            new CategoryAnnualAverageDTO { Year = 2024, AnnualAverages = [] },
+            new CategoryAnnualAverageDTO { Year = 2025, AnnualAverages = [] },
         ];
 
         await viewModel.RefreshAsync();
@@ -247,14 +247,14 @@ public class AnnualSummaryViewModelTests
         var (viewModel, _, _, historicService) = CreateViewModel();
         historicService.HistoricSummaryAverage =
         [
-            new CategoryAnnualGroupValueDTO
+            new CategoryAnnualAverageDTO
             {
                 Year = 2024,
                 AnnualAverages =
                 [
-                    new CategoryGroupValueDTO { Category = "Tax difference", Value = 100m },
-                    new CategoryGroupValueDTO { Category = "Reserva", Value = 200m },
-                    new CategoryGroupValueDTO { Category = "Resultado (R-D-Inv)", Value = 300m },
+                    new CategoryAverageDTO { Category = "Tax difference", Value = 100m },
+                    new CategoryAverageDTO { Category = "Reserva", Value = 200m },
+                    new CategoryAverageDTO { Category = "Resultado (R-D-Inv)", Value = 300m },
                 ],
             },
         ];

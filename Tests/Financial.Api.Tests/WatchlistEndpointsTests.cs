@@ -27,8 +27,8 @@ public class WatchlistEndpointsTests
         {
             options.Items =
             [
-                new WatchlistItem { Group = "Group A", Name = "KLBN4" },
-                new WatchlistItem { Group = "Group A", Name = "TAEE3" },
+                new WatchlistItemDTO { Group = "Group A", Name = "KLBN4" },
+                new WatchlistItemDTO { Group = "Group A", Name = "TAEE3" },
             ];
         });
 
@@ -37,7 +37,7 @@ public class WatchlistEndpointsTests
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var items = await response.Content.ReadFromJsonAsync<WatchlistItem[]>(CaseInsensitiveJson);
+        var items = await response.Content.ReadFromJsonAsync<WatchlistItemDTO[]>(CaseInsensitiveJson);
         items.Should().HaveCount(2);
         items![0].Group.Should().Be("Group A");
         items[0].Name.Should().Be("KLBN4");
@@ -54,7 +54,7 @@ public class WatchlistEndpointsTests
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var items = await response.Content.ReadFromJsonAsync<WatchlistItem[]>(CaseInsensitiveJson);
+        var items = await response.Content.ReadFromJsonAsync<WatchlistItemDTO[]>(CaseInsensitiveJson);
         items.Should().BeEmpty();
     }
 
@@ -63,7 +63,7 @@ public class WatchlistEndpointsTests
     {
         await using var factory = CreateFactory(options =>
         {
-            options.Items = [new WatchlistItem { Group = "Test", Name = "KLBN4" }];
+            options.Items = [new WatchlistItemDTO { Group = "Test", Name = "KLBN4" }];
         });
 
         using var client = factory.CreateClient();

@@ -189,7 +189,7 @@ public class ReserveEndpointsTests : ApiEndpointTests
         });
         var movement = await withdrawal.Content.ReadFromJsonAsync<ReserveMovementDTO>();
 
-        var response = await Client.PutAsJsonAsync($"/api/v1/financial/reserve/movements/{movement!.Id}", new UpdateReserveMovementDTO
+        var response = await Client.PutAsJsonAsync($"/api/v1/financial/reserve/movements/{movement!.Id}", new ReserveMovementUpdateDTO
         {
             BucketId = ArianaId,
             Amount = -45m,
@@ -206,7 +206,7 @@ public class ReserveEndpointsTests : ApiEndpointTests
     [Fact]
     public async Task UpdateMovement_UnknownId_ReturnsNotFound()
     {
-        var response = await Client.PutAsJsonAsync($"/api/v1/financial/reserve/movements/{Guid.NewGuid()}", new UpdateReserveMovementDTO
+        var response = await Client.PutAsJsonAsync($"/api/v1/financial/reserve/movements/{Guid.NewGuid()}", new ReserveMovementUpdateDTO
         {
             BucketId = ArianaId,
             Amount = 10m,
@@ -265,7 +265,7 @@ public class ReserveEndpointsTests : ApiEndpointTests
     {
         var linkedMovementId = await CreateLinkedMovementIdAsync();
 
-        var response = await Client.PutAsJsonAsync($"/api/v1/financial/reserve/movements/{linkedMovementId}", new UpdateReserveMovementDTO
+        var response = await Client.PutAsJsonAsync($"/api/v1/financial/reserve/movements/{linkedMovementId}", new ReserveMovementUpdateDTO
         {
             BucketId = ArianaId,
             Amount = 10m,
