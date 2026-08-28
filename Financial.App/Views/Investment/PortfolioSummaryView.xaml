@@ -2,7 +2,8 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:oxy="http://oxyplot.org/wpf"
-             xmlns:vm="clr-namespace:Financial.Presentation.App.ViewModels.Investment">
+             xmlns:vm="clr-namespace:Financial.Presentation.App.ViewModels.Investment"
+             xmlns:local="clr-namespace:Financial.Presentation.App.Views.Investment">
     <UserControl.Resources>
         <DataTemplate x:Key="AssetSummaryTemplate">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
@@ -320,21 +321,7 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
-                    <TextBlock Text="Total Bought:" FontWeight="Bold" Margin="0,0,5,0"/>
-                    <TextBlock Text="{Binding AssetDetails.TotalBought, Mode=OneWay, StringFormat=N2}"
-                               FontFamily="Consolas" Foreground="Green" Margin="0,0,20,0"/>
-                    <TextBlock Text="Total Sold:" FontWeight="Bold" Margin="0,0,5,0"/>
-                    <TextBlock Text="{Binding AssetDetails.TotalSold, Mode=OneWay, StringFormat=N2}"
-                               FontFamily="Consolas" Foreground="Red" Margin="0,0,20,0"/>
-                    <TextBlock Text="Total Credits:" FontWeight="Bold" Margin="0,0,5,0"/>
-                    <TextBlock Text="{Binding AssetDetails.TotalCredits, Mode=OneWay, StringFormat=N2}"
-                               FontFamily="Consolas" Foreground="Blue" Margin="0,0,20,0"/>
-                    <TextBlock Text="Total Invested:" FontWeight="Bold" Margin="0,0,5,0"/>
-                    <TextBlock Text="{Binding AssetDetails.TotalInvested, Mode=OneWay, StringFormat=N2}"
-                               FontFamily="Consolas"
-                               Foreground="{Binding AssetDetails.TotalInvested, Converter={StaticResource SignedValueToBrushConverter}}"/>
-                </StackPanel>
+                <local:PortfolioTotalsBar Grid.Row="0"/>
 
                 <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
                     <Grid>
@@ -588,32 +575,20 @@
                         Padding="8,6"
                         Margin="0,4,0,0">
                     <WrapPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,20,0">
-                            <TextBlock Text="Total Invested:" FontWeight="Bold" Margin="0,0,5,0"/>
-                            <TextBlock Text="{Binding AssetDetails.FooterTotalInvested, StringFormat=N2}"
-                                       FontFamily="Consolas"/>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,20,0">
-                            <TextBlock Text="Total Credits:" FontWeight="Bold" Margin="0,0,5,0"/>
-                            <TextBlock Text="{Binding AssetDetails.FooterTotalCredits, StringFormat=N2}"
-                                       FontFamily="Consolas"/>
-                        </StackPanel>
+                        <local:PortfolioFooterStat Margin="0,0,20,0" Label="Total Invested:"
+                                                    Value="{Binding AssetDetails.FooterTotalInvested, StringFormat=N2}"/>
+                        <local:PortfolioFooterStat Margin="0,0,20,0" Label="Total Credits:"
+                                                    Value="{Binding AssetDetails.FooterTotalCredits, StringFormat=N2}"/>
                         <StackPanel Orientation="Horizontal" Margin="0,0,20,0">
                             <TextBlock Text="Current Value:" FontWeight="Bold" Margin="0,0,5,0"/>
                             <TextBlock Text="{Binding AssetDetails.FooterCurrentValueDisplay}"
                                        FontFamily="Consolas"/>
                         </StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,20,0">
-                            <TextBlock Text="{Binding AssetDetails.FooterCurrentMonthLabel, StringFormat='{}{0}:'}"
-                                       FontWeight="Bold" Margin="0,0,5,0"/>
-                            <TextBlock Text="{Binding AssetDetails.FooterCurrentMonthCredits, StringFormat=N2}"
-                                       FontFamily="Consolas"/>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Est. Annual Credits:" FontWeight="Bold" Margin="0,0,5,0"/>
-                            <TextBlock Text="{Binding AssetDetails.FooterEstimatedAnnualCreditsDisplay}"
-                                       FontFamily="Consolas"/>
-                        </StackPanel>
+                        <local:PortfolioFooterStat Margin="0,0,20,0"
+                                                    Label="{Binding AssetDetails.FooterCurrentMonthLabel, StringFormat='{}{0}:'}"
+                                                    Value="{Binding AssetDetails.FooterCurrentMonthCredits, StringFormat=N2}"/>
+                        <local:PortfolioFooterStat Label="Est. Annual Credits:"
+                                                    Value="{Binding AssetDetails.FooterEstimatedAnnualCreditsDisplay}"/>
                     </WrapPanel>
                 </Border>
             </Grid>
@@ -634,21 +609,7 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
-                    <TextBlock Text="Total Bought:" FontWeight="Bold" Margin="0,0,5,0"/>
-                    <TextBlock Text="{Binding AssetDetails.TotalBought, Mode=OneWay, StringFormat=N2}"
-                               FontFamily="Consolas" Foreground="Green" Margin="0,0,20,0"/>
-                    <TextBlock Text="Total Sold:" FontWeight="Bold" Margin="0,0,5,0"/>
-                    <TextBlock Text="{Binding AssetDetails.TotalSold, Mode=OneWay, StringFormat=N2}"
-                               FontFamily="Consolas" Foreground="Red" Margin="0,0,20,0"/>
-                    <TextBlock Text="Total Credits:" FontWeight="Bold" Margin="0,0,5,0"/>
-                    <TextBlock Text="{Binding AssetDetails.TotalCredits, Mode=OneWay, StringFormat=N2}"
-                               FontFamily="Consolas" Foreground="Blue" Margin="0,0,20,0"/>
-                    <TextBlock Text="Total Invested:" FontWeight="Bold" Margin="0,0,5,0"/>
-                    <TextBlock Text="{Binding AssetDetails.TotalInvested, Mode=OneWay, StringFormat=N2}"
-                               FontFamily="Consolas"
-                               Foreground="{Binding AssetDetails.TotalInvested, Converter={StaticResource SignedValueToBrushConverter}}"/>
-                </StackPanel>
+                <local:PortfolioTotalsBar Grid.Row="0"/>
 
                 <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
                     <Grid>
@@ -872,33 +833,21 @@
                         Padding="8,6"
                         Margin="0,4,0,0">
                     <WrapPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,20,0">
-                            <TextBlock Text="Total Invested:" FontWeight="Bold" Margin="0,0,5,0"/>
-                            <TextBlock Text="{Binding AssetDetails.FooterTotalInvested, StringFormat=N2}"
-                                       FontFamily="Consolas"/>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,20,0">
-                            <TextBlock Text="Total Credits:" FontWeight="Bold" Margin="0,0,5,0"/>
-                            <TextBlock Text="{Binding AssetDetails.FooterTotalCredits, StringFormat=N2}"
-                                       FontFamily="Consolas"/>
-                        </StackPanel>
+                        <local:PortfolioFooterStat Margin="0,0,20,0" Label="Total Invested:"
+                                                    Value="{Binding AssetDetails.FooterTotalInvested, StringFormat=N2}"/>
+                        <local:PortfolioFooterStat Margin="0,0,20,0" Label="Total Credits:"
+                                                    Value="{Binding AssetDetails.FooterTotalCredits, StringFormat=N2}"/>
                         <StackPanel Orientation="Horizontal" Margin="0,0,20,0">
                             <TextBlock Text="Realized Gain/Loss:" FontWeight="Bold" Margin="0,0,5,0"/>
                             <TextBlock Text="{Binding AssetDetails.FooterRealizedGainLoss, StringFormat=N2}"
                                        FontFamily="Consolas"
                                        Foreground="{Binding AssetDetails.FooterRealizedGainLoss, Converter={StaticResource SignedValueToBrushConverter}}"/>
                         </StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,20,0">
-                            <TextBlock Text="{Binding AssetDetails.FooterCurrentMonthLabel, StringFormat='{}{0}:'}"
-                                       FontWeight="Bold" Margin="0,0,5,0"/>
-                            <TextBlock Text="{Binding AssetDetails.FooterCurrentMonthCredits, StringFormat=N2}"
-                                       FontFamily="Consolas"/>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Est. Annual Credits:" FontWeight="Bold" Margin="0,0,5,0"/>
-                            <TextBlock Text="{Binding AssetDetails.FooterEstimatedAnnualCreditsDisplay}"
-                                       FontFamily="Consolas"/>
-                        </StackPanel>
+                        <local:PortfolioFooterStat Margin="0,0,20,0"
+                                                    Label="{Binding AssetDetails.FooterCurrentMonthLabel, StringFormat='{}{0}:'}"
+                                                    Value="{Binding AssetDetails.FooterCurrentMonthCredits, StringFormat=N2}"/>
+                        <local:PortfolioFooterStat Label="Est. Annual Credits:"
+                                                    Value="{Binding AssetDetails.FooterEstimatedAnnualCreditsDisplay}"/>
                     </WrapPanel>
                 </Border>
             </Grid>

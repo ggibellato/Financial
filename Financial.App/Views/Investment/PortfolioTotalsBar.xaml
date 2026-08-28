@@ -1,0 +1,24 @@
+<UserControl x:Class="Financial.Presentation.App.Views.Investment.PortfolioTotalsBar"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!--
+        Shared "Total Bought/Sold/Credits/Invested" row for PortfolioSummaryTemplate
+        and PortfolioSummaryTemplateHistoric — was duplicated verbatim in both. Binds
+        against the ambient AssetDetails.* DataContext inherited from the host template.
+    -->
+    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+        <TextBlock Text="Total Bought:" FontWeight="Bold" Margin="0,0,5,0"/>
+        <TextBlock Text="{Binding AssetDetails.TotalBought, Mode=OneWay, StringFormat=N2}"
+                   FontFamily="Consolas" Foreground="Green" Margin="0,0,20,0"/>
+        <TextBlock Text="Total Sold:" FontWeight="Bold" Margin="0,0,5,0"/>
+        <TextBlock Text="{Binding AssetDetails.TotalSold, Mode=OneWay, StringFormat=N2}"
+                   FontFamily="Consolas" Foreground="Red" Margin="0,0,20,0"/>
+        <TextBlock Text="Total Credits:" FontWeight="Bold" Margin="0,0,5,0"/>
+        <TextBlock Text="{Binding AssetDetails.TotalCredits, Mode=OneWay, StringFormat=N2}"
+                   FontFamily="Consolas" Foreground="Blue" Margin="0,0,20,0"/>
+        <TextBlock Text="Total Invested:" FontWeight="Bold" Margin="0,0,5,0"/>
+        <TextBlock Text="{Binding AssetDetails.TotalInvested, Mode=OneWay, StringFormat=N2}"
+                   FontFamily="Consolas"
+                   Foreground="{Binding AssetDetails.TotalInvested, Converter={StaticResource SignedValueToBrushConverter}}"/>
+    </StackPanel>
+</UserControl>
