@@ -19,6 +19,7 @@ import { useExpenseForm } from '../hooks/useExpenseForm'
 import { useIncomeForm } from '../hooks/useIncomeForm'
 import { useMonthly } from '../hooks/useMonthly'
 import { useTransferForm } from '../hooks/useTransferForm'
+import { confirmThenRun } from '../utils/confirmThenRun'
 import './MonthlyPage.css'
 
 type MonthlyTabId = 'summary' | 'expense' | 'card' | 'incoming' | 'bank'
@@ -66,30 +67,20 @@ export default function MonthlyPage() {
     listActionWarning,
   } = useMonthly()
 
-  // Confirmation belongs to the caller, not to the data hook. A hook that calls window.confirm
-  // can only be tested by stubbing a browser global, and it decides for every caller that a
-  // prompt is wanted at all. This page already owned its confirmations for other actions.
-  const confirmAndDeleteExpense = (id: string) => {
-    if (window.confirm('Delete this expense?')) deleteExpense(id)
-  }
+  const confirmAndDeleteExpense = (id: string) => confirmThenRun('Delete this expense?', () => deleteExpense(id))
 
-  const confirmAndDeleteIncome = (id: string) => {
-    if (window.confirm('Delete this income entry?')) deleteIncome(id)
-  }
+  const confirmAndDeleteIncome = (id: string) => confirmThenRun('Delete this income entry?', () => deleteIncome(id))
 
-  const confirmAndUnmarkStatementPaid = (id: string) => {
-    if (window.confirm('Unmark this statement as paid? Its settled charges revert to unsettled.')) {
-      unmarkStatementPaid(id)
-    }
-  }
+  const confirmAndUnmarkStatementPaid = (id: string) =>
+    confirmThenRun('Unmark this statement as paid? Its settled charges revert to unsettled.', () =>
+      unmarkStatementPaid(id),
+    )
 
-  const confirmAndDeleteTransfer = (id: string) => {
-    if (window.confirm('Delete this transfer?')) bankOperations.deleteTransfer(id)
-  }
+  const confirmAndDeleteTransfer = (id: string) =>
+    confirmThenRun('Delete this transfer?', () => bankOperations.deleteTransfer(id))
 
-  const confirmAndDeleteAdjustment = (bankId: string, id: string) => {
-    if (window.confirm('Delete this balance adjustment?')) bankOperations.deleteAdjustment(bankId, id)
-  }
+  const confirmAndDeleteAdjustment = (bankId: string, id: string) =>
+    confirmThenRun('Delete this balance adjustment?', () => bankOperations.deleteAdjustment(bankId, id))
 
   const {
     isOpen: isExpenseFormOpen,

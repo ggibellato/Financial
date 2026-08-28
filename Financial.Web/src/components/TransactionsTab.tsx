@@ -18,6 +18,7 @@ import SortableColumnHeader from './grid/SortableColumnHeader'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import type { ChartDisplayMode, TransactionFormField, TransactionMonthBucket } from '../hooks/useTransactions'
 import { useTransactions } from '../hooks/useTransactions'
+import { confirmThenRun } from '../utils/confirmThenRun'
 import { PERIOD_FILTER_OPTIONS } from '../utils/periodFilter'
 import type { PeriodFilterOption } from '../utils/periodFilter'
 import { formatN2, formatN8, formatShortDate } from '../utils/formatters'
@@ -309,13 +310,8 @@ export default function TransactionsTab() {
 
   const { sortedRows, sortState, requestSort } = useSortableRows(transactions, SORT_ACCESSORS)
 
-  // Confirmation belongs to the caller, not to the data hook. A hook that calls window.confirm
-  // can only be tested by stubbing a browser global, and it decides for every caller that a
-  // prompt is wanted at all. Same reasoning as ControleMaePage and MensaisPage, which already
-  // did it this way.
-  const confirmAndDeleteTransaction = (id: string) => {
-    if (window.confirm('Delete this transaction?')) deleteTransaction(id)
-  }
+  const confirmAndDeleteTransaction = (id: string) =>
+    confirmThenRun('Delete this transaction?', () => deleteTransaction(id))
 
   if (isLoading) {
     return <LoadingState />
