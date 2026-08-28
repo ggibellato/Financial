@@ -4,6 +4,14 @@
 
 Accepted
 
+## Date
+
+2026-08-28
+
+## Author
+
+Gleison Gibellato da Silva
+
 ## Context
 
 We evaluated whether adopting CQRS (Command Query Responsibility Segregation) would
