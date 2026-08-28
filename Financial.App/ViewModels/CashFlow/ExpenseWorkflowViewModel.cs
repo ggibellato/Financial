@@ -39,6 +39,13 @@ public class ExpenseWorkflowViewModel : ViewModelBase
 
     public ObservableCollection<ExpenseDTO> Expenses { get; } = [];
     public ObservableCollection<ExpenseDTO> UnpaidCardCharges { get; } = [];
+    public ObservableCollection<ExpenseDTO> FilteredExpenses { get; } = [];
+    public ObservableCollection<ExpenseDTO> FilteredUnpaidCardCharges { get; } = [];
+
+    public ColumnFilterViewModel<ExpenseDTO> ExpensesCategoryFilter { get; }
+    public ColumnFilterViewModel<ExpenseDTO> ExpensesCardFilter { get; }
+    public ColumnFilterViewModel<ExpenseDTO> UnpaidCardChargesCategoryFilter { get; }
+    public ColumnFilterViewModel<ExpenseDTO> UnpaidCardChargesCardFilter { get; }
 
     /// <summary>The same instance MonthlyViewModel owns — mutated in place by its refresh, never replaced.</summary>
     public ObservableCollection<BankDTO> Banks { get; }
@@ -238,14 +245,32 @@ public class ExpenseWorkflowViewModel : ViewModelBase
         DeleteExpenseCommand = new RelayCommand<ExpenseDTO>(
             async expense => await DeleteExpenseAsync(expense),
             expense => expense?.PaymentStatus != SettledStatus);
+
+        ExpensesCategoryFilter = new ColumnFilterViewModel<ExpenseDTO>("Category", e => [e.CategoryName], ApplyExpensesFilter);
+        ExpensesCardFilter = new ColumnFilterViewModel<ExpenseDTO>("Card", e => [e.CreditCardName], ApplyExpensesFilter);
+        UnpaidCardChargesCategoryFilter = new ColumnFilterViewModel<ExpenseDTO>("Category", e => [e.CategoryName], ApplyUnpaidCardChargesFilter);
+        UnpaidCardChargesCardFilter = new ColumnFilterViewModel<ExpenseDTO>("Card", e => [e.CreditCardName], ApplyUnpaidCardChargesFilter);
     }
 
     /// <summary>Applies data the coordinator's own refresh already fetched — this workflow never fetches on its own.</summary>
     public void ApplyRefresh(IReadOnlyList<ExpenseDTO> expenses, IReadOnlyList<ExpenseDTO> unpaidCardCharges)
     {
         ReplaceAll(Expenses, expenses);
+        ExpensesCategoryFilter.Refresh(Expenses);
+        ExpensesCardFilter.Refresh(Expenses);
+        ApplyExpensesFilter();
+
         ReplaceAll(UnpaidCardCharges, unpaidCardCharges);
+        UnpaidCardChargesCategoryFilter.Refresh(UnpaidCardCharges);
+        UnpaidCardChargesCardFilter.Refresh(UnpaidCardCharges);
+        ApplyUnpaidCardChargesFilter();
     }
+
+    private void ApplyExpensesFilter() =>
+        ReplaceAll(FilteredExpenses, Expenses.Where(e => ExpensesCategoryFilter.Matches(e) && ExpensesCardFilter.Matches(e)));
+
+    private void ApplyUnpaidCardChargesFilter() =>
+        ReplaceAll(FilteredUnpaidCardCharges, UnpaidCardCharges.Where(e => UnpaidCardChargesCategoryFilter.Matches(e) && UnpaidCardChargesCardFilter.Matches(e)));
 
     /// <summary>Categories/CreditCards are the coordinator's own shared collections, mutated in place - it calls
     /// this after replacing them so ActiveCategories/ActiveCreditCards re-query, mirroring how it re-notifies its own.</summary>

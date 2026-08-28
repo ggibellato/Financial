@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using Financial.CashFlow.Application.DTOs;
+using Financial.Presentation.App.ViewModels;
 using Financial.Presentation.App.ViewModels.CashFlow;
 using Financial.Shared.Abstractions.Observability;
 using Financial.TestUtilities;
@@ -9,6 +10,16 @@ namespace Financial.Presentation.Tests.ViewModels.CashFlow;
 
 public class ExpenseWorkflowViewModelTests
 {
+    /// <summary>Unchecks every filter option except the given values, mirroring how a user would
+    /// narrow the header checklist down to a subset (see BankOperationsWorkflowViewModelTests.SelectOnly).</summary>
+    private static void SelectOnly(ColumnFilterViewModel<ExpenseDTO> filter, params string[] values)
+    {
+        foreach (var option in filter.Options)
+        {
+            option.IsChecked = values.Contains(option.Value);
+        }
+    }
+
     private static readonly Guid BarclaysId = Guid.NewGuid();
     private static readonly Guid ChaseId = Guid.NewGuid();
 
@@ -536,5 +547,92 @@ public class ExpenseWorkflowViewModelTests
 
         expenses.LastUpdateRequest.Should().NotBeNull();
         expenses.LastUpdateRequest!.Value.Request.InvoiceDate.Should().Be(new DateOnly(2026, 3, 1));
+    }
+
+    private static ExpenseDTO MakeExpense(string description, string categoryName, string? creditCardName = null, string? paymentSourceBankName = null) => new()
+    {
+        Id = Guid.NewGuid(),
+        Date = DateOnly.FromDateTime(DateTime.Today),
+        Description = description,
+        Value = 10m,
+        CategoryId = Guid.NewGuid(),
+        CategoryName = categoryName,
+        CreditCardId = creditCardName is null ? null : Guid.NewGuid(),
+        CreditCardName = creditCardName,
+        PaymentSourceBankName = paymentSourceBankName,
+        PaymentStatus = creditCardName is null ? "ImmediatePayment" : "CreditCardCharge",
+    };
+
+    [Fact]
+    public void ExpensesCategoryFilter_Refresh_ComputesAvailableValuesFromFullUnfilteredExpenses()
+    {
+        var (viewModel, _, _) = CreateViewModel();
+        var mercado = MakeExpense("A", "Mercado");
+        var extras = MakeExpense("B", "Extras");
+
+        viewModel.ApplyRefresh([mercado, extras], []);
+
+        viewModel.ExpensesCategoryFilter.Options.Select(o => o.Value).Should().BeEquivalentTo(["Mercado", "Extras"]);
+    }
+
+    [Fact]
+    public void ExpensesCategoryFilter_UncheckingValue_ExcludesMatchingRowsFromFilteredExpenses()
+    {
+        var (viewModel, _, _) = CreateViewModel();
+        var mercado = MakeExpense("A", "Mercado");
+        var extras = MakeExpense("B", "Extras");
+        viewModel.ApplyRefresh([mercado, extras], []);
+
+        SelectOnly(viewModel.ExpensesCategoryFilter, "Mercado");
+
+        viewModel.FilteredExpenses.Should().ContainSingle().Which.Should().Be(mercado);
+        viewModel.Expenses.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public void ExpensesCategoryAndCardFilters_CombineWithAnd_OnlyRowsMatchingBothRemain()
+    {
+        var (viewModel, _, _) = CreateViewModel();
+        var mercadoOnCardA = MakeExpense("A", "Mercado", creditCardName: "CardA");
+        var mercadoOnCardB = MakeExpense("B", "Mercado", creditCardName: "CardB");
+        var extrasOnCardA = MakeExpense("C", "Extras", creditCardName: "CardA");
+        viewModel.ApplyRefresh([mercadoOnCardA, mercadoOnCardB, extrasOnCardA], []);
+
+        SelectOnly(viewModel.ExpensesCategoryFilter, "Mercado");
+        SelectOnly(viewModel.ExpensesCardFilter, "CardA");
+
+        viewModel.FilteredExpenses.Should().ContainSingle().Which.Should().Be(mercadoOnCardA);
+    }
+
+    [Fact]
+    public void FilteredExpensesAndFilteredUnpaidCardCharges_AreIndependent_FilteringOneDoesNotAffectTheOther()
+    {
+        var (viewModel, _, _) = CreateViewModel();
+        var expense = MakeExpense("A", "Mercado");
+        var unpaidCharge = MakeExpense("B", "Mercado", creditCardName: "BaAmex");
+        viewModel.ApplyRefresh([expense], [unpaidCharge]);
+
+        SelectOnly(viewModel.ExpensesCategoryFilter, "Extras");
+
+        viewModel.FilteredExpenses.Should().BeEmpty();
+        viewModel.FilteredUnpaidCardCharges.Should().ContainSingle().Which.Should().Be(unpaidCharge);
+        viewModel.UnpaidCardChargesCategoryFilter.IsFiltered.Should().BeFalse();
+    }
+
+    [Fact]
+    public void FilteredUnpaidCardCharges_FilteringDoesNotAffectFilteredExpenses()
+    {
+        var (viewModel, _, _) = CreateViewModel();
+        var expense = MakeExpense("A", "Mercado");
+        var unpaidChargeA = MakeExpense("B", "Mercado", creditCardName: "CardA");
+        var unpaidChargeB = MakeExpense("C", "Mercado", creditCardName: "CardB");
+        viewModel.ApplyRefresh([expense], [unpaidChargeA, unpaidChargeB]);
+
+        SelectOnly(viewModel.UnpaidCardChargesCardFilter, "CardA");
+
+        viewModel.FilteredUnpaidCardCharges.Should().ContainSingle().Which.Should().Be(unpaidChargeA);
+        viewModel.FilteredExpenses.Should().ContainSingle().Which.Should().Be(expense);
+        viewModel.ExpensesCategoryFilter.IsFiltered.Should().BeFalse();
+        viewModel.ExpensesCardFilter.IsFiltered.Should().BeFalse();
     }
 }

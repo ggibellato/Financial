@@ -1,4 +1,5 @@
 using Financial.CashFlow.Application.DTOs;
+using Financial.Presentation.App.ViewModels;
 using Financial.Presentation.App.ViewModels.CashFlow;
 using FluentAssertions;
 
@@ -6,6 +7,16 @@ namespace Financial.Presentation.Tests.ViewModels.CashFlow;
 
 public class IncomeWorkflowViewModelTests
 {
+    /// <summary>Unchecks every filter option except the given values, mirroring how a user would
+    /// narrow the header checklist down to a subset (see BankOperationsWorkflowViewModelTests.SelectOnly).</summary>
+    private static void SelectOnly(ColumnFilterViewModel<IncomeDTO> filter, params string[] values)
+    {
+        foreach (var option in filter.Options)
+        {
+            option.IsChecked = values.Contains(option.Value);
+        }
+    }
+
     private static readonly Guid BarclaysId = Guid.NewGuid();
     private static readonly Guid ChaseId = Guid.NewGuid();
 
@@ -384,5 +395,58 @@ public class IncomeWorkflowViewModelTests
         viewModel.IncomeBankOptions[0].Name.Should().Be(IncomeWorkflowViewModel.NoBankOptionLabel);
         viewModel.IncomeBankOptions.Should().Contain(o => o.Id == BarclaysId && o.Name == "Barclays");
         viewModel.IncomeBankOptions.Should().Contain(o => o.Id == ChaseId && o.Name == "Chase");
+    }
+
+    private static IncomeDTO MakeIncome(string description, string? bankName) => new()
+    {
+        Id = Guid.NewGuid(),
+        Date = DateOnly.FromDateTime(DateTime.Today),
+        IncomeSourceId = Guid.NewGuid(),
+        IncomeSourceName = "Lottery",
+        NetValue = 10m,
+        BankId = bankName is null ? null : Guid.NewGuid(),
+        BankName = bankName,
+        Description = description,
+        SplitToReserve = false,
+    };
+
+    [Fact]
+    public void BankFilter_Refresh_ComputesAvailableValuesFromFullUnfilteredIncomes()
+    {
+        var (viewModel, _) = CreateViewModel();
+        var barclaysIncome = MakeIncome("A", "Barclays");
+        var chaseIncome = MakeIncome("B", "Chase");
+
+        viewModel.ApplyRefresh([barclaysIncome, chaseIncome], [], DefaultBanks);
+
+        viewModel.BankFilter.Options.Select(o => o.Value).Should().BeEquivalentTo(["Barclays", "Chase"]);
+    }
+
+    [Fact]
+    public void BankFilter_UncheckingValue_ExcludesMatchingRowsFromFilteredIncomes()
+    {
+        var (viewModel, _) = CreateViewModel();
+        var barclaysIncome = MakeIncome("A", "Barclays");
+        var chaseIncome = MakeIncome("B", "Chase");
+        viewModel.ApplyRefresh([barclaysIncome, chaseIncome], [], DefaultBanks);
+
+        SelectOnly(viewModel.BankFilter, "Barclays");
+
+        viewModel.FilteredIncomes.Should().ContainSingle().Which.Should().Be(barclaysIncome);
+        viewModel.Incomes.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public void BankFilter_ToggleAll_RestoresFullFilteredIncomesList()
+    {
+        var (viewModel, _) = CreateViewModel();
+        var barclaysIncome = MakeIncome("A", "Barclays");
+        var chaseIncome = MakeIncome("B", "Chase");
+        viewModel.ApplyRefresh([barclaysIncome, chaseIncome], [], DefaultBanks);
+        SelectOnly(viewModel.BankFilter, "Barclays");
+
+        viewModel.BankFilter.ToggleAllCommand.Execute(null);
+
+        viewModel.FilteredIncomes.Count.Should().Be(viewModel.Incomes.Count);
     }
 }

@@ -7,9 +7,9 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <DataGrid Grid.Row="0" ItemsSource="{Binding BankTotals}" AutoGenerateColumns="False" IsReadOnly="True">
+        <DataGrid Grid.Row="0" ItemsSource="{Binding FilteredBankTotals}" AutoGenerateColumns="False" IsReadOnly="True">
             <DataGrid.Columns>
-                <DataGridTextColumn Binding="{Binding Bank}" Header="Bank" Width="*"
+                <DataGridTextColumn x:Name="BankColumn" Binding="{Binding Bank}" Header="Bank" Width="*"
                                      ElementStyle="{StaticResource PlainColumnTextStyle}"/>
                 <DataGridTextColumn Binding="{Binding Balance, StringFormat=N2}" Header="Bank Balance" Width="140"
                                      ElementStyle="{StaticResource NumericColumnTextStyle}"/>

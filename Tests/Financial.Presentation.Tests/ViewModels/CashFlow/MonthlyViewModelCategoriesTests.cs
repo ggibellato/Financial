@@ -1,4 +1,5 @@
 using Financial.CashFlow.Application.DTOs;
+using Financial.Presentation.App.ViewModels;
 using Financial.Presentation.App.ViewModels.CashFlow;
 using Financial.TestUtilities;
 using FluentAssertions;
@@ -10,6 +11,16 @@ public class MonthlyViewModelCategoriesTests
     private static readonly Guid MercadoId = Guid.NewGuid();
     private static readonly Guid ReservaId = Guid.NewGuid();
     private static readonly Guid BarclaysId = Guid.NewGuid();
+
+    /// <summary>Unchecks every filter option except the given values, mirroring how a user would
+    /// narrow the header checklist down to a single category.</summary>
+    private static void SelectOnly(ColumnFilterViewModel<CategoryTotalDTO> filter, params string[] values)
+    {
+        foreach (var option in filter.Options)
+        {
+            option.IsChecked = values.Contains(option.Value);
+        }
+    }
 
     private static (MonthlyViewModel ViewModel, StubExpenseService Expenses) CreateViewModel()
     {
@@ -58,6 +69,44 @@ public class MonthlyViewModelCategoriesTests
 
         viewModel.ActiveCategories.Should().ContainSingle(c => c.Name == "Mercado");
         viewModel.ActiveCategories.Should().NotContain(c => c.Name == "Reserva");
+    }
+
+    [Fact]
+    public async Task CategoryFilter_AvailableValuesComeFromFullUnfilteredData()
+    {
+        var (viewModel, expenses) = CreateViewModel();
+        expenses.CategoryTotals = [new CategoryTotalDTO { Category = "Mercado", TotalValue = 100m }, new CategoryTotalDTO { Category = "Reserva", TotalValue = 50m }];
+
+        await viewModel.RefreshAsync();
+
+        viewModel.CategoryFilter.Options.Select(o => o.Value).Should().BeEquivalentTo(["Mercado", "Reserva"]);
+    }
+
+    [Fact]
+    public async Task CategoryFilter_UncheckingCategory_ExcludesItFromFilteredCategoryTotals()
+    {
+        var (viewModel, expenses) = CreateViewModel();
+        expenses.CategoryTotals = [new CategoryTotalDTO { Category = "Mercado", TotalValue = 100m }, new CategoryTotalDTO { Category = "Reserva", TotalValue = 50m }];
+        await viewModel.RefreshAsync();
+
+        SelectOnly(viewModel.CategoryFilter, "Mercado");
+
+        viewModel.FilteredCategoryTotals.Should().ContainSingle(c => c.Category == "Mercado");
+        viewModel.FilteredCategoryTotals.Should().NotContain(c => c.Category == "Reserva");
+    }
+
+    [Fact]
+    public async Task CategoryFilter_ActiveFilter_DoesNotAffectCategoryTotalsSum()
+    {
+        var (viewModel, expenses) = CreateViewModel();
+        expenses.CategoryTotals = [new CategoryTotalDTO { Category = "Mercado", TotalValue = 100m }, new CategoryTotalDTO { Category = "Reserva", TotalValue = 50m }];
+        await viewModel.RefreshAsync();
+        var sumBefore = viewModel.CategoryTotalsSum;
+
+        SelectOnly(viewModel.CategoryFilter, "Mercado");
+
+        viewModel.CategoryTotalsSum.Should().Be(sumBefore);
+        viewModel.FilteredCategoryTotals.Should().HaveCount(1);
     }
 
     [Fact]

@@ -7,16 +7,12 @@ namespace Financial.Presentation.App.ViewModels.CashFlow;
 
 public class BankOperationsWorkflowViewModel : ViewModelBase
 {
-    public const string AllBanksFilter = "All Banks";
-
     private readonly ITransferService _transferService;
     private readonly IBalanceAdjustmentService _balanceAdjustmentService;
     private readonly Func<string, bool> _confirm;
     private readonly Func<Task> _refresh;
 
     private string? _bankOperationsError;
-    private string _selectedBankFilter = AllBanksFilter;
-    private IReadOnlyList<string> _bankFilterOptions = [AllBanksFilter];
 
     public TransferWorkflowViewModel Transfer { get; }
     public AdjustmentWorkflowViewModel Adjustment { get; }
@@ -24,35 +20,18 @@ public class BankOperationsWorkflowViewModel : ViewModelBase
     public ObservableCollection<BankOperationRow> BankOperations { get; } = [];
     public ObservableCollection<BankOperationRow> FilteredBankOperations { get; } = [];
 
+    public ColumnFilterViewModel<BankOperationRow> BankFilter { get; }
+
     public bool HasBankOperations => FilteredBankOperations.Count > 0;
 
-    public string BankOperationsEmptyMessage => SelectedBankFilter == AllBanksFilter
-        ? "No transfers or balance corrections this month."
-        : $"No transfers or balance corrections for {SelectedBankFilter} this month.";
+    public bool HasAnyBankOperationsBeforeFilter => BankOperations.Count > 0;
+
+    public string BankOperationsEmptyMessage => "No transfers or balance corrections this month.";
 
     public string? BankOperationsError
     {
         get => _bankOperationsError;
         private set => SetProperty(ref _bankOperationsError, value);
-    }
-
-    public string SelectedBankFilter
-    {
-        get => _selectedBankFilter;
-        set
-        {
-            if (SetProperty(ref _selectedBankFilter, value))
-            {
-                OnPropertyChanged(nameof(BankOperationsEmptyMessage));
-                ApplyBankFilter();
-            }
-        }
-    }
-
-    public IReadOnlyList<string> BankFilterOptions
-    {
-        get => _bankFilterOptions;
-        private set => SetProperty(ref _bankFilterOptions, value);
     }
 
     public RelayCommand<BankOperationRow> DeleteBankOperationCommand { get; }
@@ -72,6 +51,10 @@ public class BankOperationsWorkflowViewModel : ViewModelBase
 
         Transfer = new TransferWorkflowViewModel(transferService, banks, refresh);
         Adjustment = new AdjustmentWorkflowViewModel(balanceAdjustmentService, banks, bankTotals, refresh);
+        BankFilter = new ColumnFilterViewModel<BankOperationRow>(
+            "Bank",
+            row => [row.SourceBank, row.DestinationBank, row.Bank],
+            ApplyBankFilter);
 
         DeleteBankOperationCommand = new RelayCommand<BankOperationRow>(async row => await DeleteBankOperationAsync(row));
     }
@@ -85,8 +68,9 @@ public class BankOperationsWorkflowViewModel : ViewModelBase
         IReadOnlyList<BankDTO> banks)
     {
         ReplaceAll(BankOperations, BuildBankOperations(transfers, adjustmentsByBank, year, month));
-        BankFilterOptions = BuildBankFilterOptions(banks);
+        BankFilter.Refresh(BankOperations);
         ApplyBankFilter();
+        OnPropertyChanged(nameof(HasAnyBankOperationsBeforeFilter));
     }
 
     private static List<BankOperationRow> BuildBankOperations(
@@ -107,17 +91,9 @@ public class BankOperationsWorkflowViewModel : ViewModelBase
         return rows.OrderByDescending(r => r.Date).ToList();
     }
 
-    /// <summary>Options for the Bank tab's filter dropdown: "All Banks" plus each configured bank name.</summary>
-    private static IReadOnlyList<string> BuildBankFilterOptions(IReadOnlyList<BankDTO> banks) =>
-        new[] { AllBanksFilter }.Concat(banks.Select(b => b.Name)).ToList();
-
     private void ApplyBankFilter()
     {
-        var matching = SelectedBankFilter == AllBanksFilter
-            ? BankOperations
-            : BankOperations.Where(row => row.MatchesBank(SelectedBankFilter));
-
-        ReplaceAll(FilteredBankOperations, matching);
+        ReplaceAll(FilteredBankOperations, BankOperations.Where(BankFilter.Matches));
         OnPropertyChanged(nameof(HasBankOperations));
     }
 

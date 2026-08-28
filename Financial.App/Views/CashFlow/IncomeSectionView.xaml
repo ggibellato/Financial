@@ -37,7 +37,7 @@
         <TextBlock Grid.Row="3" Foreground="Green" TextWrapping="Wrap" Margin="0,0,0,8"
                    Text="{Binding IncomeSplitConfirmationMessage}"/>
 
-        <DataGrid Grid.Row="4" ItemsSource="{Binding Incomes}"
+        <DataGrid Grid.Row="4" ItemsSource="{Binding FilteredIncomes}"
                   AutoGenerateColumns="False" IsReadOnly="True" CanUserResizeRows="False" CanUserSortColumns="True"
                   GridLinesVisibility="Horizontal" HeadersVisibility="Column" SelectionMode="Single">
             <DataGrid.Columns>
@@ -67,7 +67,7 @@
                                      ElementStyle="{StaticResource NumericColumnTextStyle}"/>
                 <DataGridTextColumn Binding="{Binding NetValue, StringFormat=N2}" Header="Net" Width="100"
                                      ElementStyle="{StaticResource NumericColumnTextStyle}"/>
-                <DataGridTextColumn Binding="{Binding BankName, TargetNullValue='—'}" Header="Bank" Width="140"
+                <DataGridTextColumn x:Name="BankColumn" Binding="{Binding BankName, TargetNullValue='—'}" Header="Bank" Width="140"
                                      ElementStyle="{StaticResource PlainColumnTextStyle}"/>
                 <DataGridTextColumn Binding="{Binding Description}" Header="Description" Width="*"
                                      ElementStyle="{StaticResource PlainColumnTextStyle}"/>

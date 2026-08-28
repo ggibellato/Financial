@@ -219,10 +219,10 @@ graph TD
 - [x] Reloading the page resets every filter to its default (all values checked)
 
 ### F04. CashFlow Column Filtering — WPF
-- [ ] All F03 acceptance criteria hold true for the WPF equivalents of each grid listed in Section 6 under F04
-- [ ] `BankSectionView`'s Bank filter no longer uses the old `ComboBox`-based `SelectedBankFilter` control — the header-based filter menu is the only Bank filter on that screen
-- [ ] Restarting the application resets every filter to its default (all values checked)
+- [x] All F03 acceptance criteria hold true for the WPF equivalents of each grid listed in Section 6 under F04
+- [x] `BankSectionView`'s Bank filter no longer uses the old `ComboBox`-based `SelectedBankFilter` control — the header-based filter menu is the only Bank filter on that screen
+- [x] Restarting the application resets every filter to its default (all values checked)
 
 ### Cross-Feature Integration
 - [x] On a Web grid in scope for both F01 and F03 (e.g. Expenses), the Category/Card filter icon renders inside the same header cell as the sort control from F01, and clicking the sort area still sorts while clicking the filter icon still opens the filter menu, without either interaction interfering with the other
-- [ ] On a WPF grid in scope for both F02 and F04 (e.g. Expense Section), the same coexistence holds: the filter menu from F04 is hosted in the sortable header cell provided by F02, and both interactions work independently
+- [x] On a WPF grid in scope for both F02 and F04 (e.g. Expense Section), the same coexistence holds: the filter menu from F04 is hosted in the sortable header cell provided by F02, and both interactions work independently

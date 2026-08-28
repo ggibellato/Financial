@@ -63,9 +63,14 @@ public class AnnualSummaryViewModel : ViewModelBase
     public bool ShowContent => !IsLoading && !HasError;
 
     public ObservableCollection<AnnualSummaryRow> CategoryTotalRows { get; } = [];
+    public ObservableCollection<AnnualSummaryRow> FilteredCategoryTotalRows { get; } = [];
     public ObservableCollection<InvestmentAnnualRow> InvestmentRows { get; } = [];
     public ObservableCollection<HistoricSummaryRow> HistoricSummaryRows { get; } = [];
+    public ObservableCollection<HistoricSummaryRow> FilteredHistoricSummaryRows { get; } = [];
     public ObservableCollection<int> AvailableYears { get; } = [];
+
+    public ColumnFilterViewModel<AnnualSummaryRow> CategoryTotalsFilter { get; }
+    public ColumnFilterViewModel<HistoricSummaryRow> HistoricSummaryFilter { get; }
 
     public decimal YearProgress
     {
@@ -97,6 +102,11 @@ public class AnnualSummaryViewModel : ViewModelBase
         _historicAverageService = historicAverageService ?? throw new ArgumentNullException(nameof(historicAverageService));
 
         _year = DateTime.Today.Year;
+
+        CategoryTotalsFilter = new ColumnFilterViewModel<AnnualSummaryRow>(
+            "Category", row => [row.Label], ApplyCategoryTotalsFilter);
+        HistoricSummaryFilter = new ColumnFilterViewModel<HistoricSummaryRow>(
+            "Category", row => [row.Category], ApplyHistoricSummaryFilter);
 
         RetryCommand = new RelayCommand(async () => await RefreshAsync());
 
@@ -130,6 +140,8 @@ public class AnnualSummaryViewModel : ViewModelBase
             }
 
             ReplaceAll(CategoryTotalRows, BuildCategoryTotalRows(categoryTotalsTask.Result));
+            CategoryTotalsFilter.Refresh(CategoryTotalRows);
+            ApplyCategoryTotalsFilter();
 
             var investmentResult = investmentResultTask.Result;
             ReplaceAll(InvestmentRows, BuildInvestmentRows(investmentResult));
@@ -138,9 +150,24 @@ public class AnnualSummaryViewModel : ViewModelBase
             SumOfMonthResults = investmentResult.NetPosition.SumOfMonthResults;
 
             var historicSummary = historicSummaryTask.Result;
-            ReplaceAll(AvailableYears, historicSummary.Select(y => y.Year));
+            // HistoricSummaryRows/FilteredHistoricSummaryRows must be fully in place BEFORE AvailableYears
+            // changes: the view rebuilds the grid's per-year columns off AvailableYears, and a row missing
+            // a just-added year's key throws a binding KeyNotFoundException if the columns arrive first.
             ReplaceAll(HistoricSummaryRows, BuildHistoricSummaryRows(historicSummary));
+            HistoricSummaryFilter.Refresh(HistoricSummaryRows);
+            ApplyHistoricSummaryFilter();
+            ReplaceAll(AvailableYears, historicSummary.Select(y => y.Year));
         });
+
+    private void ApplyCategoryTotalsFilter()
+    {
+        ReplaceAll(FilteredCategoryTotalRows, CategoryTotalRows.Where(r => r.IsSpacer || CategoryTotalsFilter.Matches(r)));
+    }
+
+    private void ApplyHistoricSummaryFilter()
+    {
+        ReplaceAll(FilteredHistoricSummaryRows, HistoricSummaryRows.Where(r => r.IsSpacer || HistoricSummaryFilter.Matches(r)));
+    }
 
     private static List<AnnualSummaryRow> BuildCategoryTotalRows(CategoryTotalsAnnualDTO dto)
     {

@@ -16,6 +16,9 @@ public partial class AnnualSummaryView : UserControl
         _viewModel = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
         DataContext = _viewModel;
 
+        CategoryTotalsColumn.Header = _viewModel.CategoryTotalsFilter;
+        HistoricSummaryCategoryColumn.Header = _viewModel.HistoricSummaryFilter;
+
         _viewModel.AvailableYears.CollectionChanged += OnAvailableYearsChanged;
         RebuildHistoricSummaryYearColumns();
     }

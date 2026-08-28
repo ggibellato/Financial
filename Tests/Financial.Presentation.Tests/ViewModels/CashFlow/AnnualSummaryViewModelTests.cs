@@ -160,6 +160,36 @@ public class AnnualSummaryViewModelTests
     }
 
     [Fact]
+    public async Task RefreshAsync_EveryHistoricSummaryRow_HasAValueForEveryAvailableYear()
+    {
+        var (viewModel, _, _, historicService) = CreateViewModel();
+        historicService.HistoricSummaryAverage =
+        [
+            new CategoryAnnualGroupValueDTO
+            {
+                Year = 2017,
+                AnnualAverages = [new CategoryGroupValueDTO { Category = "Tax difference", Value = 50m }],
+            },
+            new CategoryAnnualGroupValueDTO
+            {
+                Year = 2025,
+                AnnualAverages = [new CategoryGroupValueDTO { Category = "Tax difference", Value = 90m }],
+            },
+        ];
+
+        await viewModel.RefreshAsync();
+
+        foreach (var year in viewModel.AvailableYears)
+        {
+            foreach (var row in viewModel.FilteredHistoricSummaryRows.Where(r => !r.IsSpacer))
+            {
+                row.ValuesByYear.Should().ContainKey(year,
+                    $"the {row.Category} row must have a value for every year the grid's dynamic columns expose, or binding throws a KeyNotFoundException");
+            }
+        }
+    }
+
+    [Fact]
     public async Task RefreshAsync_ExposesAvailableYearsFromHistoricSummaryResponse()
     {
         var (viewModel, _, _, historicService) = CreateViewModel();
@@ -173,6 +203,71 @@ public class AnnualSummaryViewModelTests
         await viewModel.RefreshAsync();
 
         viewModel.AvailableYears.Should().Equal(2023, 2024, 2025);
+    }
+
+    [Fact]
+    public async Task CategoryTotalsFilter_UncheckingCategory_ExcludesItButKeepsSpacersAndEmphasizedRows()
+    {
+        var (viewModel, categoryService, _, _) = CreateViewModel();
+        categoryService.CategoryTotalsAnnual = new CategoryTotalsAnnualDTO
+        {
+            CategoryTotals =
+            [
+                new CategoryAnnualTotalDTO { Category = "Mercado", MonthlyTotals = MonthlyArray(100m), AnnualTotal = 1200m, Average = 100m },
+                new CategoryAnnualTotalDTO { Category = "Transporte", MonthlyTotals = MonthlyArray(50m), AnnualTotal = 600m, Average = 50m },
+            ],
+            IncomeSummary = new IncomeAnnualSummaryDTO
+            {
+                SalaryMonthly = MonthlyArray(1000m), SalaryAnnualTotal = 12000m, SalaryAverage = 1000m,
+                SalaryAfterTaxesMonthly = MonthlyArray(800m), SalaryAfterTaxesAnnualTotal = 9600m, SalaryAfterTaxesAverage = 800m,
+                TaxDifferenceMonthly = MonthlyArray(200m), TaxDifferenceAnnualTotal = 2400m, TaxDifferenceAverage = 200m,
+                DividendoJurosMonthly = MonthlyArray(10m), DividendoJurosAnnualTotal = 120m, DividendoJurosAverage = 10m,
+            },
+            TotalDespesasMonthly = MonthlyArray(150m), TotalDespesasAnnualTotal = 1800m, TotalDespesasAverage = 150m,
+            ResultadoMonthly = MonthlyArray(660m), ResultadoAnnualTotal = 7920m, ResultadoAverage = 660m,
+        };
+
+        await viewModel.RefreshAsync();
+
+        viewModel.FilteredCategoryTotalRows.Should().HaveCount(viewModel.CategoryTotalRows.Count);
+
+        var mercadoOption = viewModel.CategoryTotalsFilter.Options.Single(o => o.Value == "Mercado");
+        mercadoOption.IsChecked = false;
+
+        viewModel.FilteredCategoryTotalRows.Select(r => r.Label).Should().NotContain("Mercado");
+        viewModel.FilteredCategoryTotalRows.Should().Contain(r => r.Label == "Transporte");
+        viewModel.FilteredCategoryTotalRows.Count(r => r.IsSpacer).Should().Be(viewModel.CategoryTotalRows.Count(r => r.IsSpacer));
+        viewModel.FilteredCategoryTotalRows.Should().Contain(r => r.Label == "Resultado (R-D-Inv)" && r.IsEmphasized);
+        viewModel.FilteredCategoryTotalRows.Should().Contain(r => r.Label == "Total despesas" && r.IsEmphasized);
+    }
+
+    [Fact]
+    public async Task HistoricSummaryFilter_UncheckingCategory_ExcludesItButKeepsSpacersAndEmphasizedRows()
+    {
+        var (viewModel, _, _, historicService) = CreateViewModel();
+        historicService.HistoricSummaryAverage =
+        [
+            new CategoryAnnualGroupValueDTO
+            {
+                Year = 2024,
+                AnnualAverages =
+                [
+                    new CategoryGroupValueDTO { Category = "Tax difference", Value = 100m },
+                    new CategoryGroupValueDTO { Category = "Reserva", Value = 200m },
+                    new CategoryGroupValueDTO { Category = "Resultado (R-D-Inv)", Value = 300m },
+                ],
+            },
+        ];
+
+        await viewModel.RefreshAsync();
+
+        var reservaOption = viewModel.HistoricSummaryFilter.Options.Single(o => o.Value == "Reserva");
+        reservaOption.IsChecked = false;
+
+        viewModel.FilteredHistoricSummaryRows.Select(r => r.Category).Should().NotContain("Reserva");
+        viewModel.FilteredHistoricSummaryRows.Should().Contain(r => r.Category == "Tax difference");
+        viewModel.FilteredHistoricSummaryRows.Count(r => r.IsSpacer).Should().Be(viewModel.HistoricSummaryRows.Count(r => r.IsSpacer));
+        viewModel.FilteredHistoricSummaryRows.Should().Contain(r => r.Category == "Resultado (R-D-Inv)" && r.IsEmphasized);
     }
 
     [Fact]
