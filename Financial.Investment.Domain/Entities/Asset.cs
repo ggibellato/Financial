@@ -7,13 +7,13 @@ namespace Financial.Investment.Domain.Entities;
 
 public class Asset
 {
-    public string Name { get; private set; }
+    public string Name { get; private set; } = string.Empty;
 
-    public string ISIN { get; private set; }
+    public string ISIN { get; private set; } = string.Empty;
 
-    public string Exchange { get; private set; }
+    public string Exchange { get; private set; } = string.Empty;
 
-    public string Ticker { get; private set; }
+    public string Ticker { get; private set; } = string.Empty;
 
     public CountryCode Country { get; private set; } = CountryCode.Unknown;
 
