@@ -9,10 +9,6 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Financial.Investment.Application.Tests.Services;
 
-/// <summary>
-/// Tests that NavigationService correctly maps asset metadata so the WPF filter can
-/// use type-pattern matching on GlobalAssetClass values stored in TreeNodeDTO.Metadata.
-/// </summary>
 public class NavigationServiceTests
 {
     private static readonly ITelemetryTracer Tracer = new RecordingTelemetryTracer();

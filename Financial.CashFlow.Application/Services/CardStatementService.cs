@@ -38,8 +38,6 @@ public sealed class CardStatementService : ICardStatementService
                 _logger.LogWarning("No active credit cards found while generating statements for {Year}-{Month}.", year, month);
             }
 
-            // "Did anything change?" is exactly what the save wants to know, so the flag that used
-            // to guard the call is now the delegate's return value.
             await _repository.ApplyAndSaveAsync(() =>
             {
                 var created = false;
@@ -82,8 +80,6 @@ public sealed class CardStatementService : ICardStatementService
 
             if (statement.IsPaid)
             {
-                // Nothing to do, but "nothing to do" and "done" looked identical to the caller: the
-                // same DTO came back either way, so a click that changed nothing read as a success.
                 span.MarkSuccess();
                 _logger.LogInformation("{Operation} completed", "MarkStatementPaid");
                 return ToDto(statement, "This statement was already marked paid; nothing changed.");

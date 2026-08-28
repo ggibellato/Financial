@@ -57,7 +57,6 @@
                 </TextBlock.Style>
             </TextBlock>
 
-            <!-- Row 1: Date | From | To | Amount -->
             <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,8,8">
                 <TextBlock Text="Date" Style="{StaticResource FieldLabelStyle}"/>
                 <DatePicker AutomationProperties.Name="Transfer date"
@@ -89,7 +88,6 @@
                          behaviors:DecimalInputBehavior.IsEnabled="True"/>
             </StackPanel>
 
-            <!-- Row 2: Note -->
             <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="4" Margin="0,0,0,8">
                 <TextBlock Text="Note" Style="{StaticResource FieldLabelStyle}"/>
                 <TextBox AutomationProperties.Name="Note"

@@ -246,7 +246,6 @@ describe('MensaisPage', () => {
       expect.stringContaining('Aluguel'),
       expect.stringContaining('INSS'),
     ])
-    // UK grid is unaffected by the Brasil grid's sort.
     let ukRows = within(tables[1]).getAllByRole('row').slice(1)
     expect(ukRows.map((r) => r.textContent)).toEqual([
       expect.stringContaining('Council Tax'),
@@ -260,7 +259,6 @@ describe('MensaisPage', () => {
       expect.stringContaining('Broadband'),
       expect.stringContaining('Council Tax'),
     ])
-    // Brasil grid's own sort is untouched by sorting the UK grid.
     brasilRows = within(tables[0]).getAllByRole('row').slice(1)
     expect(brasilRows.map((r) => r.textContent)).toEqual([
       expect.stringContaining('Aluguel'),

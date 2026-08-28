@@ -254,7 +254,7 @@ describe('PriceHistoryTab', () => {
     setMock({ entries: [] })
     render(<PriceHistoryTab />)
     const rows = within(screen.getByRole('table')).getAllByRole('row')
-    expect(rows).toHaveLength(1) // header row only, no data rows
+    expect(rows).toHaveLength(1)
   })
 
   it('clicking_price_header_sorts_rows_ascending_then_descending', () => {

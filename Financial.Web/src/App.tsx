@@ -29,7 +29,6 @@ function App() {
         <main className="app__content">
           <SyncStatusBanner />
           <Breadcrumb />
-          {/* Page components are lazy-loaded (see navigation/routes.tsx) to keep the initial bundle small. */}
           <Suspense fallback={<LoadingState />}>
             <Outlet />
           </Suspense>

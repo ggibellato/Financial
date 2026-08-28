@@ -22,16 +22,8 @@ internal class GoogleFinanceSelectors
     /// </summary>
     public static class MainContainer
     {
-        /// <summary>
-        /// Primary class for the main container div.
-        /// Example: &lt;div class="KycIzb"&gt;
-        /// </summary>
         public const string PrimaryClass = "KycIzb";
 
-        /// <summary>
-        /// jsname attribute of the price element (used to find container via traversal).
-        /// Example: &lt;span jsname="Pdsbrc"&gt;
-        /// </summary>
         public const string PriceJsName = "Pdsbrc";
 
         /// <summary>
@@ -47,16 +39,8 @@ internal class GoogleFinanceSelectors
     /// </summary>
     public static class AssetName
     {
-        /// <summary>
-        /// Primary class for the asset name div.
-        /// Example: &lt;div class="gO24Ff"&gt;Banco do Brasil SA&lt;/div&gt;
-        /// </summary>
         public const string PrimaryClass = "gO24Ff";
 
-        /// <summary>
-        /// Container class that wraps the asset name.
-        /// Example: &lt;div class="YTGvuc"&gt;&lt;div class="gO24Ff"&gt;...&lt;/div&gt;&lt;/div&gt;
-        /// </summary>
         public const string ContainerClass = "YTGvuc";
     }
 
@@ -68,7 +52,6 @@ internal class GoogleFinanceSelectors
     {
         /// <summary>
         /// Primary jsname for the price span (MOST STABLE).
-        /// Example: &lt;span jsname="Pdsbrc"&gt;&lt;span&gt;R$19.17&lt;/span&gt;&lt;/span&gt;
         /// </summary>
         public const string PrimaryJsName = "Pdsbrc";
 
@@ -78,10 +61,6 @@ internal class GoogleFinanceSelectors
         /// </summary>
         public static readonly string[] AlternativeJsNames = Array.Empty<string>();
 
-        /// <summary>
-        /// Container class that wraps the price span.
-        /// Example: &lt;div class="N6SYTe"&gt;&lt;span jsname="Pdsbrc"&gt;...&lt;/span&gt;&lt;/div&gt;
-        /// </summary>
         public const string ContainerClass = "N6SYTe";
 
         /// <summary>
@@ -97,10 +76,6 @@ internal class GoogleFinanceSelectors
     /// </summary>
     public static class Timestamp
     {
-        /// <summary>
-        /// Primary class for the timestamp div.
-        /// Example: &lt;div class="jZZ2de"&gt;Jun 5, 10:44:17 PM UTC-3 · BRL&lt;/div&gt;
-        /// </summary>
         public const string PrimaryClass = "jZZ2de";
 
         /// <summary>

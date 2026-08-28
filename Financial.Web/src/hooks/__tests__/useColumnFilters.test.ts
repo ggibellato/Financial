@@ -103,7 +103,6 @@ describe('useColumnFilters', () => {
       useColumnFilters(TRANSFER_ROWS, { bank: (r: TransferRow) => r.banks }),
     )
 
-    // Start from all-checked, uncheck everything except Chase.
     act(() => result.current.toggleValue('bank', 'Barclays'))
     act(() => result.current.toggleValue('bank', 'Trading212'))
 

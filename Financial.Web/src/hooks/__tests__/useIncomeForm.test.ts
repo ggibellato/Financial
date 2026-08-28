@@ -103,7 +103,7 @@ describe('useIncomeForm', () => {
 
     act(() => result.current.showCreateIncomeForm())
 
-    expect(result.current.incomeSource).toBe('1') // Gleison - not eligible
+    expect(result.current.incomeSource).toBe('1')
     expect(result.current.incomeSplitToReserve).toBe('false')
   })
 
@@ -111,7 +111,7 @@ describe('useIncomeForm', () => {
     const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved))
     act(() => result.current.showCreateIncomeForm())
 
-    act(() => result.current.setIncomeField('incomeSource', '2')) // Ariana
+    act(() => result.current.setIncomeField('incomeSource', '2'))
 
     expect(result.current.incomeSplitToReserve).toBe('true')
   })
@@ -119,9 +119,9 @@ describe('useIncomeForm', () => {
   it('switching back to an ineligible source sets splitToReserve to false', () => {
     const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved))
     act(() => result.current.showCreateIncomeForm())
-    act(() => result.current.setIncomeField('incomeSource', '2')) // Ariana
+    act(() => result.current.setIncomeField('incomeSource', '2'))
 
-    act(() => result.current.setIncomeField('incomeSource', '1')) // Gleison
+    act(() => result.current.setIncomeField('incomeSource', '1'))
 
     expect(result.current.incomeSplitToReserve).toBe('false')
   })
@@ -156,7 +156,7 @@ describe('useIncomeForm', () => {
     createIncomeMock.mockResolvedValue({} as Awaited<ReturnType<FinancialApiClient['createIncome']>>)
     const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved))
     act(() => result.current.showCreateIncomeForm())
-    act(() => result.current.setIncomeField('incomeSource', '2')) // Ariana, defaults checked
+    act(() => result.current.setIncomeField('incomeSource', '2'))
     act(() => result.current.setIncomeField('date', '2026-07-25'))
     act(() => result.current.setIncomeField('netValue', '2450'))
 

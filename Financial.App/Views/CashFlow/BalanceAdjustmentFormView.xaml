@@ -65,7 +65,7 @@
                     </TextBlock.Style>
                 </TextBlock>
 
-                <!-- Row 1: Bank (disabled while editing an existing adjustment) -->
+                <!-- Disabled while editing an existing adjustment -->
                 <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,8,8">
                     <TextBlock Text="Bank" Style="{StaticResource FieldLabelStyle}"/>
                     <ComboBox AutomationProperties.Name="Bank"
