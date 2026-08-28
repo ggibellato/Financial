@@ -13,12 +13,13 @@ import './DetailPanel.css'
 
 type TabId = 'summary' | 'transactions' | 'credits' | 'priceHistory'
 
-const TABS: { id: TabId; label: string }[] = [
+const BASE_TABS: { id: TabId; label: string }[] = [
   { id: 'summary', label: 'Summary' },
   { id: 'transactions', label: 'Transactions' },
   { id: 'credits', label: 'Credits' },
-  { id: 'priceHistory', label: 'Price History' },
 ]
+
+const PRICE_HISTORY_TAB: { id: TabId; label: string } = { id: 'priceHistory', label: 'Price History' }
 
 function nodeKey(n: ReturnType<typeof useSelectedNode>['selectedNode']): string {
   if (!n) return ''
@@ -144,7 +145,7 @@ export default function DetailPanel() {
       )}
 
       <div className="detail-panel__tabs">
-        {TABS.map((tab) => (
+        {(isAsset ? [...BASE_TABS, PRICE_HISTORY_TAB] : BASE_TABS).map((tab) => (
           <button
             key={tab.id}
             className={`detail-panel__tab${activeTab === tab.id ? ' detail-panel__tab--active' : ''}`}
@@ -162,7 +163,7 @@ export default function DetailPanel() {
         {activeTab === 'summary' && !isAsset && !isPortfolio && <AggregatedSummaryTab />}
         {activeTab === 'transactions' && <TransactionsTab />}
         {activeTab === 'credits' && <CreditsTab />}
-        {activeTab === 'priceHistory' && <PriceHistoryTab />}
+        {activeTab === 'priceHistory' && isAsset && <PriceHistoryTab />}
       </div>
     </div>
   )

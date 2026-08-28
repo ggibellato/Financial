@@ -170,7 +170,8 @@
                 </StackPanel>
             </Border>
 
-            <TabControl Grid.Row="1">
+            <TabControl Grid.Row="1"
+                        SelectedIndex="{Binding AssetDetails.SelectedDetailTabIndex, Mode=OneWay}">
                 <TabItem Header="Summary">
                     <views:PortfolioSummaryView/>
                 </TabItem>
@@ -180,7 +181,8 @@
                 <TabItem Header="Credits">
                     <views:CreditsView/>
                 </TabItem>
-                <TabItem Header="Price History">
+                <TabItem Header="Price History"
+                         Visibility="{Binding AssetDetails.IsAssetView, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
                     <views:PriceHistoryView/>
                 </TabItem>
             </TabControl>

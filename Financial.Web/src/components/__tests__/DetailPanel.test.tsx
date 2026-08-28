@@ -192,6 +192,24 @@ describe('DetailPanel', () => {
     expect(screen.getByRole('button', { name: 'Credits' })).toBeInTheDocument()
   })
 
+  it('does not show Price History tab for a broker node', () => {
+    renderPanel(brokerNode)
+    act(() => screen.getByTestId('setter').click())
+    expect(screen.queryByRole('button', { name: 'Price History' })).not.toBeInTheDocument()
+  })
+
+  it('does not show Price History tab for a portfolio node', () => {
+    renderPanel(portfolioNode)
+    act(() => screen.getByTestId('setter').click())
+    expect(screen.queryByRole('button', { name: 'Price History' })).not.toBeInTheDocument()
+  })
+
+  it('shows Price History tab for an asset node', () => {
+    renderPanel(activeAssetNode)
+    act(() => screen.getByTestId('setter').click())
+    expect(screen.getByRole('button', { name: 'Price History' })).toBeInTheDocument()
+  })
+
   it('Summary tab is active by default', () => {
     renderPanel(brokerNode)
     act(() => screen.getByTestId('setter').click())

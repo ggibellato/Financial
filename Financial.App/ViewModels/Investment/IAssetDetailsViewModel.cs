@@ -6,6 +6,8 @@ public interface IAssetDetailsViewModel
 {
     bool IsPortfolioView { get; }
     bool IsBrokerView { get; }
+    bool IsAssetView { get; }
+    int SelectedDetailTabIndex { get; }
     TransactionsTabViewModel Transactions { get; }
     CreditsTabViewModel Credits { get; }
     PriceHistoryTabViewModel PriceHistory { get; }
