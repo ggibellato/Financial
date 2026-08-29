@@ -1,6 +1,7 @@
 import { Button, Field, Input, MessageBar, MessageBarBody, Text } from '@fluentui/react-components'
 import type { IncomeSplitResultDto } from '../api/types'
 import type { SplitFormField } from '../hooks/useReserva'
+import { useFieldError } from '../hooks/useFieldError'
 import { formatN2 } from '../utils/formatters'
 import { useFormPanelStyles } from './formPanelStyles'
 
@@ -10,6 +11,7 @@ interface IncomeSplitFormProps {
   description: string
   isSubmitting: boolean
   error: string | null
+  errorField: SplitFormField | null
   lastResult: IncomeSplitResultDto | null
   onFieldChange: (field: SplitFormField, value: string) => void
   onSubmit: () => void
@@ -23,6 +25,7 @@ export default function IncomeSplitForm({
   description,
   isSubmitting,
   error,
+  errorField,
   lastResult,
   onFieldChange,
   onSubmit,
@@ -30,6 +33,8 @@ export default function IncomeSplitForm({
   onDismissResult,
 }: IncomeSplitFormProps) {
   const styles = useFormPanelStyles()
+  const fieldError = useFieldError(error, errorField)
+  const generalError = errorField === null ? error : null
 
   if (lastResult !== null) {
     return (
@@ -71,11 +76,21 @@ export default function IncomeSplitForm({
       </Text>
 
       <div className={styles.grid}>
-        <Field label="Date">
+        <Field
+          label="Date"
+          required
+          validationState={fieldError('splitDate') ? 'error' : 'none'}
+          validationMessage={fieldError('splitDate')}
+        >
           <Input type="date" value={date} onChange={(e) => onFieldChange('splitDate', e.target.value)} />
         </Field>
 
-        <Field label="Amount to Split">
+        <Field
+          label="Amount to Split"
+          required
+          validationState={fieldError('splitAmount') ? 'error' : 'none'}
+          validationMessage={fieldError('splitAmount')}
+        >
           <Input
             type="number"
             step="0.01"
@@ -84,7 +99,12 @@ export default function IncomeSplitForm({
           />
         </Field>
 
-        <Field label="Description">
+        <Field
+          label="Description"
+          required
+          validationState={fieldError('splitDescription') ? 'error' : 'none'}
+          validationMessage={fieldError('splitDescription')}
+        >
           <Input value={description} onChange={(e) => onFieldChange('splitDescription', e.target.value)} />
         </Field>
       </div>
@@ -98,9 +118,9 @@ export default function IncomeSplitForm({
         </Button>
       </div>
 
-      {error && (
+      {generalError && (
         <MessageBar intent="error">
-          <MessageBarBody>{error}</MessageBarBody>
+          <MessageBarBody>{generalError}</MessageBarBody>
         </MessageBar>
       )}
     </div>

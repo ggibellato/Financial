@@ -43,6 +43,7 @@ interface ReservaState {
   splitDescription: string
   isSubmittingSplit: boolean
   splitError: string | null
+  splitErrorField: SplitFormField | null
   lastSplitResult: IncomeSplitResultDto | null
   isWithdrawalFormOpen: boolean
   withdrawalBucketId: string
@@ -77,7 +78,7 @@ type ReservaAction =
   | { type: 'SET_SPLIT_FIELD'; payload: { field: SplitFormField; value: string } }
   | { type: 'SPLIT_START' }
   | { type: 'SPLIT_SUCCESS'; payload: IncomeSplitResultDto }
-  | { type: 'SPLIT_ERROR'; payload: string }
+  | { type: 'SPLIT_ERROR'; payload: { message: string; field: SplitFormField | null } }
   | { type: 'DISMISS_SPLIT_RESULT' }
   | { type: 'SHOW_WITHDRAWAL_FORM' }
   | { type: 'CANCEL_WITHDRAWAL_FORM' }
@@ -118,6 +119,7 @@ const INITIAL_STATE: ReservaState = {
   ...BLANK_SPLIT_FORM,
   isSubmittingSplit: false,
   splitError: null,
+  splitErrorField: null,
   lastSplitResult: null,
   isWithdrawalFormOpen: false,
   withdrawalBucketId: '',
@@ -159,11 +161,11 @@ function reducer(state: ReservaState, action: ReservaAction): ReservaState {
     case 'SHOW_SPLIT_FORM':
       return { ...state, isSplitFormOpen: true, lastSplitResult: null }
     case 'CANCEL_SPLIT_FORM':
-      return { ...state, ...BLANK_SPLIT_FORM, isSplitFormOpen: false, splitError: null }
+      return { ...state, ...BLANK_SPLIT_FORM, isSplitFormOpen: false, splitError: null, splitErrorField: null }
     case 'SET_SPLIT_FIELD':
       return { ...state, [action.payload.field]: action.payload.value }
     case 'SPLIT_START':
-      return { ...state, isSubmittingSplit: true, splitError: null }
+      return { ...state, isSubmittingSplit: true, splitError: null, splitErrorField: null }
     case 'SPLIT_SUCCESS':
       return {
         ...state,
@@ -173,7 +175,7 @@ function reducer(state: ReservaState, action: ReservaAction): ReservaState {
         lastSplitResult: action.payload,
       }
     case 'SPLIT_ERROR':
-      return { ...state, isSubmittingSplit: false, splitError: action.payload }
+      return { ...state, isSubmittingSplit: false, splitError: action.payload.message, splitErrorField: action.payload.field }
     case 'DISMISS_SPLIT_RESULT':
       return { ...state, lastSplitResult: null }
     case 'SHOW_WITHDRAWAL_FORM':
@@ -284,6 +286,7 @@ export interface ReservaData {
   splitDescription: string
   isSubmittingSplit: boolean
   splitError: string | null
+  splitErrorField: SplitFormField | null
   lastSplitResult: IncomeSplitResultDto | null
   showSplitForm: () => void
   cancelSplitForm: () => void
@@ -423,18 +426,18 @@ export function useReserva(): ReservaData {
     const { splitDate, splitAmount, splitDescription } = state
 
     if (!splitDate.trim()) {
-      dispatch({ type: 'SPLIT_ERROR', payload: 'Date is required' })
+      dispatch({ type: 'SPLIT_ERROR', payload: { message: 'Date is required', field: 'splitDate' } })
       return
     }
 
     const amount = Number(splitAmount)
     if (!splitAmount.trim() || !isFinite(amount) || amount <= 0) {
-      dispatch({ type: 'SPLIT_ERROR', payload: 'Amount must be a positive number' })
+      dispatch({ type: 'SPLIT_ERROR', payload: { message: 'Amount must be a positive number', field: 'splitAmount' } })
       return
     }
 
     if (!splitDescription.trim()) {
-      dispatch({ type: 'SPLIT_ERROR', payload: 'Description is required' })
+      dispatch({ type: 'SPLIT_ERROR', payload: { message: 'Description is required', field: 'splitDescription' } })
       return
     }
 
@@ -449,7 +452,7 @@ export function useReserva(): ReservaData {
       .catch((err: unknown) => {
         dispatch({
           type: 'SPLIT_ERROR',
-          payload: getErrorMessage(err, 'Failed to post income split'),
+          payload: { message: getErrorMessage(err, 'Failed to post income split'), field: null },
         })
       })
   }
@@ -605,6 +608,7 @@ export function useReserva(): ReservaData {
     splitDescription: state.splitDescription,
     isSubmittingSplit: state.isSubmittingSplit,
     splitError: state.splitError,
+    splitErrorField: state.splitErrorField,
     lastSplitResult: state.lastSplitResult,
     showSplitForm,
     cancelSplitForm,

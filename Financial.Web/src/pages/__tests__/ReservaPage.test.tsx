@@ -127,8 +127,21 @@ describe('ReservaPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'New Income Split' }))
 
     expect(screen.getByText('New Income Split', { selector: 'h2' })).toBeInTheDocument()
-    expect(screen.getByLabelText('Amount to Split')).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Amount to Split/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Add Income Split' })).toBeInTheDocument()
+  })
+
+  it('shows a field-level validation error on Description when Description is missing on Income Split', async () => {
+    render(<ReservaPage />)
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New Income Split' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'New Income Split' }))
+    fireEvent.change(screen.getByLabelText(/^Date/), { target: { value: '2026-07-01' } })
+    fireEvent.change(screen.getByLabelText(/^Amount to Split/), { target: { value: '1963' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Add Income Split' }))
+
+    expect(await screen.findByText('Description is required')).toBeInTheDocument()
+    expect(postIncomeSplitMock).not.toHaveBeenCalled()
   })
 
   it('shows the posted split breakdown and total after a successful submission', async () => {
@@ -145,9 +158,9 @@ describe('ReservaPage', () => {
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Income Split' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Income Split' }))
-    fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-07-01' } })
-    fireEvent.change(screen.getByLabelText('Amount to Split'), { target: { value: '1963' } })
-    fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Ramsay' } })
+    fireEvent.change(screen.getByLabelText(/^Date/), { target: { value: '2026-07-01' } })
+    fireEvent.change(screen.getByLabelText(/^Amount to Split/), { target: { value: '1963' } })
+    fireEvent.change(screen.getByLabelText(/^Description/), { target: { value: 'Ramsay' } })
     fireEvent.click(screen.getByRole('button', { name: 'Add Income Split' }))
 
     await waitFor(() => expect(screen.getByText('Income Split Posted')).toBeInTheDocument())
@@ -334,9 +347,9 @@ describe('ReservaPage', () => {
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Income Split' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Income Split' }))
-    fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-07-01' } })
-    fireEvent.change(screen.getByLabelText('Amount to Split'), { target: { value: '1963' } })
-    fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Ramsay' } })
+    fireEvent.change(screen.getByLabelText(/^Date/), { target: { value: '2026-07-01' } })
+    fireEvent.change(screen.getByLabelText(/^Amount to Split/), { target: { value: '1963' } })
+    fireEvent.change(screen.getByLabelText(/^Description/), { target: { value: 'Ramsay' } })
     fireEvent.click(screen.getByRole('button', { name: 'Add Income Split' }))
 
     await waitFor(() => expect(screen.getByText('Income Split Posted')).toBeInTheDocument())
