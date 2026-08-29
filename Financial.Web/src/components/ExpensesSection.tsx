@@ -1,4 +1,14 @@
-import { Button, makeStyles, tokens } from '@fluentui/react-components'
+import {
+  Button,
+  Table,
+  TableBody,
+  TableCell,
+  TableHeader,
+  TableHeaderCell,
+  TableRow,
+  makeStyles,
+  tokens,
+} from '@fluentui/react-components'
 import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import type { ExpenseDto } from '../api/types'
 import SortableColumnHeader from './grid/SortableColumnHeader'
@@ -25,8 +35,8 @@ interface ExpenseRowProps {
 
 function ExpenseRow({ expense, onEdit, onDelete }: ExpenseRowProps) {
   return (
-    <tr>
-      <td>
+    <TableRow>
+      <TableCell>
         <Button
           appearance="subtle"
           size="small"
@@ -34,8 +44,8 @@ function ExpenseRow({ expense, onEdit, onDelete }: ExpenseRowProps) {
           aria-label="Edit expense"
           onClick={() => onEdit(expense)}
         />
-      </td>
-      <td>
+      </TableCell>
+      <TableCell>
         <Button
           appearance="subtle"
           size="small"
@@ -43,14 +53,14 @@ function ExpenseRow({ expense, onEdit, onDelete }: ExpenseRowProps) {
           aria-label="Delete expense"
           onClick={() => onDelete(expense.id)}
         />
-      </td>
-      <td>{formatShortDate(expense.date)}</td>
-      <td>{expense.description}</td>
-      <td>{expense.categoryName}</td>
-      <td className="data-table__col--numeric">{formatN2(expense.value)}</td>
-      <td>{expense.paymentSourceBankName}</td>
-      <td>{expense.creditCardName ?? '—'}</td>
-    </tr>
+      </TableCell>
+      <TableCell>{formatShortDate(expense.date)}</TableCell>
+      <TableCell>{expense.description}</TableCell>
+      <TableCell>{expense.categoryName}</TableCell>
+      <TableCell className="data-table__col--numeric">{formatN2(expense.value)}</TableCell>
+      <TableCell>{expense.paymentSourceBankName}</TableCell>
+      <TableCell>{expense.creditCardName ?? '—'}</TableCell>
+    </TableRow>
   )
 }
 
@@ -90,11 +100,11 @@ export default function ExpensesSection({ expenses, onEdit, onDelete, onNewExpen
         </Button>
       </div>
       <div className="expenses-section__table-wrapper">
-        <table className="expenses-section__table data-table">
-          <thead>
-            <tr>
-              <th />
-              <th />
+        <Table className="expenses-section__table data-table">
+          <TableHeader>
+            <TableRow>
+              <TableHeaderCell />
+              <TableHeaderCell />
               <SortableColumnHeader
                 label="Date"
                 columnKey="date"
@@ -152,20 +162,20 @@ export default function ExpensesSection({ expenses, onEdit, onDelete, onNewExpen
                   isFiltered={isColumnFiltered('card')}
                 />
               </SortableColumnHeader>
-            </tr>
-          </thead>
-          <tbody>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {sortedRows.length === 0 && hasActiveFilter ? (
-              <tr>
-                <td colSpan={8}>No rows match the current filters</td>
-              </tr>
+              <TableRow>
+                <TableCell colSpan={8}>No rows match the current filters</TableCell>
+              </TableRow>
             ) : (
               sortedRows.map((expense) => (
                 <ExpenseRow key={expense.id} expense={expense} onEdit={onEdit} onDelete={onDelete} />
               ))
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </section>
   )
