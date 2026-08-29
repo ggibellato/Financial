@@ -543,11 +543,11 @@ graph TD
       group (WPF).
 
 ### F03. Trigger-to-Form Naming Consistency Sweep
-- [ ] Transfer, Balance Correction, Withdrawal, and Income Split triggers/forms/confirm buttons on Web
+- [x] Transfer, Balance Correction, Withdrawal, and Income Split triggers/forms/confirm buttons on Web
       name the same entity end-to-end.
-- [ ] Investment Transaction/Credit/Price "New" triggers show a visible entity name on both Web and
+- [x] Investment Transaction/Credit/Price "New" triggers show a visible entity name on both Web and
       WPF (not tooltip-only on WPF).
-- [ ] The Add Bill WPF confirm button reads "Add Bill"/"Adding Bill..." instead of "Add"/"Adding...".
+- [x] The Add Bill WPF confirm button reads "Add Bill"/"Adding Bill..." instead of "Add"/"Adding...".
 
 ### F04. CashFlow Monthly Expense Form Compliance (Web + WPF)
 - [ ] Payment Source/Card selection appears before Value in both `ExpenseForm.tsx` and
