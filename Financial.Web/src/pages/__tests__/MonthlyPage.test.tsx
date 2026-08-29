@@ -1313,7 +1313,7 @@ describe('MonthlyPage', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Transfer' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Transfer' }))
 
-    expect(screen.getByText('Move Money', { selector: 'h2' })).toBeInTheDocument()
+    expect(screen.getByText('New Transfer', { selector: 'h2' })).toBeInTheDocument()
 
     const balancesCallsBefore = getBankBalancesByMonthMock.mock.calls.length
     const transfersCallsBefore = getTransfersByMonthMock.mock.calls.length
@@ -1321,7 +1321,7 @@ describe('MonthlyPage', () => {
     fireEvent.change(screen.getByLabelText('To'), { target: { value: 'bank-trading212' } })
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '50' } })
     const transferFormPanel = screen.getByTestId('transfer-form-panel')
-    fireEvent.click(within(transferFormPanel).getByRole('button', { name: 'Move Money' }))
+    fireEvent.click(within(transferFormPanel).getByRole('button', { name: 'Add Transfer' }))
 
     await waitFor(() => expect(createTransferMock).toHaveBeenCalled())
     await waitFor(() => expect(getBankBalancesByMonthMock.mock.calls.length).toBeGreaterThan(balancesCallsBefore))
@@ -1337,7 +1337,7 @@ describe('MonthlyPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'New Balance Correction' }))
 
     const correctBalanceFormPanel = screen.getByTestId('balance-adjustment-form-panel')
-    expect(within(correctBalanceFormPanel).getByRole('button', { name: 'Correct Balance' })).toBeDisabled()
+    expect(within(correctBalanceFormPanel).getByRole('button', { name: 'Add Balance Correction' })).toBeDisabled()
     expect(screen.queryByLabelText('Target Balance')).not.toBeInTheDocument()
 
     fireEvent.change(screen.getByLabelText('Bank'), { target: { value: 'bank-barclays' } })
@@ -1347,7 +1347,7 @@ describe('MonthlyPage', () => {
     const adjustmentsCallsBefore = getAdjustmentsByBankMock.mock.calls.length
 
     fireEvent.change(screen.getByLabelText('Target Balance'), { target: { value: '45' } })
-    fireEvent.click(within(correctBalanceFormPanel).getByRole('button', { name: 'Correct Balance' }))
+    fireEvent.click(within(correctBalanceFormPanel).getByRole('button', { name: 'Add Balance Correction' }))
 
     await waitFor(() =>
       expect(createBalanceAdjustmentMock).toHaveBeenCalledWith('bank-barclays', expect.objectContaining({ targetBalance: 45 })),
@@ -1405,7 +1405,7 @@ describe('MonthlyPage', () => {
     await waitFor(() => expect(screen.getByText('Adjustment')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Edit balance adjustment' }))
 
-    expect(screen.getByText('Edit Balance Adjustment')).toBeInTheDocument()
+    expect(screen.getByText('Edit Balance Correction')).toBeInTheDocument()
     expect(screen.queryByLabelText('Bank')).not.toBeInTheDocument()
     expect(screen.getByLabelText('Target Balance')).toHaveValue(42.5)
 
@@ -1477,12 +1477,12 @@ describe('MonthlyPage', () => {
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Transfer' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Transfer' }))
-    expect(screen.getByText('Move Money', { selector: 'h2' })).toBeInTheDocument()
+    expect(screen.getByText('New Transfer', { selector: 'h2' })).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Summary' }))
     fireEvent.click(screen.getAllByRole('button', { name: 'Bank' })[0])
 
-    expect(screen.queryByText('Move Money', { selector: 'h2' })).not.toBeInTheDocument()
+    expect(screen.queryByText('New Transfer', { selector: 'h2' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'New Transfer' })).toBeInTheDocument()
   })
 })
