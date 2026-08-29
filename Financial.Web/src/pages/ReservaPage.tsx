@@ -70,6 +70,7 @@ export default function ReservaPage() {
     withdrawalDescription,
     isSubmittingWithdrawal,
     withdrawalError,
+    withdrawalErrorField,
     showWithdrawalForm,
     cancelWithdrawalForm,
     setWithdrawalField,
@@ -81,6 +82,7 @@ export default function ReservaPage() {
     editMovementDescription,
     isSavingMovement,
     saveMovementError,
+    saveMovementErrorField,
     showEditMovementForm,
     cancelEditMovement,
     setEditMovementField,
@@ -146,6 +148,7 @@ export default function ReservaPage() {
           buckets={buckets}
           isSubmitting={isSubmittingWithdrawal}
           error={withdrawalError}
+          errorField={withdrawalErrorField}
           onFieldChange={setWithdrawalField}
           onSubmit={() => submitWithdrawal(confirmProceedWithWithdrawal)}
           onCancel={cancelWithdrawalForm}
@@ -161,6 +164,7 @@ export default function ReservaPage() {
           buckets={buckets}
           isSaving={isSavingMovement}
           error={saveMovementError}
+          errorField={saveMovementErrorField}
           onFieldChange={setEditMovementField}
           onSave={saveMovementEdit}
           onCancel={cancelEditMovement}

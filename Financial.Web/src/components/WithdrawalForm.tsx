@@ -1,6 +1,7 @@
 import { Button, Field, Input, MessageBar, MessageBarBody, Select, Text } from '@fluentui/react-components'
 import type { ReserveBucketDto } from '../api/types'
 import type { WithdrawalFormField } from '../hooks/useReserva'
+import { useFieldError } from '../hooks/useFieldError'
 import { useFormPanelStyles } from './formPanelStyles'
 
 interface WithdrawalFormProps {
@@ -11,6 +12,7 @@ interface WithdrawalFormProps {
   buckets: ReserveBucketDto[]
   isSubmitting: boolean
   error: string | null
+  errorField: WithdrawalFormField | null
   onFieldChange: (field: WithdrawalFormField, value: string) => void
   onSubmit: () => void
   onCancel: () => void
@@ -24,11 +26,14 @@ export default function WithdrawalForm({
   buckets,
   isSubmitting,
   error,
+  errorField,
   onFieldChange,
   onSubmit,
   onCancel,
 }: WithdrawalFormProps) {
   const styles = useFormPanelStyles()
+  const fieldError = useFieldError(error, errorField)
+  const generalError = errorField === null ? error : null
 
   return (
     <div className={styles.panel} data-testid="withdrawal-form-panel">
@@ -37,7 +42,21 @@ export default function WithdrawalForm({
       </Text>
 
       <div className={styles.grid}>
-        <Field label="Bucket">
+        <Field
+          label="Date"
+          required
+          validationState={fieldError('withdrawalDate') ? 'error' : 'none'}
+          validationMessage={fieldError('withdrawalDate')}
+        >
+          <Input type="date" value={date} onChange={(e) => onFieldChange('withdrawalDate', e.target.value)} />
+        </Field>
+
+        <Field
+          label="Bucket"
+          required
+          validationState={fieldError('withdrawalBucketId') ? 'error' : 'none'}
+          validationMessage={fieldError('withdrawalBucketId')}
+        >
           <Select value={bucketId} onChange={(e) => onFieldChange('withdrawalBucketId', e.target.value)}>
             {buckets.map((bucket) => (
               <option key={bucket.id} value={bucket.id}>
@@ -47,7 +66,21 @@ export default function WithdrawalForm({
           </Select>
         </Field>
 
-        <Field label="Amount">
+        <Field
+          label="Description"
+          required
+          validationState={fieldError('withdrawalDescription') ? 'error' : 'none'}
+          validationMessage={fieldError('withdrawalDescription')}
+        >
+          <Input value={description} onChange={(e) => onFieldChange('withdrawalDescription', e.target.value)} />
+        </Field>
+
+        <Field
+          label="Amount"
+          required
+          validationState={fieldError('withdrawalAmount') ? 'error' : 'none'}
+          validationMessage={fieldError('withdrawalAmount')}
+        >
           <Input
             type="number"
             step="0.01"
@@ -55,14 +88,6 @@ export default function WithdrawalForm({
             value={amount}
             onChange={(e) => onFieldChange('withdrawalAmount', e.target.value)}
           />
-        </Field>
-
-        <Field label="Date">
-          <Input type="date" value={date} onChange={(e) => onFieldChange('withdrawalDate', e.target.value)} />
-        </Field>
-
-        <Field label="Description">
-          <Input value={description} onChange={(e) => onFieldChange('withdrawalDescription', e.target.value)} />
         </Field>
       </div>
 
@@ -75,9 +100,9 @@ export default function WithdrawalForm({
         </Button>
       </div>
 
-      {error && (
+      {generalError && (
         <MessageBar intent="error">
-          <MessageBarBody>{error}</MessageBarBody>
+          <MessageBarBody>{generalError}</MessageBarBody>
         </MessageBar>
       )}
     </div>
