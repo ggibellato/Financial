@@ -31,14 +31,14 @@
   font-size: 12px;
   padding: 3px 12px;
   cursor: pointer;
-  background: #007acc;
+  background: var(--accent);
   color: #fff;
   border: none;
   border-radius: 3px;
 }
 
 .mensais-page__new-btn:hover {
-  background: #005fa3;
+  background: var(--accent-hover);
 }
 
 .mensais-page__form-panel {
@@ -78,14 +78,14 @@
   font-size: 12px;
   padding: 3px 12px;
   cursor: pointer;
-  background: #007acc;
+  background: var(--accent);
   color: #fff;
   border: none;
   border-radius: 3px;
 }
 
 .mensais-page__submit-btn:hover {
-  background: #005fa3;
+  background: var(--accent-hover);
 }
 
 .mensais-page__submit-btn:disabled {

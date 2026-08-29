@@ -77,14 +77,14 @@
   font-size: 12px;
   padding: 3px 12px;
   cursor: pointer;
-  background: #007acc;
+  background: var(--accent);
   color: #fff;
   border: none;
   border-radius: 3px;
 }
 
 .price-history-tab__new-btn:hover {
-  background: #005fa3;
+  background: var(--accent-hover);
 }
 
 .price-history-tab__form {
@@ -139,7 +139,7 @@
   font-size: 12px;
   padding: 3px 12px;
   cursor: pointer;
-  background: #007acc;
+  background: var(--accent);
   color: #fff;
   border: none;
   border-radius: 3px;

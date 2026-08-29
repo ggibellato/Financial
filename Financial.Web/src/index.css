@@ -8,6 +8,7 @@
      colorBrandBackground2) — see docs/ui/decisions/ADR-005-brand-and-status-colors.md.
      Blue is the user's company color; do not revert to a purple accent. */
   --accent: #0f6cbd;
+  --accent-hover: #115ea3; /* ADR-005's colorBrandBackgroundHover */
   --accent-bg: #ebf3fc;
   --accent-border: rgba(15, 108, 189, 0.5);
   --social-bg: rgba(244, 243, 236, 0.5);
@@ -58,6 +59,7 @@
     --code-bg: #1f2028;
     /* webDarkTheme.colorBrandForeground1 / colorBrandBackground2 */
     --accent: #479ef5;
+    --accent-hover: #6cb2f8;
     --accent-bg: #082338;
     --accent-border: rgba(71, 158, 245, 0.5);
     --social-bg: rgba(47, 48, 58, 0.5);
