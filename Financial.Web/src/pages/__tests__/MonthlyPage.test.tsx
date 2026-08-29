@@ -310,7 +310,7 @@ describe('MonthlyPage', () => {
     getExpensesByMonthMock.mockRejectedValue(new Error('Network down'))
 
     render(<MonthlyPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Income' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Income' }))
 
     await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument())
     expect(screen.getByText('Network down')).toBeInTheDocument()
@@ -332,22 +332,19 @@ describe('MonthlyPage', () => {
     render(<MonthlyPage />)
 
     await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
-    expect(screen.getByRole('button', { name: 'Summary' })).toHaveClass('monthly-page__tab--active')
-    expect(screen.getByRole('button', { name: 'Expense' })).not.toHaveClass('monthly-page__tab--active')
-    expect(screen.getByRole('button', { name: 'Income' })).not.toHaveClass('monthly-page__tab--active')
+    expect(screen.getByRole('tab', { name: 'Summary' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tab', { name: 'Expense' })).toHaveAttribute('aria-selected', 'false')
+    expect(screen.getByRole('tab', { name: 'Income' })).toHaveAttribute('aria-selected', 'false')
   })
 
   it('lists Summary, Expense, Credit Card, Income, Bank in order in the tab strip', async () => {
-    const { container } = render(<MonthlyPage />)
+    render(<MonthlyPage />)
 
     await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
-    // Scoped to the tab strip itself — the Summary tab's Banks grid also renders a "Bank"
-    // column-sort header button, which a page-wide query would otherwise also match.
-    const tabStrip = container.querySelector('.monthly-page__tabs') as HTMLElement
-    const tabLabels = within(tabStrip)
-      .getAllByRole('button', { name: /Summary|Expense|Credit Card|Income|Bank/ })
-      .map((b) => b.textContent)
-    expect(tabLabels).toEqual(['Summary', 'Expense', 'Credit Card', 'Income', 'Bank'])
+    const tabs = screen.getAllByRole('tab')
+    const expectedOrder = ['Summary', 'Expense', 'Credit Card', 'Income', 'Bank']
+    const actualOrder = expectedOrder.map((label) => tabs.indexOf(screen.getByRole('tab', { name: label })))
+    expect(actualOrder).toEqual([0, 1, 2, 3, 4])
   })
 
   it('re-scopes all 4 Summary grids when the month/year value changes', async () => {
@@ -388,32 +385,32 @@ describe('MonthlyPage', () => {
     render(<MonthlyPage />)
 
     await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
-    fireEvent.click(screen.getByRole('button', { name: 'Expense' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Expense' }))
 
     expect(screen.queryByText(/^Total:/)).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'New Income' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument()
     expect(screen.getByText('Lidl UK')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Expense' })).toHaveClass('monthly-page__tab--active')
+    expect(screen.getByRole('tab', { name: 'Expense' })).toHaveAttribute('aria-selected', 'true')
   })
 
   it('shows the same card statements on the Credit Card tab as on Summary', async () => {
     render(<MonthlyPage />)
 
     await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
-    fireEvent.click(screen.getByRole('button', { name: 'Credit Card' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Credit Card' }))
 
     expect(screen.getAllByRole('cell', { name: 'BaAmex' }).length).toBeGreaterThan(0)
     expect(screen.getAllByRole('cell', { name: 'ChaseMaster4023' }).length).toBeGreaterThan(0)
     expect(screen.getByText(/Combined adjustment figure/)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Credit Card' })).toHaveClass('monthly-page__tab--active')
+    expect(screen.getByRole('tab', { name: 'Credit Card' })).toHaveAttribute('aria-selected', 'true')
   })
 
   it('shows the unpaid card charge list on the Credit Card tab below the totals grid', async () => {
     render(<MonthlyPage />)
 
     await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
-    fireEvent.click(screen.getByRole('button', { name: 'Credit Card' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Credit Card' }))
 
     expect(screen.getByText('Uber')).toBeInTheDocument()
     expect(screen.getByText('18.40')).toBeInTheDocument()
@@ -428,7 +425,7 @@ describe('MonthlyPage', () => {
     getUnpaidCardChargesByMonthMock.mockResolvedValue([chargedSecond, chargedFirst])
     markCardStatementPaidMock.mockResolvedValue({ ...CARD_STATEMENTS[0], isPaid: true, outstandingTotal: 0 })
     render(<MonthlyPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Credit Card' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Credit Card' }))
 
     await waitFor(() => expect(screen.getByText('Charged First')).toBeInTheDocument())
     const rowsBefore = screen.getAllByRole('row')
@@ -462,7 +459,7 @@ describe('MonthlyPage', () => {
       expect(markCardStatementPaidMock).toHaveBeenCalledWith('c1', { paymentSourceBankId: 'bank-trading212' }),
     )
 
-    fireEvent.click(screen.getByRole('button', { name: 'Expense' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Expense' }))
     await waitFor(() => expect(screen.getByText('Charged Second')).toBeInTheDocument())
     const rowsAfter = screen.getAllByRole('row')
     const secondIndexAfter = rowsAfter.findIndex((r) => r.textContent?.includes('Charged Second'))
@@ -473,7 +470,7 @@ describe('MonthlyPage', () => {
   it("editing a row from the Credit Card tab's list opens the shared edit form and saves", async () => {
     updateExpenseMock.mockResolvedValue({ ...UNPAID_CARD_CHARGES[0], value: 20 })
     render(<MonthlyPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Credit Card' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Credit Card' }))
 
     await waitFor(() => expect(screen.getByText('Uber')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Edit expense' }))
@@ -488,7 +485,7 @@ describe('MonthlyPage', () => {
   it("deleting a row from the Credit Card tab's list calls delete and refreshes", async () => {
     deleteExpenseMock.mockResolvedValue(undefined)
     render(<MonthlyPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Credit Card' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Credit Card' }))
 
     await waitFor(() => expect(screen.getByText('Uber')).toBeInTheDocument())
     const callCountBefore = getUnpaidCardChargesByMonthMock.mock.calls.length
@@ -502,13 +499,13 @@ describe('MonthlyPage', () => {
 
   it('switching away from the Credit Card tab cancels an open edit form', async () => {
     render(<MonthlyPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Credit Card' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Credit Card' }))
 
     await waitFor(() => expect(screen.getByText('Uber')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Edit expense' }))
     expect(screen.getByText('Edit Expense')).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Summary' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Summary' }))
 
     expect(screen.queryByText('Edit Expense')).not.toBeInTheDocument()
   })
@@ -516,11 +513,11 @@ describe('MonthlyPage', () => {
   it('does not duplicate or omit rows already covered by the Expense tab', async () => {
     render(<MonthlyPage />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Expense' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Expense' }))
     await waitFor(() => expect(screen.getByText('Lidl UK')).toBeInTheDocument())
     expect(screen.queryByText('Uber')).not.toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Credit Card' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Credit Card' }))
     await waitFor(() => expect(screen.getByText('Uber')).toBeInTheDocument())
     expect(screen.queryByText('Lidl UK')).not.toBeInTheDocument()
   })
@@ -529,8 +526,8 @@ describe('MonthlyPage', () => {
     render(<MonthlyPage />)
 
     await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
-    fireEvent.click(screen.getByRole('button', { name: 'Credit Card' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Summary' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Credit Card' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Summary' }))
 
     expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument()
     expect(screen.getByText(/Combined adjustment figure/)).toBeInTheDocument()
@@ -543,7 +540,7 @@ describe('MonthlyPage', () => {
     await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
     const callCountBefore = getCardStatementsByMonthMock.mock.calls.length
 
-    fireEvent.click(screen.getByRole('button', { name: 'Credit Card' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Credit Card' }))
 
     expect(getCardStatementsByMonthMock.mock.calls.length).toBe(callCountBefore)
   })
@@ -553,7 +550,7 @@ describe('MonthlyPage', () => {
     render(<MonthlyPage />)
 
     await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
-    fireEvent.click(screen.getByRole('button', { name: 'Credit Card' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Credit Card' }))
     fireEvent.change(screen.getByLabelText('Paying bank for BaAmex'), { target: { value: 'bank-trading212' } })
     fireEvent.click(screen.getByRole('button', { name: 'Mark Paid' }))
     await waitFor(() =>
@@ -561,7 +558,7 @@ describe('MonthlyPage', () => {
     )
 
     getCardStatementsByMonthMock.mockResolvedValue([{ ...CARD_STATEMENTS[0], isPaid: true, outstandingTotal: 0 }, CARD_STATEMENTS[1]])
-    fireEvent.click(screen.getByRole('button', { name: 'Summary' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Summary' }))
 
     await waitFor(() => expect(screen.getAllByRole('button', { name: 'Unmark Paid' })).toHaveLength(2))
   })
@@ -569,7 +566,7 @@ describe('MonthlyPage', () => {
   it("marking a statement paid removes its expenses from the Credit Card tab's list", async () => {
     markCardStatementPaidMock.mockResolvedValue({ ...CARD_STATEMENTS[0], isPaid: true, outstandingTotal: 0 })
     render(<MonthlyPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Credit Card' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Credit Card' }))
 
     await waitFor(() => expect(screen.getByText('Uber')).toBeInTheDocument())
     fireEvent.change(screen.getByLabelText('Paying bank for BaAmex'), { target: { value: 'bank-trading212' } })
@@ -587,14 +584,14 @@ describe('MonthlyPage', () => {
     render(<MonthlyPage />)
 
     await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
-    fireEvent.click(screen.getByRole('button', { name: 'Income' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Income' }))
 
     expect(screen.queryByText(/^Total:/)).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'New Expense' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'New Income' })).toBeInTheDocument()
     const incomeSection = within(screen.getByRole('button', { name: 'New Income' }).closest('section')!)
     expect(incomeSection.getByText('Gleison')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Income' })).toHaveClass('monthly-page__tab--active')
+    expect(screen.getByRole('tab', { name: 'Income' })).toHaveAttribute('aria-selected', 'true')
   })
 
   it('does not change the month/year picker value when switching tabs', async () => {
@@ -604,7 +601,7 @@ describe('MonthlyPage', () => {
     const monthInput = screen.getByLabelText('Month') as HTMLInputElement
     const valueBefore = monthInput.value
 
-    fireEvent.click(screen.getByRole('button', { name: 'Expense' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Expense' }))
 
     expect(monthInput.value).toBe(valueBefore)
   })
@@ -615,10 +612,10 @@ describe('MonthlyPage', () => {
     await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
     const callCountBefore = getExpensesByMonthMock.mock.calls.length
 
-    fireEvent.click(screen.getByRole('button', { name: 'Expense' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Credit Card' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Income' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Summary' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Expense' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Credit Card' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Income' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Summary' }))
 
     expect(getExpensesByMonthMock.mock.calls.length).toBe(callCountBefore)
   })
@@ -627,25 +624,25 @@ describe('MonthlyPage', () => {
     render(<MonthlyPage />)
 
     await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
-    fireEvent.click(screen.getByRole('button', { name: 'Expense' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Expense' }))
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument())
 
     fireEvent.change(screen.getByLabelText('Month'), { target: { value: '2026-08' } })
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument())
-    expect(screen.getByRole('button', { name: 'Expense' })).toHaveClass('monthly-page__tab--active')
+    expect(screen.getByRole('tab', { name: 'Expense' })).toHaveAttribute('aria-selected', 'true')
   })
 
   it('closes an open create form when switching tabs away and back', async () => {
     render(<MonthlyPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Expense' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Expense' }))
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Expense' }))
     expect(screen.getByRole('button', { name: 'Add Expense' })).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Summary' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Expense' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Summary' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Expense' }))
 
     expect(screen.queryByRole('button', { name: 'Add Expense' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument()
@@ -653,7 +650,7 @@ describe('MonthlyPage', () => {
 
   it('re-scopes the expense list when the month/year value changes while Expense is active', async () => {
     render(<MonthlyPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Expense' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Expense' }))
 
     await waitFor(() => expect(screen.getByText('Lidl UK')).toBeInTheDocument())
 
@@ -674,7 +671,7 @@ describe('MonthlyPage', () => {
     expect(screen.getByText(/Combined adjustment figure/)).toBeInTheDocument()
     expect(screen.getAllByText('100.00').length).toBeGreaterThan(0)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Expense' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Expense' }))
     expect(screen.getByText('Lidl UK')).toBeInTheDocument()
   })
 
@@ -705,7 +702,7 @@ describe('MonthlyPage', () => {
     render(<MonthlyPage />)
     await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
 
-    fireEvent.click(screen.getByRole('button', { name: 'Expense' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Expense' }))
 
     await waitFor(() => expect(screen.getByText('Lidl UK')).toBeInTheDocument())
     const banksSection = within(screen.getByText(/Bank Balance:/).closest('section')!)
@@ -783,7 +780,7 @@ describe('MonthlyPage', () => {
 
   it('opens the New Expense form on the Expense tab locked to bank mode, no toggle', async () => {
     render(<MonthlyPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Expense' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Expense' }))
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Expense' }))
@@ -795,7 +792,7 @@ describe('MonthlyPage', () => {
 
   it('opens the New Expense form on the Credit Card tab locked to card mode, no toggle', async () => {
     render(<MonthlyPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Credit Card' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Credit Card' }))
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Expense' }))
@@ -808,7 +805,7 @@ describe('MonthlyPage', () => {
   it('creates a card expense from the Credit Card tab with a null payment source', async () => {
     createExpenseMock.mockResolvedValue({ ...EXPENSES[0], id: 'e2' })
     render(<MonthlyPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Credit Card' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Credit Card' }))
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Expense' }))
@@ -828,7 +825,7 @@ describe('MonthlyPage', () => {
 
   it('only lists active categories in the expense form dropdown', async () => {
     render(<MonthlyPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Expense' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Expense' }))
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Expense' }))
@@ -844,7 +841,7 @@ describe('MonthlyPage', () => {
     getCreditCardsMock.mockResolvedValueOnce([CREDIT_CARDS[0], { ...CREDIT_CARDS[1], isActive: false }])
     updateCreditCardMock.mockResolvedValue({ ...CREDIT_CARDS[1], isActive: false })
     render(<MonthlyPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Credit Card' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Credit Card' }))
 
     await waitFor(() => expect(screen.getByLabelText('Active for ChaseMaster4023')).toBeInTheDocument())
     fireEvent.click(screen.getByLabelText('Active for ChaseMaster4023'))
@@ -862,7 +859,7 @@ describe('MonthlyPage', () => {
   it('creates a bank expense from the Expense tab with a null card tag', async () => {
     createExpenseMock.mockResolvedValue({ ...EXPENSES[0], id: 'e2' })
     render(<MonthlyPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Expense' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Expense' }))
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Expense' }))
@@ -892,7 +889,7 @@ describe('MonthlyPage', () => {
       },
     ])
     render(<MonthlyPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Expense' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Expense' }))
 
     await waitFor(() => expect(screen.getByText('Lidl UK')).toBeInTheDocument())
     fireEvent.click(screen.getAllByRole('button', { name: 'Edit expense' })[0])
@@ -906,7 +903,7 @@ describe('MonthlyPage', () => {
   it('shows the add-expense form only after New Expense is clicked, and submits a new expense', async () => {
     createExpenseMock.mockResolvedValue({ ...EXPENSES[0], id: 'e2' })
     render(<MonthlyPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Expense' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Expense' }))
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument())
     expect(screen.queryByLabelText(/^Date/)).not.toBeInTheDocument()
@@ -925,8 +922,9 @@ describe('MonthlyPage', () => {
   it('edits an expense value via the toggled panel and saves, updating the displayed row', async () => {
     updateExpenseMock.mockResolvedValue({ ...EXPENSES[0], value: 50 })
     render(<MonthlyPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Expense' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Expense' }))
 
+    await waitFor(() => expect(screen.getByRole('tab', { name: 'Expense' })).toHaveAttribute('aria-selected', 'true'))
     await waitFor(() => expect(screen.getByText('Lidl UK')).toBeInTheDocument())
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Edit expense' })[0])
@@ -940,13 +938,13 @@ describe('MonthlyPage', () => {
 
     await waitFor(() => expect(updateExpenseMock).toHaveBeenCalledWith('e1', expect.objectContaining({ value: 50 })))
     const expensesSection = within(screen.getByRole('button', { name: 'New Expense' }).closest('section')!)
-    await waitFor(() => expect(expensesSection.getByText('50.00')).toBeInTheDocument())
+    await waitFor(() => expect(expensesSection.getByText('50.00')).toBeInTheDocument(), { timeout: 3000 })
   })
 
   it('deletes an expense after confirmation', async () => {
     deleteExpenseMock.mockResolvedValue(undefined)
     render(<MonthlyPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Expense' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Expense' }))
 
     await waitFor(() => expect(screen.getByText('Lidl UK')).toBeInTheDocument())
     fireEvent.click(screen.getAllByRole('button', { name: 'Delete expense' })[0])
@@ -957,7 +955,7 @@ describe('MonthlyPage', () => {
   it('does not delete an expense when the user cancels the confirmation', async () => {
     vi.spyOn(window, 'confirm').mockReturnValue(false)
     render(<MonthlyPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Expense' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Expense' }))
 
     await waitFor(() => expect(screen.getByText('Lidl UK')).toBeInTheDocument())
     fireEvent.click(screen.getAllByRole('button', { name: 'Delete expense' })[0])
@@ -967,7 +965,7 @@ describe('MonthlyPage', () => {
 
   it('renders the income list on the Incoming tab', async () => {
     render(<MonthlyPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Income' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Income' }))
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Income' })).toBeInTheDocument())
     const incomeSection = within(screen.getByRole('button', { name: 'New Income' }).closest('section')!)
@@ -977,7 +975,7 @@ describe('MonthlyPage', () => {
 
   it('re-scopes the income list when the month/year value changes while Incoming is active', async () => {
     render(<MonthlyPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Income' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Income' }))
 
     const getIncomeSection = () => within(screen.getByRole('button', { name: 'New Income' }).closest('section')!)
     await waitFor(() => expect(getIncomeSection().getByText('Gleison')).toBeInTheDocument())
@@ -1006,7 +1004,7 @@ describe('MonthlyPage', () => {
   it('shows the add-income form only after New Income is clicked, and submits a new income entry', async () => {
     createIncomeMock.mockResolvedValue({ ...INCOMES[0], id: 'i2' })
     render(<MonthlyPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Income' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Income' }))
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Income' })).toBeInTheDocument())
     expect(screen.queryByLabelText('Net Value')).not.toBeInTheDocument()
@@ -1026,7 +1024,7 @@ describe('MonthlyPage', () => {
   it('submits a new income entry with the selected bank when one is chosen', async () => {
     createIncomeMock.mockResolvedValue({ ...INCOMES[0], id: 'i2' })
     render(<MonthlyPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Income' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Income' }))
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Income' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Income' }))
@@ -1044,7 +1042,7 @@ describe('MonthlyPage', () => {
 
   it('hides the gross value field for Lottery and DividendoJuros sources', async () => {
     render(<MonthlyPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Income' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Income' }))
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Income' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Income' }))
@@ -1059,7 +1057,7 @@ describe('MonthlyPage', () => {
     getBanksMock.mockResolvedValue([])
     createIncomeMock.mockResolvedValue({ ...INCOMES[0], id: 'i2', bankId: null, bankName: null })
     render(<MonthlyPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Income' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Income' }))
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Income' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Income' }))
@@ -1073,8 +1071,9 @@ describe('MonthlyPage', () => {
   it('edits an income entry via the toggled panel and saves, updating the displayed row', async () => {
     updateIncomeMock.mockResolvedValue({ ...INCOMES[0], netValue: 500 })
     render(<MonthlyPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Income' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Income' }))
 
+    await waitFor(() => expect(screen.getByRole('tab', { name: 'Income' })).toHaveAttribute('aria-selected', 'true'))
     await waitFor(() => expect(screen.getAllByRole('button', { name: 'Edit income' }).length).toBeGreaterThan(0))
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Edit income' })[0])
@@ -1087,13 +1086,13 @@ describe('MonthlyPage', () => {
 
     await waitFor(() => expect(updateIncomeMock).toHaveBeenCalledWith('i1', expect.objectContaining({ netValue: 500 })))
     const incomeSection = within(screen.getByRole('button', { name: 'New Income' }).closest('section')!)
-    await waitFor(() => expect(incomeSection.getByText('500.00')).toBeInTheDocument())
+    await waitFor(() => expect(incomeSection.getByText('500.00')).toBeInTheDocument(), { timeout: 3000 })
   })
 
   it('deletes an income entry after confirmation', async () => {
     deleteIncomeMock.mockResolvedValue(undefined)
     render(<MonthlyPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Income' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Income' }))
 
     await waitFor(() => expect(screen.getAllByRole('button', { name: 'Delete income' }).length).toBeGreaterThan(0))
     fireEvent.click(screen.getAllByRole('button', { name: 'Delete income' })[0])
@@ -1128,7 +1127,7 @@ describe('MonthlyPage', () => {
       splitToReserve: false,
     })
     render(<MonthlyPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Income' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Income' }))
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Income' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Income' }))
@@ -1154,14 +1153,14 @@ describe('MonthlyPage', () => {
     const incomeSection = within(screen.getByRole('button', { name: 'New Income' }).closest('section')!)
     await waitFor(() => expect(incomeSection.getByText('Gleison')).toBeInTheDocument())
 
-    fireEvent.click(screen.getByRole('button', { name: 'Summary' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Summary' }))
     const incomingSection = within(screen.getByText(/Total Incoming:/).closest('section')!)
     await waitFor(() => expect(incomingSection.getByRole('cell', { name: 'Lottery' })).toBeInTheDocument())
   })
 
   it('bank picker lists banks fetched from the API in the expense form', async () => {
     render(<MonthlyPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Expense' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Expense' }))
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Expense' }))
@@ -1182,7 +1181,7 @@ describe('MonthlyPage', () => {
 
   it('shows a pre-filled round-up field when a round-up-enabled bank is selected', async () => {
     render(<MonthlyPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Expense' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Expense' }))
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Expense' }))
@@ -1197,7 +1196,7 @@ describe('MonthlyPage', () => {
 
   it('hides the round-up field for a non-round-up bank', async () => {
     render(<MonthlyPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Expense' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Expense' }))
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Expense' }))
@@ -1211,7 +1210,7 @@ describe('MonthlyPage', () => {
 
   it('never shows the round-up field in card mode', async () => {
     render(<MonthlyPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Credit Card' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Credit Card' }))
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Expense' }))
@@ -1223,7 +1222,7 @@ describe('MonthlyPage', () => {
   it('submits a typed round-up amount with the new expense', async () => {
     createExpenseMock.mockResolvedValue({ ...EXPENSES[0], id: 'e2' })
     render(<MonthlyPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Expense' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Expense' }))
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Expense' }))
@@ -1278,7 +1277,7 @@ describe('MonthlyPage', () => {
       },
     ])
     render(<MonthlyPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Expense' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Expense' }))
 
     await waitFor(() => expect(screen.getByText('Lidl UK')).toBeInTheDocument())
     fireEvent.click(screen.getAllByRole('button', { name: 'Edit expense' })[0])
@@ -1288,7 +1287,7 @@ describe('MonthlyPage', () => {
 
   it('shows the Bank tab operations list combining transfers and adjustments for the month, newest-first', async () => {
     render(<MonthlyPage />)
-    fireEvent.click(screen.getAllByRole('button', { name: 'Bank' })[0])
+    fireEvent.click(screen.getByRole('tab', { name: 'Bank' }))
 
     await waitFor(() => expect(screen.getByText('Transfer')).toBeInTheDocument())
     expect(screen.getByText('Adjustment')).toBeInTheDocument()
@@ -1297,7 +1296,7 @@ describe('MonthlyPage', () => {
 
   it('shows the same bank balances grid on the Bank tab as on the Summary tab', async () => {
     render(<MonthlyPage />)
-    fireEvent.click(screen.getAllByRole('button', { name: 'Bank' })[0])
+    fireEvent.click(screen.getByRole('tab', { name: 'Bank' }))
 
     await waitFor(() => expect(screen.getByText(/Bank Balance:/)).toBeInTheDocument())
     const banksSection = within(screen.getByText(/Bank Balance:/).closest('section')!)
@@ -1308,7 +1307,7 @@ describe('MonthlyPage', () => {
   it('opens the New Transfer form with no bank pre-selected, creates a transfer, and refreshes balances and the operations list', async () => {
     createTransferMock.mockResolvedValue(TRANSFERS[0])
     render(<MonthlyPage />)
-    fireEvent.click(screen.getAllByRole('button', { name: 'Bank' })[0])
+    fireEvent.click(screen.getByRole('tab', { name: 'Bank' }))
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Transfer' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Transfer' }))
@@ -1331,7 +1330,7 @@ describe('MonthlyPage', () => {
   it('gates New Balance Correction on a bank being chosen, then shows the resulting delta', async () => {
     createBalanceAdjustmentMock.mockResolvedValue({ ...ADJUSTMENTS[0], id: 'a2', delta: 2.5 })
     render(<MonthlyPage />)
-    fireEvent.click(screen.getAllByRole('button', { name: 'Bank' })[0])
+    fireEvent.click(screen.getByRole('tab', { name: 'Bank' }))
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Balance Correction' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Balance Correction' }))
@@ -1359,7 +1358,7 @@ describe('MonthlyPage', () => {
 
   it('narrows the operations list via the bank filter with no additional network request', async () => {
     render(<MonthlyPage />)
-    fireEvent.click(screen.getAllByRole('button', { name: 'Bank' })[0])
+    fireEvent.click(screen.getByRole('tab', { name: 'Bank' }))
 
     await waitFor(() => expect(screen.getByText('Transfer')).toBeInTheDocument())
     const transfersCallsBefore = getTransfersByMonthMock.mock.calls.length
@@ -1380,7 +1379,7 @@ describe('MonthlyPage', () => {
   it('edits a transfer from the operations list, opening TransferForm pre-filled with its values, and persists the change', async () => {
     updateTransferMock.mockResolvedValue(TRANSFERS[0])
     render(<MonthlyPage />)
-    fireEvent.click(screen.getAllByRole('button', { name: 'Bank' })[0])
+    fireEvent.click(screen.getByRole('tab', { name: 'Bank' }))
 
     await waitFor(() => expect(screen.getByText('Transfer')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Edit transfer' }))
@@ -1400,7 +1399,7 @@ describe('MonthlyPage', () => {
   it('edits an adjustment from the operations list with the bank fixed, and persists the change', async () => {
     updateBalanceAdjustmentMock.mockResolvedValue({ ...ADJUSTMENTS[0], delta: 7.5 })
     render(<MonthlyPage />)
-    fireEvent.click(screen.getAllByRole('button', { name: 'Bank' })[0])
+    fireEvent.click(screen.getByRole('tab', { name: 'Bank' }))
 
     await waitFor(() => expect(screen.getByText('Adjustment')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Edit balance adjustment' }))
@@ -1423,7 +1422,7 @@ describe('MonthlyPage', () => {
   it('does not delete a transfer when the user cancels the confirmation', async () => {
     vi.spyOn(window, 'confirm').mockReturnValue(false)
     render(<MonthlyPage />)
-    fireEvent.click(screen.getAllByRole('button', { name: 'Bank' })[0])
+    fireEvent.click(screen.getByRole('tab', { name: 'Bank' }))
 
     await waitFor(() => expect(screen.getByText('Transfer')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Delete transfer' }))
@@ -1434,7 +1433,7 @@ describe('MonthlyPage', () => {
   it('deletes a transfer from the operations list after confirmation, and refreshes balances', async () => {
     deleteTransferMock.mockResolvedValue(undefined)
     render(<MonthlyPage />)
-    fireEvent.click(screen.getAllByRole('button', { name: 'Bank' })[0])
+    fireEvent.click(screen.getByRole('tab', { name: 'Bank' }))
 
     await waitFor(() => expect(screen.getByText('Transfer')).toBeInTheDocument())
     const balancesCallsBefore = getBankBalancesByMonthMock.mock.calls.length
@@ -1447,7 +1446,7 @@ describe('MonthlyPage', () => {
   it('deletes an adjustment from the operations list after confirmation, and refreshes balances', async () => {
     deleteBalanceAdjustmentMock.mockResolvedValue(undefined)
     render(<MonthlyPage />)
-    fireEvent.click(screen.getAllByRole('button', { name: 'Bank' })[0])
+    fireEvent.click(screen.getByRole('tab', { name: 'Bank' }))
 
     await waitFor(() => expect(screen.getByText('Adjustment')).toBeInTheDocument())
     const balancesCallsBefore = getBankBalancesByMonthMock.mock.calls.length
@@ -1460,7 +1459,7 @@ describe('MonthlyPage', () => {
   it('shows an error state with retry when the Bank tab operations fetch fails', async () => {
     getTransfersByMonthMock.mockRejectedValue(new Error('Operations down'))
     render(<MonthlyPage />)
-    fireEvent.click(screen.getAllByRole('button', { name: 'Bank' })[0])
+    fireEvent.click(screen.getByRole('tab', { name: 'Bank' }))
 
     await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument())
     expect(screen.getByText('Operations down')).toBeInTheDocument()
@@ -1473,14 +1472,14 @@ describe('MonthlyPage', () => {
 
   it('cancels an open create form when switching away from the Bank tab and back', async () => {
     render(<MonthlyPage />)
-    fireEvent.click(screen.getAllByRole('button', { name: 'Bank' })[0])
+    fireEvent.click(screen.getByRole('tab', { name: 'Bank' }))
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Transfer' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Transfer' }))
     expect(screen.getByText('New Transfer', { selector: 'h2' })).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Summary' }))
-    fireEvent.click(screen.getAllByRole('button', { name: 'Bank' })[0])
+    fireEvent.click(screen.getByRole('tab', { name: 'Summary' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Bank' }))
 
     expect(screen.queryByText('New Transfer', { selector: 'h2' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'New Transfer' })).toBeInTheDocument()

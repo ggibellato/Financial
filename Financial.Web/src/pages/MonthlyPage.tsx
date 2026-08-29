@@ -1,3 +1,5 @@
+import { Tab, TabList } from '@fluentui/react-components'
+import type { SelectTabData, SelectTabEvent } from '@fluentui/react-components'
 import { useState } from 'react'
 import BalanceAdjustmentForm from '../components/BalanceAdjustmentForm'
 import BankOperationsSection from '../components/BankOperationsSection'
@@ -185,6 +187,8 @@ export default function MonthlyPage() {
     setActiveTab(tabId)
   }
 
+  const handleTabSelect = (_event: SelectTabEvent, data: SelectTabData) => handleTabClick(data.value as MonthlyTabId)
+
   return (
     <div className="monthly-page">
       <div className="monthly-page__header">
@@ -199,18 +203,13 @@ export default function MonthlyPage() {
         </div>
       </div>
 
-      <div className="monthly-page__tabs">
+      <TabList selectedValue={activeTab} onTabSelect={handleTabSelect}>
         {MONTHLY_TABS.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            className={`monthly-page__tab${activeTab === tab.id ? ' monthly-page__tab--active' : ''}`}
-            onClick={() => handleTabClick(tab.id)}
-          >
+          <Tab key={tab.id} value={tab.id}>
             {tab.label}
-          </button>
+          </Tab>
         ))}
-      </div>
+      </TabList>
 
       {isLoading ? (
         <LoadingState />
