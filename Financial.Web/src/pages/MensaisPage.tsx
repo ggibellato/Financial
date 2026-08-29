@@ -228,6 +228,16 @@ export default function MensaisPage() {
           <p className="mensais-page__form-title">Add Bill</p>
           <div className="mensais-page__form">
             <div className="mensais-page__form-field">
+              <label htmlFor="mensais-new-area">Area</label>
+              <select id="mensais-new-area" value={newArea} onChange={(e) => setAddField('newArea', e.target.value)}>
+                {AREAS.map((a) => (
+                  <option key={a} value={a}>
+                    {a}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="mensais-page__form-field">
               <label htmlFor="mensais-new-description">Description</label>
               <input
                 id="mensais-new-description"
@@ -258,16 +268,6 @@ export default function MensaisPage() {
               />
             </div>
             <div className="mensais-page__form-field">
-              <label htmlFor="mensais-new-area">Area</label>
-              <select id="mensais-new-area" value={newArea} onChange={(e) => setAddField('newArea', e.target.value)}>
-                {AREAS.map((a) => (
-                  <option key={a} value={a}>
-                    {a}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="mensais-page__form-field">
               <label htmlFor="mensais-new-note">Note</label>
               <input
                 id="mensais-new-note"
@@ -279,7 +279,7 @@ export default function MensaisPage() {
           </div>
           <div className="mensais-page__form-actions">
             <button className="mensais-page__submit-btn" type="button" disabled={isAdding} onClick={submitAdd}>
-              {isAdding ? 'Adding...' : 'Add'}
+              {isAdding ? 'Adding Bill...' : 'Add Bill'}
             </button>
             <button className="mensais-page__cancel-btn" type="button" onClick={cancelAdd}>
               Cancel

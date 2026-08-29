@@ -77,6 +77,19 @@ Typical field spans:
 Do not create one ultra-wide row merely because the window is wide.
 Do not force every field to equal width.
 
+### Add/Edit variant layout continuity
+
+When an entity's Add/Create and Edit forms are separate views with different
+field sets by design, any field that appears in both variants — plus the
+trailing validation-error and Save/Cancel action rows — must occupy the same
+absolute grid row in both views. Reserve empty, fixed-height rows in the
+shorter variant for fields it doesn't show, rather than compacting its
+shared field/action rows upward, so the value someone is editing and the
+buttons they'll press stay in the same place whether they just opened Add or
+Edit for the same entity. This does not require both variants to have the
+same field count or add fields neither design calls for — it only fixes the
+vertical position of what they already share.
+
 ### Field rules
 
 Every editable field requires:

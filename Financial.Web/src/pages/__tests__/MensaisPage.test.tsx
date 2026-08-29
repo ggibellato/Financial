@@ -158,7 +158,8 @@ describe('MensaisPage', () => {
       ...BILLS,
       { ...BILLS[0], id: 'b3', description: 'Aluguel', dueDay: 5, value: 1000 },
     ])
-    fireEvent.click(screen.getByRole('button', { name: 'Add' }))
+    const addBillFormPanel = screen.getByText('Add Bill', { selector: 'p' }).closest('.mensais-page__form-panel') as HTMLElement
+    fireEvent.click(within(addBillFormPanel).getByRole('button', { name: 'Add Bill' }))
 
     await waitFor(() =>
       expect(createMensaisBillMock).toHaveBeenCalledWith({
@@ -170,6 +171,19 @@ describe('MensaisPage', () => {
       }),
     )
     await waitFor(() => expect(screen.getByText('Aluguel')).toBeInTheDocument())
+  })
+
+  it('lists the Add Bill fields in Area, Description, Due Day, Value, Note order', async () => {
+    render(<MensaisPage />)
+
+    await waitFor(() => expect(screen.getByText('INSS')).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'Add Bill' }))
+
+    const addBillFormPanel = screen.getByText('Add Bill', { selector: 'p' }).closest('.mensais-page__form-panel') as HTMLElement
+    const fieldLabels = within(addBillFormPanel)
+      .getAllByText(/^(Area|Description|Due Day|Value|Note)$/, { selector: 'label' })
+      .map((label) => label.textContent)
+    expect(fieldLabels).toEqual(['Area', 'Description', 'Due Day', 'Value', 'Note'])
   })
 
   it('deletes a bill after confirming the prompt', async () => {
