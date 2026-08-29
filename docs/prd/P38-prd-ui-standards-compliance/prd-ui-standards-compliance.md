@@ -590,11 +590,14 @@ graph TD
       "Fix the whole chain together" note.)
 
 ### F08. InvestmentTree → Fluent Tree Migration
-- [ ] `InvestmentTree.tsx` is implemented with Fluent `Tree`, exposing `role="tree"` and
+- [x] `InvestmentTree.tsx` is implemented with Fluent `Tree`, exposing `role="tree"` and
       `aria-expanded` via the browser accessibility tree.
-- [ ] Keyboard navigation (arrow keys, roving tabindex) works across the tree.
+- [x] Keyboard navigation (arrow keys, roving tabindex) works across the tree.
 - [ ] Drag-and-drop reordering behaves identically to pre-migration behavior, manually verified.
-- [ ] `selectionMode="single"` is not used.
+      (Automated DnD tests pass unchanged; the manual browser verification this bullet explicitly
+      requires was not performed — the WPF app's pre-existing local launch issue doesn't apply here,
+      but no browser-driving tool was available in this run. Left unchecked deliberately.)
+- [x] `selectionMode="single"` is not used.
 
 ### F09. Repo-wide Fluent DataGrid/Table Adoption
 - [ ] Income, Transfer, Investment, and Investment Snapshot grids are implemented with Fluent
@@ -619,6 +622,6 @@ graph TD
       fixes where applicable.
 - [ ] F05, F06, F07, and F09 each reuse F04's proven Fluent `TabList`/`DataGrid`/validation pattern
       rather than independently reimplementing tab, grid, or validation behavior.
-- [ ] F08's Fluent `Tree` migration uses F01's design tokens for its icons/indicators.
+- [x] F08's Fluent `Tree` migration uses F01's design tokens for its icons/indicators.
 - [ ] F10's persisted defaults apply only to fields on forms already finalized by F04, F05, F06, and
       F07 — no field mapping references a form structure that predates those features' changes.
