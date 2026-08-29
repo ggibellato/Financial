@@ -114,5 +114,66 @@ public class WithdrawalViewModelTests
 
         service.WithdrawalRequests.Should().BeEmpty();
         viewModel.WithdrawalSaveError.Should().Be("Bucket is required.");
+        viewModel.BucketFieldError.Should().Be(viewModel.WithdrawalSaveError);
+    }
+
+    [Fact]
+    public async Task DateFieldError_MissingDate_MatchesSaveError()
+    {
+        var (viewModel, service) = CreateViewModel();
+        viewModel.ShowWithdrawalFormCommand.Execute(null);
+        viewModel.WithdrawalDate = null;
+        viewModel.WithdrawalAmount = "30";
+        viewModel.WithdrawalDescription = "Groceries";
+
+        await viewModel.SubmitWithdrawalAsync();
+
+        service.WithdrawalRequests.Should().BeEmpty();
+        viewModel.DateFieldError.Should().Be(viewModel.WithdrawalSaveError);
+        viewModel.BucketFieldError.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task DescriptionFieldError_MissingDescription_MatchesSaveError()
+    {
+        var (viewModel, service) = CreateViewModel();
+        viewModel.ShowWithdrawalFormCommand.Execute(null);
+        viewModel.WithdrawalAmount = "30";
+        viewModel.WithdrawalDescription = "";
+
+        await viewModel.SubmitWithdrawalAsync();
+
+        service.WithdrawalRequests.Should().BeEmpty();
+        viewModel.DescriptionFieldError.Should().Be(viewModel.WithdrawalSaveError);
+    }
+
+    [Fact]
+    public async Task AmountFieldError_ZeroAmount_MatchesSaveError()
+    {
+        var (viewModel, service) = CreateViewModel();
+        viewModel.ShowWithdrawalFormCommand.Execute(null);
+        viewModel.WithdrawalAmount = "0";
+        viewModel.WithdrawalDescription = "Groceries";
+
+        await viewModel.SubmitWithdrawalAsync();
+
+        service.WithdrawalRequests.Should().BeEmpty();
+        viewModel.AmountFieldError.Should().Be(viewModel.WithdrawalSaveError);
+    }
+
+    [Fact]
+    public async Task FieldErrors_ClearAfterSuccessfulSave()
+    {
+        var (viewModel, _) = CreateViewModel();
+        viewModel.ShowWithdrawalFormCommand.Execute(null);
+        viewModel.WithdrawalAmount = "30";
+        viewModel.WithdrawalDescription = "";
+        await viewModel.SubmitWithdrawalAsync();
+        viewModel.DescriptionFieldError.Should().NotBeNull();
+
+        viewModel.WithdrawalDescription = "Groceries";
+        await viewModel.SubmitWithdrawalAsync();
+
+        viewModel.DescriptionFieldError.Should().BeNull();
     }
 }

@@ -168,9 +168,34 @@ describe('ReservaPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'New Withdrawal' }))
 
     expect(screen.getByText('New Withdrawal', { selector: 'h2' })).toBeInTheDocument()
-    expect(screen.getByLabelText('Bucket')).toBeInTheDocument()
-    expect(screen.getByLabelText('Amount')).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Bucket/)).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Amount/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Add Withdrawal' })).toBeInTheDocument()
+  })
+
+  it('shows a field-level validation error on Amount when Amount is missing on Withdrawal', async () => {
+    render(<ReservaPage />)
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New Withdrawal' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'New Withdrawal' }))
+    fireEvent.change(screen.getByLabelText(/^Date/), { target: { value: '2026-07-01' } })
+    fireEvent.change(screen.getByLabelText(/^Description/), { target: { value: 'Big purchase' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Add Withdrawal' }))
+
+    expect(await screen.findByText('Amount must be a positive number')).toBeInTheDocument()
+    expect(postWithdrawalMock).not.toHaveBeenCalled()
+  })
+
+  it('shows a field-level validation error on Description when Description is cleared on Edit Movement', async () => {
+    render(<ReservaPage />)
+
+    await waitFor(() => expect(screen.getAllByText('Ramsay').length).toBe(4))
+    fireEvent.click(screen.getAllByRole('button', { name: 'Edit movement' })[0])
+    fireEvent.change(screen.getByLabelText(/^Description/), { target: { value: '' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    expect(await screen.findByText('Description is required')).toBeInTheDocument()
+    expect(updateReserveMovementMock).not.toHaveBeenCalled()
   })
 
   it('edits a movement via the toggled panel and saves, updating the displayed row', async () => {
@@ -209,10 +234,10 @@ describe('ReservaPage', () => {
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Withdrawal' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Withdrawal' }))
-    fireEvent.change(screen.getByLabelText('Bucket'), { target: { value: 'b1' } })
-    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '100' } })
-    fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-07-01' } })
-    fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Big purchase' } })
+    fireEvent.change(screen.getByLabelText(/^Bucket/), { target: { value: 'b1' } })
+    fireEvent.change(screen.getByLabelText(/^Amount/), { target: { value: '100' } })
+    fireEvent.change(screen.getByLabelText(/^Date/), { target: { value: '2026-07-01' } })
+    fireEvent.change(screen.getByLabelText(/^Description/), { target: { value: 'Big purchase' } })
     fireEvent.click(screen.getByRole('button', { name: 'Add Withdrawal' }))
 
     await waitFor(() =>
@@ -232,10 +257,10 @@ describe('ReservaPage', () => {
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Withdrawal' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Withdrawal' }))
-    fireEvent.change(screen.getByLabelText('Bucket'), { target: { value: 'b1' } })
-    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '100' } })
-    fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-07-01' } })
-    fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Big purchase' } })
+    fireEvent.change(screen.getByLabelText(/^Bucket/), { target: { value: 'b1' } })
+    fireEvent.change(screen.getByLabelText(/^Amount/), { target: { value: '100' } })
+    fireEvent.change(screen.getByLabelText(/^Date/), { target: { value: '2026-07-01' } })
+    fireEvent.change(screen.getByLabelText(/^Description/), { target: { value: 'Big purchase' } })
     fireEvent.click(screen.getByRole('button', { name: 'Add Withdrawal' }))
 
     await waitFor(() => expect(window.confirm).toHaveBeenCalled())
@@ -280,7 +305,7 @@ describe('ReservaPage', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Withdrawal' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Withdrawal' }))
 
-    const withdrawalOptions = within(screen.getByLabelText('Bucket')).getAllByRole('option')
+    const withdrawalOptions = within(screen.getByLabelText(/^Bucket/)).getAllByRole('option')
     expect(withdrawalOptions.map((o) => o.textContent)).toEqual([
       'Investimento',
       'HouseTreats',

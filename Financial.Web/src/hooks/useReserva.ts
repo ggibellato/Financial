@@ -51,6 +51,7 @@ interface ReservaState {
   withdrawalDescription: string
   isSubmittingWithdrawal: boolean
   withdrawalError: string | null
+  withdrawalErrorField: WithdrawalFormField | null
   editingMovementId: string | null
   editMovementBucketId: string
   editMovementAmount: string
@@ -58,6 +59,7 @@ interface ReservaState {
   editMovementDescription: string
   isSavingMovement: boolean
   saveMovementError: string | null
+  saveMovementErrorField: EditMovementField | null
   deletingMovementId: string | null
   deleteMovementError: string | null
 }
@@ -82,13 +84,13 @@ type ReservaAction =
   | { type: 'SET_WITHDRAWAL_FIELD'; payload: { field: WithdrawalFormField; value: string } }
   | { type: 'WITHDRAWAL_START' }
   | { type: 'WITHDRAWAL_SUCCESS' }
-  | { type: 'WITHDRAWAL_ERROR'; payload: string }
+  | { type: 'WITHDRAWAL_ERROR'; payload: { message: string; field: WithdrawalFormField | null } }
   | { type: 'SHOW_EDIT_MOVEMENT_FORM'; payload: ReserveMovementDto }
   | { type: 'CANCEL_EDIT_MOVEMENT' }
   | { type: 'SET_EDIT_MOVEMENT_FIELD'; payload: { field: EditMovementField; value: string } }
   | { type: 'SAVE_MOVEMENT_START' }
   | { type: 'SAVE_MOVEMENT_SUCCESS' }
-  | { type: 'SAVE_MOVEMENT_ERROR'; payload: string }
+  | { type: 'SAVE_MOVEMENT_ERROR'; payload: { message: string; field: EditMovementField | null } }
   | { type: 'DELETE_MOVEMENT_START'; payload: string }
   | { type: 'DELETE_MOVEMENT_SUCCESS' }
   | { type: 'DELETE_MOVEMENT_ERROR'; payload: string }
@@ -122,6 +124,7 @@ const INITIAL_STATE: ReservaState = {
   ...BLANK_WITHDRAWAL_FORM_FIELDS,
   isSubmittingWithdrawal: false,
   withdrawalError: null,
+  withdrawalErrorField: null,
   editingMovementId: null,
   editMovementBucketId: '',
   editMovementAmount: '',
@@ -129,6 +132,7 @@ const INITIAL_STATE: ReservaState = {
   editMovementDescription: '',
   isSavingMovement: false,
   saveMovementError: null,
+  saveMovementErrorField: null,
   deletingMovementId: null,
   deleteMovementError: null,
 }
@@ -181,11 +185,12 @@ function reducer(state: ReservaState, action: ReservaAction): ReservaState {
         withdrawalBucketId: defaultBucketId(state.buckets),
         isWithdrawalFormOpen: false,
         withdrawalError: null,
+        withdrawalErrorField: null,
       }
     case 'SET_WITHDRAWAL_FIELD':
       return { ...state, [action.payload.field]: action.payload.value }
     case 'WITHDRAWAL_START':
-      return { ...state, isSubmittingWithdrawal: true, withdrawalError: null }
+      return { ...state, isSubmittingWithdrawal: true, withdrawalError: null, withdrawalErrorField: null }
     case 'WITHDRAWAL_SUCCESS':
       return {
         ...state,
@@ -195,7 +200,12 @@ function reducer(state: ReservaState, action: ReservaAction): ReservaState {
         isSubmittingWithdrawal: false,
       }
     case 'WITHDRAWAL_ERROR':
-      return { ...state, isSubmittingWithdrawal: false, withdrawalError: action.payload }
+      return {
+        ...state,
+        isSubmittingWithdrawal: false,
+        withdrawalError: action.payload.message,
+        withdrawalErrorField: action.payload.field,
+      }
     case 'SHOW_EDIT_MOVEMENT_FORM':
       return {
         ...state,
@@ -205,6 +215,7 @@ function reducer(state: ReservaState, action: ReservaAction): ReservaState {
         editMovementDate: action.payload.date,
         editMovementDescription: action.payload.description,
         saveMovementError: null,
+        saveMovementErrorField: null,
       }
     case 'CANCEL_EDIT_MOVEMENT':
       return {
@@ -214,11 +225,12 @@ function reducer(state: ReservaState, action: ReservaAction): ReservaState {
         editMovementDate: '',
         editMovementDescription: '',
         saveMovementError: null,
+        saveMovementErrorField: null,
       }
     case 'SET_EDIT_MOVEMENT_FIELD':
       return { ...state, [action.payload.field]: action.payload.value }
     case 'SAVE_MOVEMENT_START':
-      return { ...state, isSavingMovement: true, saveMovementError: null }
+      return { ...state, isSavingMovement: true, saveMovementError: null, saveMovementErrorField: null }
     case 'SAVE_MOVEMENT_SUCCESS':
       return {
         ...state,
@@ -229,7 +241,12 @@ function reducer(state: ReservaState, action: ReservaAction): ReservaState {
         editMovementDescription: '',
       }
     case 'SAVE_MOVEMENT_ERROR':
-      return { ...state, isSavingMovement: false, saveMovementError: action.payload }
+      return {
+        ...state,
+        isSavingMovement: false,
+        saveMovementError: action.payload.message,
+        saveMovementErrorField: action.payload.field,
+      }
     case 'DELETE_MOVEMENT_START':
       return { ...state, deletingMovementId: action.payload, deleteMovementError: null }
     case 'DELETE_MOVEMENT_SUCCESS':
@@ -280,6 +297,7 @@ export interface ReservaData {
   withdrawalDescription: string
   isSubmittingWithdrawal: boolean
   withdrawalError: string | null
+  withdrawalErrorField: WithdrawalFormField | null
   showWithdrawalForm: () => void
   cancelWithdrawalForm: () => void
   setWithdrawalField: (field: WithdrawalFormField, value: string) => void
@@ -291,6 +309,7 @@ export interface ReservaData {
   editMovementDescription: string
   isSavingMovement: boolean
   saveMovementError: string | null
+  saveMovementErrorField: EditMovementField | null
   showEditMovementForm: (movement: ReserveMovementDto) => void
   cancelEditMovement: () => void
   setEditMovementField: (field: EditMovementField, value: string) => void
@@ -456,13 +475,13 @@ export function useReserva(): ReservaData {
             performWithdrawal(true, confirmProceed)
             return
           }
-          dispatch({ type: 'WITHDRAWAL_ERROR', payload: err.message })
+          dispatch({ type: 'WITHDRAWAL_ERROR', payload: { message: err.message, field: null } })
           return
         }
 
         dispatch({
           type: 'WITHDRAWAL_ERROR',
-          payload: getErrorMessage(err, 'Failed to post withdrawal'),
+          payload: { message: getErrorMessage(err, 'Failed to post withdrawal'), field: null },
         })
       })
   }
@@ -470,24 +489,30 @@ export function useReserva(): ReservaData {
   function submitWithdrawal(confirmProceed: ConfirmProceed) {
     const { withdrawalBucketId, withdrawalAmount, withdrawalDate, withdrawalDescription } = state
 
+    if (!withdrawalDate.trim()) {
+      dispatch({ type: 'WITHDRAWAL_ERROR', payload: { message: 'Date is required', field: 'withdrawalDate' } })
+      return
+    }
+
     if (!withdrawalBucketId.trim()) {
-      dispatch({ type: 'WITHDRAWAL_ERROR', payload: BUCKET_REQUIRED_ERROR })
+      dispatch({ type: 'WITHDRAWAL_ERROR', payload: { message: BUCKET_REQUIRED_ERROR, field: 'withdrawalBucketId' } })
+      return
+    }
+
+    if (!withdrawalDescription.trim()) {
+      dispatch({
+        type: 'WITHDRAWAL_ERROR',
+        payload: { message: 'Description is required', field: 'withdrawalDescription' },
+      })
       return
     }
 
     const amount = Number(withdrawalAmount)
     if (!withdrawalAmount.trim() || !isFinite(amount) || amount <= 0) {
-      dispatch({ type: 'WITHDRAWAL_ERROR', payload: 'Amount must be a positive number' })
-      return
-    }
-
-    if (!withdrawalDate.trim()) {
-      dispatch({ type: 'WITHDRAWAL_ERROR', payload: 'Date is required' })
-      return
-    }
-
-    if (!withdrawalDescription.trim()) {
-      dispatch({ type: 'WITHDRAWAL_ERROR', payload: 'Description is required' })
+      dispatch({
+        type: 'WITHDRAWAL_ERROR',
+        payload: { message: 'Amount must be a positive number', field: 'withdrawalAmount' },
+      })
       return
     }
 
@@ -499,24 +524,30 @@ export function useReserva(): ReservaData {
     const { editingMovementId, editMovementBucketId, editMovementAmount, editMovementDate, editMovementDescription } = state
     if (!editingMovementId) return
 
+    if (!editMovementDate.trim()) {
+      dispatch({ type: 'SAVE_MOVEMENT_ERROR', payload: { message: 'Date is required', field: 'editMovementDate' } })
+      return
+    }
+
     if (!editMovementBucketId.trim()) {
-      dispatch({ type: 'SAVE_MOVEMENT_ERROR', payload: BUCKET_REQUIRED_ERROR })
+      dispatch({
+        type: 'SAVE_MOVEMENT_ERROR',
+        payload: { message: BUCKET_REQUIRED_ERROR, field: 'editMovementBucketId' },
+      })
+      return
+    }
+
+    if (!editMovementDescription.trim()) {
+      dispatch({
+        type: 'SAVE_MOVEMENT_ERROR',
+        payload: { message: 'Description is required', field: 'editMovementDescription' },
+      })
       return
     }
 
     const amount = Number(editMovementAmount)
     if (!editMovementAmount.trim() || !isFinite(amount)) {
-      dispatch({ type: 'SAVE_MOVEMENT_ERROR', payload: 'Amount must be a number' })
-      return
-    }
-
-    if (!editMovementDate.trim()) {
-      dispatch({ type: 'SAVE_MOVEMENT_ERROR', payload: 'Date is required' })
-      return
-    }
-
-    if (!editMovementDescription.trim()) {
-      dispatch({ type: 'SAVE_MOVEMENT_ERROR', payload: 'Description is required' })
+      dispatch({ type: 'SAVE_MOVEMENT_ERROR', payload: { message: 'Amount must be a number', field: 'editMovementAmount' } })
       return
     }
 
@@ -536,7 +567,7 @@ export function useReserva(): ReservaData {
       .catch((err: unknown) => {
         dispatch({
           type: 'SAVE_MOVEMENT_ERROR',
-          payload: getErrorMessage(err, 'Failed to update movement'),
+          payload: { message: getErrorMessage(err, 'Failed to update movement'), field: null },
         })
       })
   }
@@ -587,6 +618,7 @@ export function useReserva(): ReservaData {
     withdrawalDescription: state.withdrawalDescription,
     isSubmittingWithdrawal: state.isSubmittingWithdrawal,
     withdrawalError: state.withdrawalError,
+    withdrawalErrorField: state.withdrawalErrorField,
     showWithdrawalForm,
     cancelWithdrawalForm,
     setWithdrawalField,
@@ -598,6 +630,7 @@ export function useReserva(): ReservaData {
     editMovementDescription: state.editMovementDescription,
     isSavingMovement: state.isSavingMovement,
     saveMovementError: state.saveMovementError,
+    saveMovementErrorField: state.saveMovementErrorField,
     showEditMovementForm,
     cancelEditMovement,
     setEditMovementField,
