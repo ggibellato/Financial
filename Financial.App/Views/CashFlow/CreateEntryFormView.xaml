@@ -39,15 +39,15 @@
             <TextBlock Grid.Row="1" Grid.Column="0" Text="Date:" VerticalAlignment="Center"/>
             <DatePicker Grid.Row="1" Grid.Column="1" SelectedDate="{Binding CreateDate, UpdateSourceTrigger=PropertyChanged}"/>
 
-            <TextBlock Grid.Row="2" Grid.Column="0" Text="Description:" VerticalAlignment="Center"/>
-            <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding CreateDescription, UpdateSourceTrigger=PropertyChanged}"/>
-
-            <TextBlock Grid.Row="3" Grid.Column="0" Text="Note:" VerticalAlignment="Center"/>
-            <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding CreateNote, UpdateSourceTrigger=PropertyChanged}"/>
-
-            <TextBlock Grid.Row="4" Grid.Column="0" Text="Currency:" VerticalAlignment="Center"/>
-            <ComboBox Grid.Row="4" Grid.Column="1" ItemsSource="{x:Static vm:ControleMaeViewModel.Currencies}"
+            <TextBlock Grid.Row="2" Grid.Column="0" Text="Currency:" VerticalAlignment="Center"/>
+            <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{x:Static vm:ControleMaeViewModel.Currencies}"
                       SelectedItem="{Binding CreateCurrency, UpdateSourceTrigger=PropertyChanged}"/>
+
+            <TextBlock Grid.Row="3" Grid.Column="0" Text="Description:" VerticalAlignment="Center"/>
+            <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding CreateDescription, UpdateSourceTrigger=PropertyChanged}"/>
+
+            <TextBlock Grid.Row="4" Grid.Column="0" Text="Note:" VerticalAlignment="Center"/>
+            <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding CreateNote, UpdateSourceTrigger=PropertyChanged}"/>
 
             <TextBlock Grid.Row="5" Grid.Column="0" Text="Value:" VerticalAlignment="Center"/>
             <!-- Plain TextBox (not the shared decimal-masked input): the source value may be
@@ -59,7 +59,7 @@
                        Text="{Binding CreateSaveError}" Margin="0,8,0,0"/>
 
             <StackPanel Grid.Row="7" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,12,0,0">
-                <Button Width="100" Command="{Binding SubmitCreateCommand}">
+                <Button Width="90" Command="{Binding SubmitCreateCommand}">
                     <Button.Style>
                         <Style TargetType="Button">
                             <Setter Property="Content" Value="Add Entry"/>
