@@ -29,6 +29,7 @@ const baseProps = {
   incomeSources: INCOME_SOURCES,
   isSaving: false,
   saveError: null,
+  saveErrorField: null,
   onFieldChange: vi.fn(),
   onSave: vi.fn(),
   onCancel: vi.fn(),
@@ -39,8 +40,8 @@ describe('IncomeForm', () => {
     render(<IncomeForm {...baseProps} />)
 
     expect(screen.getByText('New Income')).toBeInTheDocument()
-    expect(screen.getByLabelText('Date')).toHaveValue('')
-    expect(screen.getByLabelText('Net Value')).toHaveValue(null)
+    expect(screen.getByLabelText(/^Date/)).toHaveValue('')
+    expect(screen.getByLabelText(/^Net Value/)).toHaveValue(null)
     expect(screen.getByRole('button', { name: 'Add Income' })).toBeInTheDocument()
   })
 
@@ -80,7 +81,7 @@ describe('IncomeForm', () => {
   it('renders the source dropdown options from the fetched, active income sources', () => {
     render(<IncomeForm {...baseProps} />)
 
-    const select = screen.getByLabelText('Source') as HTMLSelectElement
+    const select = screen.getByLabelText(/^Source/) as HTMLSelectElement
     const optionValues = Array.from(select.options).map((o) => o.value)
     expect(optionValues).toEqual(['1', '2', '3', '4'])
     const optionLabels = Array.from(select.options).map((o) => o.text)
@@ -94,7 +95,7 @@ describe('IncomeForm', () => {
     ]
     render(<IncomeForm {...baseProps} incomeSources={sources} />)
 
-    const select = screen.getByLabelText('Source') as HTMLSelectElement
+    const select = screen.getByLabelText(/^Source/) as HTMLSelectElement
     const optionLabels = Array.from(select.options).map((o) => o.text)
     expect(optionLabels).not.toContain('RetiredSource')
     expect(optionLabels).toHaveLength(4)
@@ -103,7 +104,7 @@ describe('IncomeForm', () => {
   it('renders no options when the income sources list is empty', () => {
     render(<IncomeForm {...baseProps} incomeSources={[]} />)
 
-    const select = screen.getByLabelText('Source') as HTMLSelectElement
+    const select = screen.getByLabelText(/^Source/) as HTMLSelectElement
     expect(select.options).toHaveLength(0)
   })
 

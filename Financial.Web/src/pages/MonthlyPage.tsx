@@ -121,6 +121,7 @@ export default function MonthlyPage() {
     incomeSplitToReserve,
     isSavingIncome,
     saveIncomeError,
+    saveIncomeErrorField,
     splitConfirmationMessage,
     showCreateIncomeForm,
     showEditIncomeForm,
@@ -300,6 +301,7 @@ export default function MonthlyPage() {
                   incomeSources={incomeSources}
                   isSaving={isSavingIncome}
                   saveError={saveIncomeError}
+                  saveErrorField={saveIncomeErrorField}
                   onFieldChange={setIncomeField}
                   onSave={submitIncome}
                   onCancel={cancelIncomeForm}
