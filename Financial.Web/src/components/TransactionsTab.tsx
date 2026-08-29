@@ -348,7 +348,7 @@ export default function TransactionsTab() {
 
       <div className="transactions-tab__toolbar">
         <button className="transactions-tab__new-btn" type="button" onClick={showNewForm}>
-          New
+          New transaction
         </button>
       </div>
 

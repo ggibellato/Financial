@@ -251,7 +251,7 @@ export default function PriceHistoryTab() {
     <div className="price-history-tab__left">
       <div className="price-history-tab__table-toolbar">
         <button className="price-history-tab__new-btn" type="button" onClick={showNewForm}>
-          New
+          New price
         </button>
       </div>
 

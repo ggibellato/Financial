@@ -371,7 +371,7 @@ export default function CreditsTab() {
     <div className="credits-tab__left">
       <div className="credits-tab__table-toolbar">
         <button className="credits-tab__new-btn" type="button" onClick={showNewForm}>
-          New
+          New credit
         </button>
       </div>
 
