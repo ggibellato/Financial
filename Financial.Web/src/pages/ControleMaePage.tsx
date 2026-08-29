@@ -169,6 +169,17 @@ export default function ControleMaePage() {
                 />
               </div>
               <div className="controle-mae-page__form-field">
+                <label htmlFor="create-currency">Currency</label>
+                <select
+                  id="create-currency"
+                  value={createSourceCurrency}
+                  onChange={(e) => setCreateField('createSourceCurrency', e.target.value)}
+                >
+                  <option value="BRL">BRL</option>
+                  <option value="GBP">GBP</option>
+                </select>
+              </div>
+              <div className="controle-mae-page__form-field">
                 <label htmlFor="create-description">Description</label>
                 <input
                   id="create-description"
@@ -185,17 +196,6 @@ export default function ControleMaePage() {
                   value={createNote}
                   onChange={(e) => setCreateField('createNote', e.target.value)}
                 />
-              </div>
-              <div className="controle-mae-page__form-field">
-                <label htmlFor="create-currency">Currency</label>
-                <select
-                  id="create-currency"
-                  value={createSourceCurrency}
-                  onChange={(e) => setCreateField('createSourceCurrency', e.target.value)}
-                >
-                  <option value="BRL">BRL</option>
-                  <option value="GBP">GBP</option>
-                </select>
               </div>
               <div className="controle-mae-page__form-field">
                 <label htmlFor="create-value">Value</label>

@@ -98,6 +98,18 @@ describe('ControleMaePage', () => {
     expect(screen.getByRole('button', { name: 'Add Entry' })).toBeInTheDocument()
   })
 
+  it('lists the Create Entry fields in Date, Currency, Description, Note, Value order', async () => {
+    render(<ControleMaePage />)
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New Entry' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'New Entry' }))
+
+    const fieldLabels = screen
+      .getAllByText(/^(Date|Currency|Description|Note|Value)$/, { selector: 'label' })
+      .map((label) => label.textContent)
+    expect(fieldLabels).toEqual(['Date', 'Currency', 'Description', 'Note', 'Value'])
+  })
+
   it('edits an entry values via the toggled panel and saves, updating the displayed row', async () => {
     updateMaeLedgerEntryValuesMock.mockResolvedValue({ ...ENTRIES[0], brlValue: 355, gbpValue: 51.6 })
     render(<ControleMaePage />)
