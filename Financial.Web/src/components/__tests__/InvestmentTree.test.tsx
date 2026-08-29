@@ -116,6 +116,15 @@ describe('InvestmentTree', () => {
     expect(await screen.findByText('XPI (BRL)')).toBeInTheDocument()
   })
 
+  it('renders with the tree and treeitem accessibility roles', async () => {
+    renderTree()
+    await screen.findByText('XPI (BRL)')
+    expect(screen.getByRole('tree', { name: 'Investments' })).toBeInTheDocument()
+    const brokerItem = screen.getByText('XPI (BRL)').closest('[role="treeitem"]') as HTMLElement
+    expect(brokerItem).toBeInTheDocument()
+    expect(brokerItem).toHaveAttribute('aria-expanded', 'true')
+  })
+
   it('requests the tree with active scope by default', async () => {
     renderTree()
     await screen.findByText('XPI (BRL)')
@@ -136,17 +145,15 @@ describe('InvestmentTree', () => {
   it('renders portfolio nodes under broker', async () => {
     renderTree()
     await screen.findByText('XPI (BRL)')
-    fireEvent.click(screen.getByText('Acoes (2 assets)'))
     expect(screen.getByText('Acoes (2 assets)')).toBeInTheDocument()
   })
 
   it('renders a filled bullet prefix regardless of position type', async () => {
     renderTree()
     await screen.findByText('XPI (BRL)')
-    const expandBtn = screen.getAllByLabelText('Expand')[0]
-    fireEvent.click(expandBtn)
-    expect(screen.getByRole('button', { name: '● KLBN4' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '● TRPL4' })).toBeInTheDocument()
+    fireEvent.click(screen.getByText('Acoes (2 assets)'))
+    expect(screen.getByRole('treeitem', { name: '● KLBN4' })).toBeInTheDocument()
+    expect(screen.getByRole('treeitem', { name: '● TRPL4' })).toBeInTheDocument()
   })
 
   it('renders Long/Flat/Short status icons with the matching color class', async () => {
@@ -171,25 +178,24 @@ describe('InvestmentTree', () => {
       </SelectedNodeProvider>,
     )
     await screen.findByText('XPI (BRL)')
-    fireEvent.click(screen.getAllByLabelText('Expand')[0])
+    fireEvent.click(screen.getByText('Mix (3 assets)'))
 
-    expect(screen.getByRole('button', { name: '● LONGASSET' }).querySelector('span')).toHaveClass(
-      'investment-tree__status-icon--long',
-    )
-    expect(screen.getByRole('button', { name: '● FLATASSET' }).querySelector('span')).toHaveClass(
-      'investment-tree__status-icon--flat',
-    )
-    expect(screen.getByRole('button', { name: '● SHORTASSET' }).querySelector('span')).toHaveClass(
-      'investment-tree__status-icon--short',
-    )
+    expect(
+      screen.getByRole('treeitem', { name: '● LONGASSET' }).querySelector('.investment-tree__status-icon'),
+    ).toHaveClass('investment-tree__status-icon--long')
+    expect(
+      screen.getByRole('treeitem', { name: '● FLATASSET' }).querySelector('.investment-tree__status-icon'),
+    ).toHaveClass('investment-tree__status-icon--flat')
+    expect(
+      screen.getByRole('treeitem', { name: '● SHORTASSET' }).querySelector('.investment-tree__status-icon'),
+    ).toHaveClass('investment-tree__status-icon--short')
   })
 
   it('clicking asset node sets selectedNode in context', async () => {
     renderTree()
     await screen.findByText('XPI (BRL)')
-    const expandBtn = screen.getAllByLabelText('Expand')[0]
-    fireEvent.click(expandBtn)
-    fireEvent.click(screen.getByRole('button', { name: '● KLBN4' }))
+    fireEvent.click(screen.getByText('Acoes (2 assets)'))
+    fireEvent.click(screen.getByText('KLBN4'))
     expect(screen.getByTestId('selected').textContent).toBe('Asset:XPI:Acoes:KLBN4')
   })
 
@@ -204,8 +210,8 @@ describe('InvestmentTree', () => {
    */
   const accepts = (row: HTMLElement) => !fireEvent.dragOver(row, { dataTransfer: dataTransfer() })
 
-  /** The row element carries the drop handlers; the label sits inside it. */
-  const rowOf = (label: string) => screen.getByText(label).closest('.investment-tree__row') as HTMLElement
+  /** The TreeItemLayout element carries the drop handlers; the label sits inside it. */
+  const rowOf = (label: string) => screen.getByText(label).closest('.investment-tree__node') as HTMLElement
 
   const twoBrokerTree: TreeNodeDto = {
     nodeType: 'Investments',
@@ -223,8 +229,8 @@ describe('InvestmentTree', () => {
   async function startDraggingKLBN4() {
     renderTree(twoBrokerTree)
     await screen.findByText('XPI (BRL)')
-    fireEvent.click(screen.getAllByLabelText('Expand')[0])
-    const asset = screen.getByRole('button', { name: '● KLBN4' }).closest('li') as HTMLElement
+    fireEvent.click(screen.getByText('Acoes (1 assets)'))
+    const asset = screen.getByRole('treeitem', { name: '● KLBN4' })
     fireEvent.dragStart(asset, { dataTransfer: dataTransfer() })
   }
 
@@ -301,9 +307,9 @@ describe('InvestmentTree', () => {
     // a click - so the click is what the test has to make.
     renderTree()
     await screen.findByText('XPI (BRL)')
-    fireEvent.click(screen.getAllByLabelText('Expand')[0])
+    fireEvent.click(screen.getByText('Acoes (2 assets)'))
 
-    fireEvent.click(screen.getByRole('button', { name: '● KLBN4' }))
+    fireEvent.click(screen.getByText('KLBN4'))
 
     expect(screen.getByTestId('selected-quantity').textContent).toBe('8')
   })
@@ -311,9 +317,9 @@ describe('InvestmentTree', () => {
   it('carries a zero quantity as zero, not as absent', async () => {
     renderTree()
     await screen.findByText('XPI (BRL)')
-    fireEvent.click(screen.getAllByLabelText('Expand')[0])
+    fireEvent.click(screen.getByText('Acoes (2 assets)'))
 
-    fireEvent.click(screen.getByRole('button', { name: '● TRPL4' }))
+    fireEvent.click(screen.getByText('TRPL4'))
 
     expect(screen.getByTestId('selected-quantity').textContent).toBe('0')
   })
@@ -330,9 +336,9 @@ describe('InvestmentTree', () => {
     }
     renderTree(tree)
     await screen.findByText('XPI (BRL)')
-    fireEvent.click(screen.getAllByLabelText('Expand')[0])
+    fireEvent.click(screen.getByText('Acoes (1 assets)'))
 
-    fireEvent.click(screen.getByRole('button', { name: '● NOQTY' }))
+    fireEvent.click(screen.getByText('NOQTY'))
 
     expect(screen.getByTestId('selected-quantity').textContent).toBe('-1')
   })
@@ -394,12 +400,11 @@ describe('InvestmentTree', () => {
       </SelectedNodeProvider>,
     )
     await screen.findByText('XPI (BRL)')
-    const expandBtn = screen.getAllByLabelText('Expand')[0]
-    fireEvent.click(expandBtn)
+    fireEvent.click(screen.getByText('Mix (2 assets)'))
 
     fireEvent.change(screen.getByLabelText('Asset class'), { target: { value: '1' } })
-    expect(screen.getByRole('button', { name: '● KLBN4' })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: '● TREA3' })).not.toBeInTheDocument()
+    expect(screen.getByRole('treeitem', { name: '● KLBN4' })).toBeInTheDocument()
+    expect(screen.queryByRole('treeitem', { name: '● TREA3' })).not.toBeInTheDocument()
   })
 
   it('asset class filter All restores full tree', async () => {
@@ -420,13 +425,12 @@ describe('InvestmentTree', () => {
       </SelectedNodeProvider>,
     )
     await screen.findByText('XPI (BRL)')
-    const expandBtn = screen.getAllByLabelText('Expand')[0]
-    fireEvent.click(expandBtn)
+    fireEvent.click(screen.getByText('Mix (2 assets)'))
 
     fireEvent.change(screen.getByLabelText('Asset class'), { target: { value: '1' } })
     fireEvent.change(screen.getByLabelText('Asset class'), { target: { value: 'all' } })
-    expect(screen.getByRole('button', { name: '● KLBN4' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '● TREA3' })).toBeInTheDocument()
+    expect(screen.getByRole('treeitem', { name: '● KLBN4' })).toBeInTheDocument()
+    expect(screen.getByRole('treeitem', { name: '● TREA3' })).toBeInTheDocument()
   })
 
   it('asset class filter shows Cryptocurrency option', async () => {
@@ -454,12 +458,11 @@ describe('InvestmentTree', () => {
       </SelectedNodeProvider>,
     )
     await screen.findByText('Coinbase (GBP)')
-    const expandBtn = screen.getAllByLabelText('Expand')[0]
-    fireEvent.click(expandBtn)
+    fireEvent.click(screen.getByText('Cryptocurrency (2 assets)'))
 
     fireEvent.change(screen.getByLabelText('Asset class'), { target: { value: '9' } })
-    expect(screen.getByRole('button', { name: '● BTC' })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: '● TREA3' })).not.toBeInTheDocument()
+    expect(screen.getByRole('treeitem', { name: '● BTC' })).toBeInTheDocument()
+    expect(screen.queryByRole('treeitem', { name: '● TREA3' })).not.toBeInTheDocument()
   })
 
   it('broker node is retained in tree when filter is active', async () => {
@@ -495,20 +498,26 @@ describe('InvestmentTree', () => {
     expect(screen.getByText('Acoes (2 assets)')).toBeInTheDocument()
   })
 
-  it('clicking broker chevron collapses broker', async () => {
+  it('clicking a broker node collapses it', async () => {
     renderTree()
     await screen.findByText('XPI (BRL)')
     expect(screen.getByText('Acoes (2 assets)')).toBeInTheDocument()
-    fireEvent.click(screen.getAllByLabelText('Collapse')[0])
+    fireEvent.click(screen.getByText('XPI (BRL)'))
     expect(screen.queryByText('Acoes (2 assets)')).not.toBeInTheDocument()
   })
 
-  it('clicking broker chevron again expands broker', async () => {
+  it('clicking a broker node again expands it', async () => {
     renderTree()
     await screen.findByText('XPI (BRL)')
-    fireEvent.click(screen.getAllByLabelText('Collapse')[0])
-    fireEvent.click(screen.getAllByLabelText('Expand')[0])
+    fireEvent.click(screen.getByText('XPI (BRL)'))
+    fireEvent.click(screen.getByText('XPI (BRL)'))
     expect(screen.getByText('Acoes (2 assets)')).toBeInTheDocument()
+  })
+
+  it('does not use selectionMode="single" (verified structurally: no radio role rendered)', async () => {
+    renderTree()
+    await screen.findByText('XPI (BRL)')
+    expect(screen.queryByRole('radio')).not.toBeInTheDocument()
   })
 
   it('shows error state on fetch failure', async () => {

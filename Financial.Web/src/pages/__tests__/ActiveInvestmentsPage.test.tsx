@@ -11,12 +11,14 @@ const {
   getCurrentPriceMock,
   getSummaryByBrokerMock,
   getSummaryByPortfolioMock,
+  getPortfolioAssetsSummaryMock,
 } = vi.hoisted(() => ({
   getNavigationTreeMock: vi.fn(),
   getAssetDetailsMock: vi.fn(),
   getCurrentPriceMock: vi.fn(),
   getSummaryByBrokerMock: vi.fn(),
   getSummaryByPortfolioMock: vi.fn(),
+  getPortfolioAssetsSummaryMock: vi.fn(),
 }))
 
 vi.mock('../../api/financialApiClient', () => ({
@@ -26,6 +28,7 @@ vi.mock('../../api/financialApiClient', () => ({
     getCurrentPrice: getCurrentPriceMock,
     getSummaryByBroker: getSummaryByBrokerMock,
     getSummaryByPortfolio: getSummaryByPortfolioMock,
+    getPortfolioAssetsSummary: getPortfolioAssetsSummaryMock,
   } as Partial<FinancialApiClient>,
 }))
 
@@ -78,6 +81,7 @@ describe('ActiveInvestmentsPage', () => {
     getCurrentPriceMock.mockReturnValue(new Promise(() => {}))
     getSummaryByBrokerMock.mockReturnValue(new Promise(() => {}))
     getSummaryByPortfolioMock.mockReturnValue(new Promise(() => {}))
+    getPortfolioAssetsSummaryMock.mockReturnValue(new Promise(() => {}))
   })
 
   it('renders tree and empty detail state on load', async () => {
@@ -91,8 +95,8 @@ describe('ActiveInvestmentsPage', () => {
     getNavigationTreeMock.mockResolvedValue(stubTree)
     renderPage()
     await screen.findByText('XPI (BRL)')
-    fireEvent.click(screen.getAllByLabelText('Expand')[0])
-    fireEvent.click(screen.getByRole('button', { name: '● KLBN4' }))
+    fireEvent.click(screen.getByText('Acoes (1 assets)'))
+    fireEvent.click(screen.getByText('KLBN4'))
     expect(screen.getByText('KLBN4', { selector: '.detail-panel__name' })).toBeInTheDocument()
     expect(screen.getByText('KLBN4 · BVMF · XPI · Acoes')).toBeInTheDocument()
   })
