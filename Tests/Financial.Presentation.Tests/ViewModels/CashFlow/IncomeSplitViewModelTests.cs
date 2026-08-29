@@ -48,4 +48,64 @@ public class IncomeSplitViewModelTests
         service.LastSplitRequest.Should().BeNull();
         viewModel.SplitSaveError.Should().NotBeNullOrEmpty();
     }
+
+    [Fact]
+    public async Task DateFieldError_MissingDate_MatchesSaveError()
+    {
+        var (viewModel, service) = CreateViewModel();
+        viewModel.ShowSplitFormCommand.Execute(null);
+        viewModel.SplitDate = null;
+        viewModel.SplitAmount = "100";
+        viewModel.SplitDescription = "Salary";
+
+        await viewModel.SubmitSplitAsync();
+
+        service.LastSplitRequest.Should().BeNull();
+        viewModel.DateFieldError.Should().Be(viewModel.SplitSaveError);
+        viewModel.AmountFieldError.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task AmountFieldError_ZeroAmount_MatchesSaveError()
+    {
+        var (viewModel, service) = CreateViewModel();
+        viewModel.ShowSplitFormCommand.Execute(null);
+        viewModel.SplitAmount = "0";
+        viewModel.SplitDescription = "Salary";
+
+        await viewModel.SubmitSplitAsync();
+
+        service.LastSplitRequest.Should().BeNull();
+        viewModel.AmountFieldError.Should().Be(viewModel.SplitSaveError);
+    }
+
+    [Fact]
+    public async Task DescriptionFieldError_MissingDescription_MatchesSaveError()
+    {
+        var (viewModel, service) = CreateViewModel();
+        viewModel.ShowSplitFormCommand.Execute(null);
+        viewModel.SplitAmount = "100";
+        viewModel.SplitDescription = "";
+
+        await viewModel.SubmitSplitAsync();
+
+        service.LastSplitRequest.Should().BeNull();
+        viewModel.DescriptionFieldError.Should().Be(viewModel.SplitSaveError);
+    }
+
+    [Fact]
+    public async Task FieldErrors_ClearAfterSuccessfulSave()
+    {
+        var (viewModel, _) = CreateViewModel();
+        viewModel.ShowSplitFormCommand.Execute(null);
+        viewModel.SplitAmount = "100";
+        viewModel.SplitDescription = "";
+        await viewModel.SubmitSplitAsync();
+        viewModel.DescriptionFieldError.Should().NotBeNull();
+
+        viewModel.SplitDescription = "Salary";
+        await viewModel.SubmitSplitAsync();
+
+        viewModel.DescriptionFieldError.Should().BeNull();
+    }
 }

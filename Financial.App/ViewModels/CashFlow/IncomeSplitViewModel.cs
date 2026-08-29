@@ -56,8 +56,32 @@ public class IncomeSplitViewModel : ViewModelBase
     public string? SplitSaveError
     {
         get => _splitSaveError;
-        private set => SetProperty(ref _splitSaveError, value);
+        private set
+        {
+            if (SetProperty(ref _splitSaveError, value))
+            {
+                OnPropertyChanged(nameof(DateFieldError));
+                OnPropertyChanged(nameof(AmountFieldError));
+                OnPropertyChanged(nameof(DescriptionFieldError));
+            }
+        }
     }
+
+    /// <summary>
+    /// Per-field validation errors (P38-F05) — same substring-match pattern as F02/F04's
+    /// derived field-error properties, matching this form's own client-side
+    /// <see cref="IncomeSplitFormValidation"/> text.
+    /// </summary>
+    public string? DateFieldError => MatchFieldError("Date is required.");
+
+    public string? AmountFieldError => MatchFieldError("Amount must be a positive number.");
+
+    public string? DescriptionFieldError => MatchFieldError("Description is required.");
+
+    private string? MatchFieldError(string fragment) =>
+        SplitSaveError is { } error && error.Contains(fragment, StringComparison.OrdinalIgnoreCase)
+            ? error
+            : null;
 
     public IncomeSplitResultDTO? LastSplitResult
     {
