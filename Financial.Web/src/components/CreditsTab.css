@@ -3,6 +3,11 @@
   flex-direction: column;
   height: 100%;
   overflow: hidden;
+  /* Categorical credit-type colors — component-local, not part of the
+     global token contract in docs/ui/design-tokens.md. */
+  --credit-type-dividend: #1565c0;
+  --credit-type-rent: #0277bd;
+  --credit-type-jcp: #00838f;
 }
 
 .credits-tab__controls {
@@ -110,14 +115,14 @@
   font-size: 12px;
   padding: 3px 12px;
   cursor: pointer;
-  background: #007acc;
+  background: var(--accent);
   color: #fff;
   border: none;
   border-radius: 3px;
 }
 
 .credits-tab__new-btn:hover {
-  background: #005fa3;
+  background: var(--accent-hover);
 }
 
 .credits-tab__form {
@@ -173,7 +178,7 @@
   font-size: 12px;
   padding: 3px 12px;
   cursor: pointer;
-  background: #007acc;
+  background: var(--accent);
   color: #fff;
   border: none;
   border-radius: 3px;
@@ -226,15 +231,15 @@
 }
 
 .credits-tab__type--dividend {
-  color: #1565c0;
+  color: var(--credit-type-dividend);
 }
 
 .credits-tab__type--rent {
-  color: #0277bd;
+  color: var(--credit-type-rent);
 }
 
 .credits-tab__type--jcp {
-  color: #00838f;
+  color: var(--credit-type-jcp);
 }
 
 .credits-tab__value {
