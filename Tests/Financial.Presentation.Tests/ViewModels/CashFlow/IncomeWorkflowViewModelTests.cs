@@ -397,6 +397,73 @@ public class IncomeWorkflowViewModelTests
         viewModel.IncomeBankOptions.Should().Contain(o => o.Id == ChaseId && o.Name == "Chase");
     }
 
+    [Fact]
+    public async Task DateFieldError_MissingDate_MatchesSaveError()
+    {
+        var (viewModel, incomes) = CreateViewModel();
+        viewModel.ApplyRefresh([], DefaultIncomeSources, DefaultBanks);
+        viewModel.ShowCreateIncomeFormCommand.Execute(null);
+        viewModel.IncomeFormDate = null;
+        viewModel.IncomeFormSource = LotterySourceId;
+        viewModel.IncomeFormNetValue = "50";
+
+        await viewModel.SaveIncomeAsync();
+
+        incomes.LastCreateRequest.Should().BeNull();
+        viewModel.DateFieldError.Should().Be(viewModel.IncomeSaveError);
+        viewModel.SourceFieldError.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task SourceFieldError_MissingSource_MatchesSaveError()
+    {
+        var (viewModel, incomes) = CreateViewModel();
+        viewModel.ApplyRefresh([], DefaultIncomeSources, DefaultBanks);
+        viewModel.ShowCreateIncomeFormCommand.Execute(null);
+        viewModel.IncomeFormDate = DateTime.Today;
+        viewModel.IncomeFormSource = null;
+        viewModel.IncomeFormNetValue = "50";
+
+        await viewModel.SaveIncomeAsync();
+
+        incomes.LastCreateRequest.Should().BeNull();
+        viewModel.SourceFieldError.Should().Be(viewModel.IncomeSaveError);
+    }
+
+    [Fact]
+    public async Task NetValueFieldError_NonNumeric_MatchesSaveError()
+    {
+        var (viewModel, incomes) = CreateViewModel();
+        viewModel.ApplyRefresh([], DefaultIncomeSources, DefaultBanks);
+        viewModel.ShowCreateIncomeFormCommand.Execute(null);
+        viewModel.IncomeFormDate = DateTime.Today;
+        viewModel.IncomeFormSource = LotterySourceId;
+        viewModel.IncomeFormNetValue = "abc";
+
+        await viewModel.SaveIncomeAsync();
+
+        incomes.LastCreateRequest.Should().BeNull();
+        viewModel.NetValueFieldError.Should().Be(viewModel.IncomeSaveError);
+    }
+
+    [Fact]
+    public async Task FieldErrors_ClearAfterSuccessfulSave()
+    {
+        var (viewModel, _) = CreateViewModel();
+        viewModel.ApplyRefresh([], DefaultIncomeSources, DefaultBanks);
+        viewModel.ShowCreateIncomeFormCommand.Execute(null);
+        viewModel.IncomeFormDate = null;
+        viewModel.IncomeFormSource = LotterySourceId;
+        viewModel.IncomeFormNetValue = "50";
+        await viewModel.SaveIncomeAsync();
+        viewModel.DateFieldError.Should().NotBeNull();
+
+        viewModel.IncomeFormDate = DateTime.Today;
+        await viewModel.SaveIncomeAsync();
+
+        viewModel.DateFieldError.Should().BeNull();
+    }
+
     private static IncomeDTO MakeIncome(string description, string? bankName) => new()
     {
         Id = Guid.NewGuid(),

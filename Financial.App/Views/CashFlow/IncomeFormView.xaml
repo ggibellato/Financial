@@ -58,35 +58,30 @@
             </TextBlock>
 
             <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,8,8">
-                <TextBlock Text="Date" Style="{StaticResource FieldLabelStyle}"/>
+                <TextBlock Style="{StaticResource FieldLabelStyle}">
+                    <Run Text="Date"/>
+                    <Run Text=" *" Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
+                </TextBlock>
                 <DatePicker AutomationProperties.Name="Income date"
+                            AutomationProperties.HelpText="Required"
                             SelectedDate="{Binding IncomeFormDate, UpdateSourceTrigger=PropertyChanged}"/>
+                <TextBlock Style="{StaticResource FieldErrorTextStyle}" Text="{Binding DateFieldError}"/>
             </StackPanel>
 
             <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,8,8">
-                <TextBlock Text="Source" Style="{StaticResource FieldLabelStyle}"/>
+                <TextBlock Style="{StaticResource FieldLabelStyle}">
+                    <Run Text="Source"/>
+                    <Run Text=" *" Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
+                </TextBlock>
                 <ComboBox AutomationProperties.Name="Source"
+                          AutomationProperties.HelpText="Required"
                           ItemsSource="{Binding IncomeSourceOptions}" DisplayMemberPath="Name"
                           SelectedValue="{Binding IncomeFormSource, UpdateSourceTrigger=PropertyChanged}"
                           SelectedValuePath="Id"/>
+                <TextBlock Style="{StaticResource FieldErrorTextStyle}" Text="{Binding SourceFieldError}"/>
             </StackPanel>
 
-            <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,8,8"
-                        Visibility="{Binding ShowIncomeGrossValueField, Converter={StaticResource BoolToVisibilityConverter}}">
-                <TextBlock Text="Gross Value" Style="{StaticResource FieldLabelStyle}"/>
-                <TextBox AutomationProperties.Name="Gross value"
-                         Text="{Binding IncomeFormGrossValue, UpdateSourceTrigger=LostFocus}"
-                         behaviors:DecimalInputBehavior.IsEnabled="True"/>
-            </StackPanel>
-
-            <StackPanel Grid.Row="1" Grid.Column="3" Margin="0,0,0,8">
-                <TextBlock Text="Net Value" Style="{StaticResource FieldLabelStyle}"/>
-                <TextBox AutomationProperties.Name="Net value"
-                         Text="{Binding IncomeFormNetValue, UpdateSourceTrigger=LostFocus}"
-                         behaviors:DecimalInputBehavior.IsEnabled="True"/>
-            </StackPanel>
-
-            <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,8,8">
+            <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,8,8">
                 <TextBlock Text="Bank" Style="{StaticResource FieldLabelStyle}"/>
                 <ComboBox AutomationProperties.Name="Bank"
                           ItemsSource="{Binding IncomeBankOptions}" DisplayMemberPath="Name"
@@ -94,13 +89,33 @@
                           SelectedValuePath="Id"/>
             </StackPanel>
 
-            <StackPanel Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" Margin="0,0,8,8">
+            <StackPanel Grid.Row="1" Grid.Column="3" Margin="0,0,0,8">
                 <TextBlock Text="Description" Style="{StaticResource FieldLabelStyle}"/>
                 <TextBox AutomationProperties.Name="Description"
                          Text="{Binding IncomeFormDescription, UpdateSourceTrigger=PropertyChanged}"/>
             </StackPanel>
 
-            <CheckBox Grid.Row="2" Grid.Column="3" Margin="0,0,0,8" VerticalAlignment="Bottom"
+            <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,8,8"
+                        Visibility="{Binding ShowIncomeGrossValueField, Converter={StaticResource BoolToVisibilityConverter}}">
+                <TextBlock Text="Gross Value" Style="{StaticResource FieldLabelStyle}"/>
+                <TextBox AutomationProperties.Name="Gross value"
+                         Text="{Binding IncomeFormGrossValue, UpdateSourceTrigger=LostFocus}"
+                         behaviors:DecimalInputBehavior.IsEnabled="True"/>
+            </StackPanel>
+
+            <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,0,8,8">
+                <TextBlock Style="{StaticResource FieldLabelStyle}">
+                    <Run Text="Net Value"/>
+                    <Run Text=" *" Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
+                </TextBlock>
+                <TextBox AutomationProperties.Name="Net value"
+                         AutomationProperties.HelpText="Required"
+                         Text="{Binding IncomeFormNetValue, UpdateSourceTrigger=LostFocus}"
+                         behaviors:DecimalInputBehavior.IsEnabled="True"/>
+                <TextBlock Style="{StaticResource FieldErrorTextStyle}" Text="{Binding NetValueFieldError}"/>
+            </StackPanel>
+
+            <CheckBox Grid.Row="2" Grid.Column="2" Margin="0,0,8,8" VerticalAlignment="Bottom"
                       Content="Split to reserve" AutomationProperties.Name="Split to reserve"
                       Visibility="{Binding ShowIncomeSplitField, Converter={StaticResource BoolToVisibilityConverter}}"
                       IsChecked="{Binding IncomeFormSplitToReserve, UpdateSourceTrigger=PropertyChanged}"/>
