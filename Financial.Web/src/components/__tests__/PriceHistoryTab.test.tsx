@@ -163,7 +163,7 @@ describe('PriceHistoryTab', () => {
 
   it('new_button_calls_show_new_form', () => {
     render(<PriceHistoryTab />)
-    fireEvent.click(screen.getByRole('button', { name: 'New' }))
+    fireEvent.click(screen.getByRole('button', { name: 'New price' }))
     expect(mockShowNewForm).toHaveBeenCalledTimes(1)
   })
 
@@ -177,7 +177,7 @@ describe('PriceHistoryTab', () => {
   it('form_title_is_new_price_when_no_editing_date', () => {
     setMock({ isFormVisible: true, editingDate: null })
     render(<PriceHistoryTab />)
-    expect(screen.getByText('New price')).toBeInTheDocument()
+    expect(screen.getByText('New price', { selector: '.price-history-tab__form-title' })).toBeInTheDocument()
   })
 
   it('form_title_is_edit_price_when_editing_date_set', () => {

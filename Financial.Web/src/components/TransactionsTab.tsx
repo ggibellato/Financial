@@ -179,7 +179,7 @@ function InlineForm({
           disabled={isSaving}
           onClick={onSave}
         >
-          {isSaving ? 'Saving...' : 'Save'}
+          {isSaving ? 'Saving...' : editingId ? 'Save' : 'Add transaction'}
         </button>
         <button className="transactions-tab__cancel-btn" type="button" onClick={onCancel}>
           Cancel
@@ -348,7 +348,7 @@ export default function TransactionsTab() {
 
       <div className="transactions-tab__toolbar">
         <button className="transactions-tab__new-btn" type="button" onClick={showNewForm}>
-          New
+          New transaction
         </button>
       </div>
 

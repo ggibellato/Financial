@@ -37,13 +37,13 @@ describe('BalanceAdjustmentForm', () => {
   it('renders the create form title', () => {
     render(<BalanceAdjustmentForm {...baseProps} />)
 
-    expect(screen.getByRole('heading', { name: 'Correct Balance' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'New Balance Correction' })).toBeInTheDocument()
   })
 
   it('renders the edit form title and pre-filled values', () => {
     render(<BalanceAdjustmentForm {...baseProps} isEditing targetBalance="150" note="Matched statement" />)
 
-    expect(screen.getByRole('heading', { name: 'Edit Balance Adjustment' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Edit Balance Correction' })).toBeInTheDocument()
     expect(screen.getByLabelText('Target Balance')).toHaveValue(150)
     expect(screen.getByLabelText('Note')).toHaveValue('Matched statement')
     expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument()
@@ -77,7 +77,7 @@ describe('BalanceAdjustmentForm', () => {
     const onCancel = vi.fn()
     render(<BalanceAdjustmentForm {...baseProps} onSave={onSave} onCancel={onCancel} />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Correct Balance' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add Balance Correction' }))
     expect(onSave).toHaveBeenCalled()
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
@@ -124,7 +124,7 @@ describe('BalanceAdjustmentForm', () => {
   it('Save stays disabled until a bank is chosen', () => {
     render(<BalanceAdjustmentForm {...baseProps} bankName="" currentBalance={0} />)
 
-    expect(screen.getByRole('button', { name: 'Correct Balance' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Add Balance Correction' })).toBeDisabled()
   })
 
   it('calls onFieldChange with the selected bank when the Bank dropdown changes', () => {

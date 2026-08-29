@@ -220,14 +220,14 @@ describe('TransactionsTab', () => {
 
   it('new_button_calls_show_new_form', () => {
     render(<TransactionsTab />)
-    fireEvent.click(screen.getByRole('button', { name: 'New' }))
+    fireEvent.click(screen.getByRole('button', { name: 'New transaction' }))
     expect(mockShowNewForm).toHaveBeenCalledTimes(1)
   })
 
   it('renders_form_when_form_visible', () => {
     setMock({ isFormVisible: true, editingId: null })
     render(<TransactionsTab />)
-    expect(screen.getByText('New transaction')).toBeInTheDocument()
+    expect(screen.getByText('New transaction', { selector: '.transactions-tab__form-title' })).toBeInTheDocument()
     expect(screen.getByLabelText('Date')).toBeInTheDocument()
     expect(screen.getByLabelText('Type')).toBeInTheDocument()
     expect(screen.getByLabelText('Quantity')).toBeInTheDocument()

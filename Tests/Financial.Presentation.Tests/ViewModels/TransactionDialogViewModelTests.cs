@@ -8,8 +8,8 @@ namespace Financial.Presentation.Tests.ViewModels;
 public class TransactionDialogViewModelTests
 {
     [Theory]
-    [InlineData(TransactionDialogMode.Add, "Add Transaction", "Add")]
-    [InlineData(TransactionDialogMode.Update, "Update Transaction", "Update")]
+    [InlineData(TransactionDialogMode.Add, "New transaction", "Add transaction")]
+    [InlineData(TransactionDialogMode.Update, "Edit transaction", "Save")]
     [InlineData(TransactionDialogMode.Delete, "Delete Transaction", "Delete")]
     public void TitleAndConfirmLabel_ReflectMode(TransactionDialogMode mode, string expectedTitle, string expectedConfirmLabel)
     {

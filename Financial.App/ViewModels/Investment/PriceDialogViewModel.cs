@@ -20,16 +20,16 @@ public sealed class PriceDialogViewModel : ViewModelBase
 
     public string Title => Mode switch
     {
-        PriceDialogMode.Add => "Add Price",
-        PriceDialogMode.Update => "Update Price",
+        PriceDialogMode.Add => "New price",
+        PriceDialogMode.Update => "Edit price",
         PriceDialogMode.Delete => "Delete Price",
         _ => "Price"
     };
 
     public string ConfirmLabel => Mode switch
     {
-        PriceDialogMode.Add => "Add",
-        PriceDialogMode.Update => "Update",
+        PriceDialogMode.Add => "Add price",
+        PriceDialogMode.Update => "Save",
         PriceDialogMode.Delete => "Delete",
         _ => "Confirm"
     };

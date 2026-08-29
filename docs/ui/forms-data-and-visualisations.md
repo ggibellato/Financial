@@ -153,6 +153,24 @@ a "New Transfer" trigger opening a form titled "Move Money") — the trigger's
 noun carries through unchanged into both the form title and the confirm
 button, on both platforms, in every mode (create and edit).
 
+**Fix the whole chain together, not one link at a time.** An audit or PRD
+item that names only one link (e.g. "the trigger drops the entity name")
+does not mean the other two links are already correct — verify all three
+before scoping a fix, and fix all three in the same change. A trigger-only
+fix can make the chain look *more* broken than before: P38-F03 initially
+fixed only the Investment Transaction/Credit/Price triggers (Web + WPF) to
+match this rule, leaving each form's own title and confirm button
+untouched — WPF's `TransactionDialogViewModel.Title`/`ConfirmLabel` still
+read "Add Transaction"/"Add", so the merged trigger ("New Transaction") no
+longer matched its own form, a mismatch that didn't visibly exist before
+because the trigger was just a bare, unremarkable "New". A reviewer caught
+it before merge; the fix was to close all three links in one change rather
+than ship the partial one. When a later feature (e.g. an F07-style
+"normalize casing/verbs" item) is expected to touch the same three-link
+chain a current feature is only partially fixing, either fix the whole
+chain now or explicitly hold the trigger fix until the form/confirm fix
+ships alongside it.
+
 Grids must provide applicable:
 
 - Clear column headers

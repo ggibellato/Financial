@@ -21,6 +21,10 @@
 
 ## Forms
 
+- [ ] For any changed trigger, form title, or confirm button: the full
+      trigger → title → confirm chain was checked together, not just the
+      element named in the task — a fix to one link can leave (or create) a
+      mismatch in the other two.
 - [ ] Field order follows the documented default or has a documented exception.
 - [ ] Labels are visible and associated with controls.
 - [ ] Field widths suit their data.

@@ -33,7 +33,7 @@ export default function WithdrawalForm({
   return (
     <div className={styles.panel} data-testid="withdrawal-form-panel">
       <Text as="h2" weight="semibold" size={400}>
-        Record a Withdrawal
+        New Withdrawal
       </Text>
 
       <div className={styles.grid}>
@@ -68,7 +68,7 @@ export default function WithdrawalForm({
 
       <div className={styles.actions}>
         <Button appearance="primary" disabled={isSubmitting} onClick={onSubmit}>
-          {isSubmitting ? 'Saving...' : 'Record Withdrawal'}
+          {isSubmitting ? 'Saving...' : 'Add Withdrawal'}
         </Button>
         <Button appearance="secondary" onClick={onCancel}>
           Cancel

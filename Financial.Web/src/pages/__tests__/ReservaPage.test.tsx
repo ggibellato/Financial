@@ -122,13 +122,13 @@ describe('ReservaPage', () => {
     render(<ReservaPage />)
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Income Split' })).toBeInTheDocument())
-    expect(screen.queryByText('Post Monthly Income Split')).not.toBeInTheDocument()
+    expect(screen.queryByText('New Income Split', { selector: 'h2' })).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'New Income Split' }))
 
-    expect(screen.getByText('Post Monthly Income Split')).toBeInTheDocument()
+    expect(screen.getByText('New Income Split', { selector: 'h2' })).toBeInTheDocument()
     expect(screen.getByLabelText('Amount to Split')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Post Income Split' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Add Income Split' })).toBeInTheDocument()
   })
 
   it('shows the posted split breakdown and total after a successful submission', async () => {
@@ -148,7 +148,7 @@ describe('ReservaPage', () => {
     fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-07-01' } })
     fireEvent.change(screen.getByLabelText('Amount to Split'), { target: { value: '1963' } })
     fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Ramsay' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Post Income Split' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add Income Split' }))
 
     await waitFor(() => expect(screen.getByText('Income Split Posted')).toBeInTheDocument())
     const resultPanel = screen.getByTestId('income-split-form-panel')
@@ -163,14 +163,14 @@ describe('ReservaPage', () => {
     render(<ReservaPage />)
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Withdrawal' })).toBeInTheDocument())
-    expect(screen.queryByText('Record a Withdrawal')).not.toBeInTheDocument()
+    expect(screen.queryByText('New Withdrawal', { selector: 'h2' })).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'New Withdrawal' }))
 
-    expect(screen.getByText('Record a Withdrawal')).toBeInTheDocument()
+    expect(screen.getByText('New Withdrawal', { selector: 'h2' })).toBeInTheDocument()
     expect(screen.getByLabelText('Bucket')).toBeInTheDocument()
     expect(screen.getByLabelText('Amount')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Record Withdrawal' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Add Withdrawal' })).toBeInTheDocument()
   })
 
   it('edits a movement via the toggled panel and saves, updating the displayed row', async () => {
@@ -213,7 +213,7 @@ describe('ReservaPage', () => {
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '100' } })
     fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-07-01' } })
     fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Big purchase' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Record Withdrawal' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add Withdrawal' }))
 
     await waitFor(() =>
       expect(window.confirm).toHaveBeenCalledWith(
@@ -236,7 +236,7 @@ describe('ReservaPage', () => {
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '100' } })
     fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-07-01' } })
     fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Big purchase' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Record Withdrawal' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add Withdrawal' }))
 
     await waitFor(() => expect(window.confirm).toHaveBeenCalled())
     expect(postWithdrawalMock).toHaveBeenCalledTimes(1)
@@ -312,7 +312,7 @@ describe('ReservaPage', () => {
     fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-07-01' } })
     fireEvent.change(screen.getByLabelText('Amount to Split'), { target: { value: '1963' } })
     fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Ramsay' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Post Income Split' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add Income Split' }))
 
     await waitFor(() => expect(screen.getByText('Income Split Posted')).toBeInTheDocument())
     const resultPanel = screen.getByTestId('income-split-form-panel')

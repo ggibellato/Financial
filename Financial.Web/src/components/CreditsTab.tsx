@@ -172,7 +172,7 @@ function InlineForm({
           disabled={isSaving}
           onClick={onSave}
         >
-          {isSaving ? 'Saving...' : 'Save'}
+          {isSaving ? 'Saving...' : editingId ? 'Save' : 'Add credit'}
         </button>
         <button className="credits-tab__cancel-btn" type="button" onClick={onCancel}>
           Cancel
@@ -371,7 +371,7 @@ export default function CreditsTab() {
     <div className="credits-tab__left">
       <div className="credits-tab__table-toolbar">
         <button className="credits-tab__new-btn" type="button" onClick={showNewForm}>
-          New
+          New credit
         </button>
       </div>
 

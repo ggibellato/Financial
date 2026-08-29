@@ -7,8 +7,8 @@ namespace Financial.Presentation.Tests.ViewModels;
 public class CreditDialogViewModelTests
 {
     [Theory]
-    [InlineData(CreditDialogMode.Add, "Add Credit", "Add")]
-    [InlineData(CreditDialogMode.Update, "Update Credit", "Update")]
+    [InlineData(CreditDialogMode.Add, "New credit", "Add credit")]
+    [InlineData(CreditDialogMode.Update, "Edit credit", "Save")]
     [InlineData(CreditDialogMode.Delete, "Delete Credit", "Delete")]
     public void TitleAndConfirmLabel_ReflectMode(CreditDialogMode mode, string expectedTitle, string expectedConfirmLabel)
     {

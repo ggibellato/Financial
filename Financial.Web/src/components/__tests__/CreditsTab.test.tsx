@@ -137,7 +137,7 @@ describe('CreditsTab', () => {
     render(<CreditsTab />)
     expect(screen.getByTestId('responsive-container')).toBeInTheDocument()
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'New' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'New credit' })).not.toBeInTheDocument()
   })
 
   it('renders_table_and_chart_for_asset_node', () => {
@@ -192,18 +192,18 @@ describe('CreditsTab', () => {
   it('new_button_present_for_asset_only', () => {
     setMock({ nodeType: 'Asset' })
     render(<CreditsTab />)
-    expect(screen.getByRole('button', { name: 'New' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'New credit' })).toBeInTheDocument()
   })
 
   it('new_button_not_present_for_broker', () => {
     setMock({ nodeType: 'Broker' })
     render(<CreditsTab />)
-    expect(screen.queryByRole('button', { name: 'New' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'New credit' })).not.toBeInTheDocument()
   })
 
   it('new_button_calls_show_new_form', () => {
     render(<CreditsTab />)
-    fireEvent.click(screen.getByRole('button', { name: 'New' }))
+    fireEvent.click(screen.getByRole('button', { name: 'New credit' }))
     expect(mockShowNewForm).toHaveBeenCalledTimes(1)
   })
 
@@ -226,7 +226,7 @@ describe('CreditsTab', () => {
   it('form_title_is_new_credit_when_no_editing_id', () => {
     setMock({ isFormVisible: true, editingId: null })
     render(<CreditsTab />)
-    expect(screen.getByText('New credit')).toBeInTheDocument()
+    expect(screen.getByText('New credit', { selector: '.credits-tab__form-title' })).toBeInTheDocument()
   })
 
   it('form_title_is_edit_credit_when_editing_id_set', () => {
