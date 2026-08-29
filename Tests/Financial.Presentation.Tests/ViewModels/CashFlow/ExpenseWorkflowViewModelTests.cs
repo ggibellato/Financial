@@ -405,6 +405,142 @@ public class ExpenseWorkflowViewModelTests
     }
 
     [Fact]
+    public async Task DateFieldError_MissingDate_MatchesSaveError()
+    {
+        var (viewModel, expenses, banks) = CreateViewModel();
+        viewModel.ShowCreateExpenseFormCommand.Execute("bank");
+        viewModel.ExpenseFormDate = null;
+        viewModel.ExpenseFormDescription = "Groceries";
+        viewModel.ExpenseFormValue = "10";
+        viewModel.ExpenseFormPaymentSource = banks[0].Id;
+
+        await viewModel.SaveExpenseAsync();
+
+        expenses.LastCreateRequest.Should().BeNull();
+        viewModel.DateFieldError.Should().Be(viewModel.ExpenseSaveError);
+        viewModel.DescriptionFieldError.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task DescriptionFieldError_MissingDescription_MatchesSaveErrorAndLeavesOtherFieldsNull()
+    {
+        var (viewModel, expenses, banks) = CreateViewModel();
+        viewModel.ShowCreateExpenseFormCommand.Execute("bank");
+        viewModel.ExpenseFormDate = DateTime.Today;
+        viewModel.ExpenseFormDescription = "";
+        viewModel.ExpenseFormValue = "10";
+        viewModel.ExpenseFormPaymentSource = banks[0].Id;
+
+        await viewModel.SaveExpenseAsync();
+
+        expenses.LastCreateRequest.Should().BeNull();
+        viewModel.DescriptionFieldError.Should().Be(viewModel.ExpenseSaveError);
+        viewModel.DateFieldError.Should().BeNull();
+        viewModel.ValueFieldError.Should().BeNull();
+        viewModel.PaymentModeFieldError.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task CategoryFieldError_MissingCategory_MatchesSaveError()
+    {
+        var (viewModel, expenses, banks) = CreateViewModel();
+        viewModel.ShowCreateExpenseFormCommand.Execute("bank");
+        viewModel.ExpenseFormDate = DateTime.Today;
+        viewModel.ExpenseFormDescription = "Groceries";
+        viewModel.ExpenseFormCategoryId = null;
+        viewModel.ExpenseFormValue = "10";
+        viewModel.ExpenseFormPaymentSource = banks[0].Id;
+
+        await viewModel.SaveExpenseAsync();
+
+        expenses.LastCreateRequest.Should().BeNull();
+        viewModel.CategoryFieldError.Should().Be(viewModel.ExpenseSaveError);
+    }
+
+    [Fact]
+    public async Task ValueFieldError_ZeroValue_MatchesSaveError()
+    {
+        var (viewModel, expenses, banks) = CreateViewModel();
+        viewModel.ShowCreateExpenseFormCommand.Execute("bank");
+        viewModel.ExpenseFormDate = DateTime.Today;
+        viewModel.ExpenseFormDescription = "Groceries";
+        viewModel.ExpenseFormValue = "0";
+        viewModel.ExpenseFormPaymentSource = banks[0].Id;
+
+        await viewModel.SaveExpenseAsync();
+
+        expenses.LastCreateRequest.Should().BeNull();
+        viewModel.ValueFieldError.Should().Be(viewModel.ExpenseSaveError);
+    }
+
+    [Fact]
+    public async Task PaymentModeFieldError_BankModeMissingPaymentSource_MatchesSaveError()
+    {
+        var (viewModel, expenses, _) = CreateViewModel();
+        viewModel.ShowCreateExpenseFormCommand.Execute("bank");
+        viewModel.ExpenseFormDate = DateTime.Today;
+        viewModel.ExpenseFormDescription = "Groceries";
+        viewModel.ExpenseFormValue = "10";
+        viewModel.ExpenseFormPaymentSource = null;
+
+        await viewModel.SaveExpenseAsync();
+
+        expenses.LastCreateRequest.Should().BeNull();
+        viewModel.PaymentModeFieldError.Should().Be(viewModel.ExpenseSaveError);
+    }
+
+    [Fact]
+    public async Task PaymentModeFieldError_CardModeMissingCreditCard_MatchesSaveError()
+    {
+        var (viewModel, expenses, _) = CreateViewModel();
+        viewModel.ShowCreateExpenseFormCommand.Execute("card");
+        viewModel.ExpenseFormDate = DateTime.Today;
+        viewModel.ExpenseFormDescription = "Flight";
+        viewModel.ExpenseFormValue = "300";
+        viewModel.ExpenseFormCreditCardId = null;
+
+        await viewModel.SaveExpenseAsync();
+
+        expenses.LastCreateRequest.Should().BeNull();
+        viewModel.PaymentModeFieldError.Should().Be(viewModel.ExpenseSaveError);
+    }
+
+    [Fact]
+    public async Task RoundUpAmountFieldError_OutOfRange_MatchesSaveError()
+    {
+        var (viewModel, expenses, banks) = CreateViewModel();
+        viewModel.ShowCreateExpenseFormCommand.Execute("bank");
+        viewModel.ExpenseFormDate = DateTime.Today;
+        viewModel.ExpenseFormDescription = "Groceries";
+        viewModel.ExpenseFormValue = "10";
+        viewModel.ExpenseFormPaymentSource = banks[0].Id; // Barclays, round-up enabled
+        viewModel.ExpenseFormRoundUpAmount = "5.00"; // outside Expense.MinRoundUpAmount..MaxRoundUpAmount
+
+        await viewModel.SaveExpenseAsync();
+
+        expenses.LastCreateRequest.Should().BeNull();
+        viewModel.RoundUpAmountFieldError.Should().Be(viewModel.ExpenseSaveError);
+    }
+
+    [Fact]
+    public async Task FieldErrors_ClearAfterSuccessfulSave()
+    {
+        var (viewModel, _, banks) = CreateViewModel();
+        viewModel.ShowCreateExpenseFormCommand.Execute("bank");
+        viewModel.ExpenseFormDate = DateTime.Today;
+        viewModel.ExpenseFormDescription = "";
+        viewModel.ExpenseFormValue = "10";
+        viewModel.ExpenseFormPaymentSource = banks[0].Id;
+        await viewModel.SaveExpenseAsync();
+        viewModel.DescriptionFieldError.Should().NotBeNull();
+
+        viewModel.ExpenseFormDescription = "Groceries";
+        await viewModel.SaveExpenseAsync();
+
+        viewModel.DescriptionFieldError.Should().BeNull();
+    }
+
+    [Fact]
     public void ShowCreateExpenseFormCommand_CardMode_DefaultsInvoiceDateFromExpenseFormDate()
     {
         var (viewModel, _, _) = CreateViewModel();
