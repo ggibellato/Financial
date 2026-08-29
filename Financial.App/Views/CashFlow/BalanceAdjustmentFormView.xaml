@@ -67,8 +67,12 @@
 
                 <!-- Disabled while editing an existing adjustment -->
                 <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,8,8">
-                    <TextBlock Text="Bank" Style="{StaticResource FieldLabelStyle}"/>
+                    <TextBlock Style="{StaticResource FieldLabelStyle}">
+                        <Run Text="Bank"/>
+                        <Run Text=" *" Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
+                    </TextBlock>
                     <ComboBox AutomationProperties.Name="Bank"
+                              AutomationProperties.HelpText="Required"
                               ItemsSource="{Binding Banks}" DisplayMemberPath="Name"
                               SelectedValue="{Binding AdjustmentFormBankName, UpdateSourceTrigger=PropertyChanged}"
                               SelectedValuePath="Id">
@@ -114,10 +118,15 @@
                     </StackPanel>
 
                     <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,8,8">
-                        <TextBlock Text="Target Balance" Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBlock Style="{StaticResource FieldLabelStyle}">
+                            <Run Text="Target Balance"/>
+                            <Run Text=" *" Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
+                        </TextBlock>
                         <TextBox AutomationProperties.Name="Target balance"
+                                 AutomationProperties.HelpText="Required"
                                  Text="{Binding AdjustmentFormTargetBalance, UpdateSourceTrigger=LostFocus}"
                                  behaviors:DecimalInputBehavior.IsEnabled="True"/>
+                        <TextBlock Style="{StaticResource FieldErrorTextStyle}" Text="{Binding TargetBalanceFieldError}"/>
                     </StackPanel>
 
                     <StackPanel Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="2" Margin="0,0,0,8">
