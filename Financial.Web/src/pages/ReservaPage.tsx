@@ -57,6 +57,7 @@ export default function ReservaPage() {
     splitDescription,
     isSubmittingSplit,
     splitError,
+    splitErrorField,
     lastSplitResult,
     showSplitForm,
     cancelSplitForm,
@@ -131,6 +132,7 @@ export default function ReservaPage() {
           description={splitDescription}
           isSubmitting={isSubmittingSplit}
           error={splitError}
+          errorField={splitErrorField}
           lastResult={lastSplitResult}
           onFieldChange={setSplitField}
           onSubmit={submitIncomeSplit}

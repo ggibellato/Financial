@@ -13,11 +13,16 @@
             <SolidColorBrush x:Key="AccentButtonBackground" Color="#0F6CBD"/>
             <SolidColorBrush x:Key="AccentButtonBackgroundPointerOver" Color="#115EA3"/>
             <SolidColorBrush x:Key="AccentButtonBackgroundPressed" Color="#0C3B5E"/>
+            <Style x:Key="FieldLabelStyle" TargetType="TextBlock">
+                <Setter Property="Margin" Value="0,0,0,4"/>
+                <Setter Property="FontSize" Value="12"/>
+            </Style>
         </ResourceDictionary>
     </UserControl.Resources>
     <Border BorderThickness="1" Padding="12" Margin="0,0,0,12"
             BorderBrush="{DynamicResource ControlElevationBorderBrush}"
-            Background="{DynamicResource ControlFillColorDefaultBrush}">
+            Background="{DynamicResource ControlFillColorDefaultBrush}"
+            CornerRadius="4">
         <Grid>
             <StackPanel Visibility="{Binding HasSplitResult, Converter={StaticResource BoolToVisibilityConverter}}">
                 <TextBlock FontWeight="Bold" Text="Income Split Posted" Margin="0,0,0,8"/>
@@ -31,43 +36,74 @@
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
                 <TextBlock FontWeight="Bold" Margin="0,4,0,0" Text="{Binding LastSplitResult.Total, StringFormat='Total: {0:N2}'}"/>
-                <Button Content="Close" Width="90" HorizontalAlignment="Left" Margin="0,12,0,0"
-                        Command="{Binding DismissSplitResultCommand}"/>
+                <ui:Button Content="Close" MinWidth="90" Appearance="Secondary" HorizontalAlignment="Left" Margin="0,12,0,0"
+                           Command="{Binding DismissSplitResultCommand}"/>
             </StackPanel>
 
+            <!--
+                Four equal-width columns, label-above-control per field — matches
+                ExpenseFormView's layout standard (docs/ui/forms-data-and-visualisations
+                .md's "Layout" rule) instead of the old single-column label-left row
+                stack (F05).
+            -->
             <Grid Visibility="{Binding ShowSplitFormFields, Converter={StaticResource BoolToVisibilityConverter}}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="150"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <TextBlock Grid.Row="0" Grid.ColumnSpan="2" FontWeight="Bold" Text="New Income Split" Margin="0,0,0,8"/>
+                <TextBlock Grid.Row="0" Grid.ColumnSpan="4" FontWeight="Bold" Text="New Income Split" Margin="0,0,0,8"/>
 
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="Date:" VerticalAlignment="Center"/>
-                <DatePicker Grid.Row="1" Grid.Column="1" SelectedDate="{Binding SplitDate, UpdateSourceTrigger=PropertyChanged}"/>
+                <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,8,8">
+                    <TextBlock Style="{StaticResource FieldLabelStyle}">
+                        <Run Text="Date"/>
+                        <Run Text=" *" Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
+                    </TextBlock>
+                    <DatePicker AutomationProperties.Name="Split date"
+                                AutomationProperties.HelpText="Required"
+                                SelectedDate="{Binding SplitDate, UpdateSourceTrigger=PropertyChanged}"/>
+                    <TextBlock Style="{StaticResource FieldErrorTextStyle}" Text="{Binding DateFieldError}"/>
+                </StackPanel>
 
-                <TextBlock Grid.Row="2" Grid.Column="0" Text="Amount to Split:" VerticalAlignment="Center"/>
-                <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding SplitAmount, UpdateSourceTrigger=LostFocus}"
-                         behaviors:DecimalInputBehavior.IsEnabled="True"/>
+                <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,8,8">
+                    <TextBlock Style="{StaticResource FieldLabelStyle}">
+                        <Run Text="Amount to Split"/>
+                        <Run Text=" *" Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
+                    </TextBlock>
+                    <TextBox AutomationProperties.Name="Amount to split"
+                             AutomationProperties.HelpText="Required"
+                             Text="{Binding SplitAmount, UpdateSourceTrigger=LostFocus}"
+                             behaviors:DecimalInputBehavior.IsEnabled="True"/>
+                    <TextBlock Style="{StaticResource FieldErrorTextStyle}" Text="{Binding AmountFieldError}"/>
+                </StackPanel>
 
-                <TextBlock Grid.Row="3" Grid.Column="0" Text="Description:" VerticalAlignment="Center"/>
-                <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding SplitDescription, UpdateSourceTrigger=PropertyChanged}"/>
+                <StackPanel Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="2" Margin="0,0,0,8">
+                    <TextBlock Style="{StaticResource FieldLabelStyle}">
+                        <Run Text="Description"/>
+                        <Run Text=" *" Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
+                    </TextBlock>
+                    <TextBox AutomationProperties.Name="Description"
+                             AutomationProperties.HelpText="Required"
+                             Text="{Binding SplitDescription, UpdateSourceTrigger=PropertyChanged}"/>
+                    <TextBlock Style="{StaticResource FieldErrorTextStyle}" Text="{Binding DescriptionFieldError}"/>
+                </StackPanel>
 
-                <TextBlock Grid.Row="4" Grid.ColumnSpan="2" Foreground="{DynamicResource SystemFillColorCriticalBrush}" TextWrapping="Wrap"
-                           Text="{Binding SplitSaveError}" Margin="0,8,0,0"/>
+                <TextBlock Grid.Row="2" Grid.ColumnSpan="4" TextWrapping="Wrap" Margin="0,0,0,8"
+                           Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                           Text="{Binding SplitSaveError}"/>
 
-                <StackPanel Grid.Row="5" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,12,0,0">
-                    <Button Width="130" Command="{Binding SubmitSplitCommand}">
-                        <Button.Style>
-                            <Style TargetType="Button">
+                <StackPanel Grid.Row="3" Grid.ColumnSpan="4" Orientation="Horizontal">
+                    <ui:Button MinWidth="130" Appearance="Primary" Command="{Binding SubmitSplitCommand}">
+                        <ui:Button.Style>
+                            <Style TargetType="{x:Type ui:Button}" BasedOn="{StaticResource {x:Type ui:Button}}">
                                 <Setter Property="Content" Value="Post Income Split"/>
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsSubmittingSplit}" Value="True">
@@ -75,9 +111,10 @@
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
-                        </Button.Style>
-                    </Button>
-                    <Button Content="Cancel" Width="90" Margin="8,0,0,0" Command="{Binding CancelSplitFormCommand}"/>
+                        </ui:Button.Style>
+                    </ui:Button>
+                    <ui:Button Content="Cancel" MinWidth="90" Margin="8,0,0,0" Appearance="Secondary"
+                               Command="{Binding CancelSplitFormCommand}"/>
                 </StackPanel>
             </Grid>
         </Grid>
