@@ -109,6 +109,100 @@ public class TransferWorkflowViewModelTests
     }
 
     [Fact]
+    public async Task DateFieldError_MissingDate_MatchesSaveError()
+    {
+        var (viewModel, transfers, banks) = CreateViewModel();
+        viewModel.ShowMoveMoneyFormCommand.Execute(banks[0].Id);
+        viewModel.TransferFormDate = null;
+        viewModel.TransferFormDestinationBank = banks[1].Id;
+        viewModel.TransferFormAmount = "75";
+
+        await viewModel.SaveTransferAsync();
+
+        transfers.LastCreateRequest.Should().BeNull();
+        viewModel.DateFieldError.Should().Be(viewModel.TransferSaveError);
+        viewModel.AmountFieldError.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task SourceBankFieldError_MissingSourceBank_MatchesSaveError()
+    {
+        var (viewModel, transfers, banks) = CreateViewModel();
+        viewModel.ShowMoveMoneyFormCommand.Execute(null);
+        viewModel.TransferFormSourceBank = null;
+        viewModel.TransferFormDate = DateTime.Today;
+        viewModel.TransferFormDestinationBank = banks[1].Id;
+        viewModel.TransferFormAmount = "75";
+
+        await viewModel.SaveTransferAsync();
+
+        transfers.LastCreateRequest.Should().BeNull();
+        viewModel.SourceBankFieldError.Should().Be(viewModel.TransferSaveError);
+    }
+
+    [Fact]
+    public async Task DestinationBankFieldError_MissingDestinationBank_MatchesSaveError()
+    {
+        var (viewModel, transfers, banks) = CreateViewModel();
+        viewModel.ShowMoveMoneyFormCommand.Execute(banks[0].Id);
+        viewModel.TransferFormDate = DateTime.Today;
+        viewModel.TransferFormDestinationBank = null;
+        viewModel.TransferFormAmount = "75";
+
+        await viewModel.SaveTransferAsync();
+
+        transfers.LastCreateRequest.Should().BeNull();
+        viewModel.DestinationBankFieldError.Should().Be(viewModel.TransferSaveError);
+    }
+
+    [Fact]
+    public async Task DestinationBankFieldError_SameSourceAndDestination_MatchesSaveError()
+    {
+        var (viewModel, transfers, banks) = CreateViewModel();
+        viewModel.ShowMoveMoneyFormCommand.Execute(banks[0].Id);
+        viewModel.TransferFormDate = DateTime.Today;
+        viewModel.TransferFormDestinationBank = banks[0].Id;
+        viewModel.TransferFormAmount = "75";
+
+        await viewModel.SaveTransferAsync();
+
+        transfers.LastCreateRequest.Should().BeNull();
+        viewModel.DestinationBankFieldError.Should().Be(viewModel.TransferSaveError);
+    }
+
+    [Fact]
+    public async Task AmountFieldError_NonPositive_MatchesSaveError()
+    {
+        var (viewModel, transfers, banks) = CreateViewModel();
+        viewModel.ShowMoveMoneyFormCommand.Execute(banks[0].Id);
+        viewModel.TransferFormDate = DateTime.Today;
+        viewModel.TransferFormDestinationBank = banks[1].Id;
+        viewModel.TransferFormAmount = "0";
+
+        await viewModel.SaveTransferAsync();
+
+        transfers.LastCreateRequest.Should().BeNull();
+        viewModel.AmountFieldError.Should().Be(viewModel.TransferSaveError);
+    }
+
+    [Fact]
+    public async Task FieldErrors_ClearAfterSuccessfulSave()
+    {
+        var (viewModel, _, banks) = CreateViewModel();
+        viewModel.ShowMoveMoneyFormCommand.Execute(banks[0].Id);
+        viewModel.TransferFormDate = null;
+        viewModel.TransferFormDestinationBank = banks[1].Id;
+        viewModel.TransferFormAmount = "75";
+        await viewModel.SaveTransferAsync();
+        viewModel.DateFieldError.Should().NotBeNull();
+
+        viewModel.TransferFormDate = DateTime.Today;
+        await viewModel.SaveTransferAsync();
+
+        viewModel.DateFieldError.Should().BeNull();
+    }
+
+    [Fact]
     public void EditBankOperation_Transfer_OpensTransferFormPrefilled()
     {
         var (viewModel, _, _) = CreateViewModel();

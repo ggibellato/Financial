@@ -127,8 +127,33 @@ public class IncomeWorkflowViewModel : ViewModelBase
     public string? IncomeSaveError
     {
         get => _incomeSaveError;
-        private set => SetProperty(ref _incomeSaveError, value);
+        private set
+        {
+            if (SetProperty(ref _incomeSaveError, value))
+            {
+                OnPropertyChanged(nameof(DateFieldError));
+                OnPropertyChanged(nameof(SourceFieldError));
+                OnPropertyChanged(nameof(NetValueFieldError));
+            }
+        }
     }
+
+    /// <summary>
+    /// Per-field validation errors (P38-F05) — same substring-match pattern as F02's
+    /// <c>AdjustmentWorkflowViewModel.TargetBalanceFieldError</c>, matching this form's own
+    /// client-side <see cref="IncomeFormValidation"/> text. Additive to
+    /// <see cref="IncomeSaveError"/>'s existing bottom-of-form message.
+    /// </summary>
+    public string? DateFieldError => MatchFieldError("Date is required.");
+
+    public string? SourceFieldError => MatchFieldError("Source is required.");
+
+    public string? NetValueFieldError => MatchFieldError("Net Value must be a number.");
+
+    private string? MatchFieldError(string fragment) =>
+        IncomeSaveError is { } error && error.Contains(fragment, StringComparison.OrdinalIgnoreCase)
+            ? error
+            : null;
 
     public string? DeletingIncomeError
     {

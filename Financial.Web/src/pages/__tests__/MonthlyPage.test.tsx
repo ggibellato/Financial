@@ -1011,7 +1011,7 @@ describe('MonthlyPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'New Income' }))
     fireEvent.change(screen.getByLabelText(/^Date/), { target: { value: '2026-07-16' } })
-    fireEvent.change(screen.getByLabelText('Net Value'), { target: { value: '400' } })
+    fireEvent.change(screen.getByLabelText(/^Net Value/), { target: { value: '400' } })
     fireEvent.click(screen.getByRole('button', { name: 'Add Income' }))
 
     await waitFor(() =>
@@ -1029,7 +1029,7 @@ describe('MonthlyPage', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Income' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Income' }))
     fireEvent.change(screen.getByLabelText(/^Date/), { target: { value: '2026-07-16' } })
-    fireEvent.change(screen.getByLabelText('Net Value'), { target: { value: '400' } })
+    fireEvent.change(screen.getByLabelText(/^Net Value/), { target: { value: '400' } })
     fireEvent.change(screen.getByLabelText('Bank'), { target: { value: 'bank-barclays' } })
     fireEvent.click(screen.getByRole('button', { name: 'Add Income' }))
 
@@ -1048,7 +1048,7 @@ describe('MonthlyPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'New Income' }))
     expect(screen.getByLabelText('Gross Value')).toBeInTheDocument()
 
-    fireEvent.change(screen.getByLabelText('Source'), { target: { value: '3' } })
+    fireEvent.change(screen.getByLabelText(/^Source/), { target: { value: '3' } })
 
     expect(screen.queryByLabelText('Gross Value')).not.toBeInTheDocument()
   })
@@ -1062,7 +1062,7 @@ describe('MonthlyPage', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Income' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Income' }))
     fireEvent.change(screen.getByLabelText(/^Date/), { target: { value: '2026-07-16' } })
-    fireEvent.change(screen.getByLabelText('Net Value'), { target: { value: '400' } })
+    fireEvent.change(screen.getByLabelText(/^Net Value/), { target: { value: '400' } })
     fireEvent.click(screen.getByRole('button', { name: 'Add Income' }))
 
     await waitFor(() => expect(createIncomeMock).toHaveBeenCalledWith(expect.objectContaining({ bankId: null })))
@@ -1132,8 +1132,8 @@ describe('MonthlyPage', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Income' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Income' }))
     fireEvent.change(screen.getByLabelText(/^Date/), { target: { value: '2026-07-15' } })
-    fireEvent.change(screen.getByLabelText('Source'), { target: { value: '3' } })
-    fireEvent.change(screen.getByLabelText('Net Value'), { target: { value: '100' } })
+    fireEvent.change(screen.getByLabelText(/^Source/), { target: { value: '3' } })
+    fireEvent.change(screen.getByLabelText(/^Net Value/), { target: { value: '100' } })
 
     getIncomesByMonthMock.mockResolvedValue([...INCOMES, {
       id: 'i2',
