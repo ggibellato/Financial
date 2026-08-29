@@ -137,6 +137,22 @@ everywhere, on both platforms:
   Correction) places both buttons together, left-aligned, in the same style
   — do not demote one to a lesser style just because there are two.
 
+### Trigger-to-form naming consistency
+
+The "New X" trigger button, the form it opens, and that form's own confirm
+action must all name the same thing, so cause and effect are traceable
+without re-reading anything: **trigger button → form title → confirm
+button**. `ExpensesSection.tsx`/`ExpenseForm.tsx` is the reference: the
+trigger reads "New Expense", the form's own title reads "New Expense" (and
+"Edit Expense" once populated from an existing row), and the confirm button
+reads "Add Expense" (and "Save" once editing) — never a generic
+"Submit"/"Confirm"/"OK" that drops the entity name.
+
+Do not let the form re-title itself into different wording once open (e.g.
+a "New Transfer" trigger opening a form titled "Move Money") — the trigger's
+noun carries through unchanged into both the form title and the confirm
+button, on both platforms, in every mode (create and edit).
+
 Grids must provide applicable:
 
 - Clear column headers
