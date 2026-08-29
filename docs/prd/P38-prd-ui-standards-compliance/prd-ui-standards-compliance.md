@@ -569,12 +569,12 @@ graph TD
 - [x] WPF Balance Correction confirmation text includes the `£` symbol.
 
 ### F06. CashFlow Bill & Mãe Entry Forms
-- [ ] `EditBillFormView.xaml` and `EditEntryFormView.xaml` place each field in the same row position as
+- [x] `EditBillFormView.xaml` and `EditEntryFormView.xaml` place each field in the same row position as
       their corresponding Create form.
-- [ ] `CreateEntryFormView.xaml`'s field width matches the corrected value.
-- [ ] The Add Bill WPF confirm button reads "Add Bill" (verified again here in context of the full
+- [x] `CreateEntryFormView.xaml`'s field width matches the corrected value.
+- [x] The Add Bill WPF confirm button reads "Add Bill" (verified again here in context of the full
       row-continuity change, not just the label fix from F03).
-- [ ] Area and Currency fields appear before the financial fields in Bill/Entry forms.
+- [x] Area and Currency fields appear before the financial fields in Bill/Entry forms.
 
 ### F07. Investment Forms & Dialogs Compliance
 - [ ] `MoveAssetDialog` traps focus, closes on Escape, and restores focus to the triggering element on
