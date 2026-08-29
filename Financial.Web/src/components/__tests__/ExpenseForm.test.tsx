@@ -39,6 +39,7 @@ const baseProps = {
   isSettled: false,
   isSaving: false,
   saveError: null,
+  saveErrorField: null,
   onFieldChange: vi.fn(),
   onSave: vi.fn(),
   onCancel: vi.fn(),
@@ -49,9 +50,9 @@ describe('ExpenseForm', () => {
     render(<ExpenseForm {...baseProps} />)
 
     expect(screen.getByText('New Expense')).toBeInTheDocument()
-    expect(screen.getByLabelText('Date')).toHaveValue('')
-    expect(screen.getByLabelText('Description')).toHaveValue('')
-    expect(screen.getByLabelText('Value')).toHaveValue(null)
+    expect(screen.getByLabelText(/^Date/)).toHaveValue('')
+    expect(screen.getByLabelText(/^Description/)).toHaveValue('')
+    expect(screen.getByLabelText(/^Value/)).toHaveValue(null)
     expect(screen.getByRole('button', { name: 'Add Expense' })).toBeInTheDocument()
   })
 
@@ -75,22 +76,22 @@ describe('ExpenseForm', () => {
 
   it('shows the bank picker and no toggle in bank mode', () => {
     render(<ExpenseForm {...baseProps} paymentMode="bank" />)
-    expect(screen.getByLabelText('Payment Source')).toBeInTheDocument()
-    expect(screen.queryByLabelText('Card')).not.toBeInTheDocument()
+    expect(screen.getByLabelText(/^Payment Source/)).toBeInTheDocument()
+    expect(screen.queryByLabelText(/^Card/)).not.toBeInTheDocument()
     expect(screen.queryByRole('radio')).not.toBeInTheDocument()
   })
 
   it('shows the card picker and no toggle in card mode', () => {
     render(<ExpenseForm {...baseProps} paymentMode="card" />)
-    expect(screen.queryByLabelText('Payment Source')).not.toBeInTheDocument()
-    expect(screen.getByLabelText('Card')).toBeInTheDocument()
+    expect(screen.queryByLabelText(/^Payment Source/)).not.toBeInTheDocument()
+    expect(screen.getByLabelText(/^Card/)).toBeInTheDocument()
     expect(screen.queryByRole('radio')).not.toBeInTheDocument()
   })
 
   it('lists exactly the categories passed in via the categories prop, by name', () => {
     render(<ExpenseForm {...baseProps} />)
 
-    const categorySelect = screen.getByLabelText('Category')
+    const categorySelect = screen.getByLabelText(/^Category/)
     expect(within(categorySelect).getByRole('option', { name: 'Mercado' })).toBeInTheDocument()
     expect(within(categorySelect).getByRole('option', { name: 'Casa' })).toBeInTheDocument()
     expect(within(categorySelect).getAllByRole('option')).toHaveLength(CATEGORIES.length)
@@ -100,7 +101,7 @@ describe('ExpenseForm', () => {
     const onFieldChange = vi.fn()
     render(<ExpenseForm {...baseProps} onFieldChange={onFieldChange} />)
 
-    fireEvent.change(screen.getByLabelText('Category'), { target: { value: 'category-casa' } })
+    fireEvent.change(screen.getByLabelText(/^Category/), { target: { value: 'category-casa' } })
 
     expect(onFieldChange).toHaveBeenCalledWith('categoryId', 'category-casa')
   })
@@ -108,7 +109,7 @@ describe('ExpenseForm', () => {
   it('lists exactly the cards passed in via the creditCards prop, by name', () => {
     render(<ExpenseForm {...baseProps} paymentMode="card" />)
 
-    const cardSelect = screen.getByLabelText('Card')
+    const cardSelect = screen.getByLabelText(/^Card/)
     expect(within(cardSelect).getByRole('option', { name: 'BaAmex' })).toBeInTheDocument()
     expect(within(cardSelect).getByRole('option', { name: 'ChaseMaster4023' })).toBeInTheDocument()
     expect(within(cardSelect).getAllByRole('option')).toHaveLength(CREDIT_CARDS.length + 1)
@@ -118,7 +119,7 @@ describe('ExpenseForm', () => {
     const onFieldChange = vi.fn()
     render(<ExpenseForm {...baseProps} paymentMode="card" onFieldChange={onFieldChange} />)
 
-    fireEvent.change(screen.getByLabelText('Card'), { target: { value: 'card-chase' } })
+    fireEvent.change(screen.getByLabelText(/^Card/), { target: { value: 'card-chase' } })
 
     expect(onFieldChange).toHaveBeenCalledWith('creditCardId', 'card-chase')
   })

@@ -99,6 +99,7 @@ export default function MonthlyPage() {
     isSettled,
     isSaving,
     saveError,
+    saveErrorField,
     showCreateForm,
     showEditForm,
     cancelForm,
@@ -163,6 +164,7 @@ export default function MonthlyPage() {
       isSettled={isSettled}
       isSaving={isSaving}
       saveError={saveError}
+      saveErrorField={saveErrorField}
       onFieldChange={setField}
       onSave={submit}
       onCancel={cancelForm}

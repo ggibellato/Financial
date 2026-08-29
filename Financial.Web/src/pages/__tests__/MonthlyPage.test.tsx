@@ -788,8 +788,8 @@ describe('MonthlyPage', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Expense' }))
 
-    expect(screen.getByLabelText('Payment Source')).toBeInTheDocument()
-    expect(screen.queryByLabelText('Card')).not.toBeInTheDocument()
+    expect(screen.getByLabelText(/^Payment Source/)).toBeInTheDocument()
+    expect(screen.queryByLabelText(/^Card/)).not.toBeInTheDocument()
     expect(screen.queryByRole('radio')).not.toBeInTheDocument()
   })
 
@@ -800,8 +800,8 @@ describe('MonthlyPage', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Expense' }))
 
-    expect(screen.getByLabelText('Card')).toBeInTheDocument()
-    expect(screen.queryByLabelText('Payment Source')).not.toBeInTheDocument()
+    expect(screen.getByLabelText(/^Card/)).toBeInTheDocument()
+    expect(screen.queryByLabelText(/^Payment Source/)).not.toBeInTheDocument()
     expect(screen.queryByRole('radio')).not.toBeInTheDocument()
   })
 
@@ -812,11 +812,11 @@ describe('MonthlyPage', () => {
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Expense' }))
-    fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-07-16' } })
-    fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Amazon' } })
-    fireEvent.change(screen.getByLabelText('Value'), { target: { value: '9.99' } })
+    fireEvent.change(screen.getByLabelText(/^Date/), { target: { value: '2026-07-16' } })
+    fireEvent.change(screen.getByLabelText(/^Description/), { target: { value: 'Amazon' } })
+    fireEvent.change(screen.getByLabelText(/^Value/), { target: { value: '9.99' } })
     await waitFor(() => expect(screen.getByRole('option', { name: 'BaAmex' })).toBeInTheDocument())
-    fireEvent.change(screen.getByLabelText('Card'), { target: { value: 'card-baamex' } })
+    fireEvent.change(screen.getByLabelText(/^Card/), { target: { value: 'card-baamex' } })
     fireEvent.click(screen.getByRole('button', { name: 'Add Expense' }))
 
     await waitFor(() =>
@@ -866,9 +866,9 @@ describe('MonthlyPage', () => {
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Expense' }))
-    fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-07-16' } })
-    fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Waitrose 2' } })
-    fireEvent.change(screen.getByLabelText('Value'), { target: { value: '12' } })
+    fireEvent.change(screen.getByLabelText(/^Date/), { target: { value: '2026-07-16' } })
+    fireEvent.change(screen.getByLabelText(/^Description/), { target: { value: 'Waitrose 2' } })
+    fireEvent.change(screen.getByLabelText(/^Value/), { target: { value: '12' } })
     fireEvent.click(screen.getByRole('button', { name: 'Add Expense' }))
 
     await waitFor(() =>
@@ -898,8 +898,8 @@ describe('MonthlyPage', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Edit expense' })[0])
 
     expect(screen.getByText(/Settled via its card statement/)).toBeInTheDocument()
-    expect(screen.queryByLabelText('Payment Source')).not.toBeInTheDocument()
-    expect(screen.queryByLabelText('Card')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/^Payment Source/)).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/^Card/)).not.toBeInTheDocument()
     expect(screen.queryByRole('radio')).not.toBeInTheDocument()
   })
 
@@ -909,12 +909,12 @@ describe('MonthlyPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Expense' }))
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument())
-    expect(screen.queryByLabelText('Date')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/^Date/)).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'New Expense' }))
-    fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-07-16' } })
-    fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Waitrose' } })
-    fireEvent.change(screen.getByLabelText('Value'), { target: { value: '15.5' } })
+    fireEvent.change(screen.getByLabelText(/^Date/), { target: { value: '2026-07-16' } })
+    fireEvent.change(screen.getByLabelText(/^Description/), { target: { value: 'Waitrose' } })
+    fireEvent.change(screen.getByLabelText(/^Value/), { target: { value: '15.5' } })
     fireEvent.click(screen.getByRole('button', { name: 'Add Expense' }))
 
     await waitFor(() =>
@@ -1012,7 +1012,7 @@ describe('MonthlyPage', () => {
     expect(screen.queryByLabelText('Net Value')).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'New Income' }))
-    fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-07-16' } })
+    fireEvent.change(screen.getByLabelText(/^Date/), { target: { value: '2026-07-16' } })
     fireEvent.change(screen.getByLabelText('Net Value'), { target: { value: '400' } })
     fireEvent.click(screen.getByRole('button', { name: 'Add Income' }))
 
@@ -1030,7 +1030,7 @@ describe('MonthlyPage', () => {
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Income' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Income' }))
-    fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-07-16' } })
+    fireEvent.change(screen.getByLabelText(/^Date/), { target: { value: '2026-07-16' } })
     fireEvent.change(screen.getByLabelText('Net Value'), { target: { value: '400' } })
     fireEvent.change(screen.getByLabelText('Bank'), { target: { value: 'bank-barclays' } })
     fireEvent.click(screen.getByRole('button', { name: 'Add Income' }))
@@ -1063,7 +1063,7 @@ describe('MonthlyPage', () => {
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Income' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Income' }))
-    fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-07-16' } })
+    fireEvent.change(screen.getByLabelText(/^Date/), { target: { value: '2026-07-16' } })
     fireEvent.change(screen.getByLabelText('Net Value'), { target: { value: '400' } })
     fireEvent.click(screen.getByRole('button', { name: 'Add Income' }))
 
@@ -1132,7 +1132,7 @@ describe('MonthlyPage', () => {
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Income' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Income' }))
-    fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-07-15' } })
+    fireEvent.change(screen.getByLabelText(/^Date/), { target: { value: '2026-07-15' } })
     fireEvent.change(screen.getByLabelText('Source'), { target: { value: '3' } })
     fireEvent.change(screen.getByLabelText('Net Value'), { target: { value: '100' } })
 
@@ -1166,7 +1166,7 @@ describe('MonthlyPage', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Expense' }))
 
-    const bankPicker = screen.getByLabelText('Payment Source')
+    const bankPicker = screen.getByLabelText(/^Payment Source/)
     expect(within(bankPicker).getByRole('option', { name: 'Barclays' })).toBeInTheDocument()
     expect(within(bankPicker).getByRole('option', { name: 'Trading212' })).toBeInTheDocument()
     expect(within(bankPicker).getByRole('option', { name: 'Chase' })).toBeInTheDocument()
@@ -1186,11 +1186,11 @@ describe('MonthlyPage', () => {
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Expense' }))
-    fireEvent.change(screen.getByLabelText('Value'), { target: { value: '9.40' } })
+    fireEvent.change(screen.getByLabelText(/^Value/), { target: { value: '9.40' } })
 
     expect(screen.queryByLabelText('Round-Up')).not.toBeInTheDocument()
 
-    fireEvent.change(screen.getByLabelText('Payment Source'), { target: { value: 'bank-trading212' } })
+    fireEvent.change(screen.getByLabelText(/^Payment Source/), { target: { value: 'bank-trading212' } })
 
     expect(screen.getByLabelText('Round-Up')).toHaveValue(0.6)
   })
@@ -1201,11 +1201,11 @@ describe('MonthlyPage', () => {
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Expense' }))
-    fireEvent.change(screen.getByLabelText('Value'), { target: { value: '9.40' } })
-    fireEvent.change(screen.getByLabelText('Payment Source'), { target: { value: 'bank-trading212' } })
+    fireEvent.change(screen.getByLabelText(/^Value/), { target: { value: '9.40' } })
+    fireEvent.change(screen.getByLabelText(/^Payment Source/), { target: { value: 'bank-trading212' } })
     expect(screen.getByLabelText('Round-Up')).toBeInTheDocument()
 
-    fireEvent.change(screen.getByLabelText('Payment Source'), { target: { value: 'bank-barclays' } })
+    fireEvent.change(screen.getByLabelText(/^Payment Source/), { target: { value: 'bank-barclays' } })
     expect(screen.queryByLabelText('Round-Up')).not.toBeInTheDocument()
   })
 
@@ -1215,7 +1215,7 @@ describe('MonthlyPage', () => {
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Expense' }))
-    fireEvent.change(screen.getByLabelText('Value'), { target: { value: '9.40' } })
+    fireEvent.change(screen.getByLabelText(/^Value/), { target: { value: '9.40' } })
 
     expect(screen.queryByLabelText('Round-Up')).not.toBeInTheDocument()
   })
@@ -1227,10 +1227,10 @@ describe('MonthlyPage', () => {
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Expense' }))
-    fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-07-16' } })
-    fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'TfL' } })
-    fireEvent.change(screen.getByLabelText('Value'), { target: { value: '9.40' } })
-    fireEvent.change(screen.getByLabelText('Payment Source'), { target: { value: 'bank-trading212' } })
+    fireEvent.change(screen.getByLabelText(/^Date/), { target: { value: '2026-07-16' } })
+    fireEvent.change(screen.getByLabelText(/^Description/), { target: { value: 'TfL' } })
+    fireEvent.change(screen.getByLabelText(/^Value/), { target: { value: '9.40' } })
+    fireEvent.change(screen.getByLabelText(/^Payment Source/), { target: { value: 'bank-trading212' } })
     fireEvent.change(screen.getByLabelText('Round-Up'), { target: { value: '0.10' } })
     fireEvent.click(screen.getByRole('button', { name: 'Add Expense' }))
 
