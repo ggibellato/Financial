@@ -24,16 +24,16 @@ public sealed class TransactionDialogViewModel : ViewModelBase
 
     public string Title => Mode switch
     {
-        TransactionDialogMode.Add => "Add Transaction",
-        TransactionDialogMode.Update => "Update Transaction",
+        TransactionDialogMode.Add => "New transaction",
+        TransactionDialogMode.Update => "Edit transaction",
         TransactionDialogMode.Delete => "Delete Transaction",
         _ => "Transaction"
     };
 
     public string ConfirmLabel => Mode switch
     {
-        TransactionDialogMode.Add => "Add",
-        TransactionDialogMode.Update => "Update",
+        TransactionDialogMode.Add => "Add transaction",
+        TransactionDialogMode.Update => "Save",
         TransactionDialogMode.Delete => "Delete",
         _ => "Confirm"
     };

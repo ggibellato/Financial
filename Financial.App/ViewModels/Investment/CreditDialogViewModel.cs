@@ -22,16 +22,16 @@ public sealed class CreditDialogViewModel : ViewModelBase
 
     public string Title => Mode switch
     {
-        CreditDialogMode.Add => "Add Credit",
-        CreditDialogMode.Update => "Update Credit",
+        CreditDialogMode.Add => "New credit",
+        CreditDialogMode.Update => "Edit credit",
         CreditDialogMode.Delete => "Delete Credit",
         _ => "Credit"
     };
 
     public string ConfirmLabel => Mode switch
     {
-        CreditDialogMode.Add => "Add",
-        CreditDialogMode.Update => "Update",
+        CreditDialogMode.Add => "Add credit",
+        CreditDialogMode.Update => "Save",
         CreditDialogMode.Delete => "Delete",
         _ => "Confirm"
     };

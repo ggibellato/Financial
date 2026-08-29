@@ -119,7 +119,7 @@
                               ResizeBehavior="PreviousAndNext"/>
 
                 <StackPanel Orientation="Horizontal" Grid.Row="3" Margin="0,8,0,8">
-                    <ui:Button Content="New Transaction" Appearance="Primary" Icon="{ui:SymbolIcon Symbol=Add20}"
+                    <ui:Button Content="New transaction" Appearance="Primary" Icon="{ui:SymbolIcon Symbol=Add20}"
                                ToolTip="New transaction"
                                Command="{Binding AssetDetails.Transactions.AddTransactionCommand}"/>
                 </StackPanel>

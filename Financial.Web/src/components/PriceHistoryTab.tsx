@@ -132,7 +132,7 @@ function InlineForm({
           disabled={isSaving}
           onClick={onSave}
         >
-          {isSaving ? 'Saving...' : 'Save'}
+          {isSaving ? 'Saving...' : editingDate ? 'Save' : 'Add price'}
         </button>
         <button className="price-history-tab__cancel-btn" type="button" onClick={onCancel}>
           Cancel

@@ -80,7 +80,7 @@
                 </Grid.RowDefinitions>
 
                 <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,8">
-                    <ui:Button Content="New Price" Appearance="Primary" Icon="{ui:SymbolIcon Symbol=Add20}"
+                    <ui:Button Content="New price" Appearance="Primary" Icon="{ui:SymbolIcon Symbol=Add20}"
                                ToolTip="New price"
                                Command="{Binding AssetDetails.PriceHistory.AddPriceCommand}"/>
                 </StackPanel>

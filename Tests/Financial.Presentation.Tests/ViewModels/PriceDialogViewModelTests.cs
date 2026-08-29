@@ -6,8 +6,8 @@ namespace Financial.Presentation.Tests.ViewModels;
 public class PriceDialogViewModelTests
 {
     [Theory]
-    [InlineData(PriceDialogMode.Add, "Add Price", "Add")]
-    [InlineData(PriceDialogMode.Update, "Update Price", "Update")]
+    [InlineData(PriceDialogMode.Add, "New price", "Add price")]
+    [InlineData(PriceDialogMode.Update, "Edit price", "Save")]
     [InlineData(PriceDialogMode.Delete, "Delete Price", "Delete")]
     public void TitleAndConfirmLabel_ReflectMode(PriceDialogMode mode, string expectedTitle, string expectedConfirmLabel)
     {
