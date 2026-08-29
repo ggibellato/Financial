@@ -99,6 +99,99 @@ public class ReservaViewModelTests
     }
 
     [Fact]
+    public async Task EditDateFieldError_MissingDate_MatchesSaveError()
+    {
+        var (viewModel, service) = CreateViewModel();
+        var movement = new ReserveMovementRow
+        {
+            Id = Guid.NewGuid(), BucketId = InvestimentoId, BucketName = "Investimento", Amount = 10m,
+            Date = DateOnly.FromDateTime(DateTime.Today), Description = "Salary",
+        };
+        viewModel.EditMovementCommand.Execute(movement);
+        viewModel.EditDate = null;
+
+        await viewModel.SaveMovementEditAsync();
+
+        service.LastUpdateRequest.Should().BeNull();
+        viewModel.EditDateFieldError.Should().Be(viewModel.EditSaveError);
+        viewModel.EditBucketFieldError.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task EditBucketFieldError_MissingBucket_MatchesSaveError()
+    {
+        var (viewModel, service) = CreateViewModel();
+        var movement = new ReserveMovementRow
+        {
+            Id = Guid.NewGuid(), BucketId = InvestimentoId, BucketName = "Investimento", Amount = 10m,
+            Date = DateOnly.FromDateTime(DateTime.Today), Description = "Salary",
+        };
+        viewModel.EditMovementCommand.Execute(movement);
+        viewModel.EditBucketId = null;
+
+        await viewModel.SaveMovementEditAsync();
+
+        service.LastUpdateRequest.Should().BeNull();
+        viewModel.EditBucketFieldError.Should().Be(viewModel.EditSaveError);
+    }
+
+    [Fact]
+    public async Task EditDescriptionFieldError_MissingDescription_MatchesSaveError()
+    {
+        var (viewModel, service) = CreateViewModel();
+        var movement = new ReserveMovementRow
+        {
+            Id = Guid.NewGuid(), BucketId = InvestimentoId, BucketName = "Investimento", Amount = 10m,
+            Date = DateOnly.FromDateTime(DateTime.Today), Description = "Salary",
+        };
+        viewModel.EditMovementCommand.Execute(movement);
+        viewModel.EditDescription = "";
+
+        await viewModel.SaveMovementEditAsync();
+
+        service.LastUpdateRequest.Should().BeNull();
+        viewModel.EditDescriptionFieldError.Should().Be(viewModel.EditSaveError);
+    }
+
+    [Fact]
+    public async Task EditAmountFieldError_NonNumericAmount_MatchesSaveError()
+    {
+        var (viewModel, service) = CreateViewModel();
+        var movement = new ReserveMovementRow
+        {
+            Id = Guid.NewGuid(), BucketId = InvestimentoId, BucketName = "Investimento", Amount = 10m,
+            Date = DateOnly.FromDateTime(DateTime.Today), Description = "Salary",
+        };
+        viewModel.EditMovementCommand.Execute(movement);
+        viewModel.EditAmount = "not-a-number";
+
+        await viewModel.SaveMovementEditAsync();
+
+        service.LastUpdateRequest.Should().BeNull();
+        viewModel.EditAmountFieldError.Should().Be(viewModel.EditSaveError);
+    }
+
+    [Fact]
+    public async Task EditFieldErrors_ClearAfterSuccessfulSave()
+    {
+        var (viewModel, _) = CreateViewModel();
+        var movement = new ReserveMovementRow
+        {
+            Id = Guid.NewGuid(), BucketId = InvestimentoId, BucketName = "Investimento", Amount = 10m,
+            Date = DateOnly.FromDateTime(DateTime.Today), Description = "Salary",
+        };
+        viewModel.EditMovementCommand.Execute(movement);
+        viewModel.EditDescription = "";
+        await viewModel.SaveMovementEditAsync();
+        viewModel.EditDescriptionFieldError.Should().NotBeNull();
+
+        viewModel.EditDescription = "Salary";
+        await viewModel.SaveMovementEditAsync();
+
+        viewModel.EditDescriptionFieldError.Should().BeNull();
+    }
+
+    [Fact]
     public async Task DeleteMovement_SplitGroupMember_ShowsSplitWarningAndCallsService()
     {
         var capturedMessage = string.Empty;

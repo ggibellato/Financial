@@ -12,52 +12,95 @@
             <SolidColorBrush x:Key="AccentButtonBackground" Color="#0F6CBD"/>
             <SolidColorBrush x:Key="AccentButtonBackgroundPointerOver" Color="#115EA3"/>
             <SolidColorBrush x:Key="AccentButtonBackgroundPressed" Color="#0C3B5E"/>
+            <Style x:Key="FieldLabelStyle" TargetType="TextBlock">
+                <Setter Property="Margin" Value="0,0,0,4"/>
+                <Setter Property="FontSize" Value="12"/>
+            </Style>
         </ResourceDictionary>
     </UserControl.Resources>
+    <!--
+        Four equal-width columns, label-above-control per field — matches
+        ExpenseFormView's layout standard (docs/ui/forms-data-and-visualisations
+        .md's "Layout" rule) instead of the old single-column label-left row
+        stack (F05).
+    -->
     <Border BorderThickness="1" Padding="12" Margin="0,0,0,12"
             BorderBrush="{DynamicResource ControlElevationBorderBrush}"
-            Background="{DynamicResource ControlFillColorDefaultBrush}">
+            Background="{DynamicResource ControlFillColorDefaultBrush}"
+            CornerRadius="4">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="150"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <TextBlock Grid.Row="0" Grid.ColumnSpan="2" FontWeight="Bold" Text="Edit Movement" Margin="0,0,0,8"/>
+            <TextBlock Grid.Row="0" Grid.ColumnSpan="4" FontWeight="Bold" Text="Edit Movement" Margin="0,0,0,8"/>
 
-            <TextBlock Grid.Row="1" Grid.Column="0" Text="Bucket:" VerticalAlignment="Center"/>
-            <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding Buckets}" DisplayMemberPath="Name"
-                      SelectedValue="{Binding EditBucketId, UpdateSourceTrigger=PropertyChanged}"
-                      SelectedValuePath="Id"/>
+            <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,8,8">
+                <TextBlock Style="{StaticResource FieldLabelStyle}">
+                    <Run Text="Date"/>
+                    <Run Text=" *" Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
+                </TextBlock>
+                <DatePicker AutomationProperties.Name="Movement date"
+                            AutomationProperties.HelpText="Required"
+                            SelectedDate="{Binding EditDate, UpdateSourceTrigger=PropertyChanged}"/>
+                <TextBlock Style="{StaticResource FieldErrorTextStyle}" Text="{Binding EditDateFieldError}"/>
+            </StackPanel>
 
-            <TextBlock Grid.Row="2" Grid.Column="0" Text="Amount:" VerticalAlignment="Center"/>
-            <!-- Plain TextBox (not the shared decimal-masked input): unlike other CashFlow amount
-                 fields, this one must accept a leading minus sign for withdrawal movements. -->
-            <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding EditAmount, UpdateSourceTrigger=LostFocus}"
-                     LostFocus="OnAmountTextBoxLostFocus"/>
+            <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,8,8">
+                <TextBlock Style="{StaticResource FieldLabelStyle}">
+                    <Run Text="Bucket"/>
+                    <Run Text=" *" Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
+                </TextBlock>
+                <ComboBox AutomationProperties.Name="Bucket"
+                          AutomationProperties.HelpText="Required"
+                          ItemsSource="{Binding Buckets}" DisplayMemberPath="Name"
+                          SelectedValue="{Binding EditBucketId, UpdateSourceTrigger=PropertyChanged}"
+                          SelectedValuePath="Id"/>
+                <TextBlock Style="{StaticResource FieldErrorTextStyle}" Text="{Binding EditBucketFieldError}"/>
+            </StackPanel>
 
-            <TextBlock Grid.Row="3" Grid.Column="0" Text="Date:" VerticalAlignment="Center"/>
-            <DatePicker Grid.Row="3" Grid.Column="1" SelectedDate="{Binding EditDate, UpdateSourceTrigger=PropertyChanged}"/>
+            <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,8,8">
+                <TextBlock Style="{StaticResource FieldLabelStyle}">
+                    <Run Text="Description"/>
+                    <Run Text=" *" Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
+                </TextBlock>
+                <TextBox AutomationProperties.Name="Description"
+                         AutomationProperties.HelpText="Required"
+                         Text="{Binding EditDescription, UpdateSourceTrigger=PropertyChanged}"/>
+                <TextBlock Style="{StaticResource FieldErrorTextStyle}" Text="{Binding EditDescriptionFieldError}"/>
+            </StackPanel>
 
-            <TextBlock Grid.Row="4" Grid.Column="0" Text="Description:" VerticalAlignment="Center"/>
-            <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding EditDescription, UpdateSourceTrigger=PropertyChanged}"/>
+            <StackPanel Grid.Row="1" Grid.Column="3" Margin="0,0,0,8">
+                <TextBlock Style="{StaticResource FieldLabelStyle}">
+                    <Run Text="Amount"/>
+                    <Run Text=" *" Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
+                </TextBlock>
+                <!-- Plain TextBox (not the shared decimal-masked input): unlike other CashFlow amount
+                     fields, this one must accept a leading minus sign for withdrawal movements. -->
+                <TextBox AutomationProperties.Name="Amount"
+                         AutomationProperties.HelpText="Required"
+                         Text="{Binding EditAmount, UpdateSourceTrigger=LostFocus}"
+                         LostFocus="OnAmountTextBoxLostFocus"/>
+                <TextBlock Style="{StaticResource FieldErrorTextStyle}" Text="{Binding EditAmountFieldError}"/>
+            </StackPanel>
 
-            <TextBlock Grid.Row="5" Grid.ColumnSpan="2" Foreground="{DynamicResource SystemFillColorCriticalBrush}" TextWrapping="Wrap"
-                       Text="{Binding EditSaveError}" Margin="0,8,0,0"/>
+            <TextBlock Grid.Row="2" Grid.ColumnSpan="4" TextWrapping="Wrap" Margin="0,0,0,8"
+                       Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                       Text="{Binding EditSaveError}"/>
 
-            <StackPanel Grid.Row="6" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,12,0,0">
-                <Button Width="90" Command="{Binding SaveMovementEditCommand}">
-                    <Button.Style>
-                        <Style TargetType="Button">
+            <StackPanel Grid.Row="3" Grid.ColumnSpan="4" Orientation="Horizontal">
+                <ui:Button MinWidth="90" Appearance="Primary" Command="{Binding SaveMovementEditCommand}">
+                    <ui:Button.Style>
+                        <Style TargetType="{x:Type ui:Button}" BasedOn="{StaticResource {x:Type ui:Button}}">
                             <Setter Property="Content" Value="Save"/>
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding IsSavingMovement}" Value="True">
@@ -65,9 +108,10 @@
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </Button.Style>
-                </Button>
-                <Button Content="Cancel" Width="90" Margin="8,0,0,0" Command="{Binding CancelEditFormCommand}"/>
+                    </ui:Button.Style>
+                </ui:Button>
+                <ui:Button Content="Cancel" MinWidth="90" Margin="8,0,0,0" Appearance="Secondary"
+                           Command="{Binding CancelEditFormCommand}"/>
             </StackPanel>
         </Grid>
     </Border>

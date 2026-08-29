@@ -62,8 +62,35 @@ public class WithdrawalViewModel : ViewModelBase
     public string? WithdrawalSaveError
     {
         get => _withdrawalSaveError;
-        private set => SetProperty(ref _withdrawalSaveError, value);
+        private set
+        {
+            if (SetProperty(ref _withdrawalSaveError, value))
+            {
+                OnPropertyChanged(nameof(DateFieldError));
+                OnPropertyChanged(nameof(BucketFieldError));
+                OnPropertyChanged(nameof(DescriptionFieldError));
+                OnPropertyChanged(nameof(AmountFieldError));
+            }
+        }
     }
+
+    /// <summary>
+    /// Per-field validation errors (P38-F05) — same substring-match pattern as F02/F04's
+    /// derived field-error properties, matching this form's own client-side
+    /// <see cref="WithdrawalFormValidation"/> text.
+    /// </summary>
+    public string? DateFieldError => MatchFieldError("Date is required.");
+
+    public string? BucketFieldError => MatchFieldError("Bucket is required.");
+
+    public string? DescriptionFieldError => MatchFieldError("Description is required.");
+
+    public string? AmountFieldError => MatchFieldError("Amount must be a positive number.");
+
+    private string? MatchFieldError(string fragment) =>
+        WithdrawalSaveError is { } error && error.Contains(fragment, StringComparison.OrdinalIgnoreCase)
+            ? error
+            : null;
 
     public RelayCommand ShowWithdrawalFormCommand { get; }
     public RelayCommand CancelWithdrawalFormCommand { get; }

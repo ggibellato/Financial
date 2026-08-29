@@ -227,8 +227,35 @@ public class ReservaViewModel : ViewModelBase
     public string? EditSaveError
     {
         get => _editSaveError;
-        private set => SetProperty(ref _editSaveError, value);
+        private set
+        {
+            if (SetProperty(ref _editSaveError, value))
+            {
+                OnPropertyChanged(nameof(EditDateFieldError));
+                OnPropertyChanged(nameof(EditBucketFieldError));
+                OnPropertyChanged(nameof(EditDescriptionFieldError));
+                OnPropertyChanged(nameof(EditAmountFieldError));
+            }
+        }
     }
+
+    /// <summary>
+    /// Per-field validation errors (P38-F05) — same substring-match pattern as F02/F04's
+    /// derived field-error properties, matching this form's own client-side
+    /// <see cref="EditReserveMovementFormValidation"/> text.
+    /// </summary>
+    public string? EditDateFieldError => MatchEditFieldError("Date is required.");
+
+    public string? EditBucketFieldError => MatchEditFieldError("Bucket is required.");
+
+    public string? EditDescriptionFieldError => MatchEditFieldError("Description is required.");
+
+    public string? EditAmountFieldError => MatchEditFieldError("Amount must be a number.");
+
+    private string? MatchEditFieldError(string fragment) =>
+        EditSaveError is { } error && error.Contains(fragment, StringComparison.OrdinalIgnoreCase)
+            ? error
+            : null;
 
     private string? _deleteMovementError;
 
