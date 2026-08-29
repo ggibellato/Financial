@@ -37,7 +37,7 @@
                     <DataGridTemplateColumn Header="" Width="34">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <Button Content="✏" ToolTip="Edit" Padding="4,0"
+                                <Button Content="✏" ToolTip="Edit" AutomationProperties.Name="Edit snapshot" Padding="4,0"
                                         Command="{Binding DataContext.EditSnapshotCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                         CommandParameter="{Binding}"/>
                             </DataTemplate>

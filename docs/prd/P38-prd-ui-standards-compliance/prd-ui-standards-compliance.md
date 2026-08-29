@@ -577,13 +577,13 @@ graph TD
 - [x] Area and Currency fields appear before the financial fields in Bill/Entry forms.
 
 ### F07. Investment Forms & Dialogs Compliance
-- [ ] `MoveAssetDialog` traps focus, closes on Escape, and restores focus to the triggering element on
+- [x] `MoveAssetDialog` traps focus, closes on Escape, and restores focus to the triggering element on
       close.
-- [ ] `MoveAssetDialog`'s combo/textbox inputs have `AutomationProperties.Name`; its error text is in a
+- [x] `MoveAssetDialog`'s combo/textbox inputs have `AutomationProperties.Name`; its error text is in a
       live region.
 - [x] Investment Transaction/Credit/Price "New" triggers show a visible entity name on both platforms.
       (Completed in F03, PR #648 — duplicate of F03's own AC bullet.)
-- [ ] Investment Snapshot's edit button has `AutomationProperties.Name` (not tooltip-only).
+- [x] Investment Snapshot's edit button has `AutomationProperties.Name` (not tooltip-only).
 - [x] WPF Transaction/Credit/Price forms use sentence-case titles/verbs matching Web.
       (Completed in F03, PR #648, while closing the trigger-to-form naming chain the trigger fix
       alone would have left mismatched — see `docs/ui/forms-data-and-visualisations.md`'s
