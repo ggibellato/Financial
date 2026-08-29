@@ -95,4 +95,48 @@ public class AdjustmentWorkflowViewModelTests
         viewModel.AdjustmentFormBankName.Should().Be(BarclaysId);
         viewModel.IsEditingAdjustment.Should().BeTrue();
     }
+
+    [Fact]
+    public void TargetBalanceFieldError_NewForm_IsNull()
+    {
+        var (viewModel, _, _) = CreateViewModel();
+
+        viewModel.ShowCorrectBalanceFormCommand.Execute(null);
+
+        viewModel.TargetBalanceFieldError.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task TargetBalanceFieldError_NegativeTargetBalance_MatchesSaveError()
+    {
+        var (viewModel, _, bankTotals) = CreateViewModel();
+        bankTotals.Add(new BankTotalRow { BankId = BarclaysId, Bank = "Barclays", Balance = 42.5m, RoundUpTotal = 0m });
+        viewModel.ShowCorrectBalanceFormCommand.Execute(null);
+        viewModel.AdjustmentFormBankName = BarclaysId;
+        viewModel.AdjustmentFormDate = DateTime.Today;
+        viewModel.AdjustmentFormTargetBalance = "-5";
+
+        await viewModel.SaveAdjustmentAsync();
+
+        viewModel.AdjustmentSaveError.Should().Be("Target Balance must be zero or greater.");
+        viewModel.TargetBalanceFieldError.Should().Be(viewModel.AdjustmentSaveError);
+    }
+
+    [Fact]
+    public async Task TargetBalanceFieldError_ClearsAfterSuccessfulSave()
+    {
+        var (viewModel, _, bankTotals) = CreateViewModel();
+        bankTotals.Add(new BankTotalRow { BankId = BarclaysId, Bank = "Barclays", Balance = 42.5m, RoundUpTotal = 0m });
+        viewModel.ShowCorrectBalanceFormCommand.Execute(null);
+        viewModel.AdjustmentFormBankName = BarclaysId;
+        viewModel.AdjustmentFormDate = DateTime.Today;
+        viewModel.AdjustmentFormTargetBalance = "-5";
+        await viewModel.SaveAdjustmentAsync();
+        viewModel.TargetBalanceFieldError.Should().NotBeNull();
+
+        viewModel.AdjustmentFormTargetBalance = "50";
+        await viewModel.SaveAdjustmentAsync();
+
+        viewModel.TargetBalanceFieldError.Should().BeNull();
+    }
 }

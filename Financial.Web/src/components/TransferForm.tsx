@@ -1,6 +1,7 @@
 import { Button, Field, Input, MessageBar, MessageBarBody, Select, Text } from '@fluentui/react-components'
 import type { BankDto } from '../api/types'
 import type { TransferFormField } from '../hooks/mapTransferErrorToField'
+import { useFieldError } from '../hooks/useFieldError'
 import { useFormPanelStyles } from './formPanelStyles'
 
 interface TransferFormProps {
@@ -42,9 +43,10 @@ export default function TransferForm({
 
   const destinationBanks = banks.filter((b) => b.id !== sourceBank)
 
+  const baseFieldError = useFieldError(saveError, saveErrorField)
   const fieldError = (field: TransferFormField): string | null => {
     if (field === 'destinationBank' && sameBankError) return sameBankError
-    return saveErrorField === field ? saveError : null
+    return baseFieldError(field)
   }
 
   const generalError = saveErrorField === null ? saveError : null
@@ -56,12 +58,18 @@ export default function TransferForm({
       </Text>
 
       <div className={styles.grid}>
-        <Field label="Date" validationState={fieldError('date') ? 'error' : 'none'} validationMessage={fieldError('date')}>
+        <Field
+          label="Date"
+          required
+          validationState={fieldError('date') ? 'error' : 'none'}
+          validationMessage={fieldError('date')}
+        >
           <Input type="date" value={date} onChange={(e) => onFieldChange('date', e.target.value)} />
         </Field>
 
         <Field
           label="From"
+          required
           validationState={fieldError('sourceBank') ? 'error' : 'none'}
           validationMessage={fieldError('sourceBank')}
         >
@@ -76,6 +84,7 @@ export default function TransferForm({
 
         <Field
           label="To"
+          required
           validationState={fieldError('destinationBank') ? 'error' : 'none'}
           validationMessage={fieldError('destinationBank')}
         >
@@ -91,6 +100,7 @@ export default function TransferForm({
 
         <Field
           label="Amount"
+          required
           validationState={fieldError('amount') ? 'error' : 'none'}
           validationMessage={fieldError('amount')}
         >

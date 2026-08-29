@@ -22,6 +22,7 @@
         <converters:CategoryHasSelectedChildConverter x:Key="CategoryHasSelectedChildConverter"/>
         <converters:EqualityToBoolConverter x:Key="EqualityToBoolConverter"/>
         <converters:DateOnlyToDateTimeConverter x:Key="DateOnlyToDateTimeConverter"/>
+        <converters:NullOrEmptyToVisibilityConverter x:Key="NullOrEmptyToVisibilityConverter"/>
 
         <!-- Assigning a DataGridColumn.Header to a ColumnFilterViewModelBase instance (in a
              view's code-behind, since DataGridColumn isn't part of the visual tree and can't
@@ -152,6 +153,23 @@
                     <Setter Property="Foreground" Value="Black"/>
                 </MultiTrigger>
             </Style.Triggers>
+        </Style>
+
+        <!-- Per-field validation error text (P38-F02) — additive to a form's existing
+             bottom-of-form error message, shown directly under the field it describes.
+             Consuming views must have the WPF-UI theme merged locally (see F01) for
+             SystemFillColorCriticalBrush to resolve. -->
+        <Style x:Key="FieldErrorTextStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Margin" Value="0,2,0,0"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}"/>
+            <Setter Property="Visibility">
+                <Setter.Value>
+                    <Binding RelativeSource="{RelativeSource Self}" Path="Text"
+                             Converter="{StaticResource NullOrEmptyToVisibilityConverter}"/>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <Style x:Key="NumericColumnTextStyle" TargetType="TextBlock">

@@ -85,8 +85,29 @@ public class AdjustmentWorkflowViewModel : ViewModelBase
     public string? AdjustmentSaveError
     {
         get => _adjustmentSaveError;
-        private set => SetProperty(ref _adjustmentSaveError, value);
+        private set
+        {
+            if (SetProperty(ref _adjustmentSaveError, value))
+            {
+                OnPropertyChanged(nameof(TargetBalanceFieldError));
+            }
+        }
     }
+
+    /// <summary>
+    /// Per-field validation error (P38-F02) — Target Balance is the only field a save error can
+    /// ever target (the Bank picker is validated client-side by disabling Save until a bank is
+    /// chosen). Matches both the server's rejection text (Domain's <c>BalanceAdjustment</c>,
+    /// "cannot be negative" — mirroring mapBalanceAdjustmentErrorToField.ts on the Web side) and
+    /// this form's own client-side <see cref="BalanceAdjustmentFormValidation"/> text ("zero or
+    /// greater"). Additive to <see cref="AdjustmentSaveError"/>'s existing bottom-of-form message.
+    /// </summary>
+    public string? TargetBalanceFieldError =>
+        AdjustmentSaveError is { } error &&
+        (error.Contains("cannot be negative", StringComparison.OrdinalIgnoreCase) ||
+         error.Contains("zero or greater", StringComparison.OrdinalIgnoreCase))
+            ? error
+            : null;
 
     public decimal? AdjustmentSavedDelta
     {

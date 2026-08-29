@@ -40,11 +40,29 @@ describe('BalanceAdjustmentForm', () => {
     expect(screen.getByRole('heading', { name: 'New Balance Correction' })).toBeInTheDocument()
   })
 
+  it('marks Bank and Target Balance as required, leaving Note optional', () => {
+    render(<BalanceAdjustmentForm {...baseProps} />)
+
+    expect(screen.getByLabelText(/^Bank/)).toBeRequired()
+    expect(screen.getByRole('spinbutton', { name: /^Target Balance/ })).toBeRequired()
+    expect(screen.getByLabelText('Note')).not.toBeRequired()
+  })
+
+  it('offers contextual help explaining Target Balance', () => {
+    render(<BalanceAdjustmentForm {...baseProps} />)
+
+    expect(
+      screen.getByRole('button', {
+        name: /Target Balance information/,
+      }),
+    ).toBeInTheDocument()
+  })
+
   it('renders the edit form title and pre-filled values', () => {
     render(<BalanceAdjustmentForm {...baseProps} isEditing targetBalance="150" note="Matched statement" />)
 
     expect(screen.getByRole('heading', { name: 'Edit Balance Correction' })).toBeInTheDocument()
-    expect(screen.getByLabelText('Target Balance')).toHaveValue(150)
+    expect(screen.getByRole('spinbutton', { name: /^Target Balance/ })).toHaveValue(150)
     expect(screen.getByLabelText('Note')).toHaveValue('Matched statement')
     expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument()
   })
@@ -105,7 +123,7 @@ describe('BalanceAdjustmentForm', () => {
   it('only the Bank dropdown is enabled before a bank is chosen', () => {
     render(<BalanceAdjustmentForm {...baseProps} bankName="" currentBalance={0} />)
 
-    expect(screen.getByLabelText('Bank')).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Bank/)).toBeInTheDocument()
     expect(screen.queryByText(/Current calculated balance/)).not.toBeInTheDocument()
     expect(screen.queryByLabelText('Date')).not.toBeInTheDocument()
     expect(screen.queryByLabelText('Target Balance')).not.toBeInTheDocument()
@@ -117,7 +135,7 @@ describe('BalanceAdjustmentForm', () => {
 
     expect(screen.getByText('Current calculated balance for Barclays: £100.00')).toBeInTheDocument()
     expect(screen.getByLabelText('Date')).toBeInTheDocument()
-    expect(screen.getByLabelText('Target Balance')).toBeInTheDocument()
+    expect(screen.getByRole('spinbutton', { name: /^Target Balance/ })).toBeInTheDocument()
     expect(screen.getByLabelText('Note')).toBeInTheDocument()
   })
 
@@ -131,7 +149,7 @@ describe('BalanceAdjustmentForm', () => {
     const onFieldChange = vi.fn()
     render(<BalanceAdjustmentForm {...baseProps} bankName="" currentBalance={0} onFieldChange={onFieldChange} />)
 
-    fireEvent.change(screen.getByLabelText('Bank'), { target: { value: 'bank-trading212' } })
+    fireEvent.change(screen.getByLabelText(/^Bank/), { target: { value: 'bank-trading212' } })
 
     expect(onFieldChange).toHaveBeenCalledWith('bankName', 'bank-trading212')
   })

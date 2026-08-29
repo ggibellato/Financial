@@ -531,11 +531,11 @@ graph TD
       hardcoded `#CCCCCC`/`#FAFAFA`/`Foreground="Red"` literals.
 
 ### F02. Shared Form UX Primitives
-- [ ] A shared per-field validation primitive exists on Web (`Field validationState`/
+- [x] A shared per-field validation primitive exists on Web (`Field validationState`/
       `validationMessage`) and WPF (per-field error text) and is documented for reuse.
-- [ ] A shared required-field indicator exists on Web (`Field required`) and WPF (themed asterisk +
+- [x] A shared required-field indicator exists on Web (`Field required`) and WPF (themed asterisk +
       `AutomationProperties.HelpText`).
-- [ ] A shared contextual-help affordance exists on Web (`InfoLabel`) and WPF (`SymbolIcon` +
+- [x] A shared contextual-help affordance exists on Web (`InfoLabel`) and WPF (`SymbolIcon` +
       `Flyout`).
 - [ ] A canonical manual/automatic price-source `Badge` component exists and renders consistently
       wherever price source is shown.
@@ -612,7 +612,7 @@ graph TD
       the change is confirmed intentional.
 
 ### Cross-Feature Integration
-- [ ] F02's shared primitives render using F01's design tokens — no hardcoded color is introduced in
+- [x] F02's shared primitives render using F01's design tokens — no hardcoded color is introduced in
       the new validation/required/help components.
 - [ ] F04's Expense form and Monthly page chrome use both F01's tokens (no hardcoded colors) and F02's
       validation/required-field primitives (not a bespoke reimplementation), and reflect F03's naming

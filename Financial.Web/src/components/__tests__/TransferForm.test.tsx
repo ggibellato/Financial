@@ -31,9 +31,19 @@ describe('TransferForm', () => {
     render(<TransferForm {...baseProps} />)
 
     expect(screen.getByRole('heading', { name: 'New Transfer' })).toBeInTheDocument()
-    expect(screen.getByLabelText('Date')).toHaveValue('2026-07-25')
-    expect(screen.getByLabelText('From')).toHaveValue('bank-barclays')
-    expect(screen.getByLabelText('To')).toHaveValue('bank-trading212')
+    expect(screen.getByLabelText(/^Date/)).toHaveValue('2026-07-25')
+    expect(screen.getByLabelText(/^From/)).toHaveValue('bank-barclays')
+    expect(screen.getByLabelText(/^To/)).toHaveValue('bank-trading212')
+  })
+
+  it('marks Date, From, To, and Amount as required, leaving Note optional', () => {
+    render(<TransferForm {...baseProps} />)
+
+    expect(screen.getByLabelText(/^Date/)).toBeRequired()
+    expect(screen.getByLabelText(/^From/)).toBeRequired()
+    expect(screen.getByLabelText(/^To/)).toBeRequired()
+    expect(screen.getByLabelText(/^Amount/)).toBeRequired()
+    expect(screen.getByLabelText('Note')).not.toBeRequired()
   })
 
   it('renders the edit form title', () => {
@@ -46,7 +56,7 @@ describe('TransferForm', () => {
   it('excludes the selected source bank from the destination dropdown', () => {
     render(<TransferForm {...baseProps} sourceBank="bank-barclays" destinationBank="bank-trading212" />)
 
-    const destinationOptions = screen.getByLabelText('To').querySelectorAll('option')
+    const destinationOptions = screen.getByLabelText(/^To/).querySelectorAll('option')
     const optionValues = Array.from(destinationOptions).map((o) => o.textContent)
     expect(optionValues).not.toContain('Barclays')
     expect(optionValues).toContain('Trading212')
