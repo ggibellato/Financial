@@ -519,15 +519,15 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Design Token & Color Compliance Foundation
-- [ ] `--bg-subtle`, `--text-muted`, `--danger`, `--error` are declared in `index.css` with correct
+- [x] `--bg-subtle`, `--text-muted`, `--danger`, `--error` are declared in `index.css` with correct
       light and dark values; no component relies on an undeclared custom property's fallback.
-- [ ] `MensaisPage.tsx`, `ControleMaePage.tsx`, and the New/Save buttons in
+- [x] `MensaisPage.tsx`, `ControleMaePage.tsx`, and the New/Save buttons in
       `TransactionsTab.tsx`/`CreditsTab.tsx`/`PriceHistoryTab.tsx` contain no hardcoded `#007acc`/
       `#005fa3` hex values.
-- [ ] The 3 Dividend/Rent/JCP colors in `CreditsTab.tsx` reference named tokens.
-- [ ] Reserva's non-blocking split-percentage warning renders in a color visually distinct from the
+- [x] The 3 Dividend/Rent/JCP colors in `CreditsTab.tsx` reference named tokens.
+- [x] Reserva's non-blocking split-percentage warning renders in a color visually distinct from the
       blocking-error red.
-- [ ] All 8 legacy WPF forms and `MoveAssetDialog.xaml` have the WPF-UI theme merged and contain no
+- [x] All 8 legacy WPF forms and `MoveAssetDialog.xaml` have the WPF-UI theme merged and contain no
       hardcoded `#CCCCCC`/`#FAFAFA`/`Foreground="Red"` literals.
 
 ### F02. Shared Form UX Primitives
