@@ -1,6 +1,7 @@
 import { Button, Field, Input, MessageBar, MessageBarBody, Select, Text } from '@fluentui/react-components'
 import type { BankDto } from '../api/types'
 import type { BalanceAdjustmentFormField } from '../hooks/mapBalanceAdjustmentErrorToField'
+import { useFieldError } from '../hooks/useFieldError'
 import { formatN2 } from '../utils/formatters'
 import { useFormPanelStyles } from './formPanelStyles'
 
@@ -40,6 +41,7 @@ export default function BalanceAdjustmentForm({
   onCancel,
 }: BalanceAdjustmentFormProps) {
   const styles = useFormPanelStyles()
+  const fieldError = useFieldError(saveError, saveErrorField)
 
   if (savedDelta !== null) {
     const sign = savedDelta < 0 ? '-' : ''
@@ -60,9 +62,6 @@ export default function BalanceAdjustmentForm({
     )
   }
 
-  const fieldError = (field: BalanceAdjustmentFormField): string | null =>
-    saveErrorField === field ? saveError : null
-
   const generalError = saveErrorField === null ? saveError : null
 
   const bankChosen = bankName !== ''
@@ -78,6 +77,7 @@ export default function BalanceAdjustmentForm({
         <div className={styles.grid}>
           <Field
             label="Bank"
+            required
             validationState={fieldError('bankName') ? 'error' : 'none'}
             validationMessage={fieldError('bankName')}
           >
@@ -109,6 +109,7 @@ export default function BalanceAdjustmentForm({
 
             <Field
               label="Target Balance"
+              required
               validationState={fieldError('targetBalance') ? 'error' : 'none'}
               validationMessage={fieldError('targetBalance')}
             >
