@@ -581,9 +581,13 @@ graph TD
       close.
 - [ ] `MoveAssetDialog`'s combo/textbox inputs have `AutomationProperties.Name`; its error text is in a
       live region.
-- [ ] Investment Transaction/Credit/Price "New" triggers show a visible entity name on both platforms.
+- [x] Investment Transaction/Credit/Price "New" triggers show a visible entity name on both platforms.
+      (Completed in F03, PR #648 — duplicate of F03's own AC bullet.)
 - [ ] Investment Snapshot's edit button has `AutomationProperties.Name` (not tooltip-only).
-- [ ] WPF Transaction/Credit/Price forms use sentence-case titles/verbs matching Web.
+- [x] WPF Transaction/Credit/Price forms use sentence-case titles/verbs matching Web.
+      (Completed in F03, PR #648, while closing the trigger-to-form naming chain the trigger fix
+      alone would have left mismatched — see `docs/ui/forms-data-and-visualisations.md`'s
+      "Fix the whole chain together" note.)
 
 ### F08. InvestmentTree → Fluent Tree Migration
 - [ ] `InvestmentTree.tsx` is implemented with Fluent `Tree`, exposing `role="tree"` and
