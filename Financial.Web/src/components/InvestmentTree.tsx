@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
+import { Tree, TreeItem, TreeItemLayout } from '@fluentui/react-components'
+import type { TreeItemValue, TreeOpenChangeData, TreeOpenChangeEvent } from '@fluentui/react-components'
 import { apiClient } from '../api/financialApiClient'
 import type { PositionType, SelectedNode, TreeNodeDto } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
@@ -120,7 +122,10 @@ function AssetNode({ node, brokerName, portfolioName, filterClass, drag }: Asset
   }
 
   return (
-    <li
+    <TreeItem
+      itemType="leaf"
+      value={`asset:${brokerName}:${portfolioName}:${assetName}`}
+      aria-selected={isSelected}
       draggable
       onDragStart={(e) => {
         // The payload has to be set for the drag to start at all; the context carries the detail.
@@ -130,14 +135,14 @@ function AssetNode({ node, brokerName, portfolioName, filterClass, drag }: Asset
       }}
       onDragEnd={() => drag.setDragged(null)}
     >
-      <button
+      <TreeItemLayout
         className={`investment-tree__node investment-tree__node--asset${isSelected ? ' investment-tree__node--selected' : ''}`}
+        iconBefore={<span className={`investment-tree__status-icon investment-tree__status-icon--${statusClass}`}>●</span>}
         onClick={handleClick}
-        type="button"
       >
-        <span className={`investment-tree__status-icon investment-tree__status-icon--${statusClass}`}>●</span> {node.displayName}
-      </button>
-    </li>
+        {node.displayName}
+      </TreeItemLayout>
+    </TreeItem>
   )
 }
 
@@ -150,7 +155,6 @@ interface PortfolioNodeProps {
 
 function PortfolioNode({ node, brokerName, filterClass, drag }: PortfolioNodeProps) {
   const { selectedNode, setSelectedNode } = useSelectedNode()
-  const [expanded, setExpanded] = useState(false)
   const [isDropTarget, setIsDropTarget] = useState(false)
   const portfolioName = getMetaString(node.metadata, 'PortfolioName')
   // -1 when absent, so a portfolio whose count is unknown is never offered for deletion.
@@ -171,11 +175,19 @@ function PortfolioNode({ node, brokerName, filterClass, drag }: PortfolioNodePro
   }
 
   const accepts = canAccept(drag.dragged, brokerName, portfolioName)
+  const hasVisibleChildren = visibleAssets.length > 0
 
   return (
-    <li>
-      <div
-        className={`investment-tree__row${isDropTarget ? ' investment-tree__row--drop-target' : ''}`}
+    <TreeItem
+      itemType={hasVisibleChildren ? 'branch' : 'leaf'}
+      value={`portfolio:${brokerName}:${portfolioName}`}
+      aria-selected={isSelected}
+    >
+      <TreeItemLayout
+        className={`investment-tree__node${isSelected ? ' investment-tree__node--selected' : ''}${
+          isDropTarget ? ' investment-tree__row--drop-target' : ''
+        }`}
+        onClick={handleClick}
         // preventDefault only for a target that would take it: that is what makes an illegal drop
         // genuinely refuse rather than merely fail afterwards.
         onDragOver={(e) => {
@@ -193,24 +205,10 @@ function PortfolioNode({ node, brokerName, filterClass, drag }: PortfolioNodePro
           drag.onDrop({ ...drag.dragged, destinationPortfolioName: portfolioName })
         }}
       >
-        <button
-          className="investment-tree__chevron"
-          onClick={() => setExpanded((e) => !e)}
-          aria-label={expanded ? 'Collapse' : 'Expand'}
-          type="button"
-        >
-          {expanded ? '▾' : '▸'}
-        </button>
-        <button
-          className={`investment-tree__node${isSelected ? ' investment-tree__node--selected' : ''}`}
-          onClick={handleClick}
-          type="button"
-        >
-          {node.displayName}
-        </button>
-      </div>
-      {expanded && visibleAssets.length > 0 && (
-        <ul className="investment-tree__list investment-tree__list--children">
+        {node.displayName}
+      </TreeItemLayout>
+      {hasVisibleChildren && (
+        <Tree>
           {node.children.map((child) =>
             child.nodeType === 'Asset' ? (
               <AssetNode
@@ -223,9 +221,9 @@ function PortfolioNode({ node, brokerName, filterClass, drag }: PortfolioNodePro
               />
             ) : null,
           )}
-        </ul>
+        </Tree>
       )}
-    </li>
+    </TreeItem>
   )
 }
 
@@ -237,7 +235,6 @@ interface BrokerNodeProps {
 
 function BrokerNode({ node, filterClass, drag }: BrokerNodeProps) {
   const { selectedNode, setSelectedNode } = useSelectedNode()
-  const [expanded, setExpanded] = useState(true)
   const [isDropTarget, setIsDropTarget] = useState(false)
   const brokerName = getMetaString(node.metadata, 'BrokerName')
   const currency = getMetaString(node.metadata, 'Currency')
@@ -259,11 +256,19 @@ function BrokerNode({ node, filterClass, drag }: BrokerNodeProps) {
   }
 
   const accepts = canAccept(drag.dragged, brokerName)
+  const hasVisibleChildren = visiblePortfolios.length > 0
 
   return (
-    <li>
-      <div
-        className={`investment-tree__row${isDropTarget ? ' investment-tree__row--drop-target' : ''}`}
+    <TreeItem
+      itemType={hasVisibleChildren ? 'branch' : 'leaf'}
+      value={`broker:${brokerName}`}
+      aria-selected={isSelected}
+    >
+      <TreeItemLayout
+        className={`investment-tree__node investment-tree__node--broker${isSelected ? ' investment-tree__node--selected' : ''}${
+          isDropTarget ? ' investment-tree__row--drop-target' : ''
+        }`}
+        onClick={handleClick}
         onDragOver={(e) => {
           if (!accepts) return
           e.preventDefault()
@@ -279,38 +284,18 @@ function BrokerNode({ node, filterClass, drag }: BrokerNodeProps) {
           drag.onDrop({ ...drag.dragged })
         }}
       >
-        <button
-          className="investment-tree__chevron"
-          onClick={() => setExpanded((e) => !e)}
-          aria-label={expanded ? 'Collapse' : 'Expand'}
-          type="button"
-        >
-          {expanded ? '▾' : '▸'}
-        </button>
-        <button
-          className={`investment-tree__node investment-tree__node--broker${isSelected ? ' investment-tree__node--selected' : ''}`}
-          onClick={handleClick}
-          type="button"
-        >
-          {node.displayName}
-        </button>
-      </div>
-      {expanded && (
-        <ul className="investment-tree__list investment-tree__list--children">
+        {node.displayName}
+      </TreeItemLayout>
+      {hasVisibleChildren && (
+        <Tree>
           {node.children.map((child) =>
             child.nodeType === 'Portfolio' ? (
-              <PortfolioNode
-                key={child.displayName}
-                node={child}
-                brokerName={brokerName}
-                filterClass={filterClass}
-                drag={drag}
-              />
+              <PortfolioNode key={child.displayName} node={child} brokerName={brokerName} filterClass={filterClass} drag={drag} />
             ) : null,
           )}
-        </ul>
+        </Tree>
       )}
-    </li>
+    </TreeItem>
   )
 }
 
@@ -323,6 +308,10 @@ export default function InvestmentTree() {
   const [filterClass, setFilterClass] = useState(ALL_CLASSES)
   const [dragged, setDragged] = useState<DraggedAsset | null>(null)
   const [drop, setDrop] = useState<AssetDrop | null>(null)
+  // Brokers start expanded, portfolios start collapsed - matching the pre-migration per-node
+  // useState(true)/useState(false) defaults. Only the root Tree can be controlled; nested Tree
+  // elements automatically participate via Fluent's own context.
+  const [openItems, setOpenItems] = useState<Set<TreeItemValue>>(new Set())
 
   useEffect(() => {
     apiClient
@@ -330,6 +319,10 @@ export default function InvestmentTree() {
       .then((data) => {
         setTree(data)
         setError(null)
+        const brokerKeys = data.children
+          .filter((child) => child.nodeType === 'Broker')
+          .map((child) => `broker:${getMetaString(child.metadata, 'BrokerName')}`)
+        setOpenItems(new Set(brokerKeys))
       })
       .catch((err: unknown) => {
         setError(getErrorMessage(err, 'Unable to load investments.'))
@@ -342,6 +335,10 @@ export default function InvestmentTree() {
     setError(null)
     setRetryCount((c) => c + 1)
   }, [])
+
+  const handleOpenChange = (_event: TreeOpenChangeEvent, data: TreeOpenChangeData) => {
+    setOpenItems(new Set(data.openItems))
+  }
 
   return (
     <div className="investment-tree">
@@ -393,18 +390,13 @@ export default function InvestmentTree() {
       ) : error ? (
         <ErrorState message={error} onRetry={handleRetry} />
       ) : tree ? (
-        <ul className="investment-tree__list">
+        <Tree className="investment-tree__list" aria-label="Investments" openItems={openItems} onOpenChange={handleOpenChange}>
           {tree.children.map((child) =>
             child.nodeType === 'Broker' ? (
-              <BrokerNode
-                key={child.displayName}
-                node={child}
-                filterClass={filterClass}
-                drag={{ dragged, setDragged, onDrop: setDrop }}
-              />
+              <BrokerNode key={child.displayName} node={child} filterClass={filterClass} drag={{ dragged, setDragged, onDrop: setDrop }} />
             ) : null,
           )}
-        </ul>
+        </Tree>
       ) : null}
     </div>
   )
