@@ -550,15 +550,15 @@ graph TD
 - [x] The Add Bill WPF confirm button reads "Add Bill"/"Adding Bill..." instead of "Add"/"Adding...".
 
 ### F04. CashFlow Monthly Expense Form Compliance (Web + WPF)
-- [ ] Payment Source/Card selection appears before Value in both `ExpenseForm.tsx` and
+- [x] Payment Source/Card selection appears before Value in both `ExpenseForm.tsx` and
       `ExpenseFormView.xaml`.
-- [ ] The Monthly page's tabs are implemented with Fluent `TabList`/`Tab` and are operable via
+- [x] The Monthly page's tabs are implemented with Fluent `TabList`/`Tab` and are operable via
       arrow-key navigation.
-- [ ] `ExpensesSection.tsx`'s grid is implemented with Fluent `DataGrid`/`Table`, preserving existing
+- [x] `ExpensesSection.tsx`'s grid is implemented with Fluent `DataGrid`/`Table`, preserving existing
       sort/filter behavior.
-- [ ] An invalid or missing required field on the Expense form shows a field-level error state and
+- [x] An invalid or missing required field on the Expense form shows a field-level error state and
       message, in addition to existing save-blocked behavior.
-- [ ] Settled-expense payment-field locking behavior is unchanged after the migration.
+- [x] Settled-expense payment-field locking behavior is unchanged after the migration.
 
 ### F05. Remaining CashFlow Monthly Entry Forms
 - [ ] Income, Transfer, Withdrawal, Balance Correction, Income Split, and Edit Reserve Movement all
@@ -617,7 +617,7 @@ graph TD
 ### Cross-Feature Integration
 - [x] F02's shared primitives render using F01's design tokens — no hardcoded color is introduced in
       the new validation/required/help components.
-- [ ] F04's Expense form and Monthly page chrome use both F01's tokens (no hardcoded colors) and F02's
+- [x] F04's Expense form and Monthly page chrome use both F01's tokens (no hardcoded colors) and F02's
       validation/required-field primitives (not a bespoke reimplementation), and reflect F03's naming
       fixes where applicable.
 - [ ] F05, F06, F07, and F09 each reuse F04's proven Fluent `TabList`/`DataGrid`/validation pattern

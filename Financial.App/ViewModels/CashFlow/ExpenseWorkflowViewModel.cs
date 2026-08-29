@@ -206,8 +206,43 @@ public class ExpenseWorkflowViewModel : ViewModelBase
     public string? ExpenseSaveError
     {
         get => _expenseSaveError;
-        private set => SetProperty(ref _expenseSaveError, value);
+        private set
+        {
+            if (SetProperty(ref _expenseSaveError, value))
+            {
+                OnPropertyChanged(nameof(DateFieldError));
+                OnPropertyChanged(nameof(DescriptionFieldError));
+                OnPropertyChanged(nameof(CategoryFieldError));
+                OnPropertyChanged(nameof(ValueFieldError));
+                OnPropertyChanged(nameof(PaymentModeFieldError));
+                OnPropertyChanged(nameof(RoundUpAmountFieldError));
+            }
+        }
     }
+
+    /// <summary>
+    /// Per-field validation errors (P38-F04) — same substring-match pattern as F02's
+    /// <c>AdjustmentWorkflowViewModel.TargetBalanceFieldError</c>, matching this form's own
+    /// client-side <see cref="ExpenseFormValidation"/> text. Additive to
+    /// <see cref="ExpenseSaveError"/>'s existing bottom-of-form message.
+    /// </summary>
+    public string? DateFieldError => MatchFieldError("Date is required.");
+
+    public string? DescriptionFieldError => MatchFieldError("Description is required.");
+
+    public string? CategoryFieldError => MatchFieldError("Category is required.");
+
+    public string? ValueFieldError => MatchFieldError("Value must be a non-zero number.");
+
+    public string? PaymentModeFieldError =>
+        MatchFieldError("Card is required when charging to a card.", "Payment Source is required.");
+
+    public string? RoundUpAmountFieldError => MatchFieldError("Round-up amount must be between");
+
+    private string? MatchFieldError(params string[] fragments) =>
+        ExpenseSaveError is { } error && fragments.Any(f => error.Contains(f, StringComparison.OrdinalIgnoreCase))
+            ? error
+            : null;
 
     public string? DeletingExpenseError
     {

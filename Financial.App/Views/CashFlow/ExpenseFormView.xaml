@@ -68,49 +68,78 @@
             </TextBlock>
 
             <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,8,8">
-                <TextBlock Text="Date" Style="{StaticResource FieldLabelStyle}"/>
+                <TextBlock Style="{StaticResource FieldLabelStyle}">
+                    <Run Text="Date"/>
+                    <Run Text=" *" Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
+                </TextBlock>
                 <DatePicker AutomationProperties.Name="Expense date"
+                            AutomationProperties.HelpText="Required"
                             SelectedDate="{Binding ExpenseFormDate, UpdateSourceTrigger=PropertyChanged}"/>
+                <TextBlock Style="{StaticResource FieldErrorTextStyle}" Text="{Binding DateFieldError}"/>
             </StackPanel>
 
-            <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,8,8">
-                <TextBlock Text="Category" Style="{StaticResource FieldLabelStyle}"/>
-                <ComboBox AutomationProperties.Name="Category"
-                          ItemsSource="{Binding ActiveCategories}" DisplayMemberPath="Name"
-                          SelectedValue="{Binding ExpenseFormCategoryId, UpdateSourceTrigger=PropertyChanged}"
-                          SelectedValuePath="Id"/>
-            </StackPanel>
-
-            <StackPanel Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="2" Margin="0,0,0,8">
-                <TextBlock Text="Description" Style="{StaticResource FieldLabelStyle}"/>
+            <StackPanel Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Margin="0,0,8,8">
+                <TextBlock Style="{StaticResource FieldLabelStyle}">
+                    <Run Text="Description"/>
+                    <Run Text=" *" Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
+                </TextBlock>
                 <TextBox AutomationProperties.Name="Description"
+                         AutomationProperties.HelpText="Required"
                          Text="{Binding ExpenseFormDescription, UpdateSourceTrigger=PropertyChanged}"/>
+                <TextBlock Style="{StaticResource FieldErrorTextStyle}" Text="{Binding DescriptionFieldError}"/>
             </StackPanel>
 
-            <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,8,8">
-                <TextBlock Text="Value" Style="{StaticResource FieldLabelStyle}"/>
-                <TextBox AutomationProperties.Name="Value"
-                         Text="{Binding ExpenseFormValue, UpdateSourceTrigger=LostFocus}"
-                         behaviors:DecimalInputBehavior.IsEnabled="True"
-                         behaviors:DecimalInputBehavior.AllowSign="True"/>
-            </StackPanel>
-
-            <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,0,8,8"
+            <StackPanel Grid.Row="1" Grid.Column="3" Margin="0,0,0,8"
                         Visibility="{Binding ShowPaymentModeFields, Converter={StaticResource BoolToVisibilityConverter}}">
                 <StackPanel Visibility="{Binding IsCardPaymentMode, Converter={StaticResource BoolToVisibilityConverter}}">
-                    <TextBlock Text="Card" Style="{StaticResource FieldLabelStyle}"/>
+                    <TextBlock Style="{StaticResource FieldLabelStyle}">
+                        <Run Text="Card"/>
+                        <Run Text=" *" Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
+                    </TextBlock>
                     <ComboBox AutomationProperties.Name="Card"
+                              AutomationProperties.HelpText="Required"
                               ItemsSource="{Binding ActiveCreditCards}" DisplayMemberPath="Name"
                               SelectedValue="{Binding ExpenseFormCreditCardId, UpdateSourceTrigger=PropertyChanged}"
                               SelectedValuePath="Id"/>
                 </StackPanel>
                 <StackPanel Visibility="{Binding IsBankPaymentMode, Converter={StaticResource BoolToVisibilityConverter}}">
-                    <TextBlock Text="Payment Source" Style="{StaticResource FieldLabelStyle}"/>
+                    <TextBlock Style="{StaticResource FieldLabelStyle}">
+                        <Run Text="Payment Source"/>
+                        <Run Text=" *" Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
+                    </TextBlock>
                     <ComboBox AutomationProperties.Name="Payment source"
+                              AutomationProperties.HelpText="Required"
                               ItemsSource="{Binding Banks}" DisplayMemberPath="Name"
                               SelectedValue="{Binding ExpenseFormPaymentSource, UpdateSourceTrigger=PropertyChanged}"
                               SelectedValuePath="Id"/>
                 </StackPanel>
+                <TextBlock Style="{StaticResource FieldErrorTextStyle}" Text="{Binding PaymentModeFieldError}"/>
+            </StackPanel>
+
+            <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,8,8">
+                <TextBlock Style="{StaticResource FieldLabelStyle}">
+                    <Run Text="Value"/>
+                    <Run Text=" *" Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
+                </TextBlock>
+                <TextBox AutomationProperties.Name="Value"
+                         AutomationProperties.HelpText="Required"
+                         Text="{Binding ExpenseFormValue, UpdateSourceTrigger=LostFocus}"
+                         behaviors:DecimalInputBehavior.IsEnabled="True"
+                         behaviors:DecimalInputBehavior.AllowSign="True"/>
+                <TextBlock Style="{StaticResource FieldErrorTextStyle}" Text="{Binding ValueFieldError}"/>
+            </StackPanel>
+
+            <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,0,8,8">
+                <TextBlock Style="{StaticResource FieldLabelStyle}">
+                    <Run Text="Category"/>
+                    <Run Text=" *" Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
+                </TextBlock>
+                <ComboBox AutomationProperties.Name="Category"
+                          AutomationProperties.HelpText="Required"
+                          ItemsSource="{Binding ActiveCategories}" DisplayMemberPath="Name"
+                          SelectedValue="{Binding ExpenseFormCategoryId, UpdateSourceTrigger=PropertyChanged}"
+                          SelectedValuePath="Id"/>
+                <TextBlock Style="{StaticResource FieldErrorTextStyle}" Text="{Binding CategoryFieldError}"/>
             </StackPanel>
 
             <StackPanel Grid.Row="2" Grid.Column="2" Margin="0,0,8,8">
@@ -127,6 +156,7 @@
                     <TextBox AutomationProperties.Name="Round-up amount"
                              Text="{Binding ExpenseFormRoundUpAmount, UpdateSourceTrigger=LostFocus}"
                              behaviors:DecimalInputBehavior.IsEnabled="True"/>
+                    <TextBlock Style="{StaticResource FieldErrorTextStyle}" Text="{Binding RoundUpAmountFieldError}"/>
                 </StackPanel>
             </StackPanel>
 
