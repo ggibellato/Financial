@@ -64,6 +64,7 @@
                      Margin="0,0,0,4"/>
 
         <ComboBox Grid.Row="3"
+                  AutomationProperties.Name="Destination portfolio"
                   ItemsSource="{Binding AvailablePortfolios}"
                   SelectedItem="{Binding SelectedPortfolioName, UpdateSourceTrigger=PropertyChanged}"
                   IsEnabled="{Binding UseExistingPortfolio}"
@@ -76,11 +77,13 @@
                      Margin="0,0,0,4"/>
 
         <TextBox Grid.Row="5"
+                 AutomationProperties.Name="New portfolio name"
                  Text="{Binding NewPortfolioName, UpdateSourceTrigger=PropertyChanged}"
                  IsEnabled="{Binding CreateNewPortfolio}"
                  Margin="20,0,0,0"/>
 
         <TextBlock Grid.Row="6"
+                   AutomationProperties.LiveSetting="Polite"
                    Foreground="{DynamicResource SystemFillColorCriticalBrush}"
                    TextWrapping="Wrap"
                    Text="{Binding ValidationMessage}"
