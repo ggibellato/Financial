@@ -1346,7 +1346,7 @@ describe('MonthlyPage', () => {
     const balancesCallsBefore = getBankBalancesByMonthMock.mock.calls.length
     const adjustmentsCallsBefore = getAdjustmentsByBankMock.mock.calls.length
 
-    fireEvent.change(screen.getByLabelText(/^Target Balance/), { target: { value: '45' } })
+    fireEvent.change(screen.getByRole('spinbutton', { name: /^Target Balance/ }), { target: { value: '45' } })
     fireEvent.click(within(correctBalanceFormPanel).getByRole('button', { name: 'Add Balance Correction' }))
 
     await waitFor(() =>
@@ -1407,10 +1407,10 @@ describe('MonthlyPage', () => {
 
     expect(screen.getByText('Edit Balance Correction')).toBeInTheDocument()
     expect(screen.queryByLabelText('Bank')).not.toBeInTheDocument()
-    expect(screen.getByLabelText(/^Target Balance/)).toHaveValue(42.5)
+    expect(screen.getByRole('spinbutton', { name: /^Target Balance/ })).toHaveValue(42.5)
 
     const balancesCallsBefore = getBankBalancesByMonthMock.mock.calls.length
-    fireEvent.change(screen.getByLabelText(/^Target Balance/), { target: { value: '50' } })
+    fireEvent.change(screen.getByRole('spinbutton', { name: /^Target Balance/ }), { target: { value: '50' } })
     const adjustmentFormPanel = screen.getByTestId('balance-adjustment-form-panel')
     fireEvent.click(within(adjustmentFormPanel).getByRole('button', { name: 'Save' }))
 

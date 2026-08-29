@@ -1,4 +1,5 @@
-import { Button, Field, Input, MessageBar, MessageBarBody, Select, Text } from '@fluentui/react-components'
+import { Button, Field, InfoLabel, Input, MessageBar, MessageBarBody, Select, Text } from '@fluentui/react-components'
+import type { LabelProps } from '@fluentui/react-components'
 import type { BankDto } from '../api/types'
 import type { BalanceAdjustmentFormField } from '../hooks/mapBalanceAdjustmentErrorToField'
 import { useFieldError } from '../hooks/useFieldError'
@@ -108,7 +109,16 @@ export default function BalanceAdjustmentForm({
             </Field>
 
             <Field
-              label="Target Balance"
+              label={{
+                children: (_: unknown, props: LabelProps) => (
+                  <InfoLabel
+                    {...props}
+                    info="Enter the balance you want this bank to show after the adjustment — the app calculates and records the difference."
+                  >
+                    Target Balance
+                  </InfoLabel>
+                ),
+              }}
               required
               validationState={fieldError('targetBalance') ? 'error' : 'none'}
               validationMessage={fieldError('targetBalance')}
