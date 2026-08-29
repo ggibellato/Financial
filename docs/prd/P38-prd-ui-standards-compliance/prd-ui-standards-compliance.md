@@ -561,12 +561,12 @@ graph TD
 - [x] Settled-expense payment-field locking behavior is unchanged after the migration.
 
 ### F05. Remaining CashFlow Monthly Entry Forms
-- [ ] Income, Transfer, Withdrawal, Balance Correction, Income Split, and Edit Reserve Movement all
+- [x] Income, Transfer, Withdrawal, Balance Correction, Income Split, and Edit Reserve Movement all
       show field-level validation and required-field indicators on both Web and WPF.
-- [ ] Income, Withdrawal, and Edit Movement field order matches the corrected convention on both
+- [x] Income, Withdrawal, and Edit Movement field order matches the corrected convention on both
       platforms.
-- [ ] WPF Income's "split to reserve" checkbox position matches Web's.
-- [ ] WPF Balance Correction confirmation text includes the `£` symbol.
+- [x] WPF Income's "split to reserve" checkbox position matches Web's.
+- [x] WPF Balance Correction confirmation text includes the `£` symbol.
 
 ### F06. CashFlow Bill & Mãe Entry Forms
 - [ ] `EditBillFormView.xaml` and `EditEntryFormView.xaml` place each field in the same row position as
