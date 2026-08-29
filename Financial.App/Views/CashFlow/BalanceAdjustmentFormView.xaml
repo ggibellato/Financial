@@ -33,7 +33,7 @@
         <Grid>
             <StackPanel Visibility="{Binding HasAdjustmentResult, Converter={StaticResource BoolToVisibilityConverter}}">
                 <TextBlock FontWeight="Bold" Text="Balance Corrected" Margin="0,0,0,8"/>
-                <TextBlock Text="{Binding AdjustmentSavedDelta, StringFormat='Adjustment of {0:N2} recorded'}"/>
+                <TextBlock Text="{Binding AdjustmentSavedDelta, StringFormat='Adjustment of £{0:N2} recorded'}"/>
                 <ui:Button Content="Close" MinWidth="90" Appearance="Primary" HorizontalAlignment="Left" Margin="0,12,0,0"
                            Command="{Binding DismissAdjustmentResultCommand}"/>
             </StackPanel>

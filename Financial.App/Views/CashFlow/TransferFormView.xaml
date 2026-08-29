@@ -58,34 +58,54 @@
             </TextBlock>
 
             <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,8,8">
-                <TextBlock Text="Date" Style="{StaticResource FieldLabelStyle}"/>
+                <TextBlock Style="{StaticResource FieldLabelStyle}">
+                    <Run Text="Date"/>
+                    <Run Text=" *" Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
+                </TextBlock>
                 <DatePicker AutomationProperties.Name="Transfer date"
+                            AutomationProperties.HelpText="Required"
                             SelectedDate="{Binding TransferFormDate, UpdateSourceTrigger=PropertyChanged}"/>
+                <TextBlock Style="{StaticResource FieldErrorTextStyle}" Text="{Binding DateFieldError}"/>
             </StackPanel>
 
             <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,8,8">
-                <TextBlock Text="From" Style="{StaticResource FieldLabelStyle}"/>
+                <TextBlock Style="{StaticResource FieldLabelStyle}">
+                    <Run Text="From"/>
+                    <Run Text=" *" Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
+                </TextBlock>
                 <ComboBox AutomationProperties.Name="From"
+                          AutomationProperties.HelpText="Required"
                           ItemsSource="{Binding Banks}" DisplayMemberPath="Name"
                           SelectedValue="{Binding TransferFormSourceBank, UpdateSourceTrigger=PropertyChanged}"
                           SelectedValuePath="Id"/>
+                <TextBlock Style="{StaticResource FieldErrorTextStyle}" Text="{Binding SourceBankFieldError}"/>
             </StackPanel>
 
             <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,8,8">
-                <TextBlock Text="To" Style="{StaticResource FieldLabelStyle}"/>
+                <TextBlock Style="{StaticResource FieldLabelStyle}">
+                    <Run Text="To"/>
+                    <Run Text=" *" Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
+                </TextBlock>
                 <ComboBox AutomationProperties.Name="To"
+                          AutomationProperties.HelpText="Required"
                           ItemsSource="{Binding Banks}" DisplayMemberPath="Name"
                           SelectedValue="{Binding TransferFormDestinationBank, UpdateSourceTrigger=PropertyChanged}"
                           SelectedValuePath="Id"/>
                 <TextBlock Foreground="{DynamicResource SystemFillColorCriticalBrush}" TextWrapping="Wrap"
                            Text="{Binding SameBankTransferError}"/>
+                <TextBlock Style="{StaticResource FieldErrorTextStyle}" Text="{Binding DestinationBankFieldError}"/>
             </StackPanel>
 
             <StackPanel Grid.Row="1" Grid.Column="3" Margin="0,0,0,8">
-                <TextBlock Text="Amount" Style="{StaticResource FieldLabelStyle}"/>
+                <TextBlock Style="{StaticResource FieldLabelStyle}">
+                    <Run Text="Amount"/>
+                    <Run Text=" *" Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
+                </TextBlock>
                 <TextBox AutomationProperties.Name="Amount"
+                         AutomationProperties.HelpText="Required"
                          Text="{Binding TransferFormAmount, UpdateSourceTrigger=LostFocus}"
                          behaviors:DecimalInputBehavior.IsEnabled="True"/>
+                <TextBlock Style="{StaticResource FieldErrorTextStyle}" Text="{Binding AmountFieldError}"/>
             </StackPanel>
 
             <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="4" Margin="0,0,0,8">
