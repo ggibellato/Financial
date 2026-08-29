@@ -32,33 +32,8 @@
 }
 
 .investment-tree__list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
   overflow-y: auto;
   flex: 1;
-}
-
-.investment-tree__list--children {
-  padding-left: 16px;
-  overflow: visible;
-  flex: none;
-}
-
-.investment-tree__row {
-  display: flex;
-  align-items: center;
-}
-
-.investment-tree__chevron {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 4px;
-  font-size: 10px;
-  color: var(--text, #333);
-  flex-shrink: 0;
-  line-height: 1;
 }
 
 .investment-tree__node {
@@ -78,7 +53,7 @@
 }
 
 .investment-tree__node--selected {
-  background: #007acc !important;
+  background: var(--accent) !important;
   color: white !important;
 }
 
