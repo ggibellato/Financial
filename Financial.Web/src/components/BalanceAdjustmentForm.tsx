@@ -71,7 +71,7 @@ export default function BalanceAdjustmentForm({
   return (
     <div className={styles.panel} data-testid="balance-adjustment-form-panel">
       <Text as="h2" weight="semibold" size={400}>
-        {isEditing ? 'Edit Balance Adjustment' : 'Correct Balance'}
+        {isEditing ? 'Edit Balance Correction' : 'New Balance Correction'}
       </Text>
 
       {!isEditing && (
@@ -129,7 +129,7 @@ export default function BalanceAdjustmentForm({
 
       <div className={styles.actions}>
         <Button appearance="primary" disabled={saveDisabled} onClick={onSave}>
-          {isSaving ? 'Saving...' : isEditing ? 'Save' : 'Correct Balance'}
+          {isSaving ? 'Saving...' : isEditing ? 'Save' : 'Add Balance Correction'}
         </Button>
         <Button appearance="secondary" onClick={onCancel}>
           Cancel

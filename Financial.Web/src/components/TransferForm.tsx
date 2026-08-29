@@ -52,7 +52,7 @@ export default function TransferForm({
   return (
     <div className={styles.panel} data-testid="transfer-form-panel">
       <Text as="h2" weight="semibold" size={400}>
-        {isEditing ? 'Edit Transfer' : 'Move Money'}
+        {isEditing ? 'Edit Transfer' : 'New Transfer'}
       </Text>
 
       <div className={styles.grid}>
@@ -104,7 +104,7 @@ export default function TransferForm({
 
       <div className={styles.actions}>
         <Button appearance="primary" disabled={isSaving || sameBankError !== null} onClick={onSave}>
-          {isSaving ? 'Saving...' : isEditing ? 'Save' : 'Move Money'}
+          {isSaving ? 'Saving...' : isEditing ? 'Save' : 'Add Transfer'}
         </Button>
         <Button appearance="secondary" onClick={onCancel}>
           Cancel

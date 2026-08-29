@@ -67,7 +67,7 @@ export default function IncomeSplitForm({
   return (
     <div className={styles.panel} data-testid="income-split-form-panel">
       <Text as="h2" weight="semibold" size={400}>
-        Post Monthly Income Split
+        New Income Split
       </Text>
 
       <div className={styles.grid}>
@@ -91,7 +91,7 @@ export default function IncomeSplitForm({
 
       <div className={styles.actions}>
         <Button appearance="primary" disabled={isSubmitting} onClick={onSubmit}>
-          {isSubmitting ? 'Posting...' : 'Post Income Split'}
+          {isSubmitting ? 'Posting...' : 'Add Income Split'}
         </Button>
         <Button appearance="secondary" onClick={onCancel}>
           Cancel
