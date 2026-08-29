@@ -369,4 +369,16 @@ describe('MoveAssetDialog', () => {
     expect(onCancel).toHaveBeenCalled()
     expect(moveAssetMock).not.toHaveBeenCalled()
   })
+
+  it('renders as a modal dialog and closes on Escape, matching every other dialog in the app', async () => {
+    const onCancel = vi.fn()
+    renderDialog({ onCancel })
+
+    await waitForDestinations()
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
+
+    expect(onCancel).toHaveBeenCalled()
+  })
 })

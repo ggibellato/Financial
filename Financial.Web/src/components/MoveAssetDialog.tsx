@@ -1,4 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
+import {
+  Button,
+  Dialog,
+  DialogActions,
+  DialogBody,
+  DialogContent,
+  DialogSurface,
+  DialogTitle,
+} from '@fluentui/react-components'
 import { apiClient } from '../api/financialApiClient'
 import type { AssetDetailsDto, InvestmentScope, TreeNodeDto } from '../api/types'
 import { getErrorMessage } from '../utils/formatters'
@@ -202,120 +211,131 @@ export default function MoveAssetDialog({
   }
 
   return (
-    <div className="move-asset-dialog__backdrop" onClick={onCancel}>
-      <div
-        className="move-asset-dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Move asset"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h3 className="move-asset-dialog__title">Move Asset</h3>
-        <p className="move-asset-dialog__context">
-          {brokerName} / {portfolioName} / {assetName}
-        </p>
-
-        {presetDestination && !emptiedSource ? (
-          <p className="move-asset-dialog__prompt">Moving…</p>
-        ) : emptiedSource ? (
-          <>
-            <p className="move-asset-dialog__prompt">
-              &ldquo;{portfolioName}&rdquo; is now empty. Delete it?
+    <Dialog open onOpenChange={(_, data) => { if (!data.open) onCancel() }}>
+      <DialogSurface aria-describedby={undefined}>
+        <DialogBody>
+          <DialogTitle>Move Asset</DialogTitle>
+          <DialogContent>
+            <p className="move-asset-dialog__context">
+              {brokerName} / {portfolioName} / {assetName}
             </p>
-            {error && (
-              <p className="move-asset-dialog__error" role="alert">
-                {error}
-              </p>
+
+            {presetDestination && !emptiedSource ? (
+              <p className="move-asset-dialog__prompt">Moving…</p>
+            ) : emptiedSource ? (
+              <>
+                <p className="move-asset-dialog__prompt">
+                  &ldquo;{portfolioName}&rdquo; is now empty. Delete it?
+                </p>
+                {error && (
+                  <p className="move-asset-dialog__error" role="alert">
+                    {error}
+                  </p>
+                )}
+              </>
+            ) : (
+              <>
+                {canArchive && (
+                  <fieldset className="move-asset-dialog__scope">
+                    <legend className="move-asset-dialog__legend">Destination</legend>
+                    <label className="move-asset-dialog__option">
+                      <input
+                        type="radio"
+                        name="move-scope"
+                        checked={!archiveToHistoric}
+                        onChange={() => selectScope(false)}
+                      />
+                      Keep in Active Investments
+                    </label>
+                    <label className="move-asset-dialog__option">
+                      <input
+                        type="radio"
+                        name="move-scope"
+                        checked={archiveToHistoric}
+                        onChange={() => selectScope(true)}
+                      />
+                      Archive to Historic Investments
+                    </label>
+                  </fieldset>
+                )}
+
+                <label className="move-asset-dialog__option">
+                  <input
+                    type="radio"
+                    name="move-destination"
+                    checked={!createNewPortfolio}
+                    disabled={destinations.length === 0}
+                    onChange={() => setCreateNew(false)}
+                  />
+                  Move to an existing portfolio
+                </label>
+                <select
+                  className="move-asset-dialog__input"
+                  aria-label="Destination portfolio"
+                  value={selected}
+                  disabled={createNewPortfolio || destinations.length === 0}
+                  onChange={(e) => setSelectedPortfolio(e.target.value)}
+                >
+                  {destinations.map((name) => (
+                    <option key={name} value={name}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+
+                <label className="move-asset-dialog__option">
+                  <input
+                    type="radio"
+                    name="move-destination"
+                    checked={createNewPortfolio}
+                    onChange={() => setCreateNew(true)}
+                  />
+                  Move to a new portfolio
+                </label>
+                <input
+                  className="move-asset-dialog__input"
+                  type="text"
+                  aria-label="New portfolio name"
+                  value={newPortfolioName}
+                  disabled={!createNewPortfolio}
+                  onChange={(e) => setNewPortfolioName(e.target.value)}
+                />
+
+                {(error ?? validationMessage) && (
+                  <p className="move-asset-dialog__error" role="alert">
+                    {error ?? validationMessage}
+                  </p>
+                )}
+              </>
             )}
-            <div className="move-asset-dialog__actions">
-              <button type="button" onClick={handleDeleteEmptiedSource} disabled={isSaving}>
-                Delete
-              </button>
-              <button type="button" onClick={() => onMoved(emptiedSource, archiveToHistoric)} disabled={isSaving}>
-                Keep
-              </button>
-            </div>
-          </>
-        ) : (
-        <>
-        {canArchive && (
-          <fieldset className="move-asset-dialog__scope">
-            <legend className="move-asset-dialog__legend">Destination</legend>
-            <label className="move-asset-dialog__option">
-              <input
-                type="radio"
-                name="move-scope"
-                checked={!archiveToHistoric}
-                onChange={() => selectScope(false)}
-              />
-              Keep in Active Investments
-            </label>
-            <label className="move-asset-dialog__option">
-              <input
-                type="radio"
-                name="move-scope"
-                checked={archiveToHistoric}
-                onChange={() => selectScope(true)}
-              />
-              Archive to Historic Investments
-            </label>
-          </fieldset>
-        )}
-
-        <label className="move-asset-dialog__option">
-          <input
-            type="radio"
-            name="move-destination"
-            checked={!createNewPortfolio}
-            disabled={destinations.length === 0}
-            onChange={() => setCreateNew(false)}
-          />
-          Move to an existing portfolio
-        </label>
-        <select
-          className="move-asset-dialog__input"
-          aria-label="Destination portfolio"
-          value={selected}
-          disabled={createNewPortfolio || destinations.length === 0}
-          onChange={(e) => setSelectedPortfolio(e.target.value)}
-        >
-          {destinations.map((name) => (
-            <option key={name} value={name}>
-              {name}
-            </option>
-          ))}
-        </select>
-
-        <label className="move-asset-dialog__option">
-          <input type="radio" name="move-destination" checked={createNewPortfolio} onChange={() => setCreateNew(true)} />
-          Move to a new portfolio
-        </label>
-        <input
-          className="move-asset-dialog__input"
-          type="text"
-          aria-label="New portfolio name"
-          value={newPortfolioName}
-          disabled={!createNewPortfolio}
-          onChange={(e) => setNewPortfolioName(e.target.value)}
-        />
-
-        {(error ?? validationMessage) && (
-          <p className="move-asset-dialog__error" role="alert">
-            {error ?? validationMessage}
-          </p>
-        )}
-
-        <div className="move-asset-dialog__actions">
-          <button type="button" onClick={() => handleSubmit()} disabled={!canSubmit}>
-            Move
-          </button>
-          <button type="button" onClick={onCancel}>
-            Cancel
-          </button>
-        </div>
-        </>
-        )}
-      </div>
-    </div>
+          </DialogContent>
+          <DialogActions>
+            {emptiedSource ? (
+              <>
+                <Button appearance="primary" onClick={handleDeleteEmptiedSource} disabled={isSaving}>
+                  Delete
+                </Button>
+                <Button
+                  appearance="secondary"
+                  onClick={() => onMoved(emptiedSource, archiveToHistoric)}
+                  disabled={isSaving}
+                >
+                  Keep
+                </Button>
+              </>
+            ) : !presetDestination ? (
+              <>
+                <Button appearance="primary" onClick={() => handleSubmit()} disabled={!canSubmit}>
+                  Move
+                </Button>
+                <Button appearance="secondary" onClick={onCancel}>
+                  Cancel
+                </Button>
+              </>
+            ) : null}
+          </DialogActions>
+        </DialogBody>
+      </DialogSurface>
+    </Dialog>
   )
 }
