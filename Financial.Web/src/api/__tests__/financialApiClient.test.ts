@@ -6,6 +6,9 @@ import type {
   AssetDetailsDto,
   AssetPriceDto,
   BalanceAdjustmentDto,
+  BrokerCreateDto,
+  BrokerDto,
+  BrokerUpdateDto,
   CategoryDto,
   BalanceAdjustmentCreateDto,
   MaeLedgerEntryCreateDto,
@@ -617,6 +620,59 @@ describe('financialApiClient', () => {
 
     expect(result).toEqual(responseBody)
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/mensais`)
+  })
+
+  it('gets the admin brokers list', async () => {
+    const responseBody: BrokerDto[] = [{ name: 'XPI', currency: 'BRL', status: 'Active', portfolioCount: 2 }]
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.getAdminBrokers()
+
+    expect(result).toEqual(responseBody)
+    const [url] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/brokers`)
+  })
+
+  it('posts a broker create request', async () => {
+    const requestBody: BrokerCreateDto = { name: 'XPI', currency: 'BRL' }
+    const responseBody: BrokerDto = { ...requestBody, status: 'Active', portfolioCount: 0 }
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.createBroker(requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/brokers`)
+    expect(init?.method).toBe('POST')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('puts a broker update', async () => {
+    const requestBody: BrokerUpdateDto = { name: 'XP Investimentos', currency: 'USD' }
+    const responseBody: BrokerDto = { ...requestBody, status: 'Active', portfolioCount: 0 }
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.updateBroker('XPI', requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/brokers/XPI`)
+    expect(init?.method).toBe('PUT')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('deletes a broker', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(undefined))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await client.deleteBroker('XPI')
+
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/brokers/XPI`)
+    expect(init?.method).toBe('DELETE')
   })
 
   it('posts a mensais bill create request', async () => {
