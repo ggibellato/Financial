@@ -310,6 +310,48 @@ public class IncomeWorkflowViewModelTests
     }
 
     [Fact]
+    public async Task ShowCreateIncomeForm_AfterSuccessfulCreate_PersistsDateBankAndSource()
+    {
+        var (viewModel, _) = CreateViewModel();
+        viewModel.ApplyRefresh([], DefaultIncomeSources, DefaultBanks);
+        viewModel.ShowCreateIncomeFormCommand.Execute(null);
+        var usedDate = DateTime.Today.AddDays(-3);
+        viewModel.IncomeFormDate = usedDate;
+        viewModel.IncomeFormSource = ArianaSourceId;
+        viewModel.IncomeFormNetValue = "2450";
+        viewModel.IncomeFormBank = ChaseId;
+
+        await viewModel.SaveIncomeAsync();
+
+        viewModel.ShowCreateIncomeFormCommand.Execute(null);
+
+        viewModel.IncomeFormDate.Should().Be(usedDate);
+        viewModel.IncomeFormBank.Should().Be(ChaseId);
+        viewModel.IncomeFormSource.Should().Be(ArianaSourceId);
+    }
+
+    [Fact]
+    public async Task ShowCreateIncomeForm_AfterSuccessfulCreate_GrossNetValueAndDescriptionStayBlank()
+    {
+        var (viewModel, _) = CreateViewModel();
+        viewModel.ApplyRefresh([], DefaultIncomeSources, DefaultBanks);
+        viewModel.ShowCreateIncomeFormCommand.Execute(null);
+        viewModel.IncomeFormDate = DateTime.Today;
+        viewModel.IncomeFormSource = LotterySourceId;
+        viewModel.IncomeFormNetValue = "50";
+        viewModel.IncomeFormBank = BarclaysId;
+        viewModel.IncomeFormDescription = "Chip ISA dividend";
+
+        await viewModel.SaveIncomeAsync();
+
+        viewModel.ShowCreateIncomeFormCommand.Execute(null);
+
+        viewModel.IncomeFormNetValue.Should().BeEmpty();
+        viewModel.IncomeFormGrossValue.Should().BeEmpty();
+        viewModel.IncomeFormDescription.Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task EditIncome_ValidForm_CallsUpdateServiceAndRefreshes()
     {
         var (viewModel, incomes) = CreateViewModel();

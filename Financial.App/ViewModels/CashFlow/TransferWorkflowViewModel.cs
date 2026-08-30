@@ -19,6 +19,12 @@ public class TransferWorkflowViewModel : ViewModelBase
     private bool _isSavingTransfer;
     private string? _transferSaveError;
 
+    // Persistent create-form defaults (P38-F10) - read on the next ShowCreateTransferForm, written
+    // back after every successful save.
+    private DateTime? _lastUsedTransferDate;
+    private Guid? _lastUsedTransferSourceBank;
+    private Guid? _lastUsedTransferDestinationBank;
+
     /// <summary>The same instance MonthlyViewModel owns — mutated in place by its refresh, never replaced.</summary>
     public ObservableCollection<BankDTO> Banks { get; }
 
@@ -145,9 +151,16 @@ public class TransferWorkflowViewModel : ViewModelBase
     private void ShowCreateTransferForm(Guid? sourceBank)
     {
         _editingTransferId = null;
-        TransferFormDate = DateTime.Today;
-        TransferFormSourceBank = sourceBank ?? (Banks.Count > 0 ? Banks[0].Id : null);
-        TransferFormDestinationBank = null;
+        TransferFormDate = _lastUsedTransferDate ?? DateTime.Today;
+        var resolvedSourceBank = sourceBank
+            ?? (_lastUsedTransferSourceBank is { } lastSource && Banks.Any(b => b.Id == lastSource) ? (Guid?)lastSource : null)
+            ?? (Banks.Count > 0 ? Banks[0].Id : null);
+        TransferFormSourceBank = resolvedSourceBank;
+        TransferFormDestinationBank = _lastUsedTransferDestinationBank is { } lastDestination
+            && lastDestination != resolvedSourceBank
+            && Banks.Any(b => b.Id == lastDestination)
+            ? (Guid?)lastDestination
+            : null;
         TransferFormAmount = string.Empty;
         TransferFormNote = string.Empty;
         TransferSaveError = null;
@@ -209,6 +222,10 @@ public class TransferWorkflowViewModel : ViewModelBase
                     Amount = amount, Note = note,
                 });
             }
+
+            _lastUsedTransferDate = TransferFormDate;
+            _lastUsedTransferSourceBank = TransferFormSourceBank;
+            _lastUsedTransferDestinationBank = TransferFormDestinationBank;
 
             CloseTransferForm();
             await _refresh();
