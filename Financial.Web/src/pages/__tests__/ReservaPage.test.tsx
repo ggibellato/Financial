@@ -68,6 +68,7 @@ describe('ReservaPage', () => {
     getReserveBalancesMock.mockResolvedValue(BALANCES)
     getReserveMovementsMock.mockResolvedValue(MOVEMENTS)
     getReserveBucketsMock.mockResolvedValue(BUCKETS)
+    sessionStorage.clear()
   })
 
   it('shows a loading state before data arrives', () => {

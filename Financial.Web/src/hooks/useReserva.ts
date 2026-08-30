@@ -2,11 +2,16 @@ import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { ApiError } from '../api/apiError'
 import { apiClient } from '../api/financialApiClient'
 import type { IncomeSplitResultDto, ReserveBucketBalanceDto, ReserveBucketDto, ReserveMovementDto } from '../api/types'
-import { getErrorMessage } from '../utils/formatters'
+import { getErrorMessage, todayIsoDate } from '../utils/formatters'
+import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
 
 const SPLIT_PERCENTAGE_MIN = 99.99
 const SPLIT_PERCENTAGE_MAX = 100.01
 const BUCKET_REQUIRED_ERROR = 'Bucket is required'
+
+const SPLIT_DATE_KEY = 'incomeSplit.date'
+const WITHDRAWAL_DATE_KEY = 'withdrawal.date'
+const WITHDRAWAL_BUCKET_KEY = 'withdrawal.bucketId'
 
 export type SplitFormField = 'splitDate' | 'splitAmount' | 'splitDescription'
 
@@ -73,14 +78,14 @@ type ReservaAction =
     }
   | { type: 'FETCH_ERROR'; payload: string }
   | { type: 'RETRY' }
-  | { type: 'SHOW_SPLIT_FORM' }
+  | { type: 'SHOW_SPLIT_FORM'; payload: { date: string } }
   | { type: 'CANCEL_SPLIT_FORM' }
   | { type: 'SET_SPLIT_FIELD'; payload: { field: SplitFormField; value: string } }
   | { type: 'SPLIT_START' }
   | { type: 'SPLIT_SUCCESS'; payload: IncomeSplitResultDto }
   | { type: 'SPLIT_ERROR'; payload: { message: string; field: SplitFormField | null } }
   | { type: 'DISMISS_SPLIT_RESULT' }
-  | { type: 'SHOW_WITHDRAWAL_FORM' }
+  | { type: 'SHOW_WITHDRAWAL_FORM'; payload: { date: string } }
   | { type: 'CANCEL_WITHDRAWAL_FORM' }
   | { type: 'SET_WITHDRAWAL_FIELD'; payload: { field: WithdrawalFormField; value: string } }
   | { type: 'WITHDRAWAL_START' }
@@ -159,7 +164,7 @@ function reducer(state: ReservaState, action: ReservaAction): ReservaState {
     case 'RETRY':
       return { ...state, retryCount: state.retryCount + 1 }
     case 'SHOW_SPLIT_FORM':
-      return { ...state, isSplitFormOpen: true, lastSplitResult: null }
+      return { ...state, isSplitFormOpen: true, lastSplitResult: null, splitDate: action.payload.date }
     case 'CANCEL_SPLIT_FORM':
       return { ...state, ...BLANK_SPLIT_FORM, isSplitFormOpen: false, splitError: null, splitErrorField: null }
     case 'SET_SPLIT_FIELD':
@@ -179,7 +184,7 @@ function reducer(state: ReservaState, action: ReservaAction): ReservaState {
     case 'DISMISS_SPLIT_RESULT':
       return { ...state, lastSplitResult: null }
     case 'SHOW_WITHDRAWAL_FORM':
-      return { ...state, isWithdrawalFormOpen: true }
+      return { ...state, isWithdrawalFormOpen: true, withdrawalDate: action.payload.date }
     case 'CANCEL_WITHDRAWAL_FORM':
       return {
         ...state,
@@ -355,6 +360,10 @@ function computeSplitPercentageWarning(buckets: ReserveBucketDto[]): string | nu
 }
 
 function defaultBucketId(buckets: ReserveBucketDto[]): string {
+  const stored = getStoredDefault(WITHDRAWAL_BUCKET_KEY)
+  if (stored && buckets.some((b) => b.id === stored)) {
+    return stored
+  }
   return (buckets.find((b) => b.isActive) ?? buckets[0])?.id ?? ''
 }
 
@@ -390,13 +399,19 @@ export function useReserva(): ReservaData {
 
   const retry = useCallback(() => dispatch({ type: 'RETRY' }), [])
 
-  const showSplitForm = useCallback(() => dispatch({ type: 'SHOW_SPLIT_FORM' }), [])
+  const showSplitForm = useCallback(
+    () => dispatch({ type: 'SHOW_SPLIT_FORM', payload: { date: getStoredDefault(SPLIT_DATE_KEY) ?? todayIsoDate() } }),
+    [],
+  )
 
   const cancelSplitForm = useCallback(() => dispatch({ type: 'CANCEL_SPLIT_FORM' }), [])
 
   const dismissSplitResult = useCallback(() => dispatch({ type: 'DISMISS_SPLIT_RESULT' }), [])
 
-  const showWithdrawalForm = useCallback(() => dispatch({ type: 'SHOW_WITHDRAWAL_FORM' }), [])
+  const showWithdrawalForm = useCallback(
+    () => dispatch({ type: 'SHOW_WITHDRAWAL_FORM', payload: { date: getStoredDefault(WITHDRAWAL_DATE_KEY) ?? todayIsoDate() } }),
+    [],
+  )
 
   const cancelWithdrawalForm = useCallback(() => dispatch({ type: 'CANCEL_WITHDRAWAL_FORM' }), [])
 
@@ -446,6 +461,7 @@ export function useReserva(): ReservaData {
     void apiClient
       .postIncomeSplit({ date: splitDate, amount, description: splitDescription })
       .then((result) => {
+        setStoredDefault(SPLIT_DATE_KEY, splitDate)
         dispatch({ type: 'SPLIT_SUCCESS', payload: result })
         fetchReservaData({ includeBuckets: false })
       })
@@ -469,6 +485,8 @@ export function useReserva(): ReservaData {
         confirmed,
       })
       .then(() => {
+        setStoredDefault(WITHDRAWAL_DATE_KEY, withdrawalDate)
+        setStoredDefault(WITHDRAWAL_BUCKET_KEY, withdrawalBucketId)
         dispatch({ type: 'WITHDRAWAL_SUCCESS' })
         fetchReservaData({ includeBuckets: false })
       })

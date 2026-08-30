@@ -37,6 +37,7 @@ describe('useBalanceAdjustmentForm', () => {
   beforeEach(() => {
     createBalanceAdjustmentMock.mockReset()
     updateBalanceAdjustmentMock.mockReset()
+    sessionStorage.clear()
   })
 
   it('starts closed', () => {
@@ -45,7 +46,7 @@ describe('useBalanceAdjustmentForm', () => {
     expect(result.current.isOpen).toBe(false)
   })
 
-  it('openCreateForm defaults date to today and opens with no bank pre-selected', () => {
+  it('openCreateForm defaults date to today and opens with no bank pre-selected, when nothing was persisted yet', () => {
     const { result } = renderHook(() => useBalanceAdjustmentForm(BANK_TOTALS, vi.fn()))
 
     act(() => result.current.openCreateForm())
@@ -199,5 +200,56 @@ describe('useBalanceAdjustmentForm', () => {
     expect(result.current.saveError).toBe('Balance cannot be negative.')
     expect(result.current.saveErrorField).toBe('targetBalance')
     expect(result.current.isOpen).toBe(true)
+  })
+
+  it('persists date and bank after a successful create, for the next create form', async () => {
+    createBalanceAdjustmentMock.mockResolvedValue({ ...ADJUSTMENT, delta: 8.8 })
+    const { result } = renderHook(() => useBalanceAdjustmentForm(BANK_TOTALS, vi.fn()))
+    act(() => result.current.openCreateForm())
+    act(() => result.current.setField('date', '2026-07-25'))
+    act(() => result.current.setField('bankName', 'bank-trading212'))
+    act(() => result.current.setField('targetBalance', '20'))
+
+    await act(async () => {
+      result.current.submit()
+      await Promise.resolve()
+    })
+    act(() => result.current.cancel())
+
+    act(() => result.current.openCreateForm())
+
+    expect(result.current.date).toBe('2026-07-25')
+    expect(result.current.bankName).toBe('bank-trading212')
+    expect(result.current.currentBalance).toBe(8.8)
+  })
+
+  it('falls back to no bank pre-selected when the persisted bank no longer exists in bankTotals', () => {
+    sessionStorage.setItem('financial.createFormDefault.balanceAdjustment.bank', 'bank-deleted')
+    const { result } = renderHook(() => useBalanceAdjustmentForm(BANK_TOTALS, vi.fn()))
+
+    act(() => result.current.openCreateForm())
+
+    expect(result.current.bankName).toBe('')
+    expect(result.current.currentBalance).toBe(0)
+  })
+
+  it('always starts target balance and note blank on a new create form, even after a persisted save', async () => {
+    createBalanceAdjustmentMock.mockResolvedValue({ ...ADJUSTMENT, delta: 50 })
+    const { result } = renderHook(() => useBalanceAdjustmentForm(BANK_TOTALS, vi.fn()))
+    act(() => result.current.openCreateForm())
+    act(() => result.current.setField('bankName', 'bank-barclays'))
+    act(() => result.current.setField('targetBalance', '150'))
+    act(() => result.current.setField('note', 'Matched statement'))
+
+    await act(async () => {
+      result.current.submit()
+      await Promise.resolve()
+    })
+    act(() => result.current.cancel())
+
+    act(() => result.current.openCreateForm())
+
+    expect(result.current.targetBalance).toBe('')
+    expect(result.current.note).toBe('')
   })
 })

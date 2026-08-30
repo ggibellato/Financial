@@ -74,6 +74,7 @@ describe('useReserva', () => {
     getReserveBalancesMock.mockResolvedValue(BALANCES)
     getReserveMovementsMock.mockResolvedValue(MOVEMENTS)
     getReserveBucketsMock.mockResolvedValue(BUCKETS)
+    sessionStorage.clear()
   })
 
   it('loads balances and movements on mount', async () => {
@@ -211,6 +212,34 @@ describe('useReserva', () => {
     await waitFor(() => expect(result.current.splitError).toBe('Amount must be greater than zero.'))
   })
 
+  it('showSplitForm defaults the date to today when nothing was persisted yet', async () => {
+    const { result } = renderHook(() => useReserva())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showSplitForm())
+
+    const today = new Date().toISOString().slice(0, 10)
+    expect(result.current.splitDate).toBe(today)
+  })
+
+  it('persists the split date after a successful submit, for the next split form', async () => {
+    postIncomeSplitMock.mockResolvedValue({ buckets: [], total: 1963 })
+    const { result } = renderHook(() => useReserva())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    act(() => result.current.showSplitForm())
+    act(() => result.current.setSplitField('splitDate', '2026-07-01'))
+    act(() => result.current.setSplitField('splitAmount', '1963'))
+    act(() => result.current.setSplitField('splitDescription', 'Ramsay'))
+    act(() => result.current.submitIncomeSplit())
+    await waitFor(() => expect(postIncomeSplitMock).toHaveBeenCalledTimes(1))
+
+    act(() => result.current.showSplitForm())
+
+    expect(result.current.splitDate).toBe('2026-07-01')
+    expect(result.current.splitAmount).toBe('')
+    expect(result.current.splitDescription).toBe('')
+  })
+
   it('submits a withdrawal and re-fetches on success', async () => {
     postWithdrawalMock.mockResolvedValue({
       id: 'm2',
@@ -274,6 +303,46 @@ describe('useReserva', () => {
 
     await waitFor(() => expect(result.current.withdrawalError).toBe('This withdrawal exceeds the balance.'))
     expect(postWithdrawalMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('showWithdrawalForm defaults the date to today when nothing was persisted yet', async () => {
+    const { result } = renderHook(() => useReserva())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showWithdrawalForm())
+
+    const today = new Date().toISOString().slice(0, 10)
+    expect(result.current.withdrawalDate).toBe(today)
+  })
+
+  it('persists the withdrawal date and bucket after a successful submit, for the next withdrawal form', async () => {
+    postWithdrawalMock.mockResolvedValue({
+      id: 'm3', bucketId: 'b3', bucketName: 'Ariana',
+      amount: -100, date: '2026-07-01', description: 'Big purchase', incomeId: null,
+    })
+    const { result } = renderHook(() => useReserva())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    act(() => result.current.showWithdrawalForm())
+    act(() => result.current.setWithdrawalField('withdrawalBucketId', 'b3'))
+    act(() => result.current.setWithdrawalField('withdrawalAmount', '100'))
+    act(() => result.current.setWithdrawalField('withdrawalDate', '2026-07-01'))
+    act(() => result.current.setWithdrawalField('withdrawalDescription', 'Big purchase'))
+    act(() => result.current.submitWithdrawal(rejectUnexpectedConfirm))
+    await waitFor(() => expect(postWithdrawalMock).toHaveBeenCalledTimes(1))
+
+    act(() => result.current.showWithdrawalForm())
+
+    expect(result.current.withdrawalDate).toBe('2026-07-01')
+    expect(result.current.withdrawalBucketId).toBe('b3')
+    expect(result.current.withdrawalAmount).toBe('')
+    expect(result.current.withdrawalDescription).toBe('')
+  })
+
+  it('falls back to the first active bucket when the persisted withdrawal bucket no longer exists', async () => {
+    sessionStorage.setItem('financial.createFormDefault.withdrawal.bucketId', 'bucket-deleted')
+    const { result } = renderHook(() => useReserva())
+
+    await waitFor(() => expect(result.current.withdrawalBucketId).toBe('b1'))
   })
 
   it('saves a movement edit and re-fetches on success', async () => {
