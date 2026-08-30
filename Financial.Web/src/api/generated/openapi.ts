@@ -4610,6 +4610,7 @@ export interface components {
             roundUpEnabled: boolean;
         };
         BankDTO: {
+            hasReferences: boolean;
             /** Format: uuid */
             id: string;
             name: string;
