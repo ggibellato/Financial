@@ -37,6 +37,7 @@ describe('useTransferForm', () => {
   beforeEach(() => {
     createTransferMock.mockReset()
     updateTransferMock.mockReset()
+    sessionStorage.clear()
   })
 
   it('starts closed', () => {
@@ -181,5 +182,62 @@ describe('useTransferForm', () => {
     expect(result.current.saveError).toBe('Transfer amount must be greater than zero.')
     expect(result.current.saveErrorField).toBe('amount')
     expect(result.current.isOpen).toBe(true)
+  })
+
+  it('persists date, source bank, and destination bank after a successful create, for the next create form', async () => {
+    createTransferMock.mockResolvedValue(TRANSFER)
+    const { result } = renderHook(() => useTransferForm(BANKS, vi.fn()))
+    act(() => result.current.openCreateForm())
+    act(() => result.current.setField('date', '2026-07-25'))
+    act(() => result.current.setField('sourceBank', 'bank-trading212'))
+    act(() => result.current.setField('destinationBank', 'bank-barclays'))
+    act(() => result.current.setField('amount', '500'))
+
+    await act(async () => {
+      result.current.submit()
+      await Promise.resolve()
+    })
+
+    act(() => result.current.openCreateForm())
+
+    expect(result.current.date).toBe('2026-07-25')
+    expect(result.current.sourceBank).toBe('bank-trading212')
+    expect(result.current.destinationBank).toBe('bank-barclays')
+  })
+
+  it('an explicit preselected source bank overrides the persisted source bank', async () => {
+    createTransferMock.mockResolvedValue(TRANSFER)
+    const { result } = renderHook(() => useTransferForm(BANKS, vi.fn()))
+    act(() => result.current.openCreateForm())
+    act(() => result.current.setField('sourceBank', 'bank-trading212'))
+    act(() => result.current.setField('destinationBank', 'bank-barclays'))
+    act(() => result.current.setField('amount', '500'))
+    await act(async () => {
+      result.current.submit()
+      await Promise.resolve()
+    })
+
+    act(() => result.current.openCreateForm('bank-barclays'))
+
+    expect(result.current.sourceBank).toBe('bank-barclays')
+  })
+
+  it('always starts amount and note blank on a new create form, even after a persisted save', async () => {
+    createTransferMock.mockResolvedValue(TRANSFER)
+    const { result } = renderHook(() => useTransferForm(BANKS, vi.fn()))
+    act(() => result.current.openCreateForm())
+    act(() => result.current.setField('destinationBank', 'bank-trading212'))
+    act(() => result.current.setField('amount', '500'))
+    act(() => result.current.setField('note', 'Round-up top-up'))
+
+    await act(async () => {
+      result.current.submit()
+      await Promise.resolve()
+    })
+
+    act(() => result.current.openCreateForm())
+
+    expect(result.current.amount).toBe('')
+    expect(result.current.note).toBe('')
   })
 })

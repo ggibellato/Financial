@@ -36,6 +36,12 @@ public class IncomeWorkflowViewModel : ViewModelBase
     private string? _incomeSplitConfirmationMessage;
     private IReadOnlyList<IncomeBankOptionViewModel> _incomeBankOptions = BuildIncomeBankOptions([]);
 
+    // Persistent create-form defaults (P38-F10) - read on the next ShowCreateIncomeForm, written
+    // back after every successful save.
+    private DateTime? _lastUsedIncomeDate;
+    private Guid? _lastUsedIncomeBank;
+    private Guid? _lastUsedIncomeSource;
+
     public ObservableCollection<IncomeDTO> Incomes { get; } = [];
     public ObservableCollection<IncomeDTO> FilteredIncomes { get; } = [];
     public ObservableCollection<IncomeSourceDTO> IncomeSources { get; } = [];
@@ -217,11 +223,13 @@ public class IncomeWorkflowViewModel : ViewModelBase
     private void ShowCreateIncomeForm()
     {
         _editingIncomeId = null;
-        IncomeFormDate = DateTime.Today;
-        IncomeFormSource = IncomeSourceOptions.Count > 0 ? IncomeSourceOptions[0].Id : null;
+        IncomeFormDate = _lastUsedIncomeDate ?? DateTime.Today;
+        IncomeFormSource = _lastUsedIncomeSource is { } lastSource && IncomeSourceOptions.Any(s => s.Id == lastSource)
+            ? lastSource
+            : (IncomeSourceOptions.Count > 0 ? IncomeSourceOptions[0].Id : null);
         IncomeFormGrossValue = string.Empty;
         IncomeFormNetValue = string.Empty;
-        IncomeFormBank = null;
+        IncomeFormBank = _lastUsedIncomeBank is { } lastBank && _incomeBankOptions.Any(b => b.Id == lastBank) ? lastBank : null;
         IncomeFormDescription = string.Empty;
         IncomeFormSplitToReserve = ShowIncomeSplitField;
         IncomeSaveError = null;
@@ -298,6 +306,10 @@ public class IncomeWorkflowViewModel : ViewModelBase
                     SplitToReserve = splitToReserve,
                 });
             }
+
+            _lastUsedIncomeDate = IncomeFormDate;
+            _lastUsedIncomeBank = IncomeFormBank;
+            _lastUsedIncomeSource = IncomeFormSource;
 
             CloseIncomeForm();
             await _refresh();

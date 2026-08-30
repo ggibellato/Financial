@@ -37,6 +37,15 @@ public class ExpenseWorkflowViewModel : ViewModelBase
     private string? _expenseSaveError;
     private string? _deletingExpenseError;
 
+    // Persisted for the workflow ViewModel's lifetime (the app's own lifetime - see
+    // docs/ui/standard-compliance-audit-2026-08-29-forms.md's "persistent create-form defaults"
+    // follow-up), not just this form's open/close cycle: read on the next ShowCreateExpenseForm,
+    // written back after every successful save.
+    private DateTime? _lastUsedExpenseDate;
+    private Guid? _lastUsedExpensePaymentSource;
+    private Guid? _lastUsedExpenseCreditCardId;
+    private Guid? _lastUsedExpenseCategoryId;
+
     public ObservableCollection<ExpenseDTO> Expenses { get; } = [];
     public ObservableCollection<ExpenseDTO> UnpaidCardCharges { get; } = [];
     public ObservableCollection<ExpenseDTO> FilteredExpenses { get; } = [];
@@ -316,15 +325,21 @@ public class ExpenseWorkflowViewModel : ViewModelBase
     private void ShowCreateExpenseForm(string? mode)
     {
         _editingExpenseId = null;
-        ExpenseFormDate = DateTime.Today;
+        ExpenseFormDate = _lastUsedExpenseDate ?? DateTime.Today;
         ExpenseFormDescription = string.Empty;
-        ExpenseFormCategoryId = ActiveCategories.FirstOrDefault()?.Id;
+        ExpenseFormCategoryId = _lastUsedExpenseCategoryId is { } lastCategoryId && _categories.Any(c => c.Id == lastCategoryId)
+            ? lastCategoryId
+            : ActiveCategories.FirstOrDefault()?.Id;
         ExpenseFormValue = string.Empty;
         IsCardPaymentMode = mode == "card";
         ExpenseFormPaymentSource = IsCardPaymentMode
             ? null
-            : (Banks.Count > 0 ? Banks[0].Id : null);
-        ExpenseFormCreditCardId = null;
+            : (_lastUsedExpensePaymentSource is { } lastPaymentSource && Banks.Any(b => b.Id == lastPaymentSource)
+                ? lastPaymentSource
+                : (Banks.Count > 0 ? Banks[0].Id : null));
+        ExpenseFormCreditCardId = IsCardPaymentMode
+            ? (_lastUsedExpenseCreditCardId is { } lastCreditCardId && _creditCards.Any(c => c.Id == lastCreditCardId) ? lastCreditCardId : null)
+            : null;
         ExpenseFormCreditCardName = string.Empty;
         ExpenseFormRoundUpAmount = string.Empty;
         ExpenseFormCountsAsTithe = true;
@@ -457,6 +472,17 @@ public class ExpenseWorkflowViewModel : ViewModelBase
                     RoundUpAmount = roundUpAmount,
                     CountsAsTithe = ExpenseFormCountsAsTithe,
                 });
+            }
+
+            _lastUsedExpenseDate = ExpenseFormDate;
+            _lastUsedExpenseCategoryId = ExpenseFormCategoryId;
+            if (IsCardPaymentMode)
+            {
+                _lastUsedExpenseCreditCardId = ExpenseFormCreditCardId;
+            }
+            else
+            {
+                _lastUsedExpensePaymentSource = ExpenseFormPaymentSource;
             }
 
             CloseExpenseForm();

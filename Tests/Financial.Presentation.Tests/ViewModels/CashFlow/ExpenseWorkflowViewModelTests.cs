@@ -771,4 +771,56 @@ public class ExpenseWorkflowViewModelTests
         viewModel.ExpensesCategoryFilter.IsFiltered.Should().BeFalse();
         viewModel.ExpensesCardFilter.IsFiltered.Should().BeFalse();
     }
+
+    [Fact]
+    public async Task ShowCreateExpenseForm_AfterSuccessfulCreate_PersistsDatePaymentSourceAndCategory()
+    {
+        var (viewModel, _, banks) = CreateViewModel();
+        viewModel.ShowCreateExpenseFormCommand.Execute("bank");
+        viewModel.ExpenseFormDate = new DateTime(2026, 3, 15);
+        viewModel.ExpenseFormDescription = "Groceries";
+        viewModel.ExpenseFormCategoryId = DefaultCategories[1].Id; // Extras
+        viewModel.ExpenseFormValue = "25";
+        viewModel.ExpenseFormPaymentSource = banks[1].Id; // Chase
+
+        await viewModel.SaveExpenseAsync();
+        viewModel.ShowCreateExpenseFormCommand.Execute("bank");
+
+        viewModel.ExpenseFormDate.Should().Be(new DateTime(2026, 3, 15));
+        viewModel.ExpenseFormPaymentSource.Should().Be(banks[1].Id);
+        viewModel.ExpenseFormCategoryId.Should().Be(DefaultCategories[1].Id);
+    }
+
+    [Fact]
+    public async Task ShowCreateExpenseForm_AfterSuccessfulCreate_AmountAndDescriptionStayBlank()
+    {
+        var (viewModel, _, banks) = CreateViewModel();
+        viewModel.ShowCreateExpenseFormCommand.Execute("bank");
+        viewModel.ExpenseFormDate = DateTime.Today;
+        viewModel.ExpenseFormDescription = "Groceries";
+        viewModel.ExpenseFormValue = "25";
+        viewModel.ExpenseFormPaymentSource = banks[1].Id;
+
+        await viewModel.SaveExpenseAsync();
+        viewModel.ShowCreateExpenseFormCommand.Execute("bank");
+
+        viewModel.ExpenseFormDescription.Should().BeEmpty();
+        viewModel.ExpenseFormValue.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ShowCreateExpenseForm_AfterSuccessfulCardModeCreate_PersistsCreditCardNotPaymentSource()
+    {
+        var (viewModel, _, _) = CreateViewModel();
+        viewModel.ShowCreateExpenseFormCommand.Execute("card");
+        viewModel.ExpenseFormDate = DateTime.Today;
+        viewModel.ExpenseFormDescription = "Flight";
+        viewModel.ExpenseFormValue = "300";
+        viewModel.ExpenseFormCreditCardId = DefaultCreditCards[0].Id;
+
+        await viewModel.SaveExpenseAsync();
+        viewModel.ShowCreateExpenseFormCommand.Execute("card");
+
+        viewModel.ExpenseFormCreditCardId.Should().Be(DefaultCreditCards[0].Id);
+    }
 }

@@ -203,6 +203,60 @@ public class TransferWorkflowViewModelTests
     }
 
     [Fact]
+    public async Task ShowCreateTransferForm_AfterSuccessfulCreate_PersistsDateSourceAndDestinationBank()
+    {
+        var (viewModel, _, banks) = CreateViewModel();
+        viewModel.ShowMoveMoneyFormCommand.Execute(null);
+        var usedDate = DateTime.Today.AddDays(-2);
+        viewModel.TransferFormDate = usedDate;
+        viewModel.TransferFormSourceBank = banks[1].Id;
+        viewModel.TransferFormDestinationBank = banks[0].Id;
+        viewModel.TransferFormAmount = "75";
+
+        await viewModel.SaveTransferAsync();
+
+        viewModel.ShowMoveMoneyFormCommand.Execute(null);
+
+        viewModel.TransferFormDate.Should().Be(usedDate);
+        viewModel.TransferFormSourceBank.Should().Be(banks[1].Id);
+        viewModel.TransferFormDestinationBank.Should().Be(banks[0].Id);
+    }
+
+    [Fact]
+    public async Task ShowCreateTransferForm_ExplicitSourceBankOverridesPersistedSourceBank()
+    {
+        var (viewModel, _, banks) = CreateViewModel();
+        viewModel.ShowMoveMoneyFormCommand.Execute(null);
+        viewModel.TransferFormDate = DateTime.Today;
+        viewModel.TransferFormSourceBank = banks[1].Id;
+        viewModel.TransferFormDestinationBank = banks[0].Id;
+        viewModel.TransferFormAmount = "75";
+        await viewModel.SaveTransferAsync();
+
+        viewModel.ShowMoveMoneyFormCommand.Execute(banks[0].Id);
+
+        viewModel.TransferFormSourceBank.Should().Be(banks[0].Id);
+    }
+
+    [Fact]
+    public async Task ShowCreateTransferForm_AfterSuccessfulCreate_AmountAndNoteStayBlank()
+    {
+        var (viewModel, _, banks) = CreateViewModel();
+        viewModel.ShowMoveMoneyFormCommand.Execute(banks[0].Id);
+        viewModel.TransferFormDate = DateTime.Today;
+        viewModel.TransferFormDestinationBank = banks[1].Id;
+        viewModel.TransferFormAmount = "75";
+        viewModel.TransferFormNote = "Round-up top-up";
+
+        await viewModel.SaveTransferAsync();
+
+        viewModel.ShowMoveMoneyFormCommand.Execute(null);
+
+        viewModel.TransferFormAmount.Should().BeEmpty();
+        viewModel.TransferFormNote.Should().BeEmpty();
+    }
+
+    [Fact]
     public void EditBankOperation_Transfer_OpensTransferFormPrefilled()
     {
         var (viewModel, _, _) = CreateViewModel();
