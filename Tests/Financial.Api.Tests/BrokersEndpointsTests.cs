@@ -115,6 +115,20 @@ public class BrokersEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
+    public async Task DeleteBroker_HistoricAndEmpty_ReturnsNoContentAndRemovesItPermanently()
+    {
+        await Client.PostAsJsonAsync("/api/v1/financial/brokers", ValidBrokerRequest("TestBrokerA"));
+        // First delete archives the empty Active broker to Historic; the second permanently removes it.
+        await Client.DeleteAsync("/api/v1/financial/brokers/TestBrokerA");
+
+        var response = await Client.DeleteAsync("/api/v1/financial/brokers/TestBrokerA");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var brokers = await (await Client.GetAsync("/api/v1/financial/brokers")).Content.ReadFromJsonAsync<List<BrokerDTO>>();
+        brokers.Should().NotContain(b => b.Name == "TestBrokerA");
+    }
+
+    [Fact]
     public async Task DeleteBroker_UnknownBroker_ReturnsNotFound()
     {
         var response = await Client.DeleteAsync("/api/v1/financial/brokers/Nope");
