@@ -32,6 +32,11 @@ public class PriceHistoryTabViewModel : ViewModelBase
     private PriceDialogViewModel? _priceFormViewModel;
     private bool _isPriceFormOpen;
 
+    // Persistent create-form default (P38-F10) - read on the next ShowAddPriceFormAsync, written
+    // back after every successful set. Not scoped per-asset, matching Web's global
+    // sessionStorage-backed persistence.
+    private DateTime? _lastUsedPriceDate;
+
     public PriceHistoryTabViewModel(
         IAssetPriceHistoryService? priceService,
         Func<bool> hasContext,
@@ -141,6 +146,8 @@ public class PriceHistoryTabViewModel : ViewModelBase
             ShowWarning("Price could not be saved. Check the values and try again.");
             return;
         }
+
+        _lastUsedPriceDate = dialogData.Value.Date.ToDateTime(TimeOnly.MinValue);
 
         _applyDetails(updatedDetails);
     }
@@ -311,7 +318,8 @@ public class PriceHistoryTabViewModel : ViewModelBase
     }
 
     private Task<PriceDialogData?> ShowAddPriceFormAsync() =>
-        ShowPriceFormAsync(PriceDialogViewModel.CreateForAdd(_brokerName(), _portfolioName(), _assetName()));
+        ShowPriceFormAsync(PriceDialogViewModel.CreateForAdd(
+            _brokerName(), _portfolioName(), _assetName(), _lastUsedPriceDate ?? DateTime.Today));
 
     private Task<PriceDialogData?> ShowUpdatePriceFormAsync()
     {

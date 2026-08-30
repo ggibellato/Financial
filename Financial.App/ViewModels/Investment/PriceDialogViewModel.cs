@@ -95,7 +95,10 @@ public sealed class PriceDialogViewModel : ViewModelBase
     }
 
     public static PriceDialogViewModel CreateForAdd(string brokerName, string portfolioName, string assetName) =>
-        new(PriceDialogMode.Add, brokerName, portfolioName, assetName, DateTime.Today, 0);
+        CreateForAdd(brokerName, portfolioName, assetName, DateTime.Today);
+
+    public static PriceDialogViewModel CreateForAdd(string brokerName, string portfolioName, string assetName, DateTime date) =>
+        new(PriceDialogMode.Add, brokerName, portfolioName, assetName, date, 0);
 
     public static PriceDialogViewModel CreateForUpdate(string brokerName, string portfolioName, string assetName, DateTime date, decimal price) =>
         new(PriceDialogMode.Update, brokerName, portfolioName, assetName, date, price);

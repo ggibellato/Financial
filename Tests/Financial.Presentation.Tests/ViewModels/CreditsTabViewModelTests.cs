@@ -102,6 +102,22 @@ public class CreditsTabViewModelTests
     }
 
     [Fact]
+    public async Task AddCreditCommand_AfterSuccessfulAdd_PersistsDateAndTypeForNextOpen()
+    {
+        var expectedDetails = new AssetDetailsDTO { Name = AssetName, BrokerName = BrokerName, PortfolioName = PortfolioName, Ticker = "T" };
+        var service = new StubCreditService { AddResult = expectedDetails };
+        var (viewModel, _, _) = Build(service: service);
+        var usedDate = DateTime.Today.AddDays(-3);
+
+        await viewModel.Add(() => AsForm(ValidDialogData() with { Date = usedDate, Type = "Rent" }));
+
+        viewModel.AddCreditCommand.Execute(null);
+
+        viewModel.CreditFormViewModel!.Date.Should().Be(usedDate);
+        viewModel.CreditFormViewModel!.Type.Should().Be("Rent");
+    }
+
+    [Fact]
     public async Task Update_NullSelectedCredit_DoesNotCallService()
     {
         var (viewModel, service, _) = Build();
