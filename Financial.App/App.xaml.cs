@@ -105,6 +105,8 @@ namespace Financial.Presentation.App
                     services.AddTransient<InvestmentSnapshotsView>();
                     services.AddTransient<AnnualSummaryViewModel>();
                     services.AddTransient<AnnualSummaryView>();
+                    services.AddTransient<Financial.Presentation.App.ViewModels.Admin.BrokersViewModel>();
+                    services.AddTransient<Financial.Presentation.App.Views.Admin.BrokersView>();
                     services.AddSingleton<Financial.Presentation.App.ViewModels.SyncStatusViewModel>();
                     services.AddTransient<MainWindow>();
                 })

@@ -8,6 +8,20 @@ namespace Financial.Investment.Domain.Tests;
 public class BrokerTests
 {
     [Fact]
+    public void Update_ChangesNameAndCurrency()
+    {
+        var broker = Broker.Create("Broker A", "USD");
+
+        broker.Update("Broker A Renamed", "BRL");
+
+        using (new AssertionScope())
+        {
+            broker.Name.Should().Be("Broker A Renamed");
+            broker.Currency.Should().Be("BRL");
+        }
+    }
+
+    [Fact]
     public void AddPortfolio_SameName_ReturnsExisting()
     {
         var broker = Broker.Create("Broker A", "USD");

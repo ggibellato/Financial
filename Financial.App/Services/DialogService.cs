@@ -1,4 +1,6 @@
+using Financial.Presentation.App.ViewModels.Admin;
 using Financial.Presentation.App.ViewModels.Investment;
+using Financial.Presentation.App.Views.Admin;
 using Financial.Presentation.App.Views.Investment;
 
 namespace Financial.Presentation.App.Services;
@@ -14,4 +16,7 @@ public sealed class DialogService : IDialogService
 
     public bool ShowMoveAssetDialog(MoveAssetDialogViewModel viewModel) =>
         new MoveAssetDialog(viewModel) { Owner = System.Windows.Application.Current?.MainWindow }.ShowDialog() == true;
+
+    public bool ShowBrokerFormDialog(BrokerFormDialogViewModel viewModel) =>
+        new BrokerFormDialog(viewModel) { Owner = System.Windows.Application.Current?.MainWindow }.ShowDialog() == true;
 }

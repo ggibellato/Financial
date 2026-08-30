@@ -431,12 +431,12 @@ graph TD
 - [x] The nav-route sync test (extended for Admin) passes, confirming every Admin leaf has a reachable route
 
 ### F02. Broker CRUD
-- [ ] Creating a Broker with a unique Name and valid Currency succeeds and the new Broker appears in the list as Active
-- [ ] Creating a Broker with a Name that already exists (Active or Historic) fails with an inline duplicate-name error
-- [ ] Editing an existing Broker's Name and/or Currency persists the change and is reflected in the list
-- [ ] Deleting an Active Broker with zero Portfolios moves it to the Historic list rather than removing it
-- [ ] Deleting a Historic Broker with zero Portfolios permanently removes it from the list
-- [ ] Attempting to delete a Broker (Active or Historic) that has one or more Portfolios is blocked, both client-side (disabled action) and server-side (409 response)
+- [x] Creating a Broker with a unique Name and valid Currency succeeds and the new Broker appears in the list as Active
+- [x] Creating a Broker with a Name that already exists (Active or Historic) fails with an inline duplicate-name error
+- [x] Editing an existing Broker's Name and/or Currency persists the change and is reflected in the list
+- [x] Deleting an Active Broker with zero Portfolios moves it to the Historic list rather than removing it
+- [x] Deleting a Historic Broker with zero Portfolios permanently removes it from the list
+- [x] Attempting to delete a Broker (Active or Historic) that has one or more Portfolios is blocked, both client-side (disabled action) and server-side (409 response)
 
 ### F03. Portfolio CRUD
 - [ ] Creating a Portfolio requires selecting an Active Broker; Historic Brokers do not appear in the picker

@@ -41,6 +41,87 @@ public class Investments
     public Broker? FindHistoricBroker(string name) => _historicBrokers.FirstOrDefault(broker => broker.Name == name);
 
     /// <summary>
+    /// Registers a brand-new Active broker.
+    /// </summary>
+    /// <exception cref="InvestmentRuleViolationException">
+    /// A broker by this name already exists, Active or Historic.
+    /// </exception>
+    public Broker CreateActiveBroker(string name, string currency)
+    {
+        EnsureNameIsUnique(name, excluding: null);
+
+        var broker = Broker.Create(name, currency);
+        _activeBrokers.Add(broker);
+        return broker;
+    }
+
+    /// <summary>
+    /// Renames and/or re-currencies a broker, Active or Historic.
+    /// </summary>
+    /// <exception cref="KeyNotFoundException">No broker by <paramref name="currentName"/> exists.</exception>
+    /// <exception cref="InvestmentRuleViolationException">
+    /// <paramref name="newName"/> already belongs to a different broker.
+    /// </exception>
+    public Broker RenameBroker(string currentName, string newName, string newCurrency)
+    {
+        var broker = FindActiveBroker(currentName) ?? FindHistoricBroker(currentName)
+            ?? throw new KeyNotFoundException($"Broker \"{currentName}\" was not found.");
+
+        if (newName != currentName)
+        {
+            EnsureNameIsUnique(newName, excluding: broker);
+        }
+
+        broker.Update(newName, newCurrency);
+        return broker;
+    }
+
+    /// <summary>
+    /// Deletes an empty broker: an Active one moves to Historic (unless a Historic record of the same
+    /// name already exists, in which case that existing record already is its history and nothing is
+    /// duplicated); a Historic one is removed permanently.
+    /// </summary>
+    /// <exception cref="KeyNotFoundException">No broker by this name exists.</exception>
+    /// <exception cref="InvestmentRuleViolationException">The broker still has portfolios.</exception>
+    public void DeleteBroker(string name)
+    {
+        var activeBroker = FindActiveBroker(name);
+        if (activeBroker is not null)
+        {
+            EnsureEmpty(activeBroker);
+            _activeBrokers.Remove(activeBroker);
+            if (FindHistoricBroker(name) is null)
+            {
+                _historicBrokers.Add(activeBroker);
+            }
+            return;
+        }
+
+        var historicBroker = FindHistoricBroker(name)
+            ?? throw new KeyNotFoundException($"Broker \"{name}\" was not found.");
+
+        EnsureEmpty(historicBroker);
+        _historicBrokers.Remove(historicBroker);
+    }
+
+    private void EnsureNameIsUnique(string name, Broker? excluding)
+    {
+        var collision = FindActiveBroker(name) ?? FindHistoricBroker(name);
+        if (collision is not null && !ReferenceEquals(collision, excluding))
+        {
+            throw new InvestmentRuleViolationException($"A broker named \"{name}\" already exists.");
+        }
+    }
+
+    private static void EnsureEmpty(Broker broker)
+    {
+        if (broker.Portfolios.Count != 0)
+        {
+            throw new InvestmentRuleViolationException("Cannot delete a broker that still has portfolios.");
+        }
+    }
+
+    /// <summary>
     /// Retires a fully closed asset from Active Investments into a Historic portfolio of the same
     /// broker, creating that portfolio - and the broker's Historic record itself - when they do not
     /// exist yet.

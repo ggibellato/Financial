@@ -217,6 +217,162 @@ public class InvestmentsTests
         investments.FindHistoricBroker("XPI")!.FindPortfolio("Closed 2024").Should().NotBeNull();
     }
 
+    [Fact]
+    public void CreateActiveBroker_AddsANewActiveBroker()
+    {
+        var investments = Investments.Create();
+
+        var broker = investments.CreateActiveBroker("XPI", "BRL");
+
+        using (new AssertionScope())
+        {
+            broker.Name.Should().Be("XPI");
+            broker.Currency.Should().Be("BRL");
+            investments.ActiveBrokers.Should().ContainSingle().Which.Should().BeSameAs(broker);
+        }
+    }
+
+    [Fact]
+    public void CreateActiveBroker_DuplicateOfAnActiveBroker_ThrowsAndAddsNothing()
+    {
+        var investments = Investments.Create();
+        investments.AddActiveBroker(Broker.Create("XPI", "BRL"));
+
+        var act = () => investments.CreateActiveBroker("XPI", "GBP");
+
+        act.Should().Throw<InvestmentRuleViolationException>().WithMessage("*XPI*already exists*");
+        investments.ActiveBrokers.Should().ContainSingle();
+    }
+
+    [Fact]
+    public void CreateActiveBroker_DuplicateOfAHistoricBroker_ThrowsAndAddsNothing()
+    {
+        var investments = Investments.Create();
+        investments.AddHistoricBroker(Broker.Create("XPI", "BRL"));
+
+        var act = () => investments.CreateActiveBroker("XPI", "GBP");
+
+        act.Should().Throw<InvestmentRuleViolationException>();
+        investments.ActiveBrokers.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void RenameBroker_ChangesNameAndCurrency()
+    {
+        var investments = Investments.Create();
+        investments.AddActiveBroker(Broker.Create("XPI", "BRL"));
+
+        var broker = investments.RenameBroker("XPI", "XP Investimentos", "USD");
+
+        using (new AssertionScope())
+        {
+            broker.Name.Should().Be("XP Investimentos");
+            broker.Currency.Should().Be("USD");
+            investments.FindActiveBroker("XP Investimentos").Should().NotBeNull();
+        }
+    }
+
+    [Fact]
+    public void RenameBroker_KeepingTheSameName_OnlyChangesCurrency()
+    {
+        var investments = Investments.Create();
+        investments.AddActiveBroker(Broker.Create("XPI", "BRL"));
+
+        var broker = investments.RenameBroker("XPI", "XPI", "USD");
+
+        broker.Currency.Should().Be("USD");
+    }
+
+    [Fact]
+    public void RenameBroker_ToAnotherExistingBrokersName_ThrowsAndChangesNothing()
+    {
+        var investments = Investments.Create();
+        investments.AddActiveBroker(Broker.Create("XPI", "BRL"));
+        investments.AddActiveBroker(Broker.Create("Avenue", "USD"));
+
+        var act = () => investments.RenameBroker("XPI", "Avenue", "BRL");
+
+        act.Should().Throw<InvestmentRuleViolationException>();
+        investments.FindActiveBroker("XPI").Should().NotBeNull();
+    }
+
+    [Fact]
+    public void RenameBroker_UnknownBroker_ThrowsKeyNotFound()
+    {
+        var investments = Investments.Create();
+
+        var act = () => investments.RenameBroker("Nope", "New Name", "BRL");
+
+        act.Should().Throw<KeyNotFoundException>();
+    }
+
+    [Fact]
+    public void DeleteBroker_ActiveAndEmpty_MovesItToHistoric()
+    {
+        var investments = Investments.Create();
+        investments.AddActiveBroker(Broker.Create("XPI", "BRL"));
+
+        investments.DeleteBroker("XPI");
+
+        using (new AssertionScope())
+        {
+            investments.FindActiveBroker("XPI").Should().BeNull();
+            investments.FindHistoricBroker("XPI").Should().NotBeNull();
+        }
+    }
+
+    [Fact]
+    public void DeleteBroker_ActiveAndEmptyWithAnExistingHistoricNamesake_RemovesFromActiveWithoutDuplicating()
+    {
+        var investments = Investments.Create();
+        investments.AddActiveBroker(Broker.Create("XPI", "BRL"));
+        var existingHistoric = Broker.Create("XPI", "BRL");
+        investments.AddHistoricBroker(existingHistoric);
+
+        investments.DeleteBroker("XPI");
+
+        using (new AssertionScope())
+        {
+            investments.FindActiveBroker("XPI").Should().BeNull();
+            investments.HistoricBrokers.Should().ContainSingle().Which.Should().BeSameAs(existingHistoric);
+        }
+    }
+
+    [Fact]
+    public void DeleteBroker_HistoricAndEmpty_RemovesItPermanently()
+    {
+        var investments = Investments.Create();
+        investments.AddHistoricBroker(Broker.Create("XPI", "BRL"));
+
+        investments.DeleteBroker("XPI");
+
+        investments.FindHistoricBroker("XPI").Should().BeNull();
+    }
+
+    [Fact]
+    public void DeleteBroker_WithPortfolios_ThrowsAndChangesNothing()
+    {
+        var investments = Investments.Create();
+        var broker = Broker.Create("XPI", "BRL");
+        broker.AddPortfolio("Default");
+        investments.AddActiveBroker(broker);
+
+        var act = () => investments.DeleteBroker("XPI");
+
+        act.Should().Throw<InvestmentRuleViolationException>().WithMessage("*still has portfolios*");
+        investments.FindActiveBroker("XPI").Should().NotBeNull();
+    }
+
+    [Fact]
+    public void DeleteBroker_UnknownBroker_ThrowsKeyNotFound()
+    {
+        var investments = Investments.Create();
+
+        var act = () => investments.DeleteBroker("Nope");
+
+        act.Should().Throw<KeyNotFoundException>();
+    }
+
     /// <summary>
     /// Active XPI holding "VOD", bought then fully sold with a dividend along the way: closed, but
     /// with a record worth keeping.

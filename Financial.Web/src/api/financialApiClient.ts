@@ -8,7 +8,10 @@ import type {
   AssetPriceDto,
   BankBalanceDto,
   BankDto,
+  BrokerCreateDto,
+  BrokerDto,
   BrokerNodeDto,
+  BrokerUpdateDto,
   CalculateXirrRequestDto,
   CardStatementDto,
   CategoryAnnualAverageDto,
@@ -75,6 +78,10 @@ import type {
 export interface FinancialApiClient {
   getNavigationTree: (scope?: InvestmentScope) => Promise<TreeNodeDto>
   getBrokers: () => Promise<BrokerNodeDto[]>
+  getAdminBrokers: () => Promise<BrokerDto[]>
+  createBroker: (request: BrokerCreateDto) => Promise<BrokerDto>
+  updateBroker: (currentName: string, request: BrokerUpdateDto) => Promise<BrokerDto>
+  deleteBroker: (name: string) => Promise<void>
   getAssetDetails: (brokerName: string, portfolioName: string, assetName: string, scope?: InvestmentScope) => Promise<AssetDetailsDto>
   getCreditsByBroker: (brokerName: string, scope?: InvestmentScope) => Promise<CreditDto[]>
   getCreditsByPortfolio: (brokerName: string, portfolioName: string, scope?: InvestmentScope) => Promise<CreditDto[]>
@@ -242,6 +249,15 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
   return {
     getNavigationTree: (scope = 'active') => request<TreeNodeDto>(`/navigation/tree${buildScopeQuery(scope)}`),
     getBrokers: () => request<BrokerNodeDto[]>('/navigation/brokers'),
+    getAdminBrokers: () => request<BrokerDto[]>('/brokers'),
+    createBroker: (requestBody) =>
+      request<BrokerDto>('/brokers', { method: 'POST', body: JSON.stringify(requestBody) }),
+    updateBroker: (currentName, requestBody) =>
+      request<BrokerDto>(`/brokers/${encodeURIComponent(currentName)}`, {
+        method: 'PUT',
+        body: JSON.stringify(requestBody),
+      }),
+    deleteBroker: (name) => requestVoid(`/brokers/${encodeURIComponent(name)}`, { method: 'DELETE' }),
     getAssetDetails: (brokerName, portfolioName, assetName, scope = 'active') =>
       request<AssetDetailsDto>(
         `/assets/${encodeURIComponent(brokerName)}/${encodeURIComponent(portfolioName)}/${encodeURIComponent(assetName)}${buildScopeQuery(scope)}`,

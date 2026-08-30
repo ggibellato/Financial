@@ -86,6 +86,33 @@ public class ControllerGuardClauseTests
     }
 
     [Fact]
+    public void BrokersController_NullBrokerService_Throws()
+    {
+        Action act = () => new BrokersController(null!);
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
+    public async Task BrokersController_CreateBroker_NullRequest_ReturnsBadRequest()
+    {
+        var controller = new BrokersController(new StubBrokerService());
+
+        var result = await controller.CreateBroker(null);
+
+        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
+    }
+
+    [Fact]
+    public async Task BrokersController_UpdateBroker_NullRequest_ReturnsBadRequest()
+    {
+        var controller = new BrokersController(new StubBrokerService());
+
+        var result = await controller.UpdateBroker("XPI", null);
+
+        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
+    }
+
+    [Fact]
     public void NavigationController_NullNavigationService_Throws()
     {
         Action act = () => new NavigationController(null!);
@@ -427,6 +454,14 @@ public class ControllerGuardClauseTests
         public AssetDetailsDTO? GetAssetDetails(string brokerName, string portfolioName, string assetName, InvestmentScope scope = InvestmentScope.Active) => throw new NotImplementedException();
         public IEnumerable<BrokerNodeDTO> GetBrokers(InvestmentScope scope = InvestmentScope.Active) => throw new NotImplementedException();
         public IEnumerable<AssetNodeDTO> GetAssetsByBrokerPortfolio(string brokerName, string portfolioName) => throw new NotImplementedException();
+    }
+
+    private sealed class StubBrokerService : IBrokerService
+    {
+        public IReadOnlyList<BrokerDTO> GetBrokers() => throw new NotImplementedException();
+        public Task<BrokerDTO> CreateBrokerAsync(BrokerCreateDTO request) => throw new NotImplementedException();
+        public Task<BrokerDTO> UpdateBrokerAsync(string currentName, BrokerUpdateDTO request) => throw new NotImplementedException();
+        public Task DeleteBrokerAsync(string name) => throw new NotImplementedException();
     }
 
     private sealed class StubAssetPriceHistoryService : IAssetPriceHistoryService

@@ -498,6 +498,8 @@ public class MainNavigationViewModelBaseTests
             public bool Confirm(string message, string caption) => throw new NotImplementedException();
             public void ShowWarning(string message, string caption) => throw new NotImplementedException();
             public bool ShowMoveAssetDialog(MoveAssetDialogViewModel viewModel) => throw new NotImplementedException();
+            public bool ShowBrokerFormDialog(Financial.Presentation.App.ViewModels.Admin.BrokerFormDialogViewModel viewModel) =>
+                throw new NotImplementedException();
         }
     }
 

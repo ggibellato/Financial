@@ -1,0 +1,19 @@
+.brokers-page {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.brokers-page__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brokers-page__empty {
+  color: var(--text, #333);
+}
