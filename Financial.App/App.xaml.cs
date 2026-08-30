@@ -111,6 +111,8 @@ namespace Financial.Presentation.App
                     services.AddTransient<Financial.Presentation.App.Views.Admin.PortfoliosView>();
                     services.AddTransient<Financial.Presentation.App.ViewModels.Admin.AssetsViewModel>();
                     services.AddTransient<Financial.Presentation.App.Views.Admin.AssetsView>();
+                    services.AddTransient<Financial.Presentation.App.ViewModels.Admin.BanksViewModel>();
+                    services.AddTransient<Financial.Presentation.App.Views.Admin.BanksView>();
                     services.AddSingleton<Financial.Presentation.App.ViewModels.SyncStatusViewModel>();
                     services.AddTransient<MainWindow>();
                 })

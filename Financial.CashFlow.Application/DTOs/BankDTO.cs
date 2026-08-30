@@ -14,4 +14,8 @@ public sealed class BankDTO
 
     /// <summary>The date <see cref="OpeningBalance"/> is accurate as of.</summary>
     public required DateOnly OpeningBalanceDate { get; init; }
+
+    /// <summary>Whether a balance adjustment, income, expense, or transfer still references this
+    /// bank - Delete is refused (409) while this is true.</summary>
+    public required bool HasReferences { get; init; }
 }

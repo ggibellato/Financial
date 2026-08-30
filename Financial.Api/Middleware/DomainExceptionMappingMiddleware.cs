@@ -38,6 +38,14 @@ internal sealed class DomainExceptionMappingMiddleware
         {
             await HandleAsync(context, ex, StatusCodes.Status409Conflict);
         }
+        catch (EntityInUseException ex)
+        {
+            await HandleAsync(context, ex, StatusCodes.Status409Conflict);
+        }
+        catch (DuplicateNameException ex)
+        {
+            await HandleAsync(context, ex, StatusCodes.Status409Conflict);
+        }
         catch (UnsupportedAssetClassException ex)
         {
             // 422 rather than 400: the request is well formed and the asset is real, there is just

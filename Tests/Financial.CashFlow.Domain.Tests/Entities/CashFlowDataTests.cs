@@ -48,6 +48,29 @@ public class CashFlowDataTests
     }
 
     [Fact]
+    public void RemoveBank_RemovesOnlyTheMatchingBank()
+    {
+        var toRemove = Bank.Create("Barclays", roundUpEnabled: false);
+        var toKeep = Bank.Create("Chase", roundUpEnabled: true);
+        _sut.AddBank(toRemove);
+        _sut.AddBank(toKeep);
+
+        _sut.RemoveBank(toRemove.Id);
+
+        _sut.Banks.Should().ContainSingle().Which.Should().BeSameAs(toKeep);
+    }
+
+    [Fact]
+    public void RemoveBank_WithUnknownId_DoesNothing()
+    {
+        _sut.AddBank(Bank.Create("Barclays", roundUpEnabled: false));
+
+        _sut.RemoveBank(Guid.NewGuid());
+
+        CheckCollectionCounts(new CheckItemsQuantity(Banks: 1));
+    }
+
+    [Fact]
     public void AddIncomeSource_AddsOnlyToIncomeSourcesCollection()
     {
         _sut.AddIncomeSource(IncomeSource.Create("Gleison", IncomeGroup.Salary));

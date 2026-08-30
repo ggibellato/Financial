@@ -13,7 +13,7 @@ public class AdjustmentWorkflowViewModelTests
     private static (AdjustmentWorkflowViewModel ViewModel, StubBalanceAdjustmentService Service, ObservableCollection<BankTotalRow> BankTotals) CreateViewModel(Func<Task>? refresh = null)
     {
         var adjustmentService = new StubBalanceAdjustmentService();
-        var banks = new ObservableCollection<BankDTO> { new() { Id = BarclaysId, Name = "Barclays", RoundUpEnabled = true, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today) } };
+        var banks = new ObservableCollection<BankDTO> { new() { Id = BarclaysId, Name = "Barclays", RoundUpEnabled = true, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today), HasReferences = false } };
         var bankTotals = new ObservableCollection<BankTotalRow>();
         var viewModel = new AdjustmentWorkflowViewModel(adjustmentService, banks, bankTotals, refresh ?? (() => Task.CompletedTask));
         return (viewModel, adjustmentService, bankTotals);

@@ -32,7 +32,7 @@ public class CardsWorkflowViewModelTests
     {
         var cardStatementService = new StubCardStatementService();
         var creditCardService = new StubCreditCardService();
-        var banks = new ObservableCollection<BankDTO> { new() { Id = BarclaysId, Name = "Barclays", RoundUpEnabled = true, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today) } };
+        var banks = new ObservableCollection<BankDTO> { new() { Id = BarclaysId, Name = "Barclays", RoundUpEnabled = true, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today), HasReferences = false } };
         var creditCards = new ObservableCollection<CreditCardDTO>();
         var viewModel = new CardsWorkflowViewModel(cardStatementService, creditCardService, banks, creditCards, refresh ?? (() => Task.CompletedTask));
         return (viewModel, cardStatementService, creditCardService, banks, creditCards);

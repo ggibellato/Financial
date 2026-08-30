@@ -37,4 +37,17 @@ public class Bank
         OpeningBalance = openingBalance;
         OpeningBalanceDate = openingBalanceDate;
     }
+
+    /// <summary>Updates this bank's identity fields. Callers own uniqueness checks, since only the
+    /// repository can see across every bank.</summary>
+    public void Update(string name, bool roundUpEnabled)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new ArgumentException("Bank name is required.");
+        }
+
+        Name = name;
+        RoundUpEnabled = roundUpEnabled;
+    }
 }

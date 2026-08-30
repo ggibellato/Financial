@@ -52,7 +52,7 @@ public class MonthlyViewModelTests
     {
         var expenses = new StubExpenseService();
         var incomes = new StubIncomeService();
-        var banks = new StubBankService { Banks = [new BankDTO { Id = BarclaysId, Name = "Barclays", RoundUpEnabled = true, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today) }, new BankDTO { Id = ChaseId, Name = "Chase", RoundUpEnabled = false, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today) }] };
+        var banks = new StubBankService { Banks = [new BankDTO { Id = BarclaysId, Name = "Barclays", RoundUpEnabled = true, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today), HasReferences = false }, new BankDTO { Id = ChaseId, Name = "Chase", RoundUpEnabled = false, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today), HasReferences = false }] };
         var incomeSources = incomeSourceService ?? new StubIncomeSourceService { IncomeSources = DefaultIncomeSources };
         var tithe = new StubTitheService { Summary = new TitheSummaryDTO { CalculatedTithe = 100m, TitheBalance = 50m } };
         var transfers = new StubTransferService();

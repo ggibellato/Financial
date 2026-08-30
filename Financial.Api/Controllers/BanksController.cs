@@ -30,6 +30,55 @@ public sealed class BanksController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>Creates a new bank.</summary>
+    /// <param name="request">The bank's name and round-up setting.</param>
+    /// <returns>200 OK with the created bank, or 400 Bad Request if the request is invalid.</returns>
+    [HttpPost]
+    [ProducesResponseType(typeof(BankDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<BankDTO>> CreateBank([FromBody] BankCreateDTO? request)
+    {
+        if (request is null)
+        {
+            return BadRequest();
+        }
+
+        var bank = await _bankService.CreateBankAsync(request);
+        return Ok(bank);
+    }
+
+    /// <summary>Updates a bank's name and round-up setting.</summary>
+    /// <param name="id">The bank's identifier.</param>
+    /// <param name="request">The new name and round-up setting.</param>
+    /// <returns>200 OK with the updated bank, 400 Bad Request if the request is invalid, or 404 Not Found if no such bank exists.</returns>
+    [HttpPut("{id:guid}")]
+    [ProducesResponseType(typeof(BankDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<BankDTO>> UpdateBank(Guid id, [FromBody] BankUpdateDTO? request)
+    {
+        if (request is null)
+        {
+            return BadRequest();
+        }
+
+        var bank = await _bankService.UpdateBankAsync(id, request);
+        return Ok(bank);
+    }
+
+    /// <summary>Deletes a bank, when it has no balance history or transactions referencing it.</summary>
+    /// <param name="id">The bank's identifier.</param>
+    /// <returns>200 OK if deleted, 404 Not Found if no such bank exists, or 409 Conflict if it is still referenced.</returns>
+    [HttpDelete("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> DeleteBank(Guid id)
+    {
+        await _bankService.DeleteBankAsync(id);
+        return Ok();
+    }
+
     /// <summary>Updates a bank's opening balance and the date it's accurate as of.</summary>
     /// <param name="id">The bank's identifier.</param>
     /// <param name="request">The new opening balance and date.</param>

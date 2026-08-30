@@ -124,6 +124,12 @@ internal sealed class StubBankService : IBankService
 
     public IReadOnlyList<BankDTO> GetBanks() => Banks;
 
+    public Task<BankDTO> CreateBankAsync(BankCreateDTO request) => throw new NotSupportedException();
+
+    public Task<BankDTO> UpdateBankAsync(Guid id, BankUpdateDTO request) => throw new NotSupportedException();
+
+    public Task DeleteBankAsync(Guid id) => throw new NotSupportedException();
+
     public Task<BankDTO> UpdateOpeningBalanceAsync(Guid id, BankOpeningBalanceUpdateDTO request) =>
         throw new NotSupportedException();
 

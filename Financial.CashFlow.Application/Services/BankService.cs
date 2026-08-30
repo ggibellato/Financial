@@ -1,4 +1,5 @@
 using Financial.CashFlow.Application.DTOs;
+using Financial.CashFlow.Application.Exceptions;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
@@ -32,6 +33,106 @@ public sealed class BankService : IBankService
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetBanks");
             return result;
+        }
+        catch (Exception ex)
+        {
+            span.MarkFailed(ex);
+            throw;
+        }
+    }
+
+    public async Task<BankDTO> CreateBankAsync(BankCreateDTO request)
+    {
+        using var span = StartSpan("CreateBank");
+        try
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            if (string.IsNullOrWhiteSpace(request.Name))
+            {
+                throw new ArgumentException("Bank name is required.", nameof(request));
+            }
+
+            EnsureNameIsUnique(request.Name, excludingId: null);
+
+            var bank = Bank.Create(request.Name, request.RoundUpEnabled);
+
+            await _repository.ApplyAndSaveAsync(() =>
+            {
+                _repository.AddBank(bank);
+                return true;
+            }).ConfigureAwait(false);
+
+            span.SetAttribute(TelemetryAttributeKeys.EntityId, bank.Id.ToString());
+            span.MarkSuccess();
+            _logger.LogInformation("{Operation} completed", "CreateBank");
+            return ToDto(bank);
+        }
+        catch (Exception ex)
+        {
+            span.MarkFailed(ex);
+            throw;
+        }
+    }
+
+    public async Task<BankDTO> UpdateBankAsync(Guid id, BankUpdateDTO request)
+    {
+        using var span = StartSpan("UpdateBank");
+        span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());
+        try
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            if (string.IsNullOrWhiteSpace(request.Name))
+            {
+                throw new ArgumentException("Bank name is required.", nameof(request));
+            }
+
+            if (!EntityIdResolver.TryResolve(id, _repository.GetBanks(), b => b.Id, out var bank))
+            {
+                throw new KeyNotFoundException($"Bank '{id}' was not found.");
+            }
+
+            EnsureNameIsUnique(request.Name, excludingId: id);
+
+            await _repository.ApplyAndSaveAsync(() =>
+            {
+                bank!.Update(request.Name, request.RoundUpEnabled);
+                return true;
+            }).ConfigureAwait(false);
+
+            span.MarkSuccess();
+            _logger.LogInformation("{Operation} completed", "UpdateBank");
+            return ToDto(bank);
+        }
+        catch (Exception ex)
+        {
+            span.MarkFailed(ex);
+            throw;
+        }
+    }
+
+    public async Task DeleteBankAsync(Guid id)
+    {
+        using var span = StartSpan("DeleteBank");
+        span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());
+        try
+        {
+            if (!EntityIdResolver.TryResolve(id, _repository.GetBanks(), b => b.Id, out _))
+            {
+                throw new KeyNotFoundException($"Bank '{id}' was not found.");
+            }
+
+            EnsureNotReferenced(id);
+
+            await _repository.ApplyAndSaveAsync(() =>
+            {
+                _repository.DeleteBank(id);
+                return true;
+            }).ConfigureAwait(false);
+
+            span.MarkSuccess();
+            _logger.LogInformation("{Operation} completed", "DeleteBank");
         }
         catch (Exception ex)
         {
@@ -131,6 +232,35 @@ public sealed class BankService : IBankService
         }
     }
 
+    private void EnsureNameIsUnique(string name, Guid? excludingId)
+    {
+        var collision = _repository.GetBanks().FirstOrDefault(b => b.Name == name && b.Id != excludingId);
+        if (collision is not null)
+        {
+            throw new DuplicateNameException($"A bank named \"{name}\" already exists.");
+        }
+    }
+
+    private void EnsureNotReferenced(Guid bankId)
+    {
+        if (IsReferenced(bankId))
+        {
+            throw new EntityInUseException("Cannot delete a bank that still has balance history or transactions.");
+        }
+    }
+
+    /// <summary>
+    /// Scans the same four collections <see cref="ComputeBalance"/> already reads (Income, Expense,
+    /// Transfer, BalanceAdjustment) - every relationship that can hold a reference to a Bank. Also
+    /// drives <see cref="BankDTO.HasReferences"/>, so the client can disable Delete before attempting
+    /// it rather than only learning about the guard from a failed request.
+    /// </summary>
+    private bool IsReferenced(Guid bankId) =>
+        _repository.GetBalanceAdjustments().Any(a => a.Bank.Id == bankId) ||
+        _repository.GetIncomes().Any(i => i.Bank?.Id == bankId) ||
+        _repository.GetExpenses().Any(e => e.PaymentSourceBank?.Id == bankId) ||
+        _repository.GetTransfers().Any(t => t.SourceBank.Id == bankId || t.DestinationBank.Id == bankId);
+
     private ITelemetrySpan StartSpan(string operationName)
     {
         _logger.LogInformation("{Operation} started", operationName);
@@ -171,12 +301,13 @@ public sealed class BankService : IBankService
         return bank.OpeningBalance + incomeTotal - expenseTotal + transferInTotal - transferOutTotal + adjustmentTotal;
     }
 
-    private static BankDTO ToDto(Bank bank) => new()
+    private BankDTO ToDto(Bank bank) => new()
     {
         Id = bank.Id,
         Name = bank.Name,
         RoundUpEnabled = bank.RoundUpEnabled,
         OpeningBalance = bank.OpeningBalance,
-        OpeningBalanceDate = bank.OpeningBalanceDate
+        OpeningBalanceDate = bank.OpeningBalanceDate,
+        HasReferences = IsReferenced(bank.Id)
     };
 }
