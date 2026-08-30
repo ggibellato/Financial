@@ -77,5 +77,41 @@ namespace Financial.CashFlow.Domain.Tests.Entities
 
             act.Should().Throw<ArgumentException>();
         }
+
+        [Fact]
+        public void Update_ChangesAllFields()
+        {
+            var category = Category.Create("Mercado", isInvestment: false, isTithe: false, isActive: true);
+
+            category.Update("Casa", active: false, isInvestment: true, isTithe: true);
+
+            using (new AssertionScope())
+            {
+                category.Name.Should().Be("Casa");
+                category.Active.Should().BeFalse();
+                category.IsInvestment.Should().BeTrue();
+                category.IsTithe.Should().BeTrue();
+            }
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void Update_WithoutAName_ThrowsAndLeavesPriorValuesUntouched(string? name)
+        {
+            var category = Category.Create("Mercado", isInvestment: false, isTithe: false, isActive: true);
+
+            var act = () => category.Update(name!, active: false, isInvestment: true, isTithe: true);
+
+            using (new AssertionScope())
+            {
+                act.Should().Throw<ArgumentException>();
+                category.Name.Should().Be("Mercado");
+                category.Active.Should().BeTrue();
+                category.IsInvestment.Should().BeFalse();
+                category.IsTithe.Should().BeFalse();
+            }
+        }
     }
 }

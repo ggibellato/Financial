@@ -103,6 +103,29 @@ public class CashFlowDataTests
     }
 
     [Fact]
+    public void RemoveCategory_RemovesOnlyTheMatchingCategory()
+    {
+        var toRemove = Category.Create("Mercado");
+        var toKeep = Category.Create("Casa");
+        _sut.AddCategory(toRemove);
+        _sut.AddCategory(toKeep);
+
+        _sut.RemoveCategory(toRemove.Id);
+
+        _sut.Categories.Should().ContainSingle().Which.Should().BeSameAs(toKeep);
+    }
+
+    [Fact]
+    public void RemoveCategory_WithUnknownId_DoesNothing()
+    {
+        _sut.AddCategory(Category.Create("Mercado"));
+
+        _sut.RemoveCategory(Guid.NewGuid());
+
+        CheckCollectionCounts(new CheckItemsQuantity(Categories: 1));
+    }
+
+    [Fact]
     public void AddExpense_AddsOnlyToExpensesCollection()
     {
         _sut.AddExpense(CreateExpense());

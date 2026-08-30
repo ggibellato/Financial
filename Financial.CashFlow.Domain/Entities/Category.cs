@@ -28,5 +28,20 @@ namespace Financial.CashFlow.Domain.Entities
                 IsTithe = isTithe
             };
         }
+
+        /// <summary>Updates this category's fields. Callers own uniqueness checks, since only the
+        /// repository can see across every category.</summary>
+        public void Update(string name, bool active, bool isInvestment, bool isTithe)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                throw new ArgumentException("Category name is required.");
+            }
+
+            Name = name;
+            Active = active;
+            IsInvestment = isInvestment;
+            IsTithe = isTithe;
+        }
     }
 }
