@@ -16,4 +16,5 @@ public interface IDialogService
     bool ShowBankFormDialog(BankFormDialogViewModel viewModel);
     bool ShowPortfolioFormDialog(PortfolioFormDialogViewModel viewModel);
     bool ShowAssetFormDialog(AssetFormDialogViewModel viewModel);
+    bool ShowCategoryFormDialog(CategoryFormDialogViewModel viewModel);
 }

@@ -510,6 +510,8 @@ public class MainNavigationViewModelBaseTests
                 throw new NotImplementedException();
             public bool ShowBankFormDialog(Financial.Presentation.App.ViewModels.Admin.BankFormDialogViewModel viewModel) =>
                 throw new NotImplementedException();
+            public bool ShowCategoryFormDialog(Financial.Presentation.App.ViewModels.Admin.CategoryFormDialogViewModel viewModel) =>
+                throw new NotImplementedException();
         }
     }
 

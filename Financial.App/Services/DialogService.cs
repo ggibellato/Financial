@@ -28,4 +28,7 @@ public sealed class DialogService : IDialogService
 
     public bool ShowAssetFormDialog(AssetFormDialogViewModel viewModel) =>
         new AssetFormDialog(viewModel) { Owner = System.Windows.Application.Current?.MainWindow }.ShowDialog() == true;
+
+    public bool ShowCategoryFormDialog(CategoryFormDialogViewModel viewModel) =>
+        new CategoryFormDialog(viewModel) { Owner = System.Windows.Application.Current?.MainWindow }.ShowDialog() == true;
 }

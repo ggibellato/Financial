@@ -81,6 +81,72 @@ internal sealed class StubBankService : IBankService
     public decimal GetBankBalanceAsOf(Guid bankId, DateOnly asOfDate, Guid? excludingAdjustmentId = null) => throw new NotImplementedException();
 }
 
+internal sealed class StubCategoryService : ICategoryService
+{
+    public List<CategoryDTO> Categories { get; set; } = [];
+    public CategoryCreateDTO? LastCreateRequest { get; private set; }
+    public (Guid Id, CategoryUpdateDTO Request)? LastUpdateRequest { get; private set; }
+    public Guid? LastDeletedId { get; private set; }
+    public Exception? ThrowOnCreate { get; set; }
+    public Exception? ThrowOnUpdate { get; set; }
+    public Exception? ThrowOnDelete { get; set; }
+
+    public IReadOnlyList<CategoryDTO> GetCategories() => Categories;
+
+    public Task<CategoryDTO> CreateCategoryAsync(CategoryCreateDTO request)
+    {
+        LastCreateRequest = request;
+        if (ThrowOnCreate is not null)
+        {
+            throw ThrowOnCreate;
+        }
+
+        var created = new CategoryDTO
+        {
+            Id = Guid.NewGuid(),
+            Name = request.Name,
+            Active = request.Active,
+            IsInvestment = request.IsInvestment,
+            IsTithe = request.IsTithe,
+            HasReferences = false,
+        };
+        Categories.Add(created);
+        return Task.FromResult(created);
+    }
+
+    public Task<CategoryDTO> UpdateCategoryAsync(Guid id, CategoryUpdateDTO request)
+    {
+        LastUpdateRequest = (id, request);
+        if (ThrowOnUpdate is not null)
+        {
+            throw ThrowOnUpdate;
+        }
+
+        var updated = new CategoryDTO
+        {
+            Id = id,
+            Name = request.Name,
+            Active = request.Active,
+            IsInvestment = request.IsInvestment,
+            IsTithe = request.IsTithe,
+            HasReferences = false,
+        };
+        return Task.FromResult(updated);
+    }
+
+    public Task DeleteCategoryAsync(Guid id)
+    {
+        LastDeletedId = id;
+        if (ThrowOnDelete is not null)
+        {
+            throw ThrowOnDelete;
+        }
+
+        Categories.RemoveAll(c => c.Id == id);
+        return Task.CompletedTask;
+    }
+}
+
 internal sealed class StubBrokerService : IBrokerService
 {
     public List<BrokerDTO> Brokers { get; set; } = [];
@@ -293,6 +359,10 @@ internal sealed class StubDialogService : IDialogService
     public BankFormDialogViewModel? LastBankFormDialog { get; private set; }
     public Action<BankFormDialogViewModel>? OnShowBankFormDialog { get; set; }
 
+    public bool ShowCategoryFormDialogResult { get; set; } = true;
+    public CategoryFormDialogViewModel? LastCategoryFormDialog { get; private set; }
+    public Action<CategoryFormDialogViewModel>? OnShowCategoryFormDialog { get; set; }
+
     public bool Confirm(string message, string caption)
     {
         LastConfirmMessage = message;
@@ -331,5 +401,12 @@ internal sealed class StubDialogService : IDialogService
         LastBankFormDialog = viewModel;
         OnShowBankFormDialog?.Invoke(viewModel);
         return ShowBankFormDialogResult;
+    }
+
+    public bool ShowCategoryFormDialog(CategoryFormDialogViewModel viewModel)
+    {
+        LastCategoryFormDialog = viewModel;
+        OnShowCategoryFormDialog?.Invoke(viewModel);
+        return ShowCategoryFormDialogResult;
     }
 }
