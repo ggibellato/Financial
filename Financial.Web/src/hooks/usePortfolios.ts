@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
-import type { PortfolioCreateDto, PortfolioDto, PortfolioUpdateDto } from '../api/types'
+import type { InvestmentScope, PortfolioCreateDto, PortfolioDto, PortfolioUpdateDto } from '../api/types'
 import { getErrorMessage } from '../utils/formatters'
 
 interface PortfoliosState {
@@ -65,7 +65,7 @@ export interface PortfoliosData {
   updatePortfolio: (brokerName: string, currentName: string, request: PortfolioUpdateDto) => Promise<PortfolioDto>
   deletingKey: string | null
   deleteError: string | null
-  deletePortfolio: (brokerName: string, portfolioName: string) => void
+  deletePortfolio: (brokerName: string, portfolioName: string, brokerScope: InvestmentScope) => void
 }
 
 export function usePortfolios(): PortfoliosData {
@@ -95,11 +95,11 @@ export function usePortfolios(): PortfoliosData {
     return updated
   }, [])
 
-  const deletePortfolio = useCallback((brokerName: string, portfolioName: string) => {
+  const deletePortfolio = useCallback((brokerName: string, portfolioName: string, brokerScope: InvestmentScope) => {
     dispatch({ type: 'DELETE_START', payload: portfolioKey(brokerName, portfolioName) })
 
     void apiClient
-      .deleteEmptyPortfolio(brokerName, portfolioName)
+      .deleteEmptyPortfolio(brokerName, portfolioName, brokerScope)
       .then(() => {
         dispatch({ type: 'DELETE_SUCCESS' })
         dispatch({ type: 'RETRY' })

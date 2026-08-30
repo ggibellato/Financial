@@ -59,7 +59,8 @@ export default function PortfoliosPage() {
 
   const handleConfirmDelete = () => {
     if (!confirmingDelete) return
-    deletePortfolio(confirmingDelete.brokerName, confirmingDelete.name)
+    const scope = confirmingDelete.brokerStatus === 'Active' ? 'active' : 'historic'
+    deletePortfolio(confirmingDelete.brokerName, confirmingDelete.name, scope)
     setConfirmingDelete(null)
   }
 

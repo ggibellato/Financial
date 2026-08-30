@@ -119,6 +119,6 @@ describe('PortfoliosPage', () => {
     const confirmButtons = screen.getAllByRole('button', { name: 'Delete' })
     fireEvent.click(confirmButtons[confirmButtons.length - 1])
 
-    await waitFor(() => expect(deleteEmptyPortfolioMock).toHaveBeenCalledWith('Avenue', 'Old'))
+    await waitFor(() => expect(deleteEmptyPortfolioMock).toHaveBeenCalledWith('Avenue', 'Old', 'historic'))
   })
 })

@@ -103,10 +103,10 @@ describe('usePortfolios', () => {
     const { result } = renderHook(() => usePortfolios())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
-    act(() => result.current.deletePortfolio('Avenue', 'Old'))
+    act(() => result.current.deletePortfolio('Avenue', 'Old', 'historic'))
 
     await waitFor(() => expect(result.current.deletingKey).toBeNull())
-    expect(deleteEmptyPortfolioMock).toHaveBeenCalledWith('Avenue', 'Old')
+    expect(deleteEmptyPortfolioMock).toHaveBeenCalledWith('Avenue', 'Old', 'historic')
     await waitFor(() => expect(getAdminPortfoliosMock).toHaveBeenCalledTimes(2))
   })
 
@@ -115,7 +115,7 @@ describe('usePortfolios', () => {
     const { result } = renderHook(() => usePortfolios())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
-    act(() => result.current.deletePortfolio('XPI', 'Default'))
+    act(() => result.current.deletePortfolio('XPI', 'Default', 'active'))
 
     await waitFor(() => expect(result.current.deleteError).toBe('Only an empty portfolio can be deleted.'))
     expect(getAdminPortfoliosMock).toHaveBeenCalledTimes(1)
