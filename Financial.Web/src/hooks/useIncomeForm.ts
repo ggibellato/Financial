@@ -2,9 +2,14 @@ import { useEffect, useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { IncomeFormField } from '../components/IncomeForm'
 import type { IncomeDto, IncomeSourceDto } from '../api/types'
-import { getErrorMessage, parseValidatedNumber } from '../utils/formatters'
+import { getErrorMessage, parseValidatedNumber, todayIsoDate } from '../utils/formatters'
+import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
 
 export const INCOME_SOURCES_WITH_GROSS_VALUE = ['Gleison', 'Ariana']
+
+const DATE_KEY = 'income.date'
+const BANK_KEY = 'income.bank'
+const SOURCE_KEY = 'income.incomeSource'
 
 /** How long the post-save "split to reserve" confirmation stays visible before clearing itself. */
 export const SPLIT_CONFIRMATION_DELAY_MS = 4000
@@ -52,7 +57,7 @@ interface IncomeFormState {
 }
 
 type IncomeFormAction =
-  | { type: 'SHOW_CREATE_FORM'; payload: { source: string; splitToReserve: string } }
+  | { type: 'SHOW_CREATE_FORM'; payload: { date: string; bank: string; source: string; splitToReserve: string } }
   | { type: 'SHOW_EDIT_FORM'; payload: IncomeDto }
   | { type: 'CANCEL_FORM' }
   | { type: 'SET_FIELD'; payload: { field: IncomeFormField; value: string } }
@@ -95,6 +100,8 @@ function reducer(state: IncomeFormState, action: IncomeFormAction): IncomeFormSt
         editingId: null,
         saveError: null,
         saveErrorField: null,
+        date: action.payload.date,
+        bank: action.payload.bank,
         incomeSource: action.payload.source,
         splitToReserve: action.payload.splitToReserve,
       }
@@ -171,9 +178,14 @@ export function useIncomeForm(incomeSources: IncomeSourceDto[], onSaved: () => v
   }, [state.splitConfirmationMessage])
 
   function showCreateIncomeForm() {
-    const source = state.incomeSource || (selectActiveIncomeSources(incomeSources)[0]?.id ?? '')
+    const date = getStoredDefault(DATE_KEY) ?? todayIsoDate()
+    const bank = getStoredDefault(BANK_KEY) ?? ''
+    const storedSource = getStoredDefault(SOURCE_KEY)
+    const source =
+      state.incomeSource ||
+      (storedSource && incomeSources.some((s) => s.id === storedSource) ? storedSource : (selectActiveIncomeSources(incomeSources)[0]?.id ?? ''))
     const splitToReserve = resolveAutoSplitToReserve(incomeSources, source) ? 'true' : 'false'
-    dispatch({ type: 'SHOW_CREATE_FORM', payload: { source, splitToReserve } })
+    dispatch({ type: 'SHOW_CREATE_FORM', payload: { date, bank, source, splitToReserve } })
   }
 
   const showEditIncomeForm = (income: IncomeDto) => dispatch({ type: 'SHOW_EDIT_FORM', payload: income })
@@ -237,6 +249,9 @@ export function useIncomeForm(incomeSources: IncomeSourceDto[], onSaved: () => v
 
     void request
       .then((savedIncome) => {
+        setStoredDefault(DATE_KEY, state.date)
+        setStoredDefault(BANK_KEY, state.bank)
+        setStoredDefault(SOURCE_KEY, state.incomeSource)
         dispatch({ type: 'SAVE_SUCCESS', payload: savedIncome })
         onSaved()
       })

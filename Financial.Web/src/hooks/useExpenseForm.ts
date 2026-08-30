@@ -2,7 +2,8 @@ import { useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { ExpenseFormField } from '../components/ExpenseForm'
 import type { BankDto, CategoryDto, ExpenseDto } from '../api/types'
-import { getErrorMessage, parseValidatedNumber } from '../utils/formatters'
+import { getErrorMessage, parseValidatedNumber, todayIsoDate } from '../utils/formatters'
+import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
 
 export type PaymentMode = 'bank' | 'card'
 
@@ -11,6 +12,11 @@ const CHARGE_STATUS = 'CreditCardCharge'
 
 const MIN_ROUND_UP_AMOUNT = 0
 const MAX_ROUND_UP_AMOUNT = 0.99
+
+const DATE_KEY = 'expense.date'
+const PAYMENT_SOURCE_KEY = 'expense.paymentSource'
+const CREDIT_CARD_KEY = 'expense.creditCardId'
+const CATEGORY_KEY = 'expense.categoryId'
 
 function computeRoundUpSuggestion(value: number): number {
   return Math.round((Math.ceil(value) - value) * 100) / 100
@@ -48,7 +54,10 @@ interface ExpenseFormState {
 }
 
 type ExpenseFormAction =
-  | { type: 'SHOW_CREATE_FORM'; payload: { mode: PaymentMode; paymentSource: string; roundUpAmount: string; categoryId: string } }
+  | {
+      type: 'SHOW_CREATE_FORM'
+      payload: { mode: PaymentMode; date: string; paymentSource: string; creditCardId: string; roundUpAmount: string; categoryId: string }
+    }
   | { type: 'SHOW_EDIT_FORM'; payload: ExpenseDto }
   | { type: 'CANCEL_FORM' }
   | { type: 'SET_FIELD'; payload: { field: ExpenseFormField; value: string } }
@@ -92,9 +101,10 @@ function reducer(state: ExpenseFormState, action: ExpenseFormAction): ExpenseFor
         editingId: null,
         saveError: null,
         saveErrorField: null,
+        date: action.payload.date,
         paymentMode: action.payload.mode,
         paymentSource: action.payload.paymentSource,
-        creditCardId: '',
+        creditCardId: action.payload.creditCardId,
         roundUpAmount: action.payload.roundUpAmount,
         categoryId: action.payload.categoryId,
       }
@@ -164,12 +174,19 @@ export function useExpenseForm(banks: BankDto[], categories: CategoryDto[], onSa
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
   function showCreateForm(mode: PaymentMode) {
-    const paymentSource = mode === 'bank' ? (banks[0]?.id ?? '') : ''
+    const date = getStoredDefault(DATE_KEY) ?? todayIsoDate()
+    const storedPaymentSource = getStoredDefault(PAYMENT_SOURCE_KEY)
+    const paymentSource =
+      mode === 'bank' ? (storedPaymentSource && banks.some((b) => b.id === storedPaymentSource) ? storedPaymentSource : (banks[0]?.id ?? '')) : ''
+    const creditCardId = mode === 'card' ? (getStoredDefault(CREDIT_CARD_KEY) ?? '') : ''
     const suggestion = mode === 'bank' ? suggestRoundUpAmount(banks, paymentSource, state.value) : null
-    const categoryId = state.categoryId || (categories.find((c) => c.active)?.id ?? '')
+    const storedCategoryId = getStoredDefault(CATEGORY_KEY)
+    const categoryId =
+      state.categoryId ||
+      (storedCategoryId && categories.some((c) => c.id === storedCategoryId) ? storedCategoryId : (categories.find((c) => c.active)?.id ?? ''))
     dispatch({
       type: 'SHOW_CREATE_FORM',
-      payload: { mode, paymentSource, roundUpAmount: suggestion ?? '', categoryId },
+      payload: { mode, date, paymentSource, creditCardId, roundUpAmount: suggestion ?? '', categoryId },
     })
   }
 
@@ -260,6 +277,13 @@ export function useExpenseForm(banks: BankDto[], categories: CategoryDto[], onSa
 
     void request
       .then(() => {
+        setStoredDefault(DATE_KEY, state.date)
+        if (state.paymentMode === 'bank') {
+          setStoredDefault(PAYMENT_SOURCE_KEY, state.paymentSource)
+        } else {
+          setStoredDefault(CREDIT_CARD_KEY, state.creditCardId)
+        }
+        setStoredDefault(CATEGORY_KEY, state.categoryId)
         dispatch({ type: 'SAVE_SUCCESS' })
         onSaved()
       })

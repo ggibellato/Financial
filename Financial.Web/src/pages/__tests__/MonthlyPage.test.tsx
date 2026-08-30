@@ -285,6 +285,7 @@ describe('MonthlyPage', () => {
       Promise.resolve(bankId === 'bank-barclays' ? ADJUSTMENTS : []),
     )
     vi.spyOn(window, 'confirm').mockReturnValue(true)
+    sessionStorage.clear()
   })
 
   afterEach(() => {

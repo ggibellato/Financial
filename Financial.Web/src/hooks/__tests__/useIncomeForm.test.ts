@@ -30,6 +30,7 @@ describe('useIncomeForm', () => {
     createIncomeMock.mockReset()
     updateIncomeMock.mockReset()
     onSaved = vi.fn<() => void>()
+    sessionStorage.clear()
     // shouldAdvanceTime keeps real timers ticking so RTL's waitFor polling still resolves
     // while the split-confirmation dismiss timeout is driven by fake time.
     vi.useFakeTimers({ shouldAdvanceTime: true })
@@ -209,5 +210,42 @@ describe('useIncomeForm', () => {
     })
 
     await waitFor(() => expect(result.current.splitConfirmationMessage).toBeNull())
+  })
+
+  it('persists date, bank, and income source after a successful create, for the next create form', async () => {
+    createIncomeMock.mockResolvedValue({ splitToReserve: false } as Awaited<ReturnType<FinancialApiClient['createIncome']>>)
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved))
+    act(() => result.current.showCreateIncomeForm())
+    act(() => result.current.setIncomeField('date', '2026-07-25'))
+    act(() => result.current.setIncomeField('bank', 'bank-barclays'))
+    act(() => result.current.setIncomeField('incomeSource', INCOME_SOURCES[1].id))
+    act(() => result.current.setIncomeField('netValue', '2450'))
+    await act(async () => {
+      result.current.submitIncome()
+    })
+
+    act(() => result.current.showCreateIncomeForm())
+
+    expect(result.current.incomeDate).toBe('2026-07-25')
+    expect(result.current.incomeBank).toBe('bank-barclays')
+    expect(result.current.incomeSource).toBe(INCOME_SOURCES[1].id)
+  })
+
+  it('always starts gross/net value and description blank on a new create form, even after a persisted save', async () => {
+    createIncomeMock.mockResolvedValue({ splitToReserve: false } as Awaited<ReturnType<FinancialApiClient['createIncome']>>)
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved))
+    act(() => result.current.showCreateIncomeForm())
+    act(() => result.current.setIncomeField('date', '2026-07-25'))
+    act(() => result.current.setIncomeField('netValue', '2450'))
+    act(() => result.current.setIncomeField('description', 'Salary'))
+    await act(async () => {
+      result.current.submitIncome()
+    })
+
+    act(() => result.current.showCreateIncomeForm())
+
+    expect(result.current.incomeNetValue).toBe('')
+    expect(result.current.incomeGrossValue).toBe('')
+    expect(result.current.incomeDescription).toBe('')
   })
 })

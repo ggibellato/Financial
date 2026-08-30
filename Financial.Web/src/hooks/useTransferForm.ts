@@ -3,6 +3,11 @@ import { apiClient } from '../api/financialApiClient'
 import type { BankDto, TransferDto } from '../api/types'
 import { mapTransferErrorToField, type TransferFormField } from './mapTransferErrorToField'
 import { getErrorMessage, parseValidatedNumber, todayIsoDate } from '../utils/formatters'
+import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
+
+const DATE_KEY = 'transfer.date'
+const SOURCE_BANK_KEY = 'transfer.sourceBank'
+const DESTINATION_BANK_KEY = 'transfer.destinationBank'
 
 interface TransferFormState {
   isOpen: boolean
@@ -54,11 +59,22 @@ export function useTransferForm(banks: BankDto[], onSaved: () => void): UseTrans
   const [state, setState] = useState<TransferFormState>(BLANK_STATE)
 
   function openCreateForm(preselectedSourceBank?: string) {
+    const date = getStoredDefault(DATE_KEY) ?? todayIsoDate()
+    const storedSourceBank = getStoredDefault(SOURCE_BANK_KEY)
+    const sourceBank =
+      preselectedSourceBank ??
+      (storedSourceBank && banks.some((b) => b.id === storedSourceBank) ? storedSourceBank : (banks[0]?.id ?? ''))
+    const storedDestinationBank = getStoredDefault(DESTINATION_BANK_KEY)
+    const destinationBank =
+      storedDestinationBank && storedDestinationBank !== sourceBank && banks.some((b) => b.id === storedDestinationBank)
+        ? storedDestinationBank
+        : ''
     setState({
       ...BLANK_STATE,
       isOpen: true,
-      date: todayIsoDate(),
-      sourceBank: preselectedSourceBank ?? banks[0]?.id ?? '',
+      date,
+      sourceBank,
+      destinationBank,
     })
   }
 
@@ -134,6 +150,9 @@ export function useTransferForm(banks: BankDto[], onSaved: () => void): UseTrans
 
     void request
       .then(() => {
+        setStoredDefault(DATE_KEY, state.date)
+        setStoredDefault(SOURCE_BANK_KEY, state.sourceBank)
+        setStoredDefault(DESTINATION_BANK_KEY, state.destinationBank)
         setState(BLANK_STATE)
         onSaved()
       })

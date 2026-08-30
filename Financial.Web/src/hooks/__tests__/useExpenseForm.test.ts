@@ -55,6 +55,7 @@ describe('useExpenseForm', () => {
     createExpenseMock.mockReset()
     updateExpenseMock.mockReset()
     onSaved = vi.fn<() => void>()
+    sessionStorage.clear()
   })
 
   it('defaults the new-expense category field to the first active category once the form opens', () => {
@@ -399,5 +400,62 @@ describe('useExpenseForm', () => {
     await act(() => result.current.submit())
 
     expect(updateExpenseMock).toHaveBeenCalledWith('e9', expect.objectContaining({ roundUpAmount: null }))
+  })
+
+  it('defaults a first-ever create form to today, with no persisted date yet', () => {
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
+
+    act(() => result.current.showCreateForm('bank'))
+
+    expect(result.current.date).toBe(new Date().toISOString().slice(0, 10))
+  })
+
+  it('persists date, payment source, and category after a successful create, for the next create form', async () => {
+    createExpenseMock.mockResolvedValue({ ...EXPENSE, id: 'e10' })
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
+
+    act(() => result.current.showCreateForm('bank'))
+    act(() => result.current.setField('date', '2026-03-15'))
+    act(() => result.current.setField('paymentSource', 'bank-chase'))
+    act(() => result.current.setField('categoryId', 'category-extras'))
+    act(() => result.current.setField('description', 'Groceries'))
+    act(() => result.current.setField('value', '25'))
+    await act(() => result.current.submit())
+
+    act(() => result.current.showCreateForm('bank'))
+
+    expect(result.current.date).toBe('2026-03-15')
+    expect(result.current.paymentSource).toBe('bank-chase')
+    expect(result.current.categoryId).toBe('category-extras')
+  })
+
+  it('always starts amount and description blank on a new create form, even after a persisted save', async () => {
+    createExpenseMock.mockResolvedValue({ ...EXPENSE, id: 'e11' })
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
+
+    act(() => result.current.showCreateForm('bank'))
+    act(() => result.current.setField('description', 'Groceries'))
+    act(() => result.current.setField('value', '25'))
+    await act(() => result.current.submit())
+
+    act(() => result.current.showCreateForm('bank'))
+
+    expect(result.current.description).toBe('')
+    expect(result.current.value).toBe('')
+  })
+
+  it('persists the credit card, not the payment source, after a successful card-mode create', async () => {
+    createExpenseMock.mockResolvedValue({ ...EXPENSE, id: 'e12' })
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
+
+    act(() => result.current.showCreateForm('card'))
+    act(() => result.current.setField('creditCardId', 'card-chase'))
+    act(() => result.current.setField('description', 'Flight'))
+    act(() => result.current.setField('value', '300'))
+    await act(() => result.current.submit())
+
+    act(() => result.current.showCreateForm('card'))
+
+    expect(result.current.creditCardId).toBe('card-chase')
   })
 })
