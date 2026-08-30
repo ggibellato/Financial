@@ -7,7 +7,8 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { DeleteRegular } from '@fluentui/react-icons'
+import { Button, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
+import { DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import type { AssetPriceSnapshotDto } from '../api/types'
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
@@ -41,37 +42,37 @@ interface PriceRowProps {
 
 function PriceRow({ entry, onEdit, onDelete }: PriceRowProps) {
   return (
-    <tr>
-      <td>
+    <TableRow>
+      <TableCell>
         {entry.isManual && (
-          <button
-            className="price-history-tab__action-btn"
-            type="button"
+          <Button
+            appearance="subtle"
+            size="small"
+            icon={<EditRegular />}
             aria-label="Edit price"
             onClick={() => onEdit(entry)}
-          >
-            ✏
-          </button>
+          />
         )}
-      </td>
-      <td>
+      </TableCell>
+      <TableCell>
         {entry.isManual && (
-          <button
-            className="price-history-tab__action-btn"
-            type="button"
+          <Button
+            appearance="subtle"
+            size="small"
+            icon={<DeleteRegular />}
             aria-label="Delete price"
             onClick={() => onDelete(entry.date)}
-          >
-            <DeleteRegular />
-          </button>
+          />
         )}
-      </td>
-      <td>{formatShortDate(entry.date)}</td>
-      <td className="data-table__col--numeric price-history-tab__price">{formatN2(entry.price)}</td>
-      <td className={entry.isManual ? 'price-history-tab__source--manual' : 'price-history-tab__source--automatic'}>
+      </TableCell>
+      <TableCell>{formatShortDate(entry.date)}</TableCell>
+      <TableCell className="data-table__col--numeric price-history-tab__price">{formatN2(entry.price)}</TableCell>
+      <TableCell
+        className={entry.isManual ? 'price-history-tab__source--manual' : 'price-history-tab__source--automatic'}
+      >
         {entry.isManual ? 'Manual' : 'Automatic'}
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   )
 }
 
@@ -269,11 +270,11 @@ export default function PriceHistoryTab() {
       )}
 
       <div className="price-history-tab__table-wrapper">
-        <table className="price-history-tab__table data-table">
-          <thead>
-            <tr>
-              <th />
-              <th />
+        <Table className="price-history-tab__table data-table">
+          <TableHeader>
+            <TableRow>
+              <TableHeaderCell />
+              <TableHeaderCell />
               <SortableColumnHeader
                 label="Date"
                 columnKey="date"
@@ -293,14 +294,14 @@ export default function PriceHistoryTab() {
                 sortDirection={sortState?.columnKey === 'source' ? sortState.direction : undefined}
                 onSort={requestSort}
               />
-            </tr>
-          </thead>
-          <tbody>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {sortedRows.map((entry) => (
               <PriceRow key={entry.date} entry={entry} onEdit={showEditForm} onDelete={confirmAndDeleteEntry} />
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       {deleteError && <p className="price-history-tab__delete-error">{deleteError}</p>}
