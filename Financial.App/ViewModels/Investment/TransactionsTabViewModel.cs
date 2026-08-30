@@ -45,6 +45,12 @@ public class TransactionsTabViewModel : ViewModelBase
     private IReadOnlyList<TransactionSummaryItemDTO> _brokerPortfolioTransactions = Array.Empty<TransactionSummaryItemDTO>();
     private IReadOnlyList<TransactionMonthNet> _transactionsChartMonths = Array.Empty<TransactionMonthNet>();
 
+    // Persistent create-form defaults (P38-F10) - read on the next ShowAddTransactionFormAsync,
+    // written back after every successful add. Not scoped per-asset, matching Web's global
+    // sessionStorage-backed persistence.
+    private DateTime? _lastUsedTransactionDate;
+    private string? _lastUsedTransactionType;
+
     public TransactionsTabViewModel(
         ITransactionService? transactionService,
         ITransactionQueryService transactionQueryService,
@@ -266,6 +272,9 @@ public class TransactionsTabViewModel : ViewModelBase
             return;
         }
 
+        _lastUsedTransactionDate = dialogData.Value.Date;
+        _lastUsedTransactionType = normalizedType;
+
         _applyDetails(updatedDetails);
     }
 
@@ -403,7 +412,10 @@ public class TransactionsTabViewModel : ViewModelBase
     }
 
     private Task<TransactionDialogData?> ShowAddTransactionFormAsync() =>
-        ShowTransactionFormAsync(TransactionDialogViewModel.CreateForAdd(_brokerName(), _portfolioName(), _assetName()));
+        ShowTransactionFormAsync(TransactionDialogViewModel.CreateForAdd(
+            _brokerName(), _portfolioName(), _assetName(),
+            _lastUsedTransactionDate ?? DateTime.Today,
+            _lastUsedTransactionType ?? "Buy"));
 
     private Task<TransactionDialogData?> ShowUpdateTransactionFormAsync()
     {

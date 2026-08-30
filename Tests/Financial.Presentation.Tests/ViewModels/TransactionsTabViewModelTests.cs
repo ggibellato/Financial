@@ -103,9 +103,26 @@ public class TransactionsTabViewModelTests
         service.LastAddRequest.AssetName.Should().Be(AssetName);
         service.LastAddRequest.Type.Should().Be("Buy");
         service.LastAddRequest.Quantity.Should().Be(10m);
+
         service.LastAddRequest.UnitPrice.Should().Be(25m);
         service.LastAddRequest.Fees.Should().Be(1.5m);
         spy.AppliedDetails.Should().Be(expectedDetails);
+    }
+
+    [Fact]
+    public async Task AddTransactionCommand_AfterSuccessfulAdd_PersistsDateAndTypeForNextOpen()
+    {
+        var expectedDetails = new AssetDetailsDTO { Name = AssetName, BrokerName = BrokerName, PortfolioName = PortfolioName, Ticker = "T" };
+        var service = new StubTransactionService { AddResult = expectedDetails };
+        var (viewModel, _, _) = Build(service: service);
+        var usedDate = DateTime.Today.AddDays(-3);
+
+        await viewModel.Add(() => AsForm(ValidDialogData() with { Date = usedDate, Type = "Sell" }));
+
+        viewModel.AddTransactionCommand.Execute(null);
+
+        viewModel.TransactionFormViewModel!.Date.Should().Be(usedDate);
+        viewModel.TransactionFormViewModel!.Type.Should().Be("Sell");
     }
 
     [Fact]

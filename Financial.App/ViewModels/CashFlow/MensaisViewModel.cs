@@ -131,6 +131,10 @@ public class MensaisViewModel : ViewModelBase
     private bool _isAdding;
     private string? _addSaveError;
 
+    // Persistent create-form default (P38-F10) - read on the next ShowAddForm, written back
+    // after every successful add.
+    private string? _lastUsedBillArea;
+
     public bool IsAddFormOpen
     {
         get => _isAddFormOpen;
@@ -195,7 +199,7 @@ public class MensaisViewModel : ViewModelBase
         NewDescription = string.Empty;
         NewDueDay = string.Empty;
         NewValue = string.Empty;
-        NewArea = Areas[0];
+        NewArea = _lastUsedBillArea is { } lastArea && Areas.Contains(lastArea) ? lastArea : Areas[0];
         NewNote = string.Empty;
         AddSaveError = null;
         IsAddFormOpen = true;
@@ -221,6 +225,8 @@ public class MensaisViewModel : ViewModelBase
                 Area = NewArea,
                 Note = string.IsNullOrWhiteSpace(NewNote) ? string.Empty : NewNote,
             });
+
+            _lastUsedBillArea = NewArea;
 
             CloseAddForm();
             await RefreshAsync();

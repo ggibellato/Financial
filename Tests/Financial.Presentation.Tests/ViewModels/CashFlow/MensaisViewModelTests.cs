@@ -58,6 +58,28 @@ public class MensaisViewModelTests
         viewModel.IsAddFormOpen.Should().BeFalse();
     }
 
+    [Fact]
+    public async Task ShowAddForm_AfterSuccessfulAdd_PersistsAreaButNotOtherFields()
+    {
+        var (viewModel, _) = CreateViewModel();
+        viewModel.ShowAddFormCommand.Execute(null);
+        viewModel.NewDescription = "Council Tax";
+        viewModel.NewDueDay = "15";
+        viewModel.NewValue = "80.50";
+        viewModel.NewArea = "UK";
+        viewModel.NewNote = "Monthly";
+
+        await viewModel.SubmitAddAsync();
+
+        viewModel.ShowAddFormCommand.Execute(null);
+
+        viewModel.NewArea.Should().Be("UK");
+        viewModel.NewDescription.Should().BeEmpty();
+        viewModel.NewDueDay.Should().BeEmpty();
+        viewModel.NewValue.Should().BeEmpty();
+        viewModel.NewNote.Should().BeEmpty();
+    }
+
     [Theory]
     [InlineData("", "15", "80")]
     [InlineData("Electricity", "0", "80")]

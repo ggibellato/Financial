@@ -86,6 +86,29 @@ public class ControleMaeViewModelTests
         service.LastCreateRequest!.SourceCurrency.Should().Be("GBP");
     }
 
+    [Fact]
+    public async Task ShowCreateForm_AfterSuccessfulCreate_PersistsDateAndCurrencyButNotOtherFields()
+    {
+        var (viewModel, _) = CreateViewModel();
+        viewModel.ShowCreateFormCommand.Execute(null);
+        var usedDate = DateTime.Today.AddDays(-1);
+        viewModel.CreateDate = usedDate;
+        viewModel.CreateDescription = "Salary";
+        viewModel.CreateCurrency = "GBP";
+        viewModel.CreateValue = "100";
+        viewModel.CreateNote = "July";
+
+        await viewModel.SubmitCreateAsync();
+
+        viewModel.ShowCreateFormCommand.Execute(null);
+
+        viewModel.CreateDate.Should().Be(usedDate);
+        viewModel.CreateCurrency.Should().Be("GBP");
+        viewModel.CreateDescription.Should().BeEmpty();
+        viewModel.CreateValue.Should().BeEmpty();
+        viewModel.CreateNote.Should().BeEmpty();
+    }
+
     [Theory]
     [InlineData(null, "Salary", "100")]
     [InlineData("2026-01-01", "", "100")]
