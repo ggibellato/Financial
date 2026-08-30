@@ -4,17 +4,16 @@ using Financial.Presentation.App.Navigation;
 
 namespace Financial.Presentation.App.Converters;
 
-public class CategoryHasSelectedChildConverter : IMultiValueConverter
+public class GroupHasSelectedChildConverter : IMultiValueConverter
 {
     public object Convert(object?[] values, Type targetType, object? parameter, CultureInfo culture)
     {
-        if (values.Length != 2 || values[0] is not NavCategory category || values[1] is not string selectedChildId)
+        if (values.Length != 2 || values[0] is not IReadOnlyList<NavChild> children || values[1] is not string selectedChildId)
         {
             return false;
         }
 
-        return category.Children.Any(c => c.ViewKey == selectedChildId)
-            || (category.Groups ?? []).Any(g => g.Children.Any(c => c.ViewKey == selectedChildId));
+        return children.Any(c => c.ViewKey == selectedChildId);
     }
 
     public object?[] ConvertBack(object? value, Type[] targetTypes, object? parameter, CultureInfo culture)

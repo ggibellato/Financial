@@ -1,4 +1,4 @@
-import { useRef, useState, type FocusEvent, type ReactNode } from 'react'
+import { useRef, useState, type FocusEvent, type KeyboardEvent, type ReactNode } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { NAV_TREE } from '../navigation/navTree'
 import { getStoredSidebarCollapsed, setStoredSidebarCollapsed } from '../utils/sidebarStorage'
@@ -67,9 +67,29 @@ function CashFlowIcon() {
   )
 }
 
+function AdminIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12,2 L14,5 L17.5,4.5 L18,8 L21,10 L19,13 L21,16 L18,18 L17.5,21.5 L14,21 L12,24 L10,21 L6.5,21.5 L6,18 L3,16 L5,13 L3,10 L6,8 L6.5,4.5 L10,5 Z" />
+    </svg>
+  )
+}
+
 const CATEGORY_ICONS: Record<string, () => ReactNode> = {
   investments: InvestmentsIcon,
   cashflow: CashFlowIcon,
+  admin: AdminIcon,
 }
 
 interface FlyoutAnchor {
@@ -80,6 +100,7 @@ interface FlyoutAnchor {
 function Sidebar() {
   const [collapsed, setCollapsed] = useState(() => getStoredSidebarCollapsed())
   const [flyoutAnchor, setFlyoutAnchor] = useState<FlyoutAnchor | null>(null)
+  const [expandedGroupId, setExpandedGroupId] = useState<string | null>(null)
   const location = useLocation()
 
   const triggerRefs = useRef<Record<string, HTMLDivElement | null>>({})
@@ -158,11 +179,14 @@ function Sidebar() {
 
       {NAV_TREE.map((category) => {
         const CategoryIcon = CATEGORY_ICONS[category.id]
-        const hasActiveChild = category.children.some((child) => child.route === location.pathname)
+        const hasActiveChild =
+          category.children.some((child) => child.route === location.pathname) ||
+          (category.groups ?? []).some((group) => group.children.some((child) => child.route === location.pathname))
         const isOpen = collapsed && flyoutAnchor?.categoryId === category.id
 
         return (
           <div className="sidebar__category" key={category.id}>
+            {category.id === 'admin' && <hr className="sidebar__divider" />}
             <div
               ref={(el) => {
                 triggerRefs.current[category.id] = el
@@ -181,7 +205,52 @@ function Sidebar() {
               <CategoryIcon />
               {!collapsed && <span className="sidebar__category-label">{category.label}</span>}
             </div>
-            {!collapsed && (
+            {!collapsed && category.groups && (
+              <ul className="sidebar__groups" aria-label={category.label}>
+                {category.groups.map((group) => {
+                  const groupHasActiveChild = group.children.some((child) => child.route === location.pathname)
+                  const groupExpanded = expandedGroupId === group.id
+                  const toggleGroup = () =>
+                    setExpandedGroupId((current) => (current === group.id ? null : group.id))
+                  const handleGroupKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault()
+                      toggleGroup()
+                    }
+                  }
+
+                  return (
+                    <li key={group.id} className="sidebar__group">
+                      <div
+                        className={`sidebar__group-header${groupHasActiveChild ? ' sidebar__group-header--active' : ''}`}
+                        role="button"
+                        tabIndex={0}
+                        aria-expanded={groupExpanded}
+                        onClick={toggleGroup}
+                        onKeyDown={handleGroupKeyDown}
+                      >
+                        <span className="sidebar__group-disclosure" aria-hidden="true">
+                          {groupExpanded ? '▾' : '▸'}
+                        </span>
+                        <span>{group.label}</span>
+                      </div>
+                      {groupExpanded && (
+                        <ul className="sidebar__children" aria-label={group.label}>
+                          {group.children.map((child) => (
+                            <li key={child.id}>
+                              <NavLink to={child.route} className="sidebar__link">
+                                {child.label}
+                              </NavLink>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+            {!collapsed && !category.groups && (
               <ul className="sidebar__children" aria-label={category.label}>
                 {category.children.map((child) => (
                   <li key={child.id}>

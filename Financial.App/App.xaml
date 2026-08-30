@@ -20,6 +20,7 @@
         <converters:DoubleToDataGridLengthConverter x:Key="DoubleToDataGridLengthConverter"/>
         <converters:BoolToSidebarWidthConverter x:Key="BoolToSidebarWidthConverter"/>
         <converters:CategoryHasSelectedChildConverter x:Key="CategoryHasSelectedChildConverter"/>
+        <converters:GroupHasSelectedChildConverter x:Key="GroupHasSelectedChildConverter"/>
         <converters:EqualityToBoolConverter x:Key="EqualityToBoolConverter"/>
         <converters:DateOnlyToDateTimeConverter x:Key="DateOnlyToDateTimeConverter"/>
         <converters:NullOrEmptyToVisibilityConverter x:Key="NullOrEmptyToVisibilityConverter"/>

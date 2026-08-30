@@ -64,4 +64,57 @@ describe('SidebarFlyout', () => {
 
     expect(onClose).toHaveBeenCalledWith(true)
   })
+
+  describe('grouped category (e.g. Admin)', () => {
+    const groupedCategory: NavCategory = {
+      id: 'admin',
+      label: 'Admin',
+      children: [],
+      groups: [
+        {
+          id: 'investment',
+          label: 'Investment',
+          children: [{ id: 'brokers', label: 'Brokers', route: '/admin/investment/brokers' }],
+        },
+        {
+          id: 'cashflow',
+          label: 'CashFlow',
+          children: [{ id: 'banks', label: 'Banks', route: '/admin/cashflow/banks' }],
+        },
+      ],
+    }
+
+    const renderGroupedFlyout = (onClose = vi.fn()) => {
+      render(
+        <MemoryRouter>
+          <SidebarFlyout
+            category={groupedCategory}
+            anchorRect={anchorRect}
+            onClose={onClose}
+            onMouseEnter={vi.fn()}
+            onMouseLeave={vi.fn()}
+            onBlur={vi.fn()}
+          />
+        </MemoryRouter>,
+      )
+      return onClose
+    }
+
+    it('renders each group label and its own children nested under it', () => {
+      renderGroupedFlyout()
+
+      expect(screen.getByText('Investment')).toBeInTheDocument()
+      expect(screen.getByText('CashFlow')).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: 'Brokers' })).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: 'Banks' })).toBeInTheDocument()
+    })
+
+    it('clicking a grouped child link calls onClose', () => {
+      const onClose = renderGroupedFlyout()
+
+      fireEvent.click(screen.getByRole('link', { name: 'Brokers' }))
+
+      expect(onClose).toHaveBeenCalledWith()
+    })
+  })
 })

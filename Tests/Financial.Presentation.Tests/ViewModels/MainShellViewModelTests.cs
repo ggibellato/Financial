@@ -18,6 +18,16 @@ public class MainShellViewModelTests
         ["controle-mae"] = new object(),
         ["investment-snapshots"] = new object(),
         ["annual-summary"] = new object(),
+        ["admin-assets"] = new object(),
+        ["admin-brokers"] = new object(),
+        ["admin-portfolios"] = new object(),
+        ["admin-banks"] = new object(),
+        ["admin-categories"] = new object(),
+        ["admin-credit-cards"] = new object(),
+        ["admin-income-sources"] = new object(),
+        ["admin-investment-accounts"] = new object(),
+        ["admin-recurring-bills"] = new object(),
+        ["admin-reserve-buckets"] = new object(),
     };
 
     private static MainShellViewModel CreateShell(
@@ -128,6 +138,16 @@ public class MainShellViewModelTests
                 vm.BreadcrumbText.Should().Be($"{category.Label} › {child.Label}");
             }
         }
+    }
+
+    [Fact]
+    public void BreadcrumbText_GroupedSelection_ReturnsThreeSegmentPath()
+    {
+        var vm = CreateShell(initialCollapsed: false, persistCollapsed: _ => { }, viewsByKey: BuildViewMap());
+
+        vm.SelectItemCommand.Execute("admin-brokers");
+
+        vm.BreadcrumbText.Should().Be("Admin › Investment › Brokers");
     }
 
     [Fact]
