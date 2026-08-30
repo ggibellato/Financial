@@ -87,4 +87,46 @@ public class BankTests
 
         act.Should().Throw<ArgumentException>();
     }
+
+    [Fact]
+    public void Update_ChangesNameAndRoundUpEnabled()
+    {
+        var bank = Bank.Create("Chase", roundUpEnabled: false);
+
+        bank.Update("Barclays", roundUpEnabled: true);
+
+        bank.Name.Should().Be("Barclays");
+        bank.RoundUpEnabled.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Update_PreservesOpeningBalanceAndDate()
+    {
+        var bank = Bank.Create("Chase", roundUpEnabled: false);
+        var date = new DateOnly(2026, 7, 1);
+        bank.SetOpeningBalance(100m, date);
+
+        bank.Update("Barclays", roundUpEnabled: true);
+
+        bank.OpeningBalance.Should().Be(100m);
+        bank.OpeningBalanceDate.Should().Be(date);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Update_WithoutAName_ThrowsAndLeavesPriorValuesUntouched(string? name)
+    {
+        var bank = Bank.Create("Chase", roundUpEnabled: false);
+
+        var act = () => bank.Update(name!, roundUpEnabled: true);
+
+        using (new AssertionScope())
+        {
+            act.Should().Throw<ArgumentException>();
+            bank.Name.Should().Be("Chase");
+            bank.RoundUpEnabled.Should().BeFalse();
+        }
+    }
 }

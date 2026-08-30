@@ -77,6 +77,8 @@ public class CashFlowData
 
     public void AddBank(Bank bank) => _banks.Add(bank);
 
+    public void RemoveBank(Guid id) => _banks.RemoveAll(bank => bank.Id == id);
+
     public void AddIncomeSource(IncomeSource incomeSource) => _incomeSources.Add(incomeSource);
 
     public void AddInvestmentAccount(InvestmentAccount account) => _investmentAccounts.Add(account);
