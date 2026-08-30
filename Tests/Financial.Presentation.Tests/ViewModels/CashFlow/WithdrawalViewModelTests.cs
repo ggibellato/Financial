@@ -176,4 +176,31 @@ public class WithdrawalViewModelTests
 
         viewModel.DescriptionFieldError.Should().BeNull();
     }
+
+    [Fact]
+    public async Task ShowWithdrawalForm_AfterSuccessfulSubmit_PersistsDateAndBucket()
+    {
+        var otherBucketId = Guid.NewGuid();
+        var buckets = new ObservableCollection<ReserveBucketDTO>
+        {
+            new() { Id = InvestimentoId, Name = "Investimento", IsActive = true, SplitPercentage = 50m },
+            new() { Id = otherBucketId, Name = "HouseTreats", IsActive = true, SplitPercentage = 50m },
+        };
+        var (viewModel, _) = CreateViewModel(buckets);
+        viewModel.ShowWithdrawalFormCommand.Execute(null);
+        var usedDate = DateTime.Today.AddDays(-4);
+        viewModel.WithdrawalBucketId = otherBucketId;
+        viewModel.WithdrawalDate = usedDate;
+        viewModel.WithdrawalAmount = "30";
+        viewModel.WithdrawalDescription = "Groceries";
+
+        await viewModel.SubmitWithdrawalAsync();
+
+        viewModel.ShowWithdrawalFormCommand.Execute(null);
+
+        viewModel.WithdrawalDate.Should().Be(usedDate);
+        viewModel.WithdrawalBucketId.Should().Be(otherBucketId);
+        viewModel.WithdrawalAmount.Should().BeEmpty();
+        viewModel.WithdrawalDescription.Should().BeEmpty();
+    }
 }

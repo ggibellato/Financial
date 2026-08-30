@@ -22,6 +22,11 @@ public class AdjustmentWorkflowViewModel : ViewModelBase
     private string? _adjustmentSaveError;
     private decimal? _adjustmentSavedDelta;
 
+    // Persistent create-form defaults (P38-F10) - read on the next ShowCreateAdjustmentForm,
+    // written back after every successful save.
+    private DateTime? _lastUsedAdjustmentDate;
+    private Guid? _lastUsedAdjustmentBank;
+
     /// <summary>The same instance MonthlyViewModel owns — mutated in place by its refresh, never replaced.</summary>
     public ObservableCollection<BankDTO> Banks { get; }
 
@@ -154,12 +159,12 @@ public class AdjustmentWorkflowViewModel : ViewModelBase
     {
         _editingAdjustmentBank = null;
         _editingAdjustmentId = null;
-        AdjustmentFormDate = DateTime.Today;
+        AdjustmentFormDate = _lastUsedAdjustmentDate ?? DateTime.Today;
         AdjustmentFormTargetBalance = string.Empty;
         AdjustmentFormNote = string.Empty;
         AdjustmentSaveError = null;
         AdjustmentSavedDelta = null;
-        AdjustmentFormBankName = null;
+        AdjustmentFormBankName = _lastUsedAdjustmentBank is { } lastBank && Banks.Any(b => b.Id == lastBank) ? lastBank : null;
         OnPropertyChanged(nameof(IsEditingAdjustment));
         IsAdjustmentFormOpen = true;
     }
@@ -217,6 +222,9 @@ public class AdjustmentWorkflowViewModel : ViewModelBase
                     Date = date, TargetBalance = targetBalance, Note = note,
                 });
             }
+
+            _lastUsedAdjustmentDate = AdjustmentFormDate;
+            _lastUsedAdjustmentBank = AdjustmentFormBankName;
 
             await _refresh();
             AdjustmentSavedDelta = result.Delta;

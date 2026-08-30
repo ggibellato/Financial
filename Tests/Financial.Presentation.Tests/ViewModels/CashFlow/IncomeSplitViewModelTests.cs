@@ -108,4 +108,23 @@ public class IncomeSplitViewModelTests
 
         viewModel.DescriptionFieldError.Should().BeNull();
     }
+
+    [Fact]
+    public async Task ShowSplitForm_AfterSuccessfulSubmit_PersistsDateButNotAmountOrDescription()
+    {
+        var (viewModel, _) = CreateViewModel();
+        viewModel.ShowSplitFormCommand.Execute(null);
+        var usedDate = DateTime.Today.AddDays(-2);
+        viewModel.SplitDate = usedDate;
+        viewModel.SplitAmount = "100";
+        viewModel.SplitDescription = "Salary";
+        await viewModel.SubmitSplitAsync();
+        viewModel.DismissSplitResultCommand.Execute(null);
+
+        viewModel.ShowSplitFormCommand.Execute(null);
+
+        viewModel.SplitDate.Should().Be(usedDate);
+        viewModel.SplitAmount.Should().BeEmpty();
+        viewModel.SplitDescription.Should().BeEmpty();
+    }
 }
