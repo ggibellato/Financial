@@ -600,11 +600,11 @@ graph TD
 - [x] `selectionMode="single"` is not used.
 
 ### F09. Repo-wide Fluent DataGrid/Table Adoption
-- [ ] Income, Transfer, Investment, and Investment Snapshot grids are implemented with Fluent
+- [x] Income, Transfer, Investment, and Investment Snapshot grids are implemented with Fluent
       `DataGrid`/`Table`.
-- [ ] `IncomeSection.tsx`'s edit affordance uses the Fluent `EditRegular`/`DeleteRegular` icon-button
+- [x] `IncomeSection.tsx`'s edit affordance uses the Fluent `EditRegular`/`DeleteRegular` icon-button
       pattern, matching `ExpensesSection.tsx`.
-- [ ] Existing sort/filter behavior is preserved on every converted grid.
+- [x] Existing sort/filter behavior is preserved on every converted grid.
 
 ### F10. Persistent Create-Form Defaults Within a Session
 - [ ] Date and entity-relation fields on the 12 mapped forms retain their last-used value for the rest
@@ -620,7 +620,7 @@ graph TD
 - [x] F04's Expense form and Monthly page chrome use both F01's tokens (no hardcoded colors) and F02's
       validation/required-field primitives (not a bespoke reimplementation), and reflect F03's naming
       fixes where applicable.
-- [ ] F05, F06, F07, and F09 each reuse F04's proven Fluent `TabList`/`DataGrid`/validation pattern
+- [x] F05, F06, F07, and F09 each reuse F04's proven Fluent `TabList`/`DataGrid`/validation pattern
       rather than independently reimplementing tab, grid, or validation behavior.
 - [x] F08's Fluent `Tree` migration uses F01's design tokens for its icons/indicators.
 - [ ] F10's persisted defaults apply only to fields on forms already finalized by F04, F05, F06, and
