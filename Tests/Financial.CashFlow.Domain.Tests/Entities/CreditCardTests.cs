@@ -56,43 +56,59 @@ namespace Financial.CashFlow.Domain.Tests.Entities
         }
 
         [Fact]
-        public void UpdateDetails_SetsNextInvoiceDueDateAndIsActive()
+        public void Update_SetsNameNextInvoiceDueDateAndIsActive()
         {
             var card = CreditCard.Create("BaAmex", isActive: true);
             var dueDate = new DateOnly(2026, 9, 5);
 
-            card.UpdateDetails(dueDate, isActive: false);
+            card.Update("Nubank", isActive: false, dueDate);
 
             using (new AssertionScope())
             {
+                card.Name.Should().Be("Nubank");
                 card.NextInvoiceDueDate.Should().Be(dueDate);
                 card.IsActive.Should().BeFalse();
             }
         }
 
         [Fact]
-        public void UpdateDetails_NullDueDate_ClearsIt()
+        public void Update_NullDueDate_ClearsIt()
         {
             var card = CreditCard.Create("BaAmex", isActive: true);
-            card.UpdateDetails(new DateOnly(2026, 9, 5), isActive: true);
+            card.Update("BaAmex", isActive: true, new DateOnly(2026, 9, 5));
 
-            card.UpdateDetails(null, isActive: true);
+            card.Update("BaAmex", isActive: true, null);
 
             card.NextInvoiceDueDate.Should().BeNull();
         }
 
         [Fact]
-        public void UpdateDetails_DoesNotChangeIdOrName()
+        public void Update_DoesNotChangeId()
         {
             var card = CreditCard.Create("BaAmex", isActive: true);
             var originalId = card.Id;
 
-            card.UpdateDetails(new DateOnly(2026, 9, 5), isActive: false);
+            card.Update("Nubank", isActive: false, new DateOnly(2026, 9, 5));
+
+            card.Id.Should().Be(originalId);
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void Update_WithoutAName_ThrowsAndLeavesPriorValuesUntouched(string? name)
+        {
+            var card = CreditCard.Create("BaAmex", isActive: true);
+
+            var act = () => card.Update(name!, isActive: false, new DateOnly(2026, 9, 5));
 
             using (new AssertionScope())
             {
-                card.Id.Should().Be(originalId);
+                act.Should().Throw<ArgumentException>();
                 card.Name.Should().Be("BaAmex");
+                card.IsActive.Should().BeTrue();
+                card.NextInvoiceDueDate.Should().BeNull();
             }
         }
     }

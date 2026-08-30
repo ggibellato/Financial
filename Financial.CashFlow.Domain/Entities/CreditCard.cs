@@ -26,10 +26,16 @@ namespace Financial.CashFlow.Domain.Entities
             };
         }
 
-        public void UpdateDetails(DateOnly? nextInvoiceDueDate, bool isActive)
+        public void Update(string name, bool isActive, DateOnly? nextInvoiceDueDate)
         {
-            NextInvoiceDueDate = nextInvoiceDueDate;
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                throw new ArgumentException("Credit card name is required.");
+            }
+
+            Name = name;
             IsActive = isActive;
+            NextInvoiceDueDate = nextInvoiceDueDate;
         }
     }
 }

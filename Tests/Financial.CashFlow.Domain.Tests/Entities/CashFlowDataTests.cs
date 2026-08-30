@@ -95,6 +95,29 @@ public class CashFlowDataTests
     }
 
     [Fact]
+    public void RemoveCreditCard_RemovesOnlyTheMatchingCreditCard()
+    {
+        var toRemove = Domain.Entities.CreditCard.Create("VISA 1", isActive: true);
+        var toKeep = Domain.Entities.CreditCard.Create("VISA 2", isActive: true);
+        _sut.AddCreditCard(toRemove);
+        _sut.AddCreditCard(toKeep);
+
+        _sut.RemoveCreditCard(toRemove.Id);
+
+        _sut.CreditCards.Should().ContainSingle().Which.Should().BeSameAs(toKeep);
+    }
+
+    [Fact]
+    public void RemoveCreditCard_WithUnknownId_DoesNothing()
+    {
+        _sut.AddCreditCard(Domain.Entities.CreditCard.Create("VISA 1", isActive: true));
+
+        _sut.RemoveCreditCard(Guid.NewGuid());
+
+        CheckCollectionCounts(new CheckItemsQuantity(CreditCards: 1));
+    }
+
+    [Fact]
     public void AddCategory_AddsOnlyToCategoriesCollection()
     {
         _sut.AddCategory(Category.Create("Mercado"));
