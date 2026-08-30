@@ -2653,6 +2653,95 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/portfolios": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lists every portfolio across both Active and Historic brokers. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description 200 OK with the list of portfolios. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PortfolioDTO"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Registers a new portfolio under an Active broker. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/*+json": null | components["schemas"]["PortfolioCreateDTO"];
+                    "application/json": null | components["schemas"]["PortfolioCreateDTO"];
+                    "text/json": null | components["schemas"]["PortfolioCreateDTO"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PortfolioDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/portfolios/{brokerName}/{portfolioName}": {
         parameters: {
             query?: never;
@@ -2661,7 +2750,65 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put?: never;
+        /** Renames an existing portfolio. The parent broker is fixed and not part of this operation. */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The portfolio's parent broker name. */
+                    brokerName: string;
+                    /** @description The portfolio's current name. */
+                    portfolioName: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/*+json": null | components["schemas"]["PortfolioUpdateDTO"];
+                    "application/json": null | components["schemas"]["PortfolioUpdateDTO"];
+                    "text/json": null | components["schemas"]["PortfolioUpdateDTO"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PortfolioDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
         post?: never;
         /** Deletes a portfolio that holds no assets. */
         delete: {
@@ -4673,6 +4820,17 @@ export interface components {
             /** Format: double */
             totalInvested: number;
         };
+        PortfolioCreateDTO: {
+            brokerName: string;
+            name: string;
+        };
+        PortfolioDTO: {
+            /** Format: int32 */
+            assetCount?: number;
+            brokerName: string;
+            brokerStatus: string;
+            name: string;
+        };
         PortfolioNodeDTO: {
             /** Format: int32 */
             assetCount?: number;
@@ -4682,6 +4840,9 @@ export interface components {
         PortfolioReferenceDTO: {
             brokerName: string;
             portfolioName: string;
+        };
+        PortfolioUpdateDTO: {
+            name: string;
         };
         /** @enum {unknown} */
         PositionType: "Long" | "Flat" | "Short";

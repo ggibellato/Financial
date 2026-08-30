@@ -2066,6 +2066,44 @@
         },
         "type": "object"
       },
+      "PortfolioCreateDTO": {
+        "properties": {
+          "brokerName": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "brokerName",
+          "name"
+        ],
+        "type": "object"
+      },
+      "PortfolioDTO": {
+        "properties": {
+          "assetCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "brokerName": {
+            "type": "string"
+          },
+          "brokerStatus": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "brokerName",
+          "brokerStatus"
+        ],
+        "type": "object"
+      },
       "PortfolioNodeDTO": {
         "properties": {
           "assetCount": {
@@ -2099,6 +2137,17 @@
         "required": [
           "brokerName",
           "portfolioName"
+        ],
+        "type": "object"
+      },
+      "PortfolioUpdateDTO": {
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
         ],
         "type": "object"
       },
@@ -5909,6 +5958,117 @@
         ]
       }
     },
+    "/portfolios": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PortfolioDTO"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "200 OK with the list of portfolios."
+          }
+        },
+        "summary": "Lists every portfolio across both Active and Historic brokers.",
+        "tags": [
+          "Portfolios"
+        ]
+      },
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/*\u002Bjson": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/PortfolioCreateDTO"
+                  }
+                ]
+              }
+            },
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/PortfolioCreateDTO"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/PortfolioCreateDTO"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortfolioDTO"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "summary": "Registers a new portfolio under an Active broker.",
+        "tags": [
+          "Portfolios"
+        ]
+      }
+    },
     "/portfolios/{brokerName}/{portfolioName}": {
       "delete": {
         "parameters": [
@@ -5965,6 +6125,114 @@
           }
         },
         "summary": "Deletes a portfolio that holds no assets.",
+        "tags": [
+          "Portfolios"
+        ]
+      },
+      "put": {
+        "parameters": [
+          {
+            "description": "The portfolio\u0027s parent broker name.",
+            "in": "path",
+            "name": "brokerName",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The portfolio\u0027s current name.",
+            "in": "path",
+            "name": "portfolioName",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/*\u002Bjson": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/PortfolioUpdateDTO"
+                  }
+                ]
+              }
+            },
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/PortfolioUpdateDTO"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/PortfolioUpdateDTO"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortfolioDTO"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "summary": "Renames an existing portfolio. The parent broker is fixed and not part of this operation.",
         "tags": [
           "Portfolios"
         ]
