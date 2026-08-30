@@ -607,12 +607,18 @@ graph TD
 - [x] Existing sort/filter behavior is preserved on every converted grid.
 
 ### F10. Persistent Create-Form Defaults Within a Session
-- [ ] Date and entity-relation fields on the 12 mapped forms retain their last-used value for the rest
-      of the session after being set once.
-- [ ] Amount and description fields always start blank on a new create-form open, regardless of
+- [x] Date and entity-relation fields on the 11 mapped forms (the audit's own field-mapping table has
+      11 rows with real, non-N/A mappings; Edit Investment Snapshot value and the Move Asset dialog are
+      explicitly N/A and out of scope) retain their last-used value for the rest of the session after
+      being set once.
+- [x] Amount and description fields always start blank on a new create-form open, regardless of
       session state.
-- [ ] The 4 Web forms affected by the blank-date-to-today's-date behavior change are identified and
-      the change is confirmed intentional.
+- [x] The 8 Web forms affected by the blank-date-to-today's-date behavior change are identified and
+      the change is confirmed intentional: Expense, Income, Withdrawal, Income Split, Create Entry,
+      Investment Transaction, Investment Credit, and Price History previously opened with a blank date
+      on Web (contrary to the audit's presumption/non-verification for some of these) and now default
+      to today, matching WPF's pre-existing behavior. Transfer and Balance Correction already defaulted
+      to today on Web; Add Bill has no date field.
 
 ### Cross-Feature Integration
 - [x] F02's shared primitives render using F01's design tokens — no hardcoded color is introduced in
@@ -623,5 +629,5 @@ graph TD
 - [x] F05, F06, F07, and F09 each reuse F04's proven Fluent `TabList`/`DataGrid`/validation pattern
       rather than independently reimplementing tab, grid, or validation behavior.
 - [x] F08's Fluent `Tree` migration uses F01's design tokens for its icons/indicators.
-- [ ] F10's persisted defaults apply only to fields on forms already finalized by F04, F05, F06, and
+- [x] F10's persisted defaults apply only to fields on forms already finalized by F04, F05, F06, and
       F07 — no field mapping references a form structure that predates those features' changes.
