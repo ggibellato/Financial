@@ -423,12 +423,12 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Admin Navigation Foundation
-- [ ] Sidebar shows "Admin" as a distinct entry at the bottom, separated from Investment/CashFlow by a visible divider, on both Financial.Web and Financial.App
-- [ ] Expanding Admin reveals exactly two sub-groups: Investment and CashFlow
-- [ ] Expanding Investment reveals Assets, Brokers, Portfolios; expanding CashFlow reveals Banks, Categories, Credit Cards, Income Sources, Investment Accounts, Recurring Bills, Reserve Buckets
-- [ ] Clicking any entity leaf navigates to that entity's dedicated Admin page/view on both platforms
-- [ ] The existing Investment/CashFlow top-level categories and their children are unchanged in behavior and appearance
-- [ ] The nav-route sync test (extended for Admin) passes, confirming every Admin leaf has a reachable route
+- [x] Sidebar shows "Admin" as a distinct entry at the bottom, separated from Investment/CashFlow by a visible divider, on both Financial.Web and Financial.App
+- [x] Expanding Admin reveals exactly two sub-groups: Investment and CashFlow
+- [x] Expanding Investment reveals Assets, Brokers, Portfolios; expanding CashFlow reveals Banks, Categories, Credit Cards, Income Sources, Investment Accounts, Recurring Bills, Reserve Buckets
+- [x] Clicking any entity leaf navigates to that entity's dedicated Admin page/view on both platforms
+- [x] The existing Investment/CashFlow top-level categories and their children are unchanged in behavior and appearance
+- [x] The nav-route sync test (extended for Admin) passes, confirming every Admin leaf has a reachable route
 
 ### F02. Broker CRUD
 - [ ] Creating a Broker with a unique Name and valid Currency succeeds and the new Broker appears in the list as Active
