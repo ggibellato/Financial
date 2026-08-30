@@ -46,10 +46,10 @@ public class ExpenseWorkflowViewModelTests
     /// form's live category picklist (F05) has something to select from in tests.</summary>
     private static readonly List<CategoryDTO> DefaultCategories =
     [
-        new() { Id = Guid.NewGuid(), Name = "Mercado", Active = true, IsInvestment = false, IsTithe = false },
-        new() { Id = Guid.NewGuid(), Name = "Extras", Active = true, IsInvestment = false, IsTithe = false },
-        new() { Id = Guid.NewGuid(), Name = "Viagem", Active = true, IsInvestment = false, IsTithe = false },
-        new() { Id = Guid.NewGuid(), Name = "Dizimo", Active = true, IsInvestment = false, IsTithe = true },
+        new() { Id = Guid.NewGuid(), Name = "Mercado", Active = true, IsInvestment = false, IsTithe = false, HasReferences = false },
+        new() { Id = Guid.NewGuid(), Name = "Extras", Active = true, IsInvestment = false, IsTithe = false, HasReferences = false },
+        new() { Id = Guid.NewGuid(), Name = "Viagem", Active = true, IsInvestment = false, IsTithe = false, HasReferences = false },
+        new() { Id = Guid.NewGuid(), Name = "Dizimo", Active = true, IsInvestment = false, IsTithe = true, HasReferences = false },
     ];
 
     private static (ExpenseWorkflowViewModel ViewModel, StubExpenseService Service, ObservableCollection<BankDTO> Banks) CreateViewModel(
@@ -88,7 +88,7 @@ public class ExpenseWorkflowViewModelTests
         var viewModel = new ExpenseWorkflowViewModel(
             expenseService, categories, banks, creditCards,
             confirm: _ => true, new RecordingTelemetryTracer(), () => Task.CompletedTask);
-        var newCategory = new CategoryDTO { Id = Guid.NewGuid(), Name = "New", Active = true, IsInvestment = false, IsTithe = false };
+        var newCategory = new CategoryDTO { Id = Guid.NewGuid(), Name = "New", Active = true, IsInvestment = false, IsTithe = false, HasReferences = false };
 
         categories.Add(newCategory);
         viewModel.NotifyCategoriesChanged();

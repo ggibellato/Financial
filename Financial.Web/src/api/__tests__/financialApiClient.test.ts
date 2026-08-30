@@ -896,8 +896,8 @@ describe('financialApiClient', () => {
 
   it('gets the category list', async () => {
     const responseBody: CategoryDto[] = [
-      { id: 'category-mercado', name: 'Mercado', active: true, isInvestment: false, isTithe: false },
-      { id: 'category-investimento', name: 'Investimento', active: true, isInvestment: true, isTithe: false },
+      { id: 'category-mercado', name: 'Mercado', active: true, isInvestment: false, isTithe: false, hasReferences: false },
+      { id: 'category-investimento', name: 'Investimento', active: true, isInvestment: true, isTithe: false, hasReferences: false },
     ]
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })

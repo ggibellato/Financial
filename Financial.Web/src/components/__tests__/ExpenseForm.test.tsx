@@ -10,9 +10,9 @@ const BANKS: BankDto[] = [
 ]
 
 const CATEGORIES: CategoryDto[] = [
-  { id: 'category-mercado', name: 'Mercado', active: true, isInvestment: false, isTithe: false },
-  { id: 'category-casa', name: 'Casa', active: true, isInvestment: false, isTithe: false },
-  { id: 'category-dizimo', name: 'Dizimo', active: true, isInvestment: false, isTithe: true },
+  { id: 'category-mercado', name: 'Mercado', active: true, isInvestment: false, isTithe: false, hasReferences: false },
+  { id: 'category-casa', name: 'Casa', active: true, isInvestment: false, isTithe: false, hasReferences: false },
+  { id: 'category-dizimo', name: 'Dizimo', active: true, isInvestment: false, isTithe: true, hasReferences: false },
 ]
 
 const CREDIT_CARDS: CreditCardDto[] = [

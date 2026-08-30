@@ -40,8 +40,8 @@ public class MonthlyViewModelCategoriesTests
         {
             Categories =
             [
-                new() { Id = MercadoId, Name = "Mercado", Active = true, IsInvestment = false, IsTithe = false },
-                new() { Id = ReservaId, Name = "Reserva", Active = false, IsInvestment = false, IsTithe = false },
+                new() { Id = MercadoId, Name = "Mercado", Active = true, IsInvestment = false, IsTithe = false, HasReferences = false },
+                new() { Id = ReservaId, Name = "Reserva", Active = false, IsInvestment = false, IsTithe = false, HasReferences = false },
             ],
         };
 

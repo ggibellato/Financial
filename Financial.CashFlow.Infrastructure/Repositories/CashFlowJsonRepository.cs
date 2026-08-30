@@ -59,6 +59,8 @@ public sealed class CashFlowJsonRepository : ICashFlowRepository, ISyncStatusPro
     public IEnumerable<CreditCard> GetCreditCards() => _data.CreditCards;
 
     public IEnumerable<Category> GetCategories() => _data.Categories;
+    public void AddCategory(Category category) => _data.AddCategory(category);
+    public void DeleteCategory(Guid id) => _data.RemoveCategory(id);
 
     public IEnumerable<Income> GetIncomes() => _data.Incomes;
     public void AddIncome(Income income) => _data.AddIncome(income);

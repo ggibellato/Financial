@@ -87,9 +87,9 @@ const INCOME_SOURCES: IncomeSourceDto[] = [
 ]
 
 const CATEGORIES: CategoryDto[] = [
-  { id: 'category-mercado', name: 'Mercado', active: true, isInvestment: false, isTithe: false },
-  { id: 'category-extras', name: 'Extras', active: true, isInvestment: false, isTithe: false },
-  { id: 'category-reserva', name: 'Reserva', active: false, isInvestment: false, isTithe: false },
+  { id: 'category-mercado', name: 'Mercado', active: true, isInvestment: false, isTithe: false, hasReferences: false },
+  { id: 'category-extras', name: 'Extras', active: true, isInvestment: false, isTithe: false, hasReferences: false },
+  { id: 'category-reserva', name: 'Reserva', active: false, isInvestment: false, isTithe: false, hasReferences: false },
 ]
 
 const EXPENSES: ExpenseDto[] = [
