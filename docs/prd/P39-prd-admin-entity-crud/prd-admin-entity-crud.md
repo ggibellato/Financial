@@ -461,10 +461,10 @@ graph TD
 - [x] Attempting to delete a Bank that has balance-adjustment records or referencing transactions is blocked with a 409 response and a clear message
 
 ### F06. Category CRUD
-- [ ] Creating a Category with a unique Name and any combination of Active/IsInvestment/IsTithe succeeds
-- [ ] Editing any of a Category's four fields persists the change
-- [ ] Deleting a Category with zero referencing transactions succeeds
-- [ ] Attempting to delete a Category that is referenced by at least one transaction is blocked with a 409 response and a clear message
+- [x] Creating a Category with a unique Name and any combination of Active/IsInvestment/IsTithe succeeds
+- [x] Editing any of a Category's four fields persists the change
+- [x] Deleting a Category with zero referencing transactions succeeds
+- [x] Attempting to delete a Category that is referenced by at least one transaction is blocked with a 409 response and a clear message
 
 ### F07. Credit Card CRUD
 - [ ] Creating a Credit Card with a unique Name succeeds
