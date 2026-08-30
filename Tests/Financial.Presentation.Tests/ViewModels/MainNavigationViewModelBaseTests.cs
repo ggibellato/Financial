@@ -504,6 +504,8 @@ public class MainNavigationViewModelBaseTests
             public bool ShowMoveAssetDialog(MoveAssetDialogViewModel viewModel) => throw new NotImplementedException();
             public bool ShowBrokerFormDialog(Financial.Presentation.App.ViewModels.Admin.BrokerFormDialogViewModel viewModel) =>
                 throw new NotImplementedException();
+            public bool ShowPortfolioFormDialog(Financial.Presentation.App.ViewModels.Admin.PortfolioFormDialogViewModel viewModel) =>
+                throw new NotImplementedException();
         }
     }
 

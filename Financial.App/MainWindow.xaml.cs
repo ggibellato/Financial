@@ -23,6 +23,7 @@ namespace Financial.Presentation.App
             InvestmentSnapshotsView investmentSnapshotsView,
             AnnualSummaryView annualSummaryView,
             Financial.Presentation.App.Views.Admin.BrokersView brokersView,
+            Financial.Presentation.App.Views.Admin.PortfoliosView portfoliosView,
             MainNavigationViewModel navigationViewModel,
             MainNavigationViewModelHistoric navigationViewModelHistoric,
             SyncStatusViewModel syncStatusViewModel)
@@ -36,6 +37,7 @@ namespace Financial.Presentation.App
             ArgumentNullException.ThrowIfNull(investmentSnapshotsView);
             ArgumentNullException.ThrowIfNull(annualSummaryView);
             ArgumentNullException.ThrowIfNull(brokersView);
+            ArgumentNullException.ThrowIfNull(portfoliosView);
             ArgumentNullException.ThrowIfNull(syncStatusViewModel);
             _navigationViewModel = navigationViewModel ?? throw new ArgumentNullException(nameof(navigationViewModel));
             _navigationViewModelHistoric = navigationViewModelHistoric ?? throw new ArgumentNullException(nameof(navigationViewModelHistoric));
@@ -56,7 +58,7 @@ namespace Financial.Presentation.App
                 ["annual-summary"] = annualSummaryView,
                 ["admin-assets"] = new AdminEntityPlaceholderView(new AdminEntityPlaceholderViewModel("Assets")),
                 ["admin-brokers"] = brokersView,
-                ["admin-portfolios"] = new AdminEntityPlaceholderView(new AdminEntityPlaceholderViewModel("Portfolios")),
+                ["admin-portfolios"] = portfoliosView,
                 ["admin-banks"] = new AdminEntityPlaceholderView(new AdminEntityPlaceholderViewModel("Banks")),
                 ["admin-categories"] = new AdminEntityPlaceholderView(new AdminEntityPlaceholderViewModel("Categories")),
                 ["admin-credit-cards"] = new AdminEntityPlaceholderView(new AdminEntityPlaceholderViewModel("Credit Cards")),
