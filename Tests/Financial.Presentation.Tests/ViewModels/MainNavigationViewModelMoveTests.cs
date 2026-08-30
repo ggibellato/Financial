@@ -723,6 +723,10 @@ public class MainNavigationViewModelMoveTests
         public List<(string Broker, string Portfolio, InvestmentScope Scope)> Deleted { get; } = [];
         public Exception? Failure { get; set; }
 
+        public IReadOnlyList<PortfolioDTO> GetPortfolios() => throw new NotImplementedException();
+        public Task<PortfolioDTO> CreatePortfolioAsync(PortfolioCreateDTO request) => throw new NotImplementedException();
+        public Task<PortfolioDTO> UpdatePortfolioAsync(string brokerName, string currentName, PortfolioUpdateDTO request) => throw new NotImplementedException();
+
         public Task DeleteEmptyPortfolioAsync(string brokerName, string portfolioName, InvestmentScope scope)
         {
             if (Failure is not null)

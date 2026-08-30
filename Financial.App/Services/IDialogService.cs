@@ -13,4 +13,5 @@ public interface IDialogService
     void ShowWarning(string message, string caption);
     bool ShowMoveAssetDialog(MoveAssetDialogViewModel viewModel);
     bool ShowBrokerFormDialog(BrokerFormDialogViewModel viewModel);
+    bool ShowPortfolioFormDialog(PortfolioFormDialogViewModel viewModel);
 }

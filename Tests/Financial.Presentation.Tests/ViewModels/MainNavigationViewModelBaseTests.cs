@@ -488,6 +488,10 @@ public class MainNavigationViewModelBaseTests
         /// <summary>Stands in for the service in the many base tests that never delete anything.</summary>
         private sealed class StubPortfolioService : IPortfolioService
         {
+            public IReadOnlyList<PortfolioDTO> GetPortfolios() => throw new NotImplementedException();
+            public Task<PortfolioDTO> CreatePortfolioAsync(PortfolioCreateDTO request) => throw new NotImplementedException();
+            public Task<PortfolioDTO> UpdatePortfolioAsync(string brokerName, string currentName, PortfolioUpdateDTO request) =>
+                throw new NotImplementedException();
             public Task DeleteEmptyPortfolioAsync(string brokerName, string portfolioName, InvestmentScope scope) =>
                 throw new NotImplementedException();
         }
@@ -499,6 +503,8 @@ public class MainNavigationViewModelBaseTests
             public void ShowWarning(string message, string caption) => throw new NotImplementedException();
             public bool ShowMoveAssetDialog(MoveAssetDialogViewModel viewModel) => throw new NotImplementedException();
             public bool ShowBrokerFormDialog(Financial.Presentation.App.ViewModels.Admin.BrokerFormDialogViewModel viewModel) =>
+                throw new NotImplementedException();
+            public bool ShowPortfolioFormDialog(Financial.Presentation.App.ViewModels.Admin.PortfolioFormDialogViewModel viewModel) =>
                 throw new NotImplementedException();
         }
     }

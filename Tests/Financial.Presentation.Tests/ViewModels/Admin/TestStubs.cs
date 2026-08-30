@@ -1,4 +1,5 @@
 using Financial.Investment.Application.DTOs;
+using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
 using Financial.Presentation.App.Services;
 using Financial.Presentation.App.ViewModels.Admin;
@@ -56,6 +57,56 @@ internal sealed class StubBrokerService : IBrokerService
     }
 }
 
+internal sealed class StubPortfolioService : IPortfolioService
+{
+    public List<PortfolioDTO> Portfolios { get; set; } = [];
+    public PortfolioCreateDTO? LastCreateRequest { get; private set; }
+    public (string BrokerName, string CurrentName, PortfolioUpdateDTO Request)? LastUpdateRequest { get; private set; }
+    public (string BrokerName, string PortfolioName, InvestmentScope Scope)? LastDeleteRequest { get; private set; }
+    public Exception? ThrowOnCreate { get; set; }
+    public Exception? ThrowOnUpdate { get; set; }
+    public Exception? ThrowOnDelete { get; set; }
+
+    public IReadOnlyList<PortfolioDTO> GetPortfolios() => Portfolios;
+
+    public Task<PortfolioDTO> CreatePortfolioAsync(PortfolioCreateDTO request)
+    {
+        LastCreateRequest = request;
+        if (ThrowOnCreate is not null)
+        {
+            throw ThrowOnCreate;
+        }
+
+        var created = new PortfolioDTO { Name = request.Name, BrokerName = request.BrokerName, BrokerStatus = "Active", AssetCount = 0 };
+        Portfolios.Add(created);
+        return Task.FromResult(created);
+    }
+
+    public Task<PortfolioDTO> UpdatePortfolioAsync(string brokerName, string currentName, PortfolioUpdateDTO request)
+    {
+        LastUpdateRequest = (brokerName, currentName, request);
+        if (ThrowOnUpdate is not null)
+        {
+            throw ThrowOnUpdate;
+        }
+
+        var updated = new PortfolioDTO { Name = request.Name, BrokerName = brokerName, BrokerStatus = "Active", AssetCount = 0 };
+        return Task.FromResult(updated);
+    }
+
+    public Task DeleteEmptyPortfolioAsync(string brokerName, string portfolioName, InvestmentScope scope)
+    {
+        LastDeleteRequest = (brokerName, portfolioName, scope);
+        if (ThrowOnDelete is not null)
+        {
+            throw ThrowOnDelete;
+        }
+
+        Portfolios.RemoveAll(p => p.BrokerName == brokerName && p.Name == portfolioName);
+        return Task.CompletedTask;
+    }
+}
+
 /// <summary>Records the dialog it was shown and returns a caller-configured result, avoiding a real
 /// modal Window in tests.</summary>
 internal sealed class StubDialogService : IDialogService
@@ -68,6 +119,10 @@ internal sealed class StubDialogService : IDialogService
     /// <summary>Applied to the dialog ViewModel before the caller reads it back, simulating what the
     /// user typed while the (never-rendered) modal was open.</summary>
     public Action<BrokerFormDialogViewModel>? OnShowBrokerFormDialog { get; set; }
+
+    public bool ShowPortfolioFormDialogResult { get; set; } = true;
+    public PortfolioFormDialogViewModel? LastPortfolioFormDialog { get; private set; }
+    public Action<PortfolioFormDialogViewModel>? OnShowPortfolioFormDialog { get; set; }
 
     public bool Confirm(string message, string caption)
     {
@@ -86,5 +141,12 @@ internal sealed class StubDialogService : IDialogService
         LastBrokerFormDialog = viewModel;
         OnShowBrokerFormDialog?.Invoke(viewModel);
         return ShowBrokerFormDialogResult;
+    }
+
+    public bool ShowPortfolioFormDialog(PortfolioFormDialogViewModel viewModel)
+    {
+        LastPortfolioFormDialog = viewModel;
+        OnShowPortfolioFormDialog?.Invoke(viewModel);
+        return ShowPortfolioFormDialogResult;
     }
 }

@@ -1,3 +1,4 @@
+using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Services;
 using Financial.Investment.Domain.Entities;
@@ -14,6 +15,124 @@ public class PortfolioServiceTests
     private readonly StubInvestmentRepository _repository = new();
     private readonly RecordingTelemetryTracer _tracer = new();
     private readonly RecordingLogger<PortfolioService> _logger = new();
+
+    [Fact]
+    public void GetPortfolios_ReturnsAcrossActiveAndHistoricBrokersWithAssetCount()
+    {
+        _repository.Investments = Investments.Create();
+        var active = Broker.Create("XPI", "BRL");
+        active.CreatePortfolio("Default").AddAsset(Asset.Create("AAAA", "ISIN123", "NYSE", "AAA"));
+        _repository.Investments.AddActiveBroker(active);
+        var historic = Broker.Create("Avenue", "USD");
+        historic.CreatePortfolio("Old");
+        _repository.Investments.AddHistoricBroker(historic);
+
+        var result = CreateService().GetPortfolios();
+
+        using (new AssertionScope())
+        {
+            result.Should().HaveCount(2);
+            result.Should().ContainSingle(p => p.Name == "Default" && p.BrokerName == "XPI" && p.BrokerStatus == "Active" && p.AssetCount == 1);
+            result.Should().ContainSingle(p => p.Name == "Old" && p.BrokerName == "Avenue" && p.BrokerStatus == "Historic" && p.AssetCount == 0);
+        }
+    }
+
+    [Fact]
+    public async Task CreatePortfolioAsync_ValidRequest_AddsPortfolioUnderActiveBrokerAndPersistsOnce()
+    {
+        _repository.Investments = Investments.Create();
+        _repository.Investments.AddActiveBroker(Broker.Create("XPI", "BRL"));
+
+        var result = await CreateService().CreatePortfolioAsync(new PortfolioCreateDTO { BrokerName = "XPI", Name = "Default" });
+
+        using (new AssertionScope())
+        {
+            result.Name.Should().Be("Default");
+            result.BrokerName.Should().Be("XPI");
+            result.BrokerStatus.Should().Be("Active");
+            _repository.Investments!.FindActiveBroker("XPI")!.FindPortfolio("Default").Should().NotBeNull();
+            _repository.WriteCallCount.Should().Be(1);
+        }
+    }
+
+    [Fact]
+    public async Task CreatePortfolioAsync_BrokerIsHistoricNotActive_ThrowsNotFoundAndWritesNothing()
+    {
+        _repository.Investments = Investments.Create();
+        _repository.Investments.AddHistoricBroker(Broker.Create("XPI", "BRL"));
+
+        var act = async () => await CreateService().CreatePortfolioAsync(new PortfolioCreateDTO { BrokerName = "XPI", Name = "Default" });
+
+        await act.Should().ThrowAsync<KeyNotFoundException>();
+        _repository.WriteCallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task CreatePortfolioAsync_DuplicateNameUnderSameBroker_ThrowsAndWritesNothing()
+    {
+        _repository.Investments = Investments.Create();
+        var broker = Broker.Create("XPI", "BRL");
+        broker.CreatePortfolio("Default");
+        _repository.Investments.AddActiveBroker(broker);
+
+        var act = async () => await CreateService().CreatePortfolioAsync(new PortfolioCreateDTO { BrokerName = "XPI", Name = "Default" });
+
+        await act.Should().ThrowAsync<InvestmentRuleViolationException>();
+        _repository.WriteCallCount.Should().Be(0);
+    }
+
+    [Theory]
+    [InlineData("", "Default")]
+    [InlineData("XPI", "")]
+    public async Task CreatePortfolioAsync_MissingRequiredField_ThrowsArgumentException(string brokerName, string name)
+    {
+        var act = async () => await CreateService().CreatePortfolioAsync(new PortfolioCreateDTO { BrokerName = brokerName, Name = name });
+
+        await act.Should().ThrowAsync<ArgumentException>();
+        _repository.WriteCallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task UpdatePortfolioAsync_ValidRequest_RenamesAndPersistsOnce()
+    {
+        _repository.Investments = Investments.Create();
+        var broker = Broker.Create("XPI", "BRL");
+        broker.CreatePortfolio("Default");
+        _repository.Investments.AddActiveBroker(broker);
+
+        var result = await CreateService().UpdatePortfolioAsync("XPI", "Default", new PortfolioUpdateDTO { Name = "Growth" });
+
+        using (new AssertionScope())
+        {
+            result.Name.Should().Be("Growth");
+            result.BrokerStatus.Should().Be("Active");
+            _repository.WriteCallCount.Should().Be(1);
+        }
+    }
+
+    [Fact]
+    public async Task UpdatePortfolioAsync_HistoricBroker_ReturnsHistoricStatus()
+    {
+        _repository.Investments = Investments.Create();
+        var broker = Broker.Create("XPI", "BRL");
+        broker.CreatePortfolio("Default");
+        _repository.Investments.AddHistoricBroker(broker);
+
+        var result = await CreateService().UpdatePortfolioAsync("XPI", "Default", new PortfolioUpdateDTO { Name = "Growth" });
+
+        result.BrokerStatus.Should().Be("Historic");
+    }
+
+    [Fact]
+    public async Task UpdatePortfolioAsync_UnknownBroker_ThrowsNotFoundAndWritesNothing()
+    {
+        _repository.Investments = Investments.Create();
+
+        var act = async () => await CreateService().UpdatePortfolioAsync("Nope", "Default", new PortfolioUpdateDTO { Name = "Growth" });
+
+        await act.Should().ThrowAsync<KeyNotFoundException>();
+        _repository.WriteCallCount.Should().Be(0);
+    }
 
     [Fact]
     public async Task DeleteEmptyPortfolioAsync_WhenEmpty_RemovesItAndPersistsOnce()

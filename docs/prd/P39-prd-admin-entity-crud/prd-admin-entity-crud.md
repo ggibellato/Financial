@@ -439,12 +439,12 @@ graph TD
 - [x] Attempting to delete a Broker (Active or Historic) that has one or more Portfolios is blocked, both client-side (disabled action) and server-side (409 response)
 
 ### F03. Portfolio CRUD
-- [ ] Creating a Portfolio requires selecting an Active Broker; Historic Brokers do not appear in the picker
-- [ ] Creating a Portfolio with a unique-within-Broker Name succeeds and appears under the correct Broker in the list
-- [ ] Creating a Portfolio with a Name that duplicates another Portfolio under the same Broker fails with an inline error; the same Name under a different Broker succeeds
-- [ ] Renaming an existing Portfolio persists the change
-- [ ] Deleting a Portfolio with zero Assets succeeds and removes it from the list
-- [ ] Attempting to delete a Portfolio with one or more Assets is blocked, both client-side and server-side (409 response), consistent with the existing non-empty-portfolio rule
+- [x] Creating a Portfolio requires selecting an Active Broker; Historic Brokers do not appear in the picker
+- [x] Creating a Portfolio with a unique-within-Broker Name succeeds and appears under the correct Broker in the list
+- [x] Creating a Portfolio with a Name that duplicates another Portfolio under the same Broker fails with an inline error; the same Name under a different Broker succeeds
+- [x] Renaming an existing Portfolio persists the change
+- [x] Deleting a Portfolio with zero Assets succeeds and removes it from the list
+- [x] Attempting to delete a Portfolio with one or more Assets is blocked, both client-side and server-side (409 response), consistent with the existing non-empty-portfolio rule
 
 ### F04. Asset CRUD
 - [ ] Creating an Asset requires selecting an Active Broker and one of its Portfolios; the new Asset appears in that Portfolio with zero Quantity and no transactions
@@ -496,7 +496,7 @@ graph TD
 - [ ] "Deleting" a Reserve Bucket sets IsActive to false and does not remove the record; any existing ReserveMovement referencing it remains valid and unaffected
 
 ### Cross-Feature Integration
-- [ ] A Broker created or left Active in F02 (with zero Portfolios) is selectable as the parent Broker when creating a Portfolio in F03
-- [ ] A Broker moved to Historic in F02 is excluded from the parent-Broker picker in F03
+- [x] A Broker created or left Active in F02 (with zero Portfolios) is selectable as the parent Broker when creating a Portfolio in F03
+- [x] A Broker moved to Historic in F02 is excluded from the parent-Broker picker in F03
 - [ ] A Portfolio created in F03 (under an Active Broker) is selectable as the parent Portfolio when creating an Asset in F04, scoped correctly to its parent Broker
 - [ ] A Portfolio that already holds an Asset (via F04) cannot be deleted from F03 until that Asset is removed/archived
