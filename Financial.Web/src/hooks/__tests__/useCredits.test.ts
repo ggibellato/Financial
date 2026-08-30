@@ -111,6 +111,7 @@ describe('useCredits', () => {
     addCreditMock.mockReset()
     updateCreditMock.mockReset()
     deleteCreditMock.mockReset()
+    sessionStorage.clear()
   })
 
   it('returns_initial_empty_state', () => {
@@ -259,17 +260,41 @@ describe('useCredits', () => {
     expect(result.current.selectedMode).toBe('Stacked')
   })
 
-  it('show_new_form_opens_blank_form', async () => {
+  it('show_new_form_opens_blank_form_defaulting_date_to_today_and_type_to_dividend', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
     const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useCredits(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.credits).toHaveLength(2))
     act(() => result.current.showNewForm())
+    const today = new Date().toISOString().slice(0, 10)
     expect(result.current.isFormVisible).toBe(true)
     expect(result.current.editingId).toBeNull()
-    expect(result.current.formDate).toBe('')
+    expect(result.current.formDate).toBe(today)
     expect(result.current.formType).toBe('Dividend')
+    expect(result.current.formValue).toBe('')
+  })
+
+  it('persists date and type after a successful save, for the next new-credit form', async () => {
+    getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
+    addCreditMock.mockResolvedValue({ ...ASSET_DETAILS, credits: [CREDIT_A, CREDIT_B] })
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useCredits(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.credits).toHaveLength(2))
+    act(() => result.current.showNewForm())
+    act(() => {
+      result.current.setFormField('formDate', '2024-06-01')
+      result.current.setFormField('formType', 'JCP')
+      result.current.setFormField('formValue', '50')
+    })
+    act(() => result.current.saveForm())
+    await waitFor(() => expect(addCreditMock).toHaveBeenCalledTimes(1))
+
+    act(() => result.current.showNewForm())
+
+    expect(result.current.formDate).toBe('2024-06-01')
+    expect(result.current.formType).toBe('JCP')
     expect(result.current.formValue).toBe('')
   })
 
@@ -376,6 +401,7 @@ describe('useCredits', () => {
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.credits).toHaveLength(2))
     act(() => result.current.showNewForm())
+    act(() => result.current.setFormField('formDate', ''))
     act(() => result.current.setFormField('formValue', '50'))
     act(() => result.current.saveForm())
     expect(result.current.saveError).not.toBeNull()

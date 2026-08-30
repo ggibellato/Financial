@@ -4,9 +4,12 @@ import type { AssetPriceSnapshotDto, SelectedNode } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
 import type { PeriodFilterOption } from '../utils/periodFilter'
 import { DEFAULT_FILTER, getPeriodFilterStartDate } from '../utils/periodFilter'
-import { getErrorMessage, parseValidatedNumber, toInputDate } from '../utils/formatters'
+import { getErrorMessage, parseValidatedNumber, toInputDate, todayIsoDate } from '../utils/formatters'
+import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
 
 export type PriceHistoryFormField = 'formDate' | 'formPrice'
+
+const DATE_KEY = 'priceHistory.date'
 
 interface PersistedPrefs {
   filter: PeriodFilterOption
@@ -35,7 +38,7 @@ type PriceHistoryAction =
   | { type: 'FETCH_ERROR'; payload: string }
   | { type: 'RETRY' }
   | { type: 'SET_FILTER'; payload: { filter: PeriodFilterOption; key: string } }
-  | { type: 'SHOW_NEW_FORM' }
+  | { type: 'SHOW_NEW_FORM'; payload: { date: string } }
   | { type: 'SHOW_EDIT_FORM'; payload: AssetPriceSnapshotDto }
   | { type: 'CANCEL_FORM' }
   | { type: 'SET_FORM_FIELD'; payload: { field: PriceHistoryFormField; value: string } }
@@ -95,7 +98,7 @@ function reducer(state: PriceHistoryState, action: PriceHistoryAction): PriceHis
         ...state,
         isFormVisible: true,
         editingDate: null,
-        formDate: '',
+        formDate: action.payload.date,
         formPrice: '',
         saveError: null,
         isSaving: false,
@@ -211,7 +214,10 @@ export function usePriceHistory(): PriceHistoryData {
     [selectedNode],
   )
 
-  const showNewForm = useCallback(() => dispatch({ type: 'SHOW_NEW_FORM' }), [])
+  const showNewForm = useCallback(
+    () => dispatch({ type: 'SHOW_NEW_FORM', payload: { date: getStoredDefault(DATE_KEY) ?? todayIsoDate() } }),
+    [],
+  )
 
   const showEditForm = useCallback(
     (entry: AssetPriceSnapshotDto) => dispatch({ type: 'SHOW_EDIT_FORM', payload: entry }),
@@ -250,7 +256,10 @@ export function usePriceHistory(): PriceHistoryData {
         date: formDate,
         price,
       })
-      .then((result) => dispatch({ type: 'SAVE_SUCCESS', payload: result.priceHistory }))
+      .then((result) => {
+        setStoredDefault(DATE_KEY, formDate)
+        dispatch({ type: 'SAVE_SUCCESS', payload: result.priceHistory })
+      })
       .catch((err: unknown) => {
         dispatch({
           type: 'SAVE_ERROR',
