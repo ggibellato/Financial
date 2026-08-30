@@ -138,6 +138,57 @@ public class BanksEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
+    public async Task DeleteBank_ReferencedByIncome_ReturnsConflict()
+    {
+        await Client.PostAsJsonAsync("/api/v1/financial/incomes", new IncomeCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 1),
+            IncomeSourceId = GleisonId,
+            GrossValue = null,
+            NetValue = 500m,
+            BankId = BarclaysId
+        });
+
+        var response = await Client.DeleteAsync($"/api/v1/financial/banks/{BarclaysId}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+    }
+
+    [Fact]
+    public async Task DeleteBank_ReferencedByExpense_ReturnsConflict()
+    {
+        await Client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 5),
+            Description = "Groceries",
+            Value = 50m,
+            CategoryId = MercadoId,
+            PaymentSourceBankId = BarclaysId,
+            CreditCardId = null
+        });
+
+        var response = await Client.DeleteAsync($"/api/v1/financial/banks/{BarclaysId}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+    }
+
+    [Fact]
+    public async Task GetBanks_HasReferences_ReflectsWhetherABalanceAdjustmentExists()
+    {
+        var before = await (await Client.GetAsync("/api/v1/financial/banks")).Content.ReadFromJsonAsync<List<BankDTO>>();
+        before.Should().ContainSingle(b => b.Id == BarclaysId && !b.HasReferences);
+
+        await Client.PostAsJsonAsync($"/api/v1/financial/banks/{BarclaysId}/adjustments", new BalanceAdjustmentCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 5),
+            TargetBalance = 150m
+        });
+
+        var after = await (await Client.GetAsync("/api/v1/financial/banks")).Content.ReadFromJsonAsync<List<BankDTO>>();
+        after.Should().ContainSingle(b => b.Id == BarclaysId && b.HasReferences);
+    }
+
+    [Fact]
     public async Task UpdateOpeningBalance_ValidRequest_ReturnsOkAndUpdatesFields()
     {
         var request = new BankOpeningBalanceUpdateDTO
