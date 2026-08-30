@@ -147,7 +147,10 @@ public sealed class TransactionDialogViewModel : ViewModelBase
         Validate();
     }
 
-    public static TransactionDialogViewModel CreateForAdd(string brokerName, string portfolioName, string assetName)
+    public static TransactionDialogViewModel CreateForAdd(string brokerName, string portfolioName, string assetName) =>
+        CreateForAdd(brokerName, portfolioName, assetName, DateTime.Today, "Buy");
+
+    public static TransactionDialogViewModel CreateForAdd(string brokerName, string portfolioName, string assetName, DateTime date, string type)
     {
         return new TransactionDialogViewModel(
             TransactionDialogMode.Add,
@@ -155,8 +158,8 @@ public sealed class TransactionDialogViewModel : ViewModelBase
             portfolioName,
             assetName,
             Guid.Empty,
-            DateTime.Today,
-            "Buy",
+            date,
+            type,
             0,
             0,
             0);

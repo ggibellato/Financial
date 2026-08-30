@@ -8,16 +8,24 @@ import {
   parseMonthInputValue,
   parseValidatedNumber,
 } from '../utils/formatters'
+import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
 
 export type EditField = 'editStatus' | 'editValue'
 export type AddField = 'newDueDay' | 'newDescription' | 'newValue' | 'newArea' | 'newNote'
 
-const EMPTY_ADD_FORM = {
+const AREA_KEY = 'addBill.area'
+const AREAS = ['Brasil', 'UK']
+
+const EMPTY_ADD_FORM_FIELDS = {
   newDueDay: '',
   newDescription: '',
   newValue: '',
-  newArea: 'Brasil',
   newNote: '',
+}
+
+function defaultArea(): string {
+  const stored = getStoredDefault(AREA_KEY)
+  return stored && AREAS.includes(stored) ? stored : 'Brasil'
 }
 
 interface MensaisState {
@@ -58,7 +66,7 @@ type MensaisAction =
   | { type: 'SAVE_START' }
   | { type: 'SAVE_SUCCESS' }
   | { type: 'SAVE_ERROR'; payload: string }
-  | { type: 'SHOW_ADD_FORM' }
+  | { type: 'SHOW_ADD_FORM'; payload: { area: string } }
   | { type: 'CANCEL_ADD' }
   | { type: 'SET_ADD_FIELD'; payload: { field: AddField; value: string } }
   | { type: 'ADD_START' }
@@ -86,7 +94,8 @@ const INITIAL_STATE: MensaisState = {
   isSaving: false,
   saveError: null,
   isAddFormOpen: false,
-  ...EMPTY_ADD_FORM,
+  ...EMPTY_ADD_FORM_FIELDS,
+  newArea: 'Brasil',
   isAdding: false,
   addError: null,
   deletingBillId: null,
@@ -126,15 +135,15 @@ function reducer(state: MensaisState, action: MensaisAction): MensaisState {
     case 'SAVE_ERROR':
       return { ...state, isSaving: false, saveError: action.payload }
     case 'SHOW_ADD_FORM':
-      return { ...state, isAddFormOpen: true, ...EMPTY_ADD_FORM, addError: null }
+      return { ...state, isAddFormOpen: true, ...EMPTY_ADD_FORM_FIELDS, newArea: action.payload.area, addError: null }
     case 'CANCEL_ADD':
-      return { ...state, isAddFormOpen: false, ...EMPTY_ADD_FORM, addError: null }
+      return { ...state, isAddFormOpen: false, ...EMPTY_ADD_FORM_FIELDS, addError: null }
     case 'SET_ADD_FIELD':
       return { ...state, [action.payload.field]: action.payload.value }
     case 'ADD_START':
       return { ...state, isAdding: true, addError: null }
     case 'ADD_SUCCESS':
-      return { ...state, isAdding: false, isAddFormOpen: false, ...EMPTY_ADD_FORM }
+      return { ...state, isAdding: false, isAddFormOpen: false, ...EMPTY_ADD_FORM_FIELDS }
     case 'ADD_ERROR':
       return { ...state, isAdding: false, addError: action.payload }
     case 'DELETE_START':
@@ -256,7 +265,7 @@ export function useMensais(): MensaisData {
     [],
   )
 
-  const showAddForm = useCallback(() => dispatch({ type: 'SHOW_ADD_FORM' }), [])
+  const showAddForm = useCallback(() => dispatch({ type: 'SHOW_ADD_FORM', payload: { area: defaultArea() } }), [])
 
   const cancelAdd = useCallback(() => dispatch({ type: 'CANCEL_ADD' }), [])
 
@@ -289,6 +298,7 @@ export function useMensais(): MensaisData {
     void apiClient
       .createMensaisBill(request)
       .then(() => {
+        setStoredDefault(AREA_KEY, state.newArea)
         dispatch({ type: 'ADD_SUCCESS' })
         dispatch({ type: 'RETRY' })
       })

@@ -159,6 +159,11 @@ public class ControleMaeViewModel : ViewModelBase
     private bool _isCreating;
     private string? _createSaveError;
 
+    // Persistent create-form defaults (P38-F10) - read on the next ShowCreateForm, written back
+    // after every successful create.
+    private DateTime? _lastUsedCreateDate;
+    private string? _lastUsedCreateCurrency;
+
     public bool IsCreateFormOpen
     {
         get => _isCreateFormOpen;
@@ -221,10 +226,10 @@ public class ControleMaeViewModel : ViewModelBase
     private void ShowCreateForm()
     {
         CloseAllForms();
-        CreateDate = DateTime.Today;
+        CreateDate = _lastUsedCreateDate ?? DateTime.Today;
         CreateDescription = string.Empty;
         CreateNote = string.Empty;
-        CreateCurrency = Currencies[0];
+        CreateCurrency = _lastUsedCreateCurrency is { } lastCurrency && Currencies.Contains(lastCurrency) ? lastCurrency : Currencies[0];
         CreateValue = string.Empty;
         CreateSaveError = null;
         IsCreateFormOpen = true;
@@ -250,6 +255,9 @@ public class ControleMaeViewModel : ViewModelBase
                 SourceCurrency = CreateCurrency,
                 SourceValue = decimal.Parse(CreateValue),
             });
+
+            _lastUsedCreateDate = CreateDate;
+            _lastUsedCreateCurrency = CreateCurrency;
 
             CloseCreateForm();
             await Task.WhenAll(RefreshEntriesAsync(), RefreshTotalsAsync());

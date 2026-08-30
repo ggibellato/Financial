@@ -69,6 +69,7 @@ describe('useMensais', () => {
     deleteMensaisBillMock.mockReset()
     resetMensaisToUnsetMock.mockReset()
     getMensaisBillsMock.mockResolvedValue(BILLS)
+    sessionStorage.clear()
   })
 
   it('fetches the bill list once on mount, defaulting the display month to today', async () => {
@@ -179,6 +180,39 @@ describe('useMensais', () => {
 
     await waitFor(() => expect(result.current.addError).toBe('Description is required'))
     expect(createMensaisBillMock).not.toHaveBeenCalled()
+  })
+
+  it('showAddForm defaults area to Brasil when nothing was persisted yet', async () => {
+    const { result } = renderHook(() => useMensais())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showAddForm())
+
+    expect(result.current.newArea).toBe('Brasil')
+  })
+
+  it('persists the area after a successful add, for the next add form', async () => {
+    createMensaisBillMock.mockResolvedValue({
+      id: 'b3', dueDay: 5, description: 'Council Tax top-up', value: 100, area: 'UK', note: '',
+      nitNumber: null, minimumWageValue: null, status: 'Unset',
+    })
+    const { result } = renderHook(() => useMensais())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    act(() => result.current.showAddForm())
+    act(() => result.current.setAddField('newArea', 'UK'))
+    act(() => result.current.setAddField('newDescription', 'Council Tax top-up'))
+    act(() => result.current.setAddField('newDueDay', '5'))
+    act(() => result.current.setAddField('newValue', '100'))
+    act(() => result.current.submitAdd())
+    await waitFor(() => expect(createMensaisBillMock).toHaveBeenCalledTimes(1))
+
+    act(() => result.current.showAddForm())
+
+    expect(result.current.newArea).toBe('UK')
+    expect(result.current.newDescription).toBe('')
+    expect(result.current.newValue).toBe('')
+    expect(result.current.newDueDay).toBe('')
+    expect(result.current.newNote).toBe('')
   })
 
   it('deletes a bill and re-fetches the bill list', async () => {
