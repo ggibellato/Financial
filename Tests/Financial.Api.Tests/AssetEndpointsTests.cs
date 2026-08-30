@@ -240,6 +240,86 @@ public class AssetEndpointsTests : ApiEndpointTests
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
+    [Fact]
+    public async Task GetAssets_ReturnsAcrossActiveAndHistoricBrokers()
+    {
+        var response = await Client.GetAsync("/api/v1/financial/assets");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var assets = await response.Content.ReadFromJsonAsync<List<AssetAdminDTO>>();
+        assets.Should().Contain(a => a.Name == "BCIA11" && a.BrokerStatus == "Active");
+        assets.Should().Contain(a => a.Name == "CLOSEDASSET" && a.BrokerStatus == "Historic");
+    }
+
+    [Fact]
+    public async Task CreateAsset_UnderActiveBrokerPortfolio_SucceedsWithZeroQuantity()
+    {
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/assets", new AssetAdminCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            Name = "NEWASSET",
+            ISIN = "US0378331005",
+            Ticker = "NEW"
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var created = await response.Content.ReadFromJsonAsync<AssetAdminDTO>();
+        created!.Quantity.Should().Be(0);
+
+        var atNode = await Client.GetAsync("/api/v1/financial/assets/XPI/Default/NEWASSET");
+        atNode.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task CreateAsset_DuplicateNameInPortfolio_ReturnsConflict()
+    {
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/assets", new AssetAdminCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            Name = "BCIA11"
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+    }
+
+    [Fact]
+    public async Task CreateAsset_InvalidIsinFormat_ReturnsBadRequest()
+    {
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/assets", new AssetAdminCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            Name = "BADISIN",
+            ISIN = "NOT-AN-ISIN"
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task UpdateAsset_ExistingAsset_PersistsIdentityChangeRegardlessOfHistory()
+    {
+        var response = await Client.PutAsJsonAsync("/api/v1/financial/assets/XPI/Default/BCIA11", new AssetAdminUpdateDTO
+        {
+            Name = "BCIA11",
+            ISIN = "GB0002374006",
+            Exchange = "LSE",
+            Ticker = "BCIA11",
+            Country = CountryCode.UK,
+            Class = GlobalAssetClass.Equity
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var updated = await Client.GetFromJsonAsync<AssetDetailsDTO>("/api/v1/financial/assets/XPI/Default/BCIA11");
+        updated!.ISIN.Should().Be("GB0002374006");
+        updated.Class.Should().Be(GlobalAssetClass.Equity);
+    }
+
     /// <summary>Sells the whole Active position so the asset becomes archivable.</summary>
     private async Task CloseOutActiveAssetAsync()
     {
