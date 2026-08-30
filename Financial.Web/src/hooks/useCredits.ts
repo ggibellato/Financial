@@ -4,11 +4,16 @@ import type { CreditDto, SelectedNode } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
 import type { PeriodFilterOption } from '../utils/periodFilter'
 import { DEFAULT_FILTER, getPeriodFilterStartDate } from '../utils/periodFilter'
-import { formatMonthKey, getErrorMessage, parseValidatedNumber, toInputDate } from '../utils/formatters'
+import { formatMonthKey, getErrorMessage, parseValidatedNumber, toInputDate, todayIsoDate } from '../utils/formatters'
+import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
 
 export type ViewMode = 'Stacked' | 'Grouped'
 export type ChartType = 'Bar' | 'Line'
 export type CreditFormField = 'formDate' | 'formType' | 'formValue'
+
+const DATE_KEY = 'investmentCredit.date'
+const TYPE_KEY = 'investmentCredit.type'
+const TYPES = ['Dividend', 'Rent', 'JCP']
 
 export interface MonthBucket {
   month: string
@@ -53,7 +58,7 @@ type CreditsAction =
   | { type: 'SET_FILTER'; payload: { filter: PeriodFilterOption; key: string } }
   | { type: 'SET_MODE'; payload: { mode: ViewMode; key: string } }
   | { type: 'SET_CHART_TYPE'; payload: { chartType: ChartType; key: string } }
-  | { type: 'SHOW_NEW_FORM' }
+  | { type: 'SHOW_NEW_FORM'; payload: { date: string; type: string } }
   | { type: 'SHOW_EDIT_FORM'; payload: CreditDto }
   | { type: 'CANCEL_FORM' }
   | { type: 'SET_FORM_FIELD'; payload: { field: CreditFormField; value: string } }
@@ -140,8 +145,8 @@ function reducer(state: CreditsState, action: CreditsAction): CreditsState {
         ...state,
         isFormVisible: true,
         editingId: null,
-        formDate: '',
-        formType: 'Dividend',
+        formDate: action.payload.date,
+        formType: action.payload.type,
         formValue: '',
         saveError: null,
         isSaving: false,
@@ -334,7 +339,16 @@ export function useCredits(): CreditsData {
     [selectedNode],
   )
 
-  const showNewForm = useCallback(() => dispatch({ type: 'SHOW_NEW_FORM' }), [])
+  const showNewForm = useCallback(() => {
+    const storedType = getStoredDefault(TYPE_KEY)
+    dispatch({
+      type: 'SHOW_NEW_FORM',
+      payload: {
+        date: getStoredDefault(DATE_KEY) ?? todayIsoDate(),
+        type: storedType && TYPES.includes(storedType) ? storedType : 'Dividend',
+      },
+    })
+  }, [])
 
   const showEditForm = useCallback(
     (credit: CreditDto) => dispatch({ type: 'SHOW_EDIT_FORM', payload: credit }),
@@ -379,7 +393,11 @@ export function useCredits(): CreditsData {
       : apiClient.addCredit(base)
 
     void call
-      .then((result) => dispatch({ type: 'SAVE_SUCCESS', payload: result.credits }))
+      .then((result) => {
+        setStoredDefault(DATE_KEY, formDate)
+        setStoredDefault(TYPE_KEY, formType)
+        dispatch({ type: 'SAVE_SUCCESS', payload: result.credits })
+      })
       .catch((err: unknown) => {
         dispatch({
           type: 'SAVE_ERROR',

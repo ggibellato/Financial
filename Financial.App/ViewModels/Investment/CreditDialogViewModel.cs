@@ -112,7 +112,10 @@ public sealed class CreditDialogViewModel : ViewModelBase
         Validate();
     }
 
-    public static CreditDialogViewModel CreateForAdd(string brokerName, string portfolioName, string assetName)
+    public static CreditDialogViewModel CreateForAdd(string brokerName, string portfolioName, string assetName) =>
+        CreateForAdd(brokerName, portfolioName, assetName, DateTime.Today, "Dividend");
+
+    public static CreditDialogViewModel CreateForAdd(string brokerName, string portfolioName, string assetName, DateTime date, string type)
     {
         return new CreditDialogViewModel(
             CreditDialogMode.Add,
@@ -120,8 +123,8 @@ public sealed class CreditDialogViewModel : ViewModelBase
             portfolioName,
             assetName,
             Guid.Empty,
-            DateTime.Today,
-            "Dividend",
+            date,
+            type,
             0);
     }
 

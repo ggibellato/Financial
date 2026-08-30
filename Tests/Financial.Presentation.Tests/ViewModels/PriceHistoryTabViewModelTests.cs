@@ -113,6 +113,21 @@ public class PriceHistoryTabViewModelTests
     }
 
     [Fact]
+    public async Task AddPriceCommand_AfterSuccessfulSet_PersistsDateForNextOpen()
+    {
+        var expectedDetails = new AssetDetailsDTO { Name = AssetName, BrokerName = BrokerName, PortfolioName = PortfolioName, Ticker = "T" };
+        var service = new StubPriceService { SetResult = expectedDetails };
+        var (viewModel, _, _) = Build(service: service);
+        var usedDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-3));
+
+        await viewModel.Set(() => AsForm(new PriceDialogData(usedDate, 42.5m)));
+
+        viewModel.AddPriceCommand.Execute(null);
+
+        viewModel.PriceFormViewModel!.Date.Should().Be(usedDate.ToDateTime(TimeOnly.MinValue));
+    }
+
+    [Fact]
     public async Task Delete_NullSelectedEntry_DoesNotCallService()
     {
         var (viewModel, service, _) = Build();

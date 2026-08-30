@@ -41,6 +41,12 @@ public class CreditsTabViewModel : ViewModelBase
     private CreditDialogViewModel? _creditFormViewModel;
     private bool _isCreditFormOpen;
 
+    // Persistent create-form defaults (P38-F10) - read on the next ShowAddCreditFormAsync,
+    // written back after every successful add. Not scoped per-asset, matching Web's global
+    // sessionStorage-backed persistence.
+    private DateTime? _lastUsedCreditDate;
+    private string? _lastUsedCreditType;
+
     public CreditsTabViewModel(
         ICreditService? creditService,
         Func<bool> hasContext,
@@ -203,6 +209,9 @@ public class CreditsTabViewModel : ViewModelBase
             return;
         }
 
+        _lastUsedCreditDate = dialogData.Value.Date;
+        _lastUsedCreditType = normalizedType;
+
         _applyDetails(updatedDetails);
     }
 
@@ -332,7 +341,10 @@ public class CreditsTabViewModel : ViewModelBase
     }
 
     private Task<CreditDialogData?> ShowAddCreditFormAsync() =>
-        ShowCreditFormAsync(CreditDialogViewModel.CreateForAdd(_brokerName(), _portfolioName(), _assetName()));
+        ShowCreditFormAsync(CreditDialogViewModel.CreateForAdd(
+            _brokerName(), _portfolioName(), _assetName(),
+            _lastUsedCreditDate ?? DateTime.Today,
+            _lastUsedCreditType ?? "Dividend"));
 
     private Task<CreditDialogData?> ShowUpdateCreditFormAsync()
     {

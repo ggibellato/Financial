@@ -78,6 +78,7 @@ describe('usePriceHistory', () => {
     getAssetDetailsMock.mockReset()
     setAssetPriceMock.mockReset()
     deleteAssetPriceMock.mockReset()
+    sessionStorage.clear()
   })
 
   it('returns_initial_empty_state', () => {
@@ -167,16 +168,38 @@ describe('usePriceHistory', () => {
     await waitFor(() => expect(result.current.selectedFilter).toBe('all-time'))
   })
 
-  it('show_new_form_opens_blank_form', async () => {
+  it('show_new_form_opens_blank_form_defaulting_date_to_today', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
     const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => usePriceHistory(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.entries).toHaveLength(2))
     act(() => result.current.showNewForm())
+    const today = new Date().toISOString().slice(0, 10)
     expect(result.current.isFormVisible).toBe(true)
     expect(result.current.editingDate).toBeNull()
-    expect(result.current.formDate).toBe('')
+    expect(result.current.formDate).toBe(today)
+    expect(result.current.formPrice).toBe('')
+  })
+
+  it('persists date after a successful save, for the next new-entry form', async () => {
+    getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
+    setAssetPriceMock.mockResolvedValue({ ...ASSET_DETAILS, priceHistory: [ENTRY_A, ENTRY_B] })
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => usePriceHistory(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.entries).toHaveLength(2))
+    act(() => result.current.showNewForm())
+    act(() => {
+      result.current.setFormField('formDate', '2026-08-20')
+      result.current.setFormField('formPrice', '50')
+    })
+    act(() => result.current.saveForm())
+    await waitFor(() => expect(setAssetPriceMock).toHaveBeenCalledTimes(1))
+
+    act(() => result.current.showNewForm())
+
+    expect(result.current.formDate).toBe('2026-08-20')
     expect(result.current.formPrice).toBe('')
   })
 
@@ -237,6 +260,7 @@ describe('usePriceHistory', () => {
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.entries).toHaveLength(2))
     act(() => result.current.showNewForm())
+    act(() => result.current.setFormField('formDate', ''))
     act(() => result.current.setFormField('formPrice', '50'))
     act(() => result.current.saveForm())
     expect(result.current.saveError).not.toBeNull()
