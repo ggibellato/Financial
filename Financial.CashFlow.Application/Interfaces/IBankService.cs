@@ -5,6 +5,9 @@ namespace Financial.CashFlow.Application.Interfaces;
 public interface IBankService
 {
     IReadOnlyList<BankDTO> GetBanks();
+    Task<BankDTO> CreateBankAsync(BankCreateDTO request);
+    Task<BankDTO> UpdateBankAsync(Guid id, BankUpdateDTO request);
+    Task DeleteBankAsync(Guid id);
     Task<BankDTO> UpdateOpeningBalanceAsync(Guid id, BankOpeningBalanceUpdateDTO request);
     IReadOnlyList<BankBalanceDTO> GetBankBalancesByMonth(int year, int month);
     decimal GetBankBalanceAsOf(Guid bankId, DateOnly asOfDate, Guid? excludingAdjustmentId = null);

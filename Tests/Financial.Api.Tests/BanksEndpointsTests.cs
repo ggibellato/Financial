@@ -28,6 +28,116 @@ public class BanksEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
+    public async Task CreateBank_ValidRequest_ReturnsOkWithNewBank()
+    {
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/banks", new BankCreateDTO { Name = "Monzo", RoundUpEnabled = true });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var bank = await response.Content.ReadFromJsonAsync<BankDTO>();
+        bank!.Name.Should().Be("Monzo");
+        bank.RoundUpEnabled.Should().BeTrue();
+        bank.Id.Should().NotBe(Guid.Empty);
+    }
+
+    [Fact]
+    public async Task CreateBank_DuplicateName_ReturnsConflictWithMessage()
+    {
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/banks", new BankCreateDTO { Name = "Barclays", RoundUpEnabled = false });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        var body = await response.Content.ReadAsStringAsync();
+        body.Should().Contain("Barclays").And.Contain("already exists");
+    }
+
+    [Fact]
+    public async Task CreateBank_BlankName_ReturnsBadRequest()
+    {
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/banks", new BankCreateDTO { Name = "   ", RoundUpEnabled = false });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task UpdateBank_ValidRequest_ReturnsOkAndUpdatesFields()
+    {
+        var response = await Client.PutAsJsonAsync($"/api/v1/financial/banks/{ChaseId}", new BankUpdateDTO { Name = "Chase Renamed", RoundUpEnabled = false });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var bank = await response.Content.ReadFromJsonAsync<BankDTO>();
+        bank!.Name.Should().Be("Chase Renamed");
+        bank.RoundUpEnabled.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task UpdateBank_UnknownId_ReturnsNotFound()
+    {
+        var response = await Client.PutAsJsonAsync($"/api/v1/financial/banks/{Guid.NewGuid()}", new BankUpdateDTO { Name = "X", RoundUpEnabled = false });
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task UpdateBank_NameCollidesWithAnotherBank_ReturnsConflict()
+    {
+        var response = await Client.PutAsJsonAsync($"/api/v1/financial/banks/{ChaseId}", new BankUpdateDTO { Name = "Barclays", RoundUpEnabled = false });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+    }
+
+    [Fact]
+    public async Task DeleteBank_WithNoReferences_ReturnsOkAndRemovesIt()
+    {
+        var created = await Client.PostAsJsonAsync("/api/v1/financial/banks", new BankCreateDTO { Name = "Monzo", RoundUpEnabled = false });
+        var bank = await created.Content.ReadFromJsonAsync<BankDTO>();
+
+        var response = await Client.DeleteAsync($"/api/v1/financial/banks/{bank!.Id}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var banks = await (await Client.GetAsync("/api/v1/financial/banks")).Content.ReadFromJsonAsync<List<BankDTO>>();
+        banks.Should().NotContain(b => b.Id == bank.Id);
+    }
+
+    [Fact]
+    public async Task DeleteBank_UnknownId_ReturnsNotFound()
+    {
+        var response = await Client.DeleteAsync($"/api/v1/financial/banks/{Guid.NewGuid()}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task DeleteBank_ReferencedByBalanceAdjustment_ReturnsConflictWithMessage()
+    {
+        await Client.PostAsJsonAsync($"/api/v1/financial/banks/{BarclaysId}/adjustments", new BalanceAdjustmentCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 5),
+            TargetBalance = 150m
+        });
+
+        var response = await Client.DeleteAsync($"/api/v1/financial/banks/{BarclaysId}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        var body = await response.Content.ReadAsStringAsync();
+        body.Should().Contain("balance history or transactions");
+    }
+
+    [Fact]
+    public async Task DeleteBank_ReferencedByTransfer_ReturnsConflict()
+    {
+        await Client.PostAsJsonAsync("/api/v1/financial/transfers", new TransferCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 5),
+            SourceBankId = BarclaysId,
+            DestinationBankId = Trading212Id,
+            Amount = 500m
+        });
+
+        var response = await Client.DeleteAsync($"/api/v1/financial/banks/{Trading212Id}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+    }
+
+    [Fact]
     public async Task UpdateOpeningBalance_ValidRequest_ReturnsOkAndUpdatesFields()
     {
         var request = new BankOpeningBalanceUpdateDTO

@@ -498,6 +498,21 @@
         ],
         "type": "object"
       },
+      "BankCreateDTO": {
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "roundUpEnabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "roundUpEnabled"
+        ],
+        "type": "object"
+      },
       "BankDTO": {
         "properties": {
           "id": {
@@ -542,6 +557,21 @@
         "required": [
           "openingBalance",
           "openingBalanceDate"
+        ],
+        "type": "object"
+      },
+      "BankUpdateDTO": {
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "roundUpEnabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "roundUpEnabled"
         ],
         "type": "object"
       },
@@ -3603,6 +3633,74 @@
         "tags": [
           "Banks"
         ]
+      },
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/*\u002Bjson": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/BankCreateDTO"
+                  }
+                ]
+              }
+            },
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/BankCreateDTO"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/BankCreateDTO"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BankDTO"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          }
+        },
+        "summary": "Creates a new bank.",
+        "tags": [
+          "Banks"
+        ]
       }
     },
     "/banks/month/{year}/{month}/balances": {
@@ -3647,6 +3745,141 @@
           }
         },
         "summary": "Returns each bank\u0027s balance as of the end of the given month.",
+        "tags": [
+          "Banks"
+        ]
+      }
+    },
+    "/banks/{id}": {
+      "delete": {
+        "parameters": [
+          {
+            "description": "The bank\u0027s identifier.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "summary": "Deletes a bank, when it has no balance history or transactions referencing it.",
+        "tags": [
+          "Banks"
+        ]
+      },
+      "put": {
+        "parameters": [
+          {
+            "description": "The bank\u0027s identifier.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/*\u002Bjson": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/BankUpdateDTO"
+                  }
+                ]
+              }
+            },
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/BankUpdateDTO"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/BankUpdateDTO"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BankDTO"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "summary": "Updates a bank\u0027s name and round-up setting.",
         "tags": [
           "Banks"
         ]

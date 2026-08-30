@@ -547,6 +547,9 @@ public class ControllerGuardClauseTests
     private sealed class StubBankService : IBankService
     {
         public IReadOnlyList<Financial.CashFlow.Application.DTOs.BankDTO> GetBanks() => throw new NotImplementedException();
+        public Task<Financial.CashFlow.Application.DTOs.BankDTO> CreateBankAsync(Financial.CashFlow.Application.DTOs.BankCreateDTO request) => throw new NotImplementedException();
+        public Task<Financial.CashFlow.Application.DTOs.BankDTO> UpdateBankAsync(Guid id, Financial.CashFlow.Application.DTOs.BankUpdateDTO request) => throw new NotImplementedException();
+        public Task DeleteBankAsync(Guid id) => throw new NotImplementedException();
         public Task<Financial.CashFlow.Application.DTOs.BankDTO> UpdateOpeningBalanceAsync(Guid id, Financial.CashFlow.Application.DTOs.BankOpeningBalanceUpdateDTO request) => throw new NotImplementedException();
         public IReadOnlyList<Financial.CashFlow.Application.DTOs.BankBalanceDTO> GetBankBalancesByMonth(int year, int month) => throw new NotImplementedException();
         public decimal GetBankBalanceAsOf(Guid bankId, DateOnly asOfDate, Guid? excludingAdjustmentId = null) => throw new NotImplementedException();
