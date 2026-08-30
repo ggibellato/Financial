@@ -12,4 +12,8 @@ public sealed class CategoryDTO
     public required bool IsInvestment { get; init; }
 
     public required bool IsTithe { get; init; }
+
+    /// <summary>Whether an expense still references this category - Delete is refused (409) while
+    /// this is true.</summary>
+    public required bool HasReferences { get; init; }
 }

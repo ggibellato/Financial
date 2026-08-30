@@ -8,6 +8,7 @@ export const AdminEntityPlaceholderPage = lazy(() => import('../pages/AdminEntit
 export const AssetsPage = lazy(() => import('../pages/AssetsPage'))
 export const BanksPage = lazy(() => import('../pages/BanksPage'))
 export const BrokersPage = lazy(() => import('../pages/BrokersPage'))
+export const CategoriesPage = lazy(() => import('../pages/CategoriesPage'))
 export const PortfoliosPage = lazy(() => import('../pages/PortfoliosPage'))
 export const AnnualSummaryPage = lazy(() => import('../pages/AnnualSummaryPage'))
 export const ControleMaePage = lazy(() => import('../pages/ControleMaePage'))

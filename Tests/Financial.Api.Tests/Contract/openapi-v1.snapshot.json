@@ -807,9 +807,35 @@
         ],
         "type": "object"
       },
+      "CategoryCreateDTO": {
+        "properties": {
+          "active": {
+            "type": "boolean"
+          },
+          "isInvestment": {
+            "type": "boolean"
+          },
+          "isTithe": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "active",
+          "isInvestment",
+          "isTithe"
+        ],
+        "type": "object"
+      },
       "CategoryDTO": {
         "properties": {
           "active": {
+            "type": "boolean"
+          },
+          "hasReferences": {
             "type": "boolean"
           },
           "id": {
@@ -831,7 +857,8 @@
           "name",
           "active",
           "isInvestment",
-          "isTithe"
+          "isTithe",
+          "hasReferences"
         ],
         "type": "object"
       },
@@ -902,6 +929,29 @@
           "resultadoMonthly",
           "resultadoAnnualTotal",
           "resultadoAverage"
+        ],
+        "type": "object"
+      },
+      "CategoryUpdateDTO": {
+        "properties": {
+          "active": {
+            "type": "boolean"
+          },
+          "isInvestment": {
+            "type": "boolean"
+          },
+          "isTithe": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "active",
+          "isInvestment",
+          "isTithe"
         ],
         "type": "object"
       },
@@ -4674,6 +4724,209 @@
           }
         },
         "summary": "Lists all categories, active and inactive.",
+        "tags": [
+          "Categories"
+        ]
+      },
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/*\u002Bjson": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CategoryCreateDTO"
+                  }
+                ]
+              }
+            },
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CategoryCreateDTO"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CategoryCreateDTO"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryDTO"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          }
+        },
+        "summary": "Creates a new category.",
+        "tags": [
+          "Categories"
+        ]
+      }
+    },
+    "/categories/{id}": {
+      "delete": {
+        "parameters": [
+          {
+            "description": "The category\u0027s identifier.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "summary": "Deletes a category, when no transaction still references it.",
+        "tags": [
+          "Categories"
+        ]
+      },
+      "put": {
+        "parameters": [
+          {
+            "description": "The category\u0027s identifier.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/*\u002Bjson": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CategoryUpdateDTO"
+                  }
+                ]
+              }
+            },
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CategoryUpdateDTO"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CategoryUpdateDTO"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryDTO"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "summary": "Updates a category\u0027s name and Active/IsInvestment/IsTithe flags.",
         "tags": [
           "Categories"
         ]

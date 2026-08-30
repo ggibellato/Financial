@@ -89,6 +89,8 @@ public class CashFlowData
 
     public void AddCategory(Category category) => _categories.Add(category);
 
+    public void RemoveCategory(Guid id) => _categories.RemoveAll(category => category.Id == id);
+
     public void AddIncome(Income income) => _incomes.Add(income);
 
     public void RemoveIncome(Guid id) => _incomes.RemoveById(id);

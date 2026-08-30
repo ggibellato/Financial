@@ -41,10 +41,10 @@ public class MonthlyViewModelTests
     /// form's live category picklist (F05) has something to select from in tests.</summary>
     private static readonly List<CategoryDTO> DefaultCategories =
     [
-        new() { Id = Guid.NewGuid(), Name = "Mercado", Active = true, IsInvestment = false, IsTithe = false },
-        new() { Id = Guid.NewGuid(), Name = "Extras", Active = true, IsInvestment = false, IsTithe = false },
-        new() { Id = Guid.NewGuid(), Name = "Viagem", Active = true, IsInvestment = false, IsTithe = false },
-        new() { Id = Guid.NewGuid(), Name = "Dizimo", Active = true, IsInvestment = false, IsTithe = true },
+        new() { Id = Guid.NewGuid(), Name = "Mercado", Active = true, IsInvestment = false, IsTithe = false, HasReferences = false },
+        new() { Id = Guid.NewGuid(), Name = "Extras", Active = true, IsInvestment = false, IsTithe = false, HasReferences = false },
+        new() { Id = Guid.NewGuid(), Name = "Viagem", Active = true, IsInvestment = false, IsTithe = false, HasReferences = false },
+        new() { Id = Guid.NewGuid(), Name = "Dizimo", Active = true, IsInvestment = false, IsTithe = true, HasReferences = false },
     ];
 
     private static (MonthlyViewModel ViewModel, StubExpenseService Expenses, StubIncomeService Incomes, StubBankService Banks, StubTitheService Tithe, StubCreditCardService CreditCards) CreateViewModel(

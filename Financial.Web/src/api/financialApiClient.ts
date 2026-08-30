@@ -20,9 +20,11 @@ import type {
   CalculateXirrRequestDto,
   CardStatementDto,
   CategoryAnnualAverageDto,
+  CategoryCreateDto,
   CategoryDto,
   CategoryTotalDto,
   CategoryTotalsAnnualDto,
+  CategoryUpdateDto,
   ExpenseCreateDto,
   MaeLedgerEntryCreateDto,
   RecurringBillCreateDto,
@@ -158,6 +160,9 @@ export interface FinancialApiClient {
   deleteBank: (id: string) => Promise<void>
   getIncomeSources: () => Promise<IncomeSourceDto[]>
   getCategories: () => Promise<CategoryDto[]>
+  createCategory: (request: CategoryCreateDto) => Promise<CategoryDto>
+  updateCategory: (id: string, request: CategoryUpdateDto) => Promise<CategoryDto>
+  deleteCategory: (id: string) => Promise<void>
   getCreditCards: () => Promise<CreditCardDto[]>
   updateCreditCard: (id: string, request: CreditCardUpdateDto) => Promise<CreditCardDto>
   getBankBalancesByMonth: (year: number, month: number) => Promise<BankBalanceDto[]>
@@ -468,6 +473,14 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
     deleteBank: (id) => requestVoid(`/banks/${encodeURIComponent(id)}`, { method: 'DELETE' }),
     getIncomeSources: () => request<IncomeSourceDto[]>('/income-sources'),
     getCategories: () => request<CategoryDto[]>('/categories'),
+    createCategory: (requestBody) =>
+      request<CategoryDto>('/categories', { method: 'POST', body: JSON.stringify(requestBody) }),
+    updateCategory: (id, requestBody) =>
+      request<CategoryDto>(`/categories/${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        body: JSON.stringify(requestBody),
+      }),
+    deleteCategory: (id) => requestVoid(`/categories/${encodeURIComponent(id)}`, { method: 'DELETE' }),
     getCreditCards: () => request<CreditCardDto[]>('/credit-cards'),
     updateCreditCard: (id, requestBody) =>
       request<CreditCardDto>(`/credit-cards/${encodeURIComponent(id)}`, {

@@ -324,6 +324,38 @@ internal sealed class StubCategoryService : ICategoryService
     public List<CategoryDTO> Categories { get; set; } = [];
 
     public IReadOnlyList<CategoryDTO> GetCategories() => Categories;
+
+    public Task<CategoryDTO> CreateCategoryAsync(CategoryCreateDTO request)
+    {
+        var created = new CategoryDTO
+        {
+            Id = Guid.NewGuid(),
+            Name = request.Name,
+            Active = request.Active,
+            IsInvestment = request.IsInvestment,
+            IsTithe = request.IsTithe,
+            HasReferences = false,
+        };
+        Categories.Add(created);
+        return Task.FromResult(created);
+    }
+
+    public Task<CategoryDTO> UpdateCategoryAsync(Guid id, CategoryUpdateDTO request) =>
+        Task.FromResult(new CategoryDTO
+        {
+            Id = id,
+            Name = request.Name,
+            Active = request.Active,
+            IsInvestment = request.IsInvestment,
+            IsTithe = request.IsTithe,
+            HasReferences = false,
+        });
+
+    public Task DeleteCategoryAsync(Guid id)
+    {
+        Categories.RemoveAll(c => c.Id == id);
+        return Task.CompletedTask;
+    }
 }
 
 internal sealed class StubReserveService : IReserveService

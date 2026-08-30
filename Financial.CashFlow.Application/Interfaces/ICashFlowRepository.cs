@@ -40,6 +40,8 @@ public interface ICashFlowRepository
     IEnumerable<CreditCard> GetCreditCards();
 
     IEnumerable<Category> GetCategories();
+    void AddCategory(Category category);
+    void DeleteCategory(Guid id);
 
     IEnumerable<Income> GetIncomes();
     void AddIncome(Income income);

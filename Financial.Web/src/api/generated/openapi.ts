@@ -1335,8 +1335,145 @@ export interface paths {
             };
         };
         put?: never;
-        post?: never;
+        /** Creates a new category. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/*+json": null | components["schemas"]["CategoryCreateDTO"];
+                    "application/json": null | components["schemas"]["CategoryCreateDTO"];
+                    "text/json": null | components["schemas"]["CategoryCreateDTO"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CategoryDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/categories/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Updates a category's name and Active/IsInvestment/IsTithe flags. */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The category's identifier. */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/*+json": null | components["schemas"]["CategoryUpdateDTO"];
+                    "application/json": null | components["schemas"]["CategoryUpdateDTO"];
+                    "text/json": null | components["schemas"]["CategoryUpdateDTO"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CategoryDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        /** Deletes a category, when no transaction still references it. */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The category's identifier. */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
         options?: never;
         head?: never;
         patch?: never;
@@ -4699,8 +4836,15 @@ export interface components {
             /** Format: double */
             value: number;
         };
+        CategoryCreateDTO: {
+            active: boolean;
+            isInvestment: boolean;
+            isTithe: boolean;
+            name: string;
+        };
         CategoryDTO: {
             active: boolean;
+            hasReferences: boolean;
             /** Format: uuid */
             id: string;
             isInvestment: boolean;
@@ -4725,6 +4869,12 @@ export interface components {
             /** Format: double */
             totalDespesasAverage: number;
             totalDespesasMonthly: number[];
+        };
+        CategoryUpdateDTO: {
+            active: boolean;
+            isInvestment: boolean;
+            isTithe: boolean;
+            name: string;
         };
         /** @enum {unknown} */
         CountryCode: "Unknown" | "BR" | "US" | "UK";

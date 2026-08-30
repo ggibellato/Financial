@@ -23,10 +23,10 @@ const BANKS: BankDto[] = [
 ]
 
 const CATEGORIES: CategoryDto[] = [
-  { id: 'category-mercado', name: 'Mercado', active: true, isInvestment: false, isTithe: false },
-  { id: 'category-extras', name: 'Extras', active: true, isInvestment: false, isTithe: false },
-  { id: 'category-reserva', name: 'Reserva', active: false, isInvestment: false, isTithe: false },
-  { id: 'category-dizimo', name: 'Dizimo', active: true, isInvestment: false, isTithe: true },
+  { id: 'category-mercado', name: 'Mercado', active: true, isInvestment: false, isTithe: false, hasReferences: false },
+  { id: 'category-extras', name: 'Extras', active: true, isInvestment: false, isTithe: false, hasReferences: false },
+  { id: 'category-reserva', name: 'Reserva', active: false, isInvestment: false, isTithe: false, hasReferences: false },
+  { id: 'category-dizimo', name: 'Dizimo', active: true, isInvestment: false, isTithe: true, hasReferences: false },
 ]
 
 const EXPENSE: ExpenseDto = {
