@@ -1,5 +1,17 @@
-import { Button, MessageBar, MessageBarBody, makeStyles, tokens } from '@fluentui/react-components'
-import { AddRegular, DeleteRegular } from '@fluentui/react-icons'
+import {
+  Button,
+  MessageBar,
+  MessageBarBody,
+  Table,
+  TableBody,
+  TableCell,
+  TableHeader,
+  TableHeaderCell,
+  TableRow,
+  makeStyles,
+  tokens,
+} from '@fluentui/react-components'
+import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import type { IncomeDto } from '../api/types'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import ColumnFilterMenu from './grid/ColumnFilterMenu'
@@ -27,34 +39,34 @@ interface IncomeRowProps {
 
 function IncomeRow({ income, onEdit, onDelete }: IncomeRowProps) {
   return (
-    <tr>
-      <td>
-        <button
-          className="data-table__action-btn"
-          type="button"
+    <TableRow>
+      <TableCell>
+        <Button
+          appearance="subtle"
+          size="small"
+          icon={<EditRegular />}
           aria-label="Edit income"
           onClick={() => onEdit(income)}
-        >
-          ✏
-        </button>
-      </td>
-      <td>
-        <button
-          className="data-table__action-btn"
-          type="button"
+        />
+      </TableCell>
+      <TableCell>
+        <Button
+          appearance="subtle"
+          size="small"
+          icon={<DeleteRegular />}
           aria-label="Delete income"
           onClick={() => onDelete(income.id)}
-        >
-          <DeleteRegular />
-        </button>
-      </td>
-      <td>{formatShortDate(income.date)}</td>
-      <td>{income.incomeSourceName}</td>
-      <td className="data-table__col--numeric">{income.grossValue != null ? formatN2(income.grossValue) : '—'}</td>
-      <td className="data-table__col--numeric">{formatN2(income.netValue)}</td>
-      <td>{income.bankName ?? '—'}</td>
-      <td>{income.description ?? ''}</td>
-    </tr>
+        />
+      </TableCell>
+      <TableCell>{formatShortDate(income.date)}</TableCell>
+      <TableCell>{income.incomeSourceName}</TableCell>
+      <TableCell className="data-table__col--numeric">
+        {income.grossValue != null ? formatN2(income.grossValue) : '—'}
+      </TableCell>
+      <TableCell className="data-table__col--numeric">{formatN2(income.netValue)}</TableCell>
+      <TableCell>{income.bankName ?? '—'}</TableCell>
+      <TableCell>{income.description ?? ''}</TableCell>
+    </TableRow>
   )
 }
 
@@ -104,11 +116,11 @@ export default function IncomeSection({
         </MessageBar>
       )}
       <div className="income-section__table-wrapper">
-        <table className="income-section__table data-table">
-          <thead>
-            <tr>
-              <th />
-              <th />
+        <Table className="income-section__table data-table">
+          <TableHeader>
+            <TableRow>
+              <TableHeaderCell />
+              <TableHeaderCell />
               <SortableColumnHeader
                 label="Date"
                 columnKey="date"
@@ -157,20 +169,20 @@ export default function IncomeSection({
                 sortDirection={sortState?.columnKey === 'description' ? sortState.direction : undefined}
                 onSort={requestSort}
               />
-            </tr>
-          </thead>
-          <tbody>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {sortedRows.length === 0 && isColumnFiltered('bank') ? (
-              <tr>
-                <td colSpan={8}>No rows match the current filters</td>
-              </tr>
+              <TableRow>
+                <TableCell colSpan={8}>No rows match the current filters</TableCell>
+              </TableRow>
             ) : (
               sortedRows.map((income) => (
                 <IncomeRow key={income.id} income={income} onEdit={onEdit} onDelete={onDelete} />
               ))
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </section>
   )

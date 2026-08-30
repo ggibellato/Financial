@@ -1,5 +1,5 @@
-import { Button } from '@fluentui/react-components'
-import { AddRegular, DeleteRegular } from '@fluentui/react-icons'
+import { Button, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
+import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import type { BalanceAdjustmentDto, TransferDto } from '../api/types'
 import type { BankOperationEntry } from '../hooks/useBankOperations'
 import SortableColumnHeader from './grid/SortableColumnHeader'
@@ -21,33 +21,31 @@ function OperationRow({ entry, onEditTransfer, onEditAdjustment, onDeleteTransfe
   const isTransfer = entry.kind === 'transfer'
 
   return (
-    <tr>
-      <td>
-        <button
-          className="data-table__action-btn"
-          type="button"
+    <TableRow>
+      <TableCell>
+        <Button
+          appearance="subtle"
+          size="small"
+          icon={<EditRegular />}
           aria-label={isTransfer ? 'Edit transfer' : 'Edit balance adjustment'}
           onClick={() => (isTransfer ? onEditTransfer(entry.transfer) : onEditAdjustment(entry.adjustment))}
-        >
-          ✏
-        </button>
-      </td>
-      <td>
-        <button
-          className="data-table__action-btn"
-          type="button"
+        />
+      </TableCell>
+      <TableCell>
+        <Button
+          appearance="subtle"
+          size="small"
+          icon={<DeleteRegular />}
           aria-label={isTransfer ? 'Delete transfer' : 'Delete balance adjustment'}
           onClick={() => (isTransfer ? onDeleteTransfer(entry.id) : onDeleteAdjustment(entry.bankId, entry.id))}
-        >
-          <DeleteRegular />
-        </button>
-      </td>
-      <td>{formatShortDate(entry.date)}</td>
-      <td>{isTransfer ? 'Transfer' : 'Adjustment'}</td>
-      <td>{isTransfer ? `${entry.sourceBank} → ${entry.destinationBank}` : entry.bank}</td>
-      <td className="data-table__col--numeric">{formatN2(isTransfer ? entry.amount : entry.delta)}</td>
-      <td>{entry.note ?? ''}</td>
-    </tr>
+        />
+      </TableCell>
+      <TableCell>{formatShortDate(entry.date)}</TableCell>
+      <TableCell>{isTransfer ? 'Transfer' : 'Adjustment'}</TableCell>
+      <TableCell>{isTransfer ? `${entry.sourceBank} → ${entry.destinationBank}` : entry.bank}</TableCell>
+      <TableCell className="data-table__col--numeric">{formatN2(isTransfer ? entry.amount : entry.delta)}</TableCell>
+      <TableCell>{entry.note ?? ''}</TableCell>
+    </TableRow>
   )
 }
 
@@ -104,11 +102,11 @@ export default function BankOperationsSection({
         <p className="bank-operations-section__empty">No transfers or balance corrections this month.</p>
       ) : (
         <div className="bank-operations-section__table-wrapper">
-          <table className="bank-operations-section__table data-table">
-            <thead>
-              <tr>
-                <th />
-                <th />
+          <Table className="bank-operations-section__table data-table">
+            <TableHeader>
+              <TableRow>
+                <TableHeaderCell />
+                <TableHeaderCell />
                 <SortableColumnHeader
                   label="Date"
                   columnKey="date"
@@ -150,13 +148,13 @@ export default function BankOperationsSection({
                   sortDirection={sortState?.columnKey === 'note' ? sortState.direction : undefined}
                   onSort={requestSort}
                 />
-              </tr>
-            </thead>
-            <tbody>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {sortedRows.length === 0 ? (
-                <tr>
-                  <td colSpan={7}>No rows match the current filters</td>
-                </tr>
+                <TableRow>
+                  <TableCell colSpan={7}>No rows match the current filters</TableCell>
+                </TableRow>
               ) : (
                 sortedRows.map((entry) => (
                   <OperationRow
@@ -169,8 +167,8 @@ export default function BankOperationsSection({
                   />
                 ))
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
     </section>
