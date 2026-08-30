@@ -47,6 +47,63 @@ public class Broker
         return portfolio;
     }
 
+    /// <summary>
+    /// Registers a new portfolio, rejecting a name already in use under this broker.
+    /// </summary>
+    /// <remarks>
+    /// Distinct from <see cref="AddPortfolio"/>, which the existing Move-asset workflow relies on to
+    /// silently reuse a same-named portfolio as its destination. An explicit Admin create must refuse
+    /// a duplicate instead, so this is a separate method rather than a flag on that one.
+    /// </remarks>
+    /// <exception cref="ArgumentException">The name is blank or whitespace.</exception>
+    /// <exception cref="InvestmentRuleViolationException">A portfolio by that name already exists.</exception>
+    public Portfolio CreatePortfolio(string name)
+    {
+        var trimmed = string.IsNullOrWhiteSpace(name)
+            ? throw new ArgumentException("A portfolio name is required.", nameof(name))
+            : name.Trim();
+
+        if (FindPortfolio(trimmed) is not null)
+        {
+            throw new InvestmentRuleViolationException(
+                $"Broker \"{Name}\" already has a portfolio named \"{trimmed}\".");
+        }
+
+        var portfolio = Portfolio.Create(trimmed);
+        _portfolios.Add(portfolio);
+        return portfolio;
+    }
+
+    /// <summary>
+    /// Renames an existing portfolio, rejecting a new name already in use under this broker.
+    /// </summary>
+    /// <remarks>
+    /// Works on a non-empty portfolio, unlike <see cref="RemoveEmptyPortfolio"/>: a rename does not
+    /// disturb <see cref="Portfolio.Assets"/>. Renaming to the portfolio's own current name is a
+    /// no-op success rather than a collision with itself.
+    /// </remarks>
+    /// <exception cref="ArgumentException">The new name is blank or whitespace.</exception>
+    /// <exception cref="KeyNotFoundException">No portfolio by <paramref name="currentName"/> exists.</exception>
+    /// <exception cref="InvestmentRuleViolationException">The new name is already in use by another portfolio.</exception>
+    public Portfolio RenamePortfolio(string currentName, string newName)
+    {
+        var portfolio = FindPortfolio(currentName)
+            ?? throw new KeyNotFoundException($"Portfolio \"{currentName}\" was not found under broker \"{Name}\".");
+
+        var trimmed = string.IsNullOrWhiteSpace(newName)
+            ? throw new ArgumentException("A portfolio name is required.", nameof(newName))
+            : newName.Trim();
+
+        if (trimmed != currentName && FindPortfolio(trimmed) is not null)
+        {
+            throw new InvestmentRuleViolationException(
+                $"Broker \"{Name}\" already has a portfolio named \"{trimmed}\".");
+        }
+
+        portfolio.Rename(trimmed);
+        return portfolio;
+    }
+
     /// <summary>Matches by name ordinally, the same way <see cref="AddPortfolio"/> resolves one.</summary>
     public Portfolio? FindPortfolio(string name) => _portfolios.FirstOrDefault(p => p.Name == name);
 

@@ -231,6 +231,107 @@ public class BrokerTests
     }
 
     [Fact]
+    public void CreatePortfolio_WithANewName_AddsIt()
+    {
+        var broker = Broker.Create("Broker A", "USD");
+
+        var portfolio = broker.CreatePortfolio("Default");
+
+        using (new AssertionScope())
+        {
+            portfolio.Name.Should().Be("Default");
+            broker.Portfolios.Should().ContainSingle();
+        }
+    }
+
+    [Fact]
+    public void CreatePortfolio_WhenNameAlreadyExists_IsRefusedAndChangesNothing()
+    {
+        var broker = Broker.Create("Broker A", "USD");
+        broker.CreatePortfolio("Default");
+
+        var act = () => broker.CreatePortfolio("Default");
+
+        act.Should().Throw<InvestmentRuleViolationException>().WithMessage("*already has a portfolio named*");
+        broker.Portfolios.Should().ContainSingle();
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void CreatePortfolio_WithABlankName_ThrowsArgumentException(string name)
+    {
+        var broker = Broker.Create("Broker A", "USD");
+
+        var act = () => broker.CreatePortfolio(name);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void RenamePortfolio_ToAnUnusedName_RenamesIt()
+    {
+        var broker = Broker.Create("Broker A", "USD");
+        broker.AddPortfolio("Default");
+
+        var renamed = broker.RenamePortfolio("Default", "Growth");
+
+        using (new AssertionScope())
+        {
+            renamed.Name.Should().Be("Growth");
+            broker.FindPortfolio("Growth").Should().NotBeNull();
+            broker.FindPortfolio("Default").Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public void RenamePortfolio_ToItsOwnCurrentName_SucceedsAsANoOp()
+    {
+        var broker = Broker.Create("Broker A", "USD");
+        broker.AddPortfolio("Default");
+
+        var renamed = broker.RenamePortfolio("Default", "Default");
+
+        renamed.Name.Should().Be("Default");
+    }
+
+    [Fact]
+    public void RenamePortfolio_WhenNewNameAlreadyExists_IsRefusedAndChangesNothing()
+    {
+        var broker = Broker.Create("Broker A", "USD");
+        broker.AddPortfolio("Default");
+        broker.AddPortfolio("Growth");
+
+        var act = () => broker.RenamePortfolio("Default", "Growth");
+
+        act.Should().Throw<InvestmentRuleViolationException>().WithMessage("*already has a portfolio named*");
+        broker.FindPortfolio("Default").Should().NotBeNull();
+    }
+
+    [Fact]
+    public void RenamePortfolio_WhenCurrentNameIsUnknown_ThrowsNotFound()
+    {
+        var broker = Broker.Create("Broker A", "USD");
+
+        var act = () => broker.RenamePortfolio("Nope", "Growth");
+
+        act.Should().Throw<KeyNotFoundException>();
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void RenamePortfolio_ToABlankName_ThrowsArgumentException(string newName)
+    {
+        var broker = Broker.Create("Broker A", "USD");
+        broker.AddPortfolio("Default");
+
+        var act = () => broker.RenamePortfolio("Default", newName);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
     public void RemoveEmptyPortfolio_WhenEmpty_RemovesItAndReportsTrue()
     {
         var broker = Broker.Create("Broker A", "USD");

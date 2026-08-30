@@ -30,6 +30,13 @@ public class Portfolio
 
     internal static Portfolio Create(string name) => new Portfolio(name);
 
+    /// <summary>Uniqueness against sibling portfolios is the caller's responsibility (<see cref="Broker.RenamePortfolio"/>),
+    /// the same division of ownership as <see cref="Create"/>.</summary>
+    internal void Rename(string name)
+    {
+        Name = name;
+    }
+
     public void AddAsset(Asset asset)
     {
         _assets.Add(asset);
