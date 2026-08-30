@@ -24,6 +24,36 @@ public class AssetTests
     }
 
     [Fact]
+    public void UpdateIdentity_SetsAllFieldsAndNormalizesLocalTypeCode()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+
+        asset.UpdateIdentity("Asset B", "ISIN456", "LSE", "BBB", CountryCode.UK, "  Stock  ", GlobalAssetClass.Equity);
+
+        using (new AssertionScope())
+        {
+            asset.Name.Should().Be("Asset B");
+            asset.ISIN.Should().Be("ISIN456");
+            asset.Exchange.Should().Be("LSE");
+            asset.Ticker.Should().Be("BBB");
+            asset.Country.Should().Be(CountryCode.UK);
+            asset.LocalTypeCode.Should().Be("Stock");
+            asset.Class.Should().Be(GlobalAssetClass.Equity);
+        }
+    }
+
+    [Fact]
+    public void UpdateIdentity_DoesNotDisturbTransactionsOrQuantity()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 10, 5m, 0m));
+
+        asset.UpdateIdentity("Asset B", "ISIN456", "LSE", "BBB", CountryCode.UK, "Stock", GlobalAssetClass.Equity);
+
+        asset.Quantity.Should().Be(10);
+    }
+
+    [Fact]
     public void Create_CryptocurrencyAssetShape_SetsPropertiesWithBlankIsinAndExchange()
     {
         var asset = Asset.Create("Bitcoin", "", "", "BTC", CountryCode.UK, "", GlobalAssetClass.Cryptocurrency);

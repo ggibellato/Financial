@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Financial.Investment.Domain.Exceptions;
 
 namespace Financial.Investment.Domain.Entities;
 
@@ -40,6 +41,60 @@ public class Portfolio
     public void AddAsset(Asset asset)
     {
         _assets.Add(asset);
+    }
+
+    /// <summary>
+    /// Registers a brand-new asset, rejecting a name already in use under this portfolio.
+    /// </summary>
+    /// <remarks>
+    /// Distinct from <see cref="AddAsset"/>, which the existing Move/Archive workflows rely on to
+    /// re-attach a relocated asset without a duplicate check (the asset is leaving one portfolio for
+    /// another, so the source can never collide with itself). An explicit Admin create must refuse a
+    /// same-named asset instead, so this is a separate method, the same split <see cref="Broker.CreatePortfolio"/>
+    /// makes against <see cref="Broker.AddPortfolio"/>.
+    /// </remarks>
+    /// <exception cref="InvestmentRuleViolationException">An asset by that name already exists in this portfolio.</exception>
+    public void RegisterAsset(Asset asset)
+    {
+        if (FindAsset(asset.Name) is not null)
+        {
+            throw new InvestmentRuleViolationException(
+                $"Portfolio \"{Name}\" already has an asset named \"{asset.Name}\".");
+        }
+
+        _assets.Add(asset);
+    }
+
+    /// <summary>
+    /// Updates an existing asset's identity fields, rejecting a new name already in use by a
+    /// different asset in this portfolio.
+    /// </summary>
+    /// <remarks>Works regardless of the asset's transaction history: identity is independent of
+    /// position. Renaming to the asset's own current name is a no-op success rather than a
+    /// collision with itself.</remarks>
+    /// <exception cref="KeyNotFoundException">No asset by <paramref name="currentName"/> exists.</exception>
+    /// <exception cref="InvestmentRuleViolationException">The new name is already in use by another asset.</exception>
+    public Asset UpdateAssetIdentity(
+        string currentName,
+        string name,
+        string isin,
+        string exchange,
+        string ticker,
+        CountryCode country,
+        string localTypeCode,
+        GlobalAssetClass assetClass)
+    {
+        var asset = FindAsset(currentName)
+            ?? throw new KeyNotFoundException($"Asset \"{currentName}\" was not found in portfolio \"{Name}\".");
+
+        if (name != currentName && FindAsset(name) is not null)
+        {
+            throw new InvestmentRuleViolationException(
+                $"Portfolio \"{Name}\" already has an asset named \"{name}\".");
+        }
+
+        asset.UpdateIdentity(name, isin, exchange, ticker, country, localTypeCode, assetClass);
+        return asset;
     }
 
     /// <summary>Matches by name ordinally, the same way the repository addresses an asset.</summary>

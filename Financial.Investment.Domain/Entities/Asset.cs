@@ -103,6 +103,30 @@ public class Asset
         return new Asset(name, isin, exchange, ticker, country, normalizedLocalTypeCode, assetClass);
     }
 
+    /// <summary>
+    /// Updates this asset's identity fields. Callable regardless of transaction history, since
+    /// identity (what the asset is) is independent of position (how much of it is held).
+    /// </summary>
+    /// <remarks>Uniqueness within the parent portfolio is the caller's responsibility (<see cref="Portfolio.UpdateAssetIdentity"/>),
+    /// the same division of ownership as <see cref="Broker.RenamePortfolio"/> uses for portfolio names.</remarks>
+    public void UpdateIdentity(
+        string name,
+        string isin,
+        string exchange,
+        string ticker,
+        CountryCode country,
+        string localTypeCode,
+        GlobalAssetClass assetClass)
+    {
+        Name = name;
+        ISIN = isin;
+        Exchange = exchange;
+        Ticker = ticker;
+        Country = country;
+        LocalTypeCode = NormalizeLocalTypeCode(localTypeCode);
+        Class = assetClass;
+    }
+
     public void AddTransaction(Transaction transaction) => Transactions.Add(transaction);
 
     public void AddTransactions(IEnumerable<Transaction> transactions) => Transactions.AddRange(transactions);
