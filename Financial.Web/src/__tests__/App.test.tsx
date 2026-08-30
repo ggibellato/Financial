@@ -21,12 +21,13 @@ describe('App', () => {
     localStorage.clear()
   })
 
-  it('renders the sidebar with both categories', () => {
+  it('renders the sidebar with all three categories', () => {
     render(<AppWithRoutes />)
 
     expect(screen.getByRole('navigation', { name: 'Main' })).toBeInTheDocument()
     expect(screen.getByText('Investments')).toBeInTheDocument()
-    expect(screen.getByText('CashFlow')).toBeInTheDocument()
+    expect(screen.getAllByText('CashFlow').length).toBeGreaterThan(0)
+    expect(screen.getByText('Admin')).toBeInTheDocument()
   })
 
   it('renders the breadcrumb above the routed content', () => {
