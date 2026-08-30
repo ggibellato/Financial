@@ -11,6 +11,7 @@ import {
   InvestmentSnapshotsPage,
   MensaisPage,
   MonthlyPage,
+  PortfoliosPage,
   ReservaPage,
 } from './lazyPages'
 
@@ -42,7 +43,7 @@ export const PAGE_ROUTES: PageRoute[] = [
   { path: 'cashflow/controle-mae', element: <ControleMaePage /> },
   { path: 'admin/investment/assets', element: <AdminEntityPlaceholderPage entityLabel="Assets" /> },
   { path: 'admin/investment/brokers', element: <BrokersPage /> },
-  { path: 'admin/investment/portfolios', element: <AdminEntityPlaceholderPage entityLabel="Portfolios" /> },
+  { path: 'admin/investment/portfolios', element: <PortfoliosPage /> },
   { path: 'admin/cashflow/banks', element: <AdminEntityPlaceholderPage entityLabel="Banks" /> },
   { path: 'admin/cashflow/categories', element: <AdminEntityPlaceholderPage entityLabel="Categories" /> },
   { path: 'admin/cashflow/credit-cards', element: <AdminEntityPlaceholderPage entityLabel="Credit Cards" /> },
