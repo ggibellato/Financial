@@ -40,6 +40,19 @@ public class PortfolioEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
+    public async Task CreatePortfolio_BrokerArchivedToHistoricInF02_IsExcludedAndReturnsNotFound()
+    {
+        // Cross-feature: a Broker moved to Historic (F02) must not be a valid parent for a new
+        // Portfolio (F03), even though it still exists by name.
+        await Client.PostAsJsonAsync("/api/v1/financial/brokers", new BrokerCreateDTO { Name = "TestBrokerA", Currency = "BRL" });
+        await Client.DeleteAsync("/api/v1/financial/brokers/TestBrokerA");
+
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/portfolios", new PortfolioCreateDTO { BrokerName = "TestBrokerA", Name = "Default" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
     public async Task CreatePortfolio_DuplicateNameUnderSameBroker_ReturnsConflict()
     {
         await Client.PostAsJsonAsync("/api/v1/financial/portfolios", new PortfolioCreateDTO { BrokerName = "XPI", Name = "TestPortfolioA" });
