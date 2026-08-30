@@ -963,8 +963,26 @@
           "UK"
         ]
       },
+      "CreditCardCreateDTO": {
+        "properties": {
+          "isActive": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "isActive"
+        ],
+        "type": "object"
+      },
       "CreditCardDTO": {
         "properties": {
+          "hasReferences": {
+            "type": "boolean"
+          },
           "id": {
             "format": "uuid",
             "type": "string"
@@ -986,7 +1004,8 @@
         "required": [
           "id",
           "name",
-          "isActive"
+          "isActive",
+          "hasReferences"
         ],
         "type": "object"
       },
@@ -994,6 +1013,9 @@
         "properties": {
           "isActive": {
             "type": "boolean"
+          },
+          "name": {
+            "type": "string"
           },
           "nextInvoiceDueDate": {
             "format": "date",
@@ -1004,6 +1026,7 @@
           }
         },
         "required": [
+          "name",
           "isActive"
         ],
         "type": "object"
@@ -5195,9 +5218,120 @@
         "tags": [
           "CreditCards"
         ]
+      },
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/*\u002Bjson": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CreditCardCreateDTO"
+                  }
+                ]
+              }
+            },
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CreditCardCreateDTO"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CreditCardCreateDTO"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditCardDTO"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          }
+        },
+        "summary": "Creates a new credit card.",
+        "tags": [
+          "CreditCards"
+        ]
       }
     },
     "/credit-cards/{id}": {
+      "delete": {
+        "parameters": [
+          {
+            "description": "The credit card\u0027s identifier.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "summary": "Deletes a credit card, when it has no statement or expense referencing it.",
+        "tags": [
+          "CreditCards"
+        ]
+      },
       "put": {
         "parameters": [
           {
@@ -5283,7 +5417,7 @@
             "description": "Not Found"
           }
         },
-        "summary": "Updates a credit card\u0027s next invoice due date and active flag.",
+        "summary": "Updates a credit card\u0027s name, active flag, and next invoice due date.",
         "tags": [
           "CreditCards"
         ]
