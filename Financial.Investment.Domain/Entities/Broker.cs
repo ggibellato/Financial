@@ -28,6 +28,14 @@ public class Broker
 
     public static Broker Create(string name, string currency) => new(name, currency);
 
+    /// <summary>Updates this broker's identity fields. Callers own uniqueness checks, since only the
+    /// aggregate root can see across both the Active and Historic collections.</summary>
+    public void Update(string name, string currency)
+    {
+        Name = name;
+        Currency = currency;
+    }
+
     public Portfolio AddPortfolio(string name)
     {
         var portfolio = Portfolios.FirstOrDefault(p => p.Name == name);
