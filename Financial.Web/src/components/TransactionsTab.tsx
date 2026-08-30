@@ -10,7 +10,8 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { DeleteRegular } from '@fluentui/react-icons'
+import { Button, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
+import { DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import type { TransactionDto } from '../api/types'
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
@@ -51,34 +52,34 @@ function TransactionRow({ transaction, onEdit, onDelete }: TransactionRowProps) 
       : 'transactions-tab__type--sell'
 
   return (
-    <tr>
-      <td>
-        <button
-          className="transactions-tab__action-btn"
-          type="button"
+    <TableRow>
+      <TableCell>
+        <Button
+          appearance="subtle"
+          size="small"
+          icon={<EditRegular />}
           aria-label="Edit transaction"
           onClick={() => onEdit(transaction)}
-        >
-          ✏
-        </button>
-      </td>
-      <td>
-        <button
-          className="transactions-tab__action-btn"
-          type="button"
+        />
+      </TableCell>
+      <TableCell>
+        <Button
+          appearance="subtle"
+          size="small"
+          icon={<DeleteRegular />}
           aria-label="Delete transaction"
           onClick={() => onDelete(transaction.id)}
-        >
-          <DeleteRegular />
-        </button>
-      </td>
-      <td>{formatShortDate(transaction.date)}</td>
-      <td className={typeClass}>{transaction.type}</td>
-      <td className="data-table__col--numeric">{formatN8(transaction.quantity)}</td>
-      <td className="data-table__col--numeric">{formatN2(transaction.unitPrice)}</td>
-      <td className="data-table__col--numeric">{formatN2(transaction.fees)}</td>
-      <td className="data-table__col--numeric transactions-tab__total">{formatN2(transaction.totalPrice)}</td>
-    </tr>
+        />
+      </TableCell>
+      <TableCell>{formatShortDate(transaction.date)}</TableCell>
+      <TableCell className={typeClass}>{transaction.type}</TableCell>
+      <TableCell className="data-table__col--numeric">{formatN8(transaction.quantity)}</TableCell>
+      <TableCell className="data-table__col--numeric">{formatN2(transaction.unitPrice)}</TableCell>
+      <TableCell className="data-table__col--numeric">{formatN2(transaction.fees)}</TableCell>
+      <TableCell className="data-table__col--numeric transactions-tab__total">
+        {formatN2(transaction.totalPrice)}
+      </TableCell>
+    </TableRow>
   )
 }
 
@@ -369,11 +370,11 @@ export default function TransactionsTab() {
       )}
 
       <div className="transactions-tab__table-wrapper">
-        <table className="transactions-tab__table data-table">
-          <thead>
-            <tr>
-              <th />
-              <th />
+        <Table className="transactions-tab__table data-table">
+          <TableHeader>
+            <TableRow>
+              <TableHeaderCell />
+              <TableHeaderCell />
               <SortableColumnHeader
                 label="Date"
                 columnKey="date"
@@ -414,9 +415,9 @@ export default function TransactionsTab() {
                 sortDirection={sortState?.columnKey === 'total' ? sortState.direction : undefined}
                 onSort={requestSort}
               />
-            </tr>
-          </thead>
-          <tbody>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {sortedRows.map((t) => (
               <TransactionRow
                 key={t.id}
@@ -425,8 +426,8 @@ export default function TransactionsTab() {
                 onDelete={confirmAndDeleteTransaction}
               />
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       {deleteError && <p className="transactions-tab__delete-error">{deleteError}</p>}

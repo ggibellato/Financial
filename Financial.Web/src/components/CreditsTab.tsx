@@ -11,7 +11,8 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { DeleteRegular } from '@fluentui/react-icons'
+import { Button, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
+import { DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import type { CreditDto } from '../api/types'
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
@@ -73,31 +74,29 @@ function CreditRow({ credit, onEdit, onDelete }: CreditRowProps) {
   const typeClass = TYPE_CLASSES[credit.type] ?? 'credits-tab__type--dividend'
 
   return (
-    <tr>
-      <td>
-        <button
-          className="credits-tab__action-btn"
-          type="button"
+    <TableRow>
+      <TableCell>
+        <Button
+          appearance="subtle"
+          size="small"
+          icon={<EditRegular />}
           aria-label="Edit credit"
           onClick={() => onEdit(credit)}
-        >
-          ✏
-        </button>
-      </td>
-      <td>
-        <button
-          className="credits-tab__action-btn"
-          type="button"
+        />
+      </TableCell>
+      <TableCell>
+        <Button
+          appearance="subtle"
+          size="small"
+          icon={<DeleteRegular />}
           aria-label="Delete credit"
           onClick={() => onDelete(credit.id)}
-        >
-          <DeleteRegular />
-        </button>
-      </td>
-      <td>{formatShortDate(credit.date)}</td>
-      <td className={typeClass}>{credit.type}</td>
-      <td className="data-table__col--numeric credits-tab__value">{formatN2(credit.value)}</td>
-    </tr>
+        />
+      </TableCell>
+      <TableCell>{formatShortDate(credit.date)}</TableCell>
+      <TableCell className={typeClass}>{credit.type}</TableCell>
+      <TableCell className="data-table__col--numeric credits-tab__value">{formatN2(credit.value)}</TableCell>
+    </TableRow>
   )
 }
 
@@ -390,11 +389,11 @@ export default function CreditsTab() {
       )}
 
       <div className="credits-tab__table-wrapper">
-        <table className="credits-tab__table data-table">
-          <thead>
-            <tr>
-              <th />
-              <th />
+        <Table className="credits-tab__table data-table">
+          <TableHeader>
+            <TableRow>
+              <TableHeaderCell />
+              <TableHeaderCell />
               <SortableColumnHeader
                 label="Date"
                 columnKey="date"
@@ -414,14 +413,14 @@ export default function CreditsTab() {
                 sortDirection={sortState?.columnKey === 'value' ? sortState.direction : undefined}
                 onSort={requestSort}
               />
-            </tr>
-          </thead>
-          <tbody>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {sortedRows.map((c) => (
               <CreditRow key={c.id} credit={c} onEdit={showEditForm} onDelete={confirmAndDeleteCredit} />
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       {deleteError && <p className="credits-tab__delete-error">{deleteError}</p>}
