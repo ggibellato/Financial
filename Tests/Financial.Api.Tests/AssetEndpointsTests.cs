@@ -287,6 +287,68 @@ public class AssetEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
+    public async Task CreateAsset_PortfolioBelongingToADifferentBroker_ReturnsNotFound()
+    {
+        // "Default" exists under XPI, not under a broker named "NoSuchBroker" — proves F04's create is
+        // scoped to the (Broker, Portfolio) pair, not just any portfolio name anywhere.
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/assets", new AssetAdminCreateDTO
+        {
+            BrokerName = "NoSuchBroker",
+            PortfolioName = "Default",
+            Name = "NEWASSET"
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task CreateAsset_UnderAPortfolioCreatedViaF03_SucceedsScopedToItsParentBroker()
+    {
+        // Cross-feature: a Portfolio created via F03 (under an Active Broker) must be selectable as
+        // the parent Portfolio when creating an Asset via F04, scoped correctly to its parent Broker.
+        await Client.PostAsJsonAsync("/api/v1/financial/portfolios", new { BrokerName = "XPI", Name = "Cross-Feature Portfolio" });
+
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/assets", new AssetAdminCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Cross-Feature Portfolio",
+            Name = "CROSSASSET"
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var created = await response.Content.ReadFromJsonAsync<AssetAdminDTO>();
+        created!.PortfolioName.Should().Be("Cross-Feature Portfolio");
+    }
+
+    [Fact]
+    public async Task DeletePortfolio_HoldingAnAssetCreatedViaF04_IsBlockedUntilTheAssetIsRemoved()
+    {
+        // Cross-feature: a Portfolio that already holds an Asset (created via F04) cannot be deleted
+        // from F03 until that Asset is removed/archived.
+        await Client.PostAsJsonAsync("/api/v1/financial/portfolios", new { BrokerName = "XPI", Name = "Cross-Feature Portfolio 2" });
+        await Client.PostAsJsonAsync("/api/v1/financial/assets", new AssetAdminCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Cross-Feature Portfolio 2",
+            Name = "CROSSASSET2"
+        });
+
+        var deleteBlocked = await Client.DeleteAsync("/api/v1/financial/portfolios/XPI/Cross-Feature%20Portfolio%202");
+        deleteBlocked.StatusCode.Should().Be(HttpStatusCode.Conflict);
+
+        await Client.PostAsJsonAsync("/api/v1/financial/assets/archive", new ArchiveAssetRequestDTO
+        {
+            BrokerName = "XPI",
+            SourcePortfolioName = "Cross-Feature Portfolio 2",
+            AssetName = "CROSSASSET2",
+            DestinationPortfolioName = "Cross-Feature Portfolio 2"
+        });
+
+        var deleteAfterArchive = await Client.DeleteAsync("/api/v1/financial/portfolios/XPI/Cross-Feature%20Portfolio%202");
+        deleteAfterArchive.StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
+
+    [Fact]
     public async Task CreateAsset_InvalidIsinFormat_ReturnsBadRequest()
     {
         var response = await Client.PostAsJsonAsync("/api/v1/financial/assets", new AssetAdminCreateDTO
