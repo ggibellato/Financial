@@ -1,3 +1,4 @@
+using Financial.Presentation.App.ViewModels.Admin;
 using Financial.Presentation.App.ViewModels.Investment;
 
 namespace Financial.Presentation.App.Services;
@@ -11,4 +12,5 @@ public interface IDialogService
     bool Confirm(string message, string caption);
     void ShowWarning(string message, string caption);
     bool ShowMoveAssetDialog(MoveAssetDialogViewModel viewModel);
+    bool ShowBrokerFormDialog(BrokerFormDialogViewModel viewModel);
 }
