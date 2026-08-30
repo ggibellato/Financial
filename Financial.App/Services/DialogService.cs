@@ -22,4 +22,7 @@ public sealed class DialogService : IDialogService
 
     public bool ShowPortfolioFormDialog(PortfolioFormDialogViewModel viewModel) =>
         new PortfolioFormDialog(viewModel) { Owner = System.Windows.Application.Current?.MainWindow }.ShowDialog() == true;
+
+    public bool ShowAssetFormDialog(AssetFormDialogViewModel viewModel) =>
+        new AssetFormDialog(viewModel) { Owner = System.Windows.Application.Current?.MainWindow }.ShowDialog() == true;
 }

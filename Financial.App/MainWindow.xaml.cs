@@ -24,6 +24,7 @@ namespace Financial.Presentation.App
             AnnualSummaryView annualSummaryView,
             Financial.Presentation.App.Views.Admin.BrokersView brokersView,
             Financial.Presentation.App.Views.Admin.PortfoliosView portfoliosView,
+            Financial.Presentation.App.Views.Admin.AssetsView assetsView,
             MainNavigationViewModel navigationViewModel,
             MainNavigationViewModelHistoric navigationViewModelHistoric,
             SyncStatusViewModel syncStatusViewModel)
@@ -38,6 +39,7 @@ namespace Financial.Presentation.App
             ArgumentNullException.ThrowIfNull(annualSummaryView);
             ArgumentNullException.ThrowIfNull(brokersView);
             ArgumentNullException.ThrowIfNull(portfoliosView);
+            ArgumentNullException.ThrowIfNull(assetsView);
             ArgumentNullException.ThrowIfNull(syncStatusViewModel);
             _navigationViewModel = navigationViewModel ?? throw new ArgumentNullException(nameof(navigationViewModel));
             _navigationViewModelHistoric = navigationViewModelHistoric ?? throw new ArgumentNullException(nameof(navigationViewModelHistoric));
@@ -56,7 +58,7 @@ namespace Financial.Presentation.App
                 ["controle-mae"] = controleMaeView,
                 ["investment-snapshots"] = investmentSnapshotsView,
                 ["annual-summary"] = annualSummaryView,
-                ["admin-assets"] = new AdminEntityPlaceholderView(new AdminEntityPlaceholderViewModel("Assets")),
+                ["admin-assets"] = assetsView,
                 ["admin-brokers"] = brokersView,
                 ["admin-portfolios"] = portfoliosView,
                 ["admin-banks"] = new AdminEntityPlaceholderView(new AdminEntityPlaceholderViewModel("Banks")),

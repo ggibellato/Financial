@@ -480,5 +480,7 @@ public class MainNavigationViewModelConstructorGuardTests
             throw new NotImplementedException();
         public bool ShowPortfolioFormDialog(Financial.Presentation.App.ViewModels.Admin.PortfolioFormDialogViewModel viewModel) =>
             throw new NotImplementedException();
+        public bool ShowAssetFormDialog(Financial.Presentation.App.ViewModels.Admin.AssetFormDialogViewModel viewModel) =>
+            throw new NotImplementedException();
     }
 }
