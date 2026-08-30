@@ -204,6 +204,15 @@ to the wire format beyond what `Bank` already has (`Id`, `Name`, `RoundUpEnabled
 | `CreateBank_Duplicate_Returns409ViaMiddleware` (E2E) | HTTP contract | 409, `ProblemDetails.Detail` matches PRD wording |
 | `it('disables the delete action when the bank has balance history')` | React | Delete button `disabled`, inline explanation text shown |
 
+## 8a. Post-implementation addendum
+
+`BankDTO` gained a `HasReferences: bool` field (computed by `BankService` via the same four-collection
+scan as the delete guard) not called out in the original Component Overview above. Without it, the
+client had no signal to preemptively disable Delete/explain why — the PRD's F05 Experience section
+explicitly requires "disabled with an inline explanation... when references exist," matching F02/F03/F04's
+disabled-before-attempt UX, and no lightweight existing field could stand in for it. `BankService.ToDto`
+became an instance method (was `static`) so it can read `_repository` for this check.
+
 ## 8. Assumptions (auto-accepted per this feature-loop's batch policy)
 
 - Delete's reference scan additionally covers `Transfer` (Section 3 above) even though the PRD's F05

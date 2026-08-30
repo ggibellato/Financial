@@ -28,7 +28,7 @@ public class MonthlyViewModelCategoriesTests
         var incomes = new StubIncomeService();
         var banks = new StubBankService
         {
-            Banks = [new BankDTO { Id = BarclaysId, Name = "Barclays", RoundUpEnabled = false, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today) }],
+            Banks = [new BankDTO { Id = BarclaysId, Name = "Barclays", RoundUpEnabled = false, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today), HasReferences = false }],
         };
         var incomeSources = new StubIncomeSourceService();
         var tithe = new StubTitheService();

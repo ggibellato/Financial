@@ -241,23 +241,25 @@ public sealed class BankService : IBankService
         }
     }
 
-    /// <summary>
-    /// Scans the same four collections <see cref="ComputeBalance"/> already reads (Income, Expense,
-    /// Transfer, BalanceAdjustment) - every relationship that can hold a reference to a Bank.
-    /// </summary>
     private void EnsureNotReferenced(Guid bankId)
     {
-        var referenced =
-            _repository.GetBalanceAdjustments().Any(a => a.Bank.Id == bankId) ||
-            _repository.GetIncomes().Any(i => i.Bank?.Id == bankId) ||
-            _repository.GetExpenses().Any(e => e.PaymentSourceBank?.Id == bankId) ||
-            _repository.GetTransfers().Any(t => t.SourceBank.Id == bankId || t.DestinationBank.Id == bankId);
-
-        if (referenced)
+        if (IsReferenced(bankId))
         {
             throw new EntityInUseException("Cannot delete a bank that still has balance history or transactions.");
         }
     }
+
+    /// <summary>
+    /// Scans the same four collections <see cref="ComputeBalance"/> already reads (Income, Expense,
+    /// Transfer, BalanceAdjustment) - every relationship that can hold a reference to a Bank. Also
+    /// drives <see cref="BankDTO.HasReferences"/>, so the client can disable Delete before attempting
+    /// it rather than only learning about the guard from a failed request.
+    /// </summary>
+    private bool IsReferenced(Guid bankId) =>
+        _repository.GetBalanceAdjustments().Any(a => a.Bank.Id == bankId) ||
+        _repository.GetIncomes().Any(i => i.Bank?.Id == bankId) ||
+        _repository.GetExpenses().Any(e => e.PaymentSourceBank?.Id == bankId) ||
+        _repository.GetTransfers().Any(t => t.SourceBank.Id == bankId || t.DestinationBank.Id == bankId);
 
     private ITelemetrySpan StartSpan(string operationName)
     {
@@ -299,12 +301,13 @@ public sealed class BankService : IBankService
         return bank.OpeningBalance + incomeTotal - expenseTotal + transferInTotal - transferOutTotal + adjustmentTotal;
     }
 
-    private static BankDTO ToDto(Bank bank) => new()
+    private BankDTO ToDto(Bank bank) => new()
     {
         Id = bank.Id,
         Name = bank.Name,
         RoundUpEnabled = bank.RoundUpEnabled,
         OpeningBalance = bank.OpeningBalance,
-        OpeningBalanceDate = bank.OpeningBalanceDate
+        OpeningBalanceDate = bank.OpeningBalanceDate,
+        HasReferences = IsReferenced(bank.Id)
     };
 }

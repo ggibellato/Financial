@@ -17,8 +17,8 @@ public class BankOperationsWorkflowViewModelTests
 
     private static readonly List<BankDTO> DefaultBanks =
     [
-        new() { Id = BarclaysId, Name = "Barclays", RoundUpEnabled = true, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today) },
-        new() { Id = ChaseId, Name = "Chase", RoundUpEnabled = false, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today) },
+        new() { Id = BarclaysId, Name = "Barclays", RoundUpEnabled = true, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today), HasReferences = false },
+        new() { Id = ChaseId, Name = "Chase", RoundUpEnabled = false, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today), HasReferences = false },
     ];
 
     private static DateOnly Today => DateOnly.FromDateTime(DateTime.Today);
@@ -105,7 +105,7 @@ public class BankOperationsWorkflowViewModelTests
     {
         var (viewModel, _, _, _) = CreateViewModel();
         var duplicateId = Guid.NewGuid();
-        var banks = new List<BankDTO>(DefaultBanks) { new() { Id = duplicateId, Name = "Barclays", RoundUpEnabled = false, OpeningBalance = 0, OpeningBalanceDate = Today } };
+        var banks = new List<BankDTO>(DefaultBanks) { new() { Id = duplicateId, Name = "Barclays", RoundUpEnabled = false, OpeningBalance = 0, OpeningBalanceDate = Today, HasReferences = false } };
         List<IReadOnlyList<BalanceAdjustmentDTO>> adjustmentsByBank =
         [
             [new BalanceAdjustmentDTO { Id = Guid.NewGuid(), Date = Today, BankId = BarclaysId, BankName = "Barclays", TargetBalance = 100m, Delta = 5m }],

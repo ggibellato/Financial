@@ -1,3 +1,5 @@
+using Financial.CashFlow.Application.DTOs;
+using Financial.CashFlow.Application.Interfaces;
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
@@ -6,6 +8,78 @@ using Financial.Presentation.App.ViewModels.Admin;
 using Financial.Presentation.App.ViewModels.Investment;
 
 namespace Financial.Presentation.Tests.ViewModels.Admin;
+
+internal sealed class StubBankService : IBankService
+{
+    public List<BankDTO> Banks { get; set; } = [];
+    public BankCreateDTO? LastCreateRequest { get; private set; }
+    public (Guid Id, BankUpdateDTO Request)? LastUpdateRequest { get; private set; }
+    public Guid? LastDeletedId { get; private set; }
+    public Exception? ThrowOnCreate { get; set; }
+    public Exception? ThrowOnUpdate { get; set; }
+    public Exception? ThrowOnDelete { get; set; }
+
+    public IReadOnlyList<BankDTO> GetBanks() => Banks;
+
+    public Task<BankDTO> CreateBankAsync(BankCreateDTO request)
+    {
+        LastCreateRequest = request;
+        if (ThrowOnCreate is not null)
+        {
+            throw ThrowOnCreate;
+        }
+
+        var created = new BankDTO
+        {
+            Id = Guid.NewGuid(),
+            Name = request.Name,
+            RoundUpEnabled = request.RoundUpEnabled,
+            OpeningBalance = 0,
+            OpeningBalanceDate = default,
+            HasReferences = false,
+        };
+        Banks.Add(created);
+        return Task.FromResult(created);
+    }
+
+    public Task<BankDTO> UpdateBankAsync(Guid id, BankUpdateDTO request)
+    {
+        LastUpdateRequest = (id, request);
+        if (ThrowOnUpdate is not null)
+        {
+            throw ThrowOnUpdate;
+        }
+
+        var updated = new BankDTO
+        {
+            Id = id,
+            Name = request.Name,
+            RoundUpEnabled = request.RoundUpEnabled,
+            OpeningBalance = 0,
+            OpeningBalanceDate = default,
+            HasReferences = false,
+        };
+        return Task.FromResult(updated);
+    }
+
+    public Task DeleteBankAsync(Guid id)
+    {
+        LastDeletedId = id;
+        if (ThrowOnDelete is not null)
+        {
+            throw ThrowOnDelete;
+        }
+
+        Banks.RemoveAll(b => b.Id == id);
+        return Task.CompletedTask;
+    }
+
+    public Task<BankDTO> UpdateOpeningBalanceAsync(Guid id, BankOpeningBalanceUpdateDTO request) => throw new NotImplementedException();
+
+    public IReadOnlyList<BankBalanceDTO> GetBankBalancesByMonth(int year, int month) => throw new NotImplementedException();
+
+    public decimal GetBankBalanceAsOf(Guid bankId, DateOnly asOfDate, Guid? excludingAdjustmentId = null) => throw new NotImplementedException();
+}
 
 internal sealed class StubBrokerService : IBrokerService
 {
@@ -215,6 +289,10 @@ internal sealed class StubDialogService : IDialogService
     public AssetFormDialogViewModel? LastAssetFormDialog { get; private set; }
     public Action<AssetFormDialogViewModel>? OnShowAssetFormDialog { get; set; }
 
+    public bool ShowBankFormDialogResult { get; set; } = true;
+    public BankFormDialogViewModel? LastBankFormDialog { get; private set; }
+    public Action<BankFormDialogViewModel>? OnShowBankFormDialog { get; set; }
+
     public bool Confirm(string message, string caption)
     {
         LastConfirmMessage = message;
@@ -246,5 +324,12 @@ internal sealed class StubDialogService : IDialogService
         LastAssetFormDialog = viewModel;
         OnShowAssetFormDialog?.Invoke(viewModel);
         return ShowAssetFormDialogResult;
+    }
+
+    public bool ShowBankFormDialog(BankFormDialogViewModel viewModel)
+    {
+        LastBankFormDialog = viewModel;
+        OnShowBankFormDialog?.Invoke(viewModel);
+        return ShowBankFormDialogResult;
     }
 }

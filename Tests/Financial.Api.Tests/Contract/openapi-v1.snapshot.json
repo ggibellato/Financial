@@ -515,6 +515,9 @@
       },
       "BankDTO": {
         "properties": {
+          "hasReferences": {
+            "type": "boolean"
+          },
           "id": {
             "format": "uuid",
             "type": "string"
@@ -539,7 +542,8 @@
           "name",
           "roundUpEnabled",
           "openingBalance",
-          "openingBalanceDate"
+          "openingBalanceDate",
+          "hasReferences"
         ],
         "type": "object"
       },

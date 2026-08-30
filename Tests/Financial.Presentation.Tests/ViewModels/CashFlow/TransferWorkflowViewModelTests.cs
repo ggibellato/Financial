@@ -16,8 +16,8 @@ public class TransferWorkflowViewModelTests
         var transferService = new StubTransferService();
         var banks = new ObservableCollection<BankDTO>
         {
-            new() { Id = BarclaysId, Name = "Barclays", RoundUpEnabled = true, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today) },
-            new() { Id = ChaseId, Name = "Chase", RoundUpEnabled = false, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today) },
+            new() { Id = BarclaysId, Name = "Barclays", RoundUpEnabled = true, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today), HasReferences = false },
+            new() { Id = ChaseId, Name = "Chase", RoundUpEnabled = false, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today), HasReferences = false },
         };
         var viewModel = new TransferWorkflowViewModel(transferService, banks, refresh ?? (() => Task.CompletedTask));
         return (viewModel, transferService, banks);

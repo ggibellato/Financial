@@ -20,6 +20,9 @@ public sealed class DialogService : IDialogService
     public bool ShowBrokerFormDialog(BrokerFormDialogViewModel viewModel) =>
         new BrokerFormDialog(viewModel) { Owner = System.Windows.Application.Current?.MainWindow }.ShowDialog() == true;
 
+    public bool ShowBankFormDialog(BankFormDialogViewModel viewModel) =>
+        new BankFormDialog(viewModel) { Owner = System.Windows.Application.Current?.MainWindow }.ShowDialog() == true;
+
     public bool ShowPortfolioFormDialog(PortfolioFormDialogViewModel viewModel) =>
         new PortfolioFormDialog(viewModel) { Owner = System.Windows.Application.Current?.MainWindow }.ShowDialog() == true;
 
