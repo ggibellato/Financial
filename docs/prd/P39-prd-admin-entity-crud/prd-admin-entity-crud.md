@@ -454,11 +454,11 @@ graph TD
 - [x] An invalid ISIN format is rejected with an inline validation error before save
 
 ### F05. Bank CRUD
-- [ ] Creating a Bank with a unique Name succeeds and appears in the list
-- [ ] Creating a Bank with a duplicate Name fails with an inline error
-- [ ] Editing an existing Bank's Name and RoundUpEnabled persists the change
-- [ ] Deleting a Bank with zero balance-adjustment records and zero referencing transactions succeeds
-- [ ] Attempting to delete a Bank that has balance-adjustment records or referencing transactions is blocked with a 409 response and a clear message
+- [x] Creating a Bank with a unique Name succeeds and appears in the list
+- [x] Creating a Bank with a duplicate Name fails with an inline error
+- [x] Editing an existing Bank's Name and RoundUpEnabled persists the change
+- [x] Deleting a Bank with zero balance-adjustment records and zero referencing transactions succeeds
+- [x] Attempting to delete a Bank that has balance-adjustment records or referencing transactions is blocked with a 409 response and a clear message
 
 ### F06. Category CRUD
 - [ ] Creating a Category with a unique Name and any combination of Active/IsInvestment/IsTithe succeeds
