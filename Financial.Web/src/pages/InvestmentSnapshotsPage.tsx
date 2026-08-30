@@ -1,3 +1,5 @@
+import { Button, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
+import { EditRegular } from '@fluentui/react-icons'
 import type { InvestmentSnapshotDto } from '../api/types'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
@@ -26,20 +28,19 @@ function SnapshotRow({ snapshot, onEdit }: SnapshotRowProps) {
   const label = snapshot.isLiability ? `${snapshot.accountName} (liability)` : snapshot.accountName
 
   return (
-    <tr>
-      <td>
-        <button
-          className="data-table__action-btn"
-          type="button"
+    <TableRow>
+      <TableCell>
+        <Button
+          appearance="subtle"
+          size="small"
+          icon={<EditRegular />}
           aria-label="Edit snapshot"
           onClick={() => onEdit(snapshot)}
-        >
-          ✏
-        </button>
-      </td>
-      <td>{label}</td>
-      <td className="data-table__col--numeric">{formatN2(snapshot.value)}</td>
-    </tr>
+        />
+      </TableCell>
+      <TableCell>{label}</TableCell>
+      <TableCell className="data-table__col--numeric">{formatN2(snapshot.value)}</TableCell>
+    </TableRow>
   )
 }
 
@@ -117,11 +118,11 @@ export default function InvestmentSnapshotsPage() {
       ) : (
         <div className="investment-snapshots-page__content">
           <section className="investment-snapshots-page__section">
-            <table className="investment-snapshots-page__table data-table">
+            <Table className="investment-snapshots-page__table data-table">
               <SnapshotColumns />
-              <thead>
-                <tr>
-                  <th />
+              <TableHeader>
+                <TableRow>
+                  <TableHeaderCell />
                   <SortableColumnHeader
                     label="Account"
                     columnKey="account"
@@ -135,29 +136,29 @@ export default function InvestmentSnapshotsPage() {
                     sortDirection={sortState?.columnKey === 'value' ? sortState.direction : undefined}
                     onSort={requestSort}
                   />
-                </tr>
-              </thead>
-              <tbody>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {sortedSnapshots.map((snapshot) => (
                   <SnapshotRow key={snapshot.id} snapshot={snapshot} onEdit={showEditForm} />
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </section>
         </div>
       )}
 
       {!isLoading && !error && (
-        <table className="investment-snapshots-page__table investment-snapshots-page__totals-table data-table">
+        <Table className="investment-snapshots-page__table investment-snapshots-page__totals-table data-table">
           <SnapshotColumns />
-          <tbody>
-            <tr className="investment-snapshots-page__totals-row">
-              <td />
-              <td>Total (net of liabilities)</td>
-              <td className="data-table__col--numeric">{formatN2(totalValue)}</td>
-            </tr>
-          </tbody>
-        </table>
+          <TableBody>
+            <TableRow className="investment-snapshots-page__totals-row">
+              <TableCell />
+              <TableCell>Total (net of liabilities)</TableCell>
+              <TableCell className="data-table__col--numeric">{formatN2(totalValue)}</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
       )}
     </div>
   )
