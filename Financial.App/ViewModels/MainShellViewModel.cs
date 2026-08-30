@@ -66,6 +66,15 @@ public class MainShellViewModel : ViewModelBase
                 {
                     return $"{category.Label} › {child.Label}";
                 }
+
+                foreach (var group in category.Groups ?? [])
+                {
+                    var groupedChild = group.Children.FirstOrDefault(c => c.ViewKey == _selectedChildId);
+                    if (groupedChild != null)
+                    {
+                        return $"{category.Label} › {group.Label} › {groupedChild.Label}";
+                    }
+                }
             }
 
             return "—";

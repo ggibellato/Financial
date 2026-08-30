@@ -1,6 +1,7 @@
 using Financial.Presentation.App.Components;
 using Financial.Presentation.App.Properties;
 using Financial.Presentation.App.ViewModels;
+using Financial.Presentation.App.Views.Admin;
 using Financial.Presentation.App.Views.CashFlow;
 using Financial.Presentation.App.Views.Investment;
 using System.Windows;
@@ -51,6 +52,16 @@ namespace Financial.Presentation.App
                 ["controle-mae"] = controleMaeView,
                 ["investment-snapshots"] = investmentSnapshotsView,
                 ["annual-summary"] = annualSummaryView,
+                ["admin-assets"] = new AdminEntityPlaceholderView(new AdminEntityPlaceholderViewModel("Assets")),
+                ["admin-brokers"] = new AdminEntityPlaceholderView(new AdminEntityPlaceholderViewModel("Brokers")),
+                ["admin-portfolios"] = new AdminEntityPlaceholderView(new AdminEntityPlaceholderViewModel("Portfolios")),
+                ["admin-banks"] = new AdminEntityPlaceholderView(new AdminEntityPlaceholderViewModel("Banks")),
+                ["admin-categories"] = new AdminEntityPlaceholderView(new AdminEntityPlaceholderViewModel("Categories")),
+                ["admin-credit-cards"] = new AdminEntityPlaceholderView(new AdminEntityPlaceholderViewModel("Credit Cards")),
+                ["admin-income-sources"] = new AdminEntityPlaceholderView(new AdminEntityPlaceholderViewModel("Income Sources")),
+                ["admin-investment-accounts"] = new AdminEntityPlaceholderView(new AdminEntityPlaceholderViewModel("Investment Accounts")),
+                ["admin-recurring-bills"] = new AdminEntityPlaceholderView(new AdminEntityPlaceholderViewModel("Recurring Bills")),
+                ["admin-reserve-buckets"] = new AdminEntityPlaceholderView(new AdminEntityPlaceholderViewModel("Reserve Buckets")),
             };
 
             DataContext = new MainShellViewModel(

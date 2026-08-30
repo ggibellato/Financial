@@ -34,15 +34,32 @@ const SidebarFlyout = forwardRef<HTMLDivElement, SidebarFlyoutProps>(function Si
       onKeyDown={handleKeyDown}
     >
       <span className="sidebar-flyout__title">{category.label}</span>
-      <ul className="sidebar-flyout__list" aria-label={category.label}>
-        {category.children.map((child) => (
-          <li key={child.id}>
-            <NavLink to={child.route} className="sidebar__link" onClick={() => onClose()}>
-              {child.label}
-            </NavLink>
-          </li>
-        ))}
-      </ul>
+      {category.groups ? (
+        category.groups.map((group) => (
+          <div className="sidebar-flyout__group" key={group.id}>
+            <span className="sidebar-flyout__group-title">{group.label}</span>
+            <ul className="sidebar-flyout__list" aria-label={group.label}>
+              {group.children.map((child) => (
+                <li key={child.id}>
+                  <NavLink to={child.route} className="sidebar__link" onClick={() => onClose()}>
+                    {child.label}
+                  </NavLink>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))
+      ) : (
+        <ul className="sidebar-flyout__list" aria-label={category.label}>
+          {category.children.map((child) => (
+            <li key={child.id}>
+              <NavLink to={child.route} className="sidebar__link" onClick={() => onClose()}>
+                {child.label}
+              </NavLink>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>,
     document.body,
   )

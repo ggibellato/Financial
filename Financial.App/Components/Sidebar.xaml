@@ -6,6 +6,63 @@
              xmlns:nav="clr-namespace:Financial.Presentation.App.Navigation"
              mc:Ignorable="d"
              d:DesignHeight="700" d:DesignWidth="240">
+    <UserControl.Resources>
+        <DataTemplate x:Key="NavChildButtonTemplate" DataType="{x:Type nav:NavChild}">
+            <Button Command="{Binding DataContext.SelectItemCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                    CommandParameter="{Binding ViewKey}"
+                    HorizontalContentAlignment="Left"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    Padding="4,4"
+                    Margin="0,1">
+                <Button.Tag>
+                    <MultiBinding Converter="{StaticResource EqualityToBoolConverter}">
+                        <Binding Path="ViewKey"/>
+                        <Binding Path="DataContext.SelectedChildId" RelativeSource="{RelativeSource AncestorType=UserControl}"/>
+                    </MultiBinding>
+                </Button.Tag>
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Setter Property="Foreground" Value="#333333"/>
+                        <Setter Property="FontWeight" Value="Normal"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource Self}, Path=Tag}" Value="True">
+                                <Setter Property="Foreground" Value="#007ACC"/>
+                                <Setter Property="FontWeight" Value="Bold"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+                <TextBlock Text="{Binding Label}"/>
+            </Button>
+        </DataTemplate>
+
+        <DataTemplate x:Key="NavGroupExpanderTemplate" DataType="{x:Type nav:NavGroup}">
+            <Expander Margin="0,0,0,2">
+                <Expander.Header>
+                    <TextBlock Text="{Binding Label}" FontWeight="SemiBold">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="#333333"/>
+                                <Style.Triggers>
+                                    <DataTrigger Value="True">
+                                        <DataTrigger.Binding>
+                                            <MultiBinding Converter="{StaticResource GroupHasSelectedChildConverter}">
+                                                <Binding Path="Children"/>
+                                                <Binding Path="DataContext.SelectedChildId" RelativeSource="{RelativeSource AncestorType=UserControl}"/>
+                                            </MultiBinding>
+                                        </DataTrigger.Binding>
+                                        <Setter Property="Foreground" Value="#007ACC"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Expander.Header>
+                <ItemsControl ItemsSource="{Binding Children}" ItemTemplate="{StaticResource NavChildButtonTemplate}" Margin="16,4,0,0"/>
+            </Expander>
+        </DataTemplate>
+    </UserControl.Resources>
     <Border Background="White" BorderBrush="#E0E0E0" BorderThickness="0,0,1,0">
         <DockPanel LastChildFill="True">
             <Button DockPanel.Dock="Top"
@@ -41,6 +98,18 @@
                     <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="{x:Type nav:NavCategory}">
                             <StackPanel>
+                                <Separator Margin="8,6,8,0" Background="#E0E0E0">
+                                    <Separator.Style>
+                                        <Style TargetType="Separator">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Id}" Value="admin">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Separator.Style>
+                                </Separator>
                                 <StackPanel x:Name="CategoryHeaderPanel"
                                             Orientation="Horizontal"
                                             Margin="8,10,8,4"
@@ -52,7 +121,7 @@
                                             PreviewKeyDown="CategoryHeader_PreviewKeyDown">
                                     <StackPanel.Tag>
                                         <MultiBinding Converter="{StaticResource CategoryHasSelectedChildConverter}">
-                                            <Binding Path="Children"/>
+                                            <Binding/>
                                             <Binding Path="DataContext.SelectedChildId" RelativeSource="{RelativeSource AncestorType=UserControl}"/>
                                         </MultiBinding>
                                     </StackPanel.Tag>
@@ -99,7 +168,7 @@
                                     </TextBlock>
                                 </StackPanel>
 
-                                <ItemsControl ItemsSource="{Binding Children}" Margin="28,0,8,8">
+                                <ItemsControl ItemsSource="{Binding Children}" ItemTemplate="{StaticResource NavChildButtonTemplate}" Margin="28,0,8,8">
                                     <ItemsControl.Style>
                                         <Style TargetType="ItemsControl">
                                             <Style.Triggers>
@@ -109,37 +178,18 @@
                                             </Style.Triggers>
                                         </Style>
                                     </ItemsControl.Style>
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate DataType="{x:Type nav:NavChild}">
-                                            <Button Command="{Binding DataContext.SelectItemCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                    CommandParameter="{Binding ViewKey}"
-                                                    HorizontalContentAlignment="Left"
-                                                    Background="Transparent"
-                                                    BorderThickness="0"
-                                                    Padding="4,4"
-                                                    Margin="0,1">
-                                                <Button.Tag>
-                                                    <MultiBinding Converter="{StaticResource EqualityToBoolConverter}">
-                                                        <Binding Path="Id"/>
-                                                        <Binding Path="DataContext.SelectedChildId" RelativeSource="{RelativeSource AncestorType=UserControl}"/>
-                                                    </MultiBinding>
-                                                </Button.Tag>
-                                                <Button.Style>
-                                                    <Style TargetType="Button">
-                                                        <Setter Property="Foreground" Value="#333333"/>
-                                                        <Setter Property="FontWeight" Value="Normal"/>
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource Self}, Path=Tag}" Value="True">
-                                                                <Setter Property="Foreground" Value="#007ACC"/>
-                                                                <Setter Property="FontWeight" Value="Bold"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </Button.Style>
-                                                <TextBlock Text="{Binding Label}"/>
-                                            </Button>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <ItemsControl ItemsSource="{Binding Groups}" ItemTemplate="{StaticResource NavGroupExpanderTemplate}" Margin="20,0,8,8">
+                                    <ItemsControl.Style>
+                                        <Style TargetType="ItemsControl">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding DataContext.IsCollapsed, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ItemsControl.Style>
                                 </ItemsControl>
 
                                 <Popup x:Name="CategoryFlyoutPopup"
@@ -174,6 +224,32 @@
                                                                 Foreground="#333333">
                                                             <TextBlock Text="{Binding Label}"/>
                                                         </Button>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                            <ItemsControl ItemsSource="{Binding Groups}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate DataType="{x:Type nav:NavGroup}">
+                                                        <StackPanel Margin="0,4,0,0">
+                                                            <TextBlock Text="{Binding Label}" FontWeight="SemiBold" Foreground="#666666"
+                                                                       FontSize="11" Margin="12,4,12,4"/>
+                                                            <ItemsControl ItemsSource="{Binding Children}">
+                                                                <ItemsControl.ItemTemplate>
+                                                                    <DataTemplate DataType="{x:Type nav:NavChild}">
+                                                                        <Button Command="{Binding DataContext.SelectItemCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                                CommandParameter="{Binding ViewKey}"
+                                                                                Click="FlyoutChild_Click"
+                                                                                HorizontalContentAlignment="Left"
+                                                                                Background="Transparent"
+                                                                                BorderThickness="0"
+                                                                                Padding="12,6"
+                                                                                Foreground="#333333">
+                                                                            <TextBlock Text="{Binding Label}"/>
+                                                                        </Button>
+                                                                    </DataTemplate>
+                                                                </ItemsControl.ItemTemplate>
+                                                            </ItemsControl>
+                                                        </StackPanel>
                                                     </DataTemplate>
                                                 </ItemsControl.ItemTemplate>
                                             </ItemsControl>

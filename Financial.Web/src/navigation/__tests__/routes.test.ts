@@ -7,7 +7,10 @@ import { PAGE_ROUTES } from '../routes'
 // time: a NAV_TREE entry with no route renders a sidebar link that 404s, and a route missing from
 // NAV_TREE is unreachable except by typing the URL. These tests are the only thing that notices.
 
-const navRoutes = NAV_TREE.flatMap((category) => category.children.map((child) => child.route))
+const navRoutes = NAV_TREE.flatMap((category) => [
+  ...category.children.map((child) => child.route),
+  ...(category.groups ?? []).flatMap((group) => group.children.map((child) => child.route)),
+])
 const declaredRoutes = PAGE_ROUTES.map((route) => `/${route.path}`)
 
 describe('route and sidebar agreement', () => {

@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react'
 import {
   ActiveInvestmentsPage,
+  AdminEntityPlaceholderPage,
   AnnualSummaryPage,
   ControleMaePage,
   CurrentValuesPage,
@@ -38,4 +39,17 @@ export const PAGE_ROUTES: PageRoute[] = [
   { path: 'cashflow/reserva', element: <ReservaPage /> },
   { path: 'cashflow/mensais', element: <MensaisPage /> },
   { path: 'cashflow/controle-mae', element: <ControleMaePage /> },
+  { path: 'admin/investment/assets', element: <AdminEntityPlaceholderPage entityLabel="Assets" /> },
+  { path: 'admin/investment/brokers', element: <AdminEntityPlaceholderPage entityLabel="Brokers" /> },
+  { path: 'admin/investment/portfolios', element: <AdminEntityPlaceholderPage entityLabel="Portfolios" /> },
+  { path: 'admin/cashflow/banks', element: <AdminEntityPlaceholderPage entityLabel="Banks" /> },
+  { path: 'admin/cashflow/categories', element: <AdminEntityPlaceholderPage entityLabel="Categories" /> },
+  { path: 'admin/cashflow/credit-cards', element: <AdminEntityPlaceholderPage entityLabel="Credit Cards" /> },
+  { path: 'admin/cashflow/income-sources', element: <AdminEntityPlaceholderPage entityLabel="Income Sources" /> },
+  {
+    path: 'admin/cashflow/investment-accounts',
+    element: <AdminEntityPlaceholderPage entityLabel="Investment Accounts" />,
+  },
+  { path: 'admin/cashflow/recurring-bills', element: <AdminEntityPlaceholderPage entityLabel="Recurring Bills" /> },
+  { path: 'admin/cashflow/reserve-buckets', element: <AdminEntityPlaceholderPage entityLabel="Reserve Buckets" /> },
 ]

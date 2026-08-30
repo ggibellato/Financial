@@ -35,13 +35,56 @@ describe('Sidebar', () => {
     renderSidebar()
 
     expect(screen.getByText('Investments')).toBeInTheDocument()
-    expect(screen.getByText('CashFlow')).toBeInTheDocument()
+    expect(screen.getAllByText('CashFlow').length).toBeGreaterThan(0)
+    expect(screen.getByText('Admin')).toBeInTheDocument()
     for (const category of NAV_TREE) {
       for (const child of category.children) {
         expect(screen.getByRole('link', { name: child.label })).toBeInTheDocument()
       }
     }
     expect(screen.getByRole('navigation', { name: 'Main' })).not.toHaveClass('sidebar--collapsed')
+  })
+
+  it('renders the Admin category with a divider, its two groups, and no group children until expanded', () => {
+    renderSidebar()
+
+    expect(document.querySelector('.sidebar__divider')).toBeInTheDocument()
+    expect(screen.getByText('Investment')).toBeInTheDocument()
+    const adminGroups = NAV_TREE.find((c) => c.id === 'admin')!.groups!
+    for (const group of adminGroups) {
+      for (const child of group.children) {
+        expect(screen.queryByRole('link', { name: child.label })).not.toBeInTheDocument()
+      }
+    }
+  })
+
+  it('expanding an Admin group reveals its entity leaves, and only one group at a time', () => {
+    renderSidebar()
+
+    fireEvent.click(screen.getByText('Investment'))
+    expect(screen.getByRole('link', { name: 'Brokers' })).toBeInTheDocument()
+
+    const cashflowGroupHeader = screen
+      .getAllByText('CashFlow')
+      .find((el) => el.closest('.sidebar__group-header'))!
+    fireEvent.click(cashflowGroupHeader)
+
+    expect(screen.getByRole('link', { name: 'Banks' })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Brokers' })).not.toBeInTheDocument()
+  })
+
+  it('all Admin entity leaves navigate to their routes once their group is expanded', () => {
+    renderSidebar()
+
+    const adminGroups = NAV_TREE.find((c) => c.id === 'admin')!.groups!
+    for (const group of adminGroups) {
+      const groupHeader = screen.getAllByText(group.label).find((el) => el.closest('.sidebar__group-header'))!
+      fireEvent.click(groupHeader)
+      for (const child of group.children) {
+        fireEvent.click(screen.getByRole('link', { name: child.label }))
+        expect(screen.getByTestId('location')).toHaveTextContent(child.route)
+      }
+    }
   })
 
   it('toggling collapses and expands the sidebar', () => {
@@ -87,7 +130,11 @@ describe('Sidebar', () => {
     renderSidebar()
 
     fireEvent.click(screen.getByText('Investments'))
-    fireEvent.click(screen.getByText('CashFlow'))
+    const cashflowCategoryHeader = screen
+      .getAllByText('CashFlow')
+      .find((el) => el.closest('.sidebar__category-header'))!
+    fireEvent.click(cashflowCategoryHeader)
+    fireEvent.click(screen.getByText('Admin'))
 
     expect(screen.getByTestId('location')).toHaveTextContent('/investments/active-investments')
   })
@@ -203,7 +250,10 @@ describe('Sidebar', () => {
     it('expanded sidebar shows no flyout on hover or focus', () => {
       renderSidebar()
 
-      fireEvent.mouseEnter(screen.getByText('CashFlow'))
+      const cashflowCategoryHeader = screen
+        .getAllByText('CashFlow')
+        .find((el) => el.closest('.sidebar__category-header'))!
+      fireEvent.mouseEnter(cashflowCategoryHeader)
 
       expect(document.querySelector('.sidebar-flyout')).not.toBeInTheDocument()
     })
