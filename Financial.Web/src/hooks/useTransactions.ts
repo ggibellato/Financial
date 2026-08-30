@@ -5,10 +5,15 @@ import { useSelectedNode } from '../context/SelectedNodeContext'
 import { buildSelectionKey } from './useCredits'
 import type { PeriodFilterOption } from '../utils/periodFilter'
 import { DEFAULT_FILTER, getPeriodFilterStartDate } from '../utils/periodFilter'
-import { formatMonthKey, getErrorMessage, pad, parseValidatedNumber, toInputDate } from '../utils/formatters'
+import { formatMonthKey, getErrorMessage, pad, parseValidatedNumber, toInputDate, todayIsoDate } from '../utils/formatters'
+import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
 
 export type TransactionFormField = 'formDate' | 'formType' | 'formQuantity' | 'formUnitPrice' | 'formFees'
 export type ChartDisplayMode = 'Bar' | 'Line'
+
+const DATE_KEY = 'investmentTransaction.date'
+const TYPE_KEY = 'investmentTransaction.type'
+const TYPES = ['Buy', 'Sell']
 
 export interface TransactionMonthBucket {
   month: string
@@ -104,7 +109,7 @@ type TransactionsAction =
   | { type: 'RETRY' }
   | { type: 'SET_FILTER'; payload: { filter: PeriodFilterOption; key: string } }
   | { type: 'SET_CHART_MODE'; payload: { mode: ChartDisplayMode; key: string } }
-  | { type: 'SHOW_NEW_FORM' }
+  | { type: 'SHOW_NEW_FORM'; payload: { date: string; type: string } }
   | { type: 'SHOW_EDIT_FORM'; payload: TransactionDto }
   | { type: 'CANCEL_FORM' }
   | { type: 'SET_FORM_FIELD'; payload: { field: TransactionFormField; value: string } }
@@ -177,8 +182,8 @@ function reducer(state: TransactionsState, action: TransactionsAction): Transact
         ...state,
         isFormVisible: true,
         editingId: null,
-        formDate: '',
-        formType: 'Buy',
+        formDate: action.payload.date,
+        formType: action.payload.type,
         formQuantity: '',
         formUnitPrice: '',
         formFees: '',
@@ -335,7 +340,16 @@ export function useTransactions(): TransactionsData {
     [selectedNode],
   )
 
-  const showNewForm = useCallback(() => dispatch({ type: 'SHOW_NEW_FORM' }), [])
+  const showNewForm = useCallback(() => {
+    const storedType = getStoredDefault(TYPE_KEY)
+    dispatch({
+      type: 'SHOW_NEW_FORM',
+      payload: {
+        date: getStoredDefault(DATE_KEY) ?? todayIsoDate(),
+        type: storedType && TYPES.includes(storedType) ? storedType : 'Buy',
+      },
+    })
+  }, [])
 
   const showEditForm = useCallback((transaction: TransactionDto) => {
     dispatch({ type: 'SHOW_EDIT_FORM', payload: transaction })
@@ -389,7 +403,11 @@ export function useTransactions(): TransactionsData {
       : apiClient.addTransaction(base)
 
     void call
-      .then((result) => dispatch({ type: 'SAVE_SUCCESS', payload: result }))
+      .then((result) => {
+        setStoredDefault(DATE_KEY, formDate)
+        setStoredDefault(TYPE_KEY, formType)
+        dispatch({ type: 'SAVE_SUCCESS', payload: result })
+      })
       .catch((err: unknown) => {
         dispatch({
           type: 'SAVE_ERROR',

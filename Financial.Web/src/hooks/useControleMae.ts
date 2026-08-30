@@ -1,10 +1,15 @@
 import { useCallback, useEffect, useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { MaeLedgerEntryDto, MaeLedgerTotalsDto } from '../api/types'
-import { getErrorMessage, previousYearJanuaryFirst } from '../utils/formatters'
+import { getErrorMessage, previousYearJanuaryFirst, todayIsoDate } from '../utils/formatters'
+import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
 
 export type CreateFormField = 'createDate' | 'createDescription' | 'createNote' | 'createSourceCurrency' | 'createSourceValue'
 export type EditField = 'editBrlValue' | 'editGbpValue'
+
+const DATE_KEY = 'createEntry.date'
+const CURRENCY_KEY = 'createEntry.sourceCurrency'
+const CURRENCIES = ['BRL', 'GBP']
 
 interface ControleMaeState {
   fromDate: string
@@ -37,7 +42,7 @@ type ControleMaeAction =
   | { type: 'FETCH_ERROR'; payload: string }
   | { type: 'FETCH_TOTALS_SUCCESS'; payload: MaeLedgerTotalsDto }
   | { type: 'RETRY' }
-  | { type: 'SHOW_CREATE_FORM' }
+  | { type: 'SHOW_CREATE_FORM'; payload: { date: string; sourceCurrency: string } }
   | { type: 'CANCEL_CREATE_FORM' }
   | { type: 'SET_CREATE_FIELD'; payload: { field: CreateFormField; value: string } }
   | { type: 'CREATE_START' }
@@ -96,7 +101,14 @@ function reducer(state: ControleMaeState, action: ControleMaeAction): ControleMa
     case 'RETRY':
       return { ...state, retryCount: state.retryCount + 1 }
     case 'SHOW_CREATE_FORM':
-      return { ...state, isCreateFormOpen: true, editingId: null, saveError: null }
+      return {
+        ...state,
+        isCreateFormOpen: true,
+        editingId: null,
+        saveError: null,
+        createDate: action.payload.date,
+        createSourceCurrency: action.payload.sourceCurrency,
+      }
     case 'CANCEL_CREATE_FORM':
       return { ...state, ...BLANK_CREATE_FORM, isCreateFormOpen: false, createError: null }
     case 'SET_CREATE_FIELD':
@@ -200,7 +212,16 @@ export function useControleMae(): ControleMaeData {
 
   const retry = useCallback(() => dispatch({ type: 'RETRY' }), [])
 
-  const showCreateForm = useCallback(() => dispatch({ type: 'SHOW_CREATE_FORM' }), [])
+  const showCreateForm = useCallback(() => {
+    const storedCurrency = getStoredDefault(CURRENCY_KEY)
+    dispatch({
+      type: 'SHOW_CREATE_FORM',
+      payload: {
+        date: getStoredDefault(DATE_KEY) ?? todayIsoDate(),
+        sourceCurrency: storedCurrency && CURRENCIES.includes(storedCurrency) ? storedCurrency : 'BRL',
+      },
+    })
+  }, [])
 
   const cancelCreateForm = useCallback(() => dispatch({ type: 'CANCEL_CREATE_FORM' }), [])
 
@@ -239,6 +260,8 @@ export function useControleMae(): ControleMaeData {
         sourceValue,
       })
       .then(() => {
+        setStoredDefault(DATE_KEY, createDate)
+        setStoredDefault(CURRENCY_KEY, createSourceCurrency)
         dispatch({ type: 'CREATE_SUCCESS' })
         dispatch({ type: 'RETRY' })
       })

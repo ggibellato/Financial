@@ -55,6 +55,7 @@ describe('useControleMae', () => {
     deleteMaeLedgerEntryMock.mockReset()
     getMaeLedgerEntriesFromDateMock.mockResolvedValue(ENTRIES)
     getMaeLedgerTotalsMock.mockResolvedValue(TOTALS)
+    sessionStorage.clear()
   })
 
   it('fetches entries from January of the previous year by default', async () => {
@@ -124,6 +125,41 @@ describe('useControleMae', () => {
     act(() => result.current.submitCreate())
 
     await waitFor(() => expect(result.current.createError).toBe('Date must not be in the future.'))
+  })
+
+  it('showCreateForm defaults date to today and currency to BRL when nothing was persisted yet', async () => {
+    const { result } = renderHook(() => useControleMae())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showCreateForm())
+
+    const today = new Date().toISOString().slice(0, 10)
+    expect(result.current.createDate).toBe(today)
+    expect(result.current.createSourceCurrency).toBe('BRL')
+  })
+
+  it('persists date and source currency after a successful create, for the next create form', async () => {
+    createMaeLedgerEntryMock.mockResolvedValue({
+      id: 'e2', date: `${CURRENT_YEAR}-07-16`, description: 'Medical appointment', note: '',
+      sourceCurrency: 'GBP', brlValue: null, gbpValue: 40,
+    })
+    const { result } = renderHook(() => useControleMae())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    act(() => result.current.showCreateForm())
+    act(() => result.current.setCreateField('createDate', `${CURRENT_YEAR}-07-16`))
+    act(() => result.current.setCreateField('createDescription', 'Medical appointment'))
+    act(() => result.current.setCreateField('createSourceCurrency', 'GBP'))
+    act(() => result.current.setCreateField('createSourceValue', '40'))
+    act(() => result.current.submitCreate())
+    await waitFor(() => expect(createMaeLedgerEntryMock).toHaveBeenCalledTimes(1))
+
+    act(() => result.current.showCreateForm())
+
+    expect(result.current.createDate).toBe(`${CURRENT_YEAR}-07-16`)
+    expect(result.current.createSourceCurrency).toBe('GBP')
+    expect(result.current.createDescription).toBe('')
+    expect(result.current.createSourceValue).toBe('')
+    expect(result.current.createNote).toBe('')
   })
 
   it('saves an edit and re-fetches entries and totals on success', async () => {

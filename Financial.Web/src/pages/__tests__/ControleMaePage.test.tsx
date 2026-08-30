@@ -51,6 +51,7 @@ describe('ControleMaePage', () => {
     deleteMaeLedgerEntryMock.mockReset()
     getMaeLedgerEntriesFromDateMock.mockResolvedValue(ENTRIES)
     getMaeLedgerTotalsMock.mockResolvedValue(TOTALS)
+    sessionStorage.clear()
   })
 
   it('shows a loading state before data arrives', () => {
