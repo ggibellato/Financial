@@ -53,6 +53,9 @@ export interface SelectedNodeContextValue {
 
 export type TreeNodeDto = Schema<'TreeNodeDTO'>
 export type BrokerNodeDto = Schema<'BrokerNodeDTO'>
+export type BrokerDto = Schema<'BrokerDTO'>
+export type BrokerCreateDto = Schema<'BrokerCreateDTO'>
+export type BrokerUpdateDto = Schema<'BrokerUpdateDTO'>
 export type PortfolioNodeDto = Schema<'PortfolioNodeDTO'>
 export type AssetNodeDto = Schema<'AssetNodeDTO'>
 export type TransactionDto = Schema<'TransactionDTO'>
