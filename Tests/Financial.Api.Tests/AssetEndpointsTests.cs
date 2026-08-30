@@ -240,6 +240,148 @@ public class AssetEndpointsTests : ApiEndpointTests
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
+    [Fact]
+    public async Task GetAssets_ReturnsAcrossActiveAndHistoricBrokers()
+    {
+        var response = await Client.GetAsync("/api/v1/financial/assets");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var assets = await response.Content.ReadFromJsonAsync<List<AssetAdminDTO>>();
+        assets.Should().Contain(a => a.Name == "BCIA11" && a.BrokerStatus == "Active");
+        assets.Should().Contain(a => a.Name == "CLOSEDASSET" && a.BrokerStatus == "Historic");
+    }
+
+    [Fact]
+    public async Task CreateAsset_UnderActiveBrokerPortfolio_SucceedsWithZeroQuantity()
+    {
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/assets", new AssetAdminCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            Name = "NEWASSET",
+            ISIN = "US0378331005",
+            Ticker = "NEW"
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var created = await response.Content.ReadFromJsonAsync<AssetAdminDTO>();
+        created!.Quantity.Should().Be(0);
+
+        var atNode = await Client.GetAsync("/api/v1/financial/assets/XPI/Default/NEWASSET");
+        atNode.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task CreateAsset_DuplicateNameInPortfolio_ReturnsConflict()
+    {
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/assets", new AssetAdminCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            Name = "BCIA11"
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+    }
+
+    [Fact]
+    public async Task CreateAsset_PortfolioBelongingToADifferentBroker_ReturnsNotFound()
+    {
+        // "Default" exists under XPI, not under a broker named "NoSuchBroker" — proves F04's create is
+        // scoped to the (Broker, Portfolio) pair, not just any portfolio name anywhere.
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/assets", new AssetAdminCreateDTO
+        {
+            BrokerName = "NoSuchBroker",
+            PortfolioName = "Default",
+            Name = "NEWASSET"
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task CreateAsset_UnderAPortfolioCreatedViaF03_SucceedsScopedToItsParentBroker()
+    {
+        // Cross-feature: a Portfolio created via F03 (under an Active Broker) must be selectable as
+        // the parent Portfolio when creating an Asset via F04, scoped correctly to its parent Broker.
+        await Client.PostAsJsonAsync("/api/v1/financial/portfolios", new { BrokerName = "XPI", Name = "Cross-Feature Portfolio" });
+
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/assets", new AssetAdminCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Cross-Feature Portfolio",
+            Name = "CROSSASSET"
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var created = await response.Content.ReadFromJsonAsync<AssetAdminDTO>();
+        created!.PortfolioName.Should().Be("Cross-Feature Portfolio");
+    }
+
+    [Fact]
+    public async Task DeletePortfolio_HoldingAnAssetCreatedViaF04_IsBlockedUntilTheAssetIsRemoved()
+    {
+        // Cross-feature: a Portfolio that already holds an Asset (created via F04) cannot be deleted
+        // from F03 until that Asset is removed/archived.
+        await Client.PostAsJsonAsync("/api/v1/financial/portfolios", new { BrokerName = "XPI", Name = "Cross-Feature Portfolio 2" });
+        await Client.PostAsJsonAsync("/api/v1/financial/assets", new AssetAdminCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Cross-Feature Portfolio 2",
+            Name = "CROSSASSET2"
+        });
+
+        var deleteBlocked = await Client.DeleteAsync("/api/v1/financial/portfolios/XPI/Cross-Feature%20Portfolio%202");
+        deleteBlocked.StatusCode.Should().Be(HttpStatusCode.Conflict);
+
+        await Client.PostAsJsonAsync("/api/v1/financial/assets/archive", new ArchiveAssetRequestDTO
+        {
+            BrokerName = "XPI",
+            SourcePortfolioName = "Cross-Feature Portfolio 2",
+            AssetName = "CROSSASSET2",
+            DestinationPortfolioName = "Cross-Feature Portfolio 2"
+        });
+
+        var deleteAfterArchive = await Client.DeleteAsync("/api/v1/financial/portfolios/XPI/Cross-Feature%20Portfolio%202");
+        deleteAfterArchive.StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
+
+    [Fact]
+    public async Task CreateAsset_InvalidIsinFormat_ReturnsBadRequest()
+    {
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/assets", new AssetAdminCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            Name = "BADISIN",
+            ISIN = "NOT-AN-ISIN"
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task UpdateAsset_ExistingAsset_PersistsIdentityChangeRegardlessOfHistory()
+    {
+        var response = await Client.PutAsJsonAsync("/api/v1/financial/assets/XPI/Default/BCIA11", new AssetAdminUpdateDTO
+        {
+            Name = "BCIA11",
+            ISIN = "GB0002374006",
+            Exchange = "LSE",
+            Ticker = "BCIA11",
+            Country = CountryCode.UK,
+            Class = GlobalAssetClass.Equity
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var updated = await Client.GetFromJsonAsync<AssetDetailsDTO>("/api/v1/financial/assets/XPI/Default/BCIA11");
+        updated!.ISIN.Should().Be("GB0002374006");
+        updated.Class.Should().Be(GlobalAssetClass.Equity);
+    }
+
     /// <summary>Sells the whole Active position so the asset becomes archivable.</summary>
     private async Task CloseOutActiveAssetAsync()
     {

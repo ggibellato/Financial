@@ -447,11 +447,11 @@ graph TD
 - [x] Attempting to delete a Portfolio with one or more Assets is blocked, both client-side and server-side (409 response), consistent with the existing non-empty-portfolio rule
 
 ### F04. Asset CRUD
-- [ ] Creating an Asset requires selecting an Active Broker and one of its Portfolios; the new Asset appears in that Portfolio with zero Quantity and no transactions
-- [ ] Editing an existing Asset's Name, ISIN, Exchange, Ticker, Country, Class, and/or LocalTypeCode persists the change regardless of whether the Asset has transaction history
-- [ ] Deleting (archiving) an Asset with zero Quantity succeeds and the Asset no longer appears in active-portfolio views
-- [ ] Attempting to delete an Asset with a non-zero Quantity is blocked, both client-side and server-side, consistent with the existing Archive rule
-- [ ] An invalid ISIN format is rejected with an inline validation error before save
+- [x] Creating an Asset requires selecting an Active Broker and one of its Portfolios; the new Asset appears in that Portfolio with zero Quantity and no transactions
+- [x] Editing an existing Asset's Name, ISIN, Exchange, Ticker, Country, Class, and/or LocalTypeCode persists the change regardless of whether the Asset has transaction history
+- [x] Deleting (archiving) an Asset with zero Quantity succeeds and the Asset no longer appears in active-portfolio views
+- [x] Attempting to delete an Asset with a non-zero Quantity is blocked, both client-side and server-side, consistent with the existing Archive rule
+- [x] An invalid ISIN format is rejected with an inline validation error before save
 
 ### F05. Bank CRUD
 - [ ] Creating a Bank with a unique Name succeeds and appears in the list
@@ -498,5 +498,5 @@ graph TD
 ### Cross-Feature Integration
 - [x] A Broker created or left Active in F02 (with zero Portfolios) is selectable as the parent Broker when creating a Portfolio in F03
 - [x] A Broker moved to Historic in F02 is excluded from the parent-Broker picker in F03
-- [ ] A Portfolio created in F03 (under an Active Broker) is selectable as the parent Portfolio when creating an Asset in F04, scoped correctly to its parent Broker
-- [ ] A Portfolio that already holds an Asset (via F04) cannot be deleted from F03 until that Asset is removed/archived
+- [x] A Portfolio created in F03 (under an Active Broker) is selectable as the parent Portfolio when creating an Asset in F04, scoped correctly to its parent Broker
+- [x] A Portfolio that already holds an Asset (via F04) cannot be deleted from F03 until that Asset is removed/archived

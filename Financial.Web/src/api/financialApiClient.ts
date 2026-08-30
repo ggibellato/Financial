@@ -2,6 +2,9 @@ import { ApiError } from './apiError'
 import { API_BASE_URL } from './config'
 import type {
   AggregatedSummaryDto,
+  AssetAdminCreateDto,
+  AssetAdminDto,
+  AssetAdminUpdateDto,
   AssetCashFlowDto,
   AssetDetailsDto,
   ArchiveAssetRequestDto,
@@ -99,6 +102,9 @@ export interface FinancialApiClient {
   createPortfolio: (request: PortfolioCreateDto) => Promise<PortfolioDto>
   updatePortfolio: (brokerName: string, currentName: string, request: PortfolioUpdateDto) => Promise<PortfolioDto>
   deleteEmptyPortfolio: (brokerName: string, portfolioName: string, scope?: InvestmentScope) => Promise<void>
+  getAdminAssets: () => Promise<AssetAdminDto[]>
+  createAsset: (request: AssetAdminCreateDto) => Promise<AssetAdminDto>
+  updateAsset: (brokerName: string, portfolioName: string, currentName: string, request: AssetAdminUpdateDto) => Promise<AssetAdminDto>
   addTransaction: (request: TransactionCreateDto) => Promise<AssetDetailsDto>
   updateTransaction: (request: TransactionUpdateDto) => Promise<AssetDetailsDto>
   deleteTransaction: (request: TransactionDeleteDto) => Promise<AssetDetailsDto>
@@ -310,6 +316,14 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       requestVoid(
         `/portfolios/${encodeURIComponent(brokerName)}/${encodeURIComponent(portfolioName)}${buildScopeQuery(scope)}`,
         { method: 'DELETE' },
+      ),
+    getAdminAssets: () => request<AssetAdminDto[]>('/assets'),
+    createAsset: (requestBody) =>
+      request<AssetAdminDto>('/assets', { method: 'POST', body: JSON.stringify(requestBody) }),
+    updateAsset: (brokerName, portfolioName, currentName, requestBody) =>
+      request<AssetAdminDto>(
+        `/assets/${encodeURIComponent(brokerName)}/${encodeURIComponent(portfolioName)}/${encodeURIComponent(currentName)}`,
+        { method: 'PUT', body: JSON.stringify(requestBody) },
       ),
     addTransaction: (requestBody) =>
       request<AssetDetailsDto>('/transactions', {

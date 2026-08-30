@@ -157,6 +157,95 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/assets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lists every asset across both Active and Historic brokers/portfolios. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description 200 OK with the list of assets. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AssetAdminDTO"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Registers a new asset's identity under an Active broker's portfolio, with zero quantity. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/*+json": null | components["schemas"]["AssetAdminCreateDTO"];
+                    "application/json": null | components["schemas"]["AssetAdminCreateDTO"];
+                    "text/json": null | components["schemas"]["AssetAdminCreateDTO"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AssetAdminDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/assets/archive": {
         parameters: {
             query?: never;
@@ -346,7 +435,67 @@ export interface paths {
                 };
             };
         };
-        put?: never;
+        /** Updates an existing asset's identity fields, regardless of its transaction history. */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The asset's parent broker name. */
+                    brokerName: string;
+                    /** @description The asset's parent portfolio name. */
+                    portfolioName: string;
+                    /** @description The asset's current name. */
+                    assetName: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/*+json": null | components["schemas"]["AssetAdminUpdateDTO"];
+                    "application/json": null | components["schemas"]["AssetAdminUpdateDTO"];
+                    "text/json": null | components["schemas"]["AssetAdminUpdateDTO"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AssetAdminDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
         post?: never;
         delete?: never;
         options?: never;
@@ -4172,6 +4321,40 @@ export interface components {
             brokerName: string;
             destinationPortfolioName: string;
             sourcePortfolioName: string;
+        };
+        AssetAdminCreateDTO: {
+            brokerName: string;
+            class?: null | components["schemas"]["GlobalAssetClass"];
+            country?: components["schemas"]["CountryCode"];
+            exchange?: string;
+            isin?: string;
+            localTypeCode?: string;
+            name: string;
+            portfolioName: string;
+            ticker?: string;
+        };
+        AssetAdminDTO: {
+            brokerName: string;
+            brokerStatus: string;
+            class?: components["schemas"]["GlobalAssetClass"];
+            country?: components["schemas"]["CountryCode"];
+            exchange?: string;
+            isin?: string;
+            localTypeCode?: string;
+            name: string;
+            portfolioName: string;
+            /** Format: double */
+            quantity?: number;
+            ticker?: string;
+        };
+        AssetAdminUpdateDTO: {
+            class?: components["schemas"]["GlobalAssetClass"];
+            country?: components["schemas"]["CountryCode"];
+            exchange?: string;
+            isin?: string;
+            localTypeCode?: string;
+            name: string;
+            ticker?: string;
         };
         AssetBreakdownItemDTO: {
             assetName: string;

@@ -45,6 +45,124 @@
         ],
         "type": "object"
       },
+      "AssetAdminCreateDTO": {
+        "properties": {
+          "brokerName": {
+            "type": "string"
+          },
+          "class": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/GlobalAssetClass"
+              }
+            ]
+          },
+          "country": {
+            "$ref": "#/components/schemas/CountryCode"
+          },
+          "exchange": {
+            "type": "string"
+          },
+          "isin": {
+            "type": "string"
+          },
+          "localTypeCode": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "portfolioName": {
+            "type": "string"
+          },
+          "ticker": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "brokerName",
+          "portfolioName",
+          "name"
+        ],
+        "type": "object"
+      },
+      "AssetAdminDTO": {
+        "properties": {
+          "brokerName": {
+            "type": "string"
+          },
+          "brokerStatus": {
+            "type": "string"
+          },
+          "class": {
+            "$ref": "#/components/schemas/GlobalAssetClass"
+          },
+          "country": {
+            "$ref": "#/components/schemas/CountryCode"
+          },
+          "exchange": {
+            "type": "string"
+          },
+          "isin": {
+            "type": "string"
+          },
+          "localTypeCode": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "portfolioName": {
+            "type": "string"
+          },
+          "quantity": {
+            "format": "double",
+            "type": "number"
+          },
+          "ticker": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "brokerName",
+          "portfolioName",
+          "brokerStatus"
+        ],
+        "type": "object"
+      },
+      "AssetAdminUpdateDTO": {
+        "properties": {
+          "class": {
+            "$ref": "#/components/schemas/GlobalAssetClass"
+          },
+          "country": {
+            "$ref": "#/components/schemas/CountryCode"
+          },
+          "exchange": {
+            "type": "string"
+          },
+          "isin": {
+            "type": "string"
+          },
+          "localTypeCode": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "ticker": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": "object"
+      },
       "AssetBreakdownItemDTO": {
         "properties": {
           "assetName": {
@@ -2988,6 +3106,117 @@
         ]
       }
     },
+    "/assets": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AssetAdminDTO"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "200 OK with the list of assets."
+          }
+        },
+        "summary": "Lists every asset across both Active and Historic brokers/portfolios.",
+        "tags": [
+          "Assets"
+        ]
+      },
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/*\u002Bjson": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AssetAdminCreateDTO"
+                  }
+                ]
+              }
+            },
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AssetAdminCreateDTO"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AssetAdminCreateDTO"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetAdminDTO"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "summary": "Registers a new asset\u0027s identity under an Active broker\u0027s portfolio, with zero quantity.",
+        "tags": [
+          "Assets"
+        ]
+      }
+    },
     "/assets/archive": {
       "post": {
         "description": "Its own endpoint rather than a scope pair on the move: the direction is fixed, so there is no\nway to ask for the reverse.",
@@ -3231,6 +3460,123 @@
           }
         },
         "summary": "Returns the full details for a single asset.",
+        "tags": [
+          "Assets"
+        ]
+      },
+      "put": {
+        "parameters": [
+          {
+            "description": "The asset\u0027s parent broker name.",
+            "in": "path",
+            "name": "brokerName",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The asset\u0027s parent portfolio name.",
+            "in": "path",
+            "name": "portfolioName",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The asset\u0027s current name.",
+            "in": "path",
+            "name": "assetName",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/*\u002Bjson": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AssetAdminUpdateDTO"
+                  }
+                ]
+              }
+            },
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AssetAdminUpdateDTO"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AssetAdminUpdateDTO"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetAdminDTO"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "summary": "Updates an existing asset\u0027s identity fields, regardless of its transaction history.",
         "tags": [
           "Assets"
         ]

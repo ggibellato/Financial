@@ -1,0 +1,25 @@
+.assets-page {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.assets-page__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.assets-page__filters {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.assets-page__empty {
+  color: var(--text, #333);
+}

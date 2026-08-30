@@ -57,23 +57,50 @@ public class ControllerGuardClauseTests
     [Fact]
     public void AssetsController_NullNavigationService_Throws()
     {
-        Action act = () => new AssetsController(null!, new StubAssetMoveService());
+        Action act = () => new AssetsController(null!, new StubAssetMoveService(), new StubAssetAdminService());
         act.Should().Throw<ArgumentNullException>();
     }
 
     [Fact]
     public void AssetsController_NullAssetMoveService_Throws()
     {
-        Action act = () => new AssetsController(new StubNavigationService(), null!);
+        Action act = () => new AssetsController(new StubNavigationService(), null!, new StubAssetAdminService());
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
+    public void AssetsController_NullAssetAdminService_Throws()
+    {
+        Action act = () => new AssetsController(new StubNavigationService(), new StubAssetMoveService(), null!);
         act.Should().Throw<ArgumentNullException>();
     }
 
     [Fact]
     public async Task AssetsController_MoveAsset_NullBody_ReturnsBadRequest()
     {
-        var controller = new AssetsController(new StubNavigationService(), new StubAssetMoveService());
+        var controller = new AssetsController(new StubNavigationService(), new StubAssetMoveService(), new StubAssetAdminService());
 
         var result = await controller.MoveAsset(null!);
+
+        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
+    }
+
+    [Fact]
+    public async Task AssetsController_CreateAsset_NullBody_ReturnsBadRequest()
+    {
+        var controller = new AssetsController(new StubNavigationService(), new StubAssetMoveService(), new StubAssetAdminService());
+
+        var result = await controller.CreateAsset(null!);
+
+        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
+    }
+
+    [Fact]
+    public async Task AssetsController_UpdateAsset_NullBody_ReturnsBadRequest()
+    {
+        var controller = new AssetsController(new StubNavigationService(), new StubAssetMoveService(), new StubAssetAdminService());
+
+        var result = await controller.UpdateAsset("Broker", "Portfolio", "Asset", null!);
 
         result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
     }
@@ -446,6 +473,13 @@ public class ControllerGuardClauseTests
     {
         public Task<AssetDetailsDTO> MoveAssetAsync(MoveAssetRequestDTO request) => throw new NotImplementedException();
         public Task<AssetDetailsDTO> ArchiveAssetAsync(ArchiveAssetRequestDTO request) => throw new NotImplementedException();
+    }
+
+    private sealed class StubAssetAdminService : IAssetAdminService
+    {
+        public IReadOnlyList<AssetAdminDTO> GetAssets() => throw new NotImplementedException();
+        public Task<AssetAdminDTO> CreateAssetAsync(AssetAdminCreateDTO request) => throw new NotImplementedException();
+        public Task<AssetAdminDTO> UpdateAssetAsync(string brokerName, string portfolioName, string currentName, AssetAdminUpdateDTO request) => throw new NotImplementedException();
     }
 
     private sealed class StubNavigationService : INavigationService

@@ -107,6 +107,93 @@ internal sealed class StubPortfolioService : IPortfolioService
     }
 }
 
+internal sealed class StubAssetAdminService : IAssetAdminService
+{
+    public List<AssetAdminDTO> Assets { get; set; } = [];
+    public AssetAdminCreateDTO? LastCreateRequest { get; private set; }
+    public (string BrokerName, string PortfolioName, string CurrentName, AssetAdminUpdateDTO Request)? LastUpdateRequest { get; private set; }
+    public Exception? ThrowOnCreate { get; set; }
+    public Exception? ThrowOnUpdate { get; set; }
+
+    public IReadOnlyList<AssetAdminDTO> GetAssets() => Assets;
+
+    public Task<AssetAdminDTO> CreateAssetAsync(AssetAdminCreateDTO request)
+    {
+        LastCreateRequest = request;
+        if (ThrowOnCreate is not null)
+        {
+            throw ThrowOnCreate;
+        }
+
+        var created = new AssetAdminDTO
+        {
+            Name = request.Name,
+            BrokerName = request.BrokerName,
+            PortfolioName = request.PortfolioName,
+            BrokerStatus = "Active",
+            ISIN = request.ISIN,
+            Exchange = request.Exchange,
+            Ticker = request.Ticker,
+            Country = request.Country,
+            LocalTypeCode = request.LocalTypeCode,
+            Class = request.Class ?? Financial.Investment.Domain.Entities.GlobalAssetClass.Unknown,
+            Quantity = 0,
+        };
+        Assets.Add(created);
+        return Task.FromResult(created);
+    }
+
+    public Task<AssetAdminDTO> UpdateAssetAsync(string brokerName, string portfolioName, string currentName, AssetAdminUpdateDTO request)
+    {
+        LastUpdateRequest = (brokerName, portfolioName, currentName, request);
+        if (ThrowOnUpdate is not null)
+        {
+            throw ThrowOnUpdate;
+        }
+
+        var updated = new AssetAdminDTO
+        {
+            Name = request.Name,
+            BrokerName = brokerName,
+            PortfolioName = portfolioName,
+            BrokerStatus = "Active",
+            ISIN = request.ISIN,
+            Exchange = request.Exchange,
+            Ticker = request.Ticker,
+            Country = request.Country,
+            LocalTypeCode = request.LocalTypeCode,
+            Class = request.Class,
+            Quantity = 0,
+        };
+        return Task.FromResult(updated);
+    }
+}
+
+internal sealed class StubAssetMoveService : IAssetMoveService
+{
+    public ArchiveAssetRequestDTO? LastArchiveRequest { get; private set; }
+    public Exception? ThrowOnArchive { get; set; }
+
+    public Task<AssetDetailsDTO> MoveAssetAsync(MoveAssetRequestDTO request) => throw new NotImplementedException();
+
+    public Task<AssetDetailsDTO> ArchiveAssetAsync(ArchiveAssetRequestDTO request)
+    {
+        LastArchiveRequest = request;
+        if (ThrowOnArchive is not null)
+        {
+            throw ThrowOnArchive;
+        }
+
+        return Task.FromResult(new AssetDetailsDTO
+        {
+            Name = request.AssetName,
+            BrokerName = request.BrokerName,
+            PortfolioName = request.DestinationPortfolioName,
+            Ticker = string.Empty,
+        });
+    }
+}
+
 /// <summary>Records the dialog it was shown and returns a caller-configured result, avoiding a real
 /// modal Window in tests.</summary>
 internal sealed class StubDialogService : IDialogService
@@ -123,6 +210,10 @@ internal sealed class StubDialogService : IDialogService
     public bool ShowPortfolioFormDialogResult { get; set; } = true;
     public PortfolioFormDialogViewModel? LastPortfolioFormDialog { get; private set; }
     public Action<PortfolioFormDialogViewModel>? OnShowPortfolioFormDialog { get; set; }
+
+    public bool ShowAssetFormDialogResult { get; set; } = true;
+    public AssetFormDialogViewModel? LastAssetFormDialog { get; private set; }
+    public Action<AssetFormDialogViewModel>? OnShowAssetFormDialog { get; set; }
 
     public bool Confirm(string message, string caption)
     {
@@ -148,5 +239,12 @@ internal sealed class StubDialogService : IDialogService
         LastPortfolioFormDialog = viewModel;
         OnShowPortfolioFormDialog?.Invoke(viewModel);
         return ShowPortfolioFormDialogResult;
+    }
+
+    public bool ShowAssetFormDialog(AssetFormDialogViewModel viewModel)
+    {
+        LastAssetFormDialog = viewModel;
+        OnShowAssetFormDialog?.Invoke(viewModel);
+        return ShowAssetFormDialogResult;
     }
 }

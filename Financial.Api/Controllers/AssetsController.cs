@@ -14,11 +14,61 @@ public sealed class AssetsController : ControllerBase
 {
     private readonly INavigationService _navigationService;
     private readonly IAssetMoveService _assetMoveService;
+    private readonly IAssetAdminService _assetAdminService;
 
-    public AssetsController(INavigationService navigationService, IAssetMoveService assetMoveService)
+    public AssetsController(INavigationService navigationService, IAssetMoveService assetMoveService, IAssetAdminService assetAdminService)
     {
         _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
         _assetMoveService = assetMoveService ?? throw new ArgumentNullException(nameof(assetMoveService));
+        _assetAdminService = assetAdminService ?? throw new ArgumentNullException(nameof(assetAdminService));
+    }
+
+    /// <summary>Lists every asset across both Active and Historic brokers/portfolios.</summary>
+    /// <returns>200 OK with the list of assets.</returns>
+    [HttpGet]
+    [ProducesResponseType(typeof(IReadOnlyList<AssetAdminDTO>), StatusCodes.Status200OK)]
+    public ActionResult<IReadOnlyList<AssetAdminDTO>> GetAssets()
+    {
+        return Ok(_assetAdminService.GetAssets());
+    }
+
+    /// <summary>Registers a new asset's identity under an Active broker's portfolio, with zero quantity.</summary>
+    /// <param name="request">The parent broker/portfolio and the asset's identity fields.</param>
+    /// <returns>200 OK with the created asset, 400 Bad Request if invalid, 404 Not Found if the broker isn't Active or the portfolio doesn't exist, or 409 Conflict if the name is already in use under that portfolio.</returns>
+    [HttpPost]
+    [ProducesResponseType(typeof(AssetAdminDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<AssetAdminDTO>> CreateAsset([FromBody] AssetAdminCreateDTO? request)
+    {
+        if (request is null)
+        {
+            return BadRequest();
+        }
+
+        return Ok(await _assetAdminService.CreateAssetAsync(request));
+    }
+
+    /// <summary>Updates an existing asset's identity fields, regardless of its transaction history.</summary>
+    /// <param name="brokerName">The asset's parent broker name.</param>
+    /// <param name="portfolioName">The asset's parent portfolio name.</param>
+    /// <param name="assetName">The asset's current name.</param>
+    /// <param name="request">The asset's new identity fields.</param>
+    /// <returns>200 OK with the updated asset, 400 Bad Request if invalid, 404 Not Found if the broker, portfolio or asset doesn't exist, or 409 Conflict if the new name is already in use under that portfolio.</returns>
+    [HttpPut("{brokerName}/{portfolioName}/{assetName}")]
+    [ProducesResponseType(typeof(AssetAdminDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<AssetAdminDTO>> UpdateAsset(string brokerName, string portfolioName, string assetName, [FromBody] AssetAdminUpdateDTO? request)
+    {
+        if (request is null)
+        {
+            return BadRequest();
+        }
+
+        return Ok(await _assetAdminService.UpdateAssetAsync(brokerName, portfolioName, assetName, request));
     }
 
     /// <summary>Returns the full details for a single asset.</summary>
