@@ -4,6 +4,10 @@ import type { BalanceAdjustmentDto } from '../api/types'
 import type { BankTotal } from './useMonthly'
 import { mapBalanceAdjustmentErrorToField, type BalanceAdjustmentFormField } from './mapBalanceAdjustmentErrorToField'
 import { getErrorMessage, parseValidatedNumber, todayIsoDate } from '../utils/formatters'
+import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
+
+const DATE_KEY = 'balanceAdjustment.date'
+const BANK_KEY = 'balanceAdjustment.bank'
 
 interface BalanceAdjustmentFormState {
   isOpen: boolean
@@ -60,8 +64,10 @@ export interface UseBalanceAdjustmentFormResult {
 }
 
 /**
- * Create opens with no bank pre-selected; picking a bank resolves its current calculated
- * balance client-side from the already-fetched bankTotals (no new network call).
+ * Create defaults the bank to the last successfully used one (P38-F10), validated against the
+ * currently fetched bankTotals so a since-removed bank never gets silently re-selected; picking
+ * a bank resolves its current calculated balance client-side from bankTotals (no new network
+ * call).
  */
 export function useBalanceAdjustmentForm(
   bankTotals: BankTotal[],
@@ -70,10 +76,15 @@ export function useBalanceAdjustmentForm(
   const [state, setState] = useState<BalanceAdjustmentFormState>(BLANK_STATE)
 
   function openCreateForm() {
+    const date = getStoredDefault(DATE_KEY) ?? todayIsoDate()
+    const storedBank = getStoredDefault(BANK_KEY)
+    const bankName = storedBank && bankTotals.some((b) => b.bankId === storedBank) ? storedBank : ''
     setState({
       ...BLANK_STATE,
       isOpen: true,
-      date: todayIsoDate(),
+      date,
+      bankName,
+      currentBalance: resolveCurrentBalance(bankTotals, bankName),
     })
   }
 
@@ -145,6 +156,8 @@ export function useBalanceAdjustmentForm(
 
     void request
       .then((result) => {
+        setStoredDefault(DATE_KEY, state.date)
+        setStoredDefault(BANK_KEY, state.bankName)
         setState((s) => ({ ...s, isSaving: false, savedDelta: result.delta }))
         onSaved()
       })

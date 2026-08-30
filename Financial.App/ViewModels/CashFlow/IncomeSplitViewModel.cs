@@ -17,6 +17,10 @@ public class IncomeSplitViewModel : ViewModelBase
     private string? _splitSaveError;
     private IncomeSplitResultDTO? _lastSplitResult;
 
+    // Persistent create-form default (P38-F10) - read on the next ShowSplitForm, written back
+    // after every successful submit.
+    private DateTime? _lastUsedSplitDate;
+
     public bool IsSplitFormOpen
     {
         get => _isSplitFormOpen;
@@ -120,7 +124,7 @@ public class IncomeSplitViewModel : ViewModelBase
     internal void ShowSplitForm()
     {
         _closeOtherForms();
-        SplitDate = DateTime.Today;
+        SplitDate = _lastUsedSplitDate ?? DateTime.Today;
         SplitAmount = string.Empty;
         SplitDescription = string.Empty;
         SplitSaveError = null;
@@ -147,6 +151,8 @@ public class IncomeSplitViewModel : ViewModelBase
                 Amount = decimal.Parse(SplitAmount),
                 Description = SplitDescription,
             });
+
+            _lastUsedSplitDate = SplitDate;
 
             LastSplitResult = result;
             await _refresh();

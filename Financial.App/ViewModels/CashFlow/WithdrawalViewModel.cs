@@ -20,6 +20,11 @@ public class WithdrawalViewModel : ViewModelBase
     private bool _isSubmittingWithdrawal;
     private string? _withdrawalSaveError;
 
+    // Persistent create-form defaults (P38-F10) - read on the next ShowWithdrawalForm, written
+    // back after every successful submit.
+    private DateTime? _lastUsedWithdrawalDate;
+    private Guid? _lastUsedWithdrawalBucketId;
+
     /// <summary>The same instance ReservaViewModel owns — mutated in place by its refresh, never replaced.</summary>
     public ObservableCollection<ReserveBucketDTO> Buckets { get; }
 
@@ -117,9 +122,11 @@ public class WithdrawalViewModel : ViewModelBase
     internal void ShowWithdrawalForm()
     {
         _closeOtherForms();
-        WithdrawalBucketId = DefaultBucketId();
+        WithdrawalBucketId = _lastUsedWithdrawalBucketId is { } lastBucket && Buckets.Any(b => b.Id == lastBucket)
+            ? lastBucket
+            : DefaultBucketId();
         WithdrawalAmount = string.Empty;
-        WithdrawalDate = DateTime.Today;
+        WithdrawalDate = _lastUsedWithdrawalDate ?? DateTime.Today;
         WithdrawalDescription = string.Empty;
         WithdrawalSaveError = null;
         IsWithdrawalFormOpen = true;
@@ -138,6 +145,10 @@ public class WithdrawalViewModel : ViewModelBase
         async () =>
         {
             await PostWithdrawalWithOverdraftHandlingAsync(confirmed: false);
+
+            _lastUsedWithdrawalDate = WithdrawalDate;
+            _lastUsedWithdrawalBucketId = WithdrawalBucketId;
+
             CloseWithdrawalForm();
             await _refresh();
         });
