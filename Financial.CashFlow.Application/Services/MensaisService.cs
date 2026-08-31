@@ -110,6 +110,11 @@ public sealed class MensaisService : IMensaisService
 
             var bill = _repository.GetRecurringBills().FirstOrThrow(b => b.Id == id, "Recurring bill", id);
 
+            if (!AreaParser.TryParse(request.Area, out var area))
+            {
+                throw new ArgumentException($"Area '{request.Area}' is not recognized.");
+            }
+
             if (!BillStatusParser.TryParse(request.Status, out var status))
             {
                 throw new ArgumentException($"Status '{request.Status}' is not recognized.");
@@ -117,7 +122,9 @@ public sealed class MensaisService : IMensaisService
 
             await _repository.ApplyAndSaveAsync(() =>
             {
-                bill.Update(status, request.Value);
+                bill.Update(
+                    request.DueDay, request.Description, request.Value, area, request.Note,
+                    request.NitNumber, request.MinimumWageValue, status);
                 return true;
             }).ConfigureAwait(false);
 

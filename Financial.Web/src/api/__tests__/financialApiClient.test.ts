@@ -703,7 +703,16 @@ describe('financialApiClient', () => {
   })
 
   it('puts a mensais bill update', async () => {
-    const requestBody: RecurringBillUpdateDto = { status: 'Paid', value: 900 }
+    const requestBody: RecurringBillUpdateDto = {
+      dueDay: 10,
+      description: 'INSS',
+      value: 900,
+      area: 'Brasil',
+      note: '',
+      nitNumber: null,
+      minimumWageValue: null,
+      status: 'Paid',
+    }
     const responseBody: RecurringBillDto = {
       id: 'b1',
       dueDay: 10,

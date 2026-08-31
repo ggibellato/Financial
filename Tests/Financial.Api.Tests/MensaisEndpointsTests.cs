@@ -85,31 +85,61 @@ public class MensaisEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
-    public async Task UpdateBill_ExistingId_ReturnsOkAndUpdatesFields()
+    public async Task UpdateBill_ExistingId_ReturnsOkAndUpdatesEveryField()
     {
         var created = await Client.PostAsJsonAsync("/api/v1/financial/mensais", ValidBrasilBillRequest());
         var bill = await created.Content.ReadFromJsonAsync<RecurringBillDTO>();
 
         var response = await Client.PutAsJsonAsync($"/api/v1/financial/mensais/{bill!.Id}", new RecurringBillUpdateDTO
         {
+            DueDay = 15,
+            Description = "INSS Renamed",
+            Value = 900m,
+            Area = "UK",
+            Note = "Updated note",
+            NitNumber = "12345678901",
+            MinimumWageValue = 1621m,
             Status = "Paid",
-            Value = 900m
         });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var updated = await response.Content.ReadFromJsonAsync<RecurringBillDTO>();
-        updated!.Status.Should().Be("Paid");
+        updated!.DueDay.Should().Be(15);
+        updated.Description.Should().Be("INSS Renamed");
         updated.Value.Should().Be(900m);
+        updated.Area.Should().Be("UK");
+        updated.Note.Should().Be("Updated note");
+        updated.NitNumber.Should().Be("12345678901");
+        updated.MinimumWageValue.Should().Be(1621m);
+        updated.Status.Should().Be("Paid");
+    }
+
+    [Fact]
+    public async Task UpdateBill_InvalidDueDay_ReturnsBadRequest()
+    {
+        var created = await Client.PostAsJsonAsync("/api/v1/financial/mensais", ValidBrasilBillRequest());
+        var bill = await created.Content.ReadFromJsonAsync<RecurringBillDTO>();
+
+        var response = await Client.PutAsJsonAsync($"/api/v1/financial/mensais/{bill!.Id}", ValidUpdateRequest(dueDay: 32));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task UpdateBill_InvalidArea_ReturnsBadRequest()
+    {
+        var created = await Client.PostAsJsonAsync("/api/v1/financial/mensais", ValidBrasilBillRequest());
+        var bill = await created.Content.ReadFromJsonAsync<RecurringBillDTO>();
+
+        var response = await Client.PutAsJsonAsync($"/api/v1/financial/mensais/{bill!.Id}", ValidUpdateRequest(area: "NotAnArea"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
     public async Task UpdateBill_UnknownId_ReturnsNotFound()
     {
-        var response = await Client.PutAsJsonAsync($"/api/v1/financial/mensais/{Guid.NewGuid()}", new RecurringBillUpdateDTO
-        {
-            Status = "Paid",
-            Value = 100m
-        });
+        var response = await Client.PutAsJsonAsync($"/api/v1/financial/mensais/{Guid.NewGuid()}", ValidUpdateRequest());
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
@@ -119,7 +149,7 @@ public class MensaisEndpointsTests : ApiEndpointTests
     {
         var created = await Client.PostAsJsonAsync("/api/v1/financial/mensais", ValidBrasilBillRequest());
         var bill = await created.Content.ReadFromJsonAsync<RecurringBillDTO>();
-        await Client.PutAsJsonAsync($"/api/v1/financial/mensais/{bill!.Id}", new RecurringBillUpdateDTO { Status = "Paid", Value = 900m });
+        await Client.PutAsJsonAsync($"/api/v1/financial/mensais/{bill!.Id}", ValidUpdateRequest());
 
         var response = await Client.PostAsync("/api/v1/financial/mensais/reset", null);
 
@@ -135,5 +165,15 @@ public class MensaisEndpointsTests : ApiEndpointTests
         Value = 850m,
         Area = "Brasil",
         Note = "Direct debit"
+    };
+
+    private static RecurringBillUpdateDTO ValidUpdateRequest(int dueDay = 10, string area = "Brasil") => new()
+    {
+        DueDay = dueDay,
+        Description = "INSS",
+        Value = 900m,
+        Area = area,
+        Note = string.Empty,
+        Status = "Paid",
     };
 }

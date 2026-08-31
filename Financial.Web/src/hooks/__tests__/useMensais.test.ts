@@ -121,7 +121,18 @@ describe('useMensais', () => {
     act(() => result.current.setEditField('editValue', '900'))
     act(() => result.current.saveEdit())
 
-    await waitFor(() => expect(updateMensaisBillMock).toHaveBeenCalledWith('b1', { status: 'Paid', value: 900 }))
+    await waitFor(() =>
+      expect(updateMensaisBillMock).toHaveBeenCalledWith('b1', {
+        dueDay: 10,
+        description: 'INSS',
+        value: 900,
+        area: 'Brasil',
+        note: '',
+        nitNumber: null,
+        minimumWageValue: null,
+        status: 'Paid',
+      }),
+    )
     await waitFor(() => expect(getMensaisBillsMock).toHaveBeenCalledTimes(2))
   })
 

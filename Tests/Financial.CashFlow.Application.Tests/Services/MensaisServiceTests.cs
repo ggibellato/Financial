@@ -148,30 +148,53 @@ public class MensaisServiceTests
         result.Should().ContainSingle(b => b.Description == "INSS");
     }
 
+    private static RecurringBillUpdateDTO ValidUpdateRequest(string status = "Paid", decimal value = 900m) => new()
+    {
+        DueDay = 10,
+        Description = "INSS",
+        Value = value,
+        Area = "Brasil",
+        Note = string.Empty,
+        NitNumber = null,
+        MinimumWageValue = null,
+        Status = status,
+    };
+
     [Fact]
-    public async Task UpdateBillAsync_UpdatesStatusAndValue()
+    public async Task UpdateBillAsync_UpdatesEveryField()
     {
         var bill = RecurringBill.Create(10, "INSS", 850m, Area.Brasil, string.Empty, null, null);
         _repository.RecurringBills.Add(bill);
 
         var result = await _sut.UpdateBillAsync(bill.Id, new RecurringBillUpdateDTO
         {
+            DueDay = 15,
+            Description = "INSS Renamed",
+            Value = 900m,
+            Area = "UK",
+            Note = "Updated note",
+            NitNumber = "12345678901",
+            MinimumWageValue = 1621m,
             Status = "Paid",
-            Value = 900m
         });
 
-        result.Status.Should().Be("Paid");
-        result.Value.Should().Be(900m);
+        using (new AssertionScope())
+        {
+            result.DueDay.Should().Be(15);
+            result.Description.Should().Be("INSS Renamed");
+            result.Value.Should().Be(900m);
+            result.Area.Should().Be("UK");
+            result.Note.Should().Be("Updated note");
+            result.NitNumber.Should().Be("12345678901");
+            result.MinimumWageValue.Should().Be(1621m);
+            result.Status.Should().Be("Paid");
+        }
     }
 
     [Fact]
     public async Task UpdateBillAsync_WithUnknownId_ThrowsKeyNotFoundException()
     {
-        var act = async () => await _sut.UpdateBillAsync(Guid.NewGuid(), new RecurringBillUpdateDTO
-        {
-            Status = "Paid",
-            Value = 100m
-        });
+        var act = async () => await _sut.UpdateBillAsync(Guid.NewGuid(), ValidUpdateRequest());
 
         await act.Should().ThrowAsync<KeyNotFoundException>();
     }
@@ -182,10 +205,46 @@ public class MensaisServiceTests
         var bill = RecurringBill.Create(10, "INSS", 850m, Area.Brasil, string.Empty, null, null);
         _repository.RecurringBills.Add(bill);
 
+        var act = async () => await _sut.UpdateBillAsync(bill.Id, ValidUpdateRequest(status: "NotAStatus"));
+
+        await act.Should().ThrowAsync<ArgumentException>();
+    }
+
+    [Fact]
+    public async Task UpdateBillAsync_WithInvalidArea_ThrowsArgumentException()
+    {
+        var bill = RecurringBill.Create(10, "INSS", 850m, Area.Brasil, string.Empty, null, null);
+        _repository.RecurringBills.Add(bill);
+
         var act = async () => await _sut.UpdateBillAsync(bill.Id, new RecurringBillUpdateDTO
         {
-            Status = "NotAStatus",
-            Value = 100m
+            DueDay = 10,
+            Description = "INSS",
+            Value = 900m,
+            Area = "NotAnArea",
+            Note = string.Empty,
+            Status = "Paid",
+        });
+
+        await act.Should().ThrowAsync<ArgumentException>();
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(32)]
+    public async Task UpdateBillAsync_WithDueDayOutOfRange_ThrowsArgumentException(int dueDay)
+    {
+        var bill = RecurringBill.Create(10, "INSS", 850m, Area.Brasil, string.Empty, null, null);
+        _repository.RecurringBills.Add(bill);
+
+        var act = async () => await _sut.UpdateBillAsync(bill.Id, new RecurringBillUpdateDTO
+        {
+            DueDay = dueDay,
+            Description = "INSS",
+            Value = 900m,
+            Area = "Brasil",
+            Note = string.Empty,
+            Status = "Paid",
         });
 
         await act.Should().ThrowAsync<ArgumentException>();
@@ -195,9 +254,9 @@ public class MensaisServiceTests
     public async Task ResetAllToUnsetAsync_SetsEveryBillStatusBackToUnset()
     {
         var paidBill = RecurringBill.Create(10, "INSS", 850m, Area.Brasil, string.Empty, null, null);
-        paidBill.Update(BillStatus.Paid, 850m);
+        paidBill.Update(10, "INSS", 850m, Area.Brasil, string.Empty, null, null, BillStatus.Paid);
         var scheduledBill = RecurringBill.Create(15, "Council Tax", 120m, Area.UK, string.Empty, null, null);
-        scheduledBill.Update(BillStatus.Scheduled, 120m);
+        scheduledBill.Update(15, "Council Tax", 120m, Area.UK, string.Empty, null, null, BillStatus.Scheduled);
         _repository.RecurringBills.Add(paidBill);
         _repository.RecurringBills.Add(scheduledBill);
 
