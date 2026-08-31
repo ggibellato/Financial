@@ -2,6 +2,7 @@ import { Button, Checkbox, Field, Input, MessageBar, MessageBarBody, Select, Tex
 import type { BankDto, CategoryDto, CreditCardDto } from '../api/types'
 import type { PaymentMode } from '../hooks/useExpenseForm'
 import { useFieldError } from '../hooks/useFieldError'
+import { computeDefaultInvoiceMonth } from '../utils/expenseDefaults'
 import { useFormPanelStyles } from './formPanelStyles'
 
 export type ExpenseFormField =
@@ -70,7 +71,7 @@ export default function ExpenseForm({
   const showRoundUpField = paymentMode === 'bank' && selectedBank?.roundUpEnabled === true
   const selectedCategory = categories.find((c) => c.id === categoryId)
   const showCountsAsTitheField = selectedCategory?.isTithe === true
-  const invoiceDateDisplay = invoiceDate || (date ? date.slice(0, 7) : '')
+  const invoiceDateDisplay = invoiceDate || computeDefaultInvoiceMonth(date, creditCardId, creditCards)
 
   return (
     <div className={styles.panel}>

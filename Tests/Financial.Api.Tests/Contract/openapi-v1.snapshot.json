@@ -990,6 +990,13 @@
           "isActive": {
             "type": "boolean"
           },
+          "latestInvoiceDate": {
+            "format": "date",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "name": {
             "type": "string"
           },

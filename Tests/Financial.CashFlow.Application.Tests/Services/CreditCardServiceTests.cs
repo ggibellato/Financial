@@ -273,4 +273,44 @@ public class CreditCardServiceTests
 
         result.Should().ContainSingle(c => c.Id == card.Id && c.HasReferences);
     }
+
+    [Fact]
+    public void GetCreditCards_CardWithNoExpenses_LatestInvoiceDateIsNull()
+    {
+        var card = CreditCard.Create("BaAmex", isActive: true);
+        _repository.CreditCards.Add(card);
+
+        var result = _sut.GetCreditCards();
+
+        result.Should().ContainSingle(c => c.Id == card.Id && c.LatestInvoiceDate == null);
+    }
+
+    [Fact]
+    public void GetCreditCards_CardWithMultipleExpenses_LatestInvoiceDateIsTheMaxInvoiceDate()
+    {
+        var card = CreditCard.Create("BaAmex", isActive: true);
+        _repository.CreditCards.Add(card);
+        var category = Category.Create("Mercado");
+        _repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 5), "Groceries", 50m, category, null, card, new DateOnly(2026, 9, 1)));
+        _repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 20), "Amazon", 20m, category, null, card, new DateOnly(2026, 8, 1)));
+
+        var result = _sut.GetCreditCards();
+
+        result.Should().ContainSingle(c => c.Id == card.Id && c.LatestInvoiceDate == new DateOnly(2026, 9, 1));
+    }
+
+    [Fact]
+    public void GetCreditCards_ExpenseOnAnotherCard_DoesNotAffectLatestInvoiceDate()
+    {
+        var card = CreditCard.Create("BaAmex", isActive: true);
+        var otherCard = CreditCard.Create("Nubank", isActive: true);
+        _repository.CreditCards.Add(card);
+        _repository.CreditCards.Add(otherCard);
+        var category = Category.Create("Mercado");
+        _repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 5), "Groceries", 50m, category, null, otherCard, new DateOnly(2026, 12, 1)));
+
+        var result = _sut.GetCreditCards();
+
+        result.Should().ContainSingle(c => c.Id == card.Id && c.LatestInvoiceDate == null);
+    }
 }

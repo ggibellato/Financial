@@ -672,6 +672,63 @@ public class ExpenseWorkflowViewModelTests
     }
 
     [Fact]
+    public void ExpenseFormCreditCardId_SelectingCardWithLaterLatestInvoiceDate_UpdatesInvoiceDefault()
+    {
+        var cardWithFutureInvoice = new CreditCardDTO { Id = Guid.NewGuid(), Name = "BaAmex", IsActive = true, HasReferences = false, LatestInvoiceDate = new DateOnly(2026, 9, 1) };
+        var expenseService = new StubExpenseService();
+        var viewModel = new ExpenseWorkflowViewModel(
+            expenseService, new ObservableCollection<CategoryDTO>(DefaultCategories), new ObservableCollection<BankDTO>(DefaultBanks),
+            new ObservableCollection<CreditCardDTO>([cardWithFutureInvoice]), confirm: _ => true, new RecordingTelemetryTracer(), () => Task.CompletedTask);
+        viewModel.ShowCreateExpenseFormCommand.Execute("card");
+        viewModel.ExpenseFormDate = new DateTime(2026, 7, 15);
+
+        viewModel.ExpenseFormCreditCardId = cardWithFutureInvoice.Id;
+
+        viewModel.ExpenseFormInvoiceYear.Should().Be(2026);
+        viewModel.ExpenseFormInvoiceMonth.Should().Be(9);
+    }
+
+    [Fact]
+    public void ExpenseFormCreditCardId_SelectingCardWithEarlierOrNoLatestInvoiceDate_KeepsDateDerivedDefault()
+    {
+        var cardWithPastInvoice = new CreditCardDTO { Id = Guid.NewGuid(), Name = "BaAmex", IsActive = true, HasReferences = false, LatestInvoiceDate = new DateOnly(2026, 6, 1) };
+        var cardWithNoInvoice = new CreditCardDTO { Id = Guid.NewGuid(), Name = "PaypalCredit", IsActive = true, HasReferences = false, LatestInvoiceDate = null };
+        var expenseService = new StubExpenseService();
+        var viewModel = new ExpenseWorkflowViewModel(
+            expenseService, new ObservableCollection<CategoryDTO>(DefaultCategories), new ObservableCollection<BankDTO>(DefaultBanks),
+            new ObservableCollection<CreditCardDTO>([cardWithPastInvoice, cardWithNoInvoice]), confirm: _ => true, new RecordingTelemetryTracer(), () => Task.CompletedTask);
+        viewModel.ShowCreateExpenseFormCommand.Execute("card");
+        viewModel.ExpenseFormDate = new DateTime(2026, 7, 15);
+
+        viewModel.ExpenseFormCreditCardId = cardWithPastInvoice.Id;
+        viewModel.ExpenseFormInvoiceYear.Should().Be(2026);
+        viewModel.ExpenseFormInvoiceMonth.Should().Be(7);
+
+        viewModel.ExpenseFormCreditCardId = cardWithNoInvoice.Id;
+        viewModel.ExpenseFormInvoiceYear.Should().Be(2026);
+        viewModel.ExpenseFormInvoiceMonth.Should().Be(7);
+    }
+
+    [Fact]
+    public void ExpenseFormCreditCardId_ChangedAfterInvoiceDateTouchedByUser_DoesNotOverride()
+    {
+        var cardWithFutureInvoice = new CreditCardDTO { Id = Guid.NewGuid(), Name = "BaAmex", IsActive = true, HasReferences = false, LatestInvoiceDate = new DateOnly(2026, 9, 1) };
+        var expenseService = new StubExpenseService();
+        var viewModel = new ExpenseWorkflowViewModel(
+            expenseService, new ObservableCollection<CategoryDTO>(DefaultCategories), new ObservableCollection<BankDTO>(DefaultBanks),
+            new ObservableCollection<CreditCardDTO>([cardWithFutureInvoice]), confirm: _ => true, new RecordingTelemetryTracer(), () => Task.CompletedTask);
+        viewModel.ShowCreateExpenseFormCommand.Execute("card");
+        viewModel.ExpenseFormDate = new DateTime(2026, 7, 15);
+        viewModel.ExpenseFormInvoiceYear = 2026;
+        viewModel.ExpenseFormInvoiceMonth = 4;
+
+        viewModel.ExpenseFormCreditCardId = cardWithFutureInvoice.Id;
+
+        viewModel.ExpenseFormInvoiceYear.Should().Be(2026);
+        viewModel.ExpenseFormInvoiceMonth.Should().Be(4);
+    }
+
+    [Fact]
     public async Task AddExpense_CardMode_CallsServiceWithInvoiceDate()
     {
         var (viewModel, expenses, _) = CreateViewModel();
