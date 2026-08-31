@@ -8,6 +8,7 @@ import {
   BrokersPage,
   CategoriesPage,
   ControleMaePage,
+  CreditCardsPage,
   CurrentValuesPage,
   DividendCheckPage,
   HistoricInvestmentsPage,
@@ -49,7 +50,7 @@ export const PAGE_ROUTES: PageRoute[] = [
   { path: 'admin/investment/portfolios', element: <PortfoliosPage /> },
   { path: 'admin/cashflow/banks', element: <BanksPage /> },
   { path: 'admin/cashflow/categories', element: <CategoriesPage /> },
-  { path: 'admin/cashflow/credit-cards', element: <AdminEntityPlaceholderPage entityLabel="Credit Cards" /> },
+  { path: 'admin/cashflow/credit-cards', element: <CreditCardsPage /> },
   { path: 'admin/cashflow/income-sources', element: <AdminEntityPlaceholderPage entityLabel="Income Sources" /> },
   {
     path: 'admin/cashflow/investment-accounts',

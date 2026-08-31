@@ -42,9 +42,9 @@ public class CardsWorkflowViewModelTests
     public void CreditCardManagementRows_HasOneRowPerCreditCard_IncludingOneWithNoStatementThisMonth()
     {
         var (viewModel, _, _, _, creditCards) = CreateViewModel();
-        creditCards.Add(new() { Id = BaAmexId, Name = "BaAmex", IsActive = true, NextInvoiceDueDate = new DateOnly(2026, 9, 5) });
-        creditCards.Add(new() { Id = ChaseId, Name = "ChaseMaster4023", IsActive = true, NextInvoiceDueDate = null });
-        creditCards.Add(new() { Id = PaypalId, Name = "PaypalCredit", IsActive = false, NextInvoiceDueDate = null });
+        creditCards.Add(new() { Id = BaAmexId, Name = "BaAmex", IsActive = true, NextInvoiceDueDate = new DateOnly(2026, 9, 5), HasReferences = false });
+        creditCards.Add(new() { Id = ChaseId, Name = "ChaseMaster4023", IsActive = true, NextInvoiceDueDate = null, HasReferences = false });
+        creditCards.Add(new() { Id = PaypalId, Name = "PaypalCredit", IsActive = false, NextInvoiceDueDate = null, HasReferences = false });
         viewModel.ApplyRefresh([new CardStatementDTO { Id = Guid.NewGuid(), CreditCardId = BaAmexId, CreditCardName = "BaAmex", Year = DateTime.Today.Year, Month = DateTime.Today.Month, IsPaid = false, OutstandingTotal = 100m }]);
 
         viewModel.CreditCardManagementRows.Should().HaveCount(3);
@@ -55,7 +55,7 @@ public class CardsWorkflowViewModelTests
     public void CreditCardManagementRows_CardWithNoStatement_HasStatementFalseAndZeroOutstanding()
     {
         var (viewModel, _, _, _, creditCards) = CreateViewModel();
-        creditCards.Add(new() { Id = PaypalId, Name = "PaypalCredit", IsActive = false, NextInvoiceDueDate = null });
+        creditCards.Add(new() { Id = PaypalId, Name = "PaypalCredit", IsActive = false, NextInvoiceDueDate = null, HasReferences = false });
         viewModel.ApplyRefresh([]);
 
         var paypalRow = viewModel.CreditCardManagementRows.Single(r => r.CreditCardName == "PaypalCredit");
@@ -68,7 +68,7 @@ public class CardsWorkflowViewModelTests
     public void CreditCardManagementRows_CardWithStatement_MergesStatementDataOntoTheCard()
     {
         var (viewModel, _, _, _, creditCards) = CreateViewModel();
-        creditCards.Add(new() { Id = ChaseId, Name = "ChaseMaster4023", IsActive = true, NextInvoiceDueDate = null });
+        creditCards.Add(new() { Id = ChaseId, Name = "ChaseMaster4023", IsActive = true, NextInvoiceDueDate = null, HasReferences = false });
         viewModel.ApplyRefresh([new CardStatementDTO { Id = Guid.NewGuid(), CreditCardId = ChaseId, CreditCardName = "ChaseMaster4023", Year = DateTime.Today.Year, Month = DateTime.Today.Month, IsPaid = true, OutstandingTotal = 42.5m }]);
 
         var chaseRow = viewModel.CreditCardManagementRows.Single(r => r.CreditCardName == "ChaseMaster4023");
@@ -82,8 +82,8 @@ public class CardsWorkflowViewModelTests
     public void CreditCardManagementRows_StillExposesTheUnderlyingCreditCard_ForDueDateAndActiveManagement()
     {
         var (viewModel, _, _, _, creditCards) = CreateViewModel();
-        creditCards.Add(new() { Id = BaAmexId, Name = "BaAmex", IsActive = true, NextInvoiceDueDate = new DateOnly(2026, 9, 5) });
-        creditCards.Add(new() { Id = PaypalId, Name = "PaypalCredit", IsActive = false, NextInvoiceDueDate = null });
+        creditCards.Add(new() { Id = BaAmexId, Name = "BaAmex", IsActive = true, NextInvoiceDueDate = new DateOnly(2026, 9, 5), HasReferences = false });
+        creditCards.Add(new() { Id = PaypalId, Name = "PaypalCredit", IsActive = false, NextInvoiceDueDate = null, HasReferences = false });
 
         var baAmexRow = viewModel.CreditCardManagementRows.Single(r => r.CreditCardName == "BaAmex");
         baAmexRow.CreditCard.NextInvoiceDueDate.Should().Be(new DateOnly(2026, 9, 5));
@@ -97,8 +97,8 @@ public class CardsWorkflowViewModelTests
     public void CardFilter_AvailableValuesComeFromFullUnfilteredData()
     {
         var (viewModel, _, _, _, creditCards) = CreateViewModel();
-        creditCards.Add(new() { Id = BaAmexId, Name = "BaAmex", IsActive = true, NextInvoiceDueDate = null });
-        creditCards.Add(new() { Id = ChaseId, Name = "ChaseMaster4023", IsActive = true, NextInvoiceDueDate = null });
+        creditCards.Add(new() { Id = BaAmexId, Name = "BaAmex", IsActive = true, NextInvoiceDueDate = null, HasReferences = false });
+        creditCards.Add(new() { Id = ChaseId, Name = "ChaseMaster4023", IsActive = true, NextInvoiceDueDate = null, HasReferences = false });
 
         viewModel.NotifyCreditCardsChanged();
 
@@ -109,8 +109,8 @@ public class CardsWorkflowViewModelTests
     public void CardFilter_UncheckingCard_ExcludesItFromFilteredCreditCardManagementRows()
     {
         var (viewModel, _, _, _, creditCards) = CreateViewModel();
-        creditCards.Add(new() { Id = BaAmexId, Name = "BaAmex", IsActive = true, NextInvoiceDueDate = null });
-        creditCards.Add(new() { Id = ChaseId, Name = "ChaseMaster4023", IsActive = true, NextInvoiceDueDate = null });
+        creditCards.Add(new() { Id = BaAmexId, Name = "BaAmex", IsActive = true, NextInvoiceDueDate = null, HasReferences = false });
+        creditCards.Add(new() { Id = ChaseId, Name = "ChaseMaster4023", IsActive = true, NextInvoiceDueDate = null, HasReferences = false });
         viewModel.NotifyCreditCardsChanged();
 
         SelectOnly(viewModel.CardFilter, "BaAmex");
@@ -213,7 +213,7 @@ public class CardsWorkflowViewModelTests
     public async Task UpdateCreditCardAsync_SendsIdAndNewFields_ThenRefreshes()
     {
         var (viewModel, _, creditCardService, _, creditCards) = CreateViewModel();
-        var card = new CreditCardDTO { Id = BaAmexId, Name = "BaAmex", IsActive = true, NextInvoiceDueDate = new DateOnly(2026, 9, 5) };
+        var card = new CreditCardDTO { Id = BaAmexId, Name = "BaAmex", IsActive = true, NextInvoiceDueDate = new DateOnly(2026, 9, 5), HasReferences = false };
         creditCards.Add(card);
         creditCardService.CreditCards = [card];
         var newDueDate = new DateOnly(2026, 10, 1);
@@ -230,7 +230,7 @@ public class CardsWorkflowViewModelTests
     public async Task UpdateCreditCardAsync_ServiceThrows_SetsCreditCardUpdateError()
     {
         var (viewModel, _, creditCardService, _, creditCards) = CreateViewModel();
-        var card = new CreditCardDTO { Id = BaAmexId, Name = "BaAmex", IsActive = true, NextInvoiceDueDate = new DateOnly(2026, 9, 5) };
+        var card = new CreditCardDTO { Id = BaAmexId, Name = "BaAmex", IsActive = true, NextInvoiceDueDate = new DateOnly(2026, 9, 5), HasReferences = false };
         creditCards.Add(card);
         creditCardService.CreditCards = [card];
         creditCardService.ThrowOnUpdate = "Credit card was not found.";
@@ -251,7 +251,7 @@ public class CardsWorkflowViewModelTests
         // row again, forever (the reported "Credit Card tab keeps reloading" bug). Calling with
         // the card's own current values must be a no-op.
         var (viewModel, _, creditCardService, _, creditCards) = CreateViewModel();
-        var card = new CreditCardDTO { Id = BaAmexId, Name = "BaAmex", IsActive = true, NextInvoiceDueDate = new DateOnly(2026, 9, 5) };
+        var card = new CreditCardDTO { Id = BaAmexId, Name = "BaAmex", IsActive = true, NextInvoiceDueDate = new DateOnly(2026, 9, 5), HasReferences = false };
         creditCards.Add(card);
         creditCardService.CreditCards = [card];
 

@@ -35,11 +35,11 @@ public class ExpenseWorkflowViewModelTests
     /// expense form has something to select from in tests.</summary>
     private static readonly List<CreditCardDTO> DefaultCreditCards =
     [
-        new() { Id = Guid.NewGuid(), Name = "BarclaysPlatinumVisa8003", IsActive = true },
-        new() { Id = Guid.NewGuid(), Name = "BarclaysPlatinumVisa6007", IsActive = true },
-        new() { Id = Guid.NewGuid(), Name = "ChaseMaster4023", IsActive = true },
-        new() { Id = BaAmexId, Name = "BaAmex", IsActive = true },
-        new() { Id = Guid.NewGuid(), Name = "PaypalCredit", IsActive = true },
+        new() { Id = Guid.NewGuid(), Name = "BarclaysPlatinumVisa8003", IsActive = true, HasReferences = false },
+        new() { Id = Guid.NewGuid(), Name = "BarclaysPlatinumVisa6007", IsActive = true, HasReferences = false },
+        new() { Id = Guid.NewGuid(), Name = "ChaseMaster4023", IsActive = true, HasReferences = false },
+        new() { Id = BaAmexId, Name = "BaAmex", IsActive = true, HasReferences = false },
+        new() { Id = Guid.NewGuid(), Name = "PaypalCredit", IsActive = true, HasReferences = false },
     ];
 
     /// <summary>The categories seeded in a real deployment (F01), pre-loaded so the expense

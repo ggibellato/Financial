@@ -87,6 +87,8 @@ public class CashFlowData
 
     public void AddCreditCard(CreditCard card) => _creditCards.Add(card);
 
+    public void RemoveCreditCard(Guid id) => _creditCards.RemoveAll(card => card.Id == id);
+
     public void AddCategory(Category category) => _categories.Add(category);
 
     public void RemoveCategory(Guid id) => _categories.RemoveAll(category => category.Id == id);

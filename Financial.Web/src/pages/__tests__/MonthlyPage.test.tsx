@@ -159,8 +159,8 @@ const CARD_STATEMENTS: CardStatementDto[] = [
 ]
 
 const CREDIT_CARDS: CreditCardDto[] = [
-  { id: 'card-baamex', name: 'BaAmex', isActive: true, nextInvoiceDueDate: null },
-  { id: 'card-chase', name: 'ChaseMaster4023', isActive: true, nextInvoiceDueDate: null },
+  { id: 'card-baamex', name: 'BaAmex', isActive: true, nextInvoiceDueDate: null, hasReferences: false },
+  { id: 'card-chase', name: 'ChaseMaster4023', isActive: true, nextInvoiceDueDate: null, hasReferences: false },
 ]
 
 const UNPAID_CARD_CHARGES: ExpenseDto[] = [
@@ -848,7 +848,7 @@ describe('MonthlyPage', () => {
     fireEvent.click(screen.getByLabelText('Active for ChaseMaster4023'))
 
     await waitFor(() =>
-      expect(updateCreditCardMock).toHaveBeenCalledWith('card-chase', { nextInvoiceDueDate: null, isActive: false }),
+      expect(updateCreditCardMock).toHaveBeenCalledWith('card-chase', { name: 'ChaseMaster4023', nextInvoiceDueDate: null, isActive: false }),
     )
     await waitFor(() => expect(getCreditCardsMock).toHaveBeenCalledTimes(2))
 

@@ -486,5 +486,7 @@ public class MainNavigationViewModelConstructorGuardTests
             throw new NotImplementedException();
         public bool ShowCategoryFormDialog(Financial.Presentation.App.ViewModels.Admin.CategoryFormDialogViewModel viewModel) =>
             throw new NotImplementedException();
+        public bool ShowCreditCardFormDialog(Financial.Presentation.App.ViewModels.Admin.CreditCardFormDialogViewModel viewModel) =>
+            throw new NotImplementedException();
     }
 }

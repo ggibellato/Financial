@@ -911,8 +911,8 @@ describe('financialApiClient', () => {
 
   it('gets the credit card list', async () => {
     const responseBody: CreditCardDto[] = [
-      { id: 'card-baamex', name: 'BaAmex', isActive: true, nextInvoiceDueDate: null },
-      { id: 'card-paypal', name: 'PaypalCredit', isActive: false, nextInvoiceDueDate: '2026-09-05' },
+      { id: 'card-baamex', name: 'BaAmex', isActive: true, nextInvoiceDueDate: null, hasReferences: false },
+      { id: 'card-paypal', name: 'PaypalCredit', isActive: false, nextInvoiceDueDate: '2026-09-05', hasReferences: false },
     ]
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
@@ -925,8 +925,8 @@ describe('financialApiClient', () => {
   })
 
   it('puts a credit card update', async () => {
-    const requestBody: CreditCardUpdateDto = { nextInvoiceDueDate: '2026-09-05', isActive: false }
-    const responseBody: CreditCardDto = { id: 'card-baamex', name: 'BaAmex', ...requestBody }
+    const requestBody: CreditCardUpdateDto = { name: 'BaAmex', nextInvoiceDueDate: '2026-09-05', isActive: false }
+    const responseBody: CreditCardDto = { id: 'card-baamex', hasReferences: false, ...requestBody }
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 

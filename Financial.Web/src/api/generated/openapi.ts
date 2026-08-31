@@ -1734,7 +1734,42 @@ export interface paths {
             };
         };
         put?: never;
-        post?: never;
+        /** Creates a new credit card. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/*+json": null | components["schemas"]["CreditCardCreateDTO"];
+                    "application/json": null | components["schemas"]["CreditCardCreateDTO"];
+                    "text/json": null | components["schemas"]["CreditCardCreateDTO"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CreditCardDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -1749,7 +1784,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Updates a credit card's next invoice due date and active flag. */
+        /** Updates a credit card's name, active flag, and next invoice due date. */
         put: {
             parameters: {
                 query?: never;
@@ -1798,7 +1833,46 @@ export interface paths {
             };
         };
         post?: never;
-        delete?: never;
+        /** Deletes a credit card, when it has no statement or expense referencing it. */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The credit card's identifier. */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
         options?: never;
         head?: never;
         patch?: never;
@@ -4878,7 +4952,12 @@ export interface components {
         };
         /** @enum {unknown} */
         CountryCode: "Unknown" | "BR" | "US" | "UK";
+        CreditCardCreateDTO: {
+            isActive: boolean;
+            name: string;
+        };
         CreditCardDTO: {
+            hasReferences: boolean;
             /** Format: uuid */
             id: string;
             isActive: boolean;
@@ -4888,6 +4967,7 @@ export interface components {
         };
         CreditCardUpdateDTO: {
             isActive: boolean;
+            name: string;
             /** Format: date */
             nextInvoiceDueDate?: null | string;
         };

@@ -467,10 +467,10 @@ graph TD
 - [x] Attempting to delete a Category that is referenced by at least one transaction is blocked with a 409 response and a clear message
 
 ### F07. Credit Card CRUD
-- [ ] Creating a Credit Card with a unique Name succeeds
-- [ ] Editing an existing Credit Card's Name, IsActive, and/or NextInvoiceDueDate persists the change, including changing the Name (previously immutable)
-- [ ] Deleting a Credit Card with zero referencing statements/expenses succeeds
-- [ ] Attempting to delete a Credit Card referenced by a statement or expense is blocked with a 409 response and a clear message
+- [x] Creating a Credit Card with a unique Name succeeds
+- [x] Editing an existing Credit Card's Name, IsActive, and/or NextInvoiceDueDate persists the change, including changing the Name (previously immutable)
+- [x] Deleting a Credit Card with zero referencing statements/expenses succeeds
+- [x] Attempting to delete a Credit Card referenced by a statement or expense is blocked with a 409 response and a clear message
 
 ### F08. Income Source CRUD
 - [ ] Creating an Income Source with a unique Name, Group, IsActive, and AutoSplitToReserve succeeds

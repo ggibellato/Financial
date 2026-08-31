@@ -156,6 +156,8 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
     public IEnumerable<ReserveBucket> GetReserveBuckets() => ReserveBuckets;
 
     public IEnumerable<CreditCard> GetCreditCards() => CreditCards;
+    public void AddCreditCard(CreditCard card) => CreditCards.Add(card);
+    public void DeleteCreditCard(Guid id) => CreditCards.RemoveAll(c => c.Id == id);
 
     public IEnumerable<Category> GetCategories() => Categories;
     public void AddCategory(Category category) => Categories.Add(category);

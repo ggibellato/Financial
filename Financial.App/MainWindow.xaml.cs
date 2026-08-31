@@ -27,6 +27,7 @@ namespace Financial.Presentation.App
             Financial.Presentation.App.Views.Admin.AssetsView assetsView,
             Financial.Presentation.App.Views.Admin.BanksView banksView,
             Financial.Presentation.App.Views.Admin.CategoriesView categoriesView,
+            Financial.Presentation.App.Views.Admin.CreditCardsView creditCardsView,
             MainNavigationViewModel navigationViewModel,
             MainNavigationViewModelHistoric navigationViewModelHistoric,
             SyncStatusViewModel syncStatusViewModel)
@@ -44,6 +45,7 @@ namespace Financial.Presentation.App
             ArgumentNullException.ThrowIfNull(assetsView);
             ArgumentNullException.ThrowIfNull(banksView);
             ArgumentNullException.ThrowIfNull(categoriesView);
+            ArgumentNullException.ThrowIfNull(creditCardsView);
             ArgumentNullException.ThrowIfNull(syncStatusViewModel);
             _navigationViewModel = navigationViewModel ?? throw new ArgumentNullException(nameof(navigationViewModel));
             _navigationViewModelHistoric = navigationViewModelHistoric ?? throw new ArgumentNullException(nameof(navigationViewModelHistoric));
@@ -67,7 +69,7 @@ namespace Financial.Presentation.App
                 ["admin-portfolios"] = portfoliosView,
                 ["admin-banks"] = banksView,
                 ["admin-categories"] = categoriesView,
-                ["admin-credit-cards"] = new AdminEntityPlaceholderView(new AdminEntityPlaceholderViewModel("Credit Cards")),
+                ["admin-credit-cards"] = creditCardsView,
                 ["admin-income-sources"] = new AdminEntityPlaceholderView(new AdminEntityPlaceholderViewModel("Income Sources")),
                 ["admin-investment-accounts"] = new AdminEntityPlaceholderView(new AdminEntityPlaceholderViewModel("Investment Accounts")),
                 ["admin-recurring-bills"] = new AdminEntityPlaceholderView(new AdminEntityPlaceholderViewModel("Recurring Bills")),

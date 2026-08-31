@@ -147,6 +147,70 @@ internal sealed class StubCategoryService : ICategoryService
     }
 }
 
+internal sealed class StubCreditCardService : ICreditCardService
+{
+    public List<CreditCardDTO> CreditCards { get; set; } = [];
+    public CreditCardCreateDTO? LastCreateRequest { get; private set; }
+    public (Guid Id, CreditCardUpdateDTO Request)? LastUpdateRequest { get; private set; }
+    public Guid? LastDeletedId { get; private set; }
+    public Exception? ThrowOnCreate { get; set; }
+    public Exception? ThrowOnUpdate { get; set; }
+    public Exception? ThrowOnDelete { get; set; }
+
+    public IReadOnlyList<CreditCardDTO> GetCreditCards() => CreditCards;
+
+    public Task<CreditCardDTO> CreateCreditCardAsync(CreditCardCreateDTO request)
+    {
+        LastCreateRequest = request;
+        if (ThrowOnCreate is not null)
+        {
+            throw ThrowOnCreate;
+        }
+
+        var created = new CreditCardDTO
+        {
+            Id = Guid.NewGuid(),
+            Name = request.Name,
+            IsActive = request.IsActive,
+            NextInvoiceDueDate = null,
+            HasReferences = false,
+        };
+        CreditCards.Add(created);
+        return Task.FromResult(created);
+    }
+
+    public Task<CreditCardDTO> UpdateCreditCardAsync(Guid id, CreditCardUpdateDTO request)
+    {
+        LastUpdateRequest = (id, request);
+        if (ThrowOnUpdate is not null)
+        {
+            throw ThrowOnUpdate;
+        }
+
+        var updated = new CreditCardDTO
+        {
+            Id = id,
+            Name = request.Name,
+            IsActive = request.IsActive,
+            NextInvoiceDueDate = request.NextInvoiceDueDate,
+            HasReferences = false,
+        };
+        return Task.FromResult(updated);
+    }
+
+    public Task DeleteCreditCardAsync(Guid id)
+    {
+        LastDeletedId = id;
+        if (ThrowOnDelete is not null)
+        {
+            throw ThrowOnDelete;
+        }
+
+        CreditCards.RemoveAll(c => c.Id == id);
+        return Task.CompletedTask;
+    }
+}
+
 internal sealed class StubBrokerService : IBrokerService
 {
     public List<BrokerDTO> Brokers { get; set; } = [];
@@ -363,6 +427,10 @@ internal sealed class StubDialogService : IDialogService
     public CategoryFormDialogViewModel? LastCategoryFormDialog { get; private set; }
     public Action<CategoryFormDialogViewModel>? OnShowCategoryFormDialog { get; set; }
 
+    public bool ShowCreditCardFormDialogResult { get; set; } = true;
+    public CreditCardFormDialogViewModel? LastCreditCardFormDialog { get; private set; }
+    public Action<CreditCardFormDialogViewModel>? OnShowCreditCardFormDialog { get; set; }
+
     public bool Confirm(string message, string caption)
     {
         LastConfirmMessage = message;
@@ -408,5 +476,12 @@ internal sealed class StubDialogService : IDialogService
         LastCategoryFormDialog = viewModel;
         OnShowCategoryFormDialog?.Invoke(viewModel);
         return ShowCategoryFormDialogResult;
+    }
+
+    public bool ShowCreditCardFormDialog(CreditCardFormDialogViewModel viewModel)
+    {
+        LastCreditCardFormDialog = viewModel;
+        OnShowCreditCardFormDialog?.Invoke(viewModel);
+        return ShowCreditCardFormDialogResult;
     }
 }

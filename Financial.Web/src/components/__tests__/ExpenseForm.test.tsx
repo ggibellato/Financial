@@ -16,8 +16,8 @@ const CATEGORIES: CategoryDto[] = [
 ]
 
 const CREDIT_CARDS: CreditCardDto[] = [
-  { id: 'card-baamex', name: 'BaAmex', isActive: true, nextInvoiceDueDate: null },
-  { id: 'card-chase', name: 'ChaseMaster4023', isActive: true, nextInvoiceDueDate: null },
+  { id: 'card-baamex', name: 'BaAmex', isActive: true, nextInvoiceDueDate: null, hasReferences: false },
+  { id: 'card-chase', name: 'ChaseMaster4023', isActive: true, nextInvoiceDueDate: null, hasReferences: false },
 ]
 
 const baseProps = {

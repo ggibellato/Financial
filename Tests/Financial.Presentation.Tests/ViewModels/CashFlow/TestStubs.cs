@@ -297,6 +297,8 @@ internal sealed class StubCreditCardService : ICreditCardService
 
     public IReadOnlyList<CreditCardDTO> GetCreditCards() => CreditCards;
 
+    public Task<CreditCardDTO> CreateCreditCardAsync(CreditCardCreateDTO request) => throw new NotSupportedException();
+
     public Task<CreditCardDTO> UpdateCreditCardAsync(Guid id, CreditCardUpdateDTO request)
     {
         if (ThrowOnUpdate is { } message)
@@ -309,14 +311,17 @@ internal sealed class StubCreditCardService : ICreditCardService
         var updated = new CreditCardDTO
         {
             Id = existing.Id,
-            Name = existing.Name,
+            Name = request.Name,
             IsActive = request.IsActive,
             NextInvoiceDueDate = request.NextInvoiceDueDate,
+            HasReferences = existing.HasReferences,
         };
         var index = CreditCards.FindIndex(c => c.Id == id);
         CreditCards[index] = updated;
         return Task.FromResult(updated);
     }
+
+    public Task DeleteCreditCardAsync(Guid id) => throw new NotSupportedException();
 }
 
 internal sealed class StubCategoryService : ICategoryService

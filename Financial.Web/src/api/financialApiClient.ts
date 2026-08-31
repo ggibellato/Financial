@@ -29,6 +29,7 @@ import type {
   MaeLedgerEntryCreateDto,
   RecurringBillCreateDto,
   CreditCardDto,
+  CreditCardCreateDto,
   CreditCreateDto,
   CreditDeleteDto,
   CreditDto,
@@ -164,7 +165,9 @@ export interface FinancialApiClient {
   updateCategory: (id: string, request: CategoryUpdateDto) => Promise<CategoryDto>
   deleteCategory: (id: string) => Promise<void>
   getCreditCards: () => Promise<CreditCardDto[]>
+  createCreditCard: (request: CreditCardCreateDto) => Promise<CreditCardDto>
   updateCreditCard: (id: string, request: CreditCardUpdateDto) => Promise<CreditCardDto>
+  deleteCreditCard: (id: string) => Promise<void>
   getBankBalancesByMonth: (year: number, month: number) => Promise<BankBalanceDto[]>
   createExpense: (request: ExpenseCreateDto) => Promise<ExpenseDto>
   updateExpense: (id: string, request: ExpenseUpdateDto) => Promise<ExpenseDto>
@@ -482,11 +485,14 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       }),
     deleteCategory: (id) => requestVoid(`/categories/${encodeURIComponent(id)}`, { method: 'DELETE' }),
     getCreditCards: () => request<CreditCardDto[]>('/credit-cards'),
+    createCreditCard: (requestBody) =>
+      request<CreditCardDto>('/credit-cards', { method: 'POST', body: JSON.stringify(requestBody) }),
     updateCreditCard: (id, requestBody) =>
       request<CreditCardDto>(`/credit-cards/${encodeURIComponent(id)}`, {
         method: 'PUT',
         body: JSON.stringify(requestBody),
       }),
+    deleteCreditCard: (id) => requestVoid(`/credit-cards/${encodeURIComponent(id)}`, { method: 'DELETE' }),
     getBankBalancesByMonth: (year, month) => request<BankBalanceDto[]>(`/banks/month/${year}/${month}/balances`),
     createExpense: (requestBody) =>
       request<ExpenseDto>('/expenses', {
