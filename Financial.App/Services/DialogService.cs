@@ -38,6 +38,9 @@ public sealed class DialogService : IDialogService
     public bool ShowIncomeSourceFormDialog(IncomeSourceFormDialogViewModel viewModel) =>
         new IncomeSourceFormDialog(viewModel) { Owner = System.Windows.Application.Current?.MainWindow }.ShowDialog() == true;
 
+    public bool ShowInvestmentAccountFormDialog(InvestmentAccountFormDialogViewModel viewModel) =>
+        new InvestmentAccountFormDialog(viewModel) { Owner = System.Windows.Application.Current?.MainWindow }.ShowDialog() == true;
+
     public bool ShowRecurringBillFormDialog(RecurringBillFormDialogViewModel viewModel) =>
         new RecurringBillFormDialog(viewModel) { Owner = System.Windows.Application.Current?.MainWindow }.ShowDialog() == true;
 }

@@ -336,6 +336,29 @@ public class CashFlowDataTests
     }
 
     [Fact]
+    public void RemoveInvestmentAccount_RemovesOnlyTheMatchingAccount()
+    {
+        var toRemove = InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false);
+        var toKeep = InvestmentAccount.Create("BaAmex", isActive: true, isLiability: true);
+        _sut.AddInvestmentAccount(toRemove);
+        _sut.AddInvestmentAccount(toKeep);
+
+        _sut.RemoveInvestmentAccount(toRemove.Id);
+
+        _sut.InvestmentAccounts.Should().ContainSingle().Which.Should().BeSameAs(toKeep);
+    }
+
+    [Fact]
+    public void RemoveInvestmentAccount_WithUnknownId_DoesNothing()
+    {
+        _sut.AddInvestmentAccount(InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false));
+
+        _sut.RemoveInvestmentAccount(Guid.NewGuid());
+
+        CheckCollectionCounts(new CheckItemsQuantity(InvestmentAccounts: 1));
+    }
+
+    [Fact]
     public void AddIncome_AddsOnlyToIncomesCollection()
     {
         _sut.AddIncome(CreateIncome());

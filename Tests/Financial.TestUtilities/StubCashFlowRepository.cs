@@ -146,6 +146,7 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
 
     public IEnumerable<InvestmentAccount> GetInvestmentAccounts() => InvestmentAccounts;
     public void AddInvestmentAccount(InvestmentAccount account) => InvestmentAccounts.Add(account);
+    public void DeleteInvestmentAccount(Guid id) => InvestmentAccounts.RemoveAll(a => a.Id == id);
 
     public IEnumerable<Bank> GetBanks() => Banks;
     public void AddBank(Bank bank) => Banks.Add(bank);

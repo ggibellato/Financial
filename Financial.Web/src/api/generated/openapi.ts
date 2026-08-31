@@ -2898,8 +2898,145 @@ export interface paths {
             };
         };
         put?: never;
-        post?: never;
+        /** Creates a new investment account. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/*+json": null | components["schemas"]["InvestmentAccountCreateDTO"];
+                    "application/json": null | components["schemas"]["InvestmentAccountCreateDTO"];
+                    "text/json": null | components["schemas"]["InvestmentAccountCreateDTO"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["InvestmentAccountDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/investment-accounts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Updates an investment account's name, active flag, liability flag, and aliases. */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The account's identifier. */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/*+json": null | components["schemas"]["InvestmentAccountUpdateDTO"];
+                    "application/json": null | components["schemas"]["InvestmentAccountUpdateDTO"];
+                    "text/json": null | components["schemas"]["InvestmentAccountUpdateDTO"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["InvestmentAccountDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        /** Deletes an investment account, when its most recent recorded balance is zero. */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The account's identifier. */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
         options?: never;
         head?: never;
         patch?: never;
@@ -5399,9 +5536,24 @@ export interface components {
             monthlyDiffs: (null | number)[];
             monthlyValues: number[];
         };
+        InvestmentAccountCreateDTO: {
+            aliases: string[];
+            isActive: boolean;
+            isLiability: boolean;
+            name: string;
+        };
         InvestmentAccountDTO: {
+            aliases: string[];
             /** Format: uuid */
             id: string;
+            isActive: boolean;
+            isLiability: boolean;
+            /** Format: double */
+            latestBalance: number;
+            name: string;
+        };
+        InvestmentAccountUpdateDTO: {
+            aliases: string[];
             isActive: boolean;
             isLiability: boolean;
             name: string;
