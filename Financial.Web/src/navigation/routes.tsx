@@ -17,6 +17,7 @@ import {
   MensaisPage,
   MonthlyPage,
   PortfoliosPage,
+  RecurringBillsPage,
   ReservaPage,
 } from './lazyPages'
 
@@ -57,6 +58,6 @@ export const PAGE_ROUTES: PageRoute[] = [
     path: 'admin/cashflow/investment-accounts',
     element: <AdminEntityPlaceholderPage entityLabel="Investment Accounts" />,
   },
-  { path: 'admin/cashflow/recurring-bills', element: <AdminEntityPlaceholderPage entityLabel="Recurring Bills" /> },
+  { path: 'admin/cashflow/recurring-bills', element: <RecurringBillsPage /> },
   { path: 'admin/cashflow/reserve-buckets', element: <AdminEntityPlaceholderPage entityLabel="Reserve Buckets" /> },
 ]
