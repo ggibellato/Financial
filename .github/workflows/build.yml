@@ -65,8 +65,35 @@ jobs:
     - name: Publish coverage summary
       run: |
         dotnet tool install dotnet-reportgenerator-globaltool --tool-path .tools
-        ./.tools/reportgenerator.exe "-reports:TestResults/**/coverage.cobertura.xml" "-targetdir:CoverageReport" "-reporttypes:MarkdownSummaryGithub"
+        ./.tools/reportgenerator.exe "-reports:TestResults/**/coverage.cobertura.xml" "-targetdir:CoverageReport" "-reporttypes:MarkdownSummaryGithub;JsonSummary"
         Get-Content CoverageReport/SummaryGithub.md | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
+
+    # Graded, non-blocking signal: green (100%) / yellow (95-99.99%) / amber (90-94.99%) /
+    # red (<90%, step fails). continue-on-error keeps a red result from failing the job, so
+    # ci-status/branch protection are unaffected - see docs/ci-affected-pipeline.md.
+    - name: Check coverage threshold
+      continue-on-error: true
+      shell: pwsh
+      run: |
+        $summary = Get-Content CoverageReport/Summary.json -Raw | ConvertFrom-Json
+        $lineCoverage = $summary.summary.linecoverage
+        if ($null -eq $lineCoverage) {
+          Write-Host "::error::Could not read summary.linecoverage from CoverageReport/Summary.json"
+          "🔴 Coverage gate: could not read line coverage from the report" | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
+          exit 1
+        }
+        $lineCoverage = [math]::Round([double]$lineCoverage, 2)
+        if ($lineCoverage -ge 100) { $band = 'green'; $emoji = '🟢' }
+        elseif ($lineCoverage -ge 95) { $band = 'yellow'; $emoji = '🟡' }
+        elseif ($lineCoverage -ge 90) { $band = 'amber'; $emoji = '🟠' }
+        else { $band = 'red'; $emoji = '🔴' }
+        "$emoji Backend line coverage: $lineCoverage% ($band)" | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
+        if ($band -eq 'red') {
+          Write-Host "::error::Backend line coverage $lineCoverage% is below the 90% gate"
+          exit 1
+        } elseif ($band -ne 'green') {
+          Write-Host "::warning::Backend line coverage $lineCoverage% ($band)"
+        }
 
   wpf:
     needs: changes
@@ -112,7 +139,30 @@ jobs:
 
     - name: Run tests
       working-directory: Financial.Web
-      run: npm test
+      run: npm run test:coverage
+
+    # Graded, non-blocking signal: green (100%) / yellow (95-99.99%) / amber (90-94.99%) /
+    # red (<90%, step fails). continue-on-error keeps a red result from failing the job, so
+    # ci-status/branch protection are unaffected - see docs/ci-affected-pipeline.md.
+    - name: Check coverage threshold
+      working-directory: Financial.Web
+      continue-on-error: true
+      run: |
+        LINE_COV=$(jq -r '.total.lines.pct' coverage/coverage-summary.json)
+        if [ "$LINE_COV" = "null" ] || [ -z "$LINE_COV" ]; then
+          echo "::error::Could not read total.lines.pct from coverage/coverage-summary.json"
+          echo "🔴 Coverage gate: could not read line coverage from the report" >> "$GITHUB_STEP_SUMMARY"
+          exit 1
+        fi
+        BAND=$(awk -v v="$LINE_COV" 'BEGIN{ if (v>=100) print "green"; else if (v>=95) print "yellow"; else if (v>=90) print "amber"; else print "red" }')
+        EMOJI=$(awk -v b="$BAND" 'BEGIN{ if (b=="green") print "🟢"; else if (b=="yellow") print "🟡"; else if (b=="amber") print "🟠"; else print "🔴" }')
+        echo "$EMOJI Web line coverage: ${LINE_COV}% ($BAND)" >> "$GITHUB_STEP_SUMMARY"
+        if [ "$BAND" = "red" ]; then
+          echo "::error::Web line coverage ${LINE_COV}% is below the 90% gate"
+          exit 1
+        elif [ "$BAND" != "green" ]; then
+          echo "::warning::Web line coverage ${LINE_COV}% ($BAND)"
+        fi
 
     - name: Build
       working-directory: Financial.Web

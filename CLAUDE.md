@@ -49,7 +49,14 @@ what turns collection on, so there is no `--collect` argument anywhere. To repro
 dotnet test --settings coverlet.runsettings --results-directory TestResults
 ```
 
-No coverage threshold is enforced; a drop never fails the build.
+A coverage gate on every CI run bands the merged, whole-repo line-coverage % into
+green (100%) / yellow (95–99.99%) / amber (90–94.99%) / red (<90%) for both the
+`backend` and `web` jobs (the `Check coverage threshold` step, reading
+`CoverageReport/Summary.json`'s `summary.linecoverage` on the backend side and
+`coverage/coverage-summary.json`'s `total.lines.pct` on the web side). The step is
+`continue-on-error: true`, so red visibly fails that step in the run but never blocks
+`ci-status` or branch protection — a coverage drop is a visible signal to fix, not a
+merge blocker.
 
 The public API's shape is pinned by a committed OpenAPI snapshot
 (`Tests/Financial.Api.Tests/Contract/openapi-v1.snapshot.json`, asserted by `OpenApiContractTests`).
@@ -101,6 +108,7 @@ npm run lint
 npm run build           # tsc -b && vite build — run this (not just vitest) to catch type errors
 npm test                 # vitest run
 npm run test:watch
+npm run test:coverage   # vitest run --coverage — same command the web CI job's coverage gate uses
 npm run smoke-test      # Playwright smoke test against a running API + web server (see .github/workflows/build.yml)
 npm run generate-api-types  # regenerate src/api/generated/openapi.ts from the OpenAPI snapshot; commit the result
 ```
