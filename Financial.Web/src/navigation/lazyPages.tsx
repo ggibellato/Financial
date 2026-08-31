@@ -22,3 +22,4 @@ export const InvestmentSnapshotsPage = lazy(() => import('../pages/InvestmentSna
 export const MensaisPage = lazy(() => import('../pages/MensaisPage'))
 export const MonthlyPage = lazy(() => import('../pages/MonthlyPage'))
 export const ReservaPage = lazy(() => import('../pages/ReservaPage'))
+export const ReserveBucketsPage = lazy(() => import('../pages/ReserveBucketsPage'))
