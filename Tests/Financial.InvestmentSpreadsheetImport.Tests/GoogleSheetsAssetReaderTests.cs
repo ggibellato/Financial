@@ -132,6 +132,26 @@ public class GoogleSheetsAssetReaderTests
         reported.Should().Contain("Sheet1").And.Contain("900").And.Contain("-100");
     }
 
+    /// <summary>
+    /// <paramref name="progress"/>'s messages are transient status updates the operator sees live and
+    /// then loses; <paramref name="issues"/> accumulates the same text so the caller can present it as
+    /// a final summary once the whole import finishes.
+    /// </summary>
+    [Fact]
+    public async Task ReadTransactionsAsync_WhenTheDerivedFeeIsNegative_AlsoAddsTheMessageToTheIssuesCollection()
+    {
+        _dataSource.Rows = new List<IList<object>>
+        {
+            new List<object> { 45000L, "", "C", "10", "", "100", "900" }
+        };
+        var issues = new List<string>();
+
+        await _sut.ReadTransactionsAsync("file1", "Sheet1", progress: null, issues: issues);
+
+        var reported = issues.Should().ContainSingle().Subject;
+        reported.Should().Contain("Sheet1").And.Contain("900").And.Contain("-100");
+    }
+
     [Fact]
     public async Task ReadTransactionsAsync_WhenTheDerivedFeeIsPositive_ReportsNothing()
     {
@@ -195,6 +215,90 @@ public class GoogleSheetsAssetReaderTests
         var result = await _sut.ReadTransactionsAsync("file1", "Sheet1");
 
         result.Should().ContainSingle().Which.Fees.Should().Be(5m);
+    }
+
+    /// <summary>
+    /// Transaction.Create throws ArgumentException for a non-positive quantity or unit price - that
+    /// used to propagate uncaught and abort the entire import over one bad row (confirmed: a real
+    /// import run crashed with "Unit price must be greater than zero." on a row with a blank price
+    /// cell). The reader must catch this before construction, flag it, and keep going.
+    /// </summary>
+    [Fact]
+    public async Task ReadTransactionsAsync_ZeroUnitPrice_SkipsRowAndReportsInsteadOfThrowing()
+    {
+        _dataSource.Rows = new List<IList<object>>
+        {
+            new List<object> { 45000L, "", "C", "10", "", "0", "0" }
+        };
+        var issues = new List<string>();
+
+        var result = await _sut.ReadTransactionsAsync("file1", "Sheet1", progress: null, issues: issues);
+
+        result.Should().BeEmpty();
+        issues.Should().ContainSingle().Which.Should().Contain("Sheet1").And.Contain("Unit price");
+    }
+
+    [Fact]
+    public async Task ReadTransactionsAsync_ZeroQuantity_SkipsRowAndReportsInsteadOfThrowing()
+    {
+        _dataSource.Rows = new List<IList<object>>
+        {
+            new List<object> { 45000L, "", "C", "0", "", "100", "0" }
+        };
+        var issues = new List<string>();
+
+        var result = await _sut.ReadTransactionsAsync("file1", "Sheet1", progress: null, issues: issues);
+
+        result.Should().BeEmpty();
+        issues.Should().ContainSingle().Which.Should().Contain("Sheet1").And.Contain("Quantity");
+    }
+
+    [Fact]
+    public async Task ReadTransactionsAsync_ValidRowAfterAnInvalidRow_StillImportsTheValidRow()
+    {
+        _dataSource.Rows = new List<IList<object>>
+        {
+            new List<object> { 45000L, "", "C", "10", "", "0", "0" },
+            new List<object> { 45001L, "", "C", "5", "", "50", "250" }
+        };
+
+        var result = await _sut.ReadTransactionsAsync("file1", "Sheet1");
+
+        result.Should().ContainSingle().Which.Quantity.Should().Be(5m);
+    }
+
+    /// <summary>
+    /// Confirmed real-import bug: a Freetrade Sell row with sheet total -656.37 (quantity x unitPrice
+    /// = 656.37) imported with a fee of 1312.74 - exactly double the sale value, silently, because
+    /// gross - (-total) doubles instead of going negative. The sheet's negative-total convention for
+    /// sells must be normalized to positive before RecoverFee runs.
+    /// </summary>
+    [Fact]
+    public async Task ReadTransactionsAsync_SellWithNegativeTotalInSheet_TreatsItAsPositiveGrossReceived()
+    {
+        _dataSource.Rows = new List<IList<object>>
+        {
+            // quantity 10 x unitPrice 65.637 = 656.37 gross; sheet total is the same magnitude, negative.
+            new List<object> { 45000L, "", "V", "10", "", "65.637", "-656.37" }
+        };
+
+        var result = await _sut.ReadTransactionsAsync("file1", "Sheet1");
+
+        result.Should().ContainSingle().Which.Fees.Should().Be(0m);
+    }
+
+    [Fact]
+    public async Task ReadTransactionsAsync_SellWithNegativeTotalInSheet_StillReportsARealFeeCorrectly()
+    {
+        _dataSource.Rows = new List<IList<object>>
+        {
+            // gross = 10 x 65.637 = 656.37; sheet total -646.37 means 10 was actually deducted as a fee.
+            new List<object> { 45000L, "", "V", "10", "", "65.637", "-646.37" }
+        };
+
+        var result = await _sut.ReadTransactionsAsync("file1", "Sheet1");
+
+        result.Should().ContainSingle().Which.Fees.Should().Be(10m);
     }
 
     [Fact]

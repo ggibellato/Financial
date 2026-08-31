@@ -4,6 +4,7 @@ using Financial.Investment.SpreadsheetImport;
 using Financial.Investment.Infrastructure.Persistence;
 using Financial.Shared.Infrastructure.Persistence;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
@@ -136,12 +137,18 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
             var fileNames = selectedFiles.Select(f => f.Name).ToList();
             var progress = new Progress<string>(msg => UpdateStatus(msg, $"Processing {fileNames.Count} file(s)..."));
+            var issues = new List<string>();
 
-            await generator.GenerateAsync(fileNames, progress);
+            await generator.GenerateAsync(fileNames, progress, issues);
 
             MessageBox.Show("Data generation completed successfully!", "Success",
                 MessageBoxButton.OK, MessageBoxImage.Information);
             UpdateStatus("Data generation complete!", "Ready for next operation");
+
+            if (issues.Count > 0)
+            {
+                new ImportIssuesWindow(issues) { Owner = System.Windows.Application.Current?.MainWindow }.ShowDialog();
+            }
         }
         catch (Exception ex) when (ex.Message.Contains("rate limit") || ex.Message.Contains("quota"))
         {
