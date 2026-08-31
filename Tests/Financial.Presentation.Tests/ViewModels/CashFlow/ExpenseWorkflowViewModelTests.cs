@@ -325,6 +325,40 @@ public class ExpenseWorkflowViewModelTests
     }
 
     [Fact]
+    public void TypingValueDigitByDigit_KeepsRecalculatingTheRoundUpSuggestion()
+    {
+        var (viewModel, _, _) = CreateViewModel();
+        viewModel.ShowCreateExpenseFormCommand.Execute("bank"); // defaults to Barclays, round-up enabled
+
+        viewModel.ExpenseFormValue = "1";
+        viewModel.ExpenseFormRoundUpAmount.Should().Be("0");
+
+        viewModel.ExpenseFormValue = "15";
+        viewModel.ExpenseFormRoundUpAmount.Should().Be("0");
+
+        viewModel.ExpenseFormValue = "15.2";
+        viewModel.ExpenseFormRoundUpAmount.Should().Be("0.8");
+
+        viewModel.ExpenseFormValue = "15.20";
+        viewModel.ExpenseFormRoundUpAmount.Should().Be("0.8");
+    }
+
+    [Fact]
+    public void EditingRoundUpFieldManually_StopsRecalculatingAsValueKeepsChanging()
+    {
+        var (viewModel, _, _) = CreateViewModel();
+        viewModel.ShowCreateExpenseFormCommand.Execute("bank"); // defaults to Barclays, round-up enabled
+
+        viewModel.ExpenseFormValue = "15.20";
+        viewModel.ExpenseFormRoundUpAmount.Should().Be("0.8");
+
+        viewModel.ExpenseFormRoundUpAmount = "0.50";
+        viewModel.ExpenseFormValue = "15.99";
+
+        viewModel.ExpenseFormRoundUpAmount.Should().Be("0.50");
+    }
+
+    [Fact]
     public void NegativeValue_SelectingRoundUpEnabledBank_DoesNotSuggestRoundUp()
     {
         var (viewModel, _, banks) = CreateViewModel();

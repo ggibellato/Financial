@@ -307,6 +307,37 @@ describe('useExpenseForm', () => {
     expect(result.current.roundUpAmount).toBe('0.10')
   })
 
+  it('keeps recalculating the suggestion as the value is typed digit by digit, instead of freezing at the first keystroke', () => {
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
+
+    act(() => result.current.setField('paymentSource', 'bank-trading212'))
+
+    act(() => result.current.setField('value', '1'))
+    expect(result.current.roundUpAmount).toBe('0.00')
+
+    act(() => result.current.setField('value', '15'))
+    expect(result.current.roundUpAmount).toBe('0.00')
+
+    act(() => result.current.setField('value', '15.2'))
+    expect(result.current.roundUpAmount).toBe('0.80')
+
+    act(() => result.current.setField('value', '15.20'))
+    expect(result.current.roundUpAmount).toBe('0.80')
+  })
+
+  it('stops recalculating once the round-up field is edited manually, even as the value keeps changing', () => {
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
+
+    act(() => result.current.setField('paymentSource', 'bank-trading212'))
+    act(() => result.current.setField('value', '15.20'))
+    expect(result.current.roundUpAmount).toBe('0.80')
+
+    act(() => result.current.setField('roundUpAmount', '0.50'))
+    act(() => result.current.setField('value', '15.99'))
+
+    expect(result.current.roundUpAmount).toBe('0.50')
+  })
+
   it('picking a non-round-up bank does not fill a suggestion', () => {
     const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 

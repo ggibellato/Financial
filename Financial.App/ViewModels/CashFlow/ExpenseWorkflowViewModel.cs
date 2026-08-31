@@ -28,6 +28,9 @@ public class ExpenseWorkflowViewModel : ViewModelBase
     private Guid? _expenseFormCreditCardId;
     private string _expenseFormCreditCardName = string.Empty;
     private string _expenseFormRoundUpAmount = string.Empty;
+    // True until the user directly edits the round-up field, or an edit form loads a saved
+    // amount - both "freeze" it so later Value/PaymentSource edits stop recomputing it.
+    private bool _roundUpAmountIsAuto = true;
     private bool _expenseFormCountsAsTithe = true;
     private bool _expenseFormIsSettled;
     private int _expenseFormInvoiceYear;
@@ -114,9 +117,9 @@ public class ExpenseWorkflowViewModel : ViewModelBase
         get => _expenseFormValue;
         set
         {
-            if (SetProperty(ref _expenseFormValue, value) && ShowRoundUpField)
+            if (SetProperty(ref _expenseFormValue, value))
             {
-                ExpenseFormRoundUpAmount = SuggestRoundUpAmount();
+                ApplyRoundUpSuggestionIfAuto();
             }
         }
     }
@@ -144,10 +147,7 @@ public class ExpenseWorkflowViewModel : ViewModelBase
             if (SetProperty(ref _expenseFormPaymentSource, value))
             {
                 OnPropertyChanged(nameof(ShowRoundUpField));
-                if (ShowRoundUpField)
-                {
-                    ExpenseFormRoundUpAmount = SuggestRoundUpAmount();
-                }
+                ApplyRoundUpSuggestionIfAuto();
             }
         }
     }
@@ -167,7 +167,29 @@ public class ExpenseWorkflowViewModel : ViewModelBase
     public string ExpenseFormRoundUpAmount
     {
         get => _expenseFormRoundUpAmount;
-        set => SetProperty(ref _expenseFormRoundUpAmount, value);
+        set
+        {
+            _roundUpAmountIsAuto = false;
+            SetProperty(ref _expenseFormRoundUpAmount, value);
+        }
+    }
+
+    /// <summary>Recomputes the suggestion from the current Value/PaymentSource, unless the user
+    /// has already typed into the round-up field directly - see <see cref="_roundUpAmountIsAuto"/>.</summary>
+    private void ApplyRoundUpSuggestionIfAuto()
+    {
+        if (_roundUpAmountIsAuto)
+        {
+            ApplyRoundUpSuggestion(ShowRoundUpField ? SuggestRoundUpAmount() : string.Empty);
+        }
+    }
+
+    /// <summary>Sets the round-up field to a computed value without marking it user-edited,
+    /// so it stays eligible for further automatic recomputation.</summary>
+    private void ApplyRoundUpSuggestion(string value)
+    {
+        SetProperty(ref _expenseFormRoundUpAmount, value, nameof(ExpenseFormRoundUpAmount));
+        _roundUpAmountIsAuto = true;
     }
 
     public bool ShowRoundUpField =>
@@ -347,7 +369,7 @@ public class ExpenseWorkflowViewModel : ViewModelBase
             ? (_lastUsedExpenseCreditCardId is { } lastCreditCardId && _creditCards.Any(c => c.Id == lastCreditCardId) ? lastCreditCardId : null)
             : null;
         ExpenseFormCreditCardName = string.Empty;
-        ExpenseFormRoundUpAmount = string.Empty;
+        ApplyRoundUpSuggestion(string.Empty);
         ExpenseFormCountsAsTithe = true;
         ExpenseFormIsSettled = false;
         _invoiceDateTouchedByUser = false;
@@ -376,7 +398,16 @@ public class ExpenseWorkflowViewModel : ViewModelBase
         ExpenseFormPaymentSource = expense.PaymentSourceBankId;
         ExpenseFormCreditCardId = expense.CreditCardId;
         ExpenseFormCreditCardName = expense.CreditCardName ?? string.Empty;
-        ExpenseFormRoundUpAmount = expense.RoundUpAmount?.ToString("0.##") ?? string.Empty;
+        if (expense.RoundUpAmount is { } savedRoundUpAmount)
+        {
+            // A saved amount is frozen (not auto-recomputed) - same as a user-typed one -
+            // so re-editing Value/PaymentSource here doesn't silently change what was saved.
+            ExpenseFormRoundUpAmount = savedRoundUpAmount.ToString("0.##");
+        }
+        else
+        {
+            ApplyRoundUpSuggestion(string.Empty);
+        }
         ExpenseFormCountsAsTithe = expense.CountsAsTithe;
         ExpenseFormIsSettled = expense.PaymentStatus == SettledStatus;
         _invoiceDateTouchedByUser = false;
