@@ -27,10 +27,10 @@ public class IncomeWorkflowViewModelTests
 
     private static readonly List<IncomeSourceDTO> DefaultIncomeSources =
     [
-        new() { Id = GleisonSourceId, Name = "Gleison", IsActive = true, Group = "Salary", AutoSplitToReserve = false },
-        new() { Id = ArianaSourceId, Name = "Ariana", IsActive = true, Group = "Salary", AutoSplitToReserve = true },
-        new() { Id = LotterySourceId, Name = "Lottery", IsActive = true, Group = "NonReportable", AutoSplitToReserve = false },
-        new() { Id = DividendoJurosSourceId, Name = "DividendoJuros", IsActive = true, Group = "DividendoJuros", AutoSplitToReserve = false },
+        new() { Id = GleisonSourceId, Name = "Gleison", IsActive = true, Group = "Salary", AutoSplitToReserve = false, HasReferences = false },
+        new() { Id = ArianaSourceId, Name = "Ariana", IsActive = true, Group = "Salary", AutoSplitToReserve = true, HasReferences = false },
+        new() { Id = LotterySourceId, Name = "Lottery", IsActive = true, Group = "NonReportable", AutoSplitToReserve = false, HasReferences = false },
+        new() { Id = DividendoJurosSourceId, Name = "DividendoJuros", IsActive = true, Group = "DividendoJuros", AutoSplitToReserve = false, HasReferences = false },
     ];
 
     private static readonly List<BankDTO> DefaultBanks =
@@ -54,10 +54,10 @@ public class IncomeWorkflowViewModelTests
 
         viewModel.ApplyRefresh([],
         [
-            new IncomeSourceDTO { Id = Guid.NewGuid(), Name = "DividendoJuros", IsActive = true, Group = "DividendoJuros", AutoSplitToReserve = false },
-            new IncomeSourceDTO { Id = Guid.NewGuid(), Name = "Lottery", IsActive = true, Group = "NonReportable", AutoSplitToReserve = false },
-            new IncomeSourceDTO { Id = Guid.NewGuid(), Name = "Ariana", IsActive = true, Group = "Salary", AutoSplitToReserve = true },
-            new IncomeSourceDTO { Id = Guid.NewGuid(), Name = "Gleison", IsActive = true, Group = "Salary", AutoSplitToReserve = false },
+            new IncomeSourceDTO { Id = Guid.NewGuid(), Name = "DividendoJuros", IsActive = true, Group = "DividendoJuros", AutoSplitToReserve = false, HasReferences = false },
+            new IncomeSourceDTO { Id = Guid.NewGuid(), Name = "Lottery", IsActive = true, Group = "NonReportable", AutoSplitToReserve = false, HasReferences = false },
+            new IncomeSourceDTO { Id = Guid.NewGuid(), Name = "Ariana", IsActive = true, Group = "Salary", AutoSplitToReserve = true, HasReferences = false },
+            new IncomeSourceDTO { Id = Guid.NewGuid(), Name = "Gleison", IsActive = true, Group = "Salary", AutoSplitToReserve = false, HasReferences = false },
         ], []);
 
         viewModel.IncomeSourceOptions.Select(s => s.Name).Should().Equal("Gleison", "Ariana", "Lottery", "DividendoJuros");
@@ -70,8 +70,8 @@ public class IncomeWorkflowViewModelTests
 
         viewModel.ApplyRefresh([],
         [
-            new IncomeSourceDTO { Id = Guid.NewGuid(), Name = "Gleison", IsActive = true, Group = "Salary", AutoSplitToReserve = false },
-            new IncomeSourceDTO { Id = Guid.NewGuid(), Name = "RetiredSource", IsActive = false, Group = "NonReportable", AutoSplitToReserve = false },
+            new IncomeSourceDTO { Id = Guid.NewGuid(), Name = "Gleison", IsActive = true, Group = "Salary", AutoSplitToReserve = false, HasReferences = false },
+            new IncomeSourceDTO { Id = Guid.NewGuid(), Name = "RetiredSource", IsActive = false, Group = "NonReportable", AutoSplitToReserve = false, HasReferences = false },
         ], []);
 
         viewModel.IncomeSourceOptions.Select(s => s.Name).Should().Equal("Gleison");

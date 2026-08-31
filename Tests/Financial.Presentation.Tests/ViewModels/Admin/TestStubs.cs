@@ -211,6 +211,72 @@ internal sealed class StubCreditCardService : ICreditCardService
     }
 }
 
+internal sealed class StubIncomeSourceService : IIncomeSourceService
+{
+    public List<IncomeSourceDTO> IncomeSources { get; set; } = [];
+    public IncomeSourceCreateDTO? LastCreateRequest { get; private set; }
+    public (Guid Id, IncomeSourceUpdateDTO Request)? LastUpdateRequest { get; private set; }
+    public Guid? LastDeletedId { get; private set; }
+    public Exception? ThrowOnCreate { get; set; }
+    public Exception? ThrowOnUpdate { get; set; }
+    public Exception? ThrowOnDelete { get; set; }
+
+    public IReadOnlyList<IncomeSourceDTO> GetIncomeSources() => IncomeSources;
+
+    public Task<IncomeSourceDTO> CreateIncomeSourceAsync(IncomeSourceCreateDTO request)
+    {
+        LastCreateRequest = request;
+        if (ThrowOnCreate is not null)
+        {
+            throw ThrowOnCreate;
+        }
+
+        var created = new IncomeSourceDTO
+        {
+            Id = Guid.NewGuid(),
+            Name = request.Name,
+            Group = request.Group,
+            IsActive = request.IsActive,
+            AutoSplitToReserve = request.AutoSplitToReserve,
+            HasReferences = false,
+        };
+        IncomeSources.Add(created);
+        return Task.FromResult(created);
+    }
+
+    public Task<IncomeSourceDTO> UpdateIncomeSourceAsync(Guid id, IncomeSourceUpdateDTO request)
+    {
+        LastUpdateRequest = (id, request);
+        if (ThrowOnUpdate is not null)
+        {
+            throw ThrowOnUpdate;
+        }
+
+        var updated = new IncomeSourceDTO
+        {
+            Id = id,
+            Name = request.Name,
+            Group = request.Group,
+            IsActive = request.IsActive,
+            AutoSplitToReserve = request.AutoSplitToReserve,
+            HasReferences = false,
+        };
+        return Task.FromResult(updated);
+    }
+
+    public Task DeleteIncomeSourceAsync(Guid id)
+    {
+        LastDeletedId = id;
+        if (ThrowOnDelete is not null)
+        {
+            throw ThrowOnDelete;
+        }
+
+        IncomeSources.RemoveAll(s => s.Id == id);
+        return Task.CompletedTask;
+    }
+}
+
 internal sealed class StubBrokerService : IBrokerService
 {
     public List<BrokerDTO> Brokers { get; set; } = [];
@@ -431,6 +497,10 @@ internal sealed class StubDialogService : IDialogService
     public CreditCardFormDialogViewModel? LastCreditCardFormDialog { get; private set; }
     public Action<CreditCardFormDialogViewModel>? OnShowCreditCardFormDialog { get; set; }
 
+    public bool ShowIncomeSourceFormDialogResult { get; set; } = true;
+    public IncomeSourceFormDialogViewModel? LastIncomeSourceFormDialog { get; private set; }
+    public Action<IncomeSourceFormDialogViewModel>? OnShowIncomeSourceFormDialog { get; set; }
+
     public bool Confirm(string message, string caption)
     {
         LastConfirmMessage = message;
@@ -483,5 +553,12 @@ internal sealed class StubDialogService : IDialogService
         LastCreditCardFormDialog = viewModel;
         OnShowCreditCardFormDialog?.Invoke(viewModel);
         return ShowCreditCardFormDialogResult;
+    }
+
+    public bool ShowIncomeSourceFormDialog(IncomeSourceFormDialogViewModel viewModel)
+    {
+        LastIncomeSourceFormDialog = viewModel;
+        OnShowIncomeSourceFormDialog?.Invoke(viewModel);
+        return ShowIncomeSourceFormDialogResult;
     }
 }

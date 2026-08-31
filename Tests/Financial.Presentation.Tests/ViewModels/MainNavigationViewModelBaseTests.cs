@@ -514,6 +514,8 @@ public class MainNavigationViewModelBaseTests
                 throw new NotImplementedException();
             public bool ShowCreditCardFormDialog(Financial.Presentation.App.ViewModels.Admin.CreditCardFormDialogViewModel viewModel) =>
                 throw new NotImplementedException();
+            public bool ShowIncomeSourceFormDialog(Financial.Presentation.App.ViewModels.Admin.IncomeSourceFormDialogViewModel viewModel) =>
+                throw new NotImplementedException();
         }
     }
 

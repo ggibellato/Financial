@@ -18,10 +18,10 @@ public class MonthlyViewModelTests
 
     private static readonly List<IncomeSourceDTO> DefaultIncomeSources =
     [
-        new() { Id = GleisonSourceId, Name = "Gleison", IsActive = true, Group = "Salary", AutoSplitToReserve = false },
-        new() { Id = ArianaSourceId, Name = "Ariana", IsActive = true, Group = "Salary", AutoSplitToReserve = true },
-        new() { Id = LotterySourceId, Name = "Lottery", IsActive = true, Group = "NonReportable", AutoSplitToReserve = false },
-        new() { Id = DividendoJurosSourceId, Name = "DividendoJuros", IsActive = true, Group = "DividendoJuros", AutoSplitToReserve = false },
+        new() { Id = GleisonSourceId, Name = "Gleison", IsActive = true, Group = "Salary", AutoSplitToReserve = false, HasReferences = false },
+        new() { Id = ArianaSourceId, Name = "Ariana", IsActive = true, Group = "Salary", AutoSplitToReserve = true, HasReferences = false },
+        new() { Id = LotterySourceId, Name = "Lottery", IsActive = true, Group = "NonReportable", AutoSplitToReserve = false, HasReferences = false },
+        new() { Id = DividendoJurosSourceId, Name = "DividendoJuros", IsActive = true, Group = "DividendoJuros", AutoSplitToReserve = false, HasReferences = false },
     ];
 
     private static readonly Guid BaAmexId = Guid.NewGuid();

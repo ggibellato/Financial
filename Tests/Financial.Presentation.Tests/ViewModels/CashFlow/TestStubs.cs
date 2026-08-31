@@ -152,6 +152,12 @@ internal sealed class StubIncomeSourceService : IIncomeSourceService
 
         return IncomeSources;
     }
+
+    public Task<IncomeSourceDTO> CreateIncomeSourceAsync(IncomeSourceCreateDTO request) => throw new NotSupportedException();
+
+    public Task<IncomeSourceDTO> UpdateIncomeSourceAsync(Guid id, IncomeSourceUpdateDTO request) => throw new NotSupportedException();
+
+    public Task DeleteIncomeSourceAsync(Guid id) => throw new NotSupportedException();
 }
 
 internal sealed class StubTitheService : ITitheService
