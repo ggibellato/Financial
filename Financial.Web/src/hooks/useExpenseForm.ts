@@ -45,6 +45,9 @@ interface ExpenseFormState {
   creditCardName: string
   invoiceDate: string
   roundUpAmount: string
+  // True until the user directly edits the round-up field, or an edit form loads a saved
+  // amount - both "freeze" it so later Value/PaymentSource edits stop recomputing it.
+  roundUpAmountAuto: boolean
   countsAsTithe: string
   paymentMode: PaymentMode
   isSettled: boolean
@@ -61,6 +64,7 @@ type ExpenseFormAction =
   | { type: 'SHOW_EDIT_FORM'; payload: ExpenseDto }
   | { type: 'CANCEL_FORM' }
   | { type: 'SET_FIELD'; payload: { field: ExpenseFormField; value: string } }
+  | { type: 'SET_ROUND_UP_SUGGESTION'; payload: { value: string } }
   | { type: 'SAVE_START' }
   | { type: 'SAVE_SUCCESS' }
   | { type: 'SAVE_ERROR'; payload: { message: string; field: ExpenseFormField | null } }
@@ -75,6 +79,7 @@ const BLANK_FORM = {
   creditCardName: '',
   invoiceDate: '',
   roundUpAmount: '',
+  roundUpAmountAuto: true,
   countsAsTithe: 'true',
   paymentMode: 'bank' as PaymentMode,
   isSettled: false,
@@ -123,6 +128,9 @@ function reducer(state: ExpenseFormState, action: ExpenseFormAction): ExpenseFor
         creditCardName: action.payload.creditCardName ?? '',
         invoiceDate: action.payload.invoiceDate ? action.payload.invoiceDate.slice(0, 7) : '',
         roundUpAmount: action.payload.roundUpAmount != null ? String(action.payload.roundUpAmount) : '',
+        // A saved amount is frozen (not auto-recomputed), same as a user-typed one, so
+        // re-editing Value/PaymentSource here doesn't silently change what was saved.
+        roundUpAmountAuto: action.payload.roundUpAmount == null,
         countsAsTithe: String(action.payload.countsAsTithe),
         paymentMode: action.payload.paymentStatus === CHARGE_STATUS ? 'card' : 'bank',
         isSettled: action.payload.paymentStatus === SETTLED_STATUS,
@@ -132,7 +140,11 @@ function reducer(state: ExpenseFormState, action: ExpenseFormAction): ExpenseFor
     case 'CANCEL_FORM':
       return { ...state, ...BLANK_FORM, isOpen: false, isEditing: false, editingId: null, saveError: null, saveErrorField: null }
     case 'SET_FIELD':
-      return { ...state, [action.payload.field]: action.payload.value }
+      return action.payload.field === 'roundUpAmount'
+        ? { ...state, roundUpAmount: action.payload.value, roundUpAmountAuto: false }
+        : { ...state, [action.payload.field]: action.payload.value }
+    case 'SET_ROUND_UP_SUGGESTION':
+      return { ...state, roundUpAmount: action.payload.value, roundUpAmountAuto: true }
     case 'SAVE_START':
       return { ...state, isSaving: true, saveError: null, saveErrorField: null }
     case 'SAVE_SUCCESS':
@@ -196,11 +208,11 @@ export function useExpenseForm(banks: BankDto[], categories: CategoryDto[], onSa
 
   function setField(field: ExpenseFormField, value: string) {
     dispatch({ type: 'SET_FIELD', payload: { field, value } })
-    if (field === 'paymentSource' && state.roundUpAmount.trim() === '') {
-      const suggestion = suggestRoundUpAmount(banks, value, state.value)
-      if (suggestion !== null) {
-        dispatch({ type: 'SET_FIELD', payload: { field: 'roundUpAmount', value: suggestion } })
-      }
+    if ((field === 'paymentSource' || field === 'value') && state.roundUpAmountAuto) {
+      const bankId = field === 'paymentSource' ? value : state.paymentSource
+      const expenseValue = field === 'value' ? value : state.value
+      const suggestion = suggestRoundUpAmount(banks, bankId, expenseValue)
+      dispatch({ type: 'SET_ROUND_UP_SUGGESTION', payload: { value: suggestion ?? '' } })
     }
   }
 
