@@ -51,4 +51,30 @@ public class InvestmentAccount
 
         _aliases.Add(alias);
     }
+
+    /// <summary>Updates this account's fields, including a full replacement of its Aliases. Reuses
+    /// <see cref="AddAlias"/> for each incoming alias, so the same blank-guard and case-insensitive
+    /// dedup rule applies here as it does to the migrator's direct calls.</summary>
+    public void Update(string name, bool isActive, bool isLiability, IReadOnlyCollection<string> aliases)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new ArgumentException("Investment account name is required.");
+        }
+
+        if (aliases.Any(string.IsNullOrWhiteSpace))
+        {
+            throw new ArgumentException("Alias must not be empty.");
+        }
+
+        Name = name;
+        IsActive = isActive;
+        IsLiability = isLiability;
+
+        _aliases.Clear();
+        foreach (var alias in aliases)
+        {
+            AddAlias(alias);
+        }
+    }
 }

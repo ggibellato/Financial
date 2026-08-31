@@ -85,6 +85,8 @@ public class CashFlowData
 
     public void AddInvestmentAccount(InvestmentAccount account) => _investmentAccounts.Add(account);
 
+    public void RemoveInvestmentAccount(Guid id) => _investmentAccounts.RemoveAll(account => account.Id == id);
+
     public void AddReserveBucket(ReserveBucket bucket) => _reserveBuckets.Add(bucket);
 
     public void AddCreditCard(CreditCard card) => _creditCards.Add(card);
