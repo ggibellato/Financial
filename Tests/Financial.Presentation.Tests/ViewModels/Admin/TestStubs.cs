@@ -277,6 +277,72 @@ internal sealed class StubIncomeSourceService : IIncomeSourceService
     }
 }
 
+internal sealed class StubInvestmentAccountService : IInvestmentAccountService
+{
+    public List<InvestmentAccountDTO> InvestmentAccounts { get; set; } = [];
+    public InvestmentAccountCreateDTO? LastCreateRequest { get; private set; }
+    public (Guid Id, InvestmentAccountUpdateDTO Request)? LastUpdateRequest { get; private set; }
+    public Guid? LastDeletedId { get; private set; }
+    public Exception? ThrowOnCreate { get; set; }
+    public Exception? ThrowOnUpdate { get; set; }
+    public Exception? ThrowOnDelete { get; set; }
+
+    public IReadOnlyList<InvestmentAccountDTO> GetInvestmentAccounts() => InvestmentAccounts;
+
+    public Task<InvestmentAccountDTO> CreateInvestmentAccountAsync(InvestmentAccountCreateDTO request)
+    {
+        LastCreateRequest = request;
+        if (ThrowOnCreate is not null)
+        {
+            throw ThrowOnCreate;
+        }
+
+        var created = new InvestmentAccountDTO
+        {
+            Id = Guid.NewGuid(),
+            Name = request.Name,
+            IsActive = request.IsActive,
+            IsLiability = request.IsLiability,
+            Aliases = request.Aliases,
+            LatestBalance = 0m,
+        };
+        InvestmentAccounts.Add(created);
+        return Task.FromResult(created);
+    }
+
+    public Task<InvestmentAccountDTO> UpdateInvestmentAccountAsync(Guid id, InvestmentAccountUpdateDTO request)
+    {
+        LastUpdateRequest = (id, request);
+        if (ThrowOnUpdate is not null)
+        {
+            throw ThrowOnUpdate;
+        }
+
+        var updated = new InvestmentAccountDTO
+        {
+            Id = id,
+            Name = request.Name,
+            IsActive = request.IsActive,
+            IsLiability = request.IsLiability,
+            Aliases = request.Aliases,
+            LatestBalance = 0m,
+        };
+        return Task.FromResult(updated);
+    }
+
+    public Task DeleteInvestmentAccountAsync(Guid id)
+    {
+        LastDeletedId = id;
+        if (ThrowOnDelete is not null)
+        {
+            throw ThrowOnDelete;
+        }
+
+        InvestmentAccounts.RemoveAll(a => a.Id == id);
+        return Task.CompletedTask;
+    }
+}
+
 internal sealed class StubBrokerService : IBrokerService
 {
     public List<BrokerDTO> Brokers { get; set; } = [];
@@ -501,6 +567,10 @@ internal sealed class StubDialogService : IDialogService
     public IncomeSourceFormDialogViewModel? LastIncomeSourceFormDialog { get; private set; }
     public Action<IncomeSourceFormDialogViewModel>? OnShowIncomeSourceFormDialog { get; set; }
 
+    public bool ShowInvestmentAccountFormDialogResult { get; set; } = true;
+    public InvestmentAccountFormDialogViewModel? LastInvestmentAccountFormDialog { get; private set; }
+    public Action<InvestmentAccountFormDialogViewModel>? OnShowInvestmentAccountFormDialog { get; set; }
+
     public bool Confirm(string message, string caption)
     {
         LastConfirmMessage = message;
@@ -560,5 +630,12 @@ internal sealed class StubDialogService : IDialogService
         LastIncomeSourceFormDialog = viewModel;
         OnShowIncomeSourceFormDialog?.Invoke(viewModel);
         return ShowIncomeSourceFormDialogResult;
+    }
+
+    public bool ShowInvestmentAccountFormDialog(InvestmentAccountFormDialogViewModel viewModel)
+    {
+        LastInvestmentAccountFormDialog = viewModel;
+        OnShowInvestmentAccountFormDialog?.Invoke(viewModel);
+        return ShowInvestmentAccountFormDialogResult;
     }
 }
