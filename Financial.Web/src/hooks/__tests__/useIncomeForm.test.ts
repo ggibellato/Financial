@@ -17,10 +17,10 @@ vi.mock('../../api/financialApiClient', () => ({
 }))
 
 const INCOME_SOURCES: IncomeSourceDto[] = [
-  { id: '1', name: 'Gleison', isActive: true, group: 'Salary', autoSplitToReserve: false },
-  { id: '2', name: 'Ariana', isActive: true, group: 'Salary', autoSplitToReserve: true },
-  { id: '3', name: 'Lottery', isActive: true, group: 'NonReportable', autoSplitToReserve: false },
-  { id: '4', name: 'DividendoJuros', isActive: true, group: 'DividendoJuros', autoSplitToReserve: false },
+  { id: '1', name: 'Gleison', isActive: true, group: 'Salary', autoSplitToReserve: false, hasReferences: false },
+  { id: '2', name: 'Ariana', isActive: true, group: 'Salary', autoSplitToReserve: true, hasReferences: false },
+  { id: '3', name: 'Lottery', isActive: true, group: 'NonReportable', autoSplitToReserve: false, hasReferences: false },
+  { id: '4', name: 'DividendoJuros', isActive: true, group: 'DividendoJuros', autoSplitToReserve: false, hasReferences: false },
 ]
 
 describe('useIncomeForm', () => {
@@ -42,10 +42,10 @@ describe('useIncomeForm', () => {
 
   it('selectActiveIncomeSources filters out inactive sources and orders the rest', () => {
     const mixed: IncomeSourceDto[] = [
-      { id: '4', name: 'DividendoJuros', isActive: true, group: 'DividendoJuros', autoSplitToReserve: false },
-      { id: '3', name: 'Lottery', isActive: false, group: 'NonReportable', autoSplitToReserve: false },
-      { id: '2', name: 'Ariana', isActive: true, group: 'Salary', autoSplitToReserve: true },
-      { id: '1', name: 'Gleison', isActive: true, group: 'Salary', autoSplitToReserve: false },
+      { id: '4', name: 'DividendoJuros', isActive: true, group: 'DividendoJuros', autoSplitToReserve: false, hasReferences: false },
+      { id: '3', name: 'Lottery', isActive: false, group: 'NonReportable', autoSplitToReserve: false, hasReferences: false },
+      { id: '2', name: 'Ariana', isActive: true, group: 'Salary', autoSplitToReserve: true, hasReferences: false },
+      { id: '1', name: 'Gleison', isActive: true, group: 'Salary', autoSplitToReserve: false, hasReferences: false },
     ]
 
     const result = selectActiveIncomeSources(mixed)
