@@ -152,6 +152,8 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
     public void DeleteBank(Guid id) => Banks.RemoveAll(b => b.Id == id);
 
     public IEnumerable<IncomeSource> GetIncomeSources() => IncomeSources;
+    public void AddIncomeSource(IncomeSource incomeSource) => IncomeSources.Add(incomeSource);
+    public void DeleteIncomeSource(Guid id) => IncomeSources.RemoveAll(s => s.Id == id);
 
     public IEnumerable<ReserveBucket> GetReserveBuckets() => ReserveBuckets;
 

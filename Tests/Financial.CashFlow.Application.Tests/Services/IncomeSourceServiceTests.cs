@@ -1,3 +1,5 @@
+using Financial.CashFlow.Application.DTOs;
+using Financial.CashFlow.Application.Exceptions;
 using Financial.CashFlow.Application.Services;
 using Financial.Shared.Abstractions.Observability;
 using Financial.TestUtilities;
@@ -102,5 +104,185 @@ public class IncomeSourceServiceTests
         Action act = () => new IncomeSourceService(_repository, _tracer, null!);
 
         act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
+    public async Task CreateIncomeSourceAsync_WithValidRequest_AddsAndSaves()
+    {
+        var request = new IncomeSourceCreateDTO { Name = "Freelance", Group = "NonReportable", IsActive = true, AutoSplitToReserve = false };
+
+        var result = await _sut.CreateIncomeSourceAsync(request);
+
+        using (new AssertionScope())
+        {
+            result.Name.Should().Be("Freelance");
+            result.Group.Should().Be("NonReportable");
+            result.HasReferences.Should().BeFalse();
+            _repository.IncomeSources.Should().ContainSingle(s => s.Name == "Freelance");
+            _repository.SaveChangesCallCount.Should().Be(1);
+        }
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task CreateIncomeSourceAsync_WithoutAName_ThrowsAndWritesNothing(string? name)
+    {
+        var request = new IncomeSourceCreateDTO { Name = name!, Group = "Salary", IsActive = true, AutoSplitToReserve = false };
+
+        var act = async () => await _sut.CreateIncomeSourceAsync(request);
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>();
+            _repository.SaveChangesCallCount.Should().Be(0);
+        }
+    }
+
+    [Fact]
+    public async Task CreateIncomeSourceAsync_WithInvalidGroup_ThrowsAndWritesNothing()
+    {
+        var request = new IncomeSourceCreateDTO { Name = "Freelance", Group = "NotAGroup", IsActive = true, AutoSplitToReserve = false };
+
+        var act = async () => await _sut.CreateIncomeSourceAsync(request);
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>();
+            _repository.SaveChangesCallCount.Should().Be(0);
+        }
+    }
+
+    [Fact]
+    public async Task CreateIncomeSourceAsync_WithDuplicateName_ThrowsAndWritesNothing()
+    {
+        _repository.IncomeSources.Add(IncomeSource.Create("Gleison", IncomeGroup.Salary));
+        var request = new IncomeSourceCreateDTO { Name = "Gleison", Group = "Salary", IsActive = true, AutoSplitToReserve = false };
+
+        var act = async () => await _sut.CreateIncomeSourceAsync(request);
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<DuplicateNameException>();
+            _repository.SaveChangesCallCount.Should().Be(0);
+        }
+    }
+
+    [Fact]
+    public async Task UpdateIncomeSourceAsync_WithValidRequest_UpdatesAndSaves()
+    {
+        var incomeSource = IncomeSource.Create("Gleison", IncomeGroup.Salary);
+        _repository.IncomeSources.Add(incomeSource);
+        var request = new IncomeSourceUpdateDTO { Name = "Ariana", Group = "NonReportable", IsActive = false, AutoSplitToReserve = true };
+
+        var result = await _sut.UpdateIncomeSourceAsync(incomeSource.Id, request);
+
+        using (new AssertionScope())
+        {
+            result.Name.Should().Be("Ariana");
+            result.Group.Should().Be("NonReportable");
+            result.IsActive.Should().BeFalse();
+            result.AutoSplitToReserve.Should().BeTrue();
+            _repository.SaveChangesCallCount.Should().Be(1);
+        }
+    }
+
+    [Fact]
+    public async Task UpdateIncomeSourceAsync_WithUnknownId_ThrowsKeyNotFoundException()
+    {
+        var request = new IncomeSourceUpdateDTO { Name = "Ariana", Group = "Salary", IsActive = true, AutoSplitToReserve = false };
+
+        var act = async () => await _sut.UpdateIncomeSourceAsync(Guid.NewGuid(), request);
+
+        await act.Should().ThrowAsync<KeyNotFoundException>();
+    }
+
+    [Fact]
+    public async Task UpdateIncomeSourceAsync_WithInvalidGroup_ThrowsAndWritesNothing()
+    {
+        var incomeSource = IncomeSource.Create("Gleison", IncomeGroup.Salary);
+        _repository.IncomeSources.Add(incomeSource);
+        var request = new IncomeSourceUpdateDTO { Name = "Gleison", Group = "NotAGroup", IsActive = true, AutoSplitToReserve = false };
+
+        var act = async () => await _sut.UpdateIncomeSourceAsync(incomeSource.Id, request);
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>();
+            _repository.SaveChangesCallCount.Should().Be(0);
+        }
+    }
+
+    [Fact]
+    public async Task UpdateIncomeSourceAsync_WithDuplicateName_ThrowsAndWritesNothing()
+    {
+        var gleison = IncomeSource.Create("Gleison", IncomeGroup.Salary);
+        var ariana = IncomeSource.Create("Ariana", IncomeGroup.Salary);
+        _repository.IncomeSources.Add(gleison);
+        _repository.IncomeSources.Add(ariana);
+        var request = new IncomeSourceUpdateDTO { Name = "Ariana", Group = "Salary", IsActive = true, AutoSplitToReserve = false };
+
+        var act = async () => await _sut.UpdateIncomeSourceAsync(gleison.Id, request);
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<DuplicateNameException>();
+            _repository.SaveChangesCallCount.Should().Be(0);
+        }
+    }
+
+    [Fact]
+    public async Task DeleteIncomeSourceAsync_WithNoReferences_RemovesAndSaves()
+    {
+        var incomeSource = IncomeSource.Create("Gleison", IncomeGroup.Salary);
+        _repository.IncomeSources.Add(incomeSource);
+
+        await _sut.DeleteIncomeSourceAsync(incomeSource.Id);
+
+        using (new AssertionScope())
+        {
+            _repository.IncomeSources.Should().BeEmpty();
+            _repository.SaveChangesCallCount.Should().Be(1);
+        }
+    }
+
+    [Fact]
+    public async Task DeleteIncomeSourceAsync_WithUnknownId_ThrowsKeyNotFoundException()
+    {
+        var act = async () => await _sut.DeleteIncomeSourceAsync(Guid.NewGuid());
+
+        await act.Should().ThrowAsync<KeyNotFoundException>();
+    }
+
+    [Fact]
+    public async Task DeleteIncomeSourceAsync_ReferencedByIncome_ThrowsAndWritesNothing()
+    {
+        var incomeSource = IncomeSource.Create("Gleison", IncomeGroup.Salary);
+        _repository.IncomeSources.Add(incomeSource);
+        var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        _repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 1), incomeSource, null, 500m, bank));
+
+        var act = async () => await _sut.DeleteIncomeSourceAsync(incomeSource.Id);
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<EntityInUseException>();
+            _repository.IncomeSources.Should().ContainSingle();
+            _repository.SaveChangesCallCount.Should().Be(0);
+        }
+    }
+
+    [Fact]
+    public void GetIncomeSources_HasReferences_ReflectsWhetherAnIncomeExists()
+    {
+        var incomeSource = IncomeSource.Create("Gleison", IncomeGroup.Salary);
+        _repository.IncomeSources.Add(incomeSource);
+        var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        _repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 1), incomeSource, null, 500m, bank));
+
+        var result = _sut.GetIncomeSources();
+
+        result.Should().ContainSingle(s => s.Id == incomeSource.Id).Which.HasReferences.Should().BeTrue();
     }
 }

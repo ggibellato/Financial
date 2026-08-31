@@ -473,10 +473,10 @@ graph TD
 - [x] Attempting to delete a Credit Card referenced by a statement or expense is blocked with a 409 response and a clear message
 
 ### F08. Income Source CRUD
-- [ ] Creating an Income Source with a unique Name, Group, IsActive, and AutoSplitToReserve succeeds
-- [ ] Editing any of an Income Source's four fields persists the change
-- [ ] Deleting an Income Source with zero referencing income entries succeeds
-- [ ] Attempting to delete an Income Source referenced by an income entry is blocked with a 409 response and a clear message
+- [x] Creating an Income Source with a unique Name, Group, IsActive, and AutoSplitToReserve succeeds
+- [x] Editing any of an Income Source's four fields persists the change
+- [x] Deleting an Income Source with zero referencing income entries succeeds
+- [x] Attempting to delete an Income Source referenced by an income entry is blocked with a 409 response and a clear message
 
 ### F09. Investment Account CRUD
 - [ ] Creating an Investment Account with a unique Name, IsActive, IsLiability, and any number of Aliases succeeds

@@ -64,4 +64,40 @@ public class IncomeSourceTests
 
         incomeSource.AutoSplitToReserve.Should().BeTrue();
     }
+
+    [Fact]
+    public void Update_ChangesAllFields()
+    {
+        var incomeSource = IncomeSource.Create("Gleison", IncomeGroup.Salary, isActive: true, autoSplitToReserve: false);
+
+        incomeSource.Update("Ariana", IncomeGroup.NonReportable, isActive: false, autoSplitToReserve: true);
+
+        using (new AssertionScope())
+        {
+            incomeSource.Name.Should().Be("Ariana");
+            incomeSource.Group.Should().Be(IncomeGroup.NonReportable);
+            incomeSource.IsActive.Should().BeFalse();
+            incomeSource.AutoSplitToReserve.Should().BeTrue();
+        }
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Update_WithoutAName_ThrowsAndLeavesPriorValuesUntouched(string? name)
+    {
+        var incomeSource = IncomeSource.Create("Gleison", IncomeGroup.Salary);
+
+        var act = () => incomeSource.Update(name!, IncomeGroup.NonReportable, isActive: false, autoSplitToReserve: true);
+
+        using (new AssertionScope())
+        {
+            act.Should().Throw<ArgumentException>();
+            incomeSource.Name.Should().Be("Gleison");
+            incomeSource.Group.Should().Be(IncomeGroup.Salary);
+            incomeSource.IsActive.Should().BeTrue();
+            incomeSource.AutoSplitToReserve.Should().BeFalse();
+        }
+    }
 }

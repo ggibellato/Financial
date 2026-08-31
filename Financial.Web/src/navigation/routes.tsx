@@ -12,6 +12,7 @@ import {
   CurrentValuesPage,
   DividendCheckPage,
   HistoricInvestmentsPage,
+  IncomeSourcesPage,
   InvestmentSnapshotsPage,
   MensaisPage,
   MonthlyPage,
@@ -51,7 +52,7 @@ export const PAGE_ROUTES: PageRoute[] = [
   { path: 'admin/cashflow/banks', element: <BanksPage /> },
   { path: 'admin/cashflow/categories', element: <CategoriesPage /> },
   { path: 'admin/cashflow/credit-cards', element: <CreditCardsPage /> },
-  { path: 'admin/cashflow/income-sources', element: <AdminEntityPlaceholderPage entityLabel="Income Sources" /> },
+  { path: 'admin/cashflow/income-sources', element: <IncomeSourcesPage /> },
   {
     path: 'admin/cashflow/investment-accounts',
     element: <AdminEntityPlaceholderPage entityLabel="Investment Accounts" />,

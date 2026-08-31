@@ -40,7 +40,9 @@ import type {
   DividendSummaryDto,
   ExpenseDto,
   IncomeDto,
+  IncomeSourceCreateDto,
   IncomeSourceDto,
+  IncomeSourceUpdateDto,
   IncomeSplitRequestDto,
   IncomeSplitResultDto,
   InvestmentAnnualResultDto,
@@ -160,6 +162,9 @@ export interface FinancialApiClient {
   updateBank: (id: string, request: BankUpdateDto) => Promise<BankDto>
   deleteBank: (id: string) => Promise<void>
   getIncomeSources: () => Promise<IncomeSourceDto[]>
+  createIncomeSource: (request: IncomeSourceCreateDto) => Promise<IncomeSourceDto>
+  updateIncomeSource: (id: string, request: IncomeSourceUpdateDto) => Promise<IncomeSourceDto>
+  deleteIncomeSource: (id: string) => Promise<void>
   getCategories: () => Promise<CategoryDto[]>
   createCategory: (request: CategoryCreateDto) => Promise<CategoryDto>
   updateCategory: (id: string, request: CategoryUpdateDto) => Promise<CategoryDto>
@@ -475,6 +480,14 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       }),
     deleteBank: (id) => requestVoid(`/banks/${encodeURIComponent(id)}`, { method: 'DELETE' }),
     getIncomeSources: () => request<IncomeSourceDto[]>('/income-sources'),
+    createIncomeSource: (requestBody) =>
+      request<IncomeSourceDto>('/income-sources', { method: 'POST', body: JSON.stringify(requestBody) }),
+    updateIncomeSource: (id, requestBody) =>
+      request<IncomeSourceDto>(`/income-sources/${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        body: JSON.stringify(requestBody),
+      }),
+    deleteIncomeSource: (id) => requestVoid(`/income-sources/${encodeURIComponent(id)}`, { method: 'DELETE' }),
     getCategories: () => request<CategoryDto[]>('/categories'),
     createCategory: (requestBody) =>
       request<CategoryDto>('/categories', { method: 'POST', body: JSON.stringify(requestBody) }),

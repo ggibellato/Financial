@@ -29,4 +29,19 @@ public class IncomeSource
             AutoSplitToReserve = autoSplitToReserve
         };
     }
+
+    /// <summary>Updates this income source's fields. Callers own uniqueness checks, since only the
+    /// repository can see across every income source.</summary>
+    public void Update(string name, IncomeGroup group, bool isActive, bool autoSplitToReserve)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new ArgumentException("Income source name is required.");
+        }
+
+        Name = name;
+        Group = group;
+        IsActive = isActive;
+        AutoSplitToReserve = autoSplitToReserve;
+    }
 }

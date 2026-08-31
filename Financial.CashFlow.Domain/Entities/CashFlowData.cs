@@ -81,6 +81,8 @@ public class CashFlowData
 
     public void AddIncomeSource(IncomeSource incomeSource) => _incomeSources.Add(incomeSource);
 
+    public void RemoveIncomeSource(Guid id) => _incomeSources.RemoveAll(incomeSource => incomeSource.Id == id);
+
     public void AddInvestmentAccount(InvestmentAccount account) => _investmentAccounts.Add(account);
 
     public void AddReserveBucket(ReserveBucket bucket) => _reserveBuckets.Add(bucket);
