@@ -123,8 +123,8 @@ public class MonthlyViewModelBanksCardsTests
     {
         var (viewModel, _) = CreateViewModelWithCreditCards(
             [
-                new() { Id = BaAmexId, Name = "BaAmex", IsActive = true, NextInvoiceDueDate = new DateOnly(2026, 9, 5) },
-                new() { Id = ChaseCardId, Name = "ChaseMaster4023", IsActive = false, NextInvoiceDueDate = null },
+                new() { Id = BaAmexId, Name = "BaAmex", IsActive = true, NextInvoiceDueDate = new DateOnly(2026, 9, 5), HasReferences = false },
+                new() { Id = ChaseCardId, Name = "ChaseMaster4023", IsActive = false, NextInvoiceDueDate = null, HasReferences = false },
             ]);
 
         await viewModel.RefreshAsync();
@@ -138,8 +138,8 @@ public class MonthlyViewModelBanksCardsTests
     {
         var (viewModel, _) = CreateViewModelWithCreditCards(
             [
-                new() { Id = BaAmexId, Name = "BaAmex", IsActive = true, NextInvoiceDueDate = new DateOnly(2026, 9, 5) },
-                new() { Id = ChaseCardId, Name = "ChaseMaster4023", IsActive = false, NextInvoiceDueDate = null },
+                new() { Id = BaAmexId, Name = "BaAmex", IsActive = true, NextInvoiceDueDate = new DateOnly(2026, 9, 5), HasReferences = false },
+                new() { Id = ChaseCardId, Name = "ChaseMaster4023", IsActive = false, NextInvoiceDueDate = null, HasReferences = false },
             ]);
 
         await viewModel.RefreshAsync();
@@ -153,7 +153,7 @@ public class MonthlyViewModelBanksCardsTests
     {
         var (viewModel, _) = CreateViewModelWithCreditCards(
             [
-                new() { Id = BaAmexId, Name = "BaAmex", IsActive = true, NextInvoiceDueDate = new DateOnly(2026, 9, 5) },
+                new() { Id = BaAmexId, Name = "BaAmex", IsActive = true, NextInvoiceDueDate = new DateOnly(2026, 9, 5), HasReferences = false },
             ]);
         await viewModel.RefreshAsync();
         var card = viewModel.CreditCards.Single(c => c.Name == "BaAmex");

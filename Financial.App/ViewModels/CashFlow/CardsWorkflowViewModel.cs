@@ -183,6 +183,7 @@ public class CardsWorkflowViewModel : ViewModelBase
         {
             await _creditCardService.UpdateCreditCardAsync(card.Id, new CreditCardUpdateDTO
             {
+                Name = card.Name,
                 NextInvoiceDueDate = nextInvoiceDueDate,
                 IsActive = isActive,
             });

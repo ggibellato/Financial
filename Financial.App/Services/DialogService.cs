@@ -31,4 +31,7 @@ public sealed class DialogService : IDialogService
 
     public bool ShowCategoryFormDialog(CategoryFormDialogViewModel viewModel) =>
         new CategoryFormDialog(viewModel) { Owner = System.Windows.Application.Current?.MainWindow }.ShowDialog() == true;
+
+    public bool ShowCreditCardFormDialog(CreditCardFormDialogViewModel viewModel) =>
+        new CreditCardFormDialog(viewModel) { Owner = System.Windows.Application.Current?.MainWindow }.ShowDialog() == true;
 }
