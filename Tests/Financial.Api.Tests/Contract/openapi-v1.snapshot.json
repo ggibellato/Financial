@@ -2649,6 +2649,26 @@
         ],
         "type": "object"
       },
+      "ReserveBucketCreateDTO": {
+        "properties": {
+          "isActive": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          },
+          "splitPercentage": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "name",
+          "splitPercentage",
+          "isActive"
+        ],
+        "type": "object"
+      },
       "ReserveBucketDTO": {
         "properties": {
           "id": {
@@ -2664,6 +2684,12 @@
           "splitPercentage": {
             "format": "double",
             "type": "number"
+          },
+          "warning": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         },
         "required": [
@@ -2671,6 +2697,26 @@
           "name",
           "isActive",
           "splitPercentage"
+        ],
+        "type": "object"
+      },
+      "ReserveBucketUpdateDTO": {
+        "properties": {
+          "isActive": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          },
+          "splitPercentage": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "name",
+          "splitPercentage",
+          "isActive"
         ],
         "type": "object"
       },
@@ -7982,6 +8028,166 @@
           }
         },
         "summary": "Lists all reserve buckets.",
+        "tags": [
+          "ReserveBuckets"
+        ]
+      },
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/*\u002Bjson": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/ReserveBucketCreateDTO"
+                  }
+                ]
+              }
+            },
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/ReserveBucketCreateDTO"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/ReserveBucketCreateDTO"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReserveBucketDTO"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          }
+        },
+        "summary": "Creates a new reserve bucket.",
+        "tags": [
+          "ReserveBuckets"
+        ]
+      }
+    },
+    "/reserve-buckets/{id}": {
+      "put": {
+        "parameters": [
+          {
+            "description": "The bucket\u0027s identifier.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/*\u002Bjson": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/ReserveBucketUpdateDTO"
+                  }
+                ]
+              }
+            },
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/ReserveBucketUpdateDTO"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/ReserveBucketUpdateDTO"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReserveBucketDTO"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "summary": "Updates a reserve bucket\u0027s name, split percentage, and active flag. \u0022Deleting\u0022 a\n            bucket is a call to this endpoint with isActive set to false - no hard delete exists, since\n            existing reserve movements hold a permanent reference to their bucket.",
         "tags": [
           "ReserveBuckets"
         ]

@@ -50,10 +50,10 @@ const MOVEMENTS: ReserveMovementDto[] = [
 ]
 
 const BUCKETS: ReserveBucketDto[] = [
-  { id: 'b1', name: 'Investimento', isActive: true, splitPercentage: 33.33 },
-  { id: 'b2', name: 'HouseTreats', isActive: true, splitPercentage: 33.33 },
-  { id: 'b3', name: 'Ariana', isActive: true, splitPercentage: 16.67 },
-  { id: 'b4', name: 'Gleison', isActive: true, splitPercentage: 16.67 },
+  { id: 'b1', name: 'Investimento', isActive: true, splitPercentage: 33.33, warning: null },
+  { id: 'b2', name: 'HouseTreats', isActive: true, splitPercentage: 33.33, warning: null },
+  { id: 'b3', name: 'Ariana', isActive: true, splitPercentage: 16.67, warning: null },
+  { id: 'b4', name: 'Gleison', isActive: true, splitPercentage: 16.67, warning: null },
 ]
 
 describe('ReservaPage', () => {
@@ -312,7 +312,7 @@ describe('ReservaPage', () => {
   it('lists every fetched bucket in the withdrawal and edit-movement dropdowns, including inactive ones', async () => {
     getReserveBucketsMock.mockResolvedValue([
       ...BUCKETS,
-      { id: 'b5', name: 'Retired', isActive: false, splitPercentage: 0 },
+      { id: 'b5', name: 'Retired', isActive: false, splitPercentage: 0, warning: null },
     ])
     render(<ReservaPage />)
 
@@ -361,8 +361,8 @@ describe('ReservaPage', () => {
 
   it('shows a warning banner when active bucket percentages do not sum to 100%', async () => {
     getReserveBucketsMock.mockResolvedValue([
-      { id: 'b1', name: 'Investimento', isActive: true, splitPercentage: 50 },
-      { id: 'b2', name: 'HouseTreats', isActive: true, splitPercentage: 48.5 },
+      { id: 'b1', name: 'Investimento', isActive: true, splitPercentage: 50, warning: null },
+      { id: 'b2', name: 'HouseTreats', isActive: true, splitPercentage: 48.5, warning: null },
     ])
     render(<ReservaPage />)
 
