@@ -65,21 +65,65 @@ public class RecurringBillTests
     }
 
     [Fact]
-    public void Update_ChangesStatusAndValue()
+    public void Update_ChangesEveryField()
     {
         var bill = RecurringBill.Create(10, "INSS", 850m, Area.Brasil, string.Empty, null, null);
 
-        bill.Update(BillStatus.Paid, 900m);
+        bill.Update(15, "INSS Renamed", 900m, Area.UK, "Updated note", "12345678901", 1621m, BillStatus.Paid);
 
-        bill.Status.Should().Be(BillStatus.Paid);
-        bill.Value.Should().Be(900m);
+        using (new AssertionScope())
+        {
+            bill.DueDay.Should().Be(15);
+            bill.Description.Should().Be("INSS Renamed");
+            bill.Value.Should().Be(900m);
+            bill.Area.Should().Be(Area.UK);
+            bill.Note.Should().Be("Updated note");
+            bill.NitNumber.Should().Be("12345678901");
+            bill.MinimumWageValue.Should().Be(1621m);
+            bill.Status.Should().Be(BillStatus.Paid);
+        }
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(32)]
+    public void Update_WithDueDayOutOfRange_ThrowsAndLeavesPriorValuesUntouched(int dueDay)
+    {
+        var bill = RecurringBill.Create(10, "INSS", 850m, Area.Brasil, string.Empty, null, null);
+
+        var act = () => bill.Update(dueDay, "INSS Renamed", 900m, Area.UK, "Updated note", null, null, BillStatus.Paid);
+
+        using (new AssertionScope())
+        {
+            act.Should().Throw<ArgumentException>().WithMessage("*Due day must be between 1 and 31*");
+            bill.DueDay.Should().Be(10);
+            bill.Description.Should().Be("INSS");
+            bill.Status.Should().Be(BillStatus.Unset);
+        }
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Update_WithBlankDescription_ThrowsAndLeavesPriorValuesUntouched(string description)
+    {
+        var bill = RecurringBill.Create(10, "INSS", 850m, Area.Brasil, string.Empty, null, null);
+
+        var act = () => bill.Update(15, description, 900m, Area.UK, "Updated note", null, null, BillStatus.Paid);
+
+        using (new AssertionScope())
+        {
+            act.Should().Throw<ArgumentException>().WithMessage("*Description is required*");
+            bill.DueDay.Should().Be(10);
+            bill.Description.Should().Be("INSS");
+        }
     }
 
     [Fact]
     public void ResetToUnset_SetsStatusBackToUnsetWithoutChangingValue()
     {
         var bill = RecurringBill.Create(10, "INSS", 850m, Area.Brasil, string.Empty, null, null);
-        bill.Update(BillStatus.Paid, 900m);
+        bill.Update(10, "INSS", 900m, Area.Brasil, string.Empty, null, null, BillStatus.Paid);
 
         bill.ResetToUnset();
 

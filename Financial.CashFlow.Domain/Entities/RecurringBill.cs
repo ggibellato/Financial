@@ -45,10 +45,26 @@ public class RecurringBill
         };
     }
 
-    public void Update(BillStatus status, decimal value)
+    public void Update(
+        int dueDay,
+        string description,
+        decimal value,
+        Area area,
+        string note,
+        string? nitNumber,
+        decimal? minimumWageValue,
+        BillStatus status)
     {
-        Status = status;
+        Validate(dueDay, description);
+
+        DueDay = dueDay;
+        Description = description;
         Value = value;
+        Area = area;
+        Note = note;
+        NitNumber = nitNumber;
+        MinimumWageValue = minimumWageValue;
+        Status = status;
     }
 
     public void ResetToUnset() => Status = BillStatus.Unset;
