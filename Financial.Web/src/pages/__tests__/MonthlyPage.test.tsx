@@ -159,8 +159,8 @@ const CARD_STATEMENTS: CardStatementDto[] = [
 ]
 
 const CREDIT_CARDS: CreditCardDto[] = [
-  { id: 'card-baamex', name: 'BaAmex', isActive: true, nextInvoiceDueDate: null, hasReferences: false },
-  { id: 'card-chase', name: 'ChaseMaster4023', isActive: true, nextInvoiceDueDate: null, hasReferences: false },
+  { id: 'card-baamex', name: 'BaAmex', isActive: true, nextInvoiceDueDate: null, latestInvoiceDate: null, hasReferences: false },
+  { id: 'card-chase', name: 'ChaseMaster4023', isActive: true, nextInvoiceDueDate: null, latestInvoiceDate: null, hasReferences: false },
 ]
 
 const UNPAID_CARD_CHARGES: ExpenseDto[] = [
@@ -822,6 +822,32 @@ describe('MonthlyPage', () => {
         expect.objectContaining({ paymentSourceBankId: null, creditCardId: 'card-baamex' }),
       ),
     )
+  })
+
+  it('refetches credit cards after saving a card expense, so a later invoice month becomes the default', async () => {
+    createExpenseMock.mockResolvedValue({ ...EXPENSES[0], id: 'e2' })
+    getCreditCardsMock.mockReset()
+    getCreditCardsMock.mockResolvedValueOnce(CREDIT_CARDS)
+    getCreditCardsMock.mockResolvedValueOnce([{ ...CREDIT_CARDS[0], latestInvoiceDate: '2026-10-01' }, CREDIT_CARDS[1]])
+    render(<MonthlyPage />)
+    fireEvent.click(screen.getByRole('tab', { name: 'Credit Card expenses' }))
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'New Expense' }))
+    fireEvent.change(screen.getByLabelText(/^Date/), { target: { value: '2026-07-16' } })
+    fireEvent.change(screen.getByLabelText(/^Description/), { target: { value: 'Amazon' } })
+    fireEvent.change(screen.getByLabelText(/^Value/), { target: { value: '9.99' } })
+    await waitFor(() => expect(screen.getByRole('option', { name: 'BaAmex' })).toBeInTheDocument())
+    fireEvent.change(screen.getByLabelText(/^Card/), { target: { value: 'card-baamex' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Add Expense' }))
+
+    await waitFor(() => expect(getCreditCardsMock).toHaveBeenCalledTimes(2))
+
+    fireEvent.click(screen.getByRole('button', { name: 'New Expense' }))
+    await waitFor(() => expect(screen.getByRole('option', { name: 'BaAmex' })).toBeInTheDocument())
+    fireEvent.change(screen.getByLabelText(/^Card/), { target: { value: 'card-baamex' } })
+
+    expect(screen.getByLabelText('Invoice Month')).toHaveValue('2026-10')
   })
 
   it('only lists active categories in the expense form dropdown', async () => {

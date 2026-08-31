@@ -5337,6 +5337,8 @@ export interface components {
             /** Format: uuid */
             id: string;
             isActive: boolean;
+            /** Format: date */
+            latestInvoiceDate?: null | string;
             name: string;
             /** Format: date */
             nextInvoiceDueDate?: null | string;

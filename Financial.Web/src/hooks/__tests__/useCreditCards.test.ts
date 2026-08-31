@@ -21,8 +21,8 @@ vi.mock('../../api/financialApiClient', () => ({
 }))
 
 const CREDIT_CARDS: CreditCardDto[] = [
-  { id: 'card-baamex', name: 'BaAmex', isActive: true, nextInvoiceDueDate: null, hasReferences: false },
-  { id: 'card-paypal', name: 'PaypalCredit', isActive: false, nextInvoiceDueDate: '2026-09-05', hasReferences: true },
+  { id: 'card-baamex', name: 'BaAmex', isActive: true, nextInvoiceDueDate: null, latestInvoiceDate: null, hasReferences: false },
+  { id: 'card-paypal', name: 'PaypalCredit', isActive: false, nextInvoiceDueDate: '2026-09-05', latestInvoiceDate: null, hasReferences: true },
 ]
 
 describe('useCreditCards', () => {
@@ -54,7 +54,7 @@ describe('useCreditCards', () => {
   })
 
   it('createCreditCard calls the API and re-fetches the list', async () => {
-    createCreditCardMock.mockResolvedValue({ id: 'card-nubank', name: 'Nubank', isActive: true, nextInvoiceDueDate: null, hasReferences: false })
+    createCreditCardMock.mockResolvedValue({ id: 'card-nubank', name: 'Nubank', isActive: true, nextInvoiceDueDate: null, latestInvoiceDate: null, hasReferences: false })
     const { result } = renderHook(() => useCreditCards())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 

@@ -14,9 +14,9 @@ const CARD_STATEMENTS: CardStatementDto[] = [
 ]
 
 const CREDIT_CARDS: CreditCardDto[] = [
-  { id: 'card-baamex', name: 'BaAmex', isActive: true, nextInvoiceDueDate: '2026-09-05', hasReferences: false },
-  { id: 'card-chase', name: 'ChaseMaster4023', isActive: true, nextInvoiceDueDate: null, hasReferences: false },
-  { id: 'card-paypal', name: 'PaypalCredit', isActive: false, nextInvoiceDueDate: null, hasReferences: false },
+  { id: 'card-baamex', name: 'BaAmex', isActive: true, nextInvoiceDueDate: '2026-09-05', latestInvoiceDate: null, hasReferences: false },
+  { id: 'card-chase', name: 'ChaseMaster4023', isActive: true, nextInvoiceDueDate: null, latestInvoiceDate: null, hasReferences: false },
+  { id: 'card-paypal', name: 'PaypalCredit', isActive: false, nextInvoiceDueDate: null, latestInvoiceDate: null, hasReferences: false },
 ]
 
 describe('CardsGrid (statement-only, no creditCards prop — Summary tab)', () => {

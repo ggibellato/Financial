@@ -169,6 +169,12 @@ public sealed class CreditCardService : ICreditCardService
         _repository.GetExpenses().Any(e => e.CreditCard?.Id == creditCardId) ||
         _repository.GetCardStatements().Any(s => s.CreditCard.Id == creditCardId);
 
+    private DateOnly? GetLatestInvoiceDate(Guid creditCardId) =>
+        _repository.GetExpenses()
+            .Where(e => e.CreditCard?.Id == creditCardId)
+            .Select(e => e.InvoiceDate)
+            .Max();
+
     private ITelemetrySpan StartSpan(string operationName)
     {
         _logger.LogInformation("{Operation} started", operationName);
@@ -181,6 +187,7 @@ public sealed class CreditCardService : ICreditCardService
         Name = creditCard.Name,
         IsActive = creditCard.IsActive,
         NextInvoiceDueDate = creditCard.NextInvoiceDueDate,
+        LatestInvoiceDate = GetLatestInvoiceDate(creditCard.Id),
         HasReferences = IsReferenced(creditCard.Id)
     };
 }

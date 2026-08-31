@@ -16,8 +16,8 @@ const CATEGORIES: CategoryDto[] = [
 ]
 
 const CREDIT_CARDS: CreditCardDto[] = [
-  { id: 'card-baamex', name: 'BaAmex', isActive: true, nextInvoiceDueDate: null, hasReferences: false },
-  { id: 'card-chase', name: 'ChaseMaster4023', isActive: true, nextInvoiceDueDate: null, hasReferences: false },
+  { id: 'card-baamex', name: 'BaAmex', isActive: true, nextInvoiceDueDate: null, latestInvoiceDate: null, hasReferences: false },
+  { id: 'card-chase', name: 'ChaseMaster4023', isActive: true, nextInvoiceDueDate: null, latestInvoiceDate: null, hasReferences: false },
 ]
 
 const baseProps = {
@@ -159,6 +159,40 @@ describe('ExpenseForm', () => {
     expect(invoiceField).toBeInTheDocument()
     expect(invoiceField).toBeDisabled()
     expect(invoiceField).toHaveValue('2026-07')
+  })
+
+  it("defaults the invoice month to the selected card's latest invoice month when it's ahead of the date", () => {
+    const cardsWithFutureInvoice: CreditCardDto[] = [
+      { id: 'card-baamex', name: 'BaAmex', isActive: true, nextInvoiceDueDate: null, latestInvoiceDate: '2026-09-01', hasReferences: false },
+    ]
+    render(
+      <ExpenseForm
+        {...baseProps}
+        paymentMode="card"
+        date="2026-07-15"
+        creditCardId="card-baamex"
+        creditCards={cardsWithFutureInvoice}
+      />,
+    )
+
+    expect(screen.getByLabelText('Invoice Month')).toHaveValue('2026-09')
+  })
+
+  it("falls back to the date-derived default when the selected card's latest invoice month is not ahead of the date", () => {
+    const cardsWithPastInvoice: CreditCardDto[] = [
+      { id: 'card-baamex', name: 'BaAmex', isActive: true, nextInvoiceDueDate: null, latestInvoiceDate: '2026-06-01', hasReferences: false },
+    ]
+    render(
+      <ExpenseForm
+        {...baseProps}
+        paymentMode="card"
+        date="2026-07-15"
+        creditCardId="card-baamex"
+        creditCards={cardsWithPastInvoice}
+      />,
+    )
+
+    expect(screen.getByLabelText('Invoice Month')).toHaveValue('2026-07')
   })
 
   it('hides the invoice month field in bank mode', () => {

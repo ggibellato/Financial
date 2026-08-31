@@ -155,7 +155,13 @@ public class ExpenseWorkflowViewModel : ViewModelBase
     public Guid? ExpenseFormCreditCardId
     {
         get => _expenseFormCreditCardId;
-        set => SetProperty(ref _expenseFormCreditCardId, value);
+        set
+        {
+            if (SetProperty(ref _expenseFormCreditCardId, value))
+            {
+                ApplyCardInvoiceDefaultIfAuto();
+            }
+        }
     }
 
     public string ExpenseFormCreditCardName
@@ -365,18 +371,17 @@ public class ExpenseWorkflowViewModel : ViewModelBase
             : (_lastUsedExpensePaymentSource is { } lastPaymentSource && Banks.Any(b => b.Id == lastPaymentSource)
                 ? lastPaymentSource
                 : (Banks.Count > 0 ? Banks[0].Id : null));
+        _invoiceDateTouchedByUser = false;
         ExpenseFormCreditCardId = IsCardPaymentMode
             ? (_lastUsedExpenseCreditCardId is { } lastCreditCardId && _creditCards.Any(c => c.Id == lastCreditCardId) ? lastCreditCardId : null)
             : null;
+        // ExpenseFormCreditCardId's setter only fires the hook when the id actually changes,
+        // which misses the (very common) case of it staying null - call it directly too.
+        ApplyCardInvoiceDefaultIfAuto();
         ExpenseFormCreditCardName = string.Empty;
         ApplyRoundUpSuggestion(string.Empty);
         ExpenseFormCountsAsTithe = true;
         ExpenseFormIsSettled = false;
-        _invoiceDateTouchedByUser = false;
-        if (IsCardPaymentMode)
-        {
-            SetDefaultInvoiceDate(ExpenseFormDate!.Value.Year, ExpenseFormDate.Value.Month);
-        }
         ExpenseSaveError = null;
         OnPropertyChanged(nameof(IsEditingExpense));
         IsExpenseFormOpen = true;
@@ -426,6 +431,26 @@ public class ExpenseWorkflowViewModel : ViewModelBase
         IsExpenseFormOpen = false;
         _editingExpenseId = null;
         ExpenseSaveError = null;
+    }
+
+    /// <summary>
+    /// Recomputes the invoice default from the selected card's own history, unless the user has
+    /// already typed into the invoice picker directly - see <see cref="_invoiceDateTouchedByUser"/>.
+    /// Prefers the card's latest existing invoice month when it's ahead of the plain
+    /// date-derived default (e.g. the card already has a later invoice queued up), otherwise
+    /// falls back to the date-derived default exactly as before.
+    /// </summary>
+    private void ApplyCardInvoiceDefaultIfAuto()
+    {
+        if (!IsCardPaymentMode || _invoiceDateTouchedByUser || ExpenseFormDate is not { } date)
+        {
+            return;
+        }
+
+        var standardDefault = new DateOnly(date.Year, date.Month, 1);
+        var latest = _creditCards.FirstOrDefault(c => c.Id == _expenseFormCreditCardId)?.LatestInvoiceDate;
+        var target = latest is { } l && l > standardDefault ? l : standardDefault;
+        SetDefaultInvoiceDate(target.Year, target.Month);
     }
 
     /// <summary>

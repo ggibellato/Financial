@@ -15,7 +15,7 @@ describe('CreditCardFormDialog', () => {
   it('renders in edit mode pre-filled with the credit card being edited', () => {
     render(
       <CreditCardFormDialog
-        creditCard={{ id: 'c1', name: 'BaAmex', isActive: false, nextInvoiceDueDate: '2026-09-05', hasReferences: true }}
+        creditCard={{ id: 'c1', name: 'BaAmex', isActive: false, nextInvoiceDueDate: '2026-09-05', latestInvoiceDate: null, hasReferences: true }}
         onCancel={vi.fn()}
         onSubmit={vi.fn()}
       />,

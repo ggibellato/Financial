@@ -21,8 +21,8 @@ vi.mock('../../api/financialApiClient', () => ({
 }))
 
 const CREDIT_CARDS: CreditCardDto[] = [
-  { id: 'card-baamex', name: 'BaAmex', isActive: true, nextInvoiceDueDate: '2026-09-05', hasReferences: true },
-  { id: 'card-nubank', name: 'Nubank', isActive: true, nextInvoiceDueDate: null, hasReferences: false },
+  { id: 'card-baamex', name: 'BaAmex', isActive: true, nextInvoiceDueDate: '2026-09-05', latestInvoiceDate: null, hasReferences: true },
+  { id: 'card-nubank', name: 'Nubank', isActive: true, nextInvoiceDueDate: null, latestInvoiceDate: null, hasReferences: false },
 ]
 
 describe('CreditCardsPage', () => {
@@ -57,7 +57,7 @@ describe('CreditCardsPage', () => {
   })
 
   it('creates a credit card through the Create Credit Card dialog', async () => {
-    createCreditCardMock.mockResolvedValue({ id: 'card-chase', name: 'Chase', isActive: true, nextInvoiceDueDate: null, hasReferences: false })
+    createCreditCardMock.mockResolvedValue({ id: 'card-chase', name: 'Chase', isActive: true, nextInvoiceDueDate: null, latestInvoiceDate: null, hasReferences: false })
     render(<CreditCardsPage />)
     await waitFor(() => expect(screen.getByText('BaAmex')).toBeInTheDocument())
 
@@ -70,7 +70,7 @@ describe('CreditCardsPage', () => {
   })
 
   it('edits a credit card through its row action', async () => {
-    updateCreditCardMock.mockResolvedValue({ id: 'card-nubank', name: 'Nubank Renamed', isActive: true, nextInvoiceDueDate: null, hasReferences: false })
+    updateCreditCardMock.mockResolvedValue({ id: 'card-nubank', name: 'Nubank Renamed', isActive: true, nextInvoiceDueDate: null, latestInvoiceDate: null, hasReferences: false })
     render(<CreditCardsPage />)
     await waitFor(() => expect(screen.getByText('Nubank')).toBeInTheDocument())
 

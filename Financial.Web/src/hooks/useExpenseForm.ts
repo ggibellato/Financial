@@ -1,9 +1,10 @@
 import { useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { ExpenseFormField } from '../components/ExpenseForm'
-import type { BankDto, CategoryDto, ExpenseDto } from '../api/types'
+import type { BankDto, CategoryDto, CreditCardDto, ExpenseDto } from '../api/types'
 import { getErrorMessage, parseValidatedNumber, todayIsoDate } from '../utils/formatters'
 import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
+import { computeDefaultInvoiceMonth } from '../utils/expenseDefaults'
 
 export type PaymentMode = 'bank' | 'card'
 
@@ -182,7 +183,12 @@ export interface UseExpenseFormResult {
   submit: () => void
 }
 
-export function useExpenseForm(banks: BankDto[], categories: CategoryDto[], onSaved: () => void): UseExpenseFormResult {
+export function useExpenseForm(
+  banks: BankDto[],
+  categories: CategoryDto[],
+  creditCards: CreditCardDto[],
+  onSaved: () => void,
+): UseExpenseFormResult {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
   function showCreateForm(mode: PaymentMode) {
@@ -279,7 +285,10 @@ export function useExpenseForm(banks: BankDto[], categories: CategoryDto[], onSa
       value,
       categoryId: state.categoryId,
       ...paymentFields,
-      invoiceDate: state.paymentMode === 'card' && state.invoiceDate ? `${state.invoiceDate}-01` : null,
+      invoiceDate:
+        state.paymentMode === 'card'
+          ? `${state.invoiceDate || computeDefaultInvoiceMonth(state.date, state.creditCardId, creditCards)}-01`
+          : null,
       roundUpAmount,
       countsAsTithe: state.countsAsTithe === 'true',
     }

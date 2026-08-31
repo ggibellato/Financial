@@ -84,6 +84,8 @@ export default function MonthlyPage() {
   const confirmAndDeleteAdjustment = (bankId: string, id: string) =>
     confirmThenRun('Delete this balance adjustment?', () => bankOperations.deleteAdjustment(bankId, id))
 
+  const creditCardsData = useCreditCards()
+
   const {
     isOpen: isExpenseFormOpen,
     isEditing,
@@ -107,7 +109,10 @@ export default function MonthlyPage() {
     cancelForm,
     setField,
     submit,
-  } = useExpenseForm(banks, categories, retry)
+  } = useExpenseForm(banks, categories, creditCardsData.creditCards, () => {
+    retry()
+    creditCardsData.retry()
+  })
 
   const {
     isIncomeFormOpen,
@@ -131,7 +136,6 @@ export default function MonthlyPage() {
   } = useIncomeForm(incomeSources, retry)
 
   const bankOperations = useBankOperations(year, month, banks, retry)
-  const creditCardsData = useCreditCards()
   const activeCreditCards = creditCardsData.creditCards.filter((c) => c.isActive)
   const activeCategories = categories.filter((c) => c.active)
   const transferForm = useTransferForm(banks, () => {
