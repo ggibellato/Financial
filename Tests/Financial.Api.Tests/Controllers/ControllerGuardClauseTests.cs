@@ -432,6 +432,13 @@ public class ControllerGuardClauseTests
         act.Should().Throw<ArgumentNullException>();
     }
 
+    [Fact]
+    public void ReserveBucketsController_NullService_Throws()
+    {
+        Action act = () => new ReserveBucketsController(null!);
+        act.Should().Throw<ArgumentNullException>();
+    }
+
     private sealed class StubHostEnvironment : IHostEnvironment
     {
         public string EnvironmentName { get; set; } = "Development";
