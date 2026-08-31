@@ -34,6 +34,12 @@
   text-align: right;
 }
 
+.data-table .data-table__col--wrap,
+.data-table__col--wrap {
+  white-space: normal;
+  word-break: break-word;
+}
+
 .data-table__action-btn {
   background: none;
   border: none;
