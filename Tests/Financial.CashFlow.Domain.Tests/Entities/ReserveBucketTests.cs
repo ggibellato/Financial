@@ -127,4 +127,65 @@ public class ReserveBucketTests
 
         amount.Should().Be(0.51m);
     }
+
+    [Fact]
+    public void Update_ChangesAllFields()
+    {
+        var bucket = ReserveBucket.Create("Investimento", 33.33m, isActive: true);
+
+        bucket.Update("Ferias", 10m, isActive: false);
+
+        using (new AssertionScope())
+        {
+            bucket.Name.Should().Be("Ferias");
+            bucket.SplitPercentage.Should().Be(10m);
+            bucket.IsActive.Should().BeFalse();
+        }
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Update_WithoutAName_ThrowsAndLeavesPriorValuesUntouched(string? name)
+    {
+        var bucket = ReserveBucket.Create("Investimento", 33.33m, isActive: true);
+
+        var act = () => bucket.Update(name!, 10m, isActive: false);
+
+        using (new AssertionScope())
+        {
+            act.Should().Throw<ArgumentException>();
+            bucket.Name.Should().Be("Investimento");
+            bucket.SplitPercentage.Should().Be(33.33m);
+            bucket.IsActive.Should().BeTrue();
+        }
+    }
+
+    [Theory]
+    [InlineData(-0.01)]
+    [InlineData(100.01)]
+    public void Update_WithSplitPercentageOutOfRange_ThrowsAndLeavesPriorValuesUntouched(decimal splitPercentage)
+    {
+        var bucket = ReserveBucket.Create("Investimento", 33.33m, isActive: true);
+
+        var act = () => bucket.Update("Ferias", splitPercentage, isActive: false);
+
+        using (new AssertionScope())
+        {
+            act.Should().Throw<ArgumentException>();
+            bucket.Name.Should().Be("Investimento");
+            bucket.SplitPercentage.Should().Be(33.33m);
+        }
+    }
+
+    [Fact]
+    public void Update_DeactivatingTheBucket_SetsIsActiveFalseWithoutRemovingIt()
+    {
+        var bucket = ReserveBucket.Create("Investimento", 33.33m, isActive: true);
+
+        bucket.Update(bucket.Name, bucket.SplitPercentage, isActive: false);
+
+        bucket.IsActive.Should().BeFalse();
+    }
 }
