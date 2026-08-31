@@ -2,7 +2,6 @@ import { useState } from 'react'
 import {
   Button,
   Dialog,
-  DialogActions,
   DialogBody,
   DialogContent,
   DialogSurface,
@@ -15,6 +14,7 @@ import {
   Switch,
 } from '@fluentui/react-components'
 import type { IncomeSourceDto } from '../api/types'
+import { useFormPanelStyles } from './formPanelStyles'
 import { getErrorMessage } from '../utils/formatters'
 
 const GROUP_OPTIONS = ['Salary', 'DividendoJuros', 'NonReportable']
@@ -26,6 +26,7 @@ interface IncomeSourceFormDialogProps {
 }
 
 export default function IncomeSourceFormDialog({ incomeSource, onCancel, onSubmit }: IncomeSourceFormDialogProps) {
+  const styles = useFormPanelStyles()
   const isEditing = incomeSource !== null
   const [name, setName] = useState(incomeSource?.name ?? '')
   const [group, setGroup] = useState(incomeSource?.group ?? GROUP_OPTIONS[0])
@@ -94,14 +95,14 @@ export default function IncomeSourceFormDialog({ incomeSource, onCancel, onSubmi
               </MessageBar>
             )}
           </DialogContent>
-          <DialogActions>
+          <div className={styles.actions}>
             <Button appearance="primary" onClick={() => void handleSubmit()} disabled={!canSubmit}>
               Save
             </Button>
             <Button appearance="secondary" onClick={onCancel} disabled={isSaving}>
               Cancel
             </Button>
-          </DialogActions>
+          </div>
         </DialogBody>
       </DialogSurface>
     </Dialog>

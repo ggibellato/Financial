@@ -2,7 +2,6 @@ import { useState } from 'react'
 import {
   Button,
   Dialog,
-  DialogActions,
   DialogBody,
   DialogContent,
   DialogSurface,
@@ -21,11 +20,13 @@ import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import CategoryFormDialog from '../components/CategoryFormDialog'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
+import { useFormPanelStyles } from '../components/formPanelStyles'
 import { useCategories } from '../hooks/useCategories'
 import type { CategoryDto } from '../api/types'
 import './CategoriesPage.css'
 
 export default function CategoriesPage() {
+  const styles = useFormPanelStyles()
   const {
     categories,
     isLoading,
@@ -152,7 +153,7 @@ export default function CategoriesPage() {
                   <p>&ldquo;{confirmingDelete.name}&rdquo; will be permanently removed.</p>
                 )}
               </DialogContent>
-              <DialogActions>
+              <div className={styles.actions}>
                 <Button
                   appearance="primary"
                   onClick={handleConfirmDelete}
@@ -163,7 +164,7 @@ export default function CategoriesPage() {
                 <Button appearance="secondary" onClick={() => setConfirmingDelete(null)}>
                   Cancel
                 </Button>
-              </DialogActions>
+              </div>
             </DialogBody>
           </DialogSurface>
         </Dialog>

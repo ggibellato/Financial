@@ -1,4 +1,6 @@
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
+import { Button } from '@fluentui/react-components'
+import { SearchRegular } from '@fluentui/react-icons'
 import { apiClient } from '../api/financialApiClient'
 import type { DividendHistoryItemDto, DividendSummaryDto, DividendYearTotalDto, WatchlistItemDto } from '../api/types'
 import ErrorState from '../components/ErrorState'
@@ -107,9 +109,9 @@ export default function DividendCheckPage() {
       </header>
       <form className="dividend-check__form" onSubmit={handleSubmit} aria-label="Dividend check">
         <TickerCombobox groups={groups} value={ticker} onChange={setTicker} />
-        <button type="submit" disabled={isLoading}>
+        <Button type="submit" appearance="primary" icon={<SearchRegular />} disabled={isLoading}>
           {isLoading ? 'Checking...' : 'Check'}
-        </button>
+        </Button>
       </form>
 
       {error ? <ErrorState message={error} onRetry={runCheck} /> : null}

@@ -2,7 +2,6 @@ import { useState } from 'react'
 import {
   Button,
   Dialog,
-  DialogActions,
   DialogBody,
   DialogContent,
   DialogSurface,
@@ -14,6 +13,7 @@ import {
   Select,
 } from '@fluentui/react-components'
 import type { BrokerDto, PortfolioDto } from '../api/types'
+import { useFormPanelStyles } from './formPanelStyles'
 import { getErrorMessage } from '../utils/formatters'
 
 interface PortfolioFormDialogProps {
@@ -24,6 +24,7 @@ interface PortfolioFormDialogProps {
 }
 
 export default function PortfolioFormDialog({ portfolio, activeBrokers, onCancel, onSubmit }: PortfolioFormDialogProps) {
+  const styles = useFormPanelStyles()
   const isEditing = portfolio !== null
   const [brokerName, setBrokerName] = useState(portfolio?.brokerName ?? activeBrokers[0]?.name ?? '')
   const [name, setName] = useState(portfolio?.name ?? '')
@@ -91,14 +92,14 @@ export default function PortfolioFormDialog({ portfolio, activeBrokers, onCancel
               </MessageBar>
             )}
           </DialogContent>
-          <DialogActions>
+          <div className={styles.actions}>
             <Button appearance="primary" onClick={() => void handleSubmit()} disabled={!canSubmit}>
               Save
             </Button>
             <Button appearance="secondary" onClick={onCancel} disabled={isSaving}>
               Cancel
             </Button>
-          </DialogActions>
+          </div>
         </DialogBody>
       </DialogSurface>
     </Dialog>

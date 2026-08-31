@@ -2,7 +2,6 @@ import { useState } from 'react'
 import {
   Button,
   Dialog,
-  DialogActions,
   DialogBody,
   DialogContent,
   DialogSurface,
@@ -20,11 +19,13 @@ import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import CreditCardFormDialog from '../components/CreditCardFormDialog'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
+import { useFormPanelStyles } from '../components/formPanelStyles'
 import { useCreditCards } from '../hooks/useCreditCards'
 import type { CreditCardDto } from '../api/types'
 import './CreditCardsPage.css'
 
 export default function CreditCardsPage() {
+  const styles = useFormPanelStyles()
   const { creditCards, isLoading, error, retry, createCreditCard, updateCreditCard, deletingId, deleteError, deleteCreditCard } =
     useCreditCards()
   const [editingCard, setEditingCard] = useState<CreditCardDto | null>(null)
@@ -129,7 +130,7 @@ export default function CreditCardsPage() {
                   <p>&ldquo;{confirmingDelete.name}&rdquo; will be permanently removed.</p>
                 )}
               </DialogContent>
-              <DialogActions>
+              <div className={styles.actions}>
                 <Button
                   appearance="primary"
                   onClick={handleConfirmDelete}
@@ -140,7 +141,7 @@ export default function CreditCardsPage() {
                 <Button appearance="secondary" onClick={() => setConfirmingDelete(null)}>
                   Cancel
                 </Button>
-              </DialogActions>
+              </div>
             </DialogBody>
           </DialogSurface>
         </Dialog>

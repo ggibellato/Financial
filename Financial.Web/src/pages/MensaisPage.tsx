@@ -1,4 +1,5 @@
-import { DeleteRegular } from '@fluentui/react-icons'
+import { Button } from '@fluentui/react-components'
+import { AddRegular, ArrowResetRegular, DeleteRegular } from '@fluentui/react-icons'
 import type { RecurringBillDto } from '../api/types'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
@@ -206,17 +207,17 @@ export default function MensaisPage() {
           />
         </div>
         <div className="mensais-page__toolbar">
-          <button className="mensais-page__new-btn" type="button" onClick={showAddForm}>
+          <Button appearance="primary" icon={<AddRegular />} onClick={showAddForm}>
             Add Bill
-          </button>
-          <button
-            className="mensais-page__new-btn"
-            type="button"
+          </Button>
+          <Button
+            appearance="primary"
+            icon={<ArrowResetRegular />}
             disabled={isResetting}
             onClick={() => confirmThenRun('Reset every bill back to Unset for the new month?', resetAllToUnset)}
           >
             {isResetting ? 'Resetting...' : 'Reset All to Unset'}
-          </button>
+          </Button>
         </div>
       </div>
 

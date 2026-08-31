@@ -2,7 +2,6 @@ import { useState } from 'react'
 import {
   Button,
   Dialog,
-  DialogActions,
   DialogBody,
   DialogContent,
   DialogSurface,
@@ -14,6 +13,7 @@ import {
   Switch,
 } from '@fluentui/react-components'
 import type { BankDto } from '../api/types'
+import { useFormPanelStyles } from './formPanelStyles'
 import { getErrorMessage } from '../utils/formatters'
 
 interface BankFormDialogProps {
@@ -23,6 +23,7 @@ interface BankFormDialogProps {
 }
 
 export default function BankFormDialog({ bank, onCancel, onSubmit }: BankFormDialogProps) {
+  const styles = useFormPanelStyles()
   const isEditing = bank !== null
   const [name, setName] = useState(bank?.name ?? '')
   const [roundUpEnabled, setRoundUpEnabled] = useState(bank?.roundUpEnabled ?? false)
@@ -75,14 +76,14 @@ export default function BankFormDialog({ bank, onCancel, onSubmit }: BankFormDia
               </MessageBar>
             )}
           </DialogContent>
-          <DialogActions>
+          <div className={styles.actions}>
             <Button appearance="primary" onClick={() => void handleSubmit()} disabled={!canSubmit}>
               Save
             </Button>
             <Button appearance="secondary" onClick={onCancel} disabled={isSaving}>
               Cancel
             </Button>
-          </DialogActions>
+          </div>
         </DialogBody>
       </DialogSurface>
     </Dialog>

@@ -1,5 +1,6 @@
 import { Fragment } from 'react'
-import { DeleteRegular } from '@fluentui/react-icons'
+import { Button } from '@fluentui/react-components'
+import { AddRegular, DeleteRegular } from '@fluentui/react-icons'
 import EditMovementForm from '../components/EditMovementForm'
 import ErrorState from '../components/ErrorState'
 import IncomeSplitForm from '../components/IncomeSplitForm'
@@ -114,12 +115,12 @@ export default function ReservaPage() {
     <div className="reserva-page">
       <div className="reserva-page__header">
         <div className="reserva-page__toolbar">
-          <button className="reserva-page__new-btn" type="button" onClick={showSplitForm}>
+          <Button appearance="primary" icon={<AddRegular />} onClick={showSplitForm}>
             New Income Split
-          </button>
-          <button className="reserva-page__new-btn" type="button" onClick={showWithdrawalForm}>
+          </Button>
+          <Button appearance="primary" icon={<AddRegular />} onClick={showWithdrawalForm}>
             New Withdrawal
-          </button>
+          </Button>
         </div>
       </div>
 

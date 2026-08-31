@@ -1,3 +1,5 @@
+import { Button } from '@fluentui/react-components'
+import { ArrowSyncRegular } from '@fluentui/react-icons'
 import type { AssetPriceDto } from '../api/types'
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
@@ -156,14 +158,9 @@ export default function AssetSummaryTab() {
 
             <div className="asset-summary__section-header">
               <span className="asset-summary__section-title">Current</span>
-              <button
-                className="asset-summary__refresh-btn"
-                type="button"
-                onClick={refresh}
-                disabled={!canRefresh}
-              >
+              <Button appearance="primary" icon={<ArrowSyncRegular />} onClick={refresh} disabled={!canRefresh}>
                 Refresh
-              </button>
+              </Button>
             </div>
 
             <div className="asset-summary__field">

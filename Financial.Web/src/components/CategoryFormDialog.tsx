@@ -2,7 +2,6 @@ import { useState } from 'react'
 import {
   Button,
   Dialog,
-  DialogActions,
   DialogBody,
   DialogContent,
   DialogSurface,
@@ -14,6 +13,7 @@ import {
   Switch,
 } from '@fluentui/react-components'
 import type { CategoryDto } from '../api/types'
+import { useFormPanelStyles } from './formPanelStyles'
 import { getErrorMessage } from '../utils/formatters'
 
 interface CategoryFormDialogProps {
@@ -23,6 +23,7 @@ interface CategoryFormDialogProps {
 }
 
 export default function CategoryFormDialog({ category, onCancel, onSubmit }: CategoryFormDialogProps) {
+  const styles = useFormPanelStyles()
   const isEditing = category !== null
   const [name, setName] = useState(category?.name ?? '')
   const [active, setActive] = useState(category?.active ?? true)
@@ -85,14 +86,14 @@ export default function CategoryFormDialog({ category, onCancel, onSubmit }: Cat
               </MessageBar>
             )}
           </DialogContent>
-          <DialogActions>
+          <div className={styles.actions}>
             <Button appearance="primary" onClick={() => void handleSubmit()} disabled={!canSubmit}>
               Save
             </Button>
             <Button appearance="secondary" onClick={onCancel} disabled={isSaving}>
               Cancel
             </Button>
-          </DialogActions>
+          </div>
         </DialogBody>
       </DialogSurface>
     </Dialog>

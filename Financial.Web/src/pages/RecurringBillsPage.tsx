@@ -2,7 +2,6 @@ import { useState } from 'react'
 import {
   Button,
   Dialog,
-  DialogActions,
   DialogBody,
   DialogContent,
   DialogSurface,
@@ -15,6 +14,7 @@ import RecurringBillFormDialog, { type RecurringBillFormValues } from '../compon
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
 import SortableColumnHeader from '../components/grid/SortableColumnHeader'
+import { useFormPanelStyles } from '../components/formPanelStyles'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { useRecurringBills } from '../hooks/useRecurringBills'
 import type { RecurringBillDto } from '../api/types'
@@ -22,6 +22,7 @@ import { formatN2 } from '../utils/formatters'
 import './RecurringBillsPage.css'
 
 export default function RecurringBillsPage() {
+  const styles = useFormPanelStyles()
   const {
     recurringBills,
     isLoading,
@@ -188,14 +189,14 @@ export default function RecurringBillsPage() {
               <DialogContent>
                 <p>&ldquo;{confirmingDelete.description}&rdquo; will be permanently removed.</p>
               </DialogContent>
-              <DialogActions>
+              <div className={styles.actions}>
                 <Button appearance="primary" onClick={handleConfirmDelete}>
                   Delete
                 </Button>
                 <Button appearance="secondary" onClick={() => setConfirmingDelete(null)}>
                   Cancel
                 </Button>
-              </DialogActions>
+              </div>
             </DialogBody>
           </DialogSurface>
         </Dialog>

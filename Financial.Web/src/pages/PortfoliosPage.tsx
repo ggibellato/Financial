@@ -2,7 +2,6 @@ import { useState } from 'react'
 import {
   Button,
   Dialog,
-  DialogActions,
   DialogBody,
   DialogContent,
   DialogSurface,
@@ -20,12 +19,14 @@ import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import PortfolioFormDialog from '../components/PortfolioFormDialog'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
+import { useFormPanelStyles } from '../components/formPanelStyles'
 import { useBrokers } from '../hooks/useBrokers'
 import { portfolioKey, usePortfolios } from '../hooks/usePortfolios'
 import type { PortfolioDto } from '../api/types'
 import './PortfoliosPage.css'
 
 export default function PortfoliosPage() {
+  const styles = useFormPanelStyles()
   const {
     portfolios,
     isLoading,
@@ -153,7 +154,7 @@ export default function PortfoliosPage() {
                   <p>&ldquo;{confirmingDelete.name}&rdquo; holds no assets and will be permanently removed.</p>
                 )}
               </DialogContent>
-              <DialogActions>
+              <div className={styles.actions}>
                 <Button
                   appearance="primary"
                   onClick={handleConfirmDelete}
@@ -164,7 +165,7 @@ export default function PortfoliosPage() {
                 <Button appearance="secondary" onClick={() => setConfirmingDelete(null)}>
                   Cancel
                 </Button>
-              </DialogActions>
+              </div>
             </DialogBody>
           </DialogSurface>
         </Dialog>

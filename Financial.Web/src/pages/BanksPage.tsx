@@ -2,7 +2,6 @@ import { useState } from 'react'
 import {
   Button,
   Dialog,
-  DialogActions,
   DialogBody,
   DialogContent,
   DialogSurface,
@@ -20,11 +19,13 @@ import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import BankFormDialog from '../components/BankFormDialog'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
+import { useFormPanelStyles } from '../components/formPanelStyles'
 import { useBanks } from '../hooks/useBanks'
 import type { BankDto } from '../api/types'
 import './BanksPage.css'
 
 export default function BanksPage() {
+  const styles = useFormPanelStyles()
   const { banks, isLoading, error, retry, createBank, updateBank, deletingId, deleteError, deleteBank } = useBanks()
   const [editingBank, setEditingBank] = useState<BankDto | null>(null)
   const [isCreating, setIsCreating] = useState(false)
@@ -131,7 +132,7 @@ export default function BanksPage() {
                   <p>&ldquo;{confirmingDelete.name}&rdquo; will be permanently removed.</p>
                 )}
               </DialogContent>
-              <DialogActions>
+              <div className={styles.actions}>
                 <Button
                   appearance="primary"
                   onClick={handleConfirmDelete}
@@ -142,7 +143,7 @@ export default function BanksPage() {
                 <Button appearance="secondary" onClick={() => setConfirmingDelete(null)}>
                   Cancel
                 </Button>
-              </DialogActions>
+              </div>
             </DialogBody>
           </DialogSurface>
         </Dialog>

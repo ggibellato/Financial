@@ -2,7 +2,6 @@ import { useState } from 'react'
 import {
   Button,
   Dialog,
-  DialogActions,
   DialogBody,
   DialogContent,
   DialogSurface,
@@ -20,11 +19,13 @@ import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import BrokerFormDialog from '../components/BrokerFormDialog'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
+import { useFormPanelStyles } from '../components/formPanelStyles'
 import { useBrokers } from '../hooks/useBrokers'
 import type { BrokerDto } from '../api/types'
 import './BrokersPage.css'
 
 export default function BrokersPage() {
+  const styles = useFormPanelStyles()
   const { brokers, isLoading, error, retry, createBroker, updateBroker, deletingName, deleteError, deleteBroker } =
     useBrokers()
   const [editingBroker, setEditingBroker] = useState<BrokerDto | null>(null)
@@ -141,7 +142,7 @@ export default function BrokersPage() {
                   </p>
                 )}
               </DialogContent>
-              <DialogActions>
+              <div className={styles.actions}>
                 <Button
                   appearance="primary"
                   onClick={handleConfirmDelete}
@@ -152,7 +153,7 @@ export default function BrokersPage() {
                 <Button appearance="secondary" onClick={() => setConfirmingDelete(null)}>
                   Cancel
                 </Button>
-              </DialogActions>
+              </div>
             </DialogBody>
           </DialogSurface>
         </Dialog>

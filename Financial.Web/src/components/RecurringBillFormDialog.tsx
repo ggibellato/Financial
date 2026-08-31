@@ -2,7 +2,6 @@ import { useState } from 'react'
 import {
   Button,
   Dialog,
-  DialogActions,
   DialogBody,
   DialogContent,
   DialogSurface,
@@ -15,6 +14,7 @@ import {
   Textarea,
 } from '@fluentui/react-components'
 import type { RecurringBillDto } from '../api/types'
+import { useFormPanelStyles } from './formPanelStyles'
 import { getErrorMessage } from '../utils/formatters'
 
 const AREA_OPTIONS = ['Brasil', 'UK']
@@ -38,6 +38,7 @@ interface RecurringBillFormDialogProps {
 }
 
 export default function RecurringBillFormDialog({ recurringBill, onCancel, onSubmit }: RecurringBillFormDialogProps) {
+  const styles = useFormPanelStyles()
   const isEditing = recurringBill !== null
   const [dueDay, setDueDay] = useState(String(recurringBill?.dueDay ?? ''))
   const [description, setDescription] = useState(recurringBill?.description ?? '')
@@ -166,14 +167,14 @@ export default function RecurringBillFormDialog({ recurringBill, onCancel, onSub
               </MessageBar>
             )}
           </DialogContent>
-          <DialogActions>
+          <div className={styles.actions}>
             <Button appearance="primary" onClick={() => void handleSubmit()} disabled={!canSubmit}>
               Save
             </Button>
             <Button appearance="secondary" onClick={onCancel} disabled={isSaving}>
               Cancel
             </Button>
-          </DialogActions>
+          </div>
         </DialogBody>
       </DialogSurface>
     </Dialog>

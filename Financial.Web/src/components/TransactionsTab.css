@@ -109,19 +109,6 @@
   flex-shrink: 0;
 }
 
-.transactions-tab__new-btn {
-  font-size: 12px;
-  padding: 3px 12px;
-  cursor: pointer;
-  background: var(--accent);
-  color: #fff;
-  border: none;
-  border-radius: 3px;
-}
-
-.transactions-tab__new-btn:hover {
-  background: var(--accent-hover);
-}
 
 .transactions-tab__form {
   padding: 12px 16px;

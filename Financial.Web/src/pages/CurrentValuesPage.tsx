@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Button } from '@fluentui/react-components'
+import { SearchRegular } from '@fluentui/react-icons'
 import { apiClient } from '../api/financialApiClient'
 import type { BrokerNodeDto, PortfolioReferenceDto } from '../api/types'
 import ErrorState from '../components/ErrorState'
@@ -144,14 +146,15 @@ export default function CurrentValuesPage() {
     <section className="current-values">
       <header className="current-values__header">
         <h2>Fetch Current Prices</h2>
-        <button
+        <Button
           type="button"
-          className="current-values__check-btn"
+          appearance="primary"
+          icon={<SearchRegular />}
           onClick={() => void runPriceCheck()}
           disabled={isRunning}
         >
           {isRunning ? 'Checking...' : 'Check Prices'}
-        </button>
+        </Button>
       </header>
 
       {isRunning ? (

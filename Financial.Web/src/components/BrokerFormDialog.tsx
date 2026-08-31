@@ -2,7 +2,6 @@ import { useState } from 'react'
 import {
   Button,
   Dialog,
-  DialogActions,
   DialogBody,
   DialogContent,
   DialogSurface,
@@ -14,6 +13,7 @@ import {
   Select,
 } from '@fluentui/react-components'
 import type { BrokerDto } from '../api/types'
+import { useFormPanelStyles } from './formPanelStyles'
 import { getErrorMessage } from '../utils/formatters'
 
 /** The Investment bounded context has no shared currency enum (CashFlow's Currency is BRL/GBP only
@@ -28,6 +28,7 @@ interface BrokerFormDialogProps {
 }
 
 export default function BrokerFormDialog({ broker, onCancel, onSubmit }: BrokerFormDialogProps) {
+  const styles = useFormPanelStyles()
   const isEditing = broker !== null
   const [name, setName] = useState(broker?.name ?? '')
   const [currency, setCurrency] = useState(broker?.currency ?? CURRENCIES[0])
@@ -82,14 +83,14 @@ export default function BrokerFormDialog({ broker, onCancel, onSubmit }: BrokerF
               </MessageBar>
             )}
           </DialogContent>
-          <DialogActions>
+          <div className={styles.actions}>
             <Button appearance="primary" onClick={() => void handleSubmit()} disabled={!canSubmit}>
               Save
             </Button>
             <Button appearance="secondary" onClick={onCancel} disabled={isSaving}>
               Cancel
             </Button>
-          </DialogActions>
+          </div>
         </DialogBody>
       </DialogSurface>
     </Dialog>

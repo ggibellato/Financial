@@ -128,27 +128,71 @@ Do not use placeholders as labels.
 - Focus the first actionable error after failed submission where appropriate.
 - Do not use colour alone for invalid state.
 
+## Action buttons (applies everywhere — pages, dialogs, panels, grids alike)
+
+Any button that performs a real action — creates something, refreshes data,
+moves or deletes an entity, runs a check, submits a form — gets the **same**
+treatment everywhere on both platforms. This is not a grid-specific rule;
+it covers a grid's own "New X" create trigger just as much as an Admin list
+page's page-level "Create X" header button, a section's Refresh button, a
+detail panel's contextual Move/Delete action row, and a form's Save button.
+
+- **Style: primary-appearance, always.** `appearance="primary"` on Web,
+  `Appearance="Primary"` on WPF, using the pinned brand blue from
+  `decisions/ADR-005-brand-and-status-colors.md` — the same blue, same
+  size, everywhere. Don't hand-draw a "+" as a text character (Web) or leave
+  one instance as a plain unstyled `Button` while another uses the real
+  primary/icon treatment (WPF) — both are the same drift this rule exists
+  to prevent. Two peer action buttons sitting side by side (New Income
+  Split/New Withdrawal; Move.../Delete Portfolio; New Transfer/New Balance
+  Correction) both stay primary, left-aligned, in the same style — never
+  demote one to a lesser style just because there are two, and never treat
+  a Move/Delete pair as if it were a Save/Cancel pair.
+- **Position: left**, directly above or beside the content it acts on —
+  never right-aligned via `justify-content: space-between`/`flex-end` or
+  `margin-left: auto` (Web), and never `HorizontalAlignment="Right"` (WPF) —
+  even when the button sits in a page header next to a title, where
+  `space-between` is the single most common way this rule gets silently
+  violated. CashFlow Monthly's Bank tab is the reference for a grid's own
+  create trigger; every other tab under it (Expense, Credit Card, Income)
+  must match, not the other way around.
+- **Size: standard.** No ad hoc `font-size`/`padding` overrides, and no
+  `size="small"` on a full action button with a visible text label —
+  `size="small"` is reserved for compact icon-only row actions inside a
+  grid (see "Grid row actions" below), not a page- or panel-level action.
+
+**The one sanctioned exception**: a confirmation dialog's own Cancel/dismiss
+button — the button that backs out of the Save/Delete/Confirm decision the
+dialog itself presents — stays `appearance="secondary"` (grey, not blue).
+The dialog's whole action row (Confirm + Cancel together) still moves left
+as a group, matching this app's own inline-form action-row convention
+rather than Fluent's default right-aligned dialog-footer convention — only
+Cancel's *color* is exempt, never the row's *position*. Cancel being grey
+is the only sanctioned "lesser style" anywhere in this rule; nothing else
+earns it — a Refresh button, a Move button, a Delete-as-a-page-action
+button are not "cancel-shaped" just because they aren't the single most
+important action on the page.
+
+**Fix the whole file, not just the named button.** An audit or bug report
+that names two broken buttons on a page does not mean the other three on
+the same page are already correct — when a file is open for this reason,
+check every action button in it, not only the ones named. A page with three
+matching blue, left-aligned buttons and two left on the old grey/
+right-aligned style looks *more* broken afterward, not less: the
+inconsistency becomes the story instead of being fixed away. This is the
+same "fix the whole chain together" principle as
+"Trigger-to-form naming consistency" below, applied to styling instead of
+wording.
+
 ## Data grids
 
 ### Grid create/new actions
 
 A button that creates a new row for a grid (New Expense, New Income, New
-Transfer, New Balance Correction, etc.) is styled and placed the same way
-everywhere, on both platforms:
-
-- **Position: left**, directly above the grid it creates rows for — not
-  right-aligned. CashFlow Monthly's Bank tab is the reference; every other
-  tab under it (Expense, Credit Card, Income) must match, not the other way
-  around.
-- **Style:** primary-appearance button with a leading "add" icon and a
-  concise label (`New Expense`, `New Income`, `New Transfer`) — the same
-  size, color, and icon convention everywhere. Don't hand-draw a "+" as a
-  text character (Web) or leave one tab's button as a plain unstyled
-  `Button` while another uses the real primary/icon treatment (WPF) — both
-  are the same drift this rule exists to prevent.
-- A tab with more than one create action (Bank: New Transfer / New Balance
-  Correction) places both buttons together, left-aligned, in the same style
-  — do not demote one to a lesser style just because there are two.
+Transfer, New Balance Correction, etc.) follows the "Action buttons" rule
+above like every other action button. The one grid-specific detail: position
+it **directly above the grid it creates rows for**, left-aligned — not
+floating in an unrelated toolbar elsewhere on the page.
 
 ### Trigger-to-form naming consistency
 
