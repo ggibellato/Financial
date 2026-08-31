@@ -46,7 +46,7 @@ describe('ReserveBucketFormDialog', () => {
     expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
   })
 
-  it('submits the trimmed name, parsed split, and active flag, and closes with no warning', async () => {
+  it('submits the trimmed name, parsed split, and active flag, and closes on success', async () => {
     const onSubmit = vi.fn().mockResolvedValue({ id: 'b1', name: 'Ferias', isActive: true, splitPercentage: 20, warning: null })
     const onCancel = vi.fn()
     render(<ReserveBucketFormDialog reserveBucket={null} onCancel={onCancel} onSubmit={onSubmit} />)
@@ -59,7 +59,7 @@ describe('ReserveBucketFormDialog', () => {
     await waitFor(() => expect(onCancel).toHaveBeenCalled())
   })
 
-  it('shows the returned warning inline without closing the dialog', async () => {
+  it('closes even when the save response carries a non-blocking split-percentage warning', async () => {
     const onSubmit = vi.fn().mockResolvedValue({
       id: 'b1',
       name: 'Ferias',
@@ -74,9 +74,7 @@ describe('ReserveBucketFormDialog', () => {
     fireEvent.change(screen.getByLabelText(/^Split Percentage/), { target: { value: '20' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
-    expect(await screen.findByText('Active buckets currently sum to 110% — review your split percentages')).toBeInTheDocument()
-    expect(onCancel).not.toHaveBeenCalled()
-    expect(screen.getByRole('button', { name: 'Close' })).toBeInTheDocument()
+    await waitFor(() => expect(onCancel).toHaveBeenCalled())
   })
 
   it('shows a server error and re-enables Save when the submit rejects', async () => {

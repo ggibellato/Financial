@@ -29,7 +29,6 @@ export default function ReserveBucketFormDialog({ reserveBucket, onCancel, onSub
   const [isActive, setIsActive] = useState(reserveBucket?.isActive ?? true)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [warning, setWarning] = useState<string | null>(null)
 
   const trimmedName = name.trim()
   const parsedSplit = Number(splitPercentage)
@@ -47,13 +46,8 @@ export default function ReserveBucketFormDialog({ reserveBucket, onCancel, onSub
     setIsSaving(true)
     setError(null)
     try {
-      const result = await onSubmit(trimmedName, parsedSplit, isActive)
-      setWarning(result.warning ?? null)
-      if (!result.warning) {
-        onCancel()
-      } else {
-        setIsSaving(false)
-      }
+      await onSubmit(trimmedName, parsedSplit, isActive)
+      onCancel()
     } catch (err: unknown) {
       setError(getErrorMessage(err, 'The reserve bucket could not be saved.'))
       setIsSaving(false)
@@ -93,12 +87,6 @@ export default function ReserveBucketFormDialog({ reserveBucket, onCancel, onSub
               <Switch checked={isActive} onChange={(e) => setIsActive(e.target.checked)} disabled={isSaving} />
             </Field>
 
-            {warning && (
-              <MessageBar intent="warning">
-                <MessageBarBody>{warning}</MessageBarBody>
-              </MessageBar>
-            )}
-
             {error && (
               <MessageBar intent="error">
                 <MessageBarBody>{error}</MessageBarBody>
@@ -110,7 +98,7 @@ export default function ReserveBucketFormDialog({ reserveBucket, onCancel, onSub
               Save
             </Button>
             <Button appearance="secondary" onClick={onCancel} disabled={isSaving}>
-              {warning ? 'Close' : 'Cancel'}
+              Cancel
             </Button>
           </DialogActions>
         </DialogBody>

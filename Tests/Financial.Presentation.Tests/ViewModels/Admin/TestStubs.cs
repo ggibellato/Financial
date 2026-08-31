@@ -277,6 +277,57 @@ internal sealed class StubIncomeSourceService : IIncomeSourceService
     }
 }
 
+internal sealed class StubReserveBucketService : IReserveBucketService
+{
+    public List<ReserveBucketDTO> ReserveBuckets { get; set; } = [];
+    public ReserveBucketCreateDTO? LastCreateRequest { get; private set; }
+    public (Guid Id, ReserveBucketUpdateDTO Request)? LastUpdateRequest { get; private set; }
+    public Exception? ThrowOnCreate { get; set; }
+    public Exception? ThrowOnUpdate { get; set; }
+    public string? WarningToReturn { get; set; }
+
+    public IReadOnlyList<ReserveBucketDTO> GetReserveBuckets() => ReserveBuckets;
+
+    public Task<ReserveBucketDTO> CreateReserveBucketAsync(ReserveBucketCreateDTO request)
+    {
+        LastCreateRequest = request;
+        if (ThrowOnCreate is not null)
+        {
+            throw ThrowOnCreate;
+        }
+
+        var created = new ReserveBucketDTO
+        {
+            Id = Guid.NewGuid(),
+            Name = request.Name,
+            SplitPercentage = request.SplitPercentage,
+            IsActive = request.IsActive,
+            Warning = WarningToReturn,
+        };
+        ReserveBuckets.Add(created);
+        return Task.FromResult(created);
+    }
+
+    public Task<ReserveBucketDTO> UpdateReserveBucketAsync(Guid id, ReserveBucketUpdateDTO request)
+    {
+        LastUpdateRequest = (id, request);
+        if (ThrowOnUpdate is not null)
+        {
+            throw ThrowOnUpdate;
+        }
+
+        var updated = new ReserveBucketDTO
+        {
+            Id = id,
+            Name = request.Name,
+            SplitPercentage = request.SplitPercentage,
+            IsActive = request.IsActive,
+            Warning = WarningToReturn,
+        };
+        return Task.FromResult(updated);
+    }
+}
+
 internal sealed class StubInvestmentAccountService : IInvestmentAccountService
 {
     public List<InvestmentAccountDTO> InvestmentAccounts { get; set; } = [];
@@ -571,6 +622,10 @@ internal sealed class StubDialogService : IDialogService
     public InvestmentAccountFormDialogViewModel? LastInvestmentAccountFormDialog { get; private set; }
     public Action<InvestmentAccountFormDialogViewModel>? OnShowInvestmentAccountFormDialog { get; set; }
 
+    public bool ShowReserveBucketFormDialogResult { get; set; } = true;
+    public ReserveBucketFormDialogViewModel? LastReserveBucketFormDialog { get; private set; }
+    public Action<ReserveBucketFormDialogViewModel>? OnShowReserveBucketFormDialog { get; set; }
+
     public bool Confirm(string message, string caption)
     {
         LastConfirmMessage = message;
@@ -637,5 +692,12 @@ internal sealed class StubDialogService : IDialogService
         LastInvestmentAccountFormDialog = viewModel;
         OnShowInvestmentAccountFormDialog?.Invoke(viewModel);
         return ShowInvestmentAccountFormDialogResult;
+    }
+
+    public bool ShowReserveBucketFormDialog(ReserveBucketFormDialogViewModel viewModel)
+    {
+        LastReserveBucketFormDialog = viewModel;
+        OnShowReserveBucketFormDialog?.Invoke(viewModel);
+        return ShowReserveBucketFormDialogResult;
     }
 }
