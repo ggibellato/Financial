@@ -7,6 +7,12 @@
           <!-- Excludes compiler/source-generator output (e.g. Microsoft.AspNetCore.OpenApi's
                XmlCommentGenerator) from coverage - it isn't code we write or can test. -->
           <ExcludeByFile>**/obj/**/*.cs</ExcludeByFile>
+          <!-- Excludes test-support and one-off tooling/vendor-wrapper assemblies from the
+               coverage gate: TestUtilities is test fixtures, not application code; the two
+               spreadsheet-import tools are rarely-run migration utilities; GoogleSheets is a
+               thin vendor SDK wrapper (see docs' "Integration SDK isolation" convention).
+               None of these represent app logic the coverage % is meant to signal on. -->
+          <Exclude>[Financial.TestUtilities]*,[Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport]*,[Financial.Investment.SpreadsheetImport]*,[Financial.Integrations.GoogleSheets]*</Exclude>
         </Configuration>
       </DataCollector>
     </DataCollectors>
