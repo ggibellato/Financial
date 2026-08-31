@@ -59,7 +59,15 @@ Use:
 
 ## One primary action per region
 
-A page, form, or focused task area normally has one primary action.
+A *save/submit* form has one primary action, with Cancel as its only
+secondary-styled sibling. This does not mean every other region of the app
+should have only one blue button: independent action buttons that are
+peers rather than a save/cancel pair — a section's create trigger next to
+its Refresh button, Move next to Delete Portfolio — are not "demoted" to
+secondary just because more than one exists in the same area. See
+`forms-data-and-visualisations.md`'s "Action buttons" rule for the full
+distinction between a save/cancel pair (one primary, one grey) and a set of
+peer action buttons (all primary).
 
 Use specific labels:
 

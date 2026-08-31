@@ -2,7 +2,6 @@ import { useState } from 'react'
 import {
   Button,
   Dialog,
-  DialogActions,
   DialogBody,
   DialogContent,
   DialogSurface,
@@ -21,6 +20,7 @@ import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import AssetFormDialog from '../components/AssetFormDialog'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
+import { useFormPanelStyles } from '../components/formPanelStyles'
 import { useBrokers } from '../hooks/useBrokers'
 import { usePortfolios } from '../hooks/usePortfolios'
 import { assetKey, useAssets } from '../hooks/useAssets'
@@ -28,6 +28,7 @@ import type { AssetAdminDto } from '../api/types'
 import './AssetsPage.css'
 
 export default function AssetsPage() {
+  const styles = useFormPanelStyles()
   const { assets, isLoading, error, retry, createAsset, updateAsset, deletingKey, deleteError, deleteAsset } =
     useAssets()
   const { brokers } = useBrokers()
@@ -229,7 +230,7 @@ export default function AssetsPage() {
                   </p>
                 )}
               </DialogContent>
-              <DialogActions>
+              <div className={styles.actions}>
                 <Button
                   appearance="primary"
                   onClick={handleConfirmDelete}
@@ -240,7 +241,7 @@ export default function AssetsPage() {
                 <Button appearance="secondary" onClick={() => setConfirmingDelete(null)}>
                   Cancel
                 </Button>
-              </DialogActions>
+              </div>
             </DialogBody>
           </DialogSurface>
         </Dialog>

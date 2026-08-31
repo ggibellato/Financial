@@ -18,6 +18,12 @@
 - [ ] Typography provides clear hierarchy.
 - [ ] Cards, borders, shadows, and surfaces are restrained.
 - [ ] Light and dark behavior is considered.
+- [ ] Every action button (create, refresh, move, delete-as-a-page-action,
+      submit — anything that isn't a confirmation dialog's own Cancel) is
+      primary-appearance, standard size, and left-positioned per
+      `forms-data-and-visualisations.md`'s "Action buttons" rule — checked
+      for every action button in the file being touched, not only the one
+      named in the task/bug report.
 
 ## Forms
 
@@ -28,7 +34,9 @@
 - [ ] Field order follows the documented default or has a documented exception.
 - [ ] Labels are visible and associated with controls.
 - [ ] Field widths suit their data.
-- [ ] One primary action exists per form/region.
+- [ ] One primary *save/submit* action exists per form (peer action buttons
+      that aren't a save/cancel pair — e.g. Move/Delete side by side — are
+      exempt; see "Action buttons" in `forms-data-and-visualisations.md`).
 - [ ] Validation is specific, actionable, and accessible.
 - [ ] Saving state prevents duplicate actions.
 - [ ] Failed saves preserve entered data.

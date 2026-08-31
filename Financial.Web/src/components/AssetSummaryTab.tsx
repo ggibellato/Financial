@@ -158,7 +158,7 @@ export default function AssetSummaryTab() {
 
             <div className="asset-summary__section-header">
               <span className="asset-summary__section-title">Current</span>
-              <Button appearance="secondary" size="small" icon={<ArrowSyncRegular />} onClick={refresh} disabled={!canRefresh}>
+              <Button appearance="primary" icon={<ArrowSyncRegular />} onClick={refresh} disabled={!canRefresh}>
                 Refresh
               </Button>
             </div>

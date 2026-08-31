@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import {
   Button,
   Dialog,
-  DialogActions,
   DialogBody,
   DialogContent,
   DialogSurface,
@@ -10,6 +9,7 @@ import {
 } from '@fluentui/react-components'
 import { apiClient } from '../api/financialApiClient'
 import type { AssetDetailsDto, InvestmentScope, TreeNodeDto } from '../api/types'
+import { useFormPanelStyles } from './formPanelStyles'
 import { getErrorMessage } from '../utils/formatters'
 import './MoveAssetDialog.css'
 
@@ -68,6 +68,7 @@ export default function MoveAssetDialog({
   onCancel,
   onMoved,
 }: MoveAssetDialogProps) {
+  const styles = useFormPanelStyles()
   const [samePortfolios, setSamePortfolios] = useState<string[]>([])
   const [historicPortfolios, setHistoricPortfolios] = useState<string[]>([])
   const [archiveToHistoric, setArchiveToHistoric] = useState(false)
@@ -309,7 +310,7 @@ export default function MoveAssetDialog({
               </>
             )}
           </DialogContent>
-          <DialogActions>
+          <div className={styles.actions}>
             {emptiedSource ? (
               <>
                 <Button appearance="primary" onClick={handleDeleteEmptiedSource} disabled={isSaving}>
@@ -333,7 +334,7 @@ export default function MoveAssetDialog({
                 </Button>
               </>
             ) : null}
-          </DialogActions>
+          </div>
         </DialogBody>
       </DialogSurface>
     </Dialog>

@@ -2,7 +2,6 @@ import { useState } from 'react'
 import {
   Button,
   Dialog,
-  DialogActions,
   DialogBody,
   DialogContent,
   DialogSurface,
@@ -20,12 +19,14 @@ import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import ReserveBucketFormDialog from '../components/ReserveBucketFormDialog'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
+import { useFormPanelStyles } from '../components/formPanelStyles'
 import { useReserveBuckets } from '../hooks/useReserveBuckets'
 import type { ReserveBucketDto } from '../api/types'
 import { formatN2 } from '../utils/formatters'
 import './ReserveBucketsPage.css'
 
 export default function ReserveBucketsPage() {
+  const styles = useFormPanelStyles()
   const {
     reserveBuckets,
     isLoading,
@@ -139,14 +140,14 @@ export default function ReserveBucketsPage() {
                   movements linked to it remain valid.
                 </p>
               </DialogContent>
-              <DialogActions>
+              <div className={styles.actions}>
                 <Button appearance="primary" onClick={handleConfirmDeactivate}>
                   Delete
                 </Button>
                 <Button appearance="secondary" onClick={() => setConfirmingDeactivate(null)}>
                   Cancel
                 </Button>
-              </DialogActions>
+              </div>
             </DialogBody>
           </DialogSurface>
         </Dialog>

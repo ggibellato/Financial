@@ -2,7 +2,6 @@ import { useState } from 'react'
 import {
   Button,
   Dialog,
-  DialogActions,
   DialogBody,
   DialogContent,
   DialogSurface,
@@ -20,12 +19,14 @@ import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import InvestmentAccountFormDialog from '../components/InvestmentAccountFormDialog'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
+import { useFormPanelStyles } from '../components/formPanelStyles'
 import { useInvestmentAccounts } from '../hooks/useInvestmentAccounts'
 import type { InvestmentAccountDto } from '../api/types'
 import { formatN2 } from '../utils/formatters'
 import './InvestmentAccountsPage.css'
 
 export default function InvestmentAccountsPage() {
+  const styles = useFormPanelStyles()
   const {
     investmentAccounts,
     isLoading,
@@ -147,7 +148,7 @@ export default function InvestmentAccountsPage() {
                   <p>&ldquo;{confirmingDelete.name}&rdquo; will be permanently removed.</p>
                 )}
               </DialogContent>
-              <DialogActions>
+              <div className={styles.actions}>
                 <Button
                   appearance="primary"
                   onClick={handleConfirmDelete}
@@ -158,7 +159,7 @@ export default function InvestmentAccountsPage() {
                 <Button appearance="secondary" onClick={() => setConfirmingDelete(null)}>
                   Cancel
                 </Button>
-              </DialogActions>
+              </div>
             </DialogBody>
           </DialogSurface>
         </Dialog>

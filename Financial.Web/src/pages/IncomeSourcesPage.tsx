@@ -2,7 +2,6 @@ import { useState } from 'react'
 import {
   Button,
   Dialog,
-  DialogActions,
   DialogBody,
   DialogContent,
   DialogSurface,
@@ -20,11 +19,13 @@ import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import IncomeSourceFormDialog from '../components/IncomeSourceFormDialog'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
+import { useFormPanelStyles } from '../components/formPanelStyles'
 import { useIncomeSources } from '../hooks/useIncomeSources'
 import type { IncomeSourceDto } from '../api/types'
 import './IncomeSourcesPage.css'
 
 export default function IncomeSourcesPage() {
+  const styles = useFormPanelStyles()
   const {
     incomeSources,
     isLoading,
@@ -144,7 +145,7 @@ export default function IncomeSourcesPage() {
                   <p>&ldquo;{confirmingDelete.name}&rdquo; will be permanently removed.</p>
                 )}
               </DialogContent>
-              <DialogActions>
+              <div className={styles.actions}>
                 <Button
                   appearance="primary"
                   onClick={handleConfirmDelete}
@@ -155,7 +156,7 @@ export default function IncomeSourcesPage() {
                 <Button appearance="secondary" onClick={() => setConfirmingDelete(null)}>
                   Cancel
                 </Button>
-              </DialogActions>
+              </div>
             </DialogBody>
           </DialogSurface>
         </Dialog>

@@ -139,7 +139,7 @@
                                 <SolidColorBrush x:Key="AccentButtonBackgroundPressed" Color="#0C3B5E"/>
                             </ResourceDictionary>
                         </Border.Resources>
-                        <ui:Button Content="Refresh" Appearance="Secondary" Icon="{ui:SymbolIcon Symbol=ArrowSync20}"
+                        <ui:Button Content="Refresh" Appearance="Primary" Icon="{ui:SymbolIcon Symbol=ArrowSync20}"
                                    Command="{Binding AssetDetails.RefreshTodayInfoCommand}"/>
                     </Border>
 
