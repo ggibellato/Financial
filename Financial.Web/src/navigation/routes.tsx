@@ -13,6 +13,7 @@ import {
   DividendCheckPage,
   HistoricInvestmentsPage,
   IncomeSourcesPage,
+  InvestmentAccountsPage,
   InvestmentSnapshotsPage,
   MensaisPage,
   MonthlyPage,
@@ -53,10 +54,7 @@ export const PAGE_ROUTES: PageRoute[] = [
   { path: 'admin/cashflow/categories', element: <CategoriesPage /> },
   { path: 'admin/cashflow/credit-cards', element: <CreditCardsPage /> },
   { path: 'admin/cashflow/income-sources', element: <IncomeSourcesPage /> },
-  {
-    path: 'admin/cashflow/investment-accounts',
-    element: <AdminEntityPlaceholderPage entityLabel="Investment Accounts" />,
-  },
+  { path: 'admin/cashflow/investment-accounts', element: <InvestmentAccountsPage /> },
   { path: 'admin/cashflow/recurring-bills', element: <AdminEntityPlaceholderPage entityLabel="Recurring Bills" /> },
   { path: 'admin/cashflow/reserve-buckets', element: <AdminEntityPlaceholderPage entityLabel="Reserve Buckets" /> },
 ]
