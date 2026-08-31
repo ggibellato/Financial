@@ -14,9 +14,9 @@ const CARD_STATEMENTS: CardStatementDto[] = [
 ]
 
 const CREDIT_CARDS: CreditCardDto[] = [
-  { id: 'card-baamex', name: 'BaAmex', isActive: true, nextInvoiceDueDate: '2026-09-05' },
-  { id: 'card-chase', name: 'ChaseMaster4023', isActive: true, nextInvoiceDueDate: null },
-  { id: 'card-paypal', name: 'PaypalCredit', isActive: false, nextInvoiceDueDate: null },
+  { id: 'card-baamex', name: 'BaAmex', isActive: true, nextInvoiceDueDate: '2026-09-05', hasReferences: false },
+  { id: 'card-chase', name: 'ChaseMaster4023', isActive: true, nextInvoiceDueDate: null, hasReferences: false },
+  { id: 'card-paypal', name: 'PaypalCredit', isActive: false, nextInvoiceDueDate: null, hasReferences: false },
 ]
 
 describe('CardsGrid (statement-only, no creditCards prop — Summary tab)', () => {
@@ -202,30 +202,30 @@ describe('CardsGrid (merged with creditCards — Credit Card tab)', () => {
   })
 
   it('changing the due date calls onUpdateCreditCard with the new date and the current active flag', () => {
-    const onUpdateCreditCard = vi.fn()
+    const onUpdateCreditCard = vi.fn().mockResolvedValue(undefined)
     render(<CardsGrid {...baseProps} onUpdateCreditCard={onUpdateCreditCard} />)
 
     fireEvent.change(screen.getByLabelText('Next invoice due date for BaAmex'), { target: { value: '2026-10-01' } })
 
-    expect(onUpdateCreditCard).toHaveBeenCalledWith('card-baamex', { nextInvoiceDueDate: '2026-10-01', isActive: true })
+    expect(onUpdateCreditCard).toHaveBeenCalledWith('card-baamex', { name: 'BaAmex', nextInvoiceDueDate: '2026-10-01', isActive: true })
   })
 
   it('clearing the due date sends null', () => {
-    const onUpdateCreditCard = vi.fn()
+    const onUpdateCreditCard = vi.fn().mockResolvedValue(undefined)
     render(<CardsGrid {...baseProps} onUpdateCreditCard={onUpdateCreditCard} />)
 
     fireEvent.change(screen.getByLabelText('Next invoice due date for BaAmex'), { target: { value: '' } })
 
-    expect(onUpdateCreditCard).toHaveBeenCalledWith('card-baamex', { nextInvoiceDueDate: null, isActive: true })
+    expect(onUpdateCreditCard).toHaveBeenCalledWith('card-baamex', { name: 'BaAmex', nextInvoiceDueDate: null, isActive: true })
   })
 
   it('toggling active calls onUpdateCreditCard with the flipped flag and the current due date, even for a card with no statement', () => {
-    const onUpdateCreditCard = vi.fn()
+    const onUpdateCreditCard = vi.fn().mockResolvedValue(undefined)
     render(<CardsGrid {...baseProps} onUpdateCreditCard={onUpdateCreditCard} />)
 
     fireEvent.click(screen.getByLabelText('Active for PaypalCredit'))
 
-    expect(onUpdateCreditCard).toHaveBeenCalledWith('card-paypal', { nextInvoiceDueDate: null, isActive: true })
+    expect(onUpdateCreditCard).toHaveBeenCalledWith('card-paypal', { name: 'PaypalCredit', nextInvoiceDueDate: null, isActive: true })
   })
 
   it('disables the row being updated', () => {

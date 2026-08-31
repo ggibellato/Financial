@@ -24,7 +24,7 @@ interface CardsGridProps {
   creditCards?: CreditCardDto[]
   updatingCardId?: string | null
   updateError?: string | null
-  onUpdateCreditCard?: (id: string, request: CreditCardUpdateDto) => void
+  onUpdateCreditCard?: (id: string, request: CreditCardUpdateDto) => Promise<unknown>
 }
 
 interface CardRow {
@@ -204,10 +204,13 @@ export default function CardsGrid({
                         value={row.nextInvoiceDueDate ?? ''}
                         disabled={updatingCardId === row.creditCardId}
                         onChange={(e) =>
-                          onUpdateCreditCard?.(row.creditCardId, {
-                            nextInvoiceDueDate: e.target.value === '' ? null : e.target.value,
-                            isActive: row.isActive,
-                          })
+                          onUpdateCreditCard
+                            ?.(row.creditCardId, {
+                              name: row.creditCardName,
+                              nextInvoiceDueDate: e.target.value === '' ? null : e.target.value,
+                              isActive: row.isActive,
+                            })
+                            .catch(() => {})
                         }
                       />
                     </td>
@@ -218,10 +221,13 @@ export default function CardsGrid({
                         checked={row.isActive}
                         disabled={updatingCardId === row.creditCardId}
                         onChange={(e) =>
-                          onUpdateCreditCard?.(row.creditCardId, {
-                            nextInvoiceDueDate: row.nextInvoiceDueDate,
-                            isActive: e.target.checked,
-                          })
+                          onUpdateCreditCard
+                            ?.(row.creditCardId, {
+                              name: row.creditCardName,
+                              nextInvoiceDueDate: row.nextInvoiceDueDate,
+                              isActive: e.target.checked,
+                            })
+                            .catch(() => {})
                         }
                       />
                     </td>
