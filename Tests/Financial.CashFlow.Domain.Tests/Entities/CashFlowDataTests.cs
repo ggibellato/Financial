@@ -79,6 +79,29 @@ public class CashFlowDataTests
     }
 
     [Fact]
+    public void RemoveIncomeSource_RemovesOnlyTheMatchingIncomeSource()
+    {
+        var toRemove = IncomeSource.Create("Gleison", IncomeGroup.Salary);
+        var toKeep = IncomeSource.Create("Ariana", IncomeGroup.Salary);
+        _sut.AddIncomeSource(toRemove);
+        _sut.AddIncomeSource(toKeep);
+
+        _sut.RemoveIncomeSource(toRemove.Id);
+
+        _sut.IncomeSources.Should().ContainSingle().Which.Should().BeSameAs(toKeep);
+    }
+
+    [Fact]
+    public void RemoveIncomeSource_WithUnknownId_DoesNothing()
+    {
+        _sut.AddIncomeSource(IncomeSource.Create("Gleison", IncomeGroup.Salary));
+
+        _sut.RemoveIncomeSource(Guid.NewGuid());
+
+        CheckCollectionCounts(new CheckItemsQuantity(IncomeSources: 1));
+    }
+
+    [Fact]
     public void AddReserveBucket_AddsOnlyToReserveBucketsCollection()
     {
         _sut.AddReserveBucket(ReserveBucketEntity.Create("Investimento", 33.33m));
