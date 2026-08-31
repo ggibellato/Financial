@@ -485,9 +485,9 @@ graph TD
 - [ ] Attempting to delete an account whose most recent InvestmentSnapshot Value is non-zero is blocked with a 409 response and a clear message stating the current balance
 
 ### F10. Recurring Bill CRUD
-- [ ] Creating a Recurring Bill with a valid DueDay (1-31) and non-blank Description succeeds, matching existing validation
-- [ ] Editing DueDay, Description, Value, Area, Note, NitNumber, MinimumWageValue, and/or Status all persist independently (not just Status/Value as today)
-- [ ] Deleting a Recurring Bill succeeds regardless of its current Status, matching existing unrestricted delete behavior
+- [x] Creating a Recurring Bill with a valid DueDay (1-31) and non-blank Description succeeds, matching existing validation
+- [x] Editing DueDay, Description, Value, Area, Note, NitNumber, MinimumWageValue, and/or Status all persist independently (not just Status/Value as today)
+- [x] Deleting a Recurring Bill succeeds regardless of its current Status, matching existing unrestricted delete behavior
 
 ### F11. Reserve Bucket CRUD
 - [ ] Creating a Reserve Bucket with a unique Name and SplitPercentage between 0 and 100 succeeds
