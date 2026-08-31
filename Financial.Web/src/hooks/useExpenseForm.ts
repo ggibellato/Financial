@@ -196,8 +196,10 @@ export function useExpenseForm(banks: BankDto[], categories: CategoryDto[], onSa
 
   function setField(field: ExpenseFormField, value: string) {
     dispatch({ type: 'SET_FIELD', payload: { field, value } })
-    if (field === 'paymentSource' && state.roundUpAmount.trim() === '') {
-      const suggestion = suggestRoundUpAmount(banks, value, state.value)
+    if ((field === 'paymentSource' || field === 'value') && state.roundUpAmount.trim() === '') {
+      const bankId = field === 'paymentSource' ? value : state.paymentSource
+      const expenseValue = field === 'value' ? value : state.value
+      const suggestion = suggestRoundUpAmount(banks, bankId, expenseValue)
       if (suggestion !== null) {
         dispatch({ type: 'SET_FIELD', payload: { field: 'roundUpAmount', value: suggestion } })
       }

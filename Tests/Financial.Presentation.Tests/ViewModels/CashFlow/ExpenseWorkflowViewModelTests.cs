@@ -312,6 +312,19 @@ public class ExpenseWorkflowViewModelTests
     }
 
     [Fact]
+    public void CreatingExpense_DefaultBankIsRoundUpEnabled_ShowsFieldAndSuggestsOnValueEntry()
+    {
+        var (viewModel, _, _) = CreateViewModel();
+        viewModel.ShowCreateExpenseFormCommand.Execute("bank"); // defaults to Barclays, round-up enabled
+
+        viewModel.ShowRoundUpField.Should().BeTrue();
+
+        viewModel.ExpenseFormValue = "9.40";
+
+        viewModel.ExpenseFormRoundUpAmount.Should().Be("0.6");
+    }
+
+    [Fact]
     public void NegativeValue_SelectingRoundUpEnabledBank_DoesNotSuggestRoundUp()
     {
         var (viewModel, _, banks) = CreateViewModel();

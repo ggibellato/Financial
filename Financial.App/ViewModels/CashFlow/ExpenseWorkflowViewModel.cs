@@ -112,7 +112,13 @@ public class ExpenseWorkflowViewModel : ViewModelBase
     public string ExpenseFormValue
     {
         get => _expenseFormValue;
-        set => SetProperty(ref _expenseFormValue, value);
+        set
+        {
+            if (SetProperty(ref _expenseFormValue, value) && ShowRoundUpField)
+            {
+                ExpenseFormRoundUpAmount = SuggestRoundUpAmount();
+            }
+        }
     }
 
     public bool IsCardPaymentMode

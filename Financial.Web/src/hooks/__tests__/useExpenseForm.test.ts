@@ -287,6 +287,26 @@ describe('useExpenseForm', () => {
     expect(result.current.roundUpAmount).toBe('0.10')
   })
 
+  it('typing a value auto-suggests when the round-up-enabled bank was already pre-selected', () => {
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
+
+    act(() => result.current.showCreateForm('bank'))
+    act(() => result.current.setField('paymentSource', 'bank-trading212'))
+    act(() => result.current.setField('value', '9.40'))
+
+    expect(result.current.roundUpAmount).toBe('0.60')
+  })
+
+  it('typing a value does not overwrite an amount the user already typed', () => {
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
+
+    act(() => result.current.setField('paymentSource', 'bank-trading212'))
+    act(() => result.current.setField('roundUpAmount', '0.10'))
+    act(() => result.current.setField('value', '9.40'))
+
+    expect(result.current.roundUpAmount).toBe('0.10')
+  })
+
   it('picking a non-round-up bank does not fill a suggestion', () => {
     const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
