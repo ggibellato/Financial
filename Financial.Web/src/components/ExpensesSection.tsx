@@ -55,7 +55,7 @@ function ExpenseRow({ expense, onEdit, onDelete }: ExpenseRowProps) {
         />
       </TableCell>
       <TableCell>{formatShortDate(expense.date)}</TableCell>
-      <TableCell>{expense.description}</TableCell>
+      <TableCell className="data-table__col--wrap">{expense.description}</TableCell>
       <TableCell>{expense.categoryName}</TableCell>
       <TableCell className="data-table__col--numeric">{formatN2(expense.value)}</TableCell>
       <TableCell>{expense.paymentSourceBankName}</TableCell>
