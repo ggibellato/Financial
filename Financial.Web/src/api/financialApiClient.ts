@@ -45,6 +45,9 @@ import type {
   IncomeSourceUpdateDto,
   IncomeSplitRequestDto,
   IncomeSplitResultDto,
+  InvestmentAccountCreateDto,
+  InvestmentAccountDto,
+  InvestmentAccountUpdateDto,
   InvestmentAnnualResultDto,
   InvestmentScope,
   InvestmentSnapshotDto,
@@ -173,6 +176,10 @@ export interface FinancialApiClient {
   createCreditCard: (request: CreditCardCreateDto) => Promise<CreditCardDto>
   updateCreditCard: (id: string, request: CreditCardUpdateDto) => Promise<CreditCardDto>
   deleteCreditCard: (id: string) => Promise<void>
+  getInvestmentAccounts: () => Promise<InvestmentAccountDto[]>
+  createInvestmentAccount: (request: InvestmentAccountCreateDto) => Promise<InvestmentAccountDto>
+  updateInvestmentAccount: (id: string, request: InvestmentAccountUpdateDto) => Promise<InvestmentAccountDto>
+  deleteInvestmentAccount: (id: string) => Promise<void>
   getBankBalancesByMonth: (year: number, month: number) => Promise<BankBalanceDto[]>
   createExpense: (request: ExpenseCreateDto) => Promise<ExpenseDto>
   updateExpense: (id: string, request: ExpenseUpdateDto) => Promise<ExpenseDto>
@@ -506,6 +513,15 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
         body: JSON.stringify(requestBody),
       }),
     deleteCreditCard: (id) => requestVoid(`/credit-cards/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    getInvestmentAccounts: () => request<InvestmentAccountDto[]>('/investment-accounts'),
+    createInvestmentAccount: (requestBody) =>
+      request<InvestmentAccountDto>('/investment-accounts', { method: 'POST', body: JSON.stringify(requestBody) }),
+    updateInvestmentAccount: (id, requestBody) =>
+      request<InvestmentAccountDto>(`/investment-accounts/${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        body: JSON.stringify(requestBody),
+      }),
+    deleteInvestmentAccount: (id) => requestVoid(`/investment-accounts/${encodeURIComponent(id)}`, { method: 'DELETE' }),
     getBankBalancesByMonth: (year, month) => request<BankBalanceDto[]>(`/banks/month/${year}/${month}/balances`),
     createExpense: (requestBody) =>
       request<ExpenseDto>('/expenses', {

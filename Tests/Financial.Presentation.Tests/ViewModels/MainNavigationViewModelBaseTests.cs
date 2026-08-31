@@ -516,6 +516,8 @@ public class MainNavigationViewModelBaseTests
                 throw new NotImplementedException();
             public bool ShowIncomeSourceFormDialog(Financial.Presentation.App.ViewModels.Admin.IncomeSourceFormDialogViewModel viewModel) =>
                 throw new NotImplementedException();
+            public bool ShowInvestmentAccountFormDialog(Financial.Presentation.App.ViewModels.Admin.InvestmentAccountFormDialogViewModel viewModel) =>
+                throw new NotImplementedException();
         }
     }
 

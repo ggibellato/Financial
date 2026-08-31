@@ -1,5 +1,7 @@
 using Financial.CashFlow.Application.DTOs;
+using Financial.CashFlow.Application.Exceptions;
 using Financial.CashFlow.Application.Interfaces;
+using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
 using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.Logging;
@@ -39,17 +41,150 @@ public sealed class InvestmentAccountService : IInvestmentAccountService
         }
     }
 
+    public async Task<InvestmentAccountDTO> CreateInvestmentAccountAsync(InvestmentAccountCreateDTO request)
+    {
+        using var span = StartSpan("CreateInvestmentAccount");
+        try
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            if (string.IsNullOrWhiteSpace(request.Name))
+            {
+                throw new ArgumentException("Investment account name is required.", nameof(request));
+            }
+
+            EnsureNameIsUnique(request.Name, excludingId: null);
+
+            var account = InvestmentAccount.Create(request.Name, request.IsActive, request.IsLiability);
+            foreach (var alias in request.Aliases)
+            {
+                account.AddAlias(alias);
+            }
+
+            await _repository.ApplyAndSaveAsync(() =>
+            {
+                _repository.AddInvestmentAccount(account);
+                return true;
+            }).ConfigureAwait(false);
+
+            span.SetAttribute(TelemetryAttributeKeys.EntityId, account.Id.ToString());
+            span.MarkSuccess();
+            _logger.LogInformation("{Operation} completed", "CreateInvestmentAccount");
+            return ToDto(account);
+        }
+        catch (Exception ex)
+        {
+            span.MarkFailed(ex);
+            throw;
+        }
+    }
+
+    public async Task<InvestmentAccountDTO> UpdateInvestmentAccountAsync(Guid id, InvestmentAccountUpdateDTO request)
+    {
+        using var span = StartSpan("UpdateInvestmentAccount");
+        span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());
+        try
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            if (string.IsNullOrWhiteSpace(request.Name))
+            {
+                throw new ArgumentException("Investment account name is required.", nameof(request));
+            }
+
+            if (!EntityIdResolver.TryResolve(id, _repository.GetInvestmentAccounts(), a => a.Id, out var account))
+            {
+                throw new KeyNotFoundException($"Investment account '{id}' was not found.");
+            }
+
+            EnsureNameIsUnique(request.Name, excludingId: id);
+
+            await _repository.ApplyAndSaveAsync(() =>
+            {
+                account!.Update(request.Name, request.IsActive, request.IsLiability, request.Aliases);
+                return true;
+            }).ConfigureAwait(false);
+
+            span.MarkSuccess();
+            _logger.LogInformation("{Operation} completed", "UpdateInvestmentAccount");
+            return ToDto(account);
+        }
+        catch (Exception ex)
+        {
+            span.MarkFailed(ex);
+            throw;
+        }
+    }
+
+    public async Task DeleteInvestmentAccountAsync(Guid id)
+    {
+        using var span = StartSpan("DeleteInvestmentAccount");
+        span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());
+        try
+        {
+            if (!EntityIdResolver.TryResolve(id, _repository.GetInvestmentAccounts(), a => a.Id, out _))
+            {
+                throw new KeyNotFoundException($"Investment account '{id}' was not found.");
+            }
+
+            EnsureBalanceIsZero(id);
+
+            await _repository.ApplyAndSaveAsync(() =>
+            {
+                _repository.DeleteInvestmentAccount(id);
+                return true;
+            }).ConfigureAwait(false);
+
+            span.MarkSuccess();
+            _logger.LogInformation("{Operation} completed", "DeleteInvestmentAccount");
+        }
+        catch (Exception ex)
+        {
+            span.MarkFailed(ex);
+            throw;
+        }
+    }
+
+    private void EnsureNameIsUnique(string name, Guid? excludingId)
+    {
+        var collision = _repository.GetInvestmentAccounts().FirstOrDefault(a => a.Name == name && a.Id != excludingId);
+        if (collision is not null)
+        {
+            throw new DuplicateNameException($"An investment account named \"{name}\" already exists.");
+        }
+    }
+
+    private void EnsureBalanceIsZero(Guid accountId)
+    {
+        if (GetLatestBalance(accountId) != 0m)
+        {
+            throw new EntityInUseException("Cannot delete an investment account with a non-zero balance.");
+        }
+    }
+
+    /// <summary>The account's most recent InvestmentSnapshot value by (Year, Month), or 0 when none
+    /// exists. Also drives <see cref="InvestmentAccountDTO.LatestBalance"/>.</summary>
+    private decimal GetLatestBalance(Guid accountId) =>
+        _repository.GetInvestmentSnapshots()
+            .Where(s => s.Account.Id == accountId)
+            .OrderByDescending(s => s.Year)
+            .ThenByDescending(s => s.Month)
+            .Select(s => s.Value)
+            .FirstOrDefault();
+
     private ITelemetrySpan StartSpan(string operationName)
     {
         _logger.LogInformation("{Operation} started", operationName);
         return _tracer.StartServiceSpan("CashFlow", nameof(InvestmentAccountService), operationName, EntityType);
     }
 
-    private static InvestmentAccountDTO ToDto(InvestmentAccount account) => new()
+    private InvestmentAccountDTO ToDto(InvestmentAccount account) => new()
     {
         Id = account.Id,
         Name = account.Name,
         IsActive = account.IsActive,
-        IsLiability = account.IsLiability
+        IsLiability = account.IsLiability,
+        Aliases = account.Aliases.ToList(),
+        LatestBalance = GetLatestBalance(account.Id)
     };
 }

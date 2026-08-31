@@ -479,10 +479,10 @@ graph TD
 - [x] Attempting to delete an Income Source referenced by an income entry is blocked with a 409 response and a clear message
 
 ### F09. Investment Account CRUD
-- [ ] Creating an Investment Account with a unique Name, IsActive, IsLiability, and any number of Aliases succeeds
-- [ ] Editing an existing account's Name, IsActive, IsLiability, and Aliases (add and remove) persists the change
-- [ ] Deleting an account whose most recent InvestmentSnapshot Value is 0, or which has no snapshot at all, succeeds
-- [ ] Attempting to delete an account whose most recent InvestmentSnapshot Value is non-zero is blocked with a 409 response and a clear message stating the current balance
+- [x] Creating an Investment Account with a unique Name, IsActive, IsLiability, and any number of Aliases succeeds
+- [x] Editing an existing account's Name, IsActive, IsLiability, and Aliases (add and remove) persists the change
+- [x] Deleting an account whose most recent InvestmentSnapshot Value is 0, or which has no snapshot at all, succeeds
+- [x] Attempting to delete an account whose most recent InvestmentSnapshot Value is non-zero is blocked with a 409 response and a clear message stating the current balance
 
 ### F10. Recurring Bill CRUD
 - [ ] Creating a Recurring Bill with a valid DueDay (1-31) and non-blank Description succeeds, matching existing validation
