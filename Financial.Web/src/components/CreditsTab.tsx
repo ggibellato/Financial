@@ -12,7 +12,7 @@ import {
   YAxis,
 } from 'recharts'
 import { Button, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
-import { DeleteRegular, EditRegular } from '@fluentui/react-icons'
+import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import type { CreditDto } from '../api/types'
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
@@ -369,9 +369,9 @@ export default function CreditsTab() {
   const leftPanel = (
     <div className="credits-tab__left">
       <div className="credits-tab__table-toolbar">
-        <button className="credits-tab__new-btn" type="button" onClick={showNewForm}>
+        <Button appearance="primary" icon={<AddRegular />} onClick={showNewForm}>
           New credit
-        </button>
+        </Button>
       </div>
 
       {isFormVisible && (

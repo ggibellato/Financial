@@ -11,7 +11,7 @@ import {
   YAxis,
 } from 'recharts'
 import { Button, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
-import { DeleteRegular, EditRegular } from '@fluentui/react-icons'
+import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import type { TransactionDto } from '../api/types'
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
@@ -348,9 +348,9 @@ export default function TransactionsTab() {
       />
 
       <div className="transactions-tab__toolbar">
-        <button className="transactions-tab__new-btn" type="button" onClick={showNewForm}>
+        <Button appearance="primary" icon={<AddRegular />} onClick={showNewForm}>
           New transaction
-        </button>
+        </Button>
       </div>
 
       {isFormVisible && (

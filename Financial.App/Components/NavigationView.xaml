@@ -1,15 +1,28 @@
 <UserControl x:Class="Financial.Presentation.App.Components.NavigationView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:oxy="http://oxyplot.org/wpf"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:sys="clr-namespace:System;assembly=mscorlib"
              xmlns:vm="clr-namespace:Financial.Presentation.App.ViewModels.Investment"
              xmlns:behaviors="clr-namespace:Financial.Presentation.App.Behaviors"
              xmlns:views="clr-namespace:Financial.Presentation.App.Views.Investment"
              mc:Ignorable="d"
              d:DesignHeight="700" d:DesignWidth="1200">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ui:ThemesDictionary Theme="Light"/>
+                <ui:ControlsDictionary/>
+            </ResourceDictionary.MergedDictionaries>
+            <!-- Matches Financial.Web's accent exactly — see the same override in ExpenseFormView.xaml. -->
+            <SolidColorBrush x:Key="AccentButtonBackground" Color="#0F6CBD"/>
+            <SolidColorBrush x:Key="AccentButtonBackgroundPointerOver" Color="#115EA3"/>
+            <SolidColorBrush x:Key="AccentButtonBackgroundPressed" Color="#0C3B5E"/>
+        </ResourceDictionary>
+    </UserControl.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="300" MinWidth="400"/>
@@ -37,13 +50,11 @@
                           DisplayMemberPath="Label"
                           MinWidth="180"/>
                 <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                    <Button Content="Move Asset..."
-                            Command="{Binding MoveAssetCommand}"
-                            Padding="10,3"/>
-                    <Button Content="Delete Portfolio"
-                            Command="{Binding DeletePortfolioCommand}"
-                            Padding="10,3"
-                            Margin="8,0,0,0"/>
+                    <ui:Button Content="Move Asset..." Appearance="Secondary" Icon="{ui:SymbolIcon Symbol=ArrowMove20}"
+                               Command="{Binding MoveAssetCommand}"/>
+                    <ui:Button Content="Delete Portfolio" Appearance="Secondary" Icon="{ui:SymbolIcon Symbol=Delete20}"
+                               Command="{Binding DeletePortfolioCommand}"
+                               Margin="8,0,0,0"/>
                 </StackPanel>
             </StackPanel>
 
@@ -128,14 +139,11 @@
                                    FontSize="20"
                                    FontWeight="Bold"
                                    Foreground="#333333"/>
-                        <Button Command="{Binding AssetDetails.CopyAssetNameCommand}"
-                                ToolTip="Copy asset name"
-                                Background="Transparent"
-                                BorderThickness="0"
-                                Padding="2"
-                                Margin="4,0,0,0">
-                            <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE8C8;" FontSize="14" Foreground="#666666"/>
-                        </Button>
+                        <ui:Button Command="{Binding AssetDetails.CopyAssetNameCommand}"
+                                   ToolTip="Copy asset name"
+                                   Appearance="Transparent"
+                                   Icon="{ui:SymbolIcon Symbol=Copy20}"
+                                   Margin="4,0,0,0"/>
                     </StackPanel>
                     <TextBlock Margin="0,5,0,0">
                         <Run Text="{Binding AssetDetails.Ticker, Mode=OneWay}"/>

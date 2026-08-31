@@ -31,36 +31,6 @@
   white-space: nowrap;
 }
 
-.detail-panel__copy-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 14px;
-  padding: 2px 4px;
-  color: var(--text-muted, #888);
-  flex-shrink: 0;
-}
-
-.detail-panel__copy-btn:hover {
-  color: var(--accent, #007acc);
-}
-
-.detail-panel__action-btn {
-  background: none;
-  border: 1px solid var(--border, #e0e0e0);
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: 11px;
-  padding: 2px 8px;
-  color: var(--text-muted, #888);
-  flex-shrink: 0;
-}
-
-.detail-panel__action-btn:hover {
-  color: var(--accent, #007acc);
-  border-color: var(--accent, #007acc);
-}
-
 .detail-panel__error {
   margin: 6px 0 0;
   color: var(--danger, #c0392b);

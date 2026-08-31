@@ -1,4 +1,6 @@
 import { useCallback, useState } from 'react'
+import { Button } from '@fluentui/react-components'
+import { ArrowMoveRegular, CopyRegular, DeleteRegular } from '@fluentui/react-icons'
 import { useSelectedNode } from '../context/SelectedNodeContext'
 import { usePortfolioDeletion } from '../hooks/usePortfolioDeletion'
 import { POSITION_TYPE_STATUS_CLASS } from '../utils/positionType'
@@ -79,35 +81,36 @@ export default function DetailPanel() {
         <div className="detail-panel__title-row">
           <span className="detail-panel__name">{nodeName}</span>
           {isAsset && (
-            <button
-              className="detail-panel__copy-btn"
+            <Button
+              appearance="subtle"
+              size="small"
+              icon={<CopyRegular />}
               onClick={handleCopy}
-              type="button"
               aria-label="Copy name"
               title="Copy name"
-            >
-              ⧉
-            </button>
+            />
           )}
           {isAsset && (
-            <button
-              className="detail-panel__action-btn"
+            <Button
+              appearance="secondary"
+              size="small"
+              icon={<ArrowMoveRegular />}
               onClick={() => setIsMoving(true)}
-              type="button"
               title="Move to another portfolio"
             >
               Move...
-            </button>
+            </Button>
           )}
           {canDeletePortfolio && (
-            <button
-              className="detail-panel__action-btn"
+            <Button
+              appearance="secondary"
+              size="small"
+              icon={<DeleteRegular />}
               onClick={handleDeletePortfolio}
-              type="button"
               title="Delete this empty portfolio"
             >
               Delete Portfolio
-            </button>
+            </Button>
           )}
           {isAsset && selectedNode.positionType && (
             <span

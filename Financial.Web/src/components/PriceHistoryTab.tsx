@@ -8,7 +8,7 @@ import {
   YAxis,
 } from 'recharts'
 import { Button, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
-import { DeleteRegular, EditRegular } from '@fluentui/react-icons'
+import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import type { AssetPriceSnapshotDto } from '../api/types'
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
@@ -251,9 +251,9 @@ export default function PriceHistoryTab() {
   const leftPanel = (
     <div className="price-history-tab__left">
       <div className="price-history-tab__table-toolbar">
-        <button className="price-history-tab__new-btn" type="button" onClick={showNewForm}>
+        <Button appearance="primary" icon={<AddRegular />} onClick={showNewForm}>
           New price
-        </button>
+        </Button>
       </div>
 
       {isFormVisible && (

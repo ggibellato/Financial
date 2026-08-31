@@ -1,4 +1,5 @@
-import { DeleteRegular } from '@fluentui/react-icons'
+import { Button } from '@fluentui/react-components'
+import { AddRegular, DeleteRegular } from '@fluentui/react-icons'
 import type { MaeLedgerEntryDto } from '../api/types'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
@@ -124,9 +125,9 @@ export default function ControleMaePage() {
             onChange={(e) => setFromDateInputValue(e.target.value)}
           />
         </div>
-        <button className="controle-mae-page__new-btn" type="button" onClick={showCreateForm}>
+        <Button appearance="primary" icon={<AddRegular />} onClick={showCreateForm}>
           New Entry
-        </button>
+        </Button>
       </div>
 
       {deleteError && <p className="controle-mae-page__error">{deleteError}</p>}
