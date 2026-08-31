@@ -29,6 +29,7 @@ namespace Financial.Presentation.App
             Financial.Presentation.App.Views.Admin.CategoriesView categoriesView,
             Financial.Presentation.App.Views.Admin.CreditCardsView creditCardsView,
             Financial.Presentation.App.Views.Admin.IncomeSourcesView incomeSourcesView,
+            Financial.Presentation.App.Views.Admin.RecurringBillsView recurringBillsView,
             MainNavigationViewModel navigationViewModel,
             MainNavigationViewModelHistoric navigationViewModelHistoric,
             SyncStatusViewModel syncStatusViewModel)
@@ -48,6 +49,7 @@ namespace Financial.Presentation.App
             ArgumentNullException.ThrowIfNull(categoriesView);
             ArgumentNullException.ThrowIfNull(creditCardsView);
             ArgumentNullException.ThrowIfNull(incomeSourcesView);
+            ArgumentNullException.ThrowIfNull(recurringBillsView);
             ArgumentNullException.ThrowIfNull(syncStatusViewModel);
             _navigationViewModel = navigationViewModel ?? throw new ArgumentNullException(nameof(navigationViewModel));
             _navigationViewModelHistoric = navigationViewModelHistoric ?? throw new ArgumentNullException(nameof(navigationViewModelHistoric));
@@ -74,7 +76,7 @@ namespace Financial.Presentation.App
                 ["admin-credit-cards"] = creditCardsView,
                 ["admin-income-sources"] = incomeSourcesView,
                 ["admin-investment-accounts"] = new AdminEntityPlaceholderView(new AdminEntityPlaceholderViewModel("Investment Accounts")),
-                ["admin-recurring-bills"] = new AdminEntityPlaceholderView(new AdminEntityPlaceholderViewModel("Recurring Bills")),
+                ["admin-recurring-bills"] = recurringBillsView,
                 ["admin-reserve-buckets"] = new AdminEntityPlaceholderView(new AdminEntityPlaceholderViewModel("Reserve Buckets")),
             };
 

@@ -117,6 +117,9 @@ public class MensaisViewModelTests
         service.LastUpdateRequest!.Value.Id.Should().Be(bill.Id);
         service.LastUpdateRequest.Value.Request.Value.Should().Be(150m);
         service.LastUpdateRequest.Value.Request.Status.Should().Be("Paid");
+        service.LastUpdateRequest.Value.Request.DueDay.Should().Be(bill.DueDay);
+        service.LastUpdateRequest.Value.Request.Description.Should().Be(bill.Description);
+        service.LastUpdateRequest.Value.Request.Area.Should().Be(bill.Area);
         viewModel.IsEditFormOpen.Should().BeFalse();
     }
 
