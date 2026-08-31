@@ -61,7 +61,7 @@
             <StackPanel Grid.Row="7" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,12,0,0">
                 <ui:Button Appearance="Primary" MinWidth="90" Command="{Binding SubmitCreateCommand}">
                     <ui:Button.Style>
-                        <Style TargetType="ui:Button">
+                        <Style TargetType="{x:Type ui:Button}" BasedOn="{StaticResource {x:Type ui:Button}}">
                             <Setter Property="Content" Value="Add Entry"/>
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding IsCreating}" Value="True">

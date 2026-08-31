@@ -2,7 +2,6 @@ import { useState } from 'react'
 import {
   Button,
   Dialog,
-  DialogActions,
   DialogBody,
   DialogContent,
   DialogSurface,
@@ -14,6 +13,7 @@ import {
   Select,
 } from '@fluentui/react-components'
 import type { AssetAdminDto, BrokerDto, PortfolioDto } from '../api/types'
+import { useFormPanelStyles } from './formPanelStyles'
 import { getErrorMessage } from '../utils/formatters'
 
 const COUNTRY_OPTIONS = ['Unknown', 'BR', 'US', 'UK'] as const
@@ -55,6 +55,7 @@ interface AssetFormDialogProps {
 const ISIN_PATTERN = /^[A-Z]{2}[A-Z0-9]{9}[0-9]$/
 
 export default function AssetFormDialog({ asset, activeBrokers, portfolios, onCancel, onSubmit }: AssetFormDialogProps) {
+  const styles = useFormPanelStyles()
   const isEditing = asset !== null
   const [brokerName, setBrokerName] = useState(asset?.brokerName ?? activeBrokers[0]?.name ?? '')
   const [portfolioName, setPortfolioName] = useState(asset?.portfolioName ?? '')
@@ -222,14 +223,14 @@ export default function AssetFormDialog({ asset, activeBrokers, portfolios, onCa
               </MessageBar>
             )}
           </DialogContent>
-          <DialogActions>
+          <div className={styles.actions}>
             <Button appearance="primary" onClick={() => void handleSubmit()} disabled={!canSubmit}>
               Save
             </Button>
             <Button appearance="secondary" onClick={onCancel} disabled={isSaving}>
               Cancel
             </Button>
-          </DialogActions>
+          </div>
         </DialogBody>
       </DialogSurface>
     </Dialog>

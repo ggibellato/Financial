@@ -45,10 +45,10 @@
                                              SelectedMonth="{Binding DisplayMonth, Mode=TwoWay}"/>
                 <ui:Button Content="Add Bill" Appearance="Primary" Icon="{ui:SymbolIcon Symbol=Add20}"
                            Margin="16,0,0,0" Command="{Binding ShowAddFormCommand}"/>
-                <ui:Button Appearance="Secondary" Icon="{ui:SymbolIcon Symbol=ArrowReset20}"
+                <ui:Button Appearance="Primary" Icon="{ui:SymbolIcon Symbol=ArrowReset20}"
                            Margin="8,0,0,0" Command="{Binding ResetAllToUnsetCommand}">
                     <ui:Button.Style>
-                        <Style TargetType="ui:Button">
+                        <Style TargetType="{x:Type ui:Button}" BasedOn="{StaticResource {x:Type ui:Button}}">
                             <Setter Property="Content" Value="Reset All to Unset"/>
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding IsResetting}" Value="True">

@@ -50,9 +50,9 @@
                           DisplayMemberPath="Label"
                           MinWidth="180"/>
                 <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                    <ui:Button Content="Move Asset..." Appearance="Secondary" Icon="{ui:SymbolIcon Symbol=ArrowMove20}"
+                    <ui:Button Content="Move Asset..." Appearance="Primary" Icon="{ui:SymbolIcon Symbol=ArrowMove20}"
                                Command="{Binding MoveAssetCommand}"/>
-                    <ui:Button Content="Delete Portfolio" Appearance="Secondary" Icon="{ui:SymbolIcon Symbol=Delete20}"
+                    <ui:Button Content="Delete Portfolio" Appearance="Primary" Icon="{ui:SymbolIcon Symbol=Delete20}"
                                Command="{Binding DeletePortfolioCommand}"
                                Margin="8,0,0,0"/>
                 </StackPanel>

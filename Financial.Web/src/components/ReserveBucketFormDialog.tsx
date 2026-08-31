@@ -2,7 +2,6 @@ import { useState } from 'react'
 import {
   Button,
   Dialog,
-  DialogActions,
   DialogBody,
   DialogContent,
   DialogSurface,
@@ -14,6 +13,7 @@ import {
   Switch,
 } from '@fluentui/react-components'
 import type { ReserveBucketDto } from '../api/types'
+import { useFormPanelStyles } from './formPanelStyles'
 import { getErrorMessage } from '../utils/formatters'
 
 interface ReserveBucketFormDialogProps {
@@ -23,6 +23,7 @@ interface ReserveBucketFormDialogProps {
 }
 
 export default function ReserveBucketFormDialog({ reserveBucket, onCancel, onSubmit }: ReserveBucketFormDialogProps) {
+  const styles = useFormPanelStyles()
   const isEditing = reserveBucket !== null
   const [name, setName] = useState(reserveBucket?.name ?? '')
   const [splitPercentage, setSplitPercentage] = useState(String(reserveBucket?.splitPercentage ?? ''))
@@ -93,14 +94,14 @@ export default function ReserveBucketFormDialog({ reserveBucket, onCancel, onSub
               </MessageBar>
             )}
           </DialogContent>
-          <DialogActions>
+          <div className={styles.actions}>
             <Button appearance="primary" onClick={() => void handleSubmit()} disabled={!canSubmit}>
               Save
             </Button>
             <Button appearance="secondary" onClick={onCancel} disabled={isSaving}>
               Cancel
             </Button>
-          </DialogActions>
+          </div>
         </DialogBody>
       </DialogSurface>
     </Dialog>

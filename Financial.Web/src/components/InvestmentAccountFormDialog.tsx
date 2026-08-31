@@ -2,7 +2,6 @@ import { useState } from 'react'
 import {
   Button,
   Dialog,
-  DialogActions,
   DialogBody,
   DialogContent,
   DialogSurface,
@@ -14,6 +13,7 @@ import {
   Switch,
 } from '@fluentui/react-components'
 import type { InvestmentAccountDto } from '../api/types'
+import { useFormPanelStyles } from './formPanelStyles'
 import { getErrorMessage } from '../utils/formatters'
 import AliasesInput from './AliasesInput'
 
@@ -24,6 +24,7 @@ interface InvestmentAccountFormDialogProps {
 }
 
 export default function InvestmentAccountFormDialog({ investmentAccount, onCancel, onSubmit }: InvestmentAccountFormDialogProps) {
+  const styles = useFormPanelStyles()
   const isEditing = investmentAccount !== null
   const [name, setName] = useState(investmentAccount?.name ?? '')
   const [isActive, setIsActive] = useState(investmentAccount?.isActive ?? true)
@@ -80,14 +81,14 @@ export default function InvestmentAccountFormDialog({ investmentAccount, onCance
               </MessageBar>
             )}
           </DialogContent>
-          <DialogActions>
+          <div className={styles.actions}>
             <Button appearance="primary" onClick={() => void handleSubmit()} disabled={!canSubmit}>
               Save
             </Button>
             <Button appearance="secondary" onClick={onCancel} disabled={isSaving}>
               Cancel
             </Button>
-          </DialogActions>
+          </div>
         </DialogBody>
       </DialogSurface>
     </Dialog>

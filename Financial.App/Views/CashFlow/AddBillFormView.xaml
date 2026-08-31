@@ -60,7 +60,7 @@
             <StackPanel Grid.Row="7" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,12,0,0">
                 <ui:Button Appearance="Primary" MinWidth="100" Command="{Binding SubmitAddCommand}">
                     <ui:Button.Style>
-                        <Style TargetType="ui:Button">
+                        <Style TargetType="{x:Type ui:Button}" BasedOn="{StaticResource {x:Type ui:Button}}">
                             <Setter Property="Content" Value="Add Bill"/>
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding IsAdding}" Value="True">
