@@ -63,7 +63,9 @@ import type {
   PortfolioUpdateDto,
   RecurringBillDto,
   ReserveBucketBalanceDto,
+  ReserveBucketCreateDto,
   ReserveBucketDto,
+  ReserveBucketUpdateDto,
   ReserveMovementDto,
   SetAssetPriceDto,
   SyncStatusResponseDto,
@@ -141,6 +143,8 @@ export interface FinancialApiClient {
   getReserveBalances: () => Promise<ReserveBucketBalanceDto[]>
   getReserveMovements: () => Promise<ReserveMovementDto[]>
   getReserveBuckets: () => Promise<ReserveBucketDto[]>
+  createReserveBucket: (request: ReserveBucketCreateDto) => Promise<ReserveBucketDto>
+  updateReserveBucket: (id: string, request: ReserveBucketUpdateDto) => Promise<ReserveBucketDto>
   postIncomeSplit: (request: IncomeSplitRequestDto) => Promise<IncomeSplitResultDto>
   postWithdrawal: (request: WithdrawalRequestDto) => Promise<ReserveMovementDto>
   updateReserveMovement: (id: string, request: ReserveMovementUpdateDto) => Promise<ReserveMovementDto>
@@ -422,6 +426,13 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
     getReserveBalances: () => request<ReserveBucketBalanceDto[]>('/reserve/balances'),
     getReserveMovements: () => request<ReserveMovementDto[]>('/reserve/movements'),
     getReserveBuckets: () => request<ReserveBucketDto[]>('/reserve-buckets'),
+    createReserveBucket: (requestBody) =>
+      request<ReserveBucketDto>('/reserve-buckets', { method: 'POST', body: JSON.stringify(requestBody) }),
+    updateReserveBucket: (id, requestBody) =>
+      request<ReserveBucketDto>(`/reserve-buckets/${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        body: JSON.stringify(requestBody),
+      }),
     postIncomeSplit: (requestBody) =>
       request<IncomeSplitResultDto>('/reserve/income-split', {
         method: 'POST',

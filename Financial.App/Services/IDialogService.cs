@@ -20,5 +20,6 @@ public interface IDialogService
     bool ShowCreditCardFormDialog(CreditCardFormDialogViewModel viewModel);
     bool ShowIncomeSourceFormDialog(IncomeSourceFormDialogViewModel viewModel);
     bool ShowInvestmentAccountFormDialog(InvestmentAccountFormDialogViewModel viewModel);
+    bool ShowReserveBucketFormDialog(ReserveBucketFormDialogViewModel viewModel);
     bool ShowRecurringBillFormDialog(RecurringBillFormDialogViewModel viewModel);
 }

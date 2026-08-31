@@ -495,7 +495,7 @@ describe('financialApiClient', () => {
 
   it('calls reserve buckets endpoint', async () => {
     const responseBody: ReserveBucketDto[] = [
-      { id: 'b1', name: 'Investimento', isActive: true, splitPercentage: 33.33 },
+      { id: 'b1', name: 'Investimento', isActive: true, splitPercentage: 33.33, warning: null },
     ]
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })

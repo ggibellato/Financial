@@ -490,10 +490,10 @@ graph TD
 - [x] Deleting a Recurring Bill succeeds regardless of its current Status, matching existing unrestricted delete behavior
 
 ### F11. Reserve Bucket CRUD
-- [ ] Creating a Reserve Bucket with a unique Name and SplitPercentage between 0 and 100 succeeds
-- [ ] Editing a Reserve Bucket's Name, SplitPercentage, and/or IsActive persists the change
-- [ ] Saving a Create or Edit that leaves active buckets summing to something other than 100% still succeeds and returns/displays a non-blocking warning naming the actual total
-- [ ] "Deleting" a Reserve Bucket sets IsActive to false and does not remove the record; any existing ReserveMovement referencing it remains valid and unaffected
+- [x] Creating a Reserve Bucket with a unique Name and SplitPercentage between 0 and 100 succeeds
+- [x] Editing a Reserve Bucket's Name, SplitPercentage, and/or IsActive persists the change
+- [x] Saving a Create or Edit that leaves active buckets summing to something other than 100% still succeeds and returns/displays a non-blocking warning naming the actual total
+- [x] "Deleting" a Reserve Bucket sets IsActive to false and does not remove the record; any existing ReserveMovement referencing it remains valid and unaffected
 
 ### Cross-Feature Integration
 - [x] A Broker created or left Active in F02 (with zero Portfolios) is selectable as the parent Broker when creating a Portfolio in F03

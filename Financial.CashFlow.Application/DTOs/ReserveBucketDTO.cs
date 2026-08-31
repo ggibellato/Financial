@@ -11,4 +11,8 @@ public sealed class ReserveBucketDTO
 
     /// <summary>Stored share of a posted income split, 0-100.</summary>
     public required decimal SplitPercentage { get; init; }
+
+    /// <summary>Present only on a Create/Update response, when active buckets' SplitPercentage
+    /// doesn't sum to ~100 after this save.</summary>
+    public string? Warning { get; init; }
 }

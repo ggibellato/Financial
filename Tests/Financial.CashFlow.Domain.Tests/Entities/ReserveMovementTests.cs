@@ -88,4 +88,19 @@ public class ReserveMovementTests
 
         movement.Income.Should().BeSameAs(income);
     }
+
+    [Fact]
+    public void Bucket_DeactivatedAfterMovementCreated_MovementKeepsAValidBucketReference()
+    {
+        var bucket = ReserveBucket.Create("Ferias", 20m, isActive: true);
+        var movement = ReserveMovement.Create(bucket, 100m, new DateOnly(2026, 7, 1), "Monthly split");
+
+        bucket.Update(bucket.Name, bucket.SplitPercentage, isActive: false);
+
+        using (new AssertionScope())
+        {
+            movement.Bucket.Should().BeSameAs(bucket);
+            movement.Bucket.IsActive.Should().BeFalse();
+        }
+    }
 }

@@ -33,16 +33,182 @@ public class ReserveBucketsEndpointsTests : ApiEndpointTests
         buckets.Should().OnlyContain(b => b.IsActive);
     }
 
-    [Theory]
-    [InlineData("POST")]
-    [InlineData("PUT")]
-    [InlineData("DELETE")]
-    public async Task ReserveBuckets_UnsupportedVerbs_DoNotSucceed(string method)
+    [Fact]
+    public async Task GetReserveBuckets_NeverReturnsAWarning()
     {
-        var request = new HttpRequestMessage(new HttpMethod(method), "/api/v1/financial/reserve-buckets");
+        var response = await Client.GetAsync("/api/v1/financial/reserve-buckets");
 
-        var response = await Client.SendAsync(request);
+        var buckets = await response.Content.ReadFromJsonAsync<List<ReserveBucketDTO>>();
+        buckets.Should().OnlyContain(b => b.Warning == null);
+    }
 
-        response.IsSuccessStatusCode.Should().BeFalse();
+    [Fact]
+    public async Task CreateReserveBucket_ValidRequest_ReturnsOkWithNewBucket()
+    {
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/reserve-buckets", new ReserveBucketCreateDTO
+        {
+            Name = "Ferias",
+            SplitPercentage = 10m,
+            IsActive = false,
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var bucket = await response.Content.ReadFromJsonAsync<ReserveBucketDTO>();
+        bucket!.Name.Should().Be("Ferias");
+        bucket.SplitPercentage.Should().Be(10m);
+        bucket.IsActive.Should().BeFalse();
+        bucket.Id.Should().NotBe(Guid.Empty);
+    }
+
+    [Fact]
+    public async Task CreateReserveBucket_DuplicateName_ReturnsConflictWithMessage()
+    {
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/reserve-buckets", new ReserveBucketCreateDTO
+        {
+            Name = "Investimento",
+            SplitPercentage = 10m,
+            IsActive = true,
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        var body = await response.Content.ReadAsStringAsync();
+        body.Should().Contain("Investimento").And.Contain("already exists");
+    }
+
+    [Fact]
+    public async Task CreateReserveBucket_BlankName_ReturnsBadRequest()
+    {
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/reserve-buckets", new ReserveBucketCreateDTO
+        {
+            Name = "   ",
+            SplitPercentage = 10m,
+            IsActive = true,
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task CreateReserveBucket_SplitPercentageOutOfRange_ReturnsBadRequest()
+    {
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/reserve-buckets", new ReserveBucketCreateDTO
+        {
+            Name = "Ferias",
+            SplitPercentage = 100.01m,
+            IsActive = true,
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task CreateReserveBucket_ActiveWithNonZeroSplit_PushesActiveTotalOver100AndReturnsWarning()
+    {
+        // The 4 seeded buckets are already active and sum to exactly 100%.
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/reserve-buckets", new ReserveBucketCreateDTO
+        {
+            Name = "Ferias",
+            SplitPercentage = 10m,
+            IsActive = true,
+        });
+
+        var bucket = await response.Content.ReadFromJsonAsync<ReserveBucketDTO>();
+        bucket!.Warning.Should().NotBeNull();
+        bucket.Warning.Should().Contain("review your split percentages");
+    }
+
+    [Fact]
+    public async Task CreateReserveBucket_InactiveBucket_DoesNotAffectTheActiveSplitTotal()
+    {
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/reserve-buckets", new ReserveBucketCreateDTO
+        {
+            Name = "Ferias",
+            SplitPercentage = 10m,
+            IsActive = false,
+        });
+
+        var bucket = await response.Content.ReadFromJsonAsync<ReserveBucketDTO>();
+        bucket!.Warning.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task UpdateReserveBucket_ValidRequest_ReturnsOkAndUpdatesFields()
+    {
+        var created = await Client.PostAsJsonAsync("/api/v1/financial/reserve-buckets", new ReserveBucketCreateDTO
+        {
+            Name = "Ferias",
+            SplitPercentage = 10m,
+            IsActive = false,
+        });
+        var bucket = await created.Content.ReadFromJsonAsync<ReserveBucketDTO>();
+
+        var response = await Client.PutAsJsonAsync($"/api/v1/financial/reserve-buckets/{bucket!.Id}", new ReserveBucketUpdateDTO
+        {
+            Name = "FeriasRenamed",
+            SplitPercentage = 20m,
+            IsActive = false,
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var updated = await response.Content.ReadFromJsonAsync<ReserveBucketDTO>();
+        updated!.Name.Should().Be("FeriasRenamed");
+        updated.SplitPercentage.Should().Be(20m);
+    }
+
+    [Fact]
+    public async Task UpdateReserveBucket_UnknownId_ReturnsNotFound()
+    {
+        var response = await Client.PutAsJsonAsync($"/api/v1/financial/reserve-buckets/{Guid.NewGuid()}", new ReserveBucketUpdateDTO
+        {
+            Name = "X",
+            SplitPercentage = 10m,
+            IsActive = true,
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task UpdateReserveBucket_NameCollidesWithAnotherBucket_ReturnsConflict()
+    {
+        var created = await Client.PostAsJsonAsync("/api/v1/financial/reserve-buckets", new ReserveBucketCreateDTO
+        {
+            Name = "Ferias",
+            SplitPercentage = 10m,
+            IsActive = false,
+        });
+        var bucket = await created.Content.ReadFromJsonAsync<ReserveBucketDTO>();
+
+        var response = await Client.PutAsJsonAsync($"/api/v1/financial/reserve-buckets/{bucket!.Id}", new ReserveBucketUpdateDTO
+        {
+            Name = "Investimento",
+            SplitPercentage = 10m,
+            IsActive = false,
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+    }
+
+    [Fact]
+    public async Task UpdateReserveBucket_DeactivatingAnActiveBucket_DoesNotRemoveItAndIsStillVisibleViaGet()
+    {
+        var created = await Client.PostAsJsonAsync("/api/v1/financial/reserve-buckets", new ReserveBucketCreateDTO
+        {
+            Name = "Ferias",
+            SplitPercentage = 10m,
+            IsActive = true,
+        });
+        var bucket = await created.Content.ReadFromJsonAsync<ReserveBucketDTO>();
+
+        var response = await Client.PutAsJsonAsync($"/api/v1/financial/reserve-buckets/{bucket!.Id}", new ReserveBucketUpdateDTO
+        {
+            Name = "Ferias",
+            SplitPercentage = 10m,
+            IsActive = false,
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var buckets = await (await Client.GetAsync("/api/v1/financial/reserve-buckets")).Content.ReadFromJsonAsync<List<ReserveBucketDTO>>();
+        buckets.Should().ContainSingle(b => b.Id == bucket.Id && !b.IsActive);
     }
 }

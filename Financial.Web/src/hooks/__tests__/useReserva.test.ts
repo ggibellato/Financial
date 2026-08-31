@@ -50,10 +50,10 @@ const MOVEMENTS: ReserveMovementDto[] = [
 ]
 
 const BUCKETS: ReserveBucketDto[] = [
-  { id: 'b1', name: 'Investimento', isActive: true, splitPercentage: 33.33 },
-  { id: 'b2', name: 'HouseTreats', isActive: true, splitPercentage: 33.33 },
-  { id: 'b3', name: 'Ariana', isActive: true, splitPercentage: 16.67 },
-  { id: 'b4', name: 'Gleison', isActive: true, splitPercentage: 16.67 },
+  { id: 'b1', name: 'Investimento', isActive: true, splitPercentage: 33.33, warning: null },
+  { id: 'b2', name: 'HouseTreats', isActive: true, splitPercentage: 33.33, warning: null },
+  { id: 'b3', name: 'Ariana', isActive: true, splitPercentage: 16.67, warning: null },
+  { id: 'b4', name: 'Gleison', isActive: true, splitPercentage: 16.67, warning: null },
 ]
 
 // Only the 409 tests should reach the confirmation policy. Everywhere else, being asked at all
@@ -410,8 +410,8 @@ describe('useReserva', () => {
 
   it('defaults the withdrawal bucket to the first active bucket, skipping a leading inactive one', async () => {
     getReserveBucketsMock.mockResolvedValue([
-      { id: 'b0', name: 'Retired', isActive: false, splitPercentage: 0 },
-      { id: 'b1', name: 'Investimento', isActive: true, splitPercentage: 100 },
+      { id: 'b0', name: 'Retired', isActive: false, splitPercentage: 0, warning: null },
+      { id: 'b1', name: 'Investimento', isActive: true, splitPercentage: 100, warning: null },
     ])
     const { result } = renderHook(() => useReserva())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
@@ -451,10 +451,10 @@ describe('useReserva', () => {
 
   it('reports a split-percentage warning when active buckets do not sum to 100%', async () => {
     getReserveBucketsMock.mockResolvedValue([
-      { id: 'b1', name: 'Investimento', isActive: true, splitPercentage: 33.33 },
-      { id: 'b2', name: 'HouseTreats', isActive: true, splitPercentage: 33.33 },
-      { id: 'b3', name: 'Ariana', isActive: true, splitPercentage: 16.67 },
-      { id: 'b4', name: 'Gleison', isActive: false, splitPercentage: 16.67 },
+      { id: 'b1', name: 'Investimento', isActive: true, splitPercentage: 33.33, warning: null },
+      { id: 'b2', name: 'HouseTreats', isActive: true, splitPercentage: 33.33, warning: null },
+      { id: 'b3', name: 'Ariana', isActive: true, splitPercentage: 16.67, warning: null },
+      { id: 'b4', name: 'Gleison', isActive: false, splitPercentage: 16.67, warning: null },
     ])
     const { result } = renderHook(() => useReserva())
     await waitFor(() => expect(result.current.isLoading).toBe(false))

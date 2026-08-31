@@ -3820,6 +3820,108 @@ export interface paths {
             };
         };
         put?: never;
+        /** Creates a new reserve bucket. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/*+json": null | components["schemas"]["ReserveBucketCreateDTO"];
+                    "application/json": null | components["schemas"]["ReserveBucketCreateDTO"];
+                    "text/json": null | components["schemas"]["ReserveBucketCreateDTO"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ReserveBucketDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/reserve-buckets/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Updates a reserve bucket's name, split percentage, and active flag. "Deleting" a
+         *                 bucket is a call to this endpoint with isActive set to false - no hard delete exists, since
+         *                 existing reserve movements hold a permanent reference to their bucket.
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The bucket's identifier. */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/*+json": null | components["schemas"]["ReserveBucketUpdateDTO"];
+                    "application/json": null | components["schemas"]["ReserveBucketUpdateDTO"];
+                    "text/json": null | components["schemas"]["ReserveBucketUpdateDTO"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ReserveBucketDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
         post?: never;
         delete?: never;
         options?: never;
@@ -5759,9 +5861,22 @@ export interface components {
             bucketId: string;
             bucketName: string;
         };
+        ReserveBucketCreateDTO: {
+            isActive: boolean;
+            name: string;
+            /** Format: double */
+            splitPercentage: number;
+        };
         ReserveBucketDTO: {
             /** Format: uuid */
             id: string;
+            isActive: boolean;
+            name: string;
+            /** Format: double */
+            splitPercentage: number;
+            warning?: null | string;
+        };
+        ReserveBucketUpdateDTO: {
             isActive: boolean;
             name: string;
             /** Format: double */
