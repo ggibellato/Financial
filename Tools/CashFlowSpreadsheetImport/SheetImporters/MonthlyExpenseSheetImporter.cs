@@ -72,6 +72,12 @@ public static class MonthlyExpenseSheetImporter
                 continue;
             }
 
+            if (value.Value == 0)
+            {
+                report.RowFlagged(sheet.Name, row, "Value", valueCell.GetString(), "Value is zero - expense not imported");
+                continue;
+            }
+
             var rawCategory = sheet.Cell(row, categoryColumn).GetString();
             if (!CategoryResolver.TryResolve(rawCategory, categoriesByName, out var category))
             {

@@ -130,6 +130,26 @@ public class MonthlyExpenseSheetImporterTests : IDisposable
     }
 
     [Fact]
+    public void Import_ZeroValue_SkipsExpenseAndFlagsRowInsteadOfThrowing()
+    {
+        var sheet = _workbook.AddWorksheet("Out2017");
+        sheet.Cell(1, 1).Value = "Dia";
+        sheet.Cell(1, 2).Value = "Quem";
+        sheet.Cell(1, 3).Value = "Motivo";
+        sheet.Cell(1, 4).Value = "Valor";
+
+        sheet.Cell(2, 1).Value = 5;
+        sheet.Cell(2, 2).Value = "Some Store";
+        sheet.Cell(2, 3).Value = "Casa";
+        sheet.Cell(2, 4).Value = 0;
+
+        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2017, 10, Today, _report, Banks, CreditCards, Categories);
+
+        expenses.Should().BeEmpty();
+        _report.RowIssues.Should().ContainSingle(i => i.SheetName == "Out2017" && i.Row == 2 && i.RawValue == "0");
+    }
+
+    [Fact]
     public void Import_KnownTypoCasas_ResolvesToCasaCategory()
     {
         var sheet = _workbook.AddWorksheet("Out2017");

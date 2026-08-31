@@ -40,7 +40,7 @@ public sealed class GoogleGenerator
         _metadataResolver = new AssetMetadataResolver(options, _sheetsReader);
     }
 
-    public async Task GenerateAsync(List<string> fileNames, IProgress<string> progress = null)
+    public async Task GenerateAsync(List<string> fileNames, IProgress<string> progress = null, ICollection<string> issues = null)
     {
         var data = Investments.Create();
         var files = await _driveFiles.GetFilesAsync();
@@ -57,7 +57,7 @@ public sealed class GoogleGenerator
             }
 
             var file = files.FirstOrDefault(f => f.Name == fileName);
-            await ProcessBrokerAsync(data, fileName, file?.Id, progress);
+            await ProcessBrokerAsync(data, fileName, file?.Id, progress, issues);
         }
 
         progress?.Report("Saving data...");
@@ -66,7 +66,7 @@ public sealed class GoogleGenerator
         progress?.Report("Complete!");
     }
 
-    private async Task ProcessBrokerAsync(Investments data, string fileName, string fileId, IProgress<string> progress)
+    private async Task ProcessBrokerAsync(Investments data, string fileName, string fileId, IProgress<string> progress, ICollection<string> issues)
     {
         var currency = _metadataResolver.ResolveBrokerCurrency(fileName);
         Broker activeBroker = null;
@@ -87,12 +87,12 @@ public sealed class GoogleGenerator
             {
                 historicBroker ??= CreateBroker(data, fileName, currency, isHistoric: true);
                 var historicPortfolioName = _metadataResolver.ResolveHistoricPortfolioName(spreadsheet.Name);
-                await ProcessSheetAsync(historicBroker, historicPortfolioName, fileName, fileId, spreadsheet, progress);
+                await ProcessSheetAsync(historicBroker, historicPortfolioName, fileName, fileId, spreadsheet, progress, issues);
             }
             else
             {
                 activeBroker ??= CreateBroker(data, fileName, currency, isHistoric: false);
-                await ProcessSheetAsync(activeBroker, resolvedPortfolioName, fileName, fileId, spreadsheet, progress);
+                await ProcessSheetAsync(activeBroker, resolvedPortfolioName, fileName, fileId, spreadsheet, progress, issues);
             }
 
             if (sheetIndex < activeSheets.Count - 1)
@@ -117,7 +117,7 @@ public sealed class GoogleGenerator
         return broker;
     }
 
-    private async Task ProcessSheetAsync(Broker broker, string portfolioName, string fileName, string fileId, SheetDTO spreadsheet, IProgress<string> progress)
+    private async Task ProcessSheetAsync(Broker broker, string portfolioName, string fileName, string fileId, SheetDTO spreadsheet, IProgress<string> progress, ICollection<string> issues)
     {
         var portfolio = broker.AddPortfolio(portfolioName);
 
@@ -132,7 +132,7 @@ public sealed class GoogleGenerator
             assetData.assetClass);
         portfolio.AddAsset(asset);
 
-        asset.AddTransactions(await _sheetsReader.ReadTransactionsAsync(fileId, spreadsheet.Name, progress));
+        asset.AddTransactions(await _sheetsReader.ReadTransactionsAsync(fileId, spreadsheet.Name, progress, issues));
         await Task.Delay(DelayBetweenOperationsMs);
         asset.AddCredits(await _sheetsReader.ReadCreditsAsync(fileId, spreadsheet.Name));
     }

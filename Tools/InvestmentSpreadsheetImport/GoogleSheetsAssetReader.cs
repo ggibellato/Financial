@@ -56,12 +56,18 @@ internal sealed class GoogleSheetsAssetReader
     }
 
     /// <summary>
-    /// <paramref name="progress"/> is the import tool's operator log. A row whose recorded total
-    /// disagrees with unit price times quantity yields a negative fee, which
-    /// <see cref="Transaction"/> floors to zero - a repair that used to leave no trace, so a
-    /// spreadsheet with bad totals imported looking exactly like a clean one.
+    /// <paramref name="progress"/> is the import tool's live operator log; <paramref name="issues"/>
+    /// additionally accumulates the same messages so the caller can present a final summary once the
+    /// whole import finishes, since <paramref name="progress"/> messages are transient. A row with a
+    /// non-positive quantity or unit price is flagged and skipped here, rather than reaching
+    /// <see cref="Transaction.Create"/> - that constructor throws for either, which would otherwise
+    /// abort the entire import for one bad row. A row whose recorded total disagrees with unit price
+    /// times quantity yields a negative fee, which <see cref="Transaction"/> floors to zero instead of
+    /// throwing - a repair that used to leave no trace, so a spreadsheet with bad totals imported
+    /// looking exactly like a clean one.
     /// </summary>
-    internal async Task<List<Transaction>> ReadTransactionsAsync(string fileId, string spreadSheetName, IProgress<string> progress = null)
+    internal async Task<List<Transaction>> ReadTransactionsAsync(
+        string fileId, string spreadSheetName, IProgress<string> progress = null, ICollection<string> issues = null)
     {
         var transactions = new List<Transaction>();
         var values = await _service.GetSpreadSheetDataAsync(fileId, $"{spreadSheetName}!A3:G");
@@ -79,14 +85,38 @@ internal sealed class GoogleSheetsAssetReader
             var transactionType = type == SellTransactionCode ? Transaction.TransactionType.Sell : Transaction.TransactionType.Buy;
             var transactionDate = DateTime.FromOADate(date);
 
+            // The sheet records a Sell row's total as a negative cash-flow figure (money leaving the
+            // position); RecoverFee expects a positive gross amount received. Left un-normalized,
+            // gross - (-total) doubles the recorded total into a bogus fee instead of a negative one,
+            // so it never trips the negative-fee check below (confirmed: a Freetrade sale with sheet
+            // total -656.37 imported with a fee of 1312.74, exactly double, instead of 0).
+            if (transactionType == Transaction.TransactionType.Sell && totalAmount < 0)
+            {
+                totalAmount = -totalAmount;
+            }
+
+            if (quantity <= 0 || unitPrice <= 0)
+            {
+                var invalidField = quantity <= 0 ? "Quantity" : "Unit price";
+                var invalidValue = quantity <= 0 ? quantity : unitPrice;
+                var message =
+                    $"[{spreadSheetName}] {transactionDate:yyyy-MM-dd} {transactionType}: {invalidField} {invalidValue} "
+                    + "must be greater than zero - row not imported, check the source row.";
+                progress?.Report(message);
+                issues?.Add(message);
+                continue;
+            }
+
             // Recovered once and handed to the entity, which floors it. Recovering it here and
             // again inside the factory left two evaluations of one rule that could disagree.
             var fees = TransactionFeeCalculator.RecoverFee(transactionType, quantity, unitPrice, totalAmount);
             if (fees < 0)
             {
-                progress?.Report(
+                var message =
                     $"[{spreadSheetName}] {transactionDate:yyyy-MM-dd} {transactionType}: recorded total {totalAmount} "
-                    + $"disagrees with {quantity} x {unitPrice}, giving a fee of {fees}. Imported with a fee of 0 - check the source row.");
+                    + $"disagrees with {quantity} x {unitPrice}, giving a fee of {fees}. Imported with a fee of 0 - check the source row.";
+                progress?.Report(message);
+                issues?.Add(message);
             }
 
             transactions.Add(Transaction.Create(transactionDate, transactionType, quantity, unitPrice, fees));
