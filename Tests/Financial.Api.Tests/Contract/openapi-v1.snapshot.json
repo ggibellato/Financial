@@ -1734,6 +1734,29 @@
         ],
         "type": "object"
       },
+      "IncomeSourceCreateDTO": {
+        "properties": {
+          "autoSplitToReserve": {
+            "type": "boolean"
+          },
+          "group": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "isActive",
+          "group",
+          "autoSplitToReserve"
+        ],
+        "type": "object"
+      },
       "IncomeSourceDTO": {
         "properties": {
           "autoSplitToReserve": {
@@ -1741,6 +1764,9 @@
           },
           "group": {
             "type": "string"
+          },
+          "hasReferences": {
+            "type": "boolean"
           },
           "id": {
             "format": "uuid",
@@ -1755,6 +1781,30 @@
         },
         "required": [
           "id",
+          "name",
+          "isActive",
+          "group",
+          "autoSplitToReserve",
+          "hasReferences"
+        ],
+        "type": "object"
+      },
+      "IncomeSourceUpdateDTO": {
+        "properties": {
+          "autoSplitToReserve": {
+            "type": "boolean"
+          },
+          "group": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
           "name",
           "isActive",
           "group",
@@ -6217,6 +6267,209 @@
           }
         },
         "summary": "Lists all income sources.",
+        "tags": [
+          "IncomeSources"
+        ]
+      },
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/*\u002Bjson": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/IncomeSourceCreateDTO"
+                  }
+                ]
+              }
+            },
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/IncomeSourceCreateDTO"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/IncomeSourceCreateDTO"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncomeSourceDTO"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          }
+        },
+        "summary": "Creates a new income source.",
+        "tags": [
+          "IncomeSources"
+        ]
+      }
+    },
+    "/income-sources/{id}": {
+      "delete": {
+        "parameters": [
+          {
+            "description": "The income source\u0027s identifier.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "summary": "Deletes an income source, when no income entry still references it.",
+        "tags": [
+          "IncomeSources"
+        ]
+      },
+      "put": {
+        "parameters": [
+          {
+            "description": "The income source\u0027s identifier.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/*\u002Bjson": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/IncomeSourceUpdateDTO"
+                  }
+                ]
+              }
+            },
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/IncomeSourceUpdateDTO"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/IncomeSourceUpdateDTO"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncomeSourceDTO"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "summary": "Updates an income source\u0027s name, group, active flag, and auto-split-to-reserve setting.",
         "tags": [
           "IncomeSources"
         ]

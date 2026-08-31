@@ -53,6 +53,8 @@ public sealed class CashFlowJsonRepository : ICashFlowRepository, ISyncStatusPro
     public void DeleteBank(Guid id) => _data.RemoveBank(id);
 
     public IEnumerable<IncomeSource> GetIncomeSources() => _data.IncomeSources;
+    public void AddIncomeSource(IncomeSource incomeSource) => _data.AddIncomeSource(incomeSource);
+    public void DeleteIncomeSource(Guid id) => _data.RemoveIncomeSource(id);
 
     public IEnumerable<ReserveBucket> GetReserveBuckets() => _data.ReserveBuckets;
 

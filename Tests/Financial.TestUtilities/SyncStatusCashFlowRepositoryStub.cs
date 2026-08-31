@@ -48,6 +48,8 @@ public sealed class SyncStatusCashFlowRepositoryStub : ICashFlowRepository, ISyn
     public void AddBank(Bank bank) => throw new NotImplementedException();
     public void DeleteBank(Guid id) => throw new NotImplementedException();
     public IEnumerable<IncomeSource> GetIncomeSources() => throw new NotImplementedException();
+    public void AddIncomeSource(IncomeSource incomeSource) => throw new NotImplementedException();
+    public void DeleteIncomeSource(Guid id) => throw new NotImplementedException();
     public IEnumerable<ReserveBucket> GetReserveBuckets() => throw new NotImplementedException();
     public IEnumerable<CreditCard> GetCreditCards() => throw new NotImplementedException();
     public void AddCreditCard(CreditCard card) => throw new NotImplementedException();

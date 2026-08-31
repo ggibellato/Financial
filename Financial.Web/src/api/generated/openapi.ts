@@ -2540,8 +2540,145 @@ export interface paths {
             };
         };
         put?: never;
-        post?: never;
+        /** Creates a new income source. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/*+json": null | components["schemas"]["IncomeSourceCreateDTO"];
+                    "application/json": null | components["schemas"]["IncomeSourceCreateDTO"];
+                    "text/json": null | components["schemas"]["IncomeSourceCreateDTO"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["IncomeSourceDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/income-sources/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Updates an income source's name, group, active flag, and auto-split-to-reserve setting. */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The income source's identifier. */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/*+json": null | components["schemas"]["IncomeSourceUpdateDTO"];
+                    "application/json": null | components["schemas"]["IncomeSourceUpdateDTO"];
+                    "text/json": null | components["schemas"]["IncomeSourceUpdateDTO"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["IncomeSourceDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        /** Deletes an income source, when no income entry still references it. */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The income source's identifier. */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
         options?: never;
         head?: never;
         patch?: never;
@@ -5209,11 +5346,24 @@ export interface components {
             netValue: number;
             splitToReserve: boolean;
         };
+        IncomeSourceCreateDTO: {
+            autoSplitToReserve: boolean;
+            group: string;
+            isActive: boolean;
+            name: string;
+        };
         IncomeSourceDTO: {
             autoSplitToReserve: boolean;
             group: string;
+            hasReferences: boolean;
             /** Format: uuid */
             id: string;
+            isActive: boolean;
+            name: string;
+        };
+        IncomeSourceUpdateDTO: {
+            autoSplitToReserve: boolean;
+            group: string;
             isActive: boolean;
             name: string;
         };
