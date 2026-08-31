@@ -28,10 +28,10 @@ type MonthlyTabId = 'summary' | 'expense' | 'card' | 'incoming' | 'bank'
 
 const MONTHLY_TABS: { id: MonthlyTabId; label: string }[] = [
   { id: 'summary', label: 'Summary' },
-  { id: 'expense', label: 'Expense' },
-  { id: 'card', label: 'Credit Card' },
+  { id: 'expense', label: 'Bank expenses' },
+  { id: 'card', label: 'Credit Card expenses' },
   { id: 'incoming', label: 'Income' },
-  { id: 'bank', label: 'Bank' },
+  { id: 'bank', label: 'Bank balance adjustment' },
 ]
 
 export default function MonthlyPage() {
