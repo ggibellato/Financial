@@ -492,5 +492,7 @@ public class MainNavigationViewModelConstructorGuardTests
             throw new NotImplementedException();
         public bool ShowInvestmentAccountFormDialog(Financial.Presentation.App.ViewModels.Admin.InvestmentAccountFormDialogViewModel viewModel) =>
             throw new NotImplementedException();
+        public bool ShowRecurringBillFormDialog(Financial.Presentation.App.ViewModels.Admin.RecurringBillFormDialogViewModel viewModel) =>
+            throw new NotImplementedException();
     }
 }

@@ -2614,6 +2614,32 @@
       },
       "RecurringBillUpdateDTO": {
         "properties": {
+          "area": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "dueDay": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "minimumWageValue": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "nitNumber": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "note": {
+            "type": "string"
+          },
           "status": {
             "type": "string"
           },
@@ -2623,8 +2649,12 @@
           }
         },
         "required": [
-          "status",
-          "value"
+          "dueDay",
+          "description",
+          "value",
+          "area",
+          "note",
+          "status"
         ],
         "type": "object"
       },
@@ -7379,7 +7409,7 @@
             "description": "Not Found"
           }
         },
-        "summary": "Updates an existing recurring bill, such as marking it paid for the current period.",
+        "summary": "Updates every field of an existing recurring bill, including marking it paid for the current period.",
         "tags": [
           "Mensais"
         ]

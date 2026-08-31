@@ -329,10 +329,22 @@ public class MensaisViewModel : ViewModelBase
             saving => IsSaving = saving,
             async () =>
             {
+                var bill = BrasilBills.Concat(UkBills).FirstOrDefault(b => b.Id == id);
+                if (bill is null)
+                {
+                    return;
+                }
+
                 await _mensaisService.UpdateBillAsync(id, new RecurringBillUpdateDTO
                 {
-                    Status = EditStatus,
+                    DueDay = bill.DueDay,
+                    Description = bill.Description,
                     Value = decimal.Parse(EditValue),
+                    Area = bill.Area,
+                    Note = bill.Note,
+                    NitNumber = bill.NitNumber,
+                    MinimumWageValue = bill.MinimumWageValue,
+                    Status = EditStatus,
                 });
 
                 CloseEditForm();

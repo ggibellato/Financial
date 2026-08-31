@@ -57,7 +57,7 @@ public static class MensaisSheetImporter
 
             var bill = RecurringBill.Create(dueDay, description, value, currentArea.Value, note, nitNumber, minimumWageValue);
             var status = ResolveStatus(sheet.Cell(row, StatusColumn).GetString());
-            bill.Update(status, value);
+            bill.Update(dueDay, description, value, currentArea.Value, note, nitNumber, minimumWageValue, status);
             bills.Add(bill);
         }
 
