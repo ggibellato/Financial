@@ -1,0 +1,19 @@
+.recurring-bills-page {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.recurring-bills-page__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.recurring-bills-page__empty {
+  color: var(--text, #333);
+}

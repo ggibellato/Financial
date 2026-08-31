@@ -56,7 +56,7 @@ public sealed class MensaisController : ControllerBase
         return Ok();
     }
 
-    /// <summary>Updates an existing recurring bill, such as marking it paid for the current period.</summary>
+    /// <summary>Updates every field of an existing recurring bill, including marking it paid for the current period.</summary>
     /// <param name="id">The bill's identifier.</param>
     /// <param name="request">The new bill fields.</param>
     /// <returns>200 OK with the updated bill, 400 Bad Request if the request is invalid, or 404 Not Found if the bill doesn't exist.</returns>

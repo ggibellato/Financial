@@ -1,7 +1,6 @@
 import type { ReactElement } from 'react'
 import {
   ActiveInvestmentsPage,
-  AdminEntityPlaceholderPage,
   AnnualSummaryPage,
   AssetsPage,
   BanksPage,
@@ -18,6 +17,7 @@ import {
   MensaisPage,
   MonthlyPage,
   PortfoliosPage,
+  RecurringBillsPage,
   ReservaPage,
   ReserveBucketsPage,
 } from './lazyPages'
@@ -56,6 +56,6 @@ export const PAGE_ROUTES: PageRoute[] = [
   { path: 'admin/cashflow/credit-cards', element: <CreditCardsPage /> },
   { path: 'admin/cashflow/income-sources', element: <IncomeSourcesPage /> },
   { path: 'admin/cashflow/investment-accounts', element: <InvestmentAccountsPage /> },
-  { path: 'admin/cashflow/recurring-bills', element: <AdminEntityPlaceholderPage entityLabel="Recurring Bills" /> },
+  { path: 'admin/cashflow/recurring-bills', element: <RecurringBillsPage /> },
   { path: 'admin/cashflow/reserve-buckets', element: <ReserveBucketsPage /> },
 ]

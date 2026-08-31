@@ -244,10 +244,22 @@ export function useMensais(): MensaisData {
       return
     }
 
+    const bill = state.bills.find((b) => b.id === state.editingId)
+    if (!bill) return
+
     dispatch({ type: 'SAVE_START' })
 
     void apiClient
-      .updateMensaisBill(state.editingId, { status: state.editStatus, value })
+      .updateMensaisBill(state.editingId, {
+        dueDay: bill.dueDay,
+        description: bill.description,
+        value,
+        area: bill.area,
+        note: bill.note,
+        nitNumber: bill.nitNumber,
+        minimumWageValue: bill.minimumWageValue,
+        status: state.editStatus,
+      })
       .then(() => {
         dispatch({ type: 'SAVE_SUCCESS' })
         dispatch({ type: 'RETRY' })

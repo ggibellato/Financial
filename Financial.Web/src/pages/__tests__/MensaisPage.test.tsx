@@ -110,7 +110,16 @@ describe('MensaisPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
     await waitFor(() =>
-      expect(updateMensaisBillMock).toHaveBeenCalledWith('b1', { status: 'Paid', value: 900 }),
+      expect(updateMensaisBillMock).toHaveBeenCalledWith('b1', {
+        dueDay: 10,
+        description: 'INSS',
+        value: 900,
+        area: 'Brasil',
+        note: 'Paga via boleto',
+        nitNumber: null,
+        minimumWageValue: null,
+        status: 'Paid',
+      }),
     )
     await waitFor(() => expect(screen.getByText('Paid')).toBeInTheDocument())
   })

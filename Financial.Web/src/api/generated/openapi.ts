@@ -3261,7 +3261,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Updates an existing recurring bill, such as marking it paid for the current period. */
+        /** Updates every field of an existing recurring bill, including marking it paid for the current period. */
         put: {
             parameters: {
                 query?: never;
@@ -5842,6 +5842,14 @@ export interface components {
             value: number;
         };
         RecurringBillUpdateDTO: {
+            area: string;
+            description: string;
+            /** Format: int32 */
+            dueDay: number;
+            /** Format: double */
+            minimumWageValue?: null | number;
+            nitNumber?: null | string;
+            note: string;
             status: string;
             /** Format: double */
             value: number;

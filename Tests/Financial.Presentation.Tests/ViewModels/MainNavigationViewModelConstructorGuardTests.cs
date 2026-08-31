@@ -494,5 +494,7 @@ public class MainNavigationViewModelConstructorGuardTests
             throw new NotImplementedException();
         public bool ShowReserveBucketFormDialog(Financial.Presentation.App.ViewModels.Admin.ReserveBucketFormDialogViewModel viewModel) =>
             throw new NotImplementedException();
+        public bool ShowRecurringBillFormDialog(Financial.Presentation.App.ViewModels.Admin.RecurringBillFormDialogViewModel viewModel) =>
+            throw new NotImplementedException();
     }
 }

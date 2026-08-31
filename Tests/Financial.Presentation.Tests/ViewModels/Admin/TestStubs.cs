@@ -328,6 +328,80 @@ internal sealed class StubReserveBucketService : IReserveBucketService
     }
 }
 
+internal sealed class StubMensaisService : IMensaisService
+{
+    public List<RecurringBillDTO> Bills { get; set; } = [];
+    public RecurringBillCreateDTO? LastCreateRequest { get; private set; }
+    public (Guid Id, RecurringBillUpdateDTO Request)? LastUpdateRequest { get; private set; }
+    public Guid? LastDeletedId { get; private set; }
+    public Exception? ThrowOnCreate { get; set; }
+    public Exception? ThrowOnUpdate { get; set; }
+    public Exception? ThrowOnDelete { get; set; }
+
+    public IReadOnlyList<RecurringBillDTO> GetBills() => Bills;
+
+    public Task<RecurringBillDTO> CreateBillAsync(RecurringBillCreateDTO request)
+    {
+        LastCreateRequest = request;
+        if (ThrowOnCreate is not null)
+        {
+            throw ThrowOnCreate;
+        }
+
+        var created = new RecurringBillDTO
+        {
+            Id = Guid.NewGuid(),
+            DueDay = request.DueDay,
+            Description = request.Description,
+            Value = request.Value,
+            Area = request.Area,
+            Note = request.Note,
+            NitNumber = null,
+            MinimumWageValue = null,
+            Status = "Unset",
+        };
+        Bills.Add(created);
+        return Task.FromResult(created);
+    }
+
+    public Task<RecurringBillDTO> UpdateBillAsync(Guid id, RecurringBillUpdateDTO request)
+    {
+        LastUpdateRequest = (id, request);
+        if (ThrowOnUpdate is not null)
+        {
+            throw ThrowOnUpdate;
+        }
+
+        var updated = new RecurringBillDTO
+        {
+            Id = id,
+            DueDay = request.DueDay,
+            Description = request.Description,
+            Value = request.Value,
+            Area = request.Area,
+            Note = request.Note,
+            NitNumber = request.NitNumber,
+            MinimumWageValue = request.MinimumWageValue,
+            Status = request.Status,
+        };
+        return Task.FromResult(updated);
+    }
+
+    public Task DeleteBillAsync(Guid id)
+    {
+        LastDeletedId = id;
+        if (ThrowOnDelete is not null)
+        {
+            throw ThrowOnDelete;
+        }
+
+        Bills.RemoveAll(b => b.Id == id);
+        return Task.CompletedTask;
+    }
+
+    public Task<IReadOnlyList<RecurringBillDTO>> ResetAllToUnsetAsync() => throw new NotSupportedException();
+}
+
 internal sealed class StubInvestmentAccountService : IInvestmentAccountService
 {
     public List<InvestmentAccountDTO> InvestmentAccounts { get; set; } = [];
@@ -626,6 +700,10 @@ internal sealed class StubDialogService : IDialogService
     public ReserveBucketFormDialogViewModel? LastReserveBucketFormDialog { get; private set; }
     public Action<ReserveBucketFormDialogViewModel>? OnShowReserveBucketFormDialog { get; set; }
 
+    public bool ShowRecurringBillFormDialogResult { get; set; } = true;
+    public RecurringBillFormDialogViewModel? LastRecurringBillFormDialog { get; private set; }
+    public Action<RecurringBillFormDialogViewModel>? OnShowRecurringBillFormDialog { get; set; }
+
     public bool Confirm(string message, string caption)
     {
         LastConfirmMessage = message;
@@ -699,5 +777,12 @@ internal sealed class StubDialogService : IDialogService
         LastReserveBucketFormDialog = viewModel;
         OnShowReserveBucketFormDialog?.Invoke(viewModel);
         return ShowReserveBucketFormDialogResult;
+    }
+
+    public bool ShowRecurringBillFormDialog(RecurringBillFormDialogViewModel viewModel)
+    {
+        LastRecurringBillFormDialog = viewModel;
+        OnShowRecurringBillFormDialog?.Invoke(viewModel);
+        return ShowRecurringBillFormDialogResult;
     }
 }
