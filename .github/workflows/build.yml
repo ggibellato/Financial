@@ -62,10 +62,17 @@ jobs:
     # collection on - no --collect argument, and so no "XPlat Code Coverage" quoting to get wrong
     # on the PowerShell-hosted Windows runner. The file is the single source of truth for what is
     # excluded (generated obj/** code).
+    # Financial.Architecture.Tests project-references Financial.App (to check its dependency
+    # rules), which pulls Financial.Presentation.App into this job's test process - coverlet
+    # then instruments it here too, at whatever near-zero % incidental reflection leaves it at,
+    # even though nothing in this job behaviorally exercises it. Its real coverage is measured
+    # by the wpf job below, from Financial.Presentation.Tests; filtering it out of backend's own
+    # report (not its collection - coverlet.runsettings is unchanged) is what keeps this number
+    # honest as "backend" coverage instead of misattributing an untested-here WPF assembly to it.
     - name: Publish coverage summary
       run: |
         dotnet tool install dotnet-reportgenerator-globaltool --tool-path .tools
-        ./.tools/reportgenerator.exe "-reports:TestResults/**/coverage.cobertura.xml" "-targetdir:CoverageReport" "-reporttypes:MarkdownSummaryGithub;JsonSummary"
+        ./.tools/reportgenerator.exe "-reports:TestResults/**/coverage.cobertura.xml" "-targetdir:CoverageReport" "-reporttypes:MarkdownSummaryGithub;JsonSummary" "-assemblyfilters:+*;-Financial.Presentation.App"
         Get-Content CoverageReport/SummaryGithub.md | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
 
     # Graded, non-blocking signal: green (100%) / yellow (95-99.99%) / amber (90-94.99%) /
@@ -115,6 +122,44 @@ jobs:
       run: |
         dotnet test Tests/Financial.Presentation.Tests --configuration Release --verbosity normal --settings coverlet.runsettings --results-directory TestResults
         dotnet test Tests/Financial.Architecture.Tests --configuration Release --verbosity normal
+
+    # Only Financial.Presentation.Tests collects coverage above (Architecture.Tests doesn't pass
+    # --settings). Financial.Presentation.Tests loads its dependencies' assemblies too (backend
+    # projects Financial.App composes), so this filters the report down to Financial.Presentation.App
+    # itself - the counterpart to backend's, which deliberately excludes this same assembly to
+    # avoid double-attributing it.
+    - name: Publish coverage summary
+      run: |
+        dotnet tool install dotnet-reportgenerator-globaltool --tool-path .tools
+        ./.tools/reportgenerator.exe "-reports:TestResults/**/coverage.cobertura.xml" "-targetdir:CoverageReport" "-reporttypes:MarkdownSummaryGithub;JsonSummary" "-assemblyfilters:+Financial.Presentation.App"
+        Get-Content CoverageReport/SummaryGithub.md | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
+
+    # Graded, non-blocking signal: green (100%) / yellow (95-99.99%) / amber (90-94.99%) /
+    # red (<90%, step fails). continue-on-error keeps a red result from failing the job, so
+    # ci-status/branch protection are unaffected - see docs/ci-affected-pipeline.md.
+    - name: Check coverage threshold
+      continue-on-error: true
+      shell: pwsh
+      run: |
+        $summary = Get-Content CoverageReport/Summary.json -Raw | ConvertFrom-Json
+        $lineCoverage = $summary.summary.linecoverage
+        if ($null -eq $lineCoverage) {
+          Write-Host "::error::Could not read summary.linecoverage from CoverageReport/Summary.json"
+          "🔴 Coverage gate: could not read line coverage from the report" | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
+          exit 1
+        }
+        $lineCoverage = [math]::Round([double]$lineCoverage, 2)
+        if ($lineCoverage -ge 100) { $band = 'green'; $emoji = '🟢' }
+        elseif ($lineCoverage -ge 95) { $band = 'yellow'; $emoji = '🟡' }
+        elseif ($lineCoverage -ge 90) { $band = 'amber'; $emoji = '🟠' }
+        else { $band = 'red'; $emoji = '🔴' }
+        "$emoji WPF line coverage: $lineCoverage% ($band)" | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
+        if ($band -eq 'red') {
+          Write-Host "::error::WPF line coverage $lineCoverage% is below the 90% gate"
+          exit 1
+        } elseif ($band -ne 'green') {
+          Write-Host "::warning::WPF line coverage $lineCoverage% ($band)"
+        }
 
   web:
     needs: changes
