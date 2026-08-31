@@ -28,6 +28,7 @@ public interface ICashFlowRepository
 
     IEnumerable<InvestmentAccount> GetInvestmentAccounts();
     void AddInvestmentAccount(InvestmentAccount account);
+    void DeleteInvestmentAccount(Guid id);
 
     IEnumerable<Bank> GetBanks();
     void AddBank(Bank bank);
