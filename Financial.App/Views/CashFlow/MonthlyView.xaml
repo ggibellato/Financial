@@ -27,7 +27,7 @@
             <TabItem Header="Summary">
                 <local:MonthlySummaryView/>
             </TabItem>
-            <TabItem Header="Expense">
+            <TabItem Header="Bank expenses">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -37,7 +37,7 @@
                     <local:ExpenseSectionView Grid.Row="1" DataContext="{Binding Expense}"/>
                 </Grid>
             </TabItem>
-            <TabItem Header="Credit Card">
+            <TabItem Header="Credit Card expenses">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -57,7 +57,7 @@
                     <local:IncomeSectionView Grid.Row="1" DataContext="{Binding Income}"/>
                 </Grid>
             </TabItem>
-            <TabItem Header="Bank">
+            <TabItem Header="Bank balance adjustment">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
