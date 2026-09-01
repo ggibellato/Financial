@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
-import type { RecurringBillCreateDto, RecurringBillDto } from '../api/types'
+import type { BankDto, CategoryDto, RecurringBillCreateDto, RecurringBillDto } from '../api/types'
 import {
   currentYearMonth,
   formatMonthInputValue,
@@ -12,6 +12,14 @@ import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
 
 export type EditField = 'editStatus' | 'editValue'
 export type AddField = 'newDueDay' | 'newDescription' | 'newValue' | 'newArea' | 'newNote'
+
+export interface ExpensePromptValues {
+  description: string
+  value: number
+  date: string
+  bankId: string
+  categoryId: string
+}
 
 const AREA_KEY = 'addBill.area'
 const AREAS = ['Brasil', 'UK']
@@ -32,6 +40,8 @@ interface MensaisState {
   displayYear: number
   displayMonth: number
   bills: RecurringBillDto[]
+  banks: BankDto[]
+  categories: CategoryDto[]
   isLoading: boolean
   error: string | null
   retryCount: number
@@ -54,12 +64,16 @@ interface MensaisState {
   resetError: string | null
   updatingStatusBillId: string | null
   statusUpdateError: string | null
+  expensePromptBill: RecurringBillDto | null
+  isCreatingExpense: boolean
+  expenseCreateError: string | null
+  expenseCreatedForRetry: boolean
 }
 
 type MensaisAction =
   | { type: 'SET_DISPLAY_MONTH'; payload: { year: number; month: number } }
   | { type: 'FETCH_START' }
-  | { type: 'FETCH_SUCCESS'; payload: RecurringBillDto[] }
+  | { type: 'FETCH_SUCCESS'; payload: { bills: RecurringBillDto[]; banks: BankDto[]; categories: CategoryDto[] } }
   | { type: 'FETCH_ERROR'; payload: string }
   | { type: 'RETRY' }
   | { type: 'SHOW_EDIT_FORM'; payload: RecurringBillDto }
@@ -83,6 +97,11 @@ type MensaisAction =
   | { type: 'UPDATE_STATUS_START'; payload: string }
   | { type: 'UPDATE_STATUS_SUCCESS'; payload: RecurringBillDto }
   | { type: 'UPDATE_STATUS_ERROR'; payload: string }
+  | { type: 'OPEN_EXPENSE_PROMPT'; payload: RecurringBillDto }
+  | { type: 'CLOSE_EXPENSE_PROMPT' }
+  | { type: 'EXPENSE_CREATE_START' }
+  | { type: 'EXPENSE_CREATE_SUCCESS' }
+  | { type: 'EXPENSE_CREATE_ERROR'; payload: string }
 
 const { year: DEFAULT_YEAR, month: DEFAULT_MONTH } = currentYearMonth()
 
@@ -90,6 +109,8 @@ const INITIAL_STATE: MensaisState = {
   displayYear: DEFAULT_YEAR,
   displayMonth: DEFAULT_MONTH,
   bills: [],
+  banks: [],
+  categories: [],
   isLoading: true,
   error: null,
   retryCount: 0,
@@ -109,6 +130,10 @@ const INITIAL_STATE: MensaisState = {
   resetError: null,
   updatingStatusBillId: null,
   statusUpdateError: null,
+  expensePromptBill: null,
+  isCreatingExpense: false,
+  expenseCreateError: null,
+  expenseCreatedForRetry: false,
 }
 
 function reducer(state: MensaisState, action: MensaisAction): MensaisState {
@@ -118,7 +143,13 @@ function reducer(state: MensaisState, action: MensaisAction): MensaisState {
     case 'FETCH_START':
       return { ...state, isLoading: true, error: null }
     case 'FETCH_SUCCESS':
-      return { ...state, isLoading: false, bills: action.payload }
+      return {
+        ...state,
+        isLoading: false,
+        bills: action.payload.bills,
+        banks: action.payload.banks,
+        categories: action.payload.categories,
+      }
     case 'FETCH_ERROR':
       return { ...state, isLoading: false, error: action.payload }
     case 'RETRY':
@@ -172,9 +203,35 @@ function reducer(state: MensaisState, action: MensaisAction): MensaisState {
         ...state,
         updatingStatusBillId: null,
         bills: state.bills.map((b) => (b.id === action.payload.id ? action.payload : b)),
+        ...(state.expensePromptBill?.id === action.payload.id
+          ? { expensePromptBill: null, isCreatingExpense: false, expenseCreateError: null, expenseCreatedForRetry: false }
+          : null),
       }
     case 'UPDATE_STATUS_ERROR':
       return { ...state, updatingStatusBillId: null, statusUpdateError: action.payload }
+    case 'OPEN_EXPENSE_PROMPT':
+      return {
+        ...state,
+        expensePromptBill: action.payload,
+        expenseCreateError: null,
+        statusUpdateError: null,
+        expenseCreatedForRetry: false,
+      }
+    case 'CLOSE_EXPENSE_PROMPT':
+      return {
+        ...state,
+        expensePromptBill: null,
+        isCreatingExpense: false,
+        expenseCreateError: null,
+        expenseCreatedForRetry: false,
+        statusUpdateError: null,
+      }
+    case 'EXPENSE_CREATE_START':
+      return { ...state, isCreatingExpense: true, expenseCreateError: null }
+    case 'EXPENSE_CREATE_SUCCESS':
+      return { ...state, isCreatingExpense: false, expenseCreatedForRetry: true }
+    case 'EXPENSE_CREATE_ERROR':
+      return { ...state, isCreatingExpense: false, expenseCreateError: action.payload }
     default:
       return state
   }
@@ -218,6 +275,15 @@ export interface MensaisData {
   updatingStatusBillId: string | null
   statusUpdateError: string | null
   updateBillStatus: (id: string, status: string) => void
+  banks: BankDto[]
+  categories: CategoryDto[]
+  expensePromptBill: RecurringBillDto | null
+  isCreatingExpense: boolean
+  expenseCreateError: string | null
+  expenseCreatedForRetry: boolean
+  confirmExpensePrompt: (values: ExpensePromptValues) => void
+  skipOrRetryExpensePrompt: () => void
+  closeExpensePrompt: () => void
 }
 
 export function useMensais(): MensaisData {
@@ -225,9 +291,8 @@ export function useMensais(): MensaisData {
 
   useEffect(() => {
     dispatch({ type: 'FETCH_START' })
-    void apiClient
-      .getMensaisBills()
-      .then((bills) => dispatch({ type: 'FETCH_SUCCESS', payload: bills }))
+    void Promise.all([apiClient.getMensaisBills(), apiClient.getBanks(), apiClient.getCategories()])
+      .then(([bills, banks, categories]) => dispatch({ type: 'FETCH_SUCCESS', payload: { bills, banks, categories } }))
       .catch((err: unknown) => {
         dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, 'Unable to load Mensais data') })
       })
@@ -373,19 +438,82 @@ export function useMensais(): MensaisData {
       })
   }
 
-  function updateBillStatus(id: string, status: string) {
+  function performStatusUpdate(id: string, status: string) {
     dispatch({ type: 'UPDATE_STATUS_START', payload: id })
 
-    void apiClient
+    return apiClient
       .updateMensaisBillStatus(id, { status })
-      .then((bill) => dispatch({ type: 'UPDATE_STATUS_SUCCESS', payload: bill }))
+      .then((bill) => {
+        dispatch({ type: 'UPDATE_STATUS_SUCCESS', payload: bill })
+      })
       .catch((err: unknown) => {
         dispatch({
           type: 'UPDATE_STATUS_ERROR',
           payload: getErrorMessage(err, 'Failed to update status'),
         })
+        throw err
       })
   }
+
+  function updateBillStatus(id: string, status: string) {
+    const bill = state.bills.find((b) => b.id === id)
+    const isUkPaidTransition = bill?.area === 'UK' && status === 'Paid' && bill.status !== 'Paid'
+
+    if (bill && isUkPaidTransition) {
+      dispatch({ type: 'OPEN_EXPENSE_PROMPT', payload: bill })
+      return
+    }
+
+    void performStatusUpdate(id, status).catch(() => {
+      // Error already recorded in statusUpdateError via performStatusUpdate's own dispatch.
+    })
+  }
+
+  function confirmExpensePrompt(values: ExpensePromptValues) {
+    const bill = state.expensePromptBill
+    if (!bill) return
+
+    dispatch({ type: 'EXPENSE_CREATE_START' })
+
+    void apiClient
+      .createExpense({
+        date: values.date,
+        description: values.description,
+        value: values.value,
+        categoryId: values.categoryId,
+        paymentSourceBankId: values.bankId,
+        creditCardId: null,
+        invoiceDate: null,
+        roundUpAmount: null,
+        countsAsTithe: true,
+      })
+      .then(async () => {
+        dispatch({ type: 'EXPENSE_CREATE_SUCCESS' })
+        try {
+          await performStatusUpdate(bill.id, 'Paid')
+        } catch {
+          // Error already recorded in statusUpdateError; the prompt switches to retry-only mode
+          // because expenseCreatedForRetry is now true, and must not create a second Expense.
+        }
+      })
+      .catch((err: unknown) => {
+        dispatch({
+          type: 'EXPENSE_CREATE_ERROR',
+          payload: getErrorMessage(err, 'Failed to create the expense'),
+        })
+      })
+  }
+
+  function skipOrRetryExpensePrompt() {
+    const bill = state.expensePromptBill
+    if (!bill) return
+
+    void performStatusUpdate(bill.id, 'Paid').catch(() => {
+      // Error already recorded in statusUpdateError; the prompt stays open for another attempt.
+    })
+  }
+
+  const closeExpensePrompt = useCallback(() => dispatch({ type: 'CLOSE_EXPENSE_PROMPT' }), [])
 
   const brasilBills = useMemo(() => state.bills.filter((b) => b.area === 'Brasil'), [state.bills])
   const ukBills = useMemo(() => state.bills.filter((b) => b.area === 'UK'), [state.bills])
@@ -428,5 +556,14 @@ export function useMensais(): MensaisData {
     updatingStatusBillId: state.updatingStatusBillId,
     statusUpdateError: state.statusUpdateError,
     updateBillStatus,
+    banks: state.banks,
+    categories: state.categories,
+    expensePromptBill: state.expensePromptBill,
+    isCreatingExpense: state.isCreatingExpense,
+    expenseCreateError: state.expenseCreateError,
+    expenseCreatedForRetry: state.expenseCreatedForRetry,
+    confirmExpensePrompt,
+    skipOrRetryExpensePrompt,
+    closeExpensePrompt,
   }
 }

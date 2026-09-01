@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import MensaisPage from '../MensaisPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { RecurringBillDto } from '../../api/types'
+import type { BankDto, CategoryDto, RecurringBillDto } from '../../api/types'
 
 const {
   getMensaisBillsMock,
@@ -11,6 +11,9 @@ const {
   updateMensaisBillStatusMock,
   deleteMensaisBillMock,
   resetMensaisToUnsetMock,
+  getBanksMock,
+  getCategoriesMock,
+  createExpenseMock,
 } = vi.hoisted(() => ({
   getMensaisBillsMock: vi.fn<FinancialApiClient['getMensaisBills']>(),
   createMensaisBillMock: vi.fn<FinancialApiClient['createMensaisBill']>(),
@@ -18,6 +21,9 @@ const {
   updateMensaisBillStatusMock: vi.fn<FinancialApiClient['updateMensaisBillStatus']>(),
   deleteMensaisBillMock: vi.fn<FinancialApiClient['deleteMensaisBill']>(),
   resetMensaisToUnsetMock: vi.fn<FinancialApiClient['resetMensaisToUnset']>(),
+  getBanksMock: vi.fn<FinancialApiClient['getBanks']>(),
+  getCategoriesMock: vi.fn<FinancialApiClient['getCategories']>(),
+  createExpenseMock: vi.fn<FinancialApiClient['createExpense']>(),
 }))
 
 vi.mock('../../api/financialApiClient', () => ({
@@ -28,6 +34,9 @@ vi.mock('../../api/financialApiClient', () => ({
     updateMensaisBillStatus: updateMensaisBillStatusMock,
     deleteMensaisBill: deleteMensaisBillMock,
     resetMensaisToUnset: resetMensaisToUnsetMock,
+    getBanks: getBanksMock,
+    getCategories: getCategoriesMock,
+    createExpense: createExpenseMock,
   } as Partial<FinancialApiClient>,
 }))
 
@@ -56,6 +65,21 @@ const BILLS: RecurringBillDto[] = [
   },
 ]
 
+const BANKS: BankDto[] = [
+  {
+    id: 'bank-1',
+    name: 'Barclays',
+    roundUpEnabled: false,
+    openingBalance: 0,
+    openingBalanceDate: '2026-01-01',
+    hasReferences: false,
+  },
+]
+
+const CATEGORIES: CategoryDto[] = [
+  { id: 'cat-1', name: 'Bills', active: true, isInvestment: false, isTithe: false, hasReferences: false },
+]
+
 describe('MensaisPage', () => {
   beforeEach(() => {
     getMensaisBillsMock.mockReset()
@@ -63,6 +87,11 @@ describe('MensaisPage', () => {
     updateMensaisBillMock.mockReset()
     updateMensaisBillStatusMock.mockReset()
     deleteMensaisBillMock.mockReset()
+    getBanksMock.mockReset()
+    getCategoriesMock.mockReset()
+    createExpenseMock.mockReset()
+    getBanksMock.mockResolvedValue(BANKS)
+    getCategoriesMock.mockResolvedValue(CATEGORIES)
     resetMensaisToUnsetMock.mockReset()
     getMensaisBillsMock.mockResolvedValue(BILLS)
   })
