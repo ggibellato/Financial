@@ -1,17 +1,19 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useState, lazy, Suspense } from 'react'
 import { Button } from '@fluentui/react-components'
 import { ArrowMoveRegular, CopyRegular, DeleteRegular } from '@fluentui/react-icons'
 import { useSelectedNode } from '../context/SelectedNodeContext'
 import { usePortfolioDeletion } from '../hooks/usePortfolioDeletion'
 import { POSITION_TYPE_STATUS_CLASS } from '../utils/positionType'
-import AggregatedSummaryTab from './AggregatedSummaryTab'
 import AssetSummaryTab from './AssetSummaryTab'
-import PortfolioSummaryTab from './PortfolioSummaryTab'
-import CreditsTab from './CreditsTab'
 import MoveAssetDialog from './MoveAssetDialog'
-import TransactionsTab from './TransactionsTab'
-import PriceHistoryTab from './PriceHistoryTab'
+import LoadingState from './LoadingState'
 import './DetailPanel.css'
+
+const AggregatedSummaryTab = lazy(() => import('./AggregatedSummaryTab'))
+const PortfolioSummaryTab = lazy(() => import('./PortfolioSummaryTab'))
+const CreditsTab = lazy(() => import('./CreditsTab'))
+const TransactionsTab = lazy(() => import('./TransactionsTab'))
+const PriceHistoryTab = lazy(() => import('./PriceHistoryTab'))
 
 type TabId = 'summary' | 'transactions' | 'credits' | 'priceHistory'
 
@@ -161,12 +163,14 @@ export default function DetailPanel() {
       </div>
 
       <div className="detail-panel__content">
-        {activeTab === 'summary' && isAsset && <AssetSummaryTab />}
-        {activeTab === 'summary' && isPortfolio && <PortfolioSummaryTab />}
-        {activeTab === 'summary' && !isAsset && !isPortfolio && <AggregatedSummaryTab />}
-        {activeTab === 'transactions' && <TransactionsTab />}
-        {activeTab === 'credits' && <CreditsTab />}
-        {activeTab === 'priceHistory' && isAsset && <PriceHistoryTab />}
+        <Suspense fallback={<LoadingState />}>
+          {activeTab === 'summary' && isAsset && <AssetSummaryTab />}
+          {activeTab === 'summary' && isPortfolio && <PortfolioSummaryTab />}
+          {activeTab === 'summary' && !isAsset && !isPortfolio && <AggregatedSummaryTab />}
+          {activeTab === 'transactions' && <TransactionsTab />}
+          {activeTab === 'credits' && <CreditsTab />}
+          {activeTab === 'priceHistory' && isAsset && <PriceHistoryTab />}
+        </Suspense>
       </div>
     </div>
   )
