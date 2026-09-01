@@ -1,4 +1,5 @@
 using Financial.Presentation.App.ViewModels.Admin;
+using Financial.Presentation.App.ViewModels.CashFlow;
 using Financial.Presentation.App.ViewModels.Investment;
 
 namespace Financial.Presentation.App.Services;
@@ -22,4 +23,5 @@ public interface IDialogService
     bool ShowInvestmentAccountFormDialog(InvestmentAccountFormDialogViewModel viewModel);
     bool ShowReserveBucketFormDialog(ReserveBucketFormDialogViewModel viewModel);
     bool ShowRecurringBillFormDialog(RecurringBillFormDialogViewModel viewModel);
+    bool ShowUkExpensePromptDialog(UkExpensePromptDialogViewModel viewModel);
 }
