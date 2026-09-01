@@ -2,6 +2,7 @@ using ClosedXML.Excel;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.Incomes;
+using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.IncomeSources;
 using FluentAssertions;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.Migrations.Incomes;
@@ -84,5 +85,50 @@ public class IncomeMigratorTests
         var summary = IncomeMigrator.Migrate(data);
 
         summary.EntriesImportedCount.Should().Be(0);
+    }
+
+    /// <summary>
+    /// Reproduces the real Program.cs precondition on a first-ever run against a fresh data file
+    /// (no existing IncomeSources carried over): IncomeSourceMigrator must seed the tracked income
+    /// sources before IncomeMigrator runs, or every row silently fails to resolve and zero incomes
+    /// import - with no error or warning of any kind. This test drives both migrators in the same
+    /// order Program.cs now uses, against a fresh CashFlowData, to lock that ordering in.
+    /// </summary>
+    [Fact]
+    public void Migrate_OnFreshDataWithIncomeSourceMigratorRunFirst_BackfillsSuccessfully()
+    {
+        using var workbook = new XLWorkbook();
+        var sheet = workbook.AddWorksheet("Jul2026");
+        sheet.Cell(3, 10).Value = "Salario Ariana";
+        sheet.Cell(3, 11).Value = 2595.39;
+        sheet.Cell(3, 12).Value = 1878.74;
+        var data = CashFlowData.Create();
+        data.AddBank(Bank.Create("Barclays", roundUpEnabled: false));
+
+        IncomeSourceMigrator.Migrate(data);
+        var summary = IncomeMigrator.Migrate(data, workbook);
+
+        summary.EntriesImportedCount.Should().Be(1);
+        data.Incomes.Should().ContainSingle(i => i.IncomeSource.Name == "Ariana" && i.Bank!.Name == "Barclays");
+    }
+
+    /// <summary>The bug this guards against: running IncomeMigrator before IncomeSourceMigrator on
+    /// a fresh data file silently imports nothing, since no row's source name can resolve.</summary>
+    [Fact]
+    public void Migrate_OnFreshDataWithIncomeMigratorRunFirst_SilentlyImportsNothing()
+    {
+        using var workbook = new XLWorkbook();
+        var sheet = workbook.AddWorksheet("Jul2026");
+        sheet.Cell(3, 10).Value = "Salario Ariana";
+        sheet.Cell(3, 11).Value = 2595.39;
+        sheet.Cell(3, 12).Value = 1878.74;
+        var data = CashFlowData.Create();
+        data.AddBank(Bank.Create("Barclays", roundUpEnabled: false));
+
+        var summary = IncomeMigrator.Migrate(data, workbook);
+        IncomeSourceMigrator.Migrate(data);
+
+        summary.EntriesImportedCount.Should().Be(0);
+        data.Incomes.Should().BeEmpty();
     }
 }

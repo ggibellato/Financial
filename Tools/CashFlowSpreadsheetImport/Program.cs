@@ -115,6 +115,13 @@ ReserveBucketMigrator.Migrate(data);
 CreditCardMigrator.Migrate(data);
 CategoryMigrator.Migrate(data);
 
+// Must also run before IncomeMigrator below (in the always-run pass): on a from-scratch run (no
+// existing data file to carry income sources over from), data.IncomeSources is still empty at
+// this point, so IncomeBackfillImporter can't resolve any row's source and silently imports zero
+// incomes - no error, no warning. Seeding is idempotent, so re-running it at the end (below) to
+// audit the final imported income set - including what this run's backfill just added - is safe.
+IncomeSourceMigrator.Migrate(data);
+
 using var workbook = new XLWorkbook(workbookPath);
 
 if (mensaisOnly)
@@ -139,8 +146,10 @@ else
 var bankSummary = BankMigrator.Migrate(data);
 var bankOpeningBalanceSummary = BankOpeningBalanceMigrator.Migrate(data, today);
 var incomeSummary = IncomeMigrator.Migrate(data, workbook);
-// Runs after IncomeMigrator so its audit of Income.IncomeSource values covers backfilled
-// entries too, not just what was already on the data file before this run.
+// Runs after IncomeMigrator so its audit of Income.IncomeSource values covers this run's
+// backfilled entries too, not just what was already on the data file before this run. The early
+// seed above (before IncomeMigrator) is what actually makes the backfill able to resolve rows;
+// re-running here (idempotent) is only to get a complete final audit.
 var incomeSourceSummary = IncomeSourceMigrator.Migrate(data);
 var creditCardSummary = CreditCardMigrator.Migrate(data);
 var categorySummary = CategoryMigrator.Migrate(data);
