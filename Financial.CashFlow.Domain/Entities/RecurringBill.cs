@@ -69,6 +69,8 @@ public class RecurringBill
 
     public void ResetToUnset() => Status = BillStatus.Unset;
 
+    public void SetStatus(BillStatus status) => Status = status;
+
     private static void Validate(int dueDay, string description)
     {
         if (dueDay < MinDueDay || dueDay > MaxDueDay)

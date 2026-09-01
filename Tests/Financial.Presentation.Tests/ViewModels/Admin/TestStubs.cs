@@ -399,6 +399,8 @@ internal sealed class StubMensaisService : IMensaisService
         return Task.CompletedTask;
     }
 
+    public Task<RecurringBillDTO> UpdateBillStatusAsync(Guid id, RecurringBillStatusUpdateDTO request) => throw new NotSupportedException();
+
     public Task<IReadOnlyList<RecurringBillDTO>> ResetAllToUnsetAsync() => throw new NotSupportedException();
 }
 

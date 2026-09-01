@@ -130,4 +130,37 @@ public class RecurringBillTests
         bill.Status.Should().Be(BillStatus.Unset);
         bill.Value.Should().Be(900m);
     }
+
+    [Theory]
+    [InlineData(BillStatus.Unset)]
+    [InlineData(BillStatus.Scheduled)]
+    [InlineData(BillStatus.Paid)]
+    public void SetStatus_ChangesStatusOnly_LeavesOtherFieldsUntouched(BillStatus target)
+    {
+        var bill = RecurringBill.Create(10, "Council Tax", 120m, Area.UK, "Direct debit", null, null);
+
+        bill.SetStatus(target);
+
+        using (new AssertionScope())
+        {
+            bill.Status.Should().Be(target);
+            bill.DueDay.Should().Be(10);
+            bill.Description.Should().Be("Council Tax");
+            bill.Value.Should().Be(120m);
+            bill.Area.Should().Be(Area.UK);
+            bill.Note.Should().Be("Direct debit");
+            bill.NitNumber.Should().BeNull();
+            bill.MinimumWageValue.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public void SetStatus_ToCurrentStatus_IsANoOpAndSucceeds()
+    {
+        var bill = RecurringBill.Create(10, "Council Tax", 120m, Area.UK, string.Empty, null, null);
+
+        bill.SetStatus(BillStatus.Unset);
+
+        bill.Status.Should().Be(BillStatus.Unset);
+    }
 }

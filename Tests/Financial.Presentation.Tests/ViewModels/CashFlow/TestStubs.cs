@@ -535,6 +535,19 @@ internal sealed class StubMensaisService : IMensaisService
         return Task.FromResult(updated);
     }
 
+    public Task<RecurringBillDTO> UpdateBillStatusAsync(Guid id, RecurringBillStatusUpdateDTO request)
+    {
+        var existing = Bills.First(b => b.Id == id);
+        var updated = new RecurringBillDTO
+        {
+            Id = id, DueDay = existing.DueDay, Description = existing.Description,
+            Value = existing.Value, Area = existing.Area, Note = existing.Note,
+            NitNumber = existing.NitNumber, MinimumWageValue = existing.MinimumWageValue, Status = request.Status,
+        };
+        Bills[Bills.IndexOf(existing)] = updated;
+        return Task.FromResult(updated);
+    }
+
     public Task<IReadOnlyList<RecurringBillDTO>> ResetAllToUnsetAsync()
     {
         ResetAllToUnsetCallCount++;
