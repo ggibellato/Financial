@@ -328,6 +328,19 @@ public class TitheServiceTests
     }
 
     [Fact]
+    public async Task UpdateCarryForwardInclusionAsync_WhenSaveFails_PropagatesException()
+    {
+        _repository.Incomes.Add(Income.Create(new DateOnly(ThisMonth.Year, ThisMonth.Month, 1), Source("Gleison"), null, 1000m, Barclays));
+        await _sut.GetTitheSummaryAsync(ThisMonth.Year, ThisMonth.Month);
+        await _sut.GetTitheSummaryAsync(NextMonth.Year, NextMonth.Month);
+        _repository.ThrowOnNextSave = true;
+
+        var act = async () => await _sut.UpdateCarryForwardInclusionAsync(NextMonth.Year, NextMonth.Month, false);
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+    }
+
+    [Fact]
     public async Task UpdateCarryForwardInclusionAsync_NoRecordForMonth_ThrowsArgumentException()
     {
         var act = async () => await _sut.UpdateCarryForwardInclusionAsync(ThisMonth.Year, ThisMonth.Month, false);
