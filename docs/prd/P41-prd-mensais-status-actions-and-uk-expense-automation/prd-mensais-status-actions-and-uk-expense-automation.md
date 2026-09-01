@@ -261,15 +261,15 @@ graph TD
 - [ ] The control is keyboard and screen-reader accessible per existing WPF conventions.
 
 ### F04. UK Paid-to-Expense Prompt (React)
-- [ ] Marking a UK bill Paid via F02's control (from Unset or Scheduled) opens the Expense-generation dialog before the status change is committed.
-- [ ] Marking a Brasil bill Paid via F02's control never opens this dialog.
-- [ ] Marking any bill (UK or Brasil) Paid via the existing edit-form drawer never opens this dialog.
-- [ ] The dialog pre-fills Description, Value, and Date from the bill and today's date, respectively, and requires Bank and Category to be selected before Confirm is enabled.
-- [ ] Choosing Confirm creates a standalone Expense (no link to the bill) and commits the bill's status to Paid.
-- [ ] Choosing Skip commits the bill's status to Paid without creating an Expense.
-- [ ] Choosing Cancel leaves both the bill's status and the Expense ledger unchanged.
-- [ ] Later changing the bill's status away from Paid does not modify, delete, or reference the previously generated Expense.
-- [ ] If Expense creation succeeds but the status-update call fails, the dialog shows an error and offers a status-only retry, and does not create a second Expense on retry.
+- [x] Marking a UK bill Paid via F02's control (from Unset or Scheduled) opens the Expense-generation dialog before the status change is committed.
+- [x] Marking a Brasil bill Paid via F02's control never opens this dialog.
+- [x] Marking any bill (UK or Brasil) Paid via the existing edit-form drawer never opens this dialog.
+- [x] The dialog pre-fills Description, Value, and Date from the bill and today's date, respectively, and requires Bank and Category to be selected before Confirm is enabled.
+- [x] Choosing Confirm creates a standalone Expense (no link to the bill) and commits the bill's status to Paid.
+- [x] Choosing Skip commits the bill's status to Paid without creating an Expense.
+- [x] Choosing Cancel leaves both the bill's status and the Expense ledger unchanged.
+- [x] Later changing the bill's status away from Paid does not modify, delete, or reference the previously generated Expense.
+- [x] If Expense creation succeeds but the status-update call fails, the dialog shows an error and offers a status-only retry, and does not create a second Expense on retry.
 
 ### F05. UK Paid-to-Expense Prompt (WPF)
 - [ ] The WPF Mensais grid surfaces the same trigger condition, pre-filled fields, and Confirm/Skip/Cancel outcomes as F04.
@@ -278,5 +278,5 @@ graph TD
 ### Cross-Feature Integration
 - [x] A status change made through F02's control is persisted through F01's endpoint and reflected on a subsequent full page reload of the Mensais page.
 - [x] A status change made through F03's control is persisted through F01's endpoint and reflected on a subsequent reload of the WPF Mensais view.
-- [ ] A transition into Paid on a UK bill, captured as F02's status-transition signal, correctly opens F04's dialog with the correct bill id, area, and value carried through.
+- [x] A transition into Paid on a UK bill, captured as F02's status-transition signal, correctly opens F04's dialog with the correct bill id, area, and value carried through.
 - [ ] A transition into Paid on a UK bill, captured as F03's status-transition signal, correctly opens F05's dialog with the correct bill id, area, and value carried through.
