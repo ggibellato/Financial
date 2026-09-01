@@ -256,8 +256,8 @@ graph TD
 - [x] The control is operable by keyboard (Tab to focus, Enter/Space to open, arrow keys to navigate, Enter to select).
 
 ### F03. Mensais Inline Status Control (WPF)
-- [ ] The WPF Mensais grid shows the same colored tag-with-chevron status control as React, with equivalent behavior on selection, success, and failure.
-- [ ] The existing `EditBillFormView` status editing path is unchanged and still functions.
+- [x] The WPF Mensais grid shows the same colored tag-with-chevron status control as React, with equivalent behavior on selection, success, and failure.
+- [x] The existing `EditBillFormView` status editing path is unchanged and still functions.
 - [ ] The control is keyboard and screen-reader accessible per existing WPF conventions.
 
 ### F04. UK Paid-to-Expense Prompt (React)
@@ -277,6 +277,6 @@ graph TD
 
 ### Cross-Feature Integration
 - [x] A status change made through F02's control is persisted through F01's endpoint and reflected on a subsequent full page reload of the Mensais page.
-- [ ] A status change made through F03's control is persisted through F01's endpoint and reflected on a subsequent reload of the WPF Mensais view.
+- [x] A status change made through F03's control is persisted through F01's endpoint and reflected on a subsequent reload of the WPF Mensais view.
 - [ ] A transition into Paid on a UK bill, captured as F02's status-transition signal, correctly opens F04's dialog with the correct bill id, area, and value carried through.
 - [ ] A transition into Paid on a UK bill, captured as F03's status-transition signal, correctly opens F05's dialog with the correct bill id, area, and value carried through.
