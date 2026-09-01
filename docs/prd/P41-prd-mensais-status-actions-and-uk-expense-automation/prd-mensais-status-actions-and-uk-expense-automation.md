@@ -242,10 +242,10 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Mensais Status Quick-Change Endpoint
-- [ ] Calling the status endpoint with a valid bill id and one of `Unset`/`Scheduled`/`Paid` updates only that bill's `Status` field, leaving all other fields unchanged.
-- [ ] Calling it with a non-existent bill id returns `404 Not Found`.
-- [ ] Calling it with a value outside the 3 valid statuses returns `400 Bad Request` naming the accepted values.
-- [ ] The existing `PUT /mensais/{id}` endpoint's behavior, including its own status handling, is unchanged after this endpoint is added.
+- [x] Calling the status endpoint with a valid bill id and one of `Unset`/`Scheduled`/`Paid` updates only that bill's `Status` field, leaving all other fields unchanged.
+- [x] Calling it with a non-existent bill id returns `404 Not Found`.
+- [x] Calling it with a value outside the 3 valid statuses returns `400 Bad Request` naming the accepted values.
+- [x] The existing `PUT /mensais/{id}` endpoint's behavior, including its own status handling, is unchanged after this endpoint is added.
 
 ### F02. Mensais Inline Status Control (React)
 - [ ] Each bill row in both the Brasil and UK tables shows its status as a colored tag with a chevron instead of plain text.
