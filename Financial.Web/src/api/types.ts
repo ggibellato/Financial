@@ -105,6 +105,7 @@ export type ReserveMovementUpdateDto = Schema<'ReserveMovementUpdateDTO'>
 export type RecurringBillDto = Schema<'RecurringBillDTO'>
 export type RecurringBillCreateDto = Schema<'RecurringBillCreateDTO'>
 export type RecurringBillUpdateDto = Schema<'RecurringBillUpdateDTO'>
+export type RecurringBillStatusUpdateDto = Schema<'RecurringBillStatusUpdateDTO'>
 export type MaeLedgerEntryDto = Schema<'MaeLedgerEntryDTO'>
 export type MaeLedgerEntryCreateDto = Schema<'MaeLedgerEntryCreateDTO'>
 export type MaeLedgerTotalsDto = Schema<'MaeLedgerTotalsDTO'>
