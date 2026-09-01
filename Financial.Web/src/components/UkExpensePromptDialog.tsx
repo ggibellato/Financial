@@ -8,14 +8,36 @@ import {
   DialogTitle,
   Field,
   Input,
+  makeStyles,
   MessageBar,
   MessageBarBody,
   Select,
+  tokens,
 } from '@fluentui/react-components'
 import type { BankDto, CategoryDto, RecurringBillDto } from '../api/types'
 import type { ExpensePromptValues } from '../hooks/useMensais'
 import { todayIsoDate } from '../utils/formatters'
 import { useFormPanelStyles } from './formPanelStyles'
+
+// formPanelStyles' shared grid is 4 columns, sized for pages with more fields
+// than this dialog has. At 4 columns, native <input type="number"> (spin
+// buttons) and <input type="date"> render wider than a quarter of even a
+// widened DialogSurface, overflowing their grid cell and forcing DialogContent
+// into its own horizontal scrollbar. 3 columns gives each field enough room,
+// and the widened surface gives that a comfortable margin.
+const useDialogStyles = makeStyles({
+  surface: {
+    maxWidth: '640px',
+  },
+  grid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+    gap: tokens.spacingVerticalM,
+    '@media (max-width: 639px)': {
+      gridTemplateColumns: '1fr',
+    },
+  },
+})
 
 interface UkExpensePromptDialogProps {
   bill: RecurringBillDto
@@ -47,6 +69,7 @@ export default function UkExpensePromptDialog({
   onCancel,
 }: UkExpensePromptDialogProps) {
   const styles = useFormPanelStyles()
+  const dialogStyles = useDialogStyles()
   const [description, setDescription] = useState(bill.description)
   const [value, setValue] = useState(String(bill.value))
   const [date, setDate] = useState(todayIsoDate())
@@ -70,7 +93,7 @@ export default function UkExpensePromptDialog({
 
   return (
     <Dialog open onOpenChange={(_, data) => { if (!data.open) onCancel() }}>
-      <DialogSurface aria-describedby={undefined}>
+      <DialogSurface aria-describedby={undefined} className={dialogStyles.surface}>
         <DialogBody>
           <DialogTitle>Generate expense for this payment?</DialogTitle>
           <DialogContent>
@@ -83,7 +106,7 @@ export default function UkExpensePromptDialog({
                 </MessageBar>
               </>
             ) : (
-              <div className={styles.grid}>
+              <div className={dialogStyles.grid}>
                 <Field label="Date" required>
                   <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} disabled={isBusy} />
                 </Field>
