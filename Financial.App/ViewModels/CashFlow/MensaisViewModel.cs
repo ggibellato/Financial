@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
+using Financial.Presentation.App.Controls;
 using Microsoft.Extensions.Logging;
 using static Financial.Presentation.App.Helpers.ObservableCollectionHelper;
 
@@ -82,6 +83,7 @@ public class MensaisViewModel : ViewModelBase
         InitializeAddBillCommands();
         InitializeEditDeleteCommands();
         InitializeResetCommand();
+        InitializeChangeStatusCommand();
 
         _ = RefreshAsync();
     }
@@ -375,6 +377,59 @@ public class MensaisViewModel : ViewModelBase
         {
             _logger.LogError("Mensais delete bill failed with {ErrorType}", ex.GetType().Name);
             DeleteError = ex.Message;
+        }
+    }
+
+    #endregion
+
+    #region Change Status
+
+    private string? _statusChangeError;
+
+    public string? StatusChangeError
+    {
+        get => _statusChangeError;
+        private set => SetProperty(ref _statusChangeError, value);
+    }
+
+    public RelayCommand<StatusChangeRequest> ChangeStatusCommand { get; private set; } = null!;
+
+    private void InitializeChangeStatusCommand()
+    {
+        ChangeStatusCommand = new RelayCommand<StatusChangeRequest>(async request => await ChangeStatusAsync(request));
+    }
+
+    internal async Task ChangeStatusAsync(StatusChangeRequest? request)
+    {
+        if (request?.Bill is not RecurringBillDTO bill)
+        {
+            return;
+        }
+
+        StatusChangeError = null;
+
+        try
+        {
+            var updated = await _mensaisService.UpdateBillStatusAsync(
+                bill.Id, new RecurringBillStatusUpdateDTO { Status = request.NewStatus });
+
+            var brasilIndex = BrasilBills.IndexOf(bill);
+            if (brasilIndex >= 0)
+            {
+                BrasilBills[brasilIndex] = updated;
+                return;
+            }
+
+            var ukIndex = UkBills.IndexOf(bill);
+            if (ukIndex >= 0)
+            {
+                UkBills[ukIndex] = updated;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("Mensais change-status failed with {ErrorType}", ex.GetType().Name);
+            StatusChangeError = ex.Message;
         }
     }
 

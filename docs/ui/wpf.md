@@ -189,3 +189,20 @@ Do not use an old WPF pattern as the reason to diverge from the React target.
   you actually convert; a `Delete` confirmation can keep using the same
   `Window` in read-only mode, since confirmations are exempt from the
   inline-form rule.
+- `ui:Flyout` content (and `Wpf.Ui.Controls.SplitButton.Flyout`, which hosts
+  the same kind of content) is a `Popup`-rooted visual tree that does **not**
+  inherit the outer `DataContext` — a plain `{Binding Foo}` inside it silently
+  resolves against nothing. `HelpFlyoutButton.xaml` and
+  `Controls/StatusSplitButton.xaml` both work around this by naming the
+  hosting `UserControl` (`x:Name="root"`) and binding everything inside the
+  Flyout back to it explicitly (`{Binding Foo, ElementName=root}`), the same
+  way `BillTableView.xaml` already escapes `DataGridTemplateColumn` cell
+  scoping. Use this pattern for any new Flyout content instead of assuming
+  ambient `DataContext` reaches inside it.
+- To show a small "is this the currently selected one" checked/disabled state
+  in a repeated item template (a Flyout's status list, a sidebar's nav item),
+  reuse the existing `EqualityToBoolConverter` in a `MultiBinding` bound to
+  the item's `Tag`, then drive `IsEnabled`/icon visibility off that `Tag` with
+  a `DataTrigger` — see `Sidebar.xaml`'s `NavChildButtonTemplate` (the
+  original) and `StatusSplitButton.xaml` (the same pattern reused for a
+  Flyout item). This needs no new converter for the common case.

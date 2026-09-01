@@ -66,6 +66,7 @@
             <StackPanel Grid.Row="3">
                 <TextBlock Foreground="Red" TextWrapping="Wrap" Margin="0,0,0,4" Text="{Binding DeleteError}"/>
                 <TextBlock Foreground="Red" TextWrapping="Wrap" Margin="0,0,0,4" Text="{Binding ResetError}"/>
+                <TextBlock Foreground="Red" TextWrapping="Wrap" Margin="0,0,0,4" Text="{Binding StatusChangeError}"/>
             </StackPanel>
 
             <Grid Grid.Row="4" Margin="0,0,0,12">
@@ -75,7 +76,8 @@
                 </Grid.RowDefinitions>
                 <TextBlock Grid.Row="0" FontWeight="Bold" Text="Brasil" Margin="0,0,0,4"/>
                 <local:BillTableView Grid.Row="1" Bills="{Binding BrasilBills}" ShowBrasilFields="True"
-                                      EditBillCommand="{Binding EditBillCommand}" DeleteBillCommand="{Binding DeleteBillCommand}"/>
+                                      EditBillCommand="{Binding EditBillCommand}" DeleteBillCommand="{Binding DeleteBillCommand}"
+                                      ChangeStatusCommand="{Binding ChangeStatusCommand}"/>
             </Grid>
 
             <Grid Grid.Row="5">
@@ -85,7 +87,8 @@
                 </Grid.RowDefinitions>
                 <TextBlock Grid.Row="0" FontWeight="Bold" Text="UK" Margin="0,0,0,4"/>
                 <local:BillTableView Grid.Row="1" Bills="{Binding UkBills}" ShowBrasilFields="False"
-                                      EditBillCommand="{Binding EditBillCommand}" DeleteBillCommand="{Binding DeleteBillCommand}"/>
+                                      EditBillCommand="{Binding EditBillCommand}" DeleteBillCommand="{Binding DeleteBillCommand}"
+                                      ChangeStatusCommand="{Binding ChangeStatusCommand}"/>
             </Grid>
         </Grid>
     </Grid>

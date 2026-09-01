@@ -24,6 +24,7 @@
         <converters:EqualityToBoolConverter x:Key="EqualityToBoolConverter"/>
         <converters:DateOnlyToDateTimeConverter x:Key="DateOnlyToDateTimeConverter"/>
         <converters:NullOrEmptyToVisibilityConverter x:Key="NullOrEmptyToVisibilityConverter"/>
+        <converters:BillStatusToBrushConverter x:Key="BillStatusToBrushConverter"/>
 
         <!-- Assigning a DataGridColumn.Header to a ColumnFilterViewModelBase instance (in a
              view's code-behind, since DataGridColumn isn't part of the visual tree and can't

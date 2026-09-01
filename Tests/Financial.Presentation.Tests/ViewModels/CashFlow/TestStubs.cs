@@ -486,6 +486,8 @@ internal sealed class StubMensaisService : IMensaisService
     public List<RecurringBillDTO> Bills { get; set; } = [];
     public RecurringBillCreateDTO? LastCreateRequest { get; private set; }
     public (Guid Id, RecurringBillUpdateDTO Request)? LastUpdateRequest { get; private set; }
+    public (Guid Id, RecurringBillStatusUpdateDTO Request)? LastStatusChangeRequest { get; private set; }
+    public Exception? ThrowOnUpdateStatus { get; set; }
     public Guid? LastDeletedId { get; private set; }
     public int ResetAllToUnsetCallCount { get; private set; }
 
@@ -537,6 +539,12 @@ internal sealed class StubMensaisService : IMensaisService
 
     public Task<RecurringBillDTO> UpdateBillStatusAsync(Guid id, RecurringBillStatusUpdateDTO request)
     {
+        LastStatusChangeRequest = (id, request);
+        if (ThrowOnUpdateStatus is not null)
+        {
+            throw ThrowOnUpdateStatus;
+        }
+
         var existing = Bills.First(b => b.Id == id);
         var updated = new RecurringBillDTO
         {
