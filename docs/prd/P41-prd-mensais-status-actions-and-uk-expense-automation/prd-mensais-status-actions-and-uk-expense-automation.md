@@ -248,12 +248,12 @@ graph TD
 - [x] The existing `PUT /mensais/{id}` endpoint's behavior, including its own status handling, is unchanged after this endpoint is added.
 
 ### F02. Mensais Inline Status Control (React)
-- [ ] Each bill row in both the Brasil and UK tables shows its status as a colored tag with a chevron instead of plain text.
-- [ ] Opening the control's menu shows all 3 statuses, with the current one checked and disabled.
-- [ ] Selecting a different status updates the cell's tag/color in place without a full table reload.
-- [ ] If the update request fails, the cell reverts to its previous status and an inline error is shown.
-- [ ] The existing edit-form drawer's status dropdown and save behavior are unchanged and still function.
-- [ ] The control is operable by keyboard (Tab to focus, Enter/Space to open, arrow keys to navigate, Enter to select).
+- [x] Each bill row in both the Brasil and UK tables shows its status as a colored tag with a chevron instead of plain text.
+- [x] Opening the control's menu shows all 3 statuses, with the current one checked and disabled.
+- [x] Selecting a different status updates the cell's tag/color in place without a full table reload.
+- [x] If the update request fails, the cell reverts to its previous status and an inline error is shown.
+- [x] The existing edit-form drawer's status dropdown and save behavior are unchanged and still function.
+- [x] The control is operable by keyboard (Tab to focus, Enter/Space to open, arrow keys to navigate, Enter to select).
 
 ### F03. Mensais Inline Status Control (WPF)
 - [ ] The WPF Mensais grid shows the same colored tag-with-chevron status control as React, with equivalent behavior on selection, success, and failure.
@@ -276,7 +276,7 @@ graph TD
 - [ ] All F04 acceptance criteria hold equivalently for the WPF client and its data.
 
 ### Cross-Feature Integration
-- [ ] A status change made through F02's control is persisted through F01's endpoint and reflected on a subsequent full page reload of the Mensais page.
+- [x] A status change made through F02's control is persisted through F01's endpoint and reflected on a subsequent full page reload of the Mensais page.
 - [ ] A status change made through F03's control is persisted through F01's endpoint and reflected on a subsequent reload of the WPF Mensais view.
 - [ ] A transition into Paid on a UK bill, captured as F02's status-transition signal, correctly opens F04's dialog with the correct bill id, area, and value carried through.
 - [ ] A transition into Paid on a UK bill, captured as F03's status-transition signal, correctly opens F05's dialog with the correct bill id, area, and value carried through.
