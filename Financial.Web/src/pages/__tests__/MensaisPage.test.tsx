@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import MensaisPage from '../MensaisPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { RecurringBillDto } from '../../api/types'
+import type { BankDto, CategoryDto, RecurringBillDto } from '../../api/types'
 
 const {
   getMensaisBillsMock,
@@ -11,6 +11,9 @@ const {
   updateMensaisBillStatusMock,
   deleteMensaisBillMock,
   resetMensaisToUnsetMock,
+  getBanksMock,
+  getCategoriesMock,
+  createExpenseMock,
 } = vi.hoisted(() => ({
   getMensaisBillsMock: vi.fn<FinancialApiClient['getMensaisBills']>(),
   createMensaisBillMock: vi.fn<FinancialApiClient['createMensaisBill']>(),
@@ -18,6 +21,9 @@ const {
   updateMensaisBillStatusMock: vi.fn<FinancialApiClient['updateMensaisBillStatus']>(),
   deleteMensaisBillMock: vi.fn<FinancialApiClient['deleteMensaisBill']>(),
   resetMensaisToUnsetMock: vi.fn<FinancialApiClient['resetMensaisToUnset']>(),
+  getBanksMock: vi.fn<FinancialApiClient['getBanks']>(),
+  getCategoriesMock: vi.fn<FinancialApiClient['getCategories']>(),
+  createExpenseMock: vi.fn<FinancialApiClient['createExpense']>(),
 }))
 
 vi.mock('../../api/financialApiClient', () => ({
@@ -28,6 +34,9 @@ vi.mock('../../api/financialApiClient', () => ({
     updateMensaisBillStatus: updateMensaisBillStatusMock,
     deleteMensaisBill: deleteMensaisBillMock,
     resetMensaisToUnset: resetMensaisToUnsetMock,
+    getBanks: getBanksMock,
+    getCategories: getCategoriesMock,
+    createExpense: createExpenseMock,
   } as Partial<FinancialApiClient>,
 }))
 
@@ -56,6 +65,21 @@ const BILLS: RecurringBillDto[] = [
   },
 ]
 
+const BANKS: BankDto[] = [
+  {
+    id: 'bank-1',
+    name: 'Barclays',
+    roundUpEnabled: false,
+    openingBalance: 0,
+    openingBalanceDate: '2026-01-01',
+    hasReferences: false,
+  },
+]
+
+const CATEGORIES: CategoryDto[] = [
+  { id: 'cat-1', name: 'Bills', active: true, isInvestment: false, isTithe: false, hasReferences: false },
+]
+
 describe('MensaisPage', () => {
   beforeEach(() => {
     getMensaisBillsMock.mockReset()
@@ -63,6 +87,11 @@ describe('MensaisPage', () => {
     updateMensaisBillMock.mockReset()
     updateMensaisBillStatusMock.mockReset()
     deleteMensaisBillMock.mockReset()
+    getBanksMock.mockReset()
+    getCategoriesMock.mockReset()
+    createExpenseMock.mockReset()
+    getBanksMock.mockResolvedValue(BANKS)
+    getCategoriesMock.mockResolvedValue(CATEGORIES)
     resetMensaisToUnsetMock.mockReset()
     getMensaisBillsMock.mockResolvedValue(BILLS)
   })
@@ -141,6 +170,76 @@ describe('MensaisPage', () => {
     await waitFor(() => expect(updateMensaisBillStatusMock).toHaveBeenCalledWith('b1', { status: 'Paid' }))
     await waitFor(() => expect(screen.getByRole('button', { name: /^Status: Paid/ })).toBeInTheDocument())
     expect(screen.queryByText('Edit Bill')).not.toBeInTheDocument()
+  })
+
+  it('marking a UK bill Paid opens the expense prompt instead of calling the status API', async () => {
+    render(<MensaisPage />)
+
+    await waitFor(() => expect(screen.getByText('Council Tax')).toBeInTheDocument())
+
+    const statusButtons = screen.getAllByRole('button', { name: /^Status: Unset/ })
+    fireEvent.click(statusButtons[1])
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Paid' }))
+
+    expect(await screen.findByRole('heading', { name: 'Generate expense for this payment?' })).toBeInTheDocument()
+    expect(updateMensaisBillStatusMock).not.toHaveBeenCalled()
+  })
+
+  it('marking a Brasil bill Paid never opens the expense prompt', async () => {
+    updateMensaisBillStatusMock.mockResolvedValue({ ...BILLS[0], status: 'Paid' })
+    render(<MensaisPage />)
+
+    await waitFor(() => expect(screen.getByText('INSS')).toBeInTheDocument())
+
+    const statusButtons = screen.getAllByRole('button', { name: /^Status: Unset/ })
+    fireEvent.click(statusButtons[0])
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Paid' }))
+
+    await waitFor(() => expect(updateMensaisBillStatusMock).toHaveBeenCalledWith('b1', { status: 'Paid' }))
+    expect(screen.queryByRole('heading', { name: 'Generate expense for this payment?' })).not.toBeInTheDocument()
+  })
+
+  it('confirming the expense prompt creates the expense, marks the bill Paid, and closes the prompt', async () => {
+    createExpenseMock.mockResolvedValue({
+      id: 'exp-1', date: '2026-09-01', description: 'Council Tax', value: 120,
+      categoryId: 'cat-1', categoryName: 'Bills', paymentSourceBankId: 'bank-1', paymentSourceBankName: 'Barclays',
+      creditCardId: null, creditCardName: null, chargeDate: null, invoiceDate: null,
+      paymentStatus: 'ImmediatePayment', roundUpAmount: null, suggestedRoundUpAmount: null, countsAsTithe: true,
+    })
+    updateMensaisBillStatusMock.mockResolvedValue({ ...BILLS[1], status: 'Paid' })
+    render(<MensaisPage />)
+
+    await waitFor(() => expect(screen.getByText('Council Tax')).toBeInTheDocument())
+    const statusButtons = screen.getAllByRole('button', { name: /^Status: Unset/ })
+    fireEvent.click(statusButtons[1])
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Paid' }))
+    await screen.findByRole('heading', { name: 'Generate expense for this payment?' })
+
+    fireEvent.change(screen.getByLabelText(/^Bank/), { target: { value: 'bank-1' } })
+    fireEvent.change(screen.getByLabelText(/^Category/), { target: { value: 'cat-1' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm' }))
+
+    await waitFor(() => expect(createExpenseMock).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(updateMensaisBillStatusMock).toHaveBeenCalledWith('b2', { status: 'Paid' }))
+    await waitFor(() =>
+      expect(screen.queryByRole('heading', { name: 'Generate expense for this payment?' })).not.toBeInTheDocument(),
+    )
+  })
+
+  it('canceling the expense prompt makes no API calls', async () => {
+    render(<MensaisPage />)
+
+    await waitFor(() => expect(screen.getByText('Council Tax')).toBeInTheDocument())
+    const statusButtons = screen.getAllByRole('button', { name: /^Status: Unset/ })
+    fireEvent.click(statusButtons[1])
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Paid' }))
+    await screen.findByRole('heading', { name: 'Generate expense for this payment?' })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+
+    expect(screen.queryByRole('heading', { name: 'Generate expense for this payment?' })).not.toBeInTheDocument()
+    expect(createExpenseMock).not.toHaveBeenCalled()
+    expect(updateMensaisBillStatusMock).not.toHaveBeenCalled()
   })
 
   it('shows an error and leaves the status unchanged when the status update fails', async () => {

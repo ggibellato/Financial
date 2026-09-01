@@ -4,6 +4,7 @@ import type { RecurringBillDto } from '../api/types'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
 import StatusMenuButton from '../components/StatusMenuButton'
+import UkExpensePromptDialog from '../components/UkExpensePromptDialog'
 import SortableColumnHeader from '../components/grid/SortableColumnHeader'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { useMensais } from '../hooks/useMensais'
@@ -223,6 +224,15 @@ export default function MensaisPage() {
     updatingStatusBillId,
     statusUpdateError,
     updateBillStatus,
+    banks,
+    categories,
+    expensePromptBill,
+    isCreatingExpense,
+    expenseCreateError,
+    expenseCreatedForRetry,
+    confirmExpensePrompt,
+    skipOrRetryExpensePrompt,
+    closeExpensePrompt,
   } = useMensais()
 
   const isEditing = editingId !== null
@@ -390,6 +400,23 @@ export default function MensaisPage() {
             onStatusChange={updateBillStatus}
           />
         </div>
+      )}
+
+      {expensePromptBill && (
+        <UkExpensePromptDialog
+          bill={expensePromptBill}
+          banks={banks}
+          categories={categories}
+          isCreatingExpense={isCreatingExpense}
+          isUpdatingStatus={updatingStatusBillId === expensePromptBill.id}
+          expenseCreateError={expenseCreateError}
+          statusUpdateError={statusUpdateError}
+          isRetryOnly={expenseCreatedForRetry}
+          onConfirm={confirmExpensePrompt}
+          onSkip={skipOrRetryExpensePrompt}
+          onRetry={skipOrRetryExpensePrompt}
+          onCancel={closeExpensePrompt}
+        />
       )}
     </div>
   )
