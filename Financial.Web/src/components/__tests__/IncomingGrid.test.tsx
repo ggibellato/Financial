@@ -25,7 +25,7 @@ describe('IncomingGrid', () => {
       <IncomingGrid
         incomeTotals={INCOME_TOTALS}
         totalIncoming={2550}
-        titheSummary={{ calculatedTithe: 245, titheBalance: 245 }}
+        titheSummary={{ calculatedTithe: 245, titheBalance: 245, carryForward: null }}
       />,
     )
 

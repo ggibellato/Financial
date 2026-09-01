@@ -2896,11 +2896,58 @@
         ],
         "type": "object"
       },
+      "TitheCarryForwardDTO": {
+        "properties": {
+          "amount": {
+            "format": "double",
+            "type": "number"
+          },
+          "fromMonth": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "fromYear": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "included": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "amount",
+          "included",
+          "fromYear",
+          "fromMonth"
+        ],
+        "type": "object"
+      },
+      "TitheCarryForwardUpdateDTO": {
+        "properties": {
+          "included": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "included"
+        ],
+        "type": "object"
+      },
       "TitheSummaryDTO": {
         "properties": {
           "calculatedTithe": {
             "format": "double",
             "type": "number"
+          },
+          "carryForward": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TitheCarryForwardDTO"
+              }
+            ]
           },
           "titheBalance": {
             "format": "double",
@@ -8830,6 +8877,100 @@
           }
         },
         "summary": "Returns the tithe summary for a given month.",
+        "tags": [
+          "Tithe"
+        ]
+      }
+    },
+    "/tithe/month/{year}/{month}/carry-forward": {
+      "put": {
+        "parameters": [
+          {
+            "description": "The year.",
+            "in": "path",
+            "name": "year",
+            "required": true,
+            "schema": {
+              "format": "int32",
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The month (1-12).",
+            "in": "path",
+            "name": "month",
+            "required": true,
+            "schema": {
+              "format": "int32",
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/*\u002Bjson": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/TitheCarryForwardUpdateDTO"
+                  }
+                ]
+              }
+            },
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/TitheCarryForwardUpdateDTO"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/TitheCarryForwardUpdateDTO"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TitheSummaryDTO"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          }
+        },
+        "summary": "Includes or excludes the previous month\u0027s carried-forward amount from this month\u0027s Tithe Balance.",
         "tags": [
           "Tithe"
         ]

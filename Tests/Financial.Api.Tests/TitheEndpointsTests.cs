@@ -110,5 +110,77 @@ public class TitheEndpointsTests : ApiEndpointTests
         var summary = await response.Content.ReadFromJsonAsync<TitheSummaryDTO>();
         summary!.CalculatedTithe.Should().Be(0m);
         summary.TitheBalance.Should().Be(0m);
+        summary.CarryForward.Should().BeNull();
+    }
+
+    // --- Carry-forward: dates computed relative to "today" since the effective-from boundary
+    // auto-anchors to the real current month the first time it's resolved (see TitheServiceTests).
+
+    private static DateOnly ThisMonth => new(DateTime.Today.Year, DateTime.Today.Month, 1);
+    private static DateOnly NextMonth => ThisMonth.AddMonths(1);
+
+    [Fact]
+    public async Task GetTitheSummaryByMonth_NextMonth_CarriesInThisMonthsUnpaidBalanceByDefault()
+    {
+        await Client.PostAsJsonAsync("/api/v1/financial/incomes", new IncomeCreateDTO
+        {
+            Date = new DateOnly(ThisMonth.Year, ThisMonth.Month, 1),
+            IncomeSourceId = GleisonId,
+            GrossValue = null,
+            NetValue = 1000m,
+            BankId = BarclaysId
+        });
+        await Client.GetAsync($"/api/v1/financial/tithe/month/{ThisMonth.Year}/{ThisMonth.Month}");
+
+        var response = await Client.GetAsync($"/api/v1/financial/tithe/month/{NextMonth.Year}/{NextMonth.Month}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var summary = await response.Content.ReadFromJsonAsync<TitheSummaryDTO>();
+        summary!.CarryForward.Should().NotBeNull();
+        summary.CarryForward!.Amount.Should().Be(100m);
+        summary.CarryForward.Included.Should().BeTrue();
+        summary.TitheBalance.Should().Be(100m);
+    }
+
+    [Fact]
+    public async Task UpdateCarryForwardInclusion_SetIncludedFalse_RemovesItFromTitheBalance()
+    {
+        await Client.PostAsJsonAsync("/api/v1/financial/incomes", new IncomeCreateDTO
+        {
+            Date = new DateOnly(ThisMonth.Year, ThisMonth.Month, 1),
+            IncomeSourceId = GleisonId,
+            GrossValue = null,
+            NetValue = 1000m,
+            BankId = BarclaysId
+        });
+        await Client.GetAsync($"/api/v1/financial/tithe/month/{ThisMonth.Year}/{ThisMonth.Month}");
+        await Client.GetAsync($"/api/v1/financial/tithe/month/{NextMonth.Year}/{NextMonth.Month}");
+
+        var response = await Client.PutAsJsonAsync(
+            $"/api/v1/financial/tithe/month/{NextMonth.Year}/{NextMonth.Month}/carry-forward",
+            new TitheCarryForwardUpdateDTO { Included = false });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var summary = await response.Content.ReadFromJsonAsync<TitheSummaryDTO>();
+        summary!.CarryForward!.Included.Should().BeFalse();
+        summary.TitheBalance.Should().Be(0m);
+    }
+
+    [Fact]
+    public async Task UpdateCarryForwardInclusion_MonthWithNoCarryForwardAvailable_ReturnsBadRequest()
+    {
+        var response = await Client.PutAsJsonAsync(
+            "/api/v1/financial/tithe/month/2026/7/carry-forward",
+            new TitheCarryForwardUpdateDTO { Included = false });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task UpdateCarryForwardInclusion_NullBody_ReturnsBadRequest()
+    {
+        var response = await Client.PutAsJsonAsync<object?>("/api/v1/financial/tithe/month/2026/7/carry-forward", null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 }

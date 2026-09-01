@@ -4490,6 +4490,62 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/tithe/month/{year}/{month}/carry-forward": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Includes or excludes the previous month's carried-forward amount from this month's Tithe Balance. */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The year. */
+                    year: number;
+                    /** @description The month (1-12). */
+                    month: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/*+json": null | components["schemas"]["TitheCarryForwardUpdateDTO"];
+                    "application/json": null | components["schemas"]["TitheCarryForwardUpdateDTO"];
+                    "text/json": null | components["schemas"]["TitheCarryForwardUpdateDTO"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TitheSummaryDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/transactions": {
         parameters: {
             query?: never;
@@ -5933,9 +5989,22 @@ export interface components {
             cashFlow: components["schemas"]["SyncStatusDTO"];
             investment: components["schemas"]["SyncStatusDTO"];
         };
+        TitheCarryForwardDTO: {
+            /** Format: double */
+            amount: number;
+            /** Format: int32 */
+            fromMonth: number;
+            /** Format: int32 */
+            fromYear: number;
+            included: boolean;
+        };
+        TitheCarryForwardUpdateDTO: {
+            included: boolean;
+        };
         TitheSummaryDTO: {
             /** Format: double */
             calculatedTithe: number;
+            carryForward?: null | components["schemas"]["TitheCarryForwardDTO"];
             /** Format: double */
             titheBalance: number;
         };
