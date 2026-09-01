@@ -290,7 +290,7 @@ public class MensaisViewModelTests
     public async Task ChangeStatusAsync_UkBillTransitionToPaid_ShowsThePromptInsteadOfCallingApiDirectly(string priorStatus)
     {
         var (viewModel, service, _, _, _, dialogService) = CreateViewModel();
-        var bill = CreateBill("UK", status: priorStatus);
+        var bill = CreateBill("UK", status: priorStatus, description: "Council Tax");
         service.Bills = [bill];
         await viewModel.RefreshAsync();
         SetUpDialogToCancel(dialogService);
@@ -298,6 +298,8 @@ public class MensaisViewModelTests
         await viewModel.ChangeStatusAsync(new StatusChangeRequest(bill, "Paid"));
 
         dialogService.LastUkExpensePromptDialog.Should().NotBeNull();
+        dialogService.LastUkExpensePromptDialog!.BillDescription.Should().Be("Council Tax");
+        dialogService.LastUkExpensePromptDialog.Value.Should().Be(bill.Value.ToString());
         service.LastStatusChangeRequest.Should().BeNull();
     }
 
@@ -434,6 +436,26 @@ public class MensaisViewModelTests
         expenseService.AddExpenseCallCount.Should().Be(0);
         service.LastStatusChangeRequest.Should().BeNull();
         viewModel.UkBills.Should().ContainSingle(b => b.Id == bill.Id && b.Status == "Unset");
+    }
+
+    [Fact]
+    public async Task SaveEditAsync_MarkingAUkBillPaidViaTheEditFormDrawer_NeverOpensThePrompt()
+    {
+        var (viewModel, service, expenseService, _, _, dialogService) = CreateViewModel();
+        var bill = CreateBill("UK");
+        service.Bills = [bill];
+        await viewModel.RefreshAsync();
+
+        viewModel.EditBillCommand.Execute(bill);
+        viewModel.EditValue = "150";
+        viewModel.EditStatus = "Paid";
+
+        await viewModel.SaveEditAsync();
+
+        dialogService.LastUkExpensePromptDialog.Should().BeNull();
+        expenseService.AddExpenseCallCount.Should().Be(0);
+        service.LastUpdateRequest.Should().NotBeNull();
+        service.LastUpdateRequest!.Value.Request.Status.Should().Be("Paid");
     }
 
     #endregion
