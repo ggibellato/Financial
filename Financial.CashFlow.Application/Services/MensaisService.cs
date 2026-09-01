@@ -139,6 +139,39 @@ public sealed class MensaisService : IMensaisService
         }
     }
 
+    public async Task<RecurringBillDTO> UpdateBillStatusAsync(Guid id, RecurringBillStatusUpdateDTO request)
+    {
+        using var span = StartSpan("UpdateBillStatus");
+        span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());
+        try
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            var bill = _repository.GetRecurringBills().FirstOrThrow(b => b.Id == id, "Recurring bill", id);
+
+            if (!BillStatusParser.TryParse(request.Status, out var status))
+            {
+                throw new ArgumentException(
+                    $"Status '{request.Status}' is not recognized. Must be one of: Unset, Scheduled, Paid.");
+            }
+
+            await _repository.ApplyAndSaveAsync(() =>
+            {
+                bill.SetStatus(status);
+                return true;
+            }).ConfigureAwait(false);
+
+            span.MarkSuccess();
+            _logger.LogInformation("{Operation} completed", "UpdateBillStatus");
+            return ToDto(bill);
+        }
+        catch (Exception ex)
+        {
+            span.MarkFailed(ex);
+            throw;
+        }
+    }
+
     public async Task<IReadOnlyList<RecurringBillDTO>> ResetAllToUnsetAsync()
     {
         using var span = StartSpan("ResetAllToUnset");

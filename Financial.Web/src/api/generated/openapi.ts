@@ -3346,6 +3346,69 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/mensais/{id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Updates only the status of an existing recurring bill, leaving every other field untouched. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The bill's identifier. */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/*+json": null | components["schemas"]["RecurringBillStatusUpdateDTO"];
+                    "application/json": null | components["schemas"]["RecurringBillStatusUpdateDTO"];
+                    "text/json": null | components["schemas"]["RecurringBillStatusUpdateDTO"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RecurringBillDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/navigation/brokers": {
         parameters: {
             query?: never;
@@ -5898,6 +5961,9 @@ export interface components {
             status: string;
             /** Format: double */
             value: number;
+        };
+        RecurringBillStatusUpdateDTO: {
+            status: string;
         };
         RecurringBillUpdateDTO: {
             area: string;

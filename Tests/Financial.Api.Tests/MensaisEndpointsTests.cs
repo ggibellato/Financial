@@ -145,6 +145,63 @@ public class MensaisEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
+    public async Task UpdateBillStatus_ValidRequest_ReturnsOkWithUpdatedStatus()
+    {
+        var created = await Client.PostAsJsonAsync("/api/v1/financial/mensais", ValidBrasilBillRequest());
+        var bill = await created.Content.ReadFromJsonAsync<RecurringBillDTO>();
+
+        var response = await Client.PostAsJsonAsync(
+            $"/api/v1/financial/mensais/{bill!.Id}/status", new RecurringBillStatusUpdateDTO { Status = "Paid" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var updated = await response.Content.ReadFromJsonAsync<RecurringBillDTO>();
+        updated!.Status.Should().Be("Paid");
+    }
+
+    [Fact]
+    public async Task UpdateBillStatus_DoesNotChangeOtherFields()
+    {
+        var created = await Client.PostAsJsonAsync("/api/v1/financial/mensais", ValidBrasilBillRequest());
+        var bill = await created.Content.ReadFromJsonAsync<RecurringBillDTO>();
+
+        var response = await Client.PostAsJsonAsync(
+            $"/api/v1/financial/mensais/{bill!.Id}/status", new RecurringBillStatusUpdateDTO { Status = "Paid" });
+
+        var updated = await response.Content.ReadFromJsonAsync<RecurringBillDTO>();
+        updated!.DueDay.Should().Be(bill.DueDay);
+        updated.Description.Should().Be(bill.Description);
+        updated.Value.Should().Be(bill.Value);
+        updated.Area.Should().Be(bill.Area);
+        updated.Note.Should().Be(bill.Note);
+        updated.NitNumber.Should().Be(bill.NitNumber);
+        updated.MinimumWageValue.Should().Be(bill.MinimumWageValue);
+    }
+
+    [Fact]
+    public async Task UpdateBillStatus_UnknownId_ReturnsNotFound()
+    {
+        var response = await Client.PostAsJsonAsync(
+            $"/api/v1/financial/mensais/{Guid.NewGuid()}/status", new RecurringBillStatusUpdateDTO { Status = "Paid" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task UpdateBillStatus_InvalidStatusValue_ReturnsBadRequestWithMessage()
+    {
+        var created = await Client.PostAsJsonAsync("/api/v1/financial/mensais", ValidBrasilBillRequest());
+        var bill = await created.Content.ReadFromJsonAsync<RecurringBillDTO>();
+
+        var response = await Client.PostAsJsonAsync(
+            $"/api/v1/financial/mensais/{bill!.Id}/status", new RecurringBillStatusUpdateDTO { Status = "NotAStatus" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var body = await response.Content.ReadAsStringAsync();
+        body.Should().Contain("NotAStatus");
+        body.Should().Contain("Unset").And.Contain("Scheduled").And.Contain("Paid");
+    }
+
+    [Fact]
     public async Task ResetAllToUnset_SetsEveryBillStatusBackToUnset()
     {
         var created = await Client.PostAsJsonAsync("/api/v1/financial/mensais", ValidBrasilBillRequest());

@@ -75,6 +75,25 @@ public sealed class MensaisController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>Updates only the status of an existing recurring bill, leaving every other field untouched.</summary>
+    /// <param name="id">The bill's identifier.</param>
+    /// <param name="request">The new status.</param>
+    /// <returns>200 OK with the updated bill, 400 Bad Request if the request is invalid, or 404 Not Found if the bill doesn't exist.</returns>
+    [HttpPost("{id:guid}/status")]
+    [ProducesResponseType(typeof(RecurringBillDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<RecurringBillDTO>> UpdateBillStatus(Guid id, [FromBody] RecurringBillStatusUpdateDTO? request)
+    {
+        if (request is null)
+        {
+            return BadRequest();
+        }
+
+        var result = await _mensaisService.UpdateBillStatusAsync(id, request);
+        return Ok(result);
+    }
+
     /// <summary>Resets every recurring bill's paid state back to unset, typically at the start of a new month.</summary>
     /// <returns>200 OK with the reset bills.</returns>
     [HttpPost("reset")]
