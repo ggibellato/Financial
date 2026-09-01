@@ -27,6 +27,8 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
     public List<Income> Incomes { get; } = new();
     public List<Transfer> Transfers { get; } = new();
     public List<BalanceAdjustment> BalanceAdjustments { get; } = new();
+    public List<TitheCarryForward> TitheCarryForwards { get; } = new();
+    public DateOnly? TitheCarryForwardEffectiveFrom { get; set; }
 
     public int SaveChangesCallCount { get; private set; }
 
@@ -194,6 +196,11 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
         }
     }
     public void DeleteBalanceAdjustment(Guid id) => BalanceAdjustments.RemoveAll(a => a.Id == id);
+
+    public IEnumerable<TitheCarryForward> GetTitheCarryForwards() => TitheCarryForwards;
+    public void AddTitheCarryForward(TitheCarryForward decision) => TitheCarryForwards.Add(decision);
+    public DateOnly? GetTitheCarryForwardEffectiveFrom() => TitheCarryForwardEffectiveFrom;
+    public void SetTitheCarryForwardEffectiveFrom(DateOnly date) => TitheCarryForwardEffectiveFrom = date;
 
     /// <summary>Runs the mutation for real - the change lives in the delegate, so a stub that only
     /// counted would silently stop exercising it. Counts persisted writes, so a mutation that

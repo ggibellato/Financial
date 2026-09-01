@@ -8,5 +8,7 @@
   "InvestmentSnapshots": [],
   "InvestmentAccounts": [],
   "MaeLedgerEntries": [],
-  "ReserveBuckets": []
+  "ReserveBuckets": [],
+  "TitheCarryForwards": [],
+  "TitheCarryForwardEffectiveFrom": null
 }

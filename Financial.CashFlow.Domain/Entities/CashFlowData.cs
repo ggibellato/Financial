@@ -51,6 +51,11 @@ public class CashFlowData
     private readonly List<Category> _categories = new();
     public IReadOnlyCollection<Category> Categories => _categories.AsReadOnly();
 
+    private readonly List<TitheCarryForward> _titheCarryForwards = new();
+    public IReadOnlyCollection<TitheCarryForward> TitheCarryForwards => _titheCarryForwards.AsReadOnly();
+
+    public DateOnly? TitheCarryForwardEffectiveFrom { get; private set; }
+
     private CashFlowData() { }
 
     public static CashFlowData Create() => new();
@@ -96,6 +101,10 @@ public class CashFlowData
     public void AddCategory(Category category) => _categories.Add(category);
 
     public void RemoveCategory(Guid id) => _categories.RemoveAll(category => category.Id == id);
+
+    public void AddTitheCarryForward(TitheCarryForward decision) => _titheCarryForwards.Add(decision);
+
+    public void SetTitheCarryForwardEffectiveFrom(DateOnly date) => TitheCarryForwardEffectiveFrom = date;
 
     public void AddIncome(Income income) => _incomes.Add(income);
 

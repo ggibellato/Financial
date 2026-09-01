@@ -45,6 +45,7 @@ public class CashFlowSerializerAdapterTests
         var investmentSnapshot = InvestmentSnapshot.Create(investmentAccount, 2026, 7, 1250.00m);
         var transfer = Transfer.Create(new DateOnly(2026, 7, 25), bank, destinationBank, 500.00m, "Round-up top-up");
         var balanceAdjustment = BalanceAdjustment.Create(new DateOnly(2026, 7, 25), bank, 2340.17m, -4.20m, "Matched against July statement");
+        var titheCarryForward = TitheCarryForward.Create(2026, 8, 142.50m);
 
         original.AddReserveBucket(reserveBucket);
         original.AddCreditCard(creditCard);
@@ -62,6 +63,8 @@ public class CashFlowSerializerAdapterTests
         original.AddIncome(income);
         original.AddTransfer(transfer);
         original.AddBalanceAdjustment(balanceAdjustment);
+        original.AddTitheCarryForward(titheCarryForward);
+        original.SetTitheCarryForwardEffectiveFrom(new DateOnly(2026, 6, 1));
 
         var json = _sut.Serialize(original);
         var result = _sut.Deserialize(json);
@@ -140,6 +143,12 @@ public class CashFlowSerializerAdapterTests
             resultCategory.Active.Should().Be(category.Active);
             resultCategory.IsInvestment.Should().Be(category.IsInvestment);
             resultCategory.IsTithe.Should().Be(category.IsTithe);
+            var resultTitheCarryForward = result.TitheCarryForwards.Should().ContainSingle().Which;
+            resultTitheCarryForward.Year.Should().Be(titheCarryForward.Year);
+            resultTitheCarryForward.Month.Should().Be(titheCarryForward.Month);
+            resultTitheCarryForward.Amount.Should().Be(titheCarryForward.Amount);
+            resultTitheCarryForward.Included.Should().Be(titheCarryForward.Included);
+            result.TitheCarryForwardEffectiveFrom.Should().Be(new DateOnly(2026, 6, 1));
 
             // Reference-equality: every reference-typed property must be the exact same instance
             // as the matching entry in its owning collection, not merely an equivalent copy.
@@ -346,5 +355,25 @@ public class CashFlowSerializerAdapterTests
         result.Incomes.Should().BeEmpty();
         result.Transfers.Should().BeEmpty();
         result.BalanceAdjustments.Should().BeEmpty();
+        result.TitheCarryForwards.Should().BeEmpty();
+        result.TitheCarryForwardEffectiveFrom.Should().BeNull();
+    }
+
+    [Fact]
+    public void Deserialize_LegacyDocumentMissingTitheCarryForwardFields_DefaultsToEmptyAndNull()
+    {
+        var json = """
+            {
+              "Expenses": [], "ReserveMovements": [], "CardStatements": [], "RecurringBills": [],
+              "MaeLedgerEntries": [], "InvestmentSnapshots": [], "InvestmentAccounts": [],
+              "Incomes": [], "IncomeSources": [], "Transfers": [], "BalanceAdjustments": [], "Banks": [],
+              "ReserveBuckets": [], "CreditCards": [], "Categories": []
+            }
+            """;
+
+        var result = _sut.Deserialize(json);
+
+        result.TitheCarryForwards.Should().BeEmpty();
+        result.TitheCarryForwardEffectiveFrom.Should().BeNull();
     }
 }

@@ -49,6 +49,11 @@ public interface ICashFlowRepository
     void AddCategory(Category category);
     void DeleteCategory(Guid id);
 
+    IEnumerable<TitheCarryForward> GetTitheCarryForwards();
+    void AddTitheCarryForward(TitheCarryForward decision);
+    DateOnly? GetTitheCarryForwardEffectiveFrom();
+    void SetTitheCarryForwardEffectiveFrom(DateOnly date);
+
     IEnumerable<Income> GetIncomes();
     void AddIncome(Income income);
     void DeleteIncome(Guid id);

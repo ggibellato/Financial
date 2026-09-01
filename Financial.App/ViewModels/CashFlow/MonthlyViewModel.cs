@@ -185,7 +185,7 @@ public class MonthlyViewModel : ViewModelBase
             var banksTask = Task.Run(() => _bankService.GetBanks());
             var incomeSourcesTask = Task.Run(() => _incomeSourceService.GetIncomeSources());
             var bankBalancesTask = Task.Run(() => _bankService.GetBankBalancesByMonth(year, month));
-            var titheSummaryTask = Task.Run(() => _titheService.GetTitheSummary(year, month));
+            var titheSummaryTask = _titheService.GetTitheSummaryAsync(year, month);
             var transfersTask = Task.Run(() => _transferService.GetTransfersByMonth(year, month));
             var cardStatementsTask = _cardStatementService.GetStatementsForMonthAsync(year, month);
             var creditCardsTask = Task.Run(() => _creditCardService.GetCreditCards());

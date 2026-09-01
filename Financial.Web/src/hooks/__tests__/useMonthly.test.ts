@@ -141,7 +141,7 @@ const BANK_BALANCES: BankBalanceDto[] = [
   { bank: 'Chase', balance: 0 },
 ]
 
-const TITHE_SUMMARY: TitheSummaryDto = { calculatedTithe: 245, titheBalance: 245 }
+const TITHE_SUMMARY: TitheSummaryDto = { calculatedTithe: 245, titheBalance: 245, carryForward: null }
 
 describe('useMonthly', () => {
   beforeEach(() => {

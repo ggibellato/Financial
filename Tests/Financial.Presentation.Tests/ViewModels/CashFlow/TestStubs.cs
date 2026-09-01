@@ -164,7 +164,10 @@ internal sealed class StubTitheService : ITitheService
 {
     public TitheSummaryDTO Summary { get; set; } = new() { CalculatedTithe = 0m, TitheBalance = 0m };
 
-    public TitheSummaryDTO GetTitheSummary(int year, int month) => Summary;
+    public Task<TitheSummaryDTO> GetTitheSummaryAsync(int year, int month) => Task.FromResult(Summary);
+
+    public Task<TitheSummaryDTO> UpdateCarryForwardInclusionAsync(int year, int month, bool included) =>
+        throw new NotImplementedException();
 }
 
 internal sealed class StubTransferService : ITransferService

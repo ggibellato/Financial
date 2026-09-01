@@ -438,4 +438,41 @@ public class CashFlowJsonRepositoryTests
             File.Delete(path);
         }
     }
+
+    [Fact]
+    public void GetTitheCarryForwards_ReturnsTitheCarryForwardsFromTheUnderlyingData()
+    {
+        var path = Path.GetTempFileName();
+        try
+        {
+            var data = CashFlowData.Create();
+            data.AddTitheCarryForward(TitheCarryForward.Create(2026, 8, 50m));
+            var repository = new CashFlowJsonRepository(data, new LocalJsonStorage(path), new CashFlowSerializerAdapter());
+
+            repository.GetTitheCarryForwards().Should().ContainSingle().Which.Amount.Should().Be(50m);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public void SetTitheCarryForwardEffectiveFrom_ThenGet_ReturnsTheStoredValue()
+    {
+        var path = Path.GetTempFileName();
+        try
+        {
+            var data = CashFlowData.Create();
+            var repository = new CashFlowJsonRepository(data, new LocalJsonStorage(path), new CashFlowSerializerAdapter());
+
+            repository.SetTitheCarryForwardEffectiveFrom(new DateOnly(2026, 9, 1));
+
+            repository.GetTitheCarryForwardEffectiveFrom().Should().Be(new DateOnly(2026, 9, 1));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
 }

@@ -59,6 +59,13 @@ public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
         foreach (var snapshot in DeserializeCollection<InvestmentSnapshot>(root, "InvestmentSnapshots", resolvedOptions)) data.AddInvestmentSnapshot(snapshot);
         foreach (var transfer in DeserializeCollection<Transfer>(root, "Transfers", resolvedOptions)) data.AddTransfer(transfer);
         foreach (var adjustment in DeserializeCollection<BalanceAdjustment>(root, "BalanceAdjustments", resolvedOptions)) data.AddBalanceAdjustment(adjustment);
+        foreach (var decision in DeserializeCollection<TitheCarryForward>(root, "TitheCarryForwards", resolvedOptions)) data.AddTitheCarryForward(decision);
+
+        if (root.TryGetProperty("TitheCarryForwardEffectiveFrom", out var effectiveFromElement)
+            && effectiveFromElement.ValueKind != JsonValueKind.Null)
+        {
+            data.SetTitheCarryForwardEffectiveFrom(effectiveFromElement.Deserialize<DateOnly>(unresolvedOptions));
+        }
 
         return data;
     }
@@ -83,6 +90,18 @@ public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
         WriteCollection(writer, "Categories", value.Categories, elementOptions);
         WriteCollection(writer, "Transfers", value.Transfers, elementOptions);
         WriteCollection(writer, "BalanceAdjustments", value.BalanceAdjustments, elementOptions);
+        WriteCollection(writer, "TitheCarryForwards", value.TitheCarryForwards, elementOptions);
+
+        writer.WritePropertyName("TitheCarryForwardEffectiveFrom");
+        if (value.TitheCarryForwardEffectiveFrom.HasValue)
+        {
+            JsonSerializer.Serialize(writer, value.TitheCarryForwardEffectiveFrom.Value, elementOptions);
+        }
+        else
+        {
+            writer.WriteNullValue();
+        }
+
         writer.WriteEndObject();
     }
 
