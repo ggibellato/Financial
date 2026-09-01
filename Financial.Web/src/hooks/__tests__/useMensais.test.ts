@@ -16,12 +16,14 @@ const {
   getMensaisBillsMock,
   createMensaisBillMock,
   updateMensaisBillMock,
+  updateMensaisBillStatusMock,
   deleteMensaisBillMock,
   resetMensaisToUnsetMock,
 } = vi.hoisted(() => ({
   getMensaisBillsMock: vi.fn<FinancialApiClient['getMensaisBills']>(),
   createMensaisBillMock: vi.fn<FinancialApiClient['createMensaisBill']>(),
   updateMensaisBillMock: vi.fn<FinancialApiClient['updateMensaisBill']>(),
+  updateMensaisBillStatusMock: vi.fn<FinancialApiClient['updateMensaisBillStatus']>(),
   deleteMensaisBillMock: vi.fn<FinancialApiClient['deleteMensaisBill']>(),
   resetMensaisToUnsetMock: vi.fn<FinancialApiClient['resetMensaisToUnset']>(),
 }))
@@ -31,6 +33,7 @@ vi.mock('../../api/financialApiClient', () => ({
     getMensaisBills: getMensaisBillsMock,
     createMensaisBill: createMensaisBillMock,
     updateMensaisBill: updateMensaisBillMock,
+    updateMensaisBillStatus: updateMensaisBillStatusMock,
     deleteMensaisBill: deleteMensaisBillMock,
     resetMensaisToUnset: resetMensaisToUnsetMock,
   } as Partial<FinancialApiClient>,
@@ -66,6 +69,7 @@ describe('useMensais', () => {
     getMensaisBillsMock.mockReset()
     createMensaisBillMock.mockReset()
     updateMensaisBillMock.mockReset()
+    updateMensaisBillStatusMock.mockReset()
     deleteMensaisBillMock.mockReset()
     resetMensaisToUnsetMock.mockReset()
     getMensaisBillsMock.mockResolvedValue(BILLS)
@@ -270,5 +274,49 @@ describe('useMensais', () => {
     act(() => result.current.resetAllToUnset())
 
     await waitFor(() => expect(result.current.resetError).toBe('Failed to reset bills'))
+  })
+
+  it('updates a bill status in place, without refetching the bill list', async () => {
+    updateMensaisBillStatusMock.mockResolvedValue({ ...BILLS[0], status: 'Paid' })
+    const { result } = renderHook(() => useMensais())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.updateBillStatus('b1', 'Paid'))
+
+    await waitFor(() => expect(updateMensaisBillStatusMock).toHaveBeenCalledWith('b1', { status: 'Paid' }))
+    await waitFor(() => expect(result.current.brasilBills[0].status).toBe('Paid'))
+    expect(result.current.ukBills[0].status).toBe('Unset')
+    expect(getMensaisBillsMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('tracks which bill is updating while the status call is in flight', async () => {
+    let resolveUpdate: (bill: RecurringBillDto) => void = () => {}
+    updateMensaisBillStatusMock.mockReturnValue(
+      new Promise((resolve) => {
+        resolveUpdate = resolve
+      }),
+    )
+    const { result } = renderHook(() => useMensais())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.updateBillStatus('b1', 'Paid'))
+
+    expect(result.current.updatingStatusBillId).toBe('b1')
+
+    await act(async () => resolveUpdate({ ...BILLS[0], status: 'Paid' }))
+
+    expect(result.current.updatingStatusBillId).toBeNull()
+  })
+
+  it('surfaces a status update error and leaves the bill list untouched', async () => {
+    updateMensaisBillStatusMock.mockRejectedValue(new Error('Status is not recognized.'))
+    const { result } = renderHook(() => useMensais())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.updateBillStatus('b1', 'NotAStatus'))
+
+    await waitFor(() => expect(result.current.statusUpdateError).toBe('Status is not recognized.'))
+    expect(result.current.brasilBills[0].status).toBe('Unset')
+    expect(result.current.updatingStatusBillId).toBeNull()
   })
 })

@@ -52,6 +52,8 @@ interface MensaisState {
   deleteError: string | null
   isResetting: boolean
   resetError: string | null
+  updatingStatusBillId: string | null
+  statusUpdateError: string | null
 }
 
 type MensaisAction =
@@ -78,6 +80,9 @@ type MensaisAction =
   | { type: 'RESET_START' }
   | { type: 'RESET_SUCCESS'; payload: RecurringBillDto[] }
   | { type: 'RESET_ERROR'; payload: string }
+  | { type: 'UPDATE_STATUS_START'; payload: string }
+  | { type: 'UPDATE_STATUS_SUCCESS'; payload: RecurringBillDto }
+  | { type: 'UPDATE_STATUS_ERROR'; payload: string }
 
 const { year: DEFAULT_YEAR, month: DEFAULT_MONTH } = currentYearMonth()
 
@@ -102,6 +107,8 @@ const INITIAL_STATE: MensaisState = {
   deleteError: null,
   isResetting: false,
   resetError: null,
+  updatingStatusBillId: null,
+  statusUpdateError: null,
 }
 
 function reducer(state: MensaisState, action: MensaisAction): MensaisState {
@@ -158,6 +165,16 @@ function reducer(state: MensaisState, action: MensaisAction): MensaisState {
       return { ...state, isResetting: false, bills: action.payload }
     case 'RESET_ERROR':
       return { ...state, isResetting: false, resetError: action.payload }
+    case 'UPDATE_STATUS_START':
+      return { ...state, updatingStatusBillId: action.payload, statusUpdateError: null }
+    case 'UPDATE_STATUS_SUCCESS':
+      return {
+        ...state,
+        updatingStatusBillId: null,
+        bills: state.bills.map((b) => (b.id === action.payload.id ? action.payload : b)),
+      }
+    case 'UPDATE_STATUS_ERROR':
+      return { ...state, updatingStatusBillId: null, statusUpdateError: action.payload }
     default:
       return state
   }
@@ -198,6 +215,9 @@ export interface MensaisData {
   isResetting: boolean
   resetError: string | null
   resetAllToUnset: () => void
+  updatingStatusBillId: string | null
+  statusUpdateError: string | null
+  updateBillStatus: (id: string, status: string) => void
 }
 
 export function useMensais(): MensaisData {
@@ -353,6 +373,20 @@ export function useMensais(): MensaisData {
       })
   }
 
+  function updateBillStatus(id: string, status: string) {
+    dispatch({ type: 'UPDATE_STATUS_START', payload: id })
+
+    void apiClient
+      .updateMensaisBillStatus(id, { status })
+      .then((bill) => dispatch({ type: 'UPDATE_STATUS_SUCCESS', payload: bill }))
+      .catch((err: unknown) => {
+        dispatch({
+          type: 'UPDATE_STATUS_ERROR',
+          payload: getErrorMessage(err, 'Failed to update status'),
+        })
+      })
+  }
+
   const brasilBills = useMemo(() => state.bills.filter((b) => b.area === 'Brasil'), [state.bills])
   const ukBills = useMemo(() => state.bills.filter((b) => b.area === 'UK'), [state.bills])
 
@@ -391,5 +425,8 @@ export function useMensais(): MensaisData {
     isResetting: state.isResetting,
     resetError: state.resetError,
     resetAllToUnset,
+    updatingStatusBillId: state.updatingStatusBillId,
+    statusUpdateError: state.statusUpdateError,
+    updateBillStatus,
   }
 }

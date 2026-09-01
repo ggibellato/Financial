@@ -3,6 +3,7 @@ import { AddRegular, ArrowResetRegular, DeleteRegular } from '@fluentui/react-ic
 import type { RecurringBillDto } from '../api/types'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
+import StatusMenuButton from '../components/StatusMenuButton'
 import SortableColumnHeader from '../components/grid/SortableColumnHeader'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { useMensais } from '../hooks/useMensais'
@@ -17,11 +18,21 @@ interface BillRowProps {
   bill: RecurringBillDto
   showBrasilFields: boolean
   isDeleting: boolean
+  isUpdatingStatus: boolean
   onEdit: (bill: RecurringBillDto) => void
   onDelete: (id: string) => void
+  onStatusChange: (id: string, status: string) => void
 }
 
-function BillRow({ bill, showBrasilFields, isDeleting, onEdit, onDelete }: BillRowProps) {
+function BillRow({
+  bill,
+  showBrasilFields,
+  isDeleting,
+  isUpdatingStatus,
+  onEdit,
+  onDelete,
+  onStatusChange,
+}: BillRowProps) {
   return (
     <tr>
       <td>
@@ -53,7 +64,14 @@ function BillRow({ bill, showBrasilFields, isDeleting, onEdit, onDelete }: BillR
       {showBrasilFields && <td>{bill.nitNumber ?? ''}</td>}
       {showBrasilFields && <td className="data-table__col--numeric">{bill.minimumWageValue !== null ? formatN2(bill.minimumWageValue) : ''}</td>}
       <td className="data-table__col--numeric">{formatN2(bill.value)}</td>
-      <td>{bill.status}</td>
+      <td>
+        <StatusMenuButton
+          statuses={STATUSES}
+          status={bill.status}
+          isUpdating={isUpdatingStatus}
+          onChange={(status) => onStatusChange(bill.id, status)}
+        />
+      </td>
     </tr>
   )
 }
@@ -62,11 +80,21 @@ interface BillTableProps {
   bills: RecurringBillDto[]
   showBrasilFields: boolean
   deletingBillId: string | null
+  updatingStatusBillId: string | null
   onEdit: (bill: RecurringBillDto) => void
   onDelete: (id: string) => void
+  onStatusChange: (id: string, status: string) => void
 }
 
-function BillTable({ bills, showBrasilFields, deletingBillId, onEdit, onDelete }: BillTableProps) {
+function BillTable({
+  bills,
+  showBrasilFields,
+  deletingBillId,
+  updatingStatusBillId,
+  onEdit,
+  onDelete,
+  onStatusChange,
+}: BillTableProps) {
   const accessors: Record<string, SortAccessor<RecurringBillDto>> = {
     dueDay: (bill) => bill.dueDay,
     description: (bill) => bill.description,
@@ -143,8 +171,10 @@ function BillTable({ bills, showBrasilFields, deletingBillId, onEdit, onDelete }
                 bill={bill}
                 showBrasilFields={showBrasilFields}
                 isDeleting={deletingBillId === bill.id}
+                isUpdatingStatus={updatingStatusBillId === bill.id}
                 onEdit={onEdit}
                 onDelete={onDelete}
+                onStatusChange={onStatusChange}
               />
             ))}
           </tbody>
@@ -190,6 +220,9 @@ export default function MensaisPage() {
     isResetting,
     resetError,
     resetAllToUnset,
+    updatingStatusBillId,
+    statusUpdateError,
+    updateBillStatus,
   } = useMensais()
 
   const isEditing = editingId !== null
@@ -223,6 +256,7 @@ export default function MensaisPage() {
 
       {deleteError && <p className="mensais-page__error">{deleteError}</p>}
       {resetError && <p className="mensais-page__error">{resetError}</p>}
+      {statusUpdateError && <p className="mensais-page__error">{statusUpdateError}</p>}
 
       {isAddFormOpen && (
         <div className="mensais-page__form-panel">
@@ -341,15 +375,19 @@ export default function MensaisPage() {
             bills={brasilBills}
             showBrasilFields
             deletingBillId={deletingBillId}
+            updatingStatusBillId={updatingStatusBillId}
             onEdit={showEditForm}
             onDelete={deleteBill}
+            onStatusChange={updateBillStatus}
           />
           <BillTable
             bills={ukBills}
             showBrasilFields={false}
             deletingBillId={deletingBillId}
+            updatingStatusBillId={updatingStatusBillId}
             onEdit={showEditForm}
             onDelete={deleteBill}
+            onStatusChange={updateBillStatus}
           />
         </div>
       )}
