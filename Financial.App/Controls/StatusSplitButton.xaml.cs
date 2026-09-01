@@ -51,6 +51,11 @@ public partial class StatusSplitButton : UserControl
         InitializeComponent();
     }
 
+    private void OnSplitButtonClick(object sender, RoutedEventArgs e)
+    {
+        Split.IsDropDownOpen = true;
+    }
+
     private void OnStatusItemClick(object sender, RoutedEventArgs e)
     {
         if (sender is not FrameworkElement { DataContext: string newStatus })

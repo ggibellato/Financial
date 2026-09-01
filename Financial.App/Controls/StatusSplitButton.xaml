@@ -4,14 +4,24 @@
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              x:Name="root">
     <!--
-        Only the chevron opens the Flyout, matching Wpf.Ui.Controls.SplitButton's native two-zone
-        convention (see spec.md's Technical Decisions) - the primary segment has no bound Command.
+        Matches the React StatusMenuButton: the whole button (not just the chevron) opens the
+        Flyout - Click bubbles from any part of ui:SplitButton, including its internal chevron
+        ToggleButton, so forcing IsDropDownOpen true (never toggling) is idempotent with whatever
+        the chevron's own internal handling already does, avoiding a double-toggle no-op.
     -->
     <ui:SplitButton x:Name="Split"
-                    Background="{Binding Status, ElementName=root, Converter={StaticResource BillStatusToBrushConverter}, ConverterParameter=Background}"
-                    Foreground="{Binding Status, ElementName=root, Converter={StaticResource BillStatusToBrushConverter}, ConverterParameter=Foreground}"
-                    Content="{Binding Status, ElementName=root}"
+                    Click="OnSplitButtonClick"
                     AutomationProperties.Name="{Binding Status, ElementName=root, StringFormat='Status: {0}. Change status'}">
+        <!--
+            Status color lives on this inner badge only (matching React's Badge-inside-a-neutral-
+            MenuButton), not on the SplitButton's own Background/Foreground - those get overridden
+            by the library's MouseOver/Pressed chrome, which made "Paid" unreadable on hover.
+        -->
+        <Border Background="{Binding Status, ElementName=root, Converter={StaticResource BillStatusToBrushConverter}, ConverterParameter=Background}"
+                CornerRadius="4" Padding="8,2">
+            <TextBlock Text="{Binding Status, ElementName=root}"
+                       Foreground="{Binding Status, ElementName=root, Converter={StaticResource BillStatusToBrushConverter}, ConverterParameter=Foreground}"/>
+        </Border>
         <ui:SplitButton.Flyout>
             <!--
                 Flyout content is a Popup root and does not inherit the outer visual tree's
