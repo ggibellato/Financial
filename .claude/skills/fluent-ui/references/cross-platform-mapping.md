@@ -29,3 +29,4 @@ This mapping does not authorize WPF to change the user-facing workflow.
 | Status message | Message bar/status region | InfoBar/status control | Same severity, message, and persistence |
 | Loading | Skeleton/progress | Progress indicator | Same scope and explanation |
 | Empty state | Empty-state region | Empty panel | Same explanation and next action |
+| Inline status change in a grid | Colored tag rendered as `MenuButton` (see `docs/ui/fluent-ui-react-v9-pages/splitButton.md`) | WPF-UI `SplitButton` | Same status list, same current-value checked/disabled treatment, same 2-click change |

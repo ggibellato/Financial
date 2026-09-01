@@ -42,6 +42,7 @@
 | Short known list | Select |
 | Date value | Date picker |
 | Long descriptive input | Textarea |
+| Compact inline status change in a grid | Status tag rendered as a `MenuButton` (see `docs/ui/fluent-ui-react-v9-pages/splitButton.md`) |
 
 ## Status messages
 
