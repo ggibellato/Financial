@@ -247,6 +247,30 @@ plain HTML table does by default; keep numeric/status columns compact. Do not
 leave fixed-width columns that add up to less than the container width — the
 gap reads as an unfinished/broken grid, not intentional whitespace.
 
+### Grid row actions
+
+Icon-only row actions (Edit, Delete, and similar per-row commands) go in the
+**leftmost column(s)** of the grid, before the data columns — not trailing at
+the right edge. `ExpensesSection.tsx`/`IncomeSection.tsx` are the reference:
+each row's Edit and Delete `Button`s (`appearance="subtle"`, `size="small"`,
+an explicit `aria-label`, no visible text) sit in the first two
+`TableCell`s, ahead of Date/Description/Category/etc. WPF matches with the
+same leading column position, `ui:Button Appearance="Transparent"` and
+`ui:SymbolIcon`. This keeps the action affordance in a fixed, predictable
+place regardless of how many data columns a given grid has, and matches this
+rule's own action-button convention of never right-aligning actions (see
+"Action buttons" above).
+
+Each action column sizes to its icon button's own width plus comfortable
+padding — never auto/flex-adjusted to share the grid's leftover space the way
+the identifying/label column does above. A narrow, fixed action column next
+to data columns that stretch to fill the container is the intended contrast,
+not a bug to "fix" by letting it grow: a wide, loosely-clickable action column
+reads as broken alignment, not intentional whitespace. The action column(s)
+sit ahead of, and are excluded from, the "leftmost column takes the remaining
+width" rule above — that rule applies to the leftmost *data* column, not an
+icon action column preceding it.
+
 Column-header click-to-sort is not a designed feature yet on either platform.
 A native WPF `DataGrid` may expose default sorting via
 `CanUserSortColumns="True"` while React's plain `<th>` headers have none —
