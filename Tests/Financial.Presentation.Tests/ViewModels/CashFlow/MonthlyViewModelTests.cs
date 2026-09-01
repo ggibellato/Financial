@@ -83,6 +83,98 @@ public class MonthlyViewModelTests
     }
 
     [Fact]
+    public async Task HasTitheCarryForward_ReflectsWhetherTheSummaryHasACarryForward()
+    {
+        var (viewModel, _, _, _, tithe, _) = CreateViewModel();
+        tithe.Summary = new TitheSummaryDTO
+        {
+            CalculatedTithe = 100m,
+            TitheBalance = 150m,
+            CarryForward = new TitheCarryForwardDTO { Amount = 50m, Included = true, FromYear = 2026, FromMonth = 8 },
+        };
+
+        await viewModel.RefreshAsync();
+
+        viewModel.HasTitheCarryForward.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task HasTitheCarryForward_FalseWhenNothingToCarry()
+    {
+        var (viewModel, _, _, _, _, _) = CreateViewModel();
+
+        await viewModel.RefreshAsync();
+
+        viewModel.HasTitheCarryForward.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task UpdateTitheCarryForwardAsync_TogglesInclusionAndRefreshes()
+    {
+        var (viewModel, _, _, _, tithe, _) = CreateViewModel();
+        tithe.Summary = new TitheSummaryDTO
+        {
+            CalculatedTithe = 100m,
+            TitheBalance = 150m,
+            CarryForward = new TitheCarryForwardDTO { Amount = 50m, Included = true, FromYear = 2026, FromMonth = 8 },
+        };
+        await viewModel.RefreshAsync();
+
+        await viewModel.UpdateTitheCarryForwardAsync(false);
+
+        tithe.LastUpdateRequest.Should().Be((viewModel.Year, viewModel.Month, false));
+        viewModel.TitheCarryForwardUpdateError.Should().BeNull();
+        viewModel.IsUpdatingTitheCarryForward.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task UpdateTitheCarryForwardAsync_NoCarryForwardAvailable_DoesNothing()
+    {
+        var (viewModel, _, _, _, tithe, _) = CreateViewModel();
+        await viewModel.RefreshAsync();
+
+        await viewModel.UpdateTitheCarryForwardAsync(false);
+
+        tithe.LastUpdateRequest.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task UpdateTitheCarryForwardAsync_SameValueAsCurrent_DoesNothing()
+    {
+        var (viewModel, _, _, _, tithe, _) = CreateViewModel();
+        tithe.Summary = new TitheSummaryDTO
+        {
+            CalculatedTithe = 100m,
+            TitheBalance = 150m,
+            CarryForward = new TitheCarryForwardDTO { Amount = 50m, Included = true, FromYear = 2026, FromMonth = 8 },
+        };
+        await viewModel.RefreshAsync();
+
+        await viewModel.UpdateTitheCarryForwardAsync(true);
+
+        tithe.LastUpdateRequest.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task UpdateTitheCarryForwardAsync_WhenServiceThrows_SetsErrorAndClearsBusyFlag()
+    {
+        var (viewModel, _, _, _, tithe, _) = CreateViewModel();
+        tithe.Summary = new TitheSummaryDTO
+        {
+            CalculatedTithe = 100m,
+            TitheBalance = 150m,
+            CarryForward = new TitheCarryForwardDTO { Amount = 50m, Included = true, FromYear = 2026, FromMonth = 8 },
+        };
+        await viewModel.RefreshAsync();
+        tithe.ThrowOnUpdate = new InvalidOperationException("No carry-forward is available for this month.");
+
+        await viewModel.UpdateTitheCarryForwardAsync(false);
+
+        viewModel.TitheCarryForwardUpdateError.Should().Be("No carry-forward is available for this month.");
+        viewModel.IsUpdatingTitheCarryForward.Should().BeFalse();
+    }
+
+    [Fact]
     public async Task RefreshAsync_GroupsIncomesBySourceAndSumsGrossOnlyWhenPresent()
     {
         var (viewModel, _, incomes, _, _, _) = CreateViewModel();
