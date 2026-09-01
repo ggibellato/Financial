@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import StatusMenuButton from '../StatusMenuButton'
 
@@ -54,5 +55,22 @@ describe('StatusMenuButton', () => {
     render(<StatusMenuButton statuses={STATUSES} status="Unset" isUpdating onChange={vi.fn()} />)
 
     expect(screen.getByRole('button')).toBeDisabled()
+  })
+
+  it('is keyboard operable: Tab focuses the trigger, Enter opens the menu, Enter selects a focused item', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(<StatusMenuButton statuses={STATUSES} status="Unset" onChange={onChange} />)
+
+    await user.tab()
+    expect(screen.getByRole('button')).toHaveFocus()
+
+    await user.keyboard('{Enter}')
+    const scheduledItem = await screen.findByRole('menuitem', { name: 'Scheduled' })
+
+    scheduledItem.focus()
+    await user.keyboard('{Enter}')
+
+    expect(onChange).toHaveBeenCalledExactlyOnceWith('Scheduled')
   })
 })
