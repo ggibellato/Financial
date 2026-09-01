@@ -140,15 +140,15 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Tithe Carry-Forward Calculation
-- [ ] When the previous month's Tithe Balance is positive, the current month's Tithe Balance includes that amount by default without any user action.
-- [ ] When the previous month's Tithe Balance is zero or negative, the current month offers no carry-in and Tithe Balance equals the existing (unchanged) calculation.
-- [ ] Calculated Tithe for any month always equals exactly 10% of that month's net income, unaffected by any carry-forward inclusion.
-- [ ] Unchecking a month's carry-forward inclusion immediately reduces that month's Tithe Balance by the carried amount and persists the decision.
-- [ ] Re-checking a previously unchecked carry-forward inclusion restores the exact original snapshotted amount, not a freshly recomputed one.
-- [ ] Editing income/expenses in a month after a later month has already resolved its carry-in from it does not change the later month's stored carried amount.
-- [ ] A month whose carry-forward was declined (unchecked) never re-offers that amount to any subsequent month.
-- [ ] The first month in which this feature is active shows no carry-forward option, regardless of unpaid balances in any earlier historical month.
-- [ ] Toggling carry-forward for an invalid month returns a validation error and leaves the displayed figures unchanged.
+- [x] When the previous month's Tithe Balance is positive, the current month's Tithe Balance includes that amount by default without any user action.
+- [x] When the previous month's Tithe Balance is zero or negative, the current month offers no carry-in and Tithe Balance equals the existing (unchanged) calculation.
+- [x] Calculated Tithe for any month always equals exactly 10% of that month's net income, unaffected by any carry-forward inclusion.
+- [x] Unchecking a month's carry-forward inclusion immediately reduces that month's Tithe Balance by the carried amount and persists the decision.
+- [x] Re-checking a previously unchecked carry-forward inclusion restores the exact original snapshotted amount, not a freshly recomputed one.
+- [x] Editing income/expenses in a month after a later month has already resolved its carry-in from it does not change the later month's stored carried amount.
+- [x] A month whose carry-forward was declined (unchecked) never re-offers that amount to any subsequent month.
+- [x] The first month in which this feature is active shows no carry-forward option, regardless of unpaid balances in any earlier historical month.
+- [x] Toggling carry-forward for an invalid month returns a validation error and leaves the displayed figures unchanged.
 - [ ] A save failure while toggling reverts the control to its prior state and surfaces an error message.
 
 ### F02. Tithe Carry-Forward Display
