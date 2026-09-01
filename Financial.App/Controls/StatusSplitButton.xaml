@@ -4,10 +4,15 @@
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              x:Name="root">
     <!--
+        Wpf.Ui.Controls.SplitButton's chevron-click wiring (OnSplitButtonToggleButtonOnClick) only
+        does anything when Flyout is set to a real System.Windows.Controls.ContextMenu - it
+        silently no-ops for any other type (confirmed against the library source), so a ui:Flyout
+        here would never open on any click. IsDropDownOpen is likewise a one-way readback of the
+        ContextMenu's own Opened/Closed state, not something that opens anything when set.
         Matches the React StatusMenuButton: the whole button (not just the chevron) opens the
-        Flyout - Click bubbles from any part of ui:SplitButton, including its internal chevron
-        ToggleButton, so forcing IsDropDownOpen true (never toggling) is idempotent with whatever
-        the chevron's own internal handling already does, avoiding a double-toggle no-op.
+        menu - Click bubbles from the chevron's internal ToggleButton up through this SplitButton,
+        so OnSplitButtonClick opens the SAME ContextMenu the chevron's own handler already does,
+        making both paths idempotent with each other.
     -->
     <ui:SplitButton x:Name="Split"
                     Click="OnSplitButtonClick"
@@ -24,41 +29,39 @@
         </Border>
         <ui:SplitButton.Flyout>
             <!--
-                Flyout content is a Popup root and does not inherit the outer visual tree's
-                DataContext (see docs/ui/wpf.md), so every binding below reaches back to this
-                control's own dependency properties via ElementName=root rather than {Binding}.
+                A ContextMenu is not part of the visual tree it's declared in - it gets its own
+                NameScope and does not inherit ambient DataContext, so {Binding ElementName=root}
+                would silently resolve to nothing here (confirmed: it left ItemsSource null,
+                rendering an empty menu). StatusSplitButton's constructor sets this ContextMenu's
+                DataContext to itself; every binding below reaches back to it via
+                RelativeSource AncestorType=ContextMenu rather than ElementName.
             -->
-            <ui:Flyout Placement="Bottom">
-                <ItemsControl ItemsSource="{Binding Statuses, ElementName=root}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <ui:Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
-                                       Appearance="Transparent" Padding="8,6" Click="OnStatusItemClick">
-                                <ui:Button.Tag>
-                                    <MultiBinding Converter="{StaticResource EqualityToBoolConverter}">
-                                        <Binding/>
-                                        <Binding Path="Status" ElementName="root"/>
-                                    </MultiBinding>
-                                </ui:Button.Tag>
-                                <ui:Button.Style>
-                                    <Style TargetType="{x:Type ui:Button}" BasedOn="{StaticResource {x:Type ui:Button}}">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource Self}, Path=Tag}" Value="True">
-                                                <Setter Property="IsEnabled" Value="False"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </ui:Button.Style>
-                                <StackPanel Orientation="Horizontal">
-                                    <ui:SymbolIcon Symbol="Checkmark20" Margin="0,0,6,0"
-                                                   Visibility="{Binding RelativeSource={RelativeSource AncestorType={x:Type ui:Button}}, Path=Tag, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                                    <TextBlock Text="{Binding}"/>
-                                </StackPanel>
-                            </ui:Button>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </ui:Flyout>
+            <ContextMenu ItemsSource="{Binding Statuses}">
+                <ContextMenu.ItemContainerStyle>
+                    <Style TargetType="MenuItem">
+                        <EventSetter Event="Click" Handler="OnStatusItemClick"/>
+                        <Setter Property="Header" Value="{Binding}"/>
+                        <Setter Property="Tag">
+                            <Setter.Value>
+                                <MultiBinding Converter="{StaticResource EqualityToBoolConverter}">
+                                    <Binding/>
+                                    <Binding Path="DataContext.Status" RelativeSource="{RelativeSource AncestorType={x:Type ContextMenu}}"/>
+                                </MultiBinding>
+                            </Setter.Value>
+                        </Setter>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource Self}, Path=Tag}" Value="True">
+                                <Setter Property="IsEnabled" Value="False"/>
+                                <Setter Property="Icon">
+                                    <Setter.Value>
+                                        <ui:SymbolIcon Symbol="Checkmark20"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ContextMenu.ItemContainerStyle>
+            </ContextMenu>
         </ui:SplitButton.Flyout>
     </ui:SplitButton>
 </UserControl>
