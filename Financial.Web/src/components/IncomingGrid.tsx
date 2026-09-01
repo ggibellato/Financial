@@ -76,10 +76,10 @@ export default function IncomingGrid({
           ...(carryForward
             ? [
                 {
-                  label: `Carry forward from ${formatMonthYear(new Date(carryForward.fromYear, carryForward.fromMonth - 1, 1))}`,
+                  label: 'Carry forward',
                   value: (
                     <Checkbox
-                      label={formatN2(carryForward.amount)}
+                      label={`${formatN2(carryForward.amount)} from ${formatMonthYear(new Date(carryForward.fromYear, carryForward.fromMonth - 1, 1))}`}
                       checked={carryForward.included}
                       disabled={carryForwardUpdating}
                       onChange={(_, data) => onToggleCarryForward(data.checked === true)}

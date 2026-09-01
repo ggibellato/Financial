@@ -53,7 +53,7 @@ describe('IncomingGrid', () => {
   it('does not render a carry-forward control when nothing is available to carry', () => {
     renderGrid({ titheSummary: { calculatedTithe: 245, titheBalance: 245, carryForward: null } })
 
-    expect(screen.queryByText(/Carry forward from/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Carry forward:/)).not.toBeInTheDocument()
     expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
   })
 
@@ -66,10 +66,9 @@ describe('IncomingGrid', () => {
       },
     })
 
-    expect(screen.getByText(/Carry forward from Aug 2026/)).toBeInTheDocument()
-    const checkbox = screen.getByRole('checkbox')
+    expect(screen.getByText(/Carry forward:/)).toBeInTheDocument()
+    const checkbox = screen.getByRole('checkbox', { name: /50\.00 from Aug 2026/ })
     expect(checkbox).toBeChecked()
-    expect(screen.getByText('50.00')).toBeInTheDocument()
   })
 
   it('reflects an excluded carry-forward as unchecked', () => {

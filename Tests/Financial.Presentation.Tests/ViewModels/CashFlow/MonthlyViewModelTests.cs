@@ -99,6 +99,22 @@ public class MonthlyViewModelTests
     }
 
     [Fact]
+    public async Task CarryForwardAccessibleName_IncludesAmountAndSourceMonth()
+    {
+        var (viewModel, _, _, _, tithe, _) = CreateViewModel();
+        tithe.Summary = new TitheSummaryDTO
+        {
+            CalculatedTithe = 100m,
+            TitheBalance = 150m,
+            CarryForward = new TitheCarryForwardDTO { Amount = 50m, Included = true, FromYear = 2026, FromMonth = 8 },
+        };
+
+        await viewModel.RefreshAsync();
+
+        viewModel.CarryForwardAccessibleName.Should().Be("Carry forward 50.00 from 8/2026");
+    }
+
+    [Fact]
     public async Task HasTitheCarryForward_FalseWhenNothingToCarry()
     {
         var (viewModel, _, _, _, _, _) = CreateViewModel();

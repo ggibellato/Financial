@@ -35,7 +35,7 @@
                 <TextBlock Text=" · Carry forward: "/>
                 <CheckBox IsChecked="{Binding TitheSummary.CarryForward.Included, Mode=OneWay}"
                           IsEnabled="{Binding IsCarryForwardToggleEnabled}"
-                          AutomationProperties.Name="Carry forward"
+                          AutomationProperties.Name="{Binding CarryForwardAccessibleName}"
                           Checked="OnCarryForwardIncludedChanged" Unchecked="OnCarryForwardIncludedChanged"
                           VerticalAlignment="Center"/>
                 <TextBlock Text="{Binding TitheSummary.CarryForward.Amount, StringFormat=N2}" FontWeight="Bold"/>

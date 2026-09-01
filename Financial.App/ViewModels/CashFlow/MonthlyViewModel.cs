@@ -104,11 +104,18 @@ public class MonthlyViewModel : ViewModelBase
             if (SetProperty(ref _titheSummary, value))
             {
                 OnPropertyChanged(nameof(HasTitheCarryForward));
+                OnPropertyChanged(nameof(CarryForwardAccessibleName));
             }
         }
     }
 
     public bool HasTitheCarryForward => TitheSummary?.CarryForward != null;
+
+    /// <summary>Fully self-describing accessible name for the carry-forward checkbox - narration
+    /// must not depend on the adjacent static "Carry forward" label being read first.</summary>
+    public string CarryForwardAccessibleName => TitheSummary?.CarryForward is { } carryForward
+        ? $"Carry forward {carryForward.Amount:N2} from {carryForward.FromMonth}/{carryForward.FromYear}"
+        : "Carry forward";
 
     private bool _isUpdatingTitheCarryForward;
     public bool IsUpdatingTitheCarryForward
