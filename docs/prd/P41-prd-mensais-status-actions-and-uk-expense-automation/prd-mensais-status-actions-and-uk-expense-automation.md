@@ -272,11 +272,11 @@ graph TD
 - [x] If Expense creation succeeds but the status-update call fails, the dialog shows an error and offers a status-only retry, and does not create a second Expense on retry.
 
 ### F05. UK Paid-to-Expense Prompt (WPF)
-- [ ] The WPF Mensais grid surfaces the same trigger condition, pre-filled fields, and Confirm/Skip/Cancel outcomes as F04.
-- [ ] All F04 acceptance criteria hold equivalently for the WPF client and its data.
+- [x] The WPF Mensais grid surfaces the same trigger condition, pre-filled fields, and Confirm/Skip/Cancel outcomes as F04.
+- [x] All F04 acceptance criteria hold equivalently for the WPF client and its data.
 
 ### Cross-Feature Integration
 - [x] A status change made through F02's control is persisted through F01's endpoint and reflected on a subsequent full page reload of the Mensais page.
 - [x] A status change made through F03's control is persisted through F01's endpoint and reflected on a subsequent reload of the WPF Mensais view.
 - [x] A transition into Paid on a UK bill, captured as F02's status-transition signal, correctly opens F04's dialog with the correct bill id, area, and value carried through.
-- [ ] A transition into Paid on a UK bill, captured as F03's status-transition signal, correctly opens F05's dialog with the correct bill id, area, and value carried through.
+- [x] A transition into Paid on a UK bill, captured as F03's status-transition signal, correctly opens F05's dialog with the correct bill id, area, and value carried through.
