@@ -151,7 +151,8 @@ public sealed class MensaisService : IMensaisService
 
             if (!BillStatusParser.TryParse(request.Status, out var status))
             {
-                throw new ArgumentException($"Status '{request.Status}' is not recognized.");
+                throw new ArgumentException(
+                    $"Status '{request.Status}' is not recognized. Must be one of: Unset, Scheduled, Paid.");
             }
 
             await _repository.ApplyAndSaveAsync(() =>

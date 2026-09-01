@@ -198,6 +198,7 @@ public class MensaisEndpointsTests : ApiEndpointTests
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         var body = await response.Content.ReadAsStringAsync();
         body.Should().Contain("NotAStatus");
+        body.Should().Contain("Unset").And.Contain("Scheduled").And.Contain("Paid");
     }
 
     [Fact]

@@ -302,7 +302,8 @@ public class MensaisServiceTests
 
         var act = async () => await _sut.UpdateBillStatusAsync(bill.Id, new RecurringBillStatusUpdateDTO { Status = "NotAStatus" });
 
-        await act.Should().ThrowAsync<ArgumentException>();
+        await act.Should().ThrowAsync<ArgumentException>()
+            .WithMessage("*Unset, Scheduled, Paid*");
     }
 
     [Fact]
