@@ -172,6 +172,76 @@ describe('MensaisPage', () => {
     expect(screen.queryByText('Edit Bill')).not.toBeInTheDocument()
   })
 
+  it('marking a UK bill Paid opens the expense prompt instead of calling the status API', async () => {
+    render(<MensaisPage />)
+
+    await waitFor(() => expect(screen.getByText('Council Tax')).toBeInTheDocument())
+
+    const statusButtons = screen.getAllByRole('button', { name: /^Status: Unset/ })
+    fireEvent.click(statusButtons[1])
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Paid' }))
+
+    expect(await screen.findByRole('heading', { name: 'Generate expense for this payment?' })).toBeInTheDocument()
+    expect(updateMensaisBillStatusMock).not.toHaveBeenCalled()
+  })
+
+  it('marking a Brasil bill Paid never opens the expense prompt', async () => {
+    updateMensaisBillStatusMock.mockResolvedValue({ ...BILLS[0], status: 'Paid' })
+    render(<MensaisPage />)
+
+    await waitFor(() => expect(screen.getByText('INSS')).toBeInTheDocument())
+
+    const statusButtons = screen.getAllByRole('button', { name: /^Status: Unset/ })
+    fireEvent.click(statusButtons[0])
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Paid' }))
+
+    await waitFor(() => expect(updateMensaisBillStatusMock).toHaveBeenCalledWith('b1', { status: 'Paid' }))
+    expect(screen.queryByRole('heading', { name: 'Generate expense for this payment?' })).not.toBeInTheDocument()
+  })
+
+  it('confirming the expense prompt creates the expense, marks the bill Paid, and closes the prompt', async () => {
+    createExpenseMock.mockResolvedValue({
+      id: 'exp-1', date: '2026-09-01', description: 'Council Tax', value: 120,
+      categoryId: 'cat-1', categoryName: 'Bills', paymentSourceBankId: 'bank-1', paymentSourceBankName: 'Barclays',
+      creditCardId: null, creditCardName: null, chargeDate: null, invoiceDate: null,
+      paymentStatus: 'ImmediatePayment', roundUpAmount: null, suggestedRoundUpAmount: null, countsAsTithe: true,
+    })
+    updateMensaisBillStatusMock.mockResolvedValue({ ...BILLS[1], status: 'Paid' })
+    render(<MensaisPage />)
+
+    await waitFor(() => expect(screen.getByText('Council Tax')).toBeInTheDocument())
+    const statusButtons = screen.getAllByRole('button', { name: /^Status: Unset/ })
+    fireEvent.click(statusButtons[1])
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Paid' }))
+    await screen.findByRole('heading', { name: 'Generate expense for this payment?' })
+
+    fireEvent.change(screen.getByLabelText(/^Bank/), { target: { value: 'bank-1' } })
+    fireEvent.change(screen.getByLabelText(/^Category/), { target: { value: 'cat-1' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm' }))
+
+    await waitFor(() => expect(createExpenseMock).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(updateMensaisBillStatusMock).toHaveBeenCalledWith('b2', { status: 'Paid' }))
+    await waitFor(() =>
+      expect(screen.queryByRole('heading', { name: 'Generate expense for this payment?' })).not.toBeInTheDocument(),
+    )
+  })
+
+  it('canceling the expense prompt makes no API calls', async () => {
+    render(<MensaisPage />)
+
+    await waitFor(() => expect(screen.getByText('Council Tax')).toBeInTheDocument())
+    const statusButtons = screen.getAllByRole('button', { name: /^Status: Unset/ })
+    fireEvent.click(statusButtons[1])
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Paid' }))
+    await screen.findByRole('heading', { name: 'Generate expense for this payment?' })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+
+    expect(screen.queryByRole('heading', { name: 'Generate expense for this payment?' })).not.toBeInTheDocument()
+    expect(createExpenseMock).not.toHaveBeenCalled()
+    expect(updateMensaisBillStatusMock).not.toHaveBeenCalled()
+  })
+
   it('shows an error and leaves the status unchanged when the status update fails', async () => {
     updateMensaisBillStatusMock.mockRejectedValue(new Error('Status is not recognized.'))
     render(<MensaisPage />)
