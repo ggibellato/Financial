@@ -25,7 +25,8 @@ public class CashFlowTypeInfoResolver : DefaultJsonTypeInfoResolver
         typeof(Category),
         typeof(Income),
         typeof(Transfer),
-        typeof(BalanceAdjustment)
+        typeof(BalanceAdjustment),
+        typeof(TitheCarryForward)
     ];
 
     // Maps each reference-typed property to its wire name and whether the key must be present in

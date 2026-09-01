@@ -38,6 +38,8 @@ public class CashFlowDataTests
         _sut.BalanceAdjustments.Should().BeEmpty();
         _sut.CreditCards.Should().BeEmpty();
         _sut.Categories.Should().BeEmpty();
+        _sut.TitheCarryForwards.Should().BeEmpty();
+        _sut.TitheCarryForwardEffectiveFrom.Should().BeNull();
     }
 
     [Fact]
@@ -506,10 +508,36 @@ public class CashFlowDataTests
     private static BalanceAdjustment CreateBalanceAdjustment() =>
         BalanceAdjustment.Create(new DateOnly(2026, 7, 1), Barclays, 100m, 0m, "Test adjustment");
 
+    [Fact]
+    public void AddTitheCarryForward_AddsOnlyToTitheCarryForwardsCollection()
+    {
+        _sut.AddTitheCarryForward(TitheCarryForward.Create(2026, 8, 50m));
+
+        CheckCollectionCounts(new CheckItemsQuantity(TitheCarryForwards: 1));
+    }
+
+    [Fact]
+    public void SetTitheCarryForwardEffectiveFrom_SetsTheValue()
+    {
+        _sut.SetTitheCarryForwardEffectiveFrom(new DateOnly(2026, 9, 1));
+
+        _sut.TitheCarryForwardEffectiveFrom.Should().Be(new DateOnly(2026, 9, 1));
+    }
+
+    [Fact]
+    public void SetTitheCarryForwardEffectiveFrom_CalledAgain_OverwritesThePreviousValue()
+    {
+        _sut.SetTitheCarryForwardEffectiveFrom(new DateOnly(2026, 9, 1));
+
+        _sut.SetTitheCarryForwardEffectiveFrom(new DateOnly(2026, 10, 1));
+
+        _sut.TitheCarryForwardEffectiveFrom.Should().Be(new DateOnly(2026, 10, 1));
+    }
+
     private record CheckItemsQuantity(int Expenses = 0, int ReserveMovements = 0, int CardStatements = 0,
         int RecurringBills = 0, int MaeLedgerEntries = 0, int InvestmentSnapshots = 0, int InvestmentAccounts = 0, int Banks = 0,
         int IncomeSources = 0, int ReserveBuckets = 0, int Incomes = 0, int Transfers = 0, int BalanceAdjustments = 0, int CreditCards = 0,
-        int Categories = 0);
+        int Categories = 0, int TitheCarryForwards = 0);
 
     private void CheckCollectionCounts(CheckItemsQuantity expected)
     {
@@ -528,5 +556,6 @@ public class CashFlowDataTests
         _sut.BalanceAdjustments.Count.Should().Be(expected.BalanceAdjustments);
         _sut.CreditCards.Count.Should().Be(expected.CreditCards);
         _sut.Categories.Count.Should().Be(expected.Categories);
+        _sut.TitheCarryForwards.Count.Should().Be(expected.TitheCarryForwards);
     }
 }

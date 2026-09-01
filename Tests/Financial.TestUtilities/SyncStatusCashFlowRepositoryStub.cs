@@ -70,4 +70,8 @@ public sealed class SyncStatusCashFlowRepositoryStub : ICashFlowRepository, ISyn
     public void AddBalanceAdjustment(BalanceAdjustment adjustment) => throw new NotImplementedException();
     public void UpdateBalanceAdjustment(BalanceAdjustment adjustment) => throw new NotImplementedException();
     public void DeleteBalanceAdjustment(Guid id) => throw new NotImplementedException();
+    public IEnumerable<TitheCarryForward> GetTitheCarryForwards() => throw new NotImplementedException();
+    public void AddTitheCarryForward(TitheCarryForward decision) => throw new NotImplementedException();
+    public DateOnly? GetTitheCarryForwardEffectiveFrom() => throw new NotImplementedException();
+    public void SetTitheCarryForwardEffectiveFrom(DateOnly date) => throw new NotImplementedException();
 }

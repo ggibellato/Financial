@@ -68,6 +68,11 @@ public sealed class CashFlowJsonRepository : ICashFlowRepository, ISyncStatusPro
     public void AddCategory(Category category) => _data.AddCategory(category);
     public void DeleteCategory(Guid id) => _data.RemoveCategory(id);
 
+    public IEnumerable<TitheCarryForward> GetTitheCarryForwards() => _data.TitheCarryForwards;
+    public void AddTitheCarryForward(TitheCarryForward decision) => _data.AddTitheCarryForward(decision);
+    public DateOnly? GetTitheCarryForwardEffectiveFrom() => _data.TitheCarryForwardEffectiveFrom;
+    public void SetTitheCarryForwardEffectiveFrom(DateOnly date) => _data.SetTitheCarryForwardEffectiveFrom(date);
+
     public IEnumerable<Income> GetIncomes() => _data.Incomes;
     public void AddIncome(Income income) => _data.AddIncome(income);
     public void DeleteIncome(Guid id) => _data.RemoveIncome(id);
