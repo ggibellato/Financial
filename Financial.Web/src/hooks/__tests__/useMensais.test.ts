@@ -500,5 +500,19 @@ describe('useMensais', () => {
       expect(createExpenseMock).not.toHaveBeenCalled()
       expect(updateMensaisBillStatusMock).not.toHaveBeenCalled()
     })
+
+    it('unmarking a Paid UK bill only calls the status endpoint, never touching expenses', async () => {
+      const paidUkBill = { ...ukBill, status: 'Paid' }
+      getMensaisBillsMock.mockResolvedValue([BILLS[0], paidUkBill])
+      updateMensaisBillStatusMock.mockResolvedValue({ ...paidUkBill, status: 'Unset' })
+      const { result } = renderHook(() => useMensais())
+      await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+      act(() => result.current.updateBillStatus(paidUkBill.id, 'Unset'))
+
+      expect(result.current.expensePromptBill).toBeNull()
+      await waitFor(() => expect(updateMensaisBillStatusMock).toHaveBeenCalledWith(paidUkBill.id, { status: 'Unset' }))
+      expect(createExpenseMock).not.toHaveBeenCalled()
+    })
   })
 })
