@@ -149,15 +149,15 @@ graph TD
 - [x] A month whose carry-forward was declined (unchecked) never re-offers that amount to any subsequent month.
 - [x] The first month in which this feature is active shows no carry-forward option, regardless of unpaid balances in any earlier historical month.
 - [x] Toggling carry-forward for an invalid month returns a validation error and leaves the displayed figures unchanged.
-- [ ] A save failure while toggling reverts the control to its prior state and surfaces an error message.
+- [x] A save failure while toggling reverts the control to its prior state and surfaces an error message.
 
 ### F02. Tithe Carry-Forward Display
-- [ ] The carry-forward control appears in the Tithe footer only when a positive carry-in amount is available for the viewed month.
-- [ ] The control shows the carried amount, its source month, and a checkbox pre-checked by default.
-- [ ] Unchecking/checking the control updates the visible Tithe Balance immediately and matches the value returned by F01.
-- [ ] The same control, wording, default state, and behavior are present in both Financial.Web and Financial.App.
-- [ ] In a month with nothing to carry, the footer shows only the existing Calculated Tithe/Tithe Balance line with no carry-forward control.
-- [ ] A failed toggle reverts the checkbox to its previous state and displays the F01 error message.
+- [x] The carry-forward control appears in the Tithe footer only when a positive carry-in amount is available for the viewed month.
+- [x] The control shows the carried amount, its source month, and a checkbox pre-checked by default.
+- [x] Unchecking/checking the control updates the visible Tithe Balance immediately and matches the value returned by F01.
+- [x] The same control, wording, default state, and behavior are present in both Financial.Web and Financial.App.
+- [x] In a month with nothing to carry, the footer shows only the existing Calculated Tithe/Tithe Balance line with no carry-forward control.
+- [x] A failed toggle reverts the checkbox to its previous state and displays the F01 error message.
 
 ### Cross-Feature Integration
-- [ ] The carried-forward amount, inclusion state, source month, and adjusted Tithe Balance computed by F01 are correctly received and rendered by F02's footer control in both Financial.Web and Financial.App.
+- [x] The carried-forward amount, inclusion state, source month, and adjusted Tithe Balance computed by F01 are correctly received and rendered by F02's footer control in both Financial.Web and Financial.App.

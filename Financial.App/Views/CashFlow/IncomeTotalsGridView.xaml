@@ -5,6 +5,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <DataGrid Grid.Row="0" ItemsSource="{Binding IncomeTotals}" AutoGenerateColumns="False">
@@ -29,6 +30,22 @@
             <TextBlock Text="{Binding TitheSummary.CalculatedTithe, StringFormat=N2}" FontWeight="Bold"/>
             <TextBlock Text=" · Tithe Balance: "/>
             <TextBlock Text="{Binding TitheSummary.TitheBalance, StringFormat=N2}" FontWeight="Bold"/>
+            <StackPanel Orientation="Horizontal" Margin="8,0,0,0"
+                        Visibility="{Binding HasTitheCarryForward, Converter={StaticResource BoolToVisibilityConverter}}">
+                <TextBlock Text=" · Carry forward: "/>
+                <CheckBox IsChecked="{Binding TitheSummary.CarryForward.Included, Mode=OneWay}"
+                          IsEnabled="{Binding IsCarryForwardToggleEnabled}"
+                          AutomationProperties.Name="{Binding CarryForwardAccessibleName}"
+                          Checked="OnCarryForwardIncludedChanged" Unchecked="OnCarryForwardIncludedChanged"
+                          VerticalAlignment="Center"/>
+                <TextBlock Text="{Binding TitheSummary.CarryForward.Amount, StringFormat=N2}" FontWeight="Bold"/>
+                <TextBlock Text=" from "/>
+                <TextBlock Text="{Binding TitheSummary.CarryForward.FromMonth}" FontWeight="Bold"/>
+                <TextBlock Text="/"/>
+                <TextBlock Text="{Binding TitheSummary.CarryForward.FromYear}" FontWeight="Bold"/>
+            </StackPanel>
         </StackPanel>
+        <TextBlock Grid.Row="2" Foreground="Red" TextWrapping="Wrap" Margin="0,4,0,0"
+                   Text="{Binding TitheCarryForwardUpdateError}"/>
     </Grid>
 </UserControl>

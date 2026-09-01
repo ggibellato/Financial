@@ -37,6 +37,7 @@ const {
   deleteIncomeMock,
   getBankBalancesByMonthMock,
   getTitheSummaryByMonthMock,
+  updateTitheCarryForwardMock,
 } = vi.hoisted(() => ({
   getExpensesByMonthMock: vi.fn<FinancialApiClient['getExpensesByMonth']>(),
   getUnpaidCardChargesByMonthMock: vi.fn<FinancialApiClient['getUnpaidCardChargesByMonth']>(),
@@ -52,6 +53,7 @@ const {
   deleteIncomeMock: vi.fn<FinancialApiClient['deleteIncome']>(),
   getBankBalancesByMonthMock: vi.fn<FinancialApiClient['getBankBalancesByMonth']>(),
   getTitheSummaryByMonthMock: vi.fn<FinancialApiClient['getTitheSummaryByMonth']>(),
+  updateTitheCarryForwardMock: vi.fn<FinancialApiClient['updateTitheCarryForward']>(),
 }))
 
 vi.mock('../../api/financialApiClient', () => ({
@@ -70,6 +72,7 @@ vi.mock('../../api/financialApiClient', () => ({
     deleteIncome: deleteIncomeMock,
     getBankBalancesByMonth: getBankBalancesByMonthMock,
     getTitheSummaryByMonth: getTitheSummaryByMonthMock,
+    updateTitheCarryForward: updateTitheCarryForwardMock,
   } as Partial<FinancialApiClient>,
 }))
 
@@ -159,6 +162,7 @@ describe('useMonthly', () => {
     deleteIncomeMock.mockReset()
     getBankBalancesByMonthMock.mockReset()
     getTitheSummaryByMonthMock.mockReset()
+    updateTitheCarryForwardMock.mockReset()
     getExpensesByMonthMock.mockResolvedValue(EXPENSES)
     getUnpaidCardChargesByMonthMock.mockResolvedValue([])
     getCategoryTotalsByMonthMock.mockResolvedValue(CATEGORY_TOTALS)
@@ -399,6 +403,54 @@ describe('useMonthly', () => {
 
     expect(getTitheSummaryByMonthMock).toHaveBeenCalledWith(CURRENT_YEAR, CURRENT_MONTH)
     expect(result.current.titheSummary).toEqual(TITHE_SUMMARY)
+  })
+
+  it('toggles carry-forward inclusion and re-fetches the tithe summary', async () => {
+    updateTitheCarryForwardMock.mockResolvedValue({
+      calculatedTithe: 245,
+      titheBalance: 195,
+      carryForward: { amount: 50, included: false, fromYear: CURRENT_YEAR, fromMonth: CURRENT_MONTH },
+    })
+    const { result } = renderHook(() => useMonthly())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.updateCarryForwardInclusion(false))
+
+    await waitFor(() =>
+      expect(updateTitheCarryForwardMock).toHaveBeenCalledWith(CURRENT_YEAR, CURRENT_MONTH, { included: false }),
+    )
+    await waitFor(() => expect(getTitheSummaryByMonthMock).toHaveBeenCalledTimes(2))
+  })
+
+  it('sets carryForwardUpdating while the toggle request is in flight, then clears it', async () => {
+    let resolveUpdate!: (value: TitheSummaryDto) => void
+    updateTitheCarryForwardMock.mockReturnValue(
+      new Promise((resolve) => {
+        resolveUpdate = resolve
+      }),
+    )
+    const { result } = renderHook(() => useMonthly())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.updateCarryForwardInclusion(false))
+    expect(result.current.carryForwardUpdating).toBe(true)
+
+    await act(async () => {
+      resolveUpdate({ calculatedTithe: 245, titheBalance: 195, carryForward: null })
+    })
+
+    await waitFor(() => expect(result.current.carryForwardUpdating).toBe(false))
+  })
+
+  it('exposes a failed carry-forward toggle as an action error and clears the busy flag', async () => {
+    updateTitheCarryForwardMock.mockRejectedValue(new Error('No carry-forward is available for this month.'))
+    const { result } = renderHook(() => useMonthly())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.updateCarryForwardInclusion(false))
+
+    await waitFor(() => expect(result.current.listActionError).toBe('No carry-forward is available for this month.'))
+    expect(result.current.carryForwardUpdating).toBe(false)
   })
 
   it('deletes an income entry and re-fetches', async () => {

@@ -99,7 +99,44 @@ public class MonthlyViewModel : ViewModelBase
     public TitheSummaryDTO? TitheSummary
     {
         get => _titheSummary;
-        private set => SetProperty(ref _titheSummary, value);
+        private set
+        {
+            if (SetProperty(ref _titheSummary, value))
+            {
+                OnPropertyChanged(nameof(HasTitheCarryForward));
+                OnPropertyChanged(nameof(CarryForwardAccessibleName));
+            }
+        }
+    }
+
+    public bool HasTitheCarryForward => TitheSummary?.CarryForward != null;
+
+    /// <summary>Fully self-describing accessible name for the carry-forward checkbox - narration
+    /// must not depend on the adjacent static "Carry forward" label being read first.</summary>
+    public string CarryForwardAccessibleName => TitheSummary?.CarryForward is { } carryForward
+        ? $"Carry forward {carryForward.Amount:N2} from {carryForward.FromMonth}/{carryForward.FromYear}"
+        : "Carry forward";
+
+    private bool _isUpdatingTitheCarryForward;
+    public bool IsUpdatingTitheCarryForward
+    {
+        get => _isUpdatingTitheCarryForward;
+        private set
+        {
+            if (SetProperty(ref _isUpdatingTitheCarryForward, value))
+            {
+                OnPropertyChanged(nameof(IsCarryForwardToggleEnabled));
+            }
+        }
+    }
+
+    public bool IsCarryForwardToggleEnabled => !IsUpdatingTitheCarryForward;
+
+    private string? _titheCarryForwardUpdateError;
+    public string? TitheCarryForwardUpdateError
+    {
+        get => _titheCarryForwardUpdateError;
+        private set => SetProperty(ref _titheCarryForwardUpdateError, value);
     }
 
     public decimal CategoryTotalsSum => CategoryTotals.Sum(c => c.TotalValue);
@@ -154,6 +191,34 @@ public class MonthlyViewModel : ViewModelBase
 
         BankFilter = new ColumnFilterViewModel<BankTotalRow>("Bank", row => [row.Bank], ApplyBankFilter);
         CategoryFilter = new ColumnFilterViewModel<CategoryTotalDTO>("Category", c => [c.Category], ApplyCategoryFilter);
+    }
+
+    /// <summary>Toggles whether the previous month's carry-forward counts toward this month's Tithe
+    /// Balance. Echo-guarded: WPF re-raises Checked/Unchecked when the bound data is rebuilt
+    /// (RefreshAsync) even without a real user edit, matching CardsWorkflowViewModel's pattern.</summary>
+    internal async Task UpdateTitheCarryForwardAsync(bool included)
+    {
+        if (TitheSummary?.CarryForward is not { } carryForward || carryForward.Included == included)
+        {
+            return;
+        }
+
+        TitheCarryForwardUpdateError = null;
+        IsUpdatingTitheCarryForward = true;
+
+        try
+        {
+            await _titheService.UpdateCarryForwardInclusionAsync(Year, Month, included);
+            await RefreshAsync();
+        }
+        catch (Exception ex)
+        {
+            TitheCarryForwardUpdateError = ex.Message;
+        }
+        finally
+        {
+            IsUpdatingTitheCarryForward = false;
+        }
     }
 
     private void ApplyBankFilter() => ReplaceAll(FilteredBankTotals, BankTotals.Where(BankFilter.Matches));

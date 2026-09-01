@@ -64,6 +64,8 @@ export default function MonthlyPage() {
     incomeTotals,
     totalIncoming,
     titheSummary,
+    carryForwardUpdating,
+    updateCarryForwardInclusion,
     deleteIncome,
     listActionError,
     listActionWarning,
@@ -240,7 +242,15 @@ export default function MonthlyPage() {
             </div>
             <div className="monthly-page__grids-row">
               <BanksGrid bankTotals={bankTotals} bankTotalsSum={bankTotalsSum} roundUpTotalsSum={roundUpTotalsSum} />
-              <IncomingGrid incomeTotals={incomeTotals} totalIncoming={totalIncoming} titheSummary={titheSummary} />
+              <IncomingGrid
+                incomeTotals={incomeTotals}
+                totalIncoming={totalIncoming}
+                titheSummary={titheSummary}
+                carryForwardUpdating={carryForwardUpdating}
+                onToggleCarryForward={updateCarryForwardInclusion}
+                carryForwardActionError={listActionError}
+                carryForwardActionWarning={listActionWarning}
+              />
             </div>
           </div>
           )}
@@ -289,7 +299,15 @@ export default function MonthlyPage() {
 
           {activeTab === 'incoming' && (
             <>
-              <IncomingGrid incomeTotals={incomeTotals} totalIncoming={totalIncoming} titheSummary={titheSummary} />
+              <IncomingGrid
+                incomeTotals={incomeTotals}
+                totalIncoming={totalIncoming}
+                titheSummary={titheSummary}
+                carryForwardUpdating={carryForwardUpdating}
+                onToggleCarryForward={updateCarryForwardInclusion}
+                carryForwardActionError={listActionError}
+                carryForwardActionWarning={listActionWarning}
+              />
 
               {isIncomeFormOpen && (
                 <IncomeForm
