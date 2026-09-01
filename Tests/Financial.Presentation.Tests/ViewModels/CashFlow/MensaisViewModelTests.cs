@@ -1,4 +1,5 @@
 using Financial.CashFlow.Application.DTOs;
+using Financial.Presentation.App.Controls;
 using Financial.Presentation.App.ViewModels.CashFlow;
 using Financial.TestUtilities;
 using FluentAssertions;
@@ -179,6 +180,52 @@ public class MensaisViewModelTests
         await viewModel.ResetAllToUnsetAsync();
 
         service.ResetAllToUnsetCallCount.Should().Be(0);
+    }
+
+    [Theory]
+    [InlineData("Brasil")]
+    [InlineData("UK")]
+    public async Task ChangeStatusAsync_ValidRequest_UpdatesTheMatchingBillInPlace(string area)
+    {
+        var (viewModel, service) = CreateViewModel();
+        var bill = CreateBill(area);
+        var otherBill = CreateBill(area, description: "Other");
+        service.Bills = [bill, otherBill];
+        await viewModel.RefreshAsync();
+
+        await viewModel.ChangeStatusAsync(new StatusChangeRequest(bill, "Paid"));
+
+        service.LastStatusChangeRequest.Should().NotBeNull();
+        service.LastStatusChangeRequest!.Value.Id.Should().Be(bill.Id);
+        service.LastStatusChangeRequest.Value.Request.Status.Should().Be("Paid");
+        var collection = area == "Brasil" ? viewModel.BrasilBills : viewModel.UkBills;
+        collection.Should().ContainSingle(b => b.Id == bill.Id && b.Status == "Paid");
+        collection.Should().ContainSingle(b => b.Id == otherBill.Id && b.Status == "Unset");
+    }
+
+    [Fact]
+    public async Task ChangeStatusAsync_ServiceThrows_SetsErrorAndLeavesCollectionsUntouched()
+    {
+        var (viewModel, service) = CreateViewModel();
+        var bill = CreateBill("UK");
+        service.Bills = [bill];
+        await viewModel.RefreshAsync();
+        service.ThrowOnUpdateStatus = new InvalidOperationException("Recurring bill not found.");
+
+        await viewModel.ChangeStatusAsync(new StatusChangeRequest(bill, "Paid"));
+
+        viewModel.StatusChangeError.Should().Be("Recurring bill not found.");
+        viewModel.UkBills.Should().ContainSingle(b => b.Id == bill.Id && b.Status == "Unset");
+    }
+
+    [Fact]
+    public async Task ChangeStatusAsync_RequestWithoutARecurringBill_DoesNothing()
+    {
+        var (viewModel, service) = CreateViewModel();
+
+        await viewModel.ChangeStatusAsync(new StatusChangeRequest("not a bill", "Paid"));
+
+        service.LastStatusChangeRequest.Should().BeNull();
     }
 
     [Fact]

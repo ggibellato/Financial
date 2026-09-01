@@ -19,6 +19,9 @@ public partial class BillTableView : UserControl
     public static readonly DependencyProperty DeleteBillCommandProperty = DependencyProperty.Register(
         nameof(DeleteBillCommand), typeof(ICommand), typeof(BillTableView), new PropertyMetadata(null));
 
+    public static readonly DependencyProperty ChangeStatusCommandProperty = DependencyProperty.Register(
+        nameof(ChangeStatusCommand), typeof(ICommand), typeof(BillTableView), new PropertyMetadata(null));
+
     public IEnumerable? Bills
     {
         get => (IEnumerable?)GetValue(BillsProperty);
@@ -41,6 +44,12 @@ public partial class BillTableView : UserControl
     {
         get => (ICommand?)GetValue(DeleteBillCommandProperty);
         set => SetValue(DeleteBillCommandProperty, value);
+    }
+
+    public ICommand? ChangeStatusCommand
+    {
+        get => (ICommand?)GetValue(ChangeStatusCommandProperty);
+        set => SetValue(ChangeStatusCommandProperty, value);
     }
 
     public BillTableView()

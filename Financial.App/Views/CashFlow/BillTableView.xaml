@@ -1,6 +1,8 @@
 <UserControl x:Class="Financial.Presentation.App.Views.CashFlow.BillTableView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:Financial.Presentation.App.Controls"
+             xmlns:vm="clr-namespace:Financial.Presentation.App.ViewModels.CashFlow"
              x:Name="root">
     <DataGrid ItemsSource="{Binding Bills, ElementName=root}" AutoGenerateColumns="False" IsReadOnly="True">
         <DataGrid.Columns>
@@ -36,8 +38,16 @@
                                  Visibility="{Binding ShowBrasilFields, ElementName=root, Converter={StaticResource BoolToVisibilityConverter}}"/>
             <DataGridTextColumn Binding="{Binding Value, StringFormat=N2}" Header="Value" Width="100"
                                  ElementStyle="{StaticResource NumericColumnTextStyle}"/>
-            <DataGridTextColumn Binding="{Binding Status}" Header="Status" Width="100"
-                                 ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+            <DataGridTemplateColumn Header="Status" Width="130">
+                <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                        <controls:StatusSplitButton Statuses="{x:Static vm:MensaisViewModel.Statuses}"
+                                                     Status="{Binding Status}"
+                                                     Bill="{Binding}"
+                                                     ChangeStatusCommand="{Binding ChangeStatusCommand, ElementName=root}"/>
+                    </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
         </DataGrid.Columns>
     </DataGrid>
 </UserControl>
