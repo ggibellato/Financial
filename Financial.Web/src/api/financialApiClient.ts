@@ -69,6 +69,7 @@ import type {
   ReserveMovementDto,
   SetAssetPriceDto,
   SyncStatusResponseDto,
+  TitheCarryForwardUpdateDto,
   TitheSummaryDto,
   TransactionCreateDto,
   TransactionDeleteDto,
@@ -190,6 +191,7 @@ export interface FinancialApiClient {
   deleteExpense: (id: string) => Promise<void>
   getIncomesByMonth: (year: number, month: number) => Promise<IncomeDto[]>
   getTitheSummaryByMonth: (year: number, month: number) => Promise<TitheSummaryDto>
+  updateTitheCarryForward: (year: number, month: number, request: TitheCarryForwardUpdateDto) => Promise<TitheSummaryDto>
   createIncome: (request: IncomeCreateDto) => Promise<IncomeDto>
   updateIncome: (id: string, request: IncomeUpdateDto) => Promise<IncomeDto>
   deleteIncome: (id: string) => Promise<void>
@@ -547,6 +549,11 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
     deleteExpense: (id) => requestVoid(`/expenses/${encodeURIComponent(id)}`, { method: 'DELETE' }),
     getIncomesByMonth: (year, month) => request<IncomeDto[]>(`/incomes/month/${year}/${month}`),
     getTitheSummaryByMonth: (year, month) => request<TitheSummaryDto>(`/tithe/month/${year}/${month}`),
+    updateTitheCarryForward: (year, month, requestBody) =>
+      request<TitheSummaryDto>(`/tithe/month/${year}/${month}/carry-forward`, {
+        method: 'PUT',
+        body: JSON.stringify(requestBody),
+      }),
     createIncome: (requestBody) =>
       request<IncomeDto>('/incomes', {
         method: 'POST',

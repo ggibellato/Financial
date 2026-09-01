@@ -9,6 +9,7 @@ import type {
   ExpenseDto,
   IncomeDto,
   IncomeSourceDto,
+  TitheCarryForwardUpdateDto,
   TitheSummaryDto,
 } from '../api/types'
 import { currentYearMonth, formatMonthInputValue, getErrorMessage, parseMonthInputValue } from '../utils/formatters'
@@ -39,6 +40,7 @@ interface MonthlyState {
   bankBalances: BankBalanceDto[]
   incomes: IncomeDto[]
   titheSummary: TitheSummaryDto | null
+  carryForwardUpdating: boolean
   isLoading: boolean
   error: string | null
   retryCount: number
@@ -70,6 +72,8 @@ type MonthlyAction =
   | { type: 'SET_MARK_PAID_SOURCE'; payload: { id: string; value: string } }
   | { type: 'LIST_ACTION_ERROR'; payload: string }
   | { type: 'LIST_ACTION_WARNING'; payload: string | null }
+  | { type: 'CARRY_FORWARD_UPDATE_START' }
+  | { type: 'CARRY_FORWARD_UPDATE_END' }
 
 const INITIAL_STATE_BASE: Omit<MonthlyState, 'year' | 'month'> = {
   expenses: [],
@@ -82,6 +86,7 @@ const INITIAL_STATE_BASE: Omit<MonthlyState, 'year' | 'month'> = {
   bankBalances: [],
   incomes: [],
   titheSummary: null,
+  carryForwardUpdating: false,
   isLoading: true,
   error: null,
   retryCount: 0,
@@ -115,6 +120,10 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
       return { ...state, listActionError: action.payload, listActionWarning: null }
     case 'LIST_ACTION_WARNING':
       return { ...state, listActionWarning: action.payload, listActionError: null }
+    case 'CARRY_FORWARD_UPDATE_START':
+      return { ...state, carryForwardUpdating: true }
+    case 'CARRY_FORWARD_UPDATE_END':
+      return { ...state, carryForwardUpdating: false }
     default:
       return state
   }
@@ -149,6 +158,8 @@ export interface MonthlyData {
   incomeTotals: IncomeTotal[]
   totalIncoming: number
   titheSummary: TitheSummaryDto | null
+  carryForwardUpdating: boolean
+  updateCarryForwardInclusion: (included: boolean) => void
   deleteIncome: (id: string) => void
   listActionError: string | null
   listActionWarning: string | null
@@ -262,6 +273,24 @@ export function useMonthly(): MonthlyData {
     [],
   )
 
+  const updateCarryForwardInclusion = useCallback(
+    (included: boolean) => {
+      dispatch({ type: 'CARRY_FORWARD_UPDATE_START' })
+      const requestBody: TitheCarryForwardUpdateDto = { included }
+      void apiClient
+        .updateTitheCarryForward(state.year, state.month, requestBody)
+        .then(() => {
+          dispatch({ type: 'CARRY_FORWARD_UPDATE_END' })
+          dispatch({ type: 'RETRY' })
+        })
+        .catch((err: unknown) => {
+          dispatch({ type: 'CARRY_FORWARD_UPDATE_END' })
+          dispatch({ type: 'LIST_ACTION_ERROR', payload: getErrorMessage(err, 'Failed to update carry-forward') })
+        })
+    },
+    [state.year, state.month],
+  )
+
   const deleteIncome = useCallback(
     (id: string) => {
       void apiClient
@@ -336,6 +365,8 @@ export function useMonthly(): MonthlyData {
     incomeTotals,
     totalIncoming,
     titheSummary: state.titheSummary,
+    carryForwardUpdating: state.carryForwardUpdating,
+    updateCarryForwardInclusion,
     deleteIncome,
     listActionError: state.listActionError,
     listActionWarning: state.listActionWarning,

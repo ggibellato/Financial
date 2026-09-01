@@ -39,6 +39,7 @@ const {
   deleteIncomeMock,
   getBankBalancesByMonthMock,
   getTitheSummaryByMonthMock,
+  updateTitheCarryForwardMock,
   getTransfersByMonthMock,
   createTransferMock,
   updateTransferMock,
@@ -68,6 +69,7 @@ const {
   deleteIncomeMock: vi.fn<FinancialApiClient['deleteIncome']>(),
   getBankBalancesByMonthMock: vi.fn<FinancialApiClient['getBankBalancesByMonth']>(),
   getTitheSummaryByMonthMock: vi.fn<FinancialApiClient['getTitheSummaryByMonth']>(),
+  updateTitheCarryForwardMock: vi.fn<FinancialApiClient['updateTitheCarryForward']>(),
   getTransfersByMonthMock: vi.fn<FinancialApiClient['getTransfersByMonth']>(),
   createTransferMock: vi.fn<FinancialApiClient['createTransfer']>(),
   updateTransferMock: vi.fn<FinancialApiClient['updateTransfer']>(),
@@ -100,6 +102,7 @@ vi.mock('../../api/financialApiClient', () => ({
     deleteIncome: deleteIncomeMock,
     getBankBalancesByMonth: getBankBalancesByMonthMock,
     getTitheSummaryByMonth: getTitheSummaryByMonthMock,
+    updateTitheCarryForward: updateTitheCarryForwardMock,
     getTransfersByMonth: getTransfersByMonthMock,
     createTransfer: createTransferMock,
     updateTransfer: updateTransferMock,
@@ -261,6 +264,7 @@ describe('MonthlyPage', () => {
     deleteIncomeMock.mockReset()
     getBankBalancesByMonthMock.mockReset()
     getTitheSummaryByMonthMock.mockReset()
+    updateTitheCarryForwardMock.mockReset()
     getTransfersByMonthMock.mockReset()
     createTransferMock.mockReset()
     updateTransferMock.mockReset()
@@ -593,6 +597,33 @@ describe('MonthlyPage', () => {
     const incomeSection = within(screen.getByRole('button', { name: 'New Income' }).closest('section')!)
     expect(incomeSection.getByText('Gleison')).toBeInTheDocument()
     expect(screen.getByRole('tab', { name: 'Income' })).toHaveAttribute('aria-selected', 'true')
+  })
+
+  it('toggles carry-forward inclusion from the Income tab checkbox', async () => {
+    getTitheSummaryByMonthMock.mockResolvedValue({
+      calculatedTithe: 245,
+      titheBalance: 195,
+      carryForward: { amount: 50, included: true, fromYear: 2026, fromMonth: 8 },
+    })
+    updateTitheCarryForwardMock.mockResolvedValue({
+      calculatedTithe: 245,
+      titheBalance: 245,
+      carryForward: { amount: 50, included: false, fromYear: 2026, fromMonth: 8 },
+    })
+    render(<MonthlyPage />)
+
+    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('tab', { name: 'Income' }))
+
+    const checkbox = await screen.findByRole('checkbox')
+    fireEvent.click(checkbox)
+
+    const now = new Date()
+    await waitFor(() =>
+      expect(updateTitheCarryForwardMock).toHaveBeenCalledWith(now.getFullYear(), now.getMonth() + 1, {
+        included: false,
+      }),
+    )
   })
 
   it('does not change the month/year picker value when switching tabs', async () => {
