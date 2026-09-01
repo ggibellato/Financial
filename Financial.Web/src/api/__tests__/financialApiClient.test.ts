@@ -32,6 +32,7 @@ import type {
   InvestmentSnapshotValueUpdateDto,
   MaeLedgerEntryValuesUpdateDto,
   RecurringBillUpdateDto,
+  RecurringBillStatusUpdateDto,
   ReserveMovementUpdateDto,
   TransferUpdateDto,
   WithdrawalRequestDto,
@@ -733,6 +734,31 @@ describe('financialApiClient', () => {
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/mensais/b1`)
     expect(init?.method).toBe('PUT')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('posts a mensais bill status update', async () => {
+    const requestBody: RecurringBillStatusUpdateDto = { status: 'Paid' }
+    const responseBody: RecurringBillDto = {
+      id: 'b1',
+      dueDay: 10,
+      description: 'INSS',
+      area: 'Brasil',
+      note: '',
+      nitNumber: null,
+      minimumWageValue: null,
+      value: 850,
+      status: 'Paid',
+    }
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.updateMensaisBillStatus('b1', requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/mensais/b1/status`)
+    expect(init?.method).toBe('POST')
     expect(JSON.parse(init?.body as string)).toEqual(requestBody)
   })
 

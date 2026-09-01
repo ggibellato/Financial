@@ -88,6 +88,7 @@ import type {
   InvestmentSnapshotValueUpdateDto,
   MaeLedgerEntryValuesUpdateDto,
   RecurringBillUpdateDto,
+  RecurringBillStatusUpdateDto,
   ReserveMovementUpdateDto,
   WatchlistItemDto,
   WithdrawalRequestDto,
@@ -153,6 +154,7 @@ export interface FinancialApiClient {
   getMensaisBills: () => Promise<RecurringBillDto[]>
   createMensaisBill: (request: RecurringBillCreateDto) => Promise<RecurringBillDto>
   updateMensaisBill: (id: string, request: RecurringBillUpdateDto) => Promise<RecurringBillDto>
+  updateMensaisBillStatus: (id: string, request: RecurringBillStatusUpdateDto) => Promise<RecurringBillDto>
   deleteMensaisBill: (id: string) => Promise<void>
   resetMensaisToUnset: () => Promise<RecurringBillDto[]>
   createMaeLedgerEntry: (request: MaeLedgerEntryCreateDto) => Promise<MaeLedgerEntryDto>
@@ -460,6 +462,11 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
     updateMensaisBill: (id, requestBody) =>
       request<RecurringBillDto>(`/mensais/${encodeURIComponent(id)}`, {
         method: 'PUT',
+        body: JSON.stringify(requestBody),
+      }),
+    updateMensaisBillStatus: (id, requestBody) =>
+      request<RecurringBillDto>(`/mensais/${encodeURIComponent(id)}/status`, {
+        method: 'POST',
         body: JSON.stringify(requestBody),
       }),
     deleteMensaisBill: (id) => requestVoid(`/mensais/${encodeURIComponent(id)}`, { method: 'DELETE' }),

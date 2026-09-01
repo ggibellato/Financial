@@ -5,6 +5,8 @@ state management of the passed in list of actions.
 
 See also <a href="" data-sb-kind="components-button-menubutton">MenuButton</a>
 
+For the project-specific "status tag with an inline menu" pattern built on `MenuButton`, see `splitButton.md` in this folder.
+
 ## Best practices
 
 ### Do

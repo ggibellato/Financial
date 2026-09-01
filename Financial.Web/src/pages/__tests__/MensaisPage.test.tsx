@@ -8,12 +8,14 @@ const {
   getMensaisBillsMock,
   createMensaisBillMock,
   updateMensaisBillMock,
+  updateMensaisBillStatusMock,
   deleteMensaisBillMock,
   resetMensaisToUnsetMock,
 } = vi.hoisted(() => ({
   getMensaisBillsMock: vi.fn<FinancialApiClient['getMensaisBills']>(),
   createMensaisBillMock: vi.fn<FinancialApiClient['createMensaisBill']>(),
   updateMensaisBillMock: vi.fn<FinancialApiClient['updateMensaisBill']>(),
+  updateMensaisBillStatusMock: vi.fn<FinancialApiClient['updateMensaisBillStatus']>(),
   deleteMensaisBillMock: vi.fn<FinancialApiClient['deleteMensaisBill']>(),
   resetMensaisToUnsetMock: vi.fn<FinancialApiClient['resetMensaisToUnset']>(),
 }))
@@ -23,6 +25,7 @@ vi.mock('../../api/financialApiClient', () => ({
     getMensaisBills: getMensaisBillsMock,
     createMensaisBill: createMensaisBillMock,
     updateMensaisBill: updateMensaisBillMock,
+    updateMensaisBillStatus: updateMensaisBillStatusMock,
     deleteMensaisBill: deleteMensaisBillMock,
     resetMensaisToUnset: resetMensaisToUnsetMock,
   } as Partial<FinancialApiClient>,
@@ -58,6 +61,7 @@ describe('MensaisPage', () => {
     getMensaisBillsMock.mockReset()
     createMensaisBillMock.mockReset()
     updateMensaisBillMock.mockReset()
+    updateMensaisBillStatusMock.mockReset()
     deleteMensaisBillMock.mockReset()
     resetMensaisToUnsetMock.mockReset()
     getMensaisBillsMock.mockResolvedValue(BILLS)
@@ -122,6 +126,35 @@ describe('MensaisPage', () => {
       }),
     )
     await waitFor(() => expect(screen.getByText('Paid')).toBeInTheDocument())
+  })
+
+  it('changes a bill status via the inline status menu, without opening the edit drawer', async () => {
+    updateMensaisBillStatusMock.mockResolvedValue({ ...BILLS[0], status: 'Paid' })
+    render(<MensaisPage />)
+
+    await waitFor(() => expect(screen.getByText('INSS')).toBeInTheDocument())
+
+    const statusButtons = screen.getAllByRole('button', { name: /^Status: Unset/ })
+    fireEvent.click(statusButtons[0])
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Paid' }))
+
+    await waitFor(() => expect(updateMensaisBillStatusMock).toHaveBeenCalledWith('b1', { status: 'Paid' }))
+    await waitFor(() => expect(screen.getByRole('button', { name: /^Status: Paid/ })).toBeInTheDocument())
+    expect(screen.queryByText('Edit Bill')).not.toBeInTheDocument()
+  })
+
+  it('shows an error and leaves the status unchanged when the status update fails', async () => {
+    updateMensaisBillStatusMock.mockRejectedValue(new Error('Status is not recognized.'))
+    render(<MensaisPage />)
+
+    await waitFor(() => expect(screen.getByText('INSS')).toBeInTheDocument())
+
+    const statusButtons = screen.getAllByRole('button', { name: /^Status: Unset/ })
+    fireEvent.click(statusButtons[0])
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Paid' }))
+
+    await waitFor(() => expect(screen.getByText('Status is not recognized.')).toBeInTheDocument())
+    expect(screen.getAllByRole('button', { name: /^Status: Unset/ })).toHaveLength(2)
   })
 
   it('shows each bill\'s Note in both the Brasil and UK grids', async () => {
