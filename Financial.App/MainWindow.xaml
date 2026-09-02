@@ -18,7 +18,10 @@
                 <RowDefinition Height="32"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
-            <local:SyncStatusIndicator Grid.Row="0" DataContext="{Binding SyncStatus}"/>
+            <StackPanel Grid.Row="0">
+                <local:SyncStatusIndicator DataContext="{Binding SyncStatus}"/>
+                <local:PaymentDueBanner DataContext="{Binding PaymentsDue}"/>
+            </StackPanel>
             <Border Grid.Row="1" BorderBrush="#E0E0E0" BorderThickness="0,0,0,1" Padding="16,0">
                 <TextBlock Text="{Binding BreadcrumbText}" VerticalAlignment="Center" Foreground="#666666"/>
             </Border>
