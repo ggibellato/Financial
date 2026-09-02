@@ -1,6 +1,5 @@
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 
 namespace Financial.Presentation.App.Controls;
@@ -56,7 +55,7 @@ public partial class StatusSplitButton : UserControl
         // inside it silently resolves to nothing (confirmed: it left ItemsSource null). Setting
         // DataContext explicitly here is the standard WPF fix; the XAML then binds against it
         // via RelativeSource AncestorType=ContextMenu instead of ElementName.
-        if (Split.Flyout is ContextMenu contextMenu)
+        if (Split.ContextMenu is { } contextMenu)
         {
             contextMenu.DataContext = this;
         }
@@ -64,15 +63,14 @@ public partial class StatusSplitButton : UserControl
 
     private void OnSplitButtonClick(object sender, RoutedEventArgs e)
     {
-        // Mirrors Wpf.Ui.Controls.SplitButton's own internal chevron-click handling
-        // (OnSplitButtonToggleButtonOnClick), which only runs for the chevron itself - this
-        // makes the whole control open the menu, matching the React StatusMenuButton.
-        if (Split.Flyout is ContextMenu contextMenu)
+        if (Split.ContextMenu is not { } contextMenu)
         {
-            contextMenu.PlacementTarget = Split;
-            contextMenu.Placement = PlacementMode.Bottom;
-            contextMenu.IsOpen = true;
+            return;
         }
+
+        contextMenu.PlacementTarget = Split;
+        contextMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+        contextMenu.IsOpen = true;
     }
 
     private void OnStatusItemClick(object sender, RoutedEventArgs e)

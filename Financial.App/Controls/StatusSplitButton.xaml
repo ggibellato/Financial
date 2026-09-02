@@ -4,19 +4,19 @@
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              x:Name="root">
     <!--
-        Wpf.Ui.Controls.SplitButton's chevron-click wiring (OnSplitButtonToggleButtonOnClick) only
-        does anything when Flyout is set to a real System.Windows.Controls.ContextMenu - it
-        silently no-ops for any other type (confirmed against the library source), so a ui:Flyout
-        here would never open on any click. IsDropDownOpen is likewise a one-way readback of the
-        ContextMenu's own Opened/Closed state, not something that opens anything when set.
-        Matches the React StatusMenuButton: the whole button (not just the chevron) opens the
-        menu - Click bubbles from the chevron's internal ToggleButton up through this SplitButton,
-        so OnSplitButtonClick opens the SAME ContextMenu the chevron's own handler already does,
-        making both paths idempotent with each other.
+        Only the chevron opens the menu, matching Wpf.Ui.Controls.SplitButton's native two-zone
+        convention - its own internal chevron-click wiring (OnSplitButtonToggleButtonOnClick)
+        only does anything when Flyout is a real System.Windows.Controls.ContextMenu (confirmed
+        against the library source; a ui:Flyout here silently no-ops on every click, and
+        IsDropDownOpen is a one-way readback of the ContextMenu's Opened/Closed state, not
+        something that opens anything when set). An earlier attempt to also open on a plain-badge
+        click, by handling this SplitButton's own bubbled Click, caused the chevron's open/close to
+        flicker and interfered with selecting an item - removed; the library's own mechanism is the
+        one to rely on here.
     -->
-    <ui:SplitButton x:Name="Split"
-                    Click="OnSplitButtonClick"
-                    AutomationProperties.Name="{Binding Status, ElementName=root, StringFormat='Status: {0}. Change status'}">
+    <ui:Button x:Name="Split"
+               Click="OnSplitButtonClick"
+               AutomationProperties.Name="{Binding Status, ElementName=root, StringFormat='Status: {0}. Change status'}">
         <!--
             Status color lives on this inner badge only (matching React's Badge-inside-a-neutral-
             MenuButton), not on the SplitButton's own Background/Foreground - those get overridden
@@ -27,7 +27,7 @@
             <TextBlock Text="{Binding Status, ElementName=root}"
                        Foreground="{Binding Status, ElementName=root, Converter={StaticResource BillStatusToBrushConverter}, ConverterParameter=Foreground}"/>
         </Border>
-        <ui:SplitButton.Flyout>
+        <ui:Button.ContextMenu>
             <!--
                 A ContextMenu is not part of the visual tree it's declared in - it gets its own
                 NameScope and does not inherit ambient DataContext, so {Binding ElementName=root}
@@ -62,6 +62,6 @@
                     </Style>
                 </ContextMenu.ItemContainerStyle>
             </ContextMenu>
-        </ui:SplitButton.Flyout>
-    </ui:SplitButton>
+        </ui:Button.ContextMenu>
+    </ui:Button>
 </UserControl>
