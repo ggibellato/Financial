@@ -439,6 +439,13 @@ public class ControllerGuardClauseTests
         act.Should().Throw<ArgumentNullException>();
     }
 
+    [Fact]
+    public void PaymentsDueController_NullService_Throws()
+    {
+        Action act = () => new PaymentsDueController(null!);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("paymentsDueService");
+    }
+
     private sealed class StubHostEnvironment : IHostEnvironment
     {
         public string EnvironmentName { get; set; } = "Development";

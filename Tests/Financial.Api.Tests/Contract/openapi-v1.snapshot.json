@@ -2283,6 +2283,31 @@
         ],
         "type": "object"
       },
+      "PaymentDueDTO": {
+        "properties": {
+          "daysRemaining": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "dueDate": {
+            "format": "date",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "name",
+          "dueDate",
+          "daysRemaining"
+        ],
+        "type": "object"
+      },
       "PortfolioAssetSummaryItemDTO": {
         "properties": {
           "assetName": {
@@ -7681,6 +7706,29 @@
         ]
       }
     },
+    "/payments-due": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PaymentDueDTO"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "200 OK with the list of imminent payments (empty if none qualify)."
+          }
+        },
+        "summary": "Lists Mensais bills and credit card invoices due within the next 5 days.",
+        "tags": [
+          "PaymentsDue"
+        ]
+      }
+    },
     "/portfolios": {
       "get": {
         "responses": {
@@ -9834,6 +9882,9 @@
     },
     {
       "name": "Navigation"
+    },
+    {
+      "name": "PaymentsDue"
     },
     {
       "name": "Portfolios"
