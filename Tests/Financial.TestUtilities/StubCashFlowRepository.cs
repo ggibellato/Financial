@@ -36,6 +36,14 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
     /// once and resets to false.</summary>
     public bool ThrowOnNextSave { get; set; }
 
+    /// <summary>When true, the next <see cref="GetRecurringBills"/> call throws once and resets to
+    /// false, simulating a repository read failure.</summary>
+    public bool ThrowOnNextGetRecurringBills { get; set; }
+
+    /// <summary>When true, the next <see cref="GetCreditCards"/> call throws once and resets to
+    /// false, simulating a repository read failure.</summary>
+    public bool ThrowOnNextGetCreditCards { get; set; }
+
     public StubCashFlowRepository(
         bool seedDefaultBanks = false, bool seedDefaultIncomeSources = false, bool seedDefaultReserveBuckets = false,
         bool seedDefaultCreditCards = false, bool seedDefaultCategories = false)
@@ -135,7 +143,17 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
     public IEnumerable<CardStatement> GetCardStatements() => CardStatements;
     public void AddCardStatement(CardStatement statement) => CardStatements.Add(statement);
 
-    public IEnumerable<RecurringBill> GetRecurringBills() => RecurringBills;
+    public IEnumerable<RecurringBill> GetRecurringBills()
+    {
+        if (ThrowOnNextGetRecurringBills)
+        {
+            ThrowOnNextGetRecurringBills = false;
+            throw new InvalidOperationException("Simulated read failure.");
+        }
+
+        return RecurringBills;
+    }
+
     public void AddRecurringBill(RecurringBill bill) => RecurringBills.Add(bill);
     public void DeleteRecurringBill(Guid id) => RecurringBills.RemoveAll(b => b.Id == id);
 
@@ -161,7 +179,17 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
     public IEnumerable<ReserveBucket> GetReserveBuckets() => ReserveBuckets;
     public void AddReserveBucket(ReserveBucket bucket) => ReserveBuckets.Add(bucket);
 
-    public IEnumerable<CreditCard> GetCreditCards() => CreditCards;
+    public IEnumerable<CreditCard> GetCreditCards()
+    {
+        if (ThrowOnNextGetCreditCards)
+        {
+            ThrowOnNextGetCreditCards = false;
+            throw new InvalidOperationException("Simulated read failure.");
+        }
+
+        return CreditCards;
+    }
+
     public void AddCreditCard(CreditCard card) => CreditCards.Add(card);
     public void DeleteCreditCard(Guid id) => CreditCards.RemoveAll(c => c.Id == id);
 

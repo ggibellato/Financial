@@ -3487,6 +3487,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/payments-due": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lists Mensais bills and credit card invoices due within the next 5 days. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description 200 OK with the list of imminent payments (empty if none qualify). */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PaymentDueDTO"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/portfolios": {
         parameters: {
             query?: never;
@@ -5857,6 +5893,14 @@ export interface components {
             monthlyValues: number[];
             /** Format: double */
             sumOfMonthResults: number;
+        };
+        PaymentDueDTO: {
+            /** Format: int32 */
+            daysRemaining: number;
+            /** Format: date */
+            dueDate: string;
+            name: string;
+            type: string;
         };
         PortfolioAssetSummaryItemDTO: {
             assetName: string;
