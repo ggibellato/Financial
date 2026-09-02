@@ -7,6 +7,4 @@ public sealed class InvestmentAccountCreateDTO
     public required bool IsActive { get; init; }
 
     public required bool IsLiability { get; init; }
-
-    public required IReadOnlyList<string> Aliases { get; init; }
 }

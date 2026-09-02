@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         Title="{Binding Title}"
-        Height="440"
+        Height="280"
         Width="380"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize">
@@ -21,9 +21,6 @@
     </Window.Resources>
     <Grid Margin="16">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -50,44 +47,14 @@
                   IsChecked="{Binding IsLiability}"
                   Margin="0,0,0,10"/>
 
-        <TextBlock Grid.Row="4" Text="Aliases" Margin="0,0,0,4"/>
-        <ItemsControl Grid.Row="5" ItemsSource="{Binding Aliases}" Margin="0,0,0,6">
-            <ItemsControl.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <WrapPanel/>
-                </ItemsPanelTemplate>
-            </ItemsControl.ItemsPanel>
-            <ItemsControl.ItemTemplate>
-                <DataTemplate>
-                    <Border Background="#E1E1E1" CornerRadius="10" Padding="8,3" Margin="0,0,6,6">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="{Binding}" VerticalAlignment="Center"/>
-                            <Button Content="✕" Padding="4,0" Margin="6,0,0,0"
-                                    ToolTip="Remove"
-                                    AutomationProperties.Name="{Binding StringFormat=Remove {0}}"
-                                    Command="{Binding DataContext.RemoveAliasCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                    CommandParameter="{Binding}"/>
-                        </StackPanel>
-                    </Border>
-                </DataTemplate>
-            </ItemsControl.ItemTemplate>
-        </ItemsControl>
-
-        <StackPanel Grid.Row="6" Orientation="Horizontal" Margin="0,0,0,10">
-            <TextBox Width="220"
-                     AutomationProperties.Name="New alias"
-                     Text="{Binding NewAlias, UpdateSourceTrigger=PropertyChanged}"/>
-            <Button Content="Add" Width="60" Margin="8,0,0,0" Command="{Binding AddAliasCommand}"/>
-        </StackPanel>
-
-        <TextBlock Grid.Row="7"
+        <TextBlock Grid.Row="4"
                    AutomationProperties.LiveSetting="Polite"
                    Foreground="{DynamicResource SystemFillColorCriticalBrush}"
                    TextWrapping="Wrap"
                    Text="{Binding ValidationMessage}"
                    Margin="0,0,0,10"/>
 
-        <StackPanel Grid.Row="8" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+        <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
             <ui:Button Content="Save" Appearance="Primary" MinWidth="90" Command="{Binding ConfirmCommand}" IsDefault="True"/>
             <ui:Button Content="Cancel" Appearance="Secondary" MinWidth="90" Margin="8,0,0,0" Command="{Binding CancelCommand}" IsCancel="True"/>
         </StackPanel>

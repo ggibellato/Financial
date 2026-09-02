@@ -29,7 +29,7 @@ public sealed class InvestmentAccountsController : ControllerBase
     }
 
     /// <summary>Creates a new investment account.</summary>
-    /// <param name="request">The account's name, active flag, liability flag, and aliases.</param>
+    /// <param name="request">The account's name, active flag, and liability flag.</param>
     /// <returns>200 OK with the created account, or 400 Bad Request if the request is invalid.</returns>
     [HttpPost]
     [ProducesResponseType(typeof(InvestmentAccountDTO), StatusCodes.Status200OK)]
@@ -45,7 +45,7 @@ public sealed class InvestmentAccountsController : ControllerBase
         return Ok(account);
     }
 
-    /// <summary>Updates an investment account's name, active flag, liability flag, and aliases.</summary>
+    /// <summary>Updates an investment account's name, active flag, and liability flag.</summary>
     /// <param name="id">The account's identifier.</param>
     /// <param name="request">The new field values.</param>
     /// <returns>200 OK with the updated account, 400 Bad Request if the request is invalid, or 404 Not Found if no such account exists.</returns>

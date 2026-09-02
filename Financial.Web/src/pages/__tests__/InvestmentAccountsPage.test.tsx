@@ -21,8 +21,8 @@ vi.mock('../../api/financialApiClient', () => ({
 }))
 
 const INVESTMENT_ACCOUNTS: InvestmentAccountDto[] = [
-  { id: 'a1', name: 'ChaseSave', isActive: true, isLiability: false, aliases: [], latestBalance: 0 },
-  { id: 'a2', name: 'PlatinumVisa8003', isActive: true, isLiability: true, aliases: [], latestBalance: 500 },
+  { id: 'a1', name: 'ChaseSave', isActive: true, isLiability: false, latestBalance: 0 },
+  { id: 'a2', name: 'PlatinumVisa8003', isActive: true, isLiability: true, latestBalance: 500 },
 ]
 
 describe('InvestmentAccountsPage', () => {
@@ -61,7 +61,6 @@ describe('InvestmentAccountsPage', () => {
       name: 'Monzo Pot',
       isActive: true,
       isLiability: false,
-      aliases: [],
       latestBalance: 0,
     })
     render(<InvestmentAccountsPage />)
@@ -76,7 +75,6 @@ describe('InvestmentAccountsPage', () => {
         name: 'Monzo Pot',
         isActive: true,
         isLiability: false,
-        aliases: [],
       }),
     )
     await waitFor(() =>
@@ -90,7 +88,6 @@ describe('InvestmentAccountsPage', () => {
       name: 'ChaseSaveRenamed',
       isActive: true,
       isLiability: false,
-      aliases: [],
       latestBalance: 0,
     })
     render(<InvestmentAccountsPage />)
@@ -106,7 +103,6 @@ describe('InvestmentAccountsPage', () => {
         name: 'ChaseSaveRenamed',
         isActive: true,
         isLiability: false,
-        aliases: [],
       }),
     )
   })

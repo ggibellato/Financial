@@ -15,12 +15,11 @@ import {
 import type { InvestmentAccountDto } from '../api/types'
 import { useFormPanelStyles } from './formPanelStyles'
 import { getErrorMessage } from '../utils/formatters'
-import AliasesInput from './AliasesInput'
 
 interface InvestmentAccountFormDialogProps {
   investmentAccount: InvestmentAccountDto | null
   onCancel: () => void
-  onSubmit: (name: string, isActive: boolean, isLiability: boolean, aliases: string[]) => Promise<unknown>
+  onSubmit: (name: string, isActive: boolean, isLiability: boolean) => Promise<unknown>
 }
 
 export default function InvestmentAccountFormDialog({ investmentAccount, onCancel, onSubmit }: InvestmentAccountFormDialogProps) {
@@ -29,7 +28,6 @@ export default function InvestmentAccountFormDialog({ investmentAccount, onCance
   const [name, setName] = useState(investmentAccount?.name ?? '')
   const [isActive, setIsActive] = useState(investmentAccount?.isActive ?? true)
   const [isLiability, setIsLiability] = useState(investmentAccount?.isLiability ?? false)
-  const [aliases, setAliases] = useState<string[]>(investmentAccount?.aliases ? [...investmentAccount.aliases] : [])
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -43,7 +41,7 @@ export default function InvestmentAccountFormDialog({ investmentAccount, onCance
     setIsSaving(true)
     setError(null)
     try {
-      await onSubmit(trimmedName, isActive, isLiability, aliases)
+      await onSubmit(trimmedName, isActive, isLiability)
     } catch (err: unknown) {
       setError(getErrorMessage(err, 'The investment account could not be saved.'))
       setIsSaving(false)
@@ -72,8 +70,6 @@ export default function InvestmentAccountFormDialog({ investmentAccount, onCance
             <Field label="Liability">
               <Switch checked={isLiability} onChange={(e) => setIsLiability(e.target.checked)} disabled={isSaving} />
             </Field>
-
-            <AliasesInput aliases={aliases} onChange={setAliases} disabled={isSaving} />
 
             {error && (
               <MessageBar intent="error">

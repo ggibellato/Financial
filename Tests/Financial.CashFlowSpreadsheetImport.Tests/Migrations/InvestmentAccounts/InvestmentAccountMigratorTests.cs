@@ -7,7 +7,7 @@ namespace Financial.CashFlowSpreadsheetImport.Tests.Migrations.InvestmentAccount
 public class InvestmentAccountMigratorTests
 {
     [Fact]
-    public void Migrate_OnEmptyData_SeedsElevenActiveAndEightDisabledAccountsWithAliases()
+    public void Migrate_OnEmptyData_SeedsElevenActiveAndEightDisabledAccounts()
     {
         var data = CashFlowData.Create();
 
@@ -18,28 +18,24 @@ public class InvestmentAccountMigratorTests
         data.InvestmentAccounts.Should().HaveCount(19);
         data.InvestmentAccounts.Where(a => a.IsActive).Should().HaveCount(11);
         data.InvestmentAccounts.Where(a => !a.IsActive).Should().HaveCount(8);
-        data.InvestmentAccounts.Should().ContainSingle(a => a.Name == "PlatinumVisa8003" && a.IsLiability);
-        data.InvestmentAccounts.Should().ContainSingle(a => a.Name == "ChaseSave" && !a.IsLiability);
+        data.InvestmentAccounts.Should().ContainSingle(a => a.Name == "Platinum Visa 8003" && a.IsLiability);
+        data.InvestmentAccounts.Should().ContainSingle(a => a.Name == "Chase save" && !a.IsLiability);
         data.InvestmentAccounts.Where(a => !a.IsActive).Should().OnlyContain(a => !a.IsLiability);
-        data.InvestmentAccounts.Should().ContainSingle(a => a.Name == "EverydaySaver" && !a.IsActive)
-            .Which.Aliases.Should().ContainSingle("Everyday Saver");
-        data.InvestmentAccounts.Should().ContainSingle(a => a.Name == "InstantIsaIssue1")
-            .Which.Aliases.Should().BeEquivalentTo("Instant ISA Issue 1", "Instant ISE Issue 1");
-        data.InvestmentAccounts.Should().ContainSingle(a => a.Name == "ChipCashIsaGleison")
-            .Which.Aliases.Should().BeEquivalentTo("Chip Cash ISA Gleison", "Chip Cash ISA");
+        data.InvestmentAccounts.Should().ContainSingle(a => a.Name == "Everyday Saver" && !a.IsActive);
+        data.InvestmentAccounts.Should().ContainSingle(a => a.Name == "Instant ISA Issue 1");
+        data.InvestmentAccounts.Should().ContainSingle(a => a.Name == "Chip Cash ISA Gleison");
     }
 
     [Fact]
-    public void Migrate_BlueRewardsSaverAndBarclaysBlueRewards_HaveDistinctNonOverlappingAliases()
+    public void Migrate_BlueRewardsSaverAndBarclaysBlueRewards_AreDistinctAccounts()
     {
         var data = CashFlowData.Create();
 
         InvestmentAccountMigrator.Migrate(data);
 
-        var blueRewardsSaver = data.InvestmentAccounts.Single(a => a.Name == "BlueRewardsSaver");
-        var barclaysBlueRewards = data.InvestmentAccounts.Single(a => a.Name == "BarclaysBlueRewards");
-        blueRewardsSaver.Aliases.Should().BeEquivalentTo("Blue Rewards Saver");
-        barclaysBlueRewards.Aliases.Should().BeEquivalentTo("Barclays Blue Rewards");
+        var blueRewardsSaver = data.InvestmentAccounts.Single(a => a.Name == "Blue Rewards Saver");
+        var barclaysBlueRewards = data.InvestmentAccounts.Single(a => a.Name == "Barclays Blue Rewards");
+        blueRewardsSaver.Id.Should().NotBe(barclaysBlueRewards.Id);
         barclaysBlueRewards.IsActive.Should().BeFalse();
     }
 
@@ -60,7 +56,7 @@ public class InvestmentAccountMigratorTests
     public void Migrate_WithSomeAccountsAlreadySeeded_OnlySeedsTheMissingOnes()
     {
         var data = CashFlowData.Create();
-        data.AddInvestmentAccount(InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false));
+        data.AddInvestmentAccount(InvestmentAccount.Create("Chase save", isActive: true, isLiability: false));
 
         var summary = InvestmentAccountMigrator.Migrate(data);
 
@@ -70,30 +66,13 @@ public class InvestmentAccountMigratorTests
     }
 
     [Fact]
-    public void Migrate_AccountSeededByPriorRunWithNoAliases_BackfillsAliasesWithoutDuplicating()
-    {
-        var data = CashFlowData.Create();
-        var preExisting = InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false);
-        data.AddInvestmentAccount(preExisting);
-        preExisting.Aliases.Should().BeEmpty();
-
-        InvestmentAccountMigrator.Migrate(data);
-
-        preExisting.Aliases.Should().BeEquivalentTo("Chase save");
-
-        InvestmentAccountMigrator.Migrate(data);
-
-        preExisting.Aliases.Should().BeEquivalentTo("Chase save");
-    }
-
-    [Fact]
     public void Migrate_SnapshotWithMatchingAccountReference_CountsAsResolvedAndLeavesValueUntouched()
     {
         // A snapshot's Account is a real reference (F01), so "matching" now means the snapshot was
         // built against an account that's already present in data.InvestmentAccounts (e.g.
         // deserialized from a prior migration run) - not a freshly constructed same-named instance.
         var data = CashFlowData.Create();
-        var chaseSave = InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false);
+        var chaseSave = InvestmentAccount.Create("Chase save", isActive: true, isLiability: false);
         data.AddInvestmentAccount(chaseSave);
         var snapshot = InvestmentSnapshot.Create(chaseSave, 2026, 7, 500m);
         data.AddInvestmentSnapshot(snapshot);
@@ -126,7 +105,7 @@ public class InvestmentAccountMigratorTests
     public void Migrate_SecondRunOverFirstRunsOutput_ChangesNothing()
     {
         var data = CashFlowData.Create();
-        var chaseSave = InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false);
+        var chaseSave = InvestmentAccount.Create("Chase save", isActive: true, isLiability: false);
         data.AddInvestmentAccount(chaseSave);
         var unknownAccount = InvestmentAccount.Create("SomeUnknownAccount", isActive: true, isLiability: false);
         var resolved = InvestmentSnapshot.Create(chaseSave, 2026, 7, 500m);

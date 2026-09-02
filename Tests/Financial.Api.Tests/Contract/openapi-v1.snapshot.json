@@ -1940,12 +1940,6 @@
       },
       "InvestmentAccountCreateDTO": {
         "properties": {
-          "aliases": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
           "isActive": {
             "type": "boolean"
           },
@@ -1959,19 +1953,12 @@
         "required": [
           "name",
           "isActive",
-          "isLiability",
-          "aliases"
+          "isLiability"
         ],
         "type": "object"
       },
       "InvestmentAccountDTO": {
         "properties": {
-          "aliases": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
           "id": {
             "format": "uuid",
             "type": "string"
@@ -1995,19 +1982,12 @@
           "name",
           "isActive",
           "isLiability",
-          "aliases",
           "latestBalance"
         ],
         "type": "object"
       },
       "InvestmentAccountUpdateDTO": {
         "properties": {
-          "aliases": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
           "isActive": {
             "type": "boolean"
           },
@@ -2021,8 +2001,7 @@
         "required": [
           "name",
           "isActive",
-          "isLiability",
-          "aliases"
+          "isLiability"
         ],
         "type": "object"
       },
@@ -7167,7 +7146,7 @@
             "description": "Not Found"
           }
         },
-        "summary": "Updates an investment account\u0027s name, active flag, liability flag, and aliases.",
+        "summary": "Updates an investment account\u0027s name, active flag, and liability flag.",
         "tags": [
           "InvestmentAccounts"
         ]

@@ -15,13 +15,12 @@ public class InvestmentAccountsViewModelTests
         return (viewModel, service, dialog);
     }
 
-    private static InvestmentAccountDTO Account(Guid id, string name, bool isActive = true, bool isLiability = false, IReadOnlyList<string>? aliases = null, decimal latestBalance = 0m) => new()
+    private static InvestmentAccountDTO Account(Guid id, string name, bool isActive = true, bool isLiability = false, decimal latestBalance = 0m) => new()
     {
         Id = id,
         Name = name,
         IsActive = isActive,
         IsLiability = isLiability,
-        Aliases = aliases ?? [],
         LatestBalance = latestBalance,
     };
 
@@ -45,8 +44,6 @@ public class InvestmentAccountsViewModelTests
         {
             vm.Name = "Monzo Pot";
             vm.IsLiability = true;
-            vm.NewAlias = "Monzo";
-            vm.AddAliasCommand.Execute(null);
         };
 
         await viewModel.CreateInvestmentAccountAsync();
@@ -54,7 +51,6 @@ public class InvestmentAccountsViewModelTests
         service.LastCreateRequest.Should().NotBeNull();
         service.LastCreateRequest!.Name.Should().Be("Monzo Pot");
         service.LastCreateRequest.IsLiability.Should().BeTrue();
-        service.LastCreateRequest.Aliases.Should().ContainSingle("Monzo");
         viewModel.InvestmentAccounts.Should().ContainSingle(a => a.Name == "Monzo Pot");
     }
 
@@ -86,13 +82,12 @@ public class InvestmentAccountsViewModelTests
     {
         var (viewModel, service, dialog) = CreateViewModel();
         var id = Guid.NewGuid();
-        var account = Account(id, "ChaseSave", aliases: ["Existing"]);
+        var account = Account(id, "ChaseSave");
         dialog.OnShowInvestmentAccountFormDialog = vm => vm.IsLiability = true;
 
         await viewModel.EditInvestmentAccountAsync(account);
 
         dialog.LastInvestmentAccountFormDialog!.Name.Should().Be("ChaseSave");
-        dialog.LastInvestmentAccountFormDialog.Aliases.Should().ContainSingle("Existing");
         service.LastUpdateRequest!.Value.Id.Should().Be(id);
         service.LastUpdateRequest.Value.Request.IsLiability.Should().BeTrue();
     }

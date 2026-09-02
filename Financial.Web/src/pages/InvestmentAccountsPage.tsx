@@ -42,18 +42,18 @@ export default function InvestmentAccountsPage() {
   const [isCreating, setIsCreating] = useState(false)
   const [confirmingDelete, setConfirmingDelete] = useState<InvestmentAccountDto | null>(null)
 
-  const handleSubmit = (name: string, isActive: boolean, isLiability: boolean, aliases: string[]) =>
+  const handleSubmit = (name: string, isActive: boolean, isLiability: boolean) =>
     editingAccount
-      ? updateInvestmentAccount(editingAccount.id, { name, isActive, isLiability, aliases })
-      : createInvestmentAccount({ name, isActive, isLiability, aliases })
+      ? updateInvestmentAccount(editingAccount.id, { name, isActive, isLiability })
+      : createInvestmentAccount({ name, isActive, isLiability })
 
   const closeFormDialog = () => {
     setEditingAccount(null)
     setIsCreating(false)
   }
 
-  const handleFormSubmit = async (name: string, isActive: boolean, isLiability: boolean, aliases: string[]) => {
-    const result = await handleSubmit(name, isActive, isLiability, aliases)
+  const handleFormSubmit = async (name: string, isActive: boolean, isLiability: boolean) => {
+    const result = await handleSubmit(name, isActive, isLiability)
     closeFormDialog()
     return result
   }

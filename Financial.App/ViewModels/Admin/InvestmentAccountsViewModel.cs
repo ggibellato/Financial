@@ -112,7 +112,6 @@ public class InvestmentAccountsViewModel : ViewModelBase
                 Name = dialog.Name,
                 IsActive = dialog.IsActive,
                 IsLiability = dialog.IsLiability,
-                Aliases = dialog.Aliases.ToList(),
             });
             await RefreshAsync();
         }
@@ -133,8 +132,7 @@ public class InvestmentAccountsViewModel : ViewModelBase
         var dialog = new InvestmentAccountFormDialogViewModel(
             account.Name,
             account.IsActive,
-            account.IsLiability,
-            account.Aliases);
+            account.IsLiability);
         if (!_dialogService.ShowInvestmentAccountFormDialog(dialog))
         {
             return;
@@ -148,7 +146,6 @@ public class InvestmentAccountsViewModel : ViewModelBase
                 Name = dialog.Name,
                 IsActive = dialog.IsActive,
                 IsLiability = dialog.IsLiability,
-                Aliases = dialog.Aliases.ToList(),
             });
             await RefreshAsync();
         }

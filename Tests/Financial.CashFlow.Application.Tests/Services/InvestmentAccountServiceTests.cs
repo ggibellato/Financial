@@ -93,14 +93,13 @@ public class InvestmentAccountServiceTests
     [Fact]
     public async Task CreateInvestmentAccountAsync_WithValidRequest_AddsAndSaves()
     {
-        var request = new InvestmentAccountCreateDTO { Name = "ChaseSave", IsActive = true, IsLiability = false, Aliases = ["Chase Save"] };
+        var request = new InvestmentAccountCreateDTO { Name = "ChaseSave", IsActive = true, IsLiability = false };
 
         var result = await _sut.CreateInvestmentAccountAsync(request);
 
         using (new AssertionScope())
         {
             result.Name.Should().Be("ChaseSave");
-            result.Aliases.Should().ContainSingle("Chase Save");
             result.LatestBalance.Should().Be(0m);
             _repository.InvestmentAccounts.Should().ContainSingle(a => a.Name == "ChaseSave");
             _repository.SaveChangesCallCount.Should().Be(1);
@@ -113,7 +112,7 @@ public class InvestmentAccountServiceTests
     [InlineData("   ")]
     public async Task CreateInvestmentAccountAsync_WithoutAName_ThrowsAndWritesNothing(string? name)
     {
-        var request = new InvestmentAccountCreateDTO { Name = name!, IsActive = true, IsLiability = false, Aliases = [] };
+        var request = new InvestmentAccountCreateDTO { Name = name!, IsActive = true, IsLiability = false };
 
         var act = async () => await _sut.CreateInvestmentAccountAsync(request);
 
@@ -128,7 +127,7 @@ public class InvestmentAccountServiceTests
     public async Task CreateInvestmentAccountAsync_WithDuplicateName_ThrowsAndWritesNothing()
     {
         _repository.InvestmentAccounts.Add(InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false));
-        var request = new InvestmentAccountCreateDTO { Name = "ChaseSave", IsActive = true, IsLiability = false, Aliases = [] };
+        var request = new InvestmentAccountCreateDTO { Name = "ChaseSave", IsActive = true, IsLiability = false };
 
         var act = async () => await _sut.CreateInvestmentAccountAsync(request);
 
@@ -144,7 +143,7 @@ public class InvestmentAccountServiceTests
     {
         var account = InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false);
         _repository.InvestmentAccounts.Add(account);
-        var request = new InvestmentAccountUpdateDTO { Name = "ChaseSaveRenamed", IsActive = false, IsLiability = true, Aliases = ["New alias"] };
+        var request = new InvestmentAccountUpdateDTO { Name = "ChaseSaveRenamed", IsActive = false, IsLiability = true };
 
         var result = await _sut.UpdateInvestmentAccountAsync(account.Id, request);
 
@@ -153,7 +152,6 @@ public class InvestmentAccountServiceTests
             result.Name.Should().Be("ChaseSaveRenamed");
             result.IsActive.Should().BeFalse();
             result.IsLiability.Should().BeTrue();
-            result.Aliases.Should().ContainSingle("New alias");
             _repository.SaveChangesCallCount.Should().Be(1);
         }
     }
@@ -161,7 +159,7 @@ public class InvestmentAccountServiceTests
     [Fact]
     public async Task UpdateInvestmentAccountAsync_WithUnknownId_ThrowsKeyNotFoundException()
     {
-        var request = new InvestmentAccountUpdateDTO { Name = "X", IsActive = true, IsLiability = false, Aliases = [] };
+        var request = new InvestmentAccountUpdateDTO { Name = "X", IsActive = true, IsLiability = false };
 
         var act = async () => await _sut.UpdateInvestmentAccountAsync(Guid.NewGuid(), request);
 
@@ -175,7 +173,7 @@ public class InvestmentAccountServiceTests
         var baAmex = InvestmentAccount.Create("BaAmex", isActive: true, isLiability: true);
         _repository.InvestmentAccounts.Add(chaseSave);
         _repository.InvestmentAccounts.Add(baAmex);
-        var request = new InvestmentAccountUpdateDTO { Name = "BaAmex", IsActive = true, IsLiability = false, Aliases = [] };
+        var request = new InvestmentAccountUpdateDTO { Name = "BaAmex", IsActive = true, IsLiability = false };
 
         var act = async () => await _sut.UpdateInvestmentAccountAsync(chaseSave.Id, request);
 

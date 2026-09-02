@@ -431,7 +431,6 @@ internal sealed class StubInvestmentAccountService : IInvestmentAccountService
             Name = request.Name,
             IsActive = request.IsActive,
             IsLiability = request.IsLiability,
-            Aliases = request.Aliases,
             LatestBalance = 0m,
         };
         InvestmentAccounts.Add(created);
@@ -452,7 +451,6 @@ internal sealed class StubInvestmentAccountService : IInvestmentAccountService
             Name = request.Name,
             IsActive = request.IsActive,
             IsLiability = request.IsLiability,
-            Aliases = request.Aliases,
             LatestBalance = 0m,
         };
         return Task.FromResult(updated);
