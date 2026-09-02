@@ -156,3 +156,4 @@ export type BalanceAdjustmentCreateDto = Schema<'BalanceAdjustmentCreateDTO'>
 export type BalanceAdjustmentUpdateDto = Schema<'BalanceAdjustmentUpdateDTO'>
 export type SyncStatusDto = Schema<'SyncStatusDTO'>
 export type SyncStatusResponseDto = Schema<'SyncStatusResponseDTO'>
+export type PaymentDueDto = Schema<'PaymentDueDTO'>
