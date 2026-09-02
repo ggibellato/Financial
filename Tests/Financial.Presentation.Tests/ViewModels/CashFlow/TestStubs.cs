@@ -15,9 +15,18 @@ internal sealed class StubExpenseService : IExpenseService
     public ExpenseCreateDTO? LastCreateRequest { get; private set; }
     public (Guid Id, ExpenseUpdateDTO Request)? LastUpdateRequest { get; private set; }
     public Guid? LastDeletedId { get; private set; }
+    public string? ThrowOnAdd { get; set; }
+    public int AddExpenseCallCount { get; private set; }
 
     public Task<ExpenseDTO> AddExpenseAsync(ExpenseCreateDTO request)
     {
+        AddExpenseCallCount++;
+
+        if (ThrowOnAdd is { } message)
+        {
+            throw new InvalidOperationException(message);
+        }
+
         LastCreateRequest = request;
         return Task.FromResult(ToDto(Guid.NewGuid(), request.Date, request.Description, request.Value,
             request.CategoryId, request.PaymentSourceBankId, request.CreditCardId, request.RoundUpAmount));
