@@ -280,21 +280,21 @@ graph TD
 
 ### F01. Payments Due Aggregation (Backend)
 
-- [ ] Endpoint `GET /api/v1/financial/payments-due` exists and returns HTTP 200 with a JSON array.
-- [ ] Mensais bills with `Status == BillStatus.Unset` and a configured `DueDay` (1-31) are queried.
-- [ ] For each Mensais bill, the payment date is computed as the Due Day clamped to the last day of the current month (e.g., Due Day 31 in February → Feb 28 or 29).
-- [ ] Mensais bills with Status other than Unset (e.g., Scheduled, Paid) are excluded from the response.
-- [ ] Credit cards with a non-null `NextInvoiceDueDate` are queried.
-- [ ] Credit cards with a null `NextInvoiceDueDate` are excluded from the response.
-- [ ] Both Mensais bills and credit cards with due dates in the range `[today, today + 5 days]` inclusive are included.
-- [ ] Payments with due dates before today (overdue) are excluded.
-- [ ] Payments with due dates more than 5 days in the future are excluded.
-- [ ] For each payment, `daysRemaining` is calculated as `(dueDate - today).Days` and is between 0 and 5 inclusive.
-- [ ] The response list is sorted in ascending order by due date (nearest first).
-- [ ] When two payments share the same due date, they are sorted by type (Mensais before CreditCard alphabetically) and then by name (alphabetically).
-- [ ] "Today" is computed using the host/server's local time zone via `TimeZoneInfo.Local` and the injected `TimeProvider`.
-- [ ] If the Mensais or credit card repository fails, the endpoint returns an empty array (fail-safe) and logs the error.
-- [ ] Response payload includes, for each payment: `type` (string), `name` (string), `dueDate` (ISO 8601 date), `daysRemaining` (integer 0-5).
+- [x] Endpoint `GET /api/v1/financial/payments-due` exists and returns HTTP 200 with a JSON array.
+- [x] Mensais bills with `Status == BillStatus.Unset` and a configured `DueDay` (1-31) are queried.
+- [x] For each Mensais bill, the payment date is computed as the Due Day clamped to the last day of the current month (e.g., Due Day 31 in February → Feb 28 or 29).
+- [x] Mensais bills with Status other than Unset (e.g., Scheduled, Paid) are excluded from the response.
+- [x] Credit cards with a non-null `NextInvoiceDueDate` are queried.
+- [x] Credit cards with a null `NextInvoiceDueDate` are excluded from the response.
+- [x] Both Mensais bills and credit cards with due dates in the range `[today, today + 5 days]` inclusive are included.
+- [x] Payments with due dates before today (overdue) are excluded.
+- [x] Payments with due dates more than 5 days in the future are excluded.
+- [x] For each payment, `daysRemaining` is calculated as `(dueDate - today).Days` and is between 0 and 5 inclusive.
+- [x] The response list is sorted in ascending order by due date (nearest first).
+- [x] When two payments share the same due date, they are sorted by type (Mensais before CreditCard alphabetically) and then by name (alphabetically).
+- [x] "Today" is computed using the host/server's local time zone via `TimeZoneInfo.Local` and the injected `TimeProvider`.
+- [x] If the Mensais or credit card repository fails, the endpoint returns an empty array (fail-safe) and logs the error.
+- [x] Response payload includes, for each payment: `type` (string), `name` (string), `dueDate` (ISO 8601 date), `daysRemaining` (integer 0-5).
 
 ### F02. Payment Due Banner (Web)
 
