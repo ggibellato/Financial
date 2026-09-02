@@ -49,16 +49,47 @@ public partial class StatusSplitButton : UserControl
     public StatusSplitButton()
     {
         InitializeComponent();
+
+        // A ContextMenu is not part of the visual tree it's declared in - it gets its own
+        // NameScope and does not inherit ambient DataContext, so {Binding ElementName=root}
+        // inside it silently resolves to nothing (confirmed: it left ItemsSource null). Setting
+        // DataContext explicitly here is the standard WPF fix; the XAML then binds against it
+        // via RelativeSource AncestorType=ContextMenu instead of ElementName.
+        if (Split.ContextMenu is { } contextMenu)
+        {
+            contextMenu.DataContext = this;
+        }
     }
 
-    private void OnStatusItemClick(object sender, RoutedEventArgs e)
+    private void OnSplitButtonClick(object sender, RoutedEventArgs e)
     {
-        if (sender is not FrameworkElement { DataContext: string newStatus })
+        if (Split.ContextMenu is not { } contextMenu)
         {
             return;
         }
 
-        Split.IsDropDownOpen = false;
+        // Release any capture DataGridCell's own row-selection handling might still hold from
+        // this same click, so the ContextMenu (and its items) get uncontested capture once open -
+        // the same DataGridCell/mouse-capture conflict documented on the XAML side for why this
+        // control uses a plain Button instead of SplitButton in the first place.
+        Mouse.Capture(null);
+
+        contextMenu.PlacementTarget = Split;
+        contextMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+        contextMenu.IsOpen = true;
+    }
+
+    private void OnStatusItemClick(object sender, RoutedEventArgs e)
+    {
+        // Tag (not DataContext) carries the status: these are static XAML MenuItems, not
+        // ItemsSource-generated containers, so DataContext is inherited from the ContextMenu
+        // (the StatusSplitButton instance itself) rather than being the per-item status string.
+        if (sender is not FrameworkElement { Tag: string newStatus })
+        {
+            return;
+        }
+
+        // The ContextMenu closes itself on any item click - nothing else to do here.
         ChangeStatusCommand?.Execute(new StatusChangeRequest(Bill, newStatus));
     }
 }

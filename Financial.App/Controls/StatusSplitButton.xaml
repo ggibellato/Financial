@@ -2,53 +2,105 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-             x:Name="root">
+             x:Name="self">
     <!--
-        Only the chevron opens the Flyout, matching Wpf.Ui.Controls.SplitButton's native two-zone
-        convention (see spec.md's Technical Decisions) - the primary segment has no bound Command.
+        This control's own root used to be named "root", which collided with BillTableView.xaml's
+        own x:Name="root" (the parent hosting it in a DataGridTemplateColumn.CellTemplate):
+        BillTableView.xaml's ChangeStatusCommand="{Binding ChangeStatusCommand, ElementName=root}"
+        was set ON this control, and ElementName lookup starting from this instance found THIS
+        control's own "root" (itself) before ever reaching BillTableView's - a self-referencing
+        binding that always resolved to null. EditBillCommand/DeleteBillCommand on the plain
+        Button cells right next to this one were never affected, since a plain Button has no
+        internal "root" of its own to shadow the lookup with. Renamed to "self" to remove the
+        collision entirely.
+
+        Wpf.Ui.Controls.SplitButton's chevron-click wiring (OnSplitButtonToggleButtonOnClick) only
+        does anything when Flyout is a real System.Windows.Controls.ContextMenu (confirmed against
+        the library source; a ui:Flyout here silently no-ops on every click). Hosting THAT
+        ContextMenu on a plain ui:Button instead of ui:SplitButton avoids a second, separate issue:
+        SplitButton's chevron ToggleButton does its own internal mouse-capture handling to open the
+        menu, which conflicts with DataGridCell's own mouse-capture for row selection when this
+        control sits inside a grid cell (confirmed via an isolated DataGrid+BillTableView
+        reproduction - the exact same ContextMenu opens and stays open reliably outside a DataGrid,
+        but flickers shut immediately inside one). Releasing any leftover capture right before
+        opening (see OnSplitButtonClick) is the same fix applied one step further, in case
+        DataGridCell's capture also interferes with clicks landing on the menu's own items.
     -->
-    <ui:SplitButton x:Name="Split"
-                    Background="{Binding Status, ElementName=root, Converter={StaticResource BillStatusToBrushConverter}, ConverterParameter=Background}"
-                    Foreground="{Binding Status, ElementName=root, Converter={StaticResource BillStatusToBrushConverter}, ConverterParameter=Foreground}"
-                    Content="{Binding Status, ElementName=root}"
-                    AutomationProperties.Name="{Binding Status, ElementName=root, StringFormat='Status: {0}. Change status'}">
-        <ui:SplitButton.Flyout>
+    <ui:Button x:Name="Split"
+               Click="OnSplitButtonClick"
+               AutomationProperties.Name="{Binding Status, ElementName=self, StringFormat='Status: {0}. Change status'}">
+        <!--
+            Status color lives on this inner badge only (matching React's Badge-inside-a-neutral-
+            MenuButton), not on the SplitButton's own Background/Foreground - those get overridden
+            by the library's MouseOver/Pressed chrome, which made "Paid" unreadable on hover.
+        -->
+        <Border Background="{Binding Status, ElementName=self, Converter={StaticResource BillStatusToBrushConverter}, ConverterParameter=Background}"
+                CornerRadius="4" Padding="8,2">
+            <TextBlock Text="{Binding Status, ElementName=self}"
+                       Foreground="{Binding Status, ElementName=self, Converter={StaticResource BillStatusToBrushConverter}, ConverterParameter=Foreground}"/>
+        </Border>
+        <ui:Button.ContextMenu>
             <!--
-                Flyout content is a Popup root and does not inherit the outer visual tree's
-                DataContext (see docs/ui/wpf.md), so every binding below reaches back to this
-                control's own dependency properties via ElementName=root rather than {Binding}.
+                A ContextMenu is not part of the visual tree it's declared in - it gets its own
+                NameScope and does not inherit ambient DataContext, so {Binding ElementName=self}
+                would silently resolve to nothing here (confirmed: it left ItemsSource null when
+                this used to be ItemsSource-driven). StatusSplitButton's constructor sets this
+                ContextMenu's DataContext to itself; since these three MenuItems are now static XAML
+                children (not ItemsSource-generated containers), they inherit that DataContext
+                directly, so a plain {Binding Status} below reaches it with no RelativeSource
+                needed. Explicit MenuItems also read more reliably here than an ItemsSource +
+                ItemContainerStyle EventSetter did.
             -->
-            <ui:Flyout Placement="Bottom">
-                <ItemsControl ItemsSource="{Binding Statuses, ElementName=root}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <ui:Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
-                                       Appearance="Transparent" Padding="8,6" Click="OnStatusItemClick">
-                                <ui:Button.Tag>
-                                    <MultiBinding Converter="{StaticResource EqualityToBoolConverter}">
-                                        <Binding/>
-                                        <Binding Path="Status" ElementName="root"/>
-                                    </MultiBinding>
-                                </ui:Button.Tag>
-                                <ui:Button.Style>
-                                    <Style TargetType="{x:Type ui:Button}" BasedOn="{StaticResource {x:Type ui:Button}}">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource Self}, Path=Tag}" Value="True">
-                                                <Setter Property="IsEnabled" Value="False"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </ui:Button.Style>
-                                <StackPanel Orientation="Horizontal">
-                                    <ui:SymbolIcon Symbol="Checkmark20" Margin="0,0,6,0"
-                                                   Visibility="{Binding RelativeSource={RelativeSource AncestorType={x:Type ui:Button}}, Path=Tag, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                                    <TextBlock Text="{Binding}"/>
-                                </StackPanel>
-                            </ui:Button>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </ui:Flyout>
-        </ui:SplitButton.Flyout>
-    </ui:SplitButton>
+            <ContextMenu>
+                <MenuItem Header="Unset" Tag="Unset" Click="OnStatusItemClick">
+                    <MenuItem.Style>
+                        <Style TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Status}" Value="Unset">
+                                    <Setter Property="IsEnabled" Value="False"/>
+                                    <Setter Property="Icon">
+                                        <Setter.Value>
+                                            <ui:SymbolIcon Symbol="Checkmark20"/>
+                                        </Setter.Value>
+                                    </Setter>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </MenuItem.Style>
+                </MenuItem>
+                <MenuItem Header="Scheduled" Tag="Scheduled" Click="OnStatusItemClick">
+                    <MenuItem.Style>
+                        <Style TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Status}" Value="Scheduled">
+                                    <Setter Property="IsEnabled" Value="False"/>
+                                    <Setter Property="Icon">
+                                        <Setter.Value>
+                                            <ui:SymbolIcon Symbol="Checkmark20"/>
+                                        </Setter.Value>
+                                    </Setter>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </MenuItem.Style>
+                </MenuItem>
+                <MenuItem Header="Paid" Tag="Paid" Click="OnStatusItemClick">
+                    <MenuItem.Style>
+                        <Style TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Status}" Value="Paid">
+                                    <Setter Property="IsEnabled" Value="False"/>
+                                    <Setter Property="Icon">
+                                        <Setter.Value>
+                                            <ui:SymbolIcon Symbol="Checkmark20"/>
+                                        </Setter.Value>
+                                    </Setter>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </MenuItem.Style>
+                </MenuItem>
+            </ContextMenu>
+        </ui:Button.ContextMenu>
+    </ui:Button>
 </UserControl>
