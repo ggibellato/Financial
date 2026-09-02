@@ -34,7 +34,8 @@ namespace Financial.Presentation.App
             Financial.Presentation.App.Views.Admin.RecurringBillsView recurringBillsView,
             MainNavigationViewModel navigationViewModel,
             MainNavigationViewModelHistoric navigationViewModelHistoric,
-            SyncStatusViewModel syncStatusViewModel)
+            SyncStatusViewModel syncStatusViewModel,
+            PaymentDueBannerViewModel paymentDueBannerViewModel)
         {
             ArgumentNullException.ThrowIfNull(dividendCheckView);
             ArgumentNullException.ThrowIfNull(assetPriceView);
@@ -55,6 +56,7 @@ namespace Financial.Presentation.App
             ArgumentNullException.ThrowIfNull(reserveBucketsView);
             ArgumentNullException.ThrowIfNull(recurringBillsView);
             ArgumentNullException.ThrowIfNull(syncStatusViewModel);
+            ArgumentNullException.ThrowIfNull(paymentDueBannerViewModel);
             _navigationViewModel = navigationViewModel ?? throw new ArgumentNullException(nameof(navigationViewModel));
             _navigationViewModelHistoric = navigationViewModelHistoric ?? throw new ArgumentNullException(nameof(navigationViewModelHistoric));
 
@@ -92,7 +94,8 @@ namespace Financial.Presentation.App
                     Settings.Default.Save();
                 },
                 viewsByKey: viewsByKey,
-                syncStatusViewModel: syncStatusViewModel);
+                syncStatusViewModel: syncStatusViewModel,
+                paymentDueBannerViewModel: paymentDueBannerViewModel);
 
             Loaded += async (s, e) =>
             {
