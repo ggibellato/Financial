@@ -6,6 +6,7 @@ import Sidebar from './components/Sidebar'
 import Breadcrumb from './components/Breadcrumb'
 import LoadingState from './components/LoadingState'
 import SyncStatusBanner from './components/SyncStatusBanner'
+import PaymentDueBanner from './components/PaymentDueBanner'
 import { useSystemColorScheme } from './hooks/useSystemColorScheme'
 import { financialDarkTheme, financialLightTheme } from './theme/fluentTheme'
 import './App.css'
@@ -28,6 +29,7 @@ function App() {
         <Sidebar />
         <main className="app__content">
           <SyncStatusBanner />
+          <PaymentDueBanner />
           <Breadcrumb />
           <Suspense fallback={<LoadingState />}>
             <Outlet />
