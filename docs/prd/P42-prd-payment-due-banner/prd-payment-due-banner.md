@@ -298,28 +298,28 @@ graph TD
 
 ### F02. Payment Due Banner (Web)
 
-- [ ] A `usePaymentsDue()` hook exists and fetches `GET /api/v1/financial/payments-due` on component mount.
-- [ ] If the response array is empty, the component renders nothing (`null`).
-- [ ] If the response array is non-empty, a banner component displays with the title "Upcoming payments".
-- [ ] Each payment item displays: payment type label (`Mensais` or `Credit card`), payment name, due date, and days-remaining text.
-- [ ] Days-remaining text is human-readable: "Due today" (0d), "Due in 1 day" (1d), "Due in 2 days" (2d), "Due in 3 days" (3d), "Due in 4 days" (4d), "Due in 5 days" (5d).
-- [ ] Payment items are displayed in the order provided by F01 (ascending by due date, then by type/name).
-- [ ] Each payment item displays an urgency icon + color indicator:
+- [x] A `usePaymentsDue()` hook exists and fetches `GET /api/v1/financial/payments-due` on component mount.
+- [x] If the response array is empty, the component renders nothing (`null`).
+- [x] If the response array is non-empty, a banner component displays with the title "Upcoming payments".
+- [x] Each payment item displays: payment type label (`Mensais` or `Credit card`), payment name, due date, and days-remaining text.
+- [x] Days-remaining text is human-readable: "Due today" (0d), "Due in 1 day" (1d), "Due in 2 days" (2d), "Due in 3 days" (3d), "Due in 4 days" (4d), "Due in 5 days" (5d).
+- [x] Payment items are displayed in the order provided by F01 (ascending by due date, then by type/name).
+- [x] Each payment item displays an urgency icon + color indicator:
   - 0 days remaining: red/danger color with a filled alert icon (e.g., alert/warning symbol).
   - 1-2 days remaining: amber/warning color with a clock icon.
   - 3-5 days remaining: blue/info color with a calendar icon.
-- [ ] Urgency icons have accessible labels (e.g., `aria-label="Due today – urgent"`).
-- [ ] A close button (X or "Dismiss") is present in the banner header or trailing position.
-- [ ] Clicking the close button immediately dismisses the banner (no 10-second wait).
-- [ ] The banner auto-dismisses after exactly 10 seconds if the user does not manually close it.
-- [ ] On auto-dismiss, the banner is removed from the DOM.
-- [ ] The banner is mounted in `App.tsx` at a high-level location (similar to `<SyncStatusBanner>`), above the main content.
-- [ ] No state is persisted in localStorage or any other storage mechanism about whether the banner was shown or dismissed.
-- [ ] On app restart, the banner is re-fetched and re-displayed if qualifying payments exist.
-- [ ] If F01 endpoint fails (network error, 5xx), the banner fails silently and renders nothing (no error message or fallback UI).
-- [ ] The banner uses Fluent 2 semantic colors and components (no competing UI frameworks).
-- [ ] Close button is keyboard-operable (Tab to focus, Enter to activate).
-- [ ] Urgency icons are discoverable by screen readers.
+- [x] Urgency icons have accessible labels (e.g., `aria-label="Due today – urgent"`).
+- [x] A close button (X or "Dismiss") is present in the banner header or trailing position.
+- [x] Clicking the close button immediately dismisses the banner (no 10-second wait).
+- [x] The banner auto-dismisses after exactly 10 seconds if the user does not manually close it.
+- [x] On auto-dismiss, the banner is removed from the DOM.
+- [x] The banner is mounted in `App.tsx` at a high-level location (similar to `<SyncStatusBanner>`), above the main content.
+- [x] No state is persisted in localStorage or any other storage mechanism about whether the banner was shown or dismissed.
+- [x] On app restart, the banner is re-fetched and re-displayed if qualifying payments exist.
+- [x] If F01 endpoint fails (network error, 5xx), the banner fails silently and renders nothing (no error message or fallback UI).
+- [x] The banner uses Fluent 2 semantic colors and components (no competing UI frameworks).
+- [x] Close button is keyboard-operable (Tab to focus, Enter to activate).
+- [x] Urgency icons are discoverable by screen readers.
 
 ### F03. Payment Due Banner (WPF)
 
@@ -349,8 +349,8 @@ graph TD
 
 ### Cross-Feature Integration
 
-- [ ] Payment data returned by F01 (type, name, due date, days remaining) flows correctly to F02 (Web banner) and renders without transformation errors.
-- [ ] F02 (Web) correctly interprets F01's `daysRemaining` integer to assign the correct urgency tier (0 → today, 1-2 → soon, 3-5 → upcoming) and applies the correct color + icon.
+- [x] Payment data returned by F01 (type, name, due date, days remaining) flows correctly to F02 (Web banner) and renders without transformation errors.
+- [x] F02 (Web) correctly interprets F01's `daysRemaining` integer to assign the correct urgency tier (0 → today, 1-2 → soon, 3-5 → upcoming) and applies the correct color + icon.
 - [ ] F03 (WPF) correctly interprets F01's `daysRemaining` integer to assign the correct urgency tier and applies the correct color + icon.
 - [ ] When F01 returns an empty array, both F02 and F03 render no banner (not an error state, just no visible UI).
 - [ ] When F01 fails (network error, repository error), both F02 and F03 gracefully fail silent (no error UI, no broken banner layout).
