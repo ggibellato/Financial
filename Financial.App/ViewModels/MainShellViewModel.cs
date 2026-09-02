@@ -19,11 +19,13 @@ public class MainShellViewModel : ViewModelBase
         bool initialCollapsed,
         Action<bool> persistCollapsed,
         IReadOnlyDictionary<string, object> viewsByKey,
-        SyncStatusViewModel syncStatusViewModel)
+        SyncStatusViewModel syncStatusViewModel,
+        PaymentDueBannerViewModel paymentDueBannerViewModel)
     {
         _persistCollapsed = persistCollapsed ?? throw new ArgumentNullException(nameof(persistCollapsed));
         _viewsByKey = viewsByKey ?? throw new ArgumentNullException(nameof(viewsByKey));
         SyncStatus = syncStatusViewModel ?? throw new ArgumentNullException(nameof(syncStatusViewModel));
+        PaymentsDue = paymentDueBannerViewModel ?? throw new ArgumentNullException(nameof(paymentDueBannerViewModel));
         _isCollapsed = initialCollapsed;
 
         ToggleCollapsedCommand = new RelayCommand(ToggleCollapsed);
@@ -36,6 +38,8 @@ public class MainShellViewModel : ViewModelBase
     public IReadOnlyList<NavCategory> Categories => NavTree.Categories;
 
     public SyncStatusViewModel SyncStatus { get; }
+
+    public PaymentDueBannerViewModel PaymentsDue { get; }
 
     public bool IsCollapsed
     {

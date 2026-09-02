@@ -130,6 +130,7 @@ namespace Financial.Presentation.App
                     services.AddTransient<Financial.Presentation.App.ViewModels.Admin.RecurringBillsViewModel>();
                     services.AddTransient<Financial.Presentation.App.Views.Admin.RecurringBillsView>();
                     services.AddSingleton<Financial.Presentation.App.ViewModels.SyncStatusViewModel>();
+                    services.AddSingleton<Financial.Presentation.App.ViewModels.PaymentDueBannerViewModel>();
                     services.AddTransient<MainWindow>();
                 })
                 .Build();
