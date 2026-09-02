@@ -206,3 +206,11 @@ Do not use an old WPF pattern as the reason to diverge from the React target.
   a `DataTrigger` — see `Sidebar.xaml`'s `NavChildButtonTemplate` (the
   original) and `StatusSplitButton.xaml` (the same pattern reused for a
   Flyout item). This needs no new converter for the common case.
+- Every existing `*DialogViewModel` before `UkExpensePromptDialogViewModel`
+  was Confirm/Cancel only, matching `DialogCloser`'s and `Window.DialogResult`'s
+  native `bool?`. For a dialog with a third outcome (e.g. Confirm/Skip/Cancel),
+  don't change that signature — add a `Decision` enum property the caller reads
+  after `ShowDialog()` returns `true`, and have both non-cancelling actions
+  raise `CloseRequested(true)` (only Cancel raises `false`). This reuses
+  `DialogCloser`/`IDialogService`/`StubDialogService` unchanged for any future
+  3+-outcome dialog instead of introducing a second dialog-closing mechanism.

@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.Presentation.App.Controls;
+using Financial.Presentation.App.Services;
 using Microsoft.Extensions.Logging;
 using static Financial.Presentation.App.Helpers.ObservableCollectionHelper;
 
@@ -15,6 +16,10 @@ namespace Financial.Presentation.App.ViewModels.CashFlow;
 public class MensaisViewModel : ViewModelBase
 {
     private readonly IMensaisService _mensaisService;
+    private readonly IExpenseService _expenseService;
+    private readonly IBankService _bankService;
+    private readonly ICategoryService _categoryService;
+    private readonly IDialogService _dialogService;
     private readonly Func<string, bool> _confirm;
     private readonly ILogger<MensaisViewModel> _logger;
 
@@ -69,9 +74,20 @@ public class MensaisViewModel : ViewModelBase
 
     public RelayCommand RetryCommand { get; }
 
-    public MensaisViewModel(IMensaisService mensaisService, Func<string, bool> confirm, ILogger<MensaisViewModel> logger)
+    public MensaisViewModel(
+        IMensaisService mensaisService,
+        IExpenseService expenseService,
+        IBankService bankService,
+        ICategoryService categoryService,
+        IDialogService dialogService,
+        Func<string, bool> confirm,
+        ILogger<MensaisViewModel> logger)
     {
         _mensaisService = mensaisService ?? throw new ArgumentNullException(nameof(mensaisService));
+        _expenseService = expenseService ?? throw new ArgumentNullException(nameof(expenseService));
+        _bankService = bankService ?? throw new ArgumentNullException(nameof(bankService));
+        _categoryService = categoryService ?? throw new ArgumentNullException(nameof(categoryService));
+        _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
         _confirm = confirm ?? throw new ArgumentNullException(nameof(confirm));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
@@ -408,28 +424,100 @@ public class MensaisViewModel : ViewModelBase
 
         StatusChangeError = null;
 
+        if (bill.Area == "UK" && request.NewStatus == "Paid" && bill.Status != "Paid")
+        {
+            await ChangeStatusViaUkExpensePromptAsync(bill);
+            return;
+        }
+
         try
         {
-            var updated = await _mensaisService.UpdateBillStatusAsync(
-                bill.Id, new RecurringBillStatusUpdateDTO { Status = request.NewStatus });
-
-            var brasilIndex = BrasilBills.IndexOf(bill);
-            if (brasilIndex >= 0)
-            {
-                BrasilBills[brasilIndex] = updated;
-                return;
-            }
-
-            var ukIndex = UkBills.IndexOf(bill);
-            if (ukIndex >= 0)
-            {
-                UkBills[ukIndex] = updated;
-            }
+            await CommitStatusAsync(bill, request.NewStatus);
         }
         catch (Exception ex)
         {
             _logger.LogError("Mensais change-status failed with {ErrorType}", ex.GetType().Name);
             StatusChangeError = ex.Message;
+        }
+    }
+
+    private async Task ChangeStatusViaUkExpensePromptAsync(RecurringBillDTO bill)
+    {
+        var dialog = new UkExpensePromptDialogViewModel(bill, _bankService.GetBanks(), _categoryService.GetCategories());
+
+        if (!_dialogService.ShowUkExpensePromptDialog(dialog))
+        {
+            return;
+        }
+
+        if (dialog.Decision == UkExpensePromptDecision.Skip)
+        {
+            try
+            {
+                await CommitStatusAsync(bill, "Paid");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Mensais change-status failed with {ErrorType}", ex.GetType().Name);
+                StatusChangeError = ex.Message;
+            }
+
+            return;
+        }
+
+        try
+        {
+            await _expenseService.AddExpenseAsync(new ExpenseCreateDTO
+            {
+                Date = DateOnly.FromDateTime(dialog.Date),
+                Description = dialog.Description,
+                Value = decimal.Parse(dialog.Value),
+                CategoryId = dialog.CategoryId!.Value,
+                PaymentSourceBankId = dialog.BankId!.Value,
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("Mensais UK expense creation failed with {ErrorType}", ex.GetType().Name);
+            StatusChangeError = ex.Message;
+            return;
+        }
+
+        while (true)
+        {
+            try
+            {
+                await CommitStatusAsync(bill, "Paid");
+                return;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Mensais change-status failed with {ErrorType}", ex.GetType().Name);
+
+                if (!_confirm($"Updating the bill status failed: {ex.Message}. Retry?"))
+                {
+                    StatusChangeError = ex.Message;
+                    return;
+                }
+            }
+        }
+    }
+
+    private async Task CommitStatusAsync(RecurringBillDTO bill, string newStatus)
+    {
+        var updated = await _mensaisService.UpdateBillStatusAsync(bill.Id, new RecurringBillStatusUpdateDTO { Status = newStatus });
+
+        var brasilIndex = BrasilBills.IndexOf(bill);
+        if (brasilIndex >= 0)
+        {
+            BrasilBills[brasilIndex] = updated;
+            return;
+        }
+
+        var ukIndex = UkBills.IndexOf(bill);
+        if (ukIndex >= 0)
+        {
+            UkBills[ukIndex] = updated;
         }
     }
 

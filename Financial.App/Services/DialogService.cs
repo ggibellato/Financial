@@ -1,6 +1,8 @@
 using Financial.Presentation.App.ViewModels.Admin;
+using Financial.Presentation.App.ViewModels.CashFlow;
 using Financial.Presentation.App.ViewModels.Investment;
 using Financial.Presentation.App.Views.Admin;
+using Financial.Presentation.App.Views.CashFlow;
 using Financial.Presentation.App.Views.Investment;
 
 namespace Financial.Presentation.App.Services;
@@ -46,4 +48,7 @@ public sealed class DialogService : IDialogService
 
     public bool ShowRecurringBillFormDialog(RecurringBillFormDialogViewModel viewModel) =>
         new RecurringBillFormDialog(viewModel) { Owner = System.Windows.Application.Current?.MainWindow }.ShowDialog() == true;
+
+    public bool ShowUkExpensePromptDialog(UkExpensePromptDialogViewModel viewModel) =>
+        new UkExpensePromptDialog(viewModel) { Owner = System.Windows.Application.Current?.MainWindow }.ShowDialog() == true;
 }

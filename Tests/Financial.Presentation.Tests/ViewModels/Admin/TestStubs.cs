@@ -5,6 +5,7 @@ using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
 using Financial.Presentation.App.Services;
 using Financial.Presentation.App.ViewModels.Admin;
+using Financial.Presentation.App.ViewModels.CashFlow;
 using Financial.Presentation.App.ViewModels.Investment;
 
 namespace Financial.Presentation.Tests.ViewModels.Admin;
@@ -706,6 +707,10 @@ internal sealed class StubDialogService : IDialogService
     public RecurringBillFormDialogViewModel? LastRecurringBillFormDialog { get; private set; }
     public Action<RecurringBillFormDialogViewModel>? OnShowRecurringBillFormDialog { get; set; }
 
+    public bool ShowUkExpensePromptDialogResult { get; set; } = true;
+    public UkExpensePromptDialogViewModel? LastUkExpensePromptDialog { get; private set; }
+    public Action<UkExpensePromptDialogViewModel>? OnShowUkExpensePromptDialog { get; set; }
+
     public bool Confirm(string message, string caption)
     {
         LastConfirmMessage = message;
@@ -786,5 +791,12 @@ internal sealed class StubDialogService : IDialogService
         LastRecurringBillFormDialog = viewModel;
         OnShowRecurringBillFormDialog?.Invoke(viewModel);
         return ShowRecurringBillFormDialogResult;
+    }
+
+    public bool ShowUkExpensePromptDialog(UkExpensePromptDialogViewModel viewModel)
+    {
+        LastUkExpensePromptDialog = viewModel;
+        OnShowUkExpensePromptDialog?.Invoke(viewModel);
+        return ShowUkExpensePromptDialogResult;
     }
 }
