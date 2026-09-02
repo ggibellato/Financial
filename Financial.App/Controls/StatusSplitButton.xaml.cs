@@ -68,6 +68,12 @@ public partial class StatusSplitButton : UserControl
             return;
         }
 
+        // Release any capture DataGridCell's own row-selection handling might still hold from
+        // this same click, so the ContextMenu (and its items) get uncontested capture once open -
+        // the same DataGridCell/mouse-capture conflict documented on the XAML side for why this
+        // control uses a plain Button instead of SplitButton in the first place.
+        Mouse.Capture(null);
+
         contextMenu.PlacementTarget = Split;
         contextMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
         contextMenu.IsOpen = true;
@@ -75,7 +81,10 @@ public partial class StatusSplitButton : UserControl
 
     private void OnStatusItemClick(object sender, RoutedEventArgs e)
     {
-        if (sender is not FrameworkElement { DataContext: string newStatus })
+        // Tag (not DataContext) carries the status: these are static XAML MenuItems, not
+        // ItemsSource-generated containers, so DataContext is inherited from the ContextMenu
+        // (the StatusSplitButton instance itself) rather than being the per-item status string.
+        if (sender is not FrameworkElement { Tag: string newStatus })
         {
             return;
         }
