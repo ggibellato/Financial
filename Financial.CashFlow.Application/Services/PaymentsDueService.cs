@@ -45,7 +45,7 @@ public sealed class PaymentsDueService : IPaymentsDueService
                 .Concat(GetCreditCardPaymentsDue(today))
                 .OrderBy(p => p.DueDate)
                 .ThenBy(p => TypeSortOrder(p.Type))
-                .ThenBy(p => p.Name, StringComparer.Ordinal)
+                .ThenBy(p => p.Name, StringComparer.CurrentCultureIgnoreCase)
                 .ToList();
 
             span.MarkSuccess();

@@ -212,6 +212,17 @@ public class PaymentsDueServiceTests
     }
 
     [Fact]
+    public void GetPaymentsDue_SameDueDateAndType_NameSortIsCaseInsensitive()
+    {
+        _repository.AddRecurringBill(CreateBill(PinnedToday.Day, "Thames Water"));
+        _repository.AddRecurringBill(CreateBill(PinnedToday.Day, "eon"));
+
+        var result = _sut.GetPaymentsDue();
+
+        result.Select(p => p.Name).Should().Equal("eon", "Thames Water");
+    }
+
+    [Fact]
     public void GetPaymentsDue_RecurringBillRepositoryThrows_ReturnsCreditCardsOnlyAndLogsError()
     {
         _repository.AddCreditCard(CreateCard("Nubank", PinnedToday));
