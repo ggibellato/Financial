@@ -1161,4 +1161,16 @@ describe('financialApiClient', () => {
     const [url] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/sync-status`)
   })
+
+  it('calls payments-due endpoint', async () => {
+    const responseBody = [{ type: 'Mensais', name: 'Internet', dueDate: '2026-09-05', daysRemaining: 3 }]
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.getPaymentsDue()
+
+    expect(result).toEqual(responseBody)
+    const [url] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/payments-due`)
+  })
 })

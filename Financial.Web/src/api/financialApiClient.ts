@@ -55,6 +55,7 @@ import type {
   MoveAssetRequestDto,
   MaeLedgerTotalsDto,
   MarkCardStatementPaidDto,
+  PaymentDueDto,
   PortfolioAssetSummaryItemDto,
   PortfolioBreakdownItemDto,
   PortfolioCreateDto,
@@ -216,6 +217,7 @@ export interface FinancialApiClient {
   getInvestmentAnnualResultForYear: (year: number) => Promise<InvestmentAnnualResultDto>
   getHistoricSummaryAverageFromYear: (year: number) => Promise<CategoryAnnualAverageDto[]>
   getSyncStatus: () => Promise<SyncStatusResponseDto>
+  getPaymentsDue: () => Promise<PaymentDueDto[]>
 }
 
 export interface FinancialApiClientOptions {
@@ -618,6 +620,7 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
     getHistoricSummaryAverageFromYear: (year) =>
       request<CategoryAnnualAverageDto[]>(`/annual-summary/${year}/historic-summary-averages`),
     getSyncStatus: () => request<SyncStatusResponseDto>('/sync-status'),
+    getPaymentsDue: () => request<PaymentDueDto[]>('/payments-due'),
   }
 }
 
