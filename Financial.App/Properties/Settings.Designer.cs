@@ -34,5 +34,17 @@ namespace Financial.Presentation.App.Properties {
                 this["IsNavigationSidebarCollapsed"] = value;
             }
         }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("Light")]
+        public string ColourMode {
+            get {
+                return ((string)(this["ColourMode"]));
+            }
+            set {
+                this["ColourMode"] = value;
+            }
+        }
     }
 }
