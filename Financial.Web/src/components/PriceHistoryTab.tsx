@@ -230,7 +230,6 @@ function ChartPanel({ entries, transactions }: ChartPanelProps) {
   return (
     <div className="price-history-tab__chart-panel">
       <p className="price-history-tab__chart-title">Price History</p>
-      <ChartLegend />
       <div className="price-history-tab__chart-container">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
@@ -249,6 +248,7 @@ function ChartPanel({ entries, transactions }: ChartPanelProps) {
           </LineChart>
         </ResponsiveContainer>
       </div>
+      <ChartLegend />
     </div>
   )
 }

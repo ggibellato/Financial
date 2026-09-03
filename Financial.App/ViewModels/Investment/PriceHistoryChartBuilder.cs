@@ -1,6 +1,7 @@
 using Financial.Investment.Application.DTOs;
 using OxyPlot;
 using OxyPlot.Axes;
+using OxyPlot.Legends;
 using OxyPlot.Series;
 
 namespace Financial.Presentation.App.ViewModels.Investment;
@@ -104,6 +105,12 @@ internal static class PriceHistoryChartBuilder
         var valueAxis = OxyPlotChartBuilderHelpers.CreateValueAxis();
         model.Axes.Add(dateAxis);
         model.Axes.Add(valueAxis);
+        model.Legends.Add(new Legend
+        {
+            LegendPosition = LegendPosition.BottomCenter,
+            LegendPlacement = LegendPlacement.Outside,
+            LegendOrientation = LegendOrientation.Horizontal
+        });
         return model;
     }
 }

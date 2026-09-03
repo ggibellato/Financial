@@ -1,6 +1,7 @@
 using Financial.Investment.Application.DTOs;
 using Financial.Presentation.App.ViewModels.Investment;
 using FluentAssertions;
+using OxyPlot.Legends;
 using OxyPlot.Series;
 
 namespace Financial.Presentation.Tests.ViewModels;
@@ -13,6 +14,16 @@ public class PriceHistoryChartBuilderTests
         var model = PriceHistoryChartBuilder.Build([], []);
 
         model.Series.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Build_ConfiguresLegendBottomCenterOutsidePlotArea()
+    {
+        var model = PriceHistoryChartBuilder.Build([], []);
+
+        var legend = model.Legends.Should().ContainSingle().Subject;
+        legend.LegendPosition.Should().Be(LegendPosition.BottomCenter);
+        legend.LegendPlacement.Should().Be(LegendPlacement.Outside);
     }
 
     [Fact]
