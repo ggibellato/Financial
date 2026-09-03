@@ -40,7 +40,7 @@
                                               Visibility="{Binding IsAdjustmentFormOpen, Converter={StaticResource BoolToVisibilityConverter}}"/>
         </StackPanel>
 
-        <TextBlock Grid.Row="3" Foreground="Red" TextWrapping="Wrap" Margin="0,0,0,8"
+        <TextBlock Grid.Row="3" Foreground="{DynamicResource SystemFillColorCriticalBrush}" TextWrapping="Wrap" Margin="0,0,0,8"
                    Text="{Binding BankOperationsError}"/>
 
         <TextBlock Grid.Row="4" FontStyle="Italic" VerticalAlignment="Top" HorizontalAlignment="Left"

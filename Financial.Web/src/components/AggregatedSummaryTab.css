@@ -31,11 +31,11 @@
 }
 
 .aggregated-summary__value--green {
-  color: #2e7d32;
+  color: var(--success);
 }
 
 .aggregated-summary__value--red {
-  color: #c62828;
+  color: var(--danger);
 }
 
 .aggregated-summary__value--blue {

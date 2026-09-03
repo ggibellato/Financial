@@ -27,10 +27,10 @@
         <local:IncomeFormView Grid.Row="1"
                                Visibility="{Binding IsIncomeFormOpen, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
-        <TextBlock Grid.Row="2" Foreground="Red" TextWrapping="Wrap" Margin="0,0,0,8"
+        <TextBlock Grid.Row="2" Foreground="{DynamicResource SystemFillColorCriticalBrush}" TextWrapping="Wrap" Margin="0,0,0,8"
                    Text="{Binding DeletingIncomeError}"/>
 
-        <TextBlock Grid.Row="3" Foreground="Green" TextWrapping="Wrap" Margin="0,0,0,8"
+        <TextBlock Grid.Row="3" Foreground="{DynamicResource SystemFillColorSuccessBrush}" TextWrapping="Wrap" Margin="0,0,0,8"
                    Text="{Binding IncomeSplitConfirmationMessage}"/>
 
         <DataGrid Grid.Row="4" ItemsSource="{Binding FilteredIncomes}"

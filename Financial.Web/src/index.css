@@ -22,6 +22,7 @@
   --bg-hover: #f0f0f0;
   --surface: #ffffff;
   --text-muted: #888;
+  --success: #2e7d32;
   --danger: #c0392b;
   --error: #c0392b;
   --error-bg: #fdecea;
@@ -73,6 +74,7 @@
   --bg-hover: #262832;
   --surface: #16171d;
   --text-muted: #6b7280;
+  --success: #66bb6a;
   --danger: #ff7b72;
   --error: #ff7b72;
   --error-bg: #3b1e1e;

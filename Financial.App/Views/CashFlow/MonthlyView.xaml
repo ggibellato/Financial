@@ -19,7 +19,7 @@
                     Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
         <StackPanel Grid.Row="1" Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}">
-            <TextBlock Text="{Binding Error}" Foreground="Red" TextWrapping="Wrap"/>
+            <TextBlock Text="{Binding Error}" Foreground="{DynamicResource SystemFillColorCriticalBrush}" TextWrapping="Wrap"/>
             <Button Content="Retry" Command="{Binding RetryCommand}" HorizontalAlignment="Left" Margin="0,8,0,0"/>
         </StackPanel>
 

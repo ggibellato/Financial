@@ -19,7 +19,7 @@
                     Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
         <StackPanel Grid.Row="0" Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}">
-            <TextBlock Text="{Binding Error}" Foreground="Red" TextWrapping="Wrap"/>
+            <TextBlock Text="{Binding Error}" Foreground="{DynamicResource SystemFillColorCriticalBrush}" TextWrapping="Wrap"/>
             <Button Content="Retry" Command="{Binding RetryCommand}" HorizontalAlignment="Left" Margin="0,8,0,0"/>
         </StackPanel>
 
@@ -34,7 +34,7 @@
 
             <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,12">
                 <ui:Button Content="Create Investment Account" Appearance="Primary" Icon="{ui:SymbolIcon Symbol=Add20}" Command="{Binding CreateInvestmentAccountCommand}"/>
-                <TextBlock Text="{Binding ActionError}" Foreground="Red" TextWrapping="Wrap"
+                <TextBlock Text="{Binding ActionError}" Foreground="{DynamicResource SystemFillColorCriticalBrush}" TextWrapping="Wrap"
                            VerticalAlignment="Center" Margin="16,0,0,0"
                            Visibility="{Binding ActionError, Converter={StaticResource NullOrEmptyToVisibilityConverter}}"/>
             </StackPanel>

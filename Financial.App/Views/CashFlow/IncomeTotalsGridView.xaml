@@ -45,7 +45,7 @@
                 <TextBlock Text="{Binding TitheSummary.CarryForward.FromYear}" FontWeight="Bold"/>
             </StackPanel>
         </StackPanel>
-        <TextBlock Grid.Row="2" Foreground="Red" TextWrapping="Wrap" Margin="0,4,0,0"
+        <TextBlock Grid.Row="2" Foreground="{DynamicResource SystemFillColorCriticalBrush}" TextWrapping="Wrap" Margin="0,4,0,0"
                    Text="{Binding TitheCarryForwardUpdateError}"/>
     </Grid>
 </UserControl>
