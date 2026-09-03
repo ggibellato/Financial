@@ -9,6 +9,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import type { DefaultLegendContentProps } from 'recharts'
 import { Button, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
 import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import type { AssetPriceSnapshotDto, TransactionDto } from '../api/types'
@@ -205,6 +206,13 @@ const LEGEND_PAYLOAD = [
   { value: 'Sell', type: 'diamond' as const, color: SELL_COLOR },
 ]
 
+// recharts' <Legend> clones a `content` *element* and injects its own auto-computed payload
+// (derived from the chart's Line series) into it, overriding any payload we set on the element
+// ourselves. Passing `content` as a function instead lets us apply our payload last.
+function ChartLegendContent(props: DefaultLegendContentProps) {
+  return <DefaultLegendContent {...props} payload={LEGEND_PAYLOAD} />
+}
+
 interface ChartPanelProps {
   entries: AssetPriceSnapshotDto[]
   transactions: TransactionDto[]
@@ -223,7 +231,7 @@ function ChartPanel({ entries, transactions }: ChartPanelProps) {
             <XAxis dataKey="date" tick={{ fontSize: 11 }} />
             <YAxis tickFormatter={formatN2} tick={{ fontSize: 11 }} width={70} />
             <Tooltip content={<ChartTooltip />} />
-            <Legend content={<DefaultLegendContent payload={LEGEND_PAYLOAD} />} />
+            <Legend content={ChartLegendContent} />
             <Line
               type="monotone"
               dataKey="value"

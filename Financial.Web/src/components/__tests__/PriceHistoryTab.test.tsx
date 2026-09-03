@@ -23,7 +23,7 @@ vi.mock('recharts', () => ({
   YAxis: () => null,
   CartesianGrid: () => null,
   Tooltip: () => null,
-  Legend: ({ content }: { content?: React.ReactNode }) => <>{content}</>,
+  Legend: ({ content: Content }: { content?: React.ComponentType }) => (Content ? <Content /> : null),
   DefaultLegendContent: ({ payload }: { payload?: { value?: string }[] }) => (
     <div data-testid="chart-legend">{payload?.map((entry) => entry.value).join(',')}</div>
   ),
