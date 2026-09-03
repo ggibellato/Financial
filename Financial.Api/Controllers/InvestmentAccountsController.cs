@@ -64,9 +64,9 @@ public sealed class InvestmentAccountsController : ControllerBase
         return Ok(account);
     }
 
-    /// <summary>Deletes an investment account, when its most recent recorded balance is zero.</summary>
+    /// <summary>Deletes an investment account, when it has no recorded non-zero investment snapshot.</summary>
     /// <param name="id">The account's identifier.</param>
-    /// <returns>200 OK if deleted, 404 Not Found if no such account exists, or 409 Conflict if its latest balance is non-zero.</returns>
+    /// <returns>200 OK if deleted, 404 Not Found if no such account exists, or 409 Conflict if it has a non-zero balance.</returns>
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

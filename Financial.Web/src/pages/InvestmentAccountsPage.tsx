@@ -22,7 +22,6 @@ import LoadingState from '../components/LoadingState'
 import { useFormPanelStyles } from '../components/formPanelStyles'
 import { useInvestmentAccounts } from '../hooks/useInvestmentAccounts'
 import type { InvestmentAccountDto } from '../api/types'
-import { formatN2 } from '../utils/formatters'
 import './InvestmentAccountsPage.css'
 
 export default function InvestmentAccountsPage() {
@@ -92,7 +91,6 @@ export default function InvestmentAccountsPage() {
               <TableHeaderCell>Name</TableHeaderCell>
               <TableHeaderCell>Active</TableHeaderCell>
               <TableHeaderCell>Liability</TableHeaderCell>
-              <TableHeaderCell>Latest Balance</TableHeaderCell>
               <TableHeaderCell>Actions</TableHeaderCell>
             </TableRow>
           </TableHeader>
@@ -102,7 +100,6 @@ export default function InvestmentAccountsPage() {
                 <TableCell>{account.name}</TableCell>
                 <TableCell>{account.isActive ? 'Yes' : 'No'}</TableCell>
                 <TableCell>{account.isLiability ? 'Yes' : 'No'}</TableCell>
-                <TableCell className="data-table__col--numeric">{formatN2(account.latestBalance)}</TableCell>
                 <TableCell>
                   <Button
                     appearance="subtle"
@@ -140,10 +137,8 @@ export default function InvestmentAccountsPage() {
             <DialogBody>
               <DialogTitle>Delete Investment Account</DialogTitle>
               <DialogContent>
-                {confirmingDelete.latestBalance !== 0 ? (
-                  <p>
-                    &ldquo;{confirmingDelete.name}&rdquo;&apos;s latest balance is {formatN2(confirmingDelete.latestBalance)}, not zero, and cannot be deleted.
-                  </p>
+                {confirmingDelete.hasNonZeroInvestmentSnapshot ? (
+                  <p>&ldquo;{confirmingDelete.name}&rdquo; has a non-zero balance and cannot be deleted.</p>
                 ) : (
                   <p>&ldquo;{confirmingDelete.name}&rdquo; will be permanently removed.</p>
                 )}
@@ -152,7 +147,7 @@ export default function InvestmentAccountsPage() {
                 <Button
                   appearance="primary"
                   onClick={handleConfirmDelete}
-                  disabled={confirmingDelete.latestBalance !== 0}
+                  disabled={confirmingDelete.hasNonZeroInvestmentSnapshot}
                 >
                   Delete
                 </Button>

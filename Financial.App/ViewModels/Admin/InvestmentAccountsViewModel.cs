@@ -163,9 +163,9 @@ public class InvestmentAccountsViewModel : ViewModelBase
             return;
         }
 
-        if (account.LatestBalance != 0m)
+        if (account.HasNonZeroInvestmentSnapshot)
         {
-            ActionError = $"\"{account.Name}\"'s latest balance is {account.LatestBalance}, not zero, and cannot be deleted.";
+            ActionError = $"\"{account.Name}\" has a non-zero balance and cannot be deleted.";
             return;
         }
 

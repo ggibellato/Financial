@@ -1959,6 +1959,9 @@
       },
       "InvestmentAccountDTO": {
         "properties": {
+          "hasNonZeroInvestmentSnapshot": {
+            "type": "boolean"
+          },
           "id": {
             "format": "uuid",
             "type": "string"
@@ -1969,10 +1972,6 @@
           "isLiability": {
             "type": "boolean"
           },
-          "latestBalance": {
-            "format": "double",
-            "type": "number"
-          },
           "name": {
             "type": "string"
           }
@@ -1982,7 +1981,7 @@
           "name",
           "isActive",
           "isLiability",
-          "latestBalance"
+          "hasNonZeroInvestmentSnapshot"
         ],
         "type": "object"
       },
@@ -7056,7 +7055,7 @@
             "description": "Conflict"
           }
         },
-        "summary": "Deletes an investment account, when its most recent recorded balance is zero.",
+        "summary": "Deletes an investment account, when it has no recorded non-zero investment snapshot.",
         "tags": [
           "InvestmentAccounts"
         ]

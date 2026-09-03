@@ -21,8 +21,8 @@ vi.mock('../../api/financialApiClient', () => ({
 }))
 
 const INVESTMENT_ACCOUNTS: InvestmentAccountDto[] = [
-  { id: 'a1', name: 'ChaseSave', isActive: true, isLiability: false, latestBalance: 0 },
-  { id: 'a2', name: 'PlatinumVisa8003', isActive: true, isLiability: true, latestBalance: 500 },
+  { id: 'a1', name: 'ChaseSave', isActive: true, isLiability: false, hasNonZeroInvestmentSnapshot: false },
+  { id: 'a2', name: 'PlatinumVisa8003', isActive: true, isLiability: true, hasNonZeroInvestmentSnapshot: true },
 ]
 
 describe('InvestmentAccountsPage', () => {
@@ -61,7 +61,7 @@ describe('InvestmentAccountsPage', () => {
       name: 'Monzo Pot',
       isActive: true,
       isLiability: false,
-      latestBalance: 0,
+      hasNonZeroInvestmentSnapshot: false,
     })
     render(<InvestmentAccountsPage />)
     await waitFor(() => expect(screen.getByText('ChaseSave')).toBeInTheDocument())
@@ -88,7 +88,7 @@ describe('InvestmentAccountsPage', () => {
       name: 'ChaseSaveRenamed',
       isActive: true,
       isLiability: false,
-      latestBalance: 0,
+      hasNonZeroInvestmentSnapshot: false,
     })
     render(<InvestmentAccountsPage />)
     await waitFor(() => expect(screen.getByText('ChaseSave')).toBeInTheDocument())
@@ -107,18 +107,18 @@ describe('InvestmentAccountsPage', () => {
     )
   })
 
-  it('disables delete confirmation when the account has a non-zero latest balance', async () => {
+  it('disables delete confirmation when the account has a non-zero investment snapshot', async () => {
     render(<InvestmentAccountsPage />)
     await waitFor(() => expect(screen.getByText('PlatinumVisa8003')).toBeInTheDocument())
 
     fireEvent.click(screen.getByRole('button', { name: 'Delete PlatinumVisa8003' }))
 
-    expect(screen.getByText(/not zero, and cannot be deleted/)).toBeInTheDocument()
+    expect(screen.getByText(/has a non-zero balance and cannot be deleted/)).toBeInTheDocument()
     const confirmButtons = screen.getAllByRole('button', { name: 'Delete' })
     expect(confirmButtons[confirmButtons.length - 1]).toBeDisabled()
   })
 
-  it('deletes an investment account with a zero latest balance', async () => {
+  it('deletes an investment account with no non-zero investment snapshot', async () => {
     deleteInvestmentAccountMock.mockResolvedValue(undefined)
     render(<InvestmentAccountsPage />)
     await waitFor(() => expect(screen.getByText('ChaseSave')).toBeInTheDocument())
