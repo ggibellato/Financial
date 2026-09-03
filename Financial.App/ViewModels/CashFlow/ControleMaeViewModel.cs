@@ -209,8 +209,27 @@ public class ControleMaeViewModel : ViewModelBase
     public string? CreateSaveError
     {
         get => _createSaveError;
-        private set => SetProperty(ref _createSaveError, value);
+        private set
+        {
+            if (SetProperty(ref _createSaveError, value))
+            {
+                OnPropertyChanged(nameof(CreateDateFieldError));
+                OnPropertyChanged(nameof(CreateDescriptionFieldError));
+                OnPropertyChanged(nameof(CreateValueFieldError));
+            }
+        }
     }
+
+    public string? CreateDateFieldError => MatchCreateFieldError("Date is required.");
+
+    public string? CreateDescriptionFieldError => MatchCreateFieldError("Description is required.");
+
+    public string? CreateValueFieldError => MatchCreateFieldError("Value must be a non-zero number.");
+
+    private string? MatchCreateFieldError(params string[] fragments) =>
+        CreateSaveError is { } error && fragments.Any(f => error.Contains(f, StringComparison.OrdinalIgnoreCase))
+            ? error
+            : null;
 
     public RelayCommand ShowCreateFormCommand { get; private set; } = null!;
     public RelayCommand CancelCreateFormCommand { get; private set; } = null!;
@@ -302,8 +321,24 @@ public class ControleMaeViewModel : ViewModelBase
     public string? EditSaveError
     {
         get => _editSaveError;
-        private set => SetProperty(ref _editSaveError, value);
+        private set
+        {
+            if (SetProperty(ref _editSaveError, value))
+            {
+                OnPropertyChanged(nameof(EditBrlValueFieldError));
+                OnPropertyChanged(nameof(EditGbpValueFieldError));
+            }
+        }
     }
+
+    public string? EditBrlValueFieldError => MatchEditFieldError("BRL value must be a number.");
+
+    public string? EditGbpValueFieldError => MatchEditFieldError("GBP value must be a number.");
+
+    private string? MatchEditFieldError(params string[] fragments) =>
+        EditSaveError is { } error && fragments.Any(f => error.Contains(f, StringComparison.OrdinalIgnoreCase))
+            ? error
+            : null;
 
     public string? DeleteError
     {

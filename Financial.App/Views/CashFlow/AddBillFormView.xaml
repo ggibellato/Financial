@@ -10,11 +10,21 @@
             <SolidColorBrush x:Key="AccentButtonBackground" Color="#0F6CBD"/>
             <SolidColorBrush x:Key="AccentButtonBackgroundPointerOver" Color="#115EA3"/>
             <SolidColorBrush x:Key="AccentButtonBackgroundPressed" Color="#0C3B5E"/>
+            <Style x:Key="FieldLabelStyle" TargetType="TextBlock">
+                <Setter Property="Margin" Value="0,0,0,4"/>
+                <Setter Property="FontSize" Value="12"/>
+            </Style>
         </ResourceDictionary>
     </UserControl.Resources>
+    <!--
+        Four equal-width columns, label-above-control per field: mirrors the responsive
+        form grid used elsewhere (docs/ui/decisions/ADR-002-responsive-form-layout.md)
+        instead of the old single-column label-left/one-field-per-row layout.
+    -->
     <Border BorderThickness="1" Padding="12" Margin="0,0,0,12"
             BorderBrush="{DynamicResource ControlElevationBorderBrush}"
-            Background="{DynamicResource ControlFillColorDefaultBrush}">
+            Background="{DynamicResource ControlFillColorDefaultBrush}"
+            CornerRadius="4">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -22,38 +32,67 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="150"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <TextBlock Grid.Row="0" Grid.ColumnSpan="2" FontWeight="Bold" Text="Add Bill" Margin="0,0,0,8"/>
+            <TextBlock Grid.Row="0" Grid.ColumnSpan="4" FontWeight="Bold" Text="Add Bill" Margin="0,0,0,8"/>
 
-            <TextBlock Grid.Row="1" Grid.Column="0" Text="Area:" VerticalAlignment="Center"/>
-            <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{x:Static vm:MensaisViewModel.Areas}"
-                      SelectedItem="{Binding NewArea, UpdateSourceTrigger=PropertyChanged}"/>
+            <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,8,8">
+                <TextBlock Style="{StaticResource FieldLabelStyle}" Text="Area"/>
+                <ComboBox AutomationProperties.Name="Area"
+                          ItemsSource="{x:Static vm:MensaisViewModel.Areas}"
+                          SelectedItem="{Binding NewArea, UpdateSourceTrigger=PropertyChanged}"/>
+            </StackPanel>
 
-            <TextBlock Grid.Row="2" Grid.Column="0" Text="Description:" VerticalAlignment="Center"/>
-            <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding NewDescription, UpdateSourceTrigger=PropertyChanged}"/>
+            <StackPanel Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Margin="0,0,8,8">
+                <TextBlock Style="{StaticResource FieldLabelStyle}">
+                    <Run Text="Description"/>
+                    <Run Text=" *" Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
+                </TextBlock>
+                <TextBox AutomationProperties.Name="Description"
+                         AutomationProperties.HelpText="Required"
+                         Text="{Binding NewDescription, UpdateSourceTrigger=PropertyChanged}"/>
+                <TextBlock Style="{StaticResource FieldErrorTextStyle}" Text="{Binding NewDescriptionFieldError}"/>
+            </StackPanel>
 
-            <TextBlock Grid.Row="3" Grid.Column="0" Text="Due Day:" VerticalAlignment="Center"/>
-            <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding NewDueDay, UpdateSourceTrigger=PropertyChanged}"/>
+            <StackPanel Grid.Row="1" Grid.Column="3" Margin="0,0,0,8">
+                <TextBlock Style="{StaticResource FieldLabelStyle}">
+                    <Run Text="Due Day"/>
+                    <Run Text=" *" Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
+                </TextBlock>
+                <TextBox AutomationProperties.Name="Due day"
+                         AutomationProperties.HelpText="Required"
+                         Text="{Binding NewDueDay, UpdateSourceTrigger=PropertyChanged}"/>
+                <TextBlock Style="{StaticResource FieldErrorTextStyle}" Text="{Binding NewDueDayFieldError}"/>
+            </StackPanel>
 
-            <TextBlock Grid.Row="4" Grid.Column="0" Text="Value:" VerticalAlignment="Center"/>
-            <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding NewValue, UpdateSourceTrigger=LostFocus}"
-                     behaviors:DecimalInputBehavior.IsEnabled="True"/>
+            <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,8,8">
+                <TextBlock Style="{StaticResource FieldLabelStyle}">
+                    <Run Text="Value"/>
+                    <Run Text=" *" Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
+                </TextBlock>
+                <TextBox AutomationProperties.Name="Value"
+                         AutomationProperties.HelpText="Required"
+                         Text="{Binding NewValue, UpdateSourceTrigger=LostFocus}"
+                         behaviors:DecimalInputBehavior.IsEnabled="True"/>
+                <TextBlock Style="{StaticResource FieldErrorTextStyle}" Text="{Binding NewValueFieldError}"/>
+            </StackPanel>
 
-            <TextBlock Grid.Row="5" Grid.Column="0" Text="Note:" VerticalAlignment="Center"/>
-            <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding NewNote, UpdateSourceTrigger=PropertyChanged}"/>
+            <StackPanel Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="3" Margin="0,0,0,8">
+                <TextBlock Style="{StaticResource FieldLabelStyle}" Text="Note"/>
+                <TextBox AutomationProperties.Name="Note"
+                         Text="{Binding NewNote, UpdateSourceTrigger=PropertyChanged}"/>
+            </StackPanel>
 
-            <TextBlock Grid.Row="6" Grid.ColumnSpan="2" Foreground="{DynamicResource SystemFillColorCriticalBrush}" TextWrapping="Wrap"
+            <TextBlock Grid.Row="3" Grid.ColumnSpan="4" Foreground="{DynamicResource SystemFillColorCriticalBrush}" TextWrapping="Wrap"
                        Text="{Binding AddSaveError}" Margin="0,8,0,0"/>
 
-            <StackPanel Grid.Row="7" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,12,0,0">
+            <StackPanel Grid.Row="4" Grid.ColumnSpan="4" Orientation="Horizontal" Margin="0,12,0,0">
                 <ui:Button Appearance="Primary" MinWidth="90" Command="{Binding SubmitAddCommand}">
                     <ui:Button.Style>
                         <Style TargetType="{x:Type ui:Button}" BasedOn="{StaticResource {x:Type ui:Button}}">
