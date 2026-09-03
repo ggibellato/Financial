@@ -108,21 +108,21 @@
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <StackPanel Orientation="Horizontal">
-                                        <Button Command="{Binding DataContext.AssetDetails.PriceHistory.UpdatePriceCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                CommandParameter="{Binding}"
-                                                ToolTip="Update"
-                                                Padding="2"
-                                                Margin="0,0,4,0"
-                                                Visibility="{Binding IsManual, Converter={StaticResource BoolToVisibilityConverter}}">
-                                            <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE70F;"/>
-                                        </Button>
-                                        <Button Command="{Binding DataContext.AssetDetails.PriceHistory.DeletePriceCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                CommandParameter="{Binding}"
-                                                ToolTip="Delete"
-                                                Padding="2"
-                                                Visibility="{Binding IsManual, Converter={StaticResource BoolToVisibilityConverter}}">
-                                            <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE74D;"/>
-                                        </Button>
+                                        <ui:Button Appearance="Transparent"
+                                                   Icon="{ui:SymbolIcon Symbol=Edit16}"
+                                                   Command="{Binding DataContext.AssetDetails.PriceHistory.UpdatePriceCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                   CommandParameter="{Binding}"
+                                                   ToolTip="Update" AutomationProperties.Name="Update"
+                                                   Padding="2"
+                                                   Margin="0,0,4,0"
+                                                   Visibility="{Binding IsManual, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                        <ui:Button Appearance="Transparent"
+                                                   Icon="{ui:SymbolIcon Symbol=Delete16}"
+                                                   Command="{Binding DataContext.AssetDetails.PriceHistory.DeletePriceCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                   CommandParameter="{Binding}"
+                                                   ToolTip="Delete" AutomationProperties.Name="Delete"
+                                                   Padding="2"
+                                                   Visibility="{Binding IsManual, Converter={StaticResource BoolToVisibilityConverter}}"/>
                                     </StackPanel>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>

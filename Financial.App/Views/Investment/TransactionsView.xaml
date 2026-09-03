@@ -147,19 +147,19 @@
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <StackPanel Orientation="Horizontal">
-                                        <Button Command="{Binding DataContext.AssetDetails.Transactions.UpdateTransactionCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                CommandParameter="{Binding}"
-                                                ToolTip="Update"
-                                                Padding="2"
-                                                Margin="0,0,4,0">
-                                            <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE70F;"/>
-                                        </Button>
-                                        <Button Command="{Binding DataContext.AssetDetails.Transactions.DeleteTransactionCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                CommandParameter="{Binding}"
-                                                ToolTip="Delete"
-                                                Padding="2">
-                                            <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE74D;"/>
-                                        </Button>
+                                        <ui:Button Appearance="Transparent"
+                                                   Icon="{ui:SymbolIcon Symbol=Edit16}"
+                                                   Command="{Binding DataContext.AssetDetails.Transactions.UpdateTransactionCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                   CommandParameter="{Binding}"
+                                                   ToolTip="Update" AutomationProperties.Name="Update"
+                                                   Padding="2"
+                                                   Margin="0,0,4,0"/>
+                                        <ui:Button Appearance="Transparent"
+                                                   Icon="{ui:SymbolIcon Symbol=Delete16}"
+                                                   Command="{Binding DataContext.AssetDetails.Transactions.DeleteTransactionCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                   CommandParameter="{Binding}"
+                                                   ToolTip="Delete" AutomationProperties.Name="Delete"
+                                                   Padding="2"/>
                                     </StackPanel>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
