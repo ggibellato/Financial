@@ -115,7 +115,7 @@
                    Text="{Binding ValidationMessage}"
                    Margin="0,10,0,10"/>
 
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
+        <StackPanel Grid.Row="2" Orientation="Horizontal">
             <ui:Button Content="Save" Appearance="Primary" MinWidth="90" Command="{Binding ConfirmCommand}" IsDefault="True"/>
             <ui:Button Content="Cancel" Appearance="Secondary" MinWidth="90" Margin="8,0,0,0" Command="{Binding CancelCommand}" IsCancel="True"/>
         </StackPanel>

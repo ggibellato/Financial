@@ -174,7 +174,7 @@
                        Text="{Binding ExpenseSaveError}"/>
 
             <StackPanel Grid.Row="5" Grid.ColumnSpan="4" Orientation="Horizontal">
-                <ui:Button MinWidth="110" Appearance="Primary" Command="{Binding SaveExpenseCommand}"
+                <ui:Button MinWidth="90" Appearance="Primary" Command="{Binding SaveExpenseCommand}"
                            Visibility="{Binding ShowPaymentModeFields, Converter={StaticResource BoolToVisibilityConverter}}">
                     <ui:Button.Style>
                         <Style TargetType="{x:Type ui:Button}" BasedOn="{StaticResource {x:Type ui:Button}}">
