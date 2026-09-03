@@ -7,10 +7,6 @@
              xmlns:behaviors="clr-namespace:Financial.Presentation.App.Behaviors">
     <UserControl.Resources>
         <ResourceDictionary>
-            <ResourceDictionary.MergedDictionaries>
-                <ui:ThemesDictionary Theme="Light"/>
-                <ui:ControlsDictionary/>
-            </ResourceDictionary.MergedDictionaries>
             <!-- Matches Financial.Web's accent exactly — see the same override in ExpenseFormView.xaml. -->
             <SolidColorBrush x:Key="AccentButtonBackground" Color="#0F6CBD"/>
             <SolidColorBrush x:Key="AccentButtonBackgroundPointerOver" Color="#115EA3"/>
