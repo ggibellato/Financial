@@ -95,7 +95,6 @@ export default function DetailPanel() {
           {isAsset && (
             <Button
               appearance="primary"
-              size="small"
               icon={<ArrowMoveRegular />}
               onClick={() => setIsMoving(true)}
               title="Move to another portfolio"
@@ -106,7 +105,6 @@ export default function DetailPanel() {
           {canDeletePortfolio && (
             <Button
               appearance="primary"
-              size="small"
               icon={<DeleteRegular />}
               onClick={handleDeletePortfolio}
               title="Delete this empty portfolio"

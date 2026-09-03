@@ -93,7 +93,7 @@
                        Text="{Binding WithdrawalSaveError}"/>
 
             <StackPanel Grid.Row="3" Grid.ColumnSpan="4" Orientation="Horizontal">
-                <ui:Button MinWidth="110" Appearance="Primary" Command="{Binding SubmitWithdrawalCommand}">
+                <ui:Button MinWidth="90" Appearance="Primary" Command="{Binding SubmitWithdrawalCommand}">
                     <ui:Button.Style>
                         <Style TargetType="{x:Type ui:Button}" BasedOn="{StaticResource {x:Type ui:Button}}">
                             <Setter Property="Content" Value="Withdraw"/>

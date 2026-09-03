@@ -61,7 +61,7 @@
                        Text="{Binding ValidationMessage}"/>
 
             <StackPanel Grid.Row="3" Grid.ColumnSpan="2" Orientation="Horizontal">
-                <ui:Button Content="{Binding ConfirmLabel}" MinWidth="110" Appearance="Primary"
+                <ui:Button Content="{Binding ConfirmLabel}" MinWidth="90" Appearance="Primary"
                            Command="{Binding ConfirmCommand}"/>
                 <ui:Button Content="Cancel" MinWidth="90" Margin="8,0,0,0" Appearance="Secondary"
                            Command="{Binding CancelCommand}"/>
