@@ -7,8 +7,10 @@ using Financial.Investment.Application.DependencyInjection;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Infrastructure.DependencyInjection;
 using Financial.Integrations.GoogleDrive;
+using Financial.Presentation.App.Properties;
 using Financial.Presentation.App.Services;
 using Financial.Presentation.App.ViewModels.CashFlow;
+using Financial.Presentation.App.ViewModels.Settings;
 using Financial.Presentation.App.Views.CashFlow;
 using Financial.Presentation.App.Views.Investment;
 using Financial.Shared.Abstractions.Observability;
@@ -21,6 +23,7 @@ using Microsoft.Extensions.Options;
 using Serilog;
 using System.IO;
 using System.Windows;
+using WpfUiAppearance = Wpf.Ui.Appearance;
 
 namespace Financial.Presentation.App
 {
@@ -131,6 +134,25 @@ namespace Financial.Presentation.App
                     services.AddTransient<Financial.Presentation.App.Views.Admin.RecurringBillsView>();
                     services.AddSingleton<Financial.Presentation.App.ViewModels.SyncStatusViewModel>();
                     services.AddSingleton<Financial.Presentation.App.ViewModels.PaymentDueBannerViewModel>();
+                    services.AddSingleton(_ =>
+                    {
+                        var initialMode = Enum.TryParse<ColourMode>(Settings.Default.ColourMode, out var parsed)
+                            ? parsed
+                            : ColourMode.Light;
+
+                        return new ColourModeViewModel(
+                            initialMode,
+                            applyTheme: mode => WpfUiAppearance.ApplicationThemeManager.Apply(
+                                mode == ColourMode.Dark ? WpfUiAppearance.ApplicationTheme.Dark : WpfUiAppearance.ApplicationTheme.Light,
+                                Wpf.Ui.Controls.WindowBackdropType.None,
+                                updateAccent: false),
+                            persist: mode =>
+                            {
+                                Settings.Default.ColourMode = mode.ToString();
+                                Settings.Default.Save();
+                            });
+                    });
+                    services.AddTransient<Financial.Presentation.App.Views.Settings.AppearanceView>();
                     services.AddTransient<MainWindow>();
                 })
                 .Build();

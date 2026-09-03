@@ -6,8 +6,14 @@
              xmlns:behaviors="clr-namespace:Financial.Presentation.App.Behaviors"
              xmlns:vm="clr-namespace:Financial.Presentation.App.ViewModels"
              xmlns:controls="clr-namespace:Financial.Presentation.App.Controls"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:primitives="clr-namespace:System.Windows.Controls.Primitives;assembly=PresentationFramework">
     <Application.Resources>
+        <ResourceDictionary>
+        <ResourceDictionary.MergedDictionaries>
+            <ui:ThemesDictionary Theme="Light"/>
+            <ui:ControlsDictionary/>
+        </ResourceDictionary.MergedDictionaries>
         <converters:PositionTypeToColorConverter x:Key="PositionTypeToColorConverter"/>
         <converters:DateFormatConverter x:Key="DateFormatConverter"/>
         <converters:TransactionTypeToColorConverter x:Key="TransactionTypeToColorConverter"/>
@@ -73,7 +79,7 @@
             <Setter Property="AutoGenerateColumns" Value="False"/>
             <Setter Property="IsReadOnly" Value="True"/>
             <Setter Property="FontSize" Value="13"/>
-            <Setter Property="AlternatingRowBackground" Value="#F5F5F5"/>
+            <Setter Property="AlternatingRowBackground" Value="{DynamicResource CardBackgroundFillColorSecondaryBrush}"/>
             <Setter Property="GridLinesVisibility" Value="Horizontal"/>
             <Setter Property="HeadersVisibility" Value="Column"/>
             <Setter Property="SelectionMode" Value="Single"/>
@@ -83,11 +89,11 @@
         </Style>
 
         <Style TargetType="DataGridColumnHeader">
-            <Setter Property="Background" Value="#F0F0F0"/>
-            <Setter Property="Foreground" Value="#333333"/>
+            <Setter Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
             <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="Padding" Value="8"/>
-            <Setter Property="BorderBrush" Value="#CCCCCC"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource ControlStrokeColorDefaultBrush}"/>
             <Setter Property="BorderThickness" Value="0,0,1,1"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
             <!--
@@ -117,20 +123,20 @@
         </Style>
 
         <Style TargetType="DataGridRow">
-            <Setter Property="Background" Value="White"/>
+            <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}"/>
             <Style.Triggers>
                 <Trigger Property="ItemsControl.AlternationIndex" Value="1">
-                    <Setter Property="Background" Value="#F5F5F5"/>
+                    <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorSecondaryBrush}"/>
                 </Trigger>
                 <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="LightYellow"/>
+                    <Setter Property="Background" Value="{DynamicResource ListBoxItemSelectedBackgroundThemeBrush}"/>
                 </Trigger>
                 <MultiTrigger>
                     <MultiTrigger.Conditions>
                         <Condition Property="IsSelected" Value="True"/>
                         <Condition Property="primitives:Selector.IsSelectionActive" Value="False"/>
                     </MultiTrigger.Conditions>
-                    <Setter Property="Background" Value="LightYellow"/>
+                    <Setter Property="Background" Value="{DynamicResource ListBoxItemSelectedBackgroundThemeBrush}"/>
                 </MultiTrigger>
             </Style.Triggers>
             <Style.Resources>
@@ -143,24 +149,24 @@
             <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Style.Triggers>
                 <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="LightYellow"/>
-                    <Setter Property="Foreground" Value="Black"/>
+                    <Setter Property="Background" Value="{DynamicResource ListBoxItemSelectedBackgroundThemeBrush}"/>
+                    <Setter Property="Foreground" Value="{DynamicResource ListBoxItemSelectedForegroundThemeBrush}"/>
                 </Trigger>
                 <MultiTrigger>
                     <MultiTrigger.Conditions>
                         <Condition Property="IsSelected" Value="True"/>
                         <Condition Property="primitives:Selector.IsSelectionActive" Value="False"/>
                     </MultiTrigger.Conditions>
-                    <Setter Property="Background" Value="LightYellow"/>
-                    <Setter Property="Foreground" Value="Black"/>
+                    <Setter Property="Background" Value="{DynamicResource ListBoxItemSelectedBackgroundThemeBrush}"/>
+                    <Setter Property="Foreground" Value="{DynamicResource ListBoxItemSelectedForegroundThemeBrush}"/>
                 </MultiTrigger>
             </Style.Triggers>
         </Style>
 
         <!-- Per-field validation error text (P38-F02) — additive to a form's existing
              bottom-of-form error message, shown directly under the field it describes.
-             Consuming views must have the WPF-UI theme merged locally (see F01) for
-             SystemFillColorCriticalBrush to resolve. -->
+             SystemFillColorCriticalBrush resolves via the app-wide theme dictionary
+             ApplicationThemeManager applies at startup (see P43-F02) — no per-view merge needed. -->
         <Style x:Key="FieldErrorTextStyle" TargetType="TextBlock">
             <Setter Property="FontSize" Value="11"/>
             <Setter Property="Margin" Value="0,2,0,0"/>
@@ -190,17 +196,18 @@
         <!-- Group-header overlay bar shown above a DataGrid's own column headers,
              used to visually merge related columns under one spanning title. -->
         <Style x:Key="GroupHeaderBarStyle" TargetType="Border">
-            <Setter Property="Background" Value="#F0F0F0"/>
-            <Setter Property="BorderBrush" Value="#CCCCCC"/>
+            <Setter Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource ControlStrokeColorDefaultBrush}"/>
             <Setter Property="BorderThickness" Value="0,0,1,1"/>
         </Style>
 
         <Style x:Key="GroupHeaderTitleTextStyle" TargetType="TextBlock">
             <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="TextAlignment" Value="Center"/>
-            <Setter Property="Foreground" Value="#333333"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
             <Setter Property="Padding" Value="8,4"/>
         </Style>
+        </ResourceDictionary>
     </Application.Resources>
 </Application>
 

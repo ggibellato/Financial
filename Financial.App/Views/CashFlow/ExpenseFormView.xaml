@@ -6,10 +6,6 @@
              xmlns:behaviors="clr-namespace:Financial.Presentation.App.Behaviors">
     <UserControl.Resources>
         <ResourceDictionary>
-            <ResourceDictionary.MergedDictionaries>
-                <ui:ThemesDictionary Theme="Light"/>
-                <ui:ControlsDictionary/>
-            </ResourceDictionary.MergedDictionaries>
             <!--
                 WPF-UI's ApplicationAccentColorManager generates its own shade ramp from
                 a seed color rather than using it directly (see

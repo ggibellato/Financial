@@ -6,12 +6,26 @@ namespace Financial.Presentation.Tests.Navigation;
 public class NavTreeTests
 {
     [Fact]
-    public void Categories_HasExactlyThreeCategories()
+    public void Categories_HasExactlyFourCategories()
     {
-        NavTree.Categories.Should().HaveCount(3);
+        NavTree.Categories.Should().HaveCount(4);
         NavTree.Categories[0].Id.Should().Be("investments");
         NavTree.Categories[1].Id.Should().Be("cashflow");
         NavTree.Categories[2].Id.Should().Be("admin");
+        NavTree.Categories[3].Id.Should().Be("settings");
+    }
+
+    [Fact]
+    public void SettingsCategory_HasOneChildAppearance()
+    {
+        var settings = NavTree.Categories.Single(c => c.Id == "settings");
+
+        settings.Label.Should().Be("Settings");
+        settings.Groups.Should().BeNull();
+        settings.Children.Should().ContainSingle();
+        settings.Children[0].Id.Should().Be("appearance");
+        settings.Children[0].Label.Should().Be("Appearance");
+        settings.Children[0].ViewKey.Should().Be("settings-appearance");
     }
 
     [Fact]
@@ -83,6 +97,6 @@ public class NavTreeTests
         var viewKeys = directViewKeys.Concat(groupedViewKeys).ToList();
 
         viewKeys.Should().OnlyHaveUniqueItems();
-        viewKeys.Should().HaveCount(20);
+        viewKeys.Should().HaveCount(21);
     }
 }

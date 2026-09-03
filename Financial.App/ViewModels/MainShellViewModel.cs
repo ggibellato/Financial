@@ -1,4 +1,5 @@
 using Financial.Presentation.App.Navigation;
+using Financial.Presentation.App.ViewModels.Settings;
 
 namespace Financial.Presentation.App.ViewModels;
 
@@ -20,12 +21,14 @@ public class MainShellViewModel : ViewModelBase
         Action<bool> persistCollapsed,
         IReadOnlyDictionary<string, object> viewsByKey,
         SyncStatusViewModel syncStatusViewModel,
-        PaymentDueBannerViewModel paymentDueBannerViewModel)
+        PaymentDueBannerViewModel paymentDueBannerViewModel,
+        ColourModeViewModel colourModeViewModel)
     {
         _persistCollapsed = persistCollapsed ?? throw new ArgumentNullException(nameof(persistCollapsed));
         _viewsByKey = viewsByKey ?? throw new ArgumentNullException(nameof(viewsByKey));
         SyncStatus = syncStatusViewModel ?? throw new ArgumentNullException(nameof(syncStatusViewModel));
         PaymentsDue = paymentDueBannerViewModel ?? throw new ArgumentNullException(nameof(paymentDueBannerViewModel));
+        ColourMode = colourModeViewModel ?? throw new ArgumentNullException(nameof(colourModeViewModel));
         _isCollapsed = initialCollapsed;
 
         ToggleCollapsedCommand = new RelayCommand(ToggleCollapsed);
@@ -40,6 +43,8 @@ public class MainShellViewModel : ViewModelBase
     public SyncStatusViewModel SyncStatus { get; }
 
     public PaymentDueBannerViewModel PaymentsDue { get; }
+
+    public ColourModeViewModel ColourMode { get; }
 
     public bool IsCollapsed
     {

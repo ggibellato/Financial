@@ -23,7 +23,7 @@
                 </Button.Tag>
                 <Button.Style>
                     <Style TargetType="Button">
-                        <Setter Property="Foreground" Value="#333333"/>
+                        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
                         <Setter Property="FontWeight" Value="Normal"/>
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding RelativeSource={RelativeSource Self}, Path=Tag}" Value="True">
@@ -43,7 +43,7 @@
                     <TextBlock Text="{Binding Label}" FontWeight="SemiBold">
                         <TextBlock.Style>
                             <Style TargetType="TextBlock">
-                                <Setter Property="Foreground" Value="#333333"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
                                 <Style.Triggers>
                                     <DataTrigger Value="True">
                                         <DataTrigger.Binding>
@@ -63,7 +63,7 @@
             </Expander>
         </DataTemplate>
     </UserControl.Resources>
-    <Border Background="White" BorderBrush="#E0E0E0" BorderThickness="0,0,1,0">
+    <Border Background="{DynamicResource ApplicationBackgroundBrush}" BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}" BorderThickness="0,0,1,0">
         <DockPanel LastChildFill="True">
             <Button DockPanel.Dock="Top"
                     Command="{Binding ToggleCollapsedCommand}"
@@ -83,7 +83,7 @@
                     </Style>
                 </Button.Style>
                 <Path Data="M5,3 L19,3 A2,2 0 0 1 21,5 L21,19 A2,2 0 0 1 19,21 L5,21 A2,2 0 0 1 3,19 L3,5 A2,2 0 0 1 5,3 Z M9,3 L9,21"
-                      Stroke="#333333"
+                      Stroke="{DynamicResource TextFillColorPrimaryBrush}"
                       StrokeThickness="2"
                       StrokeStartLineCap="Round"
                       StrokeEndLineCap="Round"
@@ -98,7 +98,7 @@
                     <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="{x:Type nav:NavCategory}">
                             <StackPanel>
-                                <Separator Margin="8,6,8,0" Background="#E0E0E0">
+                                <Separator Margin="8,6,8,0" Background="{DynamicResource DividerStrokeColorDefaultBrush}">
                                     <Separator.Style>
                                         <Style TargetType="Separator">
                                             <Setter Property="Visibility" Value="Collapsed"/>
@@ -127,7 +127,7 @@
                                     </StackPanel.Tag>
                                     <StackPanel.Style>
                                         <Style TargetType="StackPanel">
-                                            <Setter Property="TextElement.Foreground" Value="#333333"/>
+                                            <Setter Property="TextElement.Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding RelativeSource={RelativeSource Self}, Path=Tag}" Value="True">
                                                     <Setter Property="TextElement.Foreground" Value="#007ACC"/>
@@ -146,7 +146,7 @@
                                           VerticalAlignment="Center">
                                         <Path.Style>
                                             <Style TargetType="Path">
-                                                <Setter Property="Stroke" Value="#333333"/>
+                                                <Setter Property="Stroke" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType=StackPanel}}" Value="True">
                                                         <Setter Property="Stroke" Value="#007ACC"/>
@@ -198,8 +198,8 @@
                                        StaysOpen="True"
                                        AllowsTransparency="True"
                                        PopupAnimation="None">
-                                    <Border Background="White"
-                                            BorderBrush="#E0E0E0"
+                                    <Border Background="{DynamicResource ApplicationBackgroundBrush}"
+                                            BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}"
                                             BorderThickness="1"
                                             Padding="0,8"
                                             MinWidth="180"
@@ -221,7 +221,7 @@
                                                                 Background="Transparent"
                                                                 BorderThickness="0"
                                                                 Padding="12,6"
-                                                                Foreground="#333333">
+                                                                Foreground="{DynamicResource TextFillColorPrimaryBrush}">
                                                             <TextBlock Text="{Binding Label}"/>
                                                         </Button>
                                                     </DataTemplate>
@@ -231,7 +231,7 @@
                                                 <ItemsControl.ItemTemplate>
                                                     <DataTemplate DataType="{x:Type nav:NavGroup}">
                                                         <StackPanel Margin="0,4,0,0">
-                                                            <TextBlock Text="{Binding Label}" FontWeight="SemiBold" Foreground="#666666"
+                                                            <TextBlock Text="{Binding Label}" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                                        FontSize="11" Margin="12,4,12,4"/>
                                                             <ItemsControl ItemsSource="{Binding Children}">
                                                                 <ItemsControl.ItemTemplate>
@@ -243,7 +243,7 @@
                                                                                 Background="Transparent"
                                                                                 BorderThickness="0"
                                                                                 Padding="12,6"
-                                                                                Foreground="#333333">
+                                                                                Foreground="{DynamicResource TextFillColorPrimaryBrush}">
                                                                             <TextBlock Text="{Binding Label}"/>
                                                                         </Button>
                                                                     </DataTemplate>

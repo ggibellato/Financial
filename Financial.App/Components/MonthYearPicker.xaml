@@ -19,10 +19,6 @@
     -->
     <UserControl.Resources>
         <ResourceDictionary>
-            <ResourceDictionary.MergedDictionaries>
-                <ui:ThemesDictionary Theme="Light"/>
-                <ui:ControlsDictionary/>
-            </ResourceDictionary.MergedDictionaries>
             <Style x:Key="FlatMonthButtonStyle" TargetType="Button">
                 <Setter Property="Margin" Value="2"/>
                 <Setter Property="Padding" Value="0,6"/>
