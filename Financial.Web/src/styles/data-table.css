@@ -26,7 +26,7 @@
 }
 
 .data-table tbody tr:nth-child(even) {
-  background: #f5f5f5;
+  background: var(--bg-subtle);
 }
 
 .data-table .data-table__col--numeric,
