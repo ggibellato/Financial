@@ -1,20 +1,16 @@
-using System.Collections.ObjectModel;
-
 namespace Financial.Presentation.App.ViewModels.Admin;
 
 /// <summary>
-/// Collects an Investment Account's Name, IsActive, IsLiability and Aliases for both Create and
-/// Edit, mirroring <see cref="IncomeSourceFormDialogViewModel"/>'s shape: validates shape only (that
-/// a name was typed and a new alias isn't blank/a case-insensitive duplicate), and lets the domain's
-/// refusal (e.g. a duplicate name) surface as a save error on the owning list ViewModel rather than
-/// being re-decided here.
+/// Collects an Investment Account's Name, IsActive and IsLiability for both Create and Edit,
+/// mirroring <see cref="IncomeSourceFormDialogViewModel"/>'s shape: validates shape only (that a
+/// name was typed), and lets the domain's refusal (e.g. a duplicate name) surface as a save error
+/// on the owning list ViewModel rather than being re-decided here.
 /// </summary>
 public sealed class InvestmentAccountFormDialogViewModel : ViewModelBase
 {
     private string _name;
     private bool _isActive;
     private bool _isLiability;
-    private string _newAlias = string.Empty;
     private string _validationMessage = string.Empty;
 
     public bool IsEditing { get; }
@@ -45,23 +41,11 @@ public sealed class InvestmentAccountFormDialogViewModel : ViewModelBase
         set => SetProperty(ref _isLiability, value);
     }
 
-    public ObservableCollection<string> Aliases { get; } = [];
-
-    public string NewAlias
-    {
-        get => _newAlias;
-        set => SetProperty(ref _newAlias, value);
-    }
-
     public string ValidationMessage
     {
         get => _validationMessage;
         private set => SetProperty(ref _validationMessage, value);
     }
-
-    public RelayCommand AddAliasCommand { get; }
-
-    public RelayCommand<string> RemoveAliasCommand { get; }
 
     public RelayCommand ConfirmCommand { get; }
 
@@ -72,42 +56,17 @@ public sealed class InvestmentAccountFormDialogViewModel : ViewModelBase
     public InvestmentAccountFormDialogViewModel(
         string? currentName = null,
         bool currentIsActive = true,
-        bool currentIsLiability = false,
-        IEnumerable<string>? currentAliases = null)
+        bool currentIsLiability = false)
     {
         IsEditing = currentName is not null;
         _name = currentName ?? string.Empty;
         _isActive = currentIsActive;
         _isLiability = currentIsLiability;
-        foreach (var alias in currentAliases ?? [])
-        {
-            Aliases.Add(alias);
-        }
 
-        AddAliasCommand = new RelayCommand(AddAlias);
-        RemoveAliasCommand = new RelayCommand<string>(alias => { if (alias is not null) Aliases.Remove(alias); });
         ConfirmCommand = new RelayCommand(Confirm, CanConfirm);
         CancelCommand = new RelayCommand(Cancel);
 
         Validate();
-    }
-
-    private void AddAlias()
-    {
-        var trimmed = NewAlias.Trim();
-        if (trimmed.Length == 0)
-        {
-            return;
-        }
-
-        if (Aliases.Any(a => string.Equals(a, trimmed, StringComparison.OrdinalIgnoreCase)))
-        {
-            NewAlias = string.Empty;
-            return;
-        }
-
-        Aliases.Add(trimmed);
-        NewAlias = string.Empty;
     }
 
     private void Confirm()

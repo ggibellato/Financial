@@ -21,8 +21,8 @@ vi.mock('../../api/financialApiClient', () => ({
 }))
 
 const INVESTMENT_ACCOUNTS: InvestmentAccountDto[] = [
-  { id: 'a1', name: 'ChaseSave', isActive: true, isLiability: false, aliases: [], latestBalance: 0 },
-  { id: 'a2', name: 'PlatinumVisa8003', isActive: true, isLiability: true, aliases: ['Amex'], latestBalance: 500 },
+  { id: 'a1', name: 'ChaseSave', isActive: true, isLiability: false, latestBalance: 0 },
+  { id: 'a2', name: 'PlatinumVisa8003', isActive: true, isLiability: true, latestBalance: 500 },
 ]
 
 describe('useInvestmentAccounts', () => {
@@ -68,17 +68,16 @@ describe('useInvestmentAccounts', () => {
       name: 'Monzo Pot',
       isActive: true,
       isLiability: false,
-      aliases: ['Monzo'],
       latestBalance: 0,
     })
     const { result } = renderHook(() => useInvestmentAccounts())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     await act(async () => {
-      await result.current.createInvestmentAccount({ name: 'Monzo Pot', isActive: true, isLiability: false, aliases: ['Monzo'] })
+      await result.current.createInvestmentAccount({ name: 'Monzo Pot', isActive: true, isLiability: false })
     })
 
-    expect(createInvestmentAccountMock).toHaveBeenCalledWith({ name: 'Monzo Pot', isActive: true, isLiability: false, aliases: ['Monzo'] })
+    expect(createInvestmentAccountMock).toHaveBeenCalledWith({ name: 'Monzo Pot', isActive: true, isLiability: false })
     await waitFor(() => expect(getInvestmentAccountsMock).toHaveBeenCalledTimes(2))
   })
 
@@ -88,7 +87,7 @@ describe('useInvestmentAccounts', () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     await expect(
-      result.current.createInvestmentAccount({ name: 'ChaseSave', isActive: true, isLiability: false, aliases: [] }),
+      result.current.createInvestmentAccount({ name: 'ChaseSave', isActive: true, isLiability: false }),
     ).rejects.toThrow('An investment account named "ChaseSave" already exists.')
   })
 
@@ -98,21 +97,19 @@ describe('useInvestmentAccounts', () => {
       name: 'ChaseSaveRenamed',
       isActive: false,
       isLiability: true,
-      aliases: ['New alias'],
       latestBalance: 0,
     })
     const { result } = renderHook(() => useInvestmentAccounts())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     await act(async () => {
-      await result.current.updateInvestmentAccount('a1', { name: 'ChaseSaveRenamed', isActive: false, isLiability: true, aliases: ['New alias'] })
+      await result.current.updateInvestmentAccount('a1', { name: 'ChaseSaveRenamed', isActive: false, isLiability: true })
     })
 
     expect(updateInvestmentAccountMock).toHaveBeenCalledWith('a1', {
       name: 'ChaseSaveRenamed',
       isActive: false,
       isLiability: true,
-      aliases: ['New alias'],
     })
     await waitFor(() => expect(getInvestmentAccountsMock).toHaveBeenCalledTimes(2))
   })

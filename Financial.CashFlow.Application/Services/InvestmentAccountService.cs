@@ -56,10 +56,6 @@ public sealed class InvestmentAccountService : IInvestmentAccountService
             EnsureNameIsUnique(request.Name, excludingId: null);
 
             var account = InvestmentAccount.Create(request.Name, request.IsActive, request.IsLiability);
-            foreach (var alias in request.Aliases)
-            {
-                account.AddAlias(alias);
-            }
 
             await _repository.ApplyAndSaveAsync(() =>
             {
@@ -101,7 +97,7 @@ public sealed class InvestmentAccountService : IInvestmentAccountService
 
             await _repository.ApplyAndSaveAsync(() =>
             {
-                account!.Update(request.Name, request.IsActive, request.IsLiability, request.Aliases);
+                account!.Update(request.Name, request.IsActive, request.IsLiability);
                 return true;
             }).ConfigureAwait(false);
 
@@ -184,7 +180,6 @@ public sealed class InvestmentAccountService : IInvestmentAccountService
         Name = account.Name,
         IsActive = account.IsActive,
         IsLiability = account.IsLiability,
-        Aliases = account.Aliases.ToList(),
         LatestBalance = GetLatestBalance(account.Id)
     };
 }

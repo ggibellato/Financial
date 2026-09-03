@@ -34,12 +34,12 @@ public class InvestmentAccountsEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
-    public async Task GetInvestmentAccounts_WithNoSnapshot_ReturnsZeroLatestBalanceAndEmptyAliases()
+    public async Task GetInvestmentAccounts_WithNoSnapshot_ReturnsZeroLatestBalance()
     {
         var response = await Client.GetAsync("/api/v1/financial/investment-accounts");
         var accounts = await response.Content.ReadFromJsonAsync<List<InvestmentAccountDTO>>();
 
-        accounts.Should().ContainSingle(a => a.Id == ChaseSaveId && a.LatestBalance == 0m && a.Aliases.Count == 0);
+        accounts.Should().ContainSingle(a => a.Id == ChaseSaveId && a.LatestBalance == 0m);
     }
 
     [Fact]
@@ -49,14 +49,12 @@ public class InvestmentAccountsEndpointsTests : ApiEndpointTests
         {
             Name = "Monzo Pot",
             IsActive = true,
-            IsLiability = false,
-            Aliases = ["Monzo"]
+            IsLiability = false
         });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var account = await response.Content.ReadFromJsonAsync<InvestmentAccountDTO>();
         account!.Name.Should().Be("Monzo Pot");
-        account.Aliases.Should().ContainSingle("Monzo");
         account.LatestBalance.Should().Be(0m);
         account.Id.Should().NotBe(Guid.Empty);
     }
@@ -68,8 +66,7 @@ public class InvestmentAccountsEndpointsTests : ApiEndpointTests
         {
             Name = "ChaseSave",
             IsActive = true,
-            IsLiability = false,
-            Aliases = []
+            IsLiability = false
         });
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
@@ -84,8 +81,7 @@ public class InvestmentAccountsEndpointsTests : ApiEndpointTests
         {
             Name = "   ",
             IsActive = true,
-            IsLiability = false,
-            Aliases = []
+            IsLiability = false
         });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -98,15 +94,13 @@ public class InvestmentAccountsEndpointsTests : ApiEndpointTests
         {
             Name = "PlatinumVisa8003Renamed",
             IsActive = false,
-            IsLiability = true,
-            Aliases = ["Amex"]
+            IsLiability = true
         });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var account = await response.Content.ReadFromJsonAsync<InvestmentAccountDTO>();
         account!.Name.Should().Be("PlatinumVisa8003Renamed");
         account.IsActive.Should().BeFalse();
-        account.Aliases.Should().ContainSingle("Amex");
     }
 
     [Fact]
@@ -116,8 +110,7 @@ public class InvestmentAccountsEndpointsTests : ApiEndpointTests
         {
             Name = "X",
             IsActive = true,
-            IsLiability = false,
-            Aliases = []
+            IsLiability = false
         });
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -130,8 +123,7 @@ public class InvestmentAccountsEndpointsTests : ApiEndpointTests
         {
             Name = "ChaseSave",
             IsActive = true,
-            IsLiability = false,
-            Aliases = []
+            IsLiability = false
         });
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
@@ -144,8 +136,7 @@ public class InvestmentAccountsEndpointsTests : ApiEndpointTests
         {
             Name = "Monzo Pot",
             IsActive = true,
-            IsLiability = false,
-            Aliases = []
+            IsLiability = false
         });
         var account = await created.Content.ReadFromJsonAsync<InvestmentAccountDTO>();
 

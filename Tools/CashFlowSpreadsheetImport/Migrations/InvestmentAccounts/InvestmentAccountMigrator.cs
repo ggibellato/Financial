@@ -6,33 +6,34 @@ namespace Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migr
 /// Idempotently seeds the 19 known investment accounts (11 currently active, 8 historical
 /// accounts confirmed present in Resumo sheets 2017-2024 but no longer active in 2026) and
 /// audits every snapshot's existing account reference against them. No snapshot field is
-/// ever rewritten. Every account's known spreadsheet-label aliases are (re-)added on every
-/// run, whether the account is newly created or already present, so accounts seeded before
-/// aliases existed (e.g. by an F01-era run) get backfilled instead of staying alias-less.
+/// ever rewritten. <see cref="Name"/> is the exact label these accounts are seeded and
+/// matched under; the handful of older Resumo-sheet label variants that don't match a
+/// current Name (e.g. a pre-rename label, or a spreadsheet typo) are recognized only by
+/// <see cref="SheetImporters.ResumoValidationReader"/>'s own label lookup, not stored here.
 /// </summary>
 public static class InvestmentAccountMigrator
 {
-    private static readonly (string Name, bool IsActive, bool IsLiability, string[] Aliases)[] SeededAccounts =
+    private static readonly (string Name, bool IsActive, bool IsLiability)[] SeededAccounts =
     [
-        ("BlueRewardsSaver", true, false, ["Blue Rewards Saver"]),
-        ("PlatinumVisa8003", true, true, ["Platinum Visa 8003"]),
-        ("PlatinumVisa6007", true, true, ["Platinum Visa 6007"]),
-        ("ChaseMaster4023", true, true, ["Chase Master 4023"]),
-        ("BaAmex", true, true, ["BA Amex"]),
-        ("PaypalCredit", true, true, ["Paypal credit"]),
-        ("ChipCashIsaGleison", true, false, ["Chip Cash ISA Gleison", "Chip Cash ISA"]),
-        ("ChaseSave", true, false, ["Chase save"]),
-        ("ChipCashIsaAriana", true, false, ["Chip Cash ISA Ariana"]),
-        ("Trading212Invested", true, false, ["Trading 212 Invested"]),
-        ("ReservasPessoais", true, true, ["Reservas pessoais"]),
-        ("EverydaySaver", false, false, ["Everyday Saver"]),
-        ("InstantIsaIssue1", false, false, ["Instant ISA Issue 1", "Instant ISE Issue 1"]),
-        ("ArianaIsa", false, false, ["Ariana ISA"]),
-        ("BarclaysBlueRewards", false, false, ["Barclays Blue Rewards"]),
-        ("HelpToBuyIsaGgs", false, false, ["Help to Buy ISA GGS"]),
-        ("HelpToBuyIsaAacs", false, false, ["Help to Buy ISA AACS"]),
-        ("ChipEasyAccess", false, false, ["Chip Easy access"]),
-        ("ChipEasyAccessAriana", false, false, ["Chip Easy access Ariana"])
+        ("Blue Rewards Saver", true, false),
+        ("Platinum Visa 8003", true, true),
+        ("Platinum Visa 6007", true, true),
+        ("Chase Master 4023", true, true),
+        ("BA Amex", true, true),
+        ("Paypal credit", true, true),
+        ("Chip Cash ISA Gleison", true, false),
+        ("Chase save", true, false),
+        ("Chip Cash ISA Ariana", true, false),
+        ("Trading 212 Invested", true, false),
+        ("Reservas pessoais", true, true),
+        ("Everyday Saver", false, false),
+        ("Instant ISA Issue 1", false, false),
+        ("Ariana ISA", false, false),
+        ("Barclays Blue Rewards", false, false),
+        ("Help to Buy ISA GGS", false, false),
+        ("Help to Buy ISA AACS", false, false),
+        ("Chip Easy access", false, false),
+        ("Chip Easy access Ariana", false, false)
     ];
 
     public static InvestmentAccountMigrationSummary Migrate(CashFlowData data)
@@ -49,7 +50,7 @@ public static class InvestmentAccountMigrator
 
     private static void SeedAccounts(CashFlowData data, InvestmentAccountMigrationSummary summary)
     {
-        foreach (var (name, isActive, isLiability, aliases) in SeededAccounts)
+        foreach (var (name, isActive, isLiability) in SeededAccounts)
         {
             var account = data.InvestmentAccounts.FirstOrDefault(a => string.Equals(a.Name, name, StringComparison.OrdinalIgnoreCase));
 
@@ -62,11 +63,6 @@ public static class InvestmentAccountMigrator
             else
             {
                 summary.CountAccountAlreadyPresent();
-            }
-
-            foreach (var alias in aliases)
-            {
-                account.AddAlias(alias);
             }
         }
     }

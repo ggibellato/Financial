@@ -41,7 +41,7 @@ public class ResumoValidationReaderTests : IDisposable
         var snapshots = ResumoValidationReader.ImportAccountSnapshots(sheet, 2026, SeededAccounts(), _report);
 
         snapshots.Should().HaveCount(12);
-        snapshots.Should().OnlyContain(s => s.Account.Name == "BlueRewardsSaver" && s.Year == 2026);
+        snapshots.Should().OnlyContain(s => s.Account.Name == "Blue Rewards Saver" && s.Year == 2026);
         snapshots.Should().Contain(s => s.Month == 1 && s.Value == 5000.0m);
         snapshots.Should().Contain(s => s.Month == 2 && s.Value == 5000.0m);
         snapshots.Where(s => s.Month is >= 3 and <= 12).Should().OnlyContain(s => s.Value == 0m);
@@ -111,7 +111,7 @@ public class ResumoValidationReaderTests : IDisposable
 
         var snapshots = ResumoValidationReader.ImportAccountSnapshots(sheet, 2026, SeededAccounts(), _report);
 
-        snapshots.Should().OnlyContain(s => s.Account.Name == "ChaseMaster4023");
+        snapshots.Should().OnlyContain(s => s.Account.Name == "Chase Master 4023");
     }
 
     [Fact]
@@ -124,7 +124,7 @@ public class ResumoValidationReaderTests : IDisposable
 
         var snapshots = ResumoValidationReader.ImportAccountSnapshots(sheet, 2023, SeededAccounts(), _report);
 
-        snapshots.Should().OnlyContain(s => s.Account.Name == "HelpToBuyIsaGgs");
+        snapshots.Should().OnlyContain(s => s.Account.Name == "Help to Buy ISA GGS");
         snapshots.Should().ContainSingle(s => s.Month == 1).Which.Value.Should().Be(15682.05m);
     }
 
@@ -151,7 +151,7 @@ public class ResumoValidationReaderTests : IDisposable
 
         var snapshots = ResumoValidationReader.ImportAccountSnapshots(sheet, 2020, SeededAccounts(), _report);
 
-        snapshots.Should().OnlyContain(s => s.Account.Name == "BarclaysBlueRewards");
+        snapshots.Should().OnlyContain(s => s.Account.Name == "Barclays Blue Rewards");
     }
 
     [Fact]
@@ -164,7 +164,7 @@ public class ResumoValidationReaderTests : IDisposable
 
         var snapshots = ResumoValidationReader.ImportAccountSnapshots(sheet, 2024, SeededAccounts(), _report);
 
-        snapshots.Should().OnlyContain(s => s.Account.Name == "ChipCashIsaGleison");
+        snapshots.Should().OnlyContain(s => s.Account.Name == "Chip Cash ISA Gleison");
     }
 
     [Fact]
@@ -177,7 +177,7 @@ public class ResumoValidationReaderTests : IDisposable
 
         var snapshots = ResumoValidationReader.ImportAccountSnapshots(sheet, 2017, SeededAccounts(), _report);
 
-        snapshots.Should().OnlyContain(s => s.Account.Name == "InstantIsaIssue1");
+        snapshots.Should().OnlyContain(s => s.Account.Name == "Instant ISA Issue 1");
     }
 
     [Fact]

@@ -6,7 +6,7 @@ namespace Financial.Presentation.Tests.ViewModels.Admin;
 public class InvestmentAccountFormDialogViewModelTests
 {
     [Fact]
-    public void Constructor_NoCurrentName_IsCreateModeWithActiveOnLiabilityOffAndNoAliases()
+    public void Constructor_NoCurrentName_IsCreateModeWithActiveOnLiabilityOff()
     {
         var viewModel = new InvestmentAccountFormDialogViewModel();
 
@@ -15,20 +15,18 @@ public class InvestmentAccountFormDialogViewModelTests
         viewModel.Name.Should().BeEmpty();
         viewModel.IsActive.Should().BeTrue();
         viewModel.IsLiability.Should().BeFalse();
-        viewModel.Aliases.Should().BeEmpty();
     }
 
     [Fact]
     public void Constructor_WithCurrentName_IsEditModePreFilled()
     {
-        var viewModel = new InvestmentAccountFormDialogViewModel("ChaseSave", currentIsActive: false, currentIsLiability: true, currentAliases: ["Chase Save"]);
+        var viewModel = new InvestmentAccountFormDialogViewModel("ChaseSave", currentIsActive: false, currentIsLiability: true);
 
         viewModel.IsEditing.Should().BeTrue();
         viewModel.Title.Should().Be("Edit Investment Account");
         viewModel.Name.Should().Be("ChaseSave");
         viewModel.IsActive.Should().BeFalse();
         viewModel.IsLiability.Should().BeTrue();
-        viewModel.Aliases.Should().ContainSingle("Chase Save");
     }
 
     [Fact]
@@ -47,47 +45,6 @@ public class InvestmentAccountFormDialogViewModelTests
 
         viewModel.ValidationMessage.Should().BeEmpty();
         viewModel.ConfirmCommand.CanExecute(null).Should().BeTrue();
-    }
-
-    [Fact]
-    public void AddAliasCommand_WithNewAlias_AddsItAndClearsInput()
-    {
-        var viewModel = new InvestmentAccountFormDialogViewModel { NewAlias = "Chase Save" };
-
-        viewModel.AddAliasCommand.Execute(null);
-
-        viewModel.Aliases.Should().ContainSingle("Chase Save");
-        viewModel.NewAlias.Should().BeEmpty();
-    }
-
-    [Fact]
-    public void AddAliasCommand_WithBlankAlias_DoesNothing()
-    {
-        var viewModel = new InvestmentAccountFormDialogViewModel { NewAlias = "   " };
-
-        viewModel.AddAliasCommand.Execute(null);
-
-        viewModel.Aliases.Should().BeEmpty();
-    }
-
-    [Fact]
-    public void AddAliasCommand_WithCaseInsensitiveDuplicate_DoesNotAddTwice()
-    {
-        var viewModel = new InvestmentAccountFormDialogViewModel(currentAliases: ["Chase Save"]) { NewAlias = "chase save" };
-
-        viewModel.AddAliasCommand.Execute(null);
-
-        viewModel.Aliases.Should().ContainSingle();
-    }
-
-    [Fact]
-    public void RemoveAliasCommand_RemovesTheMatchingAlias()
-    {
-        var viewModel = new InvestmentAccountFormDialogViewModel(currentAliases: ["Chase Save", "CS"]);
-
-        viewModel.RemoveAliasCommand.Execute("Chase Save");
-
-        viewModel.Aliases.Should().ContainSingle("CS");
     }
 
     [Fact]

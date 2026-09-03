@@ -3,14 +3,13 @@ import { describe, expect, it, vi } from 'vitest'
 import InvestmentAccountFormDialog from '../InvestmentAccountFormDialog'
 
 describe('InvestmentAccountFormDialog', () => {
-  it('renders in create mode with an empty name, active on, liability off, and no aliases', () => {
+  it('renders in create mode with an empty name, active on, liability off', () => {
     render(<InvestmentAccountFormDialog investmentAccount={null} onCancel={vi.fn()} onSubmit={vi.fn()} />)
 
     expect(screen.getByRole('heading', { name: 'Create Investment Account' })).toBeInTheDocument()
     expect(screen.getByLabelText(/^Name/)).toHaveValue('')
     expect(screen.getByLabelText('Active')).toBeChecked()
     expect(screen.getByLabelText('Liability')).not.toBeChecked()
-    expect(screen.queryByText('Monzo')).not.toBeInTheDocument()
   })
 
   it('renders in edit mode pre-filled with the account being edited', () => {
@@ -21,7 +20,6 @@ describe('InvestmentAccountFormDialog', () => {
           name: 'ChaseSave',
           isActive: false,
           isLiability: true,
-          aliases: ['Chase Save'],
           latestBalance: 0,
         }}
         onCancel={vi.fn()}
@@ -33,7 +31,6 @@ describe('InvestmentAccountFormDialog', () => {
     expect(screen.getByLabelText(/^Name/)).toHaveValue('ChaseSave')
     expect(screen.getByLabelText('Active')).not.toBeChecked()
     expect(screen.getByLabelText('Liability')).toBeChecked()
-    expect(screen.getByText('Chase Save')).toBeInTheDocument()
   })
 
   it('disables Save and shows a validation message when the name is blank', () => {
@@ -45,17 +42,15 @@ describe('InvestmentAccountFormDialog', () => {
     expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
   })
 
-  it('submits the trimmed name, toggled flags, and aliases', async () => {
+  it('submits the trimmed name and toggled flags', async () => {
     const onSubmit = vi.fn().mockResolvedValue(undefined)
     render(<InvestmentAccountFormDialog investmentAccount={null} onCancel={vi.fn()} onSubmit={onSubmit} />)
 
     fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: '  Monzo Pot  ' } })
     fireEvent.click(screen.getByLabelText('Liability'))
-    fireEvent.change(screen.getByLabelText('New alias'), { target: { value: 'Monzo' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Add alias' }))
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
-    await waitFor(() => expect(onSubmit).toHaveBeenCalledWith('Monzo Pot', true, true, ['Monzo']))
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledWith('Monzo Pot', true, true))
   })
 
   it('shows a server error and re-enables Save when the submit rejects', async () => {

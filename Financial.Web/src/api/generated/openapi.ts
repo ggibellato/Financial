@@ -2948,7 +2948,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Updates an investment account's name, active flag, liability flag, and aliases. */
+        /** Updates an investment account's name, active flag, and liability flag. */
         put: {
             parameters: {
                 query?: never;
@@ -5796,13 +5796,11 @@ export interface components {
             monthlyValues: number[];
         };
         InvestmentAccountCreateDTO: {
-            aliases: string[];
             isActive: boolean;
             isLiability: boolean;
             name: string;
         };
         InvestmentAccountDTO: {
-            aliases: string[];
             /** Format: uuid */
             id: string;
             isActive: boolean;
@@ -5812,7 +5810,6 @@ export interface components {
             name: string;
         };
         InvestmentAccountUpdateDTO: {
-            aliases: string[];
             isActive: boolean;
             isLiability: boolean;
             name: string;
