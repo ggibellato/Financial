@@ -1,6 +1,7 @@
 using Financial.Presentation.App.Components;
 using Financial.Presentation.App.Properties;
 using Financial.Presentation.App.ViewModels;
+using Financial.Presentation.App.ViewModels.Settings;
 using Financial.Presentation.App.Views.Admin;
 using Financial.Presentation.App.Views.CashFlow;
 using Financial.Presentation.App.Views.Investment;
@@ -35,7 +36,9 @@ namespace Financial.Presentation.App
             MainNavigationViewModel navigationViewModel,
             MainNavigationViewModelHistoric navigationViewModelHistoric,
             SyncStatusViewModel syncStatusViewModel,
-            PaymentDueBannerViewModel paymentDueBannerViewModel)
+            PaymentDueBannerViewModel paymentDueBannerViewModel,
+            ColourModeViewModel colourModeViewModel,
+            Financial.Presentation.App.Views.Settings.AppearanceView appearanceView)
         {
             ArgumentNullException.ThrowIfNull(dividendCheckView);
             ArgumentNullException.ThrowIfNull(assetPriceView);
@@ -57,6 +60,8 @@ namespace Financial.Presentation.App
             ArgumentNullException.ThrowIfNull(recurringBillsView);
             ArgumentNullException.ThrowIfNull(syncStatusViewModel);
             ArgumentNullException.ThrowIfNull(paymentDueBannerViewModel);
+            ArgumentNullException.ThrowIfNull(colourModeViewModel);
+            ArgumentNullException.ThrowIfNull(appearanceView);
             _navigationViewModel = navigationViewModel ?? throw new ArgumentNullException(nameof(navigationViewModel));
             _navigationViewModelHistoric = navigationViewModelHistoric ?? throw new ArgumentNullException(nameof(navigationViewModelHistoric));
 
@@ -84,6 +89,7 @@ namespace Financial.Presentation.App
                 ["admin-investment-accounts"] = investmentAccountsView,
                 ["admin-recurring-bills"] = recurringBillsView,
                 ["admin-reserve-buckets"] = reserveBucketsView,
+                ["settings-appearance"] = appearanceView,
             };
 
             DataContext = new MainShellViewModel(
@@ -95,7 +101,8 @@ namespace Financial.Presentation.App
                 },
                 viewsByKey: viewsByKey,
                 syncStatusViewModel: syncStatusViewModel,
-                paymentDueBannerViewModel: paymentDueBannerViewModel);
+                paymentDueBannerViewModel: paymentDueBannerViewModel,
+                colourModeViewModel: colourModeViewModel);
 
             Loaded += async (s, e) =>
             {

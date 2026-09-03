@@ -5,7 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Financial.Presentation.App.Components"
         mc:Ignorable="d"
-        Title="Financial tools" Height="800" Width="1200" Icon="{StaticResource AppIcon}">
+        Title="Financial tools" Height="800" Width="1200" Icon="{StaticResource AppIcon}"
+        Background="{DynamicResource ApplicationBackgroundBrush}">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="{Binding IsCollapsed, Converter={StaticResource BoolToSidebarWidthConverter}}"/>
@@ -23,7 +24,14 @@
                 <local:PaymentDueBanner DataContext="{Binding PaymentsDue}"/>
             </StackPanel>
             <Border Grid.Row="1" BorderBrush="#E0E0E0" BorderThickness="0,0,0,1" Padding="16,0">
-                <TextBlock Text="{Binding BreadcrumbText}" VerticalAlignment="Center" Foreground="#666666"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="{Binding BreadcrumbText}" VerticalAlignment="Center" Foreground="#666666"/>
+                    <local:ColourModeToggleButton Grid.Column="1" DataContext="{Binding ColourMode}" VerticalAlignment="Center"/>
+                </Grid>
             </Border>
             <ContentControl Grid.Row="2" Content="{Binding SelectedContent}"/>
         </Grid>

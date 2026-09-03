@@ -1,0 +1,14 @@
+<UserControl x:Class="Financial.Presentation.App.Components.ColourModeToggleButton"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+    <ui:Button Appearance="Transparent"
+               Padding="2"
+               Command="{Binding ToggleCommand}"
+               AutomationProperties.Name="{Binding ToggleAutomationName}"
+               ToolTip="{Binding ToggleAutomationName}">
+        <ui:Button.Icon>
+            <ui:SymbolIcon Symbol="{Binding ToggleIcon}"/>
+        </ui:Button.Icon>
+    </ui:Button>
+</UserControl>
