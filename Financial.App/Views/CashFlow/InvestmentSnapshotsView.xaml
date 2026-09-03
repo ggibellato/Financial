@@ -2,7 +2,8 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:Financial.Presentation.App.Views.CashFlow"
-             xmlns:components="clr-namespace:Financial.Presentation.App.Components">
+             xmlns:components="clr-namespace:Financial.Presentation.App.Components"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
     <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
@@ -37,9 +38,11 @@
                     <DataGridTemplateColumn Header="" Width="34">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <Button Content="✏" ToolTip="Edit" AutomationProperties.Name="Edit snapshot" Padding="4,0"
-                                        Command="{Binding DataContext.EditSnapshotCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                        CommandParameter="{Binding}"/>
+                                <ui:Button Appearance="Transparent" Padding="4,0"
+                                           Icon="{ui:SymbolIcon Symbol=Edit16}"
+                                           ToolTip="Edit" AutomationProperties.Name="Edit snapshot"
+                                           Command="{Binding DataContext.EditSnapshotCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                           CommandParameter="{Binding}"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>

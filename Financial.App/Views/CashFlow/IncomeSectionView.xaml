@@ -40,18 +40,22 @@
                 <DataGridTemplateColumn Header="" Width="34">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <Button Content="✏" ToolTip="Edit income" Padding="4,0"
-                                    Command="{Binding DataContext.EditIncomeCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                    CommandParameter="{Binding}"/>
+                            <ui:Button Appearance="Transparent" Padding="4,0"
+                                       Icon="{ui:SymbolIcon Symbol=Edit16}"
+                                       ToolTip="Edit income" AutomationProperties.Name="Edit income"
+                                       Command="{Binding DataContext.EditIncomeCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                       CommandParameter="{Binding}"/>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
                 <DataGridTemplateColumn Header="" Width="34">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <Button Content="🗑" ToolTip="Delete income" Padding="4,0"
-                                    Command="{Binding DataContext.DeleteIncomeCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                    CommandParameter="{Binding}"/>
+                            <ui:Button Appearance="Transparent" Padding="4,0"
+                                       Icon="{ui:SymbolIcon Symbol=Delete16}"
+                                       ToolTip="Delete income" AutomationProperties.Name="Delete income"
+                                       Command="{Binding DataContext.DeleteIncomeCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                       CommandParameter="{Binding}"/>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
