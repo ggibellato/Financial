@@ -120,7 +120,7 @@ platforms."**
 
 | # | Location | Finding | Severity |
 |---|---|---|---|
-| 1 | Web: 10 `*FormDialog.tsx` (Fluent `Dialog`); WPF: 11 `*FormDialog.xaml` (popup `Window`, e.g. `BankFormDialog.xaml`) | Every Admin-CRUD entity's create/edit form (Bank, Broker, Category, CreditCard, IncomeSource, InvestmentAccount, Portfolio, RecurringBill, ReserveBucket, Asset) opens as a modal on **both** platforms — the exact shape the rule names as off-limits for "New X". This is the app's most consistent, best-built button population, built on the one form-shape the spec rules out. Needs an ADR exception for lookup-entity CRUD, or a re-platform to inline — not silence either way | High |
+| 1 | Web: 10 `*FormDialog.tsx` (Fluent `Dialog`); WPF: 11 `*FormDialog.xaml` (popup `Window`, e.g. `BankFormDialog.xaml`) | **Resolved 2026-09-04 via `decisions/ADR-006-admin-crud-modal-dialogs.md`** — Admin lookup-entity CRUD (Bank, Broker, Category, CreditCard, IncomeSource, InvestmentAccount, Portfolio, RecurringBill, ReserveBucket, Asset) is now a documented exception to the "New X is inline" rule: no associated chart/running total, rarely edited, genuinely short forms — exactly the case the doc's own guidance already names as correct for a dialog. No source files changed | ~~High~~ Resolved |
 | 2 | `MensaisPage.tsx:271-376`, `ControleMaePage.tsx` form, three Investment tabs' inline "New X" forms, `InvestmentSnapshotsPage` edit panel | No required-marker or per-field validation, unlike the Fluent-`Field` population (Expense/Income/Transfer/… + every Admin dialog), which already implements the required asterisk and inline `validationMessage` correctly — this closes an item the 2026-08-29 audit listed as unbuilt | Medium |
 | 3 | `AddBillFormView.xaml`, `EditBillFormView.xaml`, `CreateEntryFormView.xaml`, `EditEntryFormView.xaml`, `EditSnapshotValueFormView.xaml` | Single-column, one-field-per-row, label-to-the-left layout — named by name in `wpf.md` as the anti-pattern the 4-column responsive grid replaced everywhere else | High |
 | 4 | Same five files as #3 | No required marker, bottom-only validation, plus hardcoded `#CCCCCC`/`#FAFAFA` borders (also a dark-mode issue) | Medium |
@@ -185,9 +185,9 @@ Carried forward from the standards docs' own list; not counted as violations abo
    found to be false positives: the doc names this exact Move/Delete Portfolio pairing as the
    canonical example of two peer buttons that must both stay primary. See the corrections in
    those sections above.
-5. **Decide the Admin-dialog question** — Forms #1. This is a product decision (write an ADR
-   exception, or re-platform) more than a code fix; resolve the decision before touching the 21
-   files it affects.
+5. ~~**Decide the Admin-dialog question**~~ **Resolved 2026-09-04** — Forms #1. The user chose the
+   ADR-exception path over re-platforming; see `decisions/ADR-006-admin-crud-modal-dialogs.md`.
+   No source files changed.
 6. **Consolidate the three row-action icon conventions** — Buttons (Web) #2, Buttons (WPF) #3.
    Standardise on the one Fluent-correct pattern each platform already has; replace the rest.
 7. **Schedule the legacy-form migration as its own workstream** — Forms #2, #3, #4. Larger effort

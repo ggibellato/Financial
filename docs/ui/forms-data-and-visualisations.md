@@ -460,6 +460,14 @@ self-contained, blocking interaction unrelated to populating a specific grid
 row may still use a real dialog — this rule is specifically about the
 create/edit-a-row action, not dialogs in general.
 
+**Exception — Admin lookup-entity CRUD:** Bank, Broker, Category, CreditCard,
+IncomeSource, InvestmentAccount, Portfolio, RecurringBill, ReserveBucket, and
+Asset create/edit forms are exempt from this rule and may use a modal
+`Dialog`/`Window` instead of an inline panel — see
+`decisions/ADR-006-admin-crud-modal-dialogs.md` for the rationale (no
+associated chart/running total, rarely edited, genuinely short forms). Do not
+extend this exception to any other entity without a documented reason.
+
 ### Transaction workspace default
 
 When users benefit from seeing a graph, entering a transaction, and immediately
