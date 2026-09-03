@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useCallback, useContext, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { getStoredColourMode, setStoredColourMode } from '../utils/colourModeStorage'
 import type { ColourMode } from '../utils/colourModeStorage'
@@ -14,6 +14,13 @@ const ColourModeContext = createContext<ColourModeContextValue | null>(null)
 
 export function ColourModeProvider({ children }: { children: ReactNode }) {
   const [colourMode, setColourModeState] = useState<ColourMode>(() => getStoredColourMode())
+
+  // Keeps the hand-rolled `index.css` custom-property palette (--text, --bg, --border, ...)
+  // in sync with the same single source of truth as the Fluent theme, instead of the two
+  // drifting apart now that only one of them still followed prefers-color-scheme.
+  useEffect(() => {
+    document.documentElement.dataset.theme = colourMode
+  }, [colourMode])
 
   const setColourMode = useCallback((mode: ColourMode) => {
     setColourModeState(mode)

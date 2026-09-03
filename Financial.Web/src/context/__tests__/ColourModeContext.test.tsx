@@ -87,6 +87,19 @@ describe('ColourModeContext', () => {
     expect(screen.getByTestId('mode-b').textContent).toBe('dark')
   })
 
+  it('syncs_the_document_root_data_theme_attribute_with_the_colour_mode', () => {
+    render(
+      <ColourModeProvider>
+        <ModeSetter />
+      </ColourModeProvider>,
+    )
+    expect(document.documentElement.dataset.theme).toBe('light')
+    act(() => {
+      screen.getByText('set-dark').click()
+    })
+    expect(document.documentElement.dataset.theme).toBe('dark')
+  })
+
   it('useColourMode_throws_when_called_outside_provider', () => {
     const original = console.error
     console.error = () => {}
