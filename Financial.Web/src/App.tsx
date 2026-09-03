@@ -7,13 +7,14 @@ import Breadcrumb from './components/Breadcrumb'
 import LoadingState from './components/LoadingState'
 import SyncStatusBanner from './components/SyncStatusBanner'
 import PaymentDueBanner from './components/PaymentDueBanner'
-import { useSystemColorScheme } from './hooks/useSystemColorScheme'
+import ColourModeToggleButton from './components/ColourModeToggleButton'
+import { ColourModeProvider, useColourMode } from './context/ColourModeContext'
 import { financialDarkTheme, financialLightTheme } from './theme/fluentTheme'
 import './App.css'
 
-function App() {
+function AppShell() {
   const location = useLocation()
-  const colorScheme = useSystemColorScheme()
+  const { colourMode } = useColourMode()
 
   useEffect(() => {
     if (location.pathname.startsWith('/investments')) {
@@ -24,19 +25,30 @@ function App() {
   }, [location.pathname])
 
   return (
-    <FluentProvider theme={colorScheme === 'dark' ? financialDarkTheme : financialLightTheme}>
+    <FluentProvider theme={colourMode === 'dark' ? financialDarkTheme : financialLightTheme}>
       <div className="app">
         <Sidebar />
         <main className="app__content">
           <SyncStatusBanner />
           <PaymentDueBanner />
-          <Breadcrumb />
+          <div className="app__topbar">
+            <Breadcrumb />
+            <ColourModeToggleButton />
+          </div>
           <Suspense fallback={<LoadingState />}>
             <Outlet />
           </Suspense>
         </main>
       </div>
     </FluentProvider>
+  )
+}
+
+function App() {
+  return (
+    <ColourModeProvider>
+      <AppShell />
+    </ColourModeProvider>
   )
 }
 

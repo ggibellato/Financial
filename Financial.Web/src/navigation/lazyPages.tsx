@@ -5,6 +5,7 @@ import { lazy } from 'react'
 // exclusively, and PAGE_ROUTES/PageRoute are not components.
 export const ActiveInvestmentsPage = lazy(() => import('../pages/ActiveInvestmentsPage'))
 export const AdminEntityPlaceholderPage = lazy(() => import('../pages/AdminEntityPlaceholderPage'))
+export const AppearancePage = lazy(() => import('../pages/AppearancePage'))
 export const AssetsPage = lazy(() => import('../pages/AssetsPage'))
 export const BanksPage = lazy(() => import('../pages/BanksPage'))
 export const BrokersPage = lazy(() => import('../pages/BrokersPage'))
