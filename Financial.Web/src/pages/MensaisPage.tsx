@@ -1,12 +1,14 @@
-import { Button } from '@fluentui/react-components'
-import { AddRegular, ArrowResetRegular, DeleteRegular } from '@fluentui/react-icons'
+import { Button, Field, Input, MessageBar, MessageBarBody, Select, Text } from '@fluentui/react-components'
+import { AddRegular, ArrowResetRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import type { RecurringBillDto } from '../api/types'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
 import StatusMenuButton from '../components/StatusMenuButton'
 import UkExpensePromptDialog from '../components/UkExpensePromptDialog'
 import SortableColumnHeader from '../components/grid/SortableColumnHeader'
+import { useFormPanelStyles } from '../components/formPanelStyles'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
+import { useFieldError } from '../hooks/useFieldError'
 import { useMensais } from '../hooks/useMensais'
 import { confirmThenRun } from '../utils/confirmThenRun'
 import { formatN2 } from '../utils/formatters'
@@ -37,27 +39,25 @@ function BillRow({
   return (
     <tr>
       <td>
-        <button
-          className="data-table__action-btn"
-          type="button"
+        <Button
+          appearance="subtle"
+          size="small"
+          icon={<EditRegular />}
           aria-label="Edit bill"
           onClick={() => onEdit(bill)}
-        >
-          ✏
-        </button>
+        />
       </td>
       <td>
-        <button
-          className="data-table__action-btn"
-          type="button"
+        <Button
+          appearance="subtle"
+          size="small"
+          icon={<DeleteRegular />}
           aria-label={isDeleting ? 'Deleting bill' : 'Delete bill'}
           disabled={isDeleting}
           onClick={() =>
             confirmThenRun(`Delete "${bill.description}"? This removes it for good.`, () => onDelete(bill.id))
           }
-        >
-          <DeleteRegular />
-        </button>
+        />
       </td>
       <td>{bill.dueDay}</td>
       <td>{bill.description}</td>
@@ -199,6 +199,7 @@ export default function MensaisPage() {
     editValue,
     isSaving,
     saveError,
+    saveErrorField,
     setEditField,
     showEditForm,
     cancelEdit,
@@ -211,6 +212,7 @@ export default function MensaisPage() {
     newNote,
     isAdding,
     addError,
+    addErrorField,
     setAddField,
     showAddForm,
     cancelAdd,
@@ -236,6 +238,9 @@ export default function MensaisPage() {
   } = useMensais()
 
   const isEditing = editingId !== null
+  const styles = useFormPanelStyles()
+  const addFieldError = useFieldError(addError, addErrorField)
+  const editFieldError = useFieldError(saveError, saveErrorField)
 
   return (
     <div className="mensais-page">
@@ -269,109 +274,132 @@ export default function MensaisPage() {
       {statusUpdateError && <p className="mensais-page__error">{statusUpdateError}</p>}
 
       {isAddFormOpen && (
-        <div className="mensais-page__form-panel">
-          <p className="mensais-page__form-title">Add Bill</p>
-          <div className="mensais-page__form">
-            <div className="mensais-page__form-field">
-              <label htmlFor="mensais-new-area">Area</label>
-              <select id="mensais-new-area" value={newArea} onChange={(e) => setAddField('newArea', e.target.value)}>
+        <div className={styles.panel}>
+          <Text as="h2" weight="semibold" size={400}>
+            Add Bill
+          </Text>
+
+          <div className={styles.grid}>
+            <Field label="Area">
+              <Select value={newArea} onChange={(e) => setAddField('newArea', e.target.value)}>
                 {AREAS.map((a) => (
                   <option key={a} value={a}>
                     {a}
                   </option>
                 ))}
-              </select>
+              </Select>
+            </Field>
+
+            <div className={styles.spanTwo}>
+              <Field
+                label="Description"
+                required
+                validationState={addFieldError('newDescription') ? 'error' : 'none'}
+                validationMessage={addFieldError('newDescription')}
+              >
+                <Input value={newDescription} onChange={(e) => setAddField('newDescription', e.target.value)} />
+              </Field>
             </div>
-            <div className="mensais-page__form-field">
-              <label htmlFor="mensais-new-description">Description</label>
-              <input
-                id="mensais-new-description"
-                type="text"
-                value={newDescription}
-                onChange={(e) => setAddField('newDescription', e.target.value)}
-              />
-            </div>
-            <div className="mensais-page__form-field">
-              <label htmlFor="mensais-new-due-day">Due Day</label>
-              <input
-                id="mensais-new-due-day"
+
+            <Field
+              label="Due Day"
+              required
+              validationState={addFieldError('newDueDay') ? 'error' : 'none'}
+              validationMessage={addFieldError('newDueDay')}
+            >
+              <Input
                 type="number"
                 min="1"
                 max="31"
                 value={newDueDay}
                 onChange={(e) => setAddField('newDueDay', e.target.value)}
               />
-            </div>
-            <div className="mensais-page__form-field">
-              <label htmlFor="mensais-new-value">Value</label>
-              <input
-                id="mensais-new-value"
-                type="number"
-                step="0.01"
-                value={newValue}
-                onChange={(e) => setAddField('newValue', e.target.value)}
-              />
-            </div>
-            <div className="mensais-page__form-field">
-              <label htmlFor="mensais-new-note">Note</label>
-              <input
-                id="mensais-new-note"
-                type="text"
-                value={newNote}
-                onChange={(e) => setAddField('newNote', e.target.value)}
-              />
+            </Field>
+
+            <Field
+              label="Value"
+              required
+              validationState={addFieldError('newValue') ? 'error' : 'none'}
+              validationMessage={addFieldError('newValue')}
+            >
+              <Input type="number" step="0.01" value={newValue} onChange={(e) => setAddField('newValue', e.target.value)} />
+            </Field>
+
+            <div className={styles.spanTwo}>
+              <Field label="Note">
+                <Input value={newNote} onChange={(e) => setAddField('newNote', e.target.value)} />
+              </Field>
             </div>
           </div>
-          <div className="mensais-page__form-actions">
-            <button className="mensais-page__submit-btn" type="button" disabled={isAdding} onClick={submitAdd}>
+
+          <div className={styles.actions}>
+            <Button appearance="primary" disabled={isAdding} onClick={submitAdd}>
               {isAdding ? 'Adding Bill...' : 'Add Bill'}
-            </button>
-            <button className="mensais-page__cancel-btn" type="button" onClick={cancelAdd}>
+            </Button>
+            <Button appearance="secondary" onClick={cancelAdd}>
               Cancel
-            </button>
+            </Button>
           </div>
-          {addError && <p className="mensais-page__error">{addError}</p>}
+
+          {addError && (
+            <MessageBar intent="error">
+              <MessageBarBody>{addError}</MessageBarBody>
+            </MessageBar>
+          )}
         </div>
       )}
 
       {isEditing && (
-        <div className="mensais-page__form-panel">
-          <p className="mensais-page__form-title">Edit Bill</p>
-          <div className="mensais-page__form">
-            <div className="mensais-page__form-field">
-              <label htmlFor="mensais-edit-value">Value</label>
-              <input
-                id="mensais-edit-value"
+        <div className={styles.panel}>
+          <Text as="h2" weight="semibold" size={400}>
+            Edit Bill
+          </Text>
+
+          <div className={styles.grid}>
+            <Field
+              label="Value"
+              required
+              validationState={editFieldError('editValue') ? 'error' : 'none'}
+              validationMessage={editFieldError('editValue')}
+            >
+              <Input
                 type="number"
                 step="0.01"
                 value={editValue}
                 onChange={(e) => setEditField('editValue', e.target.value)}
               />
-            </div>
-            <div className="mensais-page__form-field">
-              <label htmlFor="mensais-edit-status">Status</label>
-              <select
-                id="mensais-edit-status"
-                value={editStatus}
-                onChange={(e) => setEditField('editStatus', e.target.value)}
-              >
+            </Field>
+
+            <Field
+              label="Status"
+              required
+              validationState={editFieldError('editStatus') ? 'error' : 'none'}
+              validationMessage={editFieldError('editStatus')}
+            >
+              <Select value={editStatus} onChange={(e) => setEditField('editStatus', e.target.value)}>
                 {STATUSES.map((s) => (
                   <option key={s} value={s}>
                     {s}
                   </option>
                 ))}
-              </select>
-            </div>
+              </Select>
+            </Field>
           </div>
-          <div className="mensais-page__form-actions">
-            <button className="mensais-page__submit-btn" type="button" disabled={isSaving} onClick={saveEdit}>
+
+          <div className={styles.actions}>
+            <Button appearance="primary" disabled={isSaving} onClick={saveEdit}>
               {isSaving ? 'Saving...' : 'Save'}
-            </button>
-            <button className="mensais-page__cancel-btn" type="button" onClick={cancelEdit}>
+            </Button>
+            <Button appearance="secondary" onClick={cancelEdit}>
               Cancel
-            </button>
+            </Button>
           </div>
-          {saveError && <p className="mensais-page__error">{saveError}</p>}
+
+          {saveError && (
+            <MessageBar intent="error">
+              <MessageBarBody>{saveError}</MessageBarBody>
+            </MessageBar>
+          )}
         </div>
       )}
 

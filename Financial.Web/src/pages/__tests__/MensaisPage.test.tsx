@@ -291,15 +291,15 @@ describe('MensaisPage', () => {
     await waitFor(() => expect(screen.getByText('INSS')).toBeInTheDocument())
 
     fireEvent.click(screen.getByRole('button', { name: 'Add Bill' }))
-    fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Aluguel' } })
-    fireEvent.change(screen.getByLabelText('Due Day'), { target: { value: '5' } })
-    fireEvent.change(screen.getByLabelText('Value'), { target: { value: '1000' } })
+    fireEvent.change(screen.getByLabelText(/^Description/), { target: { value: 'Aluguel' } })
+    fireEvent.change(screen.getByLabelText(/^Due Day/), { target: { value: '5' } })
+    fireEvent.change(screen.getByLabelText(/^Value/), { target: { value: '1000' } })
 
     getMensaisBillsMock.mockResolvedValue([
       ...BILLS,
       { ...BILLS[0], id: 'b3', description: 'Aluguel', dueDay: 5, value: 1000 },
     ])
-    const addBillFormPanel = screen.getByText('Add Bill', { selector: 'p' }).closest('.mensais-page__form-panel') as HTMLElement
+    const addBillFormPanel = screen.getByRole('heading', { name: 'Add Bill' }).closest('div') as HTMLElement
     fireEvent.click(within(addBillFormPanel).getByRole('button', { name: 'Add Bill' }))
 
     await waitFor(() =>
@@ -320,10 +320,10 @@ describe('MensaisPage', () => {
     await waitFor(() => expect(screen.getByText('INSS')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Add Bill' }))
 
-    const addBillFormPanel = screen.getByText('Add Bill', { selector: 'p' }).closest('.mensais-page__form-panel') as HTMLElement
+    const addBillFormPanel = screen.getByRole('heading', { name: 'Add Bill' }).closest('div') as HTMLElement
     const fieldLabels = within(addBillFormPanel)
-      .getAllByText(/^(Area|Description|Due Day|Value|Note)$/, { selector: 'label' })
-      .map((label) => label.textContent)
+      .getAllByText(/^(Area|Description|Due Day|Value|Note)\*?$/, { selector: 'label' })
+      .map((label) => label.textContent?.replace(/\*$/, ''))
     expect(fieldLabels).toEqual(['Area', 'Description', 'Due Day', 'Value', 'Note'])
   })
 

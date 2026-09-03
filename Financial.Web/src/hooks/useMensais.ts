@@ -50,6 +50,7 @@ interface MensaisState {
   editValue: string
   isSaving: boolean
   saveError: string | null
+  saveErrorField: EditField | null
   isAddFormOpen: boolean
   newDueDay: string
   newDescription: string
@@ -58,6 +59,7 @@ interface MensaisState {
   newNote: string
   isAdding: boolean
   addError: string | null
+  addErrorField: AddField | null
   deletingBillId: string | null
   deleteError: string | null
   isResetting: boolean
@@ -81,13 +83,13 @@ type MensaisAction =
   | { type: 'SET_EDIT_FIELD'; payload: { field: EditField; value: string } }
   | { type: 'SAVE_START' }
   | { type: 'SAVE_SUCCESS' }
-  | { type: 'SAVE_ERROR'; payload: string }
+  | { type: 'SAVE_ERROR'; payload: { message: string; field: EditField | null } }
   | { type: 'SHOW_ADD_FORM'; payload: { area: string } }
   | { type: 'CANCEL_ADD' }
   | { type: 'SET_ADD_FIELD'; payload: { field: AddField; value: string } }
   | { type: 'ADD_START' }
   | { type: 'ADD_SUCCESS' }
-  | { type: 'ADD_ERROR'; payload: string }
+  | { type: 'ADD_ERROR'; payload: { message: string; field: AddField | null } }
   | { type: 'DELETE_START'; payload: string }
   | { type: 'DELETE_SUCCESS' }
   | { type: 'DELETE_ERROR'; payload: string }
@@ -119,11 +121,13 @@ const INITIAL_STATE: MensaisState = {
   editValue: '',
   isSaving: false,
   saveError: null,
+  saveErrorField: null,
   isAddFormOpen: false,
   ...EMPTY_ADD_FORM_FIELDS,
   newArea: 'Brasil',
   isAdding: false,
   addError: null,
+  addErrorField: null,
   deletingBillId: null,
   deleteError: null,
   isResetting: false,
@@ -163,27 +167,27 @@ function reducer(state: MensaisState, action: MensaisAction): MensaisState {
         saveError: null,
       }
     case 'CANCEL_EDIT':
-      return { ...state, editingId: null, editStatus: '', editValue: '', saveError: null }
+      return { ...state, editingId: null, editStatus: '', editValue: '', saveError: null, saveErrorField: null }
     case 'SET_EDIT_FIELD':
       return { ...state, [action.payload.field]: action.payload.value }
     case 'SAVE_START':
-      return { ...state, isSaving: true, saveError: null }
+      return { ...state, isSaving: true, saveError: null, saveErrorField: null }
     case 'SAVE_SUCCESS':
       return { ...state, isSaving: false, editingId: null, editStatus: '', editValue: '' }
     case 'SAVE_ERROR':
-      return { ...state, isSaving: false, saveError: action.payload }
+      return { ...state, isSaving: false, saveError: action.payload.message, saveErrorField: action.payload.field }
     case 'SHOW_ADD_FORM':
-      return { ...state, isAddFormOpen: true, ...EMPTY_ADD_FORM_FIELDS, newArea: action.payload.area, addError: null }
+      return { ...state, isAddFormOpen: true, ...EMPTY_ADD_FORM_FIELDS, newArea: action.payload.area, addError: null, addErrorField: null }
     case 'CANCEL_ADD':
-      return { ...state, isAddFormOpen: false, ...EMPTY_ADD_FORM_FIELDS, addError: null }
+      return { ...state, isAddFormOpen: false, ...EMPTY_ADD_FORM_FIELDS, addError: null, addErrorField: null }
     case 'SET_ADD_FIELD':
       return { ...state, [action.payload.field]: action.payload.value }
     case 'ADD_START':
-      return { ...state, isAdding: true, addError: null }
+      return { ...state, isAdding: true, addError: null, addErrorField: null }
     case 'ADD_SUCCESS':
       return { ...state, isAdding: false, isAddFormOpen: false, ...EMPTY_ADD_FORM_FIELDS }
     case 'ADD_ERROR':
-      return { ...state, isAdding: false, addError: action.payload }
+      return { ...state, isAdding: false, addError: action.payload.message, addErrorField: action.payload.field }
     case 'DELETE_START':
       return { ...state, deletingBillId: action.payload, deleteError: null }
     case 'DELETE_SUCCESS':
@@ -250,6 +254,7 @@ export interface MensaisData {
   editValue: string
   isSaving: boolean
   saveError: string | null
+  saveErrorField: EditField | null
   setEditField: (field: EditField, value: string) => void
   showEditForm: (bill: RecurringBillDto) => void
   cancelEdit: () => void
@@ -262,6 +267,7 @@ export interface MensaisData {
   newNote: string
   isAdding: boolean
   addError: string | null
+  addErrorField: AddField | null
   setAddField: (field: AddField, value: string) => void
   showAddForm: () => void
   cancelAdd: () => void
@@ -325,7 +331,12 @@ export function useMensais(): MensaisData {
 
     const value = parseValidatedNumber(state.editValue)
     if (value === null) {
-      dispatch({ type: 'SAVE_ERROR', payload: 'Value must be a number' })
+      dispatch({ type: 'SAVE_ERROR', payload: { message: 'Value must be a number', field: 'editValue' } })
+      return
+    }
+
+    if (!state.editStatus.trim()) {
+      dispatch({ type: 'SAVE_ERROR', payload: { message: 'Status is required', field: 'editStatus' } })
       return
     }
 
@@ -352,7 +363,7 @@ export function useMensais(): MensaisData {
       .catch((err: unknown) => {
         dispatch({
           type: 'SAVE_ERROR',
-          payload: getErrorMessage(err, 'Failed to update bill'),
+          payload: { message: getErrorMessage(err, 'Failed to update bill'), field: null },
         })
       })
   }
@@ -368,17 +379,17 @@ export function useMensais(): MensaisData {
 
   function submitAdd() {
     if (!state.newDescription.trim()) {
-      dispatch({ type: 'ADD_ERROR', payload: 'Description is required' })
+      dispatch({ type: 'ADD_ERROR', payload: { message: 'Description is required', field: 'newDescription' } })
       return
     }
     const dueDay = parseValidatedNumber(state.newDueDay)
     if (dueDay === null) {
-      dispatch({ type: 'ADD_ERROR', payload: 'Due day must be a number' })
+      dispatch({ type: 'ADD_ERROR', payload: { message: 'Due day must be a number', field: 'newDueDay' } })
       return
     }
     const value = parseValidatedNumber(state.newValue)
     if (value === null) {
-      dispatch({ type: 'ADD_ERROR', payload: 'Value must be a number' })
+      dispatch({ type: 'ADD_ERROR', payload: { message: 'Value must be a number', field: 'newValue' } })
       return
     }
 
@@ -402,7 +413,7 @@ export function useMensais(): MensaisData {
       .catch((err: unknown) => {
         dispatch({
           type: 'ADD_ERROR',
-          payload: getErrorMessage(err, 'Failed to add bill'),
+          payload: { message: getErrorMessage(err, 'Failed to add bill'), field: null },
         })
       })
   }
@@ -531,6 +542,7 @@ export function useMensais(): MensaisData {
     editValue: state.editValue,
     isSaving: state.isSaving,
     saveError: state.saveError,
+    saveErrorField: state.saveErrorField,
     setEditField,
     showEditForm,
     cancelEdit,
@@ -543,6 +555,7 @@ export function useMensais(): MensaisData {
     newNote: state.newNote,
     isAdding: state.isAdding,
     addError: state.addError,
+    addErrorField: state.addErrorField,
     setAddField,
     showAddForm,
     cancelAdd,
