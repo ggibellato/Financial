@@ -50,7 +50,7 @@
                             <DataGridTextColumn Binding="{Binding AnnualTotal, StringFormat=N2}" Header="Annual Total" Width="100" ElementStyle="{StaticResource NumericColumnTextStyle}"/>
                         </DataGrid.Columns>
                         <DataGrid.RowStyle>
-                            <Style TargetType="DataGridRow">
+                            <Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsEmphasized}" Value="True">
                                         <Setter Property="FontWeight" Value="Bold"/>
@@ -92,7 +92,7 @@
                                 <DataGridTextColumn Binding="{Binding MonthlyValues[11], StringFormat=N2}" Header="Dec" Width="80" ElementStyle="{StaticResource NumericColumnTextStyle}"/>
                             </DataGrid.Columns>
                             <DataGrid.RowStyle>
-                                <Style TargetType="DataGridRow">
+                                <Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding IsEmphasized}" Value="True">
                                             <Setter Property="FontWeight" Value="Bold"/>
@@ -127,7 +127,7 @@
                                                  ElementStyle="{StaticResource PlainColumnTextStyle}"/>
                         </DataGrid.Columns>
                         <DataGrid.RowStyle>
-                            <Style TargetType="DataGridRow">
+                            <Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsEmphasized}" Value="True">
                                         <Setter Property="FontWeight" Value="Bold"/>

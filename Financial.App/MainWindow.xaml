@@ -23,13 +23,13 @@
                 <local:SyncStatusIndicator DataContext="{Binding SyncStatus}"/>
                 <local:PaymentDueBanner DataContext="{Binding PaymentsDue}"/>
             </StackPanel>
-            <Border Grid.Row="1" BorderBrush="#E0E0E0" BorderThickness="0,0,0,1" Padding="16,0">
+            <Border Grid.Row="1" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" BorderThickness="0,0,0,1" Padding="16,0">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Text="{Binding BreadcrumbText}" VerticalAlignment="Center" Foreground="#666666"/>
+                    <TextBlock Grid.Column="0" Text="{Binding BreadcrumbText}" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                     <local:ColourModeToggleButton Grid.Column="1" DataContext="{Binding ColourMode}" VerticalAlignment="Center"/>
                 </Grid>
             </Border>

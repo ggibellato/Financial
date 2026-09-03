@@ -132,7 +132,7 @@
                 </DataGrid.Columns>
                 <DataGrid.RowDetailsVisibilityMode>Collapsed</DataGrid.RowDetailsVisibilityMode>
                 <DataGrid.RowStyle>
-                    <Style TargetType="DataGridRow">
+                    <Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding HasGroupTotal}" Value="True">
                                 <Setter Property="DetailsVisibility" Value="Visible"/>
