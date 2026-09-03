@@ -156,21 +156,26 @@ interface DotProps {
   key?: React.Key | null
 }
 
-function HistoryDot({ cx, cy, payload }: DotProps) {
-  if (cx === undefined || cy === undefined || payload?.price === undefined) return <g />
-  return <circle cx={cx} cy={cy} r={3} fill={payload.isManual ? MANUAL_DOT_COLOR : AUTOMATIC_DOT_COLOR} />
+const DOT_LABELS: Record<ChartPoint['kind'], string> = {
+  automatic: 'Automatic',
+  manual: 'Manual',
+  buy: 'Buy',
+  sell: 'Sell',
 }
 
-function BuyDot({ cx, cy, payload }: DotProps) {
-  if (cx === undefined || cy === undefined || payload?.buyPrice === undefined) return <g />
+function ChartDot({ cx, cy, payload }: DotProps) {
+  if (cx === undefined || cy === undefined || !payload) return <g />
   const r = MARKER_RADIUS
-  return <polygon points={`${cx},${cy - r} ${cx - r},${cy + r} ${cx + r},${cy + r}`} fill={BUY_COLOR} />
-}
-
-function SellDot({ cx, cy, payload }: DotProps) {
-  if (cx === undefined || cy === undefined || payload?.sellPrice === undefined) return <g />
-  const r = MARKER_RADIUS
-  return <polygon points={`${cx},${cy + r} ${cx - r},${cy - r} ${cx + r},${cy - r}`} fill={SELL_COLOR} />
+  switch (payload.kind) {
+    case 'automatic':
+      return <circle cx={cx} cy={cy} r={3} fill={AUTOMATIC_DOT_COLOR} />
+    case 'manual':
+      return <circle cx={cx} cy={cy} r={3} fill={MANUAL_DOT_COLOR} />
+    case 'buy':
+      return <polygon points={`${cx},${cy - r} ${cx - r},${cy + r} ${cx + r},${cy + r}`} fill={BUY_COLOR} />
+    case 'sell':
+      return <polygon points={`${cx},${cy + r} ${cx - r},${cy - r} ${cx + r},${cy - r}`} fill={SELL_COLOR} />
+  }
 }
 
 interface ChartTooltipProps {
@@ -182,34 +187,13 @@ function ChartTooltip({ active, payload }: ChartTooltipProps) {
   const point = active ? payload?.[0]?.payload : undefined
   if (!point) return null
 
-  if (point.price !== undefined) {
-    return (
-      <div className="price-history-tab__tooltip">
-        <p>{point.isManual ? 'Manual' : 'Automatic'}</p>
-        <p>{point.date}</p>
-        <p>{formatN2(point.price)}</p>
-      </div>
-    )
-  }
-  if (point.buyPrice !== undefined) {
-    return (
-      <div className="price-history-tab__tooltip">
-        <p>Buy</p>
-        <p>{point.date}</p>
-        <p>{formatN2(point.buyPrice)}</p>
-      </div>
-    )
-  }
-  if (point.sellPrice !== undefined) {
-    return (
-      <div className="price-history-tab__tooltip">
-        <p>Sell</p>
-        <p>{point.date}</p>
-        <p>{formatN2(point.sellPrice)}</p>
-      </div>
-    )
-  }
-  return null
+  return (
+    <div className="price-history-tab__tooltip">
+      <p>{DOT_LABELS[point.kind]}</p>
+      <p>{point.date}</p>
+      <p>{formatN2(point.value)}</p>
+    </div>
+  )
 }
 
 function ChartLegend() {
@@ -256,26 +240,11 @@ function ChartPanel({ entries, transactions }: ChartPanelProps) {
             <Tooltip content={<ChartTooltip />} />
             <Line
               type="monotone"
-              dataKey="price"
+              dataKey="value"
               name="Price"
               stroke={LINE_COLOR}
               strokeWidth={2}
-              connectNulls
-              dot={(props: DotProps) => <HistoryDot key={props.key} {...props} />}
-            />
-            <Line
-              dataKey="buyPrice"
-              name="Buy"
-              stroke="none"
-              isAnimationActive={false}
-              dot={(props: DotProps) => <BuyDot key={props.key} {...props} />}
-            />
-            <Line
-              dataKey="sellPrice"
-              name="Sell"
-              stroke="none"
-              isAnimationActive={false}
-              dot={(props: DotProps) => <SellDot key={props.key} {...props} />}
+              dot={(props: DotProps) => <ChartDot key={props.key} {...props} />}
             />
           </LineChart>
         </ResponsiveContainer>

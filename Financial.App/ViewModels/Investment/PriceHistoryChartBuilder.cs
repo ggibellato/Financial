@@ -14,19 +14,25 @@ internal static class PriceHistoryChartBuilder
         if (entries.Count == 0 && transactions.Count == 0)
             return model;
 
+        var linePoints = entries
+            .Select(entry => new DataPoint(ToPlotDate(entry), (double)entry.Price))
+            .Concat(transactions.Select(transaction => new DataPoint(ToPlotDate(transaction), (double)transaction.UnitPrice)))
+            .OrderBy(point => point.X)
+            .ToList();
+
+        var line = new LineSeries
+        {
+            Title = "Price",
+            Color = OxyColors.SteelBlue,
+            StrokeThickness = 2
+        };
+        foreach (var point in linePoints)
+            line.Points.Add(point);
+        model.Series.Add(line);
+
         if (entries.Count > 0)
         {
             var ordered = entries.OrderBy(entry => entry.Date).ToList();
-
-            var line = new LineSeries
-            {
-                Title = "Price",
-                Color = OxyColors.SteelBlue,
-                StrokeThickness = 2
-            };
-            foreach (var entry in ordered)
-                line.Points.Add(new DataPoint(ToPlotDate(entry), (double)entry.Price));
-            model.Series.Add(line);
 
             var manualPoints = new ScatterSeries
             {

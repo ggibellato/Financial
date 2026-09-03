@@ -80,4 +80,23 @@ public class PriceHistoryChartBuilderTests
         var sell = scatterSeries.Should().ContainSingle(s => s.Title == "Sell").Subject;
         sell.Points.Should().ContainSingle(p => p.Y == 120d);
     }
+
+    [Fact]
+    public void Build_CombinesEntriesAndTransactionsIntoOneLineSeriesOrderedByDate()
+    {
+        var entries = new List<AssetPriceSnapshotDTO>
+        {
+            new() { Date = new DateOnly(2026, 8, 20), Price = 130m, IsManual = false },
+        };
+        var transactions = new List<TransactionDTO>
+        {
+            new() { Id = Guid.NewGuid(), Date = new DateTime(2026, 8, 15), Type = "Sell", Quantity = 5m, UnitPrice = 120m, Fees = 1m, TotalPrice = 599m },
+            new() { Id = Guid.NewGuid(), Date = new DateTime(2026, 8, 14), Type = "Buy", Quantity = 10m, UnitPrice = 100m, Fees = 1m, TotalPrice = 1001m },
+        };
+
+        var model = PriceHistoryChartBuilder.Build(entries, transactions);
+
+        var line = model.Series.OfType<LineSeries>().Should().ContainSingle().Subject;
+        line.Points.Select(p => p.Y).Should().Equal(100d, 120d, 130d);
+    }
 }
