@@ -23,6 +23,10 @@ vi.mock('recharts', () => ({
   YAxis: () => null,
   CartesianGrid: () => null,
   Tooltip: () => null,
+  Legend: ({ content }: { content?: React.ReactNode }) => <>{content}</>,
+  DefaultLegendContent: ({ payload }: { payload?: { value?: string }[] }) => (
+    <div data-testid="chart-legend">{payload?.map((entry) => entry.value).join(',')}</div>
+  ),
   ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="responsive-container">{children}</div>
   ),
@@ -276,9 +280,6 @@ describe('PriceHistoryTab', () => {
 
   it('renders_chart_legend_for_all_four_series', () => {
     render(<PriceHistoryTab />)
-    expect(screen.getByText('Automatic', { selector: '.price-history-tab__legend-item' })).toBeInTheDocument()
-    expect(screen.getByText('Manual', { selector: '.price-history-tab__legend-item' })).toBeInTheDocument()
-    expect(screen.getByText('Buy', { selector: '.price-history-tab__legend-item' })).toBeInTheDocument()
-    expect(screen.getByText('Sell', { selector: '.price-history-tab__legend-item' })).toBeInTheDocument()
+    expect(screen.getByTestId('chart-legend')).toHaveTextContent('Automatic,Manual,Buy,Sell')
   })
 })

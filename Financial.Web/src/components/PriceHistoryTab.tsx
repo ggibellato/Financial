@@ -1,5 +1,7 @@
 import {
   CartesianGrid,
+  DefaultLegendContent,
+  Legend,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -196,28 +198,12 @@ function ChartTooltip({ active, payload }: ChartTooltipProps) {
   )
 }
 
-function ChartLegend() {
-  return (
-    <div className="price-history-tab__chart-legend">
-      <span className="price-history-tab__legend-item">
-        <span className="price-history-tab__legend-swatch price-history-tab__legend-swatch--automatic" />
-        Automatic
-      </span>
-      <span className="price-history-tab__legend-item">
-        <span className="price-history-tab__legend-swatch price-history-tab__legend-swatch--manual" />
-        Manual
-      </span>
-      <span className="price-history-tab__legend-item">
-        <span className="price-history-tab__legend-swatch price-history-tab__legend-swatch--buy" />
-        Buy
-      </span>
-      <span className="price-history-tab__legend-item">
-        <span className="price-history-tab__legend-swatch price-history-tab__legend-swatch--sell" />
-        Sell
-      </span>
-    </div>
-  )
-}
+const LEGEND_PAYLOAD = [
+  { value: 'Automatic', type: 'circle' as const, color: AUTOMATIC_DOT_COLOR },
+  { value: 'Manual', type: 'circle' as const, color: MANUAL_DOT_COLOR },
+  { value: 'Buy', type: 'triangle' as const, color: BUY_COLOR },
+  { value: 'Sell', type: 'diamond' as const, color: SELL_COLOR },
+]
 
 interface ChartPanelProps {
   entries: AssetPriceSnapshotDto[]
@@ -237,6 +223,7 @@ function ChartPanel({ entries, transactions }: ChartPanelProps) {
             <XAxis dataKey="date" tick={{ fontSize: 11 }} />
             <YAxis tickFormatter={formatN2} tick={{ fontSize: 11 }} width={70} />
             <Tooltip content={<ChartTooltip />} />
+            <Legend content={<DefaultLegendContent payload={LEGEND_PAYLOAD} />} />
             <Line
               type="monotone"
               dataKey="value"
@@ -248,7 +235,6 @@ function ChartPanel({ entries, transactions }: ChartPanelProps) {
           </LineChart>
         </ResponsiveContainer>
       </div>
-      <ChartLegend />
     </div>
   )
 }
