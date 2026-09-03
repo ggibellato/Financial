@@ -21,8 +21,8 @@ vi.mock('../../api/financialApiClient', () => ({
 }))
 
 const INVESTMENT_ACCOUNTS: InvestmentAccountDto[] = [
-  { id: 'a1', name: 'ChaseSave', isActive: true, isLiability: false, latestBalance: 0 },
-  { id: 'a2', name: 'PlatinumVisa8003', isActive: true, isLiability: true, latestBalance: 500 },
+  { id: 'a1', name: 'ChaseSave', isActive: true, isLiability: false, hasNonZeroInvestmentSnapshot: false },
+  { id: 'a2', name: 'PlatinumVisa8003', isActive: true, isLiability: true, hasNonZeroInvestmentSnapshot: true },
 ]
 
 describe('useInvestmentAccounts', () => {
@@ -68,7 +68,7 @@ describe('useInvestmentAccounts', () => {
       name: 'Monzo Pot',
       isActive: true,
       isLiability: false,
-      latestBalance: 0,
+      hasNonZeroInvestmentSnapshot: false,
     })
     const { result } = renderHook(() => useInvestmentAccounts())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
@@ -97,7 +97,7 @@ describe('useInvestmentAccounts', () => {
       name: 'ChaseSaveRenamed',
       isActive: false,
       isLiability: true,
-      latestBalance: 0,
+      hasNonZeroInvestmentSnapshot: false,
     })
     const { result } = renderHook(() => useInvestmentAccounts())
     await waitFor(() => expect(result.current.isLoading).toBe(false))

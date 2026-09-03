@@ -34,12 +34,12 @@ public class InvestmentAccountsEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
-    public async Task GetInvestmentAccounts_WithNoSnapshot_ReturnsZeroLatestBalance()
+    public async Task GetInvestmentAccounts_WithNoSnapshot_HasNonZeroInvestmentSnapshotIsFalse()
     {
         var response = await Client.GetAsync("/api/v1/financial/investment-accounts");
         var accounts = await response.Content.ReadFromJsonAsync<List<InvestmentAccountDTO>>();
 
-        accounts.Should().ContainSingle(a => a.Id == ChaseSaveId && a.LatestBalance == 0m);
+        accounts.Should().ContainSingle(a => a.Id == ChaseSaveId && !a.HasNonZeroInvestmentSnapshot);
     }
 
     [Fact]
@@ -55,7 +55,7 @@ public class InvestmentAccountsEndpointsTests : ApiEndpointTests
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var account = await response.Content.ReadFromJsonAsync<InvestmentAccountDTO>();
         account!.Name.Should().Be("Monzo Pot");
-        account.LatestBalance.Should().Be(0m);
+        account.HasNonZeroInvestmentSnapshot.Should().BeFalse();
         account.Id.Should().NotBe(Guid.Empty);
     }
 
@@ -156,7 +156,7 @@ public class InvestmentAccountsEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
-    public async Task DeleteInvestmentAccount_WithNonZeroLatestSnapshot_ReturnsConflictWithMessage()
+    public async Task DeleteInvestmentAccount_WithNonZeroSnapshot_ReturnsConflictWithMessage()
     {
         var snapshotsResponse = await Client.GetAsync("/api/v1/financial/investment-snapshots/2026/7");
         var snapshots = await snapshotsResponse.Content.ReadFromJsonAsync<List<InvestmentSnapshotDTO>>();
@@ -171,7 +171,27 @@ public class InvestmentAccountsEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
-    public async Task GetInvestmentAccounts_LatestBalance_ReflectsANonZeroSnapshotValue()
+    public async Task DeleteInvestmentAccount_WithOnlyZeroValueSnapshot_ReturnsOkAndRemovesIt()
+    {
+        // Opening the Investment Snapshots page for the current month auto-creates a zero-valued
+        // snapshot per active account (see GetSnapshotsForMonthAsync) - that alone must not block
+        // deletion, only a genuinely recorded non-zero value should.
+        var created = await Client.PostAsJsonAsync("/api/v1/financial/investment-accounts", new InvestmentAccountCreateDTO
+        {
+            Name = "Monzo Pot",
+            IsActive = true,
+            IsLiability = false
+        });
+        var account = await created.Content.ReadFromJsonAsync<InvestmentAccountDTO>();
+        await Client.GetAsync("/api/v1/financial/investment-snapshots/2026/7");
+
+        var response = await Client.DeleteAsync($"/api/v1/financial/investment-accounts/{account!.Id}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task GetInvestmentAccounts_HasNonZeroInvestmentSnapshot_ReflectsANonZeroSnapshotValue()
     {
         var snapshotsResponse = await Client.GetAsync("/api/v1/financial/investment-snapshots/2026/7");
         var snapshots = await snapshotsResponse.Content.ReadFromJsonAsync<List<InvestmentSnapshotDTO>>();
@@ -181,6 +201,6 @@ public class InvestmentAccountsEndpointsTests : ApiEndpointTests
         var response = await Client.GetAsync("/api/v1/financial/investment-accounts");
 
         var accounts = await response.Content.ReadFromJsonAsync<List<InvestmentAccountDTO>>();
-        accounts.Should().ContainSingle(a => a.Id == ChaseSaveId && a.LatestBalance == 500m);
+        accounts.Should().ContainSingle(a => a.Id == ChaseSaveId && a.HasNonZeroInvestmentSnapshot);
     }
 }

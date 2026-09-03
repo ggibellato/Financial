@@ -2997,7 +2997,7 @@ export interface paths {
             };
         };
         post?: never;
-        /** Deletes an investment account, when its most recent recorded balance is zero. */
+        /** Deletes an investment account, when it has no recorded non-zero investment snapshot. */
         delete: {
             parameters: {
                 query?: never;
@@ -5801,12 +5801,11 @@ export interface components {
             name: string;
         };
         InvestmentAccountDTO: {
+            hasNonZeroInvestmentSnapshot: boolean;
             /** Format: uuid */
             id: string;
             isActive: boolean;
             isLiability: boolean;
-            /** Format: double */
-            latestBalance: number;
             name: string;
         };
         InvestmentAccountUpdateDTO: {

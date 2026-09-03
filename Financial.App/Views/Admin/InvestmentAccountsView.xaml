@@ -67,7 +67,6 @@
                     <DataGridTextColumn Binding="{Binding Name}" Header="Name" Width="*"/>
                     <DataGridTextColumn Binding="{Binding IsActive}" Header="Active" Width="70"/>
                     <DataGridTextColumn Binding="{Binding IsLiability}" Header="Liability" Width="80"/>
-                    <DataGridTextColumn Binding="{Binding LatestBalance}" Header="Latest Balance" Width="110"/>
                 </DataGrid.Columns>
             </DataGrid>
         </Grid>

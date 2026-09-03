@@ -123,7 +123,7 @@ public sealed class InvestmentAccountService : IInvestmentAccountService
                 throw new KeyNotFoundException($"Investment account '{id}' was not found.");
             }
 
-            EnsureBalanceIsZero(id);
+            EnsureNoNonZeroInvestmentSnapshotExists(id);
 
             await _repository.ApplyAndSaveAsync(() =>
             {
@@ -150,23 +150,21 @@ public sealed class InvestmentAccountService : IInvestmentAccountService
         }
     }
 
-    private void EnsureBalanceIsZero(Guid accountId)
+    private void EnsureNoNonZeroInvestmentSnapshotExists(Guid accountId)
     {
-        if (GetLatestBalance(accountId) != 0m)
+        if (HasNonZeroInvestmentSnapshot(accountId))
         {
             throw new EntityInUseException("Cannot delete an investment account with a non-zero balance.");
         }
     }
 
-    /// <summary>The account's most recent InvestmentSnapshot value by (Year, Month), or 0 when none
-    /// exists. Also drives <see cref="InvestmentAccountDTO.LatestBalance"/>.</summary>
-    private decimal GetLatestBalance(Guid accountId) =>
-        _repository.GetInvestmentSnapshots()
-            .Where(s => s.Account.Id == accountId)
-            .OrderByDescending(s => s.Year)
-            .ThenByDescending(s => s.Month)
-            .Select(s => s.Value)
-            .FirstOrDefault();
+    /// <summary>Whether any InvestmentSnapshot recorded for this account has a non-zero value.
+    /// Checking every snapshot (not just the chronologically latest) matters because the import
+    /// writes an explicit 0 for every not-yet-happened month of the current year, which would
+    /// otherwise outrank a real balance recorded earlier that same year. Also drives
+    /// <see cref="InvestmentAccountDTO.HasNonZeroInvestmentSnapshot"/>.</summary>
+    private bool HasNonZeroInvestmentSnapshot(Guid accountId) =>
+        _repository.GetInvestmentSnapshots().Any(s => s.Account.Id == accountId && s.Value != 0m);
 
     private ITelemetrySpan StartSpan(string operationName)
     {
@@ -180,6 +178,6 @@ public sealed class InvestmentAccountService : IInvestmentAccountService
         Name = account.Name,
         IsActive = account.IsActive,
         IsLiability = account.IsLiability,
-        LatestBalance = GetLatestBalance(account.Id)
+        HasNonZeroInvestmentSnapshot = HasNonZeroInvestmentSnapshot(account.Id)
     };
 }

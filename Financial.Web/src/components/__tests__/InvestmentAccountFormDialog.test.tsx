@@ -20,7 +20,7 @@ describe('InvestmentAccountFormDialog', () => {
           name: 'ChaseSave',
           isActive: false,
           isLiability: true,
-          latestBalance: 0,
+          hasNonZeroInvestmentSnapshot: false,
         }}
         onCancel={vi.fn()}
         onSubmit={vi.fn()}

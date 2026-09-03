@@ -15,13 +15,13 @@ public class InvestmentAccountsViewModelTests
         return (viewModel, service, dialog);
     }
 
-    private static InvestmentAccountDTO Account(Guid id, string name, bool isActive = true, bool isLiability = false, decimal latestBalance = 0m) => new()
+    private static InvestmentAccountDTO Account(Guid id, string name, bool isActive = true, bool isLiability = false, bool hasNonZeroInvestmentSnapshot = false) => new()
     {
         Id = id,
         Name = name,
         IsActive = isActive,
         IsLiability = isLiability,
-        LatestBalance = latestBalance,
+        HasNonZeroInvestmentSnapshot = hasNonZeroInvestmentSnapshot,
     };
 
     [Fact]
@@ -93,24 +93,24 @@ public class InvestmentAccountsViewModelTests
     }
 
     [Fact]
-    public async Task DeleteInvestmentAccountAsync_NonZeroLatestBalance_SurfacesErrorWithoutConfirmingOrCallingService()
+    public async Task DeleteInvestmentAccountAsync_HasNonZeroInvestmentSnapshot_SurfacesErrorWithoutConfirmingOrCallingService()
     {
         var (viewModel, service, dialog) = CreateViewModel();
-        var account = Account(Guid.NewGuid(), "ChaseSave", latestBalance: 500m);
+        var account = Account(Guid.NewGuid(), "ChaseSave", hasNonZeroInvestmentSnapshot: true);
 
         await viewModel.DeleteInvestmentAccountAsync(account);
 
-        viewModel.ActionError.Should().Contain("not zero");
+        viewModel.ActionError.Should().Contain("non-zero balance");
         dialog.LastConfirmMessage.Should().BeNull();
         service.LastDeletedId.Should().BeNull();
     }
 
     [Fact]
-    public async Task DeleteInvestmentAccountAsync_ZeroLatestBalance_ConfirmsThenDeletes()
+    public async Task DeleteInvestmentAccountAsync_NoNonZeroInvestmentSnapshot_ConfirmsThenDeletes()
     {
         var (viewModel, service, dialog) = CreateViewModel();
         var id = Guid.NewGuid();
-        var account = Account(id, "ChaseSave", latestBalance: 0m);
+        var account = Account(id, "ChaseSave", hasNonZeroInvestmentSnapshot: false);
 
         await viewModel.DeleteInvestmentAccountAsync(account);
 

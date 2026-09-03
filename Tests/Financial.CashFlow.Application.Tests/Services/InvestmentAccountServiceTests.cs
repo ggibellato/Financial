@@ -83,6 +83,61 @@ public class InvestmentAccountServiceTests
     }
 
     [Fact]
+    public void GetInvestmentAccounts_WithNoSnapshots_HasNonZeroInvestmentSnapshotIsFalse()
+    {
+        var account = InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false);
+        _repository.InvestmentAccounts.Add(account);
+
+        var result = _sut.GetInvestmentAccounts();
+
+        result.Should().ContainSingle(a => a.Id == account.Id).Which.HasNonZeroInvestmentSnapshot.Should().BeFalse();
+    }
+
+    [Fact]
+    public void GetInvestmentAccounts_WithOnlyZeroValueSnapshots_HasNonZeroInvestmentSnapshotIsFalse()
+    {
+        // A zero-valued snapshot (e.g. an import-generated placeholder for a not-yet-happened month)
+        // must not read as "has a balance" - only an actual non-zero recorded value should.
+        var account = InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false);
+        _repository.InvestmentAccounts.Add(account);
+        _repository.InvestmentSnapshots.Add(InvestmentSnapshot.Create(account, 2026, 6, 0m));
+
+        var result = _sut.GetInvestmentAccounts();
+
+        result.Should().ContainSingle(a => a.Id == account.Id).Which.HasNonZeroInvestmentSnapshot.Should().BeFalse();
+    }
+
+    [Fact]
+    public void GetInvestmentAccounts_WithANonZeroSnapshot_HasNonZeroInvestmentSnapshotIsTrue()
+    {
+        var account = InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false);
+        _repository.InvestmentAccounts.Add(account);
+        _repository.InvestmentSnapshots.Add(InvestmentSnapshot.Create(account, 2026, 6, 500m));
+
+        var result = _sut.GetInvestmentAccounts();
+
+        result.Should().ContainSingle(a => a.Id == account.Id).Which.HasNonZeroInvestmentSnapshot.Should().BeTrue();
+    }
+
+    [Fact]
+    public void GetInvestmentAccounts_WithANonZeroSnapshotInAnyMonth_HasNonZeroInvestmentSnapshotIsTrueRegardlessOfOrder()
+    {
+        // Reproduces the original bug scenario: a real balance recorded mid-year, followed by
+        // import-generated zero placeholders for later, not-yet-happened months. The old
+        // "chronologically latest" check would miss this; checking every snapshot does not.
+        var account = InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false);
+        _repository.InvestmentAccounts.Add(account);
+        _repository.InvestmentSnapshots.Add(InvestmentSnapshot.Create(account, 2026, 9, 5000m));
+        _repository.InvestmentSnapshots.Add(InvestmentSnapshot.Create(account, 2026, 10, 0m));
+        _repository.InvestmentSnapshots.Add(InvestmentSnapshot.Create(account, 2026, 11, 0m));
+        _repository.InvestmentSnapshots.Add(InvestmentSnapshot.Create(account, 2026, 12, 0m));
+
+        var result = _sut.GetInvestmentAccounts();
+
+        result.Should().ContainSingle(a => a.Id == account.Id).Which.HasNonZeroInvestmentSnapshot.Should().BeTrue();
+    }
+
+    [Fact]
     public void Constructor_WithNullLogger_Throws()
     {
         Action act = () => new InvestmentAccountService(_repository, _tracer, null!);
@@ -100,7 +155,7 @@ public class InvestmentAccountServiceTests
         using (new AssertionScope())
         {
             result.Name.Should().Be("ChaseSave");
-            result.LatestBalance.Should().Be(0m);
+            result.HasNonZeroInvestmentSnapshot.Should().BeFalse();
             _repository.InvestmentAccounts.Should().ContainSingle(a => a.Name == "ChaseSave");
             _repository.SaveChangesCallCount.Should().Be(1);
         }
@@ -185,7 +240,7 @@ public class InvestmentAccountServiceTests
     }
 
     [Fact]
-    public async Task DeleteInvestmentAccountAsync_WithNoSnapshot_RemovesAndSaves()
+    public async Task DeleteInvestmentAccountAsync_WithNoSnapshots_RemovesAndSaves()
     {
         var account = InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false);
         _repository.InvestmentAccounts.Add(account);
@@ -200,8 +255,11 @@ public class InvestmentAccountServiceTests
     }
 
     [Fact]
-    public async Task DeleteInvestmentAccountAsync_WithZeroLatestSnapshot_RemovesAndSaves()
+    public async Task DeleteInvestmentAccountAsync_WithOnlyZeroValueSnapshots_RemovesAndSaves()
     {
+        // Zero-valued snapshots (e.g. import-generated placeholders for not-yet-happened months, or
+        // simply opening the Investment Snapshots page for the current month, which auto-creates one
+        // per active account) must not block deletion - only a genuinely recorded non-zero value should.
         var account = InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false);
         _repository.InvestmentAccounts.Add(account);
         _repository.InvestmentSnapshots.Add(InvestmentSnapshot.Create(account, 2026, 6, 0m));
@@ -220,7 +278,7 @@ public class InvestmentAccountServiceTests
     }
 
     [Fact]
-    public async Task DeleteInvestmentAccountAsync_WithNonZeroLatestSnapshot_ThrowsAndWritesNothing()
+    public async Task DeleteInvestmentAccountAsync_WithNonZeroSnapshot_ThrowsAndWritesNothing()
     {
         var account = InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false);
         _repository.InvestmentAccounts.Add(account);
@@ -237,28 +295,20 @@ public class InvestmentAccountServiceTests
     }
 
     [Fact]
-    public async Task DeleteInvestmentAccountAsync_UsesTheHighestYearMonthSnapshotNotTheLatestAdded()
+    public async Task DeleteInvestmentAccountAsync_WithNonZeroSnapshotInAnyMonth_ThrowsRegardlessOfOrder()
     {
+        // Reproduces the original bug scenario: a real balance recorded mid-year, followed by
+        // import-generated zero placeholders for later, not-yet-happened months. The old
+        // "chronologically latest" check would have missed this and allowed the delete.
         var account = InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false);
         _repository.InvestmentAccounts.Add(account);
-        _repository.InvestmentSnapshots.Add(InvestmentSnapshot.Create(account, 2026, 7, 500m));
-        _repository.InvestmentSnapshots.Add(InvestmentSnapshot.Create(account, 2026, 6, 0m));
+        _repository.InvestmentSnapshots.Add(InvestmentSnapshot.Create(account, 2026, 9, 5000m));
+        _repository.InvestmentSnapshots.Add(InvestmentSnapshot.Create(account, 2026, 10, 0m));
+        _repository.InvestmentSnapshots.Add(InvestmentSnapshot.Create(account, 2026, 11, 0m));
+        _repository.InvestmentSnapshots.Add(InvestmentSnapshot.Create(account, 2026, 12, 0m));
 
         var act = async () => await _sut.DeleteInvestmentAccountAsync(account.Id);
 
         await act.Should().ThrowAsync<EntityInUseException>();
-    }
-
-    [Fact]
-    public void GetInvestmentAccounts_LatestBalance_ReflectsTheMostRecentSnapshotByYearThenMonth()
-    {
-        var account = InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false);
-        _repository.InvestmentAccounts.Add(account);
-        _repository.InvestmentSnapshots.Add(InvestmentSnapshot.Create(account, 2025, 12, 100m));
-        _repository.InvestmentSnapshots.Add(InvestmentSnapshot.Create(account, 2026, 1, 250m));
-
-        var result = _sut.GetInvestmentAccounts();
-
-        result.Should().ContainSingle(a => a.Id == account.Id).Which.LatestBalance.Should().Be(250m);
     }
 }
