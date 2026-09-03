@@ -93,8 +93,8 @@ describe('ControleMaePage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'New Entry' }))
 
-    expect(screen.getByLabelText('Date')).toBeInTheDocument()
-    expect(screen.getByLabelText('Description')).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Date/)).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Description/)).toBeInTheDocument()
     expect(screen.getByLabelText('Currency')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Add Entry' })).toBeInTheDocument()
   })
@@ -106,8 +106,8 @@ describe('ControleMaePage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'New Entry' }))
 
     const fieldLabels = screen
-      .getAllByText(/^(Date|Currency|Description|Note|Value)$/, { selector: 'label' })
-      .map((label) => label.textContent)
+      .getAllByText(/^(Date|Currency|Description|Note|Value)\*?$/, { selector: 'label' })
+      .map((label) => label.textContent?.replace(/\*$/, ''))
     expect(fieldLabels).toEqual(['Date', 'Currency', 'Description', 'Note', 'Value'])
   })
 

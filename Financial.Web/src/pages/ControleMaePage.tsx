@@ -1,10 +1,12 @@
-import { Button } from '@fluentui/react-components'
-import { AddRegular, DeleteRegular } from '@fluentui/react-icons'
+import { Button, Field, Input, MessageBar, MessageBarBody, Select, Text } from '@fluentui/react-components'
+import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import type { MaeLedgerEntryDto } from '../api/types'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
 import SortableColumnHeader from '../components/grid/SortableColumnHeader'
+import { useFormPanelStyles } from '../components/formPanelStyles'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
+import { useFieldError } from '../hooks/useFieldError'
 import { useControleMae } from '../hooks/useControleMae'
 import { confirmThenRun } from '../utils/confirmThenRun'
 import { formatN2, formatShortDate } from '../utils/formatters'
@@ -35,27 +37,25 @@ function EntryRow({ entry, isDeleting, onEdit, onDelete }: EntryRowProps) {
   return (
     <tr>
       <td>
-        <button
-          className="data-table__action-btn"
-          type="button"
+        <Button
+          appearance="subtle"
+          size="small"
+          icon={<EditRegular />}
           aria-label="Edit entry"
           onClick={() => onEdit(entry)}
-        >
-          ✏
-        </button>
+        />
       </td>
       <td>
-        <button
-          className="data-table__action-btn"
-          type="button"
+        <Button
+          appearance="subtle"
+          size="small"
+          icon={<DeleteRegular />}
           aria-label={isDeleting ? 'Deleting entry' : 'Delete entry'}
           disabled={isDeleting}
           onClick={() =>
             confirmThenRun(`Delete "${entry.description}"? This removes it for good.`, () => onDelete(entry.id))
           }
-        >
-          <DeleteRegular />
-        </button>
+        />
       </td>
       <td>{formatShortDate(entry.date)}</td>
       <td>{entry.description}</td>
@@ -83,6 +83,7 @@ export default function ControleMaePage() {
     createSourceValue,
     isCreating,
     createError,
+    createErrorField,
     showCreateForm,
     cancelCreateForm,
     setCreateField,
@@ -92,6 +93,7 @@ export default function ControleMaePage() {
     editGbpValue,
     isSaving,
     saveError,
+    saveErrorField,
     setEditField,
     showEditForm,
     cancelEdit,
@@ -103,6 +105,9 @@ export default function ControleMaePage() {
 
   const isEditing = editingId !== null
   const isFormVisible = isCreateFormOpen || isEditing
+  const styles = useFormPanelStyles()
+  const createFieldError = useFieldError(createError, createErrorField)
+  const editFieldError = useFieldError(saveError, saveErrorField)
 
   const entryAccessors: Record<string, SortAccessor<MaeLedgerEntryDto>> = {
     date: (entry) => new Date(entry.date),
@@ -133,98 +138,109 @@ export default function ControleMaePage() {
       {deleteError && <p className="controle-mae-page__error">{deleteError}</p>}
 
       {isFormVisible && (
-        <div className="controle-mae-page__form-panel">
-          <p className="controle-mae-page__form-title">{isEditing ? 'Edit Entry' : 'New Entry'}</p>
+        <div className={styles.panel}>
+          <Text as="h2" weight="semibold" size={400}>
+            {isEditing ? 'Edit Entry' : 'New Entry'}
+          </Text>
+
           {isEditing ? (
-            <div className="controle-mae-page__form">
-              <div className="controle-mae-page__form-field">
-                <label htmlFor="edit-brl-value">BRL</label>
-                <input
-                  id="edit-brl-value"
+            <div className={styles.grid}>
+              <Field
+                label="BRL"
+                validationState={editFieldError('editBrlValue') ? 'error' : 'none'}
+                validationMessage={editFieldError('editBrlValue')}
+              >
+                <Input
                   type="number"
                   step="0.01"
                   value={editBrlValue}
                   onChange={(e) => setEditField('editBrlValue', e.target.value)}
                 />
-              </div>
-              <div className="controle-mae-page__form-field">
-                <label htmlFor="edit-gbp-value">GBP</label>
-                <input
-                  id="edit-gbp-value"
+              </Field>
+
+              <Field
+                label="GBP"
+                validationState={editFieldError('editGbpValue') ? 'error' : 'none'}
+                validationMessage={editFieldError('editGbpValue')}
+              >
+                <Input
                   type="number"
                   step="0.01"
                   value={editGbpValue}
                   onChange={(e) => setEditField('editGbpValue', e.target.value)}
                 />
-              </div>
+              </Field>
             </div>
           ) : (
-            <div className="controle-mae-page__form">
-              <div className="controle-mae-page__form-field">
-                <label htmlFor="create-date">Date</label>
-                <input
-                  id="create-date"
-                  type="date"
-                  value={createDate}
-                  onChange={(e) => setCreateField('createDate', e.target.value)}
-                />
-              </div>
-              <div className="controle-mae-page__form-field">
-                <label htmlFor="create-currency">Currency</label>
-                <select
-                  id="create-currency"
+            <div className={styles.grid}>
+              <Field
+                label="Date"
+                required
+                validationState={createFieldError('createDate') ? 'error' : 'none'}
+                validationMessage={createFieldError('createDate')}
+              >
+                <Input type="date" value={createDate} onChange={(e) => setCreateField('createDate', e.target.value)} />
+              </Field>
+
+              <Field label="Currency">
+                <Select
                   value={createSourceCurrency}
                   onChange={(e) => setCreateField('createSourceCurrency', e.target.value)}
                 >
                   <option value="BRL">BRL</option>
                   <option value="GBP">GBP</option>
-                </select>
+                </Select>
+              </Field>
+
+              <div className={styles.spanTwo}>
+                <Field
+                  label="Description"
+                  required
+                  validationState={createFieldError('createDescription') ? 'error' : 'none'}
+                  validationMessage={createFieldError('createDescription')}
+                >
+                  <Input
+                    value={createDescription}
+                    onChange={(e) => setCreateField('createDescription', e.target.value)}
+                  />
+                </Field>
               </div>
-              <div className="controle-mae-page__form-field">
-                <label htmlFor="create-description">Description</label>
-                <input
-                  id="create-description"
-                  type="text"
-                  value={createDescription}
-                  onChange={(e) => setCreateField('createDescription', e.target.value)}
-                />
+
+              <div className={styles.spanTwo}>
+                <Field label="Note">
+                  <Input value={createNote} onChange={(e) => setCreateField('createNote', e.target.value)} />
+                </Field>
               </div>
-              <div className="controle-mae-page__form-field">
-                <label htmlFor="create-note">Note</label>
-                <input
-                  id="create-note"
-                  type="text"
-                  value={createNote}
-                  onChange={(e) => setCreateField('createNote', e.target.value)}
-                />
-              </div>
-              <div className="controle-mae-page__form-field">
-                <label htmlFor="create-value">Value</label>
-                <input
-                  id="create-value"
+
+              <Field
+                label="Value"
+                required
+                validationState={createFieldError('createSourceValue') ? 'error' : 'none'}
+                validationMessage={createFieldError('createSourceValue')}
+              >
+                <Input
                   type="number"
                   step="0.01"
                   value={createSourceValue}
                   onChange={(e) => setCreateField('createSourceValue', e.target.value)}
                 />
-              </div>
+              </Field>
             </div>
           )}
-          <div className="controle-mae-page__form-actions">
-            <button
-              className="controle-mae-page__submit-btn"
-              type="button"
-              disabled={isEditing ? isSaving : isCreating}
-              onClick={isEditing ? saveEdit : submitCreate}
-            >
+
+          <div className={styles.actions}>
+            <Button appearance="primary" disabled={isEditing ? isSaving : isCreating} onClick={isEditing ? saveEdit : submitCreate}>
               {isEditing ? (isSaving ? 'Saving...' : 'Save') : isCreating ? 'Saving...' : 'Add Entry'}
-            </button>
-            <button className="controle-mae-page__cancel-btn" type="button" onClick={isEditing ? cancelEdit : cancelCreateForm}>
+            </Button>
+            <Button appearance="secondary" onClick={isEditing ? cancelEdit : cancelCreateForm}>
               Cancel
-            </button>
+            </Button>
           </div>
+
           {(isEditing ? saveError : createError) && (
-            <p className="controle-mae-page__error">{isEditing ? saveError : createError}</p>
+            <MessageBar intent="error">
+              <MessageBarBody>{isEditing ? saveError : createError}</MessageBarBody>
+            </MessageBar>
           )}
         </div>
       )}

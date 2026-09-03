@@ -26,11 +26,13 @@ interface ControleMaeState {
   createSourceValue: string
   isCreating: boolean
   createError: string | null
+  createErrorField: CreateFormField | null
   editingId: string | null
   editBrlValue: string
   editGbpValue: string
   isSaving: boolean
   saveError: string | null
+  saveErrorField: EditField | null
   deletingId: string | null
   deleteError: string | null
 }
@@ -47,13 +49,13 @@ type ControleMaeAction =
   | { type: 'SET_CREATE_FIELD'; payload: { field: CreateFormField; value: string } }
   | { type: 'CREATE_START' }
   | { type: 'CREATE_SUCCESS' }
-  | { type: 'CREATE_ERROR'; payload: string }
+  | { type: 'CREATE_ERROR'; payload: { message: string; field: CreateFormField | null } }
   | { type: 'SHOW_EDIT_FORM'; payload: MaeLedgerEntryDto }
   | { type: 'CANCEL_EDIT' }
   | { type: 'SET_EDIT_FIELD'; payload: { field: EditField; value: string } }
   | { type: 'SAVE_START' }
   | { type: 'SAVE_SUCCESS' }
-  | { type: 'SAVE_ERROR'; payload: string }
+  | { type: 'SAVE_ERROR'; payload: { message: string; field: EditField | null } }
   | { type: 'DELETE_START'; payload: string }
   | { type: 'DELETE_SUCCESS' }
   | { type: 'DELETE_ERROR'; payload: string }
@@ -77,11 +79,13 @@ const INITIAL_STATE: ControleMaeState = {
   ...BLANK_CREATE_FORM,
   isCreating: false,
   createError: null,
+  createErrorField: null,
   editingId: null,
   editBrlValue: '',
   editGbpValue: '',
   isSaving: false,
   saveError: null,
+  saveErrorField: null,
   deletingId: null,
   deleteError: null,
 }
@@ -106,19 +110,20 @@ function reducer(state: ControleMaeState, action: ControleMaeAction): ControleMa
         isCreateFormOpen: true,
         editingId: null,
         saveError: null,
+        saveErrorField: null,
         createDate: action.payload.date,
         createSourceCurrency: action.payload.sourceCurrency,
       }
     case 'CANCEL_CREATE_FORM':
-      return { ...state, ...BLANK_CREATE_FORM, isCreateFormOpen: false, createError: null }
+      return { ...state, ...BLANK_CREATE_FORM, isCreateFormOpen: false, createError: null, createErrorField: null }
     case 'SET_CREATE_FIELD':
       return { ...state, [action.payload.field]: action.payload.value }
     case 'CREATE_START':
-      return { ...state, isCreating: true, createError: null }
+      return { ...state, isCreating: true, createError: null, createErrorField: null }
     case 'CREATE_SUCCESS':
       return { ...state, ...BLANK_CREATE_FORM, isCreateFormOpen: false, isCreating: false }
     case 'CREATE_ERROR':
-      return { ...state, isCreating: false, createError: action.payload }
+      return { ...state, isCreating: false, createError: action.payload.message, createErrorField: action.payload.field }
     case 'SHOW_EDIT_FORM':
       return {
         ...state,
@@ -127,17 +132,18 @@ function reducer(state: ControleMaeState, action: ControleMaeAction): ControleMa
         editBrlValue: action.payload.brlValue !== null ? String(action.payload.brlValue) : '',
         editGbpValue: action.payload.gbpValue !== null ? String(action.payload.gbpValue) : '',
         saveError: null,
+        saveErrorField: null,
       }
     case 'CANCEL_EDIT':
-      return { ...state, editingId: null, editBrlValue: '', editGbpValue: '', saveError: null }
+      return { ...state, editingId: null, editBrlValue: '', editGbpValue: '', saveError: null, saveErrorField: null }
     case 'SET_EDIT_FIELD':
       return { ...state, [action.payload.field]: action.payload.value }
     case 'SAVE_START':
-      return { ...state, isSaving: true, saveError: null }
+      return { ...state, isSaving: true, saveError: null, saveErrorField: null }
     case 'SAVE_SUCCESS':
       return { ...state, isSaving: false, editingId: null, editBrlValue: '', editGbpValue: '' }
     case 'SAVE_ERROR':
-      return { ...state, isSaving: false, saveError: action.payload }
+      return { ...state, isSaving: false, saveError: action.payload.message, saveErrorField: action.payload.field }
     case 'DELETE_START':
       return { ...state, deletingId: action.payload, deleteError: null }
     case 'DELETE_SUCCESS':
@@ -165,6 +171,7 @@ export interface ControleMaeData {
   createSourceValue: string
   isCreating: boolean
   createError: string | null
+  createErrorField: CreateFormField | null
   showCreateForm: () => void
   cancelCreateForm: () => void
   setCreateField: (field: CreateFormField, value: string) => void
@@ -174,6 +181,7 @@ export interface ControleMaeData {
   editGbpValue: string
   isSaving: boolean
   saveError: string | null
+  saveErrorField: EditField | null
   setEditField: (field: EditField, value: string) => void
   showEditForm: (entry: MaeLedgerEntryDto) => void
   cancelEdit: () => void
@@ -234,18 +242,18 @@ export function useControleMae(): ControleMaeData {
     const { createDate, createDescription, createSourceCurrency, createSourceValue, createNote } = state
 
     if (!createDate.trim()) {
-      dispatch({ type: 'CREATE_ERROR', payload: 'Date is required' })
+      dispatch({ type: 'CREATE_ERROR', payload: { message: 'Date is required', field: 'createDate' } })
       return
     }
 
     if (!createDescription.trim()) {
-      dispatch({ type: 'CREATE_ERROR', payload: 'Description is required' })
+      dispatch({ type: 'CREATE_ERROR', payload: { message: 'Description is required', field: 'createDescription' } })
       return
     }
 
     const sourceValue = Number(createSourceValue)
     if (!createSourceValue.trim() || !isFinite(sourceValue) || sourceValue === 0) {
-      dispatch({ type: 'CREATE_ERROR', payload: 'Value must be a non-zero number' })
+      dispatch({ type: 'CREATE_ERROR', payload: { message: 'Value must be a non-zero number', field: 'createSourceValue' } })
       return
     }
 
@@ -268,7 +276,7 @@ export function useControleMae(): ControleMaeData {
       .catch((err: unknown) => {
         dispatch({
           type: 'CREATE_ERROR',
-          payload: getErrorMessage(err, 'Failed to create entry'),
+          payload: { message: getErrorMessage(err, 'Failed to create entry'), field: null },
         })
       })
   }
@@ -289,7 +297,16 @@ export function useControleMae(): ControleMaeData {
     if (!state.editingId) return
 
     const brlValue = state.editBrlValue.trim() === '' ? null : Number(state.editBrlValue)
+    if (brlValue !== null && !isFinite(brlValue)) {
+      dispatch({ type: 'SAVE_ERROR', payload: { message: 'BRL value must be a number', field: 'editBrlValue' } })
+      return
+    }
+
     const gbpValue = state.editGbpValue.trim() === '' ? null : Number(state.editGbpValue)
+    if (gbpValue !== null && !isFinite(gbpValue)) {
+      dispatch({ type: 'SAVE_ERROR', payload: { message: 'GBP value must be a number', field: 'editGbpValue' } })
+      return
+    }
 
     dispatch({ type: 'SAVE_START' })
 
@@ -302,7 +319,7 @@ export function useControleMae(): ControleMaeData {
       .catch((err: unknown) => {
         dispatch({
           type: 'SAVE_ERROR',
-          payload: getErrorMessage(err, 'Failed to update entry'),
+          payload: { message: getErrorMessage(err, 'Failed to update entry'), field: null },
         })
       })
   }
@@ -340,6 +357,7 @@ export function useControleMae(): ControleMaeData {
     createSourceValue: state.createSourceValue,
     isCreating: state.isCreating,
     createError: state.createError,
+    createErrorField: state.createErrorField,
     showCreateForm,
     cancelCreateForm,
     setCreateField,
@@ -349,6 +367,7 @@ export function useControleMae(): ControleMaeData {
     editGbpValue: state.editGbpValue,
     isSaving: state.isSaving,
     saveError: state.saveError,
+    saveErrorField: state.saveErrorField,
     setEditField,
     showEditForm,
     cancelEdit,
