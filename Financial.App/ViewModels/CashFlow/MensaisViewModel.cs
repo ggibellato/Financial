@@ -198,8 +198,27 @@ public class MensaisViewModel : ViewModelBase
     public string? AddSaveError
     {
         get => _addSaveError;
-        private set => SetProperty(ref _addSaveError, value);
+        private set
+        {
+            if (SetProperty(ref _addSaveError, value))
+            {
+                OnPropertyChanged(nameof(NewDescriptionFieldError));
+                OnPropertyChanged(nameof(NewDueDayFieldError));
+                OnPropertyChanged(nameof(NewValueFieldError));
+            }
+        }
     }
+
+    public string? NewDescriptionFieldError => MatchAddFieldError("Description is required.");
+
+    public string? NewDueDayFieldError => MatchAddFieldError("Due Day must be");
+
+    public string? NewValueFieldError => MatchAddFieldError("Value must be a number.");
+
+    private string? MatchAddFieldError(params string[] fragments) =>
+        AddSaveError is { } error && fragments.Any(f => error.Contains(f, StringComparison.OrdinalIgnoreCase))
+            ? error
+            : null;
 
     public RelayCommand ShowAddFormCommand { get; private set; } = null!;
     public RelayCommand CancelAddFormCommand { get; private set; } = null!;
@@ -291,8 +310,24 @@ public class MensaisViewModel : ViewModelBase
     public string? EditSaveError
     {
         get => _editSaveError;
-        private set => SetProperty(ref _editSaveError, value);
+        private set
+        {
+            if (SetProperty(ref _editSaveError, value))
+            {
+                OnPropertyChanged(nameof(EditValueFieldError));
+                OnPropertyChanged(nameof(EditStatusFieldError));
+            }
+        }
     }
+
+    public string? EditValueFieldError => MatchEditFieldError("Value must be a number.");
+
+    public string? EditStatusFieldError => MatchEditFieldError("Status is required.");
+
+    private string? MatchEditFieldError(params string[] fragments) =>
+        EditSaveError is { } error && fragments.Any(f => error.Contains(f, StringComparison.OrdinalIgnoreCase))
+            ? error
+            : null;
 
     public string? DeleteError
     {
