@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { afterEach, describe, expect, it } from 'vitest'
 import App from '../App'
+import { financialLightTheme } from '../theme/fluentTheme'
 
 const AppWithRoutes = ({ initialEntry = '/investments/active-investments' }: { initialEntry?: string }) => (
   <MemoryRouter initialEntries={[initialEntry]}>
@@ -67,5 +68,20 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('link', { name: 'Monthly' }))
 
     expect(sessionStorage.getItem('financial.selectedDomain')).toBe('cashflow')
+  })
+
+  it('renders_in_light_mode_by_default_regardless_of_os_preference', () => {
+    render(<AppWithRoutes />)
+
+    const provider = document.querySelector('.fui-FluentProvider') as HTMLElement
+    const instanceClass = Array.from(provider.classList).find((c) => /^fui-FluentProvider_r_\d+_$/.test(c))
+    const themeRule = Array.from(document.styleSheets)
+      .flatMap((sheet) => Array.from(sheet.cssRules))
+      .find((rule) => 'selectorText' in rule && (rule as CSSStyleRule).selectorText === `.${instanceClass}`) as
+      | CSSStyleRule
+      | undefined
+
+    expect(themeRule).toBeDefined()
+    expect(themeRule!.cssText).toContain(`--colorNeutralBackground1: ${financialLightTheme.colorNeutralBackground1};`)
   })
 })
