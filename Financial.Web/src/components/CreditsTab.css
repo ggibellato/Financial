@@ -191,7 +191,7 @@
 .credits-tab__error {
   margin-top: 6px;
   font-size: 12px;
-  color: #c62828;
+  color: var(--error);
 }
 
 .credits-tab__table-wrapper {
@@ -235,7 +235,7 @@
 .credits-tab__delete-error {
   padding: 6px 16px;
   font-size: 12px;
-  color: #c62828;
+  color: var(--error);
   flex-shrink: 0;
 }
 

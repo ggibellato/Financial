@@ -42,7 +42,7 @@
                  behaviors:DecimalInputBehavior.IsEnabled="True"/>
 
         <TextBlock Grid.Row="3" Grid.ColumnSpan="2"
-                   Foreground="Red"
+                   Foreground="{DynamicResource SystemFillColorCriticalBrush}"
                    TextWrapping="Wrap"
                    Text="{Binding ValidationMessage}"
                    Margin="0,8,0,0"/>

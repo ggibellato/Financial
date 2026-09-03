@@ -43,7 +43,7 @@
 }
 
 .detail-panel__status--long {
-  color: #2e7d32;
+  color: var(--success);
 }
 
 .detail-panel__status--flat {
@@ -51,7 +51,7 @@
 }
 
 .detail-panel__status--short {
-  color: #c62828;
+  color: var(--danger);
 }
 
 .detail-panel__breadcrumb {

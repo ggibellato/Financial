@@ -190,7 +190,7 @@
 .transactions-tab__error {
   margin-top: 6px;
   font-size: 12px;
-  color: #c62828;
+  color: var(--error);
 }
 
 .transactions-tab__table-wrapper {
@@ -216,12 +216,12 @@
 }
 
 .transactions-tab__type--buy {
-  color: #2e7d32;
+  color: var(--success);
   font-weight: bold;
 }
 
 .transactions-tab__type--sell {
-  color: #c62828;
+  color: var(--danger);
   font-weight: bold;
 }
 
@@ -232,6 +232,6 @@
 .transactions-tab__delete-error {
   padding: 6px 16px;
   font-size: 12px;
-  color: #c62828;
+  color: var(--error);
   flex-shrink: 0;
 }

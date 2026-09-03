@@ -20,7 +20,7 @@
                     Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
         <StackPanel Grid.Row="0" Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}">
-            <TextBlock Text="{Binding Error}" Foreground="Red" TextWrapping="Wrap"/>
+            <TextBlock Text="{Binding Error}" Foreground="{DynamicResource SystemFillColorCriticalBrush}" TextWrapping="Wrap"/>
             <Button Content="Retry" Command="{Binding RetryCommand}" HorizontalAlignment="Left" Margin="0,8,0,0"/>
         </StackPanel>
 
@@ -43,7 +43,7 @@
             <local:CreateEntryFormView Grid.Row="1" Visibility="{Binding IsCreateFormOpen, Converter={StaticResource BoolToVisibilityConverter}}"/>
             <local:EditEntryFormView Grid.Row="1" Visibility="{Binding IsEditFormOpen, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
-            <TextBlock Grid.Row="2" Foreground="Red" TextWrapping="Wrap" Margin="0,0,0,4" Text="{Binding DeleteError}"/>
+            <TextBlock Grid.Row="2" Foreground="{DynamicResource SystemFillColorCriticalBrush}" TextWrapping="Wrap" Margin="0,0,0,4" Text="{Binding DeleteError}"/>
 
             <DataGrid Grid.Row="3" ItemsSource="{Binding Entries}" AutoGenerateColumns="False" IsReadOnly="True">
                 <DataGrid.Columns>

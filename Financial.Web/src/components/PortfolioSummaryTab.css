@@ -37,11 +37,11 @@
 }
 
 .portfolio-summary__profit--green {
-  color: #2e7d32;
+  color: var(--success);
 }
 
 .portfolio-summary__profit--red {
-  color: #c62828;
+  color: var(--danger);
 }
 
 .portfolio-summary__loading-cell {

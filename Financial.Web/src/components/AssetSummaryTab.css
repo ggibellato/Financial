@@ -35,11 +35,11 @@
 }
 
 .asset-summary__value--green {
-  color: #2e7d32;
+  color: var(--success);
 }
 
 .asset-summary__value--red {
-  color: #c62828;
+  color: var(--danger);
 }
 
 .asset-summary__value--blue {
@@ -47,7 +47,7 @@
 }
 
 .asset-summary__value--error {
-  color: #b71c1c;
+  color: var(--error);
 }
 
 .asset-summary__manual-badge {

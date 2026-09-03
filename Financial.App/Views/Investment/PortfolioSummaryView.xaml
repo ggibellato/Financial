@@ -59,13 +59,13 @@
                                TextAlignment="Right"
                                FontFamily="Consolas"
                                Margin="10,5"
-                               Foreground="Green"/>
+                               Foreground="{DynamicResource SystemFillColorSuccessBrush}"/>
 
                     <TextBlock Grid.Row="4" Grid.Column="2" Text="Total Sold:" FontWeight="Bold" Margin="20,5,0,5"/>
                     <TextBlock Grid.Row="4" Grid.Column="3"
                                Text="{Binding AssetDetails.TotalSold, Mode=OneWay, StringFormat=N2}"
                                Margin="10,5"
-                               Foreground="Red"/>
+                               Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
 
                     <TextBlock Grid.Row="5" Grid.Column="0" Text="Total Credits:" FontWeight="Bold" Margin="0,5"/>
                     <TextBlock Grid.Row="5" Grid.Column="1"
@@ -252,7 +252,7 @@
                                TextAlignment="Right"
                                FontFamily="Consolas"
                                Margin="10,5"
-                               Foreground="Green"/>
+                               Foreground="{DynamicResource SystemFillColorSuccessBrush}"/>
 
                     <TextBlock Grid.Row="0" Grid.Column="2" Text="Total Sold:" FontWeight="Bold" Margin="20,5,0,5"/>
                     <TextBlock Grid.Row="0" Grid.Column="3"
@@ -260,7 +260,7 @@
                                TextAlignment="Right"
                                FontFamily="Consolas"
                                Margin="10,5"
-                               Foreground="Red"/>
+                               Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
 
                     <TextBlock Grid.Row="1" Grid.Column="0" Text="Total Credits:" FontWeight="Bold" Margin="0,5"/>
                     <TextBlock Grid.Row="1" Grid.Column="1"
