@@ -1,7 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { AssetDetailsDto, AssetPriceSnapshotDto, SelectedNode } from '../../api/types'
+import type { AssetDetailsDto, AssetPriceSnapshotDto, SelectedNode, TransactionDto } from '../../api/types'
 import { createSelectedNodeWrapper } from '../../test-utils/selectedNodeTestWrapper'
 import { usePriceHistory } from '../usePriceHistory'
 
@@ -47,6 +47,16 @@ const BROKER_NODE: SelectedNode = {
 
 const ENTRY_A: AssetPriceSnapshotDto = { date: '2026-08-15', price: 110.5, isManual: true }
 const ENTRY_B: AssetPriceSnapshotDto = { date: '2026-08-01', price: 100, isManual: false }
+
+const BUY_TRANSACTION: TransactionDto = {
+  id: 'tx-1',
+  date: '2026-08-05T00:00:00',
+  type: 'Buy',
+  quantity: 10,
+  unitPrice: 105,
+  fees: 1,
+  totalPrice: 1051,
+}
 
 const ASSET_DETAILS: AssetDetailsDto = {
   name: 'KLBN4',
@@ -343,5 +353,31 @@ describe('usePriceHistory', () => {
     act(() => result.current.setFilter('this-month'))
     expect(result.current.filteredEntries).toHaveLength(1)
     expect(result.current.filteredEntries[0].date).toBe(recent.date)
+  })
+
+  it('fetches_transactions_alongside_price_history', async () => {
+    getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, transactions: [BUY_TRANSACTION] })
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => usePriceHistory(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.filteredTransactions).toHaveLength(1))
+    expect(result.current.filteredTransactions[0]).toEqual(BUY_TRANSACTION)
+  })
+
+  it('filteredTransactions_excludes_transactions_outside_the_selected_window', async () => {
+    const recentTransaction: TransactionDto = {
+      ...BUY_TRANSACTION,
+      id: 'tx-recent',
+      date: new Date().toISOString(),
+    }
+    const oldTransaction: TransactionDto = { ...BUY_TRANSACTION, id: 'tx-old', date: '2020-01-01T00:00:00' }
+    getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, transactions: [recentTransaction, oldTransaction] })
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => usePriceHistory(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.entries).toHaveLength(2))
+    act(() => result.current.setFilter('this-month'))
+    expect(result.current.filteredTransactions).toHaveLength(1)
+    expect(result.current.filteredTransactions[0].id).toBe('tx-recent')
   })
 })

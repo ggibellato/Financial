@@ -1,20 +1,25 @@
 using Financial.Investment.Application.DTOs;
 using OxyPlot;
 using OxyPlot.Axes;
+using OxyPlot.Legends;
 using OxyPlot.Series;
 
 namespace Financial.Presentation.App.ViewModels.Investment;
 
 internal static class PriceHistoryChartBuilder
 {
-    public static PlotModel Build(IReadOnlyList<AssetPriceSnapshotDTO> entries)
+    public static PlotModel Build(IReadOnlyList<AssetPriceSnapshotDTO> entries, IReadOnlyList<TransactionDTO> transactions)
     {
         var model = CreateModelWithAxes();
 
-        if (entries.Count == 0)
+        if (entries.Count == 0 && transactions.Count == 0)
             return model;
 
-        var ordered = entries.OrderBy(entry => entry.Date).ToList();
+        var linePoints = entries
+            .Select(entry => new DataPoint(ToPlotDate(entry), (double)entry.Price))
+            .Concat(transactions.Select(transaction => new DataPoint(ToPlotDate(transaction), (double)transaction.UnitPrice)))
+            .OrderBy(point => point.X)
+            .ToList();
 
         var line = new LineSeries
         {
@@ -22,37 +27,70 @@ internal static class PriceHistoryChartBuilder
             Color = OxyColors.SteelBlue,
             StrokeThickness = 2
         };
-        foreach (var entry in ordered)
-            line.Points.Add(new DataPoint(ToPlotDate(entry), (double)entry.Price));
+        foreach (var point in linePoints)
+            line.Points.Add(point);
         model.Series.Add(line);
 
-        var manualPoints = new ScatterSeries
+        if (entries.Count > 0)
         {
-            Title = "Manual",
-            MarkerType = MarkerType.Triangle,
-            MarkerFill = OxyColors.OrangeRed,
-            MarkerSize = 5
-        };
-        var automaticPoints = new ScatterSeries
-        {
-            Title = "Automatic",
-            MarkerType = MarkerType.Circle,
-            MarkerFill = OxyColors.SteelBlue,
-            MarkerSize = 4
-        };
-        foreach (var entry in ordered)
-        {
-            var target = entry.IsManual ? manualPoints : automaticPoints;
-            target.Points.Add(new ScatterPoint(ToPlotDate(entry), (double)entry.Price));
+            var ordered = entries.OrderBy(entry => entry.Date).ToList();
+
+            var manualPoints = new ScatterSeries
+            {
+                Title = "Manual",
+                MarkerType = MarkerType.Triangle,
+                MarkerFill = OxyColors.OrangeRed,
+                MarkerSize = 5
+            };
+            var automaticPoints = new ScatterSeries
+            {
+                Title = "Automatic",
+                MarkerType = MarkerType.Circle,
+                MarkerFill = OxyColors.SteelBlue,
+                MarkerSize = 4
+            };
+            foreach (var entry in ordered)
+            {
+                var target = entry.IsManual ? manualPoints : automaticPoints;
+                target.Points.Add(new ScatterPoint(ToPlotDate(entry), (double)entry.Price));
+            }
+            model.Series.Add(manualPoints);
+            model.Series.Add(automaticPoints);
         }
-        model.Series.Add(manualPoints);
-        model.Series.Add(automaticPoints);
+
+        if (transactions.Count > 0)
+        {
+            var buyPoints = new ScatterSeries
+            {
+                Title = "Buy",
+                MarkerType = MarkerType.Square,
+                MarkerFill = OxyColors.Green,
+                MarkerSize = 5
+            };
+            var sellPoints = new ScatterSeries
+            {
+                Title = "Sell",
+                MarkerType = MarkerType.Diamond,
+                MarkerFill = OxyColors.Red,
+                MarkerSize = 5
+            };
+            foreach (var transaction in transactions.OrderBy(t => t.Date))
+            {
+                var target = transaction.Type.Equals("Buy", StringComparison.OrdinalIgnoreCase) ? buyPoints : sellPoints;
+                target.Points.Add(new ScatterPoint(ToPlotDate(transaction), (double)transaction.UnitPrice));
+            }
+            model.Series.Add(buyPoints);
+            model.Series.Add(sellPoints);
+        }
 
         return model;
     }
 
     private static double ToPlotDate(AssetPriceSnapshotDTO entry) =>
         DateTimeAxis.ToDouble(entry.Date.ToDateTime(TimeOnly.MinValue));
+
+    private static double ToPlotDate(TransactionDTO transaction) =>
+        DateTimeAxis.ToDouble(transaction.Date);
 
     private static PlotModel CreateModelWithAxes()
     {
@@ -67,6 +105,12 @@ internal static class PriceHistoryChartBuilder
         var valueAxis = OxyPlotChartBuilderHelpers.CreateValueAxis();
         model.Axes.Add(dateAxis);
         model.Axes.Add(valueAxis);
+        model.Legends.Add(new Legend
+        {
+            LegendPosition = LegendPosition.BottomCenter,
+            LegendPlacement = LegendPlacement.Outside,
+            LegendOrientation = LegendOrientation.Horizontal
+        });
         return model;
     }
 }

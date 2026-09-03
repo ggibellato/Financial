@@ -21,14 +21,19 @@ public class AssetDetailsViewModelPriceHistoryChartTests
             new ProfitCalculationService());
     }
 
-    private static AssetDetailsDTO BuildAssetDetails(string brokerName, string assetName, IReadOnlyList<AssetPriceSnapshotDTO> priceHistory) => new()
+    private static AssetDetailsDTO BuildAssetDetails(
+        string brokerName,
+        string assetName,
+        IReadOnlyList<AssetPriceSnapshotDTO> priceHistory,
+        IReadOnlyList<TransactionDTO>? transactions = null) => new()
     {
         Name = assetName,
         BrokerName = brokerName,
         PortfolioName = "Default",
         Ticker = assetName,
         Exchange = "BVMF",
-        PriceHistory = priceHistory.ToList()
+        PriceHistory = priceHistory.ToList(),
+        Transactions = (transactions ?? []).ToList()
     };
 
     [Fact]
@@ -101,5 +106,39 @@ public class AssetDetailsViewModelPriceHistoryChartTests
         vm.PriceHistory.PriceHistory.Should().BeEmpty();
         vm.PriceHistory.PriceHistoryPlotModel.Should().BeNull();
         vm.PriceHistory.SelectedPriceEntry.Should().BeNull();
+    }
+
+    [Fact]
+    public void LoadAssetDetails_PopulatesBuyAndSellSeriesFromTransactions()
+    {
+        var transactions = new List<TransactionDTO>
+        {
+            new() { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Buy", Quantity = 10m, UnitPrice = 90m, Fees = 1m, TotalPrice = 901m },
+            new() { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Sell", Quantity = 5m, UnitPrice = 130m, Fees = 1m, TotalPrice = 649m },
+        };
+        var vm = BuildViewModel();
+
+        vm.LoadAssetDetails(BuildAssetDetails("XPI", "TEST", [], transactions));
+
+        var scatterSeries = vm.PriceHistory.PriceHistoryPlotModel!.Series.OfType<OxyPlot.Series.ScatterSeries>().ToList();
+        scatterSeries.Should().Contain(s => s.Title == "Buy" && s.Points.Count == 1);
+        scatterSeries.Should().Contain(s => s.Title == "Sell" && s.Points.Count == 1);
+    }
+
+    [Fact]
+    public void SelectPriceHistoryFilter_ExcludesTransactionsOutsideWindow()
+    {
+        var transactions = new List<TransactionDTO>
+        {
+            new() { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Buy", Quantity = 10m, UnitPrice = 90m, Fees = 1m, TotalPrice = 901m },
+            new() { Id = Guid.NewGuid(), Date = DateTime.Today.AddYears(-2), Type = "Buy", Quantity = 10m, UnitPrice = 80m, Fees = 1m, TotalPrice = 801m },
+        };
+        var vm = BuildViewModel();
+        vm.LoadAssetDetails(BuildAssetDetails("XPI", "TEST", [], transactions));
+
+        vm.PriceHistory.SelectPriceHistoryFilterCommand.Execute(PeriodFilter.ThisMonth);
+
+        var buy = vm.PriceHistory.PriceHistoryPlotModel!.Series.OfType<OxyPlot.Series.ScatterSeries>().Single(s => s.Title == "Buy");
+        buy.Points.Should().ContainSingle();
     }
 }

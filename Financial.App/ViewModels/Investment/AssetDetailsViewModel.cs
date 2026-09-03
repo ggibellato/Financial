@@ -399,7 +399,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
 
         Credits.Load(BuildCreditsAssetKey(details.BrokerName, details.PortfolioName, details.Name), details.Credits);
 
-        PriceHistory.Load(BuildCreditsAssetKey(details.BrokerName, details.PortfolioName, details.Name), details.PriceHistory);
+        PriceHistory.Load(BuildCreditsAssetKey(details.BrokerName, details.PortfolioName, details.Name), details.PriceHistory, details.Transactions);
 
         UpdateCommandStates();
     }

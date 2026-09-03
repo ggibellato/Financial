@@ -215,3 +215,19 @@
   flex: 1;
   min-height: 0;
 }
+
+.price-history-tab__tooltip {
+  background: var(--bg, #fff);
+  border: 1px solid var(--border, #e5e4e7);
+  border-radius: 3px;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.price-history-tab__tooltip p {
+  margin: 0;
+}
+
+.price-history-tab__tooltip p:first-child {
+  font-weight: bold;
+}

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
-import type { AssetPriceSnapshotDto, SelectedNode } from '../api/types'
+import type { AssetPriceSnapshotDto, SelectedNode, TransactionDto } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
 import type { PeriodFilterOption } from '../utils/periodFilter'
 import { DEFAULT_FILTER, getPeriodFilterStartDate } from '../utils/periodFilter'
@@ -15,8 +15,14 @@ interface PersistedPrefs {
   filter: PeriodFilterOption
 }
 
+interface AssetPriceHistoryResult {
+  priceHistory: AssetPriceSnapshotDto[]
+  transactions: TransactionDto[]
+}
+
 interface PriceHistoryState {
   entries: AssetPriceSnapshotDto[]
+  transactions: TransactionDto[]
   isLoading: boolean
   error: string | null
   retryCount: number
@@ -34,7 +40,7 @@ interface PriceHistoryState {
 type PriceHistoryAction =
   | { type: 'RESET' }
   | { type: 'FETCH_START'; payload: { key: string } }
-  | { type: 'FETCH_SUCCESS'; payload: AssetPriceSnapshotDto[] }
+  | { type: 'FETCH_SUCCESS'; payload: AssetPriceHistoryResult }
   | { type: 'FETCH_ERROR'; payload: string }
   | { type: 'RETRY' }
   | { type: 'SET_FILTER'; payload: { filter: PeriodFilterOption; key: string } }
@@ -43,9 +49,9 @@ type PriceHistoryAction =
   | { type: 'CANCEL_FORM' }
   | { type: 'SET_FORM_FIELD'; payload: { field: PriceHistoryFormField; value: string } }
   | { type: 'SAVE_START' }
-  | { type: 'SAVE_SUCCESS'; payload: AssetPriceSnapshotDto[] }
+  | { type: 'SAVE_SUCCESS'; payload: AssetPriceHistoryResult }
   | { type: 'SAVE_ERROR'; payload: string }
-  | { type: 'DELETE_SUCCESS'; payload: AssetPriceSnapshotDto[] }
+  | { type: 'DELETE_SUCCESS'; payload: AssetPriceHistoryResult }
   | { type: 'DELETE_ERROR'; payload: string }
 
 const BLANK_FORM = {
@@ -59,6 +65,7 @@ const BLANK_FORM = {
 
 const INITIAL_STATE: PriceHistoryState = {
   entries: [],
+  transactions: [],
   isLoading: false,
   error: null,
   retryCount: 0,
@@ -83,7 +90,7 @@ function reducer(state: PriceHistoryState, action: PriceHistoryAction): PriceHis
       }
     }
     case 'FETCH_SUCCESS':
-      return { ...state, isLoading: false, entries: action.payload }
+      return { ...state, isLoading: false, entries: action.payload.priceHistory, transactions: action.payload.transactions }
     case 'FETCH_ERROR':
       return { ...state, isLoading: false, error: action.payload }
     case 'RETRY':
@@ -122,11 +129,17 @@ function reducer(state: PriceHistoryState, action: PriceHistoryAction): PriceHis
     case 'SAVE_START':
       return { ...state, isSaving: true, saveError: null }
     case 'SAVE_SUCCESS':
-      return { ...state, ...BLANK_FORM, entries: action.payload, deleteError: state.deleteError }
+      return {
+        ...state,
+        ...BLANK_FORM,
+        entries: action.payload.priceHistory,
+        transactions: action.payload.transactions,
+        deleteError: state.deleteError,
+      }
     case 'SAVE_ERROR':
       return { ...state, isSaving: false, saveError: action.payload }
     case 'DELETE_SUCCESS':
-      return { ...state, entries: action.payload, deleteError: null }
+      return { ...state, entries: action.payload.priceHistory, transactions: action.payload.transactions, deleteError: null }
     case 'DELETE_ERROR':
       return { ...state, deleteError: action.payload }
     default:
@@ -141,6 +154,7 @@ function buildSelectionKey(node: SelectedNode): string {
 export interface PriceHistoryData {
   entries: AssetPriceSnapshotDto[]
   filteredEntries: AssetPriceSnapshotDto[]
+  filteredTransactions: TransactionDto[]
   isLoading: boolean
   error: string | null
   retry: () => void
@@ -184,7 +198,12 @@ export function usePriceHistory(): PriceHistoryData {
 
     void apiClient
       .getAssetDetails(selectedNode.brokerName, selectedNode.portfolioName, selectedNode.assetName, scope)
-      .then((result) => dispatch({ type: 'FETCH_SUCCESS', payload: result.priceHistory }))
+      .then((result) =>
+        dispatch({
+          type: 'FETCH_SUCCESS',
+          payload: { priceHistory: result.priceHistory, transactions: result.transactions },
+        }),
+      )
       .catch((err: unknown) => {
         dispatch({
           type: 'FETCH_ERROR',
@@ -203,6 +222,12 @@ export function usePriceHistory(): PriceHistoryData {
     if (!start) return entries
     return entries.filter((entry) => new Date(entry.date) >= start)
   }, [entries, state.selectedFilter])
+
+  const filteredTransactions = useMemo(() => {
+    const start = getPeriodFilterStartDate(state.selectedFilter, new Date())
+    if (!start) return state.transactions
+    return state.transactions.filter((transaction) => new Date(transaction.date) >= start)
+  }, [state.transactions, state.selectedFilter])
 
   const retry = useCallback(() => dispatch({ type: 'RETRY' }), [])
 
@@ -258,7 +283,10 @@ export function usePriceHistory(): PriceHistoryData {
       })
       .then((result) => {
         setStoredDefault(DATE_KEY, formDate)
-        dispatch({ type: 'SAVE_SUCCESS', payload: result.priceHistory })
+        dispatch({
+          type: 'SAVE_SUCCESS',
+          payload: { priceHistory: result.priceHistory, transactions: result.transactions },
+        })
       })
       .catch((err: unknown) => {
         dispatch({
@@ -279,7 +307,12 @@ export function usePriceHistory(): PriceHistoryData {
           assetName: selectedNode.assetName,
           date,
         })
-        .then((result) => dispatch({ type: 'DELETE_SUCCESS', payload: result.priceHistory }))
+        .then((result) =>
+          dispatch({
+            type: 'DELETE_SUCCESS',
+            payload: { priceHistory: result.priceHistory, transactions: result.transactions },
+          }),
+        )
         .catch((err: unknown) => {
           dispatch({
             type: 'DELETE_ERROR',
@@ -293,6 +326,7 @@ export function usePriceHistory(): PriceHistoryData {
   return {
     entries,
     filteredEntries,
+    filteredTransactions,
     isLoading: state.isLoading,
     error: state.error,
     retry,
