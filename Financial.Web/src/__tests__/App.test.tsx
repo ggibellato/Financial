@@ -84,4 +84,10 @@ describe('App', () => {
     expect(themeRule).toBeDefined()
     expect(themeRule!.cssText).toContain(`--colorNeutralBackground1: ${financialLightTheme.colorNeutralBackground1};`)
   })
+
+  it('renders_the_colour_mode_toggle_button_in_the_topbar', () => {
+    render(<AppWithRoutes />)
+
+    expect(screen.getByRole('button', { name: /switch to dark mode/i })).toBeInTheDocument()
+  })
 })

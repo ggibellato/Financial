@@ -7,6 +7,7 @@ import Breadcrumb from './components/Breadcrumb'
 import LoadingState from './components/LoadingState'
 import SyncStatusBanner from './components/SyncStatusBanner'
 import PaymentDueBanner from './components/PaymentDueBanner'
+import ColourModeToggleButton from './components/ColourModeToggleButton'
 import { ColourModeProvider, useColourMode } from './context/ColourModeContext'
 import { financialDarkTheme, financialLightTheme } from './theme/fluentTheme'
 import './App.css'
@@ -30,7 +31,10 @@ function AppShell() {
         <main className="app__content">
           <SyncStatusBanner />
           <PaymentDueBanner />
-          <Breadcrumb />
+          <div className="app__topbar">
+            <Breadcrumb />
+            <ColourModeToggleButton />
+          </div>
           <Suspense fallback={<LoadingState />}>
             <Outlet />
           </Suspense>
