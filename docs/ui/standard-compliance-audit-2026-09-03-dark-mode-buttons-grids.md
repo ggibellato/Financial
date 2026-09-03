@@ -54,7 +54,7 @@ actions inside a grid, never a labelled panel action.
 |---|---|---|---|
 | 1 | `BankOperationsSection.tsx:92-98`, `IncomeSection.tsx:46,55`, `ExpensesSection.tsx:42,51`, `CreditsTab.tsx:81,90`, `PriceHistoryTab.tsx:58,69`, `TransactionsTab.tsx:59,68`, `DetailPanel.tsx:88,98,109` | Labelled "New X" triggers set `size="small"`, the size reserved for icon-only row actions; the 10 Admin-CRUD pages leave the equivalent trigger unsized (medium, correct) | Medium |
 | 2 | `BanksPage.tsx:94-108` (+ 9 sibling Admin pages) vs. `TransactionsTab.tsx:57-73` | Row Edit/Delete uses two different `appearance` values for the identical action: Admin-CRUD = `size="small"`, no `appearance` (default outline); Investment tabs = `appearance="subtle" size="small"` | Medium |
-| 3 | `components/DetailPanel.tsx:96-116` | "Move…" and "Delete Portfolio" both `appearance="primary" size="small"`, directly adjacent, no visual distinction between a normal and a destructive action | High |
+| 3 | ~~`components/DetailPanel.tsx:96-116`~~ | **Corrected 2026-09-04 — not a violation.** Originally flagged as "Move…"/"Delete Portfolio" needing a distinct destructive treatment. Re-read of `forms-data-and-visualisations.md` lines 146-150 and 172-174 found the doc names this exact pair by name as the canonical example of peer action buttons that must **both stay primary, same style** — "never treat a Move/Delete pair as if it were a Save/Cancel pair." The `size="small"` part of the original finding was real and is fixed (see Buttons #1); the appearance/distinction part was a misreading of the rule and required no change. WPF's equivalent (`NavigationView.xaml`'s Move Asset/Delete Portfolio buttons) was already compliant with the same rule for the same reason. | ~~High~~ N/A |
 | 4 | `pages/MensaisPage.tsx:253-263` | Two adjacent `appearance="primary"` buttons ("Add Bill", "Reset All to Unset") — a bulk/destructive action carries the same visual priority as the page's create action | Medium |
 | 5 | `TransactionsTab.css:162-188`, `CreditsTab.css`, `PriceHistoryTab.css` | Save/Cancel inside the inline "New X" form are raw HTML (`.transactions-tab__save-btn`, `background: var(--accent); color:#fff; border-radius:3px`), not Fluent `Button`, despite the trigger and row actions in the same file being genuine Fluent components | Low |
 | 6 | `TransferForm.tsx:116`, `BankOperationsSection.tsx:92-98` | Trigger reads "New Transfer"; the form it opens is titled and submitted as "Move Money" — breaks the trigger→title→confirm naming chain | Medium |
@@ -120,7 +120,7 @@ platforms."**
 
 | # | Location | Finding | Severity |
 |---|---|---|---|
-| 1 | Web: 10 `*FormDialog.tsx` (Fluent `Dialog`); WPF: 11 `*FormDialog.xaml` (popup `Window`, e.g. `BankFormDialog.xaml`) | Every Admin-CRUD entity's create/edit form (Bank, Broker, Category, CreditCard, IncomeSource, InvestmentAccount, Portfolio, RecurringBill, ReserveBucket, Asset) opens as a modal on **both** platforms — the exact shape the rule names as off-limits for "New X". This is the app's most consistent, best-built button population, built on the one form-shape the spec rules out. Needs an ADR exception for lookup-entity CRUD, or a re-platform to inline — not silence either way | High |
+| 1 | Web: 10 `*FormDialog.tsx` (Fluent `Dialog`); WPF: 11 `*FormDialog.xaml` (popup `Window`, e.g. `BankFormDialog.xaml`) | **Resolved 2026-09-04 via `decisions/ADR-006-admin-crud-modal-dialogs.md`** — Admin lookup-entity CRUD (Bank, Broker, Category, CreditCard, IncomeSource, InvestmentAccount, Portfolio, RecurringBill, ReserveBucket, Asset) is now a documented exception to the "New X is inline" rule: no associated chart/running total, rarely edited, genuinely short forms — exactly the case the doc's own guidance already names as correct for a dialog. No source files changed | ~~High~~ Resolved |
 | 2 | `MensaisPage.tsx:271-376`, `ControleMaePage.tsx` form, three Investment tabs' inline "New X" forms, `InvestmentSnapshotsPage` edit panel | No required-marker or per-field validation, unlike the Fluent-`Field` population (Expense/Income/Transfer/… + every Admin dialog), which already implements the required asterisk and inline `validationMessage` correctly — this closes an item the 2026-08-29 audit listed as unbuilt | Medium |
 | 3 | `AddBillFormView.xaml`, `EditBillFormView.xaml`, `CreateEntryFormView.xaml`, `EditEntryFormView.xaml`, `EditSnapshotValueFormView.xaml` | Single-column, one-field-per-row, label-to-the-left layout — named by name in `wpf.md` as the anti-pattern the 4-column responsive grid replaced everywhere else | High |
 | 4 | Same five files as #3 | No required marker, bottom-only validation, plus hardcoded `#CCCCCC`/`#FAFAFA` borders (also a dark-mode issue) | Medium |
@@ -147,7 +147,7 @@ Rule of record: React defines the workflow; WPF must reach the same outcome
 |---|---|---|
 | 1 | "Move Money" naming drift is confirmed on Web (Buttons #6 above); whether Financial.App's Transfer form carries the same drift wasn't independently confirmed this pass — check both before renaming just one | Medium |
 | 2 | Both platforms split along the same "migrated vs. legacy" line: Admin CRUD and Investment tabs got the Fluent/token treatment first on both Web and WPF; Mensais/ControleMae/Reserve-adjacent forms lag on both. A single coordinated fix workstream across both platforms' legacy cluster will close more ground than treating each platform as a separate backlog | Medium |
-| 3 | Grids/Buttons finding "Move/Delete Portfolio" (Web, `DetailPanel.tsx`) is confirmed on Web only; check WPF's equivalent Move/Delete Portfolio actions for the same lack of distinction so whichever platform is fixed first sets the pattern the other copies | Medium |
+| 3 | ~~Grids/Buttons finding "Move/Delete Portfolio"...~~ **Corrected 2026-09-04 — not a violation**, see Buttons (Web) #3's correction above. Both platforms already give Move/Delete Portfolio the same primary treatment, which is what the doc requires. | ~~Medium~~ N/A |
 
 ## Part B — No governing standard exists yet (needs a decision, not a guess)
 
@@ -180,12 +180,14 @@ Carried forward from the standards docs' own list; not counted as violations abo
 3. **Resolve the button-size/position rule directly** — Buttons (Web) #1, Buttons (WPF) #1, #2.
    Pick one trigger size, one Save/Cancel alignment, one primary-button width; apply everywhere in
    the same change.
-4. **Fix the two undifferentiated destructive-action spots** — Buttons (Web) #3, Parity #3. Give
-   "Delete Portfolio" a visually distinct treatment from "Move…" on whichever platform is touched
-   first, then mirror it.
-5. **Decide the Admin-dialog question** — Forms #1. This is a product decision (write an ADR
-   exception, or re-platform) more than a code fix; resolve the decision before touching the 21
-   files it affects.
+4. ~~**Fix the two undifferentiated destructive-action spots**~~ **Closed 2026-09-04, no fix
+   needed** — Buttons (Web) #3 and Parity #3 were both re-read against the actual rule text and
+   found to be false positives: the doc names this exact Move/Delete Portfolio pairing as the
+   canonical example of two peer buttons that must both stay primary. See the corrections in
+   those sections above.
+5. ~~**Decide the Admin-dialog question**~~ **Resolved 2026-09-04** — Forms #1. The user chose the
+   ADR-exception path over re-platforming; see `decisions/ADR-006-admin-crud-modal-dialogs.md`.
+   No source files changed.
 6. **Consolidate the three row-action icon conventions** — Buttons (Web) #2, Buttons (WPF) #3.
    Standardise on the one Fluent-correct pattern each platform already has; replace the rest.
 7. **Schedule the legacy-form migration as its own workstream** — Forms #2, #3, #4. Larger effort
