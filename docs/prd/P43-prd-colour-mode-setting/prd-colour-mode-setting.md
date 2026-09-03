@@ -140,14 +140,14 @@ graph TD
 - [x] The header shortcut has an accessible name/tooltip describing the action it performs, and is never the only way to change the mode (the Appearance page's text-labelled control also works).
 
 ### F02. Colour Mode Setting (WPF)
-- [ ] A "Settings" nav item appears after "Admin" in the same position as Web; selecting it opens the "Appearance" page.
-- [ ] The Appearance page shows a "Colour mode" control with two text-labelled options: "Light" and "Dark".
-- [ ] With no prior stored preference, the app launches in Light mode.
-- [ ] Selecting "Dark" immediately re-themes the entire application window without requiring a restart, and persists the choice.
-- [ ] Every existing view renders with correct contrast/legibility in Dark mode, including the `#0F6CBD` brand accent.
-- [ ] Relaunching the app applies the last stored mode at startup with no visible light-to-dark flash.
-- [ ] The header shortcut icon-button reflects and toggles the same stored value as the Appearance page; toggling from the header updates the Appearance page's selected radio.
-- [ ] The header shortcut has an accessible name (`AutomationProperties.Name`) describing the action it performs, and is never the only way to change the mode.
+- [x] A "Settings" nav item appears after "Admin" in the same position as Web; selecting it opens the "Appearance" page.
+- [x] The Appearance page shows a "Colour mode" control with two text-labelled options: "Light" and "Dark".
+- [x] With no prior stored preference, the app launches in Light mode.
+- [x] Selecting "Dark" immediately re-themes the entire application window without requiring a restart, and persists the choice.
+- [x] Every existing view renders with correct contrast/legibility in Dark mode, including the `#0F6CBD` brand accent.
+- [x] Relaunching the app applies the last stored mode at startup with no visible light-to-dark flash.
+- [x] The header shortcut icon-button reflects and toggles the same stored value as the Appearance page; toggling from the header updates the Appearance page's selected radio.
+- [x] The header shortcut has an accessible name (`AutomationProperties.Name`) describing the action it performs, and is never the only way to change the mode.
 
 ### Cross-Feature Integration
 - F01 and F02 have no functional data dependency on each other or on any other feature in this PRD — each stores and applies its colour mode entirely within its own front end. No cross-feature integration criteria apply.
