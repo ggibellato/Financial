@@ -1,4 +1,5 @@
 using Financial.Presentation.App.ViewModels;
+using Financial.Presentation.App.ViewModels.Settings;
 using Financial.TestUtilities;
 using FluentAssertions;
 
@@ -28,15 +29,18 @@ public class MainShellViewModelTests
         ["admin-investment-accounts"] = new object(),
         ["admin-recurring-bills"] = new object(),
         ["admin-reserve-buckets"] = new object(),
+        ["settings-appearance"] = new object(),
     };
 
     private static MainShellViewModel CreateShell(
         bool initialCollapsed,
         Action<bool> persistCollapsed,
-        IReadOnlyDictionary<string, object> viewsByKey) =>
+        IReadOnlyDictionary<string, object> viewsByKey,
+        ColourModeViewModel? colourModeViewModel = null) =>
         new(initialCollapsed, persistCollapsed, viewsByKey,
             new SyncStatusViewModel(new StubCashFlowRepository(), new StubInvestmentRepository()),
-            new PaymentDueBannerViewModel(new StubPaymentsDueService()));
+            new PaymentDueBannerViewModel(new StubPaymentsDueService()),
+            colourModeViewModel ?? new ColourModeViewModel(ColourMode.Light, _ => { }, _ => { }));
 
     [Fact]
     public void Constructor_DefaultsToExpandedWhenInitialCollapsedIsFalse()
@@ -174,5 +178,18 @@ public class MainShellViewModelTests
         vm.SelectItemCommand.Execute("monthly");
 
         raised.Should().Contain(nameof(MainShellViewModel.BreadcrumbText));
+    }
+
+    [Fact]
+    public void Constructor_ExposesInjectedColourModeViewModel()
+    {
+        var colourMode = new ColourModeViewModel(ColourMode.Light, _ => { }, _ => { });
+        var vm = CreateShell(
+            initialCollapsed: false,
+            persistCollapsed: _ => { },
+            viewsByKey: BuildViewMap(),
+            colourModeViewModel: colourMode);
+
+        vm.ColourMode.Should().BeSameAs(colourMode);
     }
 }
