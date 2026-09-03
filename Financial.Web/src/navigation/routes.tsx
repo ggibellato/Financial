@@ -2,6 +2,7 @@ import type { ReactElement } from 'react'
 import {
   ActiveInvestmentsPage,
   AnnualSummaryPage,
+  AppearancePage,
   AssetsPage,
   BanksPage,
   BrokersPage,
@@ -58,4 +59,5 @@ export const PAGE_ROUTES: PageRoute[] = [
   { path: 'admin/cashflow/investment-accounts', element: <InvestmentAccountsPage /> },
   { path: 'admin/cashflow/recurring-bills', element: <RecurringBillsPage /> },
   { path: 'admin/cashflow/reserve-buckets', element: <ReserveBucketsPage /> },
+  { path: 'settings/appearance', element: <AppearancePage /> },
 ]

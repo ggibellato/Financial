@@ -1,0 +1,19 @@
+.appearance-page {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+}
+
+.appearance-page__field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.appearance-page__label {
+  font-weight: 600;
+  color: var(--text-h, #242424);
+}

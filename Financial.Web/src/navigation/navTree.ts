@@ -73,4 +73,9 @@ export const NAV_TREE: NavCategory[] = [
       },
     ],
   },
+  {
+    id: 'settings',
+    label: 'Settings',
+    children: [{ id: 'appearance', label: 'Appearance', route: '/settings/appearance' }],
+  },
 ]
