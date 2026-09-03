@@ -43,6 +43,7 @@ const AUTOMATIC_ENTRY: AssetPriceSnapshotDto = {
 const DEFAULT_HOOK: PriceHistoryData = {
   entries: [],
   filteredEntries: [],
+  filteredTransactions: [],
   isLoading: false,
   error: null,
   retry: mockRetry,
@@ -136,14 +137,14 @@ describe('PriceHistoryTab', () => {
   it('renders_manual_source_label', () => {
     setMock({ entries: [MANUAL_ENTRY] })
     render(<PriceHistoryTab />)
-    const sourceCell = screen.getByText('Manual')
+    const sourceCell = screen.getByText('Manual', { selector: 'td' })
     expect(sourceCell).toHaveClass('price-history-tab__source--manual')
   })
 
   it('renders_automatic_source_label', () => {
     setMock({ entries: [AUTOMATIC_ENTRY] })
     render(<PriceHistoryTab />)
-    const sourceCell = screen.getByText('Automatic')
+    const sourceCell = screen.getByText('Automatic', { selector: 'td' })
     expect(sourceCell).toHaveClass('price-history-tab__source--automatic')
   })
 
@@ -271,5 +272,13 @@ describe('PriceHistoryTab', () => {
     dataRows = within(table).getAllByRole('row').slice(1)
     expect(within(dataRows[0]).getByText('350.00')).toBeInTheDocument()
     expect(within(dataRows[1]).getByText('120.50')).toBeInTheDocument()
+  })
+
+  it('renders_chart_legend_for_all_four_series', () => {
+    render(<PriceHistoryTab />)
+    expect(screen.getByText('Automatic', { selector: '.price-history-tab__legend-item' })).toBeInTheDocument()
+    expect(screen.getByText('Manual', { selector: '.price-history-tab__legend-item' })).toBeInTheDocument()
+    expect(screen.getByText('Buy', { selector: '.price-history-tab__legend-item' })).toBeInTheDocument()
+    expect(screen.getByText('Sell', { selector: '.price-history-tab__legend-item' })).toBeInTheDocument()
   })
 })

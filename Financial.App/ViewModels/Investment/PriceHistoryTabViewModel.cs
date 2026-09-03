@@ -24,6 +24,7 @@ public class PriceHistoryTabViewModel : ViewModelBase
     private readonly RelayCommand _deletePriceCommand;
 
     private PlotModel? _priceHistoryPlotModel;
+    private List<TransactionDTO> _transactions = new();
     private PeriodFilter _selectedPriceHistoryFilter = PeriodFilter.Last12Months;
     private const string DefaultPriceHistoryContextKey = "default";
     private readonly Dictionary<string, PriceHistoryViewState> _priceHistoryViewStateByKey = new(StringComparer.OrdinalIgnoreCase);
@@ -89,12 +90,13 @@ public class PriceHistoryTabViewModel : ViewModelBase
         private set => SetProperty(ref _isPriceFormOpen, value);
     }
 
-    public void Load(string contextKey, IReadOnlyList<AssetPriceSnapshotDTO> priceHistory)
+    public void Load(string contextKey, IReadOnlyList<AssetPriceSnapshotDTO> priceHistory, IReadOnlyList<TransactionDTO> transactions)
     {
         SetPriceHistoryContext(contextKey, rebuild: false);
         PriceHistory.Clear();
         foreach (var entry in priceHistory)
             PriceHistory.Add(entry);
+        _transactions = transactions.ToList();
         ApplyPriceHistoryFilter();
         SelectedPriceEntry = null;
     }
@@ -102,6 +104,7 @@ public class PriceHistoryTabViewModel : ViewModelBase
     public void Clear()
     {
         PriceHistory.Clear();
+        _transactions.Clear();
         PriceHistoryPlotModel = null;
         SelectedPriceEntry = null;
     }
@@ -230,7 +233,9 @@ public class PriceHistoryTabViewModel : ViewModelBase
 
     private void ApplyPriceHistoryFilter()
     {
-        RefreshPriceHistoryChart(FilterPriceHistory(PriceHistory, _selectedPriceHistoryFilter));
+        var filteredEntries = FilterPriceHistory(PriceHistory, _selectedPriceHistoryFilter);
+        var filteredTransactions = FilterTransactions(_transactions, _selectedPriceHistoryFilter);
+        RefreshPriceHistoryChart(filteredEntries, filteredTransactions);
     }
 
     private static IEnumerable<AssetPriceSnapshotDTO> FilterPriceHistory(IEnumerable<AssetPriceSnapshotDTO> entries, PeriodFilter filter)
@@ -244,9 +249,16 @@ public class PriceHistoryTabViewModel : ViewModelBase
         });
     }
 
-    private void RefreshPriceHistoryChart(IEnumerable<AssetPriceSnapshotDTO> entries)
+    private static IEnumerable<TransactionDTO> FilterTransactions(IEnumerable<TransactionDTO> transactions, PeriodFilter filter)
     {
-        PriceHistoryPlotModel = PriceHistoryChartBuilder.Build(entries.ToList());
+        var (start, endExclusive) = PeriodFilterHelper.GetDateRange(filter, DateTime.Today);
+        if (start is null) return transactions;
+        return transactions.Where(transaction => transaction.Date >= start && transaction.Date < endExclusive);
+    }
+
+    private void RefreshPriceHistoryChart(IEnumerable<AssetPriceSnapshotDTO> entries, IEnumerable<TransactionDTO> transactions)
+    {
+        PriceHistoryPlotModel = PriceHistoryChartBuilder.Build(entries.ToList(), transactions.ToList());
     }
 
     private void SetPriceHistoryContext(string contextKey, bool rebuild = true)

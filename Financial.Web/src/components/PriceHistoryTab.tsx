@@ -9,7 +9,7 @@ import {
 } from 'recharts'
 import { Button, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
 import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
-import type { AssetPriceSnapshotDto } from '../api/types'
+import type { AssetPriceSnapshotDto, TransactionDto } from '../api/types'
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
 import SplitPanel from './SplitPanel'
@@ -20,6 +20,7 @@ import { usePriceHistory } from '../hooks/usePriceHistory'
 import { confirmThenRun } from '../utils/confirmThenRun'
 import { PERIOD_FILTER_OPTIONS } from '../utils/periodFilter'
 import { formatN2, formatShortDate } from '../utils/formatters'
+import { buildChartData, type ChartPoint } from '../utils/priceHistoryChartData'
 import './PriceHistoryTab.css'
 
 const DEFAULT_LEFT_WIDTH = 400
@@ -27,6 +28,10 @@ const MIN_LEFT_WIDTH = 200
 const LINE_COLOR = '#4682b4'
 const MANUAL_DOT_COLOR = '#e65100'
 const AUTOMATIC_DOT_COLOR = '#4682b4'
+// Same Buy/Sell colors as TransactionsTab.css - keep the two in sync.
+const BUY_COLOR = '#2e7d32'
+const SELL_COLOR = '#c62828'
+const MARKER_RADIUS = 4
 
 const SORT_ACCESSORS: Record<string, SortAccessor<AssetPriceSnapshotDto>> = {
   date: (entry) => new Date(entry.date),
@@ -144,49 +149,133 @@ function InlineForm({
   )
 }
 
-interface ChartPanelProps {
-  entries: AssetPriceSnapshotDto[]
+interface DotProps {
+  cx?: number
+  cy?: number
+  payload?: ChartPoint
+  key?: React.Key | null
 }
 
-function ChartPanel({ entries }: ChartPanelProps) {
-  const chartData = [...entries]
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    .map((entry) => ({ date: formatShortDate(entry.date), price: entry.price, isManual: entry.isManual }))
+function HistoryDot({ cx, cy, payload }: DotProps) {
+  if (cx === undefined || cy === undefined || payload?.price === undefined) return <g />
+  return <circle cx={cx} cy={cy} r={3} fill={payload.isManual ? MANUAL_DOT_COLOR : AUTOMATIC_DOT_COLOR} />
+}
+
+function BuyDot({ cx, cy, payload }: DotProps) {
+  if (cx === undefined || cy === undefined || payload?.buyPrice === undefined) return <g />
+  const r = MARKER_RADIUS
+  return <polygon points={`${cx},${cy - r} ${cx - r},${cy + r} ${cx + r},${cy + r}`} fill={BUY_COLOR} />
+}
+
+function SellDot({ cx, cy, payload }: DotProps) {
+  if (cx === undefined || cy === undefined || payload?.sellPrice === undefined) return <g />
+  const r = MARKER_RADIUS
+  return <polygon points={`${cx},${cy + r} ${cx - r},${cy - r} ${cx + r},${cy - r}`} fill={SELL_COLOR} />
+}
+
+interface ChartTooltipProps {
+  active?: boolean
+  payload?: { payload: ChartPoint }[]
+}
+
+function ChartTooltip({ active, payload }: ChartTooltipProps) {
+  const point = active ? payload?.[0]?.payload : undefined
+  if (!point) return null
+
+  if (point.price !== undefined) {
+    return (
+      <div className="price-history-tab__tooltip">
+        <p>{point.isManual ? 'Manual' : 'Automatic'}</p>
+        <p>{point.date}</p>
+        <p>{formatN2(point.price)}</p>
+      </div>
+    )
+  }
+  if (point.buyPrice !== undefined) {
+    return (
+      <div className="price-history-tab__tooltip">
+        <p>Buy</p>
+        <p>{point.date}</p>
+        <p>{formatN2(point.buyPrice)}</p>
+      </div>
+    )
+  }
+  if (point.sellPrice !== undefined) {
+    return (
+      <div className="price-history-tab__tooltip">
+        <p>Sell</p>
+        <p>{point.date}</p>
+        <p>{formatN2(point.sellPrice)}</p>
+      </div>
+    )
+  }
+  return null
+}
+
+function ChartLegend() {
+  return (
+    <div className="price-history-tab__chart-legend">
+      <span className="price-history-tab__legend-item">
+        <span className="price-history-tab__legend-swatch price-history-tab__legend-swatch--automatic" />
+        Automatic
+      </span>
+      <span className="price-history-tab__legend-item">
+        <span className="price-history-tab__legend-swatch price-history-tab__legend-swatch--manual" />
+        Manual
+      </span>
+      <span className="price-history-tab__legend-item">
+        <span className="price-history-tab__legend-swatch price-history-tab__legend-swatch--buy" />
+        Buy
+      </span>
+      <span className="price-history-tab__legend-item">
+        <span className="price-history-tab__legend-swatch price-history-tab__legend-swatch--sell" />
+        Sell
+      </span>
+    </div>
+  )
+}
+
+interface ChartPanelProps {
+  entries: AssetPriceSnapshotDto[]
+  transactions: TransactionDto[]
+}
+
+function ChartPanel({ entries, transactions }: ChartPanelProps) {
+  const chartData = buildChartData(entries, transactions)
 
   return (
     <div className="price-history-tab__chart-panel">
       <p className="price-history-tab__chart-title">Price History</p>
+      <ChartLegend />
       <div className="price-history-tab__chart-container">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="date" tick={{ fontSize: 11 }} />
             <YAxis tickFormatter={formatN2} tick={{ fontSize: 11 }} width={70} />
-            <Tooltip formatter={(v) => (typeof v === 'number' ? formatN2(v) : v)} />
+            <Tooltip content={<ChartTooltip />} />
             <Line
               type="monotone"
               dataKey="price"
               name="Price"
               stroke={LINE_COLOR}
               strokeWidth={2}
-              dot={(props: {
-                cx?: number
-                cy?: number
-                payload?: { isManual: boolean }
-                key?: React.Key | null
-              }) => {
-                const { cx, cy, payload, key } = props
-                if (cx === undefined || cy === undefined) return <g key={key ?? undefined} />
-                return (
-                  <circle
-                    key={key ?? undefined}
-                    cx={cx}
-                    cy={cy}
-                    r={3}
-                    fill={payload?.isManual ? MANUAL_DOT_COLOR : AUTOMATIC_DOT_COLOR}
-                  />
-                )
-              }}
+              connectNulls
+              dot={(props: DotProps) => <HistoryDot key={props.key} {...props} />}
+            />
+            <Line
+              dataKey="buyPrice"
+              name="Buy"
+              stroke="none"
+              isAnimationActive={false}
+              dot={(props: DotProps) => <BuyDot key={props.key} {...props} />}
+            />
+            <Line
+              dataKey="sellPrice"
+              name="Sell"
+              stroke="none"
+              isAnimationActive={false}
+              dot={(props: DotProps) => <SellDot key={props.key} {...props} />}
             />
           </LineChart>
         </ResponsiveContainer>
@@ -199,6 +288,7 @@ export default function PriceHistoryTab() {
   const {
     entries,
     filteredEntries,
+    filteredTransactions,
     isLoading,
     error,
     retry,
@@ -310,7 +400,7 @@ export default function PriceHistoryTab() {
 
   const rightPanel = (
     <div className="price-history-tab__right">
-      <ChartPanel entries={filteredEntries} />
+      <ChartPanel entries={filteredEntries} transactions={filteredTransactions} />
     </div>
   )
 

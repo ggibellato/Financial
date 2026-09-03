@@ -215,3 +215,67 @@
   flex: 1;
   min-height: 0;
 }
+
+.price-history-tab__chart-legend {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 0 0 8px;
+}
+
+.price-history-tab__legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--text-muted, #888);
+}
+
+.price-history-tab__legend-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+}
+
+.price-history-tab__legend-swatch--automatic {
+  border-radius: 50%;
+  background: #4682b4;
+}
+
+.price-history-tab__legend-swatch--manual {
+  border-radius: 50%;
+  background: #e65100;
+}
+
+.price-history-tab__legend-swatch--buy {
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 9px solid #2e7d32;
+}
+
+.price-history-tab__legend-swatch--sell {
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 9px solid #c62828;
+}
+
+.price-history-tab__tooltip {
+  background: var(--bg, #fff);
+  border: 1px solid var(--border, #e5e4e7);
+  border-radius: 3px;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.price-history-tab__tooltip p {
+  margin: 0;
+}
+
+.price-history-tab__tooltip p:first-child {
+  font-weight: bold;
+}
