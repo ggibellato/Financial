@@ -131,13 +131,13 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Colour Mode Setting (Web)
-- [ ] A "Settings" nav item appears after "Admin"; selecting it opens the "Appearance" page.
-- [ ] The Appearance page shows a "Colour mode" control with two text-labelled options: "Light" and "Dark".
-- [ ] With no prior stored preference, the app renders in Light mode regardless of the OS/browser `prefers-color-scheme`.
-- [ ] Selecting "Dark" immediately re-themes the app and persists the choice in `localStorage`.
-- [ ] Reloading the page or reopening the app preserves the last chosen mode.
-- [ ] The header shortcut icon-button reflects and toggles the same stored value as the Appearance page; toggling from the header updates the Appearance page's selected radio.
-- [ ] The header shortcut has an accessible name/tooltip describing the action it performs, and is never the only way to change the mode (the Appearance page's text-labelled control also works).
+- [x] A "Settings" nav item appears after "Admin"; selecting it opens the "Appearance" page.
+- [x] The Appearance page shows a "Colour mode" control with two text-labelled options: "Light" and "Dark".
+- [x] With no prior stored preference, the app renders in Light mode regardless of the OS/browser `prefers-color-scheme`.
+- [x] Selecting "Dark" immediately re-themes the app and persists the choice in `localStorage`.
+- [x] Reloading the page or reopening the app preserves the last chosen mode.
+- [x] The header shortcut icon-button reflects and toggles the same stored value as the Appearance page; toggling from the header updates the Appearance page's selected radio.
+- [x] The header shortcut has an accessible name/tooltip describing the action it performs, and is never the only way to change the mode (the Appearance page's text-labelled control also works).
 
 ### F02. Colour Mode Setting (WPF)
 - [ ] A "Settings" nav item appears after "Admin" in the same position as Web; selecting it opens the "Appearance" page.
