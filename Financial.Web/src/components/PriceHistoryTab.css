@@ -214,6 +214,7 @@
 .price-history-tab__chart-container {
   flex: 1;
   min-height: 0;
+  overflow: hidden;
 }
 
 .price-history-tab__chart-legend {
