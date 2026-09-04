@@ -52,7 +52,7 @@ export default function BalanceAdjustmentForm({
           Balance Corrected
         </Text>
         <Text as="p">
-          Adjustment of {sign}£{formatN2(Math.abs(savedDelta))} recorded
+          Adjustment of <Text weight="semibold">{sign}£{formatN2(Math.abs(savedDelta))}</Text> recorded
         </Text>
         <div className={styles.actions}>
           <Button appearance="primary" onClick={onCancel}>
@@ -97,7 +97,10 @@ export default function BalanceAdjustmentForm({
       {bankChosen && (
         <>
           <Text as="p" size={200}>
-            Current calculated balance for {bankDisplayName}: £{formatN2(currentBalance)}
+            Current calculated balance for {bankDisplayName}:{' '}
+            <Text size={200} weight="semibold">
+              £{formatN2(currentBalance)}
+            </Text>
           </Text>
           <div className={styles.grid}>
             <Field

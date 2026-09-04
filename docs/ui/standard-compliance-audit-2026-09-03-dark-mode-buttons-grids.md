@@ -191,19 +191,31 @@ Carried forward from the standards docs' own list; not counted as violations abo
    required` prop (21 files). WPF: asterisk `Run` with `SystemFillColorCriticalBrush` paired with
    `AutomationProperties.HelpText="Required"` (11 files, matching exactly). Documented in
    `forms-data-and-visualisations.md`'s "Field rules" section.
-5. ~~Contextual-help mechanism.~~ **Mechanism documented 2026-09-05, not yet applied
-   anywhere.** Unlike #1/#4 above, this one genuinely had no existing implementation on either
-   platform to codify. Documented Web (`InfoLabel` in place of a plain string label) and WPF
-   (`ui:SymbolIcon Symbol="Info16"` + `ui:Flyout`) in `forms-data-and-visualisations.md`'s "Field
-   rules" section, per the user's choice to have the mechanism ready rather than retrofit
-   specific fields (e.g. "Round-Up", "JCP") speculatively.
+5. ~~Contextual-help mechanism.~~ **Decided and documented 2026-09-05 — corrected mid-writeup.**
+   Initially documented as "no existing implementation on either platform," which turned out
+   to be wrong: `BalanceAdjustmentForm.tsx`'s/`BalanceAdjustmentFormView.xaml`'s "Target Balance"
+   field already has contextual help on both platforms — Web via `InfoLabel`, WPF via a
+   dedicated, already-shared `controls:HelpFlyoutButton` control (`HelpText` property), not raw
+   `SymbolIcon`+`Flyout` as first assumed. Corrected `forms-data-and-visualisations.md`'s "Field
+   rules" section to document the actual existing pattern (naming `HelpFlyoutButton` specifically)
+   rather than a hypothetical one, with this field as the reference.
 6. ~~Multi-step decision dialog layout (e.g. Move Asset).~~ **Decided and documented
    2026-09-05.** Confirmed both `MoveAssetDialog.tsx` (Fluent `Dialog`/`DialogSurface`/
    `DialogBody`/`DialogContent`, free-form radio groups) and `MoveAssetDialog.xaml` (`StackPanel`+
    `RadioButton`) already use a linear decision layout, not ADR-002's 4-column grid — added an
    explicit "Consequences" line to ADR-002 stating the grid applies to parallel field-entry forms,
    not linear multi-step decision dialogs, using this dialog as the reference on both platforms.
-7. Whether inline computed-value sentences should be bold.
+7. ~~Whether inline computed-value sentences should be bold.~~ **Decided and implemented
+   2026-09-05.** Yes, bold the numeric portion only, consistent with the existing Totals rule
+   ("bold the value, not the label"). Fixed `BalanceAdjustmentForm.tsx`'s two sentences ("Current
+   calculated balance for X: £Y", "Adjustment of £Y recorded") and their WPF equivalent in
+   `BalanceAdjustmentFormView.xaml`. WPF's `MultiBinding`-produced sentence had to be split into
+   separate `TextBlock.Text` bindings (not `Run.Text`, which defaults to `TwoWay` and crashes on
+   `AdjustmentFormBankDisplayName`'s get-only property — the existing Totals rule already warns
+   against this) — incidentally also fixed a missing `£` symbol in that sentence. Updated 5 Web
+   test assertions from exact/regex `getByText` (which can't match text split across sibling
+   elements) to `toHaveTextContent` on the panel's `data-testid`. Documented in
+   `forms-data-and-visualisations.md`'s "Field rules" section, cross-referencing the Totals rule.
 8. Whether Save/Cancel/Confirm need icons.
 9. Post-submit itemized result view styling.
 10. Year-only selector (distinct from the documented month+year picker).

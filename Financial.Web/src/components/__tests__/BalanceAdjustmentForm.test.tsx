@@ -31,7 +31,9 @@ describe('BalanceAdjustmentForm', () => {
   it('renders the current calculated balance from the currentBalance prop', () => {
     render(<BalanceAdjustmentForm {...baseProps} bankName="bank-barclays" currentBalance={2344.37} />)
 
-    expect(screen.getByText('Current calculated balance for Barclays: £2,344.37')).toBeInTheDocument()
+    expect(screen.getByTestId('balance-adjustment-form-panel')).toHaveTextContent(
+      'Current calculated balance for Barclays: £2,344.37',
+    )
   })
 
   it('renders the create form title', () => {
@@ -70,7 +72,7 @@ describe('BalanceAdjustmentForm', () => {
   it('shows the saved-state confirmation with a positive delta and hides the editable fields', () => {
     render(<BalanceAdjustmentForm {...baseProps} savedDelta={4.2} />)
 
-    expect(screen.getByText('Adjustment of £4.20 recorded')).toBeInTheDocument()
+    expect(screen.getByTestId('balance-adjustment-form-panel')).toHaveTextContent('Adjustment of £4.20 recorded')
     expect(screen.queryByLabelText('Target Balance')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Close' })).toBeInTheDocument()
   })
@@ -78,7 +80,7 @@ describe('BalanceAdjustmentForm', () => {
   it('shows the saved-state confirmation with a negative delta', () => {
     render(<BalanceAdjustmentForm {...baseProps} savedDelta={-4.2} />)
 
-    expect(screen.getByText('Adjustment of -£4.20 recorded')).toBeInTheDocument()
+    expect(screen.getByTestId('balance-adjustment-form-panel')).toHaveTextContent('Adjustment of -£4.20 recorded')
   })
 
   it('calls onCancel when the Close button is clicked in the saved state', () => {
@@ -139,7 +141,9 @@ describe('BalanceAdjustmentForm', () => {
   it('reveals the reference line and fields once a bank is chosen', () => {
     render(<BalanceAdjustmentForm {...baseProps} bankName="bank-barclays" currentBalance={100} />)
 
-    expect(screen.getByText('Current calculated balance for Barclays: £100.00')).toBeInTheDocument()
+    expect(screen.getByTestId('balance-adjustment-form-panel')).toHaveTextContent(
+      'Current calculated balance for Barclays: £100.00',
+    )
     expect(screen.getByLabelText('Date')).toBeInTheDocument()
     expect(screen.getByRole('spinbutton', { name: /^Target Balance/ })).toBeInTheDocument()
     expect(screen.getByLabelText('Note')).toBeInTheDocument()
@@ -167,6 +171,8 @@ describe('BalanceAdjustmentForm', () => {
 
     expect(screen.queryByLabelText('Bank')).not.toBeInTheDocument()
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
-    expect(screen.getByText('Current calculated balance for Barclays: £100.00')).toBeInTheDocument()
+    expect(screen.getByTestId('balance-adjustment-form-panel')).toHaveTextContent(
+      'Current calculated balance for Barclays: £100.00',
+    )
   })
 })

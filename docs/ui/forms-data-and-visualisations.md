@@ -116,16 +116,26 @@ SystemFillColorCriticalBrush}"/>`, paired with
 reference.
 
 **Contextual help mechanism:** for a field whose meaning isn't obvious from
-its label alone (e.g. "Round-Up", "JCP"), Web uses Fluent's `InfoLabel` in
-place of a plain string label — `<Field label={<InfoLabel info="...">Round-
-Up</InfoLabel>}>` — which renders a trailing info button opening a
-`Popover` with the explanation, and handles the `aria-owns`/focus wiring
-itself. Use `InfoLabel` (not a plain tooltip) when the explanation is more
-than a few words or needs any interaction — a plain tooltip is for short,
-non-interactive text only. WPF: a small `ui:SymbolIcon Symbol="Info16"`
-beside the label, opening a `ui:Flyout` with the same explanation text.
-Neither platform has an instance of this yet — apply it the first time a
-field genuinely needs one, rather than retrofitting it speculatively.
+its label alone, Web uses Fluent's `InfoLabel` in place of a plain string
+label — `<Field label={{children: (_, props) => <InfoLabel {...props}
+info="...">Label</InfoLabel>}}>` — which renders a trailing info button
+opening a `Popover` with the explanation, and handles the `aria-owns`/focus
+wiring itself. Use `InfoLabel` (not a plain tooltip) when the explanation is
+more than a few words or needs any interaction — a plain tooltip is for
+short, non-interactive text only. WPF: the shared `controls:HelpFlyoutButton`
+control (`HelpText` property) — an info-icon `ui:Button` opening a
+`ui:Flyout` with the text; do not hand-roll a new `SymbolIcon`+`Flyout` pair.
+`BalanceAdjustmentForm.tsx`'s/`BalanceAdjustmentFormView.xaml`'s "Target
+Balance" field is the reference on both platforms.
+
+**Inline computed-value sentence bolding:** a prose sentence reporting a
+computed value (e.g. "Current calculated balance for Barclays: £2,344.37",
+"Adjustment of £4.20 recorded") bolds only the numeric portion, the same
+"bold the value, not the label" principle as the Totals rule below — see
+that rule's note on splitting a single bound/formatted string into separate
+label/value elements, since you cannot bold part of one string.
+`BalanceAdjustmentForm.tsx`/`BalanceAdjustmentFormView.xaml` are the
+reference on both platforms.
 
 ### Form actions and saving
 
