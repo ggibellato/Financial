@@ -121,7 +121,7 @@
                     <GridSplitter Grid.Column="1"
                                   Width="6"
                                   VerticalAlignment="Stretch"
-                                  Background="#E0E0E0"
+                                  Background="{DynamicResource ControlStrokeColorDefaultBrush}"
                                   ResizeDirection="Columns"
                                   ResizeBehavior="PreviousAndNext"/>
 

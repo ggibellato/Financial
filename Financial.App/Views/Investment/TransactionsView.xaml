@@ -110,7 +110,7 @@
                 <GridSplitter Grid.Row="2"
                               Height="6"
                               HorizontalAlignment="Stretch"
-                              Background="#E0E0E0"
+                              Background="{DynamicResource ControlStrokeColorDefaultBrush}"
                               ResizeDirection="Rows"
                               ResizeBehavior="PreviousAndNext"/>
 
