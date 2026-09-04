@@ -43,7 +43,7 @@
             <TextBlock Grid.Row="0" Grid.ColumnSpan="4" FontWeight="Bold" Margin="0,0,0,8">
                 <TextBlock.Style>
                     <Style TargetType="TextBlock">
-                        <Setter Property="Text" Value="Move Money"/>
+                        <Setter Property="Text" Value="New Transfer"/>
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding IsEditingTransfer}" Value="True">
                                 <Setter Property="Text" Value="Edit Transfer"/>
@@ -118,7 +118,7 @@
                 <ui:Button MinWidth="90" Appearance="Primary" Command="{Binding SaveTransferCommand}">
                     <ui:Button.Style>
                         <Style TargetType="{x:Type ui:Button}" BasedOn="{StaticResource {x:Type ui:Button}}">
-                            <Setter Property="Content" Value="Move Money"/>
+                            <Setter Property="Content" Value="Add Transfer"/>
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding IsEditingTransfer}" Value="True">
                                     <Setter Property="Content" Value="Save"/>
