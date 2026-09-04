@@ -282,10 +282,14 @@ public class ExpenseWorkflowViewModel : ViewModelBase
 
     public string? RoundUpAmountFieldError => MatchFieldError("Round-up amount must be between");
 
+    /// <summary>
+    /// Returns just the one line of <see cref="ExpenseSaveError"/> matching this field, not the
+    /// whole (possibly multi-line) combined message — so when several fields are invalid at once,
+    /// each shows only its own text instead of repeating every error under every field.
+    /// </summary>
     private string? MatchFieldError(params string[] fragments) =>
-        ExpenseSaveError is { } error && fragments.Any(f => error.Contains(f, StringComparison.OrdinalIgnoreCase))
-            ? error
-            : null;
+        ExpenseSaveError?.Split(Environment.NewLine)
+            .FirstOrDefault(line => fragments.Any(f => line.Contains(f, StringComparison.OrdinalIgnoreCase)));
 
     /// <summary>Bottom-of-form message — shown only when the error isn't already attributed to a field above.</summary>
     public string? ExpenseGeneralSaveError =>

@@ -34,7 +34,7 @@ interface PriceHistoryState {
   formPrice: string
   isSaving: boolean
   saveError: string | null
-  saveErrorField: PriceHistoryFormField | null
+  saveErrorFields: Partial<Record<PriceHistoryFormField, string>>
   deleteError: string | null
 }
 
@@ -51,7 +51,7 @@ type PriceHistoryAction =
   | { type: 'SET_FORM_FIELD'; payload: { field: PriceHistoryFormField; value: string } }
   | { type: 'SAVE_START' }
   | { type: 'SAVE_SUCCESS'; payload: AssetPriceHistoryResult }
-  | { type: 'SAVE_ERROR'; payload: { message: string; field: PriceHistoryFormField | null } }
+  | { type: 'SAVE_ERROR'; payload: { message: string | null; fields: Partial<Record<PriceHistoryFormField, string>> } }
   | { type: 'DELETE_SUCCESS'; payload: AssetPriceHistoryResult }
   | { type: 'DELETE_ERROR'; payload: string }
 
@@ -62,7 +62,7 @@ const BLANK_FORM = {
   formPrice: '',
   isSaving: false,
   saveError: null,
-  saveErrorField: null,
+  saveErrorFields: {},
 } as const
 
 const INITIAL_STATE: PriceHistoryState = {
@@ -110,7 +110,7 @@ function reducer(state: PriceHistoryState, action: PriceHistoryAction): PriceHis
         formDate: action.payload.date,
         formPrice: '',
         saveError: null,
-        saveErrorField: null,
+        saveErrorFields: {},
         isSaving: false,
       }
     case 'SHOW_EDIT_FORM': {
@@ -122,7 +122,7 @@ function reducer(state: PriceHistoryState, action: PriceHistoryAction): PriceHis
         formDate: toInputDate(entry.date),
         formPrice: String(entry.price),
         saveError: null,
-        saveErrorField: null,
+        saveErrorFields: {},
         isSaving: false,
       }
     }
@@ -131,7 +131,7 @@ function reducer(state: PriceHistoryState, action: PriceHistoryAction): PriceHis
     case 'SET_FORM_FIELD':
       return { ...state, [action.payload.field]: action.payload.value }
     case 'SAVE_START':
-      return { ...state, isSaving: true, saveError: null, saveErrorField: null }
+      return { ...state, isSaving: true, saveError: null, saveErrorFields: {} }
     case 'SAVE_SUCCESS':
       return {
         ...state,
@@ -141,7 +141,7 @@ function reducer(state: PriceHistoryState, action: PriceHistoryAction): PriceHis
         deleteError: state.deleteError,
       }
     case 'SAVE_ERROR':
-      return { ...state, isSaving: false, saveError: action.payload.message, saveErrorField: action.payload.field }
+      return { ...state, isSaving: false, saveError: action.payload.message, saveErrorFields: action.payload.fields }
     case 'DELETE_SUCCESS':
       return { ...state, entries: action.payload.priceHistory, transactions: action.payload.transactions, deleteError: null }
     case 'DELETE_ERROR':
@@ -170,7 +170,7 @@ export interface PriceHistoryData {
   formPrice: string
   isSaving: boolean
   saveError: string | null
-  saveErrorField: PriceHistoryFormField | null
+  saveErrorFields: Partial<Record<PriceHistoryFormField, string>>
   deleteError: string | null
   showNewForm: () => void
   showEditForm: (entry: AssetPriceSnapshotDto) => void
@@ -264,15 +264,19 @@ export function usePriceHistory(): PriceHistoryData {
     if (!selectedNode?.portfolioName || !selectedNode.assetName) return
 
     const { formDate, formPrice } = state
+    const errors: Partial<Record<PriceHistoryFormField, string>> = {}
 
     if (!formDate.trim()) {
-      dispatch({ type: 'SAVE_ERROR', payload: { message: 'Date is required', field: 'formDate' } })
-      return
+      errors.formDate = 'Date is required'
     }
 
     const price = parseValidatedNumber(formPrice)
     if (price === null || price <= 0) {
-      dispatch({ type: 'SAVE_ERROR', payload: { message: 'Price must be a positive number', field: 'formPrice' } })
+      errors.formPrice = 'Price must be a positive number'
+    }
+
+    if (Object.keys(errors).length > 0) {
+      dispatch({ type: 'SAVE_ERROR', payload: { message: Object.values(errors)[0] ?? null, fields: errors } })
       return
     }
 
@@ -284,7 +288,7 @@ export function usePriceHistory(): PriceHistoryData {
         portfolioName: selectedNode.portfolioName,
         assetName: selectedNode.assetName,
         date: formDate,
-        price,
+        price: price as number,
       })
       .then((result) => {
         setStoredDefault(DATE_KEY, formDate)
@@ -296,7 +300,7 @@ export function usePriceHistory(): PriceHistoryData {
       .catch((err: unknown) => {
         dispatch({
           type: 'SAVE_ERROR',
-          payload: { message: getErrorMessage(err, 'Failed to save price'), field: null },
+          payload: { message: getErrorMessage(err, 'Failed to save price'), fields: {} },
         })
       })
   }, [selectedNode, state])
@@ -343,7 +347,7 @@ export function usePriceHistory(): PriceHistoryData {
     formPrice: state.formPrice,
     isSaving: state.isSaving,
     saveError: state.saveError,
-    saveErrorField: state.saveErrorField,
+    saveErrorFields: state.saveErrorFields,
     deleteError: state.deleteError,
     showNewForm,
     showEditForm,

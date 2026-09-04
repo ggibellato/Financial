@@ -76,7 +76,7 @@ const DEFAULT_HOOK: TransactionsData = {
   formFees: '',
   isSaving: false,
   saveError: null,
-  saveErrorField: null,
+  saveErrorFields: {},
   deleteError: null,
   nodeType: 'Asset',
   showNewForm: mockShowNewForm,

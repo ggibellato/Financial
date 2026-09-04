@@ -19,7 +19,7 @@ interface IncomeFormProps {
   incomeSources: IncomeSourceDto[]
   isSaving: boolean
   saveError: string | null
-  saveErrorField: IncomeFormField | null
+  saveErrorFields: Partial<Record<IncomeFormField, string>>
   onFieldChange: (field: IncomeFormField, value: string) => void
   onSave: () => void
   onCancel: () => void
@@ -38,13 +38,13 @@ export default function IncomeForm({
   incomeSources,
   isSaving,
   saveError,
-  saveErrorField,
+  saveErrorFields,
   onFieldChange,
   onSave,
   onCancel,
 }: IncomeFormProps) {
   const styles = useFormPanelStyles()
-  const fieldError = useFieldError(saveError, saveErrorField)
+  const fieldError = useFieldError(saveErrorFields)
   const activeIncomeSources = selectActiveIncomeSources(incomeSources)
   const showGrossValueField = INCOME_SOURCES_WITH_GROSS_VALUE.includes(
     incomeSources.find((s) => s.id === incomeSource)?.name ?? '',
@@ -146,7 +146,7 @@ export default function IncomeForm({
         </Button>
       </div>
 
-      {saveErrorField === null && saveError && (
+      {Object.keys(saveErrorFields).length === 0 && saveError && (
         <MessageBar intent="error">
           <MessageBarBody>{saveError}</MessageBarBody>
         </MessageBar>

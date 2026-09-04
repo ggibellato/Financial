@@ -50,7 +50,7 @@ interface MensaisState {
   editValue: string
   isSaving: boolean
   saveError: string | null
-  saveErrorField: EditField | null
+  saveErrorFields: Partial<Record<EditField, string>>
   isAddFormOpen: boolean
   newDueDay: string
   newDescription: string
@@ -59,7 +59,7 @@ interface MensaisState {
   newNote: string
   isAdding: boolean
   addError: string | null
-  addErrorField: AddField | null
+  addErrorFields: Partial<Record<AddField, string>>
   deletingBillId: string | null
   deleteError: string | null
   isResetting: boolean
@@ -83,13 +83,13 @@ type MensaisAction =
   | { type: 'SET_EDIT_FIELD'; payload: { field: EditField; value: string } }
   | { type: 'SAVE_START' }
   | { type: 'SAVE_SUCCESS' }
-  | { type: 'SAVE_ERROR'; payload: { message: string; field: EditField | null } }
+  | { type: 'SAVE_ERROR'; payload: { message: string | null; fields: Partial<Record<EditField, string>> } }
   | { type: 'SHOW_ADD_FORM'; payload: { area: string } }
   | { type: 'CANCEL_ADD' }
   | { type: 'SET_ADD_FIELD'; payload: { field: AddField; value: string } }
   | { type: 'ADD_START' }
   | { type: 'ADD_SUCCESS' }
-  | { type: 'ADD_ERROR'; payload: { message: string; field: AddField | null } }
+  | { type: 'ADD_ERROR'; payload: { message: string | null; fields: Partial<Record<AddField, string>> } }
   | { type: 'DELETE_START'; payload: string }
   | { type: 'DELETE_SUCCESS' }
   | { type: 'DELETE_ERROR'; payload: string }
@@ -121,13 +121,13 @@ const INITIAL_STATE: MensaisState = {
   editValue: '',
   isSaving: false,
   saveError: null,
-  saveErrorField: null,
+  saveErrorFields: {},
   isAddFormOpen: false,
   ...EMPTY_ADD_FORM_FIELDS,
   newArea: 'Brasil',
   isAdding: false,
   addError: null,
-  addErrorField: null,
+  addErrorFields: {},
   deletingBillId: null,
   deleteError: null,
   isResetting: false,
@@ -165,29 +165,30 @@ function reducer(state: MensaisState, action: MensaisAction): MensaisState {
         editStatus: action.payload.status,
         editValue: String(action.payload.value),
         saveError: null,
+        saveErrorFields: {},
       }
     case 'CANCEL_EDIT':
-      return { ...state, editingId: null, editStatus: '', editValue: '', saveError: null, saveErrorField: null }
+      return { ...state, editingId: null, editStatus: '', editValue: '', saveError: null, saveErrorFields: {} }
     case 'SET_EDIT_FIELD':
       return { ...state, [action.payload.field]: action.payload.value }
     case 'SAVE_START':
-      return { ...state, isSaving: true, saveError: null, saveErrorField: null }
+      return { ...state, isSaving: true, saveError: null, saveErrorFields: {} }
     case 'SAVE_SUCCESS':
       return { ...state, isSaving: false, editingId: null, editStatus: '', editValue: '' }
     case 'SAVE_ERROR':
-      return { ...state, isSaving: false, saveError: action.payload.message, saveErrorField: action.payload.field }
+      return { ...state, isSaving: false, saveError: action.payload.message, saveErrorFields: action.payload.fields }
     case 'SHOW_ADD_FORM':
-      return { ...state, isAddFormOpen: true, ...EMPTY_ADD_FORM_FIELDS, newArea: action.payload.area, addError: null, addErrorField: null }
+      return { ...state, isAddFormOpen: true, ...EMPTY_ADD_FORM_FIELDS, newArea: action.payload.area, addError: null, addErrorFields: {} }
     case 'CANCEL_ADD':
-      return { ...state, isAddFormOpen: false, ...EMPTY_ADD_FORM_FIELDS, addError: null, addErrorField: null }
+      return { ...state, isAddFormOpen: false, ...EMPTY_ADD_FORM_FIELDS, addError: null, addErrorFields: {} }
     case 'SET_ADD_FIELD':
       return { ...state, [action.payload.field]: action.payload.value }
     case 'ADD_START':
-      return { ...state, isAdding: true, addError: null, addErrorField: null }
+      return { ...state, isAdding: true, addError: null, addErrorFields: {} }
     case 'ADD_SUCCESS':
       return { ...state, isAdding: false, isAddFormOpen: false, ...EMPTY_ADD_FORM_FIELDS }
     case 'ADD_ERROR':
-      return { ...state, isAdding: false, addError: action.payload.message, addErrorField: action.payload.field }
+      return { ...state, isAdding: false, addError: action.payload.message, addErrorFields: action.payload.fields }
     case 'DELETE_START':
       return { ...state, deletingBillId: action.payload, deleteError: null }
     case 'DELETE_SUCCESS':
@@ -254,7 +255,7 @@ export interface MensaisData {
   editValue: string
   isSaving: boolean
   saveError: string | null
-  saveErrorField: EditField | null
+  saveErrorFields: Partial<Record<EditField, string>>
   setEditField: (field: EditField, value: string) => void
   showEditForm: (bill: RecurringBillDto) => void
   cancelEdit: () => void
@@ -267,7 +268,7 @@ export interface MensaisData {
   newNote: string
   isAdding: boolean
   addError: string | null
-  addErrorField: AddField | null
+  addErrorFields: Partial<Record<AddField, string>>
   setAddField: (field: AddField, value: string) => void
   showAddForm: () => void
   cancelAdd: () => void
@@ -329,14 +330,19 @@ export function useMensais(): MensaisData {
   function saveEdit() {
     if (!state.editingId) return
 
+    const errors: Partial<Record<EditField, string>> = {}
+
     const value = parseValidatedNumber(state.editValue)
     if (value === null) {
-      dispatch({ type: 'SAVE_ERROR', payload: { message: 'Value must be a number', field: 'editValue' } })
-      return
+      errors.editValue = 'Value must be a number'
     }
 
     if (!state.editStatus.trim()) {
-      dispatch({ type: 'SAVE_ERROR', payload: { message: 'Status is required', field: 'editStatus' } })
+      errors.editStatus = 'Status is required'
+    }
+
+    if (Object.keys(errors).length > 0) {
+      dispatch({ type: 'SAVE_ERROR', payload: { message: Object.values(errors)[0] ?? null, fields: errors } })
       return
     }
 
@@ -349,7 +355,7 @@ export function useMensais(): MensaisData {
       .updateMensaisBill(state.editingId, {
         dueDay: bill.dueDay,
         description: bill.description,
-        value,
+        value: value as number,
         area: bill.area,
         note: bill.note,
         nitNumber: bill.nitNumber,
@@ -363,7 +369,7 @@ export function useMensais(): MensaisData {
       .catch((err: unknown) => {
         dispatch({
           type: 'SAVE_ERROR',
-          payload: { message: getErrorMessage(err, 'Failed to update bill'), field: null },
+          payload: { message: getErrorMessage(err, 'Failed to update bill'), fields: {} },
         })
       })
   }
@@ -378,27 +384,33 @@ export function useMensais(): MensaisData {
   const cancelAdd = useCallback(() => dispatch({ type: 'CANCEL_ADD' }), [])
 
   function submitAdd() {
+    const errors: Partial<Record<AddField, string>> = {}
+
     if (!state.newDescription.trim()) {
-      dispatch({ type: 'ADD_ERROR', payload: { message: 'Description is required', field: 'newDescription' } })
-      return
+      errors.newDescription = 'Description is required'
     }
+
     const dueDay = parseValidatedNumber(state.newDueDay)
     if (dueDay === null) {
-      dispatch({ type: 'ADD_ERROR', payload: { message: 'Due day must be a number', field: 'newDueDay' } })
-      return
+      errors.newDueDay = 'Due day must be a number'
     }
+
     const value = parseValidatedNumber(state.newValue)
     if (value === null) {
-      dispatch({ type: 'ADD_ERROR', payload: { message: 'Value must be a number', field: 'newValue' } })
+      errors.newValue = 'Value must be a number'
+    }
+
+    if (Object.keys(errors).length > 0) {
+      dispatch({ type: 'ADD_ERROR', payload: { message: Object.values(errors)[0] ?? null, fields: errors } })
       return
     }
 
     dispatch({ type: 'ADD_START' })
 
     const request: RecurringBillCreateDto = {
-      dueDay,
+      dueDay: dueDay as number,
       description: state.newDescription,
-      value,
+      value: value as number,
       area: state.newArea,
       note: state.newNote,
     }
@@ -413,7 +425,7 @@ export function useMensais(): MensaisData {
       .catch((err: unknown) => {
         dispatch({
           type: 'ADD_ERROR',
-          payload: { message: getErrorMessage(err, 'Failed to add bill'), field: null },
+          payload: { message: getErrorMessage(err, 'Failed to add bill'), fields: {} },
         })
       })
   }
@@ -542,7 +554,7 @@ export function useMensais(): MensaisData {
     editValue: state.editValue,
     isSaving: state.isSaving,
     saveError: state.saveError,
-    saveErrorField: state.saveErrorField,
+    saveErrorFields: state.saveErrorFields,
     setEditField,
     showEditForm,
     cancelEdit,
@@ -555,7 +567,7 @@ export function useMensais(): MensaisData {
     newNote: state.newNote,
     isAdding: state.isAdding,
     addError: state.addError,
-    addErrorField: state.addErrorField,
+    addErrorFields: state.addErrorFields,
     setAddField,
     showAddForm,
     cancelAdd,

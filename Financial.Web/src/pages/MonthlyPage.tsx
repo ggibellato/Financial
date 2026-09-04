@@ -105,7 +105,7 @@ export default function MonthlyPage() {
     isSettled,
     isSaving,
     saveError,
-    saveErrorField,
+    saveErrorFields,
     showCreateForm,
     showEditForm,
     cancelForm,
@@ -128,7 +128,7 @@ export default function MonthlyPage() {
     incomeSplitToReserve,
     isSavingIncome,
     saveIncomeError,
-    saveIncomeErrorField,
+    saveIncomeErrorFields,
     splitConfirmationMessage,
     showCreateIncomeForm,
     showEditIncomeForm,
@@ -173,7 +173,7 @@ export default function MonthlyPage() {
       isSettled={isSettled}
       isSaving={isSaving}
       saveError={saveError}
-      saveErrorField={saveErrorField}
+      saveErrorFields={saveErrorFields}
       onFieldChange={setField}
       onSave={submit}
       onCancel={cancelForm}
@@ -323,7 +323,7 @@ export default function MonthlyPage() {
                   incomeSources={incomeSources}
                   isSaving={isSavingIncome}
                   saveError={saveIncomeError}
-                  saveErrorField={saveIncomeErrorField}
+                  saveErrorFields={saveIncomeErrorFields}
                   onFieldChange={setIncomeField}
                   onSave={submitIncome}
                   onCancel={cancelIncomeForm}
@@ -361,7 +361,7 @@ export default function MonthlyPage() {
                   banks={banks}
                   isSaving={transferForm.isSaving}
                   saveError={transferForm.saveError}
-                  saveErrorField={transferForm.saveErrorField}
+                  saveErrorFields={transferForm.saveErrorFields}
                   onFieldChange={transferForm.setField}
                   onSave={transferForm.submit}
                   onCancel={transferForm.cancel}
@@ -379,7 +379,7 @@ export default function MonthlyPage() {
                   note={adjustmentForm.note}
                   isSaving={adjustmentForm.isSaving}
                   saveError={adjustmentForm.saveError}
-                  saveErrorField={adjustmentForm.saveErrorField}
+                  saveErrorFields={adjustmentForm.saveErrorFields}
                   savedDelta={adjustmentForm.savedDelta}
                   onFieldChange={adjustmentForm.setField}
                   onSave={adjustmentForm.submit}

@@ -20,7 +20,7 @@ interface TransferFormState {
   note: string
   isSaving: boolean
   saveError: string | null
-  saveErrorField: TransferFormField | null
+  saveErrorFields: Partial<Record<TransferFormField, string>>
 }
 
 const BLANK_STATE: TransferFormState = {
@@ -34,7 +34,7 @@ const BLANK_STATE: TransferFormState = {
   note: '',
   isSaving: false,
   saveError: null,
-  saveErrorField: null,
+  saveErrorFields: {},
 }
 
 export interface UseTransferFormResult {
@@ -47,7 +47,7 @@ export interface UseTransferFormResult {
   note: string
   isSaving: boolean
   saveError: string | null
-  saveErrorField: TransferFormField | null
+  saveErrorFields: Partial<Record<TransferFormField, string>>
   openCreateForm: (preselectedSourceBank?: string) => void
   openEditForm: (transfer: TransferDto) => void
   cancel: () => void
@@ -90,7 +90,7 @@ export function useTransferForm(banks: BankDto[], onSaved: () => void): UseTrans
       note: transfer.note ?? '',
       isSaving: false,
       saveError: null,
-      saveErrorField: null,
+      saveErrorFields: {},
     })
   }
 
@@ -99,47 +99,43 @@ export function useTransferForm(banks: BankDto[], onSaved: () => void): UseTrans
   }
 
   function setField(field: TransferFormField, value: string) {
-    setState((s) => ({ ...s, [field]: value, saveError: null, saveErrorField: null }))
+    setState((s) => ({ ...s, [field]: value, saveError: null, saveErrorFields: {} }))
   }
 
   function submit() {
+    const errors: Partial<Record<TransferFormField, string>> = {}
+
     if (!state.date.trim()) {
-      setState((s) => ({ ...s, saveError: 'Date is required', saveErrorField: 'date' }))
-      return
+      errors.date = 'Date is required'
     }
 
     if (!state.sourceBank.trim()) {
-      setState((s) => ({ ...s, saveError: 'Source bank is required', saveErrorField: 'sourceBank' }))
-      return
+      errors.sourceBank = 'Source bank is required'
     }
 
     if (!state.destinationBank.trim()) {
-      setState((s) => ({ ...s, saveError: 'Destination bank is required', saveErrorField: 'destinationBank' }))
-      return
-    }
-
-    if (state.sourceBank === state.destinationBank) {
-      setState((s) => ({
-        ...s,
-        saveError: 'Source and destination must be different banks.',
-        saveErrorField: 'destinationBank',
-      }))
-      return
+      errors.destinationBank = 'Destination bank is required'
+    } else if (state.sourceBank === state.destinationBank) {
+      errors.destinationBank = 'Source and destination must be different banks.'
     }
 
     const amount = parseValidatedNumber(state.amount)
     if (amount === null || amount <= 0) {
-      setState((s) => ({ ...s, saveError: 'Amount must be greater than zero.', saveErrorField: 'amount' }))
+      errors.amount = 'Amount must be greater than zero.'
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setState((s) => ({ ...s, saveError: Object.values(errors)[0] ?? null, saveErrorFields: errors }))
       return
     }
 
-    setState((s) => ({ ...s, isSaving: true, saveError: null, saveErrorField: null }))
+    setState((s) => ({ ...s, isSaving: true, saveError: null, saveErrorFields: {} }))
 
     const payload = {
       date: state.date,
       sourceBankId: state.sourceBank,
       destinationBankId: state.destinationBank,
-      amount,
+      amount: amount as number,
       note: state.note.trim() === '' ? null : state.note,
     }
 
@@ -159,7 +155,12 @@ export function useTransferForm(banks: BankDto[], onSaved: () => void): UseTrans
       .catch((err: unknown) => {
         const message = getErrorMessage(err, 'Failed to save transfer')
         const field = mapTransferErrorToField(message, state.sourceBank, state.destinationBank)
-        setState((s) => ({ ...s, isSaving: false, saveError: message, saveErrorField: field }))
+        setState((s) => ({
+          ...s,
+          isSaving: false,
+          saveError: message,
+          saveErrorFields: field === null ? {} : { [field]: message },
+        }))
       })
   }
 
@@ -173,7 +174,7 @@ export function useTransferForm(banks: BankDto[], onSaved: () => void): UseTrans
     note: state.note,
     isSaving: state.isSaving,
     saveError: state.saveError,
-    saveErrorField: state.saveErrorField,
+    saveErrorFields: state.saveErrorFields,
     openCreateForm,
     openEditForm,
     cancel,

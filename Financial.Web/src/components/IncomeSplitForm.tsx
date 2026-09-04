@@ -11,7 +11,7 @@ interface IncomeSplitFormProps {
   description: string
   isSubmitting: boolean
   error: string | null
-  errorField: SplitFormField | null
+  errorFields: Partial<Record<SplitFormField, string>>
   lastResult: IncomeSplitResultDto | null
   onFieldChange: (field: SplitFormField, value: string) => void
   onSubmit: () => void
@@ -25,7 +25,7 @@ export default function IncomeSplitForm({
   description,
   isSubmitting,
   error,
-  errorField,
+  errorFields,
   lastResult,
   onFieldChange,
   onSubmit,
@@ -33,8 +33,8 @@ export default function IncomeSplitForm({
   onDismissResult,
 }: IncomeSplitFormProps) {
   const styles = useFormPanelStyles()
-  const fieldError = useFieldError(error, errorField)
-  const generalError = errorField === null ? error : null
+  const fieldError = useFieldError(errorFields)
+  const generalError = Object.keys(errorFields).length === 0 ? error : null
 
   if (lastResult !== null) {
     return (

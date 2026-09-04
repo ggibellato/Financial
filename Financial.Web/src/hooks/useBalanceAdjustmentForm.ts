@@ -20,7 +20,7 @@ interface BalanceAdjustmentFormState {
   note: string
   isSaving: boolean
   saveError: string | null
-  saveErrorField: BalanceAdjustmentFormField | null
+  saveErrorFields: Partial<Record<BalanceAdjustmentFormField, string>>
   savedDelta: number | null
 }
 
@@ -35,7 +35,7 @@ const BLANK_STATE: BalanceAdjustmentFormState = {
   note: '',
   isSaving: false,
   saveError: null,
-  saveErrorField: null,
+  saveErrorFields: {},
   savedDelta: null,
 }
 
@@ -54,7 +54,7 @@ export interface UseBalanceAdjustmentFormResult {
   note: string
   isSaving: boolean
   saveError: string | null
-  saveErrorField: BalanceAdjustmentFormField | null
+  saveErrorFields: Partial<Record<BalanceAdjustmentFormField, string>>
   savedDelta: number | null
   openCreateForm: () => void
   openEditForm: (adjustment: BalanceAdjustmentDto) => void
@@ -100,7 +100,7 @@ export function useBalanceAdjustmentForm(
       note: adjustment.note ?? '',
       isSaving: false,
       saveError: null,
-      saveErrorField: null,
+      saveErrorFields: {},
       savedDelta: null,
     })
   }
@@ -116,11 +116,11 @@ export function useBalanceAdjustmentForm(
         bankName: value,
         currentBalance: resolveCurrentBalance(bankTotals, value),
         saveError: null,
-        saveErrorField: null,
+        saveErrorFields: {},
       }))
       return
     }
-    setState((s) => ({ ...s, [field]: value, saveError: null, saveErrorField: null }))
+    setState((s) => ({ ...s, [field]: value, saveError: null, saveErrorFields: {} }))
   }
 
   function submit() {
@@ -130,22 +130,27 @@ export function useBalanceAdjustmentForm(
       return
     }
 
+    const errors: Partial<Record<BalanceAdjustmentFormField, string>> = {}
+
     if (!state.date.trim()) {
-      setState((s) => ({ ...s, saveError: 'Date is required', saveErrorField: 'date' }))
-      return
+      errors.date = 'Date is required'
     }
 
     const targetBalance = parseValidatedNumber(state.targetBalance, { min: 0 })
     if (targetBalance === null) {
-      setState((s) => ({ ...s, saveError: 'Balance cannot be negative.', saveErrorField: 'targetBalance' }))
+      errors.targetBalance = 'Balance cannot be negative.'
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setState((s) => ({ ...s, saveError: Object.values(errors)[0] ?? null, saveErrorFields: errors }))
       return
     }
 
-    setState((s) => ({ ...s, isSaving: true, saveError: null, saveErrorField: null }))
+    setState((s) => ({ ...s, isSaving: true, saveError: null, saveErrorFields: {} }))
 
     const payload = {
       date: state.date,
-      targetBalance,
+      targetBalance: targetBalance as number,
       note: state.note.trim() === '' ? null : state.note,
     }
 
@@ -164,7 +169,12 @@ export function useBalanceAdjustmentForm(
       .catch((err: unknown) => {
         const message = getErrorMessage(err, 'Failed to save balance adjustment')
         const field = mapBalanceAdjustmentErrorToField(message)
-        setState((s) => ({ ...s, isSaving: false, saveError: message, saveErrorField: field }))
+        setState((s) => ({
+          ...s,
+          isSaving: false,
+          saveError: message,
+          saveErrorFields: field === null ? {} : { [field]: message },
+        }))
       })
   }
 
@@ -179,7 +189,7 @@ export function useBalanceAdjustmentForm(
     note: state.note,
     isSaving: state.isSaving,
     saveError: state.saveError,
-    saveErrorField: state.saveErrorField,
+    saveErrorFields: state.saveErrorFields,
     savedDelta: state.savedDelta,
     openCreateForm,
     openEditForm,

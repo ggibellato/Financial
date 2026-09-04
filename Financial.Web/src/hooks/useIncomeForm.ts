@@ -52,7 +52,7 @@ interface IncomeFormState {
   splitToReserve: string
   isSaving: boolean
   saveError: string | null
-  saveErrorField: IncomeFormField | null
+  saveErrorFields: Partial<Record<IncomeFormField, string>>
   splitConfirmationMessage: string | null
 }
 
@@ -63,7 +63,7 @@ type IncomeFormAction =
   | { type: 'SET_FIELD'; payload: { field: IncomeFormField; value: string } }
   | { type: 'SAVE_START' }
   | { type: 'SAVE_SUCCESS'; payload: IncomeDto }
-  | { type: 'SAVE_ERROR'; payload: { message: string; field: IncomeFormField | null } }
+  | { type: 'SAVE_ERROR'; payload: { message: string | null; fields: Partial<Record<IncomeFormField, string>> } }
   | { type: 'DISMISS_SPLIT_CONFIRMATION' }
 
 const BLANK_FORM = {
@@ -83,7 +83,7 @@ const INITIAL_STATE: IncomeFormState = {
   ...BLANK_FORM,
   isSaving: false,
   saveError: null,
-  saveErrorField: null,
+  saveErrorFields: {},
   splitConfirmationMessage: null,
 }
 
@@ -99,7 +99,7 @@ function reducer(state: IncomeFormState, action: IncomeFormAction): IncomeFormSt
         isEditing: false,
         editingId: null,
         saveError: null,
-        saveErrorField: null,
+        saveErrorFields: {},
         date: action.payload.date,
         bank: action.payload.bank,
         incomeSource: action.payload.source,
@@ -119,14 +119,14 @@ function reducer(state: IncomeFormState, action: IncomeFormAction): IncomeFormSt
         description: action.payload.description ?? '',
         splitToReserve: String(action.payload.splitToReserve),
         saveError: null,
-        saveErrorField: null,
+        saveErrorFields: {},
       }
     case 'CANCEL_FORM':
-      return { ...state, ...BLANK_FORM, isOpen: false, isEditing: false, editingId: null, saveError: null, saveErrorField: null }
+      return { ...state, ...BLANK_FORM, isOpen: false, isEditing: false, editingId: null, saveError: null, saveErrorFields: {} }
     case 'SET_FIELD':
       return { ...state, [action.payload.field]: action.payload.value }
     case 'SAVE_START':
-      return { ...state, isSaving: true, saveError: null, saveErrorField: null }
+      return { ...state, isSaving: true, saveError: null, saveErrorFields: {} }
     case 'SAVE_SUCCESS':
       return {
         ...state,
@@ -138,7 +138,7 @@ function reducer(state: IncomeFormState, action: IncomeFormAction): IncomeFormSt
         splitConfirmationMessage: action.payload.splitToReserve ? SPLIT_CONFIRMATION_MESSAGE : null,
       }
     case 'SAVE_ERROR':
-      return { ...state, isSaving: false, saveError: action.payload.message, saveErrorField: action.payload.field }
+      return { ...state, isSaving: false, saveError: action.payload.message, saveErrorFields: action.payload.fields }
     case 'DISMISS_SPLIT_CONFIRMATION':
       return { ...state, splitConfirmationMessage: null }
     default:
@@ -159,7 +159,7 @@ export interface UseIncomeFormResult {
   incomeSplitToReserve: string
   isSavingIncome: boolean
   saveIncomeError: string | null
-  saveIncomeErrorField: IncomeFormField | null
+  saveIncomeErrorFields: Partial<Record<IncomeFormField, string>>
   splitConfirmationMessage: string | null
   showCreateIncomeForm: () => void
   showEditIncomeForm: (income: IncomeDto) => void
@@ -204,32 +204,32 @@ export function useIncomeForm(incomeSources: IncomeSourceDto[], onSaved: () => v
   }
 
   function submitIncome() {
+    const errors: Partial<Record<IncomeFormField, string>> = {}
+
     if (!state.date.trim()) {
-      dispatch({ type: 'SAVE_ERROR', payload: { message: 'Date is required', field: 'date' } })
-      return
+      errors.date = 'Date is required'
     }
 
     if (!state.incomeSource.trim()) {
-      dispatch({ type: 'SAVE_ERROR', payload: { message: 'Income source is required', field: 'incomeSource' } })
-      return
+      errors.incomeSource = 'Income source is required'
     }
 
     const netValue = parseValidatedNumber(state.netValue, { min: 0 })
     if (netValue === null) {
-      dispatch({ type: 'SAVE_ERROR', payload: { message: 'Net value must be a non-negative number', field: 'netValue' } })
-      return
+      errors.netValue = 'Net value must be a non-negative number'
     }
 
     let grossValue: number | null = null
     if (state.grossValue.trim() !== '') {
-      grossValue = parseValidatedNumber(state.grossValue, { min: netValue })
+      grossValue = parseValidatedNumber(state.grossValue, { min: netValue ?? 0 })
       if (grossValue === null) {
-        dispatch({
-          type: 'SAVE_ERROR',
-          payload: { message: 'Gross value must be at least the net value', field: 'grossValue' },
-        })
-        return
+        errors.grossValue = 'Gross value must be at least the net value'
       }
+    }
+
+    if (Object.keys(errors).length > 0) {
+      dispatch({ type: 'SAVE_ERROR', payload: { message: Object.values(errors)[0] ?? null, fields: errors } })
+      return
     }
 
     dispatch({ type: 'SAVE_START' })
@@ -238,7 +238,7 @@ export function useIncomeForm(incomeSources: IncomeSourceDto[], onSaved: () => v
       date: state.date,
       incomeSourceId: state.incomeSource,
       grossValue,
-      netValue,
+      netValue: netValue as number,
       bankId: state.bank || null,
       description: state.description || null,
       splitToReserve: state.splitToReserve === 'true',
@@ -260,7 +260,7 @@ export function useIncomeForm(incomeSources: IncomeSourceDto[], onSaved: () => v
           type: 'SAVE_ERROR',
           payload: {
             message: getErrorMessage(err, state.isEditing ? 'Failed to update income' : 'Failed to create income'),
-            field: null,
+            fields: {},
           },
         })
       })
@@ -279,7 +279,7 @@ export function useIncomeForm(incomeSources: IncomeSourceDto[], onSaved: () => v
     incomeSplitToReserve: state.splitToReserve,
     isSavingIncome: state.isSaving,
     saveIncomeError: state.saveError,
-    saveIncomeErrorField: state.saveErrorField,
+    saveIncomeErrorFields: state.saveErrorFields,
     splitConfirmationMessage: state.splitConfirmationMessage,
     showCreateIncomeForm,
     showEditIncomeForm,

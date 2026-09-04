@@ -120,7 +120,7 @@ describe('useBalanceAdjustmentForm', () => {
 
     act(() => result.current.submit())
 
-    expect(result.current.saveErrorField).toBe('targetBalance')
+    expect(result.current.saveErrorFields).toHaveProperty('targetBalance')
     expect(createBalanceAdjustmentMock).not.toHaveBeenCalled()
   })
 
@@ -132,7 +132,7 @@ describe('useBalanceAdjustmentForm', () => {
 
     act(() => result.current.submit())
 
-    expect(result.current.saveErrorField).toBe('targetBalance')
+    expect(result.current.saveErrorFields).toHaveProperty('targetBalance')
     expect(createBalanceAdjustmentMock).not.toHaveBeenCalled()
   })
 
@@ -183,7 +183,7 @@ describe('useBalanceAdjustmentForm', () => {
     })
   })
 
-  it('sets saveError and saveErrorField from a failed request', async () => {
+  it('sets saveError and saveErrorFields from a failed request', async () => {
     createBalanceAdjustmentMock.mockRejectedValue(new ApiError('Balance cannot be negative.', 400))
     const { result } = renderHook(() => useBalanceAdjustmentForm(BANK_TOTALS, vi.fn()))
     act(() => result.current.openCreateForm())
@@ -198,7 +198,7 @@ describe('useBalanceAdjustmentForm', () => {
 
     expect(result.current.isSaving).toBe(false)
     expect(result.current.saveError).toBe('Balance cannot be negative.')
-    expect(result.current.saveErrorField).toBe('targetBalance')
+    expect(result.current.saveErrorFields).toHaveProperty('targetBalance')
     expect(result.current.isOpen).toBe(true)
   })
 

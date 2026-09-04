@@ -217,9 +217,8 @@ public class MensaisViewModel : ViewModelBase
     public string? NewValueFieldError => MatchAddFieldError("Value must be a number.");
 
     private string? MatchAddFieldError(params string[] fragments) =>
-        AddSaveError is { } error && fragments.Any(f => error.Contains(f, StringComparison.OrdinalIgnoreCase))
-            ? error
-            : null;
+        AddSaveError?.Split(Environment.NewLine)
+            .FirstOrDefault(line => fragments.Any(f => line.Contains(f, StringComparison.OrdinalIgnoreCase)));
 
     /// <summary>Bottom-of-form message — shown only when the error isn't already attributed to a field above.</summary>
     public string? AddGeneralSaveError =>
@@ -337,9 +336,8 @@ public class MensaisViewModel : ViewModelBase
         EditValueFieldError is null && EditStatusFieldError is null ? EditSaveError : null;
 
     private string? MatchEditFieldError(params string[] fragments) =>
-        EditSaveError is { } error && fragments.Any(f => error.Contains(f, StringComparison.OrdinalIgnoreCase))
-            ? error
-            : null;
+        EditSaveError?.Split(Environment.NewLine)
+            .FirstOrDefault(line => fragments.Any(f => line.Contains(f, StringComparison.OrdinalIgnoreCase)));
 
     public string? DeleteError
     {

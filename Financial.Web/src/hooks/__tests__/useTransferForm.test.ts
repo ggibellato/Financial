@@ -99,7 +99,7 @@ describe('useTransferForm', () => {
     act(() => result.current.submit())
 
     expect(result.current.saveError).toBe('Amount must be greater than zero.')
-    expect(result.current.saveErrorField).toBe('amount')
+    expect(result.current.saveErrorFields).toHaveProperty('amount')
     expect(createTransferMock).not.toHaveBeenCalled()
   })
 
@@ -111,7 +111,7 @@ describe('useTransferForm', () => {
 
     act(() => result.current.submit())
 
-    expect(result.current.saveErrorField).toBe('destinationBank')
+    expect(result.current.saveErrorFields).toHaveProperty('destinationBank')
     expect(createTransferMock).not.toHaveBeenCalled()
   })
 
@@ -165,7 +165,7 @@ describe('useTransferForm', () => {
     })
   })
 
-  it('sets saveError and saveErrorField from a failed request', async () => {
+  it('sets saveError and saveErrorFields from a failed request', async () => {
     createTransferMock.mockRejectedValue(new ApiError('Transfer amount must be greater than zero.', 400))
     const { result } = renderHook(() => useTransferForm(BANKS, vi.fn()))
     act(() => result.current.openCreateForm())
@@ -180,7 +180,7 @@ describe('useTransferForm', () => {
 
     expect(result.current.isSaving).toBe(false)
     expect(result.current.saveError).toBe('Transfer amount must be greater than zero.')
-    expect(result.current.saveErrorField).toBe('amount')
+    expect(result.current.saveErrorFields).toHaveProperty('amount')
     expect(result.current.isOpen).toBe(true)
   })
 

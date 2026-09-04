@@ -39,7 +39,7 @@ const baseProps = {
   isSettled: false,
   isSaving: false,
   saveError: null,
-  saveErrorField: null,
+  saveErrorFields: {},
   onFieldChange: vi.fn(),
   onSave: vi.fn(),
   onCancel: vi.fn(),

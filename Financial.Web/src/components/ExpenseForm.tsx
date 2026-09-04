@@ -35,7 +35,7 @@ interface ExpenseFormProps {
   isSettled: boolean
   isSaving: boolean
   saveError: string | null
-  saveErrorField: ExpenseFormField | null
+  saveErrorFields: Partial<Record<ExpenseFormField, string>>
   onFieldChange: (field: ExpenseFormField, value: string) => void
   onSave: () => void
   onCancel: () => void
@@ -60,13 +60,13 @@ export default function ExpenseForm({
   isSettled,
   isSaving,
   saveError,
-  saveErrorField,
+  saveErrorFields,
   onFieldChange,
   onSave,
   onCancel,
 }: ExpenseFormProps) {
   const styles = useFormPanelStyles()
-  const fieldError = useFieldError(saveError, saveErrorField)
+  const fieldError = useFieldError(saveErrorFields)
   const selectedBank = banks.find((b) => b.id === paymentSource)
   const showRoundUpField = paymentMode === 'bank' && selectedBank?.roundUpEnabled === true
   const selectedCategory = categories.find((c) => c.id === categoryId)
@@ -209,7 +209,7 @@ export default function ExpenseForm({
         </Button>
       </div>
 
-      {saveErrorField === null && saveError && (
+      {Object.keys(saveErrorFields).length === 0 && saveError && (
         <MessageBar intent="error">
           <MessageBarBody>{saveError}</MessageBarBody>
         </MessageBar>

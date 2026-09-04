@@ -77,7 +77,7 @@ const DEFAULT_HOOK: CreditsData = {
   formValue: '',
   isSaving: false,
   saveError: null,
-  saveErrorField: null,
+  saveErrorFields: {},
   deleteError: null,
   nodeType: 'Asset',
   showNewForm: mockShowNewForm,

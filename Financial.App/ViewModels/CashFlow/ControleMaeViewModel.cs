@@ -228,9 +228,8 @@ public class ControleMaeViewModel : ViewModelBase
     public string? CreateValueFieldError => MatchCreateFieldError("Value must be a non-zero number.");
 
     private string? MatchCreateFieldError(params string[] fragments) =>
-        CreateSaveError is { } error && fragments.Any(f => error.Contains(f, StringComparison.OrdinalIgnoreCase))
-            ? error
-            : null;
+        CreateSaveError?.Split(Environment.NewLine)
+            .FirstOrDefault(line => fragments.Any(f => line.Contains(f, StringComparison.OrdinalIgnoreCase)));
 
     /// <summary>Bottom-of-form message — shown only when the error isn't already attributed to a field above.</summary>
     public string? CreateGeneralSaveError =>
@@ -344,9 +343,8 @@ public class ControleMaeViewModel : ViewModelBase
     public string? EditGbpValueFieldError => MatchEditFieldError("GBP value must be a number.");
 
     private string? MatchEditFieldError(params string[] fragments) =>
-        EditSaveError is { } error && fragments.Any(f => error.Contains(f, StringComparison.OrdinalIgnoreCase))
-            ? error
-            : null;
+        EditSaveError?.Split(Environment.NewLine)
+            .FirstOrDefault(line => fragments.Any(f => line.Contains(f, StringComparison.OrdinalIgnoreCase)));
 
     /// <summary>Bottom-of-form message — shown only when the error isn't already attributed to a field above.</summary>
     public string? EditGeneralSaveError =>

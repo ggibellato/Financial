@@ -17,7 +17,7 @@ interface BalanceAdjustmentFormProps {
   note: string
   isSaving: boolean
   saveError: string | null
-  saveErrorField: BalanceAdjustmentFormField | null
+  saveErrorFields: Partial<Record<BalanceAdjustmentFormField, string>>
   savedDelta: number | null
   onFieldChange: (field: BalanceAdjustmentFormField, value: string) => void
   onSave: () => void
@@ -35,14 +35,14 @@ export default function BalanceAdjustmentForm({
   note,
   isSaving,
   saveError,
-  saveErrorField,
+  saveErrorFields,
   savedDelta,
   onFieldChange,
   onSave,
   onCancel,
 }: BalanceAdjustmentFormProps) {
   const styles = useFormPanelStyles()
-  const fieldError = useFieldError(saveError, saveErrorField)
+  const fieldError = useFieldError(saveErrorFields)
 
   if (savedDelta !== null) {
     const sign = savedDelta < 0 ? '-' : ''
@@ -63,7 +63,7 @@ export default function BalanceAdjustmentForm({
     )
   }
 
-  const generalError = saveErrorField === null ? saveError : null
+  const generalError = Object.keys(saveErrorFields).length === 0 ? saveError : null
 
   const bankChosen = bankName !== ''
   const saveDisabled = isSaving || (!isEditing && !bankChosen)

@@ -54,7 +54,7 @@ interface ExpenseFormState {
   isSettled: boolean
   isSaving: boolean
   saveError: string | null
-  saveErrorField: ExpenseFormField | null
+  saveErrorFields: Partial<Record<ExpenseFormField, string>>
 }
 
 type ExpenseFormAction =
@@ -68,7 +68,7 @@ type ExpenseFormAction =
   | { type: 'SET_ROUND_UP_SUGGESTION'; payload: { value: string } }
   | { type: 'SAVE_START' }
   | { type: 'SAVE_SUCCESS' }
-  | { type: 'SAVE_ERROR'; payload: { message: string; field: ExpenseFormField | null } }
+  | { type: 'SAVE_ERROR'; payload: { message: string | null; fields: Partial<Record<ExpenseFormField, string>> } }
 
 const BLANK_FORM = {
   date: '',
@@ -93,7 +93,7 @@ const INITIAL_STATE: ExpenseFormState = {
   ...BLANK_FORM,
   isSaving: false,
   saveError: null,
-  saveErrorField: null,
+  saveErrorFields: {},
 }
 
 function reducer(state: ExpenseFormState, action: ExpenseFormAction): ExpenseFormState {
@@ -106,7 +106,7 @@ function reducer(state: ExpenseFormState, action: ExpenseFormAction): ExpenseFor
         isEditing: false,
         editingId: null,
         saveError: null,
-        saveErrorField: null,
+        saveErrorFields: {},
         date: action.payload.date,
         paymentMode: action.payload.mode,
         paymentSource: action.payload.paymentSource,
@@ -136,10 +136,10 @@ function reducer(state: ExpenseFormState, action: ExpenseFormAction): ExpenseFor
         paymentMode: action.payload.paymentStatus === CHARGE_STATUS ? 'card' : 'bank',
         isSettled: action.payload.paymentStatus === SETTLED_STATUS,
         saveError: null,
-        saveErrorField: null,
+        saveErrorFields: {},
       }
     case 'CANCEL_FORM':
-      return { ...state, ...BLANK_FORM, isOpen: false, isEditing: false, editingId: null, saveError: null, saveErrorField: null }
+      return { ...state, ...BLANK_FORM, isOpen: false, isEditing: false, editingId: null, saveError: null, saveErrorFields: {} }
     case 'SET_FIELD':
       return action.payload.field === 'roundUpAmount'
         ? { ...state, roundUpAmount: action.payload.value, roundUpAmountAuto: false }
@@ -147,11 +147,11 @@ function reducer(state: ExpenseFormState, action: ExpenseFormAction): ExpenseFor
     case 'SET_ROUND_UP_SUGGESTION':
       return { ...state, roundUpAmount: action.payload.value, roundUpAmountAuto: true }
     case 'SAVE_START':
-      return { ...state, isSaving: true, saveError: null, saveErrorField: null }
+      return { ...state, isSaving: true, saveError: null, saveErrorFields: {} }
     case 'SAVE_SUCCESS':
       return { ...state, ...BLANK_FORM, isOpen: false, isEditing: false, editingId: null, isSaving: false }
     case 'SAVE_ERROR':
-      return { ...state, isSaving: false, saveError: action.payload.message, saveErrorField: action.payload.field }
+      return { ...state, isSaving: false, saveError: action.payload.message, saveErrorFields: action.payload.fields }
     default:
       return state
   }
@@ -175,7 +175,7 @@ export interface UseExpenseFormResult {
   isSettled: boolean
   isSaving: boolean
   saveError: string | null
-  saveErrorField: ExpenseFormField | null
+  saveErrorFields: Partial<Record<ExpenseFormField, string>>
   showCreateForm: (mode: PaymentMode) => void
   showEditForm: (expense: ExpenseDto) => void
   cancelForm: () => void
@@ -223,26 +223,40 @@ export function useExpenseForm(
   }
 
   function submit() {
+    const errors: Partial<Record<ExpenseFormField, string>> = {}
+
     if (!state.isEditing) {
       if (!state.date.trim()) {
-        dispatch({ type: 'SAVE_ERROR', payload: { message: 'Date is required', field: 'date' } })
-        return
+        errors.date = 'Date is required'
       }
 
       if (!state.description.trim()) {
-        dispatch({ type: 'SAVE_ERROR', payload: { message: 'Description is required', field: 'description' } })
-        return
+        errors.description = 'Description is required'
       }
     }
 
     const value = parseValidatedNumber(state.value)
     if (value === null || value === 0) {
-      dispatch({ type: 'SAVE_ERROR', payload: { message: 'Value must be a non-zero number', field: 'value' } })
-      return
+      errors.value = 'Value must be a non-zero number'
     }
 
     if (!state.isSettled && state.paymentMode === 'card' && state.creditCardId.trim() === '') {
-      dispatch({ type: 'SAVE_ERROR', payload: { message: 'Card is required', field: 'creditCardId' } })
+      errors.creditCardId = 'Card is required'
+    }
+
+    const selectedBank = banks.find((b) => b.id === state.paymentSource)
+    const roundUpEligible = !state.isSettled && state.paymentMode === 'bank' && selectedBank?.roundUpEnabled === true
+
+    let roundUpAmount: number | null = null
+    if (roundUpEligible && state.roundUpAmount.trim() !== '') {
+      roundUpAmount = parseValidatedNumber(state.roundUpAmount, { min: MIN_ROUND_UP_AMOUNT, max: MAX_ROUND_UP_AMOUNT })
+      if (roundUpAmount === null) {
+        errors.roundUpAmount = `Round-up amount must be between £${MIN_ROUND_UP_AMOUNT.toFixed(2)} and £${MAX_ROUND_UP_AMOUNT.toFixed(2)}`
+      }
+    }
+
+    if (Object.keys(errors).length > 0) {
+      dispatch({ type: 'SAVE_ERROR', payload: { message: Object.values(errors)[0] ?? null, fields: errors } })
       return
     }
 
@@ -259,30 +273,12 @@ export function useExpenseForm(
           creditCardId: state.paymentMode === 'card' ? state.creditCardId : null,
         }
 
-    const selectedBank = banks.find((b) => b.id === state.paymentSource)
-    const roundUpEligible = !state.isSettled && state.paymentMode === 'bank' && selectedBank?.roundUpEnabled === true
-
-    let roundUpAmount: number | null = null
-    if (roundUpEligible && state.roundUpAmount.trim() !== '') {
-      roundUpAmount = parseValidatedNumber(state.roundUpAmount, { min: MIN_ROUND_UP_AMOUNT, max: MAX_ROUND_UP_AMOUNT })
-      if (roundUpAmount === null) {
-        dispatch({
-          type: 'SAVE_ERROR',
-          payload: {
-            message: `Round-up amount must be between £${MIN_ROUND_UP_AMOUNT.toFixed(2)} and £${MAX_ROUND_UP_AMOUNT.toFixed(2)}`,
-            field: 'roundUpAmount',
-          },
-        })
-        return
-      }
-    }
-
     dispatch({ type: 'SAVE_START' })
 
     const payload = {
       date: state.date,
       description: state.description,
-      value,
+      value: value as number,
       categoryId: state.categoryId,
       ...paymentFields,
       invoiceDate:
@@ -313,7 +309,7 @@ export function useExpenseForm(
           type: 'SAVE_ERROR',
           payload: {
             message: getErrorMessage(err, state.isEditing ? 'Failed to update expense' : 'Failed to create expense'),
-            field: null,
+            fields: {},
           },
         })
       })
@@ -337,7 +333,7 @@ export function useExpenseForm(
     isSettled: state.isSettled,
     isSaving: state.isSaving,
     saveError: state.saveError,
-    saveErrorField: state.saveErrorField,
+    saveErrorFields: state.saveErrorFields,
     showCreateForm,
     showEditForm,
     cancelForm,

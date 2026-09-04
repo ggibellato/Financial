@@ -127,9 +127,8 @@ public class TransferWorkflowViewModel : ViewModelBase
     public string? AmountFieldError => MatchFieldError("Amount must be a positive number.");
 
     private string? MatchFieldError(params string[] fragments) =>
-        TransferSaveError is { } error && fragments.Any(f => error.Contains(f, StringComparison.OrdinalIgnoreCase))
-            ? error
-            : null;
+        TransferSaveError?.Split(Environment.NewLine)
+            .FirstOrDefault(line => fragments.Any(f => line.Contains(f, StringComparison.OrdinalIgnoreCase)));
 
     /// <summary>Bottom-of-form message — shown only when the error isn't already attributed to a field above.</summary>
     public string? TransferGeneralSaveError =>

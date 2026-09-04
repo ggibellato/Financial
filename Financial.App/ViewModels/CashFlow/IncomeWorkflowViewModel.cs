@@ -157,9 +157,8 @@ public class IncomeWorkflowViewModel : ViewModelBase
     public string? NetValueFieldError => MatchFieldError("Net Value must be a number.");
 
     private string? MatchFieldError(string fragment) =>
-        IncomeSaveError is { } error && error.Contains(fragment, StringComparison.OrdinalIgnoreCase)
-            ? error
-            : null;
+        IncomeSaveError?.Split(Environment.NewLine)
+            .FirstOrDefault(line => line.Contains(fragment, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>Bottom-of-form message — shown only when the error isn't already attributed to a field above.</summary>
     public string? IncomeGeneralSaveError =>

@@ -12,7 +12,7 @@ interface WithdrawalFormProps {
   buckets: ReserveBucketDto[]
   isSubmitting: boolean
   error: string | null
-  errorField: WithdrawalFormField | null
+  errorFields: Partial<Record<WithdrawalFormField, string>>
   onFieldChange: (field: WithdrawalFormField, value: string) => void
   onSubmit: () => void
   onCancel: () => void
@@ -26,14 +26,14 @@ export default function WithdrawalForm({
   buckets,
   isSubmitting,
   error,
-  errorField,
+  errorFields,
   onFieldChange,
   onSubmit,
   onCancel,
 }: WithdrawalFormProps) {
   const styles = useFormPanelStyles()
-  const fieldError = useFieldError(error, errorField)
-  const generalError = errorField === null ? error : null
+  const fieldError = useFieldError(errorFields)
+  const generalError = Object.keys(errorFields).length === 0 ? error : null
 
   return (
     <div className={styles.panel} data-testid="withdrawal-form-panel">

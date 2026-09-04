@@ -14,7 +14,7 @@ interface TransferFormProps {
   banks: BankDto[]
   isSaving: boolean
   saveError: string | null
-  saveErrorField: TransferFormField | null
+  saveErrorFields: Partial<Record<TransferFormField, string>>
   onFieldChange: (field: TransferFormField, value: string) => void
   onSave: () => void
   onCancel: () => void
@@ -30,7 +30,7 @@ export default function TransferForm({
   banks,
   isSaving,
   saveError,
-  saveErrorField,
+  saveErrorFields,
   onFieldChange,
   onSave,
   onCancel,
@@ -43,13 +43,13 @@ export default function TransferForm({
 
   const destinationBanks = banks.filter((b) => b.id !== sourceBank)
 
-  const baseFieldError = useFieldError(saveError, saveErrorField)
+  const baseFieldError = useFieldError(saveErrorFields)
   const fieldError = (field: TransferFormField): string | null => {
     if (field === 'destinationBank' && sameBankError) return sameBankError
     return baseFieldError(field)
   }
 
-  const generalError = saveErrorField === null ? saveError : null
+  const generalError = Object.keys(saveErrorFields).length === 0 ? saveError : null
 
   return (
     <div className={styles.panel} data-testid="transfer-form-panel">

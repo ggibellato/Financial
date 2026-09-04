@@ -261,9 +261,8 @@ public class ReservaViewModel : ViewModelBase
             : null;
 
     private string? MatchEditFieldError(string fragment) =>
-        EditSaveError is { } error && error.Contains(fragment, StringComparison.OrdinalIgnoreCase)
-            ? error
-            : null;
+        EditSaveError?.Split(Environment.NewLine)
+            .FirstOrDefault(line => line.Contains(fragment, StringComparison.OrdinalIgnoreCase));
 
     private string? _deleteMovementError;
 

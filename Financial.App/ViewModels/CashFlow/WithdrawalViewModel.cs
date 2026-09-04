@@ -101,9 +101,8 @@ public class WithdrawalViewModel : ViewModelBase
             : null;
 
     private string? MatchFieldError(string fragment) =>
-        WithdrawalSaveError is { } error && error.Contains(fragment, StringComparison.OrdinalIgnoreCase)
-            ? error
-            : null;
+        WithdrawalSaveError?.Split(Environment.NewLine)
+            .FirstOrDefault(line => line.Contains(fragment, StringComparison.OrdinalIgnoreCase));
 
     public RelayCommand ShowWithdrawalFormCommand { get; }
     public RelayCommand CancelWithdrawalFormCommand { get; }
