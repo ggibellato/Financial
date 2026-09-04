@@ -21,7 +21,10 @@ describe('Breadcrumb', () => {
       for (const child of category.children) {
         const { unmount } = renderBreadcrumb(child.route)
 
-        expect(screen.getByText(`${category.label} › ${child.label}`)).toBeInTheDocument()
+        expect(screen.getByRole('navigation', { name: 'Breadcrumb' })).toHaveTextContent(
+          `${category.label}${child.label}`,
+        )
+        expect(screen.getByText(child.label)).toHaveAttribute('aria-current', 'page')
 
         unmount()
       }
@@ -32,6 +35,7 @@ describe('Breadcrumb', () => {
     renderBreadcrumb('/unknown')
 
     expect(screen.getByText('—')).toBeInTheDocument()
+    expect(screen.getByText('—')).toHaveAttribute('aria-current', 'page')
   })
 
   it('breadcrumb text is not a link and has no interactive role', () => {
@@ -46,6 +50,6 @@ describe('Breadcrumb', () => {
 
     renderBreadcrumb('/cashflow/monthly')
 
-    expect(screen.getByText('CashFlow › Monthly')).toBeInTheDocument()
+    expect(screen.getByRole('navigation', { name: 'Breadcrumb' })).toHaveTextContent('CashFlowMonthly')
   })
 })

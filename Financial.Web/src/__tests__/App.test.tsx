@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { afterEach, describe, expect, it } from 'vitest'
 import App from '../App'
@@ -25,16 +25,17 @@ describe('App', () => {
   it('renders the sidebar with all three categories', () => {
     render(<AppWithRoutes />)
 
-    expect(screen.getByRole('navigation', { name: 'Main' })).toBeInTheDocument()
-    expect(screen.getByText('Investments')).toBeInTheDocument()
-    expect(screen.getAllByText('CashFlow').length).toBeGreaterThan(0)
-    expect(screen.getByText('Admin')).toBeInTheDocument()
+    const sidebar = screen.getByRole('navigation', { name: 'Main' })
+    expect(sidebar).toBeInTheDocument()
+    expect(within(sidebar).getByText('Investments')).toBeInTheDocument()
+    expect(within(sidebar).getAllByText('CashFlow').length).toBeGreaterThan(0)
+    expect(within(sidebar).getByText('Admin')).toBeInTheDocument()
   })
 
   it('renders the breadcrumb above the routed content', () => {
     render(<AppWithRoutes />)
 
-    expect(screen.getByText('Investments › Active Investments')).toBeInTheDocument()
+    expect(screen.getByRole('navigation', { name: 'Breadcrumb' })).toHaveTextContent('InvestmentsActive Investments')
   })
 
   it('switches to the cashflow domain content', () => {

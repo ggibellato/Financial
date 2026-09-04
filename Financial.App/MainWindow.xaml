@@ -29,7 +29,8 @@
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Text="{Binding BreadcrumbText}" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                    <TextBlock Grid.Column="0" Text="{Binding BreadcrumbText}" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                               AutomationProperties.Name="Breadcrumb"/>
                     <local:ColourModeToggleButton Grid.Column="1" DataContext="{Binding ColourMode}" VerticalAlignment="Center"/>
                 </Grid>
             </Border>

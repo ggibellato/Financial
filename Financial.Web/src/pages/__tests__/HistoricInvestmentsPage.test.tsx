@@ -110,6 +110,6 @@ describe('HistoricInvestmentsPage', () => {
     await screen.findByText('XPI (BRL)')
     fireEvent.click(screen.getByText('XPI (BRL)'))
     expect(screen.getAllByText('XPI').length).toBeGreaterThan(0)
-    expect(screen.getByRole('button', { name: 'Summary' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Summary' })).toBeInTheDocument()
   })
 })
