@@ -254,9 +254,10 @@ Icon-only row actions (Edit, Delete, and similar per-row commands) go in the
 the right edge. `ExpensesSection.tsx`/`IncomeSection.tsx` are the reference:
 each row's Edit and Delete `Button`s (`appearance="subtle"`, `size="small"`,
 an explicit `aria-label`, no visible text) sit in the first two
-`TableCell`s, ahead of Date/Description/Category/etc. WPF matches with the
-same leading column position, `ui:Button Appearance="Transparent"` and
-`ui:SymbolIcon`. This keeps the action affordance in a fixed, predictable
+`TableCell`s, ahead of Date/Description/Category/etc., using `EditRegular`/
+`DeleteRegular` from `@fluentui/react-icons`. WPF matches with the same
+leading column position, `ui:Button Appearance="Transparent"` and
+`ui:SymbolIcon Symbol=Edit16`/`Symbol=Delete16`. This keeps the action affordance in a fixed, predictable
 place regardless of how many data columns a given grid has, and matches this
 rule's own action-button convention of never right-aligning actions (see
 "Action buttons" above).
