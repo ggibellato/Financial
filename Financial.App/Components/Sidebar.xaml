@@ -27,7 +27,7 @@
                         <Setter Property="FontWeight" Value="Normal"/>
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding RelativeSource={RelativeSource Self}, Path=Tag}" Value="True">
-                                <Setter Property="Foreground" Value="#007ACC"/>
+                                <Setter Property="Foreground" Value="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
                                 <Setter Property="FontWeight" Value="Bold"/>
                             </DataTrigger>
                         </Style.Triggers>
@@ -52,7 +52,7 @@
                                                 <Binding Path="DataContext.SelectedChildId" RelativeSource="{RelativeSource AncestorType=UserControl}"/>
                                             </MultiBinding>
                                         </DataTrigger.Binding>
-                                        <Setter Property="Foreground" Value="#007ACC"/>
+                                        <Setter Property="Foreground" Value="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
@@ -130,7 +130,7 @@
                                             <Setter Property="TextElement.Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding RelativeSource={RelativeSource Self}, Path=Tag}" Value="True">
-                                                    <Setter Property="TextElement.Foreground" Value="#007ACC"/>
+                                                    <Setter Property="TextElement.Foreground" Value="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
@@ -149,7 +149,7 @@
                                                 <Setter Property="Stroke" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType=StackPanel}}" Value="True">
-                                                        <Setter Property="Stroke" Value="#007ACC"/>
+                                                        <Setter Property="Stroke" Value="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
