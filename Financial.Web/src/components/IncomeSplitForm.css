@@ -1,0 +1,14 @@
+.income-split-form__result-table {
+  width: 100%;
+  max-width: 640px;
+}
+
+.income-split-form__col-value {
+  width: 120px;
+}
+
+.income-split-form__totals-row td {
+  background: var(--bg-subtle);
+  font-weight: bold;
+  border-top: 2px solid var(--border);
+}

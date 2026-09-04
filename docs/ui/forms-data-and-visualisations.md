@@ -137,6 +137,17 @@ label/value elements, since you cannot bold part of one string.
 `BalanceAdjustmentForm.tsx`/`BalanceAdjustmentFormView.xaml` are the
 reference on both platforms.
 
+**Post-submit itemized result view:** a one-time confirmation shown after a
+form submits, itemizing what was recorded (e.g. `IncomeSplitForm`'s "posted"
+summary of amounts per bucket), uses a `MessageBar intent="success"` for the
+confirmation line, and the same raw `<table>` + shared `.data-table` CSS
+class every other grid in this app uses for its itemized rows — not Fluent's
+`Table` component, which is built for interactive/sortable grids the result
+view isn't. Give the result its own small component-local CSS file for any
+table variant it needs (e.g. a narrower value column) rather than reaching
+into another page's stylesheet for classes it doesn't own.
+`IncomeSplitForm.tsx`/`IncomeSplitForm.css` is the reference.
+
 ### Form actions and saving
 
 - Use one primary form action.

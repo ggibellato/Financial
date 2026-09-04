@@ -221,7 +221,16 @@ Carried forward from the standards docs' own list; not counted as violations abo
    Edit) and every existing form on both platforms already has zero icons on these buttons.
    Documented as a definitive rule in `forms-data-and-visualisations.md`'s "Form actions and
    saving" section.
-9. Post-submit itemized result view styling.
+9. ~~Post-submit itemized result view styling.~~ **Decided and implemented 2026-09-05,
+   corrected from the prior audit's specific proposal.** The prior audit proposed converting to
+   Fluent's `Table` component — checking actual usage found this would be LESS consistent with the
+   app's real convention (raw `<table>` + shared `.data-table` CSS, used by 23+ grids including
+   `TotalsGrid`), since Fluent's `Table` is built for interactive/sortable grids, not a static
+   result summary. Implemented instead: `MessageBar intent="success"` for the confirmation line
+   (the one genuinely missing piece), and decoupled `IncomeSplitForm.tsx` from `ReservaPage.css`
+   (whose page-specific classes it was borrowing) into its own local `IncomeSplitForm.css` — same
+   visual result, fixes the actual coupling smell. Verified live in the browser, light and dark
+   mode. Verified: `npm run build`/`lint` clean, `npm test` (1471 passed).
 10. Year-only selector (distinct from the documented month+year picker).
 11. Breadcrumb semantic structure.
 12. Hand-rolled tab-strip component convention.
