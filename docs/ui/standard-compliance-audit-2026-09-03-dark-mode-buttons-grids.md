@@ -242,10 +242,59 @@ Carried forward from the standards docs' own list; not counted as violations abo
    `forms-data-and-visualisations.md`'s new "Year-only selection" sub-rule. Verified:
    `dotnet build`/`dotnet test Tests/Financial.Presentation.Tests` (1202 passed, +4 new); pending
    the user's visual confirmation (no WPF GUI in this environment).
-11. Breadcrumb semantic structure.
-12. Hand-rolled tab-strip component convention.
-13. Status-dot/badge convention.
-14. Drag-to-resize persistent workspace layout.
+11. ~~Breadcrumb semantic structure.~~ **Decided and implemented 2026-09-05.** Both platforms
+   had zero semantic markup (plain `<div>` on Web, plain `TextBlock` on WPF). Checked whether
+   segments should become clickable first: the nav tree gives categories no route of their own,
+   so both segments are correctly non-interactive already — the real gap was purely markup. Web:
+   wrapped in `<nav aria-label="Breadcrumb"><ol>`, one `<li>` per segment,
+   `aria-current="page"` on the current-page segment, separator moved to CSS `::before` content
+   (not a DOM node). WPF: `AutomationProperties.Name="Breadcrumb"` on the `TextBlock` (no settable
+   landmark-type XAML property exists without a custom `AutomationPeer`). Updated 2 Web test
+   assertions from exact `getByText` (broken by the segments no longer being one text node) to
+   `toHaveTextContent` + `aria-current` checks. Documented in `react.md`/`wpf.md`. Verified:
+   `npm test` (4/4 Breadcrumb tests), `dotnet build`/`dotnet test Tests/Financial.Presentation.Tests`
+   (1202 passed) clean; pending the user's visual confirmation for the WPF half (no WPF GUI in
+   this environment, though this is a pure accessibility-metadata addition with no visual change).
+12. **Hand-rolled tab-strip component convention — resolved on Web, documented as an open gap
+   on WPF.** `MonthlyPage.tsx` already used Fluent `TabList` (already compliant); `DetailPanel.tsx`
+   (Investment asset detail's Summary/Transactions/Credits/Price History tabs — a page exercised
+   constantly throughout this session's manual testing) and `AnnualSummaryPage.tsx` were still
+   hand-rolled `<button>` groups. Converted both to `TabList`/`Tab`, matching `MonthlyPage`'s
+   pattern; removed the now-dead CSS. Fixed 4 test files whose assertions broke when tab buttons
+   became `role="tab"` (`DetailPanel.test.tsx`, `AnnualSummaryPage.test.tsx`,
+   `ActiveInvestmentsPage.test.tsx`, `HistoricInvestmentsPage.test.tsx`). Verified live in the
+   browser (both pages, tab switching, both light/dark). **WPF correction:** initially assumed
+   Wpf.Ui auto-themes `TabControl` (like `RadioButton`) — a DLL string-scan disproved this: Wpf.Ui
+   ships no tab-strip control and no implicit theme resources for `TabControl`/`TabItem` at all,
+   so every WPF tab strip (`NavigationView.xaml`, `MonthlyView.xaml`, `AnnualSummaryView.xaml`)
+   renders with unthemed classic Windows chrome. Documented as a known open gap in `wpf.md` rather
+   than attempting a from-scratch custom `ControlTemplate` blind — too large/risky to build without
+   visual verification. **Not closed** — left open pending a future session with WPF GUI access.
+13. ~~Status-dot/badge convention.~~ **Decided and implemented 2026-09-05.** Confirmed the
+   original finding: `InvestmentTree.tsx`'s asset-node status dot (Long/Flat/Short) was genuinely
+   color-only, no text alternative at all. Fixed with `role="img"` + `aria-label`/`title` on the
+   dot, naming the position type — becomes part of the tree item's own accessible name (e.g.
+   "Long KLBN4"). `DetailPanel.tsx`'s equivalent already had adjacent visible text ("● Long");
+   marked its bullet `aria-hidden="true"` to avoid a screen reader announcing the raw glyph on top
+   of the text. WPF: `NavigationView.xaml`'s dot got `AutomationProperties.Name` bound to the same
+   position type. Updated `InvestmentTree.test.tsx` (accessible names changed, e.g. "● KLBN4" →
+   "Long KLBN4") and `DetailPanel.test.tsx` (queried by class instead of combined text). Documented
+   in `forms-data-and-visualisations.md`'s new "Status indicators" section. Verified: `npm test`
+   (1471 passed), `dotnet build`/`dotnet test Tests/Financial.Presentation.Tests` (1202 passed);
+   pending the user's visual confirmation for the WPF half (no WPF GUI in this environment, though
+   this is a pure accessibility-metadata addition with no visual change).
+14. ~~Drag-to-resize persistent workspace layout.~~ **Decided and implemented 2026-09-04.**
+   Confirmed `Financial.Web/src/components/SplitPanel.tsx`'s resize handle was genuinely
+   mouse-only — no role, no `tabIndex`, no keyboard handler — a real WCAG 2.2 AA keyboard-operability
+   gap, not a stale citation. Added the WAI-ARIA "window splitter" pattern: `role="separator"`,
+   `aria-orientation`, `aria-valuenow`/`aria-valuemin`/`aria-valuemax`, `tabIndex={0}`, and
+   Arrow/Home/End key handling (same min/max bounds the mouse drag already enforces), plus a
+   `:focus-visible` outline. WPF's `GridSplitter` already supports keyboard resizing natively —
+   no WPF change needed there. Documented in `forms-data-and-visualisations.md`'s new "Resizable
+   split panels are keyboard-operable" sub-rule. Verified live in the browser (Credits tab):
+   focused the handle, stepped it with ArrowLeft/ArrowRight (exact ±20px steps), and confirmed
+   Home/End jump to the instance's configured min/max width. Verified: `npm run
+   build`/`lint` clean, `npm test` (1475 passed, +4 new).
 15. ~~Async batch-fetch progress indicator shape.~~ **Confirmed and documented 2026-09-04,
    no code change needed.** Verified `CurrentValuesPage.tsx` (Web) and `AssetPriceView.xaml`/
    `AssetPriceFetchViewModel.cs` (WPF) already agree closely: both use a determinate

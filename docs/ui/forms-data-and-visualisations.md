@@ -451,6 +451,22 @@ Every chart must provide:
 
 Charts must answer a user question. Do not use them as decoration.
 
+### Status indicators
+
+A color-coded status indicator (e.g. the "●" position-type dot for Long/
+Flat/Short) must never rely on color alone — pair it with an accessible
+text alternative naming the state, not just a visible label somewhere else
+on the page. Web: `role="img"` plus `aria-label`/`title` set to the state
+name on the glyph itself (`InvestmentTree.tsx`'s asset nodes are the
+reference — the dot's accessible name becomes part of the tree item's own
+name, so a screen reader hears e.g. "Long KLBN4", not just "KLBN4"). Where
+the state name is already visible as adjacent text (e.g.
+`DetailPanel.tsx`'s "● Long"), mark the glyph itself `aria-hidden="true"`
+instead, so a screen reader doesn't announce the raw bullet character on
+top of the text that already names the state. WPF: `AutomationProperties.Name`
+bound to the same state value on the glyph `TextBlock` (`NavigationView.xaml`
+is the reference).
+
 ### Series color
 
 Single-series bars and lines are **blue**, not grey/neutral — the same blue
@@ -523,6 +539,29 @@ stacks (its grid has 8 columns including actions); `CreditsTab.tsx` and
 `GridSplitter`-based row split (stacked) or column split (side by side) —
 identical controls are not required, the resulting reading order and use of
 width are.
+
+### Resizable split panels are keyboard-operable
+
+A resize handle between two panels (`SplitPanel`'s divider on Web,
+`GridSplitter` on WPF) is an interactive control, not a decorative border, so
+it must be reachable and usable without a mouse:
+
+- The handle is keyboard-focusable, exposes a visible focus state, and follows
+  the WAI-ARIA "window splitter" pattern — `role="separator"`,
+  `aria-orientation`, and `aria-valuenow`/`aria-valuemin`/`aria-valuemax`
+  reflecting the current and allowed panel width.
+- Arrow keys (Left/Right for a vertical divider, Up/Down for a horizontal one)
+  step the width by a fixed increment; Home/End jump to the minimum and
+  maximum allowed width.
+- The minimum width is the same bound the mouse drag already enforces (so
+  keyboard resizing can never produce a narrower or more cramped panel than
+  dragging can); the maximum keeps the other panel from being squeezed away
+  entirely.
+
+`SplitPanel` implements this directly (`Financial.Web/src/components/
+SplitPanel.tsx`). WPF's `GridSplitter` already supports this out of the box —
+it is keyboard-focusable and resizes its row/column with the arrow keys with
+no extra code — so WPF needs no change here, only the Web side did.
 
 ## Inline form, dialog, drawer, or page
 

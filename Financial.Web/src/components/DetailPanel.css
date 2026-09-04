@@ -60,33 +60,6 @@
   margin: 4px 0 0;
 }
 
-.detail-panel__tabs {
-  display: flex;
-  border-bottom: 1px solid var(--border, #e0e0e0);
-  padding: 0 8px;
-}
-
-.detail-panel__tab {
-  background: none;
-  border: none;
-  border-bottom: 2px solid transparent;
-  cursor: pointer;
-  font-size: 14px;
-  padding: 8px 12px;
-  color: var(--text, #333);
-  margin-bottom: -1px;
-}
-
-.detail-panel__tab:hover {
-  color: var(--accent, #007acc);
-}
-
-.detail-panel__tab--active {
-  border-bottom-color: var(--accent, #007acc);
-  font-weight: 600;
-  color: var(--accent, #007acc);
-}
-
 .detail-panel__content {
   flex: 1;
   overflow: auto;
