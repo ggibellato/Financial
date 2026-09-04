@@ -79,6 +79,6 @@
 
 .investment-tree__row--drop-target {
   background: var(--drop-target, #cce8ff);
-  outline: 1px solid var(--accent, #007acc);
+  outline: 1px solid var(--accent);
   border-radius: 3px;
 }

@@ -56,7 +56,7 @@
 }
 
 .portfolio-summary__credits-separator {
-  border-left: 3px solid var(--accent, #5a7e6e);
+  border-left: 3px solid var(--accent);
   padding-left: 10px;
 }
 

@@ -89,7 +89,7 @@ token values belong in the React theme and WPF ResourceDictionaries."
 | 5 | `CreditsTab.css:8-10` | Credit-type colours (`--credit-type-dividend/rent/jcp`) are a local, non-token palette scoped to this file, identical in both themes. Deliberately left alone during PR #704 (categorical, not a status colour) — still open. | Medium |
 | 6 | ~~`pages/AnnualSummaryPage.css:39-46`~~ | **Resolved 2026-09-05.** All three `#007acc` occurrences (hover and active tab state) replaced with `var(--accent)`. | ~~Medium~~ Resolved |
 | 7 | ~~`PortfolioSummaryTab.css:39-53`, `AggregatedSummaryTab.css:34,38,42`, `InvestmentTree.css:65,73,81-82`~~ | **Resolved via PR #704.** All six files (plus `AssetSummaryTab.css` and `DetailPanel.css`, discovered during the fix) now use `var(--success)`/`var(--danger)`. | ~~Medium~~ Resolved |
-| 8 | `InvestmentTree.css:82`, `PortfolioSummaryTab.css:59` | Stale fallback values inside otherwise-correct `var()` calls (`var(--accent, #007acc)`, `var(--accent, #5a7e6e)`) — harmless today since `--accent` is always declared, but misleading dead code. Deliberately deferred as Low, not touched — still open. | Low |
+| 8 | ~~`InvestmentTree.css:82`, `PortfolioSummaryTab.css:59`~~ | **Resolved 2026-09-05.** Both stale fallback values removed — `--accent` is always declared, so `var(--accent, #007acc)`/`var(--accent, #5a7e6e)` simplify to plain `var(--accent)`. | ~~Low~~ Resolved |
 
 ## Part A — Confirmed non-compliant items: Grids (WPF)
 
