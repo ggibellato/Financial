@@ -135,7 +135,7 @@ describe('AnnualSummaryPage', () => {
     getCategoryTotalsAnnualForYearMock.mockRejectedValue(new Error('Network down'))
 
     render(<AnnualSummaryPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Investments' }))
 
     await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument())
     expect(screen.getByText('Network down')).toBeInTheDocument()
@@ -154,8 +154,8 @@ describe('AnnualSummaryPage', () => {
     render(<AnnualSummaryPage />)
 
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
-    expect(screen.getByRole('button', { name: 'Category Totals' })).toHaveClass('annual-summary-page__tab--active')
-    expect(screen.getByRole('button', { name: 'Investments' })).not.toHaveClass('annual-summary-page__tab--active')
+    expect(screen.getByRole('tab', { name: 'Category Totals' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tab', { name: 'Investments' })).toHaveAttribute('aria-selected', 'false')
   })
 
   it('renders the combined table in the fixed row order', async () => {
@@ -230,18 +230,18 @@ describe('AnnualSummaryPage', () => {
     render(<AnnualSummaryPage />)
 
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
-    fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Investments' }))
 
     expect(screen.queryByRole('cell', { name: 'Salary' })).not.toBeInTheDocument()
     expect(screen.queryByRole('cell', { name: 'Mercado' })).not.toBeInTheDocument()
     expect(screen.getByRole('cell', { name: 'ChaseSave' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Investments' })).toHaveClass('annual-summary-page__tab--active')
+    expect(screen.getByRole('tab', { name: 'Investments' })).toHaveAttribute('aria-selected', 'true')
   })
 
   it('shows all 12 monthly balance values for each account', async () => {
     render(<AnnualSummaryPage />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Investments' }))
     await waitFor(() => expect(screen.getByRole('cell', { name: 'ChaseSave' })).toBeInTheDocument())
 
     const chaseSaveRow = screen.getByRole('cell', { name: 'ChaseSave' }).closest('tr')!
@@ -253,7 +253,7 @@ describe('AnnualSummaryPage', () => {
   it('marks liability accounts with a (-) suffix and asset accounts without one', async () => {
     render(<AnnualSummaryPage />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Investments' }))
     await waitFor(() => expect(screen.getByText('PlatinumVisa8003 (-)')).toBeInTheDocument())
     expect(screen.getByRole('cell', { name: 'ChaseSave' })).toBeInTheDocument()
   })
@@ -261,7 +261,7 @@ describe('AnnualSummaryPage', () => {
   it('renders a Total row matching the net position monthly values', async () => {
     render(<AnnualSummaryPage />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Investments' }))
     await waitFor(() => expect(screen.getByRole('cell', { name: 'Total' })).toBeInTheDocument())
 
     const totalRow = screen.getByRole('cell', { name: 'Total' }).closest('tr')!
@@ -273,7 +273,7 @@ describe('AnnualSummaryPage', () => {
   it('renders a real January Month Result value when prior-year data exists, plus the Feb-Dec diffs', async () => {
     render(<AnnualSummaryPage />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Investments' }))
     await waitFor(() => expect(screen.getByRole('cell', { name: 'Month Result' })).toBeInTheDocument())
 
     const monthResultRow = screen.getByRole('cell', { name: 'Month Result' }).closest('tr')!
@@ -291,7 +291,7 @@ describe('AnnualSummaryPage', () => {
     })
     render(<AnnualSummaryPage />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Investments' }))
     await waitFor(() => expect(screen.getByRole('cell', { name: 'Month Result' })).toBeInTheDocument())
 
     const monthResultRow = screen.getByRole('cell', { name: 'Month Result' }).closest('tr')!
@@ -303,7 +303,7 @@ describe('AnnualSummaryPage', () => {
   it('shows Year Progress, Average Month Result, and Sum of Month Results as returned by the API', async () => {
     render(<AnnualSummaryPage />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Investments' }))
     await waitFor(() => expect(screen.getByText('Year Progress')).toBeInTheDocument())
 
     const yearProgress = screen.getByText('Year Progress').closest('div')!
@@ -320,9 +320,9 @@ describe('AnnualSummaryPage', () => {
     render(<AnnualSummaryPage />)
 
     await waitFor(() => expect(screen.getByRole('cell', { name: 'Mercado' })).toBeInTheDocument())
-    fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Investments' }))
     await waitFor(() => expect(screen.getByRole('cell', { name: 'ChaseSave' })).toBeInTheDocument())
-    fireEvent.click(screen.getByRole('button', { name: 'Category Totals' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Category Totals' }))
 
     expect(screen.getByRole('cell', { name: 'Mercado' })).toBeInTheDocument()
     expect(screen.getByRole('cell', { name: 'Salary' })).toBeInTheDocument()
@@ -331,7 +331,7 @@ describe('AnnualSummaryPage', () => {
   it('re-scopes the account table, Total row, Month Result row, and summary figures when the year changes on the Investments tab', async () => {
     render(<AnnualSummaryPage />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Investments' }))
     await waitFor(() => expect(screen.getByRole('cell', { name: 'ChaseSave' })).toBeInTheDocument())
 
     const nextYearInvestmentAnnualResult: InvestmentAnnualResultDto = {
@@ -395,7 +395,7 @@ describe('AnnualSummaryPage', () => {
     const yearInput = screen.getByLabelText('Year') as HTMLInputElement
     const valueBefore = yearInput.value
 
-    fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Investments' }))
 
     expect(yearInput.value).toBe(valueBefore)
   })
@@ -406,8 +406,8 @@ describe('AnnualSummaryPage', () => {
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
     const callCountBefore = getCategoryTotalsAnnualForYearMock.mock.calls.length
 
-    fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Category Totals' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Investments' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Category Totals' }))
 
     expect(getCategoryTotalsAnnualForYearMock.mock.calls.length).toBe(callCountBefore)
   })
@@ -416,20 +416,20 @@ describe('AnnualSummaryPage', () => {
     render(<AnnualSummaryPage />)
 
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
-    fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Investments' }))
     await waitFor(() => expect(screen.getByRole('cell', { name: 'ChaseSave' })).toBeInTheDocument())
 
     fireEvent.change(screen.getByLabelText('Year'), { target: { value: '2027' } })
 
     await waitFor(() => expect(screen.getByRole('cell', { name: 'ChaseSave' })).toBeInTheDocument())
-    expect(screen.getByRole('button', { name: 'Investments' })).toHaveClass('annual-summary-page__tab--active')
+    expect(screen.getByRole('tab', { name: 'Investments' })).toHaveAttribute('aria-selected', 'true')
   })
 
   it('renders one column per year and the correct category values in the Historic Summary Average table', async () => {
     render(<AnnualSummaryPage />)
 
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
-    fireEvent.click(screen.getByRole('button', { name: 'Historic Summary Average' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Historic Summary Average' }))
 
     await waitFor(() => expect(screen.getByRole('columnheader', { name: '2025' })).toBeInTheDocument())
 
@@ -445,7 +445,7 @@ describe('AnnualSummaryPage', () => {
     render(<AnnualSummaryPage />)
 
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
-    fireEvent.click(screen.getByRole('button', { name: 'Historic Summary Average' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Historic Summary Average' }))
     await waitFor(() => expect(screen.getByRole('columnheader', { name: '2025' })).toBeInTheDocument())
 
     const rowLabels = screen
@@ -472,7 +472,7 @@ describe('AnnualSummaryPage', () => {
     render(<AnnualSummaryPage />)
 
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
-    fireEvent.click(screen.getByRole('button', { name: 'Historic Summary Average' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Historic Summary Average' }))
     await waitFor(() => expect(screen.getByRole('columnheader', { name: '2025' })).toBeInTheDocument())
 
     const resultadoRow = screen.getByText('Resultado (R-D-Inv)').closest('tr')!
@@ -488,9 +488,9 @@ describe('AnnualSummaryPage', () => {
     render(<AnnualSummaryPage />)
 
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
-    fireEvent.click(screen.getByRole('button', { name: 'Historic Summary Average' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Historic Summary Average' }))
     await waitFor(() => expect(screen.getByRole('columnheader', { name: '2025' })).toBeInTheDocument())
-    fireEvent.click(screen.getByRole('button', { name: 'Category Totals' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Category Totals' }))
 
     await waitFor(() => expect(screen.getByRole('cell', { name: 'Salary' })).toBeInTheDocument())
   })
@@ -528,7 +528,7 @@ describe('AnnualSummaryPage', () => {
   it('sorts the Investments accounts by a monthly column, without moving the fixed Total/Month Result rows', async () => {
     render(<AnnualSummaryPage />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Investments' }))
     await waitFor(() => expect(screen.getByRole('cell', { name: 'ChaseSave' })).toBeInTheDocument())
 
     fireEvent.click(screen.getByRole('button', { name: 'Jan' }))
@@ -547,7 +547,7 @@ describe('AnnualSummaryPage', () => {
     render(<AnnualSummaryPage />)
 
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
-    fireEvent.click(screen.getByRole('button', { name: 'Historic Summary Average' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Historic Summary Average' }))
     await waitFor(() => expect(screen.getByRole('columnheader', { name: '2025' })).toBeInTheDocument())
 
     fireEvent.click(screen.getByRole('button', { name: 'Category' }))
@@ -586,7 +586,7 @@ describe('AnnualSummaryPage', () => {
     render(<AnnualSummaryPage />)
 
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
-    fireEvent.click(screen.getByRole('button', { name: 'Historic Summary Average' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Historic Summary Average' }))
     await waitFor(() => expect(screen.getByRole('columnheader', { name: '2025' })).toBeInTheDocument())
 
     fireEvent.click(screen.getByRole('button', { name: 'Filter by Category' }))

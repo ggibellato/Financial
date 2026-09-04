@@ -62,7 +62,7 @@ async function main() {
   await page.getByText('XPI').first().waitFor({ timeout: TIMEOUT_MS })
 
   await page.goto(`${APP_URL}/cashflow/annual-summary`, { waitUntil: 'domcontentloaded' })
-  await page.getByRole('button', { name: 'Historic Summary Average' }).click()
+  await page.getByRole('tab', { name: 'Historic Summary Average' }).click()
 
   const mercadoCell = page.getByRole('cell', { name: 'Mercado', exact: true })
   await mercadoCell.waitFor({ timeout: TIMEOUT_MS })

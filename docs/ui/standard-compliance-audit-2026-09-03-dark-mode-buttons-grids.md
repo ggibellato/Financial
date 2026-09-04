@@ -255,7 +255,21 @@ Carried forward from the standards docs' own list; not counted as violations abo
    `npm test` (4/4 Breadcrumb tests), `dotnet build`/`dotnet test Tests/Financial.Presentation.Tests`
    (1202 passed) clean; pending the user's visual confirmation for the WPF half (no WPF GUI in
    this environment, though this is a pure accessibility-metadata addition with no visual change).
-12. Hand-rolled tab-strip component convention.
+12. **Hand-rolled tab-strip component convention — resolved on Web, documented as an open gap
+   on WPF.** `MonthlyPage.tsx` already used Fluent `TabList` (already compliant); `DetailPanel.tsx`
+   (Investment asset detail's Summary/Transactions/Credits/Price History tabs — a page exercised
+   constantly throughout this session's manual testing) and `AnnualSummaryPage.tsx` were still
+   hand-rolled `<button>` groups. Converted both to `TabList`/`Tab`, matching `MonthlyPage`'s
+   pattern; removed the now-dead CSS. Fixed 4 test files whose assertions broke when tab buttons
+   became `role="tab"` (`DetailPanel.test.tsx`, `AnnualSummaryPage.test.tsx`,
+   `ActiveInvestmentsPage.test.tsx`, `HistoricInvestmentsPage.test.tsx`). Verified live in the
+   browser (both pages, tab switching, both light/dark). **WPF correction:** initially assumed
+   Wpf.Ui auto-themes `TabControl` (like `RadioButton`) — a DLL string-scan disproved this: Wpf.Ui
+   ships no tab-strip control and no implicit theme resources for `TabControl`/`TabItem` at all,
+   so every WPF tab strip (`NavigationView.xaml`, `MonthlyView.xaml`, `AnnualSummaryView.xaml`)
+   renders with unthemed classic Windows chrome. Documented as a known open gap in `wpf.md` rather
+   than attempting a from-scratch custom `ControlTemplate` blind — too large/risky to build without
+   visual verification. **Not closed** — left open pending a future session with WPF GUI access.
 13. Status-dot/badge convention.
 14. Drag-to-resize persistent workspace layout.
 15. Async batch-fetch progress indicator shape.
