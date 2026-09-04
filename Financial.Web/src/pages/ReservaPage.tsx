@@ -1,6 +1,6 @@
 import { Fragment } from 'react'
 import { Button } from '@fluentui/react-components'
-import { AddRegular, DeleteRegular } from '@fluentui/react-icons'
+import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import EditMovementForm from '../components/EditMovementForm'
 import ErrorState from '../components/ErrorState'
 import IncomeSplitForm from '../components/IncomeSplitForm'
@@ -260,7 +260,7 @@ export default function ReservaPage() {
                             title={m.isLocked ? LOCKED_MOVEMENT_MESSAGE : undefined}
                             onClick={() => showEditMovementForm(m)}
                           >
-                            ✏
+                            <EditRegular />
                           </button>
                         </td>
                         <td>
