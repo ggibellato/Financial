@@ -88,6 +88,23 @@ Do not use an old WPF pattern as the reason to diverge from the React target.
   does not auto-reflow around a collapsed sibling the way CSS Grid does, so
   don't rely on that; place fields explicitly for the layout you intend.
 
+**Breadcrumb:** give the breadcrumb `TextBlock`/container
+`AutomationProperties.Name="Breadcrumb"` so a screen reader can identify it.
+WPF has no settable landmark-type XAML property (`AutomationLandmarkType`
+requires a custom `AutomationPeer`) — the accessible name is the practical
+equivalent to Web's `<nav aria-label="Breadcrumb">` here. Segments stay
+plain, non-interactive text, matching Web (this app's nav tree has no route
+for a category to link to). `MainWindow.xaml` is the reference.
+
+**Tab strips:** the native `TabControl` is currently the only option — confirmed via a string-scan
+of the compiled `Wpf.Ui.dll` that Wpf.Ui ships neither its own tab-strip control nor implicit
+theme resources for the standard `TabControl`/`TabItem` (unlike `RadioButton`/`ToggleSwitch`,
+which Wpf.Ui does auto-theme). Every `TabControl` in this app (`NavigationView.xaml`'s asset
+detail tabs, `MonthlyView.xaml`, `AnnualSummaryView.xaml`) therefore renders with the plain,
+unthemed classic Windows chrome — a known, open gap. Closing it needs a custom Fluent-styled
+`ControlTemplate` for `TabControl`/`TabItem`, not a drop-in control swap like `RadioButton`/
+`NumberBox` were; not attempted yet since it can't be visually verified without a WPF GUI.
+
 ## Forms
 
 - Bind fields with appropriate `UpdateSourceTrigger`.

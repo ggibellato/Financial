@@ -28,6 +28,14 @@ is the reference.
 - Reuse project components and wrappers before using raw Fluent components.
 - Do not add a competing component or styling system without approval.
 - Use semantic HTML and native browser semantics where practical.
+- **Tab strips** (page-level content-switching tabs, e.g. an asset's Summary/
+  Transactions/Credits/Price History, or Annual Summary's Category Totals/
+  Investments/Historic Summary Average): use Fluent's `TabList`/`Tab`, not a
+  hand-rolled `<button>` group — it ships the ARIA tablist/keyboard-nav
+  pattern (arrow-key navigation, `role="tablist"/tab"`, `aria-selected`) for
+  free. `MonthlyPage.tsx` is the reference. This is distinct from the chart
+  filter/mode "chip" pattern documented in `forms-data-and-visualisations.md`
+  (same underlying component, different content role).
 
 ## Layout
 
@@ -71,6 +79,12 @@ is the reference.
 ## Accessibility
 
 - Use headings and landmarks appropriately.
+- **Breadcrumb:** wrap in `<nav aria-label="Breadcrumb">` containing an
+  `<ol>`, one `<li>` per segment, with `aria-current="page"` on the last
+  (current-page) segment. A category segment with no route of its own
+  (this app's nav tree has none — categories only group leaf pages) stays
+  plain text, not a link; do not invent a fake link target just to make a
+  segment "clickable." `Breadcrumb.tsx` is the reference.
 - Prefer native semantics over custom ARIA roles.
 - Manage focus after dialogs, drawers, asynchronous updates, and validation
   failure.

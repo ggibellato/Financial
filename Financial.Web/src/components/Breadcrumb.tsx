@@ -9,14 +9,23 @@ function Breadcrumb() {
     const child = category.children.find((c) => c.route === location.pathname)
     if (child) {
       return (
-        <div className="breadcrumb">
-          {category.label} › {child.label}
-        </div>
+        <nav className="breadcrumb" aria-label="Breadcrumb">
+          <ol className="breadcrumb__list">
+            <li>{category.label}</li>
+            <li aria-current="page">{child.label}</li>
+          </ol>
+        </nav>
       )
     }
   }
 
-  return <div className="breadcrumb">—</div>
+  return (
+    <nav className="breadcrumb" aria-label="Breadcrumb">
+      <ol className="breadcrumb__list">
+        <li aria-current="page">—</li>
+      </ol>
+    </nav>
+  )
 }
 
 export default Breadcrumb

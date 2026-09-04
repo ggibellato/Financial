@@ -1,4 +1,6 @@
 import { Fragment, useState, type ReactNode } from 'react'
+import { Tab, TabList } from '@fluentui/react-components'
+import type { SelectTabData, SelectTabEvent } from '@fluentui/react-components'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
 import SortableColumnHeader from '../components/grid/SortableColumnHeader'
@@ -175,18 +177,16 @@ export default function AnnualSummaryPage() {
         />
       </div>
 
-      <div className="annual-summary-page__tabs">
+      <TabList
+        selectedValue={activeTab}
+        onTabSelect={(_event: SelectTabEvent, data: SelectTabData) => setActiveTab(data.value as AnnualSummaryTabId)}
+      >
         {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            className={`annual-summary-page__tab${activeTab === tab.id ? ' annual-summary-page__tab--active' : ''}`}
-            onClick={() => setActiveTab(tab.id)}
-          >
+          <Tab key={tab.id} value={tab.id}>
             {tab.label}
-          </button>
+          </Tab>
         ))}
-      </div>
+      </TabList>
 
       {isLoading ? (
         <LoadingState />

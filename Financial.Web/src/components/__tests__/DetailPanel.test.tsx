@@ -146,26 +146,26 @@ describe('DetailPanel', () => {
   })
 
   it('shows Long status indicator in green for a long position', () => {
-    renderPanel(activeAssetNode)
+    const { container } = renderPanel(activeAssetNode)
     act(() => screen.getByTestId('setter').click())
-    const status = screen.getByText('● Long')
-    expect(status).toBeInTheDocument()
+    const status = container.querySelector('.detail-panel__status')
+    expect(status).toHaveTextContent('Long')
     expect(status).toHaveClass('detail-panel__status--long')
   })
 
   it('shows Flat status indicator in the neutral color for a flat position', () => {
-    renderPanel(flatAssetNode)
+    const { container } = renderPanel(flatAssetNode)
     act(() => screen.getByTestId('setter').click())
-    const status = screen.getByText('● Flat')
-    expect(status).toBeInTheDocument()
+    const status = container.querySelector('.detail-panel__status')
+    expect(status).toHaveTextContent('Flat')
     expect(status).toHaveClass('detail-panel__status--flat')
   })
 
   it('shows Short status indicator in red for a short position', () => {
-    renderPanel(shortAssetNode)
+    const { container } = renderPanel(shortAssetNode)
     act(() => screen.getByTestId('setter').click())
-    const status = screen.getByText('● Short')
-    expect(status).toBeInTheDocument()
+    const status = container.querySelector('.detail-panel__status')
+    expect(status).toHaveTextContent('Short')
     expect(status).toHaveClass('detail-panel__status--short')
   })
 
@@ -187,42 +187,42 @@ describe('DetailPanel', () => {
   it('tab bar renders three tabs', () => {
     renderPanel(brokerNode)
     act(() => screen.getByTestId('setter').click())
-    expect(screen.getByRole('button', { name: 'Summary' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Transactions' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Credits' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Summary' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Transactions' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Credits' })).toBeInTheDocument()
   })
 
   it('does not show Price History tab for a broker node', () => {
     renderPanel(brokerNode)
     act(() => screen.getByTestId('setter').click())
-    expect(screen.queryByRole('button', { name: 'Price History' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('tab', { name: 'Price History' })).not.toBeInTheDocument()
   })
 
   it('does not show Price History tab for a portfolio node', () => {
     renderPanel(portfolioNode)
     act(() => screen.getByTestId('setter').click())
-    expect(screen.queryByRole('button', { name: 'Price History' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('tab', { name: 'Price History' })).not.toBeInTheDocument()
   })
 
   it('shows Price History tab for an asset node', () => {
     renderPanel(activeAssetNode)
     act(() => screen.getByTestId('setter').click())
-    expect(screen.getByRole('button', { name: 'Price History' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Price History' })).toBeInTheDocument()
   })
 
   it('Summary tab is active by default', () => {
     renderPanel(brokerNode)
     act(() => screen.getByTestId('setter').click())
-    expect(screen.getByRole('button', { name: 'Summary' })).toHaveClass('detail-panel__tab--active')
-    expect(screen.getByRole('button', { name: 'Transactions' })).not.toHaveClass('detail-panel__tab--active')
+    expect(screen.getByRole('tab', { name: 'Summary' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tab', { name: 'Transactions' })).toHaveAttribute('aria-selected', 'false')
   })
 
   it('clicking Transactions tab activates it', () => {
     renderPanel(brokerNode)
     act(() => screen.getByTestId('setter').click())
-    fireEvent.click(screen.getByRole('button', { name: 'Transactions' }))
-    expect(screen.getByRole('button', { name: 'Transactions' })).toHaveClass('detail-panel__tab--active')
-    expect(screen.getByRole('button', { name: 'Summary' })).not.toHaveClass('detail-panel__tab--active')
+    fireEvent.click(screen.getByRole('tab', { name: 'Transactions' }))
+    expect(screen.getByRole('tab', { name: 'Transactions' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tab', { name: 'Summary' })).toHaveAttribute('aria-selected', 'false')
   })
 
   it('renders_asset_summary_tab_when_asset_selected', () => {
@@ -247,7 +247,7 @@ describe('DetailPanel', () => {
   it('renders_transactions_chart_for_broker_node', async () => {
     renderPanel(brokerNode)
     act(() => screen.getByTestId('setter').click())
-    fireEvent.click(screen.getByRole('button', { name: 'Transactions' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Transactions' }))
     await waitFor(
       () => expect(screen.getByText('Net Invested by Month')).toBeInTheDocument(),
       { timeout: 5000 },
@@ -258,7 +258,7 @@ describe('DetailPanel', () => {
   it('renders_transactions_chart_for_portfolio_node', async () => {
     renderPanel(portfolioNode)
     act(() => screen.getByTestId('setter').click())
-    fireEvent.click(screen.getByRole('button', { name: 'Transactions' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Transactions' }))
     await waitFor(
       () => expect(screen.getByText('Net Invested by Month')).toBeInTheDocument(),
       { timeout: 5000 },
@@ -287,12 +287,12 @@ describe('DetailPanel', () => {
       </SelectedNodeProvider>,
     )
     fireEvent.click(screen.getByTestId('set-broker'))
-    fireEvent.click(screen.getByRole('button', { name: 'Transactions' }))
-    expect(screen.getByRole('button', { name: 'Transactions' })).toHaveClass('detail-panel__tab--active')
+    fireEvent.click(screen.getByRole('tab', { name: 'Transactions' }))
+    expect(screen.getByRole('tab', { name: 'Transactions' })).toHaveAttribute('aria-selected', 'true')
 
     fireEvent.click(screen.getByTestId('set-portfolio'))
-    expect(screen.getByRole('button', { name: 'Summary' })).toHaveClass('detail-panel__tab--active')
-    expect(screen.getByRole('button', { name: 'Transactions' })).not.toHaveClass('detail-panel__tab--active')
+    expect(screen.getByRole('tab', { name: 'Summary' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tab', { name: 'Transactions' })).toHaveAttribute('aria-selected', 'false')
   })
 
   it('offers to delete a portfolio that holds nothing', async () => {

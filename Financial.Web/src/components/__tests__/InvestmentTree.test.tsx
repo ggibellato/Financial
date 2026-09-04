@@ -148,12 +148,12 @@ describe('InvestmentTree', () => {
     expect(screen.getByText('Acoes (2 assets)')).toBeInTheDocument()
   })
 
-  it('renders a filled bullet prefix regardless of position type', async () => {
+  it('gives the status dot an accessible name naming the position type', async () => {
     renderTree()
     await screen.findByText('XPI (BRL)')
     fireEvent.click(screen.getByText('Acoes (2 assets)'))
-    expect(screen.getByRole('treeitem', { name: '● KLBN4' })).toBeInTheDocument()
-    expect(screen.getByRole('treeitem', { name: '● TRPL4' })).toBeInTheDocument()
+    expect(screen.getByRole('treeitem', { name: 'Long KLBN4' })).toBeInTheDocument()
+    expect(screen.getByRole('treeitem', { name: 'Flat TRPL4' })).toBeInTheDocument()
   })
 
   it('renders Long/Flat/Short status icons with the matching color class', async () => {
@@ -181,13 +181,13 @@ describe('InvestmentTree', () => {
     fireEvent.click(screen.getByText('Mix (3 assets)'))
 
     expect(
-      screen.getByRole('treeitem', { name: '● LONGASSET' }).querySelector('.investment-tree__status-icon'),
+      screen.getByRole('treeitem', { name: 'Long LONGASSET' }).querySelector('.investment-tree__status-icon'),
     ).toHaveClass('investment-tree__status-icon--long')
     expect(
-      screen.getByRole('treeitem', { name: '● FLATASSET' }).querySelector('.investment-tree__status-icon'),
+      screen.getByRole('treeitem', { name: 'Flat FLATASSET' }).querySelector('.investment-tree__status-icon'),
     ).toHaveClass('investment-tree__status-icon--flat')
     expect(
-      screen.getByRole('treeitem', { name: '● SHORTASSET' }).querySelector('.investment-tree__status-icon'),
+      screen.getByRole('treeitem', { name: 'Short SHORTASSET' }).querySelector('.investment-tree__status-icon'),
     ).toHaveClass('investment-tree__status-icon--short')
   })
 
@@ -230,7 +230,7 @@ describe('InvestmentTree', () => {
     renderTree(twoBrokerTree)
     await screen.findByText('XPI (BRL)')
     fireEvent.click(screen.getByText('Acoes (1 assets)'))
-    const asset = screen.getByRole('treeitem', { name: '● KLBN4' })
+    const asset = screen.getByRole('treeitem', { name: 'Long KLBN4' })
     fireEvent.dragStart(asset, { dataTransfer: dataTransfer() })
   }
 
@@ -403,8 +403,8 @@ describe('InvestmentTree', () => {
     fireEvent.click(screen.getByText('Mix (2 assets)'))
 
     fireEvent.change(screen.getByLabelText('Asset class'), { target: { value: '1' } })
-    expect(screen.getByRole('treeitem', { name: '● KLBN4' })).toBeInTheDocument()
-    expect(screen.queryByRole('treeitem', { name: '● TREA3' })).not.toBeInTheDocument()
+    expect(screen.getByRole('treeitem', { name: 'Long KLBN4' })).toBeInTheDocument()
+    expect(screen.queryByRole('treeitem', { name: 'Long TREA3' })).not.toBeInTheDocument()
   })
 
   it('asset class filter All restores full tree', async () => {
@@ -429,8 +429,8 @@ describe('InvestmentTree', () => {
 
     fireEvent.change(screen.getByLabelText('Asset class'), { target: { value: '1' } })
     fireEvent.change(screen.getByLabelText('Asset class'), { target: { value: 'all' } })
-    expect(screen.getByRole('treeitem', { name: '● KLBN4' })).toBeInTheDocument()
-    expect(screen.getByRole('treeitem', { name: '● TREA3' })).toBeInTheDocument()
+    expect(screen.getByRole('treeitem', { name: 'Long KLBN4' })).toBeInTheDocument()
+    expect(screen.getByRole('treeitem', { name: 'Long TREA3' })).toBeInTheDocument()
   })
 
   it('asset class filter shows Cryptocurrency option', async () => {
@@ -461,8 +461,8 @@ describe('InvestmentTree', () => {
     fireEvent.click(screen.getByText('Cryptocurrency (2 assets)'))
 
     fireEvent.change(screen.getByLabelText('Asset class'), { target: { value: '9' } })
-    expect(screen.getByRole('treeitem', { name: '● BTC' })).toBeInTheDocument()
-    expect(screen.queryByRole('treeitem', { name: '● TREA3' })).not.toBeInTheDocument()
+    expect(screen.getByRole('treeitem', { name: 'Long BTC' })).toBeInTheDocument()
+    expect(screen.queryByRole('treeitem', { name: 'Long TREA3' })).not.toBeInTheDocument()
   })
 
   it('broker node is retained in tree when filter is active', async () => {
