@@ -19,6 +19,7 @@ public partial class ExpenseSectionView : UserControl
         if (e.NewValue is ExpenseWorkflowViewModel viewModel)
         {
             ExpensesCategoryColumn.Header = viewModel.ExpensesCategoryFilter;
+            ExpensesBankColumn.Header = viewModel.ExpensesBankFilter;
             ExpensesCardColumn.Header = viewModel.ExpensesCardFilter;
         }
     }

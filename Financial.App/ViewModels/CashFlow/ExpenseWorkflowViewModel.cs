@@ -55,6 +55,7 @@ public class ExpenseWorkflowViewModel : ViewModelBase
     public ObservableCollection<ExpenseDTO> FilteredUnpaidCardCharges { get; } = [];
 
     public ColumnFilterViewModel<ExpenseDTO> ExpensesCategoryFilter { get; }
+    public ColumnFilterViewModel<ExpenseDTO> ExpensesBankFilter { get; }
     public ColumnFilterViewModel<ExpenseDTO> ExpensesCardFilter { get; }
     public ColumnFilterViewModel<ExpenseDTO> UnpaidCardChargesCategoryFilter { get; }
     public ColumnFilterViewModel<ExpenseDTO> UnpaidCardChargesCardFilter { get; }
@@ -336,6 +337,7 @@ public class ExpenseWorkflowViewModel : ViewModelBase
             expense => expense?.PaymentStatus != SettledStatus);
 
         ExpensesCategoryFilter = new ColumnFilterViewModel<ExpenseDTO>("Category", e => [e.CategoryName], ApplyExpensesFilter);
+        ExpensesBankFilter = new ColumnFilterViewModel<ExpenseDTO>("Bank", e => [e.PaymentSourceBankName], ApplyExpensesFilter);
         ExpensesCardFilter = new ColumnFilterViewModel<ExpenseDTO>("Card", e => [e.CreditCardName], ApplyExpensesFilter);
         UnpaidCardChargesCategoryFilter = new ColumnFilterViewModel<ExpenseDTO>("Category", e => [e.CategoryName], ApplyUnpaidCardChargesFilter);
         UnpaidCardChargesCardFilter = new ColumnFilterViewModel<ExpenseDTO>("Card", e => [e.CreditCardName], ApplyUnpaidCardChargesFilter);
@@ -346,6 +348,7 @@ public class ExpenseWorkflowViewModel : ViewModelBase
     {
         ReplaceAll(Expenses, expenses);
         ExpensesCategoryFilter.Refresh(Expenses);
+        ExpensesBankFilter.Refresh(Expenses);
         ExpensesCardFilter.Refresh(Expenses);
         ApplyExpensesFilter();
 
@@ -356,7 +359,9 @@ public class ExpenseWorkflowViewModel : ViewModelBase
     }
 
     private void ApplyExpensesFilter() =>
-        ReplaceAll(FilteredExpenses, Expenses.Where(e => ExpensesCategoryFilter.Matches(e) && ExpensesCardFilter.Matches(e)));
+        ReplaceAll(
+            FilteredExpenses,
+            Expenses.Where(e => ExpensesCategoryFilter.Matches(e) && ExpensesBankFilter.Matches(e) && ExpensesCardFilter.Matches(e)));
 
     private void ApplyUnpaidCardChargesFilter() =>
         ReplaceAll(FilteredUnpaidCardCharges, UnpaidCardCharges.Where(e => UnpaidCardChargesCategoryFilter.Matches(e) && UnpaidCardChargesCardFilter.Matches(e)));
