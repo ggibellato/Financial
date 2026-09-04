@@ -137,7 +137,16 @@ function AssetNode({ node, brokerName, portfolioName, filterClass, drag }: Asset
     >
       <TreeItemLayout
         className={`investment-tree__node investment-tree__node--asset${isSelected ? ' investment-tree__node--selected' : ''}`}
-        iconBefore={<span className={`investment-tree__status-icon investment-tree__status-icon--${statusClass}`}>●</span>}
+        iconBefore={
+          <span
+            className={`investment-tree__status-icon investment-tree__status-icon--${statusClass}`}
+            role="img"
+            aria-label={positionType}
+            title={positionType}
+          >
+            ●
+          </span>
+        }
         onClick={handleClick}
       >
         {node.displayName}

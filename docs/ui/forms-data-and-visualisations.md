@@ -425,6 +425,22 @@ Every chart must provide:
 
 Charts must answer a user question. Do not use them as decoration.
 
+### Status indicators
+
+A color-coded status indicator (e.g. the "●" position-type dot for Long/
+Flat/Short) must never rely on color alone — pair it with an accessible
+text alternative naming the state, not just a visible label somewhere else
+on the page. Web: `role="img"` plus `aria-label`/`title` set to the state
+name on the glyph itself (`InvestmentTree.tsx`'s asset nodes are the
+reference — the dot's accessible name becomes part of the tree item's own
+name, so a screen reader hears e.g. "Long KLBN4", not just "KLBN4"). Where
+the state name is already visible as adjacent text (e.g.
+`DetailPanel.tsx`'s "● Long"), mark the glyph itself `aria-hidden="true"`
+instead, so a screen reader doesn't announce the raw bullet character on
+top of the text that already names the state. WPF: `AutomationProperties.Name`
+bound to the same state value on the glyph `TextBlock` (`NavigationView.xaml`
+is the reference).
+
 ### Series color
 
 Single-series bars and lines are **blue**, not grey/neutral — the same blue

@@ -146,26 +146,26 @@ describe('DetailPanel', () => {
   })
 
   it('shows Long status indicator in green for a long position', () => {
-    renderPanel(activeAssetNode)
+    const { container } = renderPanel(activeAssetNode)
     act(() => screen.getByTestId('setter').click())
-    const status = screen.getByText('● Long')
-    expect(status).toBeInTheDocument()
+    const status = container.querySelector('.detail-panel__status')
+    expect(status).toHaveTextContent('Long')
     expect(status).toHaveClass('detail-panel__status--long')
   })
 
   it('shows Flat status indicator in the neutral color for a flat position', () => {
-    renderPanel(flatAssetNode)
+    const { container } = renderPanel(flatAssetNode)
     act(() => screen.getByTestId('setter').click())
-    const status = screen.getByText('● Flat')
-    expect(status).toBeInTheDocument()
+    const status = container.querySelector('.detail-panel__status')
+    expect(status).toHaveTextContent('Flat')
     expect(status).toHaveClass('detail-panel__status--flat')
   })
 
   it('shows Short status indicator in red for a short position', () => {
-    renderPanel(shortAssetNode)
+    const { container } = renderPanel(shortAssetNode)
     act(() => screen.getByTestId('setter').click())
-    const status = screen.getByText('● Short')
-    expect(status).toBeInTheDocument()
+    const status = container.querySelector('.detail-panel__status')
+    expect(status).toHaveTextContent('Short')
     expect(status).toHaveClass('detail-panel__status--short')
   })
 
