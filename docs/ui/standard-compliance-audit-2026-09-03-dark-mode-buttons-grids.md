@@ -244,7 +244,19 @@ Carried forward from the standards docs' own list; not counted as violations abo
    the user's visual confirmation (no WPF GUI in this environment).
 11. Breadcrumb semantic structure.
 12. Hand-rolled tab-strip component convention.
-13. Status-dot/badge convention.
+13. ~~Status-dot/badge convention.~~ **Decided and implemented 2026-09-05.** Confirmed the
+   original finding: `InvestmentTree.tsx`'s asset-node status dot (Long/Flat/Short) was genuinely
+   color-only, no text alternative at all. Fixed with `role="img"` + `aria-label`/`title` on the
+   dot, naming the position type — becomes part of the tree item's own accessible name (e.g.
+   "Long KLBN4"). `DetailPanel.tsx`'s equivalent already had adjacent visible text ("● Long");
+   marked its bullet `aria-hidden="true"` to avoid a screen reader announcing the raw glyph on top
+   of the text. WPF: `NavigationView.xaml`'s dot got `AutomationProperties.Name` bound to the same
+   position type. Updated `InvestmentTree.test.tsx` (accessible names changed, e.g. "● KLBN4" →
+   "Long KLBN4") and `DetailPanel.test.tsx` (queried by class instead of combined text). Documented
+   in `forms-data-and-visualisations.md`'s new "Status indicators" section. Verified: `npm test`
+   (1471 passed), `dotnet build`/`dotnet test Tests/Financial.Presentation.Tests` (1202 passed);
+   pending the user's visual confirmation for the WPF half (no WPF GUI in this environment, though
+   this is a pure accessibility-metadata addition with no visual change).
 14. Drag-to-resize persistent workspace layout.
 15. Async batch-fetch progress indicator shape.
 

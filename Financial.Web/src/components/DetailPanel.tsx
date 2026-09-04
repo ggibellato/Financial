@@ -116,7 +116,7 @@ export default function DetailPanel() {
             <span
               className={`detail-panel__status detail-panel__status--${POSITION_TYPE_STATUS_CLASS[selectedNode.positionType]}`}
             >
-              ● {selectedNode.positionType}
+              <span aria-hidden="true">●</span> {selectedNode.positionType}
             </span>
           )}
         </div>
