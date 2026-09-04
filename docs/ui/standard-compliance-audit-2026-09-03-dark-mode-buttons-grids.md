@@ -106,11 +106,11 @@ another, doesn't inherit it.
 | 5 | ~~`ReserveBucketsView.xaml:43` (`#B25E00`), `CardsGridView.xaml:139` (`#8A6D00`) vs. `ReservaView.xaml:44` (correct: `{DynamicResource SystemFillColorCautionBrush}`)~~ | **Resolved 2026-09-05.** Both hardcoded ambers converted to `{DynamicResource SystemFillColorCautionBrush}`, matching `ReservaView.xaml`'s already-correct usage — all three warning texts now use the same theme-aware brush. | ~~Medium~~ Resolved |
 | 6 | ~~`PortfolioSummaryView.xaml:62,68,76,255,263,271`~~ | **Resolved via PR #704** (Green/Red halves). Converted to `{DynamicResource SystemFillColorSuccessBrush}`/`SystemFillColorCriticalBrush}` for Bought/Sold — a fixed-role label, not a sign-flip, so intentionally *not* routed through `SignedValueToBrushConverter`. The `Blue` occurrences are a different "info" concept and were out of scope; left as literals. | ~~Medium~~ Resolved (Blue left as-is, by design) |
 | 7 | ~~25 files incl. all 10 Admin-CRUD grids~~ | **Resolved via PR #704.** All 25 files' `Foreground="Red"/"Green"` converted to `{DynamicResource SystemFillColorCriticalBrush}`/`SuccessBrush`. | ~~High~~ Resolved |
-| 8 | ~~`Components/NavigationView.xaml:39,43,69-81,105,119,128,137,200`~~ | **Mostly resolved via PR #703.** Section labels, drop-target colour (now `AccentFillColorSecondaryBrush`), loading veil (now a neutral `#66000000` scrim — no theme-aware backdrop brush exists in Wpf.Ui 4.0.1, verified against the compiled DLL), splitter and divider all converted. **One part deliberately deferred:** the selected-node highlight override at line ~80 (`SystemColors.InactiveSelectionHighlightBrushKey`) is still a literal `#007ACC`/White — an XAML binding attempt to make it theme-aware was reverted as unreliable (can't bind a `Color` from a `DynamicResource`-wrapping `Binding`); this matches the same accepted pattern as Grids (WPF) #12 below. | ~~High~~ Partially resolved |
+| 8 | ~~`Components/NavigationView.xaml:39,43,69-81,105,119,128,137,200`~~ | **Mostly resolved via PR #703**, remaining part fixed 2026-09-04 pending user spot-check. Section labels, drop-target colour (now `AccentFillColorSecondaryBrush`), loading veil (now a neutral `#66000000` scrim — no theme-aware backdrop brush exists in Wpf.Ui 4.0.1, verified against the compiled DLL), splitter and divider all converted via PR #703. The selected-node highlight override at line ~80 (`SystemColors.InactiveSelectionHighlightBrushKey`/`InactiveSelectionHighlightTextBrushKey`) — literal `#007ACC`/White — was fixed in PR #726 using a different technique than the previously-reverted attempt: `{DynamicResource SystemAccentColorPrimary}`/`{DynamicResource TextOnAccentFillColorPrimary}` directly on the `Color` property (not a `Binding` on a `StaticResource`-wrapped `Brush`, which doesn't propagate reliably in a loose `ResourceDictionary`). Confirmed via the Wpf.Ui 4.0.0 GitHub source that these are the exact same two `Color` resources already backing `ListBoxItemSelectedBackgroundThemeBrush`/`ListBoxItemSelectedForegroundThemeBrush` — the brushes this same style already uses for the focused-selected state — so the fix makes the unfocused-selected look identical to the focused one, in both themes, by construction. This environment can't visually verify a WPF GUI change, so this is not marked Resolved until confirmed live. | ~~High~~ Partially resolved, fix pending verification |
 | 9 | ~~`MainWindow.xaml:26,32-33`~~ | **Resolved via PR #703.** Breadcrumb `BorderBrush`/`Foreground` converted to `DynamicResource`. | ~~High~~ Resolved |
 | 10 | ~~`AssetPriceView.xaml` (8 hardcoded values), `DividendCheckView.xaml` (14+ hardcoded values)~~ | **Resolved 2026-09-05.** Both pages fully converted to theme-aware `DynamicResource` brushes: `#333333`/headings → `TextFillColorPrimaryBrush`, `#666666`/secondary text → `TextFillColorSecondaryBrush`, `#CCCCCC` card and grid borders → `ControlElevationBorderBrush` (the same key used throughout the already-migrated CashFlow forms), `#FAFAFA` card backgrounds → `ControlFillColorDefaultBrush`, `Black` → `TextFillColorPrimaryBrush`, `Red`/`Green` (price-good/bad indicator) → `SystemFillColorCriticalBrush`/`SystemFillColorSuccessBrush`, `Blue` (Average Dividend/Dividend Yield informational stats) → `AccentTextFillColorPrimaryBrush`. `DividendCheckView.xaml`'s bordered/tinted error banner (`#D32F2F`/`#FDECEA`) had no equivalent anywhere else in the app and Wpf.Ui has no theme-aware "critical background" brush to build one from, so it was simplified to match the app's one established error-display convention (plain text, `SystemFillColorCriticalBrush`) instead of inventing a new pattern — see `MonthlyView.xaml`'s error `TextBlock` for the precedent. | ~~High~~ Resolved |
 | 11 | ~~`NavigationView.xaml:119`, `CreditsView.xaml:124`, `PriceHistoryView.xaml:172`, `TransactionsView.xaml:113`~~ | **Fully resolved 2026-09-05.** The three remaining `GridSplitter`s (`CreditsView.xaml`, `PriceHistoryView.xaml`, `TransactionsView.xaml`) converted from `Background="#E0E0E0"` to `{DynamicResource ControlStrokeColorDefaultBrush}`, matching `NavigationView.xaml`'s splitter fixed incidentally by PR #703. The originally-cited `MainWindow.xaml` border splitter remains out of scope — confirmed again it's a `Border`, not a `GridSplitter`, so this finding never applied to it. | ~~Low~~ Resolved |
-| 12 | `App.xaml:143-144` | `SystemColors.InactiveSelectionHighlightBrushKey` hardcoded to `#007ACC`/White — same stale-accent pattern, visible only when a grid loses focus with a row selected. Verified 2026-09-04: still present, deliberately deferred alongside its `NavigationView.xaml` twin (Grids WPF #8) for the same reason (no reliable theme-aware binding path). | Low |
+| 12 | `App.xaml:143-144` | **Fix applied 2026-09-04 via PR #726, pending user spot-check.** `SystemColors.InactiveSelectionHighlightBrushKey`/`InactiveSelectionHighlightTextBrushKey` (hardcoded `#007ACC`/White) replaced with `{DynamicResource SystemAccentColorPrimary}`/`{DynamicResource TextOnAccentFillColorPrimary}` — see Grids (WPF) #8 above for the full rationale (same fix, same two files). Not marked Resolved until confirmed live in the running app (select a grid row, click away to defocus, check both light and dark mode) — this environment has no WPF GUI to verify with, and a prior fix attempt at this exact spot had to be reverted. | Low, fix pending verification |
 
 ## Part A — Confirmed non-compliant items: Grids — data & interaction (added 2026-09-04)
 
@@ -214,18 +214,21 @@ closed as false positives in follow-up PRs (#714-#725) tracked inline in the tab
 one item from that original list remains genuinely open:
 
 - **Grids (WPF) #12** and the `NavigationView.xaml` half of **Grids (WPF) #8** —
-  `InactiveSelectionHighlightBrushKey` hardcoded to `#007ACC`/White in both `App.xaml` and
-  `NavigationView.xaml`. Re-confirmed 2026-09-04 as a genuine technical dead-end: a prior XAML
-  binding attempt (`{Binding Source={StaticResource ...}}` on the brush) was reverted as
-  unreliable. Not re-attempted with `{DynamicResource}` on the underlying `Color` (rather than
-  `Binding` on the `Brush`) because this environment cannot visually verify a WPF GUI change, and
-  the prior attempt already broke this exact resource once — a second speculative, unverifiable
-  change to the same spot risks reintroducing that breakage silently. Low severity (only visible
-  when a grid loses focus with a row selected); left as documented technical debt.
+  `InactiveSelectionHighlightBrushKey`/`InactiveSelectionHighlightTextBrushKey` hardcoded to
+  `#007ACC`/White in both `App.xaml` and `NavigationView.xaml`. The prior fix attempt used a
+  `Binding` on a `StaticResource`-wrapped `Brush`'s `Color` sub-property, which doesn't propagate
+  reliably in a loose `ResourceDictionary` (no `DataContext`, frozen at parse time) and had to be
+  reverted. PR #726 tries a different, better-grounded technique: `{DynamicResource}` directly on
+  the `Color` property, targeting the same two `Color` resources
+  (`SystemAccentColorPrimary`/`TextOnAccentFillColorPrimary`) that already back
+  `ListBoxItemSelectedBackgroundThemeBrush`/`ListBoxItemSelectedForegroundThemeBrush` — the
+  brushes both styles already use for the *focused*-selected state — confirmed via the Wpf.Ui
+  4.0.0 GitHub source. This environment has no WPF GUI to verify the result, so it's flagged
+  pending the user's spot-check rather than marked Resolved.
 
 ## Not yet actioned
 
 The Part B gap list (15 items) is unchanged — those are product decisions with no governing
-standard, not failures. **Grids (WPF) #12** (above) is the only remaining open finding from Part
-A; everything else in this document is resolved, a documented false positive, or an explicit Gap
-awaiting a product decision.
+standard, not failures. Everything else in this document is resolved, a documented false
+positive, or an explicit Gap awaiting a product decision, except **Grids (WPF) #12**/#8 (above),
+which has a fix up in PR #726 awaiting the user's visual confirmation.
