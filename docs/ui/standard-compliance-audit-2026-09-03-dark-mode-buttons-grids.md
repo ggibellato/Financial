@@ -216,7 +216,11 @@ Carried forward from the standards docs' own list; not counted as violations abo
    test assertions from exact/regex `getByText` (which can't match text split across sibling
    elements) to `toHaveTextContent` on the panel's `data-testid`. Documented in
    `forms-data-and-visualisations.md`'s "Field rules" section, cross-referencing the Totals rule.
-8. Whether Save/Cancel/Confirm need icons.
+8. ~~Whether Save/Cancel/Confirm need icons.~~ **Decided and documented 2026-09-05.** No —
+   matches Fluent's own convention (icons reserved for high-recognition actions like Add/Delete/
+   Edit) and every existing form on both platforms already has zero icons on these buttons.
+   Documented as a definitive rule in `forms-data-and-visualisations.md`'s "Form actions and
+   saving" section.
 9. Post-submit itemized result view styling.
 10. Year-only selector (distinct from the documented month+year picker).
 11. Breadcrumb semantic structure.

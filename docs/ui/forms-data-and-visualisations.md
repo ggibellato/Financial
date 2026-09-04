@@ -149,6 +149,13 @@ reference on both platforms.
 - Confirm discarding only when unsaved changes exist.
 - Update dependent grids, totals, and charts after successful changes.
 
+**Save/Cancel/Confirm icons:** none. Fluent's own convention reserves
+leading icons for actions where recognition value is high (Add, Delete,
+Edit) and leaves primary form-submit actions as plain text — every existing
+form on both platforms already follows this. Do not add an icon to Save/
+Cancel/Confirm to "match" a grid's Add/Edit/Delete icons; those are a
+different action category.
+
 ### Validation
 
 - Validate client-side and server-side where appropriate.
