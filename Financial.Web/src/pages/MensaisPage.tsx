@@ -259,7 +259,7 @@ export default function MensaisPage() {
             Add Bill
           </Button>
           <Button
-            appearance="primary"
+            appearance="secondary"
             icon={<ArrowResetRegular />}
             disabled={isResetting}
             onClick={() => confirmThenRun('Reset every bill back to Unset for the new month?', resetAllToUnset)}

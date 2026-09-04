@@ -55,7 +55,7 @@ actions inside a grid, never a labelled panel action.
 | 1 | ~~`BankOperationsSection.tsx:92-98`, `IncomeSection.tsx:46,55`, `ExpensesSection.tsx:42,51`, `CreditsTab.tsx:81,90`, `PriceHistoryTab.tsx:58,69`, `TransactionsTab.tsx:59,68`, `DetailPanel.tsx:88,98,109`~~ | **Resolved via PR #705.** Re-verification before fixing found six of the seven cited files already correct (icon-only row actions, not the labelled trigger — false-positive citations); the only genuine violation was `DetailPanel.tsx`'s Move/Delete Portfolio pair, fixed by removing `size="small"`. | ~~Medium~~ Resolved |
 | 2 | ~~`BanksPage.tsx:94-108` (+ 9 sibling Admin pages) vs. `TransactionsTab.tsx:57-73`~~ | **Corrected 2026-09-04 — not a violation.** Re-checked while fixing Buttons (WPF) #3 (PR #707): every Admin-CRUD page and every Investment tab already uses the identical `appearance="subtle" size="small"` pattern for row Edit/Delete. The two-appearance claim didn't hold against current code; no fix needed or made. | ~~Medium~~ N/A |
 | 3 | ~~`components/DetailPanel.tsx:96-116`~~ | **Corrected 2026-09-04 — not a violation.** Originally flagged as "Move…"/"Delete Portfolio" needing a distinct destructive treatment. Re-read of `forms-data-and-visualisations.md` lines 146-150 and 172-174 found the doc names this exact pair by name as the canonical example of peer action buttons that must **both stay primary, same style** — "never treat a Move/Delete pair as if it were a Save/Cancel pair." The `size="small"` part of the original finding was real and is fixed (see Buttons #1); the appearance/distinction part was a misreading of the rule and required no change. WPF's equivalent (`NavigationView.xaml`'s Move Asset/Delete Portfolio buttons) was already compliant with the same rule for the same reason. | ~~High~~ N/A |
-| 4 | `pages/MensaisPage.tsx:258-268` | Two adjacent `appearance="primary"` buttons ("Add Bill", "Reset All to Unset") — a bulk/destructive action carries the same visual priority as the page's create action | Medium |
+| 4 | ~~`pages/MensaisPage.tsx:258-268`~~ | **Resolved 2026-09-04.** "Reset All to Unset" changed to `appearance="secondary"`, leaving "Add Bill" as the toolbar's one primary action — unlike Buttons (Web) #3's Move/Delete pair, these are an unrelated create action and a bulk-destructive action, not two peers on one entity, so the "both stay primary" exception doesn't apply here. | ~~Medium~~ Resolved |
 | 5 | ~~`TransactionsTab.css:162-188`, `CreditsTab.css`, `PriceHistoryTab.css`~~ | **Resolved via PR #710.** `TransactionsTab.tsx`, `CreditsTab.tsx` and `PriceHistoryTab.tsx` were rewritten with real Fluent `Field`/`Input`/`Button` inline forms as part of the Web Investment legacy-form migration; the raw-HTML Save/Cancel classes were removed. | ~~Low~~ Resolved |
 | 6 | ~~`TransferForm.tsx:116`, `BankOperationsSection.tsx:92-98`~~ | **Corrected 2026-09-04 — not a violation on Web.** Re-checked: `BankOperationsSection.tsx`'s trigger reads "New Transfer", and `TransferForm.tsx:57` titles the panel "New Transfer"/"Edit Transfer" — there is no "Move Money" text anywhere in the current Web naming chain. The drift the original citation described does exist, but on the **opposite** platform — see the corrected Cross-platform Parity #1 below: `Financial.App/Views/CashFlow/TransferFormView.xaml:46,121` still shows "Move Money" for the create-mode title/button while Web says "New Transfer". | ~~Medium~~ N/A (see Parity #1) |
 | 7 | `components/ColourModeToggleButton.tsx:9-17` | Raw `<button className="colour-mode-toggle">`, not a Fluent `Button` — the one non-Fluent control in the top `App.tsx` bar. Verified 2026-09-04: still unaddressed. | Low |
@@ -111,6 +111,18 @@ another, doesn't inherit it.
 | 10 | `AssetPriceView.xaml` (8 hardcoded values), `DividendCheckView.xaml` (14+ hardcoded values) | Two full pages predate the Fluent migration entirely (`#333333`, `#666666`, `#CCCCCC`, `#FAFAFA`, `#D32F2F`, `#FDECEA`, plain `Blue`/`Red`/`Green`) — named in the 2026-08-23 audit as pre-migration holdouts. Verified 2026-09-04: both files confirmed still fully unconverted; neither was in scope for any shipped PR. | High |
 | 11 | `NavigationView.xaml:119`, `CreditsView.xaml:124`, `PriceHistoryView.xaml:172`, `TransactionsView.xaml:113` | **Partially resolved.** `NavigationView.xaml`'s splitter was converted to a `DynamicResource` incidentally while PR #703 rewrote the rest of that file. Verified 2026-09-04: `CreditsView.xaml`, `PriceHistoryView.xaml` and `TransactionsView.xaml` still hardcode `Background="#E0E0E0"`; the originally-cited `MainWindow.xaml` border splitter no longer matches this pattern (border, not `GridSplitter`) and appears to have been miscited. | Low |
 | 12 | `App.xaml:143-144` | `SystemColors.InactiveSelectionHighlightBrushKey` hardcoded to `#007ACC`/White — same stale-accent pattern, visible only when a grid loses focus with a row selected. Verified 2026-09-04: still present, deliberately deferred alongside its `NavigationView.xaml` twin (Grids WPF #8) for the same reason (no reliable theme-aware binding path). | Low |
+
+## Part A — Confirmed non-compliant items: Grids — data & interaction (added 2026-09-04)
+
+Two issues reported directly by the user while using the app, not found by the original sweep.
+Rule of record: `forms-data-and-visualisations.md`'s grid conventions (consistent column naming
+and filterability) and `ux-principles.md` (don't discard a user's in-progress view state on an
+unrelated action).
+
+| # | Location | Finding | Severity |
+|---|---|---|---|
+| 13 | `Financial.Web/src/components/ExpensesSection.tsx:143-148` vs. `IncomeSection.tsx:150-165` | The Bank-Expenses grid's bank column is labelled "Payment Source" and has no filter, while the sibling Income grid's identical concept is labelled "Bank" and carries a full `ColumnFilterMenu` (`columnKey="bank"`, same pattern as the Category/Card columns already on the same page). Same underlying data (`expense.paymentSourceBankName`), inconsistent name, and the one column on this grid a user can't filter by. | Medium |
+| 14 | `Financial.Web/src/pages/MonthlyPage.tsx:221-222` gating `ExpensesSection`/`IncomeSection` behind `isLoading`, combined with `useMonthly.ts:109-110,115-116` (`RETRY` re-dispatches `FETCH_START` → `isLoading: true` after every add/edit/delete) | Confirmed root cause of "sort/filter is lost after adding a Credit Card expense": every mutation triggers a full refetch that flips `isLoading` back to `true`, and `MonthlyPage.tsx` swaps the grid components out for `<LoadingState />` while that's in flight. `useSortableRows`/`useColumnFilters` keep sort/filter selection in per-component `useState` (`useSortableRows.ts:42`, `useColumnFilters.ts:30`), so unmounting the grid on every mutation — not just the initial page load — silently resets both. This is the same `{isLoading ? <LoadingState/> : <Grid/>}` shape used by essentially every page in `Financial.Web`, so it plausibly affects every Web grid with sort/filter, exactly as reported, but only `MonthlyPage.tsx` was traced end-to-end so far. **WPF not yet checked** — `MonthlyView.xaml`'s equivalent (`Visibility="{Binding ShowContent}"` gating the `TabControl`, not a JSX unmount) uses a different mechanism that may or may not reproduce the same loss; needs its own verification before assuming parity. | High |
 
 ## Part A — Confirmed non-compliant items: Forms
 
@@ -196,14 +208,13 @@ Carried forward from the standards docs' own list; not counted as violations abo
 ## Verification pass (2026-09-04)
 
 Every finding above was re-checked against current code before being marked. Of the 42 original
-Part A findings: **26 resolved**, **4 corrected as false positives** (no fix needed — the doc's
+Part A findings: **27 resolved**, **4 corrected as false positives** (no fix needed — the doc's
 own rules were misapplied at audit time, not the code), **3 partially resolved** (noted inline
-with what remains), and **9 confirmed still genuinely open**, listed here so none are mistaken for
-addressed:
+with what remains), and **8 confirmed still genuinely open**, listed here so none are mistaken for
+addressed (Buttons (Web) #4 was fixed 2026-09-04, moving it out of this list). Two new findings
+reported by the user the same day (Grids — data & interaction #13, #14) were added after this
+count and are separately open — see that section above.
 
-- **Buttons (Web) #4** — MensaisPage's dual-primary Add/Reset toolbar buttons. Not the same shape
-  as the Move/Delete false-positive pattern (these are an unrelated create action and a bulk
-  action, not two peer actions on one entity) — this one is real and still unfixed.
 - **Buttons (Web) #7** — `ColourModeToggleButton.tsx` is still a raw `<button>`.
 - **Buttons (WPF) #4** — `Sidebar.xaml`'s hardcoded `#007ACC`.
 - **Buttons (WPF) #5** — `AppearanceView.xaml`'s `RadioButton` pair (Gap, needs a product decision).
