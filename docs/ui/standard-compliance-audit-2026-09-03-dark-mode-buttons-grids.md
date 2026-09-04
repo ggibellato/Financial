@@ -191,7 +191,12 @@ Carried forward from the standards docs' own list; not counted as violations abo
    required` prop (21 files). WPF: asterisk `Run` with `SystemFillColorCriticalBrush` paired with
    `AutomationProperties.HelpText="Required"` (11 files, matching exactly). Documented in
    `forms-data-and-visualisations.md`'s "Field rules" section.
-5. Contextual-help mechanism.
+5. ~~Contextual-help mechanism.~~ **Mechanism documented 2026-09-05, not yet applied
+   anywhere.** Unlike #1/#4 above, this one genuinely had no existing implementation on either
+   platform to codify. Documented Web (`InfoLabel` in place of a plain string label) and WPF
+   (`ui:SymbolIcon Symbol="Info16"` + `ui:Flyout`) in `forms-data-and-visualisations.md`'s "Field
+   rules" section, per the user's choice to have the mechanism ready rather than retrofit
+   specific fields (e.g. "Round-Up", "JCP") speculatively.
 6. Multi-step decision dialog layout (e.g. Move Asset).
 7. Whether inline computed-value sentences should be bold.
 8. Whether Save/Cancel/Confirm need icons.

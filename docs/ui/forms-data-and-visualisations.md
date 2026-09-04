@@ -115,6 +115,18 @@ SystemFillColorCriticalBrush}"/>`, paired with
 `FieldLabelStyle` already follows this — see `ExpenseFormView.xaml` for the
 reference.
 
+**Contextual help mechanism:** for a field whose meaning isn't obvious from
+its label alone (e.g. "Round-Up", "JCP"), Web uses Fluent's `InfoLabel` in
+place of a plain string label — `<Field label={<InfoLabel info="...">Round-
+Up</InfoLabel>}>` — which renders a trailing info button opening a
+`Popover` with the explanation, and handles the `aria-owns`/focus wiring
+itself. Use `InfoLabel` (not a plain tooltip) when the explanation is more
+than a few words or needs any interaction — a plain tooltip is for short,
+non-interactive text only. WPF: a small `ui:SymbolIcon Symbol="Info16"`
+beside the label, opening a `ui:Flyout` with the same explanation text.
+Neither platform has an instance of this yet — apply it the first time a
+field genuinely needs one, rather than retrofitting it speculatively.
+
 ### Form actions and saving
 
 - Use one primary form action.
