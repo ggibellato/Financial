@@ -10,6 +10,14 @@
   --credit-type-jcp: #00838f;
 }
 
+/* Same three hues, lightened for dark mode — the light-mode values fall to
+   3.1-4.0:1 against the dark background (WCAG 2.2 AA needs 4.5:1 for text). */
+:root[data-theme='dark'] .credits-tab {
+  --credit-type-dividend: #5b9bd8;
+  --credit-type-rent: #4dabf7;
+  --credit-type-jcp: #3bc9db;
+}
+
 .credits-tab__controls {
   display: flex;
   align-items: center;

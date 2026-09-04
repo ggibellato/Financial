@@ -85,11 +85,11 @@
 }
 
 .price-history-tab__source--manual {
-  color: #e65100;
+  color: var(--warning-text);
 }
 
 .price-history-tab__source--automatic {
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
 }
 
 .price-history-tab__delete-error {

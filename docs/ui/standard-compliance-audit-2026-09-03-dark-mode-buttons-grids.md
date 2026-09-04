@@ -73,7 +73,7 @@ a finding.
 | 2 | ~~90 (11 Admin dialogs), 100 (`AddBillFormView`), 110 (7 inline forms), 130 (`IncomeSplitFormView`), 80/70 (`UkExpensePromptDialog`)~~ | **Resolved via PR #705.** Standardised primary-button width to `MinWidth="90"` across all 11 affected files. | ~~Medium~~ Resolved |
 | 3 | ~~`ExpenseSectionView.xaml:40-44` (correct `ui:SymbolIcon`) vs. ~16 files with `Button Content="✏"/"🗑"` emoji vs. `TransactionsView.xaml:150-161` (Segoe MDL2 glyph in a `TextBlock`)~~ | **Resolved via PR #707.** Converted all 20 emoji/glyph row-action buttons to `ui:Button Appearance="Transparent" Icon="{ui:SymbolIcon Symbol=Edit16/Delete16}"`, matching the one already-correct convention. | ~~Medium~~ Resolved |
 | 4 | ~~`Components/Sidebar.xaml:30,55,133,152`~~ | **Resolved 2026-09-05.** All four `Foreground`/`Stroke`/`TextElement.Foreground` setters converted from the literal `#007ACC` to `{DynamicResource AccentTextFillColorPrimaryBrush}` — confirmed present in the compiled Wpf.Ui 4.0.1 DLL (same string-scan verification method as PR #703's brush choices) and the correct Fluent 2/WinUI semantic key for accent-colored text, matching what a selected nav label needs. | ~~High~~ Resolved |
-| 5 | `Views/Settings/AppearanceView.xaml` | Light/Dark setting uses a plain `RadioButton` pair, not a Wpf.Ui control — no rule mandates otherwise; flag for a decision. Still an open Gap, no product decision made. | Gap |
+| 5 | ~~`Views/Settings/AppearanceView.xaml`~~ | **Re-verified 2026-09-04, closed — false positive.** `App.xaml:13-16` merges `ui:ThemesDictionary`/`ui:ControlsDictionary` app-wide, and a string-scan of the compiled `Wpf.Ui.dll` confirms it ships implicit Fluent-styled resources for the standard `RadioButton` control (`RadioButtonCheckGlyphSize`, `RadioButtonOuterEllipseCheckedStroke`, etc. — the same mechanism that Fluent-styles the plain `TextBox`/`DatePicker`/`ComboBox` used unprefixed throughout the rest of the app). The plain `<RadioButton>` here already renders Fluent-themed; there is no Wpf.Ui-specific `RadioButton` control to swap to, and no gap to close. | ~~Gap~~ Resolved |
 
 ## Part A — Confirmed non-compliant items: Grids (Web)
 
@@ -83,10 +83,10 @@ token values belong in the React theme and WPF ResourceDictionaries."
 | # | Location | Finding | Severity |
 |---|---|---|---|
 | 1 | ~~`styles/data-table.css:28-30`~~ | **Resolved via PR #703.** `background: #f5f5f5` replaced with `var(--bg-subtle)`. | ~~High~~ Resolved |
-| 2 | `styles/data-table.css` (whole file) | No row-hover or selected-row state defined at all — only header background and borders are tokenised. Verified 2026-09-04: still true, never addressed (out of scope for the dark-mode-regression fix, which only touched the literal-colour bug). | Medium |
+| 2 | ~~`styles/data-table.css` (whole file)~~ | **Resolved 2026-09-04.** Added `.data-table tbody tr:hover { background: var(--bg-hover) }` using the existing theme-aware token (already defined for both themes in `index.css`, previously only used as a fallback on `.data-table__action-btn:hover`). Checked whether "selected-row" also applies first: surveyed all 23 files using `.data-table` and found none implement row selection — every grid uses per-row action buttons instead (`InvestmentTree.tsx` is the only component with click-to-select, and it isn't a `.data-table` grid) — so per the docs' "applicable" qualifier, only hover applies here. Verified live in the browser (CashFlow Monthly grids) in both light and dark mode. | ~~Medium~~ Resolved |
 | 3 | ~~`TransactionsTab.css:24-33,190-236`, `CreditsTab.css:36,69,193-238`, `PriceHistoryTab.css:31,64,167-235`~~ | **Fully resolved 2026-09-05.** PR #704 already converted buy/sell and error text to `var(--success)`/`var(--danger)`/`var(--error)`. The remaining `#007acc` filter/mode-button colour (the same stale pre-rebrand accent fixed elsewhere in this pass) is now `var(--accent)` in all three files — 2 occurrences each in `TransactionsTab.css`/`CreditsTab.css`, 1 in `PriceHistoryTab.css` (its second cited line, 64, no longer contains a colour rule — an unrelated layout line today; the original citation was stale). | ~~Medium~~ Resolved |
-| 4 | `PriceHistoryTab.css:53,185` | "Manual price" badge hardcodes `#e65100`. No documented manual-vs-automatic colour convention exists yet (see Part B), but the literal itself still bypasses the token system. Still open — no convention decided, not touched. | Medium |
-| 5 | `CreditsTab.css:8-10` | Credit-type colours (`--credit-type-dividend/rent/jcp`) are a local, non-token palette scoped to this file, identical in both themes. Deliberately left alone during PR #704 (categorical, not a status colour) — still open. | Medium |
+| 4 | ~~`PriceHistoryTab.css:53,185`~~ | **Resolved 2026-09-04.** `.price-history-tab__source--manual`'s `#e65100` replaced with `var(--warning-text)` — this is exactly what that token is for ("flag this value, it wasn't auto-fetched"), no new convention needed. Also removed the dead `var(--text-muted, #888)` fallback on the `--automatic` sibling rule (`--text-muted` is unconditionally defined, same stale-fallback pattern as the `--accent` cleanup in PR #720). Verified: contrast-checked `--warning-text` at 4.92:1 (light) / 9.11:1 (dark) against `--bg`, both pass WCAG AA; `npm test` (1471 passed), `npm run build` clean. | ~~Medium~~ Resolved |
+| 5 | ~~`CreditsTab.css:8-10`~~ | **Resolved 2026-09-04 — this was a real accessibility bug, not just a design preference.** The three credit-type colours are legitimately categorical (kept local, non-token) and pass WCAG AA against the light-mode background (4.5-5.7:1) — but measured against the dark-mode background (`--bg: #16171d`) they fall to 3.1-4.0:1, below the 4.5:1 AA baseline `docs/rules/ui.md`/CLAUDE.md mandate for text. Added a `:root[data-theme='dark'] .credits-tab` override lightening all three hues (dividend `#1565c0`→`#5b9bd8`, rent `#0277bd`→`#4dabf7`, jcp `#00838f`→`#3bc9db`) to 6.1-9.0:1 in dark mode while leaving the already-passing light-mode values untouched. Verified: contrast ratios computed and checked programmatically; confirmed legible live in the browser (TAEE3's Credits grid, dark mode) — Dividend/JCP labels clearly readable against the dark background where they were previously borderline. | ~~Medium~~ Resolved |
 | 6 | ~~`pages/AnnualSummaryPage.css:39-46`~~ | **Resolved 2026-09-05.** All three `#007acc` occurrences (hover and active tab state) replaced with `var(--accent)`. | ~~Medium~~ Resolved |
 | 7 | ~~`PortfolioSummaryTab.css:39-53`, `AggregatedSummaryTab.css:34,38,42`, `InvestmentTree.css:65,73,81-82`~~ | **Resolved via PR #704.** All six files (plus `AssetSummaryTab.css` and `DetailPanel.css`, discovered during the fix) now use `var(--success)`/`var(--danger)`. | ~~Medium~~ Resolved |
 | 8 | ~~`InvestmentTree.css:82`, `PortfolioSummaryTab.css:59`~~ | **Resolved 2026-09-05.** Both stale fallback values removed — `--accent` is always declared, so `var(--accent, #007acc)`/`var(--accent, #5a7e6e)` simplify to plain `var(--accent)`. | ~~Low~~ Resolved |
@@ -208,35 +208,24 @@ Carried forward from the standards docs' own list; not counted as violations abo
 
 ## Verification pass (2026-09-04)
 
-Every finding above was re-checked against current code before being marked. Of the 42 original
-Part A findings: **27 resolved**, **4 corrected as false positives** (no fix needed — the doc's
-own rules were misapplied at audit time, not the code), **3 partially resolved** (noted inline
-with what remains), and **8 confirmed still genuinely open**, listed here so none are mistaken for
-addressed (Buttons (Web) #4 was fixed 2026-09-04, moving it out of this list). Two new findings
-reported by the user the same day (Grids — data & interaction #13, #14) were added after this
-count and have since also been resolved — see that section above.
+Every finding above was re-checked against current code before being marked. This section
+originally listed 8 items still open as of 2026-09-04; all but one have since been fixed or
+closed as false positives in follow-up PRs (#714-#725) tracked inline in the tables above. Only
+one item from that original list remains genuinely open:
 
-- **Buttons (Web) #7** — `ColourModeToggleButton.tsx` is still a raw `<button>`.
-- **Buttons (WPF) #4** — `Sidebar.xaml`'s hardcoded `#007ACC`.
-- **Buttons (WPF) #5** — `AppearanceView.xaml`'s `RadioButton` pair (Gap, needs a product decision).
-- **Grids (Web) #2, #4, #5, #6, #8** — no row-hover/selected state, manual-price badge colour,
-  local credit-type palette, `AnnualSummaryPage.css`'s `#007acc` tab strip, and the stale `var()`
-  fallbacks — none were in scope for any shipped fix.
-- **Grids (WPF) #4, #5, #10** — `DividendCheckView.xaml`'s `AutoGenerateColumns`, the two
-  remaining amber literals, and the two fully-unconverted pre-migration pages
-  (`AssetPriceView.xaml`, `DividendCheckView.xaml`).
-- **Grids (WPF) #11** (partial) — 3 of 4 confirmed `GridSplitter`s still hardcode `#E0E0E0`
-  (`CreditsView.xaml`, `PriceHistoryView.xaml`, `TransactionsView.xaml`); only `NavigationView.xaml`'s
-  was fixed, incidentally, during PR #703.
 - **Grids (WPF) #12** and the `NavigationView.xaml` half of **Grids (WPF) #8** —
   `InactiveSelectionHighlightBrushKey` hardcoded to `#007ACC`/White in both `App.xaml` and
-  `NavigationView.xaml`, deliberately deferred (no reliable theme-aware XAML binding path found).
-- **Forms #5** — field order was never independently re-verified in this or the follow-up passes.
-- **Cross-platform Parity #1** — real naming drift confirmed, but on WPF (`TransferFormView.xaml`
-  still says "Move Money"), not Web as originally cited.
+  `NavigationView.xaml`. Re-confirmed 2026-09-04 as a genuine technical dead-end: a prior XAML
+  binding attempt (`{Binding Source={StaticResource ...}}` on the brush) was reverted as
+  unreliable. Not re-attempted with `{DynamicResource}` on the underlying `Color` (rather than
+  `Binding` on the `Brush`) because this environment cannot visually verify a WPF GUI change, and
+  the prior attempt already broke this exact resource once — a second speculative, unverifiable
+  change to the same spot risks reintroducing that breakage silently. Low severity (only visible
+  when a grid loses focus with a row selected); left as documented technical debt.
 
 ## Not yet actioned
 
 The Part B gap list (15 items) is unchanged — those are product decisions with no governing
-standard, not failures, and none were resolved by the fix-order work above. The open findings
-listed in the verification pass above remain queued until the user asks for one of them.
+standard, not failures. **Grids (WPF) #12** (above) is the only remaining open finding from Part
+A; everything else in this document is resolved, a documented false positive, or an explicit Gap
+awaiting a product decision.
