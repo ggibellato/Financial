@@ -10,14 +10,16 @@ import {
   YAxis,
 } from 'recharts'
 import type { DefaultLegendContentProps } from 'recharts'
-import { Button, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
+import { Button, Field, Input, MessageBar, MessageBarBody, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text } from '@fluentui/react-components'
 import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import type { AssetPriceSnapshotDto, TransactionDto } from '../api/types'
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
 import SplitPanel from './SplitPanel'
 import SortableColumnHeader from './grid/SortableColumnHeader'
+import { useFormPanelStyles } from './formPanelStyles'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
+import { useFieldError } from '../hooks/useFieldError'
 import type { PriceHistoryFormField } from '../hooks/usePriceHistory'
 import { usePriceHistory } from '../hooks/usePriceHistory'
 import { confirmThenRun } from '../utils/confirmThenRun'
@@ -90,6 +92,7 @@ interface InlineFormProps {
   formPrice: string
   isSaving: boolean
   saveError: string | null
+  saveErrorField: PriceHistoryFormField | null
   onFieldChange: (field: PriceHistoryFormField, value: string) => void
   onSave: () => void
   onCancel: () => void
@@ -101,53 +104,61 @@ function InlineForm({
   formPrice,
   isSaving,
   saveError,
+  saveErrorField,
   onFieldChange,
   onSave,
   onCancel,
 }: InlineFormProps) {
+  const styles = useFormPanelStyles()
+  const fieldError = useFieldError(saveError, saveErrorField)
   const title = editingDate ? 'Edit price' : 'New price'
 
   return (
-    <div className="price-history-tab__form">
-      <p className="price-history-tab__form-title">{title}</p>
-      <div className="price-history-tab__form-fields">
-        <div className="price-history-tab__form-field">
-          <label htmlFor="ph-date">Date</label>
-          <input
-            id="ph-date"
-            type="date"
-            value={formDate}
-            required
-            onChange={(e) => onFieldChange('formDate', e.target.value)}
-          />
-        </div>
-        <div className="price-history-tab__form-field">
-          <label htmlFor="ph-price">Price</label>
-          <input
-            id="ph-price"
+    <div className={styles.panel}>
+      <Text as="h2" weight="semibold" size={400}>
+        {title}
+      </Text>
+
+      <div className={styles.grid}>
+        <Field
+          label="Date"
+          required
+          validationState={fieldError('formDate') ? 'error' : 'none'}
+          validationMessage={fieldError('formDate')}
+        >
+          <Input type="date" value={formDate} onChange={(e) => onFieldChange('formDate', e.target.value)} />
+        </Field>
+
+        <Field
+          label="Price"
+          required
+          validationState={fieldError('formPrice') ? 'error' : 'none'}
+          validationMessage={fieldError('formPrice')}
+        >
+          <Input
             type="number"
             step="0.01"
             min="0"
             value={formPrice}
-            required
             onChange={(e) => onFieldChange('formPrice', e.target.value)}
           />
-        </div>
+        </Field>
       </div>
-      <div className="price-history-tab__form-actions">
-        <button
-          className="price-history-tab__save-btn"
-          type="button"
-          disabled={isSaving}
-          onClick={onSave}
-        >
+
+      <div className={styles.actions}>
+        <Button appearance="primary" disabled={isSaving} onClick={onSave}>
           {isSaving ? 'Saving...' : editingDate ? 'Save' : 'Add price'}
-        </button>
-        <button className="price-history-tab__cancel-btn" type="button" onClick={onCancel}>
+        </Button>
+        <Button appearance="secondary" onClick={onCancel}>
           Cancel
-        </button>
+        </Button>
       </div>
-      {saveError && <p className="price-history-tab__error">{saveError}</p>}
+
+      {saveError && (
+        <MessageBar intent="error">
+          <MessageBarBody>{saveError}</MessageBarBody>
+        </MessageBar>
+      )}
     </div>
   )
 }
@@ -263,6 +274,7 @@ export default function PriceHistoryTab() {
     formPrice,
     isSaving,
     saveError,
+    saveErrorField,
     deleteError,
     showNewForm,
     showEditForm,
@@ -316,6 +328,7 @@ export default function PriceHistoryTab() {
           formPrice={formPrice}
           isSaving={isSaving}
           saveError={saveError}
+          saveErrorField={saveErrorField}
           onFieldChange={setFormField}
           onSave={saveForm}
           onCancel={cancelForm}

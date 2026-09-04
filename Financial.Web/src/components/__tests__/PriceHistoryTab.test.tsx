@@ -59,6 +59,7 @@ const DEFAULT_HOOK: PriceHistoryData = {
   formPrice: '',
   isSaving: false,
   saveError: null,
+  saveErrorField: null,
   deleteError: null,
   showNewForm: mockShowNewForm,
   showEditForm: mockShowEditForm,
@@ -175,14 +176,14 @@ describe('PriceHistoryTab', () => {
   it('renders_form_when_form_visible', () => {
     setMock({ isFormVisible: true, editingDate: null })
     render(<PriceHistoryTab />)
-    expect(screen.getByLabelText('Date')).toBeInTheDocument()
-    expect(screen.getByLabelText('Price')).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Date/)).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Price/)).toBeInTheDocument()
   })
 
   it('form_title_is_new_price_when_no_editing_date', () => {
     setMock({ isFormVisible: true, editingDate: null })
     render(<PriceHistoryTab />)
-    expect(screen.getByText('New price', { selector: '.price-history-tab__form-title' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'New price' })).toBeInTheDocument()
   })
 
   it('form_title_is_edit_price_when_editing_date_set', () => {

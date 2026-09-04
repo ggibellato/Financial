@@ -73,88 +73,6 @@
   flex-shrink: 0;
 }
 
-.price-history-tab__form {
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border, #e5e4e7);
-  background: var(--bg-subtle, #f9f9f9);
-  flex-shrink: 0;
-}
-
-.price-history-tab__form-title {
-  font-size: 13px;
-  font-weight: bold;
-  margin: 0 0 10px;
-}
-
-.price-history-tab__form-fields {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 16px;
-  margin-bottom: 10px;
-}
-
-.price-history-tab__form-field {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.price-history-tab__form-field label {
-  font-size: 11px;
-  color: var(--text-muted, #888);
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-}
-
-.price-history-tab__form-field input {
-  font-size: 12px;
-  padding: 3px 6px;
-  border: 1px solid var(--border, #e5e4e7);
-  border-radius: 3px;
-  background: var(--bg, #fff);
-  min-width: 90px;
-}
-
-.price-history-tab__form-actions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.price-history-tab__save-btn {
-  font-size: 12px;
-  padding: 3px 12px;
-  cursor: pointer;
-  background: var(--accent);
-  color: #fff;
-  border: none;
-  border-radius: 3px;
-}
-
-.price-history-tab__save-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.price-history-tab__cancel-btn {
-  font-size: 12px;
-  padding: 3px 10px;
-  cursor: pointer;
-  background: none;
-  border: 1px solid var(--border, #e5e4e7);
-  border-radius: 3px;
-}
-
-.price-history-tab__cancel-btn:hover {
-  background: var(--bg-hover, #f0f0f0);
-}
-
-.price-history-tab__error {
-  margin-top: 6px;
-  font-size: 12px;
-  color: var(--error);
-}
-
 .price-history-tab__table-wrapper {
   flex: 1;
   min-height: 0;
@@ -164,21 +82,6 @@
 
 .price-history-tab__price {
   text-align: right;
-}
-
-.price-history-tab__action-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 2px 4px;
-  font-size: 12px;
-  color: var(--text-muted, #888);
-  border-radius: 2px;
-}
-
-.price-history-tab__action-btn:hover {
-  background: var(--bg-hover, #f0f0f0);
-  color: var(--text, #333);
 }
 
 .price-history-tab__source--manual {
