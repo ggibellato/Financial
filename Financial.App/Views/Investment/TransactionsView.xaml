@@ -30,7 +30,7 @@
 
                 <StackPanel Grid.Row="0" Margin="0,0,0,8">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="View:" Margin="0,0,8,0" Foreground="#666666"/>
+                        <TextBlock Text="View:" Style="{StaticResource FilterToggleLabelStyle}"/>
                         <ItemsControl ItemsSource="{Binding AssetDetails.Transactions.ChartTypeModes}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
@@ -45,21 +45,7 @@
                                             BorderThickness="0"
                                             Padding="4,0"
                                             Margin="0,0,12,0">
-                                        <TextBlock Text="{Binding Label}">
-                                            <TextBlock.Style>
-                                                <Style TargetType="TextBlock">
-                                                    <Setter Property="Foreground" Value="#007ACC"/>
-                                                    <Setter Property="TextDecorations" Value="Underline"/>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                            <Setter Property="Foreground" Value="Black"/>
-                                                            <Setter Property="TextDecorations" Value="{x:Null}"/>
-                                                            <Setter Property="FontWeight" Value="Bold"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </TextBlock.Style>
-                                        </TextBlock>
+                                        <TextBlock Text="{Binding Label}" Style="{StaticResource FilterToggleTextStyle}"/>
                                     </Button>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
@@ -81,21 +67,7 @@
                                         BorderThickness="0"
                                         Padding="4,0"
                                         Margin="0,0,12,0">
-                                    <TextBlock Text="{Binding Label}">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="Foreground" Value="#007ACC"/>
-                                                <Setter Property="TextDecorations" Value="Underline"/>
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                        <Setter Property="Foreground" Value="Black"/>
-                                                        <Setter Property="TextDecorations" Value="{x:Null}"/>
-                                                        <Setter Property="FontWeight" Value="Bold"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
+                                    <TextBlock Text="{Binding Label}" Style="{StaticResource FilterToggleTextStyle}"/>
                                 </Button>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
@@ -228,7 +200,7 @@
 
                 <StackPanel Grid.Row="0" Margin="0,0,0,8">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="View:" Margin="0,0,8,0" Foreground="#666666"/>
+                        <TextBlock Text="View:" Style="{StaticResource FilterToggleLabelStyle}"/>
                         <ItemsControl ItemsSource="{Binding AssetDetails.Transactions.ChartTypeModes}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
@@ -243,21 +215,7 @@
                                             BorderThickness="0"
                                             Padding="4,0"
                                             Margin="0,0,12,0">
-                                        <TextBlock Text="{Binding Label}">
-                                            <TextBlock.Style>
-                                                <Style TargetType="TextBlock">
-                                                    <Setter Property="Foreground" Value="#007ACC"/>
-                                                    <Setter Property="TextDecorations" Value="Underline"/>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                            <Setter Property="Foreground" Value="Black"/>
-                                                            <Setter Property="TextDecorations" Value="{x:Null}"/>
-                                                            <Setter Property="FontWeight" Value="Bold"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </TextBlock.Style>
-                                        </TextBlock>
+                                        <TextBlock Text="{Binding Label}" Style="{StaticResource FilterToggleTextStyle}"/>
                                     </Button>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
@@ -279,21 +237,7 @@
                                         BorderThickness="0"
                                         Padding="4,0"
                                         Margin="0,0,12,0">
-                                    <TextBlock Text="{Binding Label}">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="Foreground" Value="#007ACC"/>
-                                                <Setter Property="TextDecorations" Value="Underline"/>
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                        <Setter Property="Foreground" Value="Black"/>
-                                                        <Setter Property="TextDecorations" Value="{x:Null}"/>
-                                                        <Setter Property="FontWeight" Value="Bold"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
+                                    <TextBlock Text="{Binding Label}" Style="{StaticResource FilterToggleTextStyle}"/>
                                 </Button>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>

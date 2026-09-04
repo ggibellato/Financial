@@ -4,6 +4,7 @@ import type { SplitFormField } from '../hooks/useReserva'
 import { useFieldError } from '../hooks/useFieldError'
 import { formatN2 } from '../utils/formatters'
 import { useFormPanelStyles } from './formPanelStyles'
+import './IncomeSplitForm.css'
 
 interface IncomeSplitFormProps {
   date: string
@@ -39,13 +40,13 @@ export default function IncomeSplitForm({
   if (lastResult !== null) {
     return (
       <div className={styles.panel} data-testid="income-split-form-panel">
-        <Text as="h2" weight="semibold" size={400}>
-          Income Split Posted
-        </Text>
-        <table className="reserva-page__table reserva-page__split-result-table data-table">
+        <MessageBar intent="success">
+          <MessageBarBody>Income Split Posted</MessageBarBody>
+        </MessageBar>
+        <table className="income-split-form__result-table data-table">
           <colgroup>
             <col />
-            <col className="reserva-page__col-value" />
+            <col className="income-split-form__col-value" />
           </colgroup>
           <tbody>
             {lastResult.buckets.map((entry) => (
@@ -54,7 +55,7 @@ export default function IncomeSplitForm({
                 <td className="data-table__col--numeric">{formatN2(entry.amount)}</td>
               </tr>
             ))}
-            <tr className="reserva-page__totals-row">
+            <tr className="income-split-form__totals-row">
               <td>Total</td>
               <td className="data-table__col--numeric">{formatN2(lastResult.total)}</td>
             </tr>

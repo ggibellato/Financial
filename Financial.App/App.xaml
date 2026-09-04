@@ -31,6 +31,7 @@
         <converters:DateOnlyToDateTimeConverter x:Key="DateOnlyToDateTimeConverter"/>
         <converters:NullOrEmptyToVisibilityConverter x:Key="NullOrEmptyToVisibilityConverter"/>
         <converters:BillStatusToBrushConverter x:Key="BillStatusToBrushConverter"/>
+        <converters:IntToNullableDoubleConverter x:Key="IntToNullableDoubleConverter"/>
 
         <!-- Assigning a DataGridColumn.Header to a ColumnFilterViewModelBase instance (in a
              view's code-behind, since DataGridColumn isn't part of the visual tree and can't
@@ -187,6 +188,30 @@
                              Converter="{StaticResource NullOrEmptyToVisibilityConverter}"/>
                 </Setter.Value>
             </Setter>
+        </Style>
+
+        <!-- Shared "chip" toggle text for chart filter/mode bars (Transactions/Credits/
+             PriceHistory) — flat, underlined when unselected, bold/no-underline when
+             selected. Matches Web's TabList-driven equivalent (docs/ui/forms-data-and-
+             visualisations.md's "Filter/chart-mode toggle" convention); the underlying
+             control here stays a Button+Command (not a RadioButton) since the ViewModels
+             already drive selection that way and re-plumbing IsChecked bindings isn't
+             needed to fix the actual gap (hardcoded, non-theme-aware colours). -->
+        <Style x:Key="FilterToggleLabelStyle" TargetType="TextBlock">
+            <Setter Property="Margin" Value="0,0,8,0"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/>
+        </Style>
+
+        <Style x:Key="FilterToggleTextStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
+            <Setter Property="TextDecorations" Value="Underline"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                    <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
+                    <Setter Property="TextDecorations" Value="{x:Null}"/>
+                    <Setter Property="FontWeight" Value="Bold"/>
+                </DataTrigger>
+            </Style.Triggers>
         </Style>
 
         <Style x:Key="NumericColumnTextStyle" TargetType="TextBlock">

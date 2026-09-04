@@ -15,6 +15,7 @@ import { Button, Field, Input, MessageBar, MessageBarBody, Select, Table, TableB
 import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import type { CreditDto } from '../api/types'
 import ErrorState from './ErrorState'
+import FilterTabList from './FilterTabList'
 import LoadingState from './LoadingState'
 import SplitPanel from './SplitPanel'
 import SortableColumnHeader from './grid/SortableColumnHeader'
@@ -27,6 +28,16 @@ import { confirmThenRun } from '../utils/confirmThenRun'
 import { PERIOD_FILTER_OPTIONS } from '../utils/periodFilter'
 import { formatN2, formatShortDate } from '../utils/formatters'
 import './CreditsTab.css'
+
+const CHART_TYPE_OPTIONS: { value: ChartType; label: string }[] = [
+  { value: 'Bar', label: 'Bar' },
+  { value: 'Line', label: 'Line' },
+]
+
+const VIEW_MODE_OPTIONS: { value: ViewMode; label: string }[] = [
+  { value: 'Stacked', label: 'Stacked' },
+  { value: 'Grouped', label: 'Grouped' },
+]
 
 const DEFAULT_LEFT_WIDTH = 400
 const MIN_LEFT_WIDTH = 200
@@ -319,44 +330,9 @@ export default function CreditsTab() {
 
   const toolbar = (
     <div className="credits-tab__controls">
-      <div className="credits-tab__filters">
-        {PERIOD_FILTER_OPTIONS.map((opt) => (
-          <button
-            key={opt.value}
-            type="button"
-            className={`credits-tab__filter-btn${selectedFilter === opt.value ? ' credits-tab__filter-btn--active' : ''}`}
-            onClick={() => setFilter(opt.value)}
-          >
-            {opt.label}
-          </button>
-        ))}
-      </div>
-      <div className="credits-tab__modes">
-        <span className="credits-tab__mode-label">View:</span>
-        {(['Bar', 'Line'] as ChartType[]).map((chartType) => (
-          <button
-            key={chartType}
-            type="button"
-            className={`credits-tab__mode-btn${selectedChartType === chartType ? ' credits-tab__mode-btn--active' : ''}`}
-            onClick={() => setChartType(chartType)}
-          >
-            {chartType}
-          </button>
-        ))}
-      </div>
-      <div className="credits-tab__modes">
-        <span className="credits-tab__mode-label">Group:</span>
-        {(['Stacked', 'Grouped'] as ViewMode[]).map((mode) => (
-          <button
-            key={mode}
-            type="button"
-            className={`credits-tab__mode-btn${selectedMode === mode ? ' credits-tab__mode-btn--active' : ''}`}
-            onClick={() => setMode(mode)}
-          >
-            {mode}
-          </button>
-        ))}
-      </div>
+      <FilterTabList options={PERIOD_FILTER_OPTIONS} selected={selectedFilter} onSelect={setFilter} />
+      <FilterTabList label="View:" options={CHART_TYPE_OPTIONS} selected={selectedChartType} onSelect={setChartType} />
+      <FilterTabList label="Group:" options={VIEW_MODE_OPTIONS} selected={selectedMode} onSelect={setMode} />
     </div>
   )
 

@@ -168,16 +168,80 @@ Rule of record: React defines the workflow; WPF must reach the same outcome
 
 Carried forward from the standards docs' own list; not counted as violations above.
 
-1. Row-level Edit/Delete icon convention (only the "New X" create icon is specified).
-2. Filter/chart-mode toggle "chip" pattern.
-3. Manual-vs-automatic price-source colour (Grids — Web #4).
-4. Required-field indicator mechanism.
-5. Contextual-help mechanism.
-6. Multi-step decision dialog layout (e.g. Move Asset).
-7. Whether inline computed-value sentences should be bold.
-8. Whether Save/Cancel/Confirm need icons.
-9. Post-submit itemized result view styling.
-10. Year-only selector (distinct from the documented month+year picker).
+1. ~~Row-level Edit/Delete icon convention (only the "New X" create icon is specified).~~
+   **Decided and documented 2026-09-05 via PR #728.** The convention already existed in
+   practice on both platforms (Web `EditRegular`/`DeleteRegular`, WPF `SymbolIcon Edit16`/
+   `Delete16`) — codified into `forms-data-and-visualisations.md`'s "Grid row actions" section,
+   and fixed one leftover inconsistency (`ReservaPage.tsx`'s raw emoji Edit icon).
+2. ~~Filter/chart-mode toggle "chip" pattern.~~ **Decided and implemented 2026-09-05.** Web:
+   replaced the hand-rolled underlined-link buttons in `TransactionsTab`/`CreditsTab`/
+   `PriceHistoryTab` with a new shared `FilterTabList` component wrapping Fluent `TabList`/`Tab`
+   (closes the ARIA tablist/keyboard-nav gap for free). WPF: kept the existing `Button`+`Command`
+   selection model (no need to re-plumb to `RadioButton`) but fixed the real gap — hardcoded,
+   non-theme-aware colours — via two new shared styles (`FilterToggleTextStyle`/
+   `FilterToggleLabelStyle` in `App.xaml`) applied across `TransactionsView.xaml`,
+   `CreditsFilterBar.xaml`, `PriceHistoryView.xaml`. Documented in
+   `forms-data-and-visualisations.md`'s new "Chart filter/mode toggle" section. Distinct from
+   Part B #12 below (page-level tab-strip navigation, not chart filter chips — not addressed by
+   this change).
+3. ~~Manual-vs-automatic price-source colour (Grids — Web #4).~~ **Resolved via PR #725** — see
+   Grids (Web) #4 above.
+4. ~~Required-field indicator mechanism.~~ **Decided and documented 2026-09-05.** Already
+   fully consistent in practice on both platforms — no code changes needed. Web: Fluent `Field
+   required` prop (21 files). WPF: asterisk `Run` with `SystemFillColorCriticalBrush` paired with
+   `AutomationProperties.HelpText="Required"` (11 files, matching exactly). Documented in
+   `forms-data-and-visualisations.md`'s "Field rules" section.
+5. ~~Contextual-help mechanism.~~ **Decided and documented 2026-09-05 — corrected mid-writeup.**
+   Initially documented as "no existing implementation on either platform," which turned out
+   to be wrong: `BalanceAdjustmentForm.tsx`'s/`BalanceAdjustmentFormView.xaml`'s "Target Balance"
+   field already has contextual help on both platforms — Web via `InfoLabel`, WPF via a
+   dedicated, already-shared `controls:HelpFlyoutButton` control (`HelpText` property), not raw
+   `SymbolIcon`+`Flyout` as first assumed. Corrected `forms-data-and-visualisations.md`'s "Field
+   rules" section to document the actual existing pattern (naming `HelpFlyoutButton` specifically)
+   rather than a hypothetical one, with this field as the reference.
+6. ~~Multi-step decision dialog layout (e.g. Move Asset).~~ **Decided and documented
+   2026-09-05.** Confirmed both `MoveAssetDialog.tsx` (Fluent `Dialog`/`DialogSurface`/
+   `DialogBody`/`DialogContent`, free-form radio groups) and `MoveAssetDialog.xaml` (`StackPanel`+
+   `RadioButton`) already use a linear decision layout, not ADR-002's 4-column grid — added an
+   explicit "Consequences" line to ADR-002 stating the grid applies to parallel field-entry forms,
+   not linear multi-step decision dialogs, using this dialog as the reference on both platforms.
+7. ~~Whether inline computed-value sentences should be bold.~~ **Decided and implemented
+   2026-09-05.** Yes, bold the numeric portion only, consistent with the existing Totals rule
+   ("bold the value, not the label"). Fixed `BalanceAdjustmentForm.tsx`'s two sentences ("Current
+   calculated balance for X: £Y", "Adjustment of £Y recorded") and their WPF equivalent in
+   `BalanceAdjustmentFormView.xaml`. WPF's `MultiBinding`-produced sentence had to be split into
+   separate `TextBlock.Text` bindings (not `Run.Text`, which defaults to `TwoWay` and crashes on
+   `AdjustmentFormBankDisplayName`'s get-only property — the existing Totals rule already warns
+   against this) — incidentally also fixed a missing `£` symbol in that sentence. Updated 5 Web
+   test assertions from exact/regex `getByText` (which can't match text split across sibling
+   elements) to `toHaveTextContent` on the panel's `data-testid`. Documented in
+   `forms-data-and-visualisations.md`'s "Field rules" section, cross-referencing the Totals rule.
+8. ~~Whether Save/Cancel/Confirm need icons.~~ **Decided and documented 2026-09-05.** No —
+   matches Fluent's own convention (icons reserved for high-recognition actions like Add/Delete/
+   Edit) and every existing form on both platforms already has zero icons on these buttons.
+   Documented as a definitive rule in `forms-data-and-visualisations.md`'s "Form actions and
+   saving" section.
+9. ~~Post-submit itemized result view styling.~~ **Decided and implemented 2026-09-05,
+   corrected from the prior audit's specific proposal.** The prior audit proposed converting to
+   Fluent's `Table` component — checking actual usage found this would be LESS consistent with the
+   app's real convention (raw `<table>` + shared `.data-table` CSS, used by 23+ grids including
+   `TotalsGrid`), since Fluent's `Table` is built for interactive/sortable grids, not a static
+   result summary. Implemented instead: `MessageBar intent="success"` for the confirmation line
+   (the one genuinely missing piece), and decoupled `IncomeSplitForm.tsx` from `ReservaPage.css`
+   (whose page-specific classes it was borrowing) into its own local `IncomeSplitForm.css` — same
+   visual result, fixes the actual coupling smell. Verified live in the browser, light and dark
+   mode. Verified: `npm run build`/`lint` clean, `npm test` (1471 passed).
+10. ~~Year-only selector (distinct from the documented month+year picker).~~ **Decided and
+   implemented 2026-09-05.** Confirmed `AnnualSummaryView.xaml` was the only genuine year-only
+   selector left (`InvestmentSnapshotsView.xaml`/`MonthlyView.xaml` bind `Year` through the
+   already-compliant `MonthYearPicker`, not a bare field) — still a plain `TextBox` with no
+   accessible name and no invalid-input feedback, exactly as the 2026-08-23 audit found. Replaced
+   with `ui:NumberBox` (matching Web's native `<input type="number">`), bridged to the
+   ViewModel's `int Year` via a new `IntToNullableDoubleConverter` (`NumberBox.Value` is
+   `double?`) with its own unit tests, plus `AutomationProperties.Name="Year"`. Documented in
+   `forms-data-and-visualisations.md`'s new "Year-only selection" sub-rule. Verified:
+   `dotnet build`/`dotnet test Tests/Financial.Presentation.Tests` (1202 passed, +4 new); pending
+   the user's visual confirmation (no WPF GUI in this environment).
 11. Breadcrumb semantic structure.
 12. Hand-rolled tab-strip component convention.
 13. Status-dot/badge convention.

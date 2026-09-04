@@ -1401,7 +1401,7 @@ describe('MonthlyPage', () => {
     expect(screen.queryByLabelText('Target Balance')).not.toBeInTheDocument()
 
     fireEvent.change(screen.getByLabelText(/^Bank/), { target: { value: 'bank-barclays' } })
-    expect(screen.getByText(/Current calculated balance for Barclays: £42.50/)).toBeInTheDocument()
+    expect(correctBalanceFormPanel).toHaveTextContent('Current calculated balance for Barclays: £42.50')
 
     const balancesCallsBefore = getBankBalancesByMonthMock.mock.calls.length
     const adjustmentsCallsBefore = getAdjustmentsByBankMock.mock.calls.length
@@ -1412,7 +1412,9 @@ describe('MonthlyPage', () => {
     await waitFor(() =>
       expect(createBalanceAdjustmentMock).toHaveBeenCalledWith('bank-barclays', expect.objectContaining({ targetBalance: 45 })),
     )
-    expect(await screen.findByText(/Adjustment of £2.50 recorded/)).toBeInTheDocument()
+    await waitFor(() =>
+      expect(screen.getByTestId('balance-adjustment-form-panel')).toHaveTextContent('Adjustment of £2.50 recorded'),
+    )
     await waitFor(() => expect(getBankBalancesByMonthMock.mock.calls.length).toBeGreaterThan(balancesCallsBefore))
     expect(getAdjustmentsByBankMock.mock.calls.length).toBeGreaterThan(adjustmentsCallsBefore)
   })

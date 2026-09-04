@@ -14,6 +14,7 @@ import { Button, Field, Input, MessageBar, MessageBarBody, Table, TableBody, Tab
 import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import type { AssetPriceSnapshotDto, TransactionDto } from '../api/types'
 import ErrorState from './ErrorState'
+import FilterTabList from './FilterTabList'
 import LoadingState from './LoadingState'
 import SplitPanel from './SplitPanel'
 import SortableColumnHeader from './grid/SortableColumnHeader'
@@ -298,18 +299,7 @@ export default function PriceHistoryTab() {
 
   const toolbar = (
     <div className="price-history-tab__controls">
-      <div className="price-history-tab__filters">
-        {PERIOD_FILTER_OPTIONS.map((opt) => (
-          <button
-            key={opt.value}
-            type="button"
-            className={`price-history-tab__filter-btn${selectedFilter === opt.value ? ' price-history-tab__filter-btn--active' : ''}`}
-            onClick={() => setFilter(opt.value)}
-          >
-            {opt.label}
-          </button>
-        ))}
-      </div>
+      <FilterTabList options={PERIOD_FILTER_OPTIONS} selected={selectedFilter} onSelect={setFilter} />
     </div>
   )
 

@@ -38,6 +38,20 @@ into any consumer unchanged — the page-level filter
 a form field (`ExpenseFormView.xaml`'s Invoice Month, replacing the old
 `MonthYearTextBox`) alike.
 
+#### Year-only selection
+
+Distinct from the month+year picker above — a scope that's just a bare year
+(e.g. `AnnualSummaryPage`'s year filter, with no month component at all) uses
+Web's native `<input type="number">` (spinner, native invalid-input
+handling), and WPF's `ui:NumberBox` (`Value` bound via
+`IntToNullableDoubleConverter` when the ViewModel property is a plain
+`int`), not a bare `TextBox`: a `TextBox` bound directly to a numeric
+property gives no feedback at all on invalid input (the binding just
+silently fails to update) and has no accessible name unless one is added
+explicitly (`AutomationProperties.Name`). Neither platform imposes a
+min/max on the year — match that unless a workflow specifically calls for
+bounds. `AnnualSummaryPage.tsx`/`AnnualSummaryView.xaml` are the reference.
+
 ### Default field order
 
 Unless an approved financial workflow requires another order:
@@ -105,6 +119,49 @@ Every editable field requires:
 
 Do not use placeholders as labels.
 
+**Required indicator mechanism:** Web uses Fluent's `Field` component's
+first-class `required` prop (`<Field label="X" required>`), which renders a
+visible asterisk after the label and wires `aria-required` on the control —
+do not hand-roll a separate asterisk. WPF appends a themed `Run` after the
+label text: `<Run Text=" *" Foreground="{DynamicResource
+SystemFillColorCriticalBrush}"/>`, paired with
+`AutomationProperties.HelpText="Required"` on the control. Any form using
+`FieldLabelStyle` already follows this — see `ExpenseFormView.xaml` for the
+reference.
+
+**Contextual help mechanism:** for a field whose meaning isn't obvious from
+its label alone, Web uses Fluent's `InfoLabel` in place of a plain string
+label — `<Field label={{children: (_, props) => <InfoLabel {...props}
+info="...">Label</InfoLabel>}}>` — which renders a trailing info button
+opening a `Popover` with the explanation, and handles the `aria-owns`/focus
+wiring itself. Use `InfoLabel` (not a plain tooltip) when the explanation is
+more than a few words or needs any interaction — a plain tooltip is for
+short, non-interactive text only. WPF: the shared `controls:HelpFlyoutButton`
+control (`HelpText` property) — an info-icon `ui:Button` opening a
+`ui:Flyout` with the text; do not hand-roll a new `SymbolIcon`+`Flyout` pair.
+`BalanceAdjustmentForm.tsx`'s/`BalanceAdjustmentFormView.xaml`'s "Target
+Balance" field is the reference on both platforms.
+
+**Inline computed-value sentence bolding:** a prose sentence reporting a
+computed value (e.g. "Current calculated balance for Barclays: £2,344.37",
+"Adjustment of £4.20 recorded") bolds only the numeric portion, the same
+"bold the value, not the label" principle as the Totals rule below — see
+that rule's note on splitting a single bound/formatted string into separate
+label/value elements, since you cannot bold part of one string.
+`BalanceAdjustmentForm.tsx`/`BalanceAdjustmentFormView.xaml` are the
+reference on both platforms.
+
+**Post-submit itemized result view:** a one-time confirmation shown after a
+form submits, itemizing what was recorded (e.g. `IncomeSplitForm`'s "posted"
+summary of amounts per bucket), uses a `MessageBar intent="success"` for the
+confirmation line, and the same raw `<table>` + shared `.data-table` CSS
+class every other grid in this app uses for its itemized rows — not Fluent's
+`Table` component, which is built for interactive/sortable grids the result
+view isn't. Give the result its own small component-local CSS file for any
+table variant it needs (e.g. a narrower value column) rather than reaching
+into another page's stylesheet for classes it doesn't own.
+`IncomeSplitForm.tsx`/`IncomeSplitForm.css` is the reference.
+
 ### Form actions and saving
 
 - Use one primary form action.
@@ -116,6 +173,13 @@ Do not use placeholders as labels.
 - Preserve values after failed save.
 - Confirm discarding only when unsaved changes exist.
 - Update dependent grids, totals, and charts after successful changes.
+
+**Save/Cancel/Confirm icons:** none. Fluent's own convention reserves
+leading icons for actions where recognition value is high (Add, Delete,
+Edit) and leaves primary form-submit actions as plain text — every existing
+form on both platforms already follows this. Do not add an icon to Save/
+Cancel/Confirm to "match" a grid's Add/Edit/Delete icons; those are a
+different action category.
 
 ### Validation
 
@@ -278,6 +342,28 @@ A native WPF `DataGrid` may expose default sorting via
 that is not feature parity, just an accident of the native control. When
 sorting is actually specified, implement equivalent, explicit sort behavior
 on both platforms as part of that feature's own slice.
+
+### Chart filter/mode toggle ("chip") pattern
+
+A chart's period filter (This month/Last 3/6/12 months/YTD/All time),
+display-mode toggle (Bar/Line), or grouping toggle (Stacked/Grouped) is a
+single-select control among mutually-exclusive options — that's a tab
+semantic, not an independent multi-toggle one. Web uses the shared
+`FilterTabList` component (`components/FilterTabList.tsx`, wrapping Fluent's
+`TabList`/`Tab`, `appearance="subtle" size="small"`), which also gets ARIA
+tablist semantics and keyboard navigation for free — do not hand-roll a
+`<button>`-per-option toggle for this again.
+
+WPF keeps its existing `Button`+`Command`-per-option pattern (bound to each
+ViewModel's `Select*Command`, with an `IsSelected` property per option
+driving the trigger below) rather than switching to `RadioButton`+
+`GroupName` — the ViewModel-driven selection model already works and does
+not need re-plumbing to fix the actual gap, which was hardcoded, non-theme-
+aware colors. Use the shared `FilterToggleTextStyle`/`FilterToggleLabelStyle`
+resources (declared in `App.xaml`) on the option `TextBlock`s and the
+"View:"/"Group:" label `TextBlock`s respectively, instead of a new inline
+`Style` per view — `TransactionsView.xaml`, `CreditsFilterBar.xaml`, and
+`PriceHistoryView.xaml` are the reference.
 
 ### Alignment and financial values
 

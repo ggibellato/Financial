@@ -28,66 +28,6 @@
   flex-wrap: wrap;
 }
 
-.credits-tab__filters {
-  display: flex;
-  gap: 4px;
-  align-items: center;
-}
-
-.credits-tab__filter-btn {
-  font-size: 12px;
-  padding: 2px 8px;
-  cursor: pointer;
-  background: none;
-  border: 1px solid transparent;
-  border-radius: 3px;
-  color: var(--accent);
-  text-decoration: underline;
-}
-
-.credits-tab__filter-btn:hover {
-  background: var(--bg-hover, #f0f0f0);
-}
-
-.credits-tab__filter-btn--active {
-  color: var(--text-h, #08060d);
-  font-weight: bold;
-  text-decoration: none;
-}
-
-.credits-tab__modes {
-  display: flex;
-  gap: 4px;
-  align-items: center;
-}
-
-.credits-tab__mode-label {
-  font-size: 12px;
-  color: var(--text-muted, #888);
-  margin-right: 4px;
-}
-
-.credits-tab__mode-btn {
-  font-size: 12px;
-  padding: 2px 8px;
-  cursor: pointer;
-  background: none;
-  border: 1px solid transparent;
-  border-radius: 3px;
-  color: var(--accent);
-  text-decoration: underline;
-}
-
-.credits-tab__mode-btn:hover {
-  background: var(--bg-hover, #f0f0f0);
-}
-
-.credits-tab__mode-btn--active {
-  color: var(--text-h, #08060d);
-  font-weight: bold;
-  text-decoration: none;
-}
-
 .credits-tab__split {
   display: flex;
   flex: 1;
