@@ -37,13 +37,13 @@
 }
 
 .annual-summary-page__tab:hover {
-  color: #007acc;
+  color: var(--accent);
 }
 
 .annual-summary-page__tab--active {
-  border-bottom-color: #007acc;
+  border-bottom-color: var(--accent);
   font-weight: 600;
-  color: #007acc;
+  color: var(--accent);
 }
 
 .annual-summary-page__content {
