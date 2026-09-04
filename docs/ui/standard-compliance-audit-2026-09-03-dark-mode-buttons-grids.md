@@ -283,7 +283,18 @@ Carried forward from the standards docs' own list; not counted as violations abo
    (1471 passed), `dotnet build`/`dotnet test Tests/Financial.Presentation.Tests` (1202 passed);
    pending the user's visual confirmation for the WPF half (no WPF GUI in this environment, though
    this is a pure accessibility-metadata addition with no visual change).
-14. Drag-to-resize persistent workspace layout.
+14. ~~Drag-to-resize persistent workspace layout.~~ **Decided and implemented 2026-09-04.**
+   Confirmed `Financial.Web/src/components/SplitPanel.tsx`'s resize handle was genuinely
+   mouse-only — no role, no `tabIndex`, no keyboard handler — a real WCAG 2.2 AA keyboard-operability
+   gap, not a stale citation. Added the WAI-ARIA "window splitter" pattern: `role="separator"`,
+   `aria-orientation`, `aria-valuenow`/`aria-valuemin`/`aria-valuemax`, `tabIndex={0}`, and
+   Arrow/Home/End key handling (same min/max bounds the mouse drag already enforces), plus a
+   `:focus-visible` outline. WPF's `GridSplitter` already supports keyboard resizing natively —
+   no WPF change needed there. Documented in `forms-data-and-visualisations.md`'s new "Resizable
+   split panels are keyboard-operable" sub-rule. Verified live in the browser (Credits tab):
+   focused the handle, stepped it with ArrowLeft/ArrowRight (exact ±20px steps), and confirmed
+   Home/End jump to the instance's configured min/max width. Verified: `npm run
+   build`/`lint` clean, `npm test` (1475 passed, +4 new).
 15. Async batch-fetch progress indicator shape.
 
 ## Suggested fix order

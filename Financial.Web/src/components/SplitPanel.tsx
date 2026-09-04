@@ -1,9 +1,10 @@
 import { useCallback, useRef, useState } from 'react'
-import type { ReactNode } from 'react'
+import type { KeyboardEvent, ReactNode } from 'react'
 import './SplitPanel.css'
 
 const DEFAULT_LEFT_WIDTH = 300
 const MIN_LEFT_WIDTH = 300
+const KEYBOARD_STEP = 20
 
 interface SplitPanelProps {
   left: ReactNode
@@ -22,6 +23,10 @@ export default function SplitPanel({
   const startX = useRef(0)
   const startWidth = useRef(0)
 
+  // Matches the drag handler's own bound below, so keyboard and mouse resizing agree on the
+  // same maximum.
+  const maxWidth = useCallback(() => window.innerWidth / 2, [])
+
   const onHandleMouseDown = useCallback(
     (e: React.MouseEvent) => {
       startX.current = e.clientX
@@ -31,8 +36,7 @@ export default function SplitPanel({
 
       const handleMouseMove = (ev: MouseEvent) => {
         const delta = ev.clientX - startX.current
-        const maxWidth = window.innerWidth / 2
-        setLeftWidth(Math.max(minWidth, Math.min(startWidth.current + delta, maxWidth)))
+        setLeftWidth(Math.max(minWidth, Math.min(startWidth.current + delta, maxWidth())))
       }
 
       const handleMouseUp = () => {
@@ -45,7 +49,32 @@ export default function SplitPanel({
       document.addEventListener('mousemove', handleMouseMove)
       document.addEventListener('mouseup', handleMouseUp)
     },
-    [leftWidth, minWidth],
+    [leftWidth, minWidth, maxWidth],
+  )
+
+  // WAI-ARIA "window splitter" pattern: arrow keys resize, Home/End jump to the bounds.
+  const onHandleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      switch (e.key) {
+        case 'ArrowLeft':
+          e.preventDefault()
+          setLeftWidth((w) => Math.max(minWidth, w - KEYBOARD_STEP))
+          break
+        case 'ArrowRight':
+          e.preventDefault()
+          setLeftWidth((w) => Math.min(w + KEYBOARD_STEP, maxWidth()))
+          break
+        case 'Home':
+          e.preventDefault()
+          setLeftWidth(minWidth)
+          break
+        case 'End':
+          e.preventDefault()
+          setLeftWidth(maxWidth())
+          break
+      }
+    },
+    [minWidth, maxWidth],
   )
 
   return (
@@ -55,8 +84,15 @@ export default function SplitPanel({
       </div>
       <div
         className="split-panel__handle"
-        onMouseDown={onHandleMouseDown}
+        role="separator"
+        aria-orientation="vertical"
         aria-label="Resize panel"
+        aria-valuenow={Math.round(leftWidth)}
+        aria-valuemin={minWidth}
+        aria-valuemax={Math.round(maxWidth())}
+        tabIndex={0}
+        onMouseDown={onHandleMouseDown}
+        onKeyDown={onHandleKeyDown}
       />
       <div className="split-panel__right">{right}</div>
     </div>

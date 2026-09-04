@@ -22,8 +22,14 @@
   transition: background 0.15s;
 }
 
-.split-panel__handle:hover {
+.split-panel__handle:hover,
+.split-panel__handle:focus-visible {
   background: var(--accent, #007acc);
+}
+
+.split-panel__handle:focus-visible {
+  outline: 2px solid var(--accent, #007acc);
+  outline-offset: 2px;
 }
 
 .split-panel__right {
