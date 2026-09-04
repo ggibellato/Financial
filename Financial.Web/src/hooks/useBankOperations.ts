@@ -102,6 +102,7 @@ export interface UseBankOperationsResult {
   isLoading: boolean
   error: string | null
   retry: () => void
+  refreshSilently: () => void
   deleteTransfer: (id: string) => void
   deleteAdjustment: (bankId: string, id: string) => void
 }
@@ -116,15 +117,10 @@ export function useBankOperations(
 
   const bankNames = banks.map((bank) => bank.name).join(',')
 
-  useEffect(() => {
-    // banks arrives asynchronously from the caller's own fetch (useMonthly) and starts as
-    // an empty array; skip fetching until it's actually populated so this hook doesn't run
-    // a throwaway zero-bank fetch and then immediately refetch once banks land.
-    if (banks.length === 0) return
+  const fetchOperations = () => {
+    if (banks.length === 0) return Promise.resolve()
 
-    dispatch({ type: 'FETCH_START' })
-
-    Promise.all([
+    return Promise.all([
       apiClient.getTransfersByMonth(year, month),
       Promise.all(banks.map((bank) => apiClient.getAdjustmentsByBank(bank.id))),
     ])
@@ -140,17 +136,31 @@ export function useBankOperations(
           payload: getErrorMessage(err, 'Unable to load bank operations'),
         })
       })
+  }
+
+  useEffect(() => {
+    // banks arrives asynchronously from the caller's own fetch (useMonthly) and starts as
+    // an empty array; skip fetching until it's actually populated so this hook doesn't run
+    // a throwaway zero-bank fetch and then immediately refetch once banks land.
+    if (banks.length === 0) return
+
+    dispatch({ type: 'FETCH_START' })
+    void fetchOperations()
     // banks is derived every render by the caller; bankNames is a stable key for its contents.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiClient, year, month, bankNames, state.retryCount])
 
   const retry = () => dispatch({ type: 'RETRY' })
 
+  // Re-fetches after a mutation without flipping isLoading, so BankOperationsSection's own
+  // sortable/filterable grid state (owned by that component) survives the refresh.
+  const refreshSilently = () => fetchOperations()
+
   const deleteTransfer = (id: string) => {
     void apiClient
       .deleteTransfer(id)
       .then(() => {
-        retry()
+        void refreshSilently()
         onChanged()
       })
       .catch((err: unknown) => {
@@ -162,7 +172,7 @@ export function useBankOperations(
     void apiClient
       .deleteBalanceAdjustment(bankId, id)
       .then(() => {
-        retry()
+        void refreshSilently()
         onChanged()
       })
       .catch((err: unknown) => {
@@ -178,6 +188,7 @@ export function useBankOperations(
     isLoading: state.isLoading,
     error: state.error,
     retry,
+    refreshSilently,
     deleteTransfer,
     deleteAdjustment,
   }

@@ -55,6 +55,7 @@ export default function MonthlyPage() {
     isLoading,
     error,
     retry,
+    refreshSilently,
     deleteExpense,
     markPaidSources,
     setMarkPaidSource,
@@ -112,8 +113,8 @@ export default function MonthlyPage() {
     setField,
     submit,
   } = useExpenseForm(banks, categories, creditCardsData.creditCards, () => {
-    retry()
-    creditCardsData.retry()
+    refreshSilently()
+    creditCardsData.refreshSilently()
   })
 
   const {
@@ -135,18 +136,18 @@ export default function MonthlyPage() {
     cancelIncomeForm,
     setIncomeField,
     submitIncome,
-  } = useIncomeForm(incomeSources, retry)
+  } = useIncomeForm(incomeSources, refreshSilently)
 
-  const bankOperations = useBankOperations(year, month, banks, retry)
+  const bankOperations = useBankOperations(year, month, banks, refreshSilently)
   const activeCreditCards = creditCardsData.creditCards.filter((c) => c.isActive)
   const activeCategories = categories.filter((c) => c.active)
   const transferForm = useTransferForm(banks, () => {
-    retry()
-    bankOperations.retry()
+    refreshSilently()
+    bankOperations.refreshSilently()
   })
   const adjustmentForm = useBalanceAdjustmentForm(bankTotals, () => {
-    retry()
-    bankOperations.retry()
+    refreshSilently()
+    bankOperations.refreshSilently()
   })
 
   const [activeTab, setActiveTab] = useState<MonthlyTabId>('summary')

@@ -370,10 +370,12 @@ function defaultBucketId(buckets: ReserveBucketDto[]): string {
 export function useReserva(): ReservaData {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
+  // Never flips isLoading itself, so it can be reused both for the initial/retry load (which
+  // wraps it with FETCH_START) and for post-mutation refreshes (which call it directly, keeping
+  // the grids mounted so their own sort/filter state survives).
   const fetchReservaData = useCallback((options?: { includeBuckets?: boolean }) => {
     const includeBuckets = options?.includeBuckets ?? true
-    dispatch({ type: 'FETCH_START' })
-    void Promise.all([
+    return Promise.all([
       apiClient.getReserveBalances(),
       apiClient.getReserveMovements(),
       includeBuckets ? apiClient.getReserveBuckets().catch(() => []) : Promise.resolve(undefined),
@@ -385,7 +387,8 @@ export function useReserva(): ReservaData {
   }, [])
 
   useEffect(() => {
-    fetchReservaData()
+    dispatch({ type: 'FETCH_START' })
+    void fetchReservaData()
   }, [fetchReservaData, state.retryCount])
 
   const totalBalance = useMemo(
@@ -466,7 +469,7 @@ export function useReserva(): ReservaData {
       .then((result) => {
         setStoredDefault(SPLIT_DATE_KEY, splitDate)
         dispatch({ type: 'SPLIT_SUCCESS', payload: result })
-        fetchReservaData({ includeBuckets: false })
+        void fetchReservaData({ includeBuckets: false })
       })
       .catch((err: unknown) => {
         dispatch({
@@ -491,7 +494,7 @@ export function useReserva(): ReservaData {
         setStoredDefault(WITHDRAWAL_DATE_KEY, withdrawalDate)
         setStoredDefault(WITHDRAWAL_BUCKET_KEY, withdrawalBucketId)
         dispatch({ type: 'WITHDRAWAL_SUCCESS' })
-        fetchReservaData({ includeBuckets: false })
+        void fetchReservaData({ includeBuckets: false })
       })
       .catch((err: unknown) => {
         if (err instanceof ApiError && err.status === 409 && !confirmed) {
@@ -579,7 +582,7 @@ export function useReserva(): ReservaData {
       })
       .then(() => {
         dispatch({ type: 'SAVE_MOVEMENT_SUCCESS' })
-        fetchReservaData({ includeBuckets: false })
+        void fetchReservaData({ includeBuckets: false })
       })
       .catch((err: unknown) => {
         dispatch({
@@ -596,7 +599,7 @@ export function useReserva(): ReservaData {
       .deleteReserveMovement(id)
       .then(() => {
         dispatch({ type: 'DELETE_MOVEMENT_SUCCESS' })
-        fetchReservaData({ includeBuckets: false })
+        void fetchReservaData({ includeBuckets: false })
       })
       .catch((err: unknown) => {
         dispatch({
