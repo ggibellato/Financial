@@ -79,6 +79,12 @@ is the reference.
 ## Accessibility
 
 - Use headings and landmarks appropriately.
+- **Breadcrumb:** wrap in `<nav aria-label="Breadcrumb">` containing an
+  `<ol>`, one `<li>` per segment, with `aria-current="page"` on the last
+  (current-page) segment. A category segment with no route of its own
+  (this app's nav tree has none — categories only group leaf pages) stays
+  plain text, not a link; do not invent a fake link target just to make a
+  segment "clickable." `Breadcrumb.tsx` is the reference.
 - Prefer native semantics over custom ARIA roles.
 - Manage focus after dialogs, drawers, asynchronous updates, and validation
   failure.
