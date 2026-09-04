@@ -111,10 +111,9 @@ export interface InvestmentSnapshotsData {
 export function useInvestmentSnapshots(): InvestmentSnapshotsData {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
-  useEffect(() => {
-    dispatch({ type: 'FETCH_START' })
-    void apiClient
-      .getInvestmentSnapshots(state.year, state.month)
+  const fetchSnapshots = useCallback((year: number, month: number) => {
+    return apiClient
+      .getInvestmentSnapshots(year, month)
       .then((snapshots) => dispatch({ type: 'FETCH_SUCCESS', payload: snapshots }))
       .catch((err: unknown) => {
         dispatch({
@@ -122,7 +121,20 @@ export function useInvestmentSnapshots(): InvestmentSnapshotsData {
           payload: getErrorMessage(err, 'Unable to load investment snapshots'),
         })
       })
+  }, [])
+
+  useEffect(() => {
+    dispatch({ type: 'FETCH_START' })
+    void fetchSnapshots(state.year, state.month)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.year, state.month, state.retryCount])
+
+  // Re-fetches after a mutation without flipping isLoading, so the table's own sort state
+  // (owned by useSortableRows in the page component) survives the refresh.
+  const refreshSilently = useCallback(
+    () => fetchSnapshots(state.year, state.month),
+    [fetchSnapshots, state.year, state.month],
+  )
 
   const totalValue = useMemo(
     () => state.snapshots.reduce((sum, s) => sum + (s.isLiability ? -s.value : s.value), 0),
@@ -169,7 +181,7 @@ export function useInvestmentSnapshots(): InvestmentSnapshotsData {
       .updateInvestmentSnapshotValue(state.editingId, { value })
       .then(() => {
         dispatch({ type: 'SAVE_SUCCESS' })
-        dispatch({ type: 'RETRY' })
+        void refreshSilently()
       })
       .catch((err: unknown) => {
         dispatch({

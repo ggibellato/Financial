@@ -194,23 +194,33 @@ export interface ControleMaeData {
 export function useControleMae(): ControleMaeData {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
-  useEffect(() => {
-    dispatch({ type: 'FETCH_START' })
-    void apiClient
-      .getMaeLedgerEntriesFromDate(state.fromDate)
+  const fetchEntries = useCallback((fromDate: string) => {
+    return apiClient
+      .getMaeLedgerEntriesFromDate(fromDate)
       .then((entries) => dispatch({ type: 'FETCH_SUCCESS', payload: entries }))
       .catch((err: unknown) => {
         dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, 'Unable to load Controle Mae data') })
       })
-  }, [state.fromDate, state.retryCount])
+  }, [])
 
-  useEffect(() => {
-    void apiClient
+  const fetchTotals = useCallback(() => {
+    return apiClient
       .getMaeLedgerTotals()
       .then((totals) => dispatch({ type: 'FETCH_TOTALS_SUCCESS', payload: totals }))
       .catch(() => {
         // Totals are supplementary to the ledger list; a failed refresh just keeps the last known values.
       })
+  }, [])
+
+  useEffect(() => {
+    dispatch({ type: 'FETCH_START' })
+    void fetchEntries(state.fromDate)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.fromDate, state.retryCount])
+
+  useEffect(() => {
+    void fetchTotals()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.retryCount])
 
   const setFromDateInputValue = useCallback((value: string) => {
@@ -219,6 +229,13 @@ export function useControleMae(): ControleMaeData {
   }, [])
 
   const retry = useCallback(() => dispatch({ type: 'RETRY' }), [])
+
+  // Re-fetches after a mutation without flipping isLoading, so the entries grid's own
+  // sort/filter state survives the refresh.
+  const refreshSilently = useCallback(
+    () => Promise.all([fetchEntries(state.fromDate), fetchTotals()]),
+    [fetchEntries, fetchTotals, state.fromDate],
+  )
 
   const showCreateForm = useCallback(() => {
     const storedCurrency = getStoredDefault(CURRENCY_KEY)
@@ -274,7 +291,7 @@ export function useControleMae(): ControleMaeData {
         setStoredDefault(DATE_KEY, createDate)
         setStoredDefault(CURRENCY_KEY, createSourceCurrency)
         dispatch({ type: 'CREATE_SUCCESS' })
-        dispatch({ type: 'RETRY' })
+        void refreshSilently()
       })
       .catch((err: unknown) => {
         dispatch({
@@ -322,7 +339,7 @@ export function useControleMae(): ControleMaeData {
       .updateMaeLedgerEntryValues(state.editingId, { brlValue, gbpValue })
       .then(() => {
         dispatch({ type: 'SAVE_SUCCESS' })
-        dispatch({ type: 'RETRY' })
+        void refreshSilently()
       })
       .catch((err: unknown) => {
         dispatch({
@@ -339,7 +356,7 @@ export function useControleMae(): ControleMaeData {
       .deleteMaeLedgerEntry(id)
       .then(() => {
         dispatch({ type: 'DELETE_SUCCESS' })
-        dispatch({ type: 'RETRY' })
+        void refreshSilently()
       })
       .catch((err: unknown) => {
         dispatch({

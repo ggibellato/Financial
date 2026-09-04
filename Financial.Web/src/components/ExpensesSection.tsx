@@ -76,12 +76,13 @@ const SORT_ACCESSORS: Record<string, SortAccessor<ExpenseDto>> = {
   description: (expense) => expense.description,
   category: (expense) => expense.categoryName,
   value: (expense) => expense.value,
-  paymentSource: (expense) => expense.paymentSourceBankName,
+  bank: (expense) => expense.paymentSourceBankName,
   card: (expense) => expense.creditCardName,
 }
 
 const FILTER_ACCESSORS = {
   category: (expense: ExpenseDto) => expense.categoryName,
+  bank: (expense: ExpenseDto) => expense.paymentSourceBankName,
   card: (expense: ExpenseDto) => expense.creditCardName,
 }
 
@@ -90,7 +91,7 @@ export default function ExpensesSection({ expenses, onEdit, onDelete, onNewExpen
   const { filteredRows, availableValues, selectedValues, toggleValue, toggleAll, isColumnFiltered } =
     useColumnFilters(expenses, FILTER_ACCESSORS)
   const { sortedRows, sortState, requestSort } = useSortableRows(filteredRows, SORT_ACCESSORS)
-  const hasActiveFilter = isColumnFiltered('category') || isColumnFiltered('card')
+  const hasActiveFilter = isColumnFiltered('category') || isColumnFiltered('bank') || isColumnFiltered('card')
 
   return (
     <section className="expenses-section">
@@ -141,11 +142,21 @@ export default function ExpensesSection({ expenses, onEdit, onDelete, onNewExpen
                 onSort={requestSort}
               />
               <SortableColumnHeader
-                label="Payment Source"
-                columnKey="paymentSource"
-                sortDirection={sortState?.columnKey === 'paymentSource' ? sortState.direction : undefined}
+                label="Bank"
+                columnKey="bank"
+                sortDirection={sortState?.columnKey === 'bank' ? sortState.direction : undefined}
                 onSort={requestSort}
-              />
+              >
+                <ColumnFilterMenu
+                  columnKey="bank"
+                  label="Bank"
+                  availableValues={availableValues.bank}
+                  selectedValues={selectedValues.bank}
+                  onToggleValue={toggleValue}
+                  onToggleAll={toggleAll}
+                  isFiltered={isColumnFiltered('bank')}
+                />
+              </SortableColumnHeader>
               <SortableColumnHeader
                 label="Card"
                 columnKey="card"

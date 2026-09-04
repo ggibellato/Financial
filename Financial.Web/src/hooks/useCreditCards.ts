@@ -69,6 +69,7 @@ export interface CreditCardsData {
   isLoading: boolean
   error: string | null
   retry: () => void
+  refreshSilently: () => void
   createCreditCard: (request: CreditCardCreateDto) => Promise<CreditCardDto>
   updatingCardId: string | null
   updateError: string | null
@@ -81,23 +82,32 @@ export interface CreditCardsData {
 export function useCreditCards(): CreditCardsData {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
-  useEffect(() => {
-    dispatch({ type: 'FETCH_START' })
-    void apiClient
+  const fetchCreditCards = useCallback(() => {
+    return apiClient
       .getCreditCards()
       .then((creditCards) => dispatch({ type: 'FETCH_SUCCESS', payload: creditCards }))
       .catch((err: unknown) => {
         dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, 'Unable to load credit cards') })
       })
+  }, [])
+
+  useEffect(() => {
+    dispatch({ type: 'FETCH_START' })
+    void fetchCreditCards()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.retryCount])
 
   const retry = useCallback(() => dispatch({ type: 'RETRY' }), [])
 
+  // Re-fetches after a mutation without flipping isLoading, so a page rendering this data
+  // alongside its own sortable/filterable grid doesn't unmount and lose that grid's state.
+  const refreshSilently = useCallback(() => fetchCreditCards(), [fetchCreditCards])
+
   const createCreditCard = useCallback(async (request: CreditCardCreateDto) => {
     const created = await apiClient.createCreditCard(request)
-    dispatch({ type: 'RETRY' })
+    await fetchCreditCards()
     return created
-  }, [])
+  }, [fetchCreditCards])
 
   const updateCreditCard = useCallback(async (id: string, request: CreditCardUpdateDto) => {
     dispatch({ type: 'UPDATE_START', payload: id })
@@ -105,13 +115,13 @@ export function useCreditCards(): CreditCardsData {
     try {
       const updated = await apiClient.updateCreditCard(id, request)
       dispatch({ type: 'UPDATE_SUCCESS' })
-      dispatch({ type: 'RETRY' })
+      await fetchCreditCards()
       return updated
     } catch (err: unknown) {
       dispatch({ type: 'UPDATE_ERROR', payload: getErrorMessage(err, 'Failed to update credit card') })
       throw err
     }
-  }, [])
+  }, [fetchCreditCards])
 
   const deleteCreditCard = useCallback((id: string) => {
     dispatch({ type: 'DELETE_START', payload: id })
@@ -120,18 +130,19 @@ export function useCreditCards(): CreditCardsData {
       .deleteCreditCard(id)
       .then(() => {
         dispatch({ type: 'DELETE_SUCCESS' })
-        dispatch({ type: 'RETRY' })
+        void fetchCreditCards()
       })
       .catch((err: unknown) => {
         dispatch({ type: 'DELETE_ERROR', payload: getErrorMessage(err, 'Failed to delete credit card') })
       })
-  }, [])
+  }, [fetchCreditCards])
 
   return {
     creditCards: state.creditCards,
     isLoading: state.isLoading,
     error: state.error,
     retry,
+    refreshSilently,
     createCreditCard,
     updatingCardId: state.updatingCardId,
     updateError: state.updateError,

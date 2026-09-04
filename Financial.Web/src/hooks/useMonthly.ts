@@ -149,6 +149,7 @@ export interface MonthlyData {
   isLoading: boolean
   error: string | null
   retry: () => void
+  refreshSilently: () => void
   deleteExpense: (id: string) => void
   markPaidSources: Record<string, string>
   setMarkPaidSource: (id: string, value: string) => void
@@ -168,19 +169,18 @@ export interface MonthlyData {
 export function useMonthly(): MonthlyData {
   const [state, dispatch] = useReducer(reducer, undefined, buildInitialState)
 
-  useEffect(() => {
-    dispatch({ type: 'FETCH_START' })
-    void Promise.all([
-      apiClient.getExpensesByMonth(state.year, state.month),
-      apiClient.getUnpaidCardChargesByMonth(state.year, state.month),
-      apiClient.getCategoryTotalsByMonth(state.year, state.month),
-      apiClient.getCardStatementsByMonth(state.year, state.month),
+  const fetchMonthlyData = useCallback((year: number, month: number) => {
+    return Promise.all([
+      apiClient.getExpensesByMonth(year, month),
+      apiClient.getUnpaidCardChargesByMonth(year, month),
+      apiClient.getCategoryTotalsByMonth(year, month),
+      apiClient.getCardStatementsByMonth(year, month),
       apiClient.getBanks(),
       apiClient.getIncomeSources(),
       apiClient.getCategories(),
-      apiClient.getIncomesByMonth(state.year, state.month),
-      apiClient.getBankBalancesByMonth(state.year, state.month),
-      apiClient.getTitheSummaryByMonth(state.year, state.month),
+      apiClient.getIncomesByMonth(year, month),
+      apiClient.getBankBalancesByMonth(year, month),
+      apiClient.getTitheSummaryByMonth(year, month),
     ])
       .then(
         ([
@@ -214,7 +214,21 @@ export function useMonthly(): MonthlyData {
       .catch((err: unknown) => {
         dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, 'Unable to load Monthly data') })
       })
+  }, [])
+
+  useEffect(() => {
+    dispatch({ type: 'FETCH_START' })
+    void fetchMonthlyData(state.year, state.month)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.year, state.month, state.retryCount])
+
+  // Re-fetches after a mutation (add/edit/delete) without flipping isLoading, so the grid stays
+  // mounted and its sort/filter state (owned by the section components) survives the refresh -
+  // unlike retry(), which is for recovering from a genuine fetch error and should show a reload.
+  const refreshSilently = useCallback(
+    () => fetchMonthlyData(state.year, state.month),
+    [fetchMonthlyData, state.year, state.month],
+  )
 
   const monthInputValue = formatMonthInputValue(state.year, state.month)
 
@@ -230,12 +244,12 @@ export function useMonthly(): MonthlyData {
     (id: string) => {
       void apiClient
         .deleteExpense(id)
-        .then(() => dispatch({ type: 'RETRY' }))
+        .then(() => refreshSilently())
         .catch((err: unknown) => {
           dispatch({ type: 'LIST_ACTION_ERROR', payload: getErrorMessage(err, 'Failed to delete expense') })
         })
     },
-    [],
+    [refreshSilently],
   )
 
   const setMarkPaidSource = useCallback(
@@ -249,13 +263,13 @@ export function useMonthly(): MonthlyData {
         .markCardStatementPaid(id, { paymentSourceBankId })
         .then((statement) => {
           dispatch({ type: 'LIST_ACTION_WARNING', payload: statement.warning ?? null })
-          dispatch({ type: 'RETRY' })
+          void refreshSilently()
         })
         .catch((err: unknown) => {
           dispatch({ type: 'LIST_ACTION_ERROR', payload: getErrorMessage(err, 'Failed to mark statement paid') })
         })
     },
-    [],
+    [refreshSilently],
   )
 
   const unmarkStatementPaid = useCallback(
@@ -264,13 +278,13 @@ export function useMonthly(): MonthlyData {
         .unmarkCardStatementPaid(id)
         .then((statement) => {
           dispatch({ type: 'LIST_ACTION_WARNING', payload: statement.warning ?? null })
-          dispatch({ type: 'RETRY' })
+          void refreshSilently()
         })
         .catch((err: unknown) => {
           dispatch({ type: 'LIST_ACTION_ERROR', payload: getErrorMessage(err, 'Failed to unmark statement paid') })
         })
     },
-    [],
+    [refreshSilently],
   )
 
   const updateCarryForwardInclusion = useCallback(
@@ -281,26 +295,26 @@ export function useMonthly(): MonthlyData {
         .updateTitheCarryForward(state.year, state.month, requestBody)
         .then(() => {
           dispatch({ type: 'CARRY_FORWARD_UPDATE_END' })
-          dispatch({ type: 'RETRY' })
+          void refreshSilently()
         })
         .catch((err: unknown) => {
           dispatch({ type: 'CARRY_FORWARD_UPDATE_END' })
           dispatch({ type: 'LIST_ACTION_ERROR', payload: getErrorMessage(err, 'Failed to update carry-forward') })
         })
     },
-    [state.year, state.month],
+    [state.year, state.month, refreshSilently],
   )
 
   const deleteIncome = useCallback(
     (id: string) => {
       void apiClient
         .deleteIncome(id)
-        .then(() => dispatch({ type: 'RETRY' }))
+        .then(() => refreshSilently())
         .catch((err: unknown) => {
           dispatch({ type: 'LIST_ACTION_ERROR', payload: getErrorMessage(err, 'Failed to delete income') })
         })
     },
-    [],
+    [refreshSilently],
   )
 
   const adjustmentTotal = state.cardStatements.reduce((sum, statement) => sum + statement.outstandingTotal, 0)
@@ -356,6 +370,7 @@ export function useMonthly(): MonthlyData {
     isLoading: state.isLoading,
     error: state.error,
     retry,
+    refreshSilently,
     deleteExpense,
     markPaidSources: state.markPaidSources,
     setMarkPaidSource,

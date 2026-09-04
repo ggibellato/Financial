@@ -296,14 +296,23 @@ export interface MensaisData {
 export function useMensais(): MensaisData {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
-  useEffect(() => {
-    dispatch({ type: 'FETCH_START' })
-    void Promise.all([apiClient.getMensaisBills(), apiClient.getBanks(), apiClient.getCategories()])
+  const fetchMensaisData = useCallback(() => {
+    return Promise.all([apiClient.getMensaisBills(), apiClient.getBanks(), apiClient.getCategories()])
       .then(([bills, banks, categories]) => dispatch({ type: 'FETCH_SUCCESS', payload: { bills, banks, categories } }))
       .catch((err: unknown) => {
         dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, 'Unable to load Mensais data') })
       })
+  }, [])
+
+  useEffect(() => {
+    dispatch({ type: 'FETCH_START' })
+    void fetchMensaisData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.retryCount])
+
+  // Re-fetches after a mutation without flipping isLoading, so the bills grid's own sort/filter
+  // state survives the refresh.
+  const refreshSilently = useCallback(() => fetchMensaisData(), [fetchMensaisData])
 
   const monthInputValue = formatMonthInputValue(state.displayYear, state.displayMonth)
 
@@ -364,7 +373,7 @@ export function useMensais(): MensaisData {
       })
       .then(() => {
         dispatch({ type: 'SAVE_SUCCESS' })
-        dispatch({ type: 'RETRY' })
+        void refreshSilently()
       })
       .catch((err: unknown) => {
         dispatch({
@@ -420,7 +429,7 @@ export function useMensais(): MensaisData {
       .then(() => {
         setStoredDefault(AREA_KEY, state.newArea)
         dispatch({ type: 'ADD_SUCCESS' })
-        dispatch({ type: 'RETRY' })
+        void refreshSilently()
       })
       .catch((err: unknown) => {
         dispatch({
@@ -437,7 +446,7 @@ export function useMensais(): MensaisData {
       .deleteMensaisBill(id)
       .then(() => {
         dispatch({ type: 'DELETE_SUCCESS' })
-        dispatch({ type: 'RETRY' })
+        void refreshSilently()
       })
       .catch((err: unknown) => {
         dispatch({

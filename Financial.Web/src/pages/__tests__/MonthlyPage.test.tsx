@@ -558,11 +558,14 @@ describe('MonthlyPage', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Credit Card expenses' }))
     fireEvent.change(screen.getByLabelText('Paying bank for BaAmex'), { target: { value: 'bank-trading212' } })
     fireEvent.click(screen.getByRole('button', { name: 'Mark Paid' }))
+    // The silent refresh that follows a successful mark-paid call fires immediately (no longer
+    // deferred to a later render), so the mock must be updated synchronously right after the
+    // click - before any of its pending promises get a chance to resolve.
+    getCardStatementsByMonthMock.mockResolvedValue([{ ...CARD_STATEMENTS[0], isPaid: true, outstandingTotal: 0 }, CARD_STATEMENTS[1]])
     await waitFor(() =>
       expect(markCardStatementPaidMock).toHaveBeenCalledWith('c1', { paymentSourceBankId: 'bank-trading212' }),
     )
 
-    getCardStatementsByMonthMock.mockResolvedValue([{ ...CARD_STATEMENTS[0], isPaid: true, outstandingTotal: 0 }, CARD_STATEMENTS[1]])
     fireEvent.click(screen.getByRole('tab', { name: 'Summary' }))
 
     await waitFor(() => expect(screen.getAllByRole('button', { name: 'Unmark Paid' })).toHaveLength(2))
