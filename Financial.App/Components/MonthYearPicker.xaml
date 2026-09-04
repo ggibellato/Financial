@@ -22,7 +22,7 @@
             <Style x:Key="FlatMonthButtonStyle" TargetType="Button">
                 <Setter Property="Margin" Value="2"/>
                 <Setter Property="Padding" Value="0,6"/>
-                <Setter Property="Foreground" Value="#0F6CBD"/>
+                <Setter Property="Foreground" Value="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
                 <Setter Property="Background" Value="Transparent"/>
                 <Setter Property="BorderThickness" Value="0"/>
                 <Setter Property="HorizontalContentAlignment" Value="Center"/>

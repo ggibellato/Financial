@@ -15,7 +15,7 @@
             <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/>
             <Style.Triggers>
                 <DataTrigger Binding="{Binding IsFiltered}" Value="True">
-                    <Setter Property="Foreground" Value="#0F6CBD"/>
+                    <Setter Property="Foreground" Value="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
                 </DataTrigger>
             </Style.Triggers>
         </Style>
