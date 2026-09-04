@@ -69,7 +69,18 @@
                     <TextBlock Style="{StaticResource FieldErrorTextStyle}" Text="{Binding DateFieldError}"/>
                 </StackPanel>
 
-                <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,8,8">
+                <StackPanel Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Margin="0,0,8,8">
+                    <TextBlock Style="{StaticResource FieldLabelStyle}">
+                        <Run Text="Description"/>
+                        <Run Text=" *" Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
+                    </TextBlock>
+                    <TextBox AutomationProperties.Name="Description"
+                             AutomationProperties.HelpText="Required"
+                             Text="{Binding SplitDescription, UpdateSourceTrigger=PropertyChanged}"/>
+                    <TextBlock Style="{StaticResource FieldErrorTextStyle}" Text="{Binding DescriptionFieldError}"/>
+                </StackPanel>
+
+                <StackPanel Grid.Row="1" Grid.Column="3" Margin="0,0,0,8">
                     <TextBlock Style="{StaticResource FieldLabelStyle}">
                         <Run Text="Amount to Split"/>
                         <Run Text=" *" Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
@@ -79,17 +90,6 @@
                              Text="{Binding SplitAmount, UpdateSourceTrigger=LostFocus}"
                              behaviors:DecimalInputBehavior.IsEnabled="True"/>
                     <TextBlock Style="{StaticResource FieldErrorTextStyle}" Text="{Binding AmountFieldError}"/>
-                </StackPanel>
-
-                <StackPanel Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="2" Margin="0,0,0,8">
-                    <TextBlock Style="{StaticResource FieldLabelStyle}">
-                        <Run Text="Description"/>
-                        <Run Text=" *" Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
-                    </TextBlock>
-                    <TextBox AutomationProperties.Name="Description"
-                             AutomationProperties.HelpText="Required"
-                             Text="{Binding SplitDescription, UpdateSourceTrigger=PropertyChanged}"/>
-                    <TextBlock Style="{StaticResource FieldErrorTextStyle}" Text="{Binding DescriptionFieldError}"/>
                 </StackPanel>
 
                 <TextBlock Grid.Row="2" Grid.ColumnSpan="4" TextWrapping="Wrap" Margin="0,0,0,8"

@@ -86,6 +86,15 @@ export default function IncomeSplitForm({
         </Field>
 
         <Field
+          label="Description"
+          required
+          validationState={fieldError('splitDescription') ? 'error' : 'none'}
+          validationMessage={fieldError('splitDescription')}
+        >
+          <Input value={description} onChange={(e) => onFieldChange('splitDescription', e.target.value)} />
+        </Field>
+
+        <Field
           label="Amount to Split"
           required
           validationState={fieldError('splitAmount') ? 'error' : 'none'}
@@ -97,15 +106,6 @@ export default function IncomeSplitForm({
             value={amount}
             onChange={(e) => onFieldChange('splitAmount', e.target.value)}
           />
-        </Field>
-
-        <Field
-          label="Description"
-          required
-          validationState={fieldError('splitDescription') ? 'error' : 'none'}
-          validationMessage={fieldError('splitDescription')}
-        >
-          <Input value={description} onChange={(e) => onFieldChange('splitDescription', e.target.value)} />
         </Field>
       </div>
 
