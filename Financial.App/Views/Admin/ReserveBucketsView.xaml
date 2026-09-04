@@ -40,7 +40,7 @@
                            Visibility="{Binding ActionError, Converter={StaticResource NullOrEmptyToVisibilityConverter}}"/>
             </StackPanel>
 
-            <TextBlock Grid.Row="2" Text="{Binding SplitPercentageWarning}" Foreground="#B25E00" TextWrapping="Wrap"
+            <TextBlock Grid.Row="2" Text="{Binding SplitPercentageWarning}" Foreground="{DynamicResource SystemFillColorCautionBrush}" TextWrapping="Wrap"
                        Margin="0,0,0,12"
                        Visibility="{Binding SplitPercentageWarning, Converter={StaticResource NullOrEmptyToVisibilityConverter}}"/>
 
