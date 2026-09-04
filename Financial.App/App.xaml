@@ -76,6 +76,15 @@
         </DrawingImage>
         
         <Style TargetType="DataGrid">
+            <!--
+                Without this, DataGrid.Background is never set by this Style, so it falls
+                through to the Aero2 theme's own default (SystemColors.ControlBrushKey - an OS
+                control-face colour, not this app's theme). DataGridRow/DataGridColumnHeader's own
+                Background overrides below are Wpf.Ui "fill" tokens - deliberately translucent,
+                meant to be layered over an opaque surface, not to stand alone - so they only read
+                correctly with an explicit, correct, opaque base underneath them.
+            -->
+            <Setter Property="Background" Value="{DynamicResource ApplicationBackgroundBrush}"/>
             <Setter Property="AutoGenerateColumns" Value="False"/>
             <Setter Property="IsReadOnly" Value="True"/>
             <Setter Property="FontSize" Value="13"/>
