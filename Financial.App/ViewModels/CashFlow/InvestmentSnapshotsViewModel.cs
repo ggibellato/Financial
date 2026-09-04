@@ -148,6 +148,7 @@ public class InvestmentSnapshotsViewModel : ViewModelBase
             if (SetProperty(ref _editSaveError, value))
             {
                 OnPropertyChanged(nameof(EditValueFieldError));
+                OnPropertyChanged(nameof(EditGeneralSaveError));
             }
         }
     }
@@ -158,6 +159,9 @@ public class InvestmentSnapshotsViewModel : ViewModelBase
         EditSaveError is { } error && fragments.Any(f => error.Contains(f, StringComparison.OrdinalIgnoreCase))
             ? error
             : null;
+
+    /// <summary>Bottom-of-form message — shown only when the error isn't already attributed to a field above.</summary>
+    public string? EditGeneralSaveError => EditValueFieldError is null ? EditSaveError : null;
 
     public RelayCommand<SnapshotRow> EditSnapshotCommand { get; private set; } = null!;
     public RelayCommand CancelEditFormCommand { get; private set; } = null!;

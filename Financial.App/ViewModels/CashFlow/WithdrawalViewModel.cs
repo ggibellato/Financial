@@ -75,6 +75,7 @@ public class WithdrawalViewModel : ViewModelBase
                 OnPropertyChanged(nameof(BucketFieldError));
                 OnPropertyChanged(nameof(DescriptionFieldError));
                 OnPropertyChanged(nameof(AmountFieldError));
+                OnPropertyChanged(nameof(WithdrawalGeneralSaveError));
             }
         }
     }
@@ -91,6 +92,13 @@ public class WithdrawalViewModel : ViewModelBase
     public string? DescriptionFieldError => MatchFieldError("Description is required.");
 
     public string? AmountFieldError => MatchFieldError("Amount must be a positive number.");
+
+    /// <summary>Bottom-of-form message — shown only when the error isn't already attributed to a field above.</summary>
+    public string? WithdrawalGeneralSaveError =>
+        DateFieldError is null && BucketFieldError is null &&
+        DescriptionFieldError is null && AmountFieldError is null
+            ? WithdrawalSaveError
+            : null;
 
     private string? MatchFieldError(string fragment) =>
         WithdrawalSaveError is { } error && error.Contains(fragment, StringComparison.OrdinalIgnoreCase)

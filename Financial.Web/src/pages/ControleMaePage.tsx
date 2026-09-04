@@ -237,7 +237,7 @@ export default function ControleMaePage() {
             </Button>
           </div>
 
-          {(isEditing ? saveError : createError) && (
+          {(isEditing ? saveErrorField === null && saveError : createErrorField === null && createError) && (
             <MessageBar intent="error">
               <MessageBarBody>{isEditing ? saveError : createError}</MessageBarBody>
             </MessageBar>

@@ -341,7 +341,7 @@ export default function MensaisPage() {
             </Button>
           </div>
 
-          {addError && (
+          {addErrorField === null && addError && (
             <MessageBar intent="error">
               <MessageBarBody>{addError}</MessageBarBody>
             </MessageBar>
@@ -395,7 +395,7 @@ export default function MensaisPage() {
             </Button>
           </div>
 
-          {saveError && (
+          {saveErrorField === null && saveError && (
             <MessageBar intent="error">
               <MessageBarBody>{saveError}</MessageBarBody>
             </MessageBar>

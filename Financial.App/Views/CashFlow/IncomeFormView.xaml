@@ -118,7 +118,7 @@
 
             <TextBlock Grid.Row="3" Grid.ColumnSpan="4" TextWrapping="Wrap" Margin="0,0,0,8"
                        Foreground="{DynamicResource SystemFillColorCriticalBrush}"
-                       Text="{Binding IncomeSaveError}"/>
+                       Text="{Binding IncomeGeneralSaveError}"/>
 
             <StackPanel Grid.Row="4" Grid.ColumnSpan="4" Orientation="Horizontal">
                 <ui:Button MinWidth="90" Appearance="Primary" Command="{Binding SaveIncomeCommand}">

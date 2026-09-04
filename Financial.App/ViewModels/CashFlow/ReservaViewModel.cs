@@ -235,6 +235,7 @@ public class ReservaViewModel : ViewModelBase
                 OnPropertyChanged(nameof(EditBucketFieldError));
                 OnPropertyChanged(nameof(EditDescriptionFieldError));
                 OnPropertyChanged(nameof(EditAmountFieldError));
+                OnPropertyChanged(nameof(EditGeneralSaveError));
             }
         }
     }
@@ -251,6 +252,13 @@ public class ReservaViewModel : ViewModelBase
     public string? EditDescriptionFieldError => MatchEditFieldError("Description is required.");
 
     public string? EditAmountFieldError => MatchEditFieldError("Amount must be a number.");
+
+    /// <summary>Bottom-of-form message — shown only when the error isn't already attributed to a field above.</summary>
+    public string? EditGeneralSaveError =>
+        EditDateFieldError is null && EditBucketFieldError is null &&
+        EditDescriptionFieldError is null && EditAmountFieldError is null
+            ? EditSaveError
+            : null;
 
     private string? MatchEditFieldError(string fragment) =>
         EditSaveError is { } error && error.Contains(fragment, StringComparison.OrdinalIgnoreCase)

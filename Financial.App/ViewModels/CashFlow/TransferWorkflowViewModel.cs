@@ -107,6 +107,7 @@ public class TransferWorkflowViewModel : ViewModelBase
                 OnPropertyChanged(nameof(SourceBankFieldError));
                 OnPropertyChanged(nameof(DestinationBankFieldError));
                 OnPropertyChanged(nameof(AmountFieldError));
+                OnPropertyChanged(nameof(TransferGeneralSaveError));
             }
         }
     }
@@ -114,8 +115,7 @@ public class TransferWorkflowViewModel : ViewModelBase
     /// <summary>
     /// Per-field validation errors (P38-F05) — same substring-match pattern as F02's
     /// <c>AdjustmentWorkflowViewModel.TargetBalanceFieldError</c>, matching this form's own
-    /// client-side <see cref="TransferFormValidation"/> text. Additive to
-    /// <see cref="TransferSaveError"/>'s existing bottom-of-form message.
+    /// client-side <see cref="TransferFormValidation"/> text.
     /// </summary>
     public string? DateFieldError => MatchFieldError("Date is required.");
 
@@ -129,6 +129,13 @@ public class TransferWorkflowViewModel : ViewModelBase
     private string? MatchFieldError(params string[] fragments) =>
         TransferSaveError is { } error && fragments.Any(f => error.Contains(f, StringComparison.OrdinalIgnoreCase))
             ? error
+            : null;
+
+    /// <summary>Bottom-of-form message — shown only when the error isn't already attributed to a field above.</summary>
+    public string? TransferGeneralSaveError =>
+        DateFieldError is null && SourceBankFieldError is null &&
+        DestinationBankFieldError is null && AmountFieldError is null
+            ? TransferSaveError
             : null;
 
     public RelayCommand<Guid?> ShowMoveMoneyFormCommand { get; }

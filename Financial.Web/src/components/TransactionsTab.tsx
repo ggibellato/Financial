@@ -191,7 +191,7 @@ function InlineForm({
         </Button>
       </div>
 
-      {saveError && (
+      {saveErrorField === null && saveError && (
         <MessageBar intent="error">
           <MessageBarBody>{saveError}</MessageBarBody>
         </MessageBar>

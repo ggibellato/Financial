@@ -114,7 +114,7 @@ export default function InvestmentSnapshotsPage() {
             </Button>
           </div>
 
-          {saveError && (
+          {saveErrorField === null && saveError && (
             <MessageBar intent="error">
               <MessageBarBody>{saveError}</MessageBarBody>
             </MessageBar>

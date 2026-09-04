@@ -48,7 +48,7 @@
             </StackPanel>
 
             <TextBlock Grid.Row="2" Grid.ColumnSpan="4" Foreground="{DynamicResource SystemFillColorCriticalBrush}" TextWrapping="Wrap"
-                       Text="{Binding EditSaveError}" Margin="0,8,0,0"/>
+                       Text="{Binding EditGeneralSaveError}" Margin="0,8,0,0"/>
 
             <StackPanel Grid.Row="3" Grid.ColumnSpan="4" Orientation="Horizontal" Margin="0,12,0,0">
                 <ui:Button Appearance="Primary" MinWidth="90" Command="{Binding SaveEditCommand}">

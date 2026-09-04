@@ -67,6 +67,7 @@ public class IncomeSplitViewModel : ViewModelBase
                 OnPropertyChanged(nameof(DateFieldError));
                 OnPropertyChanged(nameof(AmountFieldError));
                 OnPropertyChanged(nameof(DescriptionFieldError));
+                OnPropertyChanged(nameof(SplitGeneralSaveError));
             }
         }
     }
@@ -86,6 +87,10 @@ public class IncomeSplitViewModel : ViewModelBase
         SplitSaveError is { } error && error.Contains(fragment, StringComparison.OrdinalIgnoreCase)
             ? error
             : null;
+
+    /// <summary>Bottom-of-form message — shown only when the error isn't already attributed to a field above.</summary>
+    public string? SplitGeneralSaveError =>
+        DateFieldError is null && AmountFieldError is null && DescriptionFieldError is null ? SplitSaveError : null;
 
     public IncomeSplitResultDTO? LastSplitResult
     {

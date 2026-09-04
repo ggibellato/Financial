@@ -146,7 +146,7 @@ export default function IncomeForm({
         </Button>
       </div>
 
-      {saveError && (
+      {saveErrorField === null && saveError && (
         <MessageBar intent="error">
           <MessageBarBody>{saveError}</MessageBarBody>
         </MessageBar>

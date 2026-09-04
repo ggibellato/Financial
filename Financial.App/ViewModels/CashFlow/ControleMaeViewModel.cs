@@ -216,6 +216,7 @@ public class ControleMaeViewModel : ViewModelBase
                 OnPropertyChanged(nameof(CreateDateFieldError));
                 OnPropertyChanged(nameof(CreateDescriptionFieldError));
                 OnPropertyChanged(nameof(CreateValueFieldError));
+                OnPropertyChanged(nameof(CreateGeneralSaveError));
             }
         }
     }
@@ -229,6 +230,12 @@ public class ControleMaeViewModel : ViewModelBase
     private string? MatchCreateFieldError(params string[] fragments) =>
         CreateSaveError is { } error && fragments.Any(f => error.Contains(f, StringComparison.OrdinalIgnoreCase))
             ? error
+            : null;
+
+    /// <summary>Bottom-of-form message — shown only when the error isn't already attributed to a field above.</summary>
+    public string? CreateGeneralSaveError =>
+        CreateDateFieldError is null && CreateDescriptionFieldError is null && CreateValueFieldError is null
+            ? CreateSaveError
             : null;
 
     public RelayCommand ShowCreateFormCommand { get; private set; } = null!;
@@ -327,6 +334,7 @@ public class ControleMaeViewModel : ViewModelBase
             {
                 OnPropertyChanged(nameof(EditBrlValueFieldError));
                 OnPropertyChanged(nameof(EditGbpValueFieldError));
+                OnPropertyChanged(nameof(EditGeneralSaveError));
             }
         }
     }
@@ -339,6 +347,10 @@ public class ControleMaeViewModel : ViewModelBase
         EditSaveError is { } error && fragments.Any(f => error.Contains(f, StringComparison.OrdinalIgnoreCase))
             ? error
             : null;
+
+    /// <summary>Bottom-of-form message — shown only when the error isn't already attributed to a field above.</summary>
+    public string? EditGeneralSaveError =>
+        EditBrlValueFieldError is null && EditGbpValueFieldError is null ? EditSaveError : null;
 
     public string? DeleteError
     {
