@@ -242,8 +242,34 @@ Carried forward from the standards docs' own list; not counted as violations abo
    `forms-data-and-visualisations.md`'s new "Year-only selection" sub-rule. Verified:
    `dotnet build`/`dotnet test Tests/Financial.Presentation.Tests` (1202 passed, +4 new); pending
    the user's visual confirmation (no WPF GUI in this environment).
-11. Breadcrumb semantic structure.
-12. Hand-rolled tab-strip component convention.
+11. ~~Breadcrumb semantic structure.~~ **Decided and implemented 2026-09-05.** Both platforms
+   had zero semantic markup (plain `<div>` on Web, plain `TextBlock` on WPF). Checked whether
+   segments should become clickable first: the nav tree gives categories no route of their own,
+   so both segments are correctly non-interactive already — the real gap was purely markup. Web:
+   wrapped in `<nav aria-label="Breadcrumb"><ol>`, one `<li>` per segment,
+   `aria-current="page"` on the current-page segment, separator moved to CSS `::before` content
+   (not a DOM node). WPF: `AutomationProperties.Name="Breadcrumb"` on the `TextBlock` (no settable
+   landmark-type XAML property exists without a custom `AutomationPeer`). Updated 2 Web test
+   assertions from exact `getByText` (broken by the segments no longer being one text node) to
+   `toHaveTextContent` + `aria-current` checks. Documented in `react.md`/`wpf.md`. Verified:
+   `npm test` (4/4 Breadcrumb tests), `dotnet build`/`dotnet test Tests/Financial.Presentation.Tests`
+   (1202 passed) clean; pending the user's visual confirmation for the WPF half (no WPF GUI in
+   this environment, though this is a pure accessibility-metadata addition with no visual change).
+12. **Hand-rolled tab-strip component convention — resolved on Web, documented as an open gap
+   on WPF.** `MonthlyPage.tsx` already used Fluent `TabList` (already compliant); `DetailPanel.tsx`
+   (Investment asset detail's Summary/Transactions/Credits/Price History tabs — a page exercised
+   constantly throughout this session's manual testing) and `AnnualSummaryPage.tsx` were still
+   hand-rolled `<button>` groups. Converted both to `TabList`/`Tab`, matching `MonthlyPage`'s
+   pattern; removed the now-dead CSS. Fixed 4 test files whose assertions broke when tab buttons
+   became `role="tab"` (`DetailPanel.test.tsx`, `AnnualSummaryPage.test.tsx`,
+   `ActiveInvestmentsPage.test.tsx`, `HistoricInvestmentsPage.test.tsx`). Verified live in the
+   browser (both pages, tab switching, both light/dark). **WPF correction:** initially assumed
+   Wpf.Ui auto-themes `TabControl` (like `RadioButton`) — a DLL string-scan disproved this: Wpf.Ui
+   ships no tab-strip control and no implicit theme resources for `TabControl`/`TabItem` at all,
+   so every WPF tab strip (`NavigationView.xaml`, `MonthlyView.xaml`, `AnnualSummaryView.xaml`)
+   renders with unthemed classic Windows chrome. Documented as a known open gap in `wpf.md` rather
+   than attempting a from-scratch custom `ControlTemplate` blind — too large/risky to build without
+   visual verification. **Not closed** — left open pending a future session with WPF GUI access.
 13. Status-dot/badge convention.
 14. Drag-to-resize persistent workspace layout.
 15. Async batch-fetch progress indicator shape.

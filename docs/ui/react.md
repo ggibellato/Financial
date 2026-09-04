@@ -28,6 +28,14 @@ is the reference.
 - Reuse project components and wrappers before using raw Fluent components.
 - Do not add a competing component or styling system without approval.
 - Use semantic HTML and native browser semantics where practical.
+- **Tab strips** (page-level content-switching tabs, e.g. an asset's Summary/
+  Transactions/Credits/Price History, or Annual Summary's Category Totals/
+  Investments/Historic Summary Average): use Fluent's `TabList`/`Tab`, not a
+  hand-rolled `<button>` group — it ships the ARIA tablist/keyboard-nav
+  pattern (arrow-key navigation, `role="tablist"/tab"`, `aria-selected`) for
+  free. `MonthlyPage.tsx` is the reference. This is distinct from the chart
+  filter/mode "chip" pattern documented in `forms-data-and-visualisations.md`
+  (same underlying component, different content role).
 
 ## Layout
 

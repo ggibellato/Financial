@@ -1,5 +1,6 @@
 import { useCallback, useState, lazy, Suspense } from 'react'
-import { Button } from '@fluentui/react-components'
+import { Button, Tab, TabList } from '@fluentui/react-components'
+import type { SelectTabData, SelectTabEvent } from '@fluentui/react-components'
 import { ArrowMoveRegular, CopyRegular, DeleteRegular } from '@fluentui/react-icons'
 import { useSelectedNode } from '../context/SelectedNodeContext'
 import { usePortfolioDeletion } from '../hooks/usePortfolioDeletion'
@@ -147,18 +148,16 @@ export default function DetailPanel() {
         />
       )}
 
-      <div className="detail-panel__tabs">
+      <TabList
+        selectedValue={activeTab}
+        onTabSelect={(_event: SelectTabEvent, data: SelectTabData) => setActiveTab(data.value as TabId)}
+      >
         {(isAsset ? [...BASE_TABS, PRICE_HISTORY_TAB] : BASE_TABS).map((tab) => (
-          <button
-            key={tab.id}
-            className={`detail-panel__tab${activeTab === tab.id ? ' detail-panel__tab--active' : ''}`}
-            onClick={() => setActiveTab(tab.id)}
-            type="button"
-          >
+          <Tab key={tab.id} value={tab.id}>
             {tab.label}
-          </button>
+          </Tab>
         ))}
-      </div>
+      </TabList>
 
       <div className="detail-panel__content">
         <Suspense fallback={<LoadingState />}>
