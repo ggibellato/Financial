@@ -136,6 +136,6 @@
         <TextBlock Grid.Row="2" Foreground="{DynamicResource SystemFillColorCriticalBrush}" TextWrapping="Wrap" Margin="0,4,0,0" Text="{Binding CreditCardUpdateError}"
                    Visibility="{Binding Data, Source={StaticResource ShowCardManagementColumnsProxy}, Converter={StaticResource BoolToVisibilityConverter}}"/>
         <TextBlock Grid.Row="3" Foreground="{DynamicResource SystemFillColorCriticalBrush}" TextWrapping="Wrap" Margin="0,0,0,4" Text="{Binding CardStatementError}"/>
-        <TextBlock Grid.Row="4" Foreground="#8A6D00" TextWrapping="Wrap" Margin="0,0,0,4" Text="{Binding CardStatementWarning}"/>
+        <TextBlock Grid.Row="4" Foreground="{DynamicResource SystemFillColorCautionBrush}" TextWrapping="Wrap" Margin="0,0,0,4" Text="{Binding CardStatementWarning}"/>
     </Grid>
 </UserControl>
