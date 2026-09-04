@@ -246,7 +246,15 @@ Carried forward from the standards docs' own list; not counted as violations abo
 12. Hand-rolled tab-strip component convention.
 13. Status-dot/badge convention.
 14. Drag-to-resize persistent workspace layout.
-15. Async batch-fetch progress indicator shape.
+15. ~~Async batch-fetch progress indicator shape.~~ **Confirmed and documented 2026-09-04,
+   no code change needed.** Verified `CurrentValuesPage.tsx` (Web) and `AssetPriceView.xaml`/
+   `AssetPriceFetchViewModel.cs` (WPF) already agree closely: both use a determinate
+   progress bar driven by completed/total, an identical `Fetching {n} of {total}: {item}...`
+   message format, an identical `Completed! Loaded {total} ...` summary on finish, and both
+   disable the triggering action for the batch's duration. No other batch-fetch feature exists
+   on either platform to reconcile against. Documented as the reference "Batch async progress"
+   convention in `forms-data-and-visualisations.md` so a future feature matches it instead of
+   inventing a new shape.
 
 ## Suggested fix order
 

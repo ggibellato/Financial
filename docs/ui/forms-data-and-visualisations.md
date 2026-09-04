@@ -181,6 +181,32 @@ form on both platforms already follows this. Do not add an icon to Save/
 Cancel/Confirm to "match" a grid's Add/Edit/Delete icons; those are a
 different action category.
 
+### Batch async progress
+
+An action that fetches or processes a list of items one at a time in the
+background (e.g. checking current prices for every held asset) follows one
+shared shape, not an ad hoc spinner:
+
+- A determinate progress bar (0–100%), driven by completed/total item count —
+  not an indeterminate spinner, since the total is known up front.
+- A text line under the bar naming the current item: `Fetching {n} of
+  {total}: {item}...`.
+- On completion, replace the progress line with a short result summary:
+  `Completed! Loaded {total} {items}.`
+- Disable the action that started the batch for its duration, so it can't be
+  triggered twice concurrently.
+- Surface a failure the same way an individual item's error would appear
+  elsewhere in the app (message text, not a silent stop) — do not let one
+  failed item abandon the rest of the batch without explanation.
+
+This is drawn directly from `Financial.Web`'s `CurrentValuesPage.tsx` (native
+`<progress>` + `progressText`/`progressValue` state) and `Financial.App`'s
+`AssetPriceView.xaml`/`AssetPriceFetchViewModel.cs` (`ui:ProgressBar` +
+`ProgressMessage`/`ProgressPercent`, `FetchCommand` disabled via
+`CanExecute: () => !IsFetching`) — the two already agreed on this shape
+independently; this section names it as the standard so any future
+batch-fetch feature matches it instead of inventing a new one.
+
 ### Validation
 
 - Validate client-side and server-side where appropriate.
