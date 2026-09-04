@@ -242,7 +242,19 @@ Carried forward from the standards docs' own list; not counted as violations abo
    `forms-data-and-visualisations.md`'s new "Year-only selection" sub-rule. Verified:
    `dotnet build`/`dotnet test Tests/Financial.Presentation.Tests` (1202 passed, +4 new); pending
    the user's visual confirmation (no WPF GUI in this environment).
-11. Breadcrumb semantic structure.
+11. ~~Breadcrumb semantic structure.~~ **Decided and implemented 2026-09-05.** Both platforms
+   had zero semantic markup (plain `<div>` on Web, plain `TextBlock` on WPF). Checked whether
+   segments should become clickable first: the nav tree gives categories no route of their own,
+   so both segments are correctly non-interactive already — the real gap was purely markup. Web:
+   wrapped in `<nav aria-label="Breadcrumb"><ol>`, one `<li>` per segment,
+   `aria-current="page"` on the current-page segment, separator moved to CSS `::before` content
+   (not a DOM node). WPF: `AutomationProperties.Name="Breadcrumb"` on the `TextBlock` (no settable
+   landmark-type XAML property exists without a custom `AutomationPeer`). Updated 2 Web test
+   assertions from exact `getByText` (broken by the segments no longer being one text node) to
+   `toHaveTextContent` + `aria-current` checks. Documented in `react.md`/`wpf.md`. Verified:
+   `npm test` (4/4 Breadcrumb tests), `dotnet build`/`dotnet test Tests/Financial.Presentation.Tests`
+   (1202 passed) clean; pending the user's visual confirmation for the WPF half (no WPF GUI in
+   this environment, though this is a pure accessibility-metadata addition with no visual change).
 12. Hand-rolled tab-strip component convention.
 13. Status-dot/badge convention.
 14. Drag-to-resize persistent workspace layout.

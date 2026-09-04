@@ -7,3 +7,16 @@
   border-bottom: 1px solid var(--border);
   color: var(--text);
 }
+
+.breadcrumb__list {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.breadcrumb__list li + li::before {
+  content: '›';
+  margin: 0 6px;
+}
