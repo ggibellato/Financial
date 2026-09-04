@@ -186,7 +186,11 @@ Carried forward from the standards docs' own list; not counted as violations abo
    this change).
 3. ~~Manual-vs-automatic price-source colour (Grids — Web #4).~~ **Resolved via PR #725** — see
    Grids (Web) #4 above.
-4. Required-field indicator mechanism.
+4. ~~Required-field indicator mechanism.~~ **Decided and documented 2026-09-05.** Already
+   fully consistent in practice on both platforms — no code changes needed. Web: Fluent `Field
+   required` prop (21 files). WPF: asterisk `Run` with `SystemFillColorCriticalBrush` paired with
+   `AutomationProperties.HelpText="Required"` (11 files, matching exactly). Documented in
+   `forms-data-and-visualisations.md`'s "Field rules" section.
 5. Contextual-help mechanism.
 6. Multi-step decision dialog layout (e.g. Move Asset).
 7. Whether inline computed-value sentences should be bold.

@@ -105,6 +105,16 @@ Every editable field requires:
 
 Do not use placeholders as labels.
 
+**Required indicator mechanism:** Web uses Fluent's `Field` component's
+first-class `required` prop (`<Field label="X" required>`), which renders a
+visible asterisk after the label and wires `aria-required` on the control —
+do not hand-roll a separate asterisk. WPF appends a themed `Run` after the
+label text: `<Run Text=" *" Foreground="{DynamicResource
+SystemFillColorCriticalBrush}"/>`, paired with
+`AutomationProperties.HelpText="Required"` on the control. Any form using
+`FieldLabelStyle` already follows this — see `ExpenseFormView.xaml` for the
+reference.
+
 ### Form actions and saving
 
 - Use one primary form action.
