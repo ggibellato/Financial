@@ -231,7 +231,17 @@ Carried forward from the standards docs' own list; not counted as violations abo
    (whose page-specific classes it was borrowing) into its own local `IncomeSplitForm.css` — same
    visual result, fixes the actual coupling smell. Verified live in the browser, light and dark
    mode. Verified: `npm run build`/`lint` clean, `npm test` (1471 passed).
-10. Year-only selector (distinct from the documented month+year picker).
+10. ~~Year-only selector (distinct from the documented month+year picker).~~ **Decided and
+   implemented 2026-09-05.** Confirmed `AnnualSummaryView.xaml` was the only genuine year-only
+   selector left (`InvestmentSnapshotsView.xaml`/`MonthlyView.xaml` bind `Year` through the
+   already-compliant `MonthYearPicker`, not a bare field) — still a plain `TextBox` with no
+   accessible name and no invalid-input feedback, exactly as the 2026-08-23 audit found. Replaced
+   with `ui:NumberBox` (matching Web's native `<input type="number">`), bridged to the
+   ViewModel's `int Year` via a new `IntToNullableDoubleConverter` (`NumberBox.Value` is
+   `double?`) with its own unit tests, plus `AutomationProperties.Name="Year"`. Documented in
+   `forms-data-and-visualisations.md`'s new "Year-only selection" sub-rule. Verified:
+   `dotnet build`/`dotnet test Tests/Financial.Presentation.Tests` (1202 passed, +4 new); pending
+   the user's visual confirmation (no WPF GUI in this environment).
 11. Breadcrumb semantic structure.
 12. Hand-rolled tab-strip component convention.
 13. Status-dot/badge convention.

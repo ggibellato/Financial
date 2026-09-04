@@ -38,6 +38,20 @@ into any consumer unchanged — the page-level filter
 a form field (`ExpenseFormView.xaml`'s Invoice Month, replacing the old
 `MonthYearTextBox`) alike.
 
+#### Year-only selection
+
+Distinct from the month+year picker above — a scope that's just a bare year
+(e.g. `AnnualSummaryPage`'s year filter, with no month component at all) uses
+Web's native `<input type="number">` (spinner, native invalid-input
+handling), and WPF's `ui:NumberBox` (`Value` bound via
+`IntToNullableDoubleConverter` when the ViewModel property is a plain
+`int`), not a bare `TextBox`: a `TextBox` bound directly to a numeric
+property gives no feedback at all on invalid input (the binding just
+silently fails to update) and has no accessible name unless one is added
+explicitly (`AutomationProperties.Name`). Neither platform imposes a
+min/max on the year — match that unless a workflow specifically calls for
+bounds. `AnnualSummaryPage.tsx`/`AnnualSummaryView.xaml` are the reference.
+
 ### Default field order
 
 Unless an approved financial workflow requires another order:
