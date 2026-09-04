@@ -15,33 +15,6 @@
   flex-wrap: wrap;
 }
 
-.price-history-tab__filters {
-  display: flex;
-  gap: 4px;
-  align-items: center;
-}
-
-.price-history-tab__filter-btn {
-  font-size: 12px;
-  padding: 2px 8px;
-  cursor: pointer;
-  background: none;
-  border: 1px solid transparent;
-  border-radius: 3px;
-  color: var(--accent);
-  text-decoration: underline;
-}
-
-.price-history-tab__filter-btn:hover {
-  background: var(--bg-hover, #f0f0f0);
-}
-
-.price-history-tab__filter-btn--active {
-  color: var(--text-h, #08060d);
-  font-weight: bold;
-  text-decoration: none;
-}
-
 .price-history-tab__split {
   display: flex;
   flex: 1;

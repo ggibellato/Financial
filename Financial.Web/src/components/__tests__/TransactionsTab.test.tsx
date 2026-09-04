@@ -142,29 +142,29 @@ describe('TransactionsTab', () => {
 
   it('renders_six_period_filter_buttons', () => {
     render(<TransactionsTab />)
-    expect(screen.getByRole('button', { name: 'This month' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Last 3 months' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Last 6 months' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Last 12 months' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'YTD' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'All time' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'This month' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Last 3 months' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Last 6 months' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Last 12 months' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'YTD' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'All time' })).toBeInTheDocument()
   })
 
   it('renders_bar_line_toggle_defaulting_to_bar', () => {
     render(<TransactionsTab />)
-    expect(screen.getByRole('button', { name: 'Bar' })).toHaveClass('transactions-tab__mode-btn--active')
-    expect(screen.getByRole('button', { name: 'Line' })).not.toHaveClass('transactions-tab__mode-btn--active')
+    expect(screen.getByRole('tab', { name: 'Bar' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tab', { name: 'Line' })).toHaveAttribute('aria-selected', 'false')
   })
 
   it('clicking_line_toggle_calls_setChartMode', () => {
     render(<TransactionsTab />)
-    fireEvent.click(screen.getByRole('button', { name: 'Line' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Line' }))
     expect(mockSetChartMode).toHaveBeenCalledWith('Line')
   })
 
   it('clicking_filter_button_calls_setFilter', () => {
     render(<TransactionsTab />)
-    fireEvent.click(screen.getByRole('button', { name: 'YTD' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'YTD' }))
     expect(mockSetFilter).toHaveBeenCalledWith('ytd')
   })
 

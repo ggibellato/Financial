@@ -168,9 +168,24 @@ Rule of record: React defines the workflow; WPF must reach the same outcome
 
 Carried forward from the standards docs' own list; not counted as violations above.
 
-1. Row-level Edit/Delete icon convention (only the "New X" create icon is specified).
-2. Filter/chart-mode toggle "chip" pattern.
-3. Manual-vs-automatic price-source colour (Grids — Web #4).
+1. ~~Row-level Edit/Delete icon convention (only the "New X" create icon is specified).~~
+   **Decided and documented 2026-09-05 via PR #728.** The convention already existed in
+   practice on both platforms (Web `EditRegular`/`DeleteRegular`, WPF `SymbolIcon Edit16`/
+   `Delete16`) — codified into `forms-data-and-visualisations.md`'s "Grid row actions" section,
+   and fixed one leftover inconsistency (`ReservaPage.tsx`'s raw emoji Edit icon).
+2. ~~Filter/chart-mode toggle "chip" pattern.~~ **Decided and implemented 2026-09-05.** Web:
+   replaced the hand-rolled underlined-link buttons in `TransactionsTab`/`CreditsTab`/
+   `PriceHistoryTab` with a new shared `FilterTabList` component wrapping Fluent `TabList`/`Tab`
+   (closes the ARIA tablist/keyboard-nav gap for free). WPF: kept the existing `Button`+`Command`
+   selection model (no need to re-plumb to `RadioButton`) but fixed the real gap — hardcoded,
+   non-theme-aware colours — via two new shared styles (`FilterToggleTextStyle`/
+   `FilterToggleLabelStyle` in `App.xaml`) applied across `TransactionsView.xaml`,
+   `CreditsFilterBar.xaml`, `PriceHistoryView.xaml`. Documented in
+   `forms-data-and-visualisations.md`'s new "Chart filter/mode toggle" section. Distinct from
+   Part B #12 below (page-level tab-strip navigation, not chart filter chips — not addressed by
+   this change).
+3. ~~Manual-vs-automatic price-source colour (Grids — Web #4).~~ **Resolved via PR #725** — see
+   Grids (Web) #4 above.
 4. Required-field indicator mechanism.
 5. Contextual-help mechanism.
 6. Multi-step decision dialog layout (e.g. Move Asset).

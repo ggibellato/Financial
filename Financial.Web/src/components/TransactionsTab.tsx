@@ -14,6 +14,7 @@ import { Button, Field, Input, MessageBar, MessageBarBody, Select, Table, TableB
 import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import type { TransactionDto } from '../api/types'
 import ErrorState from './ErrorState'
+import FilterTabList from './FilterTabList'
 import LoadingState from './LoadingState'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import { useFormPanelStyles } from './formPanelStyles'
@@ -31,6 +32,11 @@ import './TransactionsTab.css'
 // (docs/ui/forms-data-and-visualisations.md's "Series color" rule) — not a
 // neutral/grey, single-series charts are blue on both platforms.
 const CHART_COLOR = '#4682b4'
+
+const CHART_MODE_OPTIONS: { value: ChartDisplayMode; label: string }[] = [
+  { value: 'Bar', label: 'Bar' },
+  { value: 'Line', label: 'Line' },
+]
 
 const SORT_ACCESSORS: Record<string, SortAccessor<TransactionDto>> = {
   date: (t) => new Date(t.date),
@@ -222,31 +228,13 @@ function TransactionsChart({
       className={`transactions-tab__chart-panel${compact ? ' transactions-tab__chart-panel--compact' : ''}`}
     >
       <div className="transactions-tab__controls">
-        <div className="transactions-tab__filters">
-          {PERIOD_FILTER_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              type="button"
-              className={`transactions-tab__filter-btn${selectedFilter === opt.value ? ' transactions-tab__filter-btn--active' : ''}`}
-              onClick={() => setFilter(opt.value)}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-        <div className="transactions-tab__modes">
-          <span className="transactions-tab__mode-label">View:</span>
-          {(['Bar', 'Line'] as ChartDisplayMode[]).map((mode) => (
-            <button
-              key={mode}
-              type="button"
-              className={`transactions-tab__mode-btn${selectedChartMode === mode ? ' transactions-tab__mode-btn--active' : ''}`}
-              onClick={() => setChartMode(mode)}
-            >
-              {mode}
-            </button>
-          ))}
-        </div>
+        <FilterTabList options={PERIOD_FILTER_OPTIONS} selected={selectedFilter} onSelect={setFilter} />
+        <FilterTabList
+          label="View:"
+          options={CHART_MODE_OPTIONS}
+          selected={selectedChartMode}
+          onSelect={setChartMode}
+        />
       </div>
       <p className="transactions-tab__chart-title">Net Invested by Month</p>
       <div className="transactions-tab__chart-container">

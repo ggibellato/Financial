@@ -1,0 +1,11 @@
+.filter-tab-list {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.filter-tab-list__label {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-right: 4px;
+}

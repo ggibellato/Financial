@@ -279,43 +279,43 @@ describe('CreditsTab', () => {
 
   it('renders_all_filter_buttons', () => {
     render(<CreditsTab />)
-    expect(screen.getByRole('button', { name: 'This month' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Last 3 months' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Last 6 months' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Last 12 months' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'YTD' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'All time' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'This month' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Last 3 months' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Last 6 months' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Last 12 months' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'YTD' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'All time' })).toBeInTheDocument()
   })
 
   it('active_filter_has_active_class', () => {
     setMock({ selectedFilter: 'last-12-months' })
     render(<CreditsTab />)
-    const btn = screen.getByRole('button', { name: 'Last 12 months' })
-    expect(btn).toHaveClass('credits-tab__filter-btn--active')
+    const tab = screen.getByRole('tab', { name: 'Last 12 months' })
+    expect(tab).toHaveAttribute('aria-selected', 'true')
   })
 
   it('clicking_filter_calls_set_filter', () => {
     render(<CreditsTab />)
-    fireEvent.click(screen.getByRole('button', { name: 'Last 3 months' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Last 3 months' }))
     expect(mockSetFilter).toHaveBeenCalledWith('last-3-months')
   })
 
   it('renders_mode_toggles', () => {
     render(<CreditsTab />)
-    expect(screen.getByRole('button', { name: 'Stacked' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Grouped' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Stacked' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Grouped' })).toBeInTheDocument()
   })
 
   it('active_mode_has_active_class', () => {
     setMock({ selectedMode: 'Stacked' })
     render(<CreditsTab />)
-    const btn = screen.getByRole('button', { name: 'Stacked' })
-    expect(btn).toHaveClass('credits-tab__mode-btn--active')
+    const tab = screen.getByRole('tab', { name: 'Stacked' })
+    expect(tab).toHaveAttribute('aria-selected', 'true')
   })
 
   it('clicking_mode_calls_set_mode', () => {
     render(<CreditsTab />)
-    fireEvent.click(screen.getByRole('button', { name: 'Grouped' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Grouped' }))
     expect(mockSetMode).toHaveBeenCalledWith('Grouped')
   })
 
@@ -328,13 +328,13 @@ describe('CreditsTab', () => {
 
   it('renders_bar_line_toggle_defaulting_to_bar', () => {
     render(<CreditsTab />)
-    expect(screen.getByRole('button', { name: 'Bar' })).toHaveClass('credits-tab__mode-btn--active')
-    expect(screen.getByRole('button', { name: 'Line' })).not.toHaveClass('credits-tab__mode-btn--active')
+    expect(screen.getByRole('tab', { name: 'Bar' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tab', { name: 'Line' })).toHaveAttribute('aria-selected', 'false')
   })
 
   it('clicking_line_toggle_calls_setChartType', () => {
     render(<CreditsTab />)
-    fireEvent.click(screen.getByRole('button', { name: 'Line' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Line' }))
     expect(mockSetChartType).toHaveBeenCalledWith('Line')
   })
 

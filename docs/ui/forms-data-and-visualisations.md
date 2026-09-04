@@ -279,6 +279,28 @@ that is not feature parity, just an accident of the native control. When
 sorting is actually specified, implement equivalent, explicit sort behavior
 on both platforms as part of that feature's own slice.
 
+### Chart filter/mode toggle ("chip") pattern
+
+A chart's period filter (This month/Last 3/6/12 months/YTD/All time),
+display-mode toggle (Bar/Line), or grouping toggle (Stacked/Grouped) is a
+single-select control among mutually-exclusive options — that's a tab
+semantic, not an independent multi-toggle one. Web uses the shared
+`FilterTabList` component (`components/FilterTabList.tsx`, wrapping Fluent's
+`TabList`/`Tab`, `appearance="subtle" size="small"`), which also gets ARIA
+tablist semantics and keyboard navigation for free — do not hand-roll a
+`<button>`-per-option toggle for this again.
+
+WPF keeps its existing `Button`+`Command`-per-option pattern (bound to each
+ViewModel's `Select*Command`, with an `IsSelected` property per option
+driving the trigger below) rather than switching to `RadioButton`+
+`GroupName` — the ViewModel-driven selection model already works and does
+not need re-plumbing to fix the actual gap, which was hardcoded, non-theme-
+aware colors. Use the shared `FilterToggleTextStyle`/`FilterToggleLabelStyle`
+resources (declared in `App.xaml`) on the option `TextBlock`s and the
+"View:"/"Group:" label `TextBlock`s respectively, instead of a new inline
+`Style` per view — `TransactionsView.xaml`, `CreditsFilterBar.xaml`, and
+`PriceHistoryView.xaml` are the reference.
+
 ### Alignment and financial values
 
 - Text normally aligns left.

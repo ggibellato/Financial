@@ -235,24 +235,24 @@ describe('PriceHistoryTab', () => {
 
   it('renders_all_filter_buttons', () => {
     render(<PriceHistoryTab />)
-    expect(screen.getByRole('button', { name: 'This month' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Last 3 months' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Last 6 months' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Last 12 months' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'YTD' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'All time' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'This month' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Last 3 months' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Last 6 months' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Last 12 months' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'YTD' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'All time' })).toBeInTheDocument()
   })
 
   it('active_filter_has_active_class', () => {
     setMock({ selectedFilter: 'last-12-months' })
     render(<PriceHistoryTab />)
-    const btn = screen.getByRole('button', { name: 'Last 12 months' })
-    expect(btn).toHaveClass('price-history-tab__filter-btn--active')
+    const tab = screen.getByRole('tab', { name: 'Last 12 months' })
+    expect(tab).toHaveAttribute('aria-selected', 'true')
   })
 
   it('clicking_filter_calls_set_filter', () => {
     render(<PriceHistoryTab />)
-    fireEvent.click(screen.getByRole('button', { name: 'Last 3 months' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Last 3 months' }))
     expect(mockSetFilter).toHaveBeenCalledWith('last-3-months')
   })
 
