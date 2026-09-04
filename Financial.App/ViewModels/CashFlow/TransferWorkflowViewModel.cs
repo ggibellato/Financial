@@ -70,7 +70,7 @@ public class TransferWorkflowViewModel : ViewModelBase
         }
     }
 
-    /// <summary>True when source and destination are both set and identical — Move Money's Confirm is disabled in this state, mirroring TransferForm.tsx's sameBankError.</summary>
+    /// <summary>True when source and destination are both set and identical — the transfer form's Save is disabled in this state, mirroring TransferForm.tsx's sameBankError.</summary>
     public bool IsSameBankTransfer =>
         TransferFormSourceBank.HasValue
         && TransferFormDestinationBank.HasValue

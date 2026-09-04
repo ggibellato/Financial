@@ -27,7 +27,7 @@
             reference for POSITION; it now also matches on style.
         -->
         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
-            <ui:Button Content="Move Money" Appearance="Primary" Icon="{ui:SymbolIcon Symbol=Add20}"
+            <ui:Button Content="New Transfer" Appearance="Primary" Icon="{ui:SymbolIcon Symbol=Add20}"
                        Command="{Binding Transfer.ShowMoveMoneyFormCommand}"/>
             <ui:Button Content="Correct Balance" Margin="8,0,0,0" Appearance="Primary" Icon="{ui:SymbolIcon Symbol=Add20}"
                        Command="{Binding Adjustment.ShowCorrectBalanceFormCommand}"/>
