@@ -28,7 +28,7 @@
   background: none;
   border: 1px solid transparent;
   border-radius: 3px;
-  color: #007acc;
+  color: var(--accent);
   text-decoration: underline;
 }
 
