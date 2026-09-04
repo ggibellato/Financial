@@ -77,6 +77,7 @@ const DEFAULT_HOOK: CreditsData = {
   formValue: '',
   isSaving: false,
   saveError: null,
+  saveErrorField: null,
   deleteError: null,
   nodeType: 'Asset',
   showNewForm: mockShowNewForm,
@@ -210,9 +211,9 @@ describe('CreditsTab', () => {
   it('renders_form_when_form_visible', () => {
     setMock({ isFormVisible: true, editingId: null })
     render(<CreditsTab />)
-    expect(screen.getByLabelText('Date')).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Date/)).toBeInTheDocument()
     expect(screen.getByLabelText('Type')).toBeInTheDocument()
-    expect(screen.getByLabelText('Value')).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Value/)).toBeInTheDocument()
   })
 
   it('type_select_includes_jcp_option', () => {
@@ -226,7 +227,7 @@ describe('CreditsTab', () => {
   it('form_title_is_new_credit_when_no_editing_id', () => {
     setMock({ isFormVisible: true, editingId: null })
     render(<CreditsTab />)
-    expect(screen.getByText('New credit', { selector: '.credits-tab__form-title' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'New credit' })).toBeInTheDocument()
   })
 
   it('form_title_is_edit_credit_when_editing_id_set', () => {

@@ -1,10 +1,12 @@
-import { Button, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
+import { Button, Field, Input, MessageBar, MessageBarBody, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text } from '@fluentui/react-components'
 import { EditRegular } from '@fluentui/react-icons'
 import type { InvestmentSnapshotDto } from '../api/types'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
 import SortableColumnHeader from '../components/grid/SortableColumnHeader'
+import { useFormPanelStyles } from '../components/formPanelStyles'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
+import { useFieldError } from '../hooks/useFieldError'
 import { useInvestmentSnapshots } from '../hooks/useInvestmentSnapshots'
 import { formatN2 } from '../utils/formatters'
 import './InvestmentSnapshotsPage.css'
@@ -57,6 +59,7 @@ export default function InvestmentSnapshotsPage() {
     editValue,
     isSaving,
     saveError,
+    saveErrorField,
     setEditValue,
     showEditForm,
     cancelEdit,
@@ -64,6 +67,8 @@ export default function InvestmentSnapshotsPage() {
   } = useInvestmentSnapshots()
 
   const isEditing = editingId !== null
+  const styles = useFormPanelStyles()
+  const fieldError = useFieldError(saveError, saveErrorField)
 
   const snapshotAccessors: Record<string, SortAccessor<InvestmentSnapshotDto>> = {
     account: (snapshot) => snapshot.accountName,
@@ -84,30 +89,36 @@ export default function InvestmentSnapshotsPage() {
       </div>
 
       {isEditing && (
-        <div className="investment-snapshots-page__form-panel">
-          <p className="investment-snapshots-page__form-title">Edit Snapshot</p>
-          <div className="investment-snapshots-page__form">
-            <div className="investment-snapshots-page__form-field">
-              <label htmlFor="snapshot-edit-value">Value</label>
-              <input
-                id="snapshot-edit-value"
-                type="number"
-                step="0.01"
-                min="0"
-                value={editValue}
-                onChange={(e) => setEditValue(e.target.value)}
-              />
-            </div>
+        <div className={styles.panel}>
+          <Text as="h2" weight="semibold" size={400}>
+            Edit Snapshot
+          </Text>
+
+          <div className={styles.grid}>
+            <Field
+              label="Value"
+              required
+              validationState={fieldError('editValue') ? 'error' : 'none'}
+              validationMessage={fieldError('editValue')}
+            >
+              <Input type="number" step="0.01" min="0" value={editValue} onChange={(e) => setEditValue(e.target.value)} />
+            </Field>
           </div>
-          <div className="investment-snapshots-page__form-actions">
-            <button type="button" disabled={isSaving} onClick={saveEdit}>
+
+          <div className={styles.actions}>
+            <Button appearance="primary" disabled={isSaving} onClick={saveEdit}>
               {isSaving ? 'Saving...' : 'Save'}
-            </button>
-            <button type="button" onClick={cancelEdit}>
+            </Button>
+            <Button appearance="secondary" onClick={cancelEdit}>
               Cancel
-            </button>
+            </Button>
           </div>
-          {saveError && <p className="investment-snapshots-page__error">{saveError}</p>}
+
+          {saveError && (
+            <MessageBar intent="error">
+              <MessageBarBody>{saveError}</MessageBarBody>
+            </MessageBar>
+          )}
         </div>
       )}
 

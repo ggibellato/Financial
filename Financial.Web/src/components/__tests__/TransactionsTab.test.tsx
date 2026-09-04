@@ -76,6 +76,7 @@ const DEFAULT_HOOK: TransactionsData = {
   formFees: '',
   isSaving: false,
   saveError: null,
+  saveErrorField: null,
   deleteError: null,
   nodeType: 'Asset',
   showNewForm: mockShowNewForm,
@@ -227,11 +228,11 @@ describe('TransactionsTab', () => {
   it('renders_form_when_form_visible', () => {
     setMock({ isFormVisible: true, editingId: null })
     render(<TransactionsTab />)
-    expect(screen.getByText('New transaction', { selector: '.transactions-tab__form-title' })).toBeInTheDocument()
-    expect(screen.getByLabelText('Date')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'New transaction' })).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Date/)).toBeInTheDocument()
     expect(screen.getByLabelText('Type')).toBeInTheDocument()
-    expect(screen.getByLabelText('Quantity')).toBeInTheDocument()
-    expect(screen.getByLabelText('Unit Price')).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Quantity/)).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Unit Price/)).toBeInTheDocument()
     expect(screen.getByLabelText('Fees')).toBeInTheDocument()
   })
 

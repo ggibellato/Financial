@@ -10,13 +10,15 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { Button, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
+import { Button, Field, Input, MessageBar, MessageBarBody, Select, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text } from '@fluentui/react-components'
 import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import type { TransactionDto } from '../api/types'
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
 import SortableColumnHeader from './grid/SortableColumnHeader'
+import { useFormPanelStyles } from './formPanelStyles'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
+import { useFieldError } from '../hooks/useFieldError'
 import type { ChartDisplayMode, TransactionFormField, TransactionMonthBucket } from '../hooks/useTransactions'
 import { useTransactions } from '../hooks/useTransactions'
 import { confirmThenRun } from '../utils/confirmThenRun'
@@ -92,6 +94,7 @@ interface InlineFormProps {
   formFees: string
   isSaving: boolean
   saveError: string | null
+  saveErrorField: TransactionFormField | null
   onFieldChange: (field: TransactionFormField, value: string) => void
   onSave: () => void
   onCancel: () => void
@@ -106,87 +109,93 @@ function InlineForm({
   formFees,
   isSaving,
   saveError,
+  saveErrorField,
   onFieldChange,
   onSave,
   onCancel,
 }: InlineFormProps) {
+  const styles = useFormPanelStyles()
+  const fieldError = useFieldError(saveError, saveErrorField)
   const title = editingId ? 'Edit transaction' : 'New transaction'
 
   return (
-    <div className="transactions-tab__form">
-      <p className="transactions-tab__form-title">{title}</p>
-      <div className="transactions-tab__form-fields">
-        <div className="transactions-tab__form-field">
-          <label htmlFor="tx-date">Date</label>
-          <input
-            id="tx-date"
-            type="date"
-            value={formDate}
-            required
-            onChange={(e) => onFieldChange('formDate', e.target.value)}
-          />
-        </div>
-        <div className="transactions-tab__form-field">
-          <label htmlFor="tx-type">Type</label>
-          <select
-            id="tx-type"
-            value={formType}
-            onChange={(e) => onFieldChange('formType', e.target.value)}
-          >
+    <div className={styles.panel}>
+      <Text as="h2" weight="semibold" size={400}>
+        {title}
+      </Text>
+
+      <div className={styles.grid}>
+        <Field
+          label="Date"
+          required
+          validationState={fieldError('formDate') ? 'error' : 'none'}
+          validationMessage={fieldError('formDate')}
+        >
+          <Input type="date" value={formDate} onChange={(e) => onFieldChange('formDate', e.target.value)} />
+        </Field>
+
+        <Field label="Type">
+          <Select value={formType} onChange={(e) => onFieldChange('formType', e.target.value)}>
             <option value="Buy">Buy</option>
             <option value="Sell">Sell</option>
-          </select>
-        </div>
-        <div className="transactions-tab__form-field">
-          <label htmlFor="tx-quantity">Quantity</label>
-          <input
-            id="tx-quantity"
+          </Select>
+        </Field>
+
+        <Field
+          label="Quantity"
+          required
+          validationState={fieldError('formQuantity') ? 'error' : 'none'}
+          validationMessage={fieldError('formQuantity')}
+        >
+          <Input
             type="number"
             step="0.0001"
             min="0"
             value={formQuantity}
-            required
             onChange={(e) => onFieldChange('formQuantity', e.target.value)}
           />
-        </div>
-        <div className="transactions-tab__form-field">
-          <label htmlFor="tx-unit-price">Unit Price</label>
-          <input
-            id="tx-unit-price"
+        </Field>
+
+        <Field
+          label="Unit Price"
+          required
+          validationState={fieldError('formUnitPrice') ? 'error' : 'none'}
+          validationMessage={fieldError('formUnitPrice')}
+        >
+          <Input
             type="number"
             step="0.0001"
             min="0"
             value={formUnitPrice}
-            required
             onChange={(e) => onFieldChange('formUnitPrice', e.target.value)}
           />
-        </div>
-        <div className="transactions-tab__form-field">
-          <label htmlFor="tx-fees">Fees</label>
-          <input
-            id="tx-fees"
+        </Field>
+
+        <Field label="Fees">
+          <Input
             type="number"
             step="0.0001"
             min="0"
             value={formFees}
             onChange={(e) => onFieldChange('formFees', e.target.value)}
           />
-        </div>
+        </Field>
       </div>
-      <div className="transactions-tab__form-actions">
-        <button
-          className="transactions-tab__save-btn"
-          type="button"
-          disabled={isSaving}
-          onClick={onSave}
-        >
+
+      <div className={styles.actions}>
+        <Button appearance="primary" disabled={isSaving} onClick={onSave}>
           {isSaving ? 'Saving...' : editingId ? 'Save' : 'Add transaction'}
-        </button>
-        <button className="transactions-tab__cancel-btn" type="button" onClick={onCancel}>
+        </Button>
+        <Button appearance="secondary" onClick={onCancel}>
           Cancel
-        </button>
+        </Button>
       </div>
-      {saveError && <p className="transactions-tab__error">{saveError}</p>}
+
+      {saveError && (
+        <MessageBar intent="error">
+          <MessageBarBody>{saveError}</MessageBarBody>
+        </MessageBar>
+      )}
     </div>
   )
 }
@@ -299,6 +308,7 @@ export default function TransactionsTab() {
     formFees,
     isSaving,
     saveError,
+    saveErrorField,
     deleteError,
     nodeType,
     showNewForm,
@@ -363,6 +373,7 @@ export default function TransactionsTab() {
           formFees={formFees}
           isSaving={isSaving}
           saveError={saveError}
+          saveErrorField={saveErrorField}
           onFieldChange={setFormField}
           onSave={saveForm}
           onCancel={cancelForm}
