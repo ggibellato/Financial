@@ -197,7 +197,12 @@ Carried forward from the standards docs' own list; not counted as violations abo
    (`ui:SymbolIcon Symbol="Info16"` + `ui:Flyout`) in `forms-data-and-visualisations.md`'s "Field
    rules" section, per the user's choice to have the mechanism ready rather than retrofit
    specific fields (e.g. "Round-Up", "JCP") speculatively.
-6. Multi-step decision dialog layout (e.g. Move Asset).
+6. ~~Multi-step decision dialog layout (e.g. Move Asset).~~ **Decided and documented
+   2026-09-05.** Confirmed both `MoveAssetDialog.tsx` (Fluent `Dialog`/`DialogSurface`/
+   `DialogBody`/`DialogContent`, free-form radio groups) and `MoveAssetDialog.xaml` (`StackPanel`+
+   `RadioButton`) already use a linear decision layout, not ADR-002's 4-column grid — added an
+   explicit "Consequences" line to ADR-002 stating the grid applies to parallel field-entry forms,
+   not linear multi-step decision dialogs, using this dialog as the reference on both platforms.
 7. Whether inline computed-value sentences should be bold.
 8. Whether Save/Cancel/Confirm need icons.
 9. Post-submit itemized result view styling.

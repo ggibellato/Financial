@@ -44,3 +44,8 @@ space.
 - Descriptions, notes, and complex selectors may span multiple columns.
 - A different field order must be justified by workflow and documented in a page
   specification or another ADR.
+- This grid applies to parallel field-entry forms (a set of independent fields filled in
+  together), not to a linear, multi-step decision dialog (e.g. "Move Asset") whose content is a
+  sequence of choices rather than a set of fields. `MoveAssetDialog.tsx`/`MoveAssetDialog.xaml`
+  are the reference: both use a free-form vertical layout (Fluent `DialogContent` with stacked
+  radio groups; WPF `StackPanel` with `RadioButton`s), not this grid.
