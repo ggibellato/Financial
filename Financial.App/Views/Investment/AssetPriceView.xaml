@@ -10,10 +10,10 @@
         </Grid.RowDefinitions>
 
         <TextBlock Grid.Row="0" Text="Read Assets Current Values" FontSize="20" FontWeight="Bold"
-                   Foreground="#333333" Margin="0,0,0,20"/>
+                   Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,20"/>
 
-        <Border Grid.Row="1" BorderBrush="#CCCCCC" BorderThickness="1" Padding="15"
-                Margin="0,0,0,20" Background="#FAFAFA">
+        <Border Grid.Row="1" BorderBrush="{DynamicResource ControlElevationBorderBrush}" BorderThickness="1" Padding="15"
+                Margin="0,0,0,20" Background="{DynamicResource ControlFillColorDefaultBrush}">
             <!-- Scoped to this Border, not the whole UserControl, so it only affects the
                  Check Prices button below - the results DataGrid in Grid.Row="2" keeps its
                  existing (non-Fluent) styling untouched by this fix. -->
@@ -27,30 +27,32 @@
             </Border.Resources>
             <StackPanel>
                 <TextBlock Text="Fetch Current Prices" FontSize="14" FontWeight="Bold"
-                           Foreground="#333333" Margin="0,0,0,8"/>
+                           Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,8"/>
                 <ui:Button Content="Check Prices" Appearance="Primary" Icon="{ui:SymbolIcon Symbol=Search20}"
                            Command="{Binding FetchCommand}" HorizontalAlignment="Left"/>
 
                 <StackPanel Visibility="{Binding IsFetching, Converter={StaticResource BoolToVisibilityConverter}}"
                             Margin="0,15,0,0">
+                    <!-- No explicit Foreground: the default Wpf.Ui ProgressBar template is already
+                         theme/accent-aware, matching NavigationView.xaml's ProgressBar. -->
                     <ProgressBar Height="8" Minimum="0" Maximum="100"
-                                 Value="{Binding ProgressPercent, Mode=OneWay}" Foreground="#007ACC"/>
+                                 Value="{Binding ProgressPercent, Mode=OneWay}"/>
                     <TextBlock Text="{Binding ProgressMessage}" FontSize="13"
-                               Foreground="#666666" Margin="0,8,0,0"/>
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,8,0,0"/>
                 </StackPanel>
             </StackPanel>
         </Border>
 
-        <Border Grid.Row="2" BorderBrush="#CCCCCC" BorderThickness="1" Padding="15">
+        <Border Grid.Row="2" BorderBrush="{DynamicResource ControlElevationBorderBrush}" BorderThickness="1" Padding="15">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
                 <TextBlock Grid.Row="0" Text="Assets Current Prices" FontSize="16" FontWeight="Bold"
-                           Foreground="#333333" Margin="0,0,0,10"/>
+                           Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,10"/>
                 <DataGrid Grid.Row="1" ItemsSource="{Binding Results}"
-                          BorderBrush="#CCCCCC" BorderThickness="1"
+                          BorderBrush="{DynamicResource ControlElevationBorderBrush}" BorderThickness="1"
                           ScrollViewer.VerticalScrollBarVisibility="Auto">
                     <DataGrid.Columns>
                         <DataGridTextColumn Binding="{Binding Ticker}" Header="Ticker" Width="100">
@@ -71,7 +73,7 @@
                             <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}">
                                     <Setter Property="FontWeight" Value="Bold"/>
-                                    <Setter Property="Foreground" Value="Black"/>
+                                    <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
                                 </Style>
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
@@ -82,7 +84,7 @@
                                     <Setter Property="VerticalAlignment" Value="Center"/>
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding HasError}" Value="True">
-                                            <Setter Property="Foreground" Value="Red"/>
+                                            <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
