@@ -12,7 +12,7 @@ interface EditMovementFormProps {
   buckets: ReserveBucketDto[]
   isSaving: boolean
   error: string | null
-  errorField: EditMovementField | null
+  errorFields: Partial<Record<EditMovementField, string>>
   onFieldChange: (field: EditMovementField, value: string) => void
   onSave: () => void
   onCancel: () => void
@@ -26,14 +26,14 @@ export default function EditMovementForm({
   buckets,
   isSaving,
   error,
-  errorField,
+  errorFields,
   onFieldChange,
   onSave,
   onCancel,
 }: EditMovementFormProps) {
   const styles = useFormPanelStyles()
-  const fieldError = useFieldError(error, errorField)
-  const generalError = errorField === null ? error : null
+  const fieldError = useFieldError(errorFields)
+  const generalError = Object.keys(errorFields).length === 0 ? error : null
 
   return (
     <div className={styles.panel} data-testid="edit-movement-form-panel">

@@ -83,7 +83,7 @@ export default function ControleMaePage() {
     createSourceValue,
     isCreating,
     createError,
-    createErrorField,
+    createErrorFields,
     showCreateForm,
     cancelCreateForm,
     setCreateField,
@@ -93,7 +93,7 @@ export default function ControleMaePage() {
     editGbpValue,
     isSaving,
     saveError,
-    saveErrorField,
+    saveErrorFields,
     setEditField,
     showEditForm,
     cancelEdit,
@@ -106,8 +106,8 @@ export default function ControleMaePage() {
   const isEditing = editingId !== null
   const isFormVisible = isCreateFormOpen || isEditing
   const styles = useFormPanelStyles()
-  const createFieldError = useFieldError(createError, createErrorField)
-  const editFieldError = useFieldError(saveError, saveErrorField)
+  const createFieldError = useFieldError(createErrorFields)
+  const editFieldError = useFieldError(saveErrorFields)
 
   const entryAccessors: Record<string, SortAccessor<MaeLedgerEntryDto>> = {
     date: (entry) => new Date(entry.date),
@@ -237,7 +237,7 @@ export default function ControleMaePage() {
             </Button>
           </div>
 
-          {(isEditing ? saveError : createError) && (
+          {(isEditing ? Object.keys(saveErrorFields).length === 0 && saveError : Object.keys(createErrorFields).length === 0 && createError) && (
             <MessageBar intent="error">
               <MessageBarBody>{isEditing ? saveError : createError}</MessageBarBody>
             </MessageBar>

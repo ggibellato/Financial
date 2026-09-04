@@ -92,7 +92,7 @@ interface InlineFormProps {
   formPrice: string
   isSaving: boolean
   saveError: string | null
-  saveErrorField: PriceHistoryFormField | null
+  saveErrorFields: Partial<Record<PriceHistoryFormField, string>>
   onFieldChange: (field: PriceHistoryFormField, value: string) => void
   onSave: () => void
   onCancel: () => void
@@ -104,13 +104,13 @@ function InlineForm({
   formPrice,
   isSaving,
   saveError,
-  saveErrorField,
+  saveErrorFields,
   onFieldChange,
   onSave,
   onCancel,
 }: InlineFormProps) {
   const styles = useFormPanelStyles()
-  const fieldError = useFieldError(saveError, saveErrorField)
+  const fieldError = useFieldError(saveErrorFields)
   const title = editingDate ? 'Edit price' : 'New price'
 
   return (
@@ -154,7 +154,7 @@ function InlineForm({
         </Button>
       </div>
 
-      {saveError && (
+      {Object.keys(saveErrorFields).length === 0 && saveError && (
         <MessageBar intent="error">
           <MessageBarBody>{saveError}</MessageBarBody>
         </MessageBar>
@@ -274,7 +274,7 @@ export default function PriceHistoryTab() {
     formPrice,
     isSaving,
     saveError,
-    saveErrorField,
+    saveErrorFields,
     deleteError,
     showNewForm,
     showEditForm,
@@ -328,7 +328,7 @@ export default function PriceHistoryTab() {
           formPrice={formPrice}
           isSaving={isSaving}
           saveError={saveError}
-          saveErrorField={saveErrorField}
+          saveErrorFields={saveErrorFields}
           onFieldChange={setFormField}
           onSave={saveForm}
           onCancel={cancelForm}

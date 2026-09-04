@@ -59,7 +59,7 @@ const DEFAULT_HOOK: PriceHistoryData = {
   formPrice: '',
   isSaving: false,
   saveError: null,
-  saveErrorField: null,
+  saveErrorFields: {},
   deleteError: null,
   showNewForm: mockShowNewForm,
   showEditForm: mockShowEditForm,

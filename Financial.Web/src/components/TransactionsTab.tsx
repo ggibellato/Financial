@@ -94,7 +94,7 @@ interface InlineFormProps {
   formFees: string
   isSaving: boolean
   saveError: string | null
-  saveErrorField: TransactionFormField | null
+  saveErrorFields: Partial<Record<TransactionFormField, string>>
   onFieldChange: (field: TransactionFormField, value: string) => void
   onSave: () => void
   onCancel: () => void
@@ -109,13 +109,13 @@ function InlineForm({
   formFees,
   isSaving,
   saveError,
-  saveErrorField,
+  saveErrorFields,
   onFieldChange,
   onSave,
   onCancel,
 }: InlineFormProps) {
   const styles = useFormPanelStyles()
-  const fieldError = useFieldError(saveError, saveErrorField)
+  const fieldError = useFieldError(saveErrorFields)
   const title = editingId ? 'Edit transaction' : 'New transaction'
 
   return (
@@ -191,7 +191,7 @@ function InlineForm({
         </Button>
       </div>
 
-      {saveError && (
+      {Object.keys(saveErrorFields).length === 0 && saveError && (
         <MessageBar intent="error">
           <MessageBarBody>{saveError}</MessageBarBody>
         </MessageBar>
@@ -308,7 +308,7 @@ export default function TransactionsTab() {
     formFees,
     isSaving,
     saveError,
-    saveErrorField,
+    saveErrorFields,
     deleteError,
     nodeType,
     showNewForm,
@@ -373,7 +373,7 @@ export default function TransactionsTab() {
           formFees={formFees}
           isSaving={isSaving}
           saveError={saveError}
-          saveErrorField={saveErrorField}
+          saveErrorFields={saveErrorFields}
           onFieldChange={setFormField}
           onSave={saveForm}
           onCancel={cancelForm}

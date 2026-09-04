@@ -59,7 +59,7 @@ export default function InvestmentSnapshotsPage() {
     editValue,
     isSaving,
     saveError,
-    saveErrorField,
+    saveErrorFields,
     setEditValue,
     showEditForm,
     cancelEdit,
@@ -68,7 +68,7 @@ export default function InvestmentSnapshotsPage() {
 
   const isEditing = editingId !== null
   const styles = useFormPanelStyles()
-  const fieldError = useFieldError(saveError, saveErrorField)
+  const fieldError = useFieldError(saveErrorFields)
 
   const snapshotAccessors: Record<string, SortAccessor<InvestmentSnapshotDto>> = {
     account: (snapshot) => snapshot.accountName,
@@ -114,7 +114,7 @@ export default function InvestmentSnapshotsPage() {
             </Button>
           </div>
 
-          {saveError && (
+          {Object.keys(saveErrorFields).length === 0 && saveError && (
             <MessageBar intent="error">
               <MessageBarBody>{saveError}</MessageBarBody>
             </MessageBar>

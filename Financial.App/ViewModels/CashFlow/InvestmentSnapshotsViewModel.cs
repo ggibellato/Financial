@@ -148,6 +148,7 @@ public class InvestmentSnapshotsViewModel : ViewModelBase
             if (SetProperty(ref _editSaveError, value))
             {
                 OnPropertyChanged(nameof(EditValueFieldError));
+                OnPropertyChanged(nameof(EditGeneralSaveError));
             }
         }
     }
@@ -155,9 +156,11 @@ public class InvestmentSnapshotsViewModel : ViewModelBase
     public string? EditValueFieldError => MatchEditFieldError("Value must be a non-negative number.");
 
     private string? MatchEditFieldError(params string[] fragments) =>
-        EditSaveError is { } error && fragments.Any(f => error.Contains(f, StringComparison.OrdinalIgnoreCase))
-            ? error
-            : null;
+        EditSaveError?.Split(Environment.NewLine)
+            .FirstOrDefault(line => fragments.Any(f => line.Contains(f, StringComparison.OrdinalIgnoreCase)));
+
+    /// <summary>Bottom-of-form message — shown only when the error isn't already attributed to a field above.</summary>
+    public string? EditGeneralSaveError => EditValueFieldError is null ? EditSaveError : null;
 
     public RelayCommand<SnapshotRow> EditSnapshotCommand { get; private set; } = null!;
     public RelayCommand CancelEditFormCommand { get; private set; } = null!;

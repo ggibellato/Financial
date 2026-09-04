@@ -22,7 +22,7 @@ interface InvestmentSnapshotsState {
   editValue: string
   isSaving: boolean
   saveError: string | null
-  saveErrorField: SnapshotEditField | null
+  saveErrorFields: Partial<Record<SnapshotEditField, string>>
 }
 
 type InvestmentSnapshotsAction =
@@ -36,7 +36,7 @@ type InvestmentSnapshotsAction =
   | { type: 'SET_EDIT_VALUE'; payload: string }
   | { type: 'SAVE_START' }
   | { type: 'SAVE_SUCCESS' }
-  | { type: 'SAVE_ERROR'; payload: { message: string; field: SnapshotEditField | null } }
+  | { type: 'SAVE_ERROR'; payload: { message: string | null; fields: Partial<Record<SnapshotEditField, string>> } }
 
 const { year: DEFAULT_YEAR, month: DEFAULT_MONTH } = currentYearMonth()
 
@@ -51,7 +51,7 @@ const INITIAL_STATE: InvestmentSnapshotsState = {
   editValue: '',
   isSaving: false,
   saveError: null,
-  saveErrorField: null,
+  saveErrorFields: {},
 }
 
 function reducer(state: InvestmentSnapshotsState, action: InvestmentSnapshotsAction): InvestmentSnapshotsState {
@@ -72,18 +72,18 @@ function reducer(state: InvestmentSnapshotsState, action: InvestmentSnapshotsAct
         editingId: action.payload.id,
         editValue: String(action.payload.value),
         saveError: null,
-        saveErrorField: null,
+        saveErrorFields: {},
       }
     case 'CANCEL_EDIT':
-      return { ...state, editingId: null, editValue: '', saveError: null, saveErrorField: null }
+      return { ...state, editingId: null, editValue: '', saveError: null, saveErrorFields: {} }
     case 'SET_EDIT_VALUE':
       return { ...state, editValue: action.payload }
     case 'SAVE_START':
-      return { ...state, isSaving: true, saveError: null, saveErrorField: null }
+      return { ...state, isSaving: true, saveError: null, saveErrorFields: {} }
     case 'SAVE_SUCCESS':
       return { ...state, isSaving: false, editingId: null, editValue: '' }
     case 'SAVE_ERROR':
-      return { ...state, isSaving: false, saveError: action.payload.message, saveErrorField: action.payload.field }
+      return { ...state, isSaving: false, saveError: action.payload.message, saveErrorFields: action.payload.fields }
     default:
       return state
   }
@@ -101,7 +101,7 @@ export interface InvestmentSnapshotsData {
   editValue: string
   isSaving: boolean
   saveError: string | null
-  saveErrorField: SnapshotEditField | null
+  saveErrorFields: Partial<Record<SnapshotEditField, string>>
   setEditValue: (value: string) => void
   showEditForm: (snapshot: InvestmentSnapshotDto) => void
   cancelEdit: () => void
@@ -153,7 +153,13 @@ export function useInvestmentSnapshots(): InvestmentSnapshotsData {
 
     const value = parseValidatedNumber(state.editValue, { min: 0 })
     if (value === null) {
-      dispatch({ type: 'SAVE_ERROR', payload: { message: 'Value must be a non-negative number', field: 'editValue' } })
+      dispatch({
+        type: 'SAVE_ERROR',
+        payload: {
+          message: 'Value must be a non-negative number',
+          fields: { editValue: 'Value must be a non-negative number' },
+        },
+      })
       return
     }
 
@@ -168,7 +174,7 @@ export function useInvestmentSnapshots(): InvestmentSnapshotsData {
       .catch((err: unknown) => {
         dispatch({
           type: 'SAVE_ERROR',
-          payload: { message: getErrorMessage(err, 'Failed to update snapshot'), field: null },
+          payload: { message: getErrorMessage(err, 'Failed to update snapshot'), fields: {} },
         })
       })
   }
@@ -185,7 +191,7 @@ export function useInvestmentSnapshots(): InvestmentSnapshotsData {
     editValue: state.editValue,
     isSaving: state.isSaving,
     saveError: state.saveError,
-    saveErrorField: state.saveErrorField,
+    saveErrorFields: state.saveErrorFields,
     setEditValue,
     showEditForm,
     cancelEdit,

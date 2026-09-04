@@ -97,7 +97,7 @@ interface TransactionsState {
   formFees: string
   isSaving: boolean
   saveError: string | null
-  saveErrorField: TransactionFormField | null
+  saveErrorFields: Partial<Record<TransactionFormField, string>>
   deleteError: string | null
 }
 
@@ -116,7 +116,7 @@ type TransactionsAction =
   | { type: 'SET_FORM_FIELD'; payload: { field: TransactionFormField; value: string } }
   | { type: 'SAVE_START' }
   | { type: 'SAVE_SUCCESS'; payload: AssetDetailsDto }
-  | { type: 'SAVE_ERROR'; payload: { message: string; field: TransactionFormField | null } }
+  | { type: 'SAVE_ERROR'; payload: { message: string | null; fields: Partial<Record<TransactionFormField, string>> } }
   | { type: 'DELETE_SUCCESS'; payload: AssetDetailsDto }
   | { type: 'DELETE_ERROR'; payload: string }
 
@@ -130,7 +130,7 @@ const BLANK_FORM = {
   formFees: '',
   isSaving: false,
   saveError: null,
-  saveErrorField: null,
+  saveErrorFields: {},
 } as const
 
 const INITIAL_STATE: TransactionsState = {
@@ -190,7 +190,7 @@ function reducer(state: TransactionsState, action: TransactionsAction): Transact
         formUnitPrice: '',
         formFees: '',
         saveError: null,
-        saveErrorField: null,
+        saveErrorFields: {},
         isSaving: false,
       }
     case 'SHOW_EDIT_FORM': {
@@ -205,7 +205,7 @@ function reducer(state: TransactionsState, action: TransactionsAction): Transact
         formUnitPrice: String(t.unitPrice),
         formFees: String(t.fees),
         saveError: null,
-        saveErrorField: null,
+        saveErrorFields: {},
         isSaving: false,
       }
     }
@@ -214,11 +214,11 @@ function reducer(state: TransactionsState, action: TransactionsAction): Transact
     case 'SET_FORM_FIELD':
       return { ...state, [action.payload.field]: action.payload.value }
     case 'SAVE_START':
-      return { ...state, isSaving: true, saveError: null, saveErrorField: null }
+      return { ...state, isSaving: true, saveError: null, saveErrorFields: {} }
     case 'SAVE_SUCCESS':
       return { ...state, ...BLANK_FORM, asset: action.payload, deleteError: state.deleteError }
     case 'SAVE_ERROR':
-      return { ...state, isSaving: false, saveError: action.payload.message, saveErrorField: action.payload.field }
+      return { ...state, isSaving: false, saveError: action.payload.message, saveErrorFields: action.payload.fields }
     case 'DELETE_SUCCESS':
       return { ...state, asset: action.payload, deleteError: null }
     case 'DELETE_ERROR':
@@ -248,7 +248,7 @@ export interface TransactionsData {
   formFees: string
   isSaving: boolean
   saveError: string | null
-  saveErrorField: TransactionFormField | null
+  saveErrorFields: Partial<Record<TransactionFormField, string>>
   deleteError: string | null
   nodeType: string | undefined
   showNewForm: () => void
@@ -370,21 +370,24 @@ export function useTransactions(): TransactionsData {
     if (!selectedNode?.portfolioName || !selectedNode.assetName) return
 
     const { formDate, formType, formQuantity, formUnitPrice, formFees, editingId } = state
+    const errors: Partial<Record<TransactionFormField, string>> = {}
 
     if (!formDate.trim()) {
-      dispatch({ type: 'SAVE_ERROR', payload: { message: 'Date is required', field: 'formDate' } })
-      return
+      errors.formDate = 'Date is required'
     }
 
     const quantity = parseValidatedNumber(formQuantity)
     if (quantity === null || quantity <= 0) {
-      dispatch({ type: 'SAVE_ERROR', payload: { message: 'Quantity must be a positive number', field: 'formQuantity' } })
-      return
+      errors.formQuantity = 'Quantity must be a positive number'
     }
 
     const unitPrice = parseValidatedNumber(formUnitPrice)
     if (unitPrice === null || unitPrice <= 0) {
-      dispatch({ type: 'SAVE_ERROR', payload: { message: 'Unit Price must be a positive number', field: 'formUnitPrice' } })
+      errors.formUnitPrice = 'Unit Price must be a positive number'
+    }
+
+    if (Object.keys(errors).length > 0) {
+      dispatch({ type: 'SAVE_ERROR', payload: { message: Object.values(errors)[0] ?? null, fields: errors } })
       return
     }
 
@@ -398,8 +401,8 @@ export function useTransactions(): TransactionsData {
       assetName: selectedNode.assetName,
       date: formDate,
       type: formType,
-      quantity,
-      unitPrice,
+      quantity: quantity as number,
+      unitPrice: unitPrice as number,
       fees,
     }
 
@@ -416,7 +419,7 @@ export function useTransactions(): TransactionsData {
       .catch((err: unknown) => {
         dispatch({
           type: 'SAVE_ERROR',
-          payload: { message: getErrorMessage(err, 'Failed to save transaction'), field: null },
+          payload: { message: getErrorMessage(err, 'Failed to save transaction'), fields: {} },
         })
       })
   }, [selectedNode, state])
@@ -463,7 +466,7 @@ export function useTransactions(): TransactionsData {
     formFees: state.formFees,
     isSaving: state.isSaving,
     saveError: state.saveError,
-    saveErrorField: state.saveErrorField,
+    saveErrorFields: state.saveErrorFields,
     deleteError: state.deleteError,
     nodeType: selectedNode?.nodeType,
     showNewForm,

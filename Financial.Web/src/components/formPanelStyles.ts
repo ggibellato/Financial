@@ -15,6 +15,11 @@ export const useFormPanelStyles = makeStyles({
     display: 'grid',
     gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
     gap: tokens.spacingVerticalM,
+    // Without this, the grid's default stretch alignment gives every Field the tallest
+    // sibling's height, and Field's own internal grid (label/control/validationMessage rows)
+    // redistributes that extra space unevenly — shifting a field's input up or down relative to
+    // its row siblings depending on whether it currently shows a validation message.
+    alignItems: 'start',
     '@media (max-width: 1023px)': {
       gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
     },

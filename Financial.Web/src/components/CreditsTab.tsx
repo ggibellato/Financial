@@ -109,7 +109,7 @@ interface InlineFormProps {
   formValue: string
   isSaving: boolean
   saveError: string | null
-  saveErrorField: CreditFormField | null
+  saveErrorFields: Partial<Record<CreditFormField, string>>
   onFieldChange: (field: CreditFormField, value: string) => void
   onSave: () => void
   onCancel: () => void
@@ -122,13 +122,13 @@ function InlineForm({
   formValue,
   isSaving,
   saveError,
-  saveErrorField,
+  saveErrorFields,
   onFieldChange,
   onSave,
   onCancel,
 }: InlineFormProps) {
   const styles = useFormPanelStyles()
-  const fieldError = useFieldError(saveError, saveErrorField)
+  const fieldError = useFieldError(saveErrorFields)
   const title = editingId ? 'Edit credit' : 'New credit'
 
   return (
@@ -180,7 +180,7 @@ function InlineForm({
         </Button>
       </div>
 
-      {saveError && (
+      {Object.keys(saveErrorFields).length === 0 && saveError && (
         <MessageBar intent="error">
           <MessageBarBody>{saveError}</MessageBarBody>
         </MessageBar>
@@ -292,7 +292,7 @@ export default function CreditsTab() {
     formValue,
     isSaving,
     saveError,
-    saveErrorField,
+    saveErrorFields,
     deleteError,
     nodeType,
     showNewForm,
@@ -390,7 +390,7 @@ export default function CreditsTab() {
           formValue={formValue}
           isSaving={isSaving}
           saveError={saveError}
-          saveErrorField={saveErrorField}
+          saveErrorFields={saveErrorFields}
           onFieldChange={setFormField}
           onSave={saveForm}
           onCancel={cancelForm}

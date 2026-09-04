@@ -140,6 +140,7 @@ public class IncomeWorkflowViewModel : ViewModelBase
                 OnPropertyChanged(nameof(DateFieldError));
                 OnPropertyChanged(nameof(SourceFieldError));
                 OnPropertyChanged(nameof(NetValueFieldError));
+                OnPropertyChanged(nameof(IncomeGeneralSaveError));
             }
         }
     }
@@ -147,8 +148,7 @@ public class IncomeWorkflowViewModel : ViewModelBase
     /// <summary>
     /// Per-field validation errors (P38-F05) — same substring-match pattern as F02's
     /// <c>AdjustmentWorkflowViewModel.TargetBalanceFieldError</c>, matching this form's own
-    /// client-side <see cref="IncomeFormValidation"/> text. Additive to
-    /// <see cref="IncomeSaveError"/>'s existing bottom-of-form message.
+    /// client-side <see cref="IncomeFormValidation"/> text.
     /// </summary>
     public string? DateFieldError => MatchFieldError("Date is required.");
 
@@ -157,9 +157,12 @@ public class IncomeWorkflowViewModel : ViewModelBase
     public string? NetValueFieldError => MatchFieldError("Net Value must be a number.");
 
     private string? MatchFieldError(string fragment) =>
-        IncomeSaveError is { } error && error.Contains(fragment, StringComparison.OrdinalIgnoreCase)
-            ? error
-            : null;
+        IncomeSaveError?.Split(Environment.NewLine)
+            .FirstOrDefault(line => line.Contains(fragment, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>Bottom-of-form message — shown only when the error isn't already attributed to a field above.</summary>
+    public string? IncomeGeneralSaveError =>
+        DateFieldError is null && SourceFieldError is null && NetValueFieldError is null ? IncomeSaveError : null;
 
     public string? DeletingIncomeError
     {

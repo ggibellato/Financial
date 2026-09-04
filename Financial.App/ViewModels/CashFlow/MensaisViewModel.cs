@@ -205,6 +205,7 @@ public class MensaisViewModel : ViewModelBase
                 OnPropertyChanged(nameof(NewDescriptionFieldError));
                 OnPropertyChanged(nameof(NewDueDayFieldError));
                 OnPropertyChanged(nameof(NewValueFieldError));
+                OnPropertyChanged(nameof(AddGeneralSaveError));
             }
         }
     }
@@ -216,8 +217,13 @@ public class MensaisViewModel : ViewModelBase
     public string? NewValueFieldError => MatchAddFieldError("Value must be a number.");
 
     private string? MatchAddFieldError(params string[] fragments) =>
-        AddSaveError is { } error && fragments.Any(f => error.Contains(f, StringComparison.OrdinalIgnoreCase))
-            ? error
+        AddSaveError?.Split(Environment.NewLine)
+            .FirstOrDefault(line => fragments.Any(f => line.Contains(f, StringComparison.OrdinalIgnoreCase)));
+
+    /// <summary>Bottom-of-form message — shown only when the error isn't already attributed to a field above.</summary>
+    public string? AddGeneralSaveError =>
+        NewDescriptionFieldError is null && NewDueDayFieldError is null && NewValueFieldError is null
+            ? AddSaveError
             : null;
 
     public RelayCommand ShowAddFormCommand { get; private set; } = null!;
@@ -316,6 +322,7 @@ public class MensaisViewModel : ViewModelBase
             {
                 OnPropertyChanged(nameof(EditValueFieldError));
                 OnPropertyChanged(nameof(EditStatusFieldError));
+                OnPropertyChanged(nameof(EditGeneralSaveError));
             }
         }
     }
@@ -324,10 +331,13 @@ public class MensaisViewModel : ViewModelBase
 
     public string? EditStatusFieldError => MatchEditFieldError("Status is required.");
 
+    /// <summary>Bottom-of-form message — shown only when the error isn't already attributed to a field above.</summary>
+    public string? EditGeneralSaveError =>
+        EditValueFieldError is null && EditStatusFieldError is null ? EditSaveError : null;
+
     private string? MatchEditFieldError(params string[] fragments) =>
-        EditSaveError is { } error && fragments.Any(f => error.Contains(f, StringComparison.OrdinalIgnoreCase))
-            ? error
-            : null;
+        EditSaveError?.Split(Environment.NewLine)
+            .FirstOrDefault(line => fragments.Any(f => line.Contains(f, StringComparison.OrdinalIgnoreCase)));
 
     public string? DeleteError
     {

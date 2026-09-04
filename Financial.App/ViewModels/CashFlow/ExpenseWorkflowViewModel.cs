@@ -259,6 +259,7 @@ public class ExpenseWorkflowViewModel : ViewModelBase
                 OnPropertyChanged(nameof(ValueFieldError));
                 OnPropertyChanged(nameof(PaymentModeFieldError));
                 OnPropertyChanged(nameof(RoundUpAmountFieldError));
+                OnPropertyChanged(nameof(ExpenseGeneralSaveError));
             }
         }
     }
@@ -266,8 +267,7 @@ public class ExpenseWorkflowViewModel : ViewModelBase
     /// <summary>
     /// Per-field validation errors (P38-F04) — same substring-match pattern as F02's
     /// <c>AdjustmentWorkflowViewModel.TargetBalanceFieldError</c>, matching this form's own
-    /// client-side <see cref="ExpenseFormValidation"/> text. Additive to
-    /// <see cref="ExpenseSaveError"/>'s existing bottom-of-form message.
+    /// client-side <see cref="ExpenseFormValidation"/> text.
     /// </summary>
     public string? DateFieldError => MatchFieldError("Date is required.");
 
@@ -282,9 +282,20 @@ public class ExpenseWorkflowViewModel : ViewModelBase
 
     public string? RoundUpAmountFieldError => MatchFieldError("Round-up amount must be between");
 
+    /// <summary>
+    /// Returns just the one line of <see cref="ExpenseSaveError"/> matching this field, not the
+    /// whole (possibly multi-line) combined message — so when several fields are invalid at once,
+    /// each shows only its own text instead of repeating every error under every field.
+    /// </summary>
     private string? MatchFieldError(params string[] fragments) =>
-        ExpenseSaveError is { } error && fragments.Any(f => error.Contains(f, StringComparison.OrdinalIgnoreCase))
-            ? error
+        ExpenseSaveError?.Split(Environment.NewLine)
+            .FirstOrDefault(line => fragments.Any(f => line.Contains(f, StringComparison.OrdinalIgnoreCase)));
+
+    /// <summary>Bottom-of-form message — shown only when the error isn't already attributed to a field above.</summary>
+    public string? ExpenseGeneralSaveError =>
+        DateFieldError is null && DescriptionFieldError is null && CategoryFieldError is null &&
+        ValueFieldError is null && PaymentModeFieldError is null && RoundUpAmountFieldError is null
+            ? ExpenseSaveError
             : null;
 
     public string? DeletingExpenseError

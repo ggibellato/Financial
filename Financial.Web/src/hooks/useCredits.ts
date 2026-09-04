@@ -46,7 +46,7 @@ interface CreditsState {
   formValue: string
   isSaving: boolean
   saveError: string | null
-  saveErrorField: CreditFormField | null
+  saveErrorFields: Partial<Record<CreditFormField, string>>
   deleteError: string | null
 }
 
@@ -65,7 +65,7 @@ type CreditsAction =
   | { type: 'SET_FORM_FIELD'; payload: { field: CreditFormField; value: string } }
   | { type: 'SAVE_START' }
   | { type: 'SAVE_SUCCESS'; payload: CreditDto[] }
-  | { type: 'SAVE_ERROR'; payload: { message: string; field: CreditFormField | null } }
+  | { type: 'SAVE_ERROR'; payload: { message: string | null; fields: Partial<Record<CreditFormField, string>> } }
   | { type: 'DELETE_SUCCESS'; payload: CreditDto[] }
   | { type: 'DELETE_ERROR'; payload: string }
 
@@ -77,7 +77,7 @@ const BLANK_FORM = {
   formValue: '',
   isSaving: false,
   saveError: null,
-  saveErrorField: null,
+  saveErrorFields: {},
 } as const
 
 const INITIAL_STATE: CreditsState = {
@@ -151,7 +151,7 @@ function reducer(state: CreditsState, action: CreditsAction): CreditsState {
         formType: action.payload.type,
         formValue: '',
         saveError: null,
-        saveErrorField: null,
+        saveErrorFields: {},
         isSaving: false,
       }
     case 'SHOW_EDIT_FORM': {
@@ -164,7 +164,7 @@ function reducer(state: CreditsState, action: CreditsAction): CreditsState {
         formType: c.type,
         formValue: String(c.value),
         saveError: null,
-        saveErrorField: null,
+        saveErrorFields: {},
         isSaving: false,
       }
     }
@@ -173,11 +173,11 @@ function reducer(state: CreditsState, action: CreditsAction): CreditsState {
     case 'SET_FORM_FIELD':
       return { ...state, [action.payload.field]: action.payload.value }
     case 'SAVE_START':
-      return { ...state, isSaving: true, saveError: null, saveErrorField: null }
+      return { ...state, isSaving: true, saveError: null, saveErrorFields: {} }
     case 'SAVE_SUCCESS':
       return { ...state, ...BLANK_FORM, credits: action.payload, deleteError: state.deleteError }
     case 'SAVE_ERROR':
-      return { ...state, isSaving: false, saveError: action.payload.message, saveErrorField: action.payload.field }
+      return { ...state, isSaving: false, saveError: action.payload.message, saveErrorFields: action.payload.fields }
     case 'DELETE_SUCCESS':
       return { ...state, credits: action.payload, deleteError: null }
     case 'DELETE_ERROR':
@@ -242,7 +242,7 @@ export interface CreditsData {
   formValue: string
   isSaving: boolean
   saveError: string | null
-  saveErrorField: CreditFormField | null
+  saveErrorFields: Partial<Record<CreditFormField, string>>
   deleteError: string | null
   nodeType: string | undefined
   showNewForm: () => void
@@ -370,15 +370,19 @@ export function useCredits(): CreditsData {
     if (!selectedNode?.portfolioName || !selectedNode.assetName) return
 
     const { formDate, formType, formValue, editingId } = state
+    const errors: Partial<Record<CreditFormField, string>> = {}
 
     if (!formDate.trim()) {
-      dispatch({ type: 'SAVE_ERROR', payload: { message: 'Date is required', field: 'formDate' } })
-      return
+      errors.formDate = 'Date is required'
     }
 
     const value = parseValidatedNumber(formValue)
     if (value === null || value <= 0) {
-      dispatch({ type: 'SAVE_ERROR', payload: { message: 'Value must be a positive number', field: 'formValue' } })
+      errors.formValue = 'Value must be a positive number'
+    }
+
+    if (Object.keys(errors).length > 0) {
+      dispatch({ type: 'SAVE_ERROR', payload: { message: Object.values(errors)[0] ?? null, fields: errors } })
       return
     }
 
@@ -390,7 +394,7 @@ export function useCredits(): CreditsData {
       assetName: selectedNode.assetName,
       date: formDate,
       type: formType,
-      value,
+      value: value as number,
     }
 
     const call = editingId
@@ -406,7 +410,7 @@ export function useCredits(): CreditsData {
       .catch((err: unknown) => {
         dispatch({
           type: 'SAVE_ERROR',
-          payload: { message: getErrorMessage(err, 'Failed to save credit'), field: null },
+          payload: { message: getErrorMessage(err, 'Failed to save credit'), fields: {} },
         })
       })
   }, [selectedNode, state])
@@ -453,7 +457,7 @@ export function useCredits(): CreditsData {
     formValue: state.formValue,
     isSaving: state.isSaving,
     saveError: state.saveError,
-    saveErrorField: state.saveErrorField,
+    saveErrorFields: state.saveErrorFields,
     deleteError: state.deleteError,
     nodeType: selectedNode?.nodeType,
     showNewForm,

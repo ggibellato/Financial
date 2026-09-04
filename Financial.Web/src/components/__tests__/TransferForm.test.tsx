@@ -20,7 +20,7 @@ const baseProps = {
   banks: BANKS,
   isSaving: false,
   saveError: null,
-  saveErrorField: null,
+  saveErrorFields: {},
   onFieldChange: vi.fn(),
   onSave: vi.fn(),
   onCancel: vi.fn(),
@@ -88,14 +88,20 @@ describe('TransferForm', () => {
     expect(onCancel).toHaveBeenCalled()
   })
 
-  it('renders a backend error under the field named by saveErrorField', () => {
-    render(<TransferForm {...baseProps} saveError="Transfer amount must be greater than zero." saveErrorField="amount" />)
+  it('renders a backend error under the field named in saveErrorFields', () => {
+    render(
+      <TransferForm
+        {...baseProps}
+        saveError="Transfer amount must be greater than zero."
+        saveErrorFields={{ amount: 'Transfer amount must be greater than zero.' }}
+      />,
+    )
 
     expect(screen.getByText('Transfer amount must be greater than zero.')).toBeInTheDocument()
   })
 
-  it('renders a general error banner when saveErrorField is null', () => {
-    render(<TransferForm {...baseProps} saveError="Network request failed" saveErrorField={null} />)
+  it('renders a general error banner when no field claims the error', () => {
+    render(<TransferForm {...baseProps} saveError="Network request failed" saveErrorFields={{}} />)
 
     expect(screen.getByText('Network request failed')).toBeInTheDocument()
   })

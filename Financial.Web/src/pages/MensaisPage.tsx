@@ -199,7 +199,7 @@ export default function MensaisPage() {
     editValue,
     isSaving,
     saveError,
-    saveErrorField,
+    saveErrorFields,
     setEditField,
     showEditForm,
     cancelEdit,
@@ -212,7 +212,7 @@ export default function MensaisPage() {
     newNote,
     isAdding,
     addError,
-    addErrorField,
+    addErrorFields,
     setAddField,
     showAddForm,
     cancelAdd,
@@ -239,8 +239,8 @@ export default function MensaisPage() {
 
   const isEditing = editingId !== null
   const styles = useFormPanelStyles()
-  const addFieldError = useFieldError(addError, addErrorField)
-  const editFieldError = useFieldError(saveError, saveErrorField)
+  const addFieldError = useFieldError(addErrorFields)
+  const editFieldError = useFieldError(saveErrorFields)
 
   return (
     <div className="mensais-page">
@@ -341,7 +341,7 @@ export default function MensaisPage() {
             </Button>
           </div>
 
-          {addError && (
+          {Object.keys(addErrorFields).length === 0 && addError && (
             <MessageBar intent="error">
               <MessageBarBody>{addError}</MessageBarBody>
             </MessageBar>
@@ -395,7 +395,7 @@ export default function MensaisPage() {
             </Button>
           </div>
 
-          {saveError && (
+          {Object.keys(saveErrorFields).length === 0 && saveError && (
             <MessageBar intent="error">
               <MessageBarBody>{saveError}</MessageBarBody>
             </MessageBar>

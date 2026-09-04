@@ -20,7 +20,7 @@ const baseProps = {
   note: '',
   isSaving: false,
   saveError: null,
-  saveErrorField: null,
+  saveErrorFields: {},
   savedDelta: null,
   onFieldChange: vi.fn(),
   onSave: vi.fn(),
@@ -102,14 +102,20 @@ describe('BalanceAdjustmentForm', () => {
     expect(onCancel).toHaveBeenCalled()
   })
 
-  it('renders a backend error under the field named by saveErrorField', () => {
-    render(<BalanceAdjustmentForm {...baseProps} saveError="Balance cannot be negative." saveErrorField="targetBalance" />)
+  it('renders a backend error under the field named in saveErrorFields', () => {
+    render(
+      <BalanceAdjustmentForm
+        {...baseProps}
+        saveError="Balance cannot be negative."
+        saveErrorFields={{ targetBalance: 'Balance cannot be negative.' }}
+      />,
+    )
 
     expect(screen.getByText('Balance cannot be negative.')).toBeInTheDocument()
   })
 
-  it('renders a general error banner when saveErrorField is null', () => {
-    render(<BalanceAdjustmentForm {...baseProps} saveError="Network request failed" saveErrorField={null} />)
+  it('renders a general error banner when no field claims the error', () => {
+    render(<BalanceAdjustmentForm {...baseProps} saveError="Network request failed" saveErrorFields={{}} />)
 
     expect(screen.getByText('Network request failed')).toBeInTheDocument()
   })

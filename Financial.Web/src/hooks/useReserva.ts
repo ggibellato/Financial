@@ -48,7 +48,7 @@ interface ReservaState {
   splitDescription: string
   isSubmittingSplit: boolean
   splitError: string | null
-  splitErrorField: SplitFormField | null
+  splitErrorFields: Partial<Record<SplitFormField, string>>
   lastSplitResult: IncomeSplitResultDto | null
   isWithdrawalFormOpen: boolean
   withdrawalBucketId: string
@@ -57,7 +57,7 @@ interface ReservaState {
   withdrawalDescription: string
   isSubmittingWithdrawal: boolean
   withdrawalError: string | null
-  withdrawalErrorField: WithdrawalFormField | null
+  withdrawalErrorFields: Partial<Record<WithdrawalFormField, string>>
   editingMovementId: string | null
   editMovementBucketId: string
   editMovementAmount: string
@@ -65,7 +65,7 @@ interface ReservaState {
   editMovementDescription: string
   isSavingMovement: boolean
   saveMovementError: string | null
-  saveMovementErrorField: EditMovementField | null
+  saveMovementErrorFields: Partial<Record<EditMovementField, string>>
   deletingMovementId: string | null
   deleteMovementError: string | null
 }
@@ -83,20 +83,20 @@ type ReservaAction =
   | { type: 'SET_SPLIT_FIELD'; payload: { field: SplitFormField; value: string } }
   | { type: 'SPLIT_START' }
   | { type: 'SPLIT_SUCCESS'; payload: IncomeSplitResultDto }
-  | { type: 'SPLIT_ERROR'; payload: { message: string; field: SplitFormField | null } }
+  | { type: 'SPLIT_ERROR'; payload: { message: string | null; fields: Partial<Record<SplitFormField, string>> } }
   | { type: 'DISMISS_SPLIT_RESULT' }
   | { type: 'SHOW_WITHDRAWAL_FORM'; payload: { date: string } }
   | { type: 'CANCEL_WITHDRAWAL_FORM' }
   | { type: 'SET_WITHDRAWAL_FIELD'; payload: { field: WithdrawalFormField; value: string } }
   | { type: 'WITHDRAWAL_START' }
   | { type: 'WITHDRAWAL_SUCCESS' }
-  | { type: 'WITHDRAWAL_ERROR'; payload: { message: string; field: WithdrawalFormField | null } }
+  | { type: 'WITHDRAWAL_ERROR'; payload: { message: string | null; fields: Partial<Record<WithdrawalFormField, string>> } }
   | { type: 'SHOW_EDIT_MOVEMENT_FORM'; payload: ReserveMovementDto }
   | { type: 'CANCEL_EDIT_MOVEMENT' }
   | { type: 'SET_EDIT_MOVEMENT_FIELD'; payload: { field: EditMovementField; value: string } }
   | { type: 'SAVE_MOVEMENT_START' }
   | { type: 'SAVE_MOVEMENT_SUCCESS' }
-  | { type: 'SAVE_MOVEMENT_ERROR'; payload: { message: string; field: EditMovementField | null } }
+  | { type: 'SAVE_MOVEMENT_ERROR'; payload: { message: string | null; fields: Partial<Record<EditMovementField, string>> } }
   | { type: 'DELETE_MOVEMENT_START'; payload: string }
   | { type: 'DELETE_MOVEMENT_SUCCESS' }
   | { type: 'DELETE_MOVEMENT_ERROR'; payload: string }
@@ -124,14 +124,14 @@ const INITIAL_STATE: ReservaState = {
   ...BLANK_SPLIT_FORM,
   isSubmittingSplit: false,
   splitError: null,
-  splitErrorField: null,
+  splitErrorFields: {},
   lastSplitResult: null,
   isWithdrawalFormOpen: false,
   withdrawalBucketId: '',
   ...BLANK_WITHDRAWAL_FORM_FIELDS,
   isSubmittingWithdrawal: false,
   withdrawalError: null,
-  withdrawalErrorField: null,
+  withdrawalErrorFields: {},
   editingMovementId: null,
   editMovementBucketId: '',
   editMovementAmount: '',
@@ -139,7 +139,7 @@ const INITIAL_STATE: ReservaState = {
   editMovementDescription: '',
   isSavingMovement: false,
   saveMovementError: null,
-  saveMovementErrorField: null,
+  saveMovementErrorFields: {},
   deletingMovementId: null,
   deleteMovementError: null,
 }
@@ -166,11 +166,11 @@ function reducer(state: ReservaState, action: ReservaAction): ReservaState {
     case 'SHOW_SPLIT_FORM':
       return { ...state, isSplitFormOpen: true, lastSplitResult: null, splitDate: action.payload.date }
     case 'CANCEL_SPLIT_FORM':
-      return { ...state, ...BLANK_SPLIT_FORM, isSplitFormOpen: false, splitError: null, splitErrorField: null }
+      return { ...state, ...BLANK_SPLIT_FORM, isSplitFormOpen: false, splitError: null, splitErrorFields: {} }
     case 'SET_SPLIT_FIELD':
       return { ...state, [action.payload.field]: action.payload.value }
     case 'SPLIT_START':
-      return { ...state, isSubmittingSplit: true, splitError: null, splitErrorField: null }
+      return { ...state, isSubmittingSplit: true, splitError: null, splitErrorFields: {} }
     case 'SPLIT_SUCCESS':
       return {
         ...state,
@@ -180,7 +180,7 @@ function reducer(state: ReservaState, action: ReservaAction): ReservaState {
         lastSplitResult: action.payload,
       }
     case 'SPLIT_ERROR':
-      return { ...state, isSubmittingSplit: false, splitError: action.payload.message, splitErrorField: action.payload.field }
+      return { ...state, isSubmittingSplit: false, splitError: action.payload.message, splitErrorFields: action.payload.fields }
     case 'DISMISS_SPLIT_RESULT':
       return { ...state, lastSplitResult: null }
     case 'SHOW_WITHDRAWAL_FORM':
@@ -192,12 +192,12 @@ function reducer(state: ReservaState, action: ReservaAction): ReservaState {
         withdrawalBucketId: defaultBucketId(state.buckets),
         isWithdrawalFormOpen: false,
         withdrawalError: null,
-        withdrawalErrorField: null,
+        withdrawalErrorFields: {},
       }
     case 'SET_WITHDRAWAL_FIELD':
       return { ...state, [action.payload.field]: action.payload.value }
     case 'WITHDRAWAL_START':
-      return { ...state, isSubmittingWithdrawal: true, withdrawalError: null, withdrawalErrorField: null }
+      return { ...state, isSubmittingWithdrawal: true, withdrawalError: null, withdrawalErrorFields: {} }
     case 'WITHDRAWAL_SUCCESS':
       return {
         ...state,
@@ -211,7 +211,7 @@ function reducer(state: ReservaState, action: ReservaAction): ReservaState {
         ...state,
         isSubmittingWithdrawal: false,
         withdrawalError: action.payload.message,
-        withdrawalErrorField: action.payload.field,
+        withdrawalErrorFields: action.payload.fields,
       }
     case 'SHOW_EDIT_MOVEMENT_FORM':
       return {
@@ -222,7 +222,7 @@ function reducer(state: ReservaState, action: ReservaAction): ReservaState {
         editMovementDate: action.payload.date,
         editMovementDescription: action.payload.description,
         saveMovementError: null,
-        saveMovementErrorField: null,
+        saveMovementErrorFields: {},
       }
     case 'CANCEL_EDIT_MOVEMENT':
       return {
@@ -232,12 +232,12 @@ function reducer(state: ReservaState, action: ReservaAction): ReservaState {
         editMovementDate: '',
         editMovementDescription: '',
         saveMovementError: null,
-        saveMovementErrorField: null,
+        saveMovementErrorFields: {},
       }
     case 'SET_EDIT_MOVEMENT_FIELD':
       return { ...state, [action.payload.field]: action.payload.value }
     case 'SAVE_MOVEMENT_START':
-      return { ...state, isSavingMovement: true, saveMovementError: null, saveMovementErrorField: null }
+      return { ...state, isSavingMovement: true, saveMovementError: null, saveMovementErrorFields: {} }
     case 'SAVE_MOVEMENT_SUCCESS':
       return {
         ...state,
@@ -252,7 +252,7 @@ function reducer(state: ReservaState, action: ReservaAction): ReservaState {
         ...state,
         isSavingMovement: false,
         saveMovementError: action.payload.message,
-        saveMovementErrorField: action.payload.field,
+        saveMovementErrorFields: action.payload.fields,
       }
     case 'DELETE_MOVEMENT_START':
       return { ...state, deletingMovementId: action.payload, deleteMovementError: null }
@@ -291,7 +291,7 @@ export interface ReservaData {
   splitDescription: string
   isSubmittingSplit: boolean
   splitError: string | null
-  splitErrorField: SplitFormField | null
+  splitErrorFields: Partial<Record<SplitFormField, string>>
   lastSplitResult: IncomeSplitResultDto | null
   showSplitForm: () => void
   cancelSplitForm: () => void
@@ -305,7 +305,7 @@ export interface ReservaData {
   withdrawalDescription: string
   isSubmittingWithdrawal: boolean
   withdrawalError: string | null
-  withdrawalErrorField: WithdrawalFormField | null
+  withdrawalErrorFields: Partial<Record<WithdrawalFormField, string>>
   showWithdrawalForm: () => void
   cancelWithdrawalForm: () => void
   setWithdrawalField: (field: WithdrawalFormField, value: string) => void
@@ -317,7 +317,7 @@ export interface ReservaData {
   editMovementDescription: string
   isSavingMovement: boolean
   saveMovementError: string | null
-  saveMovementErrorField: EditMovementField | null
+  saveMovementErrorFields: Partial<Record<EditMovementField, string>>
   showEditMovementForm: (movement: ReserveMovementDto) => void
   cancelEditMovement: () => void
   setEditMovementField: (field: EditMovementField, value: string) => void
@@ -439,20 +439,23 @@ export function useReserva(): ReservaData {
 
   function submitIncomeSplit() {
     const { splitDate, splitAmount, splitDescription } = state
+    const errors: Partial<Record<SplitFormField, string>> = {}
 
     if (!splitDate.trim()) {
-      dispatch({ type: 'SPLIT_ERROR', payload: { message: 'Date is required', field: 'splitDate' } })
-      return
+      errors.splitDate = 'Date is required'
     }
 
     const amount = Number(splitAmount)
     if (!splitAmount.trim() || !isFinite(amount) || amount <= 0) {
-      dispatch({ type: 'SPLIT_ERROR', payload: { message: 'Amount must be a positive number', field: 'splitAmount' } })
-      return
+      errors.splitAmount = 'Amount must be a positive number'
     }
 
     if (!splitDescription.trim()) {
-      dispatch({ type: 'SPLIT_ERROR', payload: { message: 'Description is required', field: 'splitDescription' } })
+      errors.splitDescription = 'Description is required'
+    }
+
+    if (Object.keys(errors).length > 0) {
+      dispatch({ type: 'SPLIT_ERROR', payload: { message: Object.values(errors)[0] ?? null, fields: errors } })
       return
     }
 
@@ -468,7 +471,7 @@ export function useReserva(): ReservaData {
       .catch((err: unknown) => {
         dispatch({
           type: 'SPLIT_ERROR',
-          payload: { message: getErrorMessage(err, 'Failed to post income split'), field: null },
+          payload: { message: getErrorMessage(err, 'Failed to post income split'), fields: {} },
         })
       })
   }
@@ -496,44 +499,40 @@ export function useReserva(): ReservaData {
             performWithdrawal(true, confirmProceed)
             return
           }
-          dispatch({ type: 'WITHDRAWAL_ERROR', payload: { message: err.message, field: null } })
+          dispatch({ type: 'WITHDRAWAL_ERROR', payload: { message: err.message, fields: {} } })
           return
         }
 
         dispatch({
           type: 'WITHDRAWAL_ERROR',
-          payload: { message: getErrorMessage(err, 'Failed to post withdrawal'), field: null },
+          payload: { message: getErrorMessage(err, 'Failed to post withdrawal'), fields: {} },
         })
       })
   }
 
   function submitWithdrawal(confirmProceed: ConfirmProceed) {
     const { withdrawalBucketId, withdrawalAmount, withdrawalDate, withdrawalDescription } = state
+    const errors: Partial<Record<WithdrawalFormField, string>> = {}
 
     if (!withdrawalDate.trim()) {
-      dispatch({ type: 'WITHDRAWAL_ERROR', payload: { message: 'Date is required', field: 'withdrawalDate' } })
-      return
+      errors.withdrawalDate = 'Date is required'
     }
 
     if (!withdrawalBucketId.trim()) {
-      dispatch({ type: 'WITHDRAWAL_ERROR', payload: { message: BUCKET_REQUIRED_ERROR, field: 'withdrawalBucketId' } })
-      return
+      errors.withdrawalBucketId = BUCKET_REQUIRED_ERROR
     }
 
     if (!withdrawalDescription.trim()) {
-      dispatch({
-        type: 'WITHDRAWAL_ERROR',
-        payload: { message: 'Description is required', field: 'withdrawalDescription' },
-      })
-      return
+      errors.withdrawalDescription = 'Description is required'
     }
 
     const amount = Number(withdrawalAmount)
     if (!withdrawalAmount.trim() || !isFinite(amount) || amount <= 0) {
-      dispatch({
-        type: 'WITHDRAWAL_ERROR',
-        payload: { message: 'Amount must be a positive number', field: 'withdrawalAmount' },
-      })
+      errors.withdrawalAmount = 'Amount must be a positive number'
+    }
+
+    if (Object.keys(errors).length > 0) {
+      dispatch({ type: 'WITHDRAWAL_ERROR', payload: { message: Object.values(errors)[0] ?? null, fields: errors } })
       return
     }
 
@@ -545,30 +544,27 @@ export function useReserva(): ReservaData {
     const { editingMovementId, editMovementBucketId, editMovementAmount, editMovementDate, editMovementDescription } = state
     if (!editingMovementId) return
 
+    const errors: Partial<Record<EditMovementField, string>> = {}
+
     if (!editMovementDate.trim()) {
-      dispatch({ type: 'SAVE_MOVEMENT_ERROR', payload: { message: 'Date is required', field: 'editMovementDate' } })
-      return
+      errors.editMovementDate = 'Date is required'
     }
 
     if (!editMovementBucketId.trim()) {
-      dispatch({
-        type: 'SAVE_MOVEMENT_ERROR',
-        payload: { message: BUCKET_REQUIRED_ERROR, field: 'editMovementBucketId' },
-      })
-      return
+      errors.editMovementBucketId = BUCKET_REQUIRED_ERROR
     }
 
     if (!editMovementDescription.trim()) {
-      dispatch({
-        type: 'SAVE_MOVEMENT_ERROR',
-        payload: { message: 'Description is required', field: 'editMovementDescription' },
-      })
-      return
+      errors.editMovementDescription = 'Description is required'
     }
 
     const amount = Number(editMovementAmount)
     if (!editMovementAmount.trim() || !isFinite(amount)) {
-      dispatch({ type: 'SAVE_MOVEMENT_ERROR', payload: { message: 'Amount must be a number', field: 'editMovementAmount' } })
+      errors.editMovementAmount = 'Amount must be a number'
+    }
+
+    if (Object.keys(errors).length > 0) {
+      dispatch({ type: 'SAVE_MOVEMENT_ERROR', payload: { message: Object.values(errors)[0] ?? null, fields: errors } })
       return
     }
 
@@ -588,7 +584,7 @@ export function useReserva(): ReservaData {
       .catch((err: unknown) => {
         dispatch({
           type: 'SAVE_MOVEMENT_ERROR',
-          payload: { message: getErrorMessage(err, 'Failed to update movement'), field: null },
+          payload: { message: getErrorMessage(err, 'Failed to update movement'), fields: {} },
         })
       })
   }
@@ -626,7 +622,7 @@ export function useReserva(): ReservaData {
     splitDescription: state.splitDescription,
     isSubmittingSplit: state.isSubmittingSplit,
     splitError: state.splitError,
-    splitErrorField: state.splitErrorField,
+    splitErrorFields: state.splitErrorFields,
     lastSplitResult: state.lastSplitResult,
     showSplitForm,
     cancelSplitForm,
@@ -640,7 +636,7 @@ export function useReserva(): ReservaData {
     withdrawalDescription: state.withdrawalDescription,
     isSubmittingWithdrawal: state.isSubmittingWithdrawal,
     withdrawalError: state.withdrawalError,
-    withdrawalErrorField: state.withdrawalErrorField,
+    withdrawalErrorFields: state.withdrawalErrorFields,
     showWithdrawalForm,
     cancelWithdrawalForm,
     setWithdrawalField,
@@ -652,7 +648,7 @@ export function useReserva(): ReservaData {
     editMovementDescription: state.editMovementDescription,
     isSavingMovement: state.isSavingMovement,
     saveMovementError: state.saveMovementError,
-    saveMovementErrorField: state.saveMovementErrorField,
+    saveMovementErrorFields: state.saveMovementErrorFields,
     showEditMovementForm,
     cancelEditMovement,
     setEditMovementField,

@@ -58,7 +58,7 @@ export default function ReservaPage() {
     splitDescription,
     isSubmittingSplit,
     splitError,
-    splitErrorField,
+    splitErrorFields,
     lastSplitResult,
     showSplitForm,
     cancelSplitForm,
@@ -72,7 +72,7 @@ export default function ReservaPage() {
     withdrawalDescription,
     isSubmittingWithdrawal,
     withdrawalError,
-    withdrawalErrorField,
+    withdrawalErrorFields,
     showWithdrawalForm,
     cancelWithdrawalForm,
     setWithdrawalField,
@@ -84,7 +84,7 @@ export default function ReservaPage() {
     editMovementDescription,
     isSavingMovement,
     saveMovementError,
-    saveMovementErrorField,
+    saveMovementErrorFields,
     showEditMovementForm,
     cancelEditMovement,
     setEditMovementField,
@@ -133,7 +133,7 @@ export default function ReservaPage() {
           description={splitDescription}
           isSubmitting={isSubmittingSplit}
           error={splitError}
-          errorField={splitErrorField}
+          errorFields={splitErrorFields}
           lastResult={lastSplitResult}
           onFieldChange={setSplitField}
           onSubmit={submitIncomeSplit}
@@ -151,7 +151,7 @@ export default function ReservaPage() {
           buckets={buckets}
           isSubmitting={isSubmittingWithdrawal}
           error={withdrawalError}
-          errorField={withdrawalErrorField}
+          errorFields={withdrawalErrorFields}
           onFieldChange={setWithdrawalField}
           onSubmit={() => submitWithdrawal(confirmProceedWithWithdrawal)}
           onCancel={cancelWithdrawalForm}
@@ -167,7 +167,7 @@ export default function ReservaPage() {
           buckets={buckets}
           isSaving={isSavingMovement}
           error={saveMovementError}
-          errorField={saveMovementErrorField}
+          errorFields={saveMovementErrorFields}
           onFieldChange={setEditMovementField}
           onSave={saveMovementEdit}
           onCancel={cancelEditMovement}
