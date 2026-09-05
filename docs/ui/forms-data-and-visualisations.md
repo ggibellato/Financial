@@ -339,28 +339,53 @@ gap reads as an unfinished/broken grid, not intentional whitespace.
 
 ### Grid row actions
 
-Icon-only row actions (Edit, Delete, and similar per-row commands) go in the
-**leftmost column(s)** of the grid, before the data columns — not trailing at
-the right edge. `ExpensesSection.tsx`/`IncomeSection.tsx` are the reference:
-each row's Edit and Delete `Button`s (`appearance="subtle"`, `size="small"`,
-an explicit `aria-label`, no visible text) sit in the first two
-`TableCell`s, ahead of Date/Description/Category/etc., using `EditRegular`/
-`DeleteRegular` from `@fluentui/react-icons`. WPF matches with the same
-leading column position, `ui:Button Appearance="Transparent"` and
-`ui:SymbolIcon Symbol=Edit16`/`Symbol=Delete16`. This keeps the action affordance in a fixed, predictable
-place regardless of how many data columns a given grid has, and matches this
-rule's own action-button convention of never right-aligning actions (see
-"Action buttons" above).
+Row-level actions (Edit, Delete, and similar per-row commands) live in a
+single **Actions** column at the **trailing (rightmost)** edge of the grid,
+after the data columns — not leading. `ExpensesSection.tsx`/`IncomeSection.tsx`
+are the reference: each row's action `Button`s (`appearance="subtle"`,
+`size="small"`, an explicit `aria-label`, no visible text) use `EditRegular`/
+`DeleteRegular` from `@fluentui/react-icons`. WPF matches with
+`ui:Button Appearance="Transparent"` and `ui:SymbolIcon Symbol=Edit16`/
+`Symbol=Delete16`. This keeps the action affordance in a fixed, predictable
+place regardless of how many data columns a given grid has.
+
+Show up to **two** actions as direct icon buttons in the Actions cell (e.g.
+Edit and Delete, the pair every grid in this repo has today). Do not create
+a separate column per action — group them in the one trailing cell instead.
+
+When a row has exactly 3 actions, show all 3 as direct icon buttons — the
+third slot is that action's own icon, executing it directly like the other
+two. There is no menu and no ⋯ glyph at 3 actions.
+
+Only once a row has **4 or more actions** does a real **More actions (⋯)**
+overflow trigger appear: keep the 2 most-frequent as direct buttons and put
+everything else — 2 or more actions — behind the ⋯ trigger's menu.
+
+The ⋯ trigger (when one exists, at 4+ actions) needs its own accessible name
+(`aria-label="More actions for {row}"` / `AutomationProperties.Name`), same
+as any other icon-only action. Do not add it for a grid with only 1-3
+actions — it's pure visual noise until a row actually grows a 4th action.
+No grid in this repo currently needs it; when one does, build the menu on
+Web with
+`Menu`/`MenuTrigger`/`MenuButton`/`MenuPopover`/`MenuList`/`MenuItem` (see
+`StatusMenuButton.tsx` for the existing pattern) and on WPF with a
+`ui:Button` + `Button.ContextMenu`/`ContextMenu`/`MenuItem` (see
+`StatusSplitButton.xaml` — deliberately not `ui:Flyout`, which that control's
+own comments document as unreliable inside a `DataGrid` cell).
+
+A status indicator that isn't clickable (e.g. Reserva's 🔒 locked-movement
+glyph) is not a row action and does not count toward this — it stays wherever
+it currently sits and never occupies the Actions cell.
 
 Each action column sizes to its icon button's own width plus comfortable
 padding — never auto/flex-adjusted to share the grid's leftover space the way
 the identifying/label column does above. A narrow, fixed action column next
 to data columns that stretch to fill the container is the intended contrast,
 not a bug to "fix" by letting it grow: a wide, loosely-clickable action column
-reads as broken alignment, not intentional whitespace. The action column(s)
-sit ahead of, and are excluded from, the "leftmost column takes the remaining
-width" rule above — that rule applies to the leftmost *data* column, not an
-icon action column preceding it.
+reads as broken alignment, not intentional whitespace. The action column is
+excluded from the "leftmost column takes the remaining width" rule above —
+that rule applies to the leftmost *data* column, not the trailing action
+column.
 
 Column-header click-to-sort is not a designed feature yet on either platform.
 A native WPF `DataGrid` may expose default sorting via
@@ -626,10 +651,5 @@ When users benefit from seeing a graph, entering a transaction, and immediately
 reviewing the transaction grid and totals, keep the transaction form inline
 between the graph and grid unless the form’s complexity makes that impractical.
 
-### Grid Row Actions
-- Place row-level actions in a single **Actions** column at the far right of the grid.
-- Group related actions closely within the Actions cell.
-- Show frequent/primary actions as icon buttons (e.g., Edit); place less-frequent or additional actions in a **More actions (⋯)** menu.
-- Use accessible labels/tooltips for all icon-only actions.
-- Keep action controls visually compact while maintaining adequate click/touch targets.
-- Do not create separate columns for individual row actions.
+See "Grid row actions" above for the Actions-column standard (trailing
+placement, direct-button vs. overflow-menu split).
