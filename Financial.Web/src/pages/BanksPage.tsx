@@ -81,7 +81,7 @@ export default function BanksPage() {
               <TableHeaderCell>Name</TableHeaderCell>
               <TableHeaderCell>Round-up</TableHeaderCell>
               <TableHeaderCell>Opening Balance</TableHeaderCell>
-              <TableHeaderCell />
+              <TableHeaderCell className="data-table__col--action" />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -90,22 +90,24 @@ export default function BanksPage() {
                 <TableCell>{bank.name}</TableCell>
                 <TableCell>{bank.roundUpEnabled ? 'Enabled' : 'Disabled'}</TableCell>
                 <TableCell>{bank.openingBalance}</TableCell>
-                <TableCell>
-                  <Button
-                    appearance="subtle"
-                    size="small"
-                    icon={<EditRegular />}
-                    aria-label={`Edit ${bank.name}`}
-                    onClick={() => setEditingBank(bank)}
-                  />
-                  <Button
-                    appearance="subtle"
-                    size="small"
-                    icon={<DeleteRegular />}
-                    aria-label={`Delete ${bank.name}`}
-                    disabled={deletingId === bank.id}
-                    onClick={() => setConfirmingDelete(bank)}
-                  />
+                <TableCell className="data-table__col--action">
+                  <div className="data-table__actions-cell">
+                    <Button
+                      appearance="subtle"
+                      size="small"
+                      icon={<EditRegular />}
+                      aria-label={`Edit ${bank.name}`}
+                      onClick={() => setEditingBank(bank)}
+                    />
+                    <Button
+                      appearance="subtle"
+                      size="small"
+                      icon={<DeleteRegular />}
+                      aria-label={`Delete ${bank.name}`}
+                      disabled={deletingId === bank.id}
+                      onClick={() => setConfirmingDelete(bank)}
+                    />
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

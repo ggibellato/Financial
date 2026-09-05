@@ -83,7 +83,7 @@ export default function BrokersPage() {
               <TableHeaderCell>Currency</TableHeaderCell>
               <TableHeaderCell>Status</TableHeaderCell>
               <TableHeaderCell>Portfolios</TableHeaderCell>
-              <TableHeaderCell />
+              <TableHeaderCell className="data-table__col--action" />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -93,22 +93,24 @@ export default function BrokersPage() {
                 <TableCell>{broker.currency}</TableCell>
                 <TableCell>{broker.status}</TableCell>
                 <TableCell>{broker.portfolioCount}</TableCell>
-                <TableCell>
-                  <Button
-                    appearance="subtle"
-                    size="small"
-                    icon={<EditRegular />}
-                    aria-label={`Edit ${broker.name}`}
-                    onClick={() => setEditingBroker(broker)}
-                  />
-                  <Button
-                    appearance="subtle"
-                    size="small"
-                    icon={<DeleteRegular />}
-                    aria-label={`Delete ${broker.name}`}
-                    disabled={deletingName === broker.name}
-                    onClick={() => setConfirmingDelete(broker)}
-                  />
+                <TableCell className="data-table__col--action">
+                  <div className="data-table__actions-cell">
+                    <Button
+                      appearance="subtle"
+                      size="small"
+                      icon={<EditRegular />}
+                      aria-label={`Edit ${broker.name}`}
+                      onClick={() => setEditingBroker(broker)}
+                    />
+                    <Button
+                      appearance="subtle"
+                      size="small"
+                      icon={<DeleteRegular />}
+                      aria-label={`Delete ${broker.name}`}
+                      disabled={deletingName === broker.name}
+                      onClick={() => setConfirmingDelete(broker)}
+                    />
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
