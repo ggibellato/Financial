@@ -9,5 +9,6 @@ public partial class ControleMaeView : UserControl
     {
         InitializeComponent();
         DataContext = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
+        Loaded += async (_, _) => await viewModel.RefreshEntriesAsync();
     }
 }
