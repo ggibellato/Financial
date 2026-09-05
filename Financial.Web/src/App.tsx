@@ -26,11 +26,11 @@ function AppShell() {
 
   return (
     <FluentProvider theme={colourMode === 'dark' ? financialDarkTheme : financialLightTheme}>
+      <PaymentDueBanner />
       <div className="app">
         <Sidebar />
         <main className="app__content">
           <SyncStatusBanner />
-          <PaymentDueBanner />
           <div className="app__topbar">
             <Breadcrumb />
             <ColourModeToggleButton />

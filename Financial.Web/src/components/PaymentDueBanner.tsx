@@ -30,14 +30,22 @@ function typeLabel(type: string): string {
 
 const useStyles = makeStyles({
   banner: {
+    position: 'fixed',
+    bottom: 0,
+    left: '50%',
+    transform: 'translateX(-50%)',
+    width: '50%',
+    zIndex: 1000,
     display: 'flex',
     flexDirection: 'column',
     gap: tokens.spacingVerticalS,
     padding: tokens.spacingVerticalM,
-    marginBottom: tokens.spacingVerticalM,
     backgroundColor: tokens.colorNeutralBackground1,
     border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke1}`,
-    borderRadius: tokens.borderRadiusMedium,
+    borderBottom: 'none',
+    borderTopLeftRadius: tokens.borderRadiusMedium,
+    borderTopRightRadius: tokens.borderRadiusMedium,
+    boxShadow: tokens.shadow16,
   },
   header: {
     display: 'flex',
