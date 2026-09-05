@@ -44,6 +44,23 @@
   word-break: break-word;
 }
 
+/* A percentage width ("shrink-to-fit") doesn't reliably size a flex
+   container of multiple buttons — the browser's auto table layout can
+   under-allocate it below its actual content width, causing the row to
+   overflow. Sized concretely instead: two 24px icon buttons + the 4px gap
+   from .data-table__actions-cell below + this cell's own 8px/10px padding
+   = 72px, comfortable for the 1-2 buttons every grid uses. */
+.data-table .data-table__col--action,
+.data-table__col--action {
+  width: 72px;
+}
+
+.data-table__actions-cell {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .data-table__action-btn {
   background: none;
   border: none;

@@ -36,8 +36,7 @@ function MovementColumns() {
       <col className="reserva-page__col-bucket" />
       <col />
       <col className="reserva-page__col-value" />
-      <col className="reserva-page__col-actions" />
-      <col className="reserva-page__col-actions" />
+      <col className="reserva-page__col-row-actions" />
     </colgroup>
   )
 }
@@ -232,7 +231,6 @@ export default function ReservaPage() {
                     <th>Description</th>
                     <th className="data-table__col--numeric">Amount</th>
                     <th />
-                    <th />
                   </tr>
                 </thead>
                 <tbody>
@@ -256,33 +254,33 @@ export default function ReservaPage() {
                         <td>{m.description}</td>
                         <td className="data-table__col--numeric">{formatN2(m.amount)}</td>
                         <td>
-                          <button
-                            className="data-table__action-btn"
-                            type="button"
-                            aria-label="Edit movement"
-                            disabled={m.isLocked}
-                            title={m.isLocked ? LOCKED_MOVEMENT_MESSAGE : undefined}
-                            onClick={() => showEditMovementForm(m)}
-                          >
-                            <EditRegular />
-                          </button>
-                        </td>
-                        <td>
-                          <button
-                            className="data-table__action-btn"
-                            type="button"
-                            aria-label={deletingMovementId === m.id ? 'Deleting movement' : 'Delete movement'}
-                            disabled={m.isLocked || deletingMovementId === m.id}
-                            title={m.isLocked ? LOCKED_MOVEMENT_MESSAGE : undefined}
-                            onClick={() => {
-                              const warning = m.isPartOfGroup
-                                ? `Delete "${m.description}"? This is part of a split and will delete all 4 lines.`
-                                : `Delete "${m.description}"? This removes it for good.`
-                              confirmThenRun(warning, () => deleteMovement(m.id))
-                            }}
-                          >
-                            <DeleteRegular />
-                          </button>
+                          <div className="data-table__actions-cell">
+                            <button
+                              className="data-table__action-btn"
+                              type="button"
+                              aria-label="Edit movement"
+                              disabled={m.isLocked}
+                              title={m.isLocked ? LOCKED_MOVEMENT_MESSAGE : undefined}
+                              onClick={() => showEditMovementForm(m)}
+                            >
+                              <EditRegular />
+                            </button>
+                            <button
+                              className="data-table__action-btn"
+                              type="button"
+                              aria-label={deletingMovementId === m.id ? 'Deleting movement' : 'Delete movement'}
+                              disabled={m.isLocked || deletingMovementId === m.id}
+                              title={m.isLocked ? LOCKED_MOVEMENT_MESSAGE : undefined}
+                              onClick={() => {
+                                const warning = m.isPartOfGroup
+                                  ? `Delete "${m.description}"? This is part of a split and will delete all 4 lines.`
+                                  : `Delete "${m.description}"? This removes it for good.`
+                                confirmThenRun(warning, () => deleteMovement(m.id))
+                              }}
+                            >
+                              <DeleteRegular />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                       {m.groupTotal !== null && (
@@ -290,7 +288,6 @@ export default function ReservaPage() {
                           <td />
                           <td colSpan={3}>Total split for {m.description}</td>
                           <td className="data-table__col--numeric">{formatN2(m.groupTotal)}</td>
-                          <td />
                           <td />
                         </tr>
                       )}

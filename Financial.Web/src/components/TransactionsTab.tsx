@@ -69,23 +69,23 @@ function TransactionRow({ transaction, onEdit, onDelete }: TransactionRowProps) 
       <TableCell className="data-table__col--numeric transactions-tab__total">
         {formatN2(transaction.totalPrice)}
       </TableCell>
-      <TableCell>
-        <Button
-          appearance="subtle"
-          size="small"
-          icon={<EditRegular />}
-          aria-label="Edit transaction"
-          onClick={() => onEdit(transaction)}
-        />
-      </TableCell>
-      <TableCell>
-        <Button
-          appearance="subtle"
-          size="small"
-          icon={<DeleteRegular />}
-          aria-label="Delete transaction"
-          onClick={() => onDelete(transaction.id)}
-        />
+      <TableCell className="data-table__col--action">
+        <div className="data-table__actions-cell">
+          <Button
+            appearance="subtle"
+            size="small"
+            icon={<EditRegular />}
+            aria-label="Edit transaction"
+            onClick={() => onEdit(transaction)}
+          />
+          <Button
+            appearance="subtle"
+            size="small"
+            icon={<DeleteRegular />}
+            aria-label="Delete transaction"
+            onClick={() => onDelete(transaction.id)}
+          />
+        </div>
       </TableCell>
     </TableRow>
   )
@@ -412,8 +412,7 @@ export default function TransactionsTab() {
                 sortDirection={sortState?.columnKey === 'total' ? sortState.direction : undefined}
                 onSort={requestSort}
               />
-              <TableHeaderCell />
-              <TableHeaderCell />
+              <TableHeaderCell className="data-table__col--action" />
             </TableRow>
           </TableHeader>
           <TableBody>

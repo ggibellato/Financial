@@ -104,7 +104,7 @@ export default function CategoriesPage() {
               <TableHeaderCell>Active</TableHeaderCell>
               <TableHeaderCell>Investment</TableHeaderCell>
               <TableHeaderCell>Tithe</TableHeaderCell>
-              <TableHeaderCell>Actions</TableHeaderCell>
+              <TableHeaderCell className="data-table__col--action" />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -114,22 +114,24 @@ export default function CategoriesPage() {
                 <TableCell>{category.active ? 'Yes' : 'No'}</TableCell>
                 <TableCell>{category.isInvestment ? 'Yes' : 'No'}</TableCell>
                 <TableCell>{category.isTithe ? 'Yes' : 'No'}</TableCell>
-                <TableCell>
-                  <Button
-                    appearance="subtle"
-                    size="small"
-                    icon={<EditRegular />}
-                    aria-label={`Edit ${category.name}`}
-                    onClick={() => setEditingCategory(category)}
-                  />
-                  <Button
-                    appearance="subtle"
-                    size="small"
-                    icon={<DeleteRegular />}
-                    aria-label={`Delete ${category.name}`}
-                    disabled={deletingId === category.id}
-                    onClick={() => setConfirmingDelete(category)}
-                  />
+                <TableCell className="data-table__col--action">
+                  <div className="data-table__actions-cell">
+                    <Button
+                      appearance="subtle"
+                      size="small"
+                      icon={<EditRegular />}
+                      aria-label={`Edit ${category.name}`}
+                      onClick={() => setEditingCategory(category)}
+                    />
+                    <Button
+                      appearance="subtle"
+                      size="small"
+                      icon={<DeleteRegular />}
+                      aria-label={`Delete ${category.name}`}
+                      disabled={deletingId === category.id}
+                      onClick={() => setConfirmingDelete(category)}
+                    />
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

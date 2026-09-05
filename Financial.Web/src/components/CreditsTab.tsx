@@ -91,23 +91,23 @@ function CreditRow({ credit, onEdit, onDelete }: CreditRowProps) {
       <TableCell>{formatShortDate(credit.date)}</TableCell>
       <TableCell className={typeClass}>{credit.type}</TableCell>
       <TableCell className="data-table__col--numeric credits-tab__value">{formatN2(credit.value)}</TableCell>
-      <TableCell>
-        <Button
-          appearance="subtle"
-          size="small"
-          icon={<EditRegular />}
-          aria-label="Edit credit"
-          onClick={() => onEdit(credit)}
-        />
-      </TableCell>
-      <TableCell>
-        <Button
-          appearance="subtle"
-          size="small"
-          icon={<DeleteRegular />}
-          aria-label="Delete credit"
-          onClick={() => onDelete(credit.id)}
-        />
+      <TableCell className="data-table__col--action">
+        <div className="data-table__actions-cell">
+          <Button
+            appearance="subtle"
+            size="small"
+            icon={<EditRegular />}
+            aria-label="Edit credit"
+            onClick={() => onEdit(credit)}
+          />
+          <Button
+            appearance="subtle"
+            size="small"
+            icon={<DeleteRegular />}
+            aria-label="Delete credit"
+            onClick={() => onDelete(credit.id)}
+          />
+        </div>
       </TableCell>
     </TableRow>
   )
@@ -396,8 +396,7 @@ export default function CreditsTab() {
                 sortDirection={sortState?.columnKey === 'value' ? sortState.direction : undefined}
                 onSort={requestSort}
               />
-              <TableHeaderCell />
-              <TableHeaderCell />
+              <TableHeaderCell className="data-table__col--action" />
             </TableRow>
           </TableHeader>
           <TableBody>

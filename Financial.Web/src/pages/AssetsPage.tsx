@@ -164,7 +164,7 @@ export default function AssetsPage() {
               <TableHeaderCell>Portfolio</TableHeaderCell>
               <TableHeaderCell>Class</TableHeaderCell>
               <TableHeaderCell>Quantity</TableHeaderCell>
-              <TableHeaderCell>Actions</TableHeaderCell>
+              <TableHeaderCell className="data-table__col--action" />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -178,22 +178,24 @@ export default function AssetsPage() {
                   <TableCell>{asset.portfolioName}</TableCell>
                   <TableCell>{asset.class}</TableCell>
                   <TableCell>{asset.quantity}</TableCell>
-                  <TableCell>
-                    <Button
-                      appearance="subtle"
-                      size="small"
-                      icon={<EditRegular />}
-                      aria-label={`Edit ${asset.name}`}
-                      onClick={() => setEditingAsset(asset)}
-                    />
-                    <Button
-                      appearance="subtle"
-                      size="small"
-                      icon={<DeleteRegular />}
-                      aria-label={`Delete ${asset.name}`}
-                      disabled={deletingKey === key}
-                      onClick={() => setConfirmingDelete(asset)}
-                    />
+                  <TableCell className="data-table__col--action">
+                    <div className="data-table__actions-cell">
+                      <Button
+                        appearance="subtle"
+                        size="small"
+                        icon={<EditRegular />}
+                        aria-label={`Edit ${asset.name}`}
+                        onClick={() => setEditingAsset(asset)}
+                      />
+                      <Button
+                        appearance="subtle"
+                        size="small"
+                        icon={<DeleteRegular />}
+                        aria-label={`Delete ${asset.name}`}
+                        disabled={deletingKey === key}
+                        onClick={() => setConfirmingDelete(asset)}
+                      />
+                    </div>
                   </TableCell>
                 </TableRow>
               )

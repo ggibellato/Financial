@@ -27,23 +27,23 @@ function OperationRow({ entry, onEditTransfer, onEditAdjustment, onDeleteTransfe
       <TableCell>{isTransfer ? `${entry.sourceBank} → ${entry.destinationBank}` : entry.bank}</TableCell>
       <TableCell className="data-table__col--numeric">{formatN2(isTransfer ? entry.amount : entry.delta)}</TableCell>
       <TableCell>{entry.note ?? ''}</TableCell>
-      <TableCell>
-        <Button
-          appearance="subtle"
-          size="small"
-          icon={<EditRegular />}
-          aria-label={isTransfer ? 'Edit transfer' : 'Edit balance adjustment'}
-          onClick={() => (isTransfer ? onEditTransfer(entry.transfer) : onEditAdjustment(entry.adjustment))}
-        />
-      </TableCell>
-      <TableCell>
-        <Button
-          appearance="subtle"
-          size="small"
-          icon={<DeleteRegular />}
-          aria-label={isTransfer ? 'Delete transfer' : 'Delete balance adjustment'}
-          onClick={() => (isTransfer ? onDeleteTransfer(entry.id) : onDeleteAdjustment(entry.bankId, entry.id))}
-        />
+      <TableCell className="data-table__col--action">
+        <div className="data-table__actions-cell">
+          <Button
+            appearance="subtle"
+            size="small"
+            icon={<EditRegular />}
+            aria-label={isTransfer ? 'Edit transfer' : 'Edit balance adjustment'}
+            onClick={() => (isTransfer ? onEditTransfer(entry.transfer) : onEditAdjustment(entry.adjustment))}
+          />
+          <Button
+            appearance="subtle"
+            size="small"
+            icon={<DeleteRegular />}
+            aria-label={isTransfer ? 'Delete transfer' : 'Delete balance adjustment'}
+            onClick={() => (isTransfer ? onDeleteTransfer(entry.id) : onDeleteAdjustment(entry.bankId, entry.id))}
+          />
+        </div>
       </TableCell>
     </TableRow>
   )
@@ -146,14 +146,13 @@ export default function BankOperationsSection({
                   sortDirection={sortState?.columnKey === 'note' ? sortState.direction : undefined}
                   onSort={requestSort}
                 />
-                <TableHeaderCell />
-                <TableHeaderCell />
+                <TableHeaderCell className="data-table__col--action" />
               </TableRow>
             </TableHeader>
             <TableBody>
               {sortedRows.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7}>No rows match the current filters</TableCell>
+                  <TableCell colSpan={6}>No rows match the current filters</TableCell>
                 </TableRow>
               ) : (
                 sortedRows.map((entry) => (

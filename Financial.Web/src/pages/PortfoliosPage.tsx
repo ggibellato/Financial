@@ -94,7 +94,7 @@ export default function PortfoliosPage() {
               <TableHeaderCell>Broker</TableHeaderCell>
               <TableHeaderCell>Broker Status</TableHeaderCell>
               <TableHeaderCell>Assets</TableHeaderCell>
-              <TableHeaderCell>Actions</TableHeaderCell>
+              <TableHeaderCell className="data-table__col--action" />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -106,22 +106,24 @@ export default function PortfoliosPage() {
                   <TableCell>{portfolio.brokerName}</TableCell>
                   <TableCell>{portfolio.brokerStatus}</TableCell>
                   <TableCell>{portfolio.assetCount}</TableCell>
-                  <TableCell>
-                    <Button
-                      appearance="subtle"
-                      size="small"
-                      icon={<EditRegular />}
-                      aria-label={`Edit ${portfolio.name}`}
-                      onClick={() => setEditingPortfolio(portfolio)}
-                    />
-                    <Button
-                      appearance="subtle"
-                      size="small"
-                      icon={<DeleteRegular />}
-                      aria-label={`Delete ${portfolio.name}`}
-                      disabled={deletingKey === key}
-                      onClick={() => setConfirmingDelete(portfolio)}
-                    />
+                  <TableCell className="data-table__col--action">
+                    <div className="data-table__actions-cell">
+                      <Button
+                        appearance="subtle"
+                        size="small"
+                        icon={<EditRegular />}
+                        aria-label={`Edit ${portfolio.name}`}
+                        onClick={() => setEditingPortfolio(portfolio)}
+                      />
+                      <Button
+                        appearance="subtle"
+                        size="small"
+                        icon={<DeleteRegular />}
+                        aria-label={`Delete ${portfolio.name}`}
+                        disabled={deletingKey === key}
+                        onClick={() => setConfirmingDelete(portfolio)}
+                      />
+                    </div>
                   </TableCell>
                 </TableRow>
               )

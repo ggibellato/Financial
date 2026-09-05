@@ -79,7 +79,7 @@ export default function CreditCardsPage() {
               <TableHeaderCell>Name</TableHeaderCell>
               <TableHeaderCell>Active</TableHeaderCell>
               <TableHeaderCell>Next Invoice Due Date</TableHeaderCell>
-              <TableHeaderCell>Actions</TableHeaderCell>
+              <TableHeaderCell className="data-table__col--action" />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -88,22 +88,24 @@ export default function CreditCardsPage() {
                 <TableCell>{creditCard.name}</TableCell>
                 <TableCell>{creditCard.isActive ? 'Active' : 'Inactive'}</TableCell>
                 <TableCell>{creditCard.nextInvoiceDueDate ?? '—'}</TableCell>
-                <TableCell>
-                  <Button
-                    appearance="subtle"
-                    size="small"
-                    icon={<EditRegular />}
-                    aria-label={`Edit ${creditCard.name}`}
-                    onClick={() => setEditingCard(creditCard)}
-                  />
-                  <Button
-                    appearance="subtle"
-                    size="small"
-                    icon={<DeleteRegular />}
-                    aria-label={`Delete ${creditCard.name}`}
-                    disabled={deletingId === creditCard.id}
-                    onClick={() => setConfirmingDelete(creditCard)}
-                  />
+                <TableCell className="data-table__col--action">
+                  <div className="data-table__actions-cell">
+                    <Button
+                      appearance="subtle"
+                      size="small"
+                      icon={<EditRegular />}
+                      aria-label={`Edit ${creditCard.name}`}
+                      onClick={() => setEditingCard(creditCard)}
+                    />
+                    <Button
+                      appearance="subtle"
+                      size="small"
+                      icon={<DeleteRegular />}
+                      aria-label={`Delete ${creditCard.name}`}
+                      disabled={deletingId === creditCard.id}
+                      onClick={() => setConfirmingDelete(creditCard)}
+                    />
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

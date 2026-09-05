@@ -91,7 +91,7 @@ export default function InvestmentAccountsPage() {
               <TableHeaderCell>Name</TableHeaderCell>
               <TableHeaderCell>Active</TableHeaderCell>
               <TableHeaderCell>Liability</TableHeaderCell>
-              <TableHeaderCell>Actions</TableHeaderCell>
+              <TableHeaderCell className="data-table__col--action" />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -100,22 +100,24 @@ export default function InvestmentAccountsPage() {
                 <TableCell>{account.name}</TableCell>
                 <TableCell>{account.isActive ? 'Yes' : 'No'}</TableCell>
                 <TableCell>{account.isLiability ? 'Yes' : 'No'}</TableCell>
-                <TableCell>
-                  <Button
-                    appearance="subtle"
-                    size="small"
-                    icon={<EditRegular />}
-                    aria-label={`Edit ${account.name}`}
-                    onClick={() => setEditingAccount(account)}
-                  />
-                  <Button
-                    appearance="subtle"
-                    size="small"
-                    icon={<DeleteRegular />}
-                    aria-label={`Delete ${account.name}`}
-                    disabled={deletingId === account.id}
-                    onClick={() => setConfirmingDelete(account)}
-                  />
+                <TableCell className="data-table__col--action">
+                  <div className="data-table__actions-cell">
+                    <Button
+                      appearance="subtle"
+                      size="small"
+                      icon={<EditRegular />}
+                      aria-label={`Edit ${account.name}`}
+                      onClick={() => setEditingAccount(account)}
+                    />
+                    <Button
+                      appearance="subtle"
+                      size="small"
+                      icon={<DeleteRegular />}
+                      aria-label={`Delete ${account.name}`}
+                      disabled={deletingId === account.id}
+                      onClick={() => setConfirmingDelete(account)}
+                    />
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

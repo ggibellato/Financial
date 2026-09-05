@@ -93,7 +93,7 @@ export default function ReserveBucketsPage() {
               <TableHeaderCell>Name</TableHeaderCell>
               <TableHeaderCell>Split Percentage</TableHeaderCell>
               <TableHeaderCell>Active</TableHeaderCell>
-              <TableHeaderCell>Actions</TableHeaderCell>
+              <TableHeaderCell className="data-table__col--action" />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -102,22 +102,24 @@ export default function ReserveBucketsPage() {
                 <TableCell>{bucket.name}</TableCell>
                 <TableCell className="data-table__col--numeric">{formatN2(bucket.splitPercentage)}</TableCell>
                 <TableCell>{bucket.isActive ? 'Yes' : 'No'}</TableCell>
-                <TableCell>
-                  <Button
-                    appearance="subtle"
-                    size="small"
-                    icon={<EditRegular />}
-                    aria-label={`Edit ${bucket.name}`}
-                    onClick={() => setEditingBucket(bucket)}
-                  />
-                  <Button
-                    appearance="subtle"
-                    size="small"
-                    icon={<DeleteRegular />}
-                    aria-label={`Delete ${bucket.name}`}
-                    disabled={!bucket.isActive || savingId === bucket.id}
-                    onClick={() => setConfirmingDeactivate(bucket)}
-                  />
+                <TableCell className="data-table__col--action">
+                  <div className="data-table__actions-cell">
+                    <Button
+                      appearance="subtle"
+                      size="small"
+                      icon={<EditRegular />}
+                      aria-label={`Edit ${bucket.name}`}
+                      onClick={() => setEditingBucket(bucket)}
+                    />
+                    <Button
+                      appearance="subtle"
+                      size="small"
+                      icon={<DeleteRegular />}
+                      aria-label={`Delete ${bucket.name}`}
+                      disabled={!bucket.isActive || savingId === bucket.id}
+                      onClick={() => setConfirmingDeactivate(bucket)}
+                    />
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

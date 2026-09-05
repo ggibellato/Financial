@@ -21,7 +21,6 @@ function LedgerColumns() {
       <col className="controle-mae-page__col-value" />
       <col className="controle-mae-page__col-value" />
       <col className="controle-mae-page__col-actions" />
-      <col className="controle-mae-page__col-actions" />
     </colgroup>
   )
 }
@@ -42,25 +41,25 @@ function EntryRow({ entry, isDeleting, onEdit, onDelete }: EntryRowProps) {
       <td className="data-table__col--numeric">{entry.brlValue !== null ? formatN2(entry.brlValue) : '—'}</td>
       <td className="data-table__col--numeric">{entry.gbpValue !== null ? formatN2(entry.gbpValue) : '—'}</td>
       <td>
-        <Button
-          appearance="subtle"
-          size="small"
-          icon={<EditRegular />}
-          aria-label="Edit entry"
-          onClick={() => onEdit(entry)}
-        />
-      </td>
-      <td>
-        <Button
-          appearance="subtle"
-          size="small"
-          icon={<DeleteRegular />}
-          aria-label={isDeleting ? 'Deleting entry' : 'Delete entry'}
-          disabled={isDeleting}
-          onClick={() =>
-            confirmThenRun(`Delete "${entry.description}"? This removes it for good.`, () => onDelete(entry.id))
-          }
-        />
+        <div className="data-table__actions-cell">
+          <Button
+            appearance="subtle"
+            size="small"
+            icon={<EditRegular />}
+            aria-label="Edit entry"
+            onClick={() => onEdit(entry)}
+          />
+          <Button
+            appearance="subtle"
+            size="small"
+            icon={<DeleteRegular />}
+            aria-label={isDeleting ? 'Deleting entry' : 'Delete entry'}
+            disabled={isDeleting}
+            onClick={() =>
+              confirmThenRun(`Delete "${entry.description}"? This removes it for good.`, () => onDelete(entry.id))
+            }
+          />
+        </div>
       </td>
     </tr>
   )
@@ -289,7 +288,6 @@ export default function ControleMaePage() {
                     onSort={requestSort}
                   />
                   <th />
-                  <th />
                 </tr>
               </thead>
               <tbody>
@@ -316,7 +314,6 @@ export default function ControleMaePage() {
               <td colSpan={3}>Total (all entries)</td>
               <td className="data-table__col--numeric">{totals ? formatN2(totals.totalBrlValue) : '—'}</td>
               <td className="data-table__col--numeric">{totals ? formatN2(totals.totalGbpValue) : '—'}</td>
-              <td />
               <td />
             </tr>
           </tbody>

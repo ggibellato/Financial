@@ -52,26 +52,26 @@ function BillRow({
           onChange={(status) => onStatusChange(bill.id, status)}
         />
       </td>
-      <td>
-        <Button
-          appearance="subtle"
-          size="small"
-          icon={<EditRegular />}
-          aria-label="Edit bill"
-          onClick={() => onEdit(bill)}
-        />
-      </td>
-      <td>
-        <Button
-          appearance="subtle"
-          size="small"
-          icon={<DeleteRegular />}
-          aria-label={isDeleting ? 'Deleting bill' : 'Delete bill'}
-          disabled={isDeleting}
-          onClick={() =>
-            confirmThenRun(`Delete "${bill.description}"? This removes it for good.`, () => onDelete(bill.id))
-          }
-        />
+      <td className="data-table__col--action">
+        <div className="data-table__actions-cell">
+          <Button
+            appearance="subtle"
+            size="small"
+            icon={<EditRegular />}
+            aria-label="Edit bill"
+            onClick={() => onEdit(bill)}
+          />
+          <Button
+            appearance="subtle"
+            size="small"
+            icon={<DeleteRegular />}
+            aria-label={isDeleting ? 'Deleting bill' : 'Delete bill'}
+            disabled={isDeleting}
+            onClick={() =>
+              confirmThenRun(`Delete "${bill.description}"? This removes it for good.`, () => onDelete(bill.id))
+            }
+          />
+        </div>
       </td>
     </tr>
   )
@@ -161,8 +161,7 @@ function BillTable({
                 sortDirection={sortState?.columnKey === 'status' ? sortState.direction : undefined}
                 onSort={requestSort}
               />
-              <th />
-              <th />
+              <th className="data-table__col--action" />
             </tr>
           </thead>
           <tbody>

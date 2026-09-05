@@ -92,7 +92,7 @@ export default function IncomeSourcesPage() {
               <TableHeaderCell>Group</TableHeaderCell>
               <TableHeaderCell>Active</TableHeaderCell>
               <TableHeaderCell>Auto-split to reserve</TableHeaderCell>
-              <TableHeaderCell>Actions</TableHeaderCell>
+              <TableHeaderCell className="data-table__col--action" />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -102,22 +102,24 @@ export default function IncomeSourcesPage() {
                 <TableCell>{incomeSource.group}</TableCell>
                 <TableCell>{incomeSource.isActive ? 'Yes' : 'No'}</TableCell>
                 <TableCell>{incomeSource.autoSplitToReserve ? 'Yes' : 'No'}</TableCell>
-                <TableCell>
-                  <Button
-                    appearance="subtle"
-                    size="small"
-                    icon={<EditRegular />}
-                    aria-label={`Edit ${incomeSource.name}`}
-                    onClick={() => setEditingIncomeSource(incomeSource)}
-                  />
-                  <Button
-                    appearance="subtle"
-                    size="small"
-                    icon={<DeleteRegular />}
-                    aria-label={`Delete ${incomeSource.name}`}
-                    disabled={deletingId === incomeSource.id}
-                    onClick={() => setConfirmingDelete(incomeSource)}
-                  />
+                <TableCell className="data-table__col--action">
+                  <div className="data-table__actions-cell">
+                    <Button
+                      appearance="subtle"
+                      size="small"
+                      icon={<EditRegular />}
+                      aria-label={`Edit ${incomeSource.name}`}
+                      onClick={() => setEditingIncomeSource(incomeSource)}
+                    />
+                    <Button
+                      appearance="subtle"
+                      size="small"
+                      icon={<DeleteRegular />}
+                      aria-label={`Delete ${incomeSource.name}`}
+                      disabled={deletingId === incomeSource.id}
+                      onClick={() => setConfirmingDelete(incomeSource)}
+                    />
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

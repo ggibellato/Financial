@@ -61,26 +61,24 @@ function PriceRow({ entry, onEdit, onDelete }: PriceRowProps) {
       >
         {entry.isManual ? 'Manual' : 'Automatic'}
       </TableCell>
-      <TableCell>
+      <TableCell className="data-table__col--action">
         {entry.isManual && (
-          <Button
-            appearance="subtle"
-            size="small"
-            icon={<EditRegular />}
-            aria-label="Edit price"
-            onClick={() => onEdit(entry)}
-          />
-        )}
-      </TableCell>
-      <TableCell>
-        {entry.isManual && (
-          <Button
-            appearance="subtle"
-            size="small"
-            icon={<DeleteRegular />}
-            aria-label="Delete price"
-            onClick={() => onDelete(entry.date)}
-          />
+          <div className="data-table__actions-cell">
+            <Button
+              appearance="subtle"
+              size="small"
+              icon={<EditRegular />}
+              aria-label="Edit price"
+              onClick={() => onEdit(entry)}
+            />
+            <Button
+              appearance="subtle"
+              size="small"
+              icon={<DeleteRegular />}
+              aria-label="Delete price"
+              onClick={() => onDelete(entry.date)}
+            />
+          </div>
         )}
       </TableCell>
     </TableRow>
@@ -348,8 +346,7 @@ export default function PriceHistoryTab() {
                 sortDirection={sortState?.columnKey === 'source' ? sortState.direction : undefined}
                 onSort={requestSort}
               />
-              <TableHeaderCell />
-              <TableHeaderCell />
+              <TableHeaderCell className="data-table__col--action" />
             </TableRow>
           </TableHeader>
           <TableBody>
