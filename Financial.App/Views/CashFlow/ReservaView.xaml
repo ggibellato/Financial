@@ -90,7 +90,7 @@
                                            Command="{Binding DataContext.EditMovementCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                            CommandParameter="{Binding}">
                                     <ui:Button.Style>
-                                        <Style TargetType="{x:Type ui:Button}">
+                                        <Style TargetType="{x:Type ui:Button}" BasedOn="{StaticResource {x:Type ui:Button}}">
                                             <Setter Property="ToolTip" Value="Edit"/>
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding IsLocked}" Value="True">
@@ -112,7 +112,7 @@
                                            Command="{Binding DataContext.DeleteMovementCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                            CommandParameter="{Binding}">
                                     <ui:Button.Style>
-                                        <Style TargetType="{x:Type ui:Button}">
+                                        <Style TargetType="{x:Type ui:Button}" BasedOn="{StaticResource {x:Type ui:Button}}">
                                             <Setter Property="ToolTip" Value="Delete"/>
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding IsLocked}" Value="True">
