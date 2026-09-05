@@ -7,28 +7,6 @@
              x:Name="root">
     <DataGrid ItemsSource="{Binding Bills, ElementName=root}" AutoGenerateColumns="False" IsReadOnly="True">
         <DataGrid.Columns>
-            <DataGridTemplateColumn Header="" Width="34">
-                <DataGridTemplateColumn.CellTemplate>
-                    <DataTemplate>
-                        <ui:Button Appearance="Transparent" Padding="4,0"
-                                   Icon="{ui:SymbolIcon Symbol=Edit16}"
-                                   ToolTip="Edit" AutomationProperties.Name="Edit"
-                                   Command="{Binding EditBillCommand, ElementName=root}"
-                                   CommandParameter="{Binding}"/>
-                    </DataTemplate>
-                </DataGridTemplateColumn.CellTemplate>
-            </DataGridTemplateColumn>
-            <DataGridTemplateColumn Header="" Width="34">
-                <DataGridTemplateColumn.CellTemplate>
-                    <DataTemplate>
-                        <ui:Button Appearance="Transparent" Padding="4,0"
-                                   Icon="{ui:SymbolIcon Symbol=Delete16}"
-                                   ToolTip="Delete" AutomationProperties.Name="Delete"
-                                   Command="{Binding DeleteBillCommand, ElementName=root}"
-                                   CommandParameter="{Binding}"/>
-                    </DataTemplate>
-                </DataGridTemplateColumn.CellTemplate>
-            </DataGridTemplateColumn>
             <DataGridTextColumn Binding="{Binding DueDay}" Header="Due Day" Width="70"
                                  ElementStyle="{StaticResource NumericColumnTextStyle}"/>
             <DataGridTextColumn Binding="{Binding Description}" Header="Description" Width="*"
@@ -50,6 +28,28 @@
                                                      Status="{Binding Status}"
                                                      Bill="{Binding}"
                                                      ChangeStatusCommand="{Binding ChangeStatusCommand, ElementName=root}"/>
+                    </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+            <DataGridTemplateColumn Header="" Width="34">
+                <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                        <ui:Button Appearance="Transparent" Padding="4,0"
+                                   Icon="{ui:SymbolIcon Symbol=Edit16}"
+                                   ToolTip="Edit" AutomationProperties.Name="Edit"
+                                   Command="{Binding EditBillCommand, ElementName=root}"
+                                   CommandParameter="{Binding}"/>
+                    </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+            <DataGridTemplateColumn Header="" Width="34">
+                <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                        <ui:Button Appearance="Transparent" Padding="4,0"
+                                   Icon="{ui:SymbolIcon Symbol=Delete16}"
+                                   ToolTip="Delete" AutomationProperties.Name="Delete"
+                                   Command="{Binding DeleteBillCommand, ElementName=root}"
+                                   CommandParameter="{Binding}"/>
                     </DataTemplate>
                 </DataGridTemplateColumn.CellTemplate>
             </DataGridTemplateColumn>

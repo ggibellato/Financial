@@ -69,27 +69,6 @@
                                               Command="{Binding AssetDetails.Credits.UpdateCreditCommand}"/>
                             </DataGrid.InputBindings>
                             <DataGrid.Columns>
-                                <DataGridTemplateColumn Header="" Width="Auto">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <StackPanel Orientation="Horizontal">
-                                                <ui:Button Appearance="Transparent"
-                                                           Icon="{ui:SymbolIcon Symbol=Edit16}"
-                                                           Command="{Binding DataContext.AssetDetails.Credits.UpdateCreditCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                           CommandParameter="{Binding}"
-                                                           ToolTip="Update" AutomationProperties.Name="Update"
-                                                           Padding="2"
-                                                           Margin="0,0,4,0"/>
-                                                <ui:Button Appearance="Transparent"
-                                                           Icon="{ui:SymbolIcon Symbol=Delete16}"
-                                                           Command="{Binding DataContext.AssetDetails.Credits.DeleteCreditCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                           CommandParameter="{Binding}"
-                                                           ToolTip="Delete" AutomationProperties.Name="Delete"
-                                                           Padding="2"/>
-                                            </StackPanel>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
                                 <DataGridTextColumn Header="Date"
                                                     Binding="{Binding Date, Converter={StaticResource DateFormatConverter}, ConverterParameter='d'}"
                                                     Width="Auto">
@@ -114,6 +93,27 @@
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
+                                <DataGridTemplateColumn Header="" Width="Auto">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal">
+                                                <ui:Button Appearance="Transparent"
+                                                           Icon="{ui:SymbolIcon Symbol=Edit16}"
+                                                           Command="{Binding DataContext.AssetDetails.Credits.UpdateCreditCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                           CommandParameter="{Binding}"
+                                                           ToolTip="Update" AutomationProperties.Name="Update"
+                                                           Padding="2"
+                                                           Margin="0,0,4,0"/>
+                                                <ui:Button Appearance="Transparent"
+                                                           Icon="{ui:SymbolIcon Symbol=Delete16}"
+                                                           Command="{Binding DataContext.AssetDetails.Credits.DeleteCreditCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                           CommandParameter="{Binding}"
+                                                           ToolTip="Delete" AutomationProperties.Name="Delete"
+                                                           Padding="2"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
                             </DataGrid.Columns>
                         </DataGrid>
                     </Grid>

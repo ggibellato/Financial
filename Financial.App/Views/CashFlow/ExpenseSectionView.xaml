@@ -34,6 +34,18 @@
                   AutoGenerateColumns="False" IsReadOnly="True" CanUserResizeRows="False" CanUserSortColumns="True"
                   GridLinesVisibility="Horizontal" HeadersVisibility="Column" SelectionMode="Single">
             <DataGrid.Columns>
+                <DataGridTextColumn Binding="{Binding Date, Converter={StaticResource DateFormatConverter}}" Header="Date" Width="100"
+                                     ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                <DataGridTextColumn Binding="{Binding Description}" Header="Description" Width="*"
+                                     ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                <DataGridTextColumn x:Name="ExpensesCategoryColumn" Binding="{Binding CategoryName}" Header="Category" Width="120"
+                                     ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                <DataGridTextColumn Binding="{Binding Value, StringFormat=N2}" Header="Value" Width="100"
+                                     ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                <DataGridTextColumn x:Name="ExpensesBankColumn" Binding="{Binding PaymentSourceBankName}" Header="Bank" Width="140"
+                                     ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                <DataGridTextColumn x:Name="ExpensesCardColumn" Binding="{Binding CreditCardName}" Header="Card" Width="160"
+                                     ElementStyle="{StaticResource PlainColumnTextStyle}"/>
                 <DataGridTemplateColumn Header="" Width="34">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
@@ -56,18 +68,6 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTextColumn Binding="{Binding Date, Converter={StaticResource DateFormatConverter}}" Header="Date" Width="100"
-                                     ElementStyle="{StaticResource PlainColumnTextStyle}"/>
-                <DataGridTextColumn Binding="{Binding Description}" Header="Description" Width="*"
-                                     ElementStyle="{StaticResource PlainColumnTextStyle}"/>
-                <DataGridTextColumn x:Name="ExpensesCategoryColumn" Binding="{Binding CategoryName}" Header="Category" Width="120"
-                                     ElementStyle="{StaticResource PlainColumnTextStyle}"/>
-                <DataGridTextColumn Binding="{Binding Value, StringFormat=N2}" Header="Value" Width="100"
-                                     ElementStyle="{StaticResource NumericColumnTextStyle}"/>
-                <DataGridTextColumn x:Name="ExpensesBankColumn" Binding="{Binding PaymentSourceBankName}" Header="Bank" Width="140"
-                                     ElementStyle="{StaticResource PlainColumnTextStyle}"/>
-                <DataGridTextColumn x:Name="ExpensesCardColumn" Binding="{Binding CreditCardName}" Header="Card" Width="160"
-                                     ElementStyle="{StaticResource PlainColumnTextStyle}"/>
             </DataGrid.Columns>
         </DataGrid>
     </Grid>

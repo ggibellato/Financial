@@ -87,6 +87,16 @@
                 </Style>
             </DataGrid.Style>
             <DataGrid.Columns>
+                <DataGridTextColumn Binding="{Binding Date, Converter={StaticResource DateFormatConverter}}" Header="Date" Width="100"
+                                     ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                <DataGridTextColumn Binding="{Binding Kind}" Header="Type" Width="100"
+                                     ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                <DataGridTextColumn x:Name="BankColumn" Binding="{Binding BankLabel}" Header="Bank(s)" Width="180"
+                                     ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                <DataGridTextColumn Binding="{Binding DisplayAmount, StringFormat=N2}" Header="Amount/Delta" Width="120"
+                                     ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                <DataGridTextColumn Binding="{Binding Note}" Header="Note" Width="*"
+                                     ElementStyle="{StaticResource PlainColumnTextStyle}"/>
                 <DataGridTemplateColumn Header="" Width="34">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
@@ -138,16 +148,6 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTextColumn Binding="{Binding Date, Converter={StaticResource DateFormatConverter}}" Header="Date" Width="100"
-                                     ElementStyle="{StaticResource PlainColumnTextStyle}"/>
-                <DataGridTextColumn Binding="{Binding Kind}" Header="Type" Width="100"
-                                     ElementStyle="{StaticResource PlainColumnTextStyle}"/>
-                <DataGridTextColumn x:Name="BankColumn" Binding="{Binding BankLabel}" Header="Bank(s)" Width="180"
-                                     ElementStyle="{StaticResource PlainColumnTextStyle}"/>
-                <DataGridTextColumn Binding="{Binding DisplayAmount, StringFormat=N2}" Header="Amount/Delta" Width="120"
-                                     ElementStyle="{StaticResource NumericColumnTextStyle}"/>
-                <DataGridTextColumn Binding="{Binding Note}" Header="Note" Width="*"
-                                     ElementStyle="{StaticResource PlainColumnTextStyle}"/>
             </DataGrid.Columns>
         </DataGrid>
     </Grid>

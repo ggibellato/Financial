@@ -47,6 +47,22 @@
 
             <DataGrid Grid.Row="3" ItemsSource="{Binding Entries}" AutoGenerateColumns="False" IsReadOnly="True">
                 <DataGrid.Columns>
+                    <DataGridTextColumn Binding="{Binding Date, Converter={StaticResource DateFormatConverter}}" Header="Date" Width="100"
+                                         ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                    <DataGridTextColumn Binding="{Binding Description}" Header="Description" Width="*"
+                                         ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                    <DataGridTextColumn Binding="{Binding Note}" Header="Note" Width="140"
+                                         ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                    <DataGridTextColumn Header="BRL" Width="100" ElementStyle="{StaticResource NumericColumnTextStyle}">
+                        <DataGridTextColumn.Binding>
+                            <Binding Path="BrlValue" TargetNullValue="—" StringFormat="N2"/>
+                        </DataGridTextColumn.Binding>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Header="GBP" Width="100" ElementStyle="{StaticResource NumericColumnTextStyle}">
+                        <DataGridTextColumn.Binding>
+                            <Binding Path="GbpValue" TargetNullValue="—" StringFormat="N2"/>
+                        </DataGridTextColumn.Binding>
+                    </DataGridTextColumn>
                     <DataGridTemplateColumn Header="" Width="34">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
@@ -69,22 +85,6 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-                    <DataGridTextColumn Binding="{Binding Date, Converter={StaticResource DateFormatConverter}}" Header="Date" Width="100"
-                                         ElementStyle="{StaticResource PlainColumnTextStyle}"/>
-                    <DataGridTextColumn Binding="{Binding Description}" Header="Description" Width="*"
-                                         ElementStyle="{StaticResource PlainColumnTextStyle}"/>
-                    <DataGridTextColumn Binding="{Binding Note}" Header="Note" Width="140"
-                                         ElementStyle="{StaticResource PlainColumnTextStyle}"/>
-                    <DataGridTextColumn Header="BRL" Width="100" ElementStyle="{StaticResource NumericColumnTextStyle}">
-                        <DataGridTextColumn.Binding>
-                            <Binding Path="BrlValue" TargetNullValue="—" StringFormat="N2"/>
-                        </DataGridTextColumn.Binding>
-                    </DataGridTextColumn>
-                    <DataGridTextColumn Header="GBP" Width="100" ElementStyle="{StaticResource NumericColumnTextStyle}">
-                        <DataGridTextColumn.Binding>
-                            <Binding Path="GbpValue" TargetNullValue="—" StringFormat="N2"/>
-                        </DataGridTextColumn.Binding>
-                    </DataGridTextColumn>
                 </DataGrid.Columns>
             </DataGrid>
 

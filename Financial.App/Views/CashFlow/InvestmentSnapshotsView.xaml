@@ -35,6 +35,10 @@
 
             <DataGrid Grid.Row="2" ItemsSource="{Binding Snapshots}" AutoGenerateColumns="False" IsReadOnly="True">
                 <DataGrid.Columns>
+                    <DataGridTextColumn Binding="{Binding DisplayLabel}" Header="Account" Width="*"
+                                         ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                    <DataGridTextColumn Binding="{Binding Value, StringFormat=N2}" Header="Value" Width="120"
+                                         ElementStyle="{StaticResource NumericColumnTextStyle}"/>
                     <DataGridTemplateColumn Header="" Width="34">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
@@ -46,10 +50,6 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-                    <DataGridTextColumn Binding="{Binding DisplayLabel}" Header="Account" Width="*"
-                                         ElementStyle="{StaticResource PlainColumnTextStyle}"/>
-                    <DataGridTextColumn Binding="{Binding Value, StringFormat=N2}" Header="Value" Width="120"
-                                         ElementStyle="{StaticResource NumericColumnTextStyle}"/>
                 </DataGrid.Columns>
             </DataGrid>
 
