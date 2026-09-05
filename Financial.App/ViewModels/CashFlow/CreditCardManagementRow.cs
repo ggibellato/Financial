@@ -17,5 +17,6 @@ public sealed class CreditCardManagementRow
     public string CreditCardName => CreditCard.Name;
     public bool HasStatement => Statement is not null;
     public decimal OutstandingTotal => Statement?.OutstandingTotal ?? 0m;
+    public decimal AccumulatedOutstandingTotal => Statement?.AccumulatedOutstandingTotal ?? 0m;
     public bool IsPaid => Statement?.IsPaid ?? false;
 }
