@@ -89,47 +89,43 @@
                                          ElementStyle="{StaticResource PlainColumnTextStyle}"/>
                     <DataGridTextColumn Binding="{Binding Amount, StringFormat=N2}" Header="Amount" Width="110"
                                          ElementStyle="{StaticResource NumericColumnTextStyle}"/>
-                    <DataGridTemplateColumn Header="" Width="34">
+                    <DataGridTemplateColumn Header="" Width="Auto">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <ui:Button Appearance="Transparent" Padding="4,0" ToolTipService.ShowOnDisabled="True"
-                                           Icon="{ui:SymbolIcon Symbol=Edit16}"
-                                           AutomationProperties.Name="Edit movement"
-                                           Command="{Binding DataContext.EditMovementCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                           CommandParameter="{Binding}">
-                                    <ui:Button.Style>
-                                        <Style TargetType="{x:Type ui:Button}" BasedOn="{StaticResource {x:Type ui:Button}}">
-                                            <Setter Property="ToolTip" Value="Edit"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsLocked}" Value="True">
-                                                    <Setter Property="ToolTip" Value="{StaticResource LockedMovementMessage}"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </ui:Button.Style>
-                                </ui:Button>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-                    <DataGridTemplateColumn Header="" Width="34">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <ui:Button Appearance="Transparent" Padding="4,0" ToolTipService.ShowOnDisabled="True"
-                                           Icon="{ui:SymbolIcon Symbol=Delete16}"
-                                           AutomationProperties.Name="Delete movement"
-                                           Command="{Binding DataContext.DeleteMovementCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                           CommandParameter="{Binding}">
-                                    <ui:Button.Style>
-                                        <Style TargetType="{x:Type ui:Button}" BasedOn="{StaticResource {x:Type ui:Button}}">
-                                            <Setter Property="ToolTip" Value="Delete"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsLocked}" Value="True">
-                                                    <Setter Property="ToolTip" Value="{StaticResource LockedMovementMessage}"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </ui:Button.Style>
-                                </ui:Button>
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:Button Appearance="Transparent" Padding="4,0" Margin="0,0,4,0" ToolTipService.ShowOnDisabled="True"
+                                               Icon="{ui:SymbolIcon Symbol=Edit16}"
+                                               AutomationProperties.Name="Edit movement"
+                                               Command="{Binding DataContext.EditMovementCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                               CommandParameter="{Binding}">
+                                        <ui:Button.Style>
+                                            <Style TargetType="{x:Type ui:Button}" BasedOn="{StaticResource {x:Type ui:Button}}">
+                                                <Setter Property="ToolTip" Value="Edit"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsLocked}" Value="True">
+                                                        <Setter Property="ToolTip" Value="{StaticResource LockedMovementMessage}"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </ui:Button.Style>
+                                    </ui:Button>
+                                    <ui:Button Appearance="Transparent" Padding="4,0" ToolTipService.ShowOnDisabled="True"
+                                               Icon="{ui:SymbolIcon Symbol=Delete16}"
+                                               AutomationProperties.Name="Delete movement"
+                                               Command="{Binding DataContext.DeleteMovementCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                               CommandParameter="{Binding}">
+                                        <ui:Button.Style>
+                                            <Style TargetType="{x:Type ui:Button}" BasedOn="{StaticResource {x:Type ui:Button}}">
+                                                <Setter Property="ToolTip" Value="Delete"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsLocked}" Value="True">
+                                                        <Setter Property="ToolTip" Value="{StaticResource LockedMovementMessage}"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </ui:Button.Style>
+                                    </ui:Button>
+                                </StackPanel>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>

@@ -70,25 +70,21 @@
                             <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>
                         </DataGridTextColumn.ElementStyle>
                     </DataGridTextColumn>
-                    <DataGridTemplateColumn Header="" Width="34">
+                    <DataGridTemplateColumn Header="" Width="Auto">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <ui:Button Appearance="Transparent" Padding="4,0"
-                                           Icon="{ui:SymbolIcon Symbol=Edit16}"
-                                           ToolTip="Edit" AutomationProperties.Name="Edit"
-                                           Command="{Binding DataContext.EditAssetCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                           CommandParameter="{Binding}"/>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-                    <DataGridTemplateColumn Header="" Width="34">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <ui:Button Appearance="Transparent" Padding="4,0"
-                                           Icon="{ui:SymbolIcon Symbol=Delete16}"
-                                           ToolTip="Delete" AutomationProperties.Name="Delete"
-                                           Command="{Binding DataContext.DeleteAssetCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                           CommandParameter="{Binding}"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:Button Appearance="Transparent" Padding="4,0" Margin="0,0,4,0"
+                                               Icon="{ui:SymbolIcon Symbol=Edit16}"
+                                               ToolTip="Edit" AutomationProperties.Name="Edit"
+                                               Command="{Binding DataContext.EditAssetCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                               CommandParameter="{Binding}"/>
+                                    <ui:Button Appearance="Transparent" Padding="4,0"
+                                               Icon="{ui:SymbolIcon Symbol=Delete16}"
+                                               ToolTip="Delete" AutomationProperties.Name="Delete"
+                                               Command="{Binding DataContext.DeleteAssetCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                               CommandParameter="{Binding}"/>
+                                </StackPanel>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
