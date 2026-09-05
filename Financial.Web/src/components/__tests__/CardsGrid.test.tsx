@@ -9,7 +9,7 @@ const BANKS: BankDto[] = [
 ]
 
 const CARD_STATEMENTS: CardStatementDto[] = [
-  { id: 'c1', creditCardId: 'card-baamex', creditCardName: 'BaAmex', year: 2026, month: 7, isPaid: false, outstandingTotal: 100, accumulatedOutstandingTotal: 100, warning: null },
+  { id: 'c1', creditCardId: 'card-baamex', creditCardName: 'BaAmex', year: 2026, month: 7, isPaid: false, outstandingTotal: 100, accumulatedOutstandingTotal: 325.5, warning: null },
   { id: 'c2', creditCardId: 'card-chase', creditCardName: 'ChaseMaster4023', year: 2026, month: 7, isPaid: true, outstandingTotal: 0, accumulatedOutstandingTotal: 0, warning: null },
 ]
 
@@ -37,6 +37,27 @@ describe('CardsGrid (statement-only, no creditCards prop — Summary tab)', () =
     expect(screen.getByText('Unpaid')).toBeInTheDocument()
     expect(screen.getByText('Paid')).toBeInTheDocument()
     expect(screen.getByText(/Combined adjustment figure/)).toBeInTheDocument()
+  })
+
+  it('labels the period and accumulated outstanding columns distinctly and renders both values', () => {
+    render(
+      <CardsGrid
+        cardStatements={CARD_STATEMENTS}
+        banks={BANKS}
+        adjustmentTotal={100}
+        markPaidSources={{}}
+        setMarkPaidSource={vi.fn()}
+        markStatementPaid={vi.fn()}
+        unmarkStatementPaid={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByRole('button', { name: 'Outstanding (period)' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Accumulated outstanding' })).toBeInTheDocument()
+
+    const baAmexRow = screen.getByRole('cell', { name: 'BaAmex' }).closest('tr')!
+    expect(baAmexRow).toHaveTextContent('100.00')
+    expect(baAmexRow).toHaveTextContent('325.50')
   })
 
   it('renders a statement action warning as a status, not an alert', () => {
@@ -236,10 +257,10 @@ describe('CardsGrid (merged with creditCards — Credit Card tab)', () => {
     expect(screen.getByLabelText('Next invoice due date for PaypalCredit')).not.toBeDisabled()
   })
 
-  it('shows an update error when present', () => {
+  it('shows an update error as an accessible alert when present', () => {
     render(<CardsGrid {...baseProps} updateError="Credit card was not found." />)
 
-    expect(screen.getByText('Credit card was not found.')).toBeInTheDocument()
+    expect(screen.getByRole('alert')).toHaveTextContent('Credit card was not found.')
   })
 
   it('sorts rows by clicking the Card column header, keeping the footer total fixed', () => {

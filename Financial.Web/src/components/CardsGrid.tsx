@@ -82,6 +82,7 @@ export default function CardsGrid({
   const accessors: Record<string, SortAccessor<CardRow>> = {
     card: (row) => row.creditCardName,
     outstanding: (row) => row.statement?.outstandingTotal,
+    accumulatedOutstanding: (row) => row.statement?.accumulatedOutstandingTotal,
     status: (row) => (row.statement ? (row.statement.isPaid ? 'Paid' : 'Unpaid') : undefined),
     nextInvoiceDueDate: (row) => (row.nextInvoiceDueDate ? new Date(row.nextInvoiceDueDate) : undefined),
     active: (row) => (row.isActive ? 1 : 0),
@@ -121,10 +122,17 @@ export default function CardsGrid({
                 />
               </SortableColumnHeader>
               <SortableColumnHeader
-                label="Outstanding"
+                label="Outstanding (period)"
                 columnKey="outstanding"
                 numeric
                 sortDirection={sortState?.columnKey === 'outstanding' ? sortState.direction : undefined}
+                onSort={requestSort}
+              />
+              <SortableColumnHeader
+                label="Accumulated outstanding"
+                columnKey="accumulatedOutstanding"
+                numeric
+                sortDirection={sortState?.columnKey === 'accumulatedOutstanding' ? sortState.direction : undefined}
                 onSort={requestSort}
               />
               <SortableColumnHeader
@@ -155,7 +163,7 @@ export default function CardsGrid({
           <tbody>
             {sortedRows.length === 0 && isColumnFiltered('card') && (
               <tr>
-                <td colSpan={showCardManagementColumns ? 6 : 4}>No rows match the current filters</td>
+                <td colSpan={showCardManagementColumns ? 7 : 5}>No rows match the current filters</td>
               </tr>
             )}
             {sortedRows.map((row) => (
@@ -163,6 +171,9 @@ export default function CardsGrid({
                 <td>{row.creditCardName}</td>
                 <td className="data-table__col--numeric">
                   {row.statement ? formatN2(row.statement.outstandingTotal) : '—'}
+                </td>
+                <td className="data-table__col--numeric">
+                  {row.statement ? formatN2(row.statement.accumulatedOutstandingTotal) : '—'}
                 </td>
                 <td>{row.statement ? (row.statement.isPaid ? 'Paid' : 'Unpaid') : '—'}</td>
                 <td>
@@ -241,7 +252,11 @@ export default function CardsGrid({
       <p className="monthly-page__section-total">
         Combined adjustment figure: <strong>{formatN2(adjustmentTotal)}</strong>
       </p>
-      {updateError && <p className="monthly-page__error">{updateError}</p>}
+      {updateError && (
+        <p className="monthly-page__error" role="alert">
+          {updateError}
+        </p>
+      )}
     </section>
   )
 }
