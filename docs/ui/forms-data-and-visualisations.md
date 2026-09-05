@@ -625,3 +625,11 @@ extend this exception to any other entity without a documented reason.
 When users benefit from seeing a graph, entering a transaction, and immediately
 reviewing the transaction grid and totals, keep the transaction form inline
 between the graph and grid unless the form’s complexity makes that impractical.
+
+### Grid Row Actions
+- Place row-level actions in a single **Actions** column at the far right of the grid.
+- Group related actions closely within the Actions cell.
+- Show frequent/primary actions as icon buttons (e.g., Edit); place less-frequent or additional actions in a **More actions (⋯)** menu.
+- Use accessible labels/tooltips for all icon-only actions.
+- Keep action controls visually compact while maintaining adequate click/touch targets.
+- Do not create separate columns for individual row actions.
