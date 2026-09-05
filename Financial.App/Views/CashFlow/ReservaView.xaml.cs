@@ -9,5 +9,6 @@ public partial class ReservaView : UserControl
     {
         InitializeComponent();
         DataContext = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
+        Loaded += async (_, _) => await viewModel.RefreshAsync();
     }
 }
