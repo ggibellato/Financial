@@ -19,13 +19,31 @@
             <DataGrid.Columns>
                 <DataGridTextColumn x:Name="CardColumn" Binding="{Binding CreditCardName}" Header="Card" Width="180"
                                      ElementStyle="{StaticResource PlainColumnTextStyle}"/>
-                <DataGridTemplateColumn Header="Outstanding" SortMemberPath="OutstandingTotal" Width="110">
+                <DataGridTemplateColumn Header="Outstanding (period)" SortMemberPath="OutstandingTotal" Width="170">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBlock VerticalAlignment="Center" Padding="8,0">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}">
                                         <Setter Property="Text" Value="{Binding OutstandingTotal, StringFormat=N2}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasStatement}" Value="False">
+                                                <Setter Property="Text" Value="—"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Accumulated outstanding" SortMemberPath="AccumulatedOutstandingTotal" Width="200">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock VerticalAlignment="Center" Padding="8,0">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}">
+                                        <Setter Property="Text" Value="{Binding AccumulatedOutstandingTotal, StringFormat=N2}"/>
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding HasStatement}" Value="False">
                                                 <Setter Property="Text" Value="—"/>

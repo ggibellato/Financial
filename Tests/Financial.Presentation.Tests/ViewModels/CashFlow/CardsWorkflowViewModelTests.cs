@@ -61,6 +61,7 @@ public class CardsWorkflowViewModelTests
         var paypalRow = viewModel.CreditCardManagementRows.Single(r => r.CreditCardName == "PaypalCredit");
         paypalRow.HasStatement.Should().BeFalse();
         paypalRow.OutstandingTotal.Should().Be(0m);
+        paypalRow.AccumulatedOutstandingTotal.Should().Be(0m);
         paypalRow.IsPaid.Should().BeFalse();
     }
 
@@ -69,11 +70,12 @@ public class CardsWorkflowViewModelTests
     {
         var (viewModel, _, _, _, creditCards) = CreateViewModel();
         creditCards.Add(new() { Id = ChaseId, Name = "ChaseMaster4023", IsActive = true, NextInvoiceDueDate = null, HasReferences = false });
-        viewModel.ApplyRefresh([new CardStatementDTO { Id = Guid.NewGuid(), CreditCardId = ChaseId, CreditCardName = "ChaseMaster4023", Year = DateTime.Today.Year, Month = DateTime.Today.Month, IsPaid = true, OutstandingTotal = 42.5m, AccumulatedOutstandingTotal = 42.5m }]);
+        viewModel.ApplyRefresh([new CardStatementDTO { Id = Guid.NewGuid(), CreditCardId = ChaseId, CreditCardName = "ChaseMaster4023", Year = DateTime.Today.Year, Month = DateTime.Today.Month, IsPaid = true, OutstandingTotal = 42.5m, AccumulatedOutstandingTotal = 142.5m }]);
 
         var chaseRow = viewModel.CreditCardManagementRows.Single(r => r.CreditCardName == "ChaseMaster4023");
         chaseRow.HasStatement.Should().BeTrue();
         chaseRow.OutstandingTotal.Should().Be(42.5m);
+        chaseRow.AccumulatedOutstandingTotal.Should().Be(142.5m, "it must stay distinct from the period-scoped OutstandingTotal");
         chaseRow.IsPaid.Should().BeTrue();
         chaseRow.CreditCard.Id.Should().Be(ChaseId);
     }
