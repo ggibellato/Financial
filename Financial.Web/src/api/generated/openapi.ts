@@ -5409,6 +5409,8 @@ export interface components {
             terminalValue: number;
         };
         CardStatementDTO: {
+            /** Format: double */
+            accumulatedOutstandingTotal: number;
             /** Format: uuid */
             creditCardId: string;
             creditCardName: string;

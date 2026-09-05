@@ -202,6 +202,11 @@ public sealed class CardStatementService : ICardStatementService
                 && e.PaymentStatus == status)
             .ToList();
 
+    private decimal GetAccumulatedOutstandingTotal(Guid creditCardId) =>
+        _repository.GetExpenses()
+            .Where(e => e.CreditCard?.Id == creditCardId && e.PaymentStatus == ExpensePaymentStatus.CreditCardCharge)
+            .Sum(e => e.Value);
+
     private CardStatementDTO ToDto(CardStatement statement, string? warning = null) => new()
     {
         Id = statement.Id,
@@ -211,6 +216,7 @@ public sealed class CardStatementService : ICardStatementService
         Month = statement.Month,
         IsPaid = statement.IsPaid,
         OutstandingTotal = GetStatementExpenses(statement, ExpensePaymentStatus.CreditCardCharge).Sum(e => e.Value),
+        AccumulatedOutstandingTotal = GetAccumulatedOutstandingTotal(statement.CreditCard.Id),
         Warning = warning
     };
 }

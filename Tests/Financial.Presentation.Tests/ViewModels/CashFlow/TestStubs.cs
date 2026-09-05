@@ -299,7 +299,8 @@ internal sealed class StubCardStatementService : ICardStatementService
         {
             Id = id, CreditCardId = existing.CreditCardId, CreditCardName = existing.CreditCardName,
             Year = existing.Year, Month = existing.Month,
-            IsPaid = true, OutstandingTotal = existing.OutstandingTotal, Warning = NextWarning,
+            IsPaid = true, OutstandingTotal = existing.OutstandingTotal,
+            AccumulatedOutstandingTotal = existing.AccumulatedOutstandingTotal, Warning = NextWarning,
         });
     }
 
@@ -311,7 +312,8 @@ internal sealed class StubCardStatementService : ICardStatementService
         {
             Id = id, CreditCardId = existing.CreditCardId, CreditCardName = existing.CreditCardName,
             Year = existing.Year, Month = existing.Month,
-            IsPaid = false, OutstandingTotal = existing.OutstandingTotal, Warning = NextWarning,
+            IsPaid = false, OutstandingTotal = existing.OutstandingTotal,
+            AccumulatedOutstandingTotal = existing.AccumulatedOutstandingTotal, Warning = NextWarning,
         });
     }
 }

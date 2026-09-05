@@ -699,6 +699,10 @@
       },
       "CardStatementDTO": {
         "properties": {
+          "accumulatedOutstandingTotal": {
+            "format": "double",
+            "type": "number"
+          },
           "creditCardId": {
             "format": "uuid",
             "type": "string"
@@ -739,7 +743,8 @@
           "year",
           "month",
           "isPaid",
-          "outstandingTotal"
+          "outstandingTotal",
+          "accumulatedOutstandingTotal"
         ],
         "type": "object"
       },

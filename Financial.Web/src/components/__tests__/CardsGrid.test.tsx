@@ -9,8 +9,8 @@ const BANKS: BankDto[] = [
 ]
 
 const CARD_STATEMENTS: CardStatementDto[] = [
-  { id: 'c1', creditCardId: 'card-baamex', creditCardName: 'BaAmex', year: 2026, month: 7, isPaid: false, outstandingTotal: 100, warning: null },
-  { id: 'c2', creditCardId: 'card-chase', creditCardName: 'ChaseMaster4023', year: 2026, month: 7, isPaid: true, outstandingTotal: 0, warning: null },
+  { id: 'c1', creditCardId: 'card-baamex', creditCardName: 'BaAmex', year: 2026, month: 7, isPaid: false, outstandingTotal: 100, accumulatedOutstandingTotal: 100, warning: null },
+  { id: 'c2', creditCardId: 'card-chase', creditCardName: 'ChaseMaster4023', year: 2026, month: 7, isPaid: true, outstandingTotal: 0, accumulatedOutstandingTotal: 0, warning: null },
 ]
 
 const CREDIT_CARDS: CreditCardDto[] = [
