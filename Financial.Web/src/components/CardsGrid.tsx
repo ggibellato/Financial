@@ -141,7 +141,6 @@ export default function CardsGrid({
                 sortDirection={sortState?.columnKey === 'status' ? sortState.direction : undefined}
                 onSort={requestSort}
               />
-              <th />
               {showCardManagementColumns && (
                 <>
                   <SortableColumnHeader
@@ -158,6 +157,7 @@ export default function CardsGrid({
                   />
                 </>
               )}
+              <th className="data-table__col--action-wide" />
             </tr>
           </thead>
           <tbody>
@@ -176,36 +176,6 @@ export default function CardsGrid({
                   {row.statement ? formatN2(row.statement.accumulatedOutstandingTotal) : '—'}
                 </td>
                 <td>{row.statement ? (row.statement.isPaid ? 'Paid' : 'Unpaid') : '—'}</td>
-                <td>
-                  {row.statement &&
-                    (row.statement.isPaid ? (
-                      <button type="button" onClick={() => unmarkStatementPaid(row.statement!.id)}>
-                        Unmark Paid
-                      </button>
-                    ) : (
-                      <>
-                        <select
-                          aria-label={`Paying bank for ${row.creditCardName}`}
-                          value={markPaidSources[row.statement.id] ?? ''}
-                          onChange={(e) => setMarkPaidSource(row.statement!.id, e.target.value)}
-                        >
-                          <option value="">Bank…</option>
-                          {banks.map((b) => (
-                            <option key={b.id} value={b.id}>
-                              {b.name}
-                            </option>
-                          ))}
-                        </select>{' '}
-                        <button
-                          type="button"
-                          disabled={!markPaidSources[row.statement.id]}
-                          onClick={() => markStatementPaid(row.statement!.id, markPaidSources[row.statement!.id])}
-                        >
-                          Mark Paid
-                        </button>
-                      </>
-                    ))}
-                </td>
                 {showCardManagementColumns && (
                   <>
                     <td>
@@ -244,6 +214,36 @@ export default function CardsGrid({
                     </td>
                   </>
                 )}
+                <td className="data-table__col--action-wide">
+                  {row.statement &&
+                    (row.statement.isPaid ? (
+                      <button type="button" onClick={() => unmarkStatementPaid(row.statement!.id)}>
+                        Unmark Paid
+                      </button>
+                    ) : (
+                      <>
+                        <select
+                          aria-label={`Paying bank for ${row.creditCardName}`}
+                          value={markPaidSources[row.statement.id] ?? ''}
+                          onChange={(e) => setMarkPaidSource(row.statement!.id, e.target.value)}
+                        >
+                          <option value="">Bank…</option>
+                          {banks.map((b) => (
+                            <option key={b.id} value={b.id}>
+                              {b.name}
+                            </option>
+                          ))}
+                        </select>{' '}
+                        <button
+                          type="button"
+                          disabled={!markPaidSources[row.statement.id]}
+                          onClick={() => markStatementPaid(row.statement!.id, markPaidSources[row.statement!.id])}
+                        >
+                          Mark Paid
+                        </button>
+                      </>
+                    ))}
+                </td>
               </tr>
             ))}
           </tbody>

@@ -55,6 +55,15 @@
   width: 72px;
 }
 
+/* For an action cell holding more than icon buttons - e.g. a bank-picker
+   dropdown plus a "Mark Paid" text button - 72px isn't enough. Sized for
+   CardsGrid's mark/unmark-paid controls instead of forcing them into the
+   icon-button width. */
+.data-table .data-table__col--action-wide,
+.data-table__col--action-wide {
+  width: 200px;
+}
+
 .data-table__actions-cell {
   display: flex;
   align-items: center;

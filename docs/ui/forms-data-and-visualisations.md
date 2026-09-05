@@ -384,6 +384,14 @@ A status indicator that isn't clickable (e.g. Reserva's 🔒 locked-movement
 glyph) is not a row action and does not count toward this — it stays wherever
 it currently sits and never occupies the Actions cell.
 
+`CardsGrid.tsx`'s mark/unmark-paid cell is a documented exception to the
+icon-button shape above: marking a statement paid needs a bank picked first,
+so the cell is a native `select` (bank) plus a native text `button` ("Mark
+Paid"/"Unmark Paid"), not a stateless icon command. It still follows the
+trailing-column and fixed-width parts of this rule (`.data-table__col--action-
+wide`, 200px — sized for this content instead of the icon-button `72px`
+`.data-table__col--action`), just not the icon-only visual (fixed 2026-09-05).
+
 Each action column sizes to its icon button's own width plus comfortable
 padding — never auto/flex-adjusted to share the grid's leftover space the way
 the identifying/label column does above. A narrow, fixed action column next
