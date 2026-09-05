@@ -343,15 +343,22 @@ Row-level actions (Edit, Delete, and similar per-row commands) live in a
 single **Actions** column at the **trailing (rightmost)** edge of the grid,
 after the data columns — not leading. `ExpensesSection.tsx`/`IncomeSection.tsx`
 are the reference: each row's action `Button`s (`appearance="subtle"`,
-`size="small"`, an explicit `aria-label`, no visible text) use `EditRegular`/
-`DeleteRegular` from `@fluentui/react-icons`. WPF matches with
-`ui:Button Appearance="Transparent"` and `ui:SymbolIcon Symbol=Edit16`/
-`Symbol=Delete16`. This keeps the action affordance in a fixed, predictable
-place regardless of how many data columns a given grid has.
+`size="small"`, an explicit `aria-label`, no visible text) share one trailing
+`TableCell`, using `EditRegular`/`DeleteRegular` from `@fluentui/react-icons`.
+WPF matches with a `StackPanel` of `ui:Button Appearance="Transparent"`
+elements (`ui:SymbolIcon Symbol=Edit16`/`Symbol=Delete16`) inside one
+`DataGridTemplateColumn.CellTemplate` — see `CreditsView.xaml` for the
+existing correct WPF shape. This keeps the action affordance in a fixed,
+predictable place regardless of how many data columns a given grid has.
 
 Show up to **two** actions as direct icon buttons in the Actions cell (e.g.
-Edit and Delete, the pair every grid in this repo has today). Do not create
-a separate column per action — group them in the one trailing cell instead.
+Edit and Delete, the pair every grid in this repo has today). This is one
+shared `TableCell`/`DataGridTemplateColumn` — **never one cell or column per
+action** — with both buttons inside it (Web: adjacent `Button`s in the same
+cell; WPF: a `StackPanel` holding both `ui:Button`s in the same
+`DataGridTemplateColumn.CellTemplate`). A grid with only one action (e.g.
+`InvestmentSnapshotsView.xaml`) still uses this same single-cell shape, just
+with one button in it instead of two.
 
 When a row has exactly 3 actions, show all 3 as direct icon buttons — the
 third slot is that action's own icon, executing it directly like the other
