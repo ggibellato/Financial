@@ -97,7 +97,7 @@
                                            Command="{Binding DataContext.Transfer.EditTransferCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                            CommandParameter="{Binding Transfer}">
                                     <ui:Button.Style>
-                                        <Style TargetType="{x:Type ui:Button}">
+                                        <Style TargetType="{x:Type ui:Button}" BasedOn="{StaticResource {x:Type ui:Button}}">
                                             <Setter Property="Visibility" Value="Collapsed"/>
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding Kind}" Value="Transfer">
@@ -113,7 +113,7 @@
                                            Command="{Binding DataContext.Adjustment.EditAdjustmentCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                            CommandParameter="{Binding Adjustment}">
                                     <ui:Button.Style>
-                                        <Style TargetType="{x:Type ui:Button}">
+                                        <Style TargetType="{x:Type ui:Button}" BasedOn="{StaticResource {x:Type ui:Button}}">
                                             <Setter Property="Visibility" Value="Collapsed"/>
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding Kind}" Value="Adjustment">
