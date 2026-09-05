@@ -48,6 +48,25 @@ read:
 
 For significant UI work, also use the `fluent-ui` skill.
 
+## Scope of compliance
+
+A request to make a UI element "comply with the standards," "follow the UI
+rules," or similar — or a request scoped to one specific rule (e.g. a newly
+documented convention) — requires checking that element against **every**
+applicable rule in `docs/ui/*.md` and this file, not only the rule named in
+the request. A narrowly-worded trigger (e.g. "fix the row-action position")
+does not narrow the compliance scope of the element being touched; it only
+identifies which element to look at. Only skip rules the user has explicitly
+excluded (e.g. "just reposition the buttons, don't touch anything else about
+this grid").
+
+This applies retroactively to elements a change touches: if fixing one rule
+surfaces the element already violates another documented rule, fix or flag
+that too rather than leaving it for a future request to rediscover.
+
+`.claude/agents/ui-reviewer.md` enforces this — see "Completion requirement"
+below.
+
 ## Required process
 
 Before implementation:
@@ -101,7 +120,10 @@ Before coding a significant UI change, provide:
 
 Do not call UI work complete until:
 
-- Relevant items in `docs/ui/review-checklist.md` have been reviewed.
+- Every item in `docs/ui/review-checklist.md` has been checked against each
+  touched view or component — not only the items related to the rule that
+  motivated the change (see "Scope of compliance" above).
+- `.claude/agents/ui-reviewer.md` has reviewed the change.
 - React and/or WPF builds and relevant tests have run.
 - The affected view has actually been run and looked at on each platform it
   changed (Web: dev server in a browser; WPF: the built app launched) — a

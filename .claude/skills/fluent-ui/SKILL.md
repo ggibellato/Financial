@@ -119,7 +119,10 @@ Equivalent user experience is required. Identical controls are not.
 
 ### 5. Verify before completion
 
-Use `docs/ui/review-checklist.md`.
+Use `docs/ui/review-checklist.md` against every touched view or component in
+full — not only the items tied to whatever rule or bug prompted the change
+(`docs/rules/ui.md`'s "Scope of compliance"). Then have
+`.claude/agents/ui-reviewer.md` review the change.
 
 Run applicable project commands:
 
