@@ -25,7 +25,7 @@
 
             <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
                 <TextBlock Text="Year:" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                <ui:NumberBox Width="100" AutomationProperties.Name="Year"
+                <ui:NumberBox Width="110" AutomationProperties.Name="Year"
                               Value="{Binding Year, Converter={StaticResource IntToNullableDoubleConverter}}"/>
             </StackPanel>
 
