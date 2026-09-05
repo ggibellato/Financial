@@ -258,6 +258,6 @@ Mandatory, not advisory. Read the file for the stage you are in **before produci
 | Writing or changing tests | `testing-guide-Financial` skill, then `docs/rules/implementation.md` §Tests |
 | Finishing a change | `docs/rules/implementation.md` §Definition of Done |
 | Designing, changing, reviewing, or refactoring any user-facing UI/workflow | `docs/rules/ui.md`, then the relevant documents in `docs/ui/`; use the `fluent-ui` skill for significant UI work |
-| Finishing a UI-affecting change | `docs/ui/review-checklist.md`, then `docs/rules/implementation.md` §Definition of Done |
+| Finishing a UI-affecting change | Every item in `docs/ui/review-checklist.md` against each touched view/component (not only the items tied to the change's original trigger — see `docs/rules/ui.md` §Scope of compliance), then `docs/rules/implementation.md` §Definition of Done |
 
-`.claude/agents/architecture-reviewer.md` reviews every change against these files.
+`.claude/agents/architecture-reviewer.md` reviews every change against these files. `.claude/agents/ui-reviewer.md` reviews every UI-affecting change against `docs/rules/ui.md` and `docs/ui/*.md` in full — not only the rule that motivated the change.
