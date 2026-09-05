@@ -42,6 +42,10 @@
             <DataGrid Grid.Row="2" ItemsSource="{Binding IncomeSources}" AutoGenerateColumns="False" IsReadOnly="True"
                       AutomationProperties.Name="Income Sources">
                 <DataGrid.Columns>
+                    <DataGridTextColumn Binding="{Binding Name}" Header="Name" Width="*"/>
+                    <DataGridTextColumn Binding="{Binding Group}" Header="Group" Width="130"/>
+                    <DataGridTextColumn Binding="{Binding IsActive}" Header="Active" Width="80"/>
+                    <DataGridTextColumn Binding="{Binding AutoSplitToReserve}" Header="Auto-split to reserve" Width="150"/>
                     <DataGridTemplateColumn Header="" Width="34">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
@@ -64,10 +68,6 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-                    <DataGridTextColumn Binding="{Binding Name}" Header="Name" Width="*"/>
-                    <DataGridTextColumn Binding="{Binding Group}" Header="Group" Width="130"/>
-                    <DataGridTextColumn Binding="{Binding IsActive}" Header="Active" Width="80"/>
-                    <DataGridTextColumn Binding="{Binding AutoSplitToReserve}" Header="Auto-split to reserve" Width="150"/>
                 </DataGrid.Columns>
             </DataGrid>
         </Grid>

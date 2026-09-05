@@ -42,6 +42,9 @@
             <DataGrid Grid.Row="2" ItemsSource="{Binding CreditCards}" AutoGenerateColumns="False" IsReadOnly="True"
                       AutomationProperties.Name="Credit Cards">
                 <DataGrid.Columns>
+                    <DataGridTextColumn Binding="{Binding Name}" Header="Name" Width="*"/>
+                    <DataGridTextColumn Binding="{Binding IsActive}" Header="Active" Width="80"/>
+                    <DataGridTextColumn Binding="{Binding NextInvoiceDueDate}" Header="Next Invoice Due Date" Width="160"/>
                     <DataGridTemplateColumn Header="" Width="34">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
@@ -64,9 +67,6 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-                    <DataGridTextColumn Binding="{Binding Name}" Header="Name" Width="*"/>
-                    <DataGridTextColumn Binding="{Binding IsActive}" Header="Active" Width="80"/>
-                    <DataGridTextColumn Binding="{Binding NextInvoiceDueDate}" Header="Next Invoice Due Date" Width="160"/>
                 </DataGrid.Columns>
             </DataGrid>
         </Grid>
