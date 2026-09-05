@@ -97,7 +97,7 @@ describe('ExpensesSection', () => {
     const descriptionCells = screen
       .getAllByRole('row')
       .slice(1)
-      .map((row) => row.querySelectorAll('td')[3].textContent)
+      .map((row) => row.querySelectorAll('td')[1].textContent)
     expect(descriptionCells).toEqual(['Amazon', 'Lidl UK'])
 
     fireEvent.click(screen.getByRole('button', { name: 'Value' }))
@@ -105,7 +105,7 @@ describe('ExpensesSection', () => {
     const descriptionCellsDescending = screen
       .getAllByRole('row')
       .slice(1)
-      .map((row) => row.querySelectorAll('td')[3].textContent)
+      .map((row) => row.querySelectorAll('td')[1].textContent)
     expect(descriptionCellsDescending).toEqual(['Lidl UK', 'Amazon'])
   })
 

@@ -15,13 +15,13 @@ import './ControleMaePage.css'
 function LedgerColumns() {
   return (
     <colgroup>
-      <col className="controle-mae-page__col-actions" />
-      <col className="controle-mae-page__col-actions" />
       <col className="controle-mae-page__col-date" />
       <col className="controle-mae-page__col-description" />
       <col className="controle-mae-page__col-note" />
       <col className="controle-mae-page__col-value" />
       <col className="controle-mae-page__col-value" />
+      <col className="controle-mae-page__col-actions" />
+      <col className="controle-mae-page__col-actions" />
     </colgroup>
   )
 }
@@ -36,6 +36,11 @@ interface EntryRowProps {
 function EntryRow({ entry, isDeleting, onEdit, onDelete }: EntryRowProps) {
   return (
     <tr>
+      <td>{formatShortDate(entry.date)}</td>
+      <td>{entry.description}</td>
+      <td>{entry.note}</td>
+      <td className="data-table__col--numeric">{entry.brlValue !== null ? formatN2(entry.brlValue) : '—'}</td>
+      <td className="data-table__col--numeric">{entry.gbpValue !== null ? formatN2(entry.gbpValue) : '—'}</td>
       <td>
         <Button
           appearance="subtle"
@@ -57,11 +62,6 @@ function EntryRow({ entry, isDeleting, onEdit, onDelete }: EntryRowProps) {
           }
         />
       </td>
-      <td>{formatShortDate(entry.date)}</td>
-      <td>{entry.description}</td>
-      <td>{entry.note}</td>
-      <td className="data-table__col--numeric">{entry.brlValue !== null ? formatN2(entry.brlValue) : '—'}</td>
-      <td className="data-table__col--numeric">{entry.gbpValue !== null ? formatN2(entry.gbpValue) : '—'}</td>
     </tr>
   )
 }
@@ -256,8 +256,6 @@ export default function ControleMaePage() {
               <LedgerColumns />
               <thead>
                 <tr>
-                  <th />
-                  <th />
                   <SortableColumnHeader
                     label="Date"
                     columnKey="date"
@@ -290,6 +288,8 @@ export default function ControleMaePage() {
                     sortDirection={sortState?.columnKey === 'gbp' ? sortState.direction : undefined}
                     onSort={requestSort}
                   />
+                  <th />
+                  <th />
                 </tr>
               </thead>
               <tbody>
@@ -313,11 +313,11 @@ export default function ControleMaePage() {
           <LedgerColumns />
           <tbody>
             <tr className="controle-mae-page__totals-row">
-              <td />
-              <td />
               <td colSpan={3}>Total (all entries)</td>
               <td className="data-table__col--numeric">{totals ? formatN2(totals.totalBrlValue) : '—'}</td>
               <td className="data-table__col--numeric">{totals ? formatN2(totals.totalGbpValue) : '—'}</td>
+              <td />
+              <td />
             </tr>
           </tbody>
         </table>

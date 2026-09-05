@@ -36,6 +36,12 @@ interface ExpenseRowProps {
 function ExpenseRow({ expense, onEdit, onDelete }: ExpenseRowProps) {
   return (
     <TableRow>
+      <TableCell>{formatShortDate(expense.date)}</TableCell>
+      <TableCell className="data-table__col--wrap">{expense.description}</TableCell>
+      <TableCell>{expense.categoryName}</TableCell>
+      <TableCell className="data-table__col--numeric">{formatN2(expense.value)}</TableCell>
+      <TableCell>{expense.paymentSourceBankName}</TableCell>
+      <TableCell>{expense.creditCardName ?? '—'}</TableCell>
       <TableCell>
         <Button
           appearance="subtle"
@@ -54,12 +60,6 @@ function ExpenseRow({ expense, onEdit, onDelete }: ExpenseRowProps) {
           onClick={() => onDelete(expense.id)}
         />
       </TableCell>
-      <TableCell>{formatShortDate(expense.date)}</TableCell>
-      <TableCell className="data-table__col--wrap">{expense.description}</TableCell>
-      <TableCell>{expense.categoryName}</TableCell>
-      <TableCell className="data-table__col--numeric">{formatN2(expense.value)}</TableCell>
-      <TableCell>{expense.paymentSourceBankName}</TableCell>
-      <TableCell>{expense.creditCardName ?? '—'}</TableCell>
     </TableRow>
   )
 }
@@ -104,8 +104,6 @@ export default function ExpensesSection({ expenses, onEdit, onDelete, onNewExpen
         <Table className="expenses-section__table data-table">
           <TableHeader>
             <TableRow>
-              <TableHeaderCell />
-              <TableHeaderCell />
               <SortableColumnHeader
                 label="Date"
                 columnKey="date"
@@ -173,6 +171,8 @@ export default function ExpensesSection({ expenses, onEdit, onDelete, onNewExpen
                   isFiltered={isColumnFiltered('card')}
                 />
               </SortableColumnHeader>
+              <TableHeaderCell />
+              <TableHeaderCell />
             </TableRow>
           </TableHeader>
           <TableBody>

@@ -118,7 +118,7 @@ describe('IncomeSection', () => {
     const sourceCells = screen
       .getAllByRole('row')
       .slice(1)
-      .map((row) => row.querySelectorAll('td')[3].textContent)
+      .map((row) => row.querySelectorAll('td')[1].textContent)
     expect(sourceCells).toEqual(['Lottery', 'Gleison'])
 
     fireEvent.click(screen.getByRole('button', { name: 'Net' }))
@@ -126,7 +126,7 @@ describe('IncomeSection', () => {
     const sourceCellsDescending = screen
       .getAllByRole('row')
       .slice(1)
-      .map((row) => row.querySelectorAll('td')[3].textContent)
+      .map((row) => row.querySelectorAll('td')[1].textContent)
     expect(sourceCellsDescending).toEqual(['Gleison', 'Lottery'])
   })
 

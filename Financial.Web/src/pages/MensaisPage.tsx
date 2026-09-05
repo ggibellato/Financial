@@ -38,6 +38,20 @@ function BillRow({
 }: BillRowProps) {
   return (
     <tr>
+      <td>{bill.dueDay}</td>
+      <td>{bill.description}</td>
+      <td>{bill.note}</td>
+      {showBrasilFields && <td>{bill.nitNumber ?? ''}</td>}
+      {showBrasilFields && <td className="data-table__col--numeric">{bill.minimumWageValue !== null ? formatN2(bill.minimumWageValue) : ''}</td>}
+      <td className="data-table__col--numeric">{formatN2(bill.value)}</td>
+      <td>
+        <StatusMenuButton
+          statuses={STATUSES}
+          status={bill.status}
+          isUpdating={isUpdatingStatus}
+          onChange={(status) => onStatusChange(bill.id, status)}
+        />
+      </td>
       <td>
         <Button
           appearance="subtle"
@@ -57,20 +71,6 @@ function BillRow({
           onClick={() =>
             confirmThenRun(`Delete "${bill.description}"? This removes it for good.`, () => onDelete(bill.id))
           }
-        />
-      </td>
-      <td>{bill.dueDay}</td>
-      <td>{bill.description}</td>
-      <td>{bill.note}</td>
-      {showBrasilFields && <td>{bill.nitNumber ?? ''}</td>}
-      {showBrasilFields && <td className="data-table__col--numeric">{bill.minimumWageValue !== null ? formatN2(bill.minimumWageValue) : ''}</td>}
-      <td className="data-table__col--numeric">{formatN2(bill.value)}</td>
-      <td>
-        <StatusMenuButton
-          statuses={STATUSES}
-          status={bill.status}
-          isUpdating={isUpdatingStatus}
-          onChange={(status) => onStatusChange(bill.id, status)}
         />
       </td>
     </tr>
@@ -113,8 +113,6 @@ function BillTable({
         <table className="mensais-page__table data-table">
           <thead>
             <tr>
-              <th />
-              <th />
               <SortableColumnHeader
                 label="Due Day"
                 columnKey="dueDay"
@@ -163,6 +161,8 @@ function BillTable({
                 sortDirection={sortState?.columnKey === 'status' ? sortState.direction : undefined}
                 onSort={requestSort}
               />
+              <th />
+              <th />
             </tr>
           </thead>
           <tbody>

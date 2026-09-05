@@ -22,6 +22,11 @@ function OperationRow({ entry, onEditTransfer, onEditAdjustment, onDeleteTransfe
 
   return (
     <TableRow>
+      <TableCell>{formatShortDate(entry.date)}</TableCell>
+      <TableCell>{isTransfer ? 'Transfer' : 'Adjustment'}</TableCell>
+      <TableCell>{isTransfer ? `${entry.sourceBank} → ${entry.destinationBank}` : entry.bank}</TableCell>
+      <TableCell className="data-table__col--numeric">{formatN2(isTransfer ? entry.amount : entry.delta)}</TableCell>
+      <TableCell>{entry.note ?? ''}</TableCell>
       <TableCell>
         <Button
           appearance="subtle"
@@ -40,11 +45,6 @@ function OperationRow({ entry, onEditTransfer, onEditAdjustment, onDeleteTransfe
           onClick={() => (isTransfer ? onDeleteTransfer(entry.id) : onDeleteAdjustment(entry.bankId, entry.id))}
         />
       </TableCell>
-      <TableCell>{formatShortDate(entry.date)}</TableCell>
-      <TableCell>{isTransfer ? 'Transfer' : 'Adjustment'}</TableCell>
-      <TableCell>{isTransfer ? `${entry.sourceBank} → ${entry.destinationBank}` : entry.bank}</TableCell>
-      <TableCell className="data-table__col--numeric">{formatN2(isTransfer ? entry.amount : entry.delta)}</TableCell>
-      <TableCell>{entry.note ?? ''}</TableCell>
     </TableRow>
   )
 }
@@ -105,8 +105,6 @@ export default function BankOperationsSection({
           <Table className="bank-operations-section__table data-table">
             <TableHeader>
               <TableRow>
-                <TableHeaderCell />
-                <TableHeaderCell />
                 <SortableColumnHeader
                   label="Date"
                   columnKey="date"
@@ -148,6 +146,8 @@ export default function BankOperationsSection({
                   sortDirection={sortState?.columnKey === 'note' ? sortState.direction : undefined}
                   onSort={requestSort}
                 />
+                <TableHeaderCell />
+                <TableHeaderCell />
               </TableRow>
             </TableHeader>
             <TableBody>

@@ -54,6 +54,13 @@ interface PriceRowProps {
 function PriceRow({ entry, onEdit, onDelete }: PriceRowProps) {
   return (
     <TableRow>
+      <TableCell>{formatShortDate(entry.date)}</TableCell>
+      <TableCell className="data-table__col--numeric price-history-tab__price">{formatN2(entry.price)}</TableCell>
+      <TableCell
+        className={entry.isManual ? 'price-history-tab__source--manual' : 'price-history-tab__source--automatic'}
+      >
+        {entry.isManual ? 'Manual' : 'Automatic'}
+      </TableCell>
       <TableCell>
         {entry.isManual && (
           <Button
@@ -75,13 +82,6 @@ function PriceRow({ entry, onEdit, onDelete }: PriceRowProps) {
             onClick={() => onDelete(entry.date)}
           />
         )}
-      </TableCell>
-      <TableCell>{formatShortDate(entry.date)}</TableCell>
-      <TableCell className="data-table__col--numeric price-history-tab__price">{formatN2(entry.price)}</TableCell>
-      <TableCell
-        className={entry.isManual ? 'price-history-tab__source--manual' : 'price-history-tab__source--automatic'}
-      >
-        {entry.isManual ? 'Manual' : 'Automatic'}
       </TableCell>
     </TableRow>
   )
@@ -329,8 +329,6 @@ export default function PriceHistoryTab() {
         <Table className="price-history-tab__table data-table">
           <TableHeader>
             <TableRow>
-              <TableHeaderCell />
-              <TableHeaderCell />
               <SortableColumnHeader
                 label="Date"
                 columnKey="date"
@@ -350,6 +348,8 @@ export default function PriceHistoryTab() {
                 sortDirection={sortState?.columnKey === 'source' ? sortState.direction : undefined}
                 onSort={requestSort}
               />
+              <TableHeaderCell />
+              <TableHeaderCell />
             </TableRow>
           </TableHeader>
           <TableBody>
