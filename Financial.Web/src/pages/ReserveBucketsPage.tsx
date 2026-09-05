@@ -93,7 +93,7 @@ export default function ReserveBucketsPage() {
               <TableHeaderCell>Name</TableHeaderCell>
               <TableHeaderCell>Split Percentage</TableHeaderCell>
               <TableHeaderCell>Active</TableHeaderCell>
-              <TableHeaderCell>Actions</TableHeaderCell>
+              <TableHeaderCell />
             </TableRow>
           </TableHeader>
           <TableBody>

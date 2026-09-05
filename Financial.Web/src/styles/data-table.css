@@ -44,6 +44,20 @@
   word-break: break-word;
 }
 
+/* Shrink-to-fit trick: a tiny explicit width plus the existing white-space:
+   nowrap on .data-table td stops the browser's auto table layout handing
+   this column any of the container's leftover width. */
+.data-table .data-table__col--action,
+.data-table__col--action {
+  width: 1%;
+}
+
+.data-table__actions-cell {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .data-table__action-btn {
   background: none;
   border: none;

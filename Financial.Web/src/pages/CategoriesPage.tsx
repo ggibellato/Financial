@@ -104,7 +104,7 @@ export default function CategoriesPage() {
               <TableHeaderCell>Active</TableHeaderCell>
               <TableHeaderCell>Investment</TableHeaderCell>
               <TableHeaderCell>Tithe</TableHeaderCell>
-              <TableHeaderCell>Actions</TableHeaderCell>
+              <TableHeaderCell />
             </TableRow>
           </TableHeader>
           <TableBody>

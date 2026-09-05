@@ -92,7 +92,7 @@ export default function IncomeSourcesPage() {
               <TableHeaderCell>Group</TableHeaderCell>
               <TableHeaderCell>Active</TableHeaderCell>
               <TableHeaderCell>Auto-split to reserve</TableHeaderCell>
-              <TableHeaderCell>Actions</TableHeaderCell>
+              <TableHeaderCell />
             </TableRow>
           </TableHeader>
           <TableBody>

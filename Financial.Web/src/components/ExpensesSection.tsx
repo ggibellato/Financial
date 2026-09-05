@@ -42,23 +42,23 @@ function ExpenseRow({ expense, onEdit, onDelete }: ExpenseRowProps) {
       <TableCell className="data-table__col--numeric">{formatN2(expense.value)}</TableCell>
       <TableCell>{expense.paymentSourceBankName}</TableCell>
       <TableCell>{expense.creditCardName ?? '—'}</TableCell>
-      <TableCell>
-        <Button
-          appearance="subtle"
-          size="small"
-          icon={<EditRegular />}
-          aria-label="Edit expense"
-          onClick={() => onEdit(expense)}
-        />
-      </TableCell>
-      <TableCell>
-        <Button
-          appearance="subtle"
-          size="small"
-          icon={<DeleteRegular />}
-          aria-label="Delete expense"
-          onClick={() => onDelete(expense.id)}
-        />
+      <TableCell className="data-table__col--action">
+        <div className="data-table__actions-cell">
+          <Button
+            appearance="subtle"
+            size="small"
+            icon={<EditRegular />}
+            aria-label="Edit expense"
+            onClick={() => onEdit(expense)}
+          />
+          <Button
+            appearance="subtle"
+            size="small"
+            icon={<DeleteRegular />}
+            aria-label="Delete expense"
+            onClick={() => onDelete(expense.id)}
+          />
+        </div>
       </TableCell>
     </TableRow>
   )
@@ -171,14 +171,13 @@ export default function ExpensesSection({ expenses, onEdit, onDelete, onNewExpen
                   isFiltered={isColumnFiltered('card')}
                 />
               </SortableColumnHeader>
-              <TableHeaderCell />
-              <TableHeaderCell />
+              <TableHeaderCell className="data-table__col--action" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {sortedRows.length === 0 && hasActiveFilter ? (
               <TableRow>
-                <TableCell colSpan={8}>No rows match the current filters</TableCell>
+                <TableCell colSpan={7}>No rows match the current filters</TableCell>
               </TableRow>
             ) : (
               sortedRows.map((expense) => (

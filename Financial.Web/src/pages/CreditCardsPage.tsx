@@ -79,7 +79,7 @@ export default function CreditCardsPage() {
               <TableHeaderCell>Name</TableHeaderCell>
               <TableHeaderCell>Active</TableHeaderCell>
               <TableHeaderCell>Next Invoice Due Date</TableHeaderCell>
-              <TableHeaderCell>Actions</TableHeaderCell>
+              <TableHeaderCell />
             </TableRow>
           </TableHeader>
           <TableBody>

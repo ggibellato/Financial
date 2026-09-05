@@ -94,7 +94,7 @@ export default function PortfoliosPage() {
               <TableHeaderCell>Broker</TableHeaderCell>
               <TableHeaderCell>Broker Status</TableHeaderCell>
               <TableHeaderCell>Assets</TableHeaderCell>
-              <TableHeaderCell>Actions</TableHeaderCell>
+              <TableHeaderCell />
             </TableRow>
           </TableHeader>
           <TableBody>

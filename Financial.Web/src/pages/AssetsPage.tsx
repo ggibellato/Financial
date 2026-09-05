@@ -164,7 +164,7 @@ export default function AssetsPage() {
               <TableHeaderCell>Portfolio</TableHeaderCell>
               <TableHeaderCell>Class</TableHeaderCell>
               <TableHeaderCell>Quantity</TableHeaderCell>
-              <TableHeaderCell>Actions</TableHeaderCell>
+              <TableHeaderCell />
             </TableRow>
           </TableHeader>
           <TableBody>

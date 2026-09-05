@@ -48,23 +48,23 @@ function IncomeRow({ income, onEdit, onDelete }: IncomeRowProps) {
       <TableCell className="data-table__col--numeric">{formatN2(income.netValue)}</TableCell>
       <TableCell>{income.bankName ?? '—'}</TableCell>
       <TableCell>{income.description ?? ''}</TableCell>
-      <TableCell>
-        <Button
-          appearance="subtle"
-          size="small"
-          icon={<EditRegular />}
-          aria-label="Edit income"
-          onClick={() => onEdit(income)}
-        />
-      </TableCell>
-      <TableCell>
-        <Button
-          appearance="subtle"
-          size="small"
-          icon={<DeleteRegular />}
-          aria-label="Delete income"
-          onClick={() => onDelete(income.id)}
-        />
+      <TableCell className="data-table__col--action">
+        <div className="data-table__actions-cell">
+          <Button
+            appearance="subtle"
+            size="small"
+            icon={<EditRegular />}
+            aria-label="Edit income"
+            onClick={() => onEdit(income)}
+          />
+          <Button
+            appearance="subtle"
+            size="small"
+            icon={<DeleteRegular />}
+            aria-label="Delete income"
+            onClick={() => onDelete(income.id)}
+          />
+        </div>
       </TableCell>
     </TableRow>
   )
@@ -167,14 +167,13 @@ export default function IncomeSection({
                 sortDirection={sortState?.columnKey === 'description' ? sortState.direction : undefined}
                 onSort={requestSort}
               />
-              <TableHeaderCell />
-              <TableHeaderCell />
+              <TableHeaderCell className="data-table__col--action" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {sortedRows.length === 0 && isColumnFiltered('bank') ? (
               <TableRow>
-                <TableCell colSpan={8}>No rows match the current filters</TableCell>
+                <TableCell colSpan={7}>No rows match the current filters</TableCell>
               </TableRow>
             ) : (
               sortedRows.map((income) => (

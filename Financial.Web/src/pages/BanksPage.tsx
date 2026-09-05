@@ -81,7 +81,7 @@ export default function BanksPage() {
               <TableHeaderCell>Name</TableHeaderCell>
               <TableHeaderCell>Round-up</TableHeaderCell>
               <TableHeaderCell>Opening Balance</TableHeaderCell>
-              <TableHeaderCell>Actions</TableHeaderCell>
+              <TableHeaderCell />
             </TableRow>
           </TableHeader>
           <TableBody>

@@ -140,8 +140,7 @@ export default function RecurringBillsPage() {
                 sortDirection={sortState?.columnKey === 'status' ? sortState.direction : undefined}
                 onSort={requestSort}
               />
-              <th />
-              <th />
+              <th className="data-table__col--action" />
             </tr>
           </thead>
           <tbody>
@@ -152,24 +151,24 @@ export default function RecurringBillsPage() {
                 <td className="data-table__col--numeric">{formatN2(bill.value)}</td>
                 <td>{bill.area}</td>
                 <td>{bill.status}</td>
-                <td>
-                  <Button
-                    appearance="subtle"
-                    size="small"
-                    icon={<EditRegular />}
-                    aria-label={`Edit ${bill.description}`}
-                    onClick={() => setEditingBill(bill)}
-                  />
-                </td>
-                <td>
-                  <Button
-                    appearance="subtle"
-                    size="small"
-                    icon={<DeleteRegular />}
-                    aria-label={`Delete ${bill.description}`}
-                    disabled={deletingId === bill.id}
-                    onClick={() => setConfirmingDelete(bill)}
-                  />
+                <td className="data-table__col--action">
+                  <div className="data-table__actions-cell">
+                    <Button
+                      appearance="subtle"
+                      size="small"
+                      icon={<EditRegular />}
+                      aria-label={`Edit ${bill.description}`}
+                      onClick={() => setEditingBill(bill)}
+                    />
+                    <Button
+                      appearance="subtle"
+                      size="small"
+                      icon={<DeleteRegular />}
+                      aria-label={`Delete ${bill.description}`}
+                      disabled={deletingId === bill.id}
+                      onClick={() => setConfirmingDelete(bill)}
+                    />
+                  </div>
                 </td>
               </tr>
             ))}
