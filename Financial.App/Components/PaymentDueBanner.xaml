@@ -9,8 +9,12 @@
     <Border Visibility="{Binding IsVisible, Converter={StaticResource BoolToVisibilityConverter}}"
             Background="{DynamicResource ControlFillColorDefaultBrush}"
             BorderBrush="{DynamicResource ControlElevationBorderBrush}"
-            BorderThickness="0,0,0,1"
+            BorderThickness="1,1,1,0"
+            CornerRadius="4,4,0,0"
             Padding="16,8">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="16" ShadowDepth="0" Opacity="0.3" Color="Black"/>
+        </Border.Effect>
         <StackPanel>
             <DockPanel>
                 <TextBlock Text="Upcoming payments" FontWeight="SemiBold" DockPanel.Dock="Left" VerticalAlignment="Center"/>

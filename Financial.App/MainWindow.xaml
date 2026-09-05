@@ -19,10 +19,7 @@
                 <RowDefinition Height="32"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
-            <StackPanel Grid.Row="0">
-                <local:SyncStatusIndicator DataContext="{Binding SyncStatus}"/>
-                <local:PaymentDueBanner DataContext="{Binding PaymentsDue}"/>
-            </StackPanel>
+            <local:SyncStatusIndicator Grid.Row="0" DataContext="{Binding SyncStatus}"/>
             <Border Grid.Row="1" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" BorderThickness="0,0,0,1" Padding="16,0">
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -35,6 +32,16 @@
                 </Grid>
             </Border>
             <ContentControl Grid.Row="2" Content="{Binding SelectedContent}"/>
+        </Grid>
+        <!-- Overlay layer: floats over the whole window without affecting Sidebar/content sizing (Grid siblings don't reflow each other). -->
+        <Grid Grid.Column="0" Grid.ColumnSpan="2" VerticalAlignment="Bottom">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <local:PaymentDueBanner Grid.Column="1" Grid.ColumnSpan="2" DataContext="{Binding PaymentsDue}"/>
         </Grid>
     </Grid>
 </Window>
