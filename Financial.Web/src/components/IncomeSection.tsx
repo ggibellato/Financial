@@ -40,6 +40,14 @@ interface IncomeRowProps {
 function IncomeRow({ income, onEdit, onDelete }: IncomeRowProps) {
   return (
     <TableRow>
+      <TableCell>{formatShortDate(income.date)}</TableCell>
+      <TableCell>{income.incomeSourceName}</TableCell>
+      <TableCell className="data-table__col--numeric">
+        {income.grossValue != null ? formatN2(income.grossValue) : '—'}
+      </TableCell>
+      <TableCell className="data-table__col--numeric">{formatN2(income.netValue)}</TableCell>
+      <TableCell>{income.bankName ?? '—'}</TableCell>
+      <TableCell>{income.description ?? ''}</TableCell>
       <TableCell>
         <Button
           appearance="subtle"
@@ -58,14 +66,6 @@ function IncomeRow({ income, onEdit, onDelete }: IncomeRowProps) {
           onClick={() => onDelete(income.id)}
         />
       </TableCell>
-      <TableCell>{formatShortDate(income.date)}</TableCell>
-      <TableCell>{income.incomeSourceName}</TableCell>
-      <TableCell className="data-table__col--numeric">
-        {income.grossValue != null ? formatN2(income.grossValue) : '—'}
-      </TableCell>
-      <TableCell className="data-table__col--numeric">{formatN2(income.netValue)}</TableCell>
-      <TableCell>{income.bankName ?? '—'}</TableCell>
-      <TableCell>{income.description ?? ''}</TableCell>
     </TableRow>
   )
 }
@@ -119,8 +119,6 @@ export default function IncomeSection({
         <Table className="income-section__table data-table">
           <TableHeader>
             <TableRow>
-              <TableHeaderCell />
-              <TableHeaderCell />
               <SortableColumnHeader
                 label="Date"
                 columnKey="date"
@@ -169,6 +167,8 @@ export default function IncomeSection({
                 sortDirection={sortState?.columnKey === 'description' ? sortState.direction : undefined}
                 onSort={requestSort}
               />
+              <TableHeaderCell />
+              <TableHeaderCell />
             </TableRow>
           </TableHeader>
           <TableBody>

@@ -32,12 +32,12 @@ function MovementColumns() {
   return (
     <colgroup>
       <col className="reserva-page__col-actions" />
-      <col className="reserva-page__col-actions" />
-      <col className="reserva-page__col-actions" />
       <col className="reserva-page__col-date" />
       <col className="reserva-page__col-bucket" />
       <col />
       <col className="reserva-page__col-value" />
+      <col className="reserva-page__col-actions" />
+      <col className="reserva-page__col-actions" />
     </colgroup>
   )
 }
@@ -227,12 +227,12 @@ export default function ReservaPage() {
                 <thead>
                   <tr>
                     <th />
-                    <th />
-                    <th />
                     <th>Date</th>
                     <th>Bucket</th>
                     <th>Description</th>
                     <th className="data-table__col--numeric">Amount</th>
+                    <th />
+                    <th />
                   </tr>
                 </thead>
                 <tbody>
@@ -251,6 +251,10 @@ export default function ReservaPage() {
                             </span>
                           )}
                         </td>
+                        <td>{formatShortDate(m.date)}</td>
+                        <td>{m.bucketName}</td>
+                        <td>{m.description}</td>
+                        <td className="data-table__col--numeric">{formatN2(m.amount)}</td>
                         <td>
                           <button
                             className="data-table__action-btn"
@@ -280,18 +284,14 @@ export default function ReservaPage() {
                             <DeleteRegular />
                           </button>
                         </td>
-                        <td>{formatShortDate(m.date)}</td>
-                        <td>{m.bucketName}</td>
-                        <td>{m.description}</td>
-                        <td className="data-table__col--numeric">{formatN2(m.amount)}</td>
                       </tr>
                       {m.groupTotal !== null && (
                         <tr className="reserva-page__totals-row">
                           <td />
-                          <td />
-                          <td />
                           <td colSpan={3}>Total split for {m.description}</td>
                           <td className="data-table__col--numeric">{formatN2(m.groupTotal)}</td>
+                          <td />
+                          <td />
                         </tr>
                       )}
                     </Fragment>

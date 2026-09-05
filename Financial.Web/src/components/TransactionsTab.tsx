@@ -61,6 +61,14 @@ function TransactionRow({ transaction, onEdit, onDelete }: TransactionRowProps) 
 
   return (
     <TableRow>
+      <TableCell>{formatShortDate(transaction.date)}</TableCell>
+      <TableCell className={typeClass}>{transaction.type}</TableCell>
+      <TableCell className="data-table__col--numeric">{formatN8(transaction.quantity)}</TableCell>
+      <TableCell className="data-table__col--numeric">{formatN2(transaction.unitPrice)}</TableCell>
+      <TableCell className="data-table__col--numeric">{formatN2(transaction.fees)}</TableCell>
+      <TableCell className="data-table__col--numeric transactions-tab__total">
+        {formatN2(transaction.totalPrice)}
+      </TableCell>
       <TableCell>
         <Button
           appearance="subtle"
@@ -78,14 +86,6 @@ function TransactionRow({ transaction, onEdit, onDelete }: TransactionRowProps) 
           aria-label="Delete transaction"
           onClick={() => onDelete(transaction.id)}
         />
-      </TableCell>
-      <TableCell>{formatShortDate(transaction.date)}</TableCell>
-      <TableCell className={typeClass}>{transaction.type}</TableCell>
-      <TableCell className="data-table__col--numeric">{formatN8(transaction.quantity)}</TableCell>
-      <TableCell className="data-table__col--numeric">{formatN2(transaction.unitPrice)}</TableCell>
-      <TableCell className="data-table__col--numeric">{formatN2(transaction.fees)}</TableCell>
-      <TableCell className="data-table__col--numeric transactions-tab__total">
-        {formatN2(transaction.totalPrice)}
       </TableCell>
     </TableRow>
   )
@@ -372,8 +372,6 @@ export default function TransactionsTab() {
         <Table className="transactions-tab__table data-table">
           <TableHeader>
             <TableRow>
-              <TableHeaderCell />
-              <TableHeaderCell />
               <SortableColumnHeader
                 label="Date"
                 columnKey="date"
@@ -414,6 +412,8 @@ export default function TransactionsTab() {
                 sortDirection={sortState?.columnKey === 'total' ? sortState.direction : undefined}
                 onSort={requestSort}
               />
+              <TableHeaderCell />
+              <TableHeaderCell />
             </TableRow>
           </TableHeader>
           <TableBody>

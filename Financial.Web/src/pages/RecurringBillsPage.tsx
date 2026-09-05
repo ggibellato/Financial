@@ -109,8 +109,6 @@ export default function RecurringBillsPage() {
         <table className="data-table" aria-label="Recurring Bills">
           <thead>
             <tr>
-              <th />
-              <th />
               <SortableColumnHeader
                 label="Due Day"
                 columnKey="dueDay"
@@ -142,11 +140,18 @@ export default function RecurringBillsPage() {
                 sortDirection={sortState?.columnKey === 'status' ? sortState.direction : undefined}
                 onSort={requestSort}
               />
+              <th />
+              <th />
             </tr>
           </thead>
           <tbody>
             {sortedBills.map((bill) => (
               <tr key={bill.id}>
+                <td>{bill.dueDay}</td>
+                <td>{bill.description}</td>
+                <td className="data-table__col--numeric">{formatN2(bill.value)}</td>
+                <td>{bill.area}</td>
+                <td>{bill.status}</td>
                 <td>
                   <Button
                     appearance="subtle"
@@ -166,11 +171,6 @@ export default function RecurringBillsPage() {
                     onClick={() => setConfirmingDelete(bill)}
                   />
                 </td>
-                <td>{bill.dueDay}</td>
-                <td>{bill.description}</td>
-                <td className="data-table__col--numeric">{formatN2(bill.value)}</td>
-                <td>{bill.area}</td>
-                <td>{bill.status}</td>
               </tr>
             ))}
           </tbody>
