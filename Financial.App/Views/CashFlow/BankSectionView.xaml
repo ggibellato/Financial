@@ -133,11 +133,38 @@
                                         </Style>
                                     </ui:Button.Style>
                                 </ui:Button>
+                                <ui:Button Appearance="Transparent" Padding="4,0" Margin="0,0,4,0"
+                                           Icon="{ui:SymbolIcon Symbol=Delete16}"
+                                           ToolTip="Delete transfer" AutomationProperties.Name="Delete transfer"
+                                           Command="{Binding DataContext.DeleteBankOperationCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                           CommandParameter="{Binding}">
+                                    <ui:Button.Style>
+                                        <Style TargetType="{x:Type ui:Button}" BasedOn="{StaticResource {x:Type ui:Button}}">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Kind}" Value="Transfer">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ui:Button.Style>
+                                </ui:Button>
                                 <ui:Button Appearance="Transparent" Padding="4,0"
                                            Icon="{ui:SymbolIcon Symbol=Delete16}"
-                                           ToolTip="Delete" AutomationProperties.Name="Delete"
+                                           ToolTip="Delete balance adjustment" AutomationProperties.Name="Delete balance adjustment"
                                            Command="{Binding DataContext.DeleteBankOperationCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                           CommandParameter="{Binding}"/>
+                                           CommandParameter="{Binding}">
+                                    <ui:Button.Style>
+                                        <Style TargetType="{x:Type ui:Button}" BasedOn="{StaticResource {x:Type ui:Button}}">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Kind}" Value="Adjustment">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ui:Button.Style>
+                                </ui:Button>
                             </StackPanel>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
