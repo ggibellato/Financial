@@ -14,9 +14,9 @@ import './InvestmentSnapshotsPage.css'
 function SnapshotColumns() {
   return (
     <colgroup>
-      <col className="investment-snapshots-page__col-actions" />
       <col />
       <col className="investment-snapshots-page__col-value" />
+      <col className="investment-snapshots-page__col-actions" />
     </colgroup>
   )
 }
@@ -31,6 +31,8 @@ function SnapshotRow({ snapshot, onEdit }: SnapshotRowProps) {
 
   return (
     <TableRow>
+      <TableCell>{label}</TableCell>
+      <TableCell className="data-table__col--numeric">{formatN2(snapshot.value)}</TableCell>
       <TableCell>
         <Button
           appearance="subtle"
@@ -40,8 +42,6 @@ function SnapshotRow({ snapshot, onEdit }: SnapshotRowProps) {
           onClick={() => onEdit(snapshot)}
         />
       </TableCell>
-      <TableCell>{label}</TableCell>
-      <TableCell className="data-table__col--numeric">{formatN2(snapshot.value)}</TableCell>
     </TableRow>
   )
 }
@@ -133,7 +133,6 @@ export default function InvestmentSnapshotsPage() {
               <SnapshotColumns />
               <TableHeader>
                 <TableRow>
-                  <TableHeaderCell />
                   <SortableColumnHeader
                     label="Account"
                     columnKey="account"
@@ -147,6 +146,7 @@ export default function InvestmentSnapshotsPage() {
                     sortDirection={sortState?.columnKey === 'value' ? sortState.direction : undefined}
                     onSort={requestSort}
                   />
+                  <TableHeaderCell />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -164,9 +164,9 @@ export default function InvestmentSnapshotsPage() {
           <SnapshotColumns />
           <TableBody>
             <TableRow className="investment-snapshots-page__totals-row">
-              <TableCell />
               <TableCell>Total (net of liabilities)</TableCell>
               <TableCell className="data-table__col--numeric">{formatN2(totalValue)}</TableCell>
+              <TableCell />
             </TableRow>
           </TableBody>
         </Table>
