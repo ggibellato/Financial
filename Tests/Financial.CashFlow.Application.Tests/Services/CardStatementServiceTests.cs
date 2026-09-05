@@ -156,6 +156,38 @@ public class CardStatementServiceTests
     }
 
     [Fact]
+    public async Task GetStatementsForMonthAsync_AccumulatedOutstandingTotalSumsUnpaidChargesAcrossAllPeriodsForTheCard()
+    {
+        AddCharge(_repository, new DateOnly(2026, 6, 5), 15m, Card(_repository, "BarclaysPlatinumVisa8003"));
+        AddCharge(_repository, new DateOnly(2026, 7, 10), 30m, Card(_repository, "BarclaysPlatinumVisa8003"));
+        AddCharge(_repository, new DateOnly(2026, 8, 1), 100m, Card(_repository, "BarclaysPlatinumVisa8003"));
+        AddCharge(_repository, new DateOnly(2026, 7, 12), 999m, Card(_repository, "BaAmex"));
+
+        var result = await _sut.GetStatementsForMonthAsync(2026, 7);
+
+        using (new AssertionScope())
+        {
+            var barclays = result.Single(s => s.CreditCardName == "BarclaysPlatinumVisa8003");
+            barclays.OutstandingTotal.Should().Be(30m, "only July's charge belongs to this statement's period");
+            barclays.AccumulatedOutstandingTotal.Should().Be(145m, "June, July and August unpaid charges all count toward the card's total");
+        }
+    }
+
+    [Fact]
+    public async Task GetStatementsForMonthAsync_AccumulatedOutstandingTotalExcludesSettledChargesAndOtherCards()
+    {
+        var barclays = _repository.Banks.First(b => b.Name == "Barclays");
+        var settled = AddCharge(_repository, new DateOnly(2026, 6, 5), 15m, Card(_repository, "BarclaysPlatinumVisa8003"));
+        settled.Settle(barclays, new DateOnly(2026, 6, 20));
+        AddCharge(_repository, new DateOnly(2026, 7, 10), 30m, Card(_repository, "BarclaysPlatinumVisa8003"));
+        AddCharge(_repository, new DateOnly(2026, 7, 12), 999m, Card(_repository, "BaAmex"));
+
+        var result = await _sut.GetStatementsForMonthAsync(2026, 7);
+
+        result.Should().ContainSingle(s => s.CreditCardName == "BarclaysPlatinumVisa8003" && s.AccumulatedOutstandingTotal == 30m);
+    }
+
+    [Fact]
     public async Task MarkStatementPaidAsync_SettlesEveryChargeForTheCardMonthWithBankAndToday()
     {
         var first = AddCharge(_repository, new DateOnly(2026, 7, 10), 30m, Card(_repository, "BarclaysPlatinumVisa8003"));

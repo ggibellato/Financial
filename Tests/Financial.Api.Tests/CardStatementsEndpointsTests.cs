@@ -43,6 +43,34 @@ public class CardStatementsEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
+    public async Task GetStatementsForMonth_AccumulatedOutstandingTotal_IncludesUnpaidChargesFromOtherMonths()
+    {
+        await Client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
+        {
+            Date = new DateOnly(2026, 6, 10),
+            Description = "Older unpaid charge",
+            Value = 30m,
+            CategoryId = MercadoId,
+            PaymentSourceBankId = null,
+            CreditCardId = BarclaysPlatinumVisa8003Id
+        });
+        await Client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 10),
+            Description = "Card charge",
+            Value = 45m,
+            CategoryId = MercadoId,
+            PaymentSourceBankId = null,
+            CreditCardId = BarclaysPlatinumVisa8003Id
+        });
+
+        var statement = await GetStatementAsync(Client, "BarclaysPlatinumVisa8003");
+
+        statement.OutstandingTotal.Should().Be(45m);
+        statement.AccumulatedOutstandingTotal.Should().Be(75m);
+    }
+
+    [Fact]
     public async Task MarkStatementPaid_WithPaymentSource_SettlesChargesAndZeroesOutstandingTotal()
     {
         await Client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
