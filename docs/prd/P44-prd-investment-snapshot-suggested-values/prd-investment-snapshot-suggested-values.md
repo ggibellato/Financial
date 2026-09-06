@@ -165,17 +165,17 @@ graph TD
 - [x] A server-side rejection (e.g. a deleted credit card reference) surfaces an error banner and does not silently save a broken link.
 
 ### F02. Investment Snapshot Suggested Values
-- [ ] The "Suggest Values" button is visible and enabled next to the month picker for any selected month, including future or not-yet-populated months.
-- [ ] For a credit-card-backed account with a statement matching the exact selected month, the suggested value equals that statement's period (invoice) outstanding total.
-- [ ] For a credit-card-backed account with no statement for the exact selected month, no suggestion row is produced for it; it appears instead in the "Not updated" list with the reason "No statement for this month yet".
-- [ ] For "Reservas pessoais" (or any ReserveBucketsSum account), the suggested value equals the sum of all reserve bucket balances as of the last day of the month immediately before the selected month.
-- [ ] A row whose current snapshot value is 0 is checked (included) by default.
-- [ ] A row whose current snapshot value is non-zero is unchecked by default and displays both the current and suggested values.
-- [ ] The user can edit a suggested value and toggle any row's Include checkbox before applying.
-- [ ] Clicking "Apply N Suggestions" persists only the checked rows; unchecked and skipped rows are left completely unchanged.
-- [ ] When one checked row fails to save, the remaining checked rows still attempt to save, and the completion summary names every row that failed.
-- [ ] Accounts with Source = None never appear in either the Suggestions list or the Not-updated list.
-- [ ] The full suggest → review → apply workflow, including the overwrite-confirmation behavior, is available and behaves equivalently in the WPF app.
+- [x] The "Suggest Values" button is visible and enabled next to the month picker for any selected month, including future or not-yet-populated months.
+- [x] For a credit-card-backed account with a statement matching the exact selected month, the suggested value equals that statement's period (invoice) outstanding total.
+- [x] For a credit-card-backed account with no statement for the exact selected month, no suggestion row is produced for it; it appears instead in the "Not updated" list with the reason "No statement for this month yet".
+- [x] For "Reservas pessoais" (or any ReserveBucketsSum account), the suggested value equals the sum of all reserve bucket balances as of the last day of the month immediately before the selected month.
+- [x] A row whose current snapshot value is 0 is checked (included) by default.
+- [x] A row whose current snapshot value is non-zero is unchecked by default and displays both the current and suggested values.
+- [x] The user can edit a suggested value and toggle any row's Include checkbox before applying.
+- [x] Clicking "Apply N Suggestions" persists only the checked rows; unchecked and skipped rows are left completely unchanged.
+- [x] When one checked row fails to save, the remaining checked rows still attempt to save, and the completion summary names every row that failed.
+- [x] Accounts with Source = None never appear in either the Suggestions list or the Not-updated list.
+- [x] The full suggest → review → apply workflow, including the overwrite-confirmation behavior, is available and behaves equivalently in the WPF app.
 
 ### Cross-Feature Integration
-- [ ] An account's configured Source from F01 correctly determines its F02 behavior: a None-source account never appears in either list, a CreditCard-source account's suggestion is computed from its specifically linked card's statement, and a ReserveBucketsSum account's suggestion is computed from the combined reserve bucket total — verified for at least one account of each source type.
+- [x] An account's configured Source from F01 correctly determines its F02 behavior: a None-source account never appears in either list, a CreditCard-source account's suggestion is computed from its specifically linked card's statement, and a ReserveBucketsSum account's suggestion is computed from the combined reserve bucket total — verified for at least one account of each source type.
