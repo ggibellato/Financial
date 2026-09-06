@@ -4,10 +4,12 @@ import type { InvestmentSnapshotDto } from '../api/types'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
 import SortableColumnHeader from '../components/grid/SortableColumnHeader'
+import SuggestedValuesPanel from '../components/SuggestedValuesPanel'
 import { useFormPanelStyles } from '../components/formPanelStyles'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { useFieldError } from '../hooks/useFieldError'
 import { useInvestmentSnapshots } from '../hooks/useInvestmentSnapshots'
+import { useSuggestedValues } from '../hooks/useSuggestedValues'
 import { formatN2 } from '../utils/formatters'
 import './InvestmentSnapshotsPage.css'
 
@@ -48,6 +50,8 @@ function SnapshotRow({ snapshot, onEdit }: SnapshotRowProps) {
 
 export default function InvestmentSnapshotsPage() {
   const {
+    year,
+    month,
     monthInputValue,
     setMonthInputValue,
     snapshots,
@@ -55,6 +59,7 @@ export default function InvestmentSnapshotsPage() {
     isLoading,
     error,
     retry,
+    refresh,
     editingId,
     editValue,
     isSaving,
@@ -66,9 +71,20 @@ export default function InvestmentSnapshotsPage() {
     saveEdit,
   } = useInvestmentSnapshots()
 
+  const suggestedValues = useSuggestedValues(year, month, refresh)
   const isEditing = editingId !== null
   const styles = useFormPanelStyles()
   const fieldError = useFieldError(saveErrorFields)
+
+  const openSuggestValues = () => {
+    cancelEdit()
+    suggestedValues.open()
+  }
+
+  const openEditForm = (snapshot: InvestmentSnapshotDto) => {
+    suggestedValues.close()
+    showEditForm(snapshot)
+  }
 
   const snapshotAccessors: Record<string, SortAccessor<InvestmentSnapshotDto>> = {
     account: (snapshot) => snapshot.accountName,
@@ -86,7 +102,29 @@ export default function InvestmentSnapshotsPage() {
           value={monthInputValue}
           onChange={(e) => setMonthInputValue(e.target.value)}
         />
+        <Button appearance="primary" onClick={openSuggestValues}>
+          Suggest Values
+        </Button>
       </div>
+
+      {suggestedValues.isOpen && (
+        <SuggestedValuesPanel
+          phase={suggestedValues.phase}
+          fetchError={suggestedValues.fetchError}
+          rows={suggestedValues.rows}
+          notUpdated={suggestedValues.notUpdated}
+          checkedCount={suggestedValues.checkedCount}
+          applyProgress={suggestedValues.applyProgress}
+          succeededCount={suggestedValues.succeededCount}
+          failedRows={suggestedValues.failedRows}
+          onToggleIncluded={suggestedValues.toggleIncluded}
+          onSetValue={suggestedValues.setValue}
+          onApply={() => void suggestedValues.apply()}
+          onRetryFailed={() => void suggestedValues.retryFailed()}
+          onRetryFetch={suggestedValues.retryFetch}
+          onClose={suggestedValues.close}
+        />
+      )}
 
       {isEditing && (
         <div className={styles.panel}>
@@ -151,7 +189,7 @@ export default function InvestmentSnapshotsPage() {
               </TableHeader>
               <TableBody>
                 {sortedSnapshots.map((snapshot) => (
-                  <SnapshotRow key={snapshot.id} snapshot={snapshot} onEdit={showEditForm} />
+                  <SnapshotRow key={snapshot.id} snapshot={snapshot} onEdit={openEditForm} />
                 ))}
               </TableBody>
             </Table>

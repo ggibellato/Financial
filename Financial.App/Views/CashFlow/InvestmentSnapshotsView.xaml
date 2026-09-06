@@ -4,6 +4,14 @@
              xmlns:local="clr-namespace:Financial.Presentation.App.Views.CashFlow"
              xmlns:components="clr-namespace:Financial.Presentation.App.Components"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <!-- Matches Financial.Web's accent — see ExpenseFormView.xaml / ADR-005. -->
+            <SolidColorBrush x:Key="AccentButtonBackground" Color="#0F6CBD"/>
+            <SolidColorBrush x:Key="AccentButtonBackgroundPointerOver" Color="#115EA3"/>
+            <SolidColorBrush x:Key="AccentButtonBackgroundPressed" Color="#0C3B5E"/>
+        </ResourceDictionary>
+    </UserControl.Resources>
     <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
@@ -29,9 +37,12 @@
                 <TextBlock Text="Month:" VerticalAlignment="Center" Margin="0,0,8,0"/>
                 <components:MonthYearPicker SelectedYear="{Binding Year, Mode=TwoWay}"
                                              SelectedMonth="{Binding Month, Mode=TwoWay}"/>
+                <ui:Button Content="Suggest Values" Appearance="Primary" Margin="12,0,0,0"
+                           Command="{Binding SuggestValuesCommand}"/>
             </StackPanel>
 
             <local:EditSnapshotValueFormView Grid.Row="1" Visibility="{Binding IsEditFormOpen, Converter={StaticResource BoolToVisibilityConverter}}"/>
+            <local:SuggestValuesPanelView Grid.Row="1" Visibility="{Binding IsSuggestPanelOpen, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
             <DataGrid Grid.Row="2" ItemsSource="{Binding Snapshots}" AutoGenerateColumns="False" IsReadOnly="True">
                 <DataGrid.Columns>

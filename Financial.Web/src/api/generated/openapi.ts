@@ -3146,6 +3146,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/investment-snapshots/{year}/{month}/suggestions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Computes suggested values for a given month's investment snapshots, based on each
+         *                 account's configured Source (F01).
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The year. */
+                    year: number;
+                    /** @description The month (1-12). */
+                    month: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description 200 OK with the computed suggestions and skipped accounts. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["InvestmentSnapshotSuggestionsDTO"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/mensais": {
         parameters: {
             query?: never;
@@ -5841,6 +5885,28 @@ export interface components {
             value: number;
             /** Format: int32 */
             year: number;
+        };
+        InvestmentSnapshotSuggestionDTO: {
+            /** Format: uuid */
+            accountId: string;
+            accountName: string;
+            /** Format: double */
+            currentValue: number;
+            /** Format: uuid */
+            snapshotId: string;
+            sourceDescription: string;
+            /** Format: double */
+            suggestedValue: number;
+        };
+        InvestmentSnapshotSuggestionSkippedDTO: {
+            /** Format: uuid */
+            accountId: string;
+            accountName: string;
+            reason: string;
+        };
+        InvestmentSnapshotSuggestionsDTO: {
+            notUpdated: components["schemas"]["InvestmentSnapshotSuggestionSkippedDTO"][];
+            suggestions: components["schemas"]["InvestmentSnapshotSuggestionDTO"][];
         };
         InvestmentSnapshotValueUpdateDTO: {
             /** Format: double */
