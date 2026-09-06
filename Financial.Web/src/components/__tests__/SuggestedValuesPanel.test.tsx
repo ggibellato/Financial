@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import SuggestedValuesPanel from '../SuggestedValuesPanel'
 import type { SuggestionRow } from '../../hooks/useSuggestedValues'
@@ -77,6 +77,15 @@ describe('SuggestedValuesPanel', () => {
     )
 
     expect(screen.getByText('Applying 2 of 5: PlatinumVisa8003...')).toBeInTheDocument()
+  })
+
+  it('shows a fetch error state with a retry action', () => {
+    const onRetryFetch = vi.fn()
+    render(<SuggestedValuesPanel {...baseProps({ phase: 'error', fetchError: "Couldn't load suggestions", onRetryFetch })} />)
+
+    expect(screen.getByRole('alert')).toHaveTextContent("Couldn't load suggestions")
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
+    expect(onRetryFetch).toHaveBeenCalledTimes(1)
   })
 
   it('shows completion summary with retry failed when a row failed', () => {

@@ -693,10 +693,15 @@ internal sealed class StubInvestmentSnapshotService : IInvestmentSnapshotService
     };
     public int GetSuggestionsForMonthCallCount { get; private set; }
     public (int Year, int Month)? LastSuggestionsRequest { get; private set; }
+    public Exception? ThrowOnGetSuggestions { get; set; }
 
     public Task<InvestmentSnapshotSuggestionsDTO> GetSuggestionsForMonthAsync(int year, int month)
     {
         GetSuggestionsForMonthCallCount++;
+        if (ThrowOnGetSuggestions is { } ex)
+        {
+            throw ex;
+        }
         LastSuggestionsRequest = (year, month);
         return Task.FromResult(Suggestions);
     }

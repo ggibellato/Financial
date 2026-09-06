@@ -63,6 +63,20 @@ describe('useSuggestedValues', () => {
     expect(result.current.rows.find((r) => r.accountId === 'a2')?.included).toBe(false)
   })
 
+  it('sets an error phase with a message when the fetch fails, and retryFetch re-attempts it', async () => {
+    getInvestmentSnapshotSuggestionsMock.mockRejectedValueOnce(new Error('Network down'))
+    const { result } = renderHook(() => useSuggestedValues(2026, 8, vi.fn()))
+
+    act(() => result.current.open())
+    await waitFor(() => expect(result.current.phase).toBe('error'))
+    expect(result.current.fetchError).toBe('Network down')
+
+    getInvestmentSnapshotSuggestionsMock.mockResolvedValueOnce(SUGGESTIONS)
+    act(() => result.current.retryFetch())
+    await waitFor(() => expect(result.current.phase).toBe('ready'))
+    expect(result.current.rows).toHaveLength(2)
+  })
+
   it('applies only checked rows sequentially', async () => {
     updateInvestmentSnapshotValueMock.mockResolvedValue({
       id: 's1',

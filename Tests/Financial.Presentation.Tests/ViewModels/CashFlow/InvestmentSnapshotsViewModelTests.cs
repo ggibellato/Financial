@@ -173,6 +173,25 @@ public class InvestmentSnapshotsViewModelTests
     }
 
     [Fact]
+    public void SuggestValuesCommand_FetchFails_SetsSuggestionsErrorAndRetryReattempts()
+    {
+        var (viewModel, service) = CreateViewModel();
+        service.ThrowOnGetSuggestions = new InvalidOperationException("Network down");
+
+        viewModel.SuggestValuesCommand.Execute(null);
+
+        viewModel.HasSuggestionsError.Should().BeTrue();
+        viewModel.SuggestionsError.Should().Be("Network down");
+
+        service.ThrowOnGetSuggestions = null;
+        service.Suggestions = new InvestmentSnapshotSuggestionsDTO { Suggestions = [], NotUpdated = [] };
+        viewModel.RetrySuggestionsFetchCommand.Execute(null);
+
+        viewModel.HasSuggestionsError.Should().BeFalse();
+        viewModel.ShowSuggestionsContent.Should().BeTrue();
+    }
+
+    [Fact]
     public async Task ApplySuggestionsCommand_AppliesOnlyCheckedRowsSequentially()
     {
         var (viewModel, service) = CreateViewModel();
