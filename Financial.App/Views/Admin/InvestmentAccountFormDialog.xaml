@@ -50,13 +50,18 @@
         <TextBlock Grid.Row="4" Text="Source" Margin="0,0,0,4"/>
         <ComboBox Grid.Row="5"
                   AutomationProperties.Name="Source"
-                  ItemsSource="{Binding SourceOptions}"
+                  ItemsSource="{Binding SourceOptions}" DisplayMemberPath="Display"
                   SelectedValue="{Binding Source, UpdateSourceTrigger=PropertyChanged}"
+                  SelectedValuePath="Value"
                   Margin="0,0,0,10"/>
 
         <StackPanel Grid.Row="6" Visibility="{Binding IsCreditCardSourceMode, Converter={StaticResource BoolToVisibilityConverter}}">
-            <TextBlock Text="Credit Card" Margin="0,0,0,4"/>
+            <TextBlock Margin="0,0,0,4">
+                <Run Text="Credit Card"/>
+                <Run Text=" *" Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
+            </TextBlock>
             <ComboBox AutomationProperties.Name="Credit Card"
+                      AutomationProperties.HelpText="Required"
                       ItemsSource="{Binding CreditCardOptions}" DisplayMemberPath="Name"
                       SelectedValue="{Binding CreditCardId, UpdateSourceTrigger=PropertyChanged}"
                       SelectedValuePath="Id"

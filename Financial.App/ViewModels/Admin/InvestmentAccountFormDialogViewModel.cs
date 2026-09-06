@@ -23,7 +23,12 @@ public sealed class InvestmentAccountFormDialogViewModel : ViewModelBase
 
     public string Title => IsEditing ? "Edit Investment Account" : "Create Investment Account";
 
-    public IReadOnlyList<string> SourceOptions { get; } = ["None", "CreditCard", "ReserveBucketsSum"];
+    public IReadOnlyList<SourceOption> SourceOptions { get; } =
+    [
+        new("None", "None"),
+        new("CreditCard", "Credit Card"),
+        new("ReserveBucketsSum", "Sum of Reserve Buckets"),
+    ];
 
     public IReadOnlyList<CreditCardDTO> CreditCardOptions { get; }
 
@@ -149,3 +154,8 @@ public sealed class InvestmentAccountFormDialogViewModel : ViewModelBase
         ConfirmCommand.RaiseCanExecuteChanged();
     }
 }
+
+/// <summary>A Source ComboBox entry: <see cref="Value"/> is the wire value stored on
+/// <see cref="InvestmentAccountFormDialogViewModel.Source"/>; <see cref="Display"/> is the
+/// human-readable label shown in the picker (matching Financial.Web's dropdown text).</summary>
+public sealed record SourceOption(string Value, string Display);

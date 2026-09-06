@@ -48,7 +48,7 @@ export default function InvestmentAccountsPage() {
     deleteError,
     deleteInvestmentAccount,
   } = useInvestmentAccounts()
-  const { creditCards } = useCreditCards()
+  const { creditCards, error: creditCardsError, retry: retryCreditCards } = useCreditCards()
   const [editingAccount, setEditingAccount] = useState<InvestmentAccountDto | null>(null)
   const [isCreating, setIsCreating] = useState(false)
   const [confirmingDelete, setConfirmingDelete] = useState<InvestmentAccountDto | null>(null)
@@ -99,6 +99,18 @@ export default function InvestmentAccountsPage() {
       {deleteError && (
         <MessageBar intent="error">
           <MessageBarBody>{deleteError}</MessageBarBody>
+        </MessageBar>
+      )}
+
+      {creditCardsError && (
+        <MessageBar intent="warning">
+          <MessageBarBody>
+            Couldn&rsquo;t load credit cards, so the Source dropdown&rsquo;s Credit Card option won&rsquo;t list any
+            cards right now.{' '}
+            <Button appearance="transparent" size="small" onClick={retryCreditCards}>
+              Retry
+            </Button>
+          </MessageBarBody>
         </MessageBar>
       )}
 

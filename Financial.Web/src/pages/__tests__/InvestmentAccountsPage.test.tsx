@@ -70,6 +70,15 @@ describe('InvestmentAccountsPage', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Network down')
   })
 
+  it('shows a warning and keeps the account list usable when credit cards fail to load', async () => {
+    getCreditCardsMock.mockRejectedValue(new Error('Unable to load credit cards'))
+    render(<InvestmentAccountsPage />)
+
+    await waitFor(() => expect(screen.getByText('ChaseSave')).toBeInTheDocument())
+    expect(screen.getByText(/couldn.t load credit cards/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument()
+  })
+
   it('shows the dash, card name, or reserve buckets label per account source', async () => {
     render(<InvestmentAccountsPage />)
 
