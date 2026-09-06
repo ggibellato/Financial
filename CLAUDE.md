@@ -145,7 +145,7 @@ check and passes when every job succeeded or was skipped. Rules and extension st
 `docs/ci-affected-pipeline.md`. PR titles are enforced as Conventional Commits
 (`feat|fix|docs|chore|refactor|test|perf|ci|build`) by `semantic-pr.yml`.
 
-# GIT Policy
+## GIT Policy
 
 **Commit (conventional format):**
 ```bash
@@ -161,7 +161,7 @@ Detailed description if there are many files or changes"
 - Use `git commit --amend` unles explicity safe
 - Force push to main/master
 
-# Architecture invariants
+## Architecture invariants
 
 These bind at every stage — discovery, design, implementation, review. Everything else is in the rule files below.
 
@@ -184,7 +184,7 @@ These bind at every stage — discovery, design, implementation, review. Everyth
 
 6. **Right-sized, not over-engineered.** Single-user, self-hosted, one install per person. Follow the standards; don't build for scale that will never arrive.
 
-# UI / UX invariants
+## UI / UX invariants
 
 These bind whenever a change affects `Financial.Web`, `Financial.App`, shared
 presentation components, user-facing API error/validation contracts, or a
@@ -224,7 +224,7 @@ workflow visible in either front end.
    color-only meaning, support zoom/text scaling, and provide accessible
    equivalents for important charts and status information.
 
-# Comments
+## Comments
 
 **Priority rule:** never remove a comment used by Swagger or any other tooling. It outranks every removal criterion below.
 
@@ -247,7 +247,10 @@ When editing existing code:
 - Do not introduce new comments unless one of the allowed cases above applies.
 - If an existing comment is redundant or obvious, you may remove it (as long as it’s not used by tooling).
 
-# Rule files
+## Behaviour
+When working in automatic mode on tasks that create pull requests, always check whether the current GitHub account has permission to merge PRs before proceeding. If you detect that you cannot merge (for example, due to branch protection rules, missing write/merge permissions, or a failed permission check), stop the automation immediately, explain clearly that the PR cannot be merged with the current account, and wait for the user to confirm that the PR has been merged (or to switch to an account with merge rights) before creating any follow-up PRs or continuing with dependent work.
+
+## Rule files
 
 Mandatory, not advisory. Read the file for the stage you are in **before producing output** — do not work from memory of it.
 
