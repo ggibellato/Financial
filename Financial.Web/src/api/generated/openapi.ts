@@ -5798,22 +5798,31 @@ export interface components {
             monthlyValues: number[];
         };
         InvestmentAccountCreateDTO: {
+            /** Format: uuid */
+            creditCardId?: null | string;
             isActive: boolean;
             isLiability: boolean;
             name: string;
+            source?: string;
         };
         InvestmentAccountDTO: {
+            /** Format: uuid */
+            creditCardId?: null | string;
             hasNonZeroInvestmentSnapshot: boolean;
             /** Format: uuid */
             id: string;
             isActive: boolean;
             isLiability: boolean;
             name: string;
+            source?: string;
         };
         InvestmentAccountUpdateDTO: {
+            /** Format: uuid */
+            creditCardId?: null | string;
             isActive: boolean;
             isLiability: boolean;
             name: string;
+            source?: string;
         };
         InvestmentAnnualResultDTO: {
             accounts: components["schemas"]["InvestmentAccountAnnualDiffDTO"][];

@@ -2,13 +2,20 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import InvestmentAccountsPage from '../InvestmentAccountsPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { InvestmentAccountDto } from '../../api/types'
+import type { CreditCardDto, InvestmentAccountDto } from '../../api/types'
 
-const { getInvestmentAccountsMock, createInvestmentAccountMock, updateInvestmentAccountMock, deleteInvestmentAccountMock } = vi.hoisted(() => ({
+const {
+  getInvestmentAccountsMock,
+  createInvestmentAccountMock,
+  updateInvestmentAccountMock,
+  deleteInvestmentAccountMock,
+  getCreditCardsMock,
+} = vi.hoisted(() => ({
   getInvestmentAccountsMock: vi.fn<FinancialApiClient['getInvestmentAccounts']>(),
   createInvestmentAccountMock: vi.fn<FinancialApiClient['createInvestmentAccount']>(),
   updateInvestmentAccountMock: vi.fn<FinancialApiClient['updateInvestmentAccount']>(),
   deleteInvestmentAccountMock: vi.fn<FinancialApiClient['deleteInvestmentAccount']>(),
+  getCreditCardsMock: vi.fn<FinancialApiClient['getCreditCards']>(),
 }))
 
 vi.mock('../../api/financialApiClient', () => ({
@@ -17,12 +24,18 @@ vi.mock('../../api/financialApiClient', () => ({
     createInvestmentAccount: createInvestmentAccountMock,
     updateInvestmentAccount: updateInvestmentAccountMock,
     deleteInvestmentAccount: deleteInvestmentAccountMock,
+    getCreditCards: getCreditCardsMock,
   } as Partial<FinancialApiClient>,
 }))
 
+const CREDIT_CARDS: CreditCardDto[] = [
+  { id: 'cc1', name: 'Platinum Visa 8003', isActive: true, hasReferences: true, nextInvoiceDueDate: null, latestInvoiceDate: null },
+]
+
 const INVESTMENT_ACCOUNTS: InvestmentAccountDto[] = [
-  { id: 'a1', name: 'ChaseSave', isActive: true, isLiability: false, hasNonZeroInvestmentSnapshot: false },
-  { id: 'a2', name: 'PlatinumVisa8003', isActive: true, isLiability: true, hasNonZeroInvestmentSnapshot: true },
+  { id: 'a1', name: 'ChaseSave', isActive: true, isLiability: false, hasNonZeroInvestmentSnapshot: false, source: 'None', creditCardId: null },
+  { id: 'a2', name: 'PlatinumVisa8003', isActive: true, isLiability: true, hasNonZeroInvestmentSnapshot: true, source: 'CreditCard', creditCardId: 'cc1' },
+  { id: 'a3', name: 'Reservas pessoais', isActive: true, isLiability: false, hasNonZeroInvestmentSnapshot: false, source: 'ReserveBucketsSum', creditCardId: null },
 ]
 
 describe('InvestmentAccountsPage', () => {
@@ -31,7 +44,9 @@ describe('InvestmentAccountsPage', () => {
     createInvestmentAccountMock.mockReset()
     updateInvestmentAccountMock.mockReset()
     deleteInvestmentAccountMock.mockReset()
+    getCreditCardsMock.mockReset()
     getInvestmentAccountsMock.mockResolvedValue(INVESTMENT_ACCOUNTS)
+    getCreditCardsMock.mockResolvedValue(CREDIT_CARDS)
   })
 
   it('renders every investment account', async () => {
@@ -55,13 +70,29 @@ describe('InvestmentAccountsPage', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Network down')
   })
 
+  it('shows the dash, card name, or reserve buckets label per account source', async () => {
+    render(<InvestmentAccountsPage />)
+
+    await waitFor(() => expect(screen.getByText('ChaseSave')).toBeInTheDocument())
+    const rows = screen.getAllByRole('row')
+    const chaseSaveRow = rows.find((r) => r.textContent?.includes('ChaseSave'))
+    const platinumRow = rows.find((r) => r.textContent?.includes('PlatinumVisa8003'))
+    const reservasRow = rows.find((r) => r.textContent?.includes('Reservas pessoais'))
+
+    expect(chaseSaveRow?.textContent).toContain('—')
+    expect(platinumRow?.textContent).toContain('Platinum Visa 8003')
+    expect(reservasRow?.textContent).toContain('Sum of reserve buckets')
+  })
+
   it('creates an investment account through the Create Investment Account dialog', async () => {
     createInvestmentAccountMock.mockResolvedValue({
-      id: 'a3',
+      id: 'a4',
       name: 'Monzo Pot',
       isActive: true,
       isLiability: false,
       hasNonZeroInvestmentSnapshot: false,
+      source: 'None',
+      creditCardId: null,
     })
     render(<InvestmentAccountsPage />)
     await waitFor(() => expect(screen.getByText('ChaseSave')).toBeInTheDocument())
@@ -75,6 +106,8 @@ describe('InvestmentAccountsPage', () => {
         name: 'Monzo Pot',
         isActive: true,
         isLiability: false,
+        source: 'None',
+        creditCardId: null,
       }),
     )
     await waitFor(() =>
@@ -89,6 +122,8 @@ describe('InvestmentAccountsPage', () => {
       isActive: true,
       isLiability: false,
       hasNonZeroInvestmentSnapshot: false,
+      source: 'None',
+      creditCardId: null,
     })
     render(<InvestmentAccountsPage />)
     await waitFor(() => expect(screen.getByText('ChaseSave')).toBeInTheDocument())
@@ -103,6 +138,8 @@ describe('InvestmentAccountsPage', () => {
         name: 'ChaseSaveRenamed',
         isActive: true,
         isLiability: false,
+        source: 'None',
+        creditCardId: null,
       }),
     )
   })
