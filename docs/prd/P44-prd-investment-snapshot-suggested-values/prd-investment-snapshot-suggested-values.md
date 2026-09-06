@@ -156,13 +156,13 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. InvestmentAccount Source Configuration
-- [ ] User can set an account's Source to None, Credit Card, or Sum of Reserve Buckets via the admin dialog.
-- [ ] Selecting Credit Card requires choosing one of the active credit cards; saving without one is blocked with an inline error.
-- [ ] Selecting Sum of Reserve Buckets requires no further selection and saves successfully.
-- [ ] Switching an account back to None clears any previously configured credit card link.
-- [ ] The investment accounts admin list displays each account's configured source.
-- [ ] Every account that existed before this feature defaults to Source = None, with no manual migration step required.
-- [ ] A server-side rejection (e.g. a deleted credit card reference) surfaces an error banner and does not silently save a broken link.
+- [x] User can set an account's Source to None, Credit Card, or Sum of Reserve Buckets via the admin dialog.
+- [x] Selecting Credit Card requires choosing one of the active credit cards; saving without one is blocked with an inline error.
+- [x] Selecting Sum of Reserve Buckets requires no further selection and saves successfully.
+- [x] Switching an account back to None clears any previously configured credit card link.
+- [x] The investment accounts admin list displays each account's configured source.
+- [x] Every account that existed before this feature defaults to Source = None, with no manual migration step required.
+- [x] A server-side rejection (e.g. a deleted credit card reference) surfaces an error banner and does not silently save a broken link.
 
 ### F02. Investment Snapshot Suggested Values
 - [ ] The "Suggest Values" button is visible and enabled next to the month picker for any selected month, including future or not-yet-populated months.
