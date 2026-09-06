@@ -1,63 +1,103 @@
 > Part of the `testing-guide-Financial` skill (see `../SKILL.md`).
 
-# React Hooks & Context (`use*.ts` in `Financial.Web/src/hooks/`, `SelectedNodeContext`)
+# React Hooks (`Financial.Web/src/hooks/use*.ts`)
 
-Examples: `useAggregatedSummary`, `useAnnualSummary`, `useAssetSummary`, `useBrokerBreakdown`, `useControleMae`, and the rest of `src/hooks/`; `SelectedNodeContext` in `src/context/`.
-
-This is a real gap in the previous version of this guide — 12 hooks exist with their own test files and were never covered as their own artifact type.
+Two shapes exist: data hooks built on `useAsyncResource(fetcher, deps, errorFallback)`
+(returns `{ data, isLoading, error, retry }`) — `useBanks`, `useMensais`, `useAnnualSummary`,
+`useAggregatedSummary`, … — and form/state hooks (`useExpenseForm`, `useTransferForm`,
+`useBalanceAdjustmentForm`, `useFieldError`, `useColumnFilters`, `useSortableRows`) plus the
+error-to-field mappers (`mapTransferErrorToField.ts`, `mapBalanceAdjustmentErrorToField.ts`).
 
 ## What to test
 
-- Each branch over the discriminated input (this project's hooks commonly branch on `SelectedNode['nodeType']` — `'Broker'` vs `'Portfolio'` vs `'Asset'` — calling a different API client method per branch)
-- Loading state while the mocked API call is pending
-- Error state when the mocked API call rejects
-- Data shape returned once resolved
+- **Data hooks**: `isLoading` true on mount then false; `apiClient.getX` called exactly once
+  (no polling — `usePaymentsDue.does_not_poll` advances 60 s of fake time and asserts one
+  call); data equals the mocked payload; a rejected promise → `error` set to the message (or
+  the `errorFallback`) and `data` null; `retry()` re-fetches; a `null` fetcher (no selection)
+  → idle state; deps change → refetch with the new argument; selection-driven hooks via
+  `createSelectedNodeWrapper()` from `src/test-utils/selectedNodeTestWrapper.tsx`.
+- **Mutation hooks** (`create*`/`update*`/`delete*` in `useBanks` etc.): the client method is
+  called with the DTO, the list is refreshed or patched, a failure surfaces `saveError` /
+  `saveErrorFields` and leaves the list untouched.
+- **Form hooks**: defaults (`createFormDefaults`, remembered last bank —
+  `useBalanceAdjustmentForm` P38-F10), validation messages per field, `isSaving` blocks a second
+  submit, backend `ApiError` mapped to the named field by `map*ErrorToField`.
+- **Timers**: auto-dismiss after `PAYMENT_DUE_BANNER_DISMISS_MS` with
+  `vi.useFakeTimers({ shouldAdvanceTime: true })` + `vi.advanceTimersByTimeAsync`.
+- Negative: rejected fetch, `ApiError` with a status the mapper does not know (falls back to a
+  general error), empty arrays.
 
 ## Layer assignment
 
-Hook test via `renderHook` (React Testing Library) + Vitest. Same API-client mock boundary as pages/components — mock `financialApiClient` at the module level, never the underlying `fetch`.
+- **Unit** — `renderHook` from `@testing-library/react`, with `financialApiClient` replaced at
+  module level by `vi.mock('../../api/financialApiClient', …)`. The API is a separate
+  deployable, so this fake is the sanctioned one (`../references/mock-health-rules.md`); nothing
+  else is mocked. Hooks that read `localStorage`/`sessionStorage` use the real jsdom storage and
+  clear it in `afterEach`.
+- **Integration (frontend)** happens at the page level (`react-pages.md`); the hook's own
+  Integration coverage is whichever page composes it.
+- **No E2E of its own**; the smoke journey exercises `useAnnualSummary` end to end.
 
 ## Setup pattern
 
-```tsx
-const getSummaryByBrokerMock = vi.fn<FinancialApiClient['getSummaryByBroker']>()
-const getSummaryByPortfolioMock = vi.fn<FinancialApiClient['getSummaryByPortfolio']>()
+From `Financial.Web/src/hooks/__tests__/useBanks.test.ts`:
 
-vi.mock('../api/financialApiClient', () => ({
-  createFinancialApiClient: (): Partial<FinancialApiClient> => ({
-    getSummaryByBroker: getSummaryByBrokerMock,
-    getSummaryByPortfolio: getSummaryByPortfolioMock,
-  }),
+```ts
+import { act, renderHook, waitFor } from '@testing-library/react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { FinancialApiClient } from '../../api/financialApiClient'
+import type { BankDto } from '../../api/types'
+import { useBanks } from '../useBanks'
+
+const { getBanksMock, createBankMock, updateBankMock, deleteBankMock } = vi.hoisted(() => ({
+  getBanksMock: vi.fn<FinancialApiClient['getBanks']>(),
+  createBankMock: vi.fn<FinancialApiClient['createBank']>(),
+  updateBankMock: vi.fn<FinancialApiClient['updateBank']>(),
+  deleteBankMock: vi.fn<FinancialApiClient['deleteBank']>(),
 }))
 
-describe('useAggregatedSummary', () => {
+vi.mock('../../api/financialApiClient', () => ({
+  apiClient: {
+    getBanks: getBanksMock,
+    createBank: createBankMock,
+    updateBank: updateBankMock,
+    deleteBank: deleteBankMock,
+  } as Partial<FinancialApiClient>,
+}))
+
+describe('useBanks', () => {
   beforeEach(() => {
-    getSummaryByBrokerMock.mockReset()
-    getSummaryByPortfolioMock.mockReset()
+    getBanksMock.mockReset()
+    getBanksMock.mockResolvedValue(BANKS)
   })
 
-  it('calls getSummaryByBroker when the selected node is a Broker', async () => {
-    getSummaryByBrokerMock.mockResolvedValue(SUMMARY_DTO)
+  it('fetches the bank list once on mount', async () => {
+    const { result } = renderHook(() => useBanks())
 
-    const { result } = renderHook(() => useAggregatedSummary(BROKER_NODE), {
-      wrapper: createSelectedNodeWrapper(BROKER_NODE),
-    })
+    expect(result.current.isLoading).toBe(true)
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
 
-    await waitFor(() => expect(result.current.loading).toBe(false))
-    expect(result.current.data).toEqual(SUMMARY_DTO)
-    expect(getSummaryByPortfolioMock).not.toHaveBeenCalled()
+    expect(getBanksMock).toHaveBeenCalledTimes(1)
+    expect(result.current.banks).toEqual(BANKS)
   })
 })
 ```
 
-`renderHook` does not wait for effects to settle on its own — always follow with `waitFor` (or `await screen.findBy...` if the hook is exercised through a component) before asserting on post-fetch state. Don't destructure `result.current` at the top of the test if you need to re-read it after a state update — re-read `result.current` fresh each time so you get the latest render.
+`vi.hoisted` is what lets the mocks be referenced inside the hoisted `vi.mock` factory. Typing
+each mock as `vi.fn<FinancialApiClient['getBanks']>()` makes a renamed client method a type
+error in the test too. Re-read `result.current` after every `waitFor`; do not destructure it
+once at render time.
 
 ## When to skip
 
-- Don't re-test the API client's own request-building logic — that's `artifacts/api-client.md`'s job; the hook test only proves it calls the *right method for the right branch*
-- A hook with no branching and no async boundary (a trivial `useState` wrapper) needs no dedicated test
+- A hook that is a one-line `useAsyncResource` call with no mapping — one success + one error
+  test; the reducer is covered in `useAsyncResource` itself.
+- Testing `useAsyncResource`'s reducer through every consumer.
 
 ## Examples from project
 
-- `useAggregatedSummary.test.ts` — the canonical branching-over-`SelectedNode`-type example
-- `SelectedNodeContext.test.tsx` — context provider test; same `renderHook`/RTL approach, testing that consumers receive the expected value and update on provider changes
+- `Financial.Web/src/hooks/__tests__/useBanks.test.ts` — Unit; CRUD + list refresh.
+- `Financial.Web/src/hooks/__tests__/usePaymentsDue.test.ts` — Unit; fake timers, no polling, auto-dismiss.
+- `Financial.Web/src/hooks/__tests__/useAggregatedSummary.test.ts` — Unit; `createSelectedNodeWrapper` for node-type branching.
+- `Financial.Web/src/hooks/__tests__/useTransferForm.test.ts` + `mapTransferErrorToField.test.ts` — Unit; validation and backend-error mapping.
+- `Financial.Web/src/hooks/__tests__/useColumnFilters.test.ts`, `useSortableRows.test.ts` — Unit; grid state (P37).
