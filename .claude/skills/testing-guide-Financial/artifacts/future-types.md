@@ -1,33 +1,79 @@
 > Part of the `testing-guide-Financial` skill (see `../SKILL.md`).
 
-# Future Types — Not Yet Present
+# Future Artifact Types (not present yet)
 
-Artifact types this stack could plausibly grow into, with proactive guidance so a first instance follows house conventions instead of importing patterns (mocking frameworks, snapshot tests) that conflict with this project's established style. (Custom hooks and E2E API tests were in this section in the previous revision of this guide — both are now real, first-class artifact types with their own guides: `artifacts/react-hooks.md` and `artifacts/api-endpoints-e2e.md`.)
+Guidance for common framework artifact types this codebase does not have today. Each entry
+says where it would live, which layer proves it, and the setup to copy — so the first instance
+arrives with the right test rather than a new convention.
 
-## Domain Events
+## ASP.NET Core action filters / result filters (`Financial.Api/Filters/`)
 
-CLAUDE.md lists Domain Events as a Domain-layer concern, but none exist yet. If added: test them like `artifacts/value-objects.md` (construction, equality) plus, for any handler, like `artifacts/application-services.md` (branching logic, stub collaborators). No event-bus mocking framework — if a real in-process dispatcher is introduced, prefer testing its resolution the way `artifacts/dependency-injection-modules.md` tests DI resolution.
+- **Layer**: Integration through `ApiEndpointTests` — a filter only matters once MVC invokes
+  it. Assert the observable effect (header, status, transformed body) on one endpoint, plus
+  the negative case the filter rejects.
+- **Not**: a Unit test that constructs `ActionExecutingContext` by hand.
 
-## ASP.NET Core Middleware / Exception Filters
+## Custom model binders / value providers
 
-None exist beyond default `[ApiController]` behavior. If custom middleware or a global exception filter is added, test it via `artifacts/api-endpoints-e2e.md`'s `ApiTestFactory` — status code and response shape for the middleware's effect — not a standalone unit test, since middleware's whole job is to sit in the real HTTP pipeline.
+- **Layer**: Integration via the host, one accepted and one rejected input per binder; the
+  400 problem-details body is the assertion. Update the OpenAPI snapshot if the parameter
+  schema changes (`api-contract-snapshot.md`).
 
-## FluentValidation-style Validators
+## Additional hosted/background services (beyond `ShutdownFlushHostedService<T>`)
 
-Current validation is hand-rolled parsers (`artifacts/application-parsers.md`) plus `[ApiController]`'s automatic model validation. If FluentValidation (or similar) is introduced, keep the existing pattern: one wiring test per endpoint in the E2E suite proving the validator fires, plus `[Theory]` coverage of the validator's own rules at the unit layer — don't duplicate rule coverage into the E2E suite.
+- **Layer**: Unit for the scheduling decision with `FakeTimeProvider` /
+  `Microsoft.Extensions.Time.Testing.FakeTimeProvider` (`ITimer` fires on `Advance`), as
+  `DebouncedJsonStorageTests` does; Integration for registration
+  (`ShutdownFlushHostedServiceRegistrationTests` shape) and for the persisted outcome on a temp
+  JSON file. Never `Task.Delay` in the test.
 
-## Background/Hosted Services
+## A third bounded context (`Financial.<Name>.{Domain,Application,Infrastructure}`)
 
-None exist yet (no `IHostedService`/`BackgroundService`). If one is added (e.g., periodic price refresh): unit-test its branching logic with a stub collaborator (`artifacts/application-services.md` pattern); integration-test actual scheduling/execution only if the scheduling logic itself has bugs worth catching — don't test `IHostedService`'s own lifecycle, that's framework behavior.
+- Add `<Name>DependencyRuleTests` to `Tests/Financial.Architecture.Tests` (three assertions:
+  Domain ↛ Application, Domain ↛ Infrastructure, Application ↛ Infrastructure), add the
+  project references to `Financial.Architecture.Tests.csproj`, add the assembly to
+  `SharedInfrastructureIsolationRuleTests.IsolatedProjects`, and mirror the three test
+  projects (`Tests/Financial.<Name>.*.Tests`). Stubs for its repository go in
+  `Tests/Financial.TestUtilities`.
 
-## React Suspense / `use()` Hook
+## A second remote storage provider (beyond Google Drive)
 
-Not used yet — the project is on React 19.2 / Testing Library 16.3, which support it, but current data-fetching hooks use plain `useState`/`useEffect`. If adopted: `renderHook`/component tests will need to wrap renders in a `<Suspense>` boundary and assert on the fallback separately from resolved content — otherwise follow `artifacts/react-hooks.md` unchanged.
+- Implement `IRemoteFileClient` / `IRemoteFileClientFactory` in a new
+  `Integrations/<Vendor>` project (`feedback_integration_sdk_isolation`). Tests: Unit for
+  retry/translation logic, Integration for the DI registration and for `RemoteJsonStorage`
+  over a delegate fake, one new `Repository:Provider` value in the DI tests. The vendor API is
+  external — never called in tests.
 
-## New Integrations/Tools Projects
+## React error boundaries
 
-If a new sibling to `WebPageParser`/`GoogleFinancialSupport` (in `Integrations/`) or `CashFlowSpreadsheetImport`/`ImportGoogleSpreadSheets` (in `Tools/`) is added, classify it up front using §1's questions in `../SKILL.md`: does it wrap a live third-party SDK needing real credentials (→ `artifacts/google-api-wrappers.md`'s accepted-gap pattern), call a plain external HTTP API (→ `artifacts/external-http-services.md`'s fake-`HttpMessageHandler` pattern), or parse a real file format in-memory (→ `artifacts/spreadsheet-import.md`'s in-memory-document pattern)?
+- **Layer**: Unit (component) — render a child that throws, assert the fallback's
+  `role="alert"` text and a retry/navigate action; `vi.spyOn(console, 'error')` to silence
+  React's report. Page-level Integration: a hook rejection must not reach the boundary (the
+  page's own error state handles it).
 
-## C# Application Commands/Queries (CQRS)
+## MSW-style request mocking (`msw`)
 
-Not used — Application Services are plain classes, not MediatR handlers. If introduced, treat exactly like `artifacts/application-services.md`: unit test with a hand-written stub repository, no mocking framework.
+- Not adopted. The module-level `vi.mock('../../api/financialApiClient')` is the sanctioned
+  fake (`../references/mock-health-rules.md`); introducing MSW would need an ADR and a
+  migration of every page test. If adopted, it remains a fake of the separate API deployable,
+  so layer assignments do not change.
+
+## Playwright test files beyond the smoke script
+
+- `Financial.Web/scripts/smoke-test.mjs` is a plain Node script. If journeys multiply, move
+  to `@playwright/test` with a `playwright.config.ts` whose `webServer` starts the published
+  API on a non-8080 port (`feedback_never_smoke_test_against_live_port`). Each journey is E2E
+  and needs one failure journey (`../references/negative-path-testing.md`).
+
+## WPF UI automation (FlaUI / WinAppDriver)
+
+- Would be the WPF E2E layer. Locate elements by `AutomationProperties.Name` (already required
+  by `docs/ui/accessibility.md` and used 178 times in `Financial.App`), click via
+  `GetClickablePoint()`, never by screenshot coordinates. Until it exists, the manual run in `docs/rules/ui.md` is the WPF E2E
+  substitute.
+
+## Database/EF Core migrations
+
+- Not applicable while persistence is JSON. If a relational store ever arrives it is owned
+  infrastructure: real database in Docker at Integration (Testcontainers), never faked; the
+  example/seed-data contract tests (`example-and-seed-data.md`) become schema-migration tests.

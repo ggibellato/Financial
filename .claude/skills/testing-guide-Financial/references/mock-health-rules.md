@@ -2,75 +2,78 @@
 
 # Mock Health Rules
 
-## The Boundary Rule
+## The boundary, in this project's terms
 
-**Mock across architecturally significant boundaries, not within.** A boundary is where your code hands off to something outside your control: a file system, an HTTP endpoint, Google's SDK, the browser's `fetch`. Within a single layer, use real objects.
+Above Unit, the only things that may be faked are the six external providers in
+`external-providers.md` (Frankfurter, Yahoo Finance, scraped pages, Google Drive, Google
+Sheets, the OTLP collector) plus the non-deterministic clock. Everything else —
+`CashFlowJsonRepository`, `LocalJsonStorage`, `CashFlowSerializerAdapter`, every `*Service`,
+`DomainExceptionMappingMiddleware`, the DI container — is real.
 
----
+No mocking framework exists in the solution (no Moq / NSubstitute / FakeItEasy in any csproj,
+no MSW in `package.json`). Every double is a hand-written class implementing the real
+interface, which is deliberate: a hand-written stub cannot be "set up" to return something
+the interface never promised, and a `NotImplementedException` on an unexpected member is a
+louder failure than a silent default.
 
-## C# (.NET) — no mocking framework, anywhere
+## The one thing each layer fakes above Unit
 
-This is a deliberate, project-wide, re-confirmed choice (no Moq/NSubstitute anywhere in the solution). Three real techniques cover every case instead:
-
-| Situation | Technique | Example |
+| Layer / place | What is faked | Mechanism |
 |---|---|---|
-| Application service depends on an interface (repository, provider) | Hand-written stub class implementing the interface, only the members the test needs | `StubRepository`, `StubFinanceService`, `DividendServiceStub` |
-| Infrastructure crosses a real system boundary with no useful branching to isolate | Real implementation, real temp resource | `LocalJsonStorage` + temp file, `XLWorkbook` in-memory |
-| Infrastructure calls a configured library/HTTP client whose *configuration* is the thing under test | Real client, fake transport/delegate | `HttpClient` + `FakeHttpMessageHandler` (Frankfurter); `GoogleDriveJsonStorage`'s injected read/write delegates |
-| DI wiring | Real `ServiceProvider` built from real `IConfiguration` | `CashFlowInfrastructureServiceCollectionExtensionsTests` |
-| Whole-app HTTP behavior | Real `WebApplicationFactory<Program>`, swap only the one boundary under test via `RemoveAll<T>()`+`AddSingleton<T>()` | `ApiTestFactory` |
+| Infrastructure Integration (HTTP providers) | The provider's transport | `private sealed class FakeHttpMessageHandler : HttpMessageHandler` overriding `SendAsync` with a `Func<HttpRequestMessage, HttpResponseMessage>` (`FrankfurterExchangeRateProviderTests.cs:91`, `YahooFinanceServiceTests.cs:135`) |
+| API host Integration | `IExchangeRateProvider`, `TimeProvider` | `ApiTestFactory.ConfigureWebHost` → `builder.ConfigureTestServices(services => { services.RemoveAll<IExchangeRateProvider>(); services.AddSingleton(_exchangeRateProviderOverride); })` — the only two overrides it accepts |
+| Shared.Infrastructure Integration (remote storage) | `IRemoteFileClient` (Google Drive) | `RemoteJsonStorage`'s delegate constructor `(Func<string,string> download, Action<string,string> upload, string remotePath)` |
+| Spreadsheet import | `IGoogleSheetsDataSource` | Local `StubDataSource` in `GoogleSheetsAssetReaderTests` |
+| Observability | The collector | Not started; `Observability:Enabled=false`, or an unreachable port for the negative path |
+| WPF Integration (AC-tracing) | `IDialogService` / `confirm` delegate | `StubDialogService` — WPF shell mechanics, not the feature; services stay real |
 
-**When a C# test reaches for a mocking framework, that's the signal to stop and ask why** — either the unit under test has too many collaborators (split it), or business logic has leaked into a layer where it doesn't belong (Domain calling Infrastructure directly, for instance).
+## What Unit tests fake vs what Integration/E2E leave real
 
-### Stub pattern
+- **Unit (Application)**: `StubCashFlowRepository` / `StubInvestmentRepository` (in-memory,
+  `Tests/Financial.TestUtilities`), `RecordingTelemetryTracer`, `RecordingLogger<T>` or
+  `NullLogger<T>`, `FakeTimeProvider`, a stub `IExchangeRateProvider`. Domain entities stay real
+  (sociable Unit tests).
+- **Unit (WPF ViewModels)**: `Stub*Service` classes in `Tests/Financial.Presentation.Tests/ViewModels/**/TestStubs.cs`,
+  `StubDialogService`, `Func<string,bool> confirm`, `Func<Task> refresh`.
+- **Unit (Infrastructure fetchers)**: `StubFinanceService` / `FakeFinanceService` delegates.
+- **Unit (React hooks/components)**: `vi.mock` of `financialApiClient` or of the hook module;
+  `vi.fn()` callbacks; `vi.useFakeTimers`.
+- **Integration**: none of the above except the provider fakes in the table.
+- **E2E (smoke)**: nothing faked at all; real published API on seeded JSON, real browser.
 
-```csharp
-internal sealed class StubRepository : IRepository
-{
-    private readonly List<Broker> _brokers;
-    public StubRepository(IEnumerable<Broker> brokers) => _brokers = brokers.ToList();
+## The sanctioned exception — the SPA faking its own backend
 
-    public IEnumerable<Broker> GetBrokerList(InvestmentScope scope = InvestmentScope.Active) => _brokers;
+`Financial.Web` and `Financial.Api` live in one repo and one Docker image, but at test time
+the SPA is a single process and the API is a separate deployable reached only over HTTP. So
+`vi.mock('../../api/financialApiClient', () => ({ apiClient: { getBanks: getBanksMock, … } as Partial<FinancialApiClient> }))`
+in a page test is **not** a "mock something owned" violation — it is the same
+single-process / no-cross-service-deployment boundary the layer table uses. The backend has its
+own Integration tests against real storage (`Tests/Financial.Api.Tests`), and the smoke job
+proves the two agree at runtime. Rules that follow from this:
 
-    // Anything the test under construction doesn't exercise stays unimplemented —
-    // a NotImplementedException here is a loud signal if a test accidentally needs it.
-    public IEnumerable<Asset> GetAssetsByBroker(string name, InvestmentScope scope = InvestmentScope.Active) =>
-        throw new NotImplementedException();
-}
-```
+- Mock at the module boundary (`financialApiClient`) or at `fetch` (client tests), never at a
+  deeper owned module (a hook mocking another hook's internals, a page mocking `useAsyncResource`).
+  A component test may mock the hook module it consumes to drive its state matrix — the page
+  test then covers the real hook.
+- The exception applies only to the SPA. `Financial.App` composes the backend in-process, so a
+  WPF Integration test wires real services from the real container.
 
-### Fake HTTP transport pattern
+## The "too many fakes" signal
 
-```csharp
-private sealed class FakeHttpMessageHandler : HttpMessageHandler
-{
-    private readonly Func<HttpRequestMessage, HttpResponseMessage> _responder;
-    public FakeHttpMessageHandler(Func<HttpRequestMessage, HttpResponseMessage> responder) => _responder = responder;
+- An Integration test that needs a stub repository, a stub service and a fake storage is a
+  Unit test wearing the wrong label — move it to the Unit suite, or remove the stubs and use
+  the host / a temp file.
+- A Unit test that needs more than one `Stub*Service` plus the repository is testing a
+  ViewModel or service that does too much (`docs/rules/implementation.md` SRL) — split the
+  unit before adding the fourth stub.
+- A new `Stub*` class appearing in a test project instead of `Tests/Financial.TestUtilities`
+  (backend) or the shared `TestStubs.cs` (WPF) is a rule violation
+  (`docs/rules/implementation.md` §Tests item 1) unless it is genuinely single-file.
 
-    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct) =>
-        Task.FromResult(_responder(request));
-}
-```
+## Recording doubles are for proving absence too
 
-Copy this ~10-line shape for any new external-HTTP integration rather than introducing a mocking library.
-
----
-
-## TypeScript (React)
-
-| Dependency | How to handle |
-|---|---|
-| `financialApiClient` factory | `vi.mock` the entire module once per test file, at the module boundary |
-| Individual `fetch` calls (outside `financialApiClient.ts` itself) | Never mock directly — mock the client factory instead |
-| `MemoryRouter` / `Routes` | Always real — pages require router context |
-| `SelectedNodeContext` | Real test provider (`createSelectedNodeWrapper`) wrapping the component/hook |
-| Utility functions | Always real — they are pure functions being tested |
-| Child components | Real by default; only stub if a child has side effects impossible to control in tests |
-
-### Mock scope
-
-One `vi.mock(...)` call per module per file. If a page/hook uses only 3 of 10 API methods, include only those 3 in the mock factory — missing methods are `undefined`, which throws if accidentally called, making an incomplete mock visible immediately rather than silently returning stale data.
-
-### Signal: too many `vi.fn()` calls in one test
-
-A test that creates many `vi.fn()` instances just to get one component/hook under test may be answering an integration-test question with a unit test. Consider whether the seam is in the wrong place, or whether a smaller unit should be extracted.
+`RecordingLogger<T>.Entries` and `RecordingTelemetryTracer.Spans` exist "to prove what *is not*
+logged as much as what is": every negative-path test at Unit asserts that the entry contains
+the exception **type name** and does **not** contain the financial value or entity name from
+the message (`DomainExceptionLoggingTests.RejectedWithdrawal_LogsTheExceptionType_WithoutTheFinancialValuesInItsMessage`).
+Keep recorders as instance fields — a `static readonly` tracer accumulates spans across tests.

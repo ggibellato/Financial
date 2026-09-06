@@ -1,69 +1,116 @@
 > Part of the `testing-guide-Financial` skill (see `../SKILL.md`).
 
-# Application Services (`*.Application/Services/*.cs`)
-
-Examples: `ControleMaeService`, `BankService`, `CardStatementService`, `ExpenseService`, `IncomeService`, `InvestmentSnapshotService`, `MensaisService`, `ReserveService`, `TitheService`, `AnnualSummaryService` (CashFlow); transaction/summary/xirr/profit services (Investment).
+# Application Services (`Financial.*.Application/Services/*Service.cs`)
 
 ## What to test
 
-- Branching logic: currency conversion decisions, date-scoping rules, conditional aggregation
-- Correct delegation to injected collaborators (repository, `IExchangeRateProvider`, etc.) — but only as a side effect of testing an actual behavior, never as a bare "was called" assertion
-- Error handling: what the service does when a collaborator returns null/empty/throws
+- **Every branch** of each public method: found / not found (`KeyNotFoundException`), duplicate
+  name (`DuplicateNameException`), entity in use (`EntityInUseException`), overdraft
+  confirmation (`OverdraftConfirmationRequiredException`), scope filtering (`InvestmentScope`),
+  currency-conversion fallback when the rate is `null`.
+- **The observability contract from `docs/rules/implementation.md`**: a successful call records
+  one span named `CashFlow.ExpenseService.AddExpense` (bounded context + service + operation)
+  with `TelemetryAttributeKeys.OperationResult == TelemetryOperationResults.Success`; a failing
+  call records the same span with `RecordedException` set and rethrows. Assert with
+  `RecordingTelemetryTracer.Spans`. Assert that a swallowed exception logs its **type name** via
+  `RecordingLogger<T>.Entries`, and that no financial value or entity name is in any message.
+- **Constructor guards**: `Constructor_WithNullRepository_Throws` and one per dependency, with
+  `.WithParameterName(...)`.
+- **Time-dependent services** (`PaymentsDueService`, `CategorySummaryService`,
+  `HistoricAverageService`, `IncomeSummaryService`, `InvestmentAnnualResultService`) take an
+  optional `TimeProvider` — pass `new FakeTimeProvider(DateTimeOffset)` and test the exact
+  boundary day (due today, due in 5 days, due in 6 days).
+- **Negative paths**: invalid DTO values (zero amount, unknown id), repository read failure
+  (the stub's failure hooks), provider returning `null`.
 
 ## Layer assignment
 
-| Characteristic | Layer |
-|---|---|
-| Branching logic only, collaborators are interfaces | Unit — hand-written stub implementing the interface |
-| Also crosses a system boundary itself (rare at this layer — usually pushed to Infrastructure) | Add an integration test at the Infrastructure layer instead; don't duplicate in Application |
-
-This project has **no mocking framework**. Every Application service test builds a small stub class implementing the dependency interface, matching the existing `StubRepository`/`StubFinanceService`/`DividendServiceStub` pattern.
+- **Unit** (the bulk): service + real domain entities + `StubCashFlowRepository` /
+  `StubInvestmentRepository` (in-memory lists, no I/O) + `RecordingTelemetryTracer` +
+  `NullLogger<T>` or `RecordingLogger<T>`. The stub repository is a hand-written owned double
+  used only because the real one is file-bound — that is the Unit layer's job.
+- **Integration**: the same service wired for real inside the API host (`ApiEndpointTests`) or
+  the WPF composition (`AddFinancialCashFlowApplication` + `AddFinancialCashFlowInfrastructure`
+  on a temp file). Every feature's AC-tracing tests live here
+  (`../references/feature-traceability.md`); a service change that alters a §9 criterion needs
+  that test updated, not just the Unit suite.
+- **No E2E of its own**; a critical journey through the SPA is covered in
+  `../references/e2e-environment.md`.
 
 ## Setup pattern
 
+The binding shape from `docs/rules/implementation.md` §Tests (reference:
+`Tests/Financial.CashFlow.Application.Tests/Services/ExpenseServiceTests.cs`):
+
 ```csharp
-internal sealed class StubExchangeRateProvider : IExchangeRateProvider
-{
-    private readonly decimal? _rate;
-    public StubExchangeRateProvider(decimal? rate) => _rate = rate;
+using Financial.CashFlow.Application.Services;
+using Financial.Shared.Abstractions.Observability;
+using Financial.TestUtilities;
+using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 
-    public Task<decimal?> GetHistoricalRateAsync(DateOnly date, Currency from, Currency to)
-        => Task.FromResult(_rate);
-}
+namespace Financial.CashFlow.Application.Tests.Services;
 
-public class ControleMaeServiceTests
+public class ExpenseServiceTests
 {
-    [Fact]
-    public async Task ConvertToGbp_WhenRateAvailable_AppliesRate()
+    private static readonly Microsoft.Extensions.Logging.ILogger<ExpenseService> Logger = NullLogger<ExpenseService>.Instance;
+
+    private readonly StubCashFlowRepository _repository;
+    private readonly RecordingTelemetryTracer _tracer;
+    private readonly ExpenseService _sut;
+
+    public ExpenseServiceTests()
     {
-        var service = new ControleMaeService(new StubExchangeRateProvider(0.146m), new StubCashFlowRepository());
-
-        var result = await service.ConvertAsync(1000m, Currency.BRL, Currency.GBP, new DateOnly(2026, 7, 1));
-
-        result.Should().Be(146m);
+        _repository = CreateRepository();
+        _tracer = new RecordingTelemetryTracer();
+        _sut = CreateService();
     }
 
+    private static StubCashFlowRepository CreateRepository(
+        bool seedDefaultCreditCards = true, bool seedDefaultCategories = true) =>
+        new(seedDefaultBanks: true, seedDefaultCreditCards: seedDefaultCreditCards, seedDefaultCategories: seedDefaultCategories);
+
+    private ExpenseService CreateService(
+        StubCashFlowRepository? repository = null,
+        Microsoft.Extensions.Logging.ILogger<ExpenseService>? logger = null) =>
+        new(repository ?? _repository, _tracer, logger ?? Logger);
+
     [Fact]
-    public async Task ConvertToGbp_WhenRateUnavailable_ReturnsNull()
+    public async Task AddExpenseAsync_WithZeroValue_RecordsFailedSpanWithException()
     {
-        var service = new ControleMaeService(new StubExchangeRateProvider(null), new StubCashFlowRepository());
+        var request = ToCreateDto(_repository, ValidCreateRequest() with { Value = 0m });
 
-        var result = await service.ConvertAsync(1000m, Currency.BRL, Currency.GBP, new DateOnly(2026, 7, 1));
+        var act = async () => await _sut.AddExpenseAsync(request);
 
-        result.Should().BeNull();
+        await act.Should().ThrowAsync<ArgumentException>();
+        _tracer.Spans.Should().ContainSingle().Which.RecordedException.Should().BeOfType<ArgumentException>();
     }
 }
 ```
 
-Only implement the interface members the test actually exercises; throw `NotImplementedException` for the rest, matching `StubRepository`.
+`ExpenseService(ICashFlowRepository repository, ITelemetryTracer tracer, ILogger<ExpenseService> logger)`
+and `StubCashFlowRepository(bool seedDefaultBanks = false, bool seedDefaultIncomeSources = false, bool seedDefaultReserveBuckets = false, bool seedDefaultCreditCards = false, bool seedDefaultCategories = false)`
+are the real signatures. `ToCreateDto` / `ValidCreateRequest` are that file's private helpers.
+Recorders are instance fields — never `static readonly`, which leaks spans across tests.
 
 ## When to skip
 
-- A service that only delegates to one collaborator with zero branching (e.g., a pure pass-through `GetAll()`) — that's wiring, not logic; if it's worth verifying, do it via the E2E test that exercises the endpoint calling it
-- Duplicate coverage already proven by a DI module resolution test (`artifacts/dependency-injection-modules.md`) — that test proves wiring, not service logic
+- `CompensatingSaveHelper`, `IncomeGroupLookupBuilder`, `NavigationMapper`,
+  `*Builder`/`*Selector` helpers: test them through the service that owns them unless they have
+  their own branching worth an isolated class (`PortfolioAssetSummaryBuilder` does).
+- Pure DTO mapping with no branch (`ToDto`) — proven by the branch tests that return it.
+- A service-level re-test of a Domain rule already covered in
+  `domain-entities-and-rules.md` — one representative case is enough.
 
 ## Examples from project
 
-- `ControleMaeService` — currency-conversion branching depending on `IExchangeRateProvider` → unit, stub provider
-- `TitheService` — 10%-of-net-income calculation, no I/O → unit, no stub needed beyond a repository stub for input data
-- `ReserveService` — branches across multiple reserve buckets → unit, `StubCashFlowRepository`
+- `Tests/Financial.CashFlow.Application.Tests/Services/ExpenseServiceTests.cs` — Unit; reference
+  initializer, span success/failure assertions.
+- `Tests/Financial.CashFlow.Application.Tests/Services/PaymentsDueServiceTests.cs` — Unit;
+  `FakeTimeProvider` boundaries, fail-safe empty result when the repository read throws.
+- `Tests/Financial.CashFlow.Application.Tests/Services/ControleMaeServiceTests.cs` — Unit;
+  currency conversion branches with a stub `IExchangeRateProvider` (external provider, faked).
+- `Tests/Financial.Investment.Application.Tests/Services/TransactionServiceMutationTests.cs` and
+  `TransactionServiceQueryTests.cs` — Unit; split by mutation/query to keep files scrollable.
+- `Tests/Financial.Api.Tests/ExpenseEndpointsTests.cs` — Integration; the same `ExpenseService`
+  real inside the host, asserting HTTP status and stored result.
