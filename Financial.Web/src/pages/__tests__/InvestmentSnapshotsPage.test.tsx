@@ -4,15 +4,17 @@ import InvestmentSnapshotsPage from '../InvestmentSnapshotsPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { InvestmentSnapshotDto } from '../../api/types'
 
-const { getInvestmentSnapshotsMock, updateInvestmentSnapshotValueMock } = vi.hoisted(() => ({
+const { getInvestmentSnapshotsMock, updateInvestmentSnapshotValueMock, getInvestmentSnapshotSuggestionsMock } = vi.hoisted(() => ({
   getInvestmentSnapshotsMock: vi.fn<FinancialApiClient['getInvestmentSnapshots']>(),
   updateInvestmentSnapshotValueMock: vi.fn<FinancialApiClient['updateInvestmentSnapshotValue']>(),
+  getInvestmentSnapshotSuggestionsMock: vi.fn<FinancialApiClient['getInvestmentSnapshotSuggestions']>(),
 }))
 
 vi.mock('../../api/financialApiClient', () => ({
   apiClient: {
     getInvestmentSnapshots: getInvestmentSnapshotsMock,
     updateInvestmentSnapshotValue: updateInvestmentSnapshotValueMock,
+    getInvestmentSnapshotSuggestions: getInvestmentSnapshotSuggestionsMock,
   } as Partial<FinancialApiClient>,
 }))
 
@@ -30,7 +32,9 @@ describe('InvestmentSnapshotsPage', () => {
   beforeEach(() => {
     getInvestmentSnapshotsMock.mockReset()
     updateInvestmentSnapshotValueMock.mockReset()
+    getInvestmentSnapshotSuggestionsMock.mockReset()
     getInvestmentSnapshotsMock.mockResolvedValue(SNAPSHOTS)
+    getInvestmentSnapshotSuggestionsMock.mockResolvedValue({ suggestions: [], notUpdated: [] })
   })
 
   it('shows a loading state before data arrives', () => {
@@ -105,5 +109,22 @@ describe('InvestmentSnapshotsPage', () => {
     const allRows = screen.getAllByRole('row')
     expect(allRows).toHaveLength(13)
     expect(allRows[allRows.length - 1]).toHaveTextContent('5,300.00')
+  })
+
+  it('opening suggest values panel closes an open edit snapshot panel and vice versa', async () => {
+    render(<InvestmentSnapshotsPage />)
+    await waitFor(() => expect(screen.getByText('Account0')).toBeInTheDocument())
+
+    const editButtons = screen.getAllByRole('button', { name: 'Edit snapshot' })
+    fireEvent.click(editButtons[0])
+    expect(screen.getByText('Edit Snapshot')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Suggest Values' }))
+    await waitFor(() => expect(screen.queryByText('Edit Snapshot')).not.toBeInTheDocument())
+    expect(screen.getByText('No suggestions available for this month.')).toBeInTheDocument()
+
+    fireEvent.click(editButtons[0])
+    expect(screen.queryByText('No suggestions available for this month.')).not.toBeInTheDocument()
+    expect(screen.getByText('Edit Snapshot')).toBeInTheDocument()
   })
 })

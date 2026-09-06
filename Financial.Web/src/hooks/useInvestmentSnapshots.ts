@@ -90,6 +90,8 @@ function reducer(state: InvestmentSnapshotsState, action: InvestmentSnapshotsAct
 }
 
 export interface InvestmentSnapshotsData {
+  year: number
+  month: number
   monthInputValue: string
   setMonthInputValue: (value: string) => void
   snapshots: InvestmentSnapshotDto[]
@@ -97,6 +99,7 @@ export interface InvestmentSnapshotsData {
   isLoading: boolean
   error: string | null
   retry: () => void
+  refresh: () => void
   editingId: string | null
   editValue: string
   isSaving: boolean
@@ -192,6 +195,8 @@ export function useInvestmentSnapshots(): InvestmentSnapshotsData {
   }
 
   return {
+    year: state.year,
+    month: state.month,
     monthInputValue,
     setMonthInputValue,
     snapshots: state.snapshots,
@@ -199,6 +204,7 @@ export function useInvestmentSnapshots(): InvestmentSnapshotsData {
     isLoading: state.isLoading,
     error: state.error,
     retry,
+    refresh: refreshSilently,
     editingId: state.editingId,
     editValue: state.editValue,
     isSaving: state.isSaving,

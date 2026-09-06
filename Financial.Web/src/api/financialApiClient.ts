@@ -51,6 +51,7 @@ import type {
   InvestmentAnnualResultDto,
   InvestmentScope,
   InvestmentSnapshotDto,
+  InvestmentSnapshotSuggestionsDto,
   MaeLedgerEntryDto,
   MoveAssetRequestDto,
   MaeLedgerTotalsDto,
@@ -165,6 +166,7 @@ export interface FinancialApiClient {
   deleteMaeLedgerEntry: (id: string) => Promise<void>
   getInvestmentSnapshots: (year: number, month: number) => Promise<InvestmentSnapshotDto[]>
   updateInvestmentSnapshotValue: (id: string, request: InvestmentSnapshotValueUpdateDto) => Promise<InvestmentSnapshotDto>
+  getInvestmentSnapshotSuggestions: (year: number, month: number) => Promise<InvestmentSnapshotSuggestionsDto>
   getExpensesByMonth: (year: number, month: number) => Promise<ExpenseDto[]>
   getUnpaidCardChargesByMonth: (year: number, month: number) => Promise<ExpenseDto[]>
   getCategoryTotalsByMonth: (year: number, month: number) => Promise<CategoryTotalDto[]>
@@ -494,6 +496,8 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
         method: 'PUT',
         body: JSON.stringify(requestBody),
       }),
+    getInvestmentSnapshotSuggestions: (year, month) =>
+      request<InvestmentSnapshotSuggestionsDto>(`/investment-snapshots/${year}/${month}/suggestions`),
     getExpensesByMonth: (year, month) => request<ExpenseDto[]>(`/expenses/month/${year}/${month}`),
     getUnpaidCardChargesByMonth: (year, month) =>
       request<ExpenseDto[]>(`/expenses/month/${year}/${month}/unpaid-card-charges`),
