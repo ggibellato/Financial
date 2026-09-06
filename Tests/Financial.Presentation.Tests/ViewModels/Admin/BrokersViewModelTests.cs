@@ -2,6 +2,7 @@ using Financial.Investment.Application.DTOs;
 using Financial.Presentation.App.ViewModels.Admin;
 using Financial.TestUtilities;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 
 namespace Financial.Presentation.Tests.ViewModels.Admin;
 
@@ -129,5 +130,75 @@ public class BrokersViewModelTests
         await viewModel.DeleteBrokerAsync(broker);
 
         service.LastDeletedName.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task RefreshAsync_ServiceThrows_SetsErrorAndLogsFailure()
+    {
+        var service = new StubBrokerService { ThrowOnGetBrokers = new InvalidOperationException("boom") };
+        var logger = new RecordingLogger<BrokersViewModel>();
+        var viewModel = new BrokersViewModel(service, new StubDialogService(), logger);
+
+        await viewModel.RefreshAsync();
+
+        viewModel.HasError.Should().BeTrue();
+        viewModel.Error.Should().Be("boom");
+        logger.Entries.Should().Contain(e => e.Level == LogLevel.Error && e.Message.Contains(nameof(InvalidOperationException)));
+    }
+
+    [Fact]
+    public async Task EditBrokerAsync_NullBroker_ReturnsWithoutShowingDialog()
+    {
+        var (viewModel, _, dialog) = CreateViewModel();
+
+        await viewModel.EditBrokerAsync(null);
+
+        dialog.LastBrokerFormDialog.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task EditBrokerAsync_DialogCancelled_DoesNotCallService()
+    {
+        var (viewModel, service, dialog) = CreateViewModel();
+        dialog.ShowBrokerFormDialogResult = false;
+        var broker = new BrokerDTO { Name = "XPI", Currency = "BRL", Status = "Active", PortfolioCount = 0 };
+
+        await viewModel.EditBrokerAsync(broker);
+
+        service.LastUpdateRequest.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task EditBrokerAsync_ServiceThrows_SurfacesActionError()
+    {
+        var (viewModel, service, _) = CreateViewModel();
+        service.ThrowOnUpdate = new InvalidOperationException("A broker named \"XPI\" already exists.");
+        var broker = new BrokerDTO { Name = "XPI", Currency = "BRL", Status = "Active", PortfolioCount = 0 };
+
+        await viewModel.EditBrokerAsync(broker);
+
+        viewModel.ActionError.Should().Be("A broker named \"XPI\" already exists.");
+    }
+
+    [Fact]
+    public async Task DeleteBrokerAsync_NullBroker_ReturnsWithoutConfirming()
+    {
+        var (viewModel, _, dialog) = CreateViewModel();
+
+        await viewModel.DeleteBrokerAsync(null);
+
+        dialog.LastConfirmMessage.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task DeleteBrokerAsync_ServiceThrows_SurfacesActionError()
+    {
+        var (viewModel, service, _) = CreateViewModel();
+        service.ThrowOnDelete = new InvalidOperationException("Broker is referenced elsewhere.");
+        var broker = new BrokerDTO { Name = "XPI", Currency = "BRL", Status = "Active", PortfolioCount = 0 };
+
+        await viewModel.DeleteBrokerAsync(broker);
+
+        viewModel.ActionError.Should().Be("Broker is referenced elsewhere.");
     }
 }

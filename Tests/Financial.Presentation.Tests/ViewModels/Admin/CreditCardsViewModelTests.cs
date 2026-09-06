@@ -2,6 +2,7 @@ using Financial.CashFlow.Application.DTOs;
 using Financial.Presentation.App.ViewModels.Admin;
 using Financial.TestUtilities;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 
 namespace Financial.Presentation.Tests.ViewModels.Admin;
 
@@ -132,5 +133,75 @@ public class CreditCardsViewModelTests
         await viewModel.DeleteCreditCardAsync(creditCard);
 
         service.LastDeletedId.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task RefreshAsync_ServiceThrows_SetsErrorAndLogsFailure()
+    {
+        var service = new StubCreditCardService { ThrowOnGetCreditCards = new InvalidOperationException("boom") };
+        var logger = new RecordingLogger<CreditCardsViewModel>();
+        var viewModel = new CreditCardsViewModel(service, new StubDialogService(), logger);
+
+        await viewModel.RefreshAsync();
+
+        viewModel.HasError.Should().BeTrue();
+        viewModel.Error.Should().Be("boom");
+        logger.Entries.Should().Contain(e => e.Level == LogLevel.Error && e.Message.Contains(nameof(InvalidOperationException)));
+    }
+
+    [Fact]
+    public async Task EditCreditCardAsync_NullCreditCard_ReturnsWithoutShowingDialog()
+    {
+        var (viewModel, _, dialog) = CreateViewModel();
+
+        await viewModel.EditCreditCardAsync(null);
+
+        dialog.LastCreditCardFormDialog.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task EditCreditCardAsync_DialogCancelled_DoesNotCallService()
+    {
+        var (viewModel, service, dialog) = CreateViewModel();
+        dialog.ShowCreditCardFormDialogResult = false;
+        var creditCard = CreditCard(Guid.NewGuid(), "BaAmex");
+
+        await viewModel.EditCreditCardAsync(creditCard);
+
+        service.LastUpdateRequest.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task EditCreditCardAsync_ServiceThrows_SurfacesActionError()
+    {
+        var (viewModel, service, _) = CreateViewModel();
+        service.ThrowOnUpdate = new InvalidOperationException("A credit card named \"BaAmex\" already exists.");
+        var creditCard = CreditCard(Guid.NewGuid(), "BaAmex");
+
+        await viewModel.EditCreditCardAsync(creditCard);
+
+        viewModel.ActionError.Should().Be("A credit card named \"BaAmex\" already exists.");
+    }
+
+    [Fact]
+    public async Task DeleteCreditCardAsync_NullCreditCard_ReturnsWithoutConfirming()
+    {
+        var (viewModel, _, dialog) = CreateViewModel();
+
+        await viewModel.DeleteCreditCardAsync(null);
+
+        dialog.LastConfirmMessage.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task DeleteCreditCardAsync_ServiceThrows_SurfacesActionError()
+    {
+        var (viewModel, service, _) = CreateViewModel();
+        service.ThrowOnDelete = new InvalidOperationException("Credit card is referenced elsewhere.");
+        var creditCard = CreditCard(Guid.NewGuid(), "BaAmex");
+
+        await viewModel.DeleteCreditCardAsync(creditCard);
+
+        viewModel.ActionError.Should().Be("Credit card is referenced elsewhere.");
     }
 }

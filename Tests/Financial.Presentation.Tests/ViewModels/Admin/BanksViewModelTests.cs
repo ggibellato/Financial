@@ -2,6 +2,7 @@ using Financial.CashFlow.Application.DTOs;
 using Financial.Presentation.App.ViewModels.Admin;
 using Financial.TestUtilities;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 
 namespace Financial.Presentation.Tests.ViewModels.Admin;
 
@@ -130,5 +131,75 @@ public class BanksViewModelTests
         await viewModel.DeleteBankAsync(bank);
 
         service.LastDeletedId.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task RefreshAsync_ServiceThrows_SetsErrorAndLogsFailure()
+    {
+        var service = new StubBankService { ThrowOnGetBanks = new InvalidOperationException("boom") };
+        var logger = new RecordingLogger<BanksViewModel>();
+        var viewModel = new BanksViewModel(service, new StubDialogService(), logger);
+
+        await viewModel.RefreshAsync();
+
+        viewModel.HasError.Should().BeTrue();
+        viewModel.Error.Should().Be("boom");
+        logger.Entries.Should().Contain(e => e.Level == LogLevel.Error && e.Message.Contains(nameof(InvalidOperationException)));
+    }
+
+    [Fact]
+    public async Task EditBankAsync_NullBank_ReturnsWithoutShowingDialog()
+    {
+        var (viewModel, _, dialog) = CreateViewModel();
+
+        await viewModel.EditBankAsync(null);
+
+        dialog.LastBankFormDialog.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task EditBankAsync_DialogCancelled_DoesNotCallService()
+    {
+        var (viewModel, service, dialog) = CreateViewModel();
+        dialog.ShowBankFormDialogResult = false;
+        var bank = Bank(Guid.NewGuid(), "Barclays");
+
+        await viewModel.EditBankAsync(bank);
+
+        service.LastUpdateRequest.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task EditBankAsync_ServiceThrows_SurfacesActionError()
+    {
+        var (viewModel, service, _) = CreateViewModel();
+        service.ThrowOnUpdate = new InvalidOperationException("A bank named \"Barclays\" already exists.");
+        var bank = Bank(Guid.NewGuid(), "Barclays");
+
+        await viewModel.EditBankAsync(bank);
+
+        viewModel.ActionError.Should().Be("A bank named \"Barclays\" already exists.");
+    }
+
+    [Fact]
+    public async Task DeleteBankAsync_NullBank_ReturnsWithoutConfirming()
+    {
+        var (viewModel, _, dialog) = CreateViewModel();
+
+        await viewModel.DeleteBankAsync(null);
+
+        dialog.LastConfirmMessage.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task DeleteBankAsync_ServiceThrows_SurfacesActionError()
+    {
+        var (viewModel, service, _) = CreateViewModel();
+        service.ThrowOnDelete = new InvalidOperationException("Bank is referenced elsewhere.");
+        var bank = Bank(Guid.NewGuid(), "Barclays");
+
+        await viewModel.DeleteBankAsync(bank);
+
+        viewModel.ActionError.Should().Be("Bank is referenced elsewhere.");
     }
 }

@@ -19,8 +19,9 @@ internal sealed class StubBankService : IBankService
     public Exception? ThrowOnCreate { get; set; }
     public Exception? ThrowOnUpdate { get; set; }
     public Exception? ThrowOnDelete { get; set; }
+    public Exception? ThrowOnGetBanks { get; set; }
 
-    public IReadOnlyList<BankDTO> GetBanks() => Banks;
+    public IReadOnlyList<BankDTO> GetBanks() => ThrowOnGetBanks is null ? Banks : throw ThrowOnGetBanks;
 
     public Task<BankDTO> CreateBankAsync(BankCreateDTO request)
     {
@@ -91,8 +92,9 @@ internal sealed class StubCategoryService : ICategoryService
     public Exception? ThrowOnCreate { get; set; }
     public Exception? ThrowOnUpdate { get; set; }
     public Exception? ThrowOnDelete { get; set; }
+    public Exception? ThrowOnGetCategories { get; set; }
 
-    public IReadOnlyList<CategoryDTO> GetCategories() => Categories;
+    public IReadOnlyList<CategoryDTO> GetCategories() => ThrowOnGetCategories is null ? Categories : throw ThrowOnGetCategories;
 
     public Task<CategoryDTO> CreateCategoryAsync(CategoryCreateDTO request)
     {
@@ -157,8 +159,9 @@ internal sealed class StubCreditCardService : ICreditCardService
     public Exception? ThrowOnCreate { get; set; }
     public Exception? ThrowOnUpdate { get; set; }
     public Exception? ThrowOnDelete { get; set; }
+    public Exception? ThrowOnGetCreditCards { get; set; }
 
-    public IReadOnlyList<CreditCardDTO> GetCreditCards() => CreditCards;
+    public IReadOnlyList<CreditCardDTO> GetCreditCards() => ThrowOnGetCreditCards is null ? CreditCards : throw ThrowOnGetCreditCards;
 
     public Task<CreditCardDTO> CreateCreditCardAsync(CreditCardCreateDTO request)
     {
@@ -221,8 +224,9 @@ internal sealed class StubIncomeSourceService : IIncomeSourceService
     public Exception? ThrowOnCreate { get; set; }
     public Exception? ThrowOnUpdate { get; set; }
     public Exception? ThrowOnDelete { get; set; }
+    public Exception? ThrowOnGetIncomeSources { get; set; }
 
-    public IReadOnlyList<IncomeSourceDTO> GetIncomeSources() => IncomeSources;
+    public IReadOnlyList<IncomeSourceDTO> GetIncomeSources() => ThrowOnGetIncomeSources is null ? IncomeSources : throw ThrowOnGetIncomeSources;
 
     public Task<IncomeSourceDTO> CreateIncomeSourceAsync(IncomeSourceCreateDTO request)
     {
@@ -482,8 +486,9 @@ internal sealed class StubBrokerService : IBrokerService
     public Exception? ThrowOnCreate { get; set; }
     public Exception? ThrowOnUpdate { get; set; }
     public Exception? ThrowOnDelete { get; set; }
+    public Exception? ThrowOnGetBrokers { get; set; }
 
-    public IReadOnlyList<BrokerDTO> GetBrokers() => Brokers;
+    public IReadOnlyList<BrokerDTO> GetBrokers() => ThrowOnGetBrokers is null ? Brokers : throw ThrowOnGetBrokers;
 
     public Task<BrokerDTO> CreateBrokerAsync(BrokerCreateDTO request)
     {

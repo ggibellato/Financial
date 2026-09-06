@@ -2,6 +2,7 @@ using Financial.CashFlow.Application.DTOs;
 using Financial.Presentation.App.ViewModels.Admin;
 using Financial.TestUtilities;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 
 namespace Financial.Presentation.Tests.ViewModels.Admin;
 
@@ -134,5 +135,75 @@ public class CategoriesViewModelTests
         await viewModel.DeleteCategoryAsync(category);
 
         service.LastDeletedId.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task RefreshAsync_ServiceThrows_SetsErrorAndLogsFailure()
+    {
+        var service = new StubCategoryService { ThrowOnGetCategories = new InvalidOperationException("boom") };
+        var logger = new RecordingLogger<CategoriesViewModel>();
+        var viewModel = new CategoriesViewModel(service, new StubDialogService(), logger);
+
+        await viewModel.RefreshAsync();
+
+        viewModel.HasError.Should().BeTrue();
+        viewModel.Error.Should().Be("boom");
+        logger.Entries.Should().Contain(e => e.Level == LogLevel.Error && e.Message.Contains(nameof(InvalidOperationException)));
+    }
+
+    [Fact]
+    public async Task EditCategoryAsync_NullCategory_ReturnsWithoutShowingDialog()
+    {
+        var (viewModel, _, dialog) = CreateViewModel();
+
+        await viewModel.EditCategoryAsync(null);
+
+        dialog.LastCategoryFormDialog.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task EditCategoryAsync_DialogCancelled_DoesNotCallService()
+    {
+        var (viewModel, service, dialog) = CreateViewModel();
+        dialog.ShowCategoryFormDialogResult = false;
+        var category = Category(Guid.NewGuid(), "Mercado");
+
+        await viewModel.EditCategoryAsync(category);
+
+        service.LastUpdateRequest.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task EditCategoryAsync_ServiceThrows_SurfacesActionError()
+    {
+        var (viewModel, service, _) = CreateViewModel();
+        service.ThrowOnUpdate = new InvalidOperationException("A category named \"Mercado\" already exists.");
+        var category = Category(Guid.NewGuid(), "Mercado");
+
+        await viewModel.EditCategoryAsync(category);
+
+        viewModel.ActionError.Should().Be("A category named \"Mercado\" already exists.");
+    }
+
+    [Fact]
+    public async Task DeleteCategoryAsync_NullCategory_ReturnsWithoutConfirming()
+    {
+        var (viewModel, _, dialog) = CreateViewModel();
+
+        await viewModel.DeleteCategoryAsync(null);
+
+        dialog.LastConfirmMessage.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task DeleteCategoryAsync_ServiceThrows_SurfacesActionError()
+    {
+        var (viewModel, service, _) = CreateViewModel();
+        service.ThrowOnDelete = new InvalidOperationException("Category is referenced elsewhere.");
+        var category = Category(Guid.NewGuid(), "Mercado");
+
+        await viewModel.DeleteCategoryAsync(category);
+
+        viewModel.ActionError.Should().Be("Category is referenced elsewhere.");
     }
 }
