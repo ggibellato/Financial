@@ -13,9 +13,9 @@ public class InvestmentSnapshotsViewModelTests
         return (viewModel, service);
     }
 
-    private static InvestmentSnapshotDTO CreateSnapshot(int year, int month, string account, bool isLiability, decimal value) => new()
+    private static InvestmentSnapshotDTO CreateSnapshot(int year, int month, string account, bool isLiability, decimal value, Guid? id = null) => new()
     {
-        Id = Guid.NewGuid(), AccountId = Guid.NewGuid(), AccountName = account, IsLiability = isLiability, Year = year, Month = month, Value = value,
+        Id = id ?? Guid.NewGuid(), AccountId = Guid.NewGuid(), AccountName = account, IsLiability = isLiability, Year = year, Month = month, Value = value,
     };
 
     [Fact]
@@ -136,5 +136,151 @@ public class InvestmentSnapshotsViewModelTests
         viewModel.IsEditFormOpen.Should().BeTrue();
         viewModel.EditSaveError.Should().Be("Value must not be negative.");
         viewModel.EditValue.Should().Be("1200");
+    }
+
+    private static InvestmentSnapshotSuggestionDTO CreateSuggestion(
+        Guid snapshotId, string accountName, decimal currentValue, decimal suggestedValue) => new()
+    {
+        SnapshotId = snapshotId,
+        AccountId = Guid.NewGuid(),
+        AccountName = accountName,
+        CurrentValue = currentValue,
+        SuggestedValue = suggestedValue,
+        SourceDescription = "BarclaysPlatinumVisa8003 — Aug 2026 statement",
+    };
+
+    [Fact]
+    public void SuggestValuesCommand_Execute_LoadsSuggestionsWithDefaultIncludedState()
+    {
+        var (viewModel, service) = CreateViewModel();
+        var zeroSnapshotId = Guid.NewGuid();
+        var nonZeroSnapshotId = Guid.NewGuid();
+        service.Suggestions = new InvestmentSnapshotSuggestionsDTO
+        {
+            Suggestions =
+            [
+                CreateSuggestion(zeroSnapshotId, "PlatinumVisa8003", currentValue: 0m, suggestedValue: 142.17m),
+                CreateSuggestion(nonZeroSnapshotId, "ReservasPessoais", currentValue: 5400m, suggestedValue: 5612.30m),
+            ],
+            NotUpdated = [],
+        };
+
+        viewModel.SuggestValuesCommand.Execute(null);
+
+        viewModel.IsSuggestPanelOpen.Should().BeTrue();
+        viewModel.SuggestionRows.Single(r => r.SnapshotId == zeroSnapshotId).Included.Should().BeTrue();
+        viewModel.SuggestionRows.Single(r => r.SnapshotId == nonZeroSnapshotId).Included.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ApplySuggestionsCommand_AppliesOnlyCheckedRowsSequentially()
+    {
+        var (viewModel, service) = CreateViewModel();
+        var included = Guid.NewGuid();
+        var excluded = Guid.NewGuid();
+        var today = DateTime.Today;
+        service.Snapshots =
+        [
+            CreateSnapshot(today.Year, today.Month, "PlatinumVisa8003", true, 0m, id: included),
+            CreateSnapshot(today.Year, today.Month, "ReservasPessoais", true, 5400m, id: excluded),
+        ];
+        service.Suggestions = new InvestmentSnapshotSuggestionsDTO
+        {
+            Suggestions =
+            [
+                CreateSuggestion(included, "PlatinumVisa8003", currentValue: 0m, suggestedValue: 142.17m),
+                CreateSuggestion(excluded, "ReservasPessoais", currentValue: 5400m, suggestedValue: 5612.30m),
+            ],
+            NotUpdated = [],
+        };
+        viewModel.SuggestValuesCommand.Execute(null);
+
+        viewModel.ApplySuggestionsCommand.Execute(null);
+        await Task.Delay(50);
+
+        service.UpdateRequests.Should().ContainSingle(r => r.Id == included);
+        service.UpdateRequests.Should().NotContain(r => r.Id == excluded);
+    }
+
+    [Fact]
+    public async Task ApplySuggestionsCommand_ContinuesPastFailedRow_ShowsCompletionSummary()
+    {
+        var (viewModel, service) = CreateViewModel();
+        var willFail = Guid.NewGuid();
+        var willSucceed = Guid.NewGuid();
+        var today = DateTime.Today;
+        service.Snapshots =
+        [
+            CreateSnapshot(today.Year, today.Month, "PlatinumVisa8003", true, 0m, id: willFail),
+            CreateSnapshot(today.Year, today.Month, "ReservasPessoais", true, 0m, id: willSucceed),
+        ];
+        service.Suggestions = new InvestmentSnapshotSuggestionsDTO
+        {
+            Suggestions =
+            [
+                CreateSuggestion(willFail, "PlatinumVisa8003", currentValue: 0m, suggestedValue: 142.17m),
+                CreateSuggestion(willSucceed, "ReservasPessoais", currentValue: 0m, suggestedValue: 100m),
+            ],
+            NotUpdated = [],
+        };
+        viewModel.SuggestValuesCommand.Execute(null);
+        service.ThrowOnUpdateForId = willFail;
+
+        viewModel.ApplySuggestionsCommand.Execute(null);
+        await Task.Delay(50);
+
+        viewModel.HasCompletedApply.Should().BeTrue();
+        viewModel.SucceededCount.Should().Be(1);
+        viewModel.FailedSuggestionRows.Should().ContainSingle(r => r.SnapshotId == willFail);
+        viewModel.CompletionSummaryText.Should().Contain("Applied 1 of 2").And.Contain("PlatinumVisa8003");
+    }
+
+    [Fact]
+    public async Task RetryFailedSuggestionsCommand_ResubmitsPriorValuesWithoutRefetching()
+    {
+        var (viewModel, service) = CreateViewModel();
+        var willFailThenSucceed = Guid.NewGuid();
+        var today = DateTime.Today;
+        service.Snapshots = [CreateSnapshot(today.Year, today.Month, "PlatinumVisa8003", true, 0m, id: willFailThenSucceed)];
+        service.Suggestions = new InvestmentSnapshotSuggestionsDTO
+        {
+            Suggestions = [CreateSuggestion(willFailThenSucceed, "PlatinumVisa8003", currentValue: 0m, suggestedValue: 142.17m)],
+            NotUpdated = [],
+        };
+        viewModel.SuggestValuesCommand.Execute(null);
+        service.ThrowOnUpdateForId = willFailThenSucceed;
+        viewModel.ApplySuggestionsCommand.Execute(null);
+        await Task.Delay(50);
+        var callCountAfterFailedApply = service.GetSuggestionsForMonthCallCount;
+
+        service.ThrowOnUpdateForId = null;
+        viewModel.RetryFailedSuggestionsCommand.Execute(null);
+        await Task.Delay(50);
+
+        service.GetSuggestionsForMonthCallCount.Should().Be(callCountAfterFailedApply);
+        service.UpdateRequests.Should().ContainSingle(r => r.Id == willFailThenSucceed && r.Request.Value == 142.17m);
+        viewModel.IsSuggestPanelOpen.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task SuggestValuesCommand_ClosesOpenEditForm_AndViceVersa()
+    {
+        var (viewModel, service) = CreateViewModel();
+        var today = DateTime.Today;
+        var snapshot = CreateSnapshot(today.Year, today.Month, "ISA", false, 1000m);
+        service.Snapshots = [snapshot];
+        await viewModel.RefreshAsync();
+        viewModel.EditSnapshotCommand.Execute(viewModel.Snapshots.Single());
+        viewModel.IsEditFormOpen.Should().BeTrue();
+
+        viewModel.SuggestValuesCommand.Execute(null);
+
+        viewModel.IsEditFormOpen.Should().BeFalse();
+        viewModel.IsSuggestPanelOpen.Should().BeTrue();
+
+        viewModel.EditSnapshotCommand.Execute(viewModel.Snapshots.Single());
+
+        viewModel.IsSuggestPanelOpen.Should().BeFalse();
+        viewModel.IsEditFormOpen.Should().BeTrue();
     }
 }

@@ -29,9 +29,12 @@
                 <TextBlock Text="Month:" VerticalAlignment="Center" Margin="0,0,8,0"/>
                 <components:MonthYearPicker SelectedYear="{Binding Year, Mode=TwoWay}"
                                              SelectedMonth="{Binding Month, Mode=TwoWay}"/>
+                <ui:Button Content="Suggest Values" Appearance="Secondary" Margin="12,0,0,0"
+                           Command="{Binding SuggestValuesCommand}"/>
             </StackPanel>
 
             <local:EditSnapshotValueFormView Grid.Row="1" Visibility="{Binding IsEditFormOpen, Converter={StaticResource BoolToVisibilityConverter}}"/>
+            <local:SuggestValuesPanelView Grid.Row="1" Visibility="{Binding IsSuggestPanelOpen, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
             <DataGrid Grid.Row="2" ItemsSource="{Binding Snapshots}" AutoGenerateColumns="False" IsReadOnly="True">
                 <DataGrid.Columns>

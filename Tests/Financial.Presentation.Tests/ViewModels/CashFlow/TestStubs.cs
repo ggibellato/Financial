@@ -651,7 +651,9 @@ internal sealed class StubInvestmentSnapshotService : IInvestmentSnapshotService
     public List<InvestmentSnapshotDTO> Snapshots { get; set; } = [];
     public int GetSnapshotsForMonthCallCount { get; private set; }
     public (Guid Id, InvestmentSnapshotValueUpdateDTO Request)? LastUpdateRequest { get; private set; }
+    public List<(Guid Id, InvestmentSnapshotValueUpdateDTO Request)> UpdateRequests { get; } = [];
     public Exception? ThrowOnUpdate { get; set; }
+    public Guid? ThrowOnUpdateForId { get; set; }
 
     public Task<IReadOnlyList<InvestmentSnapshotDTO>> GetSnapshotsForMonthAsync(int year, int month)
     {
@@ -667,7 +669,13 @@ internal sealed class StubInvestmentSnapshotService : IInvestmentSnapshotService
             throw ex;
         }
 
+        if (id == ThrowOnUpdateForId)
+        {
+            throw new InvalidOperationException("Simulated failure.");
+        }
+
         LastUpdateRequest = (id, request);
+        UpdateRequests.Add((id, request));
         var existing = Snapshots.First(s => s.Id == id);
         var updated = new InvestmentSnapshotDTO
         {
