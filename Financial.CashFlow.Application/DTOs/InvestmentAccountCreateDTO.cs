@@ -1,3 +1,5 @@
+using Financial.CashFlow.Domain.Enums;
+
 namespace Financial.CashFlow.Application.DTOs;
 
 public sealed class InvestmentAccountCreateDTO
@@ -7,4 +9,8 @@ public sealed class InvestmentAccountCreateDTO
     public required bool IsActive { get; init; }
 
     public required bool IsLiability { get; init; }
+
+    public InvestmentAccountSource Source { get; init; } = InvestmentAccountSource.None;
+
+    public Guid? CreditCardId { get; init; }
 }

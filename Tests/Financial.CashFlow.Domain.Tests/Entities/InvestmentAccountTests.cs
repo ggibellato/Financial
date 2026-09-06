@@ -1,4 +1,5 @@
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Enums;
 using FluentAssertions;
 using FluentAssertions.Execution;
 
@@ -80,5 +81,103 @@ public class InvestmentAccountTests
             account.IsActive.Should().BeTrue();
             account.IsLiability.Should().BeFalse();
         }
+    }
+
+    [Fact]
+    public void Create_WithSourceNone_DefaultsSucceed()
+    {
+        var account = InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false);
+
+        using (new AssertionScope())
+        {
+            account.Source.Should().Be(InvestmentAccountSource.None);
+            account.CreditCard.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public void Create_WithSourceCreditCardAndNoCard_Throws()
+    {
+        var act = () => InvestmentAccount.Create(
+            "PlatinumVisa8003", isActive: true, isLiability: true, InvestmentAccountSource.CreditCard, creditCard: null);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void Create_WithSourceCreditCardAndCard_Succeeds()
+    {
+        var creditCard = CreditCard.Create("Platinum Visa 8003", isActive: true);
+
+        var account = InvestmentAccount.Create(
+            "PlatinumVisa8003", isActive: true, isLiability: true, InvestmentAccountSource.CreditCard, creditCard);
+
+        using (new AssertionScope())
+        {
+            account.Source.Should().Be(InvestmentAccountSource.CreditCard);
+            account.CreditCard.Should().Be(creditCard);
+        }
+    }
+
+    [Fact]
+    public void Create_WithSourceReserveBucketsSumAndACard_Throws()
+    {
+        var creditCard = CreditCard.Create("Platinum Visa 8003", isActive: true);
+
+        var act = () => InvestmentAccount.Create(
+            "Reservas pessoais", isActive: true, isLiability: false, InvestmentAccountSource.ReserveBucketsSum, creditCard);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void Create_WithSourceReserveBucketsSumAndNoCard_Succeeds()
+    {
+        var account = InvestmentAccount.Create(
+            "Reservas pessoais", isActive: true, isLiability: false, InvestmentAccountSource.ReserveBucketsSum);
+
+        account.Source.Should().Be(InvestmentAccountSource.ReserveBucketsSum);
+    }
+
+    [Fact]
+    public void Update_SwitchingFromCreditCardToNone_ClearsCreditCard()
+    {
+        var creditCard = CreditCard.Create("Platinum Visa 8003", isActive: true);
+        var account = InvestmentAccount.Create(
+            "PlatinumVisa8003", isActive: true, isLiability: true, InvestmentAccountSource.CreditCard, creditCard);
+
+        account.Update("PlatinumVisa8003", isActive: true, isLiability: true, InvestmentAccountSource.None);
+
+        using (new AssertionScope())
+        {
+            account.Source.Should().Be(InvestmentAccountSource.None);
+            account.CreditCard.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public void Update_SwitchingFromCreditCardToReserveBucketsSum_ClearsCreditCard()
+    {
+        var creditCard = CreditCard.Create("Platinum Visa 8003", isActive: true);
+        var account = InvestmentAccount.Create(
+            "PlatinumVisa8003", isActive: true, isLiability: true, InvestmentAccountSource.CreditCard, creditCard);
+
+        account.Update("PlatinumVisa8003", isActive: true, isLiability: true, InvestmentAccountSource.ReserveBucketsSum);
+
+        using (new AssertionScope())
+        {
+            account.Source.Should().Be(InvestmentAccountSource.ReserveBucketsSum);
+            account.CreditCard.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public void Update_WithSourceCreditCardAndNoCard_Throws()
+    {
+        var account = InvestmentAccount.Create("PlatinumVisa8003", isActive: true, isLiability: true);
+
+        var act = () => account.Update("PlatinumVisa8003", isActive: true, isLiability: true, InvestmentAccountSource.CreditCard);
+
+        act.Should().Throw<ArgumentException>();
     }
 }
