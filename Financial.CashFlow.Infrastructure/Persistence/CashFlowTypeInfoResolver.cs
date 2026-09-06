@@ -49,6 +49,7 @@ public class CashFlowTypeInfoResolver : DefaultJsonTypeInfoResolver
         [(typeof(CardStatement), nameof(CardStatement.CreditCard))] = ("CreditCardId", true),
         [(typeof(Expense), nameof(Expense.Category))] = ("CategoryId", true),
         [(typeof(ReserveMovement), nameof(ReserveMovement.Income))] = ("IncomeId", false),
+        [(typeof(InvestmentAccount), nameof(InvestmentAccount.CreditCard))] = ("CreditCardId", false),
     };
 
     private readonly ReferenceResolutionContext? _context;

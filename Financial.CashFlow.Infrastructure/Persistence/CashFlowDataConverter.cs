@@ -6,10 +6,12 @@ namespace Financial.CashFlow.Infrastructure.Persistence;
 
 /// <summary>
 /// Top-level (de)serializer for <see cref="CashFlowData"/>. On read, resolves the seeded
-/// Bank/IncomeSource/InvestmentAccount collections first - regardless of their position in the
-/// JSON text - then deserializes every other collection through reference converters bound to
-/// that resolution, assembling the result via <see cref="CashFlowData.Create"/>/<c>Add*</c> so
-/// every reference property shares the exact same instance as its owning collection entry.
+/// Bank/IncomeSource/ReserveBucket/CreditCard/Category collections first - regardless of their
+/// position in the JSON text - since none of them reference each other. InvestmentAccount is
+/// resolved next, since its optional CreditCard link depends on the CreditCards lookup already
+/// being built. Every other collection then deserializes through reference converters bound to
+/// that full resolution, assembling the result via <see cref="CashFlowData.Create"/>/<c>Add*</c>
+/// so every reference property shares the exact same instance as its owning collection entry.
 /// </summary>
 public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
 {
@@ -21,7 +23,6 @@ public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
         var unresolvedOptions = CreateElementOptions(context: null);
         var banks = DeserializeCollection<Bank>(root, "Banks", unresolvedOptions);
         var incomeSources = DeserializeCollection<IncomeSource>(root, "IncomeSources", unresolvedOptions);
-        var investmentAccounts = DeserializeCollection<InvestmentAccount>(root, "InvestmentAccounts", unresolvedOptions);
         var reserveBuckets = DeserializeCollection<ReserveBucket>(root, "ReserveBuckets", unresolvedOptions);
         var creditCards = DeserializeCollection<CreditCard>(root, "CreditCards", unresolvedOptions);
         var categories = DeserializeCollection<Category>(root, "Categories", unresolvedOptions);
@@ -29,10 +30,15 @@ public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
         var context = new ReferenceResolutionContext();
         foreach (var bank in banks) context.Banks[bank.Id] = bank;
         foreach (var incomeSource in incomeSources) context.IncomeSources[incomeSource.Id] = incomeSource;
-        foreach (var account in investmentAccounts) context.InvestmentAccounts[account.Id] = account;
         foreach (var bucket in reserveBuckets) context.ReserveBuckets[bucket.Id] = bucket;
         foreach (var card in creditCards) context.CreditCards[card.Id] = card;
         foreach (var category in categories) context.Categories[category.Id] = category;
+
+        // InvestmentAccount's optional CreditCard reference needs context.CreditCards, already
+        // populated above - so it cannot join the fully-independent leaf set deserialized with
+        // unresolvedOptions.
+        var investmentAccounts = DeserializeCollection<InvestmentAccount>(root, "InvestmentAccounts", CreateElementOptions(context));
+        foreach (var account in investmentAccounts) context.InvestmentAccounts[account.Id] = account;
 
         var resolvedOptions = CreateElementOptions(context);
 

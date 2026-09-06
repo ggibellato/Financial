@@ -56,9 +56,10 @@ public sealed class InvestmentAccountService : IInvestmentAccountService
 
             EnsureNameIsUnique(request.Name, excludingId: null);
 
-            var creditCard = ResolveCreditCard(request.Source, request.CreditCardId);
+            var source = ParseSource(request.Source);
+            var creditCard = ResolveCreditCard(source, request.CreditCardId);
 
-            var account = InvestmentAccount.Create(request.Name, request.IsActive, request.IsLiability, request.Source, creditCard);
+            var account = InvestmentAccount.Create(request.Name, request.IsActive, request.IsLiability, source, creditCard);
 
             await _repository.ApplyAndSaveAsync(() =>
             {
@@ -98,11 +99,12 @@ public sealed class InvestmentAccountService : IInvestmentAccountService
 
             EnsureNameIsUnique(request.Name, excludingId: id);
 
-            var creditCard = ResolveCreditCard(request.Source, request.CreditCardId);
+            var source = ParseSource(request.Source);
+            var creditCard = ResolveCreditCard(source, request.CreditCardId);
 
             await _repository.ApplyAndSaveAsync(() =>
             {
-                account!.Update(request.Name, request.IsActive, request.IsLiability, request.Source, creditCard);
+                account!.Update(request.Name, request.IsActive, request.IsLiability, source, creditCard);
                 return true;
             }).ConfigureAwait(false);
 
@@ -144,6 +146,16 @@ public sealed class InvestmentAccountService : IInvestmentAccountService
             span.MarkFailed(ex);
             throw;
         }
+    }
+
+    private static InvestmentAccountSource ParseSource(string source)
+    {
+        if (!InvestmentAccountSourceParser.TryParse(source, out var parsed))
+        {
+            throw new ArgumentException($"Source '{source}' is not recognized.");
+        }
+
+        return parsed;
     }
 
     private CreditCard? ResolveCreditCard(InvestmentAccountSource source, Guid? creditCardId)
@@ -205,7 +217,7 @@ public sealed class InvestmentAccountService : IInvestmentAccountService
         IsActive = account.IsActive,
         IsLiability = account.IsLiability,
         HasNonZeroInvestmentSnapshot = HasNonZeroInvestmentSnapshot(account.Id),
-        Source = account.Source,
+        Source = account.Source.ToString(),
         CreditCardId = account.CreditCard?.Id
     };
 }

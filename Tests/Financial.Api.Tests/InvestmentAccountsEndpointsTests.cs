@@ -9,6 +9,8 @@ public class InvestmentAccountsEndpointsTests : ApiEndpointTests
 {
     private static readonly Guid ChaseSaveId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-200000000001");
     private static readonly Guid PlatinumVisa8003Id = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-200000000002");
+    private static readonly Guid BaAmexId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-500000000004");
+    private static readonly Guid RetiredTestCardId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-500000000006");
 
     [Fact]
     public async Task GetInvestmentAccounts_ReturnsTheElevenSeededAccountsWithCorrectFields()
@@ -202,5 +204,70 @@ public class InvestmentAccountsEndpointsTests : ApiEndpointTests
 
         var accounts = await response.Content.ReadFromJsonAsync<List<InvestmentAccountDTO>>();
         accounts.Should().ContainSingle(a => a.Id == ChaseSaveId && a.HasNonZeroInvestmentSnapshot);
+    }
+
+    [Fact]
+    public async Task CreateInvestmentAccount_SourceCreditCardWithDeletedCardId_Returns400()
+    {
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/investment-accounts", new InvestmentAccountCreateDTO
+        {
+            Name = "Monzo Pot",
+            IsActive = true,
+            IsLiability = true,
+            Source = "CreditCard",
+            CreditCardId = Guid.NewGuid()
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task CreateInvestmentAccount_SourceCreditCardWithInactiveCard_Returns400()
+    {
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/investment-accounts", new InvestmentAccountCreateDTO
+        {
+            Name = "Monzo Pot",
+            IsActive = true,
+            IsLiability = true,
+            Source = "CreditCard",
+            CreditCardId = RetiredTestCardId
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task CreateInvestmentAccount_SourceCreditCardWithActiveCard_Returns200WithSourceEcho()
+    {
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/investment-accounts", new InvestmentAccountCreateDTO
+        {
+            Name = "Monzo Pot",
+            IsActive = true,
+            IsLiability = true,
+            Source = "CreditCard",
+            CreditCardId = BaAmexId
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var account = await response.Content.ReadFromJsonAsync<InvestmentAccountDTO>();
+        account!.Source.Should().Be("CreditCard");
+        account.CreditCardId.Should().Be(BaAmexId);
+    }
+
+    [Fact]
+    public async Task CreateInvestmentAccount_SourceReserveBucketsSum_Returns200WithNoCreditCardId()
+    {
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/investment-accounts", new InvestmentAccountCreateDTO
+        {
+            Name = "Reservas pessoais copy",
+            IsActive = true,
+            IsLiability = false,
+            Source = "ReserveBucketsSum"
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var account = await response.Content.ReadFromJsonAsync<InvestmentAccountDTO>();
+        account!.Source.Should().Be("ReserveBucketsSum");
+        account.CreditCardId.Should().BeNull();
     }
 }

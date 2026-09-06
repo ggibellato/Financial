@@ -321,7 +321,7 @@ public class InvestmentAccountServiceTests
             Name = "PlatinumVisa8003",
             IsActive = true,
             IsLiability = true,
-            Source = InvestmentAccountSource.CreditCard,
+            Source = "CreditCard",
             CreditCardId = Guid.NewGuid()
         };
 
@@ -344,7 +344,7 @@ public class InvestmentAccountServiceTests
             Name = "PlatinumVisa8003",
             IsActive = true,
             IsLiability = true,
-            Source = InvestmentAccountSource.CreditCard,
+            Source = "CreditCard",
             CreditCardId = creditCard.Id
         };
 
@@ -367,7 +367,7 @@ public class InvestmentAccountServiceTests
             Name = "PlatinumVisa8003",
             IsActive = true,
             IsLiability = true,
-            Source = InvestmentAccountSource.CreditCard,
+            Source = "CreditCard",
             CreditCardId = creditCard.Id
         };
 
@@ -375,7 +375,7 @@ public class InvestmentAccountServiceTests
 
         using (new AssertionScope())
         {
-            result.Source.Should().Be(InvestmentAccountSource.CreditCard);
+            result.Source.Should().Be("CreditCard");
             result.CreditCardId.Should().Be(creditCard.Id);
         }
     }
@@ -388,14 +388,14 @@ public class InvestmentAccountServiceTests
             Name = "Reservas pessoais",
             IsActive = true,
             IsLiability = false,
-            Source = InvestmentAccountSource.ReserveBucketsSum
+            Source = "ReserveBucketsSum"
         };
 
         var result = await _sut.CreateInvestmentAccountAsync(request);
 
         using (new AssertionScope())
         {
-            result.Source.Should().Be(InvestmentAccountSource.ReserveBucketsSum);
+            result.Source.Should().Be("ReserveBucketsSum");
             result.CreditCardId.Should().BeNull();
         }
     }
@@ -413,7 +413,7 @@ public class InvestmentAccountServiceTests
         var dto = result.Should().ContainSingle(a => a.Name == "PlatinumVisa8003").Which;
         using (new AssertionScope())
         {
-            dto.Source.Should().Be(InvestmentAccountSource.CreditCard);
+            dto.Source.Should().Be("CreditCard");
             dto.CreditCardId.Should().Be(creditCard.Id);
         }
     }
@@ -431,7 +431,7 @@ public class InvestmentAccountServiceTests
             Name = "PlatinumVisa8003",
             IsActive = true,
             IsLiability = true,
-            Source = InvestmentAccountSource.None,
+            Source = "None",
             CreditCardId = creditCard.Id
         };
 
@@ -439,7 +439,7 @@ public class InvestmentAccountServiceTests
 
         using (new AssertionScope())
         {
-            result.Source.Should().Be(InvestmentAccountSource.None);
+            result.Source.Should().Be("None");
             result.CreditCardId.Should().BeNull();
         }
     }

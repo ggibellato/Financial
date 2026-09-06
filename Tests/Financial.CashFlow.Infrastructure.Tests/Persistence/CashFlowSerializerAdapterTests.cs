@@ -27,7 +27,8 @@ public class CashFlowSerializerAdapterTests
         var bank = Bank.Create("Barclays", roundUpEnabled: false);
         bank.SetOpeningBalance(1250.75m, new DateOnly(2026, 7, 1));
         var destinationBank = Bank.Create("Trading212", roundUpEnabled: true);
-        var investmentAccount = InvestmentAccount.Create("PlatinumVisa8003", isActive: true, isLiability: true);
+        var investmentAccount = InvestmentAccount.Create(
+            "PlatinumVisa8003", isActive: true, isLiability: true, InvestmentAccountSource.CreditCard, creditCard);
         var incomeSource = IncomeSource.Create("Ariana", IncomeGroup.Salary, autoSplitToReserve: true);
         var expense = Expense.Create(
             new DateOnly(2026, 7, 15),
@@ -103,6 +104,7 @@ public class CashFlowSerializerAdapterTests
             resultInvestmentAccount.Name.Should().Be(investmentAccount.Name);
             resultInvestmentAccount.IsActive.Should().Be(investmentAccount.IsActive);
             resultInvestmentAccount.IsLiability.Should().Be(investmentAccount.IsLiability);
+            resultInvestmentAccount.Source.Should().Be(InvestmentAccountSource.CreditCard);
             var resultBanks = result.Banks.Should().HaveCount(2).And.Subject;
             var resultBank = resultBanks.Should().ContainSingle(b => b.Id == bank.Id).Subject;
             resultBank.Name.Should().Be(bank.Name);
@@ -161,6 +163,7 @@ public class CashFlowSerializerAdapterTests
             resultSnapshot.Account.Should().BeSameAs(resultInvestmentAccount);
             resultExpense.CreditCard.Should().BeSameAs(resultCreditCard);
             resultCardStatement.CreditCard.Should().BeSameAs(resultCreditCard);
+            resultInvestmentAccount.CreditCard.Should().BeSameAs(resultCreditCard);
             resultExpense.Category.Should().BeSameAs(resultCategory);
             resultMovement.Income.Should().BeSameAs(resultIncome);
         }
@@ -259,6 +262,29 @@ public class CashFlowSerializerAdapterTests
         var result = _sut.Deserialize(json);
 
         result.ReserveMovements.Should().ContainSingle().Which.Income.Should().BeNull();
+    }
+
+    [Fact]
+    public void Deserialize_InvestmentAccountMissingSourceAndCreditCardIdKeysEntirely_DefaultsToNoneAndUnlinked()
+    {
+        // Reproduces a pre-F01 record from before the Source/CreditCardId keys existed - the PRD
+        // requires this to load with no manual migration step.
+        var accountId = Guid.NewGuid();
+        var json = $$"""
+            {
+              "Expenses": [], "ReserveMovements": [], "CardStatements": [], "RecurringBills": [],
+              "MaeLedgerEntries": [], "InvestmentSnapshots": [],
+              "InvestmentAccounts": [{ "Id": "{{accountId}}", "Name": "ChaseSave", "IsActive": true, "IsLiability": false }],
+              "Incomes": [], "IncomeSources": [], "Transfers": [], "BalanceAdjustments": [],
+              "Banks": [], "CreditCards": [], "Categories": [], "ReserveBuckets": []
+            }
+            """;
+
+        var result = _sut.Deserialize(json);
+
+        var account = result.InvestmentAccounts.Should().ContainSingle().Which;
+        account.Source.Should().Be(InvestmentAccountSource.None);
+        account.CreditCard.Should().BeNull();
     }
 
     [Fact]

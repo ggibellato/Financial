@@ -1945,6 +1945,13 @@
       },
       "InvestmentAccountCreateDTO": {
         "properties": {
+          "creditCardId": {
+            "format": "uuid",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "isActive": {
             "type": "boolean"
           },
@@ -1952,6 +1959,9 @@
             "type": "boolean"
           },
           "name": {
+            "type": "string"
+          },
+          "source": {
             "type": "string"
           }
         },
@@ -1964,6 +1974,13 @@
       },
       "InvestmentAccountDTO": {
         "properties": {
+          "creditCardId": {
+            "format": "uuid",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "hasNonZeroInvestmentSnapshot": {
             "type": "boolean"
           },
@@ -1979,6 +1996,9 @@
           },
           "name": {
             "type": "string"
+          },
+          "source": {
+            "type": "string"
           }
         },
         "required": [
@@ -1992,6 +2012,13 @@
       },
       "InvestmentAccountUpdateDTO": {
         "properties": {
+          "creditCardId": {
+            "format": "uuid",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "isActive": {
             "type": "boolean"
           },
@@ -1999,6 +2026,9 @@
             "type": "boolean"
           },
           "name": {
+            "type": "string"
+          },
+          "source": {
             "type": "string"
           }
         },
