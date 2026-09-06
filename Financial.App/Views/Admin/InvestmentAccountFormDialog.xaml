@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         Title="{Binding Title}"
-        Height="280"
+        Height="420"
         Width="380"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
@@ -18,6 +18,9 @@
     </Window.Resources>
     <Grid Margin="16">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -44,14 +47,41 @@
                   IsChecked="{Binding IsLiability}"
                   Margin="0,0,0,10"/>
 
-        <TextBlock Grid.Row="4"
+        <TextBlock Grid.Row="4" Text="Source" Margin="0,0,0,4"/>
+        <ComboBox Grid.Row="5"
+                  AutomationProperties.Name="Source"
+                  ItemsSource="{Binding SourceOptions}" DisplayMemberPath="Display"
+                  SelectedValue="{Binding Source, UpdateSourceTrigger=PropertyChanged}"
+                  SelectedValuePath="Value"
+                  Margin="0,0,0,10"/>
+
+        <StackPanel Grid.Row="6" Visibility="{Binding IsCreditCardSourceMode, Converter={StaticResource BoolToVisibilityConverter}}">
+            <TextBlock Margin="0,0,0,4">
+                <Run Text="Credit Card"/>
+                <Run Text=" *" Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
+            </TextBlock>
+            <ComboBox AutomationProperties.Name="Credit Card"
+                      AutomationProperties.HelpText="Required"
+                      ItemsSource="{Binding CreditCardOptions}" DisplayMemberPath="Name"
+                      SelectedValue="{Binding CreditCardId, UpdateSourceTrigger=PropertyChanged}"
+                      SelectedValuePath="Id"
+                      Margin="0,0,0,10"/>
+        </StackPanel>
+
+        <TextBlock Grid.Row="6"
+                   Visibility="{Binding IsReserveBucketsSourceMode, Converter={StaticResource BoolToVisibilityConverter}}"
+                   TextWrapping="Wrap"
+                   Text="Uses the total balance across all reserve buckets"
+                   Margin="0,0,0,10"/>
+
+        <TextBlock Grid.Row="7"
                    AutomationProperties.LiveSetting="Polite"
                    Foreground="{DynamicResource SystemFillColorCriticalBrush}"
                    TextWrapping="Wrap"
                    Text="{Binding ValidationMessage}"
                    Margin="0,0,0,10"/>
 
-        <StackPanel Grid.Row="5" Orientation="Horizontal" Margin="0,8,0,0">
+        <StackPanel Grid.Row="8" Orientation="Horizontal" Margin="0,8,0,0">
             <ui:Button Content="Save" Appearance="Primary" MinWidth="90" Command="{Binding ConfirmCommand}" IsDefault="True"/>
             <ui:Button Content="Cancel" Appearance="Secondary" MinWidth="90" Margin="8,0,0,0" Command="{Binding CancelCommand}" IsCancel="True"/>
         </StackPanel>

@@ -15,4 +15,11 @@ public sealed class InvestmentAccountDTO
     /// <summary>Whether any InvestmentSnapshot recorded for this account has a non-zero value.
     /// Delete is refused (409) while this is true.</summary>
     public required bool HasNonZeroInvestmentSnapshot { get; init; }
+
+    /// <summary>Where a future suggested value for this account should come from: "None",
+    /// "CreditCard", or "ReserveBucketsSum".</summary>
+    public string Source { get; init; } = "None";
+
+    /// <summary>The linked credit card, set only when <see cref="Source"/> is CreditCard.</summary>
+    public Guid? CreditCardId { get; init; }
 }

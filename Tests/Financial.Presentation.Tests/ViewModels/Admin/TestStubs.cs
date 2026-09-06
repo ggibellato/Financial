@@ -432,6 +432,8 @@ internal sealed class StubInvestmentAccountService : IInvestmentAccountService
             IsActive = request.IsActive,
             IsLiability = request.IsLiability,
             HasNonZeroInvestmentSnapshot = false,
+            Source = request.Source,
+            CreditCardId = request.CreditCardId,
         };
         InvestmentAccounts.Add(created);
         return Task.FromResult(created);
@@ -452,6 +454,8 @@ internal sealed class StubInvestmentAccountService : IInvestmentAccountService
             IsActive = request.IsActive,
             IsLiability = request.IsLiability,
             HasNonZeroInvestmentSnapshot = false,
+            Source = request.Source,
+            CreditCardId = request.CreditCardId,
         };
         return Task.FromResult(updated);
     }

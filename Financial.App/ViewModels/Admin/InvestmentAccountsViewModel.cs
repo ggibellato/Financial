@@ -10,6 +10,7 @@ namespace Financial.Presentation.App.ViewModels.Admin;
 public class InvestmentAccountsViewModel : ViewModelBase
 {
     private readonly IInvestmentAccountService _investmentAccountService;
+    private readonly ICreditCardService _creditCardService;
     private readonly IDialogService _dialogService;
     private readonly ILogger<InvestmentAccountsViewModel> _logger;
 
@@ -54,6 +55,8 @@ public class InvestmentAccountsViewModel : ViewModelBase
 
     public ObservableCollection<InvestmentAccountDTO> InvestmentAccounts { get; } = [];
 
+    public ObservableCollection<CreditCardDTO> CreditCards { get; } = [];
+
     public RelayCommand RetryCommand { get; }
 
     public RelayCommand CreateInvestmentAccountCommand { get; }
@@ -62,9 +65,14 @@ public class InvestmentAccountsViewModel : ViewModelBase
 
     public RelayCommand<InvestmentAccountDTO> DeleteInvestmentAccountCommand { get; }
 
-    public InvestmentAccountsViewModel(IInvestmentAccountService investmentAccountService, IDialogService dialogService, ILogger<InvestmentAccountsViewModel> logger)
+    public InvestmentAccountsViewModel(
+        IInvestmentAccountService investmentAccountService,
+        ICreditCardService creditCardService,
+        IDialogService dialogService,
+        ILogger<InvestmentAccountsViewModel> logger)
     {
         _investmentAccountService = investmentAccountService ?? throw new ArgumentNullException(nameof(investmentAccountService));
+        _creditCardService = creditCardService ?? throw new ArgumentNullException(nameof(creditCardService));
         _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
@@ -86,6 +94,7 @@ public class InvestmentAccountsViewModel : ViewModelBase
         async isCurrent =>
         {
             var accounts = await Task.Run(() => _investmentAccountService.GetInvestmentAccounts());
+            var creditCards = await Task.Run(() => _creditCardService.GetCreditCards());
 
             if (!isCurrent())
             {
@@ -93,12 +102,13 @@ public class InvestmentAccountsViewModel : ViewModelBase
             }
 
             ReplaceAll(InvestmentAccounts, accounts);
+            ReplaceAll(CreditCards, creditCards);
         },
         ex => _logger.LogError("Investment accounts refresh failed with {ErrorType}", ex.GetType().Name));
 
     internal async Task CreateInvestmentAccountAsync()
     {
-        var dialog = new InvestmentAccountFormDialogViewModel();
+        var dialog = new InvestmentAccountFormDialogViewModel(ActiveCreditCardOptions(currentlyLinkedCardId: null));
         if (!_dialogService.ShowInvestmentAccountFormDialog(dialog))
         {
             return;
@@ -112,6 +122,8 @@ public class InvestmentAccountsViewModel : ViewModelBase
                 Name = dialog.Name,
                 IsActive = dialog.IsActive,
                 IsLiability = dialog.IsLiability,
+                Source = dialog.Source,
+                CreditCardId = dialog.CreditCardId,
             });
             await RefreshAsync();
         }
@@ -130,9 +142,12 @@ public class InvestmentAccountsViewModel : ViewModelBase
         }
 
         var dialog = new InvestmentAccountFormDialogViewModel(
+            ActiveCreditCardOptions(currentlyLinkedCardId: account.CreditCardId),
             account.Name,
             account.IsActive,
-            account.IsLiability);
+            account.IsLiability,
+            account.Source,
+            account.CreditCardId);
         if (!_dialogService.ShowInvestmentAccountFormDialog(dialog))
         {
             return;
@@ -146,6 +161,8 @@ public class InvestmentAccountsViewModel : ViewModelBase
                 Name = dialog.Name,
                 IsActive = dialog.IsActive,
                 IsLiability = dialog.IsLiability,
+                Source = dialog.Source,
+                CreditCardId = dialog.CreditCardId,
             });
             await RefreshAsync();
         }
@@ -155,6 +172,12 @@ public class InvestmentAccountsViewModel : ViewModelBase
             ActionError = ex.Message;
         }
     }
+
+    /// <summary>Every active credit card, plus the account's currently-linked card even if it has
+    /// since become inactive - so reopening Edit never silently shows no selection for a link
+    /// that is, in fact, still configured.</summary>
+    private IReadOnlyList<CreditCardDTO> ActiveCreditCardOptions(Guid? currentlyLinkedCardId) =>
+        CreditCards.Where(c => c.IsActive || c.Id == currentlyLinkedCardId).ToList();
 
     internal async Task DeleteInvestmentAccountAsync(InvestmentAccountDTO? account)
     {

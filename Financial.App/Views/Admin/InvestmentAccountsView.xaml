@@ -45,6 +45,15 @@
                     <DataGridTextColumn Binding="{Binding Name}" Header="Name" Width="*"/>
                     <DataGridTextColumn Binding="{Binding IsActive}" Header="Active" Width="70"/>
                     <DataGridTextColumn Binding="{Binding IsLiability}" Header="Liability" Width="80"/>
+                    <DataGridTextColumn Header="Source" Width="140">
+                        <DataGridTextColumn.Binding>
+                            <MultiBinding Converter="{StaticResource InvestmentAccountSourceDisplayConverter}">
+                                <Binding Path="Source"/>
+                                <Binding Path="CreditCardId"/>
+                                <Binding Path="DataContext.CreditCards" RelativeSource="{RelativeSource AncestorType=UserControl}"/>
+                            </MultiBinding>
+                        </DataGridTextColumn.Binding>
+                    </DataGridTextColumn>
                     <DataGridTemplateColumn Header="" Width="Auto">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>

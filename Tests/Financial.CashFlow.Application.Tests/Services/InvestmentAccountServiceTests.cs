@@ -4,6 +4,7 @@ using Financial.CashFlow.Application.Services;
 using Financial.Shared.Abstractions.Observability;
 using Financial.TestUtilities;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Enums;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -310,5 +311,136 @@ public class InvestmentAccountServiceTests
         var act = async () => await _sut.DeleteInvestmentAccountAsync(account.Id);
 
         await act.Should().ThrowAsync<EntityInUseException>();
+    }
+
+    [Fact]
+    public async Task CreateInvestmentAccountAsync_SourceCreditCardWithUnresolvedId_Throws()
+    {
+        var request = new InvestmentAccountCreateDTO
+        {
+            Name = "PlatinumVisa8003",
+            IsActive = true,
+            IsLiability = true,
+            Source = "CreditCard",
+            CreditCardId = Guid.NewGuid()
+        };
+
+        var act = async () => await _sut.CreateInvestmentAccountAsync(request);
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>();
+            _repository.SaveChangesCallCount.Should().Be(0);
+        }
+    }
+
+    [Fact]
+    public async Task CreateInvestmentAccountAsync_SourceCreditCardWithInactiveCard_Throws()
+    {
+        var creditCard = CreditCard.Create("Platinum Visa 8003", isActive: false);
+        _repository.CreditCards.Add(creditCard);
+        var request = new InvestmentAccountCreateDTO
+        {
+            Name = "PlatinumVisa8003",
+            IsActive = true,
+            IsLiability = true,
+            Source = "CreditCard",
+            CreditCardId = creditCard.Id
+        };
+
+        var act = async () => await _sut.CreateInvestmentAccountAsync(request);
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>();
+            _repository.SaveChangesCallCount.Should().Be(0);
+        }
+    }
+
+    [Fact]
+    public async Task CreateInvestmentAccountAsync_SourceCreditCardWithActiveCard_Succeeds()
+    {
+        var creditCard = CreditCard.Create("Platinum Visa 8003", isActive: true);
+        _repository.CreditCards.Add(creditCard);
+        var request = new InvestmentAccountCreateDTO
+        {
+            Name = "PlatinumVisa8003",
+            IsActive = true,
+            IsLiability = true,
+            Source = "CreditCard",
+            CreditCardId = creditCard.Id
+        };
+
+        var result = await _sut.CreateInvestmentAccountAsync(request);
+
+        using (new AssertionScope())
+        {
+            result.Source.Should().Be("CreditCard");
+            result.CreditCardId.Should().Be(creditCard.Id);
+        }
+    }
+
+    [Fact]
+    public async Task CreateInvestmentAccountAsync_SourceReserveBucketsSum_Succeeds()
+    {
+        var request = new InvestmentAccountCreateDTO
+        {
+            Name = "Reservas pessoais",
+            IsActive = true,
+            IsLiability = false,
+            Source = "ReserveBucketsSum"
+        };
+
+        var result = await _sut.CreateInvestmentAccountAsync(request);
+
+        using (new AssertionScope())
+        {
+            result.Source.Should().Be("ReserveBucketsSum");
+            result.CreditCardId.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public async Task GetInvestmentAccounts_MapsSourceAndCreditCardId()
+    {
+        var creditCard = CreditCard.Create("Platinum Visa 8003", isActive: true);
+        _repository.CreditCards.Add(creditCard);
+        _repository.InvestmentAccounts.Add(InvestmentAccount.Create(
+            "PlatinumVisa8003", isActive: true, isLiability: true, InvestmentAccountSource.CreditCard, creditCard));
+
+        var result = _sut.GetInvestmentAccounts();
+
+        var dto = result.Should().ContainSingle(a => a.Name == "PlatinumVisa8003").Which;
+        using (new AssertionScope())
+        {
+            dto.Source.Should().Be("CreditCard");
+            dto.CreditCardId.Should().Be(creditCard.Id);
+        }
+    }
+
+    [Fact]
+    public async Task UpdateInvestmentAccountAsync_SwitchingAwayFromCreditCard_ClearsCreditCardIdRegardlessOfRequestValue()
+    {
+        var creditCard = CreditCard.Create("Platinum Visa 8003", isActive: true);
+        _repository.CreditCards.Add(creditCard);
+        var account = InvestmentAccount.Create(
+            "PlatinumVisa8003", isActive: true, isLiability: true, InvestmentAccountSource.CreditCard, creditCard);
+        _repository.InvestmentAccounts.Add(account);
+        var request = new InvestmentAccountUpdateDTO
+        {
+            Name = "PlatinumVisa8003",
+            IsActive = true,
+            IsLiability = true,
+            Source = "None",
+            CreditCardId = creditCard.Id
+        };
+
+        var result = await _sut.UpdateInvestmentAccountAsync(account.Id, request);
+
+        using (new AssertionScope())
+        {
+            result.Source.Should().Be("None");
+            result.CreditCardId.Should().BeNull();
+        }
     }
 }
