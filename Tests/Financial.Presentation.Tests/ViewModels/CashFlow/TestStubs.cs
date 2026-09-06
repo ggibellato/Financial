@@ -677,6 +677,21 @@ internal sealed class StubInvestmentSnapshotService : IInvestmentSnapshotService
         Snapshots[Snapshots.IndexOf(existing)] = updated;
         return Task.FromResult(updated);
     }
+
+    public InvestmentSnapshotSuggestionsDTO Suggestions { get; set; } = new()
+    {
+        Suggestions = [],
+        NotUpdated = [],
+    };
+    public int GetSuggestionsForMonthCallCount { get; private set; }
+    public (int Year, int Month)? LastSuggestionsRequest { get; private set; }
+
+    public Task<InvestmentSnapshotSuggestionsDTO> GetSuggestionsForMonthAsync(int year, int month)
+    {
+        GetSuggestionsForMonthCallCount++;
+        LastSuggestionsRequest = (year, month);
+        return Task.FromResult(Suggestions);
+    }
 }
 
 internal sealed class StubCategorySummaryService : ICategorySummaryService

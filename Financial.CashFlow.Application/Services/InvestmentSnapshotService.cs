@@ -1,7 +1,9 @@
+using System.Globalization;
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.Logging;
@@ -91,6 +93,93 @@ public sealed class InvestmentSnapshotService : IInvestmentSnapshotService
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UpdateSnapshotValue");
             return ToDto(snapshot);
+        }
+        catch (Exception ex)
+        {
+            span.MarkFailed(ex);
+            throw;
+        }
+    }
+
+    public async Task<InvestmentSnapshotSuggestionsDTO> GetSuggestionsForMonthAsync(int year, int month)
+    {
+        using var span = StartSpan("GetSuggestionsForMonth");
+        try
+        {
+            var snapshotDtos = await GetSnapshotsForMonthAsync(year, month).ConfigureAwait(false);
+            var snapshotsByAccountId = snapshotDtos.ToDictionary(s => s.AccountId);
+
+            var accounts = _repository.GetInvestmentAccounts()
+                .Where(a => snapshotsByAccountId.ContainsKey(a.Id))
+                .ToList();
+
+            var monthLabel = new DateOnly(year, month, 1).ToString("MMM yyyy", CultureInfo.InvariantCulture);
+
+            var suggestions = new List<InvestmentSnapshotSuggestionDTO>();
+            var notUpdated = new List<InvestmentSnapshotSuggestionSkippedDTO>();
+
+            foreach (var account in accounts)
+            {
+                var snapshot = snapshotsByAccountId[account.Id];
+
+                switch (account.Source)
+                {
+                    case InvestmentAccountSource.CreditCard:
+                        var matchingExpenses = _repository.GetExpenses()
+                            .Where(e => e.CreditCard?.Id == account.CreditCard!.Id
+                                && e.InvoiceDate is not null
+                                && e.InvoiceDate.Value.Year == year
+                                && e.InvoiceDate.Value.Month == month)
+                            .ToList();
+
+                        if (matchingExpenses.Count == 0)
+                        {
+                            notUpdated.Add(new InvestmentSnapshotSuggestionSkippedDTO
+                            {
+                                AccountId = account.Id,
+                                AccountName = account.Name,
+                                Reason = "No statement for this month yet"
+                            });
+                            break;
+                        }
+
+                        suggestions.Add(new InvestmentSnapshotSuggestionDTO
+                        {
+                            SnapshotId = snapshot.Id,
+                            AccountId = account.Id,
+                            AccountName = account.Name,
+                            CurrentValue = snapshot.Value,
+                            SuggestedValue = matchingExpenses.Sum(e => e.Value),
+                            SourceDescription = $"{account.CreditCard!.Name} — {monthLabel} statement"
+                        });
+                        break;
+
+                    case InvestmentAccountSource.ReserveBucketsSum:
+                        var asOfDate = ReserveBucketAsOfDateResolver.LastDayOfPriorMonth(year, month);
+                        var total = ReserveBucketAsOfDateResolver.TotalBalanceAsOf(
+                            _repository.GetReserveMovements().ToList(), asOfDate);
+                        var asOfLabel = asOfDate.ToString("MMM yyyy", CultureInfo.InvariantCulture);
+
+                        suggestions.Add(new InvestmentSnapshotSuggestionDTO
+                        {
+                            SnapshotId = snapshot.Id,
+                            AccountId = account.Id,
+                            AccountName = account.Name,
+                            CurrentValue = snapshot.Value,
+                            SuggestedValue = total,
+                            SourceDescription = $"Sum of reserve buckets — as of {asOfLabel}"
+                        });
+                        break;
+
+                    case InvestmentAccountSource.None:
+                    default:
+                        break;
+                }
+            }
+
+            span.MarkSuccess();
+            _logger.LogInformation("{Operation} completed", "GetSuggestionsForMonth");
+            return new InvestmentSnapshotSuggestionsDTO { Suggestions = suggestions, NotUpdated = notUpdated };
         }
         catch (Exception ex)
         {

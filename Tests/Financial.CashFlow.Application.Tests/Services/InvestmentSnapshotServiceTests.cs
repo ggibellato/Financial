@@ -3,11 +3,13 @@ using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Services;
 using Financial.CashFlow.Application.Tests.TestHelpers;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Enums;
 using Financial.Shared.Abstractions.Observability;
 using Financial.TestUtilities;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Microsoft.Extensions.Logging.Abstractions;
+using CreditCard = Financial.CashFlow.Domain.Entities.CreditCard;
 
 namespace Financial.CashFlow.Application.Tests.Services;
 
@@ -161,6 +163,144 @@ public class InvestmentSnapshotServiceTests
         SeededInvestmentAccounts.SeedInto(repository);
         return repository;
     }
+
+    #region GetSuggestionsForMonthAsync
+
+    private static (StubCashFlowRepository Repository, InvestmentSnapshotService Service, CreditCard Card, InvestmentAccount CreditCardAccount, InvestmentAccount ReserveAccount, InvestmentAccount NoneAccount) CreateSuggestionsFixture()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultReserveBuckets: true, seedDefaultCreditCards: true);
+        var card = repository.CreditCards.First(c => c.Name == "BarclaysPlatinumVisa8003");
+
+        var creditCardAccount = InvestmentAccount.Create(
+            "PlatinumVisa8003", isActive: true, isLiability: true, InvestmentAccountSource.CreditCard, card);
+        var reserveAccount = InvestmentAccount.Create(
+            "ReservasPessoais", isActive: true, isLiability: true, InvestmentAccountSource.ReserveBucketsSum);
+        var noneAccount = InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false);
+
+        repository.InvestmentAccounts.AddRange([creditCardAccount, reserveAccount, noneAccount]);
+
+        var tracer = new RecordingTelemetryTracer();
+        var service = new InvestmentSnapshotService(repository, tracer, Logger);
+
+        return (repository, service, card, creditCardAccount, reserveAccount, noneAccount);
+    }
+
+    private static Expense AddCharge(
+        StubCashFlowRepository repository, DateOnly date, decimal value, CreditCard card, DateOnly? invoiceDate = null)
+    {
+        var expense = Expense.Create(date, "Charge", value, Category.Create("Mercado"), null, card, invoiceDate);
+        repository.Expenses.Add(expense);
+        return expense;
+    }
+
+    [Fact]
+    public async Task GetSuggestionsForMonth_SourceNone_NeverAppearsInEitherList()
+    {
+        var (_, service, _, _, _, noneAccount) = CreateSuggestionsFixture();
+
+        var result = await service.GetSuggestionsForMonthAsync(2026, 8);
+
+        using (new AssertionScope())
+        {
+            result.Suggestions.Should().NotContain(s => s.AccountId == noneAccount.Id);
+            result.NotUpdated.Should().NotContain(s => s.AccountId == noneAccount.Id);
+        }
+    }
+
+    [Fact]
+    public async Task GetSuggestionsForMonth_CreditCardWithMatchingExpense_SuggestsSum()
+    {
+        var (repository, service, card, creditCardAccount, _, _) = CreateSuggestionsFixture();
+        AddCharge(repository, new DateOnly(2026, 8, 5), 100m, card, new DateOnly(2026, 8, 1));
+        AddCharge(repository, new DateOnly(2026, 8, 12), 42.17m, card, new DateOnly(2026, 8, 1));
+
+        var result = await service.GetSuggestionsForMonthAsync(2026, 8);
+
+        var suggestion = result.Suggestions.Should().ContainSingle(s => s.AccountId == creditCardAccount.Id).Subject;
+        suggestion.SuggestedValue.Should().Be(142.17m);
+    }
+
+    [Fact]
+    public async Task GetSuggestionsForMonth_CreditCardWithSettledExpense_StillIncludesIt()
+    {
+        var (repository, service, card, creditCardAccount, _, _) = CreateSuggestionsFixture();
+        var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        var expense = AddCharge(repository, new DateOnly(2026, 8, 5), 100m, card, new DateOnly(2026, 8, 1));
+        expense.Settle(bank, new DateOnly(2026, 9, 1));
+
+        var result = await service.GetSuggestionsForMonthAsync(2026, 8);
+
+        var suggestion = result.Suggestions.Should().ContainSingle(s => s.AccountId == creditCardAccount.Id).Subject;
+        suggestion.SuggestedValue.Should().Be(100m);
+    }
+
+    [Fact]
+    public async Task GetSuggestionsForMonth_CreditCardWithNoMatchingExpense_AddsToNotUpdatedWithReason()
+    {
+        var (_, service, _, creditCardAccount, _, _) = CreateSuggestionsFixture();
+
+        var result = await service.GetSuggestionsForMonthAsync(2026, 8);
+
+        var skipped = result.NotUpdated.Should().ContainSingle(s => s.AccountId == creditCardAccount.Id).Subject;
+        skipped.Reason.Should().Be("No statement for this month yet");
+        result.Suggestions.Should().NotContain(s => s.AccountId == creditCardAccount.Id);
+    }
+
+    [Fact]
+    public async Task GetSuggestionsForMonth_ReserveBucketsSum_UsesLastDayOfPriorMonth()
+    {
+        var (repository, service, _, _, reserveAccount, _) = CreateSuggestionsFixture();
+        var investimento = repository.ReserveBuckets.First(b => b.Name == "Investimento");
+        var houseTreats = repository.ReserveBuckets.First(b => b.Name == "HouseTreats");
+        repository.ReserveMovements.Add(ReserveMovement.Create(investimento, 100m, new DateOnly(2026, 7, 31), "Contribution"));
+        repository.ReserveMovements.Add(ReserveMovement.Create(houseTreats, 50m, new DateOnly(2026, 7, 15), "Contribution"));
+        repository.ReserveMovements.Add(ReserveMovement.Create(investimento, 30m, new DateOnly(2026, 8, 1), "Too late"));
+
+        var result = await service.GetSuggestionsForMonthAsync(2026, 8);
+
+        var suggestion = result.Suggestions.Should().ContainSingle(s => s.AccountId == reserveAccount.Id).Subject;
+        suggestion.SuggestedValue.Should().Be(150m);
+    }
+
+    [Fact]
+    public async Task GetSuggestionsForMonth_ReserveBucketsSum_NeverAddedToNotUpdated()
+    {
+        var (_, service, _, _, reserveAccount, _) = CreateSuggestionsFixture();
+
+        var result = await service.GetSuggestionsForMonthAsync(2026, 8);
+
+        result.NotUpdated.Should().NotContain(s => s.AccountId == reserveAccount.Id);
+        result.Suggestions.Should().ContainSingle(s => s.AccountId == reserveAccount.Id)
+            .Which.SuggestedValue.Should().Be(0m);
+    }
+
+    [Fact]
+    public async Task GetSuggestionsForMonth_ReturnsExistingSnapshotIdForEachSuggestion()
+    {
+        var (repository, service, card, creditCardAccount, _, _) = CreateSuggestionsFixture();
+        AddCharge(repository, new DateOnly(2026, 8, 5), 100m, card, new DateOnly(2026, 8, 1));
+
+        var result = await service.GetSuggestionsForMonthAsync(2026, 8);
+
+        var expectedSnapshotId = repository.InvestmentSnapshots
+            .Single(s => s.Account.Id == creditCardAccount.Id && s.Year == 2026 && s.Month == 8).Id;
+        result.Suggestions.Should().ContainSingle(s => s.AccountId == creditCardAccount.Id)
+            .Which.SnapshotId.Should().Be(expectedSnapshotId);
+    }
+
+    [Fact]
+    public async Task GetSuggestionsForMonth_UsesSameYearScopingAsSnapshotGrid()
+    {
+        var (_, service, _, creditCardAccount, _, _) = CreateSuggestionsFixture();
+        var pastYear = DateTime.Now.Year - 5;
+
+        var result = await service.GetSuggestionsForMonthAsync(pastYear, 8);
+
+        result.Suggestions.Should().NotContain(s => s.AccountId == creditCardAccount.Id);
+        result.NotUpdated.Should().NotContain(s => s.AccountId == creditCardAccount.Id);
+    }
+
+    #endregion
 
     [Fact]
     public void Constructor_WithNullLogger_Throws()

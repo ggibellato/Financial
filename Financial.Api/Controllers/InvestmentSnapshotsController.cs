@@ -30,6 +30,19 @@ public sealed class InvestmentSnapshotsController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>Computes suggested values for a given month's investment snapshots, based on each
+    /// account's configured Source (F01).</summary>
+    /// <param name="year">The year.</param>
+    /// <param name="month">The month (1-12).</param>
+    /// <returns>200 OK with the computed suggestions and skipped accounts.</returns>
+    [HttpGet("{year:int}/{month:int}/suggestions")]
+    [ProducesResponseType(typeof(InvestmentSnapshotSuggestionsDTO), StatusCodes.Status200OK)]
+    public async Task<ActionResult<InvestmentSnapshotSuggestionsDTO>> GetSuggestionsForMonth(int year, int month)
+    {
+        var result = await _investmentSnapshotService.GetSuggestionsForMonthAsync(year, month);
+        return Ok(result);
+    }
+
     /// <summary>Updates the value recorded for an investment snapshot.</summary>
     /// <param name="id">The snapshot's identifier.</param>
     /// <param name="request">The new value.</param>

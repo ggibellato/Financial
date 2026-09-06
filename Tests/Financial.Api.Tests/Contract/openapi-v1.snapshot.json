@@ -2097,6 +2097,82 @@
         ],
         "type": "object"
       },
+      "InvestmentSnapshotSuggestionDTO": {
+        "properties": {
+          "accountId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "accountName": {
+            "type": "string"
+          },
+          "currentValue": {
+            "format": "double",
+            "type": "number"
+          },
+          "snapshotId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "sourceDescription": {
+            "type": "string"
+          },
+          "suggestedValue": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "snapshotId",
+          "accountId",
+          "accountName",
+          "currentValue",
+          "suggestedValue",
+          "sourceDescription"
+        ],
+        "type": "object"
+      },
+      "InvestmentSnapshotSuggestionSkippedDTO": {
+        "properties": {
+          "accountId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "accountName": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "accountId",
+          "accountName",
+          "reason"
+        ],
+        "type": "object"
+      },
+      "InvestmentSnapshotSuggestionsDTO": {
+        "properties": {
+          "notUpdated": {
+            "items": {
+              "$ref": "#/components/schemas/InvestmentSnapshotSuggestionSkippedDTO"
+            },
+            "type": "array"
+          },
+          "suggestions": {
+            "items": {
+              "$ref": "#/components/schemas/InvestmentSnapshotSuggestionDTO"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "suggestions",
+          "notUpdated"
+        ],
+        "type": "object"
+      },
       "InvestmentSnapshotValueUpdateDTO": {
         "properties": {
           "value": {
@@ -7320,6 +7396,50 @@
           }
         },
         "summary": "Lists investment account snapshots for a given month.",
+        "tags": [
+          "InvestmentSnapshots"
+        ]
+      }
+    },
+    "/investment-snapshots/{year}/{month}/suggestions": {
+      "get": {
+        "parameters": [
+          {
+            "description": "The year.",
+            "in": "path",
+            "name": "year",
+            "required": true,
+            "schema": {
+              "format": "int32",
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The month (1-12).",
+            "in": "path",
+            "name": "month",
+            "required": true,
+            "schema": {
+              "format": "int32",
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvestmentSnapshotSuggestionsDTO"
+                }
+              }
+            },
+            "description": "200 OK with the computed suggestions and skipped accounts."
+          }
+        },
+        "summary": "Computes suggested values for a given month\u0027s investment snapshots, based on each\n            account\u0027s configured Source (F01).",
         "tags": [
           "InvestmentSnapshots"
         ]
