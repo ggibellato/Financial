@@ -102,7 +102,7 @@ export default function InvestmentSnapshotsPage() {
           value={monthInputValue}
           onChange={(e) => setMonthInputValue(e.target.value)}
         />
-        <Button appearance="secondary" onClick={openSuggestValues}>
+        <Button appearance="primary" onClick={openSuggestValues}>
           Suggest Values
         </Button>
       </div>

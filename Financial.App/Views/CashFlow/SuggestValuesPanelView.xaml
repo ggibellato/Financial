@@ -4,6 +4,10 @@
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
     <UserControl.Resources>
         <ResourceDictionary>
+            <!-- Matches Financial.Web's accent — see ExpenseFormView.xaml / ADR-005. -->
+            <SolidColorBrush x:Key="AccentButtonBackground" Color="#0F6CBD"/>
+            <SolidColorBrush x:Key="AccentButtonBackgroundPointerOver" Color="#115EA3"/>
+            <SolidColorBrush x:Key="AccentButtonBackgroundPressed" Color="#0C3B5E"/>
             <!-- Muted/struck-through current value for a checked row that would overwrite an
                  existing non-zero value - makes the overwrite explicit, matching Financial.Web's
                  equivalent styling for the same row state. -->
@@ -29,7 +33,7 @@
 
             <StackPanel Visibility="{Binding HasSuggestionsError, Converter={StaticResource BoolToVisibilityConverter}}">
                 <TextBlock Text="{Binding SuggestionsError}" Foreground="{DynamicResource SystemFillColorCriticalBrush}" TextWrapping="Wrap"/>
-                <Button Content="Retry" Command="{Binding RetrySuggestionsFetchCommand}" HorizontalAlignment="Left" Margin="0,8,0,0"/>
+                <ui:Button Content="Retry" Appearance="Primary" Command="{Binding RetrySuggestionsFetchCommand}" HorizontalAlignment="Left" Margin="0,8,0,0"/>
             </StackPanel>
 
             <StackPanel Visibility="{Binding ShowSuggestionsContent, Converter={StaticResource BoolToVisibilityConverter}}">
@@ -39,7 +43,7 @@
                            Margin="0,0,0,8"/>
 
                 <DataGrid ItemsSource="{Binding SuggestionRows}" AutoGenerateColumns="False"
-                          IsReadOnly="False" CanUserAddRows="False"
+                          IsReadOnly="{Binding IsApplyingSuggestions}" CanUserAddRows="False"
                           Visibility="{Binding HasSuggestionRows, Converter={StaticResource BoolToVisibilityConverter}}"
                           Margin="0,0,0,8">
                     <DataGrid.Columns>
@@ -91,10 +95,10 @@
                            Margin="0,0,0,8"/>
 
                 <StackPanel Orientation="Horizontal">
-                    <Button Content="{Binding CheckedSuggestionsCount, StringFormat='Apply {0} Suggestions'}"
-                            Command="{Binding ApplySuggestionsCommand}" Margin="0,0,8,0">
-                        <Button.Style>
-                            <Style TargetType="Button">
+                    <ui:Button Content="{Binding CheckedSuggestionsCount, StringFormat='Apply {0} Suggestions'}"
+                               Appearance="Primary" Command="{Binding ApplySuggestionsCommand}" Margin="0,0,8,0">
+                        <ui:Button.Style>
+                            <Style TargetType="{x:Type ui:Button}" BasedOn="{StaticResource {x:Type ui:Button}}">
                                 <Setter Property="Visibility" Value="Collapsed"/>
                                 <Style.Triggers>
                                     <MultiDataTrigger>
@@ -107,15 +111,15 @@
                                     </MultiDataTrigger>
                                 </Style.Triggers>
                             </Style>
-                        </Button.Style>
-                    </Button>
+                        </ui:Button.Style>
+                    </ui:Button>
 
-                    <Button Content="Retry Failed" Command="{Binding RetryFailedSuggestionsCommand}" Margin="0,0,8,0"
-                            Visibility="{Binding HasFailedSuggestions, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                    <ui:Button Content="Retry Failed" Appearance="Primary" Command="{Binding RetryFailedSuggestionsCommand}" Margin="0,0,8,0"
+                               Visibility="{Binding HasFailedSuggestions, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
-                    <Button Command="{Binding CancelSuggestValuesCommand}" IsEnabled="{Binding CanEditSuggestions}">
-                        <Button.Style>
-                            <Style TargetType="Button">
+                    <ui:Button Appearance="Secondary" Command="{Binding CancelSuggestValuesCommand}" IsEnabled="{Binding CanEditSuggestions}">
+                        <ui:Button.Style>
+                            <Style TargetType="{x:Type ui:Button}" BasedOn="{StaticResource {x:Type ui:Button}}">
                                 <Setter Property="Content" Value="Cancel"/>
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding HasCompletedApply}" Value="True">
@@ -123,8 +127,8 @@
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
-                        </Button.Style>
-                    </Button>
+                        </ui:Button.Style>
+                    </ui:Button>
                 </StackPanel>
             </StackPanel>
         </StackPanel>
