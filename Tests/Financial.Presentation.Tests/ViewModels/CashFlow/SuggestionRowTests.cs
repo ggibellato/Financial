@@ -56,3 +56,36 @@ public class SuggestionRowTests
         row.IsOverwriteCandidate.Should().BeFalse();
     }
 }
+
+public class SuggestionSkippedRowTests
+{
+    [Fact]
+    public void Constructor_SetsProperties()
+    {
+        var accountId = Guid.NewGuid();
+
+        var row = new SuggestionSkippedRow(accountId, "PlatinumVisa8003", "No source configured");
+
+        row.AccountId.Should().Be(accountId);
+        row.AccountName.Should().Be("PlatinumVisa8003");
+        row.Reason.Should().Be("No source configured");
+    }
+
+    [Fact]
+    public void FromDto_MapsAllFields()
+    {
+        var accountId = Guid.NewGuid();
+        var dto = new InvestmentSnapshotSuggestionSkippedDTO
+        {
+            AccountId = accountId,
+            AccountName = "PlatinumVisa8003",
+            Reason = "No source configured",
+        };
+
+        var row = SuggestionSkippedRow.FromDto(dto);
+
+        row.AccountId.Should().Be(accountId);
+        row.AccountName.Should().Be("PlatinumVisa8003");
+        row.Reason.Should().Be("No source configured");
+    }
+}

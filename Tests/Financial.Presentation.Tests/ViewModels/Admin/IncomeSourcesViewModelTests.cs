@@ -2,6 +2,7 @@ using Financial.CashFlow.Application.DTOs;
 using Financial.Presentation.App.ViewModels.Admin;
 using Financial.TestUtilities;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 
 namespace Financial.Presentation.Tests.ViewModels.Admin;
 
@@ -133,5 +134,75 @@ public class IncomeSourcesViewModelTests
         await viewModel.DeleteIncomeSourceAsync(incomeSource);
 
         service.LastDeletedId.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task RefreshAsync_ServiceThrows_SetsErrorAndLogsFailure()
+    {
+        var service = new StubIncomeSourceService { ThrowOnGetIncomeSources = new InvalidOperationException("boom") };
+        var logger = new RecordingLogger<IncomeSourcesViewModel>();
+        var viewModel = new IncomeSourcesViewModel(service, new StubDialogService(), logger);
+
+        await viewModel.RefreshAsync();
+
+        viewModel.HasError.Should().BeTrue();
+        viewModel.Error.Should().Be("boom");
+        logger.Entries.Should().Contain(e => e.Level == LogLevel.Error && e.Message.Contains(nameof(InvalidOperationException)));
+    }
+
+    [Fact]
+    public async Task EditIncomeSourceAsync_NullIncomeSource_ReturnsWithoutShowingDialog()
+    {
+        var (viewModel, _, dialog) = CreateViewModel();
+
+        await viewModel.EditIncomeSourceAsync(null);
+
+        dialog.LastIncomeSourceFormDialog.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task EditIncomeSourceAsync_DialogCancelled_DoesNotCallService()
+    {
+        var (viewModel, service, dialog) = CreateViewModel();
+        dialog.ShowIncomeSourceFormDialogResult = false;
+        var incomeSource = IncomeSource(Guid.NewGuid(), "Gleison");
+
+        await viewModel.EditIncomeSourceAsync(incomeSource);
+
+        service.LastUpdateRequest.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task EditIncomeSourceAsync_ServiceThrows_SurfacesActionError()
+    {
+        var (viewModel, service, _) = CreateViewModel();
+        service.ThrowOnUpdate = new InvalidOperationException("An income source named \"Gleison\" already exists.");
+        var incomeSource = IncomeSource(Guid.NewGuid(), "Gleison");
+
+        await viewModel.EditIncomeSourceAsync(incomeSource);
+
+        viewModel.ActionError.Should().Be("An income source named \"Gleison\" already exists.");
+    }
+
+    [Fact]
+    public async Task DeleteIncomeSourceAsync_NullIncomeSource_ReturnsWithoutConfirming()
+    {
+        var (viewModel, _, dialog) = CreateViewModel();
+
+        await viewModel.DeleteIncomeSourceAsync(null);
+
+        dialog.LastConfirmMessage.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task DeleteIncomeSourceAsync_ServiceThrows_SurfacesActionError()
+    {
+        var (viewModel, service, _) = CreateViewModel();
+        service.ThrowOnDelete = new InvalidOperationException("Income source is referenced elsewhere.");
+        var incomeSource = IncomeSource(Guid.NewGuid(), "Gleison");
+
+        await viewModel.DeleteIncomeSourceAsync(incomeSource);
+
+        viewModel.ActionError.Should().Be("Income source is referenced elsewhere.");
     }
 }
