@@ -211,34 +211,18 @@ jobs:
     # red (<90%, step fails). continue-on-error keeps a red result from failing the job, so
     # ci-status/branch protection are unaffected - see docs/ci-affected-pipeline.md. coverage/band
     # /emoji are also written as job outputs for the coverage-comment job's combined PR comment
-    # table. Kept as its own bash step (not the shared ./.github/actions/coverage-gate composite
-    # action) since it runs on ubuntu, not windows/pwsh, and reads a differently-shaped JSON file
-    # (vitest's own coverage-summary.json, not a reportgenerator Summary.json).
-    # Reads coverage/coverage-summary.json (vitest's own json-summary reporter), independent of
-    # the lcov-derived CoverageReport/ above, so this gate's data source is unchanged from before.
+    # table. Same shared ./.github/actions/coverage-gate as backend/wpf, reading the
+    # reportgenerator Summary.json the "Publish coverage summary" step above just produced from
+    # lcov.info - pwsh runs fine on ubuntu-latest too, and reportgenerator's own JsonSummary
+    # output has the identical summary.linecoverage shape regardless of source parser (lcov vs
+    # cobertura), so there's no need for a second, differently-shaped gate here.
     - name: Check coverage threshold
       id: gate
-      working-directory: Financial.Web
       continue-on-error: true
-      run: |
-        LINE_COV=$(jq -r '.total.lines.pct' coverage/coverage-summary.json)
-        if [ "$LINE_COV" = "null" ] || [ -z "$LINE_COV" ]; then
-          echo "::error::Could not read total.lines.pct from coverage/coverage-summary.json"
-          echo "🔴 Coverage gate: could not read line coverage from the report" >> "$GITHUB_STEP_SUMMARY"
-          exit 1
-        fi
-        BAND=$(awk -v v="$LINE_COV" 'BEGIN{ if (v>=100) print "green"; else if (v>=95) print "yellow"; else if (v>=90) print "amber"; else print "red" }')
-        EMOJI=$(awk -v b="$BAND" 'BEGIN{ if (b=="green") print "🟢"; else if (b=="yellow") print "🟡"; else if (b=="amber") print "🟠"; else print "🔴" }')
-        echo "$EMOJI Web line coverage: ${LINE_COV}% ($BAND) - gate: 90% required" >> "$GITHUB_STEP_SUMMARY"
-        echo "coverage=$LINE_COV" >> "$GITHUB_OUTPUT"
-        echo "band=$BAND" >> "$GITHUB_OUTPUT"
-        echo "emoji=$EMOJI" >> "$GITHUB_OUTPUT"
-        if [ "$BAND" = "red" ]; then
-          echo "::error::Web line coverage ${LINE_COV}% is below the 90% gate"
-          exit 1
-        elif [ "$BAND" != "green" ]; then
-          echo "::warning::Web line coverage ${LINE_COV}% ($BAND)"
-        fi
+      uses: ./.github/actions/coverage-gate
+      with:
+        label: Web
+        summary-path: Financial.Web/CoverageReport/Summary.json
 
     - name: Upload coverage report artifact
       if: always()
