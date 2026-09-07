@@ -57,8 +57,11 @@ fails the save itself. `POST .../integrations/calendar/credit-cards/{id}/resync`
 `POST .../integrations/calendar/resync-all` manually retry a failed sync; `GET
 .../integrations/calendar/credit-cards/sync-status` reports each card's current sync state.
 
-Connect, disconnect, and monitor per-card sync status from **Settings > Integrations**
-(`/settings/integrations`) in `Financial.Web`. The WPF equivalent is tracked separately (F04).
+Connect, disconnect, and monitor per-card sync status from **Settings > Integrations** -
+(`/settings/integrations`) in `Financial.Web`, or the equivalent "Settings > Integrations"
+view in `Financial.App` (WPF). The WPF view calls the same `ICalendarIntegrationService`/
+`ICreditCardCalendarSyncService` in-process rather than over HTTP, and opens the OAuth
+consent URL in the OS default browser.
 
 ### Application configuration
 
