@@ -316,6 +316,11 @@ internal sealed class StubCardStatementService : ICardStatementService
             AccumulatedOutstandingTotal = existing.AccumulatedOutstandingTotal, Warning = NextWarning,
         });
     }
+
+    public (decimal Total, bool HasChargesPosted) OutstandingTotalForPeriodResult { get; set; } = (0m, false);
+
+    public (decimal Total, bool HasChargesPosted) GetOutstandingTotalForPeriod(Guid creditCardId, int year, int month) =>
+        OutstandingTotalForPeriodResult;
 }
 
 internal sealed class StubCreditCardService : ICreditCardService
