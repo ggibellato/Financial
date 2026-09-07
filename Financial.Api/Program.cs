@@ -8,6 +8,7 @@ using Financial.Investment.Application.Configuration;
 using Financial.Investment.Application.DependencyInjection;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Infrastructure.DependencyInjection;
+using Financial.Integrations.GoogleCalendar;
 using Financial.Integrations.GoogleDrive;
 using Financial.Shared.Abstractions.Persistence;
 using Financial.Shared.Infrastructure.Hosting;
@@ -101,6 +102,7 @@ builder.Services.Configure<AssetPriceFetchOptions>(configuration.GetSection(Asse
 builder.Services.AddObservability(configuration, serviceName: "Financial.Api");
 builder.Services.AddFinancialApplication();
 builder.Services.AddGoogleDriveFileClient();
+builder.Services.AddGoogleCalendarOAuthClient();
 builder.Services.AddSingleton<IJsonStorageFactory, JsonStorageFactory>();
 builder.Services.AddFinancialInfrastructure(configuration);
 builder.Services.AddFinancialCashFlowApplication();

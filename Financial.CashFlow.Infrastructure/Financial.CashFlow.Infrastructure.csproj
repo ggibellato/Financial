@@ -9,6 +9,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Financial.CashFlow.Application\Financial.CashFlow.Application.csproj" />
     <ProjectReference Include="..\Financial.CashFlow.Domain\Financial.CashFlow.Domain.csproj" />
+    <ProjectReference Include="..\Integrations\GoogleCalendar\GoogleCalendar.csproj" />
   </ItemGroup>
 
   <ItemGroup>

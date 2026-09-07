@@ -31,7 +31,7 @@ project (`Services/`, `Persistence/`, `Repositories/`, `DependencyInjection/`, `
 |---|---|---|
 | Test file / class | `{Subject}Tests.cs` / `{Subject}Tests`; split by concern when large | `ExpenseServiceTests`, `TransactionServiceMutationTests` + `TransactionServiceQueryTests`, `MonthlyViewModelBanksCardsTests` |
 | Test method | `{Method}_{Scenario}_{Outcome}` | `GetHistoricalRateAsync_WhenHttpRequestThrows_ReturnsNull`; architecture tests use `Domain_Should_Not_Reference_Infrastructure` |
-| AC-tracing class / file | `P{NN}F{NN}{FeatureName}AcceptanceTests` under `Acceptance/` | `Tests/Financial.Api.Tests/Acceptance/P42F01PaymentsDueAggregationAcceptanceTests.cs` |
+| AC-tracing class / file | `{FeatureName}AcceptanceTests` under `Acceptance/` - no `P{NN}F{NN}` prefix, the AC id already carries that in its `[Trait]`/title | `Tests/Financial.Api.Tests/Acceptance/GoogleCalendarAccountConnectionAcceptanceTests.cs` |
 | AC-tracing method | `[Trait("AC", "<id>")]` + `{Scenario}_{Outcome}` | see `feature-traceability.md` |
 | Shared doubles | `Stub{Interface}`, `Recording{Thing}`, `Fake{Thing}` in `Tests/Financial.TestUtilities` | `StubCashFlowRepository`, `RecordingLogger<T>`, `FakeTimeProvider` |
 | Local doubles (single consumer) | same prefixes, `private sealed class` at the bottom of the test file, or `TestStubs.cs` / `TestDoubles/` per test project | `FakeHttpMessageHandler`, `Financial.Presentation.Tests/ViewModels/CashFlow/TestStubs.cs`, `Financial.Investment.Infrastructure.Tests/TestDoubles/StubFinanceService.cs` |
@@ -69,7 +69,7 @@ src/hooks/__tests__/*.test.ts
 src/navigation/__tests__/routes.test.ts
 src/pages/__tests__/*.test.tsx
 src/utils/__tests__/*.test.ts
-src/acceptance/P{NN}-F{NN}-{feature-slug}.test.tsx                     ← AC-tracing (to be created)
+src/acceptance/{feature-slug}.test.tsx                                 ← AC-tracing (to be created)
 src/test/renderWithFluent.tsx, src/test-utils/selectedNodeTestWrapper.tsx, src/setupTests.ts
 ```
 

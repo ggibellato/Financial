@@ -697,6 +697,53 @@
         },
         "type": "object"
       },
+      "CalendarConnectionStatusDTO": {
+        "properties": {
+          "accountEmail": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "calendarName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "connected": {
+            "type": "boolean"
+          },
+          "connectedAtUtc": {
+            "format": "date-time",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "disconnectReason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "required": [
+          "connected"
+        ],
+        "type": "object"
+      },
+      "CalendarDisconnectResultDTO": {
+        "properties": {
+          "remoteCleanupSucceeded": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "remoteCleanupSucceeded"
+        ],
+        "type": "object"
+      },
       "CardStatementDTO": {
         "properties": {
           "accumulatedOutstandingTotal": {
@@ -7036,6 +7083,101 @@
         ]
       }
     },
+    "/integrations/calendar/callback": {
+      "get": {
+        "parameters": [
+          {
+            "description": "The OAuth redirect target. Completes the connection and renders a landing\n            page telling the user to return to the app - never called by either front end\u0027s API client.",
+            "in": "query",
+            "name": "code",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The OAuth redirect target. Completes the connection and renders a landing\n            page telling the user to return to the app - never called by either front end\u0027s API client.",
+            "in": "query",
+            "name": "state",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The OAuth redirect target. Completes the connection and renders a landing\n            page telling the user to return to the app - never called by either front end\u0027s API client.",
+            "in": "query",
+            "name": "error",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/html": {}
+            },
+            "description": "200 OK with a minimal HTML success/failure page."
+          }
+        },
+        "summary": "The OAuth redirect target. Completes the connection and renders a landing\n            page telling the user to return to the app - never called by either front end\u0027s API client.",
+        "tags": [
+          "CalendarIntegration"
+        ]
+      }
+    },
+    "/integrations/calendar/connect": {
+      "get": {
+        "responses": {
+          "302": {
+            "description": "302 redirect to the OAuth consent URL."
+          }
+        },
+        "summary": "Redirects the browser to the provider\u0027s consent screen.",
+        "tags": [
+          "CalendarIntegration"
+        ]
+      }
+    },
+    "/integrations/calendar/disconnect": {
+      "post": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarDisconnectResultDTO"
+                }
+              }
+            },
+            "description": "200 OK with whether the remote cleanup succeeded."
+          }
+        },
+        "summary": "Removes the calendar connection - deletes the dedicated calendar, revokes\n            the token, and clears local state, always clearing local state even if the remote calls fail.",
+        "tags": [
+          "CalendarIntegration"
+        ]
+      }
+    },
+    "/integrations/calendar/status": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarConnectionStatusDTO"
+                }
+              }
+            },
+            "description": "200 OK with the connection status."
+          }
+        },
+        "summary": "Returns the current connection status.",
+        "tags": [
+          "CalendarIntegration"
+        ]
+      }
+    },
     "/investment-accounts": {
       "get": {
         "responses": {
@@ -9973,6 +10115,9 @@
     },
     {
       "name": "Brokers"
+    },
+    {
+      "name": "CalendarIntegration"
     },
     {
       "name": "CardStatements"
