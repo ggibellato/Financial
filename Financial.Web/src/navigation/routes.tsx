@@ -13,6 +13,7 @@ import {
   DividendCheckPage,
   HistoricInvestmentsPage,
   IncomeSourcesPage,
+  IntegrationsPage,
   InvestmentAccountsPage,
   InvestmentSnapshotsPage,
   MensaisPage,
@@ -60,4 +61,5 @@ export const PAGE_ROUTES: PageRoute[] = [
   { path: 'admin/cashflow/recurring-bills', element: <RecurringBillsPage /> },
   { path: 'admin/cashflow/reserve-buckets', element: <ReserveBucketsPage /> },
   { path: 'settings/appearance', element: <AppearancePage /> },
+  { path: 'settings/integrations', element: <IntegrationsPage /> },
 ]
