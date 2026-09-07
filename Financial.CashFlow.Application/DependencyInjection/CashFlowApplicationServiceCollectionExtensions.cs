@@ -30,6 +30,7 @@ public static class CashFlowApplicationServiceCollectionExtensions
         services.AddSingleton<ITransferService, TransferService>();
         services.AddSingleton<IBalanceAdjustmentService, BalanceAdjustmentService>();
         services.AddSingleton<IPaymentsDueService, PaymentsDueService>();
+        services.AddSingleton<IGoogleCalendarIntegrationService, GoogleCalendarIntegrationService>();
 
         return services;
     }
