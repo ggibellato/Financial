@@ -16,16 +16,15 @@ public class NavTreeTests
     }
 
     [Fact]
-    public void SettingsCategory_HasOneChildAppearance()
+    public void SettingsCategory_HasAppearanceAndIntegrationsChildren()
     {
         var settings = NavTree.Categories.Single(c => c.Id == "settings");
 
         settings.Label.Should().Be("Settings");
         settings.Groups.Should().BeNull();
-        settings.Children.Should().ContainSingle();
-        settings.Children[0].Id.Should().Be("appearance");
-        settings.Children[0].Label.Should().Be("Appearance");
-        settings.Children[0].ViewKey.Should().Be("settings-appearance");
+        settings.Children.Select(c => (c.Id, c.Label, c.ViewKey)).Should().Equal(
+            ("appearance", "Appearance", "settings-appearance"),
+            ("integrations", "Integrations", "settings-integrations"));
     }
 
     [Fact]
@@ -97,6 +96,6 @@ public class NavTreeTests
         var viewKeys = directViewKeys.Concat(groupedViewKeys).ToList();
 
         viewKeys.Should().OnlyHaveUniqueItems();
-        viewKeys.Should().HaveCount(21);
+        viewKeys.Should().HaveCount(22);
     }
 }

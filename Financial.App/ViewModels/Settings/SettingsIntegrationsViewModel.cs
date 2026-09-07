@@ -201,25 +201,29 @@ public class SettingsIntegrationsViewModel : ViewModelBase
 
             Status = status;
 
-            await RefreshSyncRowsAsync();
+            var rows = await BuildSyncRowsAsync();
+            if (!isCurrent())
+            {
+                return;
+            }
+
+            ReplaceAll(SyncRows, rows);
         },
         ex => _logger.LogError("SettingsIntegrations refresh failed with {ErrorType}", ex.GetType().Name));
 
-    private async Task RefreshSyncRowsAsync()
+    private async Task<IEnumerable<CalendarSyncRow>> BuildSyncRowsAsync()
     {
         var creditCards = await Task.Run(() => _creditCardService.GetCreditCards());
         var syncStatuses = await Task.Run(() => _calendarSyncService.GetSyncStatuses());
 
         var statusByCardId = syncStatuses.ToDictionary(s => s.CreditCardId);
-        var rows = creditCards
+        return creditCards
             .Where(card => card.IsActive && card.NextInvoiceDueDate.HasValue)
             .Select(card =>
             {
                 statusByCardId.TryGetValue(card.Id, out var syncStatus);
                 return new CalendarSyncRow(card.Id, card.Name, card.NextInvoiceDueDate!.Value, syncStatus?.State ?? "Pending", syncStatus?.LastError);
             });
-
-        ReplaceAll(SyncRows, rows);
     }
 
     internal void Connect()
@@ -262,7 +266,7 @@ public class SettingsIntegrationsViewModel : ViewModelBase
         {
             IsConnecting = false;
             StopConnectingPoll();
-            await RefreshSyncRowsAsync();
+            ReplaceAll(SyncRows, await BuildSyncRowsAsync());
         }
     }
 

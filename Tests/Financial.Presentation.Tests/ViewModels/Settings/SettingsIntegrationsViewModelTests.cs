@@ -94,6 +94,36 @@ public class SettingsIntegrationsViewModelTests
     }
 
     [Fact]
+    public async Task RefreshAsync_ASlowerStaleRefreshInFlightAtConstruction_NeverClobbersALaterFasterRefresh()
+    {
+        // The constructor fires its own initial RefreshAsync() (request #1). This test makes that
+        // first call block mid-flight, then runs a second, explicit RefreshAsync() (request #2)
+        // to completion first, and only then releases request #1 - proving the stale request can't
+        // overwrite SyncRows once a newer request has already applied its result.
+        var calendarIntegration = new StubCalendarIntegrationService();
+        var calendarSync = new StubCreditCardCalendarSyncService();
+        var creditCards = new StubCreditCardServiceForSettings();
+        var gate = new SemaphoreSlim(0, 1);
+        creditCards.BlockFirstCallUntilReleased = gate;
+
+        var viewModel = new SettingsIntegrationsViewModel(
+            calendarIntegration, calendarSync, creditCards, new StubBrowserLauncher(), new StubDialogService(),
+            new RecordingLogger<SettingsIntegrationsViewModel>());
+
+        var cardId = Guid.NewGuid();
+        creditCards.CreditCards = [CreditCard(cardId, "BaAmex", nextInvoiceDueDate: new DateOnly(2026, 9, 10))];
+        calendarSync.Statuses = [new CreditCardCalendarSyncStatusDTO { CreditCardId = cardId, State = "Synced" }];
+
+        await viewModel.RefreshAsync();
+        viewModel.SyncRows.Should().ContainSingle(r => r.CreditCardId == cardId);
+
+        gate.Release();
+        await Task.Delay(50);
+
+        viewModel.SyncRows.Should().ContainSingle(r => r.CreditCardId == cardId);
+    }
+
+    [Fact]
     public void Connect_OpensBrowserWithAuthorizationUrl_AndArmsConnectingState()
     {
         var (viewModel, calendarIntegration, _, _, browserLauncher, _) = CreateViewModel();

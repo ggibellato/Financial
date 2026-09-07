@@ -78,7 +78,22 @@ internal sealed class StubCreditCardServiceForSettings : ICreditCardService
     public List<CreditCardDTO> CreditCards { get; set; } = [];
     public Exception? ThrowOnGetCreditCards { get; set; }
 
-    public IReadOnlyList<CreditCardDTO> GetCreditCards() => ThrowOnGetCreditCards is null ? CreditCards : throw ThrowOnGetCreditCards;
+    /// <summary>When set, the *first* GetCreditCards() call blocks here (runs on a thread-pool
+    /// thread via the view model's Task.Run) until the test releases it - lets a test deterministically
+    /// prove a slower, stale refresh can't clobber a faster, later one's result.</summary>
+    public SemaphoreSlim? BlockFirstCallUntilReleased { get; set; }
+
+    public IReadOnlyList<CreditCardDTO> GetCreditCards()
+    {
+        var snapshot = CreditCards;
+        if (BlockFirstCallUntilReleased is { } gate)
+        {
+            BlockFirstCallUntilReleased = null;
+            gate.Wait();
+        }
+
+        return ThrowOnGetCreditCards is null ? snapshot : throw ThrowOnGetCreditCards;
+    }
 
     public Task<CreditCardDTO> CreateCreditCardAsync(CreditCardCreateDTO request) => throw new NotSupportedException();
 
