@@ -15,6 +15,7 @@
 		<Project Path="Financial.Shared.Infrastructure/Financial.Shared.Infrastructure.csproj" />
 	</Folder>
 	<Folder Name="/Integrations/">
+		<Project Path="Integrations/GoogleCalendar/GoogleCalendar.csproj" />
 		<Project Path="Integrations/GoogleCore/GoogleCore.csproj" />
 		<Project Path="Integrations/GoogleDrive/GoogleDrive.csproj" />
 		<Project Path="Integrations/GoogleSheets/GoogleSheets.csproj" />

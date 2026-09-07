@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Financial.Integrations.GoogleCalendar</RootNamespace>
+    <AssemblyName>Financial.Integrations.GoogleCalendar</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Google.Apis.Calendar.v3" Version="1.64.0.3270" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.9" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.9" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Financial.Shared.Abstractions\Financial.Shared.Abstractions.csproj" />
+    <ProjectReference Include="..\GoogleCore\GoogleCore.csproj" />
+  </ItemGroup>
+
+</Project>
