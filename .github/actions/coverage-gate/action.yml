@@ -1,0 +1,53 @@
+name: Coverage gate
+description: >-
+  Reads a reportgenerator Summary.json's line coverage, bands it
+  green/yellow/amber/red against the 90% floor, writes the step-summary line,
+  and exposes coverage/band/emoji as outputs. Fails (exit 1) on red or a
+  missing/unreadable value; the calling step decides whether that's fatal via
+  its own continue-on-error.
+inputs:
+  label:
+    description: Human-readable project label for step-summary/error messages (e.g. "Backend", "WPF")
+    required: true
+  summary-path:
+    description: Path to reportgenerator's Summary.json
+    required: false
+    default: CoverageReport/Summary.json
+outputs:
+  coverage:
+    description: Line coverage percentage, rounded to 2 decimals
+    value: ${{ steps.gate.outputs.coverage }}
+  band:
+    description: One of green/yellow/amber/red
+    value: ${{ steps.gate.outputs.band }}
+  emoji:
+    description: The emoji matching band
+    value: ${{ steps.gate.outputs.emoji }}
+runs:
+  using: composite
+  steps:
+    - id: gate
+      shell: pwsh
+      run: |
+        $summary = Get-Content '${{ inputs.summary-path }}' -Raw | ConvertFrom-Json
+        $lineCoverage = $summary.summary.linecoverage
+        if ($null -eq $lineCoverage) {
+          Write-Host "::error::Could not read summary.linecoverage from ${{ inputs.summary-path }}"
+          "🔴 Coverage gate: could not read line coverage from the report" | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
+          exit 1
+        }
+        $lineCoverage = [math]::Round([double]$lineCoverage, 2)
+        if ($lineCoverage -ge 100) { $band = 'green'; $emoji = '🟢' }
+        elseif ($lineCoverage -ge 95) { $band = 'yellow'; $emoji = '🟡' }
+        elseif ($lineCoverage -ge 90) { $band = 'amber'; $emoji = '🟠' }
+        else { $band = 'red'; $emoji = '🔴' }
+        "$emoji ${{ inputs.label }} line coverage: $lineCoverage% ($band) - gate: 90% required" | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
+        "coverage=$lineCoverage" | Out-File -Append -Encoding utf8 $env:GITHUB_OUTPUT
+        "band=$band" | Out-File -Append -Encoding utf8 $env:GITHUB_OUTPUT
+        "emoji=$emoji" | Out-File -Append -Encoding utf8 $env:GITHUB_OUTPUT
+        if ($band -eq 'red') {
+          Write-Host "::error::${{ inputs.label }} line coverage $lineCoverage% is below the 90% gate"
+          exit 1
+        } elseif ($band -ne 'green') {
+          Write-Host "::warning::${{ inputs.label }} line coverage $lineCoverage% ($band)"
+        }

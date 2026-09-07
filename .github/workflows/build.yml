@@ -52,6 +52,7 @@ jobs:
     outputs:
       coverage: ${{ steps.gate.outputs.coverage }}
       band: ${{ steps.gate.outputs.band }}
+      emoji: ${{ steps.gate.outputs.emoji }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
@@ -88,33 +89,15 @@ jobs:
     # Graded, non-blocking signal: green (100%) / yellow (95-99.99%) / amber (90-94.99%) /
     # red (<90%, step fails). continue-on-error keeps a red result from failing the job, so
     # ci-status/branch protection are unaffected - see docs/ci-affected-pipeline.md. coverage/band
-    # are also written as job outputs for the coverage-comment job's combined PR comment table.
+    # /emoji are also written as job outputs for the coverage-comment job's combined PR comment
+    # table. Logic lives in ./.github/actions/coverage-gate, shared with the wpf job below (both
+    # read an identical reportgenerator Summary.json shape).
     - name: Check coverage threshold
       id: gate
       continue-on-error: true
-      shell: pwsh
-      run: |
-        $summary = Get-Content CoverageReport/Summary.json -Raw | ConvertFrom-Json
-        $lineCoverage = $summary.summary.linecoverage
-        if ($null -eq $lineCoverage) {
-          Write-Host "::error::Could not read summary.linecoverage from CoverageReport/Summary.json"
-          "🔴 Coverage gate: could not read line coverage from the report" | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
-          exit 1
-        }
-        $lineCoverage = [math]::Round([double]$lineCoverage, 2)
-        if ($lineCoverage -ge 100) { $band = 'green'; $emoji = '🟢' }
-        elseif ($lineCoverage -ge 95) { $band = 'yellow'; $emoji = '🟡' }
-        elseif ($lineCoverage -ge 90) { $band = 'amber'; $emoji = '🟠' }
-        else { $band = 'red'; $emoji = '🔴' }
-        "$emoji Backend line coverage: $lineCoverage% ($band) - gate: 90% required" | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
-        "coverage=$lineCoverage" | Out-File -Append -Encoding utf8 $env:GITHUB_OUTPUT
-        "band=$band" | Out-File -Append -Encoding utf8 $env:GITHUB_OUTPUT
-        if ($band -eq 'red') {
-          Write-Host "::error::Backend line coverage $lineCoverage% is below the 90% gate"
-          exit 1
-        } elseif ($band -ne 'green') {
-          Write-Host "::warning::Backend line coverage $lineCoverage% ($band)"
-        }
+      uses: ./.github/actions/coverage-gate
+      with:
+        label: Backend
 
     - name: Upload coverage report artifact
       if: always()
@@ -130,6 +113,7 @@ jobs:
     outputs:
       coverage: ${{ steps.gate.outputs.coverage }}
       band: ${{ steps.gate.outputs.band }}
+      emoji: ${{ steps.gate.outputs.emoji }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
@@ -161,33 +145,15 @@ jobs:
     # Graded, non-blocking signal: green (100%) / yellow (95-99.99%) / amber (90-94.99%) /
     # red (<90%, step fails). continue-on-error keeps a red result from failing the job, so
     # ci-status/branch protection are unaffected - see docs/ci-affected-pipeline.md. coverage/band
-    # are also written as job outputs for the coverage-comment job's combined PR comment table.
+    # /emoji are also written as job outputs for the coverage-comment job's combined PR comment
+    # table. Logic lives in ./.github/actions/coverage-gate, shared with the backend job above
+    # (both read an identical reportgenerator Summary.json shape).
     - name: Check coverage threshold
       id: gate
       continue-on-error: true
-      shell: pwsh
-      run: |
-        $summary = Get-Content CoverageReport/Summary.json -Raw | ConvertFrom-Json
-        $lineCoverage = $summary.summary.linecoverage
-        if ($null -eq $lineCoverage) {
-          Write-Host "::error::Could not read summary.linecoverage from CoverageReport/Summary.json"
-          "🔴 Coverage gate: could not read line coverage from the report" | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
-          exit 1
-        }
-        $lineCoverage = [math]::Round([double]$lineCoverage, 2)
-        if ($lineCoverage -ge 100) { $band = 'green'; $emoji = '🟢' }
-        elseif ($lineCoverage -ge 95) { $band = 'yellow'; $emoji = '🟡' }
-        elseif ($lineCoverage -ge 90) { $band = 'amber'; $emoji = '🟠' }
-        else { $band = 'red'; $emoji = '🔴' }
-        "$emoji WPF line coverage: $lineCoverage% ($band) - gate: 90% required" | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
-        "coverage=$lineCoverage" | Out-File -Append -Encoding utf8 $env:GITHUB_OUTPUT
-        "band=$band" | Out-File -Append -Encoding utf8 $env:GITHUB_OUTPUT
-        if ($band -eq 'red') {
-          Write-Host "::error::WPF line coverage $lineCoverage% is below the 90% gate"
-          exit 1
-        } elseif ($band -ne 'green') {
-          Write-Host "::warning::WPF line coverage $lineCoverage% ($band)"
-        }
+      uses: ./.github/actions/coverage-gate
+      with:
+        label: WPF
 
     - name: Upload coverage report artifact
       if: always()
@@ -203,6 +169,7 @@ jobs:
     outputs:
       coverage: ${{ steps.gate.outputs.coverage }}
       band: ${{ steps.gate.outputs.band }}
+      emoji: ${{ steps.gate.outputs.emoji }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
@@ -243,7 +210,10 @@ jobs:
     # Graded, non-blocking signal: green (100%) / yellow (95-99.99%) / amber (90-94.99%) /
     # red (<90%, step fails). continue-on-error keeps a red result from failing the job, so
     # ci-status/branch protection are unaffected - see docs/ci-affected-pipeline.md. coverage/band
-    # are also written as job outputs for the coverage-comment job's combined PR comment table.
+    # /emoji are also written as job outputs for the coverage-comment job's combined PR comment
+    # table. Kept as its own bash step (not the shared ./.github/actions/coverage-gate composite
+    # action) since it runs on ubuntu, not windows/pwsh, and reads a differently-shaped JSON file
+    # (vitest's own coverage-summary.json, not a reportgenerator Summary.json).
     # Reads coverage/coverage-summary.json (vitest's own json-summary reporter), independent of
     # the lcov-derived CoverageReport/ above, so this gate's data source is unchanged from before.
     - name: Check coverage threshold
@@ -262,6 +232,7 @@ jobs:
         echo "$EMOJI Web line coverage: ${LINE_COV}% ($BAND) - gate: 90% required" >> "$GITHUB_STEP_SUMMARY"
         echo "coverage=$LINE_COV" >> "$GITHUB_OUTPUT"
         echo "band=$BAND" >> "$GITHUB_OUTPUT"
+        echo "emoji=$EMOJI" >> "$GITHUB_OUTPUT"
         if [ "$BAND" = "red" ]; then
           echo "::error::Web line coverage ${LINE_COV}% is below the 90% gate"
           exit 1
@@ -296,40 +267,38 @@ jobs:
         BACKEND_RESULT: ${{ needs.backend.result }}
         BACKEND_COVERAGE: ${{ needs.backend.outputs.coverage }}
         BACKEND_BAND: ${{ needs.backend.outputs.band }}
+        BACKEND_EMOJI: ${{ needs.backend.outputs.emoji }}
         WPF_RESULT: ${{ needs.wpf.result }}
         WPF_COVERAGE: ${{ needs.wpf.outputs.coverage }}
         WPF_BAND: ${{ needs.wpf.outputs.band }}
+        WPF_EMOJI: ${{ needs.wpf.outputs.emoji }}
         WEB_RESULT: ${{ needs.web.result }}
         WEB_COVERAGE: ${{ needs.web.outputs.coverage }}
         WEB_BAND: ${{ needs.web.outputs.band }}
+        WEB_EMOJI: ${{ needs.web.outputs.emoji }}
         RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
       run: |
+        # band/emoji are already computed once by each job's own coverage-gate step (or its web
+        # equivalent) - this just lays out the row, plus a fallback for a job that didn't run or
+        # didn't produce a value.
         row() {
-          local name="$1" result="$2" coverage="$3" band="$4" emoji
+          local name="$1" result="$2" coverage="$3" band="$4" emoji="$5"
           if [ "$result" = "skipped" ]; then
             echo "| $name | – | ⚪ not run this time |"
-            return
-          fi
-          if [ "$result" != "success" ] || [ -z "$coverage" ]; then
+          elif [ "$result" != "success" ] || [ -z "$coverage" ]; then
             echo "| $name | – | ⚠️ unavailable |"
-            return
+          else
+            echo "| $name | ${coverage}% | $emoji $band |"
           fi
-          case "$band" in
-            green) emoji="🟢" ;;
-            yellow) emoji="🟡" ;;
-            amber) emoji="🟠" ;;
-            *) emoji="🔴" ;;
-          esac
-          echo "| $name | ${coverage}% | $emoji $band |"
         }
         {
           echo "### Coverage summary"
           echo
           echo "| Project | Line coverage | Gate (90% required) |"
           echo "|:---|---:|:---|"
-          row "Backend (.NET)" "$BACKEND_RESULT" "$BACKEND_COVERAGE" "$BACKEND_BAND"
-          row "WPF (Financial.App)" "$WPF_RESULT" "$WPF_COVERAGE" "$WPF_BAND"
-          row "Web (Financial.Web)" "$WEB_RESULT" "$WEB_COVERAGE" "$WEB_BAND"
+          row "Backend (.NET)" "$BACKEND_RESULT" "$BACKEND_COVERAGE" "$BACKEND_BAND" "$BACKEND_EMOJI"
+          row "WPF (Financial.App)" "$WPF_RESULT" "$WPF_COVERAGE" "$WPF_BAND" "$WPF_EMOJI"
+          row "Web (Financial.Web)" "$WEB_RESULT" "$WEB_COVERAGE" "$WEB_BAND" "$WEB_EMOJI"
           echo
           echo "[Full coverage reports (artifacts)]($RUN_URL)"
         } > coverage-comment.md
