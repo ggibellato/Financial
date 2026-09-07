@@ -209,6 +209,26 @@ public class SettingsIntegrationsViewModelTests
     }
 
     [Fact]
+    public async Task RetrySyncAsync_ServiceThrows_ClearsIsRetryingWithoutChangingState()
+    {
+        var (viewModel, _, calendarSync, creditCards, _, _) = CreateViewModel();
+        var cardId = Guid.NewGuid();
+        creditCards.CreditCards = [CreditCard(cardId, "Nubank", nextInvoiceDueDate: new DateOnly(2026, 9, 15))];
+        calendarSync.Statuses = [new CreditCardCalendarSyncStatusDTO { CreditCardId = cardId, State = "Error", LastError = "Rate limit exceeded" }];
+        await viewModel.RefreshAsync();
+        calendarSync.ThrowOnResync = new InvalidOperationException("Sync failed.");
+        var row = viewModel.SyncRows.Single();
+
+        await viewModel.RetrySyncAsync(row);
+
+        var updatedRow = viewModel.SyncRows.Single();
+        updatedRow.IsRetrying.Should().BeFalse();
+        updatedRow.CanRetry.Should().BeTrue();
+        updatedRow.State.Should().Be("Error");
+        viewModel.RetryingCardId.Should().BeNull();
+    }
+
+    [Fact]
     public async Task RetrySyncAsync_TracksRetryingCardId_WhileInFlight()
     {
         var (viewModel, _, calendarSync, creditCards, _, _) = CreateViewModel();
@@ -221,11 +241,37 @@ public class SettingsIntegrationsViewModelTests
 
         var task = viewModel.RetrySyncAsync(row);
         viewModel.RetryingCardId.Should().Be(cardId);
+        viewModel.SyncRows.Single().IsRetrying.Should().BeTrue();
+        viewModel.SyncRows.Single().CanRetry.Should().BeFalse();
 
         tcs.SetResult(new CreditCardCalendarSyncStatusDTO { CreditCardId = cardId, State = "Synced" });
         await task;
 
         viewModel.RetryingCardId.Should().BeNull();
+        viewModel.SyncRows.Single().IsRetrying.Should().BeFalse();
+        viewModel.SyncRows.Single().CanRetry.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task OpenCalendarLink_OpensGoogleCalendarDeepLinkForTheConnectedCalendarId()
+    {
+        var (viewModel, calendarIntegration, _, _, browserLauncher, _) = CreateViewModel();
+        calendarIntegration.StatusToReturn = new CalendarConnectionStatusDTO { Connected = true, CalendarId = "abc123@group.calendar.google.com" };
+        await viewModel.RefreshAsync();
+
+        viewModel.OpenCalendarLink();
+
+        browserLauncher.LastOpenedUrl.Should().Be("https://calendar.google.com/calendar/u/0/r?cid=abc123%40group.calendar.google.com");
+    }
+
+    [Fact]
+    public void OpenCalendarLink_NoCalendarId_DoesNothing()
+    {
+        var (viewModel, _, _, _, browserLauncher, _) = CreateViewModel();
+
+        viewModel.OpenCalendarLink();
+
+        browserLauncher.OpenUrlCallCount.Should().Be(0);
     }
 
     [Fact]

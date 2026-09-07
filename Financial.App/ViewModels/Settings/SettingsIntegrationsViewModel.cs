@@ -8,7 +8,10 @@ using static Financial.Presentation.App.Helpers.ObservableCollectionHelper;
 
 namespace Financial.Presentation.App.ViewModels.Settings;
 
-public sealed record CalendarSyncRow(Guid CreditCardId, string Name, DateOnly DueDate, string State, string? LastError);
+public sealed record CalendarSyncRow(Guid CreditCardId, string Name, DateOnly DueDate, string State, string? LastError, bool IsRetrying = false)
+{
+    public bool CanRetry => !IsRetrying;
+}
 
 /// <summary>
 /// Reads the calendar connection/sync state directly from CashFlow's in-process Application
@@ -46,7 +49,7 @@ public class SettingsIntegrationsViewModel : ViewModelBase
         {
             if (SetProperty(ref _isLoading, value))
             {
-                OnPropertyChanged(nameof(ShowContent));
+                NotifyPanelPropertiesChanged();
             }
         }
     }
@@ -59,7 +62,7 @@ public class SettingsIntegrationsViewModel : ViewModelBase
             if (SetProperty(ref _error, value))
             {
                 OnPropertyChanged(nameof(HasError));
-                OnPropertyChanged(nameof(ShowContent));
+                NotifyPanelPropertiesChanged();
             }
         }
     }
@@ -76,6 +79,9 @@ public class SettingsIntegrationsViewModel : ViewModelBase
             if (SetProperty(ref _status, value))
             {
                 OnPropertyChanged(nameof(IsConnected));
+                OnPropertyChanged(nameof(NotConnectedMessage));
+                OnPropertyChanged(nameof(ConnectedSinceText));
+                NotifyPanelPropertiesChanged();
             }
         }
     }
@@ -85,14 +91,52 @@ public class SettingsIntegrationsViewModel : ViewModelBase
     public bool IsConnecting
     {
         get => _isConnecting;
-        private set => SetProperty(ref _isConnecting, value);
+        private set
+        {
+            if (SetProperty(ref _isConnecting, value))
+            {
+                OnPropertyChanged(nameof(ConnectButtonText));
+                OnPropertyChanged(nameof(CanConnect));
+            }
+        }
     }
+
+    public bool ShowNotConnectedPanel => ShowContent && !IsConnected;
+
+    public bool ShowConnectedPanel => ShowContent && IsConnected;
+
+    public string ConnectButtonText => IsConnecting ? "Connecting…" : "Connect Google Calendar";
+
+    public string NotConnectedMessage => Status?.DisconnectReason == "token_revoked"
+        ? "Connection lost — please reconnect."
+        : "Connect your Google Calendar to get due-date reminders outside the app.";
+
+    public string ConnectedSinceText => Status?.ConnectedAtUtc is { } connectedAtUtc
+        ? connectedAtUtc.LocalDateTime.ToString("dd/MM/yyyy HH:mm", System.Globalization.CultureInfo.InvariantCulture)
+        : string.Empty;
+
+    private void NotifyPanelPropertiesChanged()
+    {
+        OnPropertyChanged(nameof(ShowContent));
+        OnPropertyChanged(nameof(ShowNotConnectedPanel));
+        OnPropertyChanged(nameof(ShowConnectedPanel));
+    }
+
+    public bool CanConnect => !IsConnecting;
 
     public bool IsDisconnecting
     {
         get => _isDisconnecting;
-        private set => SetProperty(ref _isDisconnecting, value);
+        private set
+        {
+            if (SetProperty(ref _isDisconnecting, value))
+            {
+                OnPropertyChanged(nameof(CanDisconnect));
+            }
+        }
     }
+
+    public bool CanDisconnect => !IsDisconnecting;
 
     public string? DisconnectError
     {
@@ -116,6 +160,8 @@ public class SettingsIntegrationsViewModel : ViewModelBase
 
     public RelayCommand<CalendarSyncRow> RetryCommand { get; }
 
+    public RelayCommand OpenCalendarLinkCommand { get; }
+
     public SettingsIntegrationsViewModel(
         ICalendarIntegrationService calendarIntegrationService,
         ICreditCardCalendarSyncService calendarSyncService,
@@ -135,6 +181,7 @@ public class SettingsIntegrationsViewModel : ViewModelBase
         ConnectCommand = new RelayCommand(Connect);
         DisconnectCommand = new RelayCommand(async () => await DisconnectAsync());
         RetryCommand = new RelayCommand<CalendarSyncRow>(async row => await RetrySyncAsync(row));
+        OpenCalendarLinkCommand = new RelayCommand(OpenCalendarLink);
 
         _ = RefreshAsync();
     }
@@ -184,6 +231,16 @@ public class SettingsIntegrationsViewModel : ViewModelBase
         _connectingTimer = new DispatcherTimer { Interval = ConnectingPollInterval };
         _connectingTimer.Tick += async (_, _) => await PollConnectingStatusAsync();
         _connectingTimer.Start();
+    }
+
+    internal void OpenCalendarLink()
+    {
+        if (Status?.CalendarId is not { } calendarId)
+        {
+            return;
+        }
+
+        _browserLauncher.OpenUrl($"https://calendar.google.com/calendar/u/0/r?cid={Uri.EscapeDataString(calendarId)}");
     }
 
     internal async Task PollConnectingStatusAsync()
@@ -251,23 +308,30 @@ public class SettingsIntegrationsViewModel : ViewModelBase
         }
 
         RetryingCardId = row.CreditCardId;
+        ReplaceRow(row with { IsRetrying = true });
 
         try
         {
             var updated = await _calendarSyncService.ResyncAsync(row.CreditCardId);
-            var index = SyncRows.ToList().FindIndex(r => r.CreditCardId == row.CreditCardId);
-            if (index >= 0)
-            {
-                SyncRows[index] = row with { State = updated.State, LastError = updated.LastError };
-            }
+            ReplaceRow(row with { State = updated.State, LastError = updated.LastError, IsRetrying = false });
         }
         catch (Exception ex)
         {
             _logger.LogError("SettingsIntegrations resync failed with {ErrorType}", ex.GetType().Name);
+            ReplaceRow(row with { IsRetrying = false });
         }
         finally
         {
             RetryingCardId = null;
+        }
+    }
+
+    private void ReplaceRow(CalendarSyncRow updated)
+    {
+        var index = SyncRows.ToList().FindIndex(r => r.CreditCardId == updated.CreditCardId);
+        if (index >= 0)
+        {
+            SyncRows[index] = updated;
         }
     }
 }
