@@ -219,12 +219,12 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Google Calendar Account Connection
-- [ ] **P45-F01-google-calendar-account-connection-01** Clicking "Connect" and completing Google consent results in `/status` reporting `connected: true` with the correct account email and a newly created "Financial - Credit Card Due Dates" calendar.
-- [ ] **P45-F01-google-calendar-account-connection-02** Declining consent leaves `/status` reporting `connected: false` and does not create a calendar or persist any credentials.
-- [ ] **P45-F01-google-calendar-account-connection-03** Disconnecting deletes the dedicated calendar in Google Calendar, revokes the token, deletes the local credentials file, and `/status` reports `connected: false` immediately after.
-- [ ] **P45-F01-google-calendar-account-connection-04** Connecting a new account while one is already connected first deletes the previous account's dedicated calendar before completing the new connection.
-- [ ] **P45-F01-google-calendar-account-connection-05** An expired access token is transparently refreshed using the stored refresh token on the next API call, with no user-visible interruption.
-- [ ] **P45-F01-google-calendar-account-connection-06** A revoked refresh token causes `/status` to report `connected: false` with reason `token_revoked`, without the app crashing or repeatedly retrying the same failed call.
+- [x] **P45-F01-google-calendar-account-connection-01** Clicking "Connect" and completing Google consent results in `/status` reporting `connected: true` with the correct account email and a newly created "Financial - Credit Card Due Dates" calendar.
+- [x] **P45-F01-google-calendar-account-connection-02** Declining consent leaves `/status` reporting `connected: false` and does not create a calendar or persist any credentials.
+- [x] **P45-F01-google-calendar-account-connection-03** Disconnecting deletes the dedicated calendar in Google Calendar, revokes the token, deletes the local credentials file, and `/status` reports `connected: false` immediately after.
+- [x] **P45-F01-google-calendar-account-connection-04** Connecting a new account while one is already connected first deletes the previous account's dedicated calendar before completing the new connection.
+- [x] **P45-F01-google-calendar-account-connection-05** An expired access token is transparently refreshed using the stored refresh token on the next API call, with no user-visible interruption.
+- [x] **P45-F01-google-calendar-account-connection-06** A revoked refresh token causes `/status` to report `connected: false` with reason `token_revoked`, without the app crashing or repeatedly retrying the same failed call.
 
 ### F02. Credit-Card Due-Date Event Sync
 - [ ] Saving an active credit card with a due date, while connected, creates exactly one calendar event within 5 seconds showing the card name, due date, and the correct current-period outstanding balance.
