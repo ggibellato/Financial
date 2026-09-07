@@ -41,6 +41,20 @@ public static class CashFlowInfrastructureServiceCollectionExtensions
                 sp.GetRequiredService<IJsonStorageFactory>()).Create(options);
         });
 
+        services.Configure<GoogleCalendarSettingsOptions>(options =>
+        {
+            options.ClientId = configuration[CashFlowGoogleCalendarConfigurationKeys.ClientId];
+            options.ClientSecret = configuration[CashFlowGoogleCalendarConfigurationKeys.ClientSecret];
+            options.RedirectUri = configuration[CashFlowGoogleCalendarConfigurationKeys.RedirectUri];
+            options.CredentialsPath = configuration[CashFlowGoogleCalendarConfigurationKeys.CredentialsPath];
+        });
+        services.AddSingleton<IGoogleCalendarConnectionStore>(sp =>
+        {
+            var settings = sp.GetRequiredService<IOptions<GoogleCalendarSettingsOptions>>().Value;
+            return new GoogleCalendarConnectionStore(settings.CredentialsPath);
+        });
+        services.AddSingleton<IGoogleCalendarClient, GoogleCalendarClientAdapter>();
+
         return services;
     }
 

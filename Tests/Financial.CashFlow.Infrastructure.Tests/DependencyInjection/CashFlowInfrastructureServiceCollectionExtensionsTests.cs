@@ -1,5 +1,6 @@
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Infrastructure.DependencyInjection;
+using Financial.Integrations.GoogleCalendar;
 using Financial.Shared.Abstractions.Persistence;
 using Financial.Shared.Infrastructure.Persistence;
 using FluentAssertions;
@@ -40,6 +41,19 @@ public class CashFlowInfrastructureServiceCollectionExtensionsTests
         repository.Should().NotBeNull();
     }
 
+    [Fact]
+    public void AddFinancialCashFlowInfrastructure_RegistersGoogleCalendarConnectionStoreAndClient()
+    {
+        var missingPath = Path.Combine(Path.GetTempPath(), $"cashflow-di-{Guid.NewGuid()}.json");
+        var provider = BuildServiceProvider(new Dictionary<string, string?>
+        {
+            ["CashFlow:DataJsonFile"] = missingPath
+        });
+
+        provider.GetRequiredService<IGoogleCalendarConnectionStore>().Should().NotBeNull();
+        provider.GetRequiredService<IGoogleCalendarClient>().Should().NotBeNull();
+    }
+
     private static IServiceProvider BuildServiceProvider(Dictionary<string, string?> settings)
     {
         var configuration = new ConfigurationBuilder()
@@ -56,6 +70,10 @@ public class CashFlowInfrastructureServiceCollectionExtensionsTests
         // mirrors that invariant, matching how ShutdownFlushHostedService's own registration moved
         // out to the composition root too (F06/F08 of the shared-domain-structure refactor).
         services.AddSingleton<IJsonStorageFactory, JsonStorageFactory>();
+        // The composition root also registers the Google Calendar OAuth client before calling
+        // AddFinancialCashFlowInfrastructure (see Program.cs) - GoogleCalendarClientAdapter depends
+        // on it.
+        services.AddGoogleCalendarOAuthClient();
         services.AddFinancialCashFlowInfrastructure(configuration);
         return services.BuildServiceProvider();
     }

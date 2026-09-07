@@ -16,6 +16,7 @@ public class SharedInfrastructureIsolationRuleTests
     {
         "Financial.CashFlow.Infrastructure",
         "Financial.Investment.Infrastructure",
+        "Financial.Integrations.GoogleCalendar",
         "Financial.Integrations.GoogleCore",
         "Financial.Integrations.GoogleDrive",
         "Financial.Integrations.GoogleSheets",
