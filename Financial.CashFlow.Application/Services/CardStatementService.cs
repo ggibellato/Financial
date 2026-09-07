@@ -184,6 +184,19 @@ public sealed class CardStatementService : ICardStatementService
         }
     }
 
+    public (decimal Total, bool HasChargesPosted) GetOutstandingTotalForPeriod(Guid creditCardId, int year, int month)
+    {
+        var charges = _repository.GetExpenses()
+            .Where(e => e.CreditCard?.Id == creditCardId
+                && e.InvoiceDate is not null
+                && e.InvoiceDate.Value.Year == year
+                && e.InvoiceDate.Value.Month == month
+                && e.PaymentStatus == ExpensePaymentStatus.CreditCardCharge)
+            .ToList();
+
+        return (charges.Sum(e => e.Value), charges.Count > 0);
+    }
+
     private ITelemetrySpan StartSpan(string operationName)
     {
         _logger.LogInformation("{Operation} started", operationName);

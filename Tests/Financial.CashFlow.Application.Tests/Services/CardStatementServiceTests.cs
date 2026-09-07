@@ -483,4 +483,55 @@ public class CardStatementServiceTests
         await act.Should().ThrowAsync<KeyNotFoundException>();
     }
 
+    [Fact]
+    public void GetOutstandingTotalForPeriod_WithMatchingCharges_SumsThemAndReportsChargesPosted()
+    {
+        var card = Card(_repository, "BarclaysPlatinumVisa8003");
+        AddChargeWithInvoiceDate(_repository, new DateOnly(2026, 9, 1), new DateOnly(2026, 9, 10), 40m, card);
+        AddChargeWithInvoiceDate(_repository, new DateOnly(2026, 9, 2), new DateOnly(2026, 9, 10), 15.5m, card);
+
+        var (total, hasChargesPosted) = _sut.GetOutstandingTotalForPeriod(card.Id, 2026, 9);
+
+        total.Should().Be(55.5m);
+        hasChargesPosted.Should().BeTrue();
+    }
+
+    [Fact]
+    public void GetOutstandingTotalForPeriod_WithNoMatchingCharges_ReturnsZeroAndNoChargesPosted()
+    {
+        var card = Card(_repository, "BarclaysPlatinumVisa8003");
+
+        var (total, hasChargesPosted) = _sut.GetOutstandingTotalForPeriod(card.Id, 2026, 9);
+
+        total.Should().Be(0m);
+        hasChargesPosted.Should().BeFalse();
+    }
+
+    [Fact]
+    public void GetOutstandingTotalForPeriod_DoesNotRequireAnExistingCardStatementRow()
+    {
+        var card = Card(_repository, "BarclaysPlatinumVisa8003");
+        AddChargeWithInvoiceDate(_repository, new DateOnly(2026, 9, 1), new DateOnly(2026, 9, 10), 20m, card);
+        _repository.CardStatements.Should().BeEmpty();
+
+        var (total, hasChargesPosted) = _sut.GetOutstandingTotalForPeriod(card.Id, 2026, 9);
+
+        total.Should().Be(20m);
+        hasChargesPosted.Should().BeTrue();
+    }
+
+    [Fact]
+    public void GetOutstandingTotalForPeriod_IgnoresChargesFromOtherPeriodsOrOtherCards()
+    {
+        var card = Card(_repository, "BarclaysPlatinumVisa8003");
+        var otherCard = Card(_repository, "BarclaysPlatinumVisa6007");
+        AddChargeWithInvoiceDate(_repository, new DateOnly(2026, 8, 1), new DateOnly(2026, 8, 10), 99m, card);
+        AddChargeWithInvoiceDate(_repository, new DateOnly(2026, 9, 1), new DateOnly(2026, 9, 10), 99m, otherCard);
+
+        var (total, hasChargesPosted) = _sut.GetOutstandingTotalForPeriod(card.Id, 2026, 9);
+
+        total.Should().Be(0m);
+        hasChargesPosted.Should().BeFalse();
+    }
+
 }

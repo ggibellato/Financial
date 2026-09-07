@@ -386,7 +386,14 @@ public class ControllerGuardClauseTests
     [Fact]
     public void CalendarIntegrationController_NullService_Throws()
     {
-        Action act = () => new CalendarIntegrationController(null!);
+        Action act = () => new CalendarIntegrationController(null!, new FakeCreditCardCalendarSyncService());
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
+    public void CalendarIntegrationController_NullSyncService_Throws()
+    {
+        Action act = () => new CalendarIntegrationController(new FakeCalendarIntegrationService(), null!);
         act.Should().Throw<ArgumentNullException>();
     }
 

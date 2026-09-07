@@ -2958,6 +2958,93 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/integrations/calendar/credit-cards/sync-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Returns the current calendar-event sync status for every credit card that has
+         *                 been synced this process lifetime.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description 200 OK with the current status list. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CreditCardCalendarSyncStatusDTO"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/integrations/calendar/credit-cards/{id}/resync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Manually retries the calendar-event sync for one credit card. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Manually retries the calendar-event sync for one credit card. */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CreditCardCalendarSyncStatusDTO"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/integrations/calendar/disconnect": {
         parameters: {
             query?: never;
@@ -2987,6 +3074,42 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["CalendarDisconnectResultDTO"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/integrations/calendar/resync-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Manually retries the calendar-event sync for every active credit card with a due date. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description 200 OK with the resulting status per card. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CreditCardCalendarSyncStatusDTO"][];
                     };
                 };
             };
@@ -5704,6 +5827,14 @@ export interface components {
         };
         /** @enum {unknown} */
         CountryCode: "Unknown" | "BR" | "US" | "UK";
+        CreditCardCalendarSyncStatusDTO: {
+            /** Format: uuid */
+            creditCardId: string;
+            lastError?: null | string;
+            /** Format: date-time */
+            lastSuccessfulSyncUtc?: null | string;
+            state: string;
+        };
         CreditCardCreateDTO: {
             isActive: boolean;
             name: string;

@@ -13,12 +13,18 @@ public sealed class CreditCardService : ICreditCardService
     private const string EntityType = "CreditCard";
 
     private readonly ICashFlowRepository _repository;
+    private readonly ICreditCardCalendarSyncService _calendarSyncTrigger;
     private readonly ITelemetryTracer _tracer;
     private readonly ILogger<CreditCardService> _logger;
 
-    public CreditCardService(ICashFlowRepository repository, ITelemetryTracer tracer, ILogger<CreditCardService> logger)
+    public CreditCardService(
+        ICashFlowRepository repository,
+        ICreditCardCalendarSyncService calendarSyncTrigger,
+        ITelemetryTracer tracer,
+        ILogger<CreditCardService> logger)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+        _calendarSyncTrigger = calendarSyncTrigger ?? throw new ArgumentNullException(nameof(calendarSyncTrigger));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -63,6 +69,9 @@ public sealed class CreditCardService : ICreditCardService
                 return true;
             }).ConfigureAwait(false);
 
+            // Fire-and-forget: never affects this save's own success (see CreditCardCalendarSyncService).
+            _calendarSyncTrigger.TriggerSync(creditCard.Id);
+
             span.SetAttribute(TelemetryAttributeKeys.EntityId, creditCard.Id.ToString());
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "CreateCreditCard");
@@ -101,6 +110,8 @@ public sealed class CreditCardService : ICreditCardService
                 return true;
             }).ConfigureAwait(false);
 
+            _calendarSyncTrigger.TriggerSync(id);
+
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UpdateCreditCard");
             return ToDto(creditCard);
@@ -130,6 +141,10 @@ public sealed class CreditCardService : ICreditCardService
                 _repository.DeleteCreditCard(id);
                 return true;
             }).ConfigureAwait(false);
+
+            // The card is already gone from the repository; the sync service treats a
+            // no-longer-existing id the same as inactive/no-due-date - it removes the event.
+            _calendarSyncTrigger.TriggerSync(id);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "DeleteCreditCard");

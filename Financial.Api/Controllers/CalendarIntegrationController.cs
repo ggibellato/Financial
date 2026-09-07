@@ -16,10 +16,12 @@ namespace Financial.Api.Controllers;
 public sealed class CalendarIntegrationController : ControllerBase
 {
     private readonly ICalendarIntegrationService _service;
+    private readonly ICreditCardCalendarSyncService _syncService;
 
-    public CalendarIntegrationController(ICalendarIntegrationService service)
+    public CalendarIntegrationController(ICalendarIntegrationService service, ICreditCardCalendarSyncService syncService)
     {
         _service = service ?? throw new ArgumentNullException(nameof(service));
+        _syncService = syncService ?? throw new ArgumentNullException(nameof(syncService));
     }
 
     /// <summary>Returns the current connection status.</summary>
@@ -68,6 +70,37 @@ public sealed class CalendarIntegrationController : ControllerBase
     {
         var result = await _service.DisconnectAsync(cancellationToken);
         return Ok(result);
+    }
+
+    /// <summary>Manually retries the calendar-event sync for one credit card.</summary>
+    /// <returns>200 OK with the resulting status, or 404 if the card does not exist.</returns>
+    [HttpPost("credit-cards/{id:guid}/resync")]
+    [ProducesResponseType(typeof(CreditCardCalendarSyncStatusDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<CreditCardCalendarSyncStatusDTO>> ResyncCreditCard(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await _syncService.ResyncAsync(id, cancellationToken);
+        return Ok(result);
+    }
+
+    /// <summary>Manually retries the calendar-event sync for every active credit card with a due date.</summary>
+    /// <returns>200 OK with the resulting status per card.</returns>
+    [HttpPost("resync-all")]
+    [ProducesResponseType(typeof(IReadOnlyList<CreditCardCalendarSyncStatusDTO>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<CreditCardCalendarSyncStatusDTO>>> ResyncAll(CancellationToken cancellationToken)
+    {
+        var results = await _syncService.ResyncAllAsync(cancellationToken);
+        return Ok(results);
+    }
+
+    /// <summary>Returns the current calendar-event sync status for every credit card that has
+    /// been synced this process lifetime.</summary>
+    /// <returns>200 OK with the current status list.</returns>
+    [HttpGet("credit-cards/sync-status")]
+    [ProducesResponseType(typeof(IReadOnlyList<CreditCardCalendarSyncStatusDTO>), StatusCodes.Status200OK)]
+    public ActionResult<IReadOnlyList<CreditCardCalendarSyncStatusDTO>> GetSyncStatuses()
+    {
+        return Ok(_syncService.GetSyncStatuses());
     }
 
     private static string BuildLandingPage(string title, string message) => $"""

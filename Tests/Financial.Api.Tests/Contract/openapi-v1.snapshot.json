@@ -1015,6 +1015,35 @@
           "UK"
         ]
       },
+      "CreditCardCalendarSyncStatusDTO": {
+        "properties": {
+          "creditCardId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "lastError": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "lastSuccessfulSyncUtc": {
+            "format": "date-time",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "state": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "creditCardId",
+          "state"
+        ],
+        "type": "object"
+      },
       "CreditCardCreateDTO": {
         "properties": {
           "isActive": {
@@ -7138,6 +7167,71 @@
         ]
       }
     },
+    "/integrations/calendar/credit-cards/sync-status": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CreditCardCalendarSyncStatusDTO"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "200 OK with the current status list."
+          }
+        },
+        "summary": "Returns the current calendar-event sync status for every credit card that has\n            been synced this process lifetime.",
+        "tags": [
+          "CalendarIntegration"
+        ]
+      }
+    },
+    "/integrations/calendar/credit-cards/{id}/resync": {
+      "post": {
+        "parameters": [
+          {
+            "description": "Manually retries the calendar-event sync for one credit card.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditCardCalendarSyncStatusDTO"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "summary": "Manually retries the calendar-event sync for one credit card.",
+        "tags": [
+          "CalendarIntegration"
+        ]
+      }
+    },
     "/integrations/calendar/disconnect": {
       "post": {
         "responses": {
@@ -7153,6 +7247,29 @@
           }
         },
         "summary": "Removes the calendar connection - deletes the dedicated calendar, revokes\n            the token, and clears local state, always clearing local state even if the remote calls fail.",
+        "tags": [
+          "CalendarIntegration"
+        ]
+      }
+    },
+    "/integrations/calendar/resync-all": {
+      "post": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CreditCardCalendarSyncStatusDTO"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "200 OK with the resulting status per card."
+          }
+        },
+        "summary": "Manually retries the calendar-event sync for every active credit card with a due date.",
         "tags": [
           "CalendarIntegration"
         ]

@@ -227,13 +227,13 @@ graph TD
 - [x] **P45-F01-google-calendar-account-connection-06** A revoked refresh token causes `/status` to report `connected: false` with reason `token_revoked`, without the app crashing or repeatedly retrying the same failed call.
 
 ### F02. Credit-Card Due-Date Event Sync
-- [ ] Saving an active credit card with a due date, while connected, creates exactly one calendar event within 5 seconds showing the card name, due date, and the correct current-period outstanding balance.
-- [ ] Changing that card's due date updates the same event (same event ID) rather than creating a second one.
-- [ ] Clearing the due date, deactivating the card, or deleting the card removes its calendar event.
-- [ ] The created event has exactly one popup reminder set 1440 minutes before its start.
-- [ ] A card with a due date but no posted charges for that invoice period shows a balance of 0 with the "no charges posted yet" note.
-- [ ] A simulated Calendar API failure during sync leaves the triggering credit-card save unaffected (it still returns success) and marks that card's sync status as `error` with a retry available.
-- [ ] Manually deleting the dedicated calendar in Google Calendar, then triggering any sync, results in the calendar being recreated and every active card's event being re-created in it.
+- [x] **P45-F02-credit-card-due-date-event-sync-01** Saving an active credit card with a due date, while connected, creates exactly one calendar event within 5 seconds showing the card name, due date, and the correct current-period outstanding balance.
+- [x] **P45-F02-credit-card-due-date-event-sync-02** Changing that card's due date updates the same event (same event ID) rather than creating a second one.
+- [x] **P45-F02-credit-card-due-date-event-sync-03** Clearing the due date, deactivating the card, or deleting the card removes its calendar event.
+- [x] **P45-F02-credit-card-due-date-event-sync-04** The created event has exactly one popup reminder set 1440 minutes before its start.
+- [x] **P45-F02-credit-card-due-date-event-sync-05** A card with a due date but no posted charges for that invoice period shows a balance of 0 with the "no charges posted yet" note.
+- [x] **P45-F02-credit-card-due-date-event-sync-06** A simulated Calendar API failure during sync leaves the triggering credit-card save unaffected (it still returns success) and marks that card's sync status as `error` with a retry available.
+- [x] **P45-F02-credit-card-due-date-event-sync-07** Manually deleting the dedicated calendar in Google Calendar, then triggering any sync, results in the calendar being recreated and every active card's event being re-created in it.
 
 ### F03. Integrations Settings — Web
 - [ ] `/settings/integrations` shows a "Connect Google Calendar" button when not connected, and the connected account email, calendar name, and per-card sync list when connected.
@@ -250,6 +250,6 @@ graph TD
 - [ ] Disconnect requires the same explicit confirmation as F03 before proceeding.
 
 ### Cross-Feature Integration
-- [ ] After connecting via F01, F02's sync engine successfully creates events using the connection's dedicated calendar ID — no separate calendar ID configuration is needed.
+- [x] After connecting via F01, F02's sync engine successfully creates events using the connection's dedicated calendar ID — no separate calendar ID configuration is needed.
 - [ ] F03 and F04 both correctly display F01's live connection status (connected/disconnected, account email, calendar name) immediately after a connect or disconnect action.
 - [ ] F03 and F04 both correctly display F02's per-card sync status and last-synced/last-error data, and their "Retry" actions successfully invoke F02's per-card resync endpoint and reflect the updated status afterward.

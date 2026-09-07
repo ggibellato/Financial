@@ -51,6 +51,12 @@ attempting to connect returns an error rather than crashing the app.
 - `CashFlow:GoogleCalendar:RedirectUri` — must exactly match `{API_BASE_URL}/api/v1/financial/integrations/calendar/callback` as registered in Google Cloud Console (e.g. `http://localhost:5190/api/v1/financial/integrations/calendar/callback` for local dev). The route is provider-agnostic even though Google is the only connected provider.
 - `CashFlow:GoogleCalendar:CredentialsPath` — local file storing the connection's tokens, separate from `data-cashflow.json` and from the `GoogleDrive` credentials above. Defaults to `data/google-calendar-credentials.json` if unset (git-ignored, like every other local credentials file).
 
+Once connected, saving an active credit card with a due date automatically syncs one persistent
+all-day event per card (with a 1-day-before reminder) in the background - it never blocks or
+fails the save itself. `POST .../integrations/calendar/credit-cards/{id}/resync` and
+`POST .../integrations/calendar/resync-all` manually retry a failed sync; `GET
+.../integrations/calendar/credit-cards/sync-status` reports each card's current sync state.
+
 ### Application configuration
 
 Personalise the following sections in `appsettings.json` (or via environment variable overrides) before first use:

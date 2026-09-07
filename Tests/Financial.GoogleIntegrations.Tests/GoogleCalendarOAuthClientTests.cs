@@ -42,4 +42,27 @@ public class GoogleCalendarOAuthClientTests
         url.Should().Contain("access_type=offline");
         url.Should().Contain("prompt=consent");
     }
+
+    [Fact]
+    public void BuildEvent_IsAllDay_OnTheGivenDate()
+    {
+        var calendarEvent = GoogleCalendarOAuthClient.BuildEvent("title", "description", new DateOnly(2026, 9, 10));
+
+        calendarEvent.Start.Date.Should().Be("2026-09-10");
+        calendarEvent.End.Date.Should().Be("2026-09-11");
+        calendarEvent.Summary.Should().Be("title");
+        calendarEvent.Description.Should().Be("description");
+    }
+
+    [Fact]
+    [Trait("AC", "P45-F02-credit-card-due-date-event-sync-04")]
+    public void BuildEvent_HasExactlyOnePopupReminderSet1440MinutesBeforeItsStart()
+    {
+        var calendarEvent = GoogleCalendarOAuthClient.BuildEvent("title", "description", new DateOnly(2026, 9, 10));
+
+        calendarEvent.Reminders.UseDefault.Should().BeFalse();
+        calendarEvent.Reminders.Overrides.Should().ContainSingle();
+        calendarEvent.Reminders.Overrides[0].Method.Should().Be("popup");
+        calendarEvent.Reminders.Overrides[0].Minutes.Should().Be(1440);
+    }
 }

@@ -80,6 +80,76 @@ public class GoogleCalendarProviderAdapterTests
         act.Should().Throw<InvalidOperationException>().WithMessage("*ClientId*");
     }
 
+    [Fact]
+    public async Task CreateEventAsync_ForwardsTitleDescriptionAndDate_AndReturnsTheNewEventId()
+    {
+        var adapter = CreateAdapter();
+
+        var eventId = await adapter.CreateEventAsync("access-token", "cal-1", "title", "description", new DateOnly(2026, 9, 10));
+
+        eventId.Should().Be("event-id");
+        _oAuthClient.LastCalendarId.Should().Be("cal-1");
+        _oAuthClient.LastTitle.Should().Be("title");
+        _oAuthClient.LastDescription.Should().Be("description");
+        _oAuthClient.LastDate.Should().Be(new DateOnly(2026, 9, 10));
+    }
+
+    [Fact]
+    public async Task UpdateEventAsync_ForwardsEventIdTitleDescriptionAndDate()
+    {
+        var adapter = CreateAdapter();
+
+        await adapter.UpdateEventAsync("access-token", "cal-1", "event-1", "title", "description", new DateOnly(2026, 9, 15));
+
+        _oAuthClient.LastEventId.Should().Be("event-1");
+        _oAuthClient.LastTitle.Should().Be("title");
+        _oAuthClient.LastDate.Should().Be(new DateOnly(2026, 9, 15));
+    }
+
+    [Fact]
+    public async Task DeleteEventAsync_ForwardsCalendarIdAndEventId()
+    {
+        var adapter = CreateAdapter();
+
+        await adapter.DeleteEventAsync("access-token", "cal-1", "event-1");
+
+        _oAuthClient.LastCalendarId.Should().Be("cal-1");
+        _oAuthClient.LastEventId.Should().Be("event-1");
+    }
+
+    [Fact]
+    public async Task CreateEventAsync_WhenTheCalendarWasNotFound_ThrowsApplicationLevelException()
+    {
+        _oAuthClient.EventCallsThrowNotFound = true;
+        var adapter = CreateAdapter();
+
+        Func<Task> act = () => adapter.CreateEventAsync("access-token", "cal-1", "title", "description", new DateOnly(2026, 9, 10));
+
+        await act.Should().ThrowAsync<CalendarNotFoundException>();
+    }
+
+    [Fact]
+    public async Task UpdateEventAsync_WhenTheCalendarWasNotFound_ThrowsApplicationLevelException()
+    {
+        _oAuthClient.EventCallsThrowNotFound = true;
+        var adapter = CreateAdapter();
+
+        Func<Task> act = () => adapter.UpdateEventAsync("access-token", "cal-1", "event-1", "title", "description", new DateOnly(2026, 9, 10));
+
+        await act.Should().ThrowAsync<CalendarNotFoundException>();
+    }
+
+    [Fact]
+    public async Task DeleteEventAsync_WhenTheCalendarWasNotFound_ThrowsApplicationLevelException()
+    {
+        _oAuthClient.EventCallsThrowNotFound = true;
+        var adapter = CreateAdapter();
+
+        Func<Task> act = () => adapter.DeleteEventAsync("access-token", "cal-1", "event-1");
+
+        await act.Should().ThrowAsync<CalendarNotFoundException>();
+    }
+
     private sealed class FakeGoogleCalendarOAuthClient : IGoogleCalendarOAuthClient
     {
         public bool RefreshThrowsRevoked { get; set; }
@@ -132,5 +202,56 @@ public class GoogleCalendarProviderAdapterTests
 
         public Task DeleteCalendarAsync(string accessToken, string calendarId, CancellationToken cancellationToken = default) =>
             Task.CompletedTask;
+
+        public bool EventCallsThrowNotFound { get; set; }
+        public string CreatedEventId { get; set; } = "event-id";
+        public string? LastCalendarId { get; private set; }
+        public string? LastEventId { get; private set; }
+        public string? LastTitle { get; private set; }
+        public string? LastDescription { get; private set; }
+        public DateOnly? LastDate { get; private set; }
+
+        public Task<string> CreateEventAsync(
+            string accessToken, string calendarId, string title, string description, DateOnly date, CancellationToken cancellationToken = default)
+        {
+            LastCalendarId = calendarId;
+            LastTitle = title;
+            LastDescription = description;
+            LastDate = date;
+            if (EventCallsThrowNotFound)
+            {
+                throw new GoogleCalendarNotFoundException("not found", new InvalidOperationException());
+            }
+
+            return Task.FromResult(CreatedEventId);
+        }
+
+        public Task UpdateEventAsync(
+            string accessToken, string calendarId, string eventId, string title, string description, DateOnly date, CancellationToken cancellationToken = default)
+        {
+            LastCalendarId = calendarId;
+            LastEventId = eventId;
+            LastTitle = title;
+            LastDescription = description;
+            LastDate = date;
+            if (EventCallsThrowNotFound)
+            {
+                throw new GoogleCalendarNotFoundException("not found", new InvalidOperationException());
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public Task DeleteEventAsync(string accessToken, string calendarId, string eventId, CancellationToken cancellationToken = default)
+        {
+            LastCalendarId = calendarId;
+            LastEventId = eventId;
+            if (EventCallsThrowNotFound)
+            {
+                throw new GoogleCalendarNotFoundException("not found", new InvalidOperationException());
+            }
+
+            return Task.CompletedTask;
+        }
     }
 }

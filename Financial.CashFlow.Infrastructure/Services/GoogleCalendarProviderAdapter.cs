@@ -60,6 +60,17 @@ public sealed class GoogleCalendarProviderAdapter : ICalendarProvider
     public Task DeleteCalendarAsync(string accessToken, string calendarId, CancellationToken cancellationToken = default) =>
         _oAuthClient.DeleteCalendarAsync(accessToken, calendarId, cancellationToken);
 
+    public Task<string> CreateEventAsync(
+        string accessToken, string calendarId, string title, string description, DateOnly date, CancellationToken cancellationToken = default) =>
+        TranslatingNotFound(() => _oAuthClient.CreateEventAsync(accessToken, calendarId, title, description, date, cancellationToken));
+
+    public Task UpdateEventAsync(
+        string accessToken, string calendarId, string eventId, string title, string description, DateOnly date, CancellationToken cancellationToken = default) =>
+        TranslatingNotFound(() => _oAuthClient.UpdateEventAsync(accessToken, calendarId, eventId, title, description, date, cancellationToken));
+
+    public Task DeleteEventAsync(string accessToken, string calendarId, string eventId, CancellationToken cancellationToken = default) =>
+        TranslatingNotFound(() => _oAuthClient.DeleteEventAsync(accessToken, calendarId, eventId, cancellationToken));
+
     private static async Task<GoogleOAuthTokenResult> TranslatingRevocation(Func<Task<GoogleOAuthTokenResult>> action)
     {
         try
@@ -69,6 +80,30 @@ public sealed class GoogleCalendarProviderAdapter : ICalendarProvider
         catch (GoogleTokenRevokedException ex)
         {
             throw new CalendarTokenRevokedException(ex.Message);
+        }
+    }
+
+    private static async Task<T> TranslatingNotFound<T>(Func<Task<T>> action)
+    {
+        try
+        {
+            return await action().ConfigureAwait(false);
+        }
+        catch (GoogleCalendarNotFoundException ex)
+        {
+            throw new CalendarNotFoundException(ex.Message);
+        }
+    }
+
+    private static async Task TranslatingNotFound(Func<Task> action)
+    {
+        try
+        {
+            await action().ConfigureAwait(false);
+        }
+        catch (GoogleCalendarNotFoundException ex)
+        {
+            throw new CalendarNotFoundException(ex.Message);
         }
     }
 
