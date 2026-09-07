@@ -57,11 +57,11 @@ using System.Net.Http.Json;
 
 namespace Financial.Api.Tests.Acceptance;
 
-public class P42F01PaymentsDueAggregationAcceptanceTests : ApiEndpointTests
+public class PaymentsDueAggregationAcceptanceTests : ApiEndpointTests
 {
     private static readonly DateTimeOffset Today = new(2026, 9, 10, 9, 0, 0, TimeSpan.Zero);
 
-    public P42F01PaymentsDueAggregationAcceptanceTests()
+    public PaymentsDueAggregationAcceptanceTests()
         : base(timeProvider: new FakeTimeProvider(Today))
     {
     }
@@ -109,11 +109,13 @@ Both forms carry the same id grammar, so one grep answers both directions.
   natural table of cases may be a `[Theory]` — still one method, one trait.
 - Negative criteria ("… are excluded", "fails silently and renders nothing", "returns 409")
   get their own test; they are not implied by the positive ones.
-- Dedicated files, never interleaved:
-  - `Tests/Financial.Api.Tests/Acceptance/P{NN}F{NN}{FeatureName}AcceptanceTests.cs`
-  - `Tests/Financial.Presentation.Tests/Acceptance/P{NN}F{NN}{FeatureName}AcceptanceTests.cs`
-  - `Financial.Web/src/acceptance/P{NN}-F{NN}-{feature-slug}.test.tsx`
-  (none of these folders exist yet; create them with the first feature.)
+- Dedicated files, never interleaved. No `P{NN}F{NN}` prefix on the filename - the AC id
+  already carries the PRD/feature numbering in its `[Trait]`/title, so repeating it in the
+  filename is redundant (decided 2026-09-07, after the first real example shipped it that way
+  and then dropped the prefix):
+  - `Tests/Financial.Api.Tests/Acceptance/{FeatureName}AcceptanceTests.cs`
+  - `Tests/Financial.Presentation.Tests/Acceptance/{FeatureName}AcceptanceTests.cs`
+  - `Financial.Web/src/acceptance/{feature-slug}.test.tsx`
 - The PR body's §9 checklist (see `feedback_pr_body_acceptance_criteria` in project memory)
   lists each id next to the test that proves it.
 
@@ -130,9 +132,9 @@ dotnet test Tests/Financial.Api.Tests --filter "AC=P42-F01-payments-due-aggregat
 cd Financial.Web; npx vitest list -t "\[AC P42-F02"
 ```
 
-Output today for the first command: `No test matches the given testcase filter 'AC~P42-F01'` —
-the filter is valid, there simply is no tagged test yet. `npx vitest list -t "\[AC P42-F02"`
-exited 0 with an empty list for the same reason.
+`dotnet test Tests/Financial.Api.Tests --filter "AC~P45-F01" --list-tests` lists the 6 real
+tests in `GoogleCalendarAccountConnectionAcceptanceTests.cs`. `npx vitest list -t "\[AC P42-F02"`
+still exits 0 with an empty list - no Web AC-tracing test exists yet.
 
 **Given a test, which AC does it prove?** — read its trait / title prefix. **Whole-repo
 listing of every AC-tracing test:**
@@ -142,12 +144,16 @@ grep -rnE 'Trait\("AC", *"[^"]+"\)|\[AC [^]]+\]' Tests Financial.Web/src \
   --include=*.cs --include=*.ts --include=*.tsx --exclude-dir=bin --exclude-dir=obj
 ```
 
-Exit code 1 today (valid pattern, zero matches). Worked example of what a match line looks like
-once the first test exists:
+Real example, from the P45-F01 Google Calendar connection feature:
 
 ```
-Tests/Financial.Api.Tests/Acceptance/P42F01PaymentsDueAggregationAcceptanceTests.cs:17:    [Trait("AC", "P42-F01-payments-due-aggregation-backend-08")]
-Financial.Web/src/acceptance/P42-F02-payment-due-banner-web.test.tsx:31:  it('[AC P42-F02-payment-due-banner-web-03] renders nothing when the list is empty', async () => {
+Tests/Financial.Api.Tests/Acceptance/GoogleCalendarAccountConnectionAcceptanceTests.cs:29:    [Trait("AC", "P45-F01-google-calendar-account-connection-01")]
+```
+
+Illustrative Web line, in the same no-prefix filename convention, once a Web AC test exists:
+
+```
+Financial.Web/src/acceptance/payment-due-banner-web.test.tsx:31:  it('[AC P42-F02-payment-due-banner-web-03] renders nothing when the list is empty', async () => {
 ```
 
 Note `rg` is not on this machine's PATH (the `rtk` hook fails over to it); use `grep -rnE`.
@@ -168,7 +174,10 @@ not the wired feature: a criterion is proven at Integration, through the host.
 
 ## Examples from the project
 
-None yet — no test carries an `AC` trait or `[AC …]` title (confirmed by the grep above). The
-first one added should follow the template in this file; the P42 payment-due banner (three
-features, backend + Web + WPF, all criteria already ticked in the PRD) is the natural pilot
-because every layer it needs already has a harness.
+`Tests/Financial.Api.Tests/Acceptance/GoogleCalendarAccountConnectionAcceptanceTests.cs` (P45-F01,
+Google Calendar account connection) is the first AC-tracing suite - 6 tests, one per §9
+criterion, `IExchangeRateProvider`'s external-provider role played here by a faked
+`ICalendarProvider` (`FakeCalendarProvider` in `Tests/Financial.TestUtilities`) while the real
+`ICalendarIntegrationService`/`ICalendarConnectionStore` graph runs through the host. No Web or
+WPF AC-tracing test exists yet; the P42 payment-due banner (three features, backend + Web + WPF,
+all criteria already ticked in the PRD) is the natural next pilot for those two stacks.

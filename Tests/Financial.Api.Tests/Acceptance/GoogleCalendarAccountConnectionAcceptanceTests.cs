@@ -8,18 +8,18 @@ using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace Financial.Api.Tests.Acceptance;
 
-public class P45F01GoogleCalendarAccountConnectionAcceptanceTests : ApiEndpointTests
+public class GoogleCalendarAccountConnectionAcceptanceTests : ApiEndpointTests
 {
     private const string BaseRoute = "/api/v1/financial/integrations/calendar";
     private static readonly DateTimeOffset Now = new(2026, 9, 7, 12, 0, 0, TimeSpan.Zero);
 
     private readonly FakeCalendarProvider _provider;
 
-    public P45F01GoogleCalendarAccountConnectionAcceptanceTests() : this(new FakeCalendarProvider())
+    public GoogleCalendarAccountConnectionAcceptanceTests() : this(new FakeCalendarProvider())
     {
     }
 
-    private P45F01GoogleCalendarAccountConnectionAcceptanceTests(FakeCalendarProvider provider)
+    private GoogleCalendarAccountConnectionAcceptanceTests(FakeCalendarProvider provider)
         : base(timeProvider: new FakeTimeProvider(Now), calendarProvider: provider)
     {
         _provider = provider;
