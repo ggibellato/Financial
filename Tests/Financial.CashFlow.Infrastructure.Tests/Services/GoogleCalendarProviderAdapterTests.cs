@@ -132,5 +132,56 @@ public class GoogleCalendarProviderAdapterTests
 
         public Task DeleteCalendarAsync(string accessToken, string calendarId, CancellationToken cancellationToken = default) =>
             Task.CompletedTask;
+
+        public bool EventCallsThrowNotFound { get; set; }
+        public string CreatedEventId { get; set; } = "event-id";
+        public string? LastCalendarId { get; private set; }
+        public string? LastEventId { get; private set; }
+        public string? LastTitle { get; private set; }
+        public string? LastDescription { get; private set; }
+        public DateOnly? LastDate { get; private set; }
+
+        public Task<string> CreateEventAsync(
+            string accessToken, string calendarId, string title, string description, DateOnly date, CancellationToken cancellationToken = default)
+        {
+            LastCalendarId = calendarId;
+            LastTitle = title;
+            LastDescription = description;
+            LastDate = date;
+            if (EventCallsThrowNotFound)
+            {
+                throw new GoogleCalendarNotFoundException("not found", new InvalidOperationException());
+            }
+
+            return Task.FromResult(CreatedEventId);
+        }
+
+        public Task UpdateEventAsync(
+            string accessToken, string calendarId, string eventId, string title, string description, DateOnly date, CancellationToken cancellationToken = default)
+        {
+            LastCalendarId = calendarId;
+            LastEventId = eventId;
+            LastTitle = title;
+            LastDescription = description;
+            LastDate = date;
+            if (EventCallsThrowNotFound)
+            {
+                throw new GoogleCalendarNotFoundException("not found", new InvalidOperationException());
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public Task DeleteEventAsync(string accessToken, string calendarId, string eventId, CancellationToken cancellationToken = default)
+        {
+            LastCalendarId = calendarId;
+            LastEventId = eventId;
+            if (EventCallsThrowNotFound)
+            {
+                throw new GoogleCalendarNotFoundException("not found", new InvalidOperationException());
+            }
+
+            return Task.CompletedTask;
+        }
     }
 }

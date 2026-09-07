@@ -1,7 +1,9 @@
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using Financial.Integrations.GoogleCore;
+using Google;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Auth.OAuth2.Flows;
 using Google.Apis.Auth.OAuth2.Responses;
@@ -115,6 +117,71 @@ internal sealed class GoogleCalendarOAuthClient : IGoogleCalendarOAuthClient
             return true;
         }).ConfigureAwait(false);
     }
+
+    public async Task<string> CreateEventAsync(
+        string accessToken, string calendarId, string title, string description, DateOnly date, CancellationToken cancellationToken = default)
+    {
+        using var service = CreateCalendarService(accessToken);
+        var calendarEvent = BuildEvent(title, description, date);
+        try
+        {
+            var created = await GoogleRetryPolicy.ExecuteWithRetryAsync(
+                () => service.Events.Insert(calendarEvent, calendarId).ExecuteAsync(cancellationToken)).ConfigureAwait(false);
+            return created.Id;
+        }
+        catch (GoogleApiException ex) when (IsNotFound(ex))
+        {
+            throw new GoogleCalendarNotFoundException($"Calendar '{calendarId}' was not found.", ex);
+        }
+    }
+
+    public async Task UpdateEventAsync(
+        string accessToken, string calendarId, string eventId, string title, string description, DateOnly date, CancellationToken cancellationToken = default)
+    {
+        using var service = CreateCalendarService(accessToken);
+        var calendarEvent = BuildEvent(title, description, date);
+        try
+        {
+            await GoogleRetryPolicy.ExecuteWithRetryAsync(
+                () => service.Events.Update(calendarEvent, calendarId, eventId).ExecuteAsync(cancellationToken)).ConfigureAwait(false);
+        }
+        catch (GoogleApiException ex) when (IsNotFound(ex))
+        {
+            throw new GoogleCalendarNotFoundException($"Calendar '{calendarId}' was not found.", ex);
+        }
+    }
+
+    public async Task DeleteEventAsync(string accessToken, string calendarId, string eventId, CancellationToken cancellationToken = default)
+    {
+        using var service = CreateCalendarService(accessToken);
+        try
+        {
+            await GoogleRetryPolicy.ExecuteWithRetryAsync(async () =>
+            {
+                await service.Events.Delete(calendarId, eventId).ExecuteAsync(cancellationToken).ConfigureAwait(false);
+                return true;
+            }).ConfigureAwait(false);
+        }
+        catch (GoogleApiException ex) when (IsNotFound(ex))
+        {
+            throw new GoogleCalendarNotFoundException($"Calendar '{calendarId}' was not found.", ex);
+        }
+    }
+
+    private static Event BuildEvent(string title, string description, DateOnly date) => new()
+    {
+        Summary = title,
+        Description = description,
+        Start = new EventDateTime { Date = date.ToString("yyyy-MM-dd") },
+        End = new EventDateTime { Date = date.AddDays(1).ToString("yyyy-MM-dd") },
+        Reminders = new Event.RemindersData
+        {
+            UseDefault = false,
+            Overrides = new List<EventReminder> { new() { Method = "popup", Minutes = 1440 } }
+        }
+    };
+
+    private static bool IsNotFound(GoogleApiException ex) => ex.HttpStatusCode == HttpStatusCode.NotFound;
 
     private static GoogleAuthorizationCodeFlow CreateFlow(string clientId, string clientSecret) =>
         new(new GoogleAuthorizationCodeFlow.Initializer

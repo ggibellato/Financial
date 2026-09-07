@@ -29,4 +29,20 @@ public interface IGoogleCalendarOAuthClient
 
     /// <summary>Deletes a calendar (and every event in it) from the connected account.</summary>
     Task DeleteCalendarAsync(string accessToken, string calendarId, CancellationToken cancellationToken = default);
+
+    /// <summary>Creates a single all-day event with a fixed 1-day-before popup reminder, and
+    /// returns its Google-assigned id. Throws <see cref="GoogleCalendarNotFoundException"/> when
+    /// <paramref name="calendarId"/> no longer exists.</summary>
+    Task<string> CreateEventAsync(
+        string accessToken, string calendarId, string title, string description, DateOnly date, CancellationToken cancellationToken = default);
+
+    /// <summary>Updates an existing all-day event's date and content in place. Throws
+    /// <see cref="GoogleCalendarNotFoundException"/> when <paramref name="calendarId"/> no longer
+    /// exists.</summary>
+    Task UpdateEventAsync(
+        string accessToken, string calendarId, string eventId, string title, string description, DateOnly date, CancellationToken cancellationToken = default);
+
+    /// <summary>Deletes a single event. Throws <see cref="GoogleCalendarNotFoundException"/> when
+    /// <paramref name="calendarId"/> no longer exists.</summary>
+    Task DeleteEventAsync(string accessToken, string calendarId, string eventId, CancellationToken cancellationToken = default);
 }
