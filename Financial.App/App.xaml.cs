@@ -6,6 +6,7 @@ using Financial.Investment.Application.Configuration;
 using Financial.Investment.Application.DependencyInjection;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Infrastructure.DependencyInjection;
+using Financial.Integrations.GoogleCalendar;
 using Financial.Integrations.GoogleDrive;
 using Financial.Presentation.App.Properties;
 using Financial.Presentation.App.Services;
@@ -50,6 +51,7 @@ namespace Financial.Presentation.App
                     services.AddObservability(context.Configuration, serviceName: "Financial.App");
                     services.AddFinancialApplication();
                     services.AddGoogleDriveFileClient();
+                    services.AddGoogleCalendarOAuthClient();
                     services.AddSingleton<IJsonStorageFactory, JsonStorageFactory>();
                     services.AddFinancialInfrastructure(context.Configuration);
                     services.AddFinancialCashFlowApplication();
@@ -153,6 +155,9 @@ namespace Financial.Presentation.App
                             });
                     });
                     services.AddTransient<Financial.Presentation.App.Views.Settings.AppearanceView>();
+                    services.AddSingleton<Financial.Presentation.App.Services.IBrowserLauncher, Financial.Presentation.App.Services.BrowserLauncher>();
+                    services.AddTransient<Financial.Presentation.App.ViewModels.Settings.SettingsIntegrationsViewModel>();
+                    services.AddTransient<Financial.Presentation.App.Views.Settings.SettingsIntegrationsView>();
                     services.AddTransient<MainWindow>();
                 })
                 .Build();

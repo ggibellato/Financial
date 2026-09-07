@@ -39,6 +39,7 @@ public class PresentationDependencyRuleTests
         "Financial.Shared.Infrastructure",
         "Financial.Integrations.Observability",
         "Financial.Integrations.GoogleDrive",
+        "Financial.Integrations.GoogleCalendar",
     };
 
     [Fact]

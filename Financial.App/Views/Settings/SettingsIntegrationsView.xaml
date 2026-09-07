@@ -1,0 +1,149 @@
+<UserControl x:Class="Financial.Presentation.App.Views.Settings.SettingsIntegrationsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <!-- Matches Financial.Web's accent exactly — see the same override in CreditCardsView.xaml. -->
+            <SolidColorBrush x:Key="AccentButtonBackground" Color="#0F6CBD"/>
+            <SolidColorBrush x:Key="AccentButtonBackgroundPointerOver" Color="#115EA3"/>
+            <SolidColorBrush x:Key="AccentButtonBackgroundPressed" Color="#0C3B5E"/>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Loading..." FontSize="14"
+                   Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+        <StackPanel Grid.Row="0" Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}">
+            <TextBlock Text="{Binding Error}" Foreground="{DynamicResource SystemFillColorCriticalBrush}" TextWrapping="Wrap"/>
+            <Button Content="Retry" Command="{Binding RetryLoadCommand}" HorizontalAlignment="Left" Margin="0,8,0,0"/>
+        </StackPanel>
+
+        <StackPanel Grid.Row="0" Visibility="{Binding ShowContent, Converter={StaticResource BoolToVisibilityConverter}}">
+            <TextBlock Text="Integrations" FontSize="20" FontWeight="Bold" Margin="0,0,0,12"/>
+
+            <Border BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="4" Padding="16">
+                <StackPanel>
+                    <TextBlock Text="Google Calendar" FontWeight="SemiBold" Margin="0,0,0,8"/>
+
+                    <StackPanel Visibility="{Binding ShowNotConnectedPanel, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <TextBlock Text="{Binding NotConnectedMessage}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                        <ui:Button Content="{Binding ConnectButtonText}" Appearance="Primary" HorizontalAlignment="Left"
+                                   IsEnabled="{Binding CanConnect}"
+                                   Command="{Binding ConnectCommand}"
+                                   AutomationProperties.Name="Connect Google Calendar"/>
+                    </StackPanel>
+
+                    <StackPanel Visibility="{Binding ShowConnectedPanel, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <Grid Margin="0,0,0,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="140"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Account" FontWeight="SemiBold"/>
+                            <TextBlock Grid.Column="1" Text="{Binding Status.AccountEmail}"/>
+                        </Grid>
+                        <Grid Margin="0,0,0,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="140"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Calendar" FontWeight="SemiBold"/>
+                            <ui:Button Grid.Column="1" Content="{Binding Status.CalendarName}" Appearance="Transparent"
+                                       Padding="0" HorizontalAlignment="Left"
+                                       Command="{Binding OpenCalendarLinkCommand}"
+                                       AutomationProperties.Name="Open the dedicated calendar in Google Calendar"/>
+                        </Grid>
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="140"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Connected since" FontWeight="SemiBold"/>
+                            <TextBlock Grid.Column="1" Text="{Binding ConnectedSinceText}"/>
+                        </Grid>
+
+                        <TextBlock Text="{Binding DisconnectError}" Foreground="{DynamicResource SystemFillColorCriticalBrush}" TextWrapping="Wrap"
+                                   Margin="0,0,0,8"
+                                   Visibility="{Binding DisconnectError, Converter={StaticResource NullOrEmptyToVisibilityConverter}}"/>
+
+                        <ui:Button Content="Disconnect" Appearance="Primary" HorizontalAlignment="Left" Margin="0,0,0,16"
+                                   IsEnabled="{Binding CanDisconnect}"
+                                   Command="{Binding DisconnectCommand}"/>
+
+                        <TextBlock Text="No active credit cards with a due date yet." Margin="0,0,0,8">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SyncRows.Count}" Value="0">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+
+                        <DataGrid ItemsSource="{Binding SyncRows}" AutoGenerateColumns="False" IsReadOnly="True"
+                                  AutomationProperties.Name="Credit Card Calendar Sync Status">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Binding="{Binding Name}" Header="Card" Width="*"/>
+                                <DataGridTextColumn Binding="{Binding DueDate, Converter={StaticResource DateFormatConverter}}" Header="Due Date" Width="140"/>
+                                <DataGridTemplateColumn Header="Sync Status" Width="220">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Border Background="{Binding State, Converter={StaticResource CalendarSyncStateToBrushConverter}, ConverterParameter=Background}"
+                                                    CornerRadius="4" Padding="8,2" HorizontalAlignment="Left">
+                                                <TextBlock Foreground="{Binding State, Converter={StaticResource CalendarSyncStateToBrushConverter}, ConverterParameter=Foreground}">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Text" Value="Syncing…"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding State}" Value="Synced">
+                                                                    <Setter Property="Text" Value="Synced"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding State}" Value="Error">
+                                                                    <Setter Property="Text" Value="{Binding LastError, StringFormat='Sync failed: {0}'}"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </Border>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Header="" Width="Auto">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ui:Button Content="Retry" Appearance="Transparent"
+                                                       AutomationProperties.Name="{Binding Name, StringFormat='Retry calendar sync for {0}'}"
+                                                       IsEnabled="{Binding CanRetry}"
+                                                       Command="{Binding DataContext.RetryCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                       CommandParameter="{Binding}">
+                                                <ui:Button.Style>
+                                                    <Style TargetType="{x:Type ui:Button}">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding State}" Value="Error">
+                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </ui:Button.Style>
+                                            </ui:Button>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </Grid>
+</UserControl>

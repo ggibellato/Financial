@@ -30,6 +30,7 @@ public class MainShellViewModelTests
         ["admin-recurring-bills"] = new object(),
         ["admin-reserve-buckets"] = new object(),
         ["settings-appearance"] = new object(),
+        ["settings-integrations"] = new object(),
     };
 
     private static MainShellViewModel CreateShell(
