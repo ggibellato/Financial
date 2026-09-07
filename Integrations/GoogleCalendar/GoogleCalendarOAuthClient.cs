@@ -168,7 +168,9 @@ internal sealed class GoogleCalendarOAuthClient : IGoogleCalendarOAuthClient
         }
     }
 
-    private static Event BuildEvent(string title, string description, DateOnly date) => new()
+    /// <summary>Internal (not private) so <c>Financial.GoogleIntegrations.Tests</c> can pin the
+    /// fixed all-day + 1-day-before-popup-reminder shape without a live Google API call.</summary>
+    internal static Event BuildEvent(string title, string description, DateOnly date) => new()
     {
         Summary = title,
         Description = description,
