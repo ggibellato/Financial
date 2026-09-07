@@ -9,6 +9,6 @@ if (-not (Test-Path $exePath)) {
     exit 1
 }
 
-$env:ASPNETCORE_URLS = 'http://localhost:8080'
+$env:ASPNETCORE_URLS = 'http://0.0.0.0:8080'
 Start-Process -FilePath $exePath -WorkingDirectory $webDir
-Write-Host "Financial web app starting at http://localhost:8080"
+Write-Host "Financial web app starting at http://localhost:8080 (also reachable on your LAN IP)"
