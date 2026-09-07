@@ -171,6 +171,7 @@ public class CalendarIntegrationServiceTests
 
         status.Connected.Should().BeTrue();
         status.AccountEmail.Should().Be("user@gmail.com");
+        status.CalendarId.Should().Be("cal-1");
         _provider.RefreshCallCount.Should().Be(1);
         _store.Load()!.AccessToken.Should().Be("refreshed-access");
     }

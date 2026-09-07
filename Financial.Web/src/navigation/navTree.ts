@@ -76,6 +76,9 @@ export const NAV_TREE: NavCategory[] = [
   {
     id: 'settings',
     label: 'Settings',
-    children: [{ id: 'appearance', label: 'Appearance', route: '/settings/appearance' }],
+    children: [
+      { id: 'appearance', label: 'Appearance', route: '/settings/appearance' },
+      { id: 'integrations', label: 'Integrations', route: '/settings/integrations' },
+    ],
   },
 ]

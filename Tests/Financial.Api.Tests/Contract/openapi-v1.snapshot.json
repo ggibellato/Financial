@@ -705,6 +705,12 @@
               "string"
             ]
           },
+          "calendarId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "calendarName": {
             "type": [
               "null",
