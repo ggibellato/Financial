@@ -6,6 +6,8 @@ namespace Financial.CashFlow.Application.Models;
 /// <see cref="Interfaces.ICalendarProvider"/> implementation is wired in today - even though only
 /// a Google Calendar connection exists right now. <see cref="RevokedReason"/> is set once a
 /// refresh attempt fails, so later status checks stop retrying the same failed refresh.
+/// <see cref="CardEventIds"/> maps a credit card's id to its persistent calendar event id, so a
+/// later sync updates the same event instead of creating a second one.
 /// </summary>
 public sealed record CalendarConnection(
     string AccountEmail,
@@ -14,4 +16,5 @@ public sealed record CalendarConnection(
     string RefreshToken,
     DateTimeOffset AccessTokenExpiresAtUtc,
     DateTimeOffset ConnectedAtUtc,
+    IReadOnlyDictionary<Guid, string> CardEventIds,
     string? RevokedReason = null);

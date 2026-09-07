@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using Financial.CashFlow.Application.Configuration;
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Exceptions;
 using Financial.CashFlow.Application.Interfaces;
@@ -17,7 +18,6 @@ namespace Financial.CashFlow.Application.Services;
 public sealed class CalendarIntegrationService : ICalendarIntegrationService
 {
     private const string EntityType = "CalendarConnection";
-    private const string DedicatedCalendarName = "Financial - Credit Card Due Dates";
     private const string TokenRevokedReason = "token_revoked";
     private static readonly TimeSpan PendingStateLifetime = TimeSpan.FromMinutes(10);
     private static readonly TimeSpan AccessTokenRefreshSkew = TimeSpan.FromMinutes(1);
@@ -98,7 +98,7 @@ public sealed class CalendarIntegrationService : ICalendarIntegrationService
             try
             {
                 accountEmail = await _provider.GetAccountEmailAsync(token.AccessToken, cancellationToken).ConfigureAwait(false);
-                calendarId = await _provider.CreateCalendarAsync(token.AccessToken, DedicatedCalendarName, cancellationToken).ConfigureAwait(false);
+                calendarId = await _provider.CreateCalendarAsync(token.AccessToken, CalendarDefaults.DedicatedCalendarName, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -120,7 +120,8 @@ public sealed class CalendarIntegrationService : ICalendarIntegrationService
                 token.AccessToken,
                 refreshToken,
                 token.AccessTokenExpiresAtUtc,
-                _timeProvider.GetUtcNow()));
+                _timeProvider.GetUtcNow(),
+                new Dictionary<Guid, string>()));
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "CompleteConnection");
@@ -187,6 +188,32 @@ public sealed class CalendarIntegrationService : ICalendarIntegrationService
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "Disconnect");
             return new CalendarDisconnectResultDTO { RemoteCleanupSucceeded = remoteCleanupSucceeded };
+        }
+        catch (Exception ex)
+        {
+            span.MarkFailed(ex);
+            throw;
+        }
+    }
+
+    public async Task<string?> GetValidAccessTokenAsync(CancellationToken cancellationToken = default)
+    {
+        using var span = StartSpan("GetValidAccessToken");
+        try
+        {
+            var connection = _store.Load();
+            if (connection is null || connection.RevokedReason is not null)
+            {
+                span.MarkSuccess();
+                _logger.LogInformation("{Operation} completed", "GetValidAccessToken");
+                return null;
+            }
+
+            var refreshed = await EnsureFreshAccessTokenAsync(connection, cancellationToken).ConfigureAwait(false);
+
+            span.MarkSuccess();
+            _logger.LogInformation("{Operation} completed", "GetValidAccessToken");
+            return refreshed?.AccessToken;
         }
         catch (Exception ex)
         {
@@ -305,7 +332,7 @@ public sealed class CalendarIntegrationService : ICalendarIntegrationService
     {
         Connected = connected,
         AccountEmail = connection.AccountEmail,
-        CalendarName = DedicatedCalendarName,
+        CalendarName = CalendarDefaults.DedicatedCalendarName,
         ConnectedAtUtc = connection.ConnectedAtUtc,
         DisconnectReason = connection.RevokedReason
     };

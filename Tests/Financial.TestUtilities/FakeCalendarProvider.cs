@@ -84,4 +84,63 @@ public sealed class FakeCalendarProvider : ICalendarProvider
 
         return Task.CompletedTask;
     }
+
+    public string CreatedEventId { get; set; } = "event-id";
+    public bool CreateEventThrows { get; set; }
+    public bool UpdateEventThrows { get; set; }
+    public bool DeleteEventThrows { get; set; }
+    public bool EventCallsThrowNotFound { get; set; }
+    public List<(string CalendarId, string Title, string Description, DateOnly Date)> CreatedEvents { get; } = new();
+    public List<(string CalendarId, string EventId, string Title, string Description, DateOnly Date)> UpdatedEvents { get; } = new();
+    public List<(string CalendarId, string EventId)> DeletedEvents { get; } = new();
+
+    public Task<string> CreateEventAsync(
+        string accessToken, string calendarId, string title, string description, DateOnly date, CancellationToken cancellationToken = default)
+    {
+        CreatedEvents.Add((calendarId, title, description, date));
+        if (EventCallsThrowNotFound)
+        {
+            throw new CalendarNotFoundException("Calendar not found.");
+        }
+
+        if (CreateEventThrows)
+        {
+            throw new InvalidOperationException("Simulated event create failure.");
+        }
+
+        return Task.FromResult(CreatedEventId);
+    }
+
+    public Task UpdateEventAsync(
+        string accessToken, string calendarId, string eventId, string title, string description, DateOnly date, CancellationToken cancellationToken = default)
+    {
+        UpdatedEvents.Add((calendarId, eventId, title, description, date));
+        if (EventCallsThrowNotFound)
+        {
+            throw new CalendarNotFoundException("Calendar not found.");
+        }
+
+        if (UpdateEventThrows)
+        {
+            throw new InvalidOperationException("Simulated event update failure.");
+        }
+
+        return Task.CompletedTask;
+    }
+
+    public Task DeleteEventAsync(string accessToken, string calendarId, string eventId, CancellationToken cancellationToken = default)
+    {
+        DeletedEvents.Add((calendarId, eventId));
+        if (EventCallsThrowNotFound)
+        {
+            throw new CalendarNotFoundException("Calendar not found.");
+        }
+
+        if (DeleteEventThrows)
+        {
+            throw new InvalidOperationException("Simulated event delete failure.");
+        }
+
+        return Task.CompletedTask;
+    }
 }

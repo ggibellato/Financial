@@ -18,4 +18,10 @@ public interface ICalendarIntegrationService
     /// <summary>Always clears local connection state, even when the remote calendar-delete or
     /// token-revoke call fails. Idempotent when nothing is connected.</summary>
     Task<CalendarDisconnectResultDTO> DisconnectAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Returns a currently-valid access token, transparently refreshing it first if
+    /// needed - the same check <see cref="GetStatusAsync"/> performs, reused by
+    /// credit-card-event sync so it never duplicates the refresh/tombstone logic. Returns
+    /// <see langword="null"/> when not connected or the connection is known-revoked.</summary>
+    Task<string?> GetValidAccessTokenAsync(CancellationToken cancellationToken = default);
 }

@@ -133,7 +133,7 @@ public class CalendarIntegrationServiceTests
     [Fact]
     public async Task CompleteConnectionAsync_WhenAlreadyConnected_DisconnectsThePreviousConnectionFirst()
     {
-        var previous = new CalendarConnection("old@gmail.com", "old-cal", "old-access", "old-refresh", Now.AddHours(1), Now.AddDays(-1));
+        var previous = new CalendarConnection("old@gmail.com", "old-cal", "old-access", "old-refresh", Now.AddHours(1), Now.AddDays(-1), new Dictionary<Guid, string>());
         _store.Save(previous);
 
         _sut.BuildAuthorizationUrl();
@@ -163,7 +163,7 @@ public class CalendarIntegrationServiceTests
     [Fact]
     public async Task GetStatusAsync_WhenAccessTokenExpired_RefreshesTransparently()
     {
-        var connection = new CalendarConnection("user@gmail.com", "cal-1", "old-access", "refresh-token", Now.AddMinutes(-1), Now.AddDays(-1));
+        var connection = new CalendarConnection("user@gmail.com", "cal-1", "old-access", "refresh-token", Now.AddMinutes(-1), Now.AddDays(-1), new Dictionary<Guid, string>());
         _store.Save(connection);
         _provider.RefreshResult = new CalendarTokenResult("refreshed-access", null, Now.AddHours(1));
 
@@ -178,7 +178,7 @@ public class CalendarIntegrationServiceTests
     [Fact]
     public async Task GetStatusAsync_WhenRefreshTokenIsRevoked_ReportsTokenRevoked_AndDoesNotRetryOnNextCall()
     {
-        var connection = new CalendarConnection("user@gmail.com", "cal-1", "old-access", "refresh-token", Now.AddMinutes(-1), Now.AddDays(-1));
+        var connection = new CalendarConnection("user@gmail.com", "cal-1", "old-access", "refresh-token", Now.AddMinutes(-1), Now.AddDays(-1), new Dictionary<Guid, string>());
         _store.Save(connection);
         _provider.RefreshThrowsRevoked = true;
 
@@ -195,7 +195,7 @@ public class CalendarIntegrationServiceTests
     [Fact]
     public async Task DisconnectAsync_WhenConnected_DeletesCalendarRevokesTokenAndClearsLocalState()
     {
-        var connection = new CalendarConnection("user@gmail.com", "cal-1", "access-token", "refresh-token", Now.AddHours(1), Now.AddDays(-1));
+        var connection = new CalendarConnection("user@gmail.com", "cal-1", "access-token", "refresh-token", Now.AddHours(1), Now.AddDays(-1), new Dictionary<Guid, string>());
         _store.Save(connection);
 
         var result = await _sut.DisconnectAsync();
@@ -209,7 +209,7 @@ public class CalendarIntegrationServiceTests
     [Fact]
     public async Task DisconnectAsync_WhenRemoteCallsFail_StillClearsLocalState()
     {
-        var connection = new CalendarConnection("user@gmail.com", "cal-1", "access-token", "refresh-token", Now.AddHours(1), Now.AddDays(-1));
+        var connection = new CalendarConnection("user@gmail.com", "cal-1", "access-token", "refresh-token", Now.AddHours(1), Now.AddDays(-1), new Dictionary<Guid, string>());
         _store.Save(connection);
         _provider.DeleteCalendarThrows = true;
         _provider.RevokeThrows = true;
@@ -228,5 +228,53 @@ public class CalendarIntegrationServiceTests
 
         result.RemoteCleanupSucceeded.Should().BeTrue();
         _provider.RevokeCallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task GetValidAccessTokenAsync_WhenNotConnected_ReturnsNull()
+    {
+        var token = await _sut.GetValidAccessTokenAsync();
+
+        token.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetValidAccessTokenAsync_WhenTokenStillValid_ReturnsItWithoutRefreshing()
+    {
+        var connection = new CalendarConnection("user@gmail.com", "cal-1", "access-token", "refresh-token", Now.AddHours(1), Now.AddDays(-1), new Dictionary<Guid, string>());
+        _store.Save(connection);
+
+        var token = await _sut.GetValidAccessTokenAsync();
+
+        token.Should().Be("access-token");
+        _provider.RefreshCallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task GetValidAccessTokenAsync_WhenTokenExpired_RefreshesAndReturnsTheNewToken()
+    {
+        var connection = new CalendarConnection("user@gmail.com", "cal-1", "old-access", "refresh-token", Now.AddMinutes(-1), Now.AddDays(-1), new Dictionary<Guid, string>());
+        _store.Save(connection);
+        _provider.RefreshResult = new CalendarTokenResult("refreshed-access", null, Now.AddHours(1));
+
+        var token = await _sut.GetValidAccessTokenAsync();
+
+        token.Should().Be("refreshed-access");
+        _provider.RefreshCallCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task GetValidAccessTokenAsync_WhenConnectionIsKnownRevoked_ReturnsNullWithoutRetryingRefresh()
+    {
+        var connection = new CalendarConnection("user@gmail.com", "cal-1", "old-access", "refresh-token", Now.AddHours(1), Now.AddDays(-1), new Dictionary<Guid, string>())
+        {
+            RevokedReason = "token_revoked"
+        };
+        _store.Save(connection);
+
+        var token = await _sut.GetValidAccessTokenAsync();
+
+        token.Should().BeNull();
+        _provider.RefreshCallCount.Should().Be(0);
     }
 }

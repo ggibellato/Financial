@@ -28,14 +28,17 @@ public class CalendarConnectionStoreTests
             "access-token",
             "refresh-token",
             new DateTimeOffset(2026, 9, 7, 12, 0, 0, TimeSpan.Zero),
-            new DateTimeOffset(2026, 9, 1, 10, 15, 0, TimeSpan.Zero));
+            new DateTimeOffset(2026, 9, 1, 10, 15, 0, TimeSpan.Zero),
+            new Dictionary<Guid, string> { [Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-500000000001")] = "event-id" });
 
         try
         {
             store.Save(connection);
             var loaded = store.Load();
 
-            loaded.Should().Be(connection);
+            // BeEquivalentTo, not Be: record equality on IReadOnlyDictionary falls back to
+            // reference equality, and deserialization always produces a new dictionary instance.
+            loaded.Should().BeEquivalentTo(connection);
         }
         finally
         {
@@ -51,7 +54,7 @@ public class CalendarConnectionStoreTests
     {
         var path = CreateTempPath();
         var store = new CalendarConnectionStore(path);
-        store.Save(new CalendarConnection("user@gmail.com", "cal", "at", "rt", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow));
+        store.Save(new CalendarConnection("user@gmail.com", "cal", "at", "rt", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, new Dictionary<Guid, string>()));
 
         store.Delete();
 

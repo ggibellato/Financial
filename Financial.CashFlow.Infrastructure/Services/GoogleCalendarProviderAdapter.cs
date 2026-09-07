@@ -60,6 +60,19 @@ public sealed class GoogleCalendarProviderAdapter : ICalendarProvider
     public Task DeleteCalendarAsync(string accessToken, string calendarId, CancellationToken cancellationToken = default) =>
         _oAuthClient.DeleteCalendarAsync(accessToken, calendarId, cancellationToken);
 
+    // TODO(F02 Phase 5): forward to _oAuthClient's event methods and translate
+    // GoogleCalendarNotFoundException -> CalendarNotFoundException, mirroring TranslatingRevocation.
+    public Task<string> CreateEventAsync(
+        string accessToken, string calendarId, string title, string description, DateOnly date, CancellationToken cancellationToken = default) =>
+        throw new NotImplementedException();
+
+    public Task UpdateEventAsync(
+        string accessToken, string calendarId, string eventId, string title, string description, DateOnly date, CancellationToken cancellationToken = default) =>
+        throw new NotImplementedException();
+
+    public Task DeleteEventAsync(string accessToken, string calendarId, string eventId, CancellationToken cancellationToken = default) =>
+        throw new NotImplementedException();
+
     private static async Task<GoogleOAuthTokenResult> TranslatingRevocation(Func<Task<GoogleOAuthTokenResult>> action)
     {
         try
