@@ -48,7 +48,7 @@ Leaving these unset keeps the integration disabled - the rest of the app is unaf
 attempting to connect returns an error rather than crashing the app.
 
 - `CashFlow:GoogleCalendar:ClientId` / `ClientSecret` — the OAuth client's id and secret.
-- `CashFlow:GoogleCalendar:RedirectUri` — must exactly match `{API_BASE_URL}/api/v1/financial/integrations/google-calendar/callback` as registered in Google Cloud Console (e.g. `http://localhost:5190/api/v1/financial/integrations/google-calendar/callback` for local dev).
+- `CashFlow:GoogleCalendar:RedirectUri` — must exactly match `{API_BASE_URL}/api/v1/financial/integrations/calendar/callback` as registered in Google Cloud Console (e.g. `http://localhost:5190/api/v1/financial/integrations/calendar/callback` for local dev). The route is provider-agnostic even though Google is the only connected provider.
 - `CashFlow:GoogleCalendar:CredentialsPath` — local file storing the connection's tokens, separate from `data-cashflow.json` and from the `GoogleDrive` credentials above. Defaults to `data/google-calendar-credentials.json` if unset (git-ignored, like every other local credentials file).
 
 ### Application configuration

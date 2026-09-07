@@ -16,12 +16,12 @@
 - `Integrations/GoogleCalendar/` (new project) — generic Google OAuth + Calendar SDK wrapper, no CashFlow types.
 - `Financial.CashFlow.Application/` — the provider-agnostic contract (`ICalendarProvider`, `ICalendarConnectionStore`, `ICalendarIntegrationService`), a connection model and token result (no provider name in either), DTOs, and `CalendarIntegrationService` (all business rules, zero Google awareness).
 - `Financial.CashFlow.Infrastructure/` — `GoogleCalendarProviderAdapter` (the first `ICalendarProvider` implementation, owns everything Google-specific: client id/secret/redirect/scope) and `CalendarConnectionStore` (local JSON file I/O — provider-agnostic, since the file just holds whichever connection is active).
-- `Financial.Api/` — `GoogleCalendarIntegrationController` (4 endpoints, depends only on `ICalendarIntegrationService`), `Program.cs` DI wiring, `appsettings.json`/`appsettings.Development.json` config placeholders. The controller and route keep "Google" in their name because `Financial.Api` is a composition root wiring a concrete provider today — that's a naming choice, not a leak of Google types into a layer that shouldn't have them.
+- `Financial.Api/` — `CalendarIntegrationController` (4 endpoints, depends only on `ICalendarIntegrationService`), `Program.cs` DI wiring, `appsettings.json`/`appsettings.Development.json` config placeholders. The controller and its `integrations/calendar` route are provider-agnostic too, not just Application: the controller carries no Google-specific code, and the OAuth redirect URI is a configured value (`CashFlow:GoogleCalendar:RedirectUri`), not derived from the route name, so nothing forces the route to say "google."
 - `Financial.slnx` — registers the new `Integrations/GoogleCalendar` project (and its test project).
 
 ```mermaid
 graph TD
-  U[User's browser] --> C["GoogleCalendarIntegrationController"]
+  U[User's browser] --> C["CalendarIntegrationController"]
   C --> S["ICalendarIntegrationService"]
   S --> ST["ICalendarConnectionStore"]
   S --> CP["ICalendarProvider"]
@@ -87,7 +87,7 @@ graph TD
 
 | File Path | New/Modified | Purpose | Key Responsibilities |
 |-----------|--------------|---------|---------------------|
-| `Controllers/GoogleCalendarIntegrationController.cs` | New | 4 endpoints | `GET status`, `GET connect` (302 redirect), `GET callback` (minimal HTML landing page), `POST disconnect` — depends only on `ICalendarIntegrationService` |
+| `Controllers/CalendarIntegrationController.cs` | New | 4 endpoints | `GET status`, `GET connect` (302 redirect), `GET callback` (minimal HTML landing page), `POST disconnect` — depends only on `ICalendarIntegrationService` |
 | `Program.cs` | Modified | DI wiring | `builder.Services.AddGoogleCalendarOAuthClient();` alongside `AddGoogleDriveFileClient()` |
 | `appsettings.json` / `appsettings.Development.json` | Modified | Config placeholders | `CashFlow:GoogleCalendar:{ClientId,ClientSecret,RedirectUri,CredentialsPath}` |
 | `Financial.Api.csproj` | Modified | Project reference | Adds `ProjectReference` to `Integrations/GoogleCalendar/GoogleCalendar.csproj` |
@@ -96,7 +96,7 @@ graph TD
 
 ## 5. API Contracts
 
-Unchanged from the initial pass — all routes relative to `/api/v1/financial/integrations/google-calendar`.
+All routes relative to `/api/v1/financial/integrations/calendar` — provider-agnostic, matching the controller.
 
 **`GET /status`** → `CalendarConnectionStatusDTO { connected, accountEmail?, calendarName?, connectedAtUtc?, disconnectReason? }`.
 
@@ -137,7 +137,7 @@ This file is itself provider-agnostic in shape (`CalendarConnection`, not `Googl
 | `Tests/Financial.CashFlow.Infrastructure.Tests/Services/GoogleCalendarProviderAdapterTests.cs` | Unit | `GoogleCalendarProviderAdapter`, against a hand-rolled fake of `IGoogleCalendarOAuthClient` | Configured client id/secret/redirect/scope forwarded; empty-string config treated as unconfigured; revoked-token translation |
 | `Tests/Financial.CashFlow.Infrastructure.Tests/DependencyInjection/CashFlowInfrastructureServiceCollectionExtensionsTests.cs` | Unit | DI wiring | `ICalendarConnectionStore`/`ICalendarProvider` resolve |
 | `Tests/Financial.Api.Tests/Acceptance/P45F01GoogleCalendarAccountConnectionAcceptanceTests.cs` | Integration (AC-tracing) | All 4 endpoints via `ApiEndpointTests`, real service/store, only `ICalendarProvider` faked | One `[Trait("AC", …)]` test per §9 criterion |
-| `Tests/Financial.Api.Tests/Controllers/ControllerGuardClauseTests.cs` | Unit | Controller constructor null-guard | Extended with `GoogleCalendarIntegrationController_NullService_Throws` |
+| `Tests/Financial.Api.Tests/Controllers/ControllerGuardClauseTests.cs` | Unit | Controller constructor null-guard | Extended with `CalendarIntegrationController_NullService_Throws` |
 | `Tests/Financial.Architecture.Tests/CashFlowDependencyRuleTests.cs` | Integration (architecture rule) | `Application_Should_Not_Reference_GoogleCalendar_Integration` | Pins that `Financial.CashFlow.Application` never references `Financial.Integrations.GoogleCalendar` — the mechanical enforcement of this spec's core decision |
 | `Tests/Financial.Api.Tests/Contract/openapi-v1.snapshot.json` | Contract | OpenAPI document | Regenerated once the controller ships |
 

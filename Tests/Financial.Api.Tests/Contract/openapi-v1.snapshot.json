@@ -7083,7 +7083,7 @@
         ]
       }
     },
-    "/integrations/google-calendar/callback": {
+    "/integrations/calendar/callback": {
       "get": {
         "parameters": [
           {
@@ -7121,11 +7121,11 @@
         },
         "summary": "The OAuth redirect target. Completes the connection and renders a landing\n            page telling the user to return to the app - never called by either front end\u0027s API client.",
         "tags": [
-          "GoogleCalendarIntegration"
+          "CalendarIntegration"
         ]
       }
     },
-    "/integrations/google-calendar/connect": {
+    "/integrations/calendar/connect": {
       "get": {
         "responses": {
           "302": {
@@ -7134,11 +7134,11 @@
         },
         "summary": "Redirects the browser to the provider\u0027s consent screen.",
         "tags": [
-          "GoogleCalendarIntegration"
+          "CalendarIntegration"
         ]
       }
     },
-    "/integrations/google-calendar/disconnect": {
+    "/integrations/calendar/disconnect": {
       "post": {
         "responses": {
           "200": {
@@ -7154,11 +7154,11 @@
         },
         "summary": "Removes the calendar connection - deletes the dedicated calendar, revokes\n            the token, and clears local state, always clearing local state even if the remote calls fail.",
         "tags": [
-          "GoogleCalendarIntegration"
+          "CalendarIntegration"
         ]
       }
     },
-    "/integrations/google-calendar/status": {
+    "/integrations/calendar/status": {
       "get": {
         "responses": {
           "200": {
@@ -7174,7 +7174,7 @@
         },
         "summary": "Returns the current connection status.",
         "tags": [
-          "GoogleCalendarIntegration"
+          "CalendarIntegration"
         ]
       }
     },
@@ -10117,6 +10117,9 @@
       "name": "Brokers"
     },
     {
+      "name": "CalendarIntegration"
+    },
+    {
       "name": "CardStatements"
     },
     {
@@ -10139,9 +10142,6 @@
     },
     {
       "name": "Expenses"
-    },
-    {
-      "name": "GoogleCalendarIntegration"
     },
     {
       "name": "Incomes"

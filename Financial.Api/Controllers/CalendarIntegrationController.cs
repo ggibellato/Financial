@@ -6,17 +6,18 @@ namespace Financial.Api.Controllers;
 
 /// <summary>
 /// Manages the optional calendar connection used to sync credit-card due dates. Depends only on
-/// <see cref="ICalendarIntegrationService"/> - Google is the only concrete provider wired in
-/// today (see <c>GoogleCalendarProviderAdapter</c>), but this controller has no Google-specific
-/// code. The "Google" in this class's name and route reflects that composition-root choice.
+/// <see cref="ICalendarIntegrationService"/> - provider-agnostic by design. Google is the only
+/// concrete provider wired in today (see <c>GoogleCalendarProviderAdapter</c>), but that choice
+/// lives entirely in DI registration; this controller, its route, and its DTOs carry no
+/// Google-specific concept, so swapping the provider later needs no change here.
 /// </summary>
 [ApiController]
-[Route("integrations/google-calendar")]
-public sealed class GoogleCalendarIntegrationController : ControllerBase
+[Route("integrations/calendar")]
+public sealed class CalendarIntegrationController : ControllerBase
 {
     private readonly ICalendarIntegrationService _service;
 
-    public GoogleCalendarIntegrationController(ICalendarIntegrationService service)
+    public CalendarIntegrationController(ICalendarIntegrationService service)
     {
         _service = service ?? throw new ArgumentNullException(nameof(service));
     }

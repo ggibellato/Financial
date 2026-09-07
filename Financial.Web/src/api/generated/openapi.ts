@@ -2869,7 +2869,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/integrations/google-calendar/callback": {
+    "/integrations/calendar/callback": {
         parameters: {
             query?: never;
             header?: never;
@@ -2924,7 +2924,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/integrations/google-calendar/connect": {
+    "/integrations/calendar/connect": {
         parameters: {
             query?: never;
             header?: never;
@@ -2958,7 +2958,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/integrations/google-calendar/disconnect": {
+    "/integrations/calendar/disconnect": {
         parameters: {
             query?: never;
             header?: never;
@@ -2997,7 +2997,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/integrations/google-calendar/status": {
+    "/integrations/calendar/status": {
         parameters: {
             query?: never;
             header?: never;

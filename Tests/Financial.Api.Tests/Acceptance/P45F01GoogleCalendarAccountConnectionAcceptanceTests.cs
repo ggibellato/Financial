@@ -10,7 +10,7 @@ namespace Financial.Api.Tests.Acceptance;
 
 public class P45F01GoogleCalendarAccountConnectionAcceptanceTests : ApiEndpointTests
 {
-    private const string BaseRoute = "/api/v1/financial/integrations/google-calendar";
+    private const string BaseRoute = "/api/v1/financial/integrations/calendar";
     private static readonly DateTimeOffset Now = new(2026, 9, 7, 12, 0, 0, TimeSpan.Zero);
 
     private readonly FakeCalendarProvider _provider;
