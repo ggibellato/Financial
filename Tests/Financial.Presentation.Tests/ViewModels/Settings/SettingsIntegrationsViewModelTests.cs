@@ -94,33 +94,59 @@ public class SettingsIntegrationsViewModelTests
     }
 
     [Fact]
-    public async Task RefreshAsync_ASlowerStaleRefreshInFlightAtConstruction_NeverClobbersALaterFasterRefresh()
+    public async Task RefreshAsync_ASlowerStaleRefreshInFlight_NeverClobbersALaterFasterRefresh()
     {
-        // The constructor fires its own initial RefreshAsync() (request #1). This test makes that
-        // first call block mid-flight, then runs a second, explicit RefreshAsync() (request #2)
-        // to completion first, and only then releases request #1 - proving the stale request can't
-        // overwrite SyncRows once a newer request has already applied its result.
+        // Sequenced deterministically, with no reliance on thread-pool scheduling order between
+        // two overlapping calls (that ambiguity is exactly what made an earlier version of this
+        // test hang in CI): let the constructor's own initial refresh fully settle first, then run
+        // two *explicit*, directly-awaitable RefreshAsync() calls whose ordering is fully test-controlled.
         var calendarIntegration = new StubCalendarIntegrationService();
         var calendarSync = new StubCreditCardCalendarSyncService();
         var creditCards = new StubCreditCardServiceForSettings();
-        var gate = new SemaphoreSlim(0, 1);
-        creditCards.BlockFirstCallUntilReleased = gate;
-
         var viewModel = new SettingsIntegrationsViewModel(
             calendarIntegration, calendarSync, creditCards, new StubBrowserLauncher(), new StubDialogService(),
             new RecordingLogger<SettingsIntegrationsViewModel>());
+        await WaitUntilAsync(() => !viewModel.IsLoading);
 
+        // Request A ("stale"): gate GetStatusAsync (a plain awaited Task, not a Task.Run - a fully
+        // deterministic suspension point) and GetCreditCards, so once released it captures an EMPTY
+        // snapshot, since no card data has been set yet.
+        var pendingStatus = new TaskCompletionSource<CalendarConnectionStatusDTO>();
+        calendarIntegration.PendingGetStatus = pendingStatus;
+        var creditCardsGate = new SemaphoreSlim(0, 1);
+        creditCards.BlockFirstCallUntilReleased = creditCardsGate;
+
+        var staleRefreshTask = viewModel.RefreshAsync();
+        pendingStatus.SetResult(new CalendarConnectionStatusDTO { Connected = false });
+        await WaitUntilAsync(() => creditCards.HasEnteredBlock);
+        // Request A is now blocked inside GetCreditCards(), having already captured its empty snapshot.
+
+        // Request B ("fresh"): fully unblocked, completes normally with real data.
         var cardId = Guid.NewGuid();
         creditCards.CreditCards = [CreditCard(cardId, "BaAmex", nextInvoiceDueDate: new DateOnly(2026, 9, 10))];
         calendarSync.Statuses = [new CreditCardCalendarSyncStatusDTO { CreditCardId = cardId, State = "Synced" }];
-
         await viewModel.RefreshAsync();
         viewModel.SyncRows.Should().ContainSingle(r => r.CreditCardId == cardId);
 
-        gate.Release();
-        await Task.Delay(50);
+        // Release request A - its stale (empty) write attempt must be discarded, not re-applied.
+        creditCardsGate.Release();
+        await staleRefreshTask;
 
         viewModel.SyncRows.Should().ContainSingle(r => r.CreditCardId == cardId);
+    }
+
+    private static async Task WaitUntilAsync(Func<bool> condition, int timeoutMs = 5000)
+    {
+        var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+        while (!condition())
+        {
+            if (DateTime.UtcNow > deadline)
+            {
+                throw new TimeoutException("Condition was not met within the timeout.");
+            }
+
+            await Task.Delay(10);
+        }
     }
 
     [Fact]

@@ -14,6 +14,11 @@ internal sealed class StubCalendarIntegrationService : ICalendarIntegrationServi
     public int DisconnectCallCount { get; private set; }
     public int GetStatusCallCount { get; private set; }
 
+    /// <summary>When set, GetStatusAsync returns this uncompleted task instead of resolving
+    /// immediately - a plain async continuation (no thread-pool scheduling involved), so a test
+    /// can deterministically control exactly when one specific call resumes.</summary>
+    public TaskCompletionSource<CalendarConnectionStatusDTO>? PendingGetStatus { get; set; }
+
     public string BuildAuthorizationUrl() => AuthorizationUrl;
 
     public Task<CalendarCallbackResultDTO> CompleteConnectionAsync(
@@ -23,7 +28,12 @@ internal sealed class StubCalendarIntegrationService : ICalendarIntegrationServi
     public Task<CalendarConnectionStatusDTO> GetStatusAsync(CancellationToken cancellationToken = default)
     {
         GetStatusCallCount++;
-        return ThrowOnGetStatus is null ? Task.FromResult(StatusToReturn) : throw ThrowOnGetStatus;
+        if (ThrowOnGetStatus is not null)
+        {
+            throw ThrowOnGetStatus;
+        }
+
+        return PendingGetStatus is not null ? PendingGetStatus.Task : Task.FromResult(StatusToReturn);
     }
 
     public Task<CalendarDisconnectResultDTO> DisconnectAsync(CancellationToken cancellationToken = default)
@@ -79,9 +89,15 @@ internal sealed class StubCreditCardServiceForSettings : ICreditCardService
     public Exception? ThrowOnGetCreditCards { get; set; }
 
     /// <summary>When set, the *first* GetCreditCards() call blocks here (runs on a thread-pool
-    /// thread via the view model's Task.Run) until the test releases it - lets a test deterministically
-    /// prove a slower, stale refresh can't clobber a faster, later one's result.</summary>
+    /// thread via the view model's Task.Run) until the test releases it. Only meaningful when the
+    /// caller has already guaranteed no other call can be in flight at the same time (e.g. by
+    /// gating ICalendarIntegrationService.GetStatusAsync first) - otherwise which call "wins" the
+    /// block is a thread-pool-scheduling race, not something a test can rely on.</summary>
     public SemaphoreSlim? BlockFirstCallUntilReleased { get; set; }
+
+    /// <summary>Set synchronously, before waiting on <see cref="BlockFirstCallUntilReleased"/>, so
+    /// a test can poll for "has entered the block" instead of guessing with a fixed delay.</summary>
+    public volatile bool HasEnteredBlock;
 
     public IReadOnlyList<CreditCardDTO> GetCreditCards()
     {
@@ -89,6 +105,7 @@ internal sealed class StubCreditCardServiceForSettings : ICreditCardService
         if (BlockFirstCallUntilReleased is { } gate)
         {
             BlockFirstCallUntilReleased = null;
+            HasEnteredBlock = true;
             gate.Wait();
         }
 
