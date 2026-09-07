@@ -40,23 +40,32 @@ dotnet test --filter "FullyQualifiedName~ExpenseTests.Should_Reject_Negative_Val
 
 Tests use **xUnit** + **FluentAssertions**.
 
-Coverage is collected on every CI run and published as a summary table on the workflow run page
-(`.github/workflows/build.yml`, the `Publish coverage summary` step). `coverlet.runsettings` declares the
-`XPlat code coverage` collector and its one exclusion, generated `obj/**` code — passing `--settings` is
-what turns collection on, so there is no `--collect` argument anywhere. To reproduce it locally:
+Coverage is collected on every CI run; `backend`, `wpf`, and `web` each publish their own
+coverage table to the workflow run's step summary (`.github/workflows/build.yml`, each job's
+`Publish coverage summary` step) and post one combined sticky PR comment (the
+`coverage-comment` job) — a row per project with its line-coverage % and gate verdict, plus a
+link to the run's coverage-report artifacts. `coverlet.runsettings` declares the `XPlat code
+coverage` collector; passing `--settings` is what turns collection on, so there is no
+`--collect` argument anywhere. To reproduce it locally:
 
 ```
 dotnet test --settings coverlet.runsettings --results-directory TestResults
 ```
 
-A coverage gate on every CI run bands the merged, whole-repo line-coverage % into
-green (100%) / yellow (95–99.99%) / amber (90–94.99%) / red (<90%) for the `backend`,
-`wpf`, and `web` jobs (the `Check coverage threshold` step, reading
-`CoverageReport/Summary.json`'s `summary.linecoverage` on the two .NET jobs and
-`coverage/coverage-summary.json`'s `total.lines.pct` on the web side). The step is
-`continue-on-error: true`, so red visibly fails that step in the run but never blocks
-`ci-status` or branch protection — a coverage drop is a visible signal to fix, not a
-merge blocker.
+All three jobs share one gate, `.github/actions/coverage-gate` (a local composite action): it
+reads a `reportgenerator` `Summary.json`'s `summary.linecoverage`, bands it green (100%) /
+yellow (95–99.99%) / amber (90–94.99%) / red (<90%), and fails the step on red — `web` runs
+`reportgenerator` against the `lcov` report vitest's `coverage.reporter` also produces
+(`Financial.Web/vite.config.ts`), so all three jobs' gates read the identical report shape.
+**The gate is enforced**: a red result fails its job, which fails `ci-status` — the sole
+required check — and blocks merge.
+
+`coverlet.runsettings`' `<Exclude>` is what keeps the % meaningful: besides non-app assemblies
+(test fixtures, vendor wrappers, rarely-run migration tools), it excludes
+`Financial.Presentation.App`'s XAML view/component/control code-behind and a handful of thin
+visual-tree/dialog classes the `testing-guide-Financial` skill already documents as tested via
+contract + manual verification, never unit tests — see the file's own comments for the full
+list and rationale.
 
 `backend`'s and `wpf`'s reports are assembly-filtered so each measures only its own code:
 `Financial.Architecture.Tests` project-references `Financial.App` (to check its dependency

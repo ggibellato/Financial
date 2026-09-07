@@ -39,11 +39,12 @@ checks them (first match wins):
 
 Jobs:
 
-- **backend** (Windows) — builds `Financial.Api` and runs every `Tests/*.Tests.csproj` listed in `Financial.slnx` except the WPF one, with coverage and a non-blocking coverage-threshold gate (see `CLAUDE.md`).
-- **wpf** (Windows) — builds `Financial.App` and runs `Financial.Presentation.Tests` + `Financial.Architecture.Tests`, with coverage (scoped to `Financial.Presentation.App` only) and the same non-blocking coverage-threshold gate as `backend`.
-- **web** (Ubuntu) — `npm run lint`, `npm run test:coverage`, `npm run build`, with the same non-blocking coverage-threshold gate as `backend`/`wpf`.
+- **backend** (Windows) — builds `Financial.Api` and runs every `Tests/*.Tests.csproj` listed in `Financial.slnx` except the WPF one, with coverage and a blocking 90% coverage gate (see `CLAUDE.md`).
+- **wpf** (Windows) — builds `Financial.App` and runs `Financial.Presentation.Tests` + `Financial.Architecture.Tests`, with coverage (scoped to `Financial.Presentation.App` only) and the same blocking coverage gate as `backend`.
+- **web** (Ubuntu) — `npm run lint`, `npm run test:coverage`, `npm run build`, with the same blocking coverage gate as `backend`/`wpf`.
+- **coverage-comment** (Ubuntu) — posts one combined sticky PR comment with backend/wpf/web's coverage %, gate verdict, and a link to the run's coverage-report artifacts. Not in `ci-status`'s `needs`, so a failure here (e.g. the comment action itself erroring) never blocks merge.
 - **smoke** (Ubuntu) — publishes the API with the built SPA and runs the Playwright smoke test. Runs whenever either side of the HTTP boundary changed, even when a backend/web job was skipped.
-- **ci-status** — always runs; the only check branch protection should require. Passes when every job succeeded or was skipped by `changes`; fails if change detection failed or any job failed/was cancelled.
+- **ci-status** — always runs; the only check branch protection should require. Passes when every job succeeded or was skipped by `changes`; fails if change detection failed or any job failed/was cancelled — including a red coverage gate, since that now fails its job.
 
 Security-relevant configuration (`Financial.Api/appsettings*.json`, `Program.cs`, auth/CORS setup) sits under `Financial.Api/` and therefore hits the Contract rule; `Dockerfile`, compose files and anything under `deploy/` hit Infra and run everything.
 
