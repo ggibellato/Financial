@@ -236,11 +236,11 @@ graph TD
 - [x] **P45-F02-credit-card-due-date-event-sync-07** Manually deleting the dedicated calendar in Google Calendar, then triggering any sync, results in the calendar being recreated and every active card's event being re-created in it.
 
 ### F03. Integrations Settings — Web
-- [ ] `/settings/integrations` shows a "Connect Google Calendar" button when not connected, and the connected account email, calendar name, and per-card sync list when connected.
-- [ ] Each card row's sync status is conveyed with both an icon and an accessible text label, not color alone.
-- [ ] Clicking "Disconnect" always shows a confirmation dialog before the disconnect request is sent; cancelling the dialog leaves the connection intact.
-- [ ] Clicking "Retry" on an errored row triggers that card's resync endpoint and updates its status once the retry completes.
-- [ ] A failed `/status` request shows a retry affordance instead of an empty or broken panel.
+- [ ] **P45-F03-integrations-settings-web-01** `/settings/integrations` shows a "Connect Google Calendar" button when not connected, and the connected account email, calendar name, and per-card sync list when connected.
+- [ ] **P45-F03-integrations-settings-web-02** Each card row's sync status is conveyed with both an icon and an accessible text label, not color alone.
+- [ ] **P45-F03-integrations-settings-web-03** Clicking "Disconnect" always shows a confirmation dialog before the disconnect request is sent; cancelling the dialog leaves the connection intact.
+- [ ] **P45-F03-integrations-settings-web-04** Clicking "Retry" on an errored row triggers that card's resync endpoint and updates its status once the retry completes.
+- [ ] **P45-F03-integrations-settings-web-05** A failed `/status` request shows a retry affordance instead of an empty or broken panel.
 
 ### F04. Integrations Settings — WPF
 - [ ] The WPF Settings > Integrations view shows the same connection states, account details, and per-card sync list as F03, using WPF-native controls.
