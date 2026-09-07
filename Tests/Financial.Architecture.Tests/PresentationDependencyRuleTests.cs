@@ -24,6 +24,7 @@ public class PresentationDependencyRuleTests
         "Financial.Shared.Infrastructure",
         "Financial.Integrations.Observability",
         "Financial.Integrations.GoogleDrive",
+        "Financial.Integrations.GoogleCalendar",
     };
 
     private static readonly IReadOnlyCollection<string> AppAllowedFinancialAssemblies = new[]

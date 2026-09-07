@@ -1492,6 +1492,53 @@
           "PrivateCredit"
         ]
       },
+      "GoogleCalendarConnectionStatusDTO": {
+        "properties": {
+          "accountEmail": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "calendarName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "connected": {
+            "type": "boolean"
+          },
+          "connectedAtUtc": {
+            "format": "date-time",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "disconnectReason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "required": [
+          "connected"
+        ],
+        "type": "object"
+      },
+      "GoogleCalendarDisconnectResultDTO": {
+        "properties": {
+          "remoteCleanupSucceeded": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "remoteCleanupSucceeded"
+        ],
+        "type": "object"
+      },
       "HealthContextDTO": {
         "description": "One context\u0027s configured storage provider and the state of its most recent persistence attempt.\n\nReported from the repository\u0027s already-tracked sync status rather than by probing storage: the\ndocument is read once at startup and held in memory, so a fresh read would prove nothing about\nwhether writes are landing, and a fresh Google Drive round-trip would put a network call on\nevery probe.",
         "properties": {
@@ -7036,6 +7083,101 @@
         ]
       }
     },
+    "/integrations/google-calendar/callback": {
+      "get": {
+        "parameters": [
+          {
+            "description": "Google\u0027s OAuth redirect target. Completes the connection and renders a landing\n            page telling the user to return to the app - never called by either front end\u0027s API client.",
+            "in": "query",
+            "name": "code",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Google\u0027s OAuth redirect target. Completes the connection and renders a landing\n            page telling the user to return to the app - never called by either front end\u0027s API client.",
+            "in": "query",
+            "name": "state",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Google\u0027s OAuth redirect target. Completes the connection and renders a landing\n            page telling the user to return to the app - never called by either front end\u0027s API client.",
+            "in": "query",
+            "name": "error",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/html": {}
+            },
+            "description": "200 OK with a minimal HTML success/failure page."
+          }
+        },
+        "summary": "Google\u0027s OAuth redirect target. Completes the connection and renders a landing\n            page telling the user to return to the app - never called by either front end\u0027s API client.",
+        "tags": [
+          "GoogleCalendarIntegration"
+        ]
+      }
+    },
+    "/integrations/google-calendar/connect": {
+      "get": {
+        "responses": {
+          "302": {
+            "description": "302 redirect to Google\u0027s OAuth consent URL."
+          }
+        },
+        "summary": "Redirects the browser to Google\u0027s consent screen.",
+        "tags": [
+          "GoogleCalendarIntegration"
+        ]
+      }
+    },
+    "/integrations/google-calendar/disconnect": {
+      "post": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoogleCalendarDisconnectResultDTO"
+                }
+              }
+            },
+            "description": "200 OK with whether the remote cleanup succeeded."
+          }
+        },
+        "summary": "Removes the Google Calendar connection - deletes the dedicated calendar, revokes\n            the token, and clears local state, always clearing local state even if the remote calls fail.",
+        "tags": [
+          "GoogleCalendarIntegration"
+        ]
+      }
+    },
+    "/integrations/google-calendar/status": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoogleCalendarConnectionStatusDTO"
+                }
+              }
+            },
+            "description": "200 OK with the connection status."
+          }
+        },
+        "summary": "Returns the current connection status.",
+        "tags": [
+          "GoogleCalendarIntegration"
+        ]
+      }
+    },
     "/investment-accounts": {
       "get": {
         "responses": {
@@ -9997,6 +10139,9 @@
     },
     {
       "name": "Expenses"
+    },
+    {
+      "name": "GoogleCalendarIntegration"
     },
     {
       "name": "Incomes"

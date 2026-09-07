@@ -13,16 +13,23 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
 {
     private readonly string _dataFilePath;
     private readonly string _cashFlowDataFilePath;
+    private readonly string _googleCalendarCredentialsPath;
     private readonly IExchangeRateProvider? _exchangeRateProviderOverride;
     private readonly TimeProvider? _timeProviderOverride;
+    private readonly IGoogleCalendarClient? _googleCalendarClientOverride;
     private bool _disposed;
 
-    public ApiTestFactory(IExchangeRateProvider? exchangeRateProviderOverride = null, TimeProvider? timeProviderOverride = null)
+    public ApiTestFactory(
+        IExchangeRateProvider? exchangeRateProviderOverride = null,
+        TimeProvider? timeProviderOverride = null,
+        IGoogleCalendarClient? googleCalendarClientOverride = null)
     {
         _dataFilePath = CreateTempDataFile();
         _cashFlowDataFilePath = CreateTempCashFlowDataFilePath();
+        _googleCalendarCredentialsPath = Path.Combine(Path.GetTempPath(), $"financial-api-google-calendar-{Guid.NewGuid():N}.json");
         _exchangeRateProviderOverride = exchangeRateProviderOverride;
         _timeProviderOverride = timeProviderOverride;
+        _googleCalendarClientOverride = googleCalendarClientOverride;
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -34,7 +41,8 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
                 ["Investment:Repository:Provider"] = "LocalJson",
                 ["Investment:DataJsonFile"] = _dataFilePath,
                 ["CashFlow:Repository:Provider"] = "LocalJson",
-                ["CashFlow:DataJsonFile"] = _cashFlowDataFilePath
+                ["CashFlow:DataJsonFile"] = _cashFlowDataFilePath,
+                ["CashFlow:GoogleCalendar:CredentialsPath"] = _googleCalendarCredentialsPath
             };
             config.AddInMemoryCollection(settings);
         });
@@ -56,6 +64,15 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
                 services.AddSingleton(_timeProviderOverride);
             });
         }
+
+        if (_googleCalendarClientOverride is not null)
+        {
+            builder.ConfigureTestServices(services =>
+            {
+                services.RemoveAll<IGoogleCalendarClient>();
+                services.AddSingleton(_googleCalendarClientOverride);
+            });
+        }
     }
 
     protected override void Dispose(bool disposing)
@@ -67,6 +84,7 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
             _disposed = true;
             TryDeleteTempFile(_dataFilePath);
             TryDeleteTempFile(_cashFlowDataFilePath);
+            TryDeleteTempFile(_googleCalendarCredentialsPath);
         }
     }
 

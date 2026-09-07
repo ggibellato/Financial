@@ -74,14 +74,14 @@ public sealed class GoogleCalendarClientAdapter : IGoogleCalendarClient
     private static GoogleCalendarTokenResult ToResult(GoogleOAuthTokenResult result) =>
         new(result.AccessToken, result.RefreshToken, result.AccessTokenExpiresAtUtc);
 
-    private string RequireClientId() =>
-        _settings.ClientId ?? throw MissingConfig(nameof(GoogleCalendarSettingsOptions.ClientId));
+    private string RequireClientId() => Require(_settings.ClientId, nameof(GoogleCalendarSettingsOptions.ClientId));
 
-    private string RequireClientSecret() =>
-        _settings.ClientSecret ?? throw MissingConfig(nameof(GoogleCalendarSettingsOptions.ClientSecret));
+    private string RequireClientSecret() => Require(_settings.ClientSecret, nameof(GoogleCalendarSettingsOptions.ClientSecret));
 
-    private string RequireRedirectUri() =>
-        _settings.RedirectUri ?? throw MissingConfig(nameof(GoogleCalendarSettingsOptions.RedirectUri));
+    private string RequireRedirectUri() => Require(_settings.RedirectUri, nameof(GoogleCalendarSettingsOptions.RedirectUri));
+
+    private static string Require(string? value, string settingName) =>
+        string.IsNullOrWhiteSpace(value) ? throw MissingConfig(settingName) : value;
 
     private static InvalidOperationException MissingConfig(string settingName) =>
         new($"CashFlow:GoogleCalendar:{settingName} is not configured.");

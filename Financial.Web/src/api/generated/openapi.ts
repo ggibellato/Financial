@@ -2869,6 +2869,170 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/integrations/google-calendar/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Google's OAuth redirect target. Completes the connection and renders a landing
+         *                 page telling the user to return to the app - never called by either front end's API client.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /**
+                     * @description Google's OAuth redirect target. Completes the connection and renders a landing
+                     *                 page telling the user to return to the app - never called by either front end's API client.
+                     */
+                    code?: string;
+                    /**
+                     * @description Google's OAuth redirect target. Completes the connection and renders a landing
+                     *                 page telling the user to return to the app - never called by either front end's API client.
+                     */
+                    state?: string;
+                    /**
+                     * @description Google's OAuth redirect target. Completes the connection and renders a landing
+                     *                 page telling the user to return to the app - never called by either front end's API client.
+                     */
+                    error?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description 200 OK with a minimal HTML success/failure page. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/html": unknown;
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/integrations/google-calendar/connect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Redirects the browser to Google's consent screen. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description 302 redirect to Google's OAuth consent URL. */
+                302: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/integrations/google-calendar/disconnect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Removes the Google Calendar connection - deletes the dedicated calendar, revokes
+         *                 the token, and clears local state, always clearing local state even if the remote calls fail.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description 200 OK with whether the remote cleanup succeeded. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["GoogleCalendarDisconnectResultDTO"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/integrations/google-calendar/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Returns the current connection status. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description 200 OK with the connection status. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["GoogleCalendarConnectionStatusDTO"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/investment-accounts": {
         parameters: {
             query?: never;
@@ -5693,6 +5857,17 @@ export interface components {
         };
         /** @enum {unknown} */
         GlobalAssetClass: "Unknown" | "Equity" | "RealEstate" | "Bond" | "Fund" | "ETF" | "Cash" | "Pension" | "Other" | "Cryptocurrency" | "PrivateCredit";
+        GoogleCalendarConnectionStatusDTO: {
+            accountEmail?: null | string;
+            calendarName?: null | string;
+            connected: boolean;
+            /** Format: date-time */
+            connectedAtUtc?: null | string;
+            disconnectReason?: null | string;
+        };
+        GoogleCalendarDisconnectResultDTO: {
+            remoteCleanupSucceeded: boolean;
+        };
         /**
          * @description One context's configured storage provider and the state of its most recent persistence attempt.
          *

@@ -1,4 +1,5 @@
 using Financial.CashFlow.Application.Interfaces;
+using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace Financial.Api.Tests;
 
@@ -13,14 +14,21 @@ public abstract class ApiEndpointTests : IAsyncLifetime
     private readonly ApiTestFactory _factory;
     private HttpClient? _client;
 
-    protected ApiEndpointTests(IExchangeRateProvider? exchangeRateProvider = null, TimeProvider? timeProvider = null)
+    protected ApiEndpointTests(
+        IExchangeRateProvider? exchangeRateProvider = null,
+        TimeProvider? timeProvider = null,
+        IGoogleCalendarClient? googleCalendarClient = null)
     {
-        _factory = new ApiTestFactory(exchangeRateProvider, timeProvider);
+        _factory = new ApiTestFactory(exchangeRateProvider, timeProvider, googleCalendarClient);
     }
 
     /// <summary>The API client for this test's own host, created on first use so a test that builds
     /// its own factory instead does not pay for booting a second one.</summary>
     protected HttpClient Client => _client ??= _factory.CreateClient();
+
+    /// <summary>A client on this same test's host with a chosen redirect behavior - e.g. for a
+    /// test asserting on a raw 302 rather than following it.</summary>
+    protected HttpClient CreateClient(WebApplicationFactoryClientOptions options) => _factory.CreateClient(options);
 
     /// <summary>The host's service provider, for the few tests that assert on resolved services.</summary>
     protected IServiceProvider Services => _factory.Services;

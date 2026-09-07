@@ -35,6 +35,20 @@ The Investment and CashFlow domains each select their storage backend independen
 - **`LocalJson`** (default) — reads/writes the file set by `CashFlow:DataJsonFile`.
 - **`GoogleDrive`** — requires `CashFlow:GoogleDrive:CredentialsPath` and `CashFlow:GoogleDrive:FilePath`.
 
+### Google Calendar integration (optional)
+
+CashFlow can optionally connect a Google account so credit-card due dates sync to a dedicated
+"Financial - Credit Card Due Dates" calendar. Unlike the storage providers above, this needs an
+OAuth 2.0 **Web application** client (not a service account) from
+[Google Cloud Console](https://console.cloud.google.com/apis/credentials), with the Calendar API
+enabled and an authorized redirect URI matching `CashFlow:GoogleCalendar:RedirectUri` below.
+Leaving these unset keeps the integration disabled - the rest of the app is unaffected - and
+attempting to connect returns an error rather than crashing the app.
+
+- `CashFlow:GoogleCalendar:ClientId` / `ClientSecret` — the OAuth client's id and secret.
+- `CashFlow:GoogleCalendar:RedirectUri` — must exactly match `{API_BASE_URL}/api/v1/financial/integrations/google-calendar/callback` as registered in Google Cloud Console (e.g. `http://localhost:5190/api/v1/financial/integrations/google-calendar/callback` for local dev).
+- `CashFlow:GoogleCalendar:CredentialsPath` — local file storing the connection's tokens, separate from `data-cashflow.json` and from the `GoogleDrive` credentials above. Defaults to `data/google-calendar-credentials.json` if unset (git-ignored, like every other local credentials file).
+
 ### Application configuration
 
 Personalise the following sections in `appsettings.json` (or via environment variable overrides) before first use:

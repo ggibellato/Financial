@@ -67,6 +67,19 @@ public class GoogleCalendarClientAdapterTests
         act.Should().Throw<InvalidOperationException>().WithMessage("*ClientId*");
     }
 
+    [Fact]
+    public void BuildAuthorizationUrl_WhenClientIdIsAnEmptyString_Throws()
+    {
+        // appsettings.json ships an empty-string placeholder (not an absent key), which reads back
+        // as "" rather than null - this must be treated as "not configured" too.
+        _settings.ClientId = "";
+        var adapter = CreateAdapter();
+
+        Action act = () => adapter.BuildAuthorizationUrl("state");
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*ClientId*");
+    }
+
     private sealed class FakeGoogleCalendarOAuthClient : IGoogleCalendarOAuthClient
     {
         public bool RefreshThrowsRevoked { get; set; }
