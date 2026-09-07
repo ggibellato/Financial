@@ -23,6 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Integrations\GoogleCalendar\GoogleCalendar.csproj" />
     <ProjectReference Include="..\..\Integrations\GoogleCore\GoogleCore.csproj" />
     <ProjectReference Include="..\..\Integrations\GoogleDrive\GoogleDrive.csproj" />
     <ProjectReference Include="..\..\Integrations\GoogleSheets\GoogleSheets.csproj" />
