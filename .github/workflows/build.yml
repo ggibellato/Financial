@@ -282,9 +282,10 @@ jobs:
 
   # One combined sticky PR comment covering backend/wpf/web, rather than each job posting its
   # own - a skipped job (changes didn't affect it) shows as "not run this time" instead of being
-  # silently absent. Each job's own detailed per-project/per-class breakdown table stays only in
-  # its GITHUB_STEP_SUMMARY (see each job's "Publish coverage summary" step); this comment is
-  # intentionally just the gate verdict per project plus a link to the full reports.
+  # silently absent. Each job's own detailed per-project/per-class breakdown table (generated-on
+  # date, assemblies, classes, files, etc.) stays only in its GITHUB_STEP_SUMMARY (see each job's
+  # "Publish coverage summary" step); this comment is intentionally just the gate verdict per
+  # project plus a link to the full reports.
   coverage-comment:
     needs: [ changes, backend, wpf, web ]
     if: always() && github.event_name == 'pull_request'
