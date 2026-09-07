@@ -9,7 +9,10 @@ import type {
   BrokerCreateDto,
   BrokerDto,
   BrokerUpdateDto,
+  CalendarConnectionStatusDto,
+  CalendarDisconnectResultDto,
   CategoryDto,
+  CreditCardCalendarSyncStatusDto,
   BalanceAdjustmentCreateDto,
   MaeLedgerEntryCreateDto,
   RecurringBillCreateDto,
@@ -1172,5 +1175,99 @@ describe('financialApiClient', () => {
     expect(result).toEqual(responseBody)
     const [url] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/payments-due`)
+  })
+
+  it('calls the calendar status endpoint', async () => {
+    const responseBody: CalendarConnectionStatusDto = {
+      connected: true,
+      accountEmail: 'user@gmail.com',
+      calendarName: 'Financial - Credit Card Due Dates',
+      calendarId: 'abc123@group.calendar.google.com',
+      connectedAtUtc: '2026-09-01T10:00:00Z',
+      disconnectReason: null,
+    }
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.getCalendarStatus()
+
+    expect(result).toEqual(responseBody)
+    const [url] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/integrations/calendar/status`)
+  })
+
+  it('posts to the calendar disconnect endpoint', async () => {
+    const responseBody: CalendarDisconnectResultDto = { remoteCleanupSucceeded: true }
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.disconnectCalendar()
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/integrations/calendar/disconnect`)
+    expect(init?.method).toBe('POST')
+  })
+
+  it('calls the calendar sync-status list endpoint', async () => {
+    const responseBody: CreditCardCalendarSyncStatusDto[] = [
+      { creditCardId: 'c1', state: 'Synced', lastSuccessfulSyncUtc: '2026-09-01T10:00:00Z', lastError: null },
+    ]
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.getCalendarSyncStatuses()
+
+    expect(result).toEqual(responseBody)
+    const [url] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/integrations/calendar/credit-cards/sync-status`)
+  })
+
+  it('posts to a single card resync endpoint', async () => {
+    const responseBody: CreditCardCalendarSyncStatusDto = {
+      creditCardId: 'c1',
+      state: 'Synced',
+      lastSuccessfulSyncUtc: '2026-09-01T10:00:00Z',
+      lastError: null,
+    }
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.resyncCreditCardCalendar('c1')
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/integrations/calendar/credit-cards/c1/resync`)
+    expect(init?.method).toBe('POST')
+  })
+
+  it('posts to the resync-all endpoint', async () => {
+    const responseBody: CreditCardCalendarSyncStatusDto[] = []
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.resyncAllCalendars()
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/integrations/calendar/resync-all`)
+    expect(init?.method).toBe('POST')
+  })
+
+  it('builds the calendar connect url without making a network call', () => {
+    const fetchMock = vi.fn()
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const url = client.buildCalendarConnectUrl()
+
+    expect(url).toBe(`${API_BASE_URL}/integrations/calendar/connect`)
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('throws an error carrying calendar disconnect failure details', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(errorResponse())
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await expect(client.disconnectCalendar()).rejects.toBeInstanceOf(ApiError)
   })
 })

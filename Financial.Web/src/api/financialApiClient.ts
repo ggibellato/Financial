@@ -18,7 +18,10 @@ import type {
   BrokerNodeDto,
   BrokerUpdateDto,
   CalculateXirrRequestDto,
+  CalendarConnectionStatusDto,
+  CalendarDisconnectResultDto,
   CardStatementDto,
+  CreditCardCalendarSyncStatusDto,
   CategoryAnnualAverageDto,
   CategoryCreateDto,
   CategoryDto,
@@ -220,6 +223,13 @@ export interface FinancialApiClient {
   getHistoricSummaryAverageFromYear: (year: number) => Promise<CategoryAnnualAverageDto[]>
   getSyncStatus: () => Promise<SyncStatusResponseDto>
   getPaymentsDue: () => Promise<PaymentDueDto[]>
+  getCalendarStatus: () => Promise<CalendarConnectionStatusDto>
+  disconnectCalendar: () => Promise<CalendarDisconnectResultDto>
+  getCalendarSyncStatuses: () => Promise<CreditCardCalendarSyncStatusDto[]>
+  resyncCreditCardCalendar: (id: string) => Promise<CreditCardCalendarSyncStatusDto>
+  resyncAllCalendars: () => Promise<CreditCardCalendarSyncStatusDto[]>
+  /** Not a fetch call - the connect endpoint is a browser redirect target, opened directly (e.g. via window.open). */
+  buildCalendarConnectUrl: () => string
 }
 
 export interface FinancialApiClientOptions {
@@ -625,6 +635,18 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       request<CategoryAnnualAverageDto[]>(`/annual-summary/${year}/historic-summary-averages`),
     getSyncStatus: () => request<SyncStatusResponseDto>('/sync-status'),
     getPaymentsDue: () => request<PaymentDueDto[]>('/payments-due'),
+    getCalendarStatus: () => request<CalendarConnectionStatusDto>('/integrations/calendar/status'),
+    disconnectCalendar: () =>
+      request<CalendarDisconnectResultDto>('/integrations/calendar/disconnect', { method: 'POST' }),
+    getCalendarSyncStatuses: () =>
+      request<CreditCardCalendarSyncStatusDto[]>('/integrations/calendar/credit-cards/sync-status'),
+    resyncCreditCardCalendar: (id) =>
+      request<CreditCardCalendarSyncStatusDto>(`/integrations/calendar/credit-cards/${encodeURIComponent(id)}/resync`, {
+        method: 'POST',
+      }),
+    resyncAllCalendars: () =>
+      request<CreditCardCalendarSyncStatusDto[]>('/integrations/calendar/resync-all', { method: 'POST' }),
+    buildCalendarConnectUrl: () => `${baseUrl}/integrations/calendar/connect`,
   }
 }
 

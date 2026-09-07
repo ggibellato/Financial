@@ -160,3 +160,6 @@ export type BalanceAdjustmentUpdateDto = Schema<'BalanceAdjustmentUpdateDTO'>
 export type SyncStatusDto = Schema<'SyncStatusDTO'>
 export type SyncStatusResponseDto = Schema<'SyncStatusResponseDTO'>
 export type PaymentDueDto = Schema<'PaymentDueDTO'>
+export type CalendarConnectionStatusDto = Schema<'CalendarConnectionStatusDTO'>
+export type CalendarDisconnectResultDto = Schema<'CalendarDisconnectResultDTO'>
+export type CreditCardCalendarSyncStatusDto = Schema<'CreditCardCalendarSyncStatusDTO'>
