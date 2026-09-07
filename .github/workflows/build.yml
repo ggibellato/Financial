@@ -86,12 +86,10 @@ jobs:
         ./.tools/reportgenerator.exe "-reports:TestResults/**/coverage.cobertura.xml" "-targetdir:CoverageReport" "-reporttypes:MarkdownSummaryGithub;JsonSummary;Html" "-assemblyfilters:+*;-Financial.Presentation.App"
         Get-Content CoverageReport/SummaryGithub.md | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
 
-    # Graded, non-blocking signal: green (100%) / yellow (95-99.99%) / amber (90-94.99%) /
-    # red (<90%, step fails). continue-on-error keeps a red result from failing the job, so
-    # ci-status/branch protection are unaffected - see docs/ci-affected-pipeline.md.
+    # Graded, blocking signal: green (100%) / yellow (95-99.99%) / amber (90-94.99%) /
+    # red (<90%, step fails, which fails this job and ci-status - see docs/ci-affected-pipeline.md).
     - name: Check coverage threshold
       id: gate
-      continue-on-error: true
       uses: ./.github/actions/coverage-gate
       with:
         label: Backend
@@ -139,12 +137,10 @@ jobs:
         ./.tools/reportgenerator.exe "-reports:TestResults/**/coverage.cobertura.xml" "-targetdir:CoverageReport" "-reporttypes:MarkdownSummaryGithub;JsonSummary;Html" "-assemblyfilters:+Financial.Presentation.App"
         Get-Content CoverageReport/SummaryGithub.md | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
 
-    # Graded, non-blocking signal: green (100%) / yellow (95-99.99%) / amber (90-94.99%) /
-    # red (<90%, step fails). continue-on-error keeps a red result from failing the job, so
-    # ci-status/branch protection are unaffected - see docs/ci-affected-pipeline.md.
+    # Graded, blocking signal: green (100%) / yellow (95-99.99%) / amber (90-94.99%) /
+    # red (<90%, step fails, which fails this job and ci-status - see docs/ci-affected-pipeline.md).
     - name: Check coverage threshold
       id: gate
-      continue-on-error: true
       uses: ./.github/actions/coverage-gate
       with:
         label: WPF
@@ -201,14 +197,12 @@ jobs:
         ../.tools/reportgenerator "-reports:coverage/lcov.info" "-targetdir:CoverageReport" "-reporttypes:MarkdownSummaryGithub;JsonSummary;Html"
         cat CoverageReport/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY"
 
-    # Graded, non-blocking signal: green (100%) / yellow (95-99.99%) / amber (90-94.99%) /
-    # red (<90%, step fails). continue-on-error keeps a red result from failing the job, so
-    # ci-status/branch protection are unaffected - see docs/ci-affected-pipeline.md. Same gate as
-    # backend/wpf, reading the Summary.json "Publish coverage summary" just produced from
-    # lcov.info - pwsh runs fine on ubuntu-latest too.
+    # Graded, blocking signal: green (100%) / yellow (95-99.99%) / amber (90-94.99%) /
+    # red (<90%, step fails, which fails this job and ci-status - see docs/ci-affected-pipeline.md).
+    # Same gate as backend/wpf, reading the Summary.json "Publish coverage summary" just produced
+    # from lcov.info - pwsh runs fine on ubuntu-latest too.
     - name: Check coverage threshold
       id: gate
-      continue-on-error: true
       uses: ./.github/actions/coverage-gate
       with:
         label: Web
