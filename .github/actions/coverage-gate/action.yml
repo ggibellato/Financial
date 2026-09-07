@@ -1,10 +1,5 @@
 name: Coverage gate
-description: >-
-  Reads a reportgenerator Summary.json's line coverage, bands it
-  green/yellow/amber/red against the 90% floor, writes the step-summary line,
-  and exposes coverage/band/emoji as outputs. Fails (exit 1) on red or a
-  missing/unreadable value; the calling step decides whether that's fatal via
-  its own continue-on-error.
+description: Bands a reportgenerator Summary.json's line coverage against the 90% floor and exposes coverage/band/emoji as outputs.
 inputs:
   label:
     description: Human-readable project label for step-summary/error messages (e.g. "Backend", "WPF")
