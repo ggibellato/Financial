@@ -5741,6 +5741,7 @@ export interface components {
         };
         CalendarConnectionStatusDTO: {
             accountEmail?: null | string;
+            calendarId?: null | string;
             calendarName?: null | string;
             connected: boolean;
             /** Format: date-time */

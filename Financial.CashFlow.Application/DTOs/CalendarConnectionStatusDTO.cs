@@ -8,6 +8,8 @@ public sealed class CalendarConnectionStatusDTO
 
     public string? CalendarName { get; init; }
 
+    public string? CalendarId { get; init; }
+
     public DateTimeOffset? ConnectedAtUtc { get; init; }
 
     /// <summary>Null unless a stored connection is known-broken - currently only <c>"token_revoked"</c>.</summary>

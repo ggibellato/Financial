@@ -333,6 +333,7 @@ public sealed class CalendarIntegrationService : ICalendarIntegrationService
         Connected = connected,
         AccountEmail = connection.AccountEmail,
         CalendarName = CalendarDefaults.DedicatedCalendarName,
+        CalendarId = connection.CalendarId,
         ConnectedAtUtc = connection.ConnectedAtUtc,
         DisconnectReason = connection.RevokedReason
     };
