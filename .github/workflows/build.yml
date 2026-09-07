@@ -7,9 +7,9 @@ on:
     branches: [ main ]
     types: [opened, synchronize, reopened]
 
-# pull-requests: write lets backend/wpf/web post their coverage summary as a sticky PR comment
-# (see each job's "Comment coverage on PR" step); contents: read is needed alongside it because
-# declaring `permissions:` at all replaces the GITHUB_TOKEN's default grants with exactly this set.
+# pull-requests: write lets the coverage-comment job post one combined sticky PR comment for
+# backend/wpf/web; contents: read is needed alongside it because declaring `permissions:` at all
+# replaces the GITHUB_TOKEN's default grants with exactly this set.
 permissions:
   contents: read
   pull-requests: write
@@ -49,6 +49,10 @@ jobs:
     needs: changes
     if: needs.changes.outputs.backend == 'true'
     runs-on: windows-latest
+    outputs:
+      coverage: ${{ steps.gate.outputs.coverage }}
+      band: ${{ steps.gate.outputs.band }}
+      emoji: ${{ steps.gate.outputs.emoji }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
@@ -85,36 +89,12 @@ jobs:
     # Graded, non-blocking signal: green (100%) / yellow (95-99.99%) / amber (90-94.99%) /
     # red (<90%, step fails). continue-on-error keeps a red result from failing the job, so
     # ci-status/branch protection are unaffected - see docs/ci-affected-pipeline.md.
-    # The same lines are appended to CoverageReport/SummaryGithub.md (not just the step summary)
-    # so the "Comment coverage on PR" step below posts an identical gate verdict on the PR itself.
     - name: Check coverage threshold
+      id: gate
       continue-on-error: true
-      shell: pwsh
-      run: |
-        $runUrl = "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-        $summary = Get-Content CoverageReport/Summary.json -Raw | ConvertFrom-Json
-        $lineCoverage = $summary.summary.linecoverage
-        if ($null -eq $lineCoverage) {
-          Write-Host "::error::Could not read summary.linecoverage from CoverageReport/Summary.json"
-          "🔴 Coverage gate: could not read line coverage from the report" | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
-          "🔴 Coverage gate: could not read line coverage from the report" | Out-File -Append -Encoding utf8 CoverageReport/SummaryGithub.md
-          exit 1
-        }
-        $lineCoverage = [math]::Round([double]$lineCoverage, 2)
-        if ($lineCoverage -ge 100) { $band = 'green'; $emoji = '🟢' }
-        elseif ($lineCoverage -ge 95) { $band = 'yellow'; $emoji = '🟡' }
-        elseif ($lineCoverage -ge 90) { $band = 'amber'; $emoji = '🟠' }
-        else { $band = 'red'; $emoji = '🔴' }
-        $gateLine = "$emoji Backend line coverage: $lineCoverage% ($band) - gate: 90% required"
-        $gateLine | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
-        $gateLine | Out-File -Append -Encoding utf8 CoverageReport/SummaryGithub.md
-        "[Full coverage report artifact]($runUrl)" | Out-File -Append -Encoding utf8 CoverageReport/SummaryGithub.md
-        if ($band -eq 'red') {
-          Write-Host "::error::Backend line coverage $lineCoverage% is below the 90% gate"
-          exit 1
-        } elseif ($band -ne 'green') {
-          Write-Host "::warning::Backend line coverage $lineCoverage% ($band)"
-        }
+      uses: ./.github/actions/coverage-gate
+      with:
+        label: Backend
 
     - name: Upload coverage report artifact
       if: always()
@@ -123,17 +103,14 @@ jobs:
         name: coverage-report-backend
         path: CoverageReport
 
-    - name: Comment coverage on PR
-      if: always() && github.event_name == 'pull_request'
-      uses: marocchino/sticky-pull-request-comment@v2
-      with:
-        header: coverage-backend
-        path: CoverageReport/SummaryGithub.md
-
   wpf:
     needs: changes
     if: needs.changes.outputs.wpf == 'true'
     runs-on: windows-latest
+    outputs:
+      coverage: ${{ steps.gate.outputs.coverage }}
+      band: ${{ steps.gate.outputs.band }}
+      emoji: ${{ steps.gate.outputs.emoji }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
@@ -165,36 +142,12 @@ jobs:
     # Graded, non-blocking signal: green (100%) / yellow (95-99.99%) / amber (90-94.99%) /
     # red (<90%, step fails). continue-on-error keeps a red result from failing the job, so
     # ci-status/branch protection are unaffected - see docs/ci-affected-pipeline.md.
-    # The same lines are appended to CoverageReport/SummaryGithub.md (not just the step summary)
-    # so the "Comment coverage on PR" step below posts an identical gate verdict on the PR itself.
     - name: Check coverage threshold
+      id: gate
       continue-on-error: true
-      shell: pwsh
-      run: |
-        $runUrl = "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-        $summary = Get-Content CoverageReport/Summary.json -Raw | ConvertFrom-Json
-        $lineCoverage = $summary.summary.linecoverage
-        if ($null -eq $lineCoverage) {
-          Write-Host "::error::Could not read summary.linecoverage from CoverageReport/Summary.json"
-          "🔴 Coverage gate: could not read line coverage from the report" | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
-          "🔴 Coverage gate: could not read line coverage from the report" | Out-File -Append -Encoding utf8 CoverageReport/SummaryGithub.md
-          exit 1
-        }
-        $lineCoverage = [math]::Round([double]$lineCoverage, 2)
-        if ($lineCoverage -ge 100) { $band = 'green'; $emoji = '🟢' }
-        elseif ($lineCoverage -ge 95) { $band = 'yellow'; $emoji = '🟡' }
-        elseif ($lineCoverage -ge 90) { $band = 'amber'; $emoji = '🟠' }
-        else { $band = 'red'; $emoji = '🔴' }
-        $gateLine = "$emoji WPF line coverage: $lineCoverage% ($band) - gate: 90% required"
-        $gateLine | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
-        $gateLine | Out-File -Append -Encoding utf8 CoverageReport/SummaryGithub.md
-        "[Full coverage report artifact]($runUrl)" | Out-File -Append -Encoding utf8 CoverageReport/SummaryGithub.md
-        if ($band -eq 'red') {
-          Write-Host "::error::WPF line coverage $lineCoverage% is below the 90% gate"
-          exit 1
-        } elseif ($band -ne 'green') {
-          Write-Host "::warning::WPF line coverage $lineCoverage% ($band)"
-        }
+      uses: ./.github/actions/coverage-gate
+      with:
+        label: WPF
 
     - name: Upload coverage report artifact
       if: always()
@@ -203,17 +156,14 @@ jobs:
         name: coverage-report-wpf
         path: CoverageReport
 
-    - name: Comment coverage on PR
-      if: always() && github.event_name == 'pull_request'
-      uses: marocchino/sticky-pull-request-comment@v2
-      with:
-        header: coverage-wpf
-        path: CoverageReport/SummaryGithub.md
-
   web:
     needs: changes
     if: needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
+    outputs:
+      coverage: ${{ steps.gate.outputs.coverage }}
+      band: ${{ steps.gate.outputs.band }}
+      emoji: ${{ steps.gate.outputs.emoji }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
@@ -253,35 +203,16 @@ jobs:
 
     # Graded, non-blocking signal: green (100%) / yellow (95-99.99%) / amber (90-94.99%) /
     # red (<90%, step fails). continue-on-error keeps a red result from failing the job, so
-    # ci-status/branch protection are unaffected - see docs/ci-affected-pipeline.md.
-    # The same lines are appended to CoverageReport/SummaryGithub.md (not just the step summary)
-    # so the "Comment coverage on PR" step below posts an identical gate verdict on the PR itself.
-    # Reads coverage/coverage-summary.json (vitest's own json-summary reporter), independent of
-    # the lcov-derived CoverageReport/ above, so this gate's data source is unchanged from before.
+    # ci-status/branch protection are unaffected - see docs/ci-affected-pipeline.md. Same gate as
+    # backend/wpf, reading the Summary.json "Publish coverage summary" just produced from
+    # lcov.info - pwsh runs fine on ubuntu-latest too.
     - name: Check coverage threshold
-      working-directory: Financial.Web
+      id: gate
       continue-on-error: true
-      run: |
-        RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-        LINE_COV=$(jq -r '.total.lines.pct' coverage/coverage-summary.json)
-        if [ "$LINE_COV" = "null" ] || [ -z "$LINE_COV" ]; then
-          echo "::error::Could not read total.lines.pct from coverage/coverage-summary.json"
-          echo "🔴 Coverage gate: could not read line coverage from the report" >> "$GITHUB_STEP_SUMMARY"
-          echo "🔴 Coverage gate: could not read line coverage from the report" >> CoverageReport/SummaryGithub.md
-          exit 1
-        fi
-        BAND=$(awk -v v="$LINE_COV" 'BEGIN{ if (v>=100) print "green"; else if (v>=95) print "yellow"; else if (v>=90) print "amber"; else print "red" }')
-        EMOJI=$(awk -v b="$BAND" 'BEGIN{ if (b=="green") print "🟢"; else if (b=="yellow") print "🟡"; else if (b=="amber") print "🟠"; else print "🔴" }')
-        GATE_LINE="$EMOJI Web line coverage: ${LINE_COV}% ($BAND) - gate: 90% required"
-        echo "$GATE_LINE" >> "$GITHUB_STEP_SUMMARY"
-        echo "$GATE_LINE" >> CoverageReport/SummaryGithub.md
-        echo "[Full coverage report artifact]($RUN_URL)" >> CoverageReport/SummaryGithub.md
-        if [ "$BAND" = "red" ]; then
-          echo "::error::Web line coverage ${LINE_COV}% is below the 90% gate"
-          exit 1
-        elif [ "$BAND" != "green" ]; then
-          echo "::warning::Web line coverage ${LINE_COV}% ($BAND)"
-        fi
+      uses: ./.github/actions/coverage-gate
+      with:
+        label: Web
+        summary-path: Financial.Web/CoverageReport/Summary.json
 
     - name: Upload coverage report artifact
       if: always()
@@ -290,16 +221,64 @@ jobs:
         name: coverage-report-web
         path: Financial.Web/CoverageReport
 
-    - name: Comment coverage on PR
-      if: always() && github.event_name == 'pull_request'
-      uses: marocchino/sticky-pull-request-comment@v2
-      with:
-        header: coverage-web
-        path: Financial.Web/CoverageReport/SummaryGithub.md
-
     - name: Build
       working-directory: Financial.Web
       run: npm run build
+
+  # One combined sticky PR comment for backend/wpf/web instead of three separate ones - a
+  # skipped job shows as "not run this time" rather than a stale leftover comment. The detailed
+  # per-class breakdown stays only in each job's own GITHUB_STEP_SUMMARY; this comment is just
+  # the gate verdict per project plus a link to the full reports.
+  coverage-comment:
+    needs: [ changes, backend, wpf, web ]
+    if: always() && github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+    - name: Build combined coverage comment
+      env:
+        BACKEND_RESULT: ${{ needs.backend.result }}
+        BACKEND_COVERAGE: ${{ needs.backend.outputs.coverage }}
+        BACKEND_BAND: ${{ needs.backend.outputs.band }}
+        BACKEND_EMOJI: ${{ needs.backend.outputs.emoji }}
+        WPF_RESULT: ${{ needs.wpf.result }}
+        WPF_COVERAGE: ${{ needs.wpf.outputs.coverage }}
+        WPF_BAND: ${{ needs.wpf.outputs.band }}
+        WPF_EMOJI: ${{ needs.wpf.outputs.emoji }}
+        WEB_RESULT: ${{ needs.web.result }}
+        WEB_COVERAGE: ${{ needs.web.outputs.coverage }}
+        WEB_BAND: ${{ needs.web.outputs.band }}
+        WEB_EMOJI: ${{ needs.web.outputs.emoji }}
+        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      run: |
+        # band/emoji are already computed by each job's own coverage-gate step; this just lays
+        # out the row, plus a fallback for a job that didn't run or produced nothing.
+        row() {
+          local name="$1" result="$2" coverage="$3" band="$4" emoji="$5"
+          if [ "$result" = "skipped" ]; then
+            echo "| $name | – | ⚪ not run this time |"
+          elif [ "$result" != "success" ] || [ -z "$coverage" ]; then
+            echo "| $name | – | ⚠️ unavailable |"
+          else
+            echo "| $name | ${coverage}% | $emoji $band |"
+          fi
+        }
+        {
+          echo "### Coverage summary"
+          echo
+          echo "| Project | Line coverage | Gate (90% required) |"
+          echo "|:---|---:|:---|"
+          row "Backend (.NET)" "$BACKEND_RESULT" "$BACKEND_COVERAGE" "$BACKEND_BAND" "$BACKEND_EMOJI"
+          row "WPF (Financial.App)" "$WPF_RESULT" "$WPF_COVERAGE" "$WPF_BAND" "$WPF_EMOJI"
+          row "Web (Financial.Web)" "$WEB_RESULT" "$WEB_COVERAGE" "$WEB_BAND" "$WEB_EMOJI"
+          echo
+          echo "[Full coverage reports (artifacts)]($RUN_URL)"
+        } > coverage-comment.md
+
+    - name: Comment coverage on PR
+      uses: marocchino/sticky-pull-request-comment@v2
+      with:
+        header: coverage-summary
+        path: coverage-comment.md
 
   # Boots the published API with the built SPA and drives it with Playwright. Runs whenever either
   # side of the HTTP boundary changed; waits for backend/web but tolerates them being skipped.
