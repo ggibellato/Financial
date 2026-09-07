@@ -93,6 +93,7 @@ jobs:
       uses: ./.github/actions/coverage-gate
       with:
         label: Backend
+        summary-path: nonexistent/Summary.json
 
     - name: Upload coverage report artifact
       if: always()
