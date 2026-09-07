@@ -15,37 +15,46 @@ public class CreditCardServiceTests
     private static readonly Microsoft.Extensions.Logging.ILogger<CreditCardService> Logger = NullLogger<CreditCardService>.Instance;
 
     private readonly StubCashFlowRepository _repository;
+    private readonly FakeCreditCardCalendarSyncService _calendarSyncTrigger;
     private readonly RecordingTelemetryTracer _tracer;
     private readonly CreditCardService _sut;
 
     public CreditCardServiceTests()
     {
         _repository = new StubCashFlowRepository();
+        _calendarSyncTrigger = new FakeCreditCardCalendarSyncService();
         _tracer = new RecordingTelemetryTracer();
         _sut = CreateService();
     }
 
     private CreditCardService CreateService(StubCashFlowRepository? repository = null) =>
-        new(repository ?? _repository, _tracer, Logger);
+        new(repository ?? _repository, _calendarSyncTrigger, _tracer, Logger);
 
     [Fact]
     public void Constructor_WithNullRepository_Throws()
     {
-        Action act = () => new CreditCardService(null!, _tracer, Logger);
+        Action act = () => new CreditCardService(null!, _calendarSyncTrigger, _tracer, Logger);
         act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
+    }
+
+    [Fact]
+    public void Constructor_WithNullCalendarSyncTrigger_Throws()
+    {
+        Action act = () => new CreditCardService(_repository, null!, _tracer, Logger);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("calendarSyncTrigger");
     }
 
     [Fact]
     public void Constructor_WithNullTracer_Throws()
     {
-        Action act = () => new CreditCardService(_repository, null!, Logger);
+        Action act = () => new CreditCardService(_repository, _calendarSyncTrigger, null!, Logger);
         act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
     }
 
     [Fact]
     public void Constructor_WithNullLogger_Throws()
     {
-        Action act = () => new CreditCardService(_repository, _tracer, null!);
+        Action act = () => new CreditCardService(_repository, _calendarSyncTrigger, _tracer, null!);
 
         act.Should().Throw<ArgumentNullException>();
     }
@@ -312,5 +321,35 @@ public class CreditCardServiceTests
         var result = _sut.GetCreditCards();
 
         result.Should().ContainSingle(c => c.Id == card.Id && c.LatestInvoiceDate == null);
+    }
+
+    [Fact]
+    public async Task CreateCreditCardAsync_TriggersCalendarSyncForTheNewCard()
+    {
+        var result = await _sut.CreateCreditCardAsync(new CreditCardCreateDTO { Name = "BaAmex", IsActive = true });
+
+        _calendarSyncTrigger.TriggeredCreditCardIds.Should().ContainSingle().Which.Should().Be(result.Id);
+    }
+
+    [Fact]
+    public async Task UpdateCreditCardAsync_TriggersCalendarSyncForTheUpdatedCard()
+    {
+        var card = CreditCard.Create("BaAmex", isActive: true);
+        _repository.CreditCards.Add(card);
+
+        await _sut.UpdateCreditCardAsync(card.Id, new CreditCardUpdateDTO { Name = "BaAmex", IsActive = true, NextInvoiceDueDate = new DateOnly(2026, 9, 10) });
+
+        _calendarSyncTrigger.TriggeredCreditCardIds.Should().ContainSingle().Which.Should().Be(card.Id);
+    }
+
+    [Fact]
+    public async Task DeleteCreditCardAsync_TriggersCalendarSyncForTheDeletedCardId()
+    {
+        var card = CreditCard.Create("BaAmex", isActive: true);
+        _repository.CreditCards.Add(card);
+
+        await _sut.DeleteCreditCardAsync(card.Id);
+
+        _calendarSyncTrigger.TriggeredCreditCardIds.Should().ContainSingle().Which.Should().Be(card.Id);
     }
 }
