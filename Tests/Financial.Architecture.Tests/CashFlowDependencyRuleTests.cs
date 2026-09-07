@@ -29,4 +29,14 @@ public class CashFlowDependencyRuleTests
         ProjectAssembly.GetReferencedAssemblyNames(ApplicationAssembly)
             .Should().NotContain("Financial.CashFlow.Infrastructure");
     }
+
+    [Fact]
+    public void Application_Should_Not_Reference_GoogleCalendar_Integration()
+    {
+        // ICalendarProvider is Application-owned and provider-agnostic, so Google SDK types never
+        // cross into Application; only Infrastructure's GoogleCalendarProviderAdapter may depend
+        // on Integrations/GoogleCalendar.
+        ProjectAssembly.GetReferencedAssemblyNames(ApplicationAssembly)
+            .Should().NotContain("Financial.Integrations.GoogleCalendar");
+    }
 }
