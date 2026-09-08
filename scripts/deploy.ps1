@@ -14,6 +14,12 @@
     the deployed appsettings.Production.json files after each publish. Leaving the Google
     Calendar values blank in deploy.local.json keeps that integration disabled, same as an
     unconfigured Docker/dev deployment.
+
+    Financial.App (WPF) hosts its own OAuth loopback listener rather than depending on
+    Financial.Api's callback controller, so it needs its own RedirectUri distinct from Api's -
+    GoogleCalendarAppRedirectUri in deploy.local.json (default http://localhost:8082/), stamped
+    only into the deployed Financial.App's appsettings.Production.json. Both URIs must be
+    registered as authorized redirect URIs on the same Google Cloud Console OAuth client.
 #>
 [CmdletBinding()]
 param(
@@ -72,15 +78,15 @@ if ($LASTEXITCODE -ne 0) { throw 'Publish of Financial.Api failed.' }
 #    so this script is the only thing that puts it in the deploy folder, then stamps in
 #    the machine-local Google Drive credentials path.
 foreach ($pair in @(
-        @{ Source = (Join-Path $repoRoot 'Financial.App\appsettings.Production.json'); Target = (Join-Path $appDeployDir 'appsettings.Production.json') },
-        @{ Source = (Join-Path $repoRoot 'Financial.Api\appsettings.Production.json'); Target = (Join-Path $webDeployDir 'appsettings.Production.json') }
+        @{ Source = (Join-Path $repoRoot 'Financial.App\appsettings.Production.json'); Target = (Join-Path $appDeployDir 'appsettings.Production.json'); RedirectUri = $localSettings.GoogleCalendarAppRedirectUri },
+        @{ Source = (Join-Path $repoRoot 'Financial.Api\appsettings.Production.json'); Target = (Join-Path $webDeployDir 'appsettings.Production.json'); RedirectUri = $localSettings.GoogleCalendarRedirectUri }
     )) {
     $settings = Get-Content $pair.Source -Raw | ConvertFrom-Json
     $settings.Investment.GoogleDrive.CredentialsPath = $localSettings.GoogleDriveCredentialsPath
     $settings.CashFlow.GoogleDrive.CredentialsPath = $localSettings.GoogleDriveCredentialsPath
     $settings.CashFlow.GoogleCalendar.ClientId = $localSettings.GoogleCalendarClientId
     $settings.CashFlow.GoogleCalendar.ClientSecret = $localSettings.GoogleCalendarClientSecret
-    $settings.CashFlow.GoogleCalendar.RedirectUri = $localSettings.GoogleCalendarRedirectUri
+    $settings.CashFlow.GoogleCalendar.RedirectUri = $pair.RedirectUri
     $settings.CashFlow.GoogleCalendar.CredentialsPath = $localSettings.GoogleCalendarCredentialsPath
     $settings | ConvertTo-Json -Depth 10 | Set-Content -Path $pair.Target -Encoding utf8
 }

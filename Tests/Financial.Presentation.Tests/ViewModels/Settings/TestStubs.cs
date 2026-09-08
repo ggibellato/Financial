@@ -9,10 +9,13 @@ internal sealed class StubCalendarIntegrationService : ICalendarIntegrationServi
     public string AuthorizationUrl { get; set; } = "https://accounts.google.com/o/oauth2/v2/auth?state=fake";
     public CalendarConnectionStatusDTO StatusToReturn { get; set; } = new() { Connected = false };
     public CalendarDisconnectResultDTO DisconnectResult { get; set; } = new() { RemoteCleanupSucceeded = true };
+    public CalendarCallbackResultDTO CompleteConnectionResult { get; set; } = new() { Success = true };
     public Exception? ThrowOnGetStatus { get; set; }
     public Exception? ThrowOnDisconnect { get; set; }
+    public Exception? ThrowOnCompleteConnection { get; set; }
     public int DisconnectCallCount { get; private set; }
     public int GetStatusCallCount { get; private set; }
+    public (string? Code, string? State, string? Error)? LastCompleteConnectionArgs { get; private set; }
 
     /// <summary>When set, GetStatusAsync returns this uncompleted task instead of resolving
     /// immediately - a plain async continuation (no thread-pool scheduling involved), so a test
@@ -22,8 +25,13 @@ internal sealed class StubCalendarIntegrationService : ICalendarIntegrationServi
     public string BuildAuthorizationUrl() => AuthorizationUrl;
 
     public Task<CalendarCallbackResultDTO> CompleteConnectionAsync(
-        string? code, string? state, string? error, CancellationToken cancellationToken = default) =>
-        throw new NotSupportedException();
+        string? code, string? state, string? error, CancellationToken cancellationToken = default)
+    {
+        LastCompleteConnectionArgs = (code, state, error);
+        return ThrowOnCompleteConnection is null
+            ? Task.FromResult(CompleteConnectionResult)
+            : throw ThrowOnCompleteConnection;
+    }
 
     public Task<CalendarConnectionStatusDTO> GetStatusAsync(CancellationToken cancellationToken = default)
     {
@@ -128,5 +136,28 @@ internal sealed class StubBrowserLauncher : IBrowserLauncher
     {
         LastOpenedUrl = url;
         OpenUrlCallCount++;
+    }
+}
+
+internal sealed class StubCalendarOAuthCallbackListener : ICalendarOAuthCallbackListener
+{
+    public CalendarOAuthCallbackResult ResultToReturn { get; set; } = new("auth-code", "state", null);
+    public Exception? ThrowOnListen { get; set; }
+    public string? LastAuthorizationUrl { get; private set; }
+
+    /// <summary>When set, ListenAsync returns this uncompleted task instead of resolving
+    /// immediately, so a test can observe IsConnecting while the "browser flow" is still in
+    /// flight.</summary>
+    public TaskCompletionSource<CalendarOAuthCallbackResult>? PendingListen { get; set; }
+
+    public Task<CalendarOAuthCallbackResult> ListenAsync(string authorizationUrl, CancellationToken cancellationToken = default)
+    {
+        LastAuthorizationUrl = authorizationUrl;
+        if (ThrowOnListen is not null)
+        {
+            throw ThrowOnListen;
+        }
+
+        return PendingListen is not null ? PendingListen.Task : Task.FromResult(ResultToReturn);
     }
 }

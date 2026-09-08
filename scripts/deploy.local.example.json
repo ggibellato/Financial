@@ -3,5 +3,6 @@
   "GoogleCalendarClientId": "",
   "GoogleCalendarClientSecret": "",
   "GoogleCalendarRedirectUri": "http://localhost:8080/api/v1/financial/integrations/calendar/callback",
+  "GoogleCalendarAppRedirectUri": "http://localhost:8082/",
   "GoogleCalendarCredentialsPath": "C:\\path\\to\\your\\google-calendar-credentials.json"
 }

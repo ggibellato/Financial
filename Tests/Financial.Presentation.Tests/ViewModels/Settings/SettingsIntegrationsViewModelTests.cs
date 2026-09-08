@@ -1,4 +1,5 @@
 using Financial.CashFlow.Application.DTOs;
+using Financial.Presentation.App.Services;
 using Financial.Presentation.App.ViewModels.Settings;
 using Financial.Presentation.Tests.ViewModels.Admin;
 using Financial.TestUtilities;
@@ -14,17 +15,19 @@ public class SettingsIntegrationsViewModelTests
         StubCreditCardCalendarSyncService CalendarSync,
         StubCreditCardServiceForSettings CreditCards,
         StubBrowserLauncher BrowserLauncher,
+        StubCalendarOAuthCallbackListener CallbackListener,
         StubDialogService Dialog) CreateViewModel()
     {
         var calendarIntegration = new StubCalendarIntegrationService();
         var calendarSync = new StubCreditCardCalendarSyncService();
         var creditCards = new StubCreditCardServiceForSettings();
         var browserLauncher = new StubBrowserLauncher();
+        var callbackListener = new StubCalendarOAuthCallbackListener();
         var dialog = new StubDialogService();
         var viewModel = new SettingsIntegrationsViewModel(
-            calendarIntegration, calendarSync, creditCards, browserLauncher, dialog,
+            calendarIntegration, calendarSync, creditCards, browserLauncher, callbackListener, dialog,
             new RecordingLogger<SettingsIntegrationsViewModel>());
-        return (viewModel, calendarIntegration, calendarSync, creditCards, browserLauncher, dialog);
+        return (viewModel, calendarIntegration, calendarSync, creditCards, browserLauncher, callbackListener, dialog);
     }
 
     private static CreditCardDTO CreditCard(Guid id, string name, bool isActive = true, DateOnly? nextInvoiceDueDate = null, bool hasReferences = false) => new()
@@ -39,7 +42,7 @@ public class SettingsIntegrationsViewModelTests
     [Fact]
     public async Task RefreshAsync_PopulatesStatus()
     {
-        var (viewModel, calendarIntegration, _, _, _, _) = CreateViewModel();
+        var (viewModel, calendarIntegration, _, _, _, _, _) = CreateViewModel();
         calendarIntegration.StatusToReturn = new CalendarConnectionStatusDTO
         {
             Connected = true,
@@ -58,7 +61,7 @@ public class SettingsIntegrationsViewModelTests
     [Fact]
     public async Task RefreshAsync_ServiceThrows_SetsErrorAndLogsFailure()
     {
-        var (viewModel, calendarIntegration, _, _, _, _) = CreateViewModel();
+        var (viewModel, calendarIntegration, _, _, _, _, _) = CreateViewModel();
         calendarIntegration.ThrowOnGetStatus = new InvalidOperationException("boom");
 
         await viewModel.RefreshAsync();
@@ -70,7 +73,7 @@ public class SettingsIntegrationsViewModelTests
     [Fact]
     public async Task RefreshAsync_JoinsActiveDueDatedCardsWithSyncStatus_DefaultingAbsentStatusToPending()
     {
-        var (viewModel, _, calendarSync, creditCards, _, _) = CreateViewModel();
+        var (viewModel, _, calendarSync, creditCards, _, _, _) = CreateViewModel();
         var syncedId = Guid.NewGuid();
         var neverSyncedId = Guid.NewGuid();
         var noDueDateId = Guid.NewGuid();
@@ -104,8 +107,8 @@ public class SettingsIntegrationsViewModelTests
         var calendarSync = new StubCreditCardCalendarSyncService();
         var creditCards = new StubCreditCardServiceForSettings();
         var viewModel = new SettingsIntegrationsViewModel(
-            calendarIntegration, calendarSync, creditCards, new StubBrowserLauncher(), new StubDialogService(),
-            new RecordingLogger<SettingsIntegrationsViewModel>());
+            calendarIntegration, calendarSync, creditCards, new StubBrowserLauncher(), new StubCalendarOAuthCallbackListener(),
+            new StubDialogService(), new RecordingLogger<SettingsIntegrationsViewModel>());
         await WaitUntilAsync(() => !viewModel.IsLoading);
 
         // Request A ("stale"): gate GetStatusAsync (a plain awaited Task, not a Task.Run - a fully
@@ -150,58 +153,85 @@ public class SettingsIntegrationsViewModelTests
     }
 
     [Fact]
-    public void Connect_OpensBrowserWithAuthorizationUrl_AndArmsConnectingState()
+    public async Task ConnectAsync_OpensBrowserWithAuthorizationUrl_AwaitsTheLoopbackListener_AndCompletesTheConnection()
     {
-        var (viewModel, calendarIntegration, _, _, browserLauncher, _) = CreateViewModel();
-        calendarIntegration.AuthorizationUrl = "https://accounts.google.com/o/oauth2/v2/auth?state=abc";
+        var (viewModel, calendarIntegration, _, _, browserLauncher, callbackListener, _) = CreateViewModel();
+        calendarIntegration.AuthorizationUrl = "https://accounts.google.com/o/oauth2/v2/auth?state=abc&redirect_uri=http%3A%2F%2Flocalhost%3A8082%2F";
+        callbackListener.ResultToReturn = new CalendarOAuthCallbackResult("auth-code", "abc", null);
+        calendarIntegration.CompleteConnectionResult = new CalendarCallbackResultDTO { Success = true };
 
-        viewModel.Connect();
+        await viewModel.ConnectAsync();
 
-        browserLauncher.LastOpenedUrl.Should().Be("https://accounts.google.com/o/oauth2/v2/auth?state=abc");
-        viewModel.IsConnecting.Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task PollConnectingStatusAsync_WhenConnected_ClearsIsConnecting()
-    {
-        var (viewModel, calendarIntegration, _, _, _, _) = CreateViewModel();
-        viewModel.Connect();
-        calendarIntegration.StatusToReturn = new CalendarConnectionStatusDTO { Connected = true, AccountEmail = "user@gmail.com" };
-
-        await viewModel.PollConnectingStatusAsync();
-
+        browserLauncher.LastOpenedUrl.Should().Be(calendarIntegration.AuthorizationUrl);
+        callbackListener.LastAuthorizationUrl.Should().Be(calendarIntegration.AuthorizationUrl);
+        calendarIntegration.LastCompleteConnectionArgs.Should().Be(("auth-code", "abc", (string?)null));
         viewModel.IsConnecting.Should().BeFalse();
-        viewModel.IsConnected.Should().BeTrue();
+        viewModel.ConnectError.Should().BeNull();
     }
 
     [Fact]
-    public async Task PollConnectingStatusAsync_StillNotConnected_KeepsIsConnectingTrue()
+    public async Task ConnectAsync_WhileListenerIsAwaitingTheCallback_KeepsIsConnectingTrue()
     {
-        var (viewModel, calendarIntegration, _, _, _, _) = CreateViewModel();
-        viewModel.Connect();
-        calendarIntegration.StatusToReturn = new CalendarConnectionStatusDTO { Connected = false };
+        var (viewModel, _, _, _, _, callbackListener, _) = CreateViewModel();
+        var pending = new TaskCompletionSource<CalendarOAuthCallbackResult>();
+        callbackListener.PendingListen = pending;
 
-        await viewModel.PollConnectingStatusAsync();
+        var connectTask = viewModel.ConnectAsync();
+        await WaitUntilAsync(() => viewModel.IsConnecting);
 
         viewModel.IsConnecting.Should().BeTrue();
+
+        pending.SetResult(new CalendarOAuthCallbackResult("auth-code", "state", null));
+        await connectTask;
+
+        viewModel.IsConnecting.Should().BeFalse();
     }
 
     [Fact]
-    public async Task PollConnectingStatusAsync_TokenRevoked_ClearsIsConnecting()
+    public async Task ConnectAsync_WhenCompleteConnectionFails_SurfacesConnectError()
     {
-        var (viewModel, calendarIntegration, _, _, _, _) = CreateViewModel();
-        viewModel.Connect();
-        calendarIntegration.StatusToReturn = new CalendarConnectionStatusDTO { Connected = false, DisconnectReason = "token_revoked" };
+        var (viewModel, calendarIntegration, _, _, _, _, _) = CreateViewModel();
+        calendarIntegration.CompleteConnectionResult = new CalendarCallbackResultDTO { Success = false, ErrorMessage = "State mismatch." };
 
-        await viewModel.PollConnectingStatusAsync();
+        await viewModel.ConnectAsync();
 
+        viewModel.ConnectError.Should().Be("State mismatch.");
         viewModel.IsConnecting.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ConnectAsync_WhenTheListenerThrows_SurfacesConnectErrorAndLogsFailure()
+    {
+        var (viewModel, _, _, _, _, callbackListener, _) = CreateViewModel();
+        callbackListener.ThrowOnListen = new InvalidOperationException("Could not bind the loopback listener.");
+
+        await viewModel.ConnectAsync();
+
+        viewModel.ConnectError.Should().NotBeNullOrEmpty();
+        viewModel.IsConnecting.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ConnectAsync_WhileAlreadyConnecting_IsANoOp()
+    {
+        var (viewModel, _, _, _, browserLauncher, callbackListener, _) = CreateViewModel();
+        var pending = new TaskCompletionSource<CalendarOAuthCallbackResult>();
+        callbackListener.PendingListen = pending;
+
+        var firstConnect = viewModel.ConnectAsync();
+        await WaitUntilAsync(() => viewModel.IsConnecting);
+        await viewModel.ConnectAsync();
+
+        browserLauncher.OpenUrlCallCount.Should().Be(1);
+
+        pending.SetResult(new CalendarOAuthCallbackResult("auth-code", "state", null));
+        await firstConnect;
     }
 
     [Fact]
     public async Task DisconnectAsync_AlwaysConfirmsFirst()
     {
-        var (viewModel, calendarIntegration, _, _, _, dialog) = CreateViewModel();
+        var (viewModel, calendarIntegration, _, _, _, _, dialog) = CreateViewModel();
         dialog.ConfirmResult = false;
 
         await viewModel.DisconnectAsync();
@@ -213,7 +243,7 @@ public class SettingsIntegrationsViewModelTests
     [Fact]
     public async Task DisconnectAsync_Confirmed_CallsServiceAndRefreshes()
     {
-        var (viewModel, calendarIntegration, _, _, _, dialog) = CreateViewModel();
+        var (viewModel, calendarIntegration, _, _, _, _, dialog) = CreateViewModel();
         dialog.ConfirmResult = true;
 
         await viewModel.DisconnectAsync();
@@ -226,7 +256,7 @@ public class SettingsIntegrationsViewModelTests
     [Fact]
     public async Task DisconnectAsync_ServiceThrows_SurfacesDisconnectError()
     {
-        var (viewModel, calendarIntegration, _, _, _, dialog) = CreateViewModel();
+        var (viewModel, calendarIntegration, _, _, _, _, dialog) = CreateViewModel();
         dialog.ConfirmResult = true;
         calendarIntegration.ThrowOnDisconnect = new InvalidOperationException("Disconnect failed.");
 
@@ -239,7 +269,7 @@ public class SettingsIntegrationsViewModelTests
     [Fact]
     public async Task RetrySyncAsync_CallsResyncForTheCorrectCard_AndUpdatesOnlyThatRow()
     {
-        var (viewModel, _, calendarSync, creditCards, _, _) = CreateViewModel();
+        var (viewModel, _, calendarSync, creditCards, _, _, _) = CreateViewModel();
         var errorId = Guid.NewGuid();
         var otherSyncedId = Guid.NewGuid();
         creditCards.CreditCards =
@@ -267,7 +297,7 @@ public class SettingsIntegrationsViewModelTests
     [Fact]
     public async Task RetrySyncAsync_ServiceThrows_ClearsIsRetryingWithoutChangingState()
     {
-        var (viewModel, _, calendarSync, creditCards, _, _) = CreateViewModel();
+        var (viewModel, _, calendarSync, creditCards, _, _, _) = CreateViewModel();
         var cardId = Guid.NewGuid();
         creditCards.CreditCards = [CreditCard(cardId, "Nubank", nextInvoiceDueDate: new DateOnly(2026, 9, 15))];
         calendarSync.Statuses = [new CreditCardCalendarSyncStatusDTO { CreditCardId = cardId, State = "Error", LastError = "Rate limit exceeded" }];
@@ -287,7 +317,7 @@ public class SettingsIntegrationsViewModelTests
     [Fact]
     public async Task RetrySyncAsync_TracksRetryingCardId_WhileInFlight()
     {
-        var (viewModel, _, calendarSync, creditCards, _, _) = CreateViewModel();
+        var (viewModel, _, calendarSync, creditCards, _, _, _) = CreateViewModel();
         var cardId = Guid.NewGuid();
         creditCards.CreditCards = [CreditCard(cardId, "Nubank", nextInvoiceDueDate: new DateOnly(2026, 9, 15))];
         await viewModel.RefreshAsync();
@@ -311,7 +341,7 @@ public class SettingsIntegrationsViewModelTests
     [Fact]
     public async Task OpenCalendarLink_OpensGoogleCalendarDeepLinkForTheConnectedCalendarId()
     {
-        var (viewModel, calendarIntegration, _, _, browserLauncher, _) = CreateViewModel();
+        var (viewModel, calendarIntegration, _, _, browserLauncher, _, _) = CreateViewModel();
         calendarIntegration.StatusToReturn = new CalendarConnectionStatusDTO { Connected = true, CalendarId = "abc123@group.calendar.google.com" };
         await viewModel.RefreshAsync();
 
@@ -323,7 +353,7 @@ public class SettingsIntegrationsViewModelTests
     [Fact]
     public void OpenCalendarLink_NoCalendarId_DoesNothing()
     {
-        var (viewModel, _, _, _, browserLauncher, _) = CreateViewModel();
+        var (viewModel, _, _, _, browserLauncher, _, _) = CreateViewModel();
 
         viewModel.OpenCalendarLink();
 
@@ -333,7 +363,7 @@ public class SettingsIntegrationsViewModelTests
     [Fact]
     public async Task RetrySyncAsync_NullRow_ReturnsWithoutCallingService()
     {
-        var (viewModel, _, calendarSync, _, _, _) = CreateViewModel();
+        var (viewModel, _, calendarSync, _, _, _, _) = CreateViewModel();
 
         await viewModel.RetrySyncAsync(null);
 
