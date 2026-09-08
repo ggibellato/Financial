@@ -29,6 +29,11 @@ public interface ICalendarProvider
 
     Task<string> CreateCalendarAsync(string accessToken, string calendarName, CancellationToken cancellationToken = default);
 
+    /// <summary>Returns the id of an existing calendar with this exact name in the connected
+    /// account, or <see langword="null"/> if none exists - lets connecting reuse a previously
+    /// created dedicated calendar instead of creating a duplicate.</summary>
+    Task<string?> FindCalendarByNameAsync(string accessToken, string calendarName, CancellationToken cancellationToken = default);
+
     Task DeleteCalendarAsync(string accessToken, string calendarId, CancellationToken cancellationToken = default);
 
     /// <summary>Creates a single all-day event with a fixed 1-day-before popup reminder, and

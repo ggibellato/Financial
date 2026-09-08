@@ -89,6 +89,21 @@ public class CalendarIntegrationServiceTests
         connection.AccessToken.Should().Be("new-access");
         connection.RefreshToken.Should().Be("new-refresh");
         connection.ConnectedAtUtc.Should().Be(Now);
+        _provider.CreateCalendarCallCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task CompleteConnectionAsync_WhenACalendarWithTheDedicatedNameAlreadyExists_ReusesItInsteadOfCreatingANewOne()
+    {
+        _sut.BuildAuthorizationUrl();
+        _provider.ExchangeResult = new CalendarTokenResult("new-access", "new-refresh", Now.AddHours(1));
+        _provider.ExistingCalendarId = "existing-cal";
+
+        var result = await _sut.CompleteConnectionAsync(code: "auth-code", state: _provider.LastState, error: null);
+
+        result.Success.Should().BeTrue();
+        _store.Load()!.CalendarId.Should().Be("existing-cal");
+        _provider.CreateCalendarCallCount.Should().Be(0);
     }
 
     [Fact]

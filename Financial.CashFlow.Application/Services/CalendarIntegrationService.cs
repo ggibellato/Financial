@@ -98,7 +98,8 @@ public sealed class CalendarIntegrationService : ICalendarIntegrationService
             try
             {
                 accountEmail = await _provider.GetAccountEmailAsync(token.AccessToken, cancellationToken).ConfigureAwait(false);
-                calendarId = await _provider.CreateCalendarAsync(token.AccessToken, CalendarDefaults.DedicatedCalendarName, cancellationToken).ConfigureAwait(false);
+                calendarId = await _provider.FindCalendarByNameAsync(token.AccessToken, CalendarDefaults.DedicatedCalendarName, cancellationToken).ConfigureAwait(false)
+                    ?? await _provider.CreateCalendarAsync(token.AccessToken, CalendarDefaults.DedicatedCalendarName, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {

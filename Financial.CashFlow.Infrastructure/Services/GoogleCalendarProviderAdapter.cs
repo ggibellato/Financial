@@ -61,6 +61,9 @@ public sealed class GoogleCalendarProviderAdapter : ICalendarProvider
     public Task<string> CreateCalendarAsync(string accessToken, string calendarName, CancellationToken cancellationToken = default) =>
         _oAuthClient.CreateCalendarAsync(accessToken, calendarName, cancellationToken);
 
+    public Task<string?> FindCalendarByNameAsync(string accessToken, string calendarName, CancellationToken cancellationToken = default) =>
+        _oAuthClient.FindCalendarIdByNameAsync(accessToken, calendarName, cancellationToken);
+
     public Task DeleteCalendarAsync(string accessToken, string calendarId, CancellationToken cancellationToken = default) =>
         _oAuthClient.DeleteCalendarAsync(accessToken, calendarId, cancellationToken);
 

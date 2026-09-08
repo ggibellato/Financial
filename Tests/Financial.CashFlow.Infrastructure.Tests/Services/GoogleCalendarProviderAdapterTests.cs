@@ -150,6 +150,28 @@ public class GoogleCalendarProviderAdapterTests
         await act.Should().ThrowAsync<CalendarNotFoundException>();
     }
 
+    [Fact]
+    public async Task FindCalendarByNameAsync_ForwardsTheCalendarNameAndReturnsWhatTheOAuthClientFound()
+    {
+        _oAuthClient.ExistingCalendarId = "existing-cal-1";
+        var adapter = CreateAdapter();
+
+        var found = await adapter.FindCalendarByNameAsync("access-token", "Financial - Credit Card Due Dates");
+
+        found.Should().Be("existing-cal-1");
+        _oAuthClient.LastFindCalendarByNameCalendarName.Should().Be("Financial - Credit Card Due Dates");
+    }
+
+    [Fact]
+    public async Task FindCalendarByNameAsync_WhenNoneExists_ReturnsNull()
+    {
+        var adapter = CreateAdapter();
+
+        var found = await adapter.FindCalendarByNameAsync("access-token", "Financial - Credit Card Due Dates");
+
+        found.Should().BeNull();
+    }
+
     private sealed class FakeGoogleCalendarOAuthClient : IGoogleCalendarOAuthClient
     {
         public bool RefreshThrowsRevoked { get; set; }
@@ -199,6 +221,15 @@ public class GoogleCalendarProviderAdapterTests
 
         public Task<string> CreateCalendarAsync(string accessToken, string calendarName, CancellationToken cancellationToken = default) =>
             Task.FromResult("calendar-id");
+
+        public string? ExistingCalendarId { get; set; }
+        public string? LastFindCalendarByNameCalendarName { get; private set; }
+
+        public Task<string?> FindCalendarIdByNameAsync(string accessToken, string calendarName, CancellationToken cancellationToken = default)
+        {
+            LastFindCalendarByNameCalendarName = calendarName;
+            return Task.FromResult(ExistingCalendarId);
+        }
 
         public Task DeleteCalendarAsync(string accessToken, string calendarId, CancellationToken cancellationToken = default) =>
             Task.CompletedTask;
