@@ -7,10 +7,13 @@
     Re-run any time to refresh the deployed copies with whatever is currently on disk.
     Log level (Debug) and the Google Drive data source are fixed via the checked-in
     appsettings.Production.json files, so nothing needs to be reconfigured between runs.
-    GoogleDrive:CredentialsPath is machine-specific and NOT committed to source control -
-    it's read from scripts/deploy.local.json (gitignored, created from
-    scripts/deploy.local.example.json on first run) and stamped into the deployed
-    appsettings.Production.json files after each publish.
+    GoogleDrive:CredentialsPath, and the Google Calendar integration's ClientId/ClientSecret/
+    RedirectUri/CredentialsPath, are machine-specific (the latter three doubling as real
+    secrets) and NOT committed to source control - they're read from scripts/deploy.local.json
+    (gitignored, created from scripts/deploy.local.example.json on first run) and stamped into
+    the deployed appsettings.Production.json files after each publish. Leaving the Google
+    Calendar values blank in deploy.local.json keeps that integration disabled, same as an
+    unconfigured Docker/dev deployment.
 #>
 [CmdletBinding()]
 param(
@@ -75,6 +78,10 @@ foreach ($pair in @(
     $settings = Get-Content $pair.Source -Raw | ConvertFrom-Json
     $settings.Investment.GoogleDrive.CredentialsPath = $localSettings.GoogleDriveCredentialsPath
     $settings.CashFlow.GoogleDrive.CredentialsPath = $localSettings.GoogleDriveCredentialsPath
+    $settings.CashFlow.GoogleCalendar.ClientId = $localSettings.GoogleCalendarClientId
+    $settings.CashFlow.GoogleCalendar.ClientSecret = $localSettings.GoogleCalendarClientSecret
+    $settings.CashFlow.GoogleCalendar.RedirectUri = $localSettings.GoogleCalendarRedirectUri
+    $settings.CashFlow.GoogleCalendar.CredentialsPath = $localSettings.GoogleCalendarCredentialsPath
     $settings | ConvertTo-Json -Depth 10 | Set-Content -Path $pair.Target -Encoding utf8
 }
 

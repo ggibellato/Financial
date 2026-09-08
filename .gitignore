@@ -20,6 +20,10 @@ terraform*
 /deploy
 scripts/deploy.local.json
 
+#environment files
+.env
+.env.*
+!.env.example
 
 #test + coverage output (CI regenerates these every run)
 TestResults
@@ -29,5 +33,4 @@ CoverageReport
 #specific files
 .gitignore.bak
 data-investment.json
-.env*.local
-Financial.Web/.env
+
