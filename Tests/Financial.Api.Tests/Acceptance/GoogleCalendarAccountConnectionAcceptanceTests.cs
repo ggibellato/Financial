@@ -60,7 +60,7 @@ public class GoogleCalendarAccountConnectionAcceptanceTests : ApiEndpointTests
 
     [Fact]
     [Trait("AC", "P45-F01-google-calendar-account-connection-03")]
-    public async Task Disconnecting_DeletesCalendarRevokesTokenAndClearsCredentials_AndStatusReportsDisconnected()
+    public async Task Disconnecting_RevokesTokenAndClearsCredentials_LeavesTheCalendarIntact_AndStatusReportsDisconnected()
     {
         var state = await BeginConnectAndCaptureStateAsync();
         await Client.GetAsync($"{BaseRoute}/callback?code=auth-code&state={Uri.EscapeDataString(state)}");
@@ -69,7 +69,7 @@ public class GoogleCalendarAccountConnectionAcceptanceTests : ApiEndpointTests
         var result = await disconnectResponse.Content.ReadFromJsonAsync<CalendarDisconnectResultDTO>();
 
         result!.RemoteCleanupSucceeded.Should().BeTrue();
-        _provider.DeletedCalendars.Should().ContainSingle();
+        _provider.DeletedCalendars.Should().BeEmpty();
         _provider.RevokeCallCount.Should().Be(1);
 
         var status = await Client.GetFromJsonAsync<CalendarConnectionStatusDTO>($"{BaseRoute}/status");

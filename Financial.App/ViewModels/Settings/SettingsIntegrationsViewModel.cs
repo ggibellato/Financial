@@ -279,7 +279,7 @@ public class SettingsIntegrationsViewModel : ViewModelBase
     internal async Task DisconnectAsync()
     {
         if (!_dialogService.Confirm(
-            $"This will delete the \"{Status?.CalendarName ?? "Financial - Credit Card Due Dates"}\" calendar and all its events from Google Calendar. Continue?",
+            $"The app will stop managing due-date events and revoke its access to your Google account. The \"{Status?.CalendarName ?? "Financial - Credit Card Due Dates"}\" calendar and its events will remain in your Google account. Continue?",
             "Disconnect Google Calendar"))
         {
             return;
