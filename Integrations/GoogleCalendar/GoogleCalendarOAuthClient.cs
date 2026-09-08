@@ -141,6 +141,39 @@ internal sealed class GoogleCalendarOAuthClient : IGoogleCalendarOAuthClient
         }).ConfigureAwait(false);
     }
 
+    public async Task<string?> FindEventIdByTitlePrefixAsync(
+        string accessToken, string calendarId, string titlePrefix, CancellationToken cancellationToken = default)
+    {
+        using var service = CreateCalendarService(accessToken);
+        try
+        {
+            string? pageToken = null;
+            do
+            {
+                var request = service.Events.List(calendarId);
+                request.Q = titlePrefix;
+                request.PageToken = pageToken;
+                var page = await GoogleRetryPolicy.ExecuteWithRetryAsync(
+                    () => request.ExecuteAsync(cancellationToken)).ConfigureAwait(false);
+
+                var match = page.Items?.FirstOrDefault(item =>
+                    item.Summary is not null && item.Summary.StartsWith(titlePrefix, StringComparison.Ordinal));
+                if (match is not null)
+                {
+                    return match.Id;
+                }
+
+                pageToken = page.NextPageToken;
+            } while (pageToken is not null);
+
+            return null;
+        }
+        catch (GoogleApiException ex) when (IsNotFound(ex))
+        {
+            throw new GoogleCalendarNotFoundException($"Calendar '{calendarId}' was not found.", ex);
+        }
+    }
+
     public async Task<string> CreateEventAsync(
         string accessToken, string calendarId, string title, string description, DateOnly date, CancellationToken cancellationToken = default)
     {

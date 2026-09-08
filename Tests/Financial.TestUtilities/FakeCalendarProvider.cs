@@ -114,6 +114,23 @@ public sealed class FakeCalendarProvider : ICalendarProvider
     public List<(string CalendarId, string EventId, string Title, string Description, DateOnly Date)> UpdatedEvents { get; } = new();
     public List<(string CalendarId, string EventId)> DeletedEvents { get; } = new();
 
+    /// <summary>When set, FindEventIdByTitlePrefixAsync returns this id instead of null,
+    /// simulating a matching event already present in the calendar (e.g. a reused one).</summary>
+    public string? ExistingEventIdForTitlePrefix { get; set; }
+    public List<(string CalendarId, string TitlePrefix)> FindEventIdByTitlePrefixCalls { get; } = new();
+
+    public Task<string?> FindEventIdByTitlePrefixAsync(
+        string accessToken, string calendarId, string titlePrefix, CancellationToken cancellationToken = default)
+    {
+        FindEventIdByTitlePrefixCalls.Add((calendarId, titlePrefix));
+        if (calendarId == NotFoundCalendarId)
+        {
+            throw new CalendarNotFoundException("Calendar not found.");
+        }
+
+        return Task.FromResult(ExistingEventIdForTitlePrefix);
+    }
+
     public Task<string> CreateEventAsync(
         string accessToken, string calendarId, string title, string description, DateOnly date, CancellationToken cancellationToken = default)
     {

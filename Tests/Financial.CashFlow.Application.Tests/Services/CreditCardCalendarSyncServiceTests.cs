@@ -112,6 +112,41 @@ public class CreditCardCalendarSyncServiceTests
     }
 
     [Fact]
+    public async Task ResyncAsync_NoLocalMappingButAMatchingEventAlreadyExists_ReconcilesInsteadOfDuplicating()
+    {
+        // Simulates reconnecting to a reused calendar (ICalendarProvider.FindCalendarByNameAsync)
+        // that already has this card's event from a previous connection - the local mapping was
+        // lost (a fresh connection always starts empty), but the real event is still there.
+        Connect();
+        var card = Card("BarclaysPlatinumVisa8003");
+        card.Update(card.Name, isActive: true, new DateOnly(2026, 9, 10));
+        _provider.ExistingEventIdForTitlePrefix = "pre-existing-event-1";
+
+        var result = await _sut.ResyncAsync(card.Id);
+
+        result.State.Should().Be("Synced");
+        _provider.CreatedEvents.Should().BeEmpty();
+        _provider.UpdatedEvents.Should().ContainSingle(e => e.EventId == "pre-existing-event-1" && e.CalendarId == "cal-1");
+        _provider.FindEventIdByTitlePrefixCalls.Should().ContainSingle(c => c.CalendarId == "cal-1" && c.TitlePrefix == $"{card.Name} — Due ");
+        _connectionStore.Load()!.CardEventIds.Should().ContainKey(card.Id).WhoseValue.Should().Be("pre-existing-event-1");
+    }
+
+    [Fact]
+    public async Task ResyncAsync_SecondSync_DoesNotReconcile_BecauseTheLocalMappingIsAlreadyKnown()
+    {
+        Connect();
+        var card = Card("BarclaysPlatinumVisa8003");
+        card.Update(card.Name, isActive: true, new DateOnly(2026, 9, 10));
+        await _sut.ResyncAsync(card.Id); // first sync: no local mapping yet, so this itself reconciles once.
+        _provider.ExistingEventIdForTitlePrefix = "some-other-event";
+
+        await _sut.ResyncAsync(card.Id);
+
+        _provider.FindEventIdByTitlePrefixCalls.Should().ContainSingle("the second sync already knows the mapping, so it must not reconcile again");
+        _provider.UpdatedEvents.Should().Contain(e => e.EventId == _provider.CreatedEventId);
+    }
+
+    [Fact]
     public async Task ResyncAsync_SecondSync_UpdatesTheSameEventInstead_OfCreatingASecondOne()
     {
         Connect();

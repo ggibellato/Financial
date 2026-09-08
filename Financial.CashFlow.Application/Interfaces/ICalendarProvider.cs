@@ -36,6 +36,15 @@ public interface ICalendarProvider
 
     Task DeleteCalendarAsync(string accessToken, string calendarId, CancellationToken cancellationToken = default);
 
+    /// <summary>Returns the id of the first event in the calendar whose title starts with
+    /// <paramref name="titlePrefix"/>, or <see langword="null"/> if none matches - lets a sync
+    /// reconcile with an event that already exists (e.g. in a reused calendar, see
+    /// <see cref="FindCalendarByNameAsync"/>) instead of creating a duplicate. Throws
+    /// <see cref="Exceptions.CalendarNotFoundException"/> when <paramref name="calendarId"/> no
+    /// longer exists.</summary>
+    Task<string?> FindEventIdByTitlePrefixAsync(
+        string accessToken, string calendarId, string titlePrefix, CancellationToken cancellationToken = default);
+
     /// <summary>Creates a single all-day event with a fixed 1-day-before popup reminder, and
     /// returns its provider-assigned id. Throws <see cref="Exceptions.CalendarNotFoundException"/>
     /// when <paramref name="calendarId"/> no longer exists.</summary>
