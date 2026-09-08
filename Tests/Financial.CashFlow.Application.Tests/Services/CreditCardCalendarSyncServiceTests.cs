@@ -295,4 +295,31 @@ public class CreditCardCalendarSyncServiceTests
 
         statuses.Should().ContainSingle(s => s.State == "Synced");
     }
+
+    [Fact]
+    public void GetSyncStatuses_CardHasAPersistedEventButNoInMemoryStatus_IsReportedAsSynced()
+    {
+        // Simulates a fresh process (e.g. after restarting Financial.App): the in-memory status
+        // store starts empty, but the card's event already exists from a previous process's sync.
+        var card = Card("BaAmex");
+        Connect();
+        _connectionStore.Save(_connectionStore.Load()! with { CardEventIds = new Dictionary<Guid, string> { [card.Id] = "event-1" } });
+
+        var statuses = _sut.GetSyncStatuses();
+
+        statuses.Should().ContainSingle(s => s.CreditCardId == card.Id && s.State == "Synced");
+    }
+
+    [Fact]
+    public void GetSyncStatuses_InMemoryStatusTakesPrecedenceOverThePersistedEventMapping()
+    {
+        var card = Card("BaAmex");
+        Connect();
+        _connectionStore.Save(_connectionStore.Load()! with { CardEventIds = new Dictionary<Guid, string> { [card.Id] = "event-1" } });
+        _statusStore.SetError(card.Id, "Rate limit exceeded");
+
+        var statuses = _sut.GetSyncStatuses();
+
+        statuses.Should().ContainSingle(s => s.CreditCardId == card.Id && s.State == "Error");
+    }
 }

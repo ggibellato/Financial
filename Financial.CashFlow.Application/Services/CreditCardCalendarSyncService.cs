@@ -102,8 +102,21 @@ public sealed class CreditCardCalendarSyncService : ICreditCardCalendarSyncServi
         return results;
     }
 
-    public IReadOnlyList<CreditCardCalendarSyncStatusDTO> GetSyncStatuses() =>
-        _statusStore.GetAllStatuses().Select(kvp => ToDto(kvp.Key, kvp.Value)).ToList();
+    /// <summary>The status store is per-process and in-memory, so it starts empty on every fresh
+    /// process even though a card's event already exists in Google Calendar from a previous
+    /// process's sync. Cards present in the persisted event-id mapping but missing from the
+    /// status store are reported as <c>Synced</c> here instead of leaving callers to default
+    /// them to <c>Pending</c> ("still syncing" forever, even though the real work is done).</summary>
+    public IReadOnlyList<CreditCardCalendarSyncStatusDTO> GetSyncStatuses()
+    {
+        var recorded = _statusStore.GetAllStatuses();
+        var cardEventIds = _connectionStore.Load()?.CardEventIds ?? new Dictionary<Guid, string>();
+        var derivedSyncedIds = cardEventIds.Keys.Where(id => !recorded.ContainsKey(id));
+
+        return recorded.Select(kvp => ToDto(kvp.Key, kvp.Value))
+            .Concat(derivedSyncedIds.Select(id => ToDto(id, new CreditCardCalendarSyncStatus(CreditCardCalendarSyncState.Synced, null, null))))
+            .ToList();
+    }
 
     private async Task SyncCoreAsync(Guid creditCardId, CancellationToken cancellationToken)
     {
