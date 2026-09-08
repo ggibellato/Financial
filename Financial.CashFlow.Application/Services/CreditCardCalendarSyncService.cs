@@ -102,8 +102,38 @@ public sealed class CreditCardCalendarSyncService : ICreditCardCalendarSyncServi
         return results;
     }
 
-    public IReadOnlyList<CreditCardCalendarSyncStatusDTO> GetSyncStatuses() =>
-        _statusStore.GetAllStatuses().Select(kvp => ToDto(kvp.Key, kvp.Value)).ToList();
+    /// <summary>The status store is per-process and in-memory, so it starts empty on every fresh
+    /// process even though a card's event already exists in Google Calendar from a previous
+    /// process's sync. Cards present in the persisted event-id mapping but missing from the
+    /// status store are reported as <c>Synced</c> here instead of leaving callers to default
+    /// them to <c>Pending</c> ("still syncing" forever, even though the real work is done).</summary>
+    public IReadOnlyList<CreditCardCalendarSyncStatusDTO> GetSyncStatuses()
+    {
+        var recorded = _statusStore.GetAllStatuses();
+        var cardEventIds = TryLoadCardEventIds();
+        var derivedSyncedIds = cardEventIds.Keys.Where(id => !recorded.ContainsKey(id));
+
+        return recorded.Select(kvp => ToDto(kvp.Key, kvp.Value))
+            .Concat(derivedSyncedIds.Select(id => ToDto(id, new CreditCardCalendarSyncStatus(CreditCardCalendarSyncState.Synced, null, null))))
+            .ToList();
+    }
+
+    /// <summary>The real store writes via temp-file-then-atomic-rename, but a concurrent read can
+    /// still occasionally race the rename on Windows and throw <see cref="IOException"/> - this
+    /// method is called on every status poll, far more often than the store was ever read before,
+    /// so treat that as "no derived data this call" rather than failing the whole status list; the
+    /// next call sees the settled file.</summary>
+    private IReadOnlyDictionary<Guid, string> TryLoadCardEventIds()
+    {
+        try
+        {
+            return _connectionStore.Load()?.CardEventIds ?? new Dictionary<Guid, string>();
+        }
+        catch (IOException)
+        {
+            return new Dictionary<Guid, string>();
+        }
+    }
 
     private async Task SyncCoreAsync(Guid creditCardId, CancellationToken cancellationToken)
     {
@@ -207,18 +237,32 @@ public sealed class CreditCardCalendarSyncService : ICreditCardCalendarSyncServi
 
         try
         {
+            if (!hasEventMapping)
+            {
+                // No locally-known event for this card - before creating one, check whether the
+                // calendar already has a matching event (e.g. it was reused on reconnect, see
+                // ICalendarProvider.FindCalendarByNameAsync). Reconciling here, rather than only
+                // recovering the mapping right after a reconnect, means a lost/never-recorded
+                // mapping self-heals on its own next sync too.
+                existingEventId = await _provider.FindEventIdByTitlePrefixAsync(accessToken, connection.CalendarId, TitlePrefix(cardName), cancellationToken)
+                    .ConfigureAwait(false);
+                hasEventMapping = existingEventId is not null;
+            }
+
+            string eventId;
             if (hasEventMapping)
             {
-                await _provider.UpdateEventAsync(accessToken, connection.CalendarId, existingEventId!, title, description, dueDate, cancellationToken)
+                eventId = existingEventId!;
+                await _provider.UpdateEventAsync(accessToken, connection.CalendarId, eventId, title, description, dueDate, cancellationToken)
                     .ConfigureAwait(false);
             }
             else
             {
-                var newEventId = await _provider.CreateEventAsync(accessToken, connection.CalendarId, title, description, dueDate, cancellationToken)
+                eventId = await _provider.CreateEventAsync(accessToken, connection.CalendarId, title, description, dueDate, cancellationToken)
                     .ConfigureAwait(false);
-                SetEventMapping(creditCardId, newEventId, connection);
             }
 
+            SetEventMapping(creditCardId, eventId, connection);
             _statusStore.SetSynced(creditCardId, _timeProvider.GetUtcNow());
         }
         catch (CalendarNotFoundException)
@@ -286,6 +330,8 @@ public sealed class CreditCardCalendarSyncService : ICreditCardCalendarSyncServi
 
     private static string BuildTitle(string cardName, decimal total) =>
         $"{cardName} — Due {total.ToString("N2", CultureInfo.InvariantCulture)}";
+
+    private static string TitlePrefix(string cardName) => $"{cardName} — Due ";
 
     private static string BuildDescription(string cardName, DateOnly dueDate, decimal total, bool hasChargesPosted)
     {

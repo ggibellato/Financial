@@ -29,7 +29,21 @@ public interface ICalendarProvider
 
     Task<string> CreateCalendarAsync(string accessToken, string calendarName, CancellationToken cancellationToken = default);
 
+    /// <summary>Returns the id of an existing calendar with this exact name in the connected
+    /// account, or <see langword="null"/> if none exists - lets connecting reuse a previously
+    /// created dedicated calendar instead of creating a duplicate.</summary>
+    Task<string?> FindCalendarByNameAsync(string accessToken, string calendarName, CancellationToken cancellationToken = default);
+
     Task DeleteCalendarAsync(string accessToken, string calendarId, CancellationToken cancellationToken = default);
+
+    /// <summary>Returns the id of the first event in the calendar whose title starts with
+    /// <paramref name="titlePrefix"/>, or <see langword="null"/> if none matches - lets a sync
+    /// reconcile with an event that already exists (e.g. in a reused calendar, see
+    /// <see cref="FindCalendarByNameAsync"/>) instead of creating a duplicate. Throws
+    /// <see cref="Exceptions.CalendarNotFoundException"/> when <paramref name="calendarId"/> no
+    /// longer exists.</summary>
+    Task<string?> FindEventIdByTitlePrefixAsync(
+        string accessToken, string calendarId, string titlePrefix, CancellationToken cancellationToken = default);
 
     /// <summary>Creates a single all-day event with a fixed 1-day-before popup reminder, and
     /// returns its provider-assigned id. Throws <see cref="Exceptions.CalendarNotFoundException"/>

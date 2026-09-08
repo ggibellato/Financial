@@ -32,6 +32,9 @@
 
                     <StackPanel Visibility="{Binding ShowNotConnectedPanel, Converter={StaticResource BoolToVisibilityConverter}}">
                         <TextBlock Text="{Binding NotConnectedMessage}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                        <TextBlock Text="{Binding ConnectError}" Foreground="{DynamicResource SystemFillColorCriticalBrush}" TextWrapping="Wrap"
+                                   Margin="0,0,0,8"
+                                   Visibility="{Binding ConnectError, Converter={StaticResource NullOrEmptyToVisibilityConverter}}"/>
                         <ui:Button Content="{Binding ConnectButtonText}" Appearance="Primary" HorizontalAlignment="Left"
                                    IsEnabled="{Binding CanConnect}"
                                    Command="{Binding ConnectCommand}"

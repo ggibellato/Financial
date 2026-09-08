@@ -8,8 +8,9 @@ public interface ICalendarIntegrationService
     string BuildAuthorizationUrl();
 
     /// <summary>Handles the OAuth callback: validates <paramref name="state"/>, exchanges
-    /// <paramref name="code"/>, creates the dedicated calendar, and persists the connection -
-    /// or records why it failed.</summary>
+    /// <paramref name="code"/>, reuses the dedicated calendar if one with that name already
+    /// exists in the account (otherwise creates it), and persists the connection - or records
+    /// why it failed.</summary>
     Task<CalendarCallbackResultDTO> CompleteConnectionAsync(
         string? code, string? state, string? error, CancellationToken cancellationToken = default);
 

@@ -19,6 +19,13 @@ public sealed class FakeCalendarProvider : ICalendarProvider
     public bool DeleteCalendarThrows { get; set; }
     public bool RevokeThrows { get; set; }
 
+    /// <summary>When set, <see cref="FindCalendarByNameAsync"/> returns this id instead of
+    /// <see langword="null"/>, simulating an existing calendar with that name already in the
+    /// account.</summary>
+    public string? ExistingCalendarId { get; set; }
+    public int CreateCalendarCallCount { get; private set; }
+    public List<string> FindCalendarByNameCalls { get; } = new();
+
     public int RevokeCallCount { get; private set; }
     public List<string> RevokedTokens { get; } = new();
     public int RefreshCallCount { get; private set; }
@@ -66,12 +73,19 @@ public sealed class FakeCalendarProvider : ICalendarProvider
 
     public Task<string> CreateCalendarAsync(string accessToken, string calendarName, CancellationToken cancellationToken = default)
     {
+        CreateCalendarCallCount++;
         if (CreateCalendarThrows)
         {
             throw new InvalidOperationException("Simulated calendar creation failure.");
         }
 
         return Task.FromResult(CreatedCalendarId);
+    }
+
+    public Task<string?> FindCalendarByNameAsync(string accessToken, string calendarName, CancellationToken cancellationToken = default)
+    {
+        FindCalendarByNameCalls.Add(calendarName);
+        return Task.FromResult(ExistingCalendarId);
     }
 
     public Task DeleteCalendarAsync(string accessToken, string calendarId, CancellationToken cancellationToken = default)
@@ -99,6 +113,23 @@ public sealed class FakeCalendarProvider : ICalendarProvider
     public List<(string CalendarId, string Title, string Description, DateOnly Date)> CreatedEvents { get; } = new();
     public List<(string CalendarId, string EventId, string Title, string Description, DateOnly Date)> UpdatedEvents { get; } = new();
     public List<(string CalendarId, string EventId)> DeletedEvents { get; } = new();
+
+    /// <summary>When set, FindEventIdByTitlePrefixAsync returns this id instead of null,
+    /// simulating a matching event already present in the calendar (e.g. a reused one).</summary>
+    public string? ExistingEventIdForTitlePrefix { get; set; }
+    public List<(string CalendarId, string TitlePrefix)> FindEventIdByTitlePrefixCalls { get; } = new();
+
+    public Task<string?> FindEventIdByTitlePrefixAsync(
+        string accessToken, string calendarId, string titlePrefix, CancellationToken cancellationToken = default)
+    {
+        FindEventIdByTitlePrefixCalls.Add((calendarId, titlePrefix));
+        if (calendarId == NotFoundCalendarId)
+        {
+            throw new CalendarNotFoundException("Calendar not found.");
+        }
+
+        return Task.FromResult(ExistingEventIdForTitlePrefix);
+    }
 
     public Task<string> CreateEventAsync(
         string accessToken, string calendarId, string title, string description, DateOnly date, CancellationToken cancellationToken = default)

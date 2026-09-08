@@ -108,6 +108,29 @@ internal sealed class GoogleCalendarOAuthClient : IGoogleCalendarOAuthClient
         return created.Id;
     }
 
+    public async Task<string?> FindCalendarIdByNameAsync(string accessToken, string calendarName, CancellationToken cancellationToken = default)
+    {
+        using var service = CreateCalendarService(accessToken);
+        string? pageToken = null;
+        do
+        {
+            var request = service.CalendarList.List();
+            request.PageToken = pageToken;
+            var page = await GoogleRetryPolicy.ExecuteWithRetryAsync(
+                () => request.ExecuteAsync(cancellationToken)).ConfigureAwait(false);
+
+            var match = page.Items?.FirstOrDefault(item => string.Equals(item.Summary, calendarName, StringComparison.Ordinal));
+            if (match is not null)
+            {
+                return match.Id;
+            }
+
+            pageToken = page.NextPageToken;
+        } while (pageToken is not null);
+
+        return null;
+    }
+
     public async Task DeleteCalendarAsync(string accessToken, string calendarId, CancellationToken cancellationToken = default)
     {
         using var service = CreateCalendarService(accessToken);
@@ -116,6 +139,39 @@ internal sealed class GoogleCalendarOAuthClient : IGoogleCalendarOAuthClient
             await service.Calendars.Delete(calendarId).ExecuteAsync(cancellationToken).ConfigureAwait(false);
             return true;
         }).ConfigureAwait(false);
+    }
+
+    public async Task<string?> FindEventIdByTitlePrefixAsync(
+        string accessToken, string calendarId, string titlePrefix, CancellationToken cancellationToken = default)
+    {
+        using var service = CreateCalendarService(accessToken);
+        try
+        {
+            string? pageToken = null;
+            do
+            {
+                var request = service.Events.List(calendarId);
+                request.Q = titlePrefix;
+                request.PageToken = pageToken;
+                var page = await GoogleRetryPolicy.ExecuteWithRetryAsync(
+                    () => request.ExecuteAsync(cancellationToken)).ConfigureAwait(false);
+
+                var match = page.Items?.FirstOrDefault(item =>
+                    item.Summary is not null && item.Summary.StartsWith(titlePrefix, StringComparison.Ordinal));
+                if (match is not null)
+                {
+                    return match.Id;
+                }
+
+                pageToken = page.NextPageToken;
+            } while (pageToken is not null);
+
+            return null;
+        }
+        catch (GoogleApiException ex) when (IsNotFound(ex))
+        {
+            throw new GoogleCalendarNotFoundException($"Calendar '{calendarId}' was not found.", ex);
+        }
     }
 
     public async Task<string> CreateEventAsync(

@@ -89,6 +89,21 @@ public class CalendarIntegrationServiceTests
         connection.AccessToken.Should().Be("new-access");
         connection.RefreshToken.Should().Be("new-refresh");
         connection.ConnectedAtUtc.Should().Be(Now);
+        _provider.CreateCalendarCallCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task CompleteConnectionAsync_WhenACalendarWithTheDedicatedNameAlreadyExists_ReusesItInsteadOfCreatingANewOne()
+    {
+        _sut.BuildAuthorizationUrl();
+        _provider.ExchangeResult = new CalendarTokenResult("new-access", "new-refresh", Now.AddHours(1));
+        _provider.ExistingCalendarId = "existing-cal";
+
+        var result = await _sut.CompleteConnectionAsync(code: "auth-code", state: _provider.LastState, error: null);
+
+        result.Success.Should().BeTrue();
+        _store.Load()!.CalendarId.Should().Be("existing-cal");
+        _provider.CreateCalendarCallCount.Should().Be(0);
     }
 
     [Fact]
@@ -194,7 +209,7 @@ public class CalendarIntegrationServiceTests
     }
 
     [Fact]
-    public async Task DisconnectAsync_WhenConnected_DeletesCalendarRevokesTokenAndClearsLocalState()
+    public async Task DisconnectAsync_WhenConnected_RevokesTokenClearsLocalStateAndLeavesTheCalendarUntouched()
     {
         var connection = new CalendarConnection("user@gmail.com", "cal-1", "access-token", "refresh-token", Now.AddHours(1), Now.AddDays(-1), new Dictionary<Guid, string>());
         _store.Save(connection);
@@ -202,22 +217,22 @@ public class CalendarIntegrationServiceTests
         var result = await _sut.DisconnectAsync();
 
         result.RemoteCleanupSucceeded.Should().BeTrue();
-        _provider.DeletedCalendars.Should().ContainSingle(c => c.AccessToken == "access-token" && c.CalendarId == "cal-1");
+        _provider.DeletedCalendars.Should().BeEmpty();
         _provider.RevokeCallCount.Should().Be(1);
         _store.Load().Should().BeNull();
     }
 
     [Fact]
-    public async Task DisconnectAsync_WhenRemoteCallsFail_StillClearsLocalState()
+    public async Task DisconnectAsync_WhenRevokeFails_StillClearsLocalState()
     {
         var connection = new CalendarConnection("user@gmail.com", "cal-1", "access-token", "refresh-token", Now.AddHours(1), Now.AddDays(-1), new Dictionary<Guid, string>());
         _store.Save(connection);
-        _provider.DeleteCalendarThrows = true;
         _provider.RevokeThrows = true;
 
         var result = await _sut.DisconnectAsync();
 
         result.RemoteCleanupSucceeded.Should().BeFalse();
+        _provider.DeletedCalendars.Should().BeEmpty();
         _store.Load().Should().BeNull();
         _store.DeleteCallCount.Should().Be(1);
     }

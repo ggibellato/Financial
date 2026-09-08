@@ -7122,7 +7122,7 @@
       "get": {
         "parameters": [
           {
-            "description": "The OAuth redirect target. Completes the connection and renders a landing\n            page telling the user to return to the app - never called by either front end\u0027s API client.",
+            "description": "The OAuth redirect target. Completes the connection, syncs every qualifying\n            credit card so pre-existing cards show up immediately rather than staying \u0022Pending\u0022\n            until their next save, and renders a landing page telling the user to return to the\n            app - never called by either front end\u0027s API client.",
             "in": "query",
             "name": "code",
             "schema": {
@@ -7130,7 +7130,7 @@
             }
           },
           {
-            "description": "The OAuth redirect target. Completes the connection and renders a landing\n            page telling the user to return to the app - never called by either front end\u0027s API client.",
+            "description": "The OAuth redirect target. Completes the connection, syncs every qualifying\n            credit card so pre-existing cards show up immediately rather than staying \u0022Pending\u0022\n            until their next save, and renders a landing page telling the user to return to the\n            app - never called by either front end\u0027s API client.",
             "in": "query",
             "name": "state",
             "schema": {
@@ -7138,7 +7138,7 @@
             }
           },
           {
-            "description": "The OAuth redirect target. Completes the connection and renders a landing\n            page telling the user to return to the app - never called by either front end\u0027s API client.",
+            "description": "The OAuth redirect target. Completes the connection, syncs every qualifying\n            credit card so pre-existing cards show up immediately rather than staying \u0022Pending\u0022\n            until their next save, and renders a landing page telling the user to return to the\n            app - never called by either front end\u0027s API client.",
             "in": "query",
             "name": "error",
             "schema": {
@@ -7154,7 +7154,7 @@
             "description": "200 OK with a minimal HTML success/failure page."
           }
         },
-        "summary": "The OAuth redirect target. Completes the connection and renders a landing\n            page telling the user to return to the app - never called by either front end\u0027s API client.",
+        "summary": "The OAuth redirect target. Completes the connection, syncs every qualifying\n            credit card so pre-existing cards show up immediately rather than staying \u0022Pending\u0022\n            until their next save, and renders a landing page telling the user to return to the\n            app - never called by either front end\u0027s API client.",
         "tags": [
           "CalendarIntegration"
         ]

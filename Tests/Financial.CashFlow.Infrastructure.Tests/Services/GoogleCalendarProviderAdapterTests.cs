@@ -150,6 +150,52 @@ public class GoogleCalendarProviderAdapterTests
         await act.Should().ThrowAsync<CalendarNotFoundException>();
     }
 
+    [Fact]
+    public async Task FindCalendarByNameAsync_ForwardsTheCalendarNameAndReturnsWhatTheOAuthClientFound()
+    {
+        _oAuthClient.ExistingCalendarId = "existing-cal-1";
+        var adapter = CreateAdapter();
+
+        var found = await adapter.FindCalendarByNameAsync("access-token", "Financial - Credit Card Due Dates");
+
+        found.Should().Be("existing-cal-1");
+        _oAuthClient.LastFindCalendarByNameCalendarName.Should().Be("Financial - Credit Card Due Dates");
+    }
+
+    [Fact]
+    public async Task FindCalendarByNameAsync_WhenNoneExists_ReturnsNull()
+    {
+        var adapter = CreateAdapter();
+
+        var found = await adapter.FindCalendarByNameAsync("access-token", "Financial - Credit Card Due Dates");
+
+        found.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task FindEventIdByTitlePrefixAsync_ForwardsCalendarIdAndTitlePrefix_AndReturnsWhatTheOAuthClientFound()
+    {
+        _oAuthClient.ExistingEventIdForTitlePrefix = "existing-event-1";
+        var adapter = CreateAdapter();
+
+        var found = await adapter.FindEventIdByTitlePrefixAsync("access-token", "cal-1", "BaAmex — Due ");
+
+        found.Should().Be("existing-event-1");
+        _oAuthClient.LastCalendarId.Should().Be("cal-1");
+        _oAuthClient.LastTitlePrefix.Should().Be("BaAmex — Due ");
+    }
+
+    [Fact]
+    public async Task FindEventIdByTitlePrefixAsync_WhenTheCalendarWasNotFound_ThrowsApplicationLevelException()
+    {
+        _oAuthClient.EventCallsThrowNotFound = true;
+        var adapter = CreateAdapter();
+
+        Func<Task> act = () => adapter.FindEventIdByTitlePrefixAsync("access-token", "cal-1", "BaAmex — Due ");
+
+        await act.Should().ThrowAsync<CalendarNotFoundException>();
+    }
+
     private sealed class FakeGoogleCalendarOAuthClient : IGoogleCalendarOAuthClient
     {
         public bool RefreshThrowsRevoked { get; set; }
@@ -200,6 +246,15 @@ public class GoogleCalendarProviderAdapterTests
         public Task<string> CreateCalendarAsync(string accessToken, string calendarName, CancellationToken cancellationToken = default) =>
             Task.FromResult("calendar-id");
 
+        public string? ExistingCalendarId { get; set; }
+        public string? LastFindCalendarByNameCalendarName { get; private set; }
+
+        public Task<string?> FindCalendarIdByNameAsync(string accessToken, string calendarName, CancellationToken cancellationToken = default)
+        {
+            LastFindCalendarByNameCalendarName = calendarName;
+            return Task.FromResult(ExistingCalendarId);
+        }
+
         public Task DeleteCalendarAsync(string accessToken, string calendarId, CancellationToken cancellationToken = default) =>
             Task.CompletedTask;
 
@@ -210,6 +265,22 @@ public class GoogleCalendarProviderAdapterTests
         public string? LastTitle { get; private set; }
         public string? LastDescription { get; private set; }
         public DateOnly? LastDate { get; private set; }
+
+        public string? ExistingEventIdForTitlePrefix { get; set; }
+        public string? LastTitlePrefix { get; private set; }
+
+        public Task<string?> FindEventIdByTitlePrefixAsync(
+            string accessToken, string calendarId, string titlePrefix, CancellationToken cancellationToken = default)
+        {
+            LastCalendarId = calendarId;
+            LastTitlePrefix = titlePrefix;
+            if (EventCallsThrowNotFound)
+            {
+                throw new GoogleCalendarNotFoundException("not found", new InvalidOperationException());
+            }
+
+            return Task.FromResult(ExistingEventIdForTitlePrefix);
+        }
 
         public Task<string> CreateEventAsync(
             string accessToken, string calendarId, string title, string description, DateOnly date, CancellationToken cancellationToken = default)

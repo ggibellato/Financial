@@ -1,5 +1,4 @@
 using System.Collections.ObjectModel;
-using System.Windows.Threading;
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.Presentation.App.Services;
@@ -16,28 +15,30 @@ public sealed record CalendarSyncRow(Guid CreditCardId, string Name, DateOnly Du
 /// <summary>
 /// Reads the calendar connection/sync state directly from CashFlow's in-process Application
 /// services (no HTTP call - see spec.md's Technical Decisions). Connect opens the OS default
-/// browser to the OAuth consent URL and polls status on a short interval
-/// (<see cref="ConnectingPollInterval"/>) until connected, since no window-focus-regained
-/// signal exists in this codebase to mirror the Web page's behaviour exactly.
+/// browser to the OAuth consent URL and awaits Google's redirect on a self-hosted loopback
+/// listener (<see cref="ICalendarOAuthCallbackListener"/>) - Financial.App has no HTTP server of
+/// its own, so this is what lets the calendar be connected without Financial.Api running.
 /// </summary>
 public class SettingsIntegrationsViewModel : ViewModelBase
 {
-    public static readonly TimeSpan ConnectingPollInterval = TimeSpan.FromSeconds(3);
+    public static readonly TimeSpan ConnectTimeout = TimeSpan.FromMinutes(5);
 
     private readonly ICalendarIntegrationService _calendarIntegrationService;
     private readonly ICreditCardCalendarSyncService _calendarSyncService;
     private readonly ICreditCardService _creditCardService;
     private readonly IBrowserLauncher _browserLauncher;
+    private readonly ICalendarOAuthCallbackListener _callbackListener;
     private readonly IDialogService _dialogService;
     private readonly ILogger<SettingsIntegrationsViewModel> _logger;
 
-    private DispatcherTimer? _connectingTimer;
+    private CancellationTokenSource? _connectCts;
     private int _refreshRequestId;
 
     private bool _isLoading = true;
     private string? _error;
     private CalendarConnectionStatusDTO? _status;
     private bool _isConnecting;
+    private string? _connectError;
     private bool _isDisconnecting;
     private string? _disconnectError;
     private Guid? _retryingCardId;
@@ -124,6 +125,12 @@ public class SettingsIntegrationsViewModel : ViewModelBase
 
     public bool CanConnect => !IsConnecting;
 
+    public string? ConnectError
+    {
+        get => _connectError;
+        private set => SetProperty(ref _connectError, value);
+    }
+
     public bool IsDisconnecting
     {
         get => _isDisconnecting;
@@ -167,6 +174,7 @@ public class SettingsIntegrationsViewModel : ViewModelBase
         ICreditCardCalendarSyncService calendarSyncService,
         ICreditCardService creditCardService,
         IBrowserLauncher browserLauncher,
+        ICalendarOAuthCallbackListener callbackListener,
         IDialogService dialogService,
         ILogger<SettingsIntegrationsViewModel> logger)
     {
@@ -174,11 +182,12 @@ public class SettingsIntegrationsViewModel : ViewModelBase
         _calendarSyncService = calendarSyncService ?? throw new ArgumentNullException(nameof(calendarSyncService));
         _creditCardService = creditCardService ?? throw new ArgumentNullException(nameof(creditCardService));
         _browserLauncher = browserLauncher ?? throw new ArgumentNullException(nameof(browserLauncher));
+        _callbackListener = callbackListener ?? throw new ArgumentNullException(nameof(callbackListener));
         _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         RetryLoadCommand = new RelayCommand(async () => await RefreshAsync());
-        ConnectCommand = new RelayCommand(Connect);
+        ConnectCommand = new RelayCommand(async () => await ConnectAsync());
         DisconnectCommand = new RelayCommand(async () => await DisconnectAsync());
         RetryCommand = new RelayCommand<CalendarSyncRow>(async row => await RetrySyncAsync(row));
         OpenCalendarLinkCommand = new RelayCommand(OpenCalendarLink);
@@ -226,15 +235,55 @@ public class SettingsIntegrationsViewModel : ViewModelBase
             });
     }
 
-    internal void Connect()
+    internal async Task ConnectAsync()
     {
-        _browserLauncher.OpenUrl(_calendarIntegrationService.BuildAuthorizationUrl());
-        IsConnecting = true;
+        if (IsConnecting)
+        {
+            return;
+        }
 
-        StopConnectingPoll();
-        _connectingTimer = new DispatcherTimer { Interval = ConnectingPollInterval };
-        _connectingTimer.Tick += async (_, _) => await PollConnectingStatusAsync();
-        _connectingTimer.Start();
+        IsConnecting = true;
+        ConnectError = null;
+
+        _connectCts?.Dispose();
+        var cts = new CancellationTokenSource(ConnectTimeout);
+        _connectCts = cts;
+
+        try
+        {
+            var authorizationUrl = _calendarIntegrationService.BuildAuthorizationUrl();
+            var callbackTask = _callbackListener.ListenAsync(authorizationUrl, cts.Token);
+            _browserLauncher.OpenUrl(authorizationUrl);
+
+            var callback = await callbackTask;
+            var result = await _calendarIntegrationService
+                .CompleteConnectionAsync(callback.Code, callback.State, callback.Error, cts.Token);
+
+            if (!result.Success)
+            {
+                ConnectError = result.ErrorMessage ?? "Google Calendar connection failed.";
+            }
+            else
+            {
+                // Syncs every qualifying card immediately, so pre-existing cards show up right
+                // away rather than staying "Pending" until their next save.
+                await _calendarSyncService.ResyncAllAsync(cts.Token);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            ConnectError = "The connection attempt timed out. Please try again.";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("SettingsIntegrations connect failed with {ErrorType}", ex.GetType().Name);
+            ConnectError = "Google Calendar connection failed.";
+        }
+        finally
+        {
+            IsConnecting = false;
+            await RefreshAsync();
+        }
     }
 
     internal void OpenCalendarLink()
@@ -247,39 +296,10 @@ public class SettingsIntegrationsViewModel : ViewModelBase
         _browserLauncher.OpenUrl($"https://calendar.google.com/calendar/u/0/r?cid={Uri.EscapeDataString(calendarId)}");
     }
 
-    internal async Task PollConnectingStatusAsync()
-    {
-        CalendarConnectionStatusDTO status;
-        try
-        {
-            status = await _calendarIntegrationService.GetStatusAsync();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError("SettingsIntegrations connecting-poll failed with {ErrorType}", ex.GetType().Name);
-            return;
-        }
-
-        Status = status;
-
-        if (status.Connected || status.DisconnectReason is not null)
-        {
-            IsConnecting = false;
-            StopConnectingPoll();
-            ReplaceAll(SyncRows, await BuildSyncRowsAsync());
-        }
-    }
-
-    private void StopConnectingPoll()
-    {
-        _connectingTimer?.Stop();
-        _connectingTimer = null;
-    }
-
     internal async Task DisconnectAsync()
     {
         if (!_dialogService.Confirm(
-            $"This will delete the \"{Status?.CalendarName ?? "Financial - Credit Card Due Dates"}\" calendar and all its events from Google Calendar. Continue?",
+            $"The app will stop managing due-date events and revoke its access to your Google account. The \"{Status?.CalendarName ?? "Financial - Credit Card Due Dates"}\" calendar and its events will remain in your Google account. Continue?",
             "Disconnect Google Calendar"))
         {
             return;

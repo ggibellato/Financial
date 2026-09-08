@@ -4,6 +4,7 @@ using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Models;
 using Financial.TestUtilities;
 using FluentAssertions;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Financial.Api.Tests.Acceptance;
@@ -198,5 +199,24 @@ public class CreditCardDueDateEventSyncAcceptanceTests : ApiEndpointTests
         connection!.CalendarId.Should().Be("new-cal");
         connection.CardEventIds.Should().ContainKeys(card1, card2);
         _provider.CreatedEvents.Should().Contain(e => e.CalendarId == "new-cal");
+    }
+
+    [Fact]
+    public async Task ConnectingViaTheOAuthCallback_SyncsEveryPreExistingQualifyingCardImmediately()
+    {
+        var cardId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-500000000004"); // BaAmex
+        await SetDueDateAsync(cardId, "BaAmex", isActive: true, new DateOnly(2026, 9, 10));
+        // Not connected yet at save time, so this save alone never triggered a sync.
+
+        using var noRedirectClient = CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        await noRedirectClient.GetAsync($"{CalendarRoute}/connect");
+        var state = _provider.LastState!;
+
+        var callback = await Client.GetAsync($"{CalendarRoute}/callback?code=auth-code&state={Uri.EscapeDataString(state)}");
+        callback.EnsureSuccessStatusCode();
+
+        _provider.CreatedEvents.Should().ContainSingle(e => e.Title.StartsWith("BaAmex"));
+        var statuses = await Client.GetFromJsonAsync<List<CreditCardCalendarSyncStatusDTO>>($"{CalendarRoute}/credit-cards/sync-status");
+        statuses.Should().ContainSingle(s => s.CreditCardId == cardId && s.State == "Synced");
     }
 }

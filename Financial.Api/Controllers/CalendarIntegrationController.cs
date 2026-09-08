@@ -44,8 +44,10 @@ public sealed class CalendarIntegrationController : ControllerBase
         return Redirect(url);
     }
 
-    /// <summary>The OAuth redirect target. Completes the connection and renders a landing
-    /// page telling the user to return to the app - never called by either front end's API client.</summary>
+    /// <summary>The OAuth redirect target. Completes the connection, syncs every qualifying
+    /// credit card so pre-existing cards show up immediately rather than staying "Pending"
+    /// until their next save, and renders a landing page telling the user to return to the
+    /// app - never called by either front end's API client.</summary>
     /// <returns>200 OK with a minimal HTML success/failure page.</returns>
     [HttpGet("callback")]
     [Produces("text/html")]
@@ -54,6 +56,11 @@ public sealed class CalendarIntegrationController : ControllerBase
         [FromQuery] string? code, [FromQuery] string? state, [FromQuery] string? error, CancellationToken cancellationToken)
     {
         var result = await _service.CompleteConnectionAsync(code, state, error, cancellationToken);
+        if (result.Success)
+        {
+            await _syncService.ResyncAllAsync(cancellationToken);
+        }
+
         var html = result.Success
             ? BuildLandingPage("Connected!", "You can close this tab and return to the app.")
             : BuildLandingPage("Connection not completed", result.ErrorMessage ?? "Please try again.");

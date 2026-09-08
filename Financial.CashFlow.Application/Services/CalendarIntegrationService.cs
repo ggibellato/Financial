@@ -98,7 +98,8 @@ public sealed class CalendarIntegrationService : ICalendarIntegrationService
             try
             {
                 accountEmail = await _provider.GetAccountEmailAsync(token.AccessToken, cancellationToken).ConfigureAwait(false);
-                calendarId = await _provider.CreateCalendarAsync(token.AccessToken, CalendarDefaults.DedicatedCalendarName, cancellationToken).ConfigureAwait(false);
+                calendarId = await _provider.FindCalendarByNameAsync(token.AccessToken, CalendarDefaults.DedicatedCalendarName, cancellationToken).ConfigureAwait(false)
+                    ?? await _provider.CreateCalendarAsync(token.AccessToken, CalendarDefaults.DedicatedCalendarName, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -182,7 +183,7 @@ public sealed class CalendarIntegrationService : ICalendarIntegrationService
                 return new CalendarDisconnectResultDTO { RemoteCleanupSucceeded = true };
             }
 
-            var remoteCleanupSucceeded = await BestEffortDisconnectRemoteAsync(connection, cancellationToken).ConfigureAwait(false);
+            var remoteCleanupSucceeded = await RevokeAccessOnlyAsync(connection, cancellationToken).ConfigureAwait(false);
             _store.Delete();
 
             span.MarkSuccess();
@@ -252,8 +253,39 @@ public sealed class CalendarIntegrationService : ICalendarIntegrationService
         }
     }
 
+    /// <summary>Best-effort: revokes the token only, leaving the dedicated calendar and its events
+    /// intact in the user's Google account - the user asked to stop the app managing their
+    /// calendar, not to delete data they may still want. Logs (not throws) on failure. Never
+    /// touches local storage - callers decide what to persist.</summary>
+    private async Task<bool> RevokeAccessOnlyAsync(CalendarConnection connection, CancellationToken cancellationToken)
+    {
+        if (connection.RevokedReason is not null)
+        {
+            return false;
+        }
+
+        var fresh = await EnsureFreshAccessTokenAsync(connection, cancellationToken).ConfigureAwait(false);
+        if (fresh is null)
+        {
+            return false;
+        }
+
+        try
+        {
+            await _provider.RevokeTokenAsync(fresh.AccessToken, cancellationToken).ConfigureAwait(false);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning("{Operation} failed to revoke the token: {ExceptionType}", "Disconnect", ex.GetType().Name);
+            return false;
+        }
+    }
+
     /// <summary>Best-effort: deletes the dedicated calendar and revokes the token, logging (not
-    /// throwing) on any failure. Never touches local storage - callers decide what to persist.</summary>
+    /// throwing) on any failure. Used only when a new connection replaces this one (the new
+    /// account gets its own fresh dedicated calendar, so the old one is no longer reachable
+    /// through the app and would otherwise be orphaned) - never touches local storage.</summary>
     private async Task<bool> BestEffortDisconnectRemoteAsync(CalendarConnection connection, CancellationToken cancellationToken)
     {
         if (connection.RevokedReason is not null)

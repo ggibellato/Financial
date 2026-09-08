@@ -17,14 +17,20 @@
                Components and Controls are code-behind tested via contract (binding) tests +
                manual verification, never unit tests (testing-guide-Financial skill,
                artifacts/wpf-views-and-xaml.md); App/MainWindow/Properties.Settings are
-               composition-root and generated-settings code. The six named classes are thin
-               visual-tree/dialog glue the same skill's artifacts/wpf-converters-behaviors-helpers.md
-               and artifacts/wpf-viewmodels.md already document as untestable-by-design - their
-               real logic is covered elsewhere (e.g. TreeViewDragDropBehavior's drop decision via
-               MainNavigationViewModelMoveTests; DialogService's real logic is why IDialogService /
-               StubDialogService exist). None of this is code the 90% WPF coverage gate can
-               meaningfully signal on. -->
-          <Exclude>[Financial.TestUtilities]*,[Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport]*,[Financial.Investment.SpreadsheetImport]*,[Financial.Integrations.GoogleSheets]*,[Financial.Presentation.App]Financial.Presentation.App.Views.*,[Financial.Presentation.App]Financial.Presentation.App.Components.*,[Financial.Presentation.App]Financial.Presentation.App.Controls.*,[Financial.Presentation.App]Financial.Presentation.App.App,[Financial.Presentation.App]Financial.Presentation.App.MainWindow,[Financial.Presentation.App]Financial.Presentation.App.Properties.Settings,[Financial.Presentation.App]Financial.Presentation.App.Behaviors.TreeViewDragDropBehavior,[Financial.Presentation.App]Financial.Presentation.App.Behaviors.SortableColumnsBehavior,[Financial.Presentation.App]Financial.Presentation.App.Behaviors.DecimalInputBehavior,[Financial.Presentation.App]Financial.Presentation.App.Helpers.BindingProxy,[Financial.Presentation.App]Financial.Presentation.App.ViewModels.AdminEntityPlaceholderViewModel,[Financial.Presentation.App]Financial.Presentation.App.Services.DialogService</Exclude>
+               composition-root and generated-settings code. The seven named classes are thin
+               visual-tree/dialog/socket-I/O glue the same skill's
+               artifacts/wpf-converters-behaviors-helpers.md and artifacts/wpf-viewmodels.md
+               already document as untestable-by-design - their real logic is covered elsewhere
+               (e.g. TreeViewDragDropBehavior's drop decision via MainNavigationViewModelMoveTests;
+               DialogService's real logic is why IDialogService / StubDialogService exist).
+               CalendarOAuthCallbackListener's query-parsing/redirect-extraction and cancellation
+               logic is unit tested directly (its internal helpers are `internal`, matching
+               GoogleCalendarOAuthClient.BuildEvent's precedent); only its raw HttpListener
+               bind/accept/write path is excluded, verified manually instead - a real socket-based
+               test proved unreliable both locally (blocked outright by local security software)
+               and in CI (silently zeroed out this whole assembly's coverage collection). None of
+               this is code the 90% WPF coverage gate can meaningfully signal on. -->
+          <Exclude>[Financial.TestUtilities]*,[Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport]*,[Financial.Investment.SpreadsheetImport]*,[Financial.Integrations.GoogleSheets]*,[Financial.Presentation.App]Financial.Presentation.App.Views.*,[Financial.Presentation.App]Financial.Presentation.App.Components.*,[Financial.Presentation.App]Financial.Presentation.App.Controls.*,[Financial.Presentation.App]Financial.Presentation.App.App,[Financial.Presentation.App]Financial.Presentation.App.MainWindow,[Financial.Presentation.App]Financial.Presentation.App.Properties.Settings,[Financial.Presentation.App]Financial.Presentation.App.Behaviors.TreeViewDragDropBehavior,[Financial.Presentation.App]Financial.Presentation.App.Behaviors.SortableColumnsBehavior,[Financial.Presentation.App]Financial.Presentation.App.Behaviors.DecimalInputBehavior,[Financial.Presentation.App]Financial.Presentation.App.Helpers.BindingProxy,[Financial.Presentation.App]Financial.Presentation.App.ViewModels.AdminEntityPlaceholderViewModel,[Financial.Presentation.App]Financial.Presentation.App.Services.DialogService,[Financial.Presentation.App]Financial.Presentation.App.Services.CalendarOAuthCallbackListener</Exclude>
         </Configuration>
       </DataCollector>
     </DataCollectors>

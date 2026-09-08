@@ -12,7 +12,12 @@ public sealed class FakeCalendarConnectionStore : ICalendarConnectionStore
     public int SaveCallCount { get; private set; }
     public int DeleteCallCount { get; private set; }
 
-    public CalendarConnection? Load() => _connection;
+    /// <summary>When set, Load() throws this instead of returning - simulates the real
+    /// file-backed store racing a concurrent Save() (see GoogleCalendarProviderAdapterTests /
+    /// CreditCardCalendarSyncServiceTests for the scenario this stands in for).</summary>
+    public Exception? ThrowOnLoad { get; set; }
+
+    public CalendarConnection? Load() => ThrowOnLoad is null ? _connection : throw ThrowOnLoad;
 
     public void Save(CalendarConnection connection)
     {

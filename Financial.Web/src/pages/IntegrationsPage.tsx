@@ -156,8 +156,9 @@ export default function IntegrationsPage() {
               <DialogTitle>Disconnect Google Calendar</DialogTitle>
               <DialogContent>
                 <p>
-                  This will delete the &ldquo;{connection.status?.calendarName ?? 'Financial - Credit Card Due Dates'}&rdquo; calendar
-                  and all its events from Google Calendar. This cannot be undone.
+                  The app will stop managing due-date events and revoke its access to your Google account. The
+                  &ldquo;{connection.status?.calendarName ?? 'Financial - Credit Card Due Dates'}&rdquo; calendar and its events
+                  will remain in your Google account.
                 </p>
               </DialogContent>
               <div className={panelStyles.actions}>

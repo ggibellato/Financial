@@ -112,6 +112,41 @@ public class CreditCardCalendarSyncServiceTests
     }
 
     [Fact]
+    public async Task ResyncAsync_NoLocalMappingButAMatchingEventAlreadyExists_ReconcilesInsteadOfDuplicating()
+    {
+        // Simulates reconnecting to a reused calendar (ICalendarProvider.FindCalendarByNameAsync)
+        // that already has this card's event from a previous connection - the local mapping was
+        // lost (a fresh connection always starts empty), but the real event is still there.
+        Connect();
+        var card = Card("BarclaysPlatinumVisa8003");
+        card.Update(card.Name, isActive: true, new DateOnly(2026, 9, 10));
+        _provider.ExistingEventIdForTitlePrefix = "pre-existing-event-1";
+
+        var result = await _sut.ResyncAsync(card.Id);
+
+        result.State.Should().Be("Synced");
+        _provider.CreatedEvents.Should().BeEmpty();
+        _provider.UpdatedEvents.Should().ContainSingle(e => e.EventId == "pre-existing-event-1" && e.CalendarId == "cal-1");
+        _provider.FindEventIdByTitlePrefixCalls.Should().ContainSingle(c => c.CalendarId == "cal-1" && c.TitlePrefix == $"{card.Name} — Due ");
+        _connectionStore.Load()!.CardEventIds.Should().ContainKey(card.Id).WhoseValue.Should().Be("pre-existing-event-1");
+    }
+
+    [Fact]
+    public async Task ResyncAsync_SecondSync_DoesNotReconcile_BecauseTheLocalMappingIsAlreadyKnown()
+    {
+        Connect();
+        var card = Card("BarclaysPlatinumVisa8003");
+        card.Update(card.Name, isActive: true, new DateOnly(2026, 9, 10));
+        await _sut.ResyncAsync(card.Id); // first sync: no local mapping yet, so this itself reconciles once.
+        _provider.ExistingEventIdForTitlePrefix = "some-other-event";
+
+        await _sut.ResyncAsync(card.Id);
+
+        _provider.FindEventIdByTitlePrefixCalls.Should().ContainSingle("the second sync already knows the mapping, so it must not reconcile again");
+        _provider.UpdatedEvents.Should().Contain(e => e.EventId == _provider.CreatedEventId);
+    }
+
+    [Fact]
     public async Task ResyncAsync_SecondSync_UpdatesTheSameEventInstead_OfCreatingASecondOne()
     {
         Connect();
@@ -294,5 +329,46 @@ public class CreditCardCalendarSyncServiceTests
         var statuses = _sut.GetSyncStatuses();
 
         statuses.Should().ContainSingle(s => s.State == "Synced");
+    }
+
+    [Fact]
+    public void GetSyncStatuses_CardHasAPersistedEventButNoInMemoryStatus_IsReportedAsSynced()
+    {
+        // Simulates a fresh process (e.g. after restarting Financial.App): the in-memory status
+        // store starts empty, but the card's event already exists from a previous process's sync.
+        var card = Card("BaAmex");
+        Connect();
+        _connectionStore.Save(_connectionStore.Load()! with { CardEventIds = new Dictionary<Guid, string> { [card.Id] = "event-1" } });
+
+        var statuses = _sut.GetSyncStatuses();
+
+        statuses.Should().ContainSingle(s => s.CreditCardId == card.Id && s.State == "Synced");
+    }
+
+    [Fact]
+    public void GetSyncStatuses_WhenReadingThePersistedConnectionRaces_FallsBackToWhatIsTracked()
+    {
+        // The real store writes via temp-file-then-atomic-rename; a concurrent GetSyncStatuses
+        // read can occasionally race that rename on Windows and throw IOException. It must
+        // degrade gracefully (report only in-memory-tracked statuses) rather than fail entirely.
+        _statusStore.SetSynced(Guid.NewGuid(), Now);
+        _connectionStore.ThrowOnLoad = new IOException("The process cannot access the file because it is being used by another process.");
+
+        var statuses = _sut.GetSyncStatuses();
+
+        statuses.Should().ContainSingle(s => s.State == "Synced");
+    }
+
+    [Fact]
+    public void GetSyncStatuses_InMemoryStatusTakesPrecedenceOverThePersistedEventMapping()
+    {
+        var card = Card("BaAmex");
+        Connect();
+        _connectionStore.Save(_connectionStore.Load()! with { CardEventIds = new Dictionary<Guid, string> { [card.Id] = "event-1" } });
+        _statusStore.SetError(card.Id, "Rate limit exceeded");
+
+        var statuses = _sut.GetSyncStatuses();
+
+        statuses.Should().ContainSingle(s => s.CreditCardId == card.Id && s.State == "Error");
     }
 }
