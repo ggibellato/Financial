@@ -255,10 +255,9 @@ public class SettingsIntegrationsViewModel : ViewModelBase
             var callbackTask = _callbackListener.ListenAsync(authorizationUrl, cts.Token);
             _browserLauncher.OpenUrl(authorizationUrl);
 
-            var callback = await callbackTask.ConfigureAwait(false);
+            var callback = await callbackTask;
             var result = await _calendarIntegrationService
-                .CompleteConnectionAsync(callback.Code, callback.State, callback.Error, cts.Token)
-                .ConfigureAwait(false);
+                .CompleteConnectionAsync(callback.Code, callback.State, callback.Error, cts.Token);
 
             if (!result.Success)
             {
@@ -277,7 +276,7 @@ public class SettingsIntegrationsViewModel : ViewModelBase
         finally
         {
             IsConnecting = false;
-            await RefreshAsync().ConfigureAwait(false);
+            await RefreshAsync();
         }
     }
 
