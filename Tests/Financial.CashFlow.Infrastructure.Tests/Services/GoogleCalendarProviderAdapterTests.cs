@@ -28,7 +28,7 @@ public class GoogleCalendarProviderAdapterTests
 
         _oAuthClient.LastClientId.Should().Be("client-id");
         _oAuthClient.LastRedirectUri.Should().Be("https://example.test/callback");
-        _oAuthClient.LastScope.Should().Be("https://www.googleapis.com/auth/calendar");
+        _oAuthClient.LastScope.Should().Be("https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/userinfo.email");
         _oAuthClient.LastState.Should().Be("state-value");
     }
 
