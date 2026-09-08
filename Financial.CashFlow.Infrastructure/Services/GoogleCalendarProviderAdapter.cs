@@ -11,14 +11,18 @@ namespace Financial.CashFlow.Infrastructure.Services;
 /// The first (and currently only) <see cref="ICalendarProvider"/> implementation - this is the
 /// one place "the calendar provider is Google" becomes concrete. Translates the generic contract
 /// into calls against <c>Integrations/GoogleCalendar</c>'s <see cref="IGoogleCalendarOAuthClient"/>,
-/// injecting the configured client id/secret/redirect URI and the fixed Calendar scope, and
-/// mapping the Integrations-level <see cref="GoogleTokenRevokedException"/> into the
-/// Application-level <see cref="CalendarTokenRevokedException"/> so Application never references
-/// the vendor SDK's exception type.
+/// injecting the configured client id/secret/redirect URI and the fixed scope, and mapping the
+/// Integrations-level <see cref="GoogleTokenRevokedException"/> into the Application-level
+/// <see cref="CalendarTokenRevokedException"/> so Application never references the vendor SDK's
+/// exception type.
 /// </summary>
 public sealed class GoogleCalendarProviderAdapter : ICalendarProvider
 {
-    private const string CalendarScope = "https://www.googleapis.com/auth/calendar";
+    /// <summary>Calendar scope for the dedicated-calendar management this feature needs, plus
+    /// userinfo.email - required for <see cref="IGoogleCalendarOAuthClient.GetAccountEmailAsync"/>'s
+    /// call to Google's userinfo endpoint, which 401s without it even though the calendar scope
+    /// alone is enough for every other call this adapter makes.</summary>
+    private const string CalendarScope = "https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/userinfo.email";
 
     private readonly IGoogleCalendarOAuthClient _oAuthClient;
     private readonly GoogleCalendarSettingsOptions _settings;
