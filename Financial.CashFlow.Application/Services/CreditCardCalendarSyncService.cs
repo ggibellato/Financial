@@ -110,12 +110,29 @@ public sealed class CreditCardCalendarSyncService : ICreditCardCalendarSyncServi
     public IReadOnlyList<CreditCardCalendarSyncStatusDTO> GetSyncStatuses()
     {
         var recorded = _statusStore.GetAllStatuses();
-        var cardEventIds = _connectionStore.Load()?.CardEventIds ?? new Dictionary<Guid, string>();
+        var cardEventIds = TryLoadCardEventIds();
         var derivedSyncedIds = cardEventIds.Keys.Where(id => !recorded.ContainsKey(id));
 
         return recorded.Select(kvp => ToDto(kvp.Key, kvp.Value))
             .Concat(derivedSyncedIds.Select(id => ToDto(id, new CreditCardCalendarSyncStatus(CreditCardCalendarSyncState.Synced, null, null))))
             .ToList();
+    }
+
+    /// <summary>The real store writes via temp-file-then-atomic-rename, but a concurrent read can
+    /// still occasionally race the rename on Windows and throw <see cref="IOException"/> - this
+    /// method is called on every status poll, far more often than the store was ever read before,
+    /// so treat that as "no derived data this call" rather than failing the whole status list; the
+    /// next call sees the settled file.</summary>
+    private IReadOnlyDictionary<Guid, string> TryLoadCardEventIds()
+    {
+        try
+        {
+            return _connectionStore.Load()?.CardEventIds ?? new Dictionary<Guid, string>();
+        }
+        catch (IOException)
+        {
+            return new Dictionary<Guid, string>();
+        }
     }
 
     private async Task SyncCoreAsync(Guid creditCardId, CancellationToken cancellationToken)

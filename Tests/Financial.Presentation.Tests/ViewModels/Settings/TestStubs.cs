@@ -85,8 +85,15 @@ internal sealed class StubCreditCardCalendarSyncService : ICreditCardCalendarSyn
         return Task.FromResult(ResyncResult ?? new CreditCardCalendarSyncStatusDTO { CreditCardId = creditCardId, State = "Synced" });
     }
 
-    public Task<IReadOnlyList<CreditCardCalendarSyncStatusDTO>> ResyncAllAsync(CancellationToken cancellationToken = default) =>
-        throw new NotSupportedException();
+    public IReadOnlyList<CreditCardCalendarSyncStatusDTO> ResyncAllResult { get; set; } = [];
+    public Exception? ThrowOnResyncAll { get; set; }
+    public int ResyncAllCallCount { get; private set; }
+
+    public Task<IReadOnlyList<CreditCardCalendarSyncStatusDTO>> ResyncAllAsync(CancellationToken cancellationToken = default)
+    {
+        ResyncAllCallCount++;
+        return ThrowOnResyncAll is null ? Task.FromResult(ResyncAllResult) : throw ThrowOnResyncAll;
+    }
 
     public IReadOnlyList<CreditCardCalendarSyncStatusDTO> GetSyncStatuses() => Statuses;
 }

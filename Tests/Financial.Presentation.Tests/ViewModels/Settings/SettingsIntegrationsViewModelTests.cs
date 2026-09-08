@@ -155,7 +155,7 @@ public class SettingsIntegrationsViewModelTests
     [Fact]
     public async Task ConnectAsync_OpensBrowserWithAuthorizationUrl_AwaitsTheLoopbackListener_AndCompletesTheConnection()
     {
-        var (viewModel, calendarIntegration, _, _, browserLauncher, callbackListener, _) = CreateViewModel();
+        var (viewModel, calendarIntegration, calendarSync, _, browserLauncher, callbackListener, _) = CreateViewModel();
         calendarIntegration.AuthorizationUrl = "https://accounts.google.com/o/oauth2/v2/auth?state=abc&redirect_uri=http%3A%2F%2Flocalhost%3A8082%2F";
         callbackListener.ResultToReturn = new CalendarOAuthCallbackResult("auth-code", "abc", null);
         calendarIntegration.CompleteConnectionResult = new CalendarCallbackResultDTO { Success = true };
@@ -167,6 +167,18 @@ public class SettingsIntegrationsViewModelTests
         calendarIntegration.LastCompleteConnectionArgs.Should().Be(("auth-code", "abc", (string?)null));
         viewModel.IsConnecting.Should().BeFalse();
         viewModel.ConnectError.Should().BeNull();
+        calendarSync.ResyncAllCallCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task ConnectAsync_WhenCompleteConnectionFails_DoesNotTriggerResyncAll()
+    {
+        var (viewModel, calendarIntegration, calendarSync, _, _, _, _) = CreateViewModel();
+        calendarIntegration.CompleteConnectionResult = new CalendarCallbackResultDTO { Success = false, ErrorMessage = "State mismatch." };
+
+        await viewModel.ConnectAsync();
+
+        calendarSync.ResyncAllCallCount.Should().Be(0);
     }
 
     [Fact]

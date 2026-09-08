@@ -311,6 +311,20 @@ public class CreditCardCalendarSyncServiceTests
     }
 
     [Fact]
+    public void GetSyncStatuses_WhenReadingThePersistedConnectionRaces_FallsBackToWhatIsTracked()
+    {
+        // The real store writes via temp-file-then-atomic-rename; a concurrent GetSyncStatuses
+        // read can occasionally race that rename on Windows and throw IOException. It must
+        // degrade gracefully (report only in-memory-tracked statuses) rather than fail entirely.
+        _statusStore.SetSynced(Guid.NewGuid(), Now);
+        _connectionStore.ThrowOnLoad = new IOException("The process cannot access the file because it is being used by another process.");
+
+        var statuses = _sut.GetSyncStatuses();
+
+        statuses.Should().ContainSingle(s => s.State == "Synced");
+    }
+
+    [Fact]
     public void GetSyncStatuses_InMemoryStatusTakesPrecedenceOverThePersistedEventMapping()
     {
         var card = Card("BaAmex");

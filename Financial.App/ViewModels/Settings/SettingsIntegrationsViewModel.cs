@@ -263,6 +263,12 @@ public class SettingsIntegrationsViewModel : ViewModelBase
             {
                 ConnectError = result.ErrorMessage ?? "Google Calendar connection failed.";
             }
+            else
+            {
+                // Syncs every qualifying card immediately, so pre-existing cards show up right
+                // away rather than staying "Pending" until their next save.
+                await _calendarSyncService.ResyncAllAsync(cts.Token);
+            }
         }
         catch (OperationCanceledException)
         {

@@ -2877,25 +2877,33 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * The OAuth redirect target. Completes the connection and renders a landing
-         *                 page telling the user to return to the app - never called by either front end's API client.
+         * The OAuth redirect target. Completes the connection, syncs every qualifying
+         *                 credit card so pre-existing cards show up immediately rather than staying "Pending"
+         *                 until their next save, and renders a landing page telling the user to return to the
+         *                 app - never called by either front end's API client.
          */
         get: {
             parameters: {
                 query?: {
                     /**
-                     * @description The OAuth redirect target. Completes the connection and renders a landing
-                     *                 page telling the user to return to the app - never called by either front end's API client.
+                     * @description The OAuth redirect target. Completes the connection, syncs every qualifying
+                     *                 credit card so pre-existing cards show up immediately rather than staying "Pending"
+                     *                 until their next save, and renders a landing page telling the user to return to the
+                     *                 app - never called by either front end's API client.
                      */
                     code?: string;
                     /**
-                     * @description The OAuth redirect target. Completes the connection and renders a landing
-                     *                 page telling the user to return to the app - never called by either front end's API client.
+                     * @description The OAuth redirect target. Completes the connection, syncs every qualifying
+                     *                 credit card so pre-existing cards show up immediately rather than staying "Pending"
+                     *                 until their next save, and renders a landing page telling the user to return to the
+                     *                 app - never called by either front end's API client.
                      */
                     state?: string;
                     /**
-                     * @description The OAuth redirect target. Completes the connection and renders a landing
-                     *                 page telling the user to return to the app - never called by either front end's API client.
+                     * @description The OAuth redirect target. Completes the connection, syncs every qualifying
+                     *                 credit card so pre-existing cards show up immediately rather than staying "Pending"
+                     *                 until their next save, and renders a landing page telling the user to return to the
+                     *                 app - never called by either front end's API client.
                      */
                     error?: string;
                 };

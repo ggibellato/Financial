@@ -112,7 +112,7 @@ At a high level: the user connects their Google account once from a new Settings
 
 **Capabilities:**
 - Sync runs automatically, within 5 seconds of the triggering `CreditCardService` save completing, whenever Google Calendar is connected.
-- Triggering conditions: a credit card is created or updated with `IsActive = true` and a non-null `NextInvoiceDueDate`.
+- Triggering conditions: a credit card is created or updated with `IsActive = true` and a non-null `NextInvoiceDueDate`. Completing a new connection (F01) also triggers a sync for every already-qualifying card immediately, rather than leaving pre-existing cards on `pending` until their next individual save.
 - Removal conditions: `NextInvoiceDueDate` becomes null, `IsActive` becomes `false`, or the card is deleted — the app deletes that card's existing event, if any.
 - Balance shown is the current period's outstanding total: the `CardStatement` whose year/month matches `NextInvoiceDueDate`'s own year/month, via the same `OutstandingTotal` computation `CardStatementService` already exposes. If no statement exists yet for that period, the balance shown is 0 with the description noting "(no charges posted to this invoice yet)".
 - One persistent event per card: the app stores a mapping of `CreditCardId → Google event ID` inside the same local credentials file used by F01 (not on the `CreditCard` domain entity), and updates that same event's date and content on every subsequent sync instead of creating a new one. This mapping entry is removed whenever the corresponding event is deleted.
