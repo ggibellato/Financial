@@ -375,4 +375,14 @@ public class HistoricAverageServiceTests
         SeededInvestmentAccounts.SeedInto(repository);
         return repository;
     }
+
+    [Fact]
+    public void GetHistoricSummaryAverageFromYear_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    {
+        _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
+
+        Action act = () => _sut.GetHistoricSummaryAverageFromYear(CurrentYear);
+
+        act.Should().Throw<InvalidOperationException>();
+    }
 }

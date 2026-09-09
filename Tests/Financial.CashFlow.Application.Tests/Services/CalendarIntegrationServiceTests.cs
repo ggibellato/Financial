@@ -293,4 +293,146 @@ public class CalendarIntegrationServiceTests
         token.Should().BeNull();
         _provider.RefreshCallCount.Should().Be(0);
     }
+
+    [Fact]
+    public void BuildAuthorizationUrl_WhenProviderThrows_Rethrows()
+    {
+        _provider.BuildAuthorizationUrlThrows = true;
+
+        Action act = () => _sut.BuildAuthorizationUrl();
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public async Task CompleteConnectionAsync_WhenStoreLoadThrows_Rethrows()
+    {
+        _sut.BuildAuthorizationUrl();
+        _store.ThrowOnLoad = new InvalidOperationException("simulated load failure");
+
+        Func<Task> act = () => _sut.CompleteConnectionAsync(code: "auth-code", state: _provider.LastState, error: null);
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+    }
+
+    [Fact]
+    public async Task GetStatusAsync_WhenStoreLoadThrows_Rethrows()
+    {
+        _store.ThrowOnLoad = new InvalidOperationException("simulated load failure");
+
+        Func<Task> act = () => _sut.GetStatusAsync();
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+    }
+
+    [Fact]
+    public async Task DisconnectAsync_WhenStoreLoadThrows_Rethrows()
+    {
+        _store.ThrowOnLoad = new InvalidOperationException("simulated load failure");
+
+        Func<Task> act = () => _sut.DisconnectAsync();
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+    }
+
+    [Fact]
+    public async Task GetValidAccessTokenAsync_WhenStoreLoadThrows_Rethrows()
+    {
+        _store.ThrowOnLoad = new InvalidOperationException("simulated load failure");
+
+        Func<Task> act = () => _sut.GetValidAccessTokenAsync();
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+    }
+
+    [Fact]
+    public async Task DisconnectAsync_WhenConnectionAlreadyKnownRevoked_SkipsRemoteCallsAndClearsLocalState()
+    {
+        var connection = new CalendarConnection("user@gmail.com", "cal-1", "access-token", "refresh-token", Now.AddHours(1), Now.AddDays(-1), new Dictionary<Guid, string>())
+        {
+            RevokedReason = "token_revoked"
+        };
+        _store.Save(connection);
+
+        var result = await _sut.DisconnectAsync();
+
+        result.RemoteCleanupSucceeded.Should().BeFalse();
+        _provider.RevokeCallCount.Should().Be(0);
+        _store.Load().Should().BeNull();
+        _store.DeleteCallCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task CompleteConnectionAsync_WhenAlreadyConnectedButThatConnectionIsAlreadyKnownRevoked_SkipsDisconnectingItRemotely()
+    {
+        var previous = new CalendarConnection("old@gmail.com", "old-cal", "old-access", "old-refresh", Now.AddHours(1), Now.AddDays(-1), new Dictionary<Guid, string>())
+        {
+            RevokedReason = "token_revoked"
+        };
+        _store.Save(previous);
+
+        _sut.BuildAuthorizationUrl();
+        _provider.ExchangeResult = new CalendarTokenResult("new-access", "new-refresh", Now.AddHours(1));
+        _provider.AccountEmail = "new@gmail.com";
+        _provider.CreatedCalendarId = "new-cal";
+
+        var result = await _sut.CompleteConnectionAsync(code: "auth-code", state: _provider.LastState, error: null);
+
+        result.Success.Should().BeTrue();
+        _provider.DeletedCalendars.Should().BeEmpty();
+        _provider.RevokedTokens.Should().NotContain("old-access");
+    }
+
+    [Fact]
+    public async Task CompleteConnectionAsync_WhenAlreadyConnectedAndDeletingThePreviousCalendarFails_StillProceedsWithNewConnection()
+    {
+        var previous = new CalendarConnection("old@gmail.com", "old-cal", "old-access", "old-refresh", Now.AddHours(1), Now.AddDays(-1), new Dictionary<Guid, string>());
+        _store.Save(previous);
+        _provider.DeleteCalendarThrows = true;
+
+        _sut.BuildAuthorizationUrl();
+        _provider.ExchangeResult = new CalendarTokenResult("new-access", "new-refresh", Now.AddHours(1));
+        _provider.AccountEmail = "new@gmail.com";
+        _provider.CreatedCalendarId = "new-cal";
+
+        var result = await _sut.CompleteConnectionAsync(code: "auth-code", state: _provider.LastState, error: null);
+
+        result.Success.Should().BeTrue();
+        _provider.RevokedTokens.Should().Contain("old-access");
+        _store.Load()!.AccountEmail.Should().Be("new@gmail.com");
+    }
+
+    [Fact]
+    public async Task CompleteConnectionAsync_WhenAlreadyConnectedAndRevokingThePreviousTokenFails_StillProceedsWithNewConnection()
+    {
+        var previous = new CalendarConnection("old@gmail.com", "old-cal", "old-access", "old-refresh", Now.AddHours(1), Now.AddDays(-1), new Dictionary<Guid, string>());
+        _store.Save(previous);
+        _provider.RevokeThrows = true;
+
+        _sut.BuildAuthorizationUrl();
+        _provider.ExchangeResult = new CalendarTokenResult("new-access", "new-refresh", Now.AddHours(1));
+        _provider.AccountEmail = "new@gmail.com";
+        _provider.CreatedCalendarId = "new-cal";
+
+        var result = await _sut.CompleteConnectionAsync(code: "auth-code", state: _provider.LastState, error: null);
+
+        result.Success.Should().BeTrue();
+        _provider.DeletedCalendars.Should().ContainSingle(c => c.AccessToken == "old-access" && c.CalendarId == "old-cal");
+        _store.Load()!.AccountEmail.Should().Be("new@gmail.com");
+    }
+
+    [Fact]
+    public async Task CompleteConnectionAsync_WhenCalendarCreationFailsAndRevokingTheJustIssuedTokenAlsoFails_StillReportsFailure()
+    {
+        _sut.BuildAuthorizationUrl();
+        _provider.ExchangeResult = new CalendarTokenResult("new-access", "new-refresh", Now.AddHours(1));
+        _provider.CreateCalendarThrows = true;
+        _provider.RevokeThrows = true;
+
+        var result = await _sut.CompleteConnectionAsync(code: "auth-code", state: _provider.LastState, error: null);
+
+        result.Success.Should().BeFalse();
+        _provider.RevokeCallCount.Should().Be(1);
+        _store.Load().Should().BeNull();
+    }
 }

@@ -443,4 +443,36 @@ public class InvestmentAccountServiceTests
             result.CreditCardId.Should().BeNull();
         }
     }
+
+    [Fact]
+    public void GetInvestmentAccounts_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    {
+        _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
+
+        Action act = () => _sut.GetInvestmentAccounts();
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public async Task UpdateInvestmentAccountAsync_WithBlankName_ThrowsArgumentException()
+    {
+        var account = InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false);
+        _repository.InvestmentAccounts.Add(account);
+        var request = new InvestmentAccountUpdateDTO { Name = "   ", IsActive = true, IsLiability = false };
+
+        var act = async () => await _sut.UpdateInvestmentAccountAsync(account.Id, request);
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*name is required*");
+    }
+
+    [Fact]
+    public async Task CreateInvestmentAccountAsync_WithUnrecognizedSource_ThrowsArgumentException()
+    {
+        var request = new InvestmentAccountCreateDTO { Name = "New Account", IsActive = true, IsLiability = false, Source = "NotARealSource" };
+
+        var act = async () => await _sut.CreateInvestmentAccountAsync(request);
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*not recognized*");
+    }
 }

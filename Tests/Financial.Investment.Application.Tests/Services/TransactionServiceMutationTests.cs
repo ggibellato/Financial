@@ -248,6 +248,65 @@ public class TransactionServiceMutationTests
         result.Should().BeNull();
     }
 
+    [Fact]
+    public async Task AddTransactionAsync_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    {
+        _repository.Asset = MakeAsset();
+        _repository.ThrowOnApplyAndSaveAsync = new InvalidOperationException("simulated failure");
+
+        var act = async () => await CreateService().AddTransactionAsync(new TransactionCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "AAAA",
+            Date = new DateTime(2024, 1, 1),
+            Type = "Buy",
+            Quantity = 1m,
+            UnitPrice = 10m,
+            Fees = 0m
+        });
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+    }
+
+    [Fact]
+    public async Task UpdateTransactionAsync_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    {
+        _repository.Asset = MakeAsset();
+        _repository.ThrowOnApplyAndSaveAsync = new InvalidOperationException("simulated failure");
+
+        var act = async () => await CreateService().UpdateTransactionAsync(new TransactionUpdateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "AAAA",
+            Id = Guid.NewGuid(),
+            Type = "Buy",
+            Quantity = 1m,
+            UnitPrice = 10m,
+            Fees = 0m
+        });
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+    }
+
+    [Fact]
+    public async Task DeleteTransactionAsync_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    {
+        _repository.Asset = MakeAsset();
+        _repository.ThrowOnApplyAndSaveAsync = new InvalidOperationException("simulated failure");
+
+        var act = async () => await CreateService().DeleteTransactionAsync(new TransactionDeleteDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "AAAA",
+            Id = Guid.NewGuid()
+        });
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+    }
+
     private TransactionService CreateService() => new(_repository, new NavigationService(_repository, Tracer, NullLogger<NavigationService>.Instance), Tracer, NullLogger<TransactionService>.Instance);
 
     private static Asset MakeAsset(string name = "AAAA") =>

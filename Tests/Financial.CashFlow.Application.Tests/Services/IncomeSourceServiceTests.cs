@@ -285,4 +285,26 @@ public class IncomeSourceServiceTests
 
         result.Should().ContainSingle(s => s.Id == incomeSource.Id).Which.HasReferences.Should().BeTrue();
     }
+
+    [Fact]
+    public void GetIncomeSources_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    {
+        _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
+
+        Action act = () => _sut.GetIncomeSources();
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public async Task UpdateIncomeSourceAsync_WithBlankName_ThrowsArgumentException()
+    {
+        var incomeSource = IncomeSource.Create("Gleison", IncomeGroup.Salary);
+        _repository.IncomeSources.Add(incomeSource);
+        var request = new IncomeSourceUpdateDTO { Name = "   ", Group = "Salary", IsActive = true, AutoSplitToReserve = false };
+
+        var act = async () => await _sut.UpdateIncomeSourceAsync(incomeSource.Id, request);
+
+        await act.Should().ThrowAsync<ArgumentException>();
+    }
 }

@@ -13,6 +13,13 @@
                thin vendor SDK wrapper (see docs' "Integration SDK isolation" convention).
                None of these represent app logic the coverage % is meant to signal on.
 
+               GoogleFinanceVerifier is the same category as GoogleSheets: its own doc comment
+               says it exists to "verify selectors work after Google changes their HTML
+               structure" by hitting live google.com/finance URLs - a manual diagnostic run by a
+               developer, never invoked by the app at runtime and not something an automated
+               suite can exercise without a live network call. It is not app logic the coverage
+               gate is meant to signal on.
+
                Also excludes Financial.Presentation.App's XAML/bootstrap boundary: Views,
                Components and Controls are code-behind tested via contract (binding) tests +
                manual verification, never unit tests (testing-guide-Financial skill,
@@ -30,7 +37,7 @@
                test proved unreliable both locally (blocked outright by local security software)
                and in CI (silently zeroed out this whole assembly's coverage collection). None of
                this is code the 90% WPF coverage gate can meaningfully signal on. -->
-          <Exclude>[Financial.TestUtilities]*,[Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport]*,[Financial.Investment.SpreadsheetImport]*,[Financial.Integrations.GoogleSheets]*,[Financial.Presentation.App]Financial.Presentation.App.Views.*,[Financial.Presentation.App]Financial.Presentation.App.Components.*,[Financial.Presentation.App]Financial.Presentation.App.Controls.*,[Financial.Presentation.App]Financial.Presentation.App.App,[Financial.Presentation.App]Financial.Presentation.App.MainWindow,[Financial.Presentation.App]Financial.Presentation.App.Properties.Settings,[Financial.Presentation.App]Financial.Presentation.App.Behaviors.TreeViewDragDropBehavior,[Financial.Presentation.App]Financial.Presentation.App.Behaviors.SortableColumnsBehavior,[Financial.Presentation.App]Financial.Presentation.App.Behaviors.DecimalInputBehavior,[Financial.Presentation.App]Financial.Presentation.App.Helpers.BindingProxy,[Financial.Presentation.App]Financial.Presentation.App.ViewModels.AdminEntityPlaceholderViewModel,[Financial.Presentation.App]Financial.Presentation.App.Services.DialogService,[Financial.Presentation.App]Financial.Presentation.App.Services.CalendarOAuthCallbackListener</Exclude>
+          <Exclude>[Financial.TestUtilities]*,[Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport]*,[Financial.Investment.SpreadsheetImport]*,[Financial.Integrations.GoogleSheets]*,[Financial.Integrations.WebPageParser]Financial.Integrations.WebPageParser.GoogleFinanceVerifier,[Financial.Presentation.App]Financial.Presentation.App.Views.*,[Financial.Presentation.App]Financial.Presentation.App.Components.*,[Financial.Presentation.App]Financial.Presentation.App.Controls.*,[Financial.Presentation.App]Financial.Presentation.App.App,[Financial.Presentation.App]Financial.Presentation.App.MainWindow,[Financial.Presentation.App]Financial.Presentation.App.Properties.Settings,[Financial.Presentation.App]Financial.Presentation.App.Behaviors.TreeViewDragDropBehavior,[Financial.Presentation.App]Financial.Presentation.App.Behaviors.SortableColumnsBehavior,[Financial.Presentation.App]Financial.Presentation.App.Behaviors.DecimalInputBehavior,[Financial.Presentation.App]Financial.Presentation.App.Helpers.BindingProxy,[Financial.Presentation.App]Financial.Presentation.App.ViewModels.AdminEntityPlaceholderViewModel,[Financial.Presentation.App]Financial.Presentation.App.Services.DialogService,[Financial.Presentation.App]Financial.Presentation.App.Services.CalendarOAuthCallbackListener</Exclude>
         </Configuration>
       </DataCollector>
     </DataCollectors>

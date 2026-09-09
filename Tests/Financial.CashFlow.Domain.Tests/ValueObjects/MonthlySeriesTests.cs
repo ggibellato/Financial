@@ -123,4 +123,31 @@ public class MonthlySeriesTests
 
         first.Should().NotBe(second);
     }
+
+    [Fact]
+    public void FromMonthlyValues_WithNull_ThrowsArgumentNullException()
+    {
+        var act = () => MonthlySeries.FromMonthlyValues(null!);
+
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
+    public void Add_WithNull_ThrowsArgumentNullException()
+    {
+        var series = MonthlySeries.FromMonthlyValues(TwelveMonths);
+
+        var act = () => series.Add(null!);
+
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
+    public void GetHashCode_TwoInstancesWithSameValues_ProduceTheSameHash()
+    {
+        var first = MonthlySeries.FromMonthlyValues(TwelveMonths);
+        var second = MonthlySeries.FromMonthlyValues(TwelveMonths);
+
+        first.GetHashCode().Should().Be(second.GetHashCode());
+    }
 }

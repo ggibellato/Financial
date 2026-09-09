@@ -365,4 +365,14 @@ public class TitheServiceTests
 
         act.Should().Throw<ArgumentNullException>();
     }
+
+    [Fact]
+    public async Task GetTitheSummaryAsync_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    {
+        _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
+
+        var act = async () => await _sut.GetTitheSummaryAsync(2026, 9);
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+    }
 }

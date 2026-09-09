@@ -352,4 +352,14 @@ public class CreditCardServiceTests
 
         _calendarSyncTrigger.TriggeredCreditCardIds.Should().ContainSingle().Which.Should().Be(card.Id);
     }
+
+    [Fact]
+    public void GetCreditCards_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    {
+        _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
+
+        Action act = () => _sut.GetCreditCards();
+
+        act.Should().Throw<InvalidOperationException>();
+    }
 }

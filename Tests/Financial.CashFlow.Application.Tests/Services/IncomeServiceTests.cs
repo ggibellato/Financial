@@ -523,4 +523,14 @@ public class IncomeServiceTests
 
         result.SplitToReserve.Should().BeTrue();
     }
+
+    [Fact]
+    public void GetIncomesByMonth_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    {
+        _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
+
+        Action act = () => _sut.GetIncomesByMonth(2026, 9);
+
+        act.Should().Throw<InvalidOperationException>();
+    }
 }

@@ -363,6 +363,56 @@ public class ControllerGuardClauseTests
     }
 
     [Fact]
+    public async Task BanksController_CreateBank_NullRequest_ReturnsBadRequest()
+    {
+        var controller = new BanksController(new StubBankService(), new StubBalanceAdjustmentService());
+
+        var result = await controller.CreateBank(null!);
+
+        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
+    }
+
+    [Fact]
+    public async Task BanksController_UpdateBank_NullRequest_ReturnsBadRequest()
+    {
+        var controller = new BanksController(new StubBankService(), new StubBalanceAdjustmentService());
+
+        var result = await controller.UpdateBank(Guid.NewGuid(), null!);
+
+        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
+    }
+
+    [Fact]
+    public async Task BanksController_UpdateOpeningBalance_NullRequest_ReturnsBadRequest()
+    {
+        var controller = new BanksController(new StubBankService(), new StubBalanceAdjustmentService());
+
+        var result = await controller.UpdateOpeningBalance(Guid.NewGuid(), null!);
+
+        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
+    }
+
+    [Fact]
+    public async Task BanksController_AddAdjustment_NullRequest_ReturnsBadRequest()
+    {
+        var controller = new BanksController(new StubBankService(), new StubBalanceAdjustmentService());
+
+        var result = await controller.AddAdjustment(Guid.NewGuid(), null!);
+
+        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
+    }
+
+    [Fact]
+    public async Task BanksController_UpdateAdjustment_NullRequest_ReturnsBadRequest()
+    {
+        var controller = new BanksController(new StubBankService(), new StubBalanceAdjustmentService());
+
+        var result = await controller.UpdateAdjustment(Guid.NewGuid(), Guid.NewGuid(), null!);
+
+        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
+    }
+
+    [Fact]
     public void CardStatementsController_NullService_Throws()
     {
         Action act = () => new CardStatementsController(null!);
@@ -433,10 +483,70 @@ public class ControllerGuardClauseTests
     }
 
     [Fact]
+    public async Task MensaisController_CreateBill_NullRequest_ReturnsBadRequest()
+    {
+        var controller = new MensaisController(new StubMensaisService());
+
+        var result = await controller.CreateBill(null!);
+
+        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
+    }
+
+    [Fact]
+    public async Task MensaisController_UpdateBill_NullRequest_ReturnsBadRequest()
+    {
+        var controller = new MensaisController(new StubMensaisService());
+
+        var result = await controller.UpdateBill(Guid.NewGuid(), null!);
+
+        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
+    }
+
+    [Fact]
+    public async Task MensaisController_UpdateBillStatus_NullRequest_ReturnsBadRequest()
+    {
+        var controller = new MensaisController(new StubMensaisService());
+
+        var result = await controller.UpdateBillStatus(Guid.NewGuid(), null!);
+
+        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
+    }
+
+    [Fact]
     public void ReserveController_NullService_Throws()
     {
         Action act = () => new ReserveController(null!);
         act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
+    public async Task ReserveController_PostIncomeSplit_NullRequest_ReturnsBadRequest()
+    {
+        var controller = new ReserveController(new StubReserveService());
+
+        var result = await controller.PostIncomeSplit(null!);
+
+        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
+    }
+
+    [Fact]
+    public async Task ReserveController_PostWithdrawal_NullRequest_ReturnsBadRequest()
+    {
+        var controller = new ReserveController(new StubReserveService());
+
+        var result = await controller.PostWithdrawal(null!);
+
+        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
+    }
+
+    [Fact]
+    public async Task ReserveController_UpdateMovement_NullRequest_ReturnsBadRequest()
+    {
+        var controller = new ReserveController(new StubReserveService());
+
+        var result = await controller.UpdateMovement(Guid.NewGuid(), null!);
+
+        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
     }
 
     [Fact]
@@ -589,5 +699,25 @@ public class ControllerGuardClauseTests
         public Task<Financial.CashFlow.Application.DTOs.BalanceAdjustmentDTO> UpdateAdjustmentAsync(Guid bankId, Guid id, Financial.CashFlow.Application.DTOs.BalanceAdjustmentUpdateDTO request) => throw new NotImplementedException();
         public Task DeleteAdjustmentAsync(Guid bankId, Guid id) => throw new NotImplementedException();
         public IReadOnlyList<Financial.CashFlow.Application.DTOs.BalanceAdjustmentDTO> GetAdjustmentsByBank(Guid bankId) => throw new NotImplementedException();
+    }
+
+    private sealed class StubReserveService : IReserveService
+    {
+        public Task<Financial.CashFlow.Application.DTOs.IncomeSplitResultDTO> PostIncomeSplitAsync(Financial.CashFlow.Application.DTOs.IncomeSplitRequestDTO request) => throw new NotImplementedException();
+        public Task<Financial.CashFlow.Application.DTOs.ReserveMovementDTO> PostWithdrawalAsync(Financial.CashFlow.Application.DTOs.WithdrawalRequestDTO request) => throw new NotImplementedException();
+        public IReadOnlyList<Financial.CashFlow.Application.DTOs.ReserveBucketBalanceDTO> GetBucketBalances() => throw new NotImplementedException();
+        public IReadOnlyList<Financial.CashFlow.Application.DTOs.ReserveMovementDTO> GetMovementHistory() => throw new NotImplementedException();
+        public Task<Financial.CashFlow.Application.DTOs.ReserveMovementDTO> UpdateMovementAsync(Guid id, Financial.CashFlow.Application.DTOs.ReserveMovementUpdateDTO request) => throw new NotImplementedException();
+        public Task DeleteMovementAsync(Guid id) => throw new NotImplementedException();
+    }
+
+    private sealed class StubMensaisService : IMensaisService
+    {
+        public Task<Financial.CashFlow.Application.DTOs.RecurringBillDTO> CreateBillAsync(Financial.CashFlow.Application.DTOs.RecurringBillCreateDTO request) => throw new NotImplementedException();
+        public Task DeleteBillAsync(Guid id) => throw new NotImplementedException();
+        public IReadOnlyList<Financial.CashFlow.Application.DTOs.RecurringBillDTO> GetBills() => throw new NotImplementedException();
+        public Task<Financial.CashFlow.Application.DTOs.RecurringBillDTO> UpdateBillAsync(Guid id, Financial.CashFlow.Application.DTOs.RecurringBillUpdateDTO request) => throw new NotImplementedException();
+        public Task<Financial.CashFlow.Application.DTOs.RecurringBillDTO> UpdateBillStatusAsync(Guid id, Financial.CashFlow.Application.DTOs.RecurringBillStatusUpdateDTO request) => throw new NotImplementedException();
+        public Task<IReadOnlyList<Financial.CashFlow.Application.DTOs.RecurringBillDTO>> ResetAllToUnsetAsync() => throw new NotImplementedException();
     }
 }

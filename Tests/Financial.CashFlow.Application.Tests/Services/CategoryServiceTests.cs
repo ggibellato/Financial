@@ -255,4 +255,28 @@ public class CategoryServiceTests
 
         result.Should().ContainSingle(c => c.Name == "Mercado" && c.HasReferences);
     }
+
+    [Fact]
+    public void GetCategories_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    {
+        _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
+
+        Action act = () => _sut.GetCategories();
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public async Task UpdateCategoryAsync_WithBlankName_ThrowsArgumentException()
+    {
+        var repository = new StubCashFlowRepository();
+        var category = Category.Create("Mercado");
+        repository.Categories.Add(category);
+        var sut = CreateService(repository);
+        var request = new CategoryUpdateDTO { Name = "   ", Active = true, IsInvestment = false, IsTithe = false };
+
+        var act = async () => await sut.UpdateCategoryAsync(category.Id, request);
+
+        await act.Should().ThrowAsync<ArgumentException>();
+    }
 }

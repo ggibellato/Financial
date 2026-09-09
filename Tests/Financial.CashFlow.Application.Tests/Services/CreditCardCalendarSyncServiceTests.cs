@@ -371,4 +371,110 @@ public class CreditCardCalendarSyncServiceTests
 
         statuses.Should().ContainSingle(s => s.CreditCardId == card.Id && s.State == "Error");
     }
+
+    [Fact]
+    public async Task TriggerSync_WhenBackgroundSyncFailsUnexpectedly_MarksErrorStatus()
+    {
+        Connect();
+        var card = Card("BarclaysPlatinumVisa8003");
+        card.Update(card.Name, isActive: true, new DateOnly(2026, 9, 10));
+        _calendarIntegrationService.Throws = true;
+
+        _sut.TriggerSync(card.Id);
+        var resolvedState = await WaitForResolvedStateAsync(card.Id);
+
+        resolvedState.Should().Be(CreditCardCalendarSyncState.Error);
+        _statusStore.GetStatus(card.Id)!.LastError.Should().Be("Unexpected sync failure.");
+    }
+
+    [Fact]
+    public async Task ResyncAsync_WhenAccessTokenIsUnavailable_DoesNothing()
+    {
+        Connect();
+        var card = Card("BarclaysPlatinumVisa8003");
+        card.Update(card.Name, isActive: true, new DateOnly(2026, 9, 10));
+        _calendarIntegrationService.AccessToken = null;
+
+        await _sut.ResyncAsync(card.Id);
+
+        _provider.CreatedEvents.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ResyncAsync_WhenConnectionBecomesRevokedWhileRefreshingTheAccessToken_DoesNothing()
+    {
+        Connect();
+        var card = Card("BarclaysPlatinumVisa8003");
+        card.Update(card.Name, isActive: true, new DateOnly(2026, 9, 10));
+        _calendarIntegrationService.OnGetValidAccessToken = () =>
+            _connectionStore.Save(_connectionStore.Load()! with { RevokedReason = "token_revoked" });
+
+        await _sut.ResyncAsync(card.Id);
+
+        _provider.CreatedEvents.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ResyncAsync_WhenCardIsInactiveAndWasNeverSynced_MarksSyncedWithoutCallingTheProvider()
+    {
+        Connect();
+        var card = Card("BarclaysPlatinumVisa8003");
+        card.Update(card.Name, isActive: false, new DateOnly(2026, 9, 10));
+
+        var result = await _sut.ResyncAsync(card.Id);
+
+        result.State.Should().Be("Synced");
+        _provider.DeletedEvents.Should().BeEmpty();
+        _provider.CreatedEvents.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ResyncAsync_WhenDeletingTheEventFailsBecauseTheCalendarWasDeleted_SelfHealsByRecreatingIt()
+    {
+        Connect("old-cal");
+        var card = Card("BarclaysPlatinumVisa8003");
+        card.Update(card.Name, isActive: true, new DateOnly(2026, 9, 10));
+        await _sut.ResyncAsync(card.Id);
+
+        card.Update(card.Name, isActive: false, new DateOnly(2026, 9, 10));
+        _provider.NotFoundCalendarId = "old-cal";
+        _provider.CreatedCalendarId = "new-cal";
+
+        await _sut.ResyncAsync(card.Id);
+
+        _connectionStore.Load()!.CalendarId.Should().Be("new-cal");
+    }
+
+    [Fact]
+    public async Task ResyncAsync_WhenDeletingTheEventFailsForAnotherReason_MarksErrorStatus()
+    {
+        Connect();
+        var card = Card("BarclaysPlatinumVisa8003");
+        card.Update(card.Name, isActive: true, new DateOnly(2026, 9, 10));
+        await _sut.ResyncAsync(card.Id);
+
+        card.Update(card.Name, isActive: false, new DateOnly(2026, 9, 10));
+        _provider.DeleteEventThrows = true;
+        var result = await _sut.ResyncAsync(card.Id);
+
+        result.State.Should().Be("Error");
+        result.LastError.Should().NotBeNullOrEmpty();
+    }
+
+    [Fact]
+    public async Task ResyncAsync_WhenSelfHealingFailsToRecreateTheCalendar_LogsAndLeavesTheOldMappingInPlace()
+    {
+        Connect("old-cal");
+        var card = Card("BarclaysPlatinumVisa8003");
+        card.Update(card.Name, isActive: true, new DateOnly(2026, 9, 10));
+        await _sut.ResyncAsync(card.Id);
+
+        card.Update(card.Name, isActive: true, new DateOnly(2026, 9, 15));
+        _provider.NotFoundCalendarId = "old-cal";
+        _provider.CreateCalendarThrows = true;
+
+        await _sut.ResyncAsync(card.Id);
+
+        _connectionStore.Load()!.CalendarId.Should().Be("old-cal");
+    }
 }

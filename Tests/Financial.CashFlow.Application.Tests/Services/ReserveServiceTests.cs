@@ -473,6 +473,76 @@ public class ReserveServiceTests
 
         _repository.ReserveMovements.Should().OnlyContain(m => m.Income == null);
     }
+
+    [Fact]
+    public async Task PostWithdrawalAsync_WithBlankDescription_ThrowsArgumentException()
+    {
+        var act = async () => await _sut.PostWithdrawalAsync(new WithdrawalRequestDTO
+        {
+            BucketId = BucketId("Investimento"),
+            Amount = 30m,
+            Date = new DateOnly(2026, 7, 1),
+            Description = "   "
+        });
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*Description is required*");
+    }
+
+    [Fact]
+    public async Task PostWithdrawalAsync_WhenSaveFails_RollsBackTheMovement()
+    {
+        _repository.Seed("Investimento", 100m);
+        _repository.ThrowOnNextSave = true;
+
+        var act = async () => await _sut.PostWithdrawalAsync(new WithdrawalRequestDTO
+        {
+            BucketId = BucketId("Investimento"),
+            Amount = 30m,
+            Date = new DateOnly(2026, 7, 1),
+            Description = "Groceries top-up",
+            Confirmed = false
+        });
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+        _repository.ReserveMovements.Should().ContainSingle("the withdrawal itself was rolled back, leaving only the seed movement");
+    }
+
+    [Fact]
+    public void GetBucketBalances_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    {
+        _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
+
+        Action act = () => _sut.GetBucketBalances();
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void GetMovementHistory_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    {
+        _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
+
+        Action act = () => _sut.GetMovementHistory();
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public async Task UpdateMovementAsync_WithBlankDescription_ThrowsArgumentException()
+    {
+        _repository.Seed("Investimento", 100m, new DateOnly(2026, 7, 1));
+        var movement = _repository.ReserveMovements[0];
+
+        var act = async () => await _sut.UpdateMovementAsync(movement.Id, new ReserveMovementUpdateDTO
+        {
+            BucketId = BucketId("Investimento"),
+            Amount = 150m,
+            Date = new DateOnly(2026, 7, 5),
+            Description = " "
+        });
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*Description is required*");
+    }
 }
 
 internal static class ReserveServiceTestsStubExtensions

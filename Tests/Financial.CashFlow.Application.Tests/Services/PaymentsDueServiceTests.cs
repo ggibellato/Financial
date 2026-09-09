@@ -264,4 +264,20 @@ public class PaymentsDueServiceTests
         result.Should().NotBeNull();
         result.Should().BeEmpty();
     }
+
+    [Fact]
+    public void GetPaymentsDue_TimeProviderThrowsUnexpectedly_ReturnsEmptyArray()
+    {
+        var sut = CreateService(timeProvider: new ThrowingTimeProvider());
+
+        var result = sut.GetPaymentsDue();
+
+        result.Should().NotBeNull();
+        result.Should().BeEmpty();
+    }
+
+    private sealed class ThrowingTimeProvider : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => throw new InvalidOperationException("simulated failure");
+    }
 }

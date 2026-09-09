@@ -351,4 +351,24 @@ public class SummaryServiceTests
 
         act.Should().Throw<ArgumentNullException>();
     }
+
+    [Fact]
+    public void GetBrokerSummary_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    {
+        _repository.ThrowOnGetBrokerList = new InvalidOperationException("simulated failure");
+
+        Action act = () => CreateService().GetBrokerSummary("XPI");
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void GetPortfolioSummary_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    {
+        _repository.ThrowOnGetAssetsByBrokerPortfolio = new InvalidOperationException("simulated failure");
+
+        Action act = () => CreateService().GetPortfolioSummary("XPI", "Default");
+
+        act.Should().Throw<InvalidOperationException>();
+    }
 }

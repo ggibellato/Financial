@@ -261,4 +261,29 @@ public class ReserveBucketServiceTests
             result.Warning.Should().Contain("50");
         }
     }
+
+    [Fact]
+    public void GetReserveBuckets_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    {
+        var repository = new StubCashFlowRepository { ThrowOnNextRead = new InvalidOperationException("simulated failure") };
+        var service = new ReserveBucketService(repository, Tracer, Logger);
+
+        Action act = () => service.GetReserveBuckets();
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public async Task UpdateReserveBucketAsync_WithBlankName_ThrowsArgumentException()
+    {
+        var repository = new StubCashFlowRepository();
+        var bucket = ReserveBucket.Create("Investimento", 50m, isActive: true);
+        repository.ReserveBuckets.Add(bucket);
+        var service = new ReserveBucketService(repository, Tracer, Logger);
+        var request = new ReserveBucketUpdateDTO { Name = "   ", SplitPercentage = 50m, IsActive = true };
+
+        var act = async () => await service.UpdateReserveBucketAsync(bucket.Id, request);
+
+        await act.Should().ThrowAsync<ArgumentException>();
+    }
 }

@@ -985,4 +985,34 @@ public class ExpenseServiceTests
         // Only the operation name is logged - never the expense's description or value (FR-014).
         logger.Entries.Should().OnlyContain(e => !e.Message.Contains(request.Description));
     }
+
+    [Fact]
+    public void GetExpensesByMonth_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    {
+        _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
+
+        Action act = () => _sut.GetExpensesByMonth(2026, 7);
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void GetUnpaidCardChargesByMonth_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    {
+        _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
+
+        Action act = () => _sut.GetUnpaidCardChargesByMonth(2026, 7);
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void GetCategoryTotalsByMonth_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    {
+        _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
+
+        Action act = () => _sut.GetCategoryTotalsByMonth(2026, 7);
+
+        act.Should().Throw<InvalidOperationException>();
+    }
 }
