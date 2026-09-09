@@ -28,7 +28,8 @@ public sealed class IncomeSourceService : IIncomeSourceService
         using var span = StartSpan("GetIncomeSources");
         try
         {
-            var result = _repository.GetIncomeSources().Select(ToDto).ToList();
+            var referencedSourceIds = _repository.GetIncomes().Select(i => i.IncomeSource.Id).ToHashSet();
+            var result = _repository.GetIncomeSources().Select(source => ToDto(source, referencedSourceIds.Contains(source.Id))).ToList();
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetIncomeSources");
@@ -58,7 +59,7 @@ public sealed class IncomeSourceService : IIncomeSourceService
                 throw new ArgumentException($"Income group '{request.Group}' is not recognized.", nameof(request));
             }
 
-            EnsureNameIsUnique(request.Name, excludingId: null);
+            _repository.GetIncomeSources().EnsureNameIsUnique(request.Name, null, s => s.Name, s => s.Id, "An income source");
 
             var incomeSource = IncomeSource.Create(request.Name, group, request.IsActive, request.AutoSplitToReserve);
 
@@ -103,7 +104,7 @@ public sealed class IncomeSourceService : IIncomeSourceService
                 throw new KeyNotFoundException($"Income source '{id}' was not found.");
             }
 
-            EnsureNameIsUnique(request.Name, excludingId: id);
+            _repository.GetIncomeSources().EnsureNameIsUnique(request.Name, id, s => s.Name, s => s.Id, "An income source");
 
             await _repository.ApplyAndSaveAsync(() =>
             {
@@ -151,15 +152,6 @@ public sealed class IncomeSourceService : IIncomeSourceService
         }
     }
 
-    private void EnsureNameIsUnique(string name, Guid? excludingId)
-    {
-        var collision = _repository.GetIncomeSources().FirstOrDefault(s => s.Name == name && s.Id != excludingId);
-        if (collision is not null)
-        {
-            throw new DuplicateNameException($"An income source named \"{name}\" already exists.");
-        }
-    }
-
     private void EnsureNotReferenced(Guid incomeSourceId)
     {
         if (IsReferenced(incomeSourceId))
@@ -179,13 +171,15 @@ public sealed class IncomeSourceService : IIncomeSourceService
         return _tracer.StartServiceSpan("CashFlow", nameof(IncomeSourceService), operationName, EntityType);
     }
 
-    private IncomeSourceDTO ToDto(IncomeSource source) => new()
+    private IncomeSourceDTO ToDto(IncomeSource source) => ToDto(source, IsReferenced(source.Id));
+
+    private static IncomeSourceDTO ToDto(IncomeSource source, bool hasReferences) => new()
     {
         Id = source.Id,
         Name = source.Name,
         IsActive = source.IsActive,
         Group = source.Group.ToString(),
         AutoSplitToReserve = source.AutoSplitToReserve,
-        HasReferences = IsReferenced(source.Id)
+        HasReferences = hasReferences
     };
 }

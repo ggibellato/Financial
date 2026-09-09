@@ -253,18 +253,21 @@ public sealed class CalendarIntegrationService : ICalendarIntegrationService
         }
     }
 
+    /// <summary>Returns a live, non-revoked connection with a fresh access token, or
+    /// <see langword="null"/> when the connection is already revoked or the refresh itself fails -
+    /// the single failure check shared by every best-effort remote call below.</summary>
+    private async Task<CalendarConnection?> TryGetFreshConnectionAsync(CalendarConnection connection, CancellationToken cancellationToken) =>
+        connection.RevokedReason is not null
+            ? null
+            : await EnsureFreshAccessTokenAsync(connection, cancellationToken).ConfigureAwait(false);
+
     /// <summary>Best-effort: revokes the token only, leaving the dedicated calendar and its events
     /// intact in the user's Google account - the user asked to stop the app managing their
     /// calendar, not to delete data they may still want. Logs (not throws) on failure. Never
     /// touches local storage - callers decide what to persist.</summary>
     private async Task<bool> RevokeAccessOnlyAsync(CalendarConnection connection, CancellationToken cancellationToken)
     {
-        if (connection.RevokedReason is not null)
-        {
-            return false;
-        }
-
-        var fresh = await EnsureFreshAccessTokenAsync(connection, cancellationToken).ConfigureAwait(false);
+        var fresh = await TryGetFreshConnectionAsync(connection, cancellationToken).ConfigureAwait(false);
         if (fresh is null)
         {
             return false;
@@ -288,12 +291,7 @@ public sealed class CalendarIntegrationService : ICalendarIntegrationService
     /// through the app and would otherwise be orphaned) - never touches local storage.</summary>
     private async Task<bool> BestEffortDisconnectRemoteAsync(CalendarConnection connection, CancellationToken cancellationToken)
     {
-        if (connection.RevokedReason is not null)
-        {
-            return false;
-        }
-
-        var fresh = await EnsureFreshAccessTokenAsync(connection, cancellationToken).ConfigureAwait(false);
+        var fresh = await TryGetFreshConnectionAsync(connection, cancellationToken).ConfigureAwait(false);
         if (fresh is null)
         {
             return false;

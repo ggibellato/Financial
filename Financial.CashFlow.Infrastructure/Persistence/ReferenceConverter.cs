@@ -13,13 +13,11 @@ public abstract class ReferenceConverter<T> : JsonConverter<T> where T : class
 {
     private readonly Dictionary<Guid, T>? _lookup;
     private readonly Func<T, Guid> _idSelector;
-    private readonly string _entityName;
 
-    protected ReferenceConverter(Dictionary<Guid, T>? lookup, Func<T, Guid> idSelector, string entityName)
+    protected ReferenceConverter(Dictionary<Guid, T>? lookup, Func<T, Guid> idSelector)
     {
         _lookup = lookup;
         _idSelector = idSelector;
-        _entityName = entityName;
     }
 
     public override T? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
@@ -39,7 +37,8 @@ public abstract class ReferenceConverter<T> : JsonConverter<T> where T : class
 
         if (!_lookup.TryGetValue(id, out var resolved))
         {
-            throw new JsonException($"{_entityName} '{id}' referenced but not found in the seeded {_entityName} collection.");
+            var entityName = typeof(T).Name;
+            throw new JsonException($"{entityName} '{id}' referenced but not found in the seeded {entityName} collection.");
         }
 
         return resolved;

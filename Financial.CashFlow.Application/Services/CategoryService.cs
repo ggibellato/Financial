@@ -28,7 +28,8 @@ public sealed class CategoryService : ICategoryService
         using var span = StartSpan("GetCategories");
         try
         {
-            var result = _repository.GetCategories().Select(ToDto).ToList();
+            var referencedCategoryIds = _repository.GetExpenses().Select(e => e.Category.Id).ToHashSet();
+            var result = _repository.GetCategories().Select(category => ToDto(category, referencedCategoryIds.Contains(category.Id))).ToList();
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetCategories");
@@ -53,7 +54,7 @@ public sealed class CategoryService : ICategoryService
                 throw new ArgumentException("Category name is required.", nameof(request));
             }
 
-            EnsureNameIsUnique(request.Name, excludingId: null);
+            _repository.GetCategories().EnsureNameIsUnique(request.Name, null, c => c.Name, c => c.Id, "A category");
 
             var category = Category.Create(request.Name, request.IsInvestment, request.IsTithe, request.Active);
 
@@ -93,7 +94,7 @@ public sealed class CategoryService : ICategoryService
                 throw new KeyNotFoundException($"Category '{id}' was not found.");
             }
 
-            EnsureNameIsUnique(request.Name, excludingId: id);
+            _repository.GetCategories().EnsureNameIsUnique(request.Name, id, c => c.Name, c => c.Id, "A category");
 
             await _repository.ApplyAndSaveAsync(() =>
             {
@@ -141,15 +142,6 @@ public sealed class CategoryService : ICategoryService
         }
     }
 
-    private void EnsureNameIsUnique(string name, Guid? excludingId)
-    {
-        var collision = _repository.GetCategories().FirstOrDefault(c => c.Name == name && c.Id != excludingId);
-        if (collision is not null)
-        {
-            throw new DuplicateNameException($"A category named \"{name}\" already exists.");
-        }
-    }
-
     private void EnsureNotReferenced(Guid categoryId)
     {
         if (IsReferenced(categoryId))
@@ -169,13 +161,15 @@ public sealed class CategoryService : ICategoryService
         return _tracer.StartServiceSpan("CashFlow", nameof(CategoryService), operationName, EntityType);
     }
 
-    private CategoryDTO ToDto(Category category) => new()
+    private CategoryDTO ToDto(Category category) => ToDto(category, IsReferenced(category.Id));
+
+    private static CategoryDTO ToDto(Category category, bool hasReferences) => new()
     {
         Id = category.Id,
         Name = category.Name,
         Active = category.Active,
         IsInvestment = category.IsInvestment,
         IsTithe = category.IsTithe,
-        HasReferences = IsReferenced(category.Id)
+        HasReferences = hasReferences
     };
 }

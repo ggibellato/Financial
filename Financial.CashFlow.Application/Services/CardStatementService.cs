@@ -57,9 +57,26 @@ public sealed class CardStatementService : ICardStatementService
                 return created;
             }).ConfigureAwait(false);
 
+            var charges = _repository.GetExpenses()
+                .Where(e => e.PaymentStatus == ExpensePaymentStatus.CreditCardCharge)
+                .ToList();
+            var outstandingByCardPeriod = charges
+                .Where(e => e.InvoiceDate is not null)
+                .GroupBy(e => (e.CreditCard!.Id, e.InvoiceDate!.Value.Year, e.InvoiceDate!.Value.Month))
+                .ToDictionary(g => g.Key, g => g.Sum(e => e.Value));
+            var accumulatedByCard = charges
+                .GroupBy(e => e.CreditCard!.Id)
+                .ToDictionary(g => g.Key, g => g.Sum(e => e.Value));
+
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetStatementsForMonth");
-            return existingStatements.Select(s => ToDto(s)).ToList();
+            return existingStatements
+                .Select(s => ToDto(
+                    s,
+                    outstandingByCardPeriod.GetValueOrDefault((s.CreditCard.Id, s.Year, s.Month)),
+                    accumulatedByCard.GetValueOrDefault(s.CreditCard.Id),
+                    warning: null))
+                .ToList();
         }
         catch (Exception ex)
         {
@@ -220,7 +237,14 @@ public sealed class CardStatementService : ICardStatementService
             .Where(e => e.CreditCard?.Id == creditCardId && e.PaymentStatus == ExpensePaymentStatus.CreditCardCharge)
             .Sum(e => e.Value);
 
-    private CardStatementDTO ToDto(CardStatement statement, string? warning = null) => new()
+    private CardStatementDTO ToDto(CardStatement statement, string? warning = null) =>
+        ToDto(
+            statement,
+            GetStatementExpenses(statement, ExpensePaymentStatus.CreditCardCharge).Sum(e => e.Value),
+            GetAccumulatedOutstandingTotal(statement.CreditCard.Id),
+            warning);
+
+    private static CardStatementDTO ToDto(CardStatement statement, decimal outstandingTotal, decimal accumulatedOutstandingTotal, string? warning) => new()
     {
         Id = statement.Id,
         CreditCardId = statement.CreditCard.Id,
@@ -228,8 +252,8 @@ public sealed class CardStatementService : ICardStatementService
         Year = statement.Year,
         Month = statement.Month,
         IsPaid = statement.IsPaid,
-        OutstandingTotal = GetStatementExpenses(statement, ExpensePaymentStatus.CreditCardCharge).Sum(e => e.Value),
-        AccumulatedOutstandingTotal = GetAccumulatedOutstandingTotal(statement.CreditCard.Id),
+        OutstandingTotal = outstandingTotal,
+        AccumulatedOutstandingTotal = accumulatedOutstandingTotal,
         Warning = warning
     };
 }

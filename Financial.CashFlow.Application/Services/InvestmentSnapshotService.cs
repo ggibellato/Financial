@@ -118,6 +118,8 @@ public sealed class InvestmentSnapshotService : IInvestmentSnapshotService
             var suggestions = new List<InvestmentSnapshotSuggestionDTO>();
             var notUpdated = new List<InvestmentSnapshotSuggestionSkippedDTO>();
 
+            (DateOnly AsOfDate, decimal Total, string Label)? reserveBucketsSummary = null;
+
             foreach (var account in accounts)
             {
                 var snapshot = snapshotsByAccountId[account.Id];
@@ -155,10 +157,10 @@ public sealed class InvestmentSnapshotService : IInvestmentSnapshotService
                         break;
 
                     case InvestmentAccountSource.ReserveBucketsSum:
-                        var asOfDate = ReserveBucketAsOfDateResolver.LastDayOfPriorMonth(year, month);
-                        var total = ReserveBucketAsOfDateResolver.TotalBalanceAsOf(
-                            _repository.GetReserveMovements().ToList(), asOfDate);
-                        var asOfLabel = asOfDate.ToString("MMM yyyy", CultureInfo.InvariantCulture);
+                        // Every account of this source in a given month shares the same as-of date
+                        // and bucket total, so it's computed once and reused instead of re-scanning
+                        // ReserveMovements per account.
+                        reserveBucketsSummary ??= ComputeReserveBucketsSummary(year, month);
 
                         suggestions.Add(new InvestmentSnapshotSuggestionDTO
                         {
@@ -166,8 +168,8 @@ public sealed class InvestmentSnapshotService : IInvestmentSnapshotService
                             AccountId = account.Id,
                             AccountName = account.Name,
                             CurrentValue = snapshot.Value,
-                            SuggestedValue = total,
-                            SourceDescription = $"Sum of reserve buckets — as of {asOfLabel}"
+                            SuggestedValue = reserveBucketsSummary.Value.Total,
+                            SourceDescription = $"Sum of reserve buckets — as of {reserveBucketsSummary.Value.Label}"
                         });
                         break;
 
@@ -192,6 +194,14 @@ public sealed class InvestmentSnapshotService : IInvestmentSnapshotService
     {
         _logger.LogInformation("{Operation} started", operationName);
         return _tracer.StartServiceSpan("CashFlow", nameof(InvestmentSnapshotService), operationName, EntityType);
+    }
+
+    private (DateOnly AsOfDate, decimal Total, string Label) ComputeReserveBucketsSummary(int year, int month)
+    {
+        var asOfDate = ReserveBucketAsOfDateResolver.LastDayOfPriorMonth(year, month);
+        var total = ReserveBucketAsOfDateResolver.TotalBalanceAsOf(_repository.GetReserveMovements().ToList(), asOfDate);
+        var label = asOfDate.ToString("MMM yyyy", CultureInfo.InvariantCulture);
+        return (asOfDate, total, label);
     }
 
     private static InvestmentSnapshotDTO ToDto(InvestmentSnapshot snapshot) => new()

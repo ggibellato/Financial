@@ -35,7 +35,7 @@ public class MonthlySeriesTests
     {
         var series = MonthlySeries.Zero();
 
-        series.AsReadOnly().Should().AllBeEquivalentTo(0m);
+        series.ToArray().Should().AllBeEquivalentTo(0m);
     }
 
     [Fact]

@@ -241,12 +241,6 @@ public sealed class ExpenseService : IExpenseService
                 throw new ArgumentException($"Credit card '{creditCardId}' is not recognized.");
             }
 
-            if (!creditCard!.IsActive)
-            {
-                throw new ArgumentException(
-                    $"Credit card '{creditCard.Name}' is inactive and cannot be used for new entries.");
-            }
-
             parsedCreditCard = creditCard;
         }
 
@@ -269,21 +263,7 @@ public sealed class ExpenseService : IExpenseService
         InvoiceDate = expense.InvoiceDate,
         PaymentStatus = expense.PaymentStatus.ToString(),
         RoundUpAmount = expense.RoundUpAmount,
-        SuggestedRoundUpAmount = GetSuggestedRoundUpAmount(expense),
+        SuggestedRoundUpAmount = expense.SuggestedRoundUpAmount,
         CountsAsTithe = expense.CountsAsTithe
     };
-
-    private static decimal? GetSuggestedRoundUpAmount(Expense expense)
-    {
-        if (expense.RoundUpAmount is not null
-            || expense.PaymentStatus != ExpensePaymentStatus.ImmediatePayment
-            || expense.Value <= 0)
-        {
-            return null;
-        }
-
-        return expense.PaymentSourceBank?.RoundUpEnabled == true
-            ? expense.RoundUpSuggestion
-            : null;
-    }
 }

@@ -1,5 +1,4 @@
 using Financial.CashFlow.Application.DTOs;
-using Financial.CashFlow.Application.Exceptions;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
@@ -54,7 +53,7 @@ public sealed class ReserveBucketService : IReserveBucketService
                 throw new ArgumentException("Reserve bucket name is required.", nameof(request));
             }
 
-            EnsureNameIsUnique(request.Name, excludingId: null);
+            _repository.GetReserveBuckets().EnsureNameIsUnique(request.Name, null, b => b.Name, b => b.Id, "A reserve bucket");
 
             var bucket = ReserveBucket.Create(request.Name, request.SplitPercentage, request.IsActive);
 
@@ -94,7 +93,7 @@ public sealed class ReserveBucketService : IReserveBucketService
                 throw new KeyNotFoundException($"Reserve bucket '{id}' was not found.");
             }
 
-            EnsureNameIsUnique(request.Name, excludingId: id);
+            _repository.GetReserveBuckets().EnsureNameIsUnique(request.Name, id, b => b.Name, b => b.Id, "A reserve bucket");
 
             await _repository.ApplyAndSaveAsync(() =>
             {
@@ -110,15 +109,6 @@ public sealed class ReserveBucketService : IReserveBucketService
         {
             span.MarkFailed(ex);
             throw;
-        }
-    }
-
-    private void EnsureNameIsUnique(string name, Guid? excludingId)
-    {
-        var collision = _repository.GetReserveBuckets().FirstOrDefault(b => b.Name == name && b.Id != excludingId);
-        if (collision is not null)
-        {
-            throw new DuplicateNameException($"A reserve bucket named \"{name}\" already exists.");
         }
     }
 

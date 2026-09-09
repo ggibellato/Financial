@@ -27,6 +27,19 @@ public class Expense
 
     public decimal RoundUpSuggestion => Value <= 0 ? 0m : Math.Ceiling(Value) - Value;
 
+    /// <summary>
+    /// <see cref="RoundUpSuggestion"/>, but only when it is actually offerable: no round-up already
+    /// set, paid directly from a bank (not a credit-card charge), a positive value, and that bank
+    /// itself supports round-up.
+    /// </summary>
+    public decimal? SuggestedRoundUpAmount =>
+        RoundUpAmount is not null
+        || PaymentStatus != ExpensePaymentStatus.ImmediatePayment
+        || Value <= 0
+        || PaymentSourceBank?.RoundUpEnabled != true
+            ? null
+            : RoundUpSuggestion;
+
     public bool IsInvestment => Category.IsInvestment;
 
     /// <summary>
@@ -227,6 +240,12 @@ public class Expense
         {
             throw new ArgumentException(
                 "An expense cannot have both a payment source and a card tag; a settled expense is only produced by marking its card statement paid.");
+        }
+
+        if (creditCard is not null && !creditCard.IsActive)
+        {
+            throw new ArgumentException(
+                $"Credit card '{creditCard.Name}' is inactive and cannot be used for new entries.");
         }
     }
 }

@@ -71,5 +71,11 @@ public class InvestmentAccount
         {
             throw new ArgumentException("Only a credit-card-sourced investment account can have a linked credit card.");
         }
+
+        if (creditCard is not null && !creditCard.IsActive)
+        {
+            throw new ArgumentException(
+                $"Credit card '{creditCard.Name}' is inactive and cannot be used for new entries.");
+        }
     }
 }
