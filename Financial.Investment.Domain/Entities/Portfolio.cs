@@ -14,11 +14,7 @@ public class Portfolio
 
     private List<Asset> _assets = new List<Asset>();
     public IReadOnlyCollection<Asset> Assets { get => _assets.AsReadOnly(); private set => SetAssets(value); }
-    private void SetAssets(IReadOnlyCollection<Asset> data)
-    {
-        _assets.Clear();
-        _assets.AddRange(data);
-    }
+    private void SetAssets(IReadOnlyCollection<Asset> data) => EntityGuard.ReplaceAll(_assets, data);
 
     private Portfolio()
     {

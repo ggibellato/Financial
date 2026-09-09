@@ -152,7 +152,7 @@ public class Asset
             throw new ArgumentNullException(nameof(updatedCredit));
         }
 
-        EnsureNotEmptyId(updatedCredit.Id, "Credit Id is required for update.", nameof(updatedCredit));
+        EntityGuard.EnsureNotEmptyId(updatedCredit.Id, "Credit Id is required for update.", nameof(updatedCredit));
 
         var index = _credits.FindIndex(credit => credit.Id == updatedCredit.Id);
         if (index < 0)
@@ -166,7 +166,7 @@ public class Asset
 
     public bool RemoveCredit(Guid creditId)
     {
-        EnsureNotEmptyId(creditId, "Credit Id is required for delete.", nameof(creditId));
+        EntityGuard.EnsureNotEmptyId(creditId, "Credit Id is required for delete.", nameof(creditId));
 
         var index = _credits.FindIndex(credit => credit.Id == creditId);
         if (index < 0)
@@ -267,14 +267,6 @@ public class Asset
         else
         {
             entries.Add(entry);
-        }
-    }
-
-    private static void EnsureNotEmptyId(Guid id, string message, string paramName)
-    {
-        if (id == Guid.Empty)
-        {
-            throw new ArgumentException(message, paramName);
         }
     }
 

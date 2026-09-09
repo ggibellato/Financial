@@ -3,6 +3,7 @@ using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.Entities;
 using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.Logging;
+using static Financial.Investment.Application.Validation.RequiredValueValidator;
 
 namespace Financial.Investment.Application.Services;
 
@@ -122,11 +123,6 @@ public sealed class BrokerService : IBrokerService
             throw;
         }
     }
-
-    private static string Required(string? value, string parameterName) =>
-        string.IsNullOrWhiteSpace(value)
-            ? throw new ArgumentException($"{parameterName} is required.", parameterName)
-            : value;
 
     private ITelemetrySpan StartSpan(string operationName)
     {

@@ -60,7 +60,7 @@ public class Transactions : ICollection<Transaction>
             throw new ArgumentNullException(nameof(updatedTransaction));
         }
 
-        EnsureNotEmptyId(updatedTransaction.Id, "Transaction Id is required for update.", nameof(updatedTransaction));
+        EntityGuard.EnsureNotEmptyId(updatedTransaction.Id, "Transaction Id is required for update.", nameof(updatedTransaction));
 
         var index = _items.FindIndex(t => t.Id == updatedTransaction.Id);
         if (index < 0)
@@ -76,7 +76,7 @@ public class Transactions : ICollection<Transaction>
 
     public bool RemoveById(Guid transactionId)
     {
-        EnsureNotEmptyId(transactionId, "Transaction Id is required for delete.", nameof(transactionId));
+        EntityGuard.EnsureNotEmptyId(transactionId, "Transaction Id is required for delete.", nameof(transactionId));
 
         var index = _items.FindIndex(t => t.Id == transactionId);
         if (index < 0)
@@ -102,14 +102,6 @@ public class Transactions : ICollection<Transaction>
         foreach (var transaction in replayList)
         {
             Add(transaction);
-        }
-    }
-
-    private static void EnsureNotEmptyId(Guid id, string message, string paramName)
-    {
-        if (id == Guid.Empty)
-        {
-            throw new ArgumentException(message, paramName);
         }
     }
 
