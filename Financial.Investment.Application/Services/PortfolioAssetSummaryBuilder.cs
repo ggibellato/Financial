@@ -42,7 +42,7 @@ internal static class PortfolioAssetSummaryBuilder
             .Min();
 
         var cashFlows = AssetCashFlowBuilder.BuildWithCredits(asset);
-        var creditsAnalysis = ComputeCreditsAnalysis(asset, weightBasis, today);
+        var creditsAnalysis = CreditsAnalysisCalculator.Calculate(asset.Credits, weightBasis, today);
 
         return new AssetComputedData(
             asset.Name, asset.Ticker, asset.Exchange, asset.Class,
@@ -53,51 +53,6 @@ internal static class PortfolioAssetSummaryBuilder
             creditsAnalysis.LastMonthCreditsPercent, creditsAnalysis.CreditFrequencyPerYear,
             creditsAnalysis.EstimatedAnnualCredits, creditsAnalysis.EstimatedAnnualPercent,
             creditsAnalysis.CurrentMonthCredits);
-    }
-
-    private static CreditsAnalysis ComputeCreditsAnalysis(Asset asset, decimal weightBasis, DateTime today)
-    {
-        var pastCredits = asset.Credits.Where(c => c.Date <= today).ToList();
-
-        var lastCreditMonth = pastCredits
-            .GroupBy(c => (c.Date.Year, c.Date.Month))
-            .Select(g => g.Key)
-            .OrderByDescending(g => g.Year).ThenByDescending(g => g.Month)
-            .Cast<(int Year, int Month)?>()
-            .FirstOrDefault();
-
-        var lastMonthCreditsString = lastCreditMonth.HasValue
-            ? $"{lastCreditMonth.Value.Year:D4}-{lastCreditMonth.Value.Month:D2}"
-            : null;
-
-        var lastMonthCredits = lastCreditMonth.HasValue
-            ? pastCredits
-                .Where(c => c.Date.Year == lastCreditMonth.Value.Year && c.Date.Month == lastCreditMonth.Value.Month)
-                .Sum(c => c.Value)
-            : 0m;
-
-        decimal? lastMonthCreditsPercent = lastCreditMonth.HasValue && weightBasis != 0m
-            ? lastMonthCredits / weightBasis * 100m
-            : null;
-
-        var frequencyPerYear = CreditFrequencyAnalyzer.DetectFrequencyPerYear(asset.Credits);
-
-        decimal? estimatedAnnualCredits = frequencyPerYear.HasValue
-            ? lastMonthCredits * frequencyPerYear.Value
-            : null;
-
-        decimal? estimatedAnnualPercent = estimatedAnnualCredits.HasValue && weightBasis != 0m
-            ? estimatedAnnualCredits.Value / weightBasis * 100m
-            : null;
-
-        var currentMonthCredits = asset.Credits
-            .Where(c => c.Date.Year == today.Year && c.Date.Month == today.Month)
-            .Sum(c => c.Value);
-
-        return new CreditsAnalysis(
-            lastMonthCredits, lastMonthCreditsString, lastMonthCreditsPercent,
-            frequencyPerYear, estimatedAnnualCredits, estimatedAnnualPercent,
-            currentMonthCredits);
     }
 
     private static PortfolioAssetSummaryItemDTO ToDTO(AssetComputedData c, decimal weight) =>
@@ -135,11 +90,6 @@ internal static class PortfolioAssetSummaryBuilder
         DateTime? FirstInvestmentDate, decimal CurrentQuantity, decimal AveragePrice, decimal? AverageSellPrice,
         decimal TotalBought, decimal TotalSold, decimal TotalInvested, decimal RealizedGainLoss, decimal WeightBasis,
         decimal TotalCredits, IReadOnlyList<AssetCashFlowDTO> CashFlows,
-        decimal LastMonthCredits, string? LastCreditMonth, decimal? LastMonthCreditsPercent,
-        int? CreditFrequencyPerYear, decimal? EstimatedAnnualCredits, decimal? EstimatedAnnualPercent,
-        decimal CurrentMonthCredits);
-
-    private sealed record CreditsAnalysis(
         decimal LastMonthCredits, string? LastCreditMonth, decimal? LastMonthCreditsPercent,
         int? CreditFrequencyPerYear, decimal? EstimatedAnnualCredits, decimal? EstimatedAnnualPercent,
         decimal CurrentMonthCredits);

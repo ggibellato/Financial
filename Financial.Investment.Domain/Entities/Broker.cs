@@ -12,11 +12,7 @@ public class Broker
 
     private List<Portfolio> _portfolios = new List<Portfolio>();
     public IReadOnlyCollection<Portfolio> Portfolios { get => _portfolios.AsReadOnly(); private set => SetPortfolios(value); }
-    private void SetPortfolios(IReadOnlyCollection<Portfolio> data)
-    {
-        _portfolios.Clear();
-        _portfolios.AddRange(data);
-    }
+    private void SetPortfolios(IReadOnlyCollection<Portfolio> data) => EntityGuard.ReplaceAll(_portfolios, data);
 
     private Broker() { }
 

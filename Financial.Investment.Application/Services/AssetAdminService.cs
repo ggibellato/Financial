@@ -6,6 +6,7 @@ using Financial.Investment.Domain.Entities;
 using Financial.Investment.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.Logging;
+using static Financial.Investment.Application.Validation.RequiredValueValidator;
 
 namespace Financial.Investment.Application.Services;
 
@@ -135,11 +136,6 @@ public sealed class AssetAdminService : IAssetAdminService
             throw new ArgumentException($"\"{isin}\" is not a validly formatted ISIN.", nameof(isin));
         }
     }
-
-    private static string Required(string? value, string parameterName) =>
-        string.IsNullOrWhiteSpace(value)
-            ? throw new ArgumentException($"{parameterName} is required.", parameterName)
-            : value;
 
     private ITelemetrySpan StartSpan(string operationName)
     {
