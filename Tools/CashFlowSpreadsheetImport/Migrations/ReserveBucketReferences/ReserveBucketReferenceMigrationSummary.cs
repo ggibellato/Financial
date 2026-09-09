@@ -36,15 +36,11 @@ public sealed class ReserveBucketReferenceMigrationSummary
 
         builder.AppendLine($"  Reserve movements: {MovementsMigratedCount} migrated");
 
-        if (_unresolvedMovements.Count > 0)
-        {
-            builder.AppendLine();
-            builder.AppendLine("Reserve movements whose legacy bucket name does not match any seeded bucket (skipped, review manually):");
-            foreach (var (id, details) in _unresolvedMovements)
-            {
-                builder.AppendLine($"  {id} {details}");
-            }
-        }
+        MigrationSummaryBase.AppendUnresolvedSection(
+            builder,
+            "Reserve movements whose legacy bucket name does not match any seeded bucket (skipped, review manually):",
+            _unresolvedMovements,
+            item => $"{item.Id} {item.Details}");
 
         return builder.ToString();
     }

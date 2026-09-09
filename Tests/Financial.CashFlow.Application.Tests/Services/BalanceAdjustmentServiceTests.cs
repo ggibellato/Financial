@@ -144,7 +144,7 @@ public class BalanceAdjustmentServiceTests
     }
 
     [Fact]
-    public async Task AddAdjustmentAsync_WithUnresolvableBank_ThrowsArgumentException()
+    public async Task AddAdjustmentAsync_WithUnresolvableBank_ThrowsKeyNotFoundException()
     {
         var unknownBankId = Guid.NewGuid();
 
@@ -154,7 +154,7 @@ public class BalanceAdjustmentServiceTests
             TargetBalance = 100m
         });
 
-        await act.Should().ThrowAsync<ArgumentException>().WithMessage($"*Bank '{unknownBankId}' was not found*");
+        await act.Should().ThrowAsync<KeyNotFoundException>().WithMessage($"*Bank '{unknownBankId}' was not found*");
     }
 
     [Fact]
@@ -170,7 +170,7 @@ public class BalanceAdjustmentServiceTests
     }
 
     [Fact]
-    public async Task UpdateAdjustmentAsync_WithUnresolvableBank_ThrowsArgumentException()
+    public async Task UpdateAdjustmentAsync_WithUnresolvableBank_ThrowsKeyNotFoundException()
     {
         _repository.SetOpeningBalance("Barclays", 100m, new DateOnly(2026, 1, 1));
         var added = await _sut.AddAdjustmentAsync(BankIdOf(_repository, "Barclays"), new BalanceAdjustmentCreateDTO
@@ -186,7 +186,7 @@ public class BalanceAdjustmentServiceTests
             TargetBalance = 120m
         });
 
-        await act.Should().ThrowAsync<ArgumentException>().WithMessage($"*Bank '{unknownBankId}' was not found*");
+        await act.Should().ThrowAsync<KeyNotFoundException>().WithMessage($"*Bank '{unknownBankId}' was not found*");
     }
 
     [Fact]

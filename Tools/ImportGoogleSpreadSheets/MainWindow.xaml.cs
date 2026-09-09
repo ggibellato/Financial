@@ -1,6 +1,7 @@
 using Financial.Integrations.GoogleDrive;
 using Financial.Integrations.GoogleSheets;
 using Financial.Investment.Infrastructure.Persistence;
+using Financial.Shared.Infrastructure.Persistence;
 using System;
 using System.IO;
 using System.Text.Json;
@@ -63,9 +64,7 @@ public partial class MainWindow : Window
         if (string.IsNullOrWhiteSpace(rawPath))
             return null;
 
-        return Path.IsPathRooted(rawPath)
-            ? rawPath
-            : Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, rawPath));
+        return PathResolution.ResolveRelativeToBaseDirectory(rawPath);
     }
 
     private static bool TryGetConfigValue(JsonElement root, string key, out JsonElement value)

@@ -30,19 +30,21 @@ internal sealed class DomainExceptionMappingMiddleware
         {
             await _next(context);
         }
-        catch (OverdraftConfirmationRequiredException ex)
-        {
-            await HandleAsync(context, ex, StatusCodes.Status409Conflict);
-        }
-        catch (ReserveMovementLinkedToIncomeException ex)
-        {
-            await HandleAsync(context, ex, StatusCodes.Status409Conflict);
-        }
-        catch (EntityInUseException ex)
-        {
-            await HandleAsync(context, ex, StatusCodes.Status409Conflict);
-        }
-        catch (DuplicateNameException ex)
+        // A well-formed request the domain refuses on its own rules - an overdraft not confirmed, a
+        // still-referenced entity, a duplicate name, moving an asset onto itself or into a portfolio
+        // that already holds one by that name. 409 rather than 400 because the request is not
+        // malformed, and the distinction is what tells a client whether re-sending the same body
+        // could ever succeed.
+        //
+        // InvestmentRuleViolationException is deliberately its own type rather than
+        // InvalidOperationException: Infrastructure already throws that for genuine upstream faults
+        // (an unreadable Yahoo Finance response, a missing price fetcher), and catching it here
+        // would relabel those as client conflicts and hide real defects behind a 409.
+        catch (Exception ex) when (ex is OverdraftConfirmationRequiredException
+            or ReserveMovementLinkedToIncomeException
+            or EntityInUseException
+            or DuplicateNameException
+            or InvestmentRuleViolationException)
         {
             await HandleAsync(context, ex, StatusCodes.Status409Conflict);
         }
@@ -53,30 +55,13 @@ internal sealed class DomainExceptionMappingMiddleware
             // 500 - what this used to be - invites a retry that can never succeed.
             await HandleAsync(context, ex, StatusCodes.Status422UnprocessableEntity);
         }
-        catch (KeyNotFoundException ex)
-        {
-            await HandleAsync(context, ex, StatusCodes.Status404NotFound);
-        }
-        catch (DividendNotFoundException ex)
+        catch (Exception ex) when (ex is KeyNotFoundException or DividendNotFoundException)
         {
             await HandleAsync(context, ex, StatusCodes.Status404NotFound);
         }
         catch (ArgumentException ex)
         {
             await HandleAsync(context, ex, StatusCodes.Status400BadRequest);
-        }
-        // A well-formed request the domain refuses on its own rules - moving an asset onto itself,
-        // or into a portfolio that already holds one by that name. 409 rather than 400 because the
-        // request is not malformed, and the distinction is what tells a client whether re-sending
-        // the same body could ever succeed.
-        //
-        // Deliberately its own type rather than InvalidOperationException: Infrastructure already
-        // throws that for genuine upstream faults (an unreadable Yahoo Finance response, a missing
-        // price fetcher), and catching it here would relabel those as client conflicts and hide
-        // real defects behind a 409.
-        catch (InvestmentRuleViolationException ex)
-        {
-            await HandleAsync(context, ex, StatusCodes.Status409Conflict);
         }
     }
 
