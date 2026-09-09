@@ -343,6 +343,161 @@ public class MainNavigationViewModelBaseTests
         _summaryService.LastScopeForBroker.Should().Be(InvestmentScope.Historic);
     }
 
+    [Fact]
+    public void AsMainNavigationViewModel_ExposesAssetDetailsThroughTheInterface()
+    {
+        IMainNavigationViewModel navigationViewModel = _sut;
+
+        navigationViewModel.AssetDetails.Should().BeSameAs(_sut.AssetDetails);
+    }
+
+    [Fact]
+    public void IsLoading_CanBeSetAndRead()
+    {
+        _sut.IsLoading = true;
+
+        _sut.IsLoading.Should().BeTrue();
+    }
+
+    [Fact]
+    public void CanAcceptDrop_WhenTheDraggedAssetsPortfolioHasNoBrokerParent_ReturnsFalse()
+    {
+        var portfolioDto = new TreeNodeDTO { NodeType = TreeNodeType.Portfolio, DisplayName = "P", Metadata = [], Children = [] };
+        var portfolioNode = new TreeNodeViewModel(portfolioDto);
+        var assetDto = new TreeNodeDTO { NodeType = TreeNodeType.Asset, DisplayName = "A", Metadata = [], Children = [] };
+        var assetNode = new TreeNodeViewModel(assetDto, portfolioNode);
+        var target = BuildBrokerNode("XPI");
+
+        _sut.CanAcceptDrop(assetNode, target).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task DeleteSelectedPortfolioAsync_WhenNothingIsSelected_DoesNothing()
+    {
+        _sut.SelectedNode = null;
+
+        await _sut.DeleteSelectedPortfolioAsync();
+
+        _sut.LastEmptiedPortfolioOffered.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task LoadNavigationTreeAsync_WithAssetClassFilter_ExcludesBrokersWithNoMatchingAssets()
+    {
+        _navigationService.Tree = BuildFilterableTree();
+        await _sut.LoadNavigationTreeAsync();
+
+        _sut.SelectedAssetClassFilter = _sut.AssetClassFilters.Single(f => f.Filter == GlobalAssetClass.Cryptocurrency);
+
+        _sut.RootNodes.Should().ContainSingle(b => b.DisplayName == "CryptoBroker");
+    }
+
+    [Fact]
+    public async Task LoadNavigationTreeAsync_WithAssetClassFilterMatchingNothing_ClearsRootNodes()
+    {
+        _navigationService.Tree = BuildFilterableTree();
+        await _sut.LoadNavigationTreeAsync();
+
+        _sut.SelectedAssetClassFilter = _sut.AssetClassFilters.Single(f => f.Filter == GlobalAssetClass.RealEstate);
+
+        _sut.RootNodes.Should().BeEmpty();
+    }
+
+    private static TreeNodeDTO BuildFilterableTree()
+    {
+        TreeNodeDTO Asset(string name, GlobalAssetClass assetClass) => new()
+        {
+            NodeType = TreeNodeType.Asset,
+            DisplayName = name,
+            Metadata = new Dictionary<string, object> { ["AssetName"] = name, ["GlobalAssetClass"] = assetClass },
+            Children = []
+        };
+
+        TreeNodeDTO Portfolio(string name, TreeNodeDTO asset) => new()
+        {
+            NodeType = TreeNodeType.Portfolio,
+            DisplayName = name,
+            Metadata = new Dictionary<string, object> { ["PortfolioName"] = name },
+            Children = [asset]
+        };
+
+        TreeNodeDTO Broker(string name, TreeNodeDTO portfolio) => new()
+        {
+            NodeType = TreeNodeType.Broker,
+            DisplayName = name,
+            Metadata = new Dictionary<string, object> { ["BrokerName"] = name },
+            Children = [portfolio]
+        };
+
+        return new TreeNodeDTO
+        {
+            NodeType = TreeNodeType.Investments,
+            DisplayName = "Root",
+            Metadata = [],
+            Children =
+            [
+                Broker("CryptoBroker", Portfolio("CryptoPortfolio", Asset("Bitcoin", GlobalAssetClass.Cryptocurrency))),
+                Broker("BondBroker", Portfolio("BondPortfolio", Asset("Treasury", GlobalAssetClass.Bond)))
+            ]
+        };
+    }
+
+    [Fact]
+    public void SelectingAnInvestmentsNode_ClearsDetails()
+    {
+        var rootNode = new TreeNodeViewModel(new TreeNodeDTO { NodeType = TreeNodeType.Investments, DisplayName = "Root", Metadata = [], Children = [] });
+
+        _sut.SelectedNode = rootNode;
+
+        _spy.WasCleared.Should().BeTrue();
+    }
+
+    [Fact]
+    public void SelectingAnAssetNode_WithoutAssetNameMetadata_DoesNotLoadDetails()
+    {
+        var portfolioNode = new TreeNodeViewModel(new TreeNodeDTO { NodeType = TreeNodeType.Portfolio, DisplayName = "P", Metadata = new Dictionary<string, object> { ["PortfolioName"] = "P" }, Children = [] }, BuildBrokerNode("XPI"));
+        var assetNode = new TreeNodeViewModel(new TreeNodeDTO { NodeType = TreeNodeType.Asset, DisplayName = "A", Metadata = [], Children = [] }, portfolioNode);
+
+        _sut.SelectedNode = assetNode;
+
+        _spy.LastAssetDetails.Should().BeNull();
+    }
+
+    [Fact]
+    public void SelectingAnAssetNode_WithoutPortfolioNameMetadataOnItsParent_DoesNotLoadDetails()
+    {
+        var brokerNode = BuildBrokerNode("XPI");
+        var portfolioNode = new TreeNodeViewModel(new TreeNodeDTO { NodeType = TreeNodeType.Portfolio, DisplayName = "P", Metadata = [], Children = [] }, brokerNode);
+        var assetNode = new TreeNodeViewModel(new TreeNodeDTO { NodeType = TreeNodeType.Asset, DisplayName = "A", Metadata = new Dictionary<string, object> { ["AssetName"] = "A" }, Children = [] }, portfolioNode);
+
+        _sut.SelectedNode = assetNode;
+
+        _spy.LastAssetDetails.Should().BeNull();
+    }
+
+    [Fact]
+    public void SelectingAPortfolioNode_WithoutBrokerNameMetadataOnItsParent_ClearsDetails()
+    {
+        var brokerNode = new TreeNodeViewModel(new TreeNodeDTO { NodeType = TreeNodeType.Broker, DisplayName = "XPI", Metadata = [], Children = [] });
+        var portfolioNode = new TreeNodeViewModel(new TreeNodeDTO { NodeType = TreeNodeType.Portfolio, DisplayName = "P", Metadata = new Dictionary<string, object> { ["PortfolioName"] = "P" }, Children = [] }, brokerNode);
+
+        _sut.SelectedNode = portfolioNode;
+
+        _spy.WasCleared.Should().BeTrue();
+        _spy.WasPortfolioSummaryLoaded.Should().BeFalse();
+    }
+
+    [Fact]
+    public void SelectingABrokerNode_WithoutBrokerNameMetadata_ClearsDetails()
+    {
+        var brokerNode = new TreeNodeViewModel(new TreeNodeDTO { NodeType = TreeNodeType.Broker, DisplayName = "XPI", Metadata = [], Children = [] });
+
+        _sut.SelectedNode = brokerNode;
+
+        _spy.WasCleared.Should().BeTrue();
+        _spy.WasBrokerSummaryLoaded.Should().BeFalse();
+    }
+
     private static TreeNodeViewModel BuildPortfolioNode(string brokerName, string portfolioName)
     {
         var brokerDto = new TreeNodeDTO

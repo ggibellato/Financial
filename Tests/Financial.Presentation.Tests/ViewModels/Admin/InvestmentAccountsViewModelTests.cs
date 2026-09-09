@@ -207,4 +207,74 @@ public class InvestmentAccountsViewModelTests
 
         service.LastDeletedId.Should().BeNull();
     }
+
+    [Fact]
+    public async Task EditInvestmentAccountAsync_NullAccount_DoesNothing()
+    {
+        var (viewModel, service, _, dialog) = CreateViewModel();
+
+        await viewModel.EditInvestmentAccountAsync(null);
+
+        service.LastUpdateRequest.Should().BeNull();
+        dialog.LastInvestmentAccountFormDialog.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task EditInvestmentAccountAsync_DialogCancelled_DoesNotCallService()
+    {
+        var (viewModel, service, _, dialog) = CreateViewModel();
+        dialog.ShowInvestmentAccountFormDialogResult = false;
+        var account = Account(Guid.NewGuid(), "ChaseSave");
+
+        await viewModel.EditInvestmentAccountAsync(account);
+
+        service.LastUpdateRequest.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task EditInvestmentAccountAsync_ServiceThrows_SurfacesActionError()
+    {
+        var (viewModel, service, _, dialog) = CreateViewModel();
+        var account = Account(Guid.NewGuid(), "ChaseSave");
+        dialog.OnShowInvestmentAccountFormDialog = vm => vm.IsLiability = true;
+        service.ThrowOnUpdate = new InvalidOperationException("Update failed.");
+
+        await viewModel.EditInvestmentAccountAsync(account);
+
+        viewModel.ActionError.Should().Be("Update failed.");
+    }
+
+    [Fact]
+    public async Task DeleteInvestmentAccountAsync_NullAccount_DoesNothing()
+    {
+        var (viewModel, service, _, _) = CreateViewModel();
+
+        await viewModel.DeleteInvestmentAccountAsync(null);
+
+        service.LastDeletedId.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task DeleteInvestmentAccountAsync_ServiceThrows_SurfacesActionError()
+    {
+        var (viewModel, service, _, _) = CreateViewModel();
+        var account = Account(Guid.NewGuid(), "ChaseSave", hasNonZeroInvestmentSnapshot: false);
+        service.ThrowOnDelete = new InvalidOperationException("Delete failed.");
+
+        await viewModel.DeleteInvestmentAccountAsync(account);
+
+        viewModel.ActionError.Should().Be("Delete failed.");
+    }
+
+    [Fact]
+    public void Properties_ExposeExpectedDefaultsAndCommands()
+    {
+        var (viewModel, _, _, _) = CreateViewModel();
+
+        viewModel.HasError.Should().BeFalse();
+        viewModel.RetryCommand.Should().NotBeNull();
+        viewModel.CreateInvestmentAccountCommand.Should().NotBeNull();
+        viewModel.EditInvestmentAccountCommand.Should().NotBeNull();
+        viewModel.DeleteInvestmentAccountCommand.Should().NotBeNull();
+    }
 }

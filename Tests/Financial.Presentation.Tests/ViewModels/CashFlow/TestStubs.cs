@@ -424,6 +424,7 @@ internal sealed class StubReserveService : IReserveService
     public Exception? ThrowOnWithdrawal { get; set; }
     public (Guid Id, ReserveMovementUpdateDTO Request)? LastUpdateRequest { get; private set; }
     public Guid? LastDeletedId { get; private set; }
+    public Exception? ThrowOnDeleteMovement { get; set; }
 
     public Task<IncomeSplitResultDTO> PostIncomeSplitAsync(IncomeSplitRequestDTO request)
     {
@@ -470,6 +471,11 @@ internal sealed class StubReserveService : IReserveService
 
     public Task DeleteMovementAsync(Guid id)
     {
+        if (ThrowOnDeleteMovement is not null)
+        {
+            throw ThrowOnDeleteMovement;
+        }
+
         LastDeletedId = id;
         return Task.CompletedTask;
     }
@@ -595,6 +601,7 @@ internal sealed class StubControleMaeService : IControleMaeService
     public int GetEntriesFromDateCallCount { get; private set; }
     public int GetTotalsCallCount { get; private set; }
     public DateOnly? LastFromDate { get; private set; }
+    public Exception? ThrowOnDelete { get; set; }
 
     public Task<MaeLedgerEntryDTO> CreateEntryAsync(MaeLedgerEntryCreateDTO request)
     {
@@ -645,6 +652,11 @@ internal sealed class StubControleMaeService : IControleMaeService
 
     public Task DeleteEntryAsync(Guid id)
     {
+        if (ThrowOnDelete is { } ex)
+        {
+            throw ex;
+        }
+
         LastDeletedId = id;
         Entries.RemoveAll(e => e.Id == id);
         return Task.CompletedTask;
@@ -659,10 +671,16 @@ internal sealed class StubInvestmentSnapshotService : IInvestmentSnapshotService
     public List<(Guid Id, InvestmentSnapshotValueUpdateDTO Request)> UpdateRequests { get; } = [];
     public Exception? ThrowOnUpdate { get; set; }
     public Guid? ThrowOnUpdateForId { get; set; }
+    public Exception? ThrowOnGetSnapshots { get; set; }
 
     public Task<IReadOnlyList<InvestmentSnapshotDTO>> GetSnapshotsForMonthAsync(int year, int month)
     {
         GetSnapshotsForMonthCallCount++;
+        if (ThrowOnGetSnapshots is { } ex)
+        {
+            throw ex;
+        }
+
         return Task.FromResult<IReadOnlyList<InvestmentSnapshotDTO>>(
             Snapshots.Where(s => s.Year == year && s.Month == month).ToList());
     }

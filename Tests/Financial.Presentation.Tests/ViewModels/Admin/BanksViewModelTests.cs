@@ -202,4 +202,17 @@ public class BanksViewModelTests
 
         viewModel.ActionError.Should().Be("Bank is referenced elsewhere.");
     }
+
+    [Fact]
+    public async Task Properties_ExposeExpectedDefaultsAndCommands()
+    {
+        var (viewModel, _, _) = CreateViewModel();
+        await viewModel.RefreshAsync();
+
+        viewModel.IsLoading.Should().BeFalse();
+        viewModel.RetryCommand.Should().NotBeNull();
+        viewModel.CreateBankCommand.Should().NotBeNull();
+        viewModel.EditBankCommand.Should().NotBeNull();
+        viewModel.DeleteBankCommand.Should().NotBeNull();
+    }
 }

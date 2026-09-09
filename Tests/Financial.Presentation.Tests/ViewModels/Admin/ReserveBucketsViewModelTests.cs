@@ -145,4 +145,75 @@ public class ReserveBucketsViewModelTests
 
         service.LastUpdateRequest.Should().BeNull();
     }
+
+    [Fact]
+    public async Task EditReserveBucketAsync_NullBucket_DoesNothing()
+    {
+        var (viewModel, service, dialog) = CreateViewModel();
+
+        await viewModel.EditReserveBucketAsync(null);
+
+        service.LastUpdateRequest.Should().BeNull();
+        dialog.LastReserveBucketFormDialog.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task EditReserveBucketAsync_DialogCancelled_DoesNotCallService()
+    {
+        var (viewModel, service, dialog) = CreateViewModel();
+        dialog.ShowReserveBucketFormDialogResult = false;
+        var bucket = Bucket(Guid.NewGuid(), "Investimento", 33.33m);
+
+        await viewModel.EditReserveBucketAsync(bucket);
+
+        service.LastUpdateRequest.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task EditReserveBucketAsync_ServiceThrows_SurfacesActionError()
+    {
+        var (viewModel, service, dialog) = CreateViewModel();
+        var bucket = Bucket(Guid.NewGuid(), "Investimento", 33.33m);
+        dialog.OnShowReserveBucketFormDialog = vm => vm.SplitPercentage = "50";
+        service.ThrowOnUpdate = new InvalidOperationException("Update failed.");
+
+        await viewModel.EditReserveBucketAsync(bucket);
+
+        viewModel.ActionError.Should().Be("Update failed.");
+    }
+
+    [Fact]
+    public async Task DeactivateReserveBucketAsync_NullBucket_DoesNothing()
+    {
+        var (viewModel, service, _) = CreateViewModel();
+
+        await viewModel.DeactivateReserveBucketAsync(null);
+
+        service.LastUpdateRequest.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task DeactivateReserveBucketAsync_ServiceThrows_SurfacesActionError()
+    {
+        var (viewModel, service, _) = CreateViewModel();
+        var bucket = Bucket(Guid.NewGuid(), "Investimento", 33.33m);
+        service.ThrowOnUpdate = new InvalidOperationException("Deactivate failed.");
+
+        await viewModel.DeactivateReserveBucketAsync(bucket);
+
+        viewModel.ActionError.Should().Be("Deactivate failed.");
+    }
+
+    [Fact]
+    public void Properties_ExposeExpectedDefaultsAndCommands()
+    {
+        var (viewModel, _, _) = CreateViewModel();
+
+        viewModel.HasError.Should().BeFalse();
+        viewModel.SplitPercentageWarning.Should().BeEmpty();
+        viewModel.RetryCommand.Should().NotBeNull();
+        viewModel.CreateReserveBucketCommand.Should().NotBeNull();
+        viewModel.EditReserveBucketCommand.Should().NotBeNull();
+        viewModel.DeactivateReserveBucketCommand.Should().NotBeNull();
+    }
 }

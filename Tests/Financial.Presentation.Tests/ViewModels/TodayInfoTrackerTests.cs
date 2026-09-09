@@ -170,6 +170,119 @@ public class TodayInfoTrackerTests
         applied[0].AsOf.Should().Be("—");
     }
 
+    [Fact]
+    public void IsLoading_Initially_IsFalse()
+    {
+        _sut.IsLoading.Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData(true, true)]
+    [InlineData(false, false)]
+    public void CanRefresh_WhenNotLoading_ReflectsAssetContext(bool hasAssetContext, bool expected)
+    {
+        _sut.CanRefresh(hasAssetContext).Should().Be(expected);
+    }
+
+    [Fact]
+    public void UpdateAssetKey_SameKeyTwice_IsNoOp()
+    {
+        var resetCount = 0;
+        var tracker = new TodayInfoTracker(_ => { }, () => resetCount++, () => { });
+        tracker.UpdateAssetKey("XPI|Acoes|KLBN4");
+        resetCount = 0;
+
+        tracker.UpdateAssetKey("XPI|Acoes|KLBN4");
+
+        resetCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task UpdateAssetKey_PreviouslyCachedKey_ReappliesCachedSnapshotWithoutRefetching()
+    {
+        var applied = new List<TodayInfoSnapshot>();
+        var tracker = new TodayInfoTracker(applied.Add, () => { }, () => { });
+        var priceService = new StubPriceService();
+        tracker.UpdateAssetKey("XPI|Acoes|KLBN4");
+        await tracker.RefreshAsync(
+            forceRefresh: true, hasAssetContext: true, priceService,
+            GlobalAssetClass.Equity, "XPI", "BVMF", "KLBN4", "KLBN4", "Acoes", "KLBN4", _ => { });
+        tracker.UpdateAssetKey("XPI|Acoes|OTHER");
+
+        tracker.UpdateAssetKey("XPI|Acoes|KLBN4");
+
+        applied.Should().HaveCount(2);
+        applied[1].Should().Be(applied[0]);
+    }
+
+    [Fact]
+    public async Task RefreshAsync_NoAssetContext_SetsMessageAndDoesNotFetch()
+    {
+        await _sut.RefreshAsync(
+            forceRefresh: true, hasAssetContext: false, _priceService,
+            GlobalAssetClass.Equity, "XPI", "BVMF", "KLBN4", "KLBN4", "Acoes", "KLBN4", _messages.Add);
+
+        _priceService.LastRequest.Should().BeNull();
+        _messages.Should().ContainSingle().Which.Should().Be("Select an asset to load current values.");
+    }
+
+    [Fact]
+    public async Task RefreshAsync_NullPriceService_SetsMessageAndDoesNotFetch()
+    {
+        await _sut.RefreshAsync(
+            forceRefresh: true, hasAssetContext: true, priceService: null,
+            GlobalAssetClass.Equity, "XPI", "BVMF", "KLBN4", "KLBN4", "Acoes", "KLBN4", _messages.Add);
+
+        _messages.Should().ContainSingle().Which.Should().Be("Current value service is not available.");
+    }
+
+    [Fact]
+    public async Task RefreshAsync_MissingTicker_SetsMessageAndDoesNotFetch()
+    {
+        await _sut.RefreshAsync(
+            forceRefresh: true, hasAssetContext: true, _priceService,
+            GlobalAssetClass.Equity, "XPI", "BVMF", "", "KLBN4", "Acoes", "KLBN4", _messages.Add);
+
+        _priceService.LastRequest.Should().BeNull();
+        _messages.Should().ContainSingle().Which.Should().Be("Asset exchange or ticker is missing.");
+    }
+
+    [Fact]
+    public async Task RefreshAsync_AlreadyAttemptedWithoutForceRefresh_SkipsSecondFetch()
+    {
+        _sut.UpdateAssetKey("XPI|Acoes|KLBN4");
+        await _sut.RefreshAsync(
+            forceRefresh: true, hasAssetContext: true, _priceService,
+            GlobalAssetClass.Equity, "XPI", "BVMF", "KLBN4", "KLBN4", "Acoes", "KLBN4", _messages.Add);
+
+        await _sut.RefreshAsync(
+            forceRefresh: false, hasAssetContext: true, _priceService,
+            GlobalAssetClass.Equity, "XPI", "BVMF", "KLBN4", "KLBN4", "Acoes", "KLBN4", _messages.Add);
+
+        _priceService.LastRequest.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task RefreshAsync_ServiceThrows_SetsErrorMessage()
+    {
+        var applied = new List<TodayInfoSnapshot>();
+        var tracker = new TodayInfoTracker(applied.Add, () => { }, () => { });
+        tracker.UpdateAssetKey("XPI|Acoes|KLBN4");
+
+        await tracker.RefreshAsync(
+            forceRefresh: true, hasAssetContext: true, new ThrowingPriceService(),
+            GlobalAssetClass.Equity, "XPI", "BVMF", "KLBN4", "KLBN4", "Acoes", "KLBN4", _messages.Add);
+
+        applied.Should().BeEmpty();
+        _messages.Should().ContainSingle().Which.Should().StartWith("Error:");
+    }
+
+    private sealed class ThrowingPriceService : IAssetPriceLookupService
+    {
+        public Task<AssetPriceDTO> GetCurrentPriceAsync(AssetPriceRequestDTO request) =>
+            throw new InvalidOperationException("boom");
+    }
+
     private sealed class NoDatePriceService : IAssetPriceLookupService
     {
         public Task<AssetPriceDTO> GetCurrentPriceAsync(AssetPriceRequestDTO request) =>

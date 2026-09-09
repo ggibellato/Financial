@@ -130,4 +130,74 @@ public class RecurringBillsViewModelTests
 
         service.LastDeletedId.Should().BeNull();
     }
+
+    [Fact]
+    public async Task EditRecurringBillAsync_NullBill_DoesNothing()
+    {
+        var (viewModel, service, dialog) = CreateViewModel();
+
+        await viewModel.EditRecurringBillAsync(null);
+
+        service.LastUpdateRequest.Should().BeNull();
+        dialog.LastRecurringBillFormDialog.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task EditRecurringBillAsync_DialogCancelled_DoesNotCallService()
+    {
+        var (viewModel, service, dialog) = CreateViewModel();
+        dialog.ShowRecurringBillFormDialogResult = false;
+        var bill = Bill(Guid.NewGuid(), "Rent");
+
+        await viewModel.EditRecurringBillAsync(bill);
+
+        service.LastUpdateRequest.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task EditRecurringBillAsync_ServiceThrows_SurfacesActionError()
+    {
+        var (viewModel, service, dialog) = CreateViewModel();
+        var bill = Bill(Guid.NewGuid(), "Rent");
+        dialog.OnShowRecurringBillFormDialog = vm => vm.Status = "Paid";
+        service.ThrowOnUpdate = new InvalidOperationException("Update failed.");
+
+        await viewModel.EditRecurringBillAsync(bill);
+
+        viewModel.ActionError.Should().Be("Update failed.");
+    }
+
+    [Fact]
+    public async Task DeleteRecurringBillAsync_NullBill_DoesNothing()
+    {
+        var (viewModel, service, _) = CreateViewModel();
+
+        await viewModel.DeleteRecurringBillAsync(null);
+
+        service.LastDeletedId.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task DeleteRecurringBillAsync_ServiceThrows_SurfacesActionError()
+    {
+        var (viewModel, service, _) = CreateViewModel();
+        var bill = Bill(Guid.NewGuid(), "Rent");
+        service.ThrowOnDelete = new InvalidOperationException("Delete failed.");
+
+        await viewModel.DeleteRecurringBillAsync(bill);
+
+        viewModel.ActionError.Should().Be("Delete failed.");
+    }
+
+    [Fact]
+    public void Properties_ExposeExpectedDefaultsAndCommands()
+    {
+        var (viewModel, _, _) = CreateViewModel();
+
+        viewModel.HasError.Should().BeFalse();
+        viewModel.RetryCommand.Should().NotBeNull();
+        viewModel.CreateRecurringBillCommand.Should().NotBeNull();
+        viewModel.EditRecurringBillCommand.Should().NotBeNull();
+        viewModel.DeleteRecurringBillCommand.Should().NotBeNull();
+    }
 }

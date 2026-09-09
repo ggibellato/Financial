@@ -113,6 +113,76 @@ public class MensaisViewModelTests
     }
 
     [Fact]
+    public async Task AddBill_InvalidDescription_AttributesErrorToDescriptionFieldOnly()
+    {
+        var (viewModel, _, _, _, _, _) = CreateViewModel();
+        viewModel.ShowAddFormCommand.Execute(null);
+        viewModel.NewDescription = "";
+        viewModel.NewDueDay = "15";
+        viewModel.NewValue = "80";
+
+        await viewModel.SubmitAddAsync();
+
+        viewModel.NewDescriptionFieldError.Should().NotBeNull();
+        viewModel.NewDueDayFieldError.Should().BeNull();
+        viewModel.NewValueFieldError.Should().BeNull();
+        viewModel.AddGeneralSaveError.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task AddBill_InvalidDueDay_AttributesErrorToDueDayFieldOnly()
+    {
+        var (viewModel, _, _, _, _, _) = CreateViewModel();
+        viewModel.ShowAddFormCommand.Execute(null);
+        viewModel.NewDescription = "Electricity";
+        viewModel.NewDueDay = "0";
+        viewModel.NewValue = "80";
+
+        await viewModel.SubmitAddAsync();
+
+        viewModel.NewDueDayFieldError.Should().NotBeNull();
+        viewModel.NewDescriptionFieldError.Should().BeNull();
+        viewModel.NewValueFieldError.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task AddBill_InvalidValue_AttributesErrorToValueFieldOnly()
+    {
+        var (viewModel, _, _, _, _, _) = CreateViewModel();
+        viewModel.ShowAddFormCommand.Execute(null);
+        viewModel.NewDescription = "Electricity";
+        viewModel.NewDueDay = "15";
+        viewModel.NewValue = "abc";
+
+        await viewModel.SubmitAddAsync();
+
+        viewModel.NewValueFieldError.Should().NotBeNull();
+        viewModel.NewDescriptionFieldError.Should().BeNull();
+        viewModel.NewDueDayFieldError.Should().BeNull();
+    }
+
+    [Fact]
+    public void DisplayYearAndDisplayMonth_CanBeSetAndRead()
+    {
+        var (viewModel, _, _, _, _, _) = CreateViewModel();
+
+        viewModel.DisplayYear = 2026;
+        viewModel.DisplayMonth = 6;
+
+        viewModel.DisplayYear.Should().Be(2026);
+        viewModel.DisplayMonth.Should().Be(6);
+    }
+
+    [Fact]
+    public void RetryCommand_IsExposedAndCanExecute()
+    {
+        var (viewModel, _, _, _, _, _) = CreateViewModel();
+
+        viewModel.RetryCommand.Should().NotBeNull();
+        viewModel.RetryCommand.CanExecute(null).Should().BeTrue();
+    }
+
+    [Fact]
     public async Task EditBill_ValidForm_CallsUpdateServiceWithCorrectId()
     {
         var (viewModel, service, _, _, _, _) = CreateViewModel();

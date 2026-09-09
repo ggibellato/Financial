@@ -146,4 +146,74 @@ public class PortfoliosViewModelTests
 
         portfolioService.LastDeleteRequest.Should().BeNull();
     }
+
+    [Fact]
+    public async Task EditPortfolioAsync_NullPortfolio_DoesNothing()
+    {
+        var (viewModel, portfolioService, _, dialog) = CreateViewModel();
+
+        await viewModel.EditPortfolioAsync(null);
+
+        portfolioService.LastUpdateRequest.Should().BeNull();
+        dialog.LastPortfolioFormDialog.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task EditPortfolioAsync_DialogCancelled_DoesNotCallService()
+    {
+        var (viewModel, portfolioService, _, dialog) = CreateViewModel();
+        dialog.ShowPortfolioFormDialogResult = false;
+        var portfolio = new PortfolioDTO { Name = "Default", BrokerName = "XPI", BrokerStatus = "Active", AssetCount = 0 };
+
+        await viewModel.EditPortfolioAsync(portfolio);
+
+        portfolioService.LastUpdateRequest.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task EditPortfolioAsync_ServiceThrows_SurfacesActionError()
+    {
+        var (viewModel, portfolioService, _, dialog) = CreateViewModel();
+        var portfolio = new PortfolioDTO { Name = "Default", BrokerName = "XPI", BrokerStatus = "Active", AssetCount = 0 };
+        dialog.OnShowPortfolioFormDialog = vm => vm.Name = "Growth";
+        portfolioService.ThrowOnUpdate = new InvalidOperationException("Update failed.");
+
+        await viewModel.EditPortfolioAsync(portfolio);
+
+        viewModel.ActionError.Should().Be("Update failed.");
+    }
+
+    [Fact]
+    public async Task DeletePortfolioAsync_NullPortfolio_DoesNothing()
+    {
+        var (viewModel, portfolioService, _, _) = CreateViewModel();
+
+        await viewModel.DeletePortfolioAsync(null);
+
+        portfolioService.LastDeleteRequest.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task DeletePortfolioAsync_ServiceThrows_SurfacesActionError()
+    {
+        var (viewModel, portfolioService, _, _) = CreateViewModel();
+        var portfolio = new PortfolioDTO { Name = "Default", BrokerName = "XPI", BrokerStatus = "Active", AssetCount = 0 };
+        portfolioService.ThrowOnDelete = new InvalidOperationException("Delete failed.");
+
+        await viewModel.DeletePortfolioAsync(portfolio);
+
+        viewModel.ActionError.Should().Be("Delete failed.");
+    }
+
+    [Fact]
+    public void Properties_ExposeExpectedDefaultsAndCommands()
+    {
+        var (viewModel, _, _, _) = CreateViewModel();
+
+        viewModel.HasError.Should().BeFalse();
+        viewModel.RetryCommand.Should().NotBeNull();
+        viewModel.CreatePortfolioCommand.Should().NotBeNull();
+        viewModel.EditPortfolioCommand.Should().NotBeNull();
+        viewModel.DeletePortfolioCommand.Should().NotBeNull();
+    }
 }

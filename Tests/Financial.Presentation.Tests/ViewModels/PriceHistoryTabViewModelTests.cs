@@ -204,6 +204,64 @@ public class PriceHistoryTabViewModelTests
         spy.AppliedDetails.Should().Be(expectedDetails);
     }
 
+    [Fact]
+    public void Properties_ExposeExpectedDefaultsAndCommands()
+    {
+        var (viewModel, _, _) = Build();
+
+        viewModel.IsPriceFormOpen.Should().BeFalse();
+        viewModel.UpdatePriceCommand.Should().NotBeNull();
+        viewModel.DeletePriceCommand.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void UpdatePriceCommand_WithParameterAndConfirmedForm_SelectsEntryOpensFormAndCallsService()
+    {
+        var expectedDetails = new AssetDetailsDTO { Name = AssetName, BrokerName = BrokerName, PortfolioName = PortfolioName, Ticker = "T" };
+        var service = new StubPriceService { SetResult = expectedDetails };
+        var (viewModel, svc, spy) = Build(service: service);
+        var entry = new AssetPriceSnapshotDTO { Date = DateOnly.FromDateTime(DateTime.Today), Price = 10m, IsManual = true };
+
+        viewModel.UpdatePriceCommand.Execute(entry);
+
+        viewModel.SelectedPriceEntry.Should().Be(entry);
+        viewModel.IsPriceFormOpen.Should().BeTrue();
+        viewModel.PriceFormViewModel.Should().NotBeNull();
+
+        viewModel.PriceFormViewModel!.ConfirmCommand.Execute(null);
+
+        viewModel.IsPriceFormOpen.Should().BeFalse();
+        viewModel.PriceFormViewModel.Should().BeNull();
+        svc.SetCallCount.Should().Be(1);
+        spy.AppliedDetails.Should().Be(expectedDetails);
+    }
+
+    [Fact]
+    public void UpdatePriceCommand_WithParameterAndCancelledForm_DoesNotCallService()
+    {
+        var (viewModel, svc, _) = Build();
+        var entry = new AssetPriceSnapshotDTO { Date = DateOnly.FromDateTime(DateTime.Today), Price = 10m, IsManual = true };
+
+        viewModel.UpdatePriceCommand.Execute(entry);
+        viewModel.PriceFormViewModel!.CancelCommand.Execute(null);
+
+        viewModel.IsPriceFormOpen.Should().BeFalse();
+        svc.SetCallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public void DeletePriceCommand_WithNonManualEntry_SelectsEntryAndShowsWarningWithoutOpeningRealDialog()
+    {
+        var (viewModel, svc, spy) = Build();
+        var entry = new AssetPriceSnapshotDTO { Date = DateOnly.FromDateTime(DateTime.Today), Price = 10m, IsManual = false };
+
+        viewModel.DeletePriceCommand.Execute(entry);
+
+        viewModel.SelectedPriceEntry.Should().Be(entry);
+        svc.DeleteCallCount.Should().Be(0);
+        spy.Messages.Should().ContainSingle(m => m.Image == MessageBoxImage.Warning);
+    }
+
     private sealed class Spy
     {
         public AssetDetailsDTO? AppliedDetails { get; private set; }

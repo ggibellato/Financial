@@ -206,4 +206,17 @@ public class CategoriesViewModelTests
 
         viewModel.ActionError.Should().Be("Category is referenced elsewhere.");
     }
+
+    [Fact]
+    public async Task Properties_ExposeExpectedDefaultsAndCommands()
+    {
+        var (viewModel, _, _) = CreateViewModel();
+        await viewModel.RefreshAsync();
+
+        viewModel.IsLoading.Should().BeFalse();
+        viewModel.RetryCommand.Should().NotBeNull();
+        viewModel.CreateCategoryCommand.Should().NotBeNull();
+        viewModel.EditCategoryCommand.Should().NotBeNull();
+        viewModel.DeleteCategoryCommand.Should().NotBeNull();
+    }
 }
