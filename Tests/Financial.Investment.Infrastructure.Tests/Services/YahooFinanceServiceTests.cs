@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http;
 using Financial.Investment.Infrastructure.DTOs;
 using Financial.Investment.Infrastructure.Services;
+using Financial.TestUtilities;
 using FluentAssertions;
 
 namespace Financial.Investment.Infrastructure.Tests.Services;
@@ -132,19 +133,4 @@ public class YahooFinanceServiceTests
         return new YahooFinanceService(new HttpClient(handler));
     }
 
-    private sealed class FakeHttpMessageHandler : HttpMessageHandler
-    {
-        private readonly Func<HttpRequestMessage, HttpResponseMessage> _responder;
-
-        public FakeHttpMessageHandler(Func<HttpRequestMessage, HttpResponseMessage> responder)
-        {
-            _responder = responder;
-        }
-
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
-            Task.FromResult(_responder(request));
-
-        protected override HttpResponseMessage Send(HttpRequestMessage request, CancellationToken cancellationToken) =>
-            _responder(request);
-    }
 }

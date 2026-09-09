@@ -61,19 +61,22 @@ public class PortfolioSummaryColumnWidthsTests
             EstAnnualCredits = 106,
         };
 
-        widths.FirstInvestment.Should().Be(111);
-        widths.Quantity.Should().Be(112);
-        widths.TotalInvested.Should().Be(113);
-        widths.PortfolioWeight.Should().Be(91);
-        widths.TotalCredits.Should().Be(101);
-        widths.CurrentValue.Should().Be(102);
-        widths.AveragePrice.Should().Be(103);
-        widths.CurrentPrice.Should().Be(104);
-        widths.Profit.Should().Be(71);
-        widths.ProfitWithCredits.Should().Be(114);
-        widths.LastMonthCredits.Should().Be(105);
-        widths.LastCreditMonth.Should().Be(92);
-        widths.LastMonthPercent.Should().Be(72);
-        widths.EstAnnualCredits.Should().Be(106);
+        widths.Should().BeEquivalentTo(new
+        {
+            FirstInvestment = 111,
+            Quantity = 112,
+            TotalInvested = 113,
+            PortfolioWeight = 91,
+            TotalCredits = 101,
+            CurrentValue = 102,
+            AveragePrice = 103,
+            CurrentPrice = 104,
+            Profit = 71,
+            ProfitWithCredits = 114,
+            LastMonthCredits = 105,
+            LastCreditMonth = 92,
+            LastMonthPercent = 72,
+            EstAnnualCredits = 106,
+        });
     }
 }

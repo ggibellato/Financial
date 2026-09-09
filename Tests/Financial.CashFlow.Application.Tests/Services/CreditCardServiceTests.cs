@@ -356,7 +356,7 @@ public class CreditCardServiceTests
     [Fact]
     public void GetCreditCards_WhenRepositoryThrowsUnexpectedly_Rethrows()
     {
-        _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
+        _repository.ThrowOnNextGetCreditCards = true;
 
         Action act = () => _sut.GetCreditCards();
 

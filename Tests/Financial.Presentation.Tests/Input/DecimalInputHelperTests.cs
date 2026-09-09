@@ -5,12 +5,19 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.Input;
 
-public class DecimalInputHelperTests
+public class DecimalInputHelperTests : IClassFixture<StaThreadFixture>
 {
+    private readonly StaThreadFixture _sta;
+
+    public DecimalInputHelperTests(StaThreadFixture sta)
+    {
+        _sta = sta;
+    }
+
     [Fact]
     public void IsDecimalTextAllowed_ValidProposedText_ReturnsTrue()
     {
-        RunOnStaThread(() =>
+        _sta.Run(() =>
         {
             var textBox = new TextBox { Text = "10" };
             textBox.Select(2, 0);
@@ -22,7 +29,7 @@ public class DecimalInputHelperTests
     [Fact]
     public void IsDecimalTextAllowed_InvalidProposedText_ReturnsFalse()
     {
-        RunOnStaThread(() =>
+        _sta.Run(() =>
         {
             var textBox = new TextBox { Text = "10.5" };
             textBox.Select(4, 0);
@@ -34,7 +41,7 @@ public class DecimalInputHelperTests
     [Fact]
     public void IsSignedDecimalTextAllowed_ValidProposedText_ReturnsTrue()
     {
-        RunOnStaThread(() =>
+        _sta.Run(() =>
         {
             var textBox = new TextBox { Text = "" };
             textBox.Select(0, 0);
@@ -46,7 +53,7 @@ public class DecimalInputHelperTests
     [Fact]
     public void IsSignedDecimalTextAllowed_InvalidProposedText_ReturnsFalse()
     {
-        RunOnStaThread(() =>
+        _sta.Run(() =>
         {
             var textBox = new TextBox { Text = "10" };
             textBox.Select(2, 0);
@@ -58,7 +65,7 @@ public class DecimalInputHelperTests
     [Fact]
     public void GetProposedText_WithSelectedText_RemovesItBeforeInserting()
     {
-        RunOnStaThread(() =>
+        _sta.Run(() =>
         {
             var textBox = new TextBox { Text = "12345" };
             textBox.Select(1, 3);
@@ -70,39 +77,13 @@ public class DecimalInputHelperTests
     [Fact]
     public void GetProposedText_WithoutSelection_InsertsAtCaret()
     {
-        RunOnStaThread(() =>
+        _sta.Run(() =>
         {
             var textBox = new TextBox { Text = "12" };
             textBox.Select(1, 0);
 
             DecimalInputHelper.GetProposedText(textBox, "9").Should().Be("192");
         });
-    }
-
-    /// <summary>WPF's TextBox requires STA thread affinity (InputManager/KeyboardNavigation), which
-    /// the default xUnit test thread does not provide.</summary>
-    private static void RunOnStaThread(Action action)
-    {
-        Exception? failure = null;
-        var thread = new Thread(() =>
-        {
-            try
-            {
-                action();
-            }
-            catch (Exception ex)
-            {
-                failure = ex;
-            }
-        });
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start();
-        thread.Join();
-
-        if (failure != null)
-        {
-            throw failure;
-        }
     }
 
     [Theory]
@@ -147,31 +128,18 @@ public class DecimalInputHelperTests
         DecimalInputHelper.IsValidSignedDecimalInput(text).Should().BeFalse();
     }
 
-    [Fact]
-    public void NormalizeDecimalSeparator_DotCulture_ReplacesCommaWithDot()
+    [Theory]
+    [InlineData("en-US", "10,5", "10.5")] // NumberDecimalSeparator: "."
+    [InlineData("pt-BR", "10.5", "10,5")] // NumberDecimalSeparator: ","
+    public void NormalizeDecimalSeparator_GivenCulture_ReplacesOtherSeparatorWithCultureSeparator(
+        string cultureName, string text, string expected)
     {
         var original = CultureInfo.CurrentCulture;
         try
         {
-            CultureInfo.CurrentCulture = new CultureInfo("en-US"); // NumberDecimalSeparator: "."
+            CultureInfo.CurrentCulture = new CultureInfo(cultureName);
 
-            DecimalInputHelper.NormalizeDecimalSeparator("10,5").Should().Be("10.5");
-        }
-        finally
-        {
-            CultureInfo.CurrentCulture = original;
-        }
-    }
-
-    [Fact]
-    public void NormalizeDecimalSeparator_CommaCulture_ReplacesDotWithComma()
-    {
-        var original = CultureInfo.CurrentCulture;
-        try
-        {
-            CultureInfo.CurrentCulture = new CultureInfo("pt-BR"); // NumberDecimalSeparator: ","
-
-            DecimalInputHelper.NormalizeDecimalSeparator("10.5").Should().Be("10,5");
+            DecimalInputHelper.NormalizeDecimalSeparator(text).Should().Be(expected);
         }
         finally
         {
