@@ -5,7 +5,7 @@ import { useSelectedNode } from '../context/SelectedNodeContext'
 import { buildSelectionKey } from './useCredits'
 import type { PeriodFilterOption } from '../utils/periodFilter'
 import { DEFAULT_FILTER, getPeriodFilterStartDate } from '../utils/periodFilter'
-import { formatMonthKey, getErrorMessage, pad, parseValidatedNumber, toInputDate, todayIsoDate } from '../utils/formatters'
+import { formatMonthInputValue, formatMonthKey, getErrorMessage, parseValidatedNumber, toInputDate, todayIsoDate } from '../utils/formatters'
 import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
 
 export type TransactionFormField = 'formDate' | 'formType' | 'formQuantity' | 'formUnitPrice' | 'formFees'
@@ -42,7 +42,7 @@ function addMonths(date: Date, count: number): Date {
 }
 
 function monthKey(date: Date): string {
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}`
+  return formatMonthInputValue(date.getFullYear(), date.getMonth() + 1)
 }
 
 export function buildMonthlyNetInvested(

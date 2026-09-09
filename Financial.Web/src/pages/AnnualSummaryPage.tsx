@@ -30,6 +30,8 @@ const TABS: { id: AnnualSummaryTabId; label: string }[] = [
   { id: 'historicSummaryAverage', label: 'Historic Summary Average' },
 ]
 
+const optionalEmphasize = (content: ReactNode, emphasized?: boolean) => (emphasized ? <strong>{content}</strong> : content)
+
 function AnnualSummaryRow({
   label,
   monthlyValues,
@@ -43,13 +45,12 @@ function AnnualSummaryRow({
   annualTotal: number
   emphasized?: boolean
 }) {
-  const cell = (content: ReactNode) => (emphasized ? <strong>{content}</strong> : content)
   return (
     <tr className={emphasized ? 'annual-summary-page__emphasized-row' : undefined}>
-      <td>{cell(label)}</td>
+      <td>{optionalEmphasize(label, emphasized)}</td>
       {monthlyValues.map((v, i) => (
         <td key={i} className="data-table__col--numeric">
-          {cell(formatN2(v))}
+          {optionalEmphasize(formatN2(v), emphasized)}
         </td>
       ))}
       <td className="data-table__col--numeric">
@@ -61,9 +62,6 @@ function AnnualSummaryRow({
     </tr>
   )
 }
-
-
-const optionalEmphasize = (content: ReactNode, emphasized?: boolean) => (emphasized ? <strong>{content}</strong> : content)
 
 function InvestmentRow({
   label,

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
-import { ArrowSortDownRegular, ArrowSortUpRegular } from '@fluentui/react-icons'
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
+import SortableColumnHeader from './grid/SortableColumnHeader'
 import { useSortableRows, type SortAccessor, type SortDirection } from '../hooks/useSortableRows'
 import { usePortfolioAssetSummary } from '../hooks/usePortfolioAssetSummary'
 import type { RowPriceState } from '../hooks/usePortfolioAssetSummary'
@@ -77,43 +77,6 @@ const DEFAULT_ROW_PRICE: RowPriceState = {
   isManual: false,
   xirr: null,
   isLoadingXirr: false,
-}
-
-interface SortableHeaderCellProps {
-  label: ReactNode
-  columnKey: string
-  sortDirection?: SortDirection
-  onSort: (columnKey: string) => void
-  numeric?: boolean
-  rowSpan?: number
-  className?: string
-}
-
-// This table's header spans two <tr> rows (rowSpan cells alongside grouped sub-column
-// headers), which the shared SortableColumnHeader has no prop for, and its "Last Month"
-// group uses a credits-separator accent class SortableColumnHeader can't accept either.
-// This mirrors SortableColumnHeader's markup/classes exactly (so its CSS still applies)
-// while supporting rowSpan and an extra className.
-function SortableHeaderCell({ label, columnKey, sortDirection, onSort, numeric, rowSpan, className }: SortableHeaderCellProps) {
-  return (
-    <th
-      rowSpan={rowSpan}
-      className={['sortable-column-header', numeric ? 'data-table__col--numeric' : '', className ?? '']
-        .filter(Boolean)
-        .join(' ')}
-      aria-sort={sortDirection ?? 'none'}
-    >
-      <button type="button" className="sortable-column-header__button" onClick={() => onSort(columnKey)}>
-        <span className="sortable-column-header__label">{label}</span>
-        {sortDirection === 'ascending' && (
-          <ArrowSortUpRegular className="sortable-column-header__icon" aria-hidden="true" />
-        )}
-        {sortDirection === 'descending' && (
-          <ArrowSortDownRegular className="sortable-column-header__icon" aria-hidden="true" />
-        )}
-      </button>
-    </th>
-  )
 }
 
 function renderGatedCell(
@@ -289,33 +252,33 @@ export default function PortfolioSummaryTab() {
           <table className="portfolio-summary__table data-table">
             <thead>
               <tr>
-                <SortableHeaderCell rowSpan={2} label="Asset Name" columnKey="assetName" sortDirection={sortDirectionFor('assetName')} onSort={requestSort} />
-                <SortableHeaderCell rowSpan={2} label="First Investment" columnKey="firstInvestment" sortDirection={sortDirectionFor('firstInvestment')} onSort={requestSort} />
-                <SortableHeaderCell rowSpan={2} numeric label="Quantity" columnKey="quantity" sortDirection={sortDirectionFor('quantity')} onSort={requestSort} />
-                <SortableHeaderCell rowSpan={2} numeric label="% Portfolio" columnKey="portfolioWeight" sortDirection={sortDirectionFor('portfolioWeight')} onSort={requestSort} />
-                <SortableHeaderCell rowSpan={2} numeric label="Total Invested" columnKey="totalInvested" sortDirection={sortDirectionFor('totalInvested')} onSort={requestSort} />
+                <SortableColumnHeader rowSpan={2} label="Asset Name" columnKey="assetName" sortDirection={sortDirectionFor('assetName')} onSort={requestSort} />
+                <SortableColumnHeader rowSpan={2} label="First Investment" columnKey="firstInvestment" sortDirection={sortDirectionFor('firstInvestment')} onSort={requestSort} />
+                <SortableColumnHeader rowSpan={2} numeric label="Quantity" columnKey="quantity" sortDirection={sortDirectionFor('quantity')} onSort={requestSort} />
+                <SortableColumnHeader rowSpan={2} numeric label="% Portfolio" columnKey="portfolioWeight" sortDirection={sortDirectionFor('portfolioWeight')} onSort={requestSort} />
+                <SortableColumnHeader rowSpan={2} numeric label="Total Invested" columnKey="totalInvested" sortDirection={sortDirectionFor('totalInvested')} onSort={requestSort} />
                 {isHistoric && (
-                  <SortableHeaderCell rowSpan={2} numeric label="Realized Gain/Loss" columnKey="realizedGainLoss" sortDirection={sortDirectionFor('realizedGainLoss')} onSort={requestSort} />
+                  <SortableColumnHeader rowSpan={2} numeric label="Realized Gain/Loss" columnKey="realizedGainLoss" sortDirection={sortDirectionFor('realizedGainLoss')} onSort={requestSort} />
                 )}
                 {!isHistoric && (
-                  <SortableHeaderCell rowSpan={2} numeric label="Current Value" columnKey="currentValue" sortDirection={sortDirectionFor('currentValue')} onSort={requestSort} />
+                  <SortableColumnHeader rowSpan={2} numeric label="Current Value" columnKey="currentValue" sortDirection={sortDirectionFor('currentValue')} onSort={requestSort} />
                 )}
-                <SortableHeaderCell rowSpan={2} numeric label="Total Credits" columnKey="totalCredits" sortDirection={sortDirectionFor('totalCredits')} onSort={requestSort} />
-                <SortableHeaderCell rowSpan={2} numeric label="Average Price" columnKey="averagePrice" sortDirection={sortDirectionFor('averagePrice')} onSort={requestSort} />
-                <SortableHeaderCell rowSpan={2} numeric label={isHistoric ? 'Sold Price' : 'Current Price'} columnKey="price" sortDirection={sortDirectionFor('price')} onSort={requestSort} />
+                <SortableColumnHeader rowSpan={2} numeric label="Total Credits" columnKey="totalCredits" sortDirection={sortDirectionFor('totalCredits')} onSort={requestSort} />
+                <SortableColumnHeader rowSpan={2} numeric label="Average Price" columnKey="averagePrice" sortDirection={sortDirectionFor('averagePrice')} onSort={requestSort} />
+                <SortableColumnHeader rowSpan={2} numeric label={isHistoric ? 'Sold Price' : 'Current Price'} columnKey="price" sortDirection={sortDirectionFor('price')} onSort={requestSort} />
                 <th colSpan={2} className="portfolio-summary__group-header">Profit</th>
-                <SortableHeaderCell rowSpan={2} numeric label="XIRR" columnKey="xirr" sortDirection={sortDirectionFor('xirr')} onSort={requestSort} />
+                <SortableColumnHeader rowSpan={2} numeric label="XIRR" columnKey="xirr" sortDirection={sortDirectionFor('xirr')} onSort={requestSort} />
                 <th colSpan={3} className="portfolio-summary__group-header portfolio-summary__credits-separator">Last Month</th>
                 <th colSpan={2} className="portfolio-summary__group-header">Est. Annual</th>
               </tr>
               <tr>
-                <SortableHeaderCell numeric label="%" columnKey="profitPercent" sortDirection={sortDirectionFor('profitPercent')} onSort={requestSort} />
-                <SortableHeaderCell numeric label="w/ Credits" columnKey="profitWithCreditsPercent" sortDirection={sortDirectionFor('profitWithCreditsPercent')} onSort={requestSort} />
-                <SortableHeaderCell numeric label="Credits" columnKey="lastMonthCredits" sortDirection={sortDirectionFor('lastMonthCredits')} onSort={requestSort} className="portfolio-summary__credits-separator" />
-                <SortableHeaderCell numeric label="Month" columnKey="lastCreditMonth" sortDirection={sortDirectionFor('lastCreditMonth')} onSort={requestSort} />
-                <SortableHeaderCell numeric label="%" columnKey="lastMonthCreditsPercent" sortDirection={sortDirectionFor('lastMonthCreditsPercent')} onSort={requestSort} />
-                <SortableHeaderCell numeric label="Credits" columnKey="estimatedAnnualCredits" sortDirection={sortDirectionFor('estimatedAnnualCredits')} onSort={requestSort} />
-                <SortableHeaderCell numeric label="%" columnKey="estimatedAnnualPercent" sortDirection={sortDirectionFor('estimatedAnnualPercent')} onSort={requestSort} />
+                <SortableColumnHeader numeric label="%" columnKey="profitPercent" sortDirection={sortDirectionFor('profitPercent')} onSort={requestSort} />
+                <SortableColumnHeader numeric label="w/ Credits" columnKey="profitWithCreditsPercent" sortDirection={sortDirectionFor('profitWithCreditsPercent')} onSort={requestSort} />
+                <SortableColumnHeader numeric label="Credits" columnKey="lastMonthCredits" sortDirection={sortDirectionFor('lastMonthCredits')} onSort={requestSort} className="portfolio-summary__credits-separator" />
+                <SortableColumnHeader numeric label="Month" columnKey="lastCreditMonth" sortDirection={sortDirectionFor('lastCreditMonth')} onSort={requestSort} />
+                <SortableColumnHeader numeric label="%" columnKey="lastMonthCreditsPercent" sortDirection={sortDirectionFor('lastMonthCreditsPercent')} onSort={requestSort} />
+                <SortableColumnHeader numeric label="Credits" columnKey="estimatedAnnualCredits" sortDirection={sortDirectionFor('estimatedAnnualCredits')} onSort={requestSort} />
+                <SortableColumnHeader numeric label="%" columnKey="estimatedAnnualPercent" sortDirection={sortDirectionFor('estimatedAnnualPercent')} onSort={requestSort} />
               </tr>
             </thead>
             <tbody>

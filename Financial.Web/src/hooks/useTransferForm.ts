@@ -9,6 +9,10 @@ const DATE_KEY = 'transfer.date'
 const SOURCE_BANK_KEY = 'transfer.sourceBank'
 const DESTINATION_BANK_KEY = 'transfer.destinationBank'
 
+/** Shared with TransferForm's own live (pre-submit) validation, so the rule and its message
+ * can't drift between the two. */
+export const DIFFERENT_BANKS_ERROR = 'Source and destination must be different banks.'
+
 interface TransferFormState {
   isOpen: boolean
   isEditing: boolean
@@ -116,7 +120,7 @@ export function useTransferForm(banks: BankDto[], onSaved: () => void): UseTrans
     if (!state.destinationBank.trim()) {
       errors.destinationBank = 'Destination bank is required'
     } else if (state.sourceBank === state.destinationBank) {
-      errors.destinationBank = 'Source and destination must be different banks.'
+      errors.destinationBank = DIFFERENT_BANKS_ERROR
     }
 
     const amount = parseValidatedNumber(state.amount)

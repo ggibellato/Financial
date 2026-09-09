@@ -28,10 +28,9 @@ export default function CurrentValuesPage() {
   const [progressText, setProgressText] = useState('')
   const [progressValue, setProgressValue] = useState(0)
   const [results, setResults] = useState<PriceResult[]>([])
-  const [retryCount, setRetryCount] = useState(0)
 
-  useEffect(() => {
-    Promise.all([apiClient.getBrokers(), apiClient.getAssetPriceFetchScope()])
+  const loadData = useCallback(() => {
+    return Promise.all([apiClient.getBrokers(), apiClient.getAssetPriceFetchScope()])
       .then(([brokersData, scopeData]) => {
         setBrokers(brokersData)
         setScope(scopeData)
@@ -42,13 +41,17 @@ export default function CurrentValuesPage() {
         setError(message)
       })
       .finally(() => setIsLoading(false))
-  }, [retryCount])
+  }, [])
+
+  useEffect(() => {
+    void loadData()
+  }, [loadData])
 
   const handleRetry = useCallback(() => {
     setIsLoading(true)
     setError(null)
-    setRetryCount((c) => c + 1)
-  }, [])
+    void loadData()
+  }, [loadData])
 
   const assetsToCheck = useMemo(() => {
     const assets = scope.flatMap(({ brokerName, portfolioName }) => {
