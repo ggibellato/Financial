@@ -1,9 +1,6 @@
-using System;
-using System.Threading.Tasks;
+namespace Financial.Shared.Abstractions.Persistence;
 
-namespace Financial.CashFlow.Application.Services;
-
-internal static class CompensatingSaveHelper
+public static class CompensatingSaveHelper
 {
     /// <summary>
     /// Runs <paramref name="applyAndSave"/>; if it throws, runs <paramref name="rollbackAndSave"/>
@@ -12,7 +9,7 @@ internal static class CompensatingSaveHelper
     /// change (return false) - that keeps the correction in memory only, since the failed write
     /// must not be retried.
     /// </summary>
-    internal static async Task ApplyWithCompensationAsync(Func<Task<bool>> applyAndSave, Func<Task<bool>> rollbackAndSave)
+    public static async Task ApplyWithCompensationAsync(Func<Task<bool>> applyAndSave, Func<Task<bool>> rollbackAndSave)
     {
         try
         {
