@@ -4,9 +4,7 @@ import { apiClient } from '../api/financialApiClient'
 import type { IncomeSplitResultDto, ReserveBucketBalanceDto, ReserveBucketDto, ReserveMovementDto } from '../api/types'
 import { getErrorMessage, todayIsoDate } from '../utils/formatters'
 import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
-
-const SPLIT_PERCENTAGE_MIN = 99.99
-const SPLIT_PERCENTAGE_MAX = 100.01
+import { computeActiveSplitPercentage, isActiveSplitBalanced } from '../utils/reserveBucketSplit'
 const BUCKET_REQUIRED_ERROR = 'Bucket is required'
 
 const SPLIT_DATE_KEY = 'incomeSplit.date'
@@ -352,9 +350,9 @@ function buildMovementRows(movements: ReserveMovementDto[]): ReserveMovementRow[
 function computeSplitPercentageWarning(buckets: ReserveBucketDto[]): string | null {
   if (buckets.length === 0) return null
 
-  const activeSum = buckets.reduce((sum, b) => (b.isActive ? sum + b.splitPercentage : sum), 0)
+  const activeSum = computeActiveSplitPercentage(buckets)
 
-  if (activeSum >= SPLIT_PERCENTAGE_MIN && activeSum <= SPLIT_PERCENTAGE_MAX) return null
+  if (isActiveSplitBalanced(activeSum)) return null
 
   return `Active bucket percentages sum to ${activeSum.toFixed(2)}%, not 100%`
 }

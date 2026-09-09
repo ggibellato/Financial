@@ -2,6 +2,7 @@ import { Button, Field, Input, MessageBar, MessageBarBody, Select, Text } from '
 import type { BankDto } from '../api/types'
 import type { TransferFormField } from '../hooks/mapTransferErrorToField'
 import { useFieldError } from '../hooks/useFieldError'
+import { DIFFERENT_BANKS_ERROR } from '../hooks/useTransferForm'
 import { useFormPanelStyles } from './formPanelStyles'
 
 interface TransferFormProps {
@@ -38,7 +39,7 @@ export default function TransferForm({
   const styles = useFormPanelStyles()
   const sameBankError =
     sourceBank !== '' && destinationBank !== '' && sourceBank === destinationBank
-      ? 'Source and destination must be different banks.'
+      ? DIFFERENT_BANKS_ERROR
       : null
 
   const destinationBanks = banks.filter((b) => b.id !== sourceBank)

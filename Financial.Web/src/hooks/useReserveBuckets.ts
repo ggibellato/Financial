@@ -2,8 +2,7 @@ import { useCallback, useEffect, useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { ReserveBucketCreateDto, ReserveBucketDto, ReserveBucketUpdateDto } from '../api/types'
 import { getErrorMessage } from '../utils/formatters'
-
-const SPLIT_PERCENTAGE_TOLERANCE = 0.01
+import { computeActiveSplitPercentage, isActiveSplitBalanced } from '../utils/reserveBucketSplit'
 
 interface ReserveBucketsState {
   reserveBuckets: ReserveBucketDto[]
@@ -107,11 +106,9 @@ export function useReserveBuckets(): ReserveBucketsData {
       })
   }, [])
 
-  const activeSplitTotal = state.reserveBuckets
-    .filter((bucket) => bucket.isActive)
-    .reduce((sum, bucket) => sum + bucket.splitPercentage, 0)
+  const activeSplitTotal = computeActiveSplitPercentage(state.reserveBuckets)
   const activeSplitWarning =
-    state.reserveBuckets.length === 0 || Math.abs(activeSplitTotal - 100) <= SPLIT_PERCENTAGE_TOLERANCE
+    state.reserveBuckets.length === 0 || isActiveSplitBalanced(activeSplitTotal)
       ? null
       : `Active buckets currently sum to ${activeSplitTotal.toFixed(2)}% — review your split percentages`
 

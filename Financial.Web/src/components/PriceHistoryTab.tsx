@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import {
   CartesianGrid,
   DefaultLegendContent,
@@ -229,7 +230,7 @@ interface ChartPanelProps {
 }
 
 function ChartPanel({ entries, transactions }: ChartPanelProps) {
-  const chartData = buildChartData(entries, transactions)
+  const chartData = useMemo(() => buildChartData(entries, transactions), [entries, transactions])
 
   return (
     <div className="price-history-tab__chart-panel">

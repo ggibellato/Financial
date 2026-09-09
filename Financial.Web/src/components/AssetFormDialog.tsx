@@ -15,6 +15,7 @@ import {
 import type { AssetAdminDto, BrokerDto, PortfolioDto } from '../api/types'
 import { useFormPanelStyles } from './formPanelStyles'
 import { getErrorMessage } from '../utils/formatters'
+import { isValidIsin } from '../utils/validators'
 
 const COUNTRY_OPTIONS = ['Unknown', 'BR', 'US', 'UK'] as const
 const CLASS_OPTIONS = [
@@ -51,9 +52,6 @@ interface AssetFormDialogProps {
   onSubmit: (values: AssetFormValues) => Promise<unknown>
 }
 
-/** ISO 6166 shape: 2-letter country code + 9 alphanumeric + 1 check digit. Blank is valid (optional field). */
-const ISIN_PATTERN = /^[A-Z]{2}[A-Z0-9]{9}[0-9]$/
-
 export default function AssetFormDialog({ asset, activeBrokers, portfolios, onCancel, onSubmit }: AssetFormDialogProps) {
   const styles = useFormPanelStyles()
   const isEditing = asset !== null
@@ -82,7 +80,7 @@ export default function AssetFormDialog({ asset, activeBrokers, portfolios, onCa
   const brokerValidationMessage = !isEditing && brokerName.length === 0 ? 'A broker is required.' : ''
   const portfolioValidationMessage = !isEditing && portfolioName.length === 0 ? 'A portfolio is required.' : ''
   const isinValidationMessage =
-    trimmedIsin.length > 0 && !ISIN_PATTERN.test(trimmedIsin)
+    trimmedIsin.length > 0 && !isValidIsin(trimmedIsin)
       ? 'ISIN must be 2 letters, 9 alphanumeric characters, and a check digit (e.g. US0378331005).'
       : ''
   const canSubmit =

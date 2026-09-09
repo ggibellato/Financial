@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
-import type { AssetPriceSnapshotDto, SelectedNode, TransactionDto } from '../api/types'
+import type { AssetPriceSnapshotDto, TransactionDto } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
+import { buildSelectionKey } from './useCredits'
 import type { PeriodFilterOption } from '../utils/periodFilter'
 import { DEFAULT_FILTER, getPeriodFilterStartDate } from '../utils/periodFilter'
 import { getErrorMessage, parseValidatedNumber, toInputDate, todayIsoDate } from '../utils/formatters'
@@ -149,10 +150,6 @@ function reducer(state: PriceHistoryState, action: PriceHistoryAction): PriceHis
     default:
       return state
   }
-}
-
-function buildSelectionKey(node: SelectedNode): string {
-  return `Asset|${node.brokerName}|${node.portfolioName ?? ''}|${node.assetName ?? ''}`
 }
 
 export interface PriceHistoryData {

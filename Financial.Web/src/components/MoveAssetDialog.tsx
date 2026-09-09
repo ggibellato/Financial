@@ -11,6 +11,7 @@ import { apiClient } from '../api/financialApiClient'
 import type { AssetDetailsDto, InvestmentScope, TreeNodeDto } from '../api/types'
 import { useFormPanelStyles } from './formPanelStyles'
 import { getErrorMessage } from '../utils/formatters'
+import { getMetaNumber, getMetaString } from '../utils/treeNodeMetadata'
 import './MoveAssetDialog.css'
 
 interface MoveAssetDialogProps {
@@ -33,16 +34,6 @@ interface MoveAssetDialogProps {
   onCancel: () => void
   /** archived is true when the asset left this scope for Historic Investments. */
   onMoved: (moved: AssetDetailsDto, archived: boolean) => void
-}
-
-function getMetaString(metadata: Record<string, unknown>, key: string): string {
-  const value = metadata[key]
-  return typeof value === 'string' ? value : ''
-}
-
-function getMetaNumber(metadata: Record<string, unknown>, key: string): number {
-  const value = metadata[key]
-  return typeof value === 'number' ? value : -1
 }
 
 /** The broker's portfolios in one scope, taken from the tree that scope is rendered from. */

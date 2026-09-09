@@ -6,6 +6,7 @@ import type { PositionType, SelectedNode, TreeNodeDto } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
 import { getErrorMessage } from '../utils/formatters'
 import { POSITION_TYPE_STATUS_CLASS } from '../utils/positionType'
+import { getMetaNumber, getMetaString } from '../utils/treeNodeMetadata'
 import ErrorState from './ErrorState'
 import MoveAssetDialog from './MoveAssetDialog'
 import LoadingState from './LoadingState'
@@ -37,19 +38,9 @@ export interface AssetDrop extends DraggedAsset {
 
 const DRAG_MIME = 'application/x-financial-asset'
 
-function getMetaString(metadata: Record<string, unknown>, key: string): string {
-  const v = metadata[key]
-  return typeof v === 'string' ? v : ''
-}
-
 function getMetaPositionType(metadata: Record<string, unknown>): PositionType {
   const v = metadata['PositionType']
   return v === 'Long' || v === 'Short' ? v : 'Flat'
-}
-
-function getMetaNumber(metadata: Record<string, unknown>, key: string): number {
-  const v = metadata[key]
-  return typeof v === 'number' ? v : -1
 }
 
 interface NodeMatch {
