@@ -347,4 +347,63 @@ public class NavigationServiceTests
 
         act.Should().Throw<ArgumentNullException>();
     }
+
+    [Fact]
+    public void GetAssetDetails_WithMultiplePriceHistoryEntries_ReturnsThemSortedByDateDescending()
+    {
+        var broker = Broker.Create("Broker", "BRL");
+        var portfolio = broker.AddPortfolio("Portfolio");
+        var asset = Asset.Create("ASSET1", "ISIN", "BVMF", "ASSET1", CountryCode.BR, "FII", GlobalAssetClass.Equity);
+        asset.SetPrice(new DateOnly(2024, 1, 1), 10m, isManual: false);
+        asset.SetPrice(new DateOnly(2024, 2, 1), 12m, isManual: false);
+        portfolio.AddAsset(asset);
+        _repository.Broker = broker;
+
+        var details = CreateService().GetAssetDetails("Broker", "Portfolio", "ASSET1");
+
+        details.Should().NotBeNull();
+        details!.PriceHistory.Should().HaveCount(2);
+        details.PriceHistory[0].Date.Should().Be(new DateOnly(2024, 2, 1));
+        details.PriceHistory[1].Date.Should().Be(new DateOnly(2024, 1, 1));
+    }
+
+    [Fact]
+    public void GetNavigationTree_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    {
+        _repository.ThrowOnGetBrokerList = new InvalidOperationException("simulated failure");
+
+        Action act = () => CreateService().GetNavigationTree();
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void GetAssetDetails_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    {
+        _repository.ThrowOnGetAsset = new InvalidOperationException("simulated failure");
+
+        Action act = () => CreateService().GetAssetDetails("Broker", "Portfolio", "ASSET1");
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void GetBrokers_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    {
+        _repository.ThrowOnGetBrokerList = new InvalidOperationException("simulated failure");
+
+        Action act = () => CreateService().GetBrokers();
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void GetAssetsByBrokerPortfolio_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    {
+        _repository.ThrowOnGetAssetsByBrokerPortfolio = new InvalidOperationException("simulated failure");
+
+        Action act = () => CreateService().GetAssetsByBrokerPortfolio("Broker", "Portfolio");
+
+        act.Should().Throw<InvalidOperationException>();
+    }
 }

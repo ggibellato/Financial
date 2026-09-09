@@ -328,4 +328,14 @@ public class BalanceAdjustmentServiceTests
 
         act.Should().Throw<ArgumentNullException>();
     }
+
+    [Fact]
+    public void GetAdjustmentsByBank_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    {
+        _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
+
+        Action act = () => _sut.GetAdjustmentsByBank(Guid.NewGuid());
+
+        act.Should().Throw<InvalidOperationException>();
+    }
 }

@@ -10,6 +10,7 @@ namespace Financial.TestUtilities;
 public sealed class FakeCalendarProvider : ICalendarProvider
 {
     public string AuthorizationUrl { get; set; } = "https://accounts.google.com/o/oauth2/v2/auth?state=fake";
+    public bool BuildAuthorizationUrlThrows { get; set; }
     public CalendarTokenResult ExchangeResult { get; set; } = new("access-token", "refresh-token", DateTimeOffset.UtcNow.AddHours(1));
     public CalendarTokenResult? RefreshResult { get; set; }
     public bool RefreshThrowsRevoked { get; set; }
@@ -35,6 +36,11 @@ public sealed class FakeCalendarProvider : ICalendarProvider
 
     public string BuildAuthorizationUrl(string state)
     {
+        if (BuildAuthorizationUrlThrows)
+        {
+            throw new InvalidOperationException("Simulated authorization URL build failure.");
+        }
+
         LastState = state;
         return AuthorizationUrl;
     }

@@ -44,6 +44,25 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
     /// false, simulating a repository read failure.</summary>
     public bool ThrowOnNextGetCreditCards { get; set; }
 
+    /// <summary>When set, the next call to any read method wrapped with <see cref="CheckThrow{T}"/>
+    /// throws this and resets to null - simulates an unexpected repository read failure so a
+    /// caller's outer catch/rethrow can be exercised, without needing a dedicated flag per method.
+    /// Set it immediately before the one call site under test, since it fires on whichever wrapped
+    /// method the code under test reads from first.</summary>
+    public Exception? ThrowOnNextRead { get; set; }
+
+    private T CheckThrow<T>(T value)
+    {
+        if (ThrowOnNextRead is not null)
+        {
+            var ex = ThrowOnNextRead;
+            ThrowOnNextRead = null;
+            throw ex;
+        }
+
+        return value;
+    }
+
     public StubCashFlowRepository(
         bool seedDefaultBanks = false, bool seedDefaultIncomeSources = false, bool seedDefaultReserveBuckets = false,
         bool seedDefaultCreditCards = false, bool seedDefaultCategories = false)
@@ -132,15 +151,15 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
     public void SetOpeningBalance(string bankName, decimal openingBalance, DateOnly openingBalanceDate) =>
         Banks.First(b => b.Name == bankName).SetOpeningBalance(openingBalance, openingBalanceDate);
 
-    public IEnumerable<Expense> GetExpenses() => Expenses;
+    public IEnumerable<Expense> GetExpenses() => CheckThrow(Expenses);
     public void AddExpense(Expense expense) => Expenses.Add(expense);
     public void DeleteExpense(Guid id) => Expenses.RemoveAll(e => e.Id == id);
 
-    public IEnumerable<ReserveMovement> GetReserveMovements() => ReserveMovements;
+    public IEnumerable<ReserveMovement> GetReserveMovements() => CheckThrow(ReserveMovements);
     public void AddReserveMovement(ReserveMovement movement) => ReserveMovements.Add(movement);
     public void DeleteReserveMovement(Guid id) => ReserveMovements.RemoveAll(m => m.Id == id);
 
-    public IEnumerable<CardStatement> GetCardStatements() => CardStatements;
+    public IEnumerable<CardStatement> GetCardStatements() => CheckThrow(CardStatements);
     public void AddCardStatement(CardStatement statement) => CardStatements.Add(statement);
 
     public IEnumerable<RecurringBill> GetRecurringBills()
@@ -157,26 +176,26 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
     public void AddRecurringBill(RecurringBill bill) => RecurringBills.Add(bill);
     public void DeleteRecurringBill(Guid id) => RecurringBills.RemoveAll(b => b.Id == id);
 
-    public IEnumerable<MaeLedgerEntry> GetMaeLedgerEntries() => MaeLedgerEntries;
+    public IEnumerable<MaeLedgerEntry> GetMaeLedgerEntries() => CheckThrow(MaeLedgerEntries);
     public void AddMaeLedgerEntry(MaeLedgerEntry entry) => MaeLedgerEntries.Add(entry);
     public void DeleteMaeLedgerEntry(Guid id) => MaeLedgerEntries.RemoveAll(e => e.Id == id);
 
-    public IEnumerable<InvestmentSnapshot> GetInvestmentSnapshots() => InvestmentSnapshots;
+    public IEnumerable<InvestmentSnapshot> GetInvestmentSnapshots() => CheckThrow(InvestmentSnapshots);
     public void AddInvestmentSnapshot(InvestmentSnapshot snapshot) => InvestmentSnapshots.Add(snapshot);
 
-    public IEnumerable<InvestmentAccount> GetInvestmentAccounts() => InvestmentAccounts;
+    public IEnumerable<InvestmentAccount> GetInvestmentAccounts() => CheckThrow(InvestmentAccounts);
     public void AddInvestmentAccount(InvestmentAccount account) => InvestmentAccounts.Add(account);
     public void DeleteInvestmentAccount(Guid id) => InvestmentAccounts.RemoveAll(a => a.Id == id);
 
-    public IEnumerable<Bank> GetBanks() => Banks;
+    public IEnumerable<Bank> GetBanks() => CheckThrow(Banks);
     public void AddBank(Bank bank) => Banks.Add(bank);
     public void DeleteBank(Guid id) => Banks.RemoveAll(b => b.Id == id);
 
-    public IEnumerable<IncomeSource> GetIncomeSources() => IncomeSources;
+    public IEnumerable<IncomeSource> GetIncomeSources() => CheckThrow(IncomeSources);
     public void AddIncomeSource(IncomeSource incomeSource) => IncomeSources.Add(incomeSource);
     public void DeleteIncomeSource(Guid id) => IncomeSources.RemoveAll(s => s.Id == id);
 
-    public IEnumerable<ReserveBucket> GetReserveBuckets() => ReserveBuckets;
+    public IEnumerable<ReserveBucket> GetReserveBuckets() => CheckThrow(ReserveBuckets);
     public void AddReserveBucket(ReserveBucket bucket) => ReserveBuckets.Add(bucket);
 
     public IEnumerable<CreditCard> GetCreditCards()
@@ -193,15 +212,15 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
     public void AddCreditCard(CreditCard card) => CreditCards.Add(card);
     public void DeleteCreditCard(Guid id) => CreditCards.RemoveAll(c => c.Id == id);
 
-    public IEnumerable<Category> GetCategories() => Categories;
+    public IEnumerable<Category> GetCategories() => CheckThrow(Categories);
     public void AddCategory(Category category) => Categories.Add(category);
     public void DeleteCategory(Guid id) => Categories.RemoveAll(c => c.Id == id);
 
-    public IEnumerable<Income> GetIncomes() => Incomes;
+    public IEnumerable<Income> GetIncomes() => CheckThrow(Incomes);
     public void AddIncome(Income income) => Incomes.Add(income);
     public void DeleteIncome(Guid id) => Incomes.RemoveAll(i => i.Id == id);
 
-    public IEnumerable<Transfer> GetTransfers() => Transfers;
+    public IEnumerable<Transfer> GetTransfers() => CheckThrow(Transfers);
     public void AddTransfer(Transfer transfer) => Transfers.Add(transfer);
     public void UpdateTransfer(Transfer transfer)
     {
@@ -213,7 +232,7 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
     }
     public void DeleteTransfer(Guid id) => Transfers.RemoveAll(t => t.Id == id);
 
-    public IEnumerable<BalanceAdjustment> GetBalanceAdjustments() => BalanceAdjustments;
+    public IEnumerable<BalanceAdjustment> GetBalanceAdjustments() => CheckThrow(BalanceAdjustments);
     public void AddBalanceAdjustment(BalanceAdjustment adjustment) => BalanceAdjustments.Add(adjustment);
     public void UpdateBalanceAdjustment(BalanceAdjustment adjustment)
     {

@@ -534,4 +534,13 @@ public class CardStatementServiceTests
         hasChargesPosted.Should().BeFalse();
     }
 
+    [Fact]
+    public async Task GetStatementsForMonthAsync_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    {
+        _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
+
+        var act = async () => await _sut.GetStatementsForMonthAsync(2026, 9);
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+    }
 }

@@ -395,6 +395,26 @@ public class CategorySummaryServiceTests
         result.ResultadoAverage.Should().Be(700m);
     }
 
+    [Fact]
+    public void GetCategoryTotalsForYear_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    {
+        _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
+
+        Action act = () => _sut.GetCategoryTotalsForYear(CurrentYear);
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void GetCategoryTotalsAnnualForYear_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    {
+        _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
+
+        Action act = () => _sut.GetCategoryTotalsAnnualForYear(CurrentYear);
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
     private static StubCashFlowRepository CreateRepository()
     {
         var repository = new StubCashFlowRepository(seedDefaultIncomeSources: true, seedDefaultCategories: true);

@@ -172,6 +172,26 @@ public class TransactionServiceQueryTests
         result.Should().BeEmpty();
     }
 
+    [Fact]
+    public void GetTransactionsByBroker_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    {
+        _repository.ThrowOnGetAssetsByBroker = new InvalidOperationException("simulated failure");
+
+        Action act = () => CreateService().GetTransactionsByBroker("XPI");
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void GetTransactionsByPortfolio_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    {
+        _repository.ThrowOnGetAssetsByBrokerPortfolio = new InvalidOperationException("simulated failure");
+
+        Action act = () => CreateService().GetTransactionsByPortfolio("XPI", "Default");
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
     private TransactionService CreateService() => new(_repository, new NavigationService(_repository, Tracer, NullLogger<NavigationService>.Instance), Tracer, NullLogger<TransactionService>.Instance);
 
     private static Asset MakeAsset(string name = "TEST") =>

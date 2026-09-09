@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Collections.Generic;
 using Financial.Investment.Domain.Entities;
 using FluentAssertions;
 
@@ -168,5 +170,43 @@ public class TransactionsTests
         _sut.Add(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 20m));
 
         _sut.AveragePrice.Should().Be(102m, "a purchase cost basis still includes its fees");
+    }
+
+    [Fact]
+    public void NonGenericGetEnumerator_EnumeratesTheSameItemsAsTheGenericOne()
+    {
+        _sut.Add(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+
+        var items = new List<Transaction>();
+        var enumerator = ((IEnumerable)_sut).GetEnumerator();
+        while (enumerator.MoveNext())
+        {
+            items.Add((Transaction)enumerator.Current!);
+        }
+
+        items.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public void ExplicitClear_RemovesEveryTransaction()
+    {
+        _sut.Add(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+
+        ((ICollection<Transaction>)_sut).Clear();
+
+        _sut.Count.Should().Be(0);
+        _sut.Quantity.Should().Be(0);
+    }
+
+    [Fact]
+    public void ExplicitCopyTo_CopiesEveryTransactionIntoTheGivenArray()
+    {
+        var transaction = Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m);
+        _sut.Add(transaction);
+
+        var target = new Transaction[1];
+        ((ICollection<Transaction>)_sut).CopyTo(target, 0);
+
+        target[0].Should().BeSameAs(transaction);
     }
 }

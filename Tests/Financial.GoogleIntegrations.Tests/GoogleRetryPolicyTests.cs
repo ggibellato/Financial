@@ -86,6 +86,20 @@ public class GoogleRetryPolicyTests
     }
 
     [Fact]
+    public async Task ExecuteWithRetryAsync_VoidActionSucceedsImmediately_CompletesWithoutRetrying()
+    {
+        var callCount = 0;
+
+        await GoogleRetryPolicy.ExecuteWithRetryAsync(() =>
+        {
+            callCount++;
+            return Task.CompletedTask;
+        });
+
+        callCount.Should().Be(1);
+    }
+
+    [Fact]
     public void ExecuteWithRetry_ActionSucceedsImmediately_ReturnsResultWithoutRetrying()
     {
         var callCount = 0;

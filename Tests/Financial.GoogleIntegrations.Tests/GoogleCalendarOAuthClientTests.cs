@@ -1,3 +1,5 @@
+using System.Net;
+using System.Net.Http.Headers;
 using Financial.Integrations.GoogleCalendar;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,6 +14,9 @@ public class GoogleCalendarOAuthClientTests
         services.AddGoogleCalendarOAuthClient();
         return services.BuildServiceProvider().GetRequiredService<IGoogleCalendarOAuthClient>();
     }
+
+    private static GoogleCalendarOAuthClient CreateClientWithHandler(Func<HttpRequestMessage, Task<HttpResponseMessage>> respond) =>
+        new(new HttpClient(new FakeHttpMessageHandler(respond)));
 
     [Fact]
     public void BuildAuthorizationUrl_IncludesClientIdRedirectUriScopeAndState()
@@ -64,5 +69,103 @@ public class GoogleCalendarOAuthClientTests
         calendarEvent.Reminders.Overrides.Should().ContainSingle();
         calendarEvent.Reminders.Overrides[0].Method.Should().Be("popup");
         calendarEvent.Reminders.Overrides[0].Minutes.Should().Be(1440);
+    }
+
+    [Fact]
+    public async Task RevokeTokenAsync_PostsTheTokenToTheRevokeEndpoint()
+    {
+        HttpRequestMessage? capturedRequest = null;
+        string? capturedBody = null;
+        var client = CreateClientWithHandler(async request =>
+        {
+            capturedRequest = request;
+            capturedBody = request.Content is null ? null : await request.Content.ReadAsStringAsync();
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        });
+
+        await client.RevokeTokenAsync("token-abc");
+
+        capturedRequest!.Method.Should().Be(HttpMethod.Post);
+        capturedRequest.RequestUri.Should().Be(new Uri("https://oauth2.googleapis.com/revoke"));
+        capturedBody.Should().Be("token=token-abc");
+    }
+
+    [Fact]
+    public async Task RevokeTokenAsync_WithNonSuccessStatusCode_Throws()
+    {
+        var client = CreateClientWithHandler(_ => Task.FromResult(new HttpResponseMessage(HttpStatusCode.BadRequest)));
+
+        var act = () => client.RevokeTokenAsync("token-abc");
+
+        await act.Should().ThrowAsync<HttpRequestException>();
+    }
+
+    [Fact]
+    public async Task GetAccountEmailAsync_WithSuccessfulResponse_ReturnsTheEmail()
+    {
+        var client = CreateClientWithHandler(_ => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("""{"email":"user@example.test"}""")
+        }));
+
+        var email = await client.GetAccountEmailAsync("access-token-123");
+
+        email.Should().Be("user@example.test");
+    }
+
+    [Fact]
+    public async Task GetAccountEmailAsync_SendsTheAccessTokenAsABearerHeader()
+    {
+        HttpRequestMessage? capturedRequest = null;
+        var client = CreateClientWithHandler(request =>
+        {
+            capturedRequest = request;
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("""{"email":"user@example.test"}""")
+            });
+        });
+
+        await client.GetAccountEmailAsync("access-token-123");
+
+        capturedRequest!.Headers.Authorization.Should().Be(new AuthenticationHeaderValue("Bearer", "access-token-123"));
+        capturedRequest.RequestUri.Should().Be(new Uri("https://www.googleapis.com/oauth2/v2/userinfo"));
+    }
+
+    [Fact]
+    public async Task GetAccountEmailAsync_WithNonSuccessStatusCode_Throws()
+    {
+        var client = CreateClientWithHandler(_ => Task.FromResult(new HttpResponseMessage(HttpStatusCode.Unauthorized)));
+
+        var act = () => client.GetAccountEmailAsync("access-token-123");
+
+        await act.Should().ThrowAsync<HttpRequestException>();
+    }
+
+    [Fact]
+    public async Task GetAccountEmailAsync_WithResponseMissingEmail_ThrowsInvalidOperationException()
+    {
+        var client = CreateClientWithHandler(_ => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("{}")
+        }));
+
+        var act = () => client.GetAccountEmailAsync("access-token-123");
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*did not include an email address*");
+    }
+
+    private sealed class FakeHttpMessageHandler : HttpMessageHandler
+    {
+        private readonly Func<HttpRequestMessage, Task<HttpResponseMessage>> _responder;
+
+        public FakeHttpMessageHandler(Func<HttpRequestMessage, Task<HttpResponseMessage>> responder)
+        {
+            _responder = responder;
+        }
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
+            _responder(request);
     }
 }

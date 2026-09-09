@@ -332,6 +332,81 @@ public class CreditServiceTests
         _repository.LastGetAssetsByBrokerPortfolioScope.Should().Be(InvestmentScope.Historic);
     }
 
+    [Fact]
+    public async Task AddCreditAsync_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    {
+        _repository.Asset = MakeAsset();
+        _repository.ThrowOnApplyAndSaveAsync = new InvalidOperationException("simulated failure");
+
+        var act = async () => await CreateService().AddCreditAsync(new CreditCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "AAAA",
+            Date = new DateTime(2024, 1, 1),
+            Type = "Dividend",
+            Value = 10m
+        });
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+    }
+
+    [Fact]
+    public async Task UpdateCreditAsync_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    {
+        _repository.Asset = MakeAsset();
+        _repository.ThrowOnApplyAndSaveAsync = new InvalidOperationException("simulated failure");
+
+        var act = async () => await CreateService().UpdateCreditAsync(new CreditUpdateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "AAAA",
+            Id = Guid.NewGuid(),
+            Type = "Dividend",
+            Value = 10m
+        });
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+    }
+
+    [Fact]
+    public async Task DeleteCreditAsync_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    {
+        _repository.Asset = MakeAsset();
+        _repository.ThrowOnApplyAndSaveAsync = new InvalidOperationException("simulated failure");
+
+        var act = async () => await CreateService().DeleteCreditAsync(new CreditDeleteDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "AAAA",
+            Id = Guid.NewGuid()
+        });
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void GetCreditsByBroker_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    {
+        _repository.ThrowOnGetAssetsByBroker = new InvalidOperationException("simulated failure");
+
+        Action act = () => CreateService().GetCreditsByBroker("XPI");
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void GetCreditsByPortfolio_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    {
+        _repository.ThrowOnGetAssetsByBrokerPortfolio = new InvalidOperationException("simulated failure");
+
+        Action act = () => CreateService().GetCreditsByPortfolio("XPI", "Default");
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
     private CreditService CreateService() => new(_repository, new NavigationService(_repository, Tracer, NullLogger<NavigationService>.Instance), Tracer, NullLogger<CreditService>.Instance);
 
     private static Asset MakeAsset(string name = "AAAA") =>

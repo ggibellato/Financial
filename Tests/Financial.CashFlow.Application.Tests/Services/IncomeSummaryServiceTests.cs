@@ -214,6 +214,26 @@ public class IncomeSummaryServiceTests
         result.SalaryAfterTaxesAverage.Should().Be(800m);
     }
 
+    [Fact]
+    public void GetIncomeSummaryForYear_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    {
+        _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
+
+        Action act = () => _sut.GetIncomeSummaryForYear(CurrentYear);
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void GetSalaryAfterTaxesSeriesForYear_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    {
+        _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
+
+        Action act = () => _sut.GetSalaryAfterTaxesSeriesForYear(CurrentYear);
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
     private static StubCashFlowRepository CreateRepository()
     {
         var repository = new StubCashFlowRepository(seedDefaultIncomeSources: true, seedDefaultCategories: true);

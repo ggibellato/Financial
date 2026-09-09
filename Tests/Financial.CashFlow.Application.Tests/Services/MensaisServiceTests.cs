@@ -339,4 +339,24 @@ public class MensaisServiceTests
 
         act.Should().Throw<ArgumentNullException>();
     }
+
+    [Fact]
+    public void GetBills_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    {
+        _repository.ThrowOnNextGetRecurringBills = true;
+
+        Action act = () => _sut.GetBills();
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public async Task ResetAllToUnsetAsync_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    {
+        _repository.ThrowOnNextGetRecurringBills = true;
+
+        var act = async () => await _sut.ResetAllToUnsetAsync();
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+    }
 }

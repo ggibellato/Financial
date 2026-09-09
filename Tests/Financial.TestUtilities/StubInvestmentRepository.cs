@@ -36,6 +36,14 @@ public sealed class StubInvestmentRepository : IInvestmentRepository
     public InvestmentScope? LastGetAssetsByBrokerPortfolioScope { get; private set; }
     public InvestmentScope? LastGetBrokerListScope { get; private set; }
 
+    /// <summary>When set, the matching method throws this instead of returning - simulates an
+    /// unexpected repository failure so a caller's outer catch/rethrow can be exercised.</summary>
+    public Exception? ThrowOnApplyAndSaveAsync { get; set; }
+    public Exception? ThrowOnGetAssetsByBroker { get; set; }
+    public Exception? ThrowOnGetAssetsByBrokerPortfolio { get; set; }
+    public Exception? ThrowOnGetBrokerList { get; set; }
+    public Exception? ThrowOnGetAsset { get; set; }
+
     public StubInvestmentRepository()
     {
     }
@@ -49,6 +57,10 @@ public sealed class StubInvestmentRepository : IInvestmentRepository
     public IEnumerable<Asset> GetAssetsByBroker(string name, InvestmentScope scope = InvestmentScope.Active)
     {
         LastGetAssetsByBrokerScope = scope;
+        if (ThrowOnGetAssetsByBroker is not null)
+        {
+            throw ThrowOnGetAssetsByBroker;
+        }
 
         if (Investments is not null)
         {
@@ -61,6 +73,10 @@ public sealed class StubInvestmentRepository : IInvestmentRepository
     public IEnumerable<Asset> GetAssetsByBrokerPortfolio(string broker, string portfolio, InvestmentScope scope = InvestmentScope.Active)
     {
         LastGetAssetsByBrokerPortfolioScope = scope;
+        if (ThrowOnGetAssetsByBrokerPortfolio is not null)
+        {
+            throw ThrowOnGetAssetsByBrokerPortfolio;
+        }
 
         if (Investments is not null)
         {
@@ -75,6 +91,10 @@ public sealed class StubInvestmentRepository : IInvestmentRepository
     public IEnumerable<Broker> GetBrokerList(InvestmentScope scope = InvestmentScope.Active)
     {
         LastGetBrokerListScope = scope;
+        if (ThrowOnGetBrokerList is not null)
+        {
+            throw ThrowOnGetBrokerList;
+        }
 
         if (Investments is not null)
         {
@@ -86,6 +106,11 @@ public sealed class StubInvestmentRepository : IInvestmentRepository
 
     public Asset? GetAsset(string brokerName, string portfolioName, string assetName, InvestmentScope scope = InvestmentScope.Active)
     {
+        if (ThrowOnGetAsset is not null)
+        {
+            throw ThrowOnGetAsset;
+        }
+
         if (Investments is not null)
         {
             return ScopedBroker(brokerName, scope)?.FindPortfolio(portfolioName)?.FindAsset(assetName);
@@ -104,6 +129,11 @@ public sealed class StubInvestmentRepository : IInvestmentRepository
     /// stub that only counted would silently stop exercising it.</summary>
     public Task<bool> ApplyAndSaveAsync(Func<bool> applyChanges)
     {
+        if (ThrowOnApplyAndSaveAsync is not null)
+        {
+            throw ThrowOnApplyAndSaveAsync;
+        }
+
         if (!applyChanges())
         {
             return Task.FromResult(false);

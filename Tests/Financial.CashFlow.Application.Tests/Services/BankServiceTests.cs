@@ -534,4 +534,54 @@ public class BankServiceTests
 
         act.Should().Throw<ArgumentNullException>();
     }
+
+    [Fact]
+    public void GetBanks_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    {
+        _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
+
+        Action act = () => _sut.GetBanks();
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public async Task UpdateBankAsync_WithBlankName_ThrowsArgumentException()
+    {
+        var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        _repository.Banks.Add(bank);
+        var request = new BankUpdateDTO { Name = "   ", RoundUpEnabled = true };
+
+        var act = async () => await _sut.UpdateBankAsync(bank.Id, request);
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*name is required*");
+    }
+
+    [Fact]
+    public void GetBankBalancesByMonth_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    {
+        _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
+
+        Action act = () => _sut.GetBankBalancesByMonth(2026, 7);
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void GetBanks_WithATransferReferencingABank_MarksItAsReferenced()
+    {
+        var source = Bank.Create("Barclays", roundUpEnabled: false);
+        var destination = Bank.Create("Chase", roundUpEnabled: true);
+        _repository.Banks.Add(source);
+        _repository.Banks.Add(destination);
+        _repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 7, 1), source, destination, 50m, note: null));
+
+        var result = _sut.GetBanks();
+
+        using (new AssertionScope())
+        {
+            result.Should().ContainSingle(b => b.Id == source.Id).Which.HasReferences.Should().BeTrue();
+            result.Should().ContainSingle(b => b.Id == destination.Id).Which.HasReferences.Should().BeTrue();
+        }
+    }
 }

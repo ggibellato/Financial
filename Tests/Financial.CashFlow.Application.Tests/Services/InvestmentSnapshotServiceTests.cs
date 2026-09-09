@@ -309,4 +309,24 @@ public class InvestmentSnapshotServiceTests
 
         act.Should().Throw<ArgumentNullException>();
     }
+
+    [Fact]
+    public async Task GetSnapshotsForMonthAsync_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    {
+        _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
+
+        var act = async () => await _sut.GetSnapshotsForMonthAsync(2026, 7);
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+    }
+
+    [Fact]
+    public async Task GetSuggestionsForMonthAsync_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    {
+        _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
+
+        var act = async () => await _sut.GetSuggestionsForMonthAsync(2026, 7);
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+    }
 }

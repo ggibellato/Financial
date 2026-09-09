@@ -122,6 +122,33 @@ public class LocalJsonStorageTests
         }
     }
 
+    /// <summary>Unlike the sibling "staging blocked" test above, here the stage write itself
+    /// succeeds (a real file lands on disk) and it's the rename into place that fails - so the
+    /// staged file genuinely exists when DiscardStagedFile runs and must be deleted, not just
+    /// skipped via File.Exists returning false. The data file's resolved path is made to collide
+    /// with a directory (not the staged ".tmp" sibling), so writing the stage succeeds but the
+    /// move onto that path does not.</summary>
+    [Fact]
+    public async Task WriteAsync_WhenTheRenameFails_DiscardsTheStagedFile()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), $"local-json-storage-{Guid.NewGuid():N}");
+        var conflictingDataPath = Path.Combine(tempDir, LocalJsonStorage.DefaultDataFileName);
+        Directory.CreateDirectory(conflictingDataPath);
+        try
+        {
+            var storage = new LocalJsonStorage(tempDir);
+
+            Func<Task> act = () => storage.WriteAsync("{\"replacement\": true}");
+
+            await act.Should().ThrowAsync<UnauthorizedAccessException>();
+            File.Exists(conflictingDataPath + LocalJsonStorage.TemporaryFileSuffix).Should().BeFalse();
+        }
+        finally
+        {
+            Directory.Delete(tempDir, recursive: true);
+        }
+    }
+
     [Fact]
     public async Task Constructor_WithNullPath_UsesDefaultFileName()
     {
