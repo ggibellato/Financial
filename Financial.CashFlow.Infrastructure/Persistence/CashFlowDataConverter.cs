@@ -15,12 +15,14 @@ namespace Financial.CashFlow.Infrastructure.Persistence;
 /// </summary>
 public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
 {
+    private static readonly JsonSerializerOptions UnresolvedOptions = CreateElementOptions(context: null);
+
     public override CashFlowData Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         using var document = JsonDocument.ParseValue(ref reader);
         var root = document.RootElement;
 
-        var unresolvedOptions = CreateElementOptions(context: null);
+        var unresolvedOptions = UnresolvedOptions;
         var banks = DeserializeCollection<Bank>(root, "Banks", unresolvedOptions);
         var incomeSources = DeserializeCollection<IncomeSource>(root, "IncomeSources", unresolvedOptions);
         var reserveBuckets = DeserializeCollection<ReserveBucket>(root, "ReserveBuckets", unresolvedOptions);
@@ -36,11 +38,13 @@ public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
 
         // InvestmentAccount's optional CreditCard reference needs context.CreditCards, already
         // populated above - so it cannot join the fully-independent leaf set deserialized with
-        // unresolvedOptions.
-        var investmentAccounts = DeserializeCollection<InvestmentAccount>(root, "InvestmentAccounts", CreateElementOptions(context));
-        foreach (var account in investmentAccounts) context.InvestmentAccounts[account.Id] = account;
-
+        // unresolvedOptions. The same options instance is then reused as resolvedOptions below:
+        // System.Text.Json resolves and caches each type's JsonTypeInfo on first use, and nothing
+        // deserialized so far touches a type other than InvestmentAccount/CreditCard, so every
+        // later type still resolves its reference converters against the fully-populated context.
         var resolvedOptions = CreateElementOptions(context);
+        var investmentAccounts = DeserializeCollection<InvestmentAccount>(root, "InvestmentAccounts", resolvedOptions);
+        foreach (var account in investmentAccounts) context.InvestmentAccounts[account.Id] = account;
 
         var data = CashFlowData.Create();
         foreach (var bank in banks) data.AddBank(bank);
@@ -78,7 +82,7 @@ public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
 
     public override void Write(Utf8JsonWriter writer, CashFlowData value, JsonSerializerOptions options)
     {
-        var elementOptions = CreateElementOptions(context: null);
+        var elementOptions = UnresolvedOptions;
 
         writer.WriteStartObject();
         WriteCollection(writer, "ReserveBuckets", value.ReserveBuckets, elementOptions);

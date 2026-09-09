@@ -129,7 +129,7 @@ public sealed class InvestmentAnnualResultService : IInvestmentAnnualResultServi
 
         var netPositionSeries = accountSeries.Aggregate(MonthlySeries.Zero(), (net, a) =>
             net.Add(a.account.IsLiability
-                ? MonthlySeries.FromMonthlyValues(a.monthlyValues.AsReadOnly().Select(v => -v).ToArray())
+                ? MonthlySeries.FromMonthlyValues(a.monthlyValues.ToArray().Select(v => -v).ToArray())
                 : a.monthlyValues));
 
         decimal? netPositionPriorClosingValue = hasPriorYearData

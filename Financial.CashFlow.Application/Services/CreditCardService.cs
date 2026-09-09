@@ -34,7 +34,18 @@ public sealed class CreditCardService : ICreditCardService
         using var span = StartSpan("GetCreditCards");
         try
         {
-            var result = _repository.GetCreditCards().Select(ToDto).ToList();
+            var latestInvoiceDateByCard = _repository.GetExpenses()
+                .Where(e => e.CreditCard is not null)
+                .GroupBy(e => e.CreditCard!.Id)
+                .ToDictionary(g => g.Key, g => g.Max(e => e.InvoiceDate));
+            var cardIdsWithStatements = _repository.GetCardStatements().Select(s => s.CreditCard.Id).ToHashSet();
+
+            var result = _repository.GetCreditCards()
+                .Select(card => ToDto(
+                    card,
+                    latestInvoiceDateByCard.GetValueOrDefault(card.Id),
+                    latestInvoiceDateByCard.ContainsKey(card.Id) || cardIdsWithStatements.Contains(card.Id)))
+                .ToList();
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetCreditCards");
@@ -59,7 +70,7 @@ public sealed class CreditCardService : ICreditCardService
                 throw new ArgumentException("Credit card name is required.", nameof(request));
             }
 
-            EnsureNameIsUnique(request.Name, excludingId: null);
+            _repository.GetCreditCards().EnsureNameIsUnique(request.Name, null, c => c.Name, c => c.Id, "A credit card");
 
             var creditCard = CreditCard.Create(request.Name, request.IsActive);
 
@@ -102,7 +113,7 @@ public sealed class CreditCardService : ICreditCardService
                 throw new KeyNotFoundException($"Credit card '{id}' was not found.");
             }
 
-            EnsureNameIsUnique(request.Name, excludingId: id);
+            _repository.GetCreditCards().EnsureNameIsUnique(request.Name, id, c => c.Name, c => c.Id, "A credit card");
 
             await _repository.ApplyAndSaveAsync(() =>
             {
@@ -156,15 +167,6 @@ public sealed class CreditCardService : ICreditCardService
         }
     }
 
-    private void EnsureNameIsUnique(string name, Guid? excludingId)
-    {
-        var collision = _repository.GetCreditCards().FirstOrDefault(c => c.Name == name && c.Id != excludingId);
-        if (collision is not null)
-        {
-            throw new DuplicateNameException($"A credit card named \"{name}\" already exists.");
-        }
-    }
-
     private void EnsureNotReferenced(Guid creditCardId)
     {
         if (IsReferenced(creditCardId))
@@ -196,13 +198,16 @@ public sealed class CreditCardService : ICreditCardService
         return _tracer.StartServiceSpan("CashFlow", nameof(CreditCardService), operationName, EntityType);
     }
 
-    private CreditCardDTO ToDto(CreditCard creditCard) => new()
+    private CreditCardDTO ToDto(CreditCard creditCard) =>
+        ToDto(creditCard, GetLatestInvoiceDate(creditCard.Id), IsReferenced(creditCard.Id));
+
+    private static CreditCardDTO ToDto(CreditCard creditCard, DateOnly? latestInvoiceDate, bool hasReferences) => new()
     {
         Id = creditCard.Id,
         Name = creditCard.Name,
         IsActive = creditCard.IsActive,
         NextInvoiceDueDate = creditCard.NextInvoiceDueDate,
-        LatestInvoiceDate = GetLatestInvoiceDate(creditCard.Id),
-        HasReferences = IsReferenced(creditCard.Id)
+        LatestInvoiceDate = latestInvoiceDate,
+        HasReferences = hasReferences
     };
 }

@@ -28,7 +28,8 @@ public sealed class BankService : IBankService
         using var span = StartSpan("GetBanks");
         try
         {
-            var result = _repository.GetBanks().Select(ToDto).ToList();
+            var referencedBankIds = BuildReferencedBankIds();
+            var result = _repository.GetBanks().Select(bank => ToDto(bank, referencedBankIds.Contains(bank.Id))).ToList();
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetBanks");
@@ -53,7 +54,7 @@ public sealed class BankService : IBankService
                 throw new ArgumentException("Bank name is required.", nameof(request));
             }
 
-            EnsureNameIsUnique(request.Name, excludingId: null);
+            _repository.GetBanks().EnsureNameIsUnique(request.Name, null, b => b.Name, b => b.Id, "A bank");
 
             var bank = Bank.Create(request.Name, request.RoundUpEnabled);
 
@@ -93,7 +94,7 @@ public sealed class BankService : IBankService
                 throw new KeyNotFoundException($"Bank '{id}' was not found.");
             }
 
-            EnsureNameIsUnique(request.Name, excludingId: id);
+            _repository.GetBanks().EnsureNameIsUnique(request.Name, id, b => b.Name, b => b.Id, "A bank");
 
             await _repository.ApplyAndSaveAsync(() =>
             {
@@ -232,15 +233,6 @@ public sealed class BankService : IBankService
         }
     }
 
-    private void EnsureNameIsUnique(string name, Guid? excludingId)
-    {
-        var collision = _repository.GetBanks().FirstOrDefault(b => b.Name == name && b.Id != excludingId);
-        if (collision is not null)
-        {
-            throw new DuplicateNameException($"A bank named \"{name}\" already exists.");
-        }
-    }
-
     private void EnsureNotReferenced(Guid bankId)
     {
         if (IsReferenced(bankId))
@@ -260,6 +252,23 @@ public sealed class BankService : IBankService
         _repository.GetIncomes().Any(i => i.Bank?.Id == bankId) ||
         _repository.GetExpenses().Any(e => e.PaymentSourceBank?.Id == bankId) ||
         _repository.GetTransfers().Any(t => t.SourceBank.Id == bankId || t.DestinationBank.Id == bankId);
+
+    /// <summary>Every bank id referenced by any balance-affecting record, built once so
+    /// <see cref="GetBanks"/> can look up each bank's <see cref="BankDTO.HasReferences"/> in O(1)
+    /// instead of re-scanning all four collections per bank.</summary>
+    private HashSet<Guid> BuildReferencedBankIds()
+    {
+        var ids = new HashSet<Guid>();
+        foreach (var adjustment in _repository.GetBalanceAdjustments()) ids.Add(adjustment.Bank.Id);
+        foreach (var income in _repository.GetIncomes()) if (income.Bank is not null) ids.Add(income.Bank.Id);
+        foreach (var expense in _repository.GetExpenses()) if (expense.PaymentSourceBank is not null) ids.Add(expense.PaymentSourceBank.Id);
+        foreach (var transfer in _repository.GetTransfers())
+        {
+            ids.Add(transfer.SourceBank.Id);
+            ids.Add(transfer.DestinationBank.Id);
+        }
+        return ids;
+    }
 
     private ITelemetrySpan StartSpan(string operationName)
     {
@@ -301,13 +310,15 @@ public sealed class BankService : IBankService
         return bank.OpeningBalance + incomeTotal - expenseTotal + transferInTotal - transferOutTotal + adjustmentTotal;
     }
 
-    private BankDTO ToDto(Bank bank) => new()
+    private BankDTO ToDto(Bank bank) => ToDto(bank, IsReferenced(bank.Id));
+
+    private static BankDTO ToDto(Bank bank, bool hasReferences) => new()
     {
         Id = bank.Id,
         Name = bank.Name,
         RoundUpEnabled = bank.RoundUpEnabled,
         OpeningBalance = bank.OpeningBalance,
         OpeningBalanceDate = bank.OpeningBalanceDate,
-        HasReferences = IsReferenced(bank.Id)
+        HasReferences = hasReferences
     };
 }

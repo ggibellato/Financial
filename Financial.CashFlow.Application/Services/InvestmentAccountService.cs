@@ -29,7 +29,13 @@ public sealed class InvestmentAccountService : IInvestmentAccountService
         using var span = StartSpan("GetInvestmentAccounts");
         try
         {
-            var result = _repository.GetInvestmentAccounts().Select(ToDto).ToList();
+            var nonZeroSnapshotAccountIds = _repository.GetInvestmentSnapshots()
+                .Where(s => s.Value != 0m)
+                .Select(s => s.Account.Id)
+                .ToHashSet();
+            var result = _repository.GetInvestmentAccounts()
+                .Select(account => ToDto(account, nonZeroSnapshotAccountIds.Contains(account.Id)))
+                .ToList();
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetInvestmentAccounts");
@@ -54,7 +60,7 @@ public sealed class InvestmentAccountService : IInvestmentAccountService
                 throw new ArgumentException("Investment account name is required.", nameof(request));
             }
 
-            EnsureNameIsUnique(request.Name, excludingId: null);
+            _repository.GetInvestmentAccounts().EnsureNameIsUnique(request.Name, null, a => a.Name, a => a.Id, "An investment account");
 
             var source = ParseSource(request.Source);
             var creditCard = ResolveCreditCard(source, request.CreditCardId);
@@ -97,7 +103,7 @@ public sealed class InvestmentAccountService : IInvestmentAccountService
                 throw new KeyNotFoundException($"Investment account '{id}' was not found.");
             }
 
-            EnsureNameIsUnique(request.Name, excludingId: id);
+            _repository.GetInvestmentAccounts().EnsureNameIsUnique(request.Name, id, a => a.Name, a => a.Id, "An investment account");
 
             var source = ParseSource(request.Source);
             var creditCard = ResolveCreditCard(source, request.CreditCardId);
@@ -170,22 +176,7 @@ public sealed class InvestmentAccountService : IInvestmentAccountService
             throw new ArgumentException($"Credit card '{creditCardId}' is not recognized.");
         }
 
-        if (!creditCard.IsActive)
-        {
-            throw new ArgumentException(
-                $"Credit card '{creditCard.Name}' is inactive and cannot be used for new entries.");
-        }
-
         return creditCard;
-    }
-
-    private void EnsureNameIsUnique(string name, Guid? excludingId)
-    {
-        var collision = _repository.GetInvestmentAccounts().FirstOrDefault(a => a.Name == name && a.Id != excludingId);
-        if (collision is not null)
-        {
-            throw new DuplicateNameException($"An investment account named \"{name}\" already exists.");
-        }
     }
 
     private void EnsureNoNonZeroInvestmentSnapshotExists(Guid accountId)
@@ -210,13 +201,15 @@ public sealed class InvestmentAccountService : IInvestmentAccountService
         return _tracer.StartServiceSpan("CashFlow", nameof(InvestmentAccountService), operationName, EntityType);
     }
 
-    private InvestmentAccountDTO ToDto(InvestmentAccount account) => new()
+    private InvestmentAccountDTO ToDto(InvestmentAccount account) => ToDto(account, HasNonZeroInvestmentSnapshot(account.Id));
+
+    private static InvestmentAccountDTO ToDto(InvestmentAccount account, bool hasNonZeroInvestmentSnapshot) => new()
     {
         Id = account.Id,
         Name = account.Name,
         IsActive = account.IsActive,
         IsLiability = account.IsLiability,
-        HasNonZeroInvestmentSnapshot = HasNonZeroInvestmentSnapshot(account.Id),
+        HasNonZeroInvestmentSnapshot = hasNonZeroInvestmentSnapshot,
         Source = account.Source.ToString(),
         CreditCardId = account.CreditCard?.Id
     };

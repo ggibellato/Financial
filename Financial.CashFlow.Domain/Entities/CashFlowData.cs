@@ -24,14 +24,14 @@ public class CashFlowData
     private readonly List<InvestmentSnapshot> _investmentSnapshots = new();
     public IReadOnlyCollection<InvestmentSnapshot> InvestmentSnapshots => _investmentSnapshots.AsReadOnly();
 
-    private readonly List<Bank> _banks = new();
-    public IReadOnlyCollection<Bank> Banks => _banks.AsReadOnly();
+    private readonly IdCollection<Bank> _banks = new(i => i.Id);
+    public IReadOnlyCollection<Bank> Banks => _banks;
 
-    private readonly List<IncomeSource> _incomeSources = new();
-    public IReadOnlyCollection<IncomeSource> IncomeSources => _incomeSources.AsReadOnly();
+    private readonly IdCollection<IncomeSource> _incomeSources = new(i => i.Id);
+    public IReadOnlyCollection<IncomeSource> IncomeSources => _incomeSources;
 
-    private readonly List<InvestmentAccount> _investmentAccounts = new();
-    public IReadOnlyCollection<InvestmentAccount> InvestmentAccounts => _investmentAccounts.AsReadOnly();
+    private readonly IdCollection<InvestmentAccount> _investmentAccounts = new(i => i.Id);
+    public IReadOnlyCollection<InvestmentAccount> InvestmentAccounts => _investmentAccounts;
 
     private readonly List<ReserveBucket> _reserveBuckets = new();
     public IReadOnlyCollection<ReserveBucket> ReserveBuckets => _reserveBuckets.AsReadOnly();
@@ -45,11 +45,11 @@ public class CashFlowData
     private readonly IdCollection<BalanceAdjustment> _balanceAdjustments = new(i => i.Id);
     public IReadOnlyCollection<BalanceAdjustment> BalanceAdjustments => _balanceAdjustments;
 
-    private readonly List<CreditCard> _creditCards = new();
-    public IReadOnlyCollection<CreditCard> CreditCards => _creditCards.AsReadOnly();
+    private readonly IdCollection<CreditCard> _creditCards = new(i => i.Id);
+    public IReadOnlyCollection<CreditCard> CreditCards => _creditCards;
 
-    private readonly List<Category> _categories = new();
-    public IReadOnlyCollection<Category> Categories => _categories.AsReadOnly();
+    private readonly IdCollection<Category> _categories = new(i => i.Id);
+    public IReadOnlyCollection<Category> Categories => _categories;
 
     private readonly List<TitheCarryForward> _titheCarryForwards = new();
     public IReadOnlyCollection<TitheCarryForward> TitheCarryForwards => _titheCarryForwards.AsReadOnly();
@@ -82,25 +82,25 @@ public class CashFlowData
 
     public void AddBank(Bank bank) => _banks.Add(bank);
 
-    public void RemoveBank(Guid id) => _banks.RemoveAll(bank => bank.Id == id);
+    public void RemoveBank(Guid id) => _banks.RemoveById(id);
 
     public void AddIncomeSource(IncomeSource incomeSource) => _incomeSources.Add(incomeSource);
 
-    public void RemoveIncomeSource(Guid id) => _incomeSources.RemoveAll(incomeSource => incomeSource.Id == id);
+    public void RemoveIncomeSource(Guid id) => _incomeSources.RemoveById(id);
 
     public void AddInvestmentAccount(InvestmentAccount account) => _investmentAccounts.Add(account);
 
-    public void RemoveInvestmentAccount(Guid id) => _investmentAccounts.RemoveAll(account => account.Id == id);
+    public void RemoveInvestmentAccount(Guid id) => _investmentAccounts.RemoveById(id);
 
     public void AddReserveBucket(ReserveBucket bucket) => _reserveBuckets.Add(bucket);
 
     public void AddCreditCard(CreditCard card) => _creditCards.Add(card);
 
-    public void RemoveCreditCard(Guid id) => _creditCards.RemoveAll(card => card.Id == id);
+    public void RemoveCreditCard(Guid id) => _creditCards.RemoveById(id);
 
     public void AddCategory(Category category) => _categories.Add(category);
 
-    public void RemoveCategory(Guid id) => _categories.RemoveAll(category => category.Id == id);
+    public void RemoveCategory(Guid id) => _categories.RemoveById(id);
 
     public void AddTitheCarryForward(TitheCarryForward decision) => _titheCarryForwards.Add(decision);
 
