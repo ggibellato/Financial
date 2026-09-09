@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import SuggestedValuesPanel from '../SuggestedValuesPanel'
 import type { SuggestionRow } from '../../hooks/useSuggestedValues'
+import type { InvestmentSnapshotSuggestionSkippedDto } from '../../api/types'
 
 const ROW_ZERO_CURRENT: SuggestionRow = {
   snapshotId: 's1',
@@ -86,6 +87,35 @@ describe('SuggestedValuesPanel', () => {
     expect(screen.getByRole('alert')).toHaveTextContent("Couldn't load suggestions")
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
     expect(onRetryFetch).toHaveBeenCalledTimes(1)
+  })
+
+  it('lists skipped accounts with their reason', () => {
+    const notUpdated: InvestmentSnapshotSuggestionSkippedDto[] = [
+      { accountId: 'a3', accountName: 'ChaseFreedom', reason: 'No new statement this month' },
+    ]
+    render(<SuggestedValuesPanel {...baseProps({ rows: [ROW_ZERO_CURRENT], notUpdated })} />)
+
+    expect(screen.getByText('Not updated')).toBeInTheDocument()
+    expect(screen.getByText('ChaseFreedom')).toBeInTheDocument()
+    expect(screen.getByText('No new statement this month')).toBeInTheDocument()
+  })
+
+  it('calls onSetValue when the suggested value input changes', () => {
+    const onSetValue = vi.fn()
+    render(<SuggestedValuesPanel {...baseProps({ rows: [ROW_ZERO_CURRENT], onSetValue })} />)
+
+    fireEvent.change(screen.getByLabelText('Suggested value for PlatinumVisa8003'), { target: { value: '200.5' } })
+
+    expect(onSetValue).toHaveBeenCalledWith('a1', '200.5')
+  })
+
+  it('calls onToggleIncluded when the include checkbox is clicked', () => {
+    const onToggleIncluded = vi.fn()
+    render(<SuggestedValuesPanel {...baseProps({ rows: [ROW_ZERO_CURRENT], onToggleIncluded })} />)
+
+    fireEvent.click(screen.getByLabelText('Include PlatinumVisa8003'))
+
+    expect(onToggleIncluded).toHaveBeenCalledWith('a1')
   })
 
   it('shows completion summary with retry failed when a row failed', () => {

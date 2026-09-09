@@ -14,15 +14,48 @@ const mockDeleteEntry = vi.fn()
 const mockRetry = vi.fn()
 const mockSetFilter = vi.fn()
 
+type MockDotProps = {
+  cx?: number
+  cy?: number
+  payload?: { kind: 'automatic' | 'manual' | 'buy' | 'sell'; date: string; value: number }
+  key?: React.Key | null
+}
+
 vi.mock('recharts', () => ({
   LineChart: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="line-chart">{children}</div>
   ),
-  Line: () => null,
+  // Renders the real `dot` render-prop against a representative point of each kind, plus a
+  // point missing coordinates - the same shape recharts itself would call it with - so the
+  // component's own dot-rendering logic (not just this mock) is what's under test.
+  Line: ({ dot }: { dot?: (props: MockDotProps) => React.ReactNode }) => (
+    <div data-testid="chart-dots">
+      {dot?.({ cx: 10, cy: 20, payload: { kind: 'automatic', date: '2024-01-01', value: 10 }, key: 'automatic' })}
+      {dot?.({ cx: 10, cy: 20, payload: { kind: 'manual', date: '2024-01-02', value: 20 }, key: 'manual' })}
+      {dot?.({ cx: 10, cy: 20, payload: { kind: 'buy', date: '2024-01-03', value: 30 }, key: 'buy' })}
+      {dot?.({ cx: 10, cy: 20, payload: { kind: 'sell', date: '2024-01-04', value: 40 }, key: 'sell' })}
+      {dot?.({ cx: undefined, cy: undefined, payload: undefined, key: 'missing' })}
+    </div>
+  ),
   XAxis: () => null,
   YAxis: () => null,
   CartesianGrid: () => null,
-  Tooltip: () => null,
+  // recharts clones the `content` element and injects `active`/`payload`; the mock does the same
+  // for both an inactive render and an active one, exercising the tooltip's own null-guard.
+  Tooltip: ({
+    content,
+  }: {
+    content?: React.ReactElement<{ active?: boolean; payload?: { payload: MockDotProps['payload'] }[] }>
+  }) =>
+    content ? (
+      <div data-testid="chart-tooltip">
+        {React.cloneElement(content, { active: false })}
+        {React.cloneElement(content, {
+          active: true,
+          payload: [{ payload: { kind: 'manual', date: '2024-01-02', value: 20.5 } }],
+        })}
+      </div>
+    ) : null,
   Legend: ({ content: Content }: { content?: React.ComponentType }) => (Content ? <Content /> : null),
   DefaultLegendContent: ({ payload }: { payload?: { value?: string }[] }) => (
     <div data-testid="chart-legend">{payload?.map((entry) => entry.value).join(',')}</div>
@@ -282,5 +315,32 @@ describe('PriceHistoryTab', () => {
   it('renders_chart_legend_for_all_four_series', () => {
     render(<PriceHistoryTab />)
     expect(screen.getByTestId('chart-legend')).toHaveTextContent('Automatic,Manual,Buy,Sell')
+  })
+
+  it('clicking_date_header_sorts_rows_by_date', () => {
+    setMock({ entries: [MANUAL_ENTRY, AUTOMATIC_ENTRY], filteredEntries: [MANUAL_ENTRY, AUTOMATIC_ENTRY] })
+    render(<PriceHistoryTab />)
+    fireEvent.click(screen.getByRole('button', { name: 'Date' }))
+    const dataRows = within(screen.getByRole('table')).getAllByRole('row').slice(1)
+    expect(dataRows).toHaveLength(2)
+  })
+
+  it('clicking_source_header_sorts_rows_by_source', () => {
+    setMock({ entries: [MANUAL_ENTRY, AUTOMATIC_ENTRY], filteredEntries: [MANUAL_ENTRY, AUTOMATIC_ENTRY] })
+    render(<PriceHistoryTab />)
+    fireEvent.click(screen.getByRole('button', { name: 'Source' }))
+    const dataRows = within(screen.getByRole('table')).getAllByRole('row').slice(1)
+    expect(dataRows).toHaveLength(2)
+  })
+
+  it('editing_each_form_field_calls_setFormField', () => {
+    setMock({ isFormVisible: true })
+    render(<PriceHistoryTab />)
+
+    fireEvent.change(screen.getByLabelText(/^Date/), { target: { value: '2024-05-01' } })
+    expect(mockSetFormField).toHaveBeenCalledWith('formDate', '2024-05-01')
+
+    fireEvent.change(screen.getByLabelText(/^Price/), { target: { value: '4.5' } })
+    expect(mockSetFormField).toHaveBeenCalledWith('formPrice', '4.5')
   })
 })

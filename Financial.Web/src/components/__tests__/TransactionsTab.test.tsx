@@ -305,4 +305,64 @@ describe('TransactionsTab', () => {
     expect(within(dataRows[0]).getByText('420.50')).toBeInTheDocument()
     expect(within(dataRows[1]).getByText('251.00')).toBeInTheDocument()
   })
+
+  it('clicking_date_header_sorts_rows_by_date', () => {
+    setMock({ transactions: [TRANSACTION_BUY, TRANSACTION_SELL] })
+    render(<TransactionsTab />)
+    fireEvent.click(screen.getByRole('button', { name: 'Date' }))
+    const dataRows = within(screen.getByRole('table')).getAllByRole('row').slice(1)
+    expect(dataRows).toHaveLength(2)
+  })
+
+  it('clicking_type_header_sorts_rows_by_type', () => {
+    setMock({ transactions: [TRANSACTION_BUY, TRANSACTION_SELL] })
+    render(<TransactionsTab />)
+    fireEvent.click(screen.getByRole('button', { name: 'Type' }))
+    const dataRows = within(screen.getByRole('table')).getAllByRole('row').slice(1)
+    expect(dataRows).toHaveLength(2)
+  })
+
+  it('clicking_quantity_header_sorts_rows_by_quantity', () => {
+    setMock({ transactions: [TRANSACTION_BUY, TRANSACTION_SELL] })
+    render(<TransactionsTab />)
+    fireEvent.click(screen.getByRole('button', { name: 'Quantity' }))
+    const dataRows = within(screen.getByRole('table')).getAllByRole('row').slice(1)
+    expect(dataRows).toHaveLength(2)
+  })
+
+  it('clicking_unit_price_header_sorts_rows_by_unit_price', () => {
+    setMock({ transactions: [TRANSACTION_BUY, TRANSACTION_SELL] })
+    render(<TransactionsTab />)
+    fireEvent.click(screen.getByRole('button', { name: 'Unit Price' }))
+    const dataRows = within(screen.getByRole('table')).getAllByRole('row').slice(1)
+    expect(dataRows).toHaveLength(2)
+  })
+
+  it('clicking_fees_header_sorts_rows_by_fees', () => {
+    setMock({ transactions: [TRANSACTION_BUY, TRANSACTION_SELL] })
+    render(<TransactionsTab />)
+    fireEvent.click(screen.getByRole('button', { name: 'Fees' }))
+    const dataRows = within(screen.getByRole('table')).getAllByRole('row').slice(1)
+    expect(dataRows).toHaveLength(2)
+  })
+
+  it('editing_each_form_field_calls_setFormField', () => {
+    setMock({ isFormVisible: true })
+    render(<TransactionsTab />)
+
+    fireEvent.change(screen.getByLabelText(/^Date/), { target: { value: '2024-05-01' } })
+    expect(mockSetFormField).toHaveBeenCalledWith('formDate', '2024-05-01')
+
+    fireEvent.change(screen.getByLabelText('Type'), { target: { value: 'Sell' } })
+    expect(mockSetFormField).toHaveBeenCalledWith('formType', 'Sell')
+
+    fireEvent.change(screen.getByLabelText(/^Quantity/), { target: { value: '10' } })
+    expect(mockSetFormField).toHaveBeenCalledWith('formQuantity', '10')
+
+    fireEvent.change(screen.getByLabelText(/^Unit Price/), { target: { value: '4.5' } })
+    expect(mockSetFormField).toHaveBeenCalledWith('formUnitPrice', '4.5')
+
+    fireEvent.change(screen.getByLabelText('Fees'), { target: { value: '0.1' } })
+    expect(mockSetFormField).toHaveBeenCalledWith('formFees', '0.1')
+  })
 })

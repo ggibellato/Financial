@@ -226,6 +226,66 @@ describe('useMensais', () => {
     expect(createMensaisBillMock).not.toHaveBeenCalled()
   })
 
+  it('surfaces a backend add error without crashing', async () => {
+    createMensaisBillMock.mockRejectedValue(new Error('Due day must be between 1 and 31.'))
+    const { result } = renderHook(() => useMensais())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showAddForm())
+    act(() => result.current.setAddField('newDescription', 'Aluguel'))
+    act(() => result.current.setAddField('newDueDay', '5'))
+    act(() => result.current.setAddField('newValue', '1000'))
+    act(() => result.current.submitAdd())
+
+    await waitFor(() => expect(result.current.addError).toBe('Due day must be between 1 and 31.'))
+  })
+
+  it('cancelAdd closes the add form and clears its fields', async () => {
+    const { result } = renderHook(() => useMensais())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showAddForm())
+    act(() => result.current.setAddField('newDescription', 'Draft'))
+    act(() => result.current.cancelAdd())
+
+    expect(result.current.isAddFormOpen).toBe(false)
+    expect(result.current.newDescription).toBe('')
+  })
+
+  it('rejects an edit with a non-numeric value and a blank status, without calling the API', async () => {
+    const { result } = renderHook(() => useMensais())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showEditForm(BILLS[0]))
+    act(() => result.current.setEditField('editValue', 'not-a-number'))
+    act(() => result.current.setEditField('editStatus', ''))
+    act(() => result.current.saveEdit())
+
+    expect(updateMensaisBillMock).not.toHaveBeenCalled()
+    expect(result.current.saveErrorFields.editValue).toBe('Value must be a number')
+    expect(result.current.saveErrorFields.editStatus).toBe('Status is required')
+  })
+
+  it('cancelEdit clears the editing bill and its form fields', async () => {
+    const { result } = renderHook(() => useMensais())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showEditForm(BILLS[0]))
+    act(() => result.current.cancelEdit())
+
+    expect(result.current.editingId).toBeNull()
+    expect(result.current.editValue).toBe('')
+  })
+
+  it('retry re-fetches the bill list', async () => {
+    const { result } = renderHook(() => useMensais())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.retry())
+
+    await waitFor(() => expect(getMensaisBillsMock).toHaveBeenCalledTimes(2))
+  })
+
   it('showAddForm defaults area to Brasil when nothing was persisted yet', async () => {
     const { result } = renderHook(() => useMensais())
     await waitFor(() => expect(result.current.isLoading).toBe(false))

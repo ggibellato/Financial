@@ -788,6 +788,48 @@ describe('PortfolioSummaryTab', () => {
     expect(within(rows[3]).getAllByRole('cell')[0].textContent).toBe('BBB11')
   })
 
+  it('clicking_the_realized_gain_loss_header_engages_that_columns_sort_in_historic_scope', () => {
+    const item1: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'AAA11' }
+    const item2: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'BBB11' }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item1, item2], rowPrices: [IDLE_ROW_PRICE, IDLE_ROW_PRICE] })
+    renderComponent('historic')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Realized Gain/Loss' }))
+    expect(screen.getByRole('columnheader', { name: 'Realized Gain/Loss' })).toHaveAttribute('aria-sort', 'ascending')
+  })
+
+  it('clicking_each_remaining_sortable_header_engages_that_columns_sort', () => {
+    const item1: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'AAA11' }
+    const item2: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'BBB11' }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item1, item2], rowPrices: [IDLE_ROW_PRICE, IDLE_ROW_PRICE] })
+    renderComponent()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Total Credits' }))
+    expect(screen.getByRole('columnheader', { name: 'Total Credits' })).toHaveAttribute('aria-sort', 'ascending')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Average Price' }))
+    expect(screen.getByRole('columnheader', { name: 'Average Price' })).toHaveAttribute('aria-sort', 'ascending')
+
+    fireEvent.click(screen.getByRole('button', { name: 'w/ Credits' }))
+    expect(screen.getByRole('columnheader', { name: 'w/ Credits' })).toHaveAttribute('aria-sort', 'ascending')
+
+    const creditsHeaders = screen.getAllByRole('columnheader', { name: 'Credits' })
+    fireEvent.click(within(creditsHeaders[0]).getByRole('button'))
+    expect(creditsHeaders[0]).toHaveAttribute('aria-sort', 'ascending')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Month' }))
+    expect(screen.getByRole('columnheader', { name: 'Month' })).toHaveAttribute('aria-sort', 'ascending')
+
+    fireEvent.click(within(creditsHeaders[1]).getByRole('button'))
+    expect(creditsHeaders[1]).toHaveAttribute('aria-sort', 'ascending')
+
+    const percentHeaders = screen.getAllByRole('columnheader', { name: '%' })
+    fireEvent.click(within(percentHeaders[2]).getByRole('button'))
+    expect(percentHeaders[2]).toHaveAttribute('aria-sort', 'ascending')
+  })
+
   it('footer_panel_is_not_inside_table_element', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [ITEM_1], rowPrices: [LOADING_ROW_PRICE] })

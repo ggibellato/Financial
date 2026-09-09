@@ -178,4 +178,63 @@ describe('ControleMaePage', () => {
     expect(totalsRow).toHaveTextContent('5,000.00')
     expect(totalsRow).toHaveTextContent('720.45')
   })
+
+  it('sorts entries by clicking each of the remaining column headers', async () => {
+    const entries: MaeLedgerEntryDto[] = [
+      { id: 'e1', date: '2026-07-15', description: 'Zebra item', note: 'B note', sourceCurrency: 'BRL', brlValue: 350, gbpValue: 51.1 },
+      { id: 'e2', date: '2026-07-20', description: 'Apple item', note: 'A note', sourceCurrency: 'BRL', brlValue: 100, gbpValue: 20 },
+    ]
+    getMaeLedgerEntriesFromDateMock.mockResolvedValue(entries)
+    render(<ControleMaePage />)
+    await waitFor(() => expect(screen.getByText('Zebra item')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Date' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Note' }))
+    fireEvent.click(screen.getByRole('button', { name: 'BRL' }))
+    fireEvent.click(screen.getByRole('button', { name: 'GBP' }))
+
+    expect(screen.getByText('Zebra item')).toBeInTheDocument()
+    expect(screen.getByText('Apple item')).toBeInTheDocument()
+  })
+
+  it('changing the From date input updates the fetched date', async () => {
+    render(<ControleMaePage />)
+    await waitFor(() => expect(screen.getByText('School supplies')).toBeInTheDocument())
+
+    fireEvent.change(screen.getByLabelText('From'), { target: { value: '2020-01-01' } })
+
+    await waitFor(() => expect(getMaeLedgerEntriesFromDateMock).toHaveBeenCalledWith('2020-01-01'))
+  })
+
+  it('editing each create-entry field updates its value', async () => {
+    render(<ControleMaePage />)
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New Entry' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'New Entry' }))
+
+    fireEvent.change(screen.getByLabelText(/^Date/), { target: { value: '2026-08-01' } })
+    expect(screen.getByLabelText(/^Date/)).toHaveValue('2026-08-01')
+
+    fireEvent.change(screen.getByLabelText('Currency'), { target: { value: 'GBP' } })
+    expect(screen.getByLabelText('Currency')).toHaveValue('GBP')
+
+    fireEvent.change(screen.getByLabelText(/^Description/), { target: { value: 'Camp fees' } })
+    expect(screen.getByLabelText(/^Description/)).toHaveValue('Camp fees')
+
+    fireEvent.change(screen.getByLabelText('Note'), { target: { value: 'Half term' } })
+    expect(screen.getByLabelText('Note')).toHaveValue('Half term')
+
+    fireEvent.change(screen.getByLabelText(/^Value/), { target: { value: '75' } })
+    expect(screen.getByLabelText(/^Value/)).toHaveValue(75)
+  })
+
+  it('editing the GBP field in the edit-entry panel updates its value', async () => {
+    render(<ControleMaePage />)
+    await waitFor(() => expect(screen.getByText('School supplies')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit entry' }))
+    const gbpInput = screen.getByDisplayValue('51.1')
+    fireEvent.change(gbpInput, { target: { value: '52.2' } })
+
+    expect(gbpInput).toHaveValue(52.2)
+  })
 })

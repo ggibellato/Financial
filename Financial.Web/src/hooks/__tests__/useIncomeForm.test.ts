@@ -248,4 +248,57 @@ describe('useIncomeForm', () => {
     expect(result.current.incomeGrossValue).toBe('')
     expect(result.current.incomeDescription).toBe('')
   })
+
+  it('rejects a submit with a blank date, blank source, and a gross value below the net value, without calling the API', () => {
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved))
+    act(() => result.current.showCreateIncomeForm())
+    act(() => result.current.setIncomeField('date', ''))
+    act(() => result.current.setIncomeField('incomeSource', ''))
+    act(() => result.current.setIncomeField('netValue', '100'))
+    act(() => result.current.setIncomeField('grossValue', '50'))
+
+    act(() => result.current.submitIncome())
+
+    expect(createIncomeMock).not.toHaveBeenCalled()
+    expect(result.current.saveIncomeErrorFields.date).toBe('Date is required')
+    expect(result.current.saveIncomeErrorFields.incomeSource).toBe('Income source is required')
+    expect(result.current.saveIncomeErrorFields.grossValue).toBe('Gross value must be at least the net value')
+  })
+
+  it('rejects a submit with a non-numeric net value, without calling the API', () => {
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved))
+    act(() => result.current.showCreateIncomeForm())
+    act(() => result.current.setIncomeField('date', '2026-07-25'))
+    act(() => result.current.setIncomeField('netValue', 'not-a-number'))
+
+    act(() => result.current.submitIncome())
+
+    expect(createIncomeMock).not.toHaveBeenCalled()
+    expect(result.current.saveIncomeErrorFields.netValue).toBe('Net value must be a non-negative number')
+  })
+
+  it('cancelIncomeForm closes the form and resets its fields', () => {
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved))
+    act(() => result.current.showCreateIncomeForm())
+    act(() => result.current.setIncomeField('description', 'Draft'))
+
+    act(() => result.current.cancelIncomeForm())
+
+    expect(result.current.isIncomeFormOpen).toBe(false)
+    expect(result.current.incomeDescription).toBe('')
+  })
+
+  it('surfaces a create error returned by the backend', async () => {
+    createIncomeMock.mockRejectedValue(new Error('Income source is inactive'))
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved))
+    act(() => result.current.showCreateIncomeForm())
+    act(() => result.current.setIncomeField('date', '2026-07-25'))
+    act(() => result.current.setIncomeField('netValue', '42.50'))
+
+    await act(async () => {
+      result.current.submitIncome()
+    })
+
+    expect(result.current.saveIncomeError).toBe('Income source is inactive')
+  })
 })

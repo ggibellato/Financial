@@ -294,6 +294,27 @@ describe('CardsGrid (merged with creditCards — Credit Card tab)', () => {
     expect(screen.getByText(/Combined adjustment figure/)).toBeInTheDocument()
   })
 
+  it('sorts rows by outstanding, accumulated outstanding, status, due date and active columns', () => {
+    render(<CardsGrid {...baseProps} />)
+    const namesOf = () => screen.getAllByRole('row').slice(1).map((r) => r.querySelector('td')!.textContent)
+
+    // Rows with no statement (null/undefined accessor value) always sort last.
+    fireEvent.click(screen.getByRole('button', { name: 'Outstanding (period)' }))
+    expect(namesOf()).toEqual(['ChaseMaster4023', 'BaAmex', 'PaypalCredit'])
+
+    fireEvent.click(screen.getByRole('button', { name: 'Accumulated outstanding' }))
+    expect(namesOf()).toEqual(['ChaseMaster4023', 'BaAmex', 'PaypalCredit'])
+
+    fireEvent.click(screen.getByRole('button', { name: 'Status' }))
+    expect(namesOf()).toEqual(['ChaseMaster4023', 'BaAmex', 'PaypalCredit'])
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next Invoice Due Date' }))
+    expect(namesOf()).toEqual(['BaAmex', 'ChaseMaster4023', 'PaypalCredit'])
+
+    fireEvent.click(screen.getByRole('button', { name: 'Active' }))
+    expect(namesOf()).toEqual(['PaypalCredit', 'BaAmex', 'ChaseMaster4023'])
+  })
+
   it('filters rows by Card via the header checklist', () => {
     render(<CardsGrid {...baseProps} />)
 

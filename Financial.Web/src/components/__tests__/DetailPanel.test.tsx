@@ -39,6 +39,26 @@ vi.mock('../../api/financialApiClient', () => ({
   } as Partial<FinancialApiClient>,
 }))
 
+vi.mock('../MoveAssetDialog', () => ({
+  default: ({
+    onCancel,
+    onMoved,
+  }: {
+    onCancel: () => void
+    onMoved: (moved: { assetName: string; portfolioName: string }, archived: boolean) => void
+  }) => (
+    <div data-testid="move-asset-dialog-stub">
+      <button onClick={onCancel}>stub-cancel</button>
+      <button onClick={() => onMoved({ assetName: 'KLBN4', portfolioName: 'NewPortfolio' }, false)}>
+        stub-moved
+      </button>
+      <button onClick={() => onMoved({ assetName: 'KLBN4', portfolioName: 'NewPortfolio' }, true)}>
+        stub-archived
+      </button>
+    </div>
+  ),
+}))
+
 function NodeSetter({ node }: { node: SelectedNode | null }) {
   const { setSelectedNode } = useSelectedNode()
   return (
@@ -327,6 +347,47 @@ describe('DetailPanel', () => {
     await waitFor(() => expect(deleteEmptyPortfolioMock).toHaveBeenCalledWith('XPI', 'Stale', 'active'))
     // Nothing here describes anything once the portfolio is gone.
     await waitFor(() => expect(screen.getByText('Select an item to view details')).toBeInTheDocument())
+  })
+
+  it('opens the Move Asset dialog for an asset node', () => {
+    renderPanel(activeAssetNode)
+    act(() => screen.getByTestId('setter').click())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Move...' }))
+
+    expect(screen.getByTestId('move-asset-dialog-stub')).toBeInTheDocument()
+  })
+
+  it('closes the Move Asset dialog on cancel', () => {
+    renderPanel(activeAssetNode)
+    act(() => screen.getByTestId('setter').click())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Move...' }))
+    fireEvent.click(screen.getByText('stub-cancel'))
+
+    expect(screen.queryByTestId('move-asset-dialog-stub')).not.toBeInTheDocument()
+  })
+
+  it('closes the dialog and re-selects the asset under its new portfolio on a same-scope move', () => {
+    renderPanel(activeAssetNode)
+    act(() => screen.getByTestId('setter').click())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Move...' }))
+    fireEvent.click(screen.getByText('stub-moved'))
+
+    expect(screen.queryByTestId('move-asset-dialog-stub')).not.toBeInTheDocument()
+    expect(screen.getByText(/NewPortfolio/)).toBeInTheDocument()
+  })
+
+  it('closes the dialog and clears the selection when the asset is archived out of this scope', () => {
+    renderPanel(activeAssetNode)
+    act(() => screen.getByTestId('setter').click())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Move...' }))
+    fireEvent.click(screen.getByText('stub-archived'))
+
+    expect(screen.queryByTestId('move-asset-dialog-stub')).not.toBeInTheDocument()
+    expect(screen.getByText('Select an item to view details')).toBeInTheDocument()
   })
 
   it("shows the server's reason when a deletion is refused", async () => {

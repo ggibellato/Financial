@@ -3,19 +3,67 @@ import { ApiError } from '../apiError'
 import { API_BASE_URL } from '../config'
 import { createFinancialApiClient } from '../financialApiClient'
 import type {
+  ArchiveAssetRequestDto,
+  AssetAdminCreateDto,
+  AssetAdminDto,
+  AssetAdminUpdateDto,
   AssetDetailsDto,
   AssetPriceDto,
   BalanceAdjustmentDto,
+  BankBalanceDto,
+  BankCreateDto,
+  BankDto,
+  BankUpdateDto,
   BrokerCreateDto,
   BrokerDto,
+  BrokerNodeDto,
   BrokerUpdateDto,
   CalendarConnectionStatusDto,
   CalendarDisconnectResultDto,
+  CardStatementDto,
+  CategoryAnnualAverageDto,
+  CategoryCreateDto,
   CategoryDto,
+  CategoryTotalDto,
+  CategoryTotalsAnnualDto,
+  CategoryUpdateDto,
   CreditCardCalendarSyncStatusDto,
   BalanceAdjustmentCreateDto,
+  CreditCardCreateDto,
+  CreditCreateDto,
+  CreditDeleteDto,
+  CreditDto,
+  CreditUpdateDto,
+  DeleteAssetPriceDto,
+  DividendHistoryItemDto,
+  ExpenseCreateDto,
+  ExpenseDto,
+  ExpenseUpdateDto,
+  IncomeCreateDto,
+  IncomeDto,
+  IncomeSourceCreateDto,
+  IncomeSourceDto,
+  IncomeSourceUpdateDto,
+  IncomeUpdateDto,
+  InvestmentAccountCreateDto,
+  InvestmentAccountDto,
+  InvestmentAccountUpdateDto,
+  InvestmentAnnualResultDto,
+  InvestmentSnapshotSuggestionsDto,
   MaeLedgerEntryCreateDto,
+  MarkCardStatementPaidDto,
+  PortfolioCreateDto,
+  PortfolioDto,
+  PortfolioUpdateDto,
   RecurringBillCreateDto,
+  ReserveBucketCreateDto,
+  ReserveBucketUpdateDto,
+  SetAssetPriceDto,
+  TitheCarryForwardUpdateDto,
+  TitheSummaryDto,
+  TransactionDeleteDto,
+  TransactionSummaryItemDto,
+  TransactionUpdateDto,
   TransferCreateDto,
   CreditCardDto,
   IncomeSplitRequestDto,
@@ -1269,5 +1317,857 @@ describe('financialApiClient', () => {
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
     await expect(client.disconnectCalendar()).rejects.toBeInstanceOf(ApiError)
+  })
+
+  it('throws the problem-details "title" message when the API returns one with no "detail"', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 404,
+      statusText: 'Not Found',
+      text: async () => JSON.stringify({ title: 'Resource not found' }),
+    } as Response)
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await expect(client.getNavigationTree()).rejects.toThrow('Resource not found')
+  })
+
+  it('gets the broker navigation list', async () => {
+    const responseBody: BrokerNodeDto[] = [{ name: 'XPI', currency: 'BRL', portfolioCount: 1, totalAssets: 3, portfolios: [] }]
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.getBrokers()
+
+    expect(result).toEqual(responseBody)
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/navigation/brokers`)
+  })
+
+  it('gets credits by broker', async () => {
+    const responseBody: CreditDto[] = [{ id: 'c1', type: 'Dividend', value: 10, date: '2026-07-01T00:00:00Z' }]
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.getCreditsByBroker('XPI')
+
+    expect(result).toEqual(responseBody)
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/credits/broker/XPI?scope=active`)
+  })
+
+  it('gets credits by portfolio', async () => {
+    const responseBody: CreditDto[] = []
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.getCreditsByPortfolio('XPI', 'Default')
+
+    expect(result).toEqual(responseBody)
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/credits/portfolio/XPI/Default?scope=active`)
+  })
+
+  it('gets transactions by broker', async () => {
+    const responseBody: TransactionSummaryItemDto[] = [{ assetName: 'BCIA11', type: 'Buy', totalPrice: 100, date: '2026-07-01T00:00:00Z' }]
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.getTransactionsByBroker('XPI')
+
+    expect(result).toEqual(responseBody)
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/transactions/broker/XPI?scope=active`)
+  })
+
+  it('gets transactions by portfolio', async () => {
+    const responseBody: TransactionSummaryItemDto[] = []
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.getTransactionsByPortfolio('XPI', 'Default')
+
+    expect(result).toEqual(responseBody)
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/transactions/portfolio/XPI/Default?scope=active`)
+  })
+
+  it('posts an archive-asset request', async () => {
+    const requestBody: ArchiveAssetRequestDto = {
+      brokerName: 'XPI',
+      sourcePortfolioName: 'Default',
+      assetName: 'CLOSEDASSET',
+      destinationPortfolioName: 'Uncategorized',
+    }
+    const responseBody = { name: 'CLOSEDASSET', portfolioName: 'Uncategorized' } as AssetDetailsDto
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.archiveAsset(requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/assets/archive`)
+    expect(init?.method).toBe('POST')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('gets the admin portfolios list', async () => {
+    const responseBody: PortfolioDto[] = [{ name: 'Default', brokerName: 'XPI', brokerStatus: 'Active', assetCount: 3 }]
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.getAdminPortfolios()
+
+    expect(result).toEqual(responseBody)
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/portfolios`)
+  })
+
+  it('posts a portfolio create request', async () => {
+    const requestBody: PortfolioCreateDto = { brokerName: 'XPI', name: 'ISA' }
+    const responseBody: PortfolioDto = { name: 'ISA', brokerName: 'XPI', brokerStatus: 'Active', assetCount: 0 }
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.createPortfolio(requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/portfolios`)
+    expect(init?.method).toBe('POST')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('puts a portfolio update', async () => {
+    const requestBody: PortfolioUpdateDto = { name: 'ISA Renamed' }
+    const responseBody: PortfolioDto = { name: 'ISA Renamed', brokerName: 'XPI', brokerStatus: 'Active', assetCount: 0 }
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.updatePortfolio('XPI', 'ISA', requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/portfolios/XPI/ISA`)
+    expect(init?.method).toBe('PUT')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('gets the admin assets list', async () => {
+    const responseBody = [{ name: 'BCIA11', brokerName: 'XPI', portfolioName: 'Default', brokerStatus: 'Active' }] as AssetAdminDto[]
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.getAdminAssets()
+
+    expect(result).toEqual(responseBody)
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/assets`)
+  })
+
+  it('posts an asset create request', async () => {
+    const requestBody = { brokerName: 'XPI', portfolioName: 'Default', name: 'BCIA11' } as AssetAdminCreateDto
+    const responseBody = { name: 'BCIA11', brokerName: 'XPI', portfolioName: 'Default', brokerStatus: 'Active' } as AssetAdminDto
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.createAsset(requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/assets`)
+    expect(init?.method).toBe('POST')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('puts an asset update', async () => {
+    const requestBody = { name: 'BCIA11 Renamed' } as AssetAdminUpdateDto
+    const responseBody = { name: 'BCIA11 Renamed', brokerName: 'XPI', portfolioName: 'Default', brokerStatus: 'Active' } as AssetAdminDto
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.updateAsset('XPI', 'Default', 'BCIA11', requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/assets/XPI/Default/BCIA11`)
+    expect(init?.method).toBe('PUT')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('puts a transaction update', async () => {
+    const requestBody: TransactionUpdateDto = {
+      id: 'tx1',
+      brokerName: 'XPI',
+      portfolioName: 'Default',
+      assetName: 'BCIA11',
+      type: 'Buy',
+      date: '2026-07-01T00:00:00Z',
+      fees: 0,
+      quantity: 10,
+      unitPrice: 10,
+    }
+    const responseBody = { name: 'BCIA11' } as AssetDetailsDto
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.updateTransaction(requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/transactions`)
+    expect(init?.method).toBe('PUT')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('deletes a transaction', async () => {
+    const requestBody: TransactionDeleteDto = { id: 'tx1', brokerName: 'XPI', portfolioName: 'Default', assetName: 'BCIA11' }
+    const responseBody = { name: 'BCIA11' } as AssetDetailsDto
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.deleteTransaction(requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/transactions`)
+    expect(init?.method).toBe('DELETE')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('posts a credit create request', async () => {
+    const requestBody: CreditCreateDto = { brokerName: 'XPI', portfolioName: 'Default', assetName: 'BCIA11', type: 'Dividend', value: 10, date: '2026-07-01T00:00:00Z' }
+    const responseBody = { name: 'BCIA11' } as AssetDetailsDto
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.addCredit(requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/credits`)
+    expect(init?.method).toBe('POST')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('puts a credit update', async () => {
+    const requestBody: CreditUpdateDto = { id: 'c1', brokerName: 'XPI', portfolioName: 'Default', assetName: 'BCIA11', type: 'Dividend', value: 12, date: '2026-07-01T00:00:00Z' }
+    const responseBody = { name: 'BCIA11' } as AssetDetailsDto
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.updateCredit(requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/credits`)
+    expect(init?.method).toBe('PUT')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('deletes a credit', async () => {
+    const requestBody: CreditDeleteDto = { id: 'c1', brokerName: 'XPI', portfolioName: 'Default', assetName: 'BCIA11' }
+    const responseBody = { name: 'BCIA11' } as AssetDetailsDto
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.deleteCredit(requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/credits`)
+    expect(init?.method).toBe('DELETE')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('puts a manual asset price', async () => {
+    const requestBody: SetAssetPriceDto = { brokerName: 'XPI', portfolioName: 'Default', assetName: 'BCIA11', date: '2026-07-01', price: 12.5 }
+    const responseBody = { name: 'BCIA11' } as AssetDetailsDto
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.setAssetPrice(requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/prices`)
+    expect(init?.method).toBe('PUT')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('deletes a manual asset price', async () => {
+    const requestBody: DeleteAssetPriceDto = { brokerName: 'XPI', portfolioName: 'Default', assetName: 'BCIA11', date: '2026-07-01' }
+    const responseBody = { name: 'BCIA11' } as AssetDetailsDto
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.deleteAssetPrice(requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/prices`)
+    expect(init?.method).toBe('DELETE')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('gets dividend history', async () => {
+    const responseBody: DividendHistoryItemDto[] = [{ date: '2026-07-01T00:00:00Z', type: 'Dividend', value: 1.5 }]
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.getDividendHistory('BCIA11', 'BVMF')
+
+    expect(result).toEqual(responseBody)
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/dividends/BCIA11/history?exchange=BVMF`)
+  })
+
+  it('posts a reserve bucket create request', async () => {
+    const requestBody: ReserveBucketCreateDto = { name: 'Travel', splitPercentage: 20, isActive: true }
+    const responseBody: ReserveBucketDto = { id: 'rb1', name: 'Travel', splitPercentage: 20, isActive: true, warning: null }
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.createReserveBucket(requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/reserve-buckets`)
+    expect(init?.method).toBe('POST')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('puts a reserve bucket update', async () => {
+    const requestBody: ReserveBucketUpdateDto = { name: 'Travel', splitPercentage: 25, isActive: true }
+    const responseBody: ReserveBucketDto = { id: 'rb1', name: 'Travel', splitPercentage: 25, isActive: true, warning: null }
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.updateReserveBucket('rb1', requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/reserve-buckets/rb1`)
+    expect(init?.method).toBe('PUT')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('gets investment snapshot suggestions', async () => {
+    const responseBody = { suggestions: [], notUpdated: [] } as InvestmentSnapshotSuggestionsDto
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.getInvestmentSnapshotSuggestions(2026, 7)
+
+    expect(result).toEqual(responseBody)
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/investment-snapshots/2026/7/suggestions`)
+  })
+
+  it('gets expenses by month', async () => {
+    const responseBody: ExpenseDto[] = []
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.getExpensesByMonth(2026, 7)
+
+    expect(result).toEqual(responseBody)
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/expenses/month/2026/7`)
+  })
+
+  it('gets unpaid card charges by month', async () => {
+    const responseBody: ExpenseDto[] = []
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.getUnpaidCardChargesByMonth(2026, 7)
+
+    expect(result).toEqual(responseBody)
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/expenses/month/2026/7/unpaid-card-charges`)
+  })
+
+  it('gets category totals by month', async () => {
+    const responseBody: CategoryTotalDto[] = [{ category: 'Mercado', totalValue: 250 }]
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.getCategoryTotalsByMonth(2026, 7)
+
+    expect(result).toEqual(responseBody)
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/expenses/month/2026/7/category-totals`)
+  })
+
+  it('gets the bank list', async () => {
+    const responseBody: BankDto[] = [{ id: 'bank-barclays', name: 'Barclays', roundUpEnabled: true, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false }]
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.getBanks()
+
+    expect(result).toEqual(responseBody)
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/banks`)
+  })
+
+  it('posts a bank create request', async () => {
+    const requestBody: BankCreateDto = { name: 'Barclays', roundUpEnabled: true }
+    const responseBody: BankDto = { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: true, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false }
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.createBank(requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/banks`)
+    expect(init?.method).toBe('POST')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('puts a bank update', async () => {
+    const requestBody: BankUpdateDto = { name: 'Barclays Renamed', roundUpEnabled: false }
+    const responseBody: BankDto = { id: 'bank-barclays', name: 'Barclays Renamed', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false }
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.updateBank('bank-barclays', requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/banks/bank-barclays`)
+    expect(init?.method).toBe('PUT')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('deletes a bank', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(undefined))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await client.deleteBank('bank-barclays')
+
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/banks/bank-barclays`)
+    expect(init?.method).toBe('DELETE')
+  })
+
+  it('gets the income source list', async () => {
+    const responseBody: IncomeSourceDto[] = [{ id: 'is1', name: 'Salary', group: 'Salary', isActive: true, autoSplitToReserve: false, hasReferences: false }]
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.getIncomeSources()
+
+    expect(result).toEqual(responseBody)
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/income-sources`)
+  })
+
+  it('posts an income source create request', async () => {
+    const requestBody: IncomeSourceCreateDto = { name: 'Salary', group: 'Salary', isActive: true, autoSplitToReserve: false }
+    const responseBody: IncomeSourceDto = { id: 'is1', ...requestBody, hasReferences: false }
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.createIncomeSource(requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/income-sources`)
+    expect(init?.method).toBe('POST')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('puts an income source update', async () => {
+    const requestBody: IncomeSourceUpdateDto = { name: 'Salary Renamed', group: 'Salary', isActive: true, autoSplitToReserve: false }
+    const responseBody: IncomeSourceDto = { id: 'is1', ...requestBody, hasReferences: false }
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.updateIncomeSource('is1', requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/income-sources/is1`)
+    expect(init?.method).toBe('PUT')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('deletes an income source', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(undefined))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await client.deleteIncomeSource('is1')
+
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/income-sources/is1`)
+    expect(init?.method).toBe('DELETE')
+  })
+
+  it('posts a category create request', async () => {
+    const requestBody: CategoryCreateDto = { name: 'Lazer', active: true, isInvestment: false, isTithe: false }
+    const responseBody: CategoryDto = { id: 'category-lazer', ...requestBody, hasReferences: false }
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.createCategory(requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/categories`)
+    expect(init?.method).toBe('POST')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('puts a category update', async () => {
+    const requestBody: CategoryUpdateDto = { name: 'Lazer Renamed', active: true, isInvestment: false, isTithe: false }
+    const responseBody: CategoryDto = { id: 'category-lazer', ...requestBody, hasReferences: false }
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.updateCategory('category-lazer', requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/categories/category-lazer`)
+    expect(init?.method).toBe('PUT')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('deletes a category', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(undefined))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await client.deleteCategory('category-lazer')
+
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/categories/category-lazer`)
+    expect(init?.method).toBe('DELETE')
+  })
+
+  it('posts a credit card create request', async () => {
+    const requestBody: CreditCardCreateDto = { name: 'BaAmex', isActive: true }
+    const responseBody: CreditCardDto = { id: 'card-baamex', ...requestBody, nextInvoiceDueDate: null, latestInvoiceDate: null, hasReferences: false }
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.createCreditCard(requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/credit-cards`)
+    expect(init?.method).toBe('POST')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('deletes a credit card', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(undefined))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await client.deleteCreditCard('card-baamex')
+
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/credit-cards/card-baamex`)
+    expect(init?.method).toBe('DELETE')
+  })
+
+  it('gets the investment account list', async () => {
+    const responseBody: InvestmentAccountDto[] = [
+      { id: 'ia1', name: 'ChaseSave', isActive: true, isLiability: false, hasNonZeroInvestmentSnapshot: false, creditCardId: null, source: 'None' },
+    ]
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.getInvestmentAccounts()
+
+    expect(result).toEqual(responseBody)
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/investment-accounts`)
+  })
+
+  it('posts an investment account create request', async () => {
+    const requestBody: InvestmentAccountCreateDto = { name: 'ChaseSave', isActive: true, isLiability: false, creditCardId: null, source: 'None' }
+    const responseBody: InvestmentAccountDto = { id: 'ia1', ...requestBody, hasNonZeroInvestmentSnapshot: false }
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.createInvestmentAccount(requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/investment-accounts`)
+    expect(init?.method).toBe('POST')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('puts an investment account update', async () => {
+    const requestBody: InvestmentAccountUpdateDto = { name: 'ChaseSave Renamed', isActive: true, isLiability: false, creditCardId: null, source: 'None' }
+    const responseBody: InvestmentAccountDto = { id: 'ia1', ...requestBody, hasNonZeroInvestmentSnapshot: false }
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.updateInvestmentAccount('ia1', requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/investment-accounts/ia1`)
+    expect(init?.method).toBe('PUT')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('deletes an investment account', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(undefined))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await client.deleteInvestmentAccount('ia1')
+
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/investment-accounts/ia1`)
+    expect(init?.method).toBe('DELETE')
+  })
+
+  it('gets bank balances by month', async () => {
+    const responseBody: BankBalanceDto[] = [{ bank: 'Barclays', balance: 1500 }]
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.getBankBalancesByMonth(2026, 7)
+
+    expect(result).toEqual(responseBody)
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/banks/month/2026/7/balances`)
+  })
+
+  it('posts an expense create request', async () => {
+    const requestBody: ExpenseCreateDto = {
+      categoryId: 'category-mercado',
+      date: '2026-07-01',
+      description: 'Groceries',
+      value: 100,
+      countsAsTithe: true,
+      creditCardId: null,
+      invoiceDate: null,
+      paymentSourceBankId: null,
+      roundUpAmount: null,
+    }
+    const responseBody = { id: 'e1', categoryName: 'Mercado', paymentStatus: 'ImmediatePayment', ...requestBody } as ExpenseDto
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.createExpense(requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/expenses`)
+    expect(init?.method).toBe('POST')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('puts an expense update', async () => {
+    const requestBody: ExpenseUpdateDto = {
+      categoryId: 'category-mercado',
+      date: '2026-07-01',
+      description: 'Groceries',
+      value: 120,
+      countsAsTithe: true,
+      creditCardId: null,
+      invoiceDate: null,
+      paymentSourceBankId: null,
+      roundUpAmount: null,
+    }
+    const responseBody = { id: 'e1', categoryName: 'Mercado', paymentStatus: 'ImmediatePayment', ...requestBody } as ExpenseDto
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.updateExpense('e1', requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/expenses/e1`)
+    expect(init?.method).toBe('PUT')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('deletes an expense', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(undefined))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await client.deleteExpense('e1')
+
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/expenses/e1`)
+    expect(init?.method).toBe('DELETE')
+  })
+
+  it('gets incomes by month', async () => {
+    const responseBody: IncomeDto[] = []
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.getIncomesByMonth(2026, 7)
+
+    expect(result).toEqual(responseBody)
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/incomes/month/2026/7`)
+  })
+
+  it('gets tithe summary by month', async () => {
+    const responseBody: TitheSummaryDto = { calculatedTithe: 100, titheBalance: 0, carryForward: null }
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.getTitheSummaryByMonth(2026, 7)
+
+    expect(result).toEqual(responseBody)
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/tithe/month/2026/7`)
+  })
+
+  it('puts a tithe carry-forward update', async () => {
+    const requestBody: TitheCarryForwardUpdateDto = { included: true }
+    const responseBody: TitheSummaryDto = { calculatedTithe: 100, titheBalance: 0, carryForward: { amount: 50, fromMonth: 6, fromYear: 2026, included: true } }
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.updateTitheCarryForward(2026, 7, requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/tithe/month/2026/7/carry-forward`)
+    expect(init?.method).toBe('PUT')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('posts an income create request', async () => {
+    const requestBody: IncomeCreateDto = {
+      incomeSourceId: 'is1',
+      date: '2026-07-01',
+      netValue: 3000,
+      bankId: null,
+      description: null,
+      grossValue: null,
+      splitToReserve: false,
+    }
+    const responseBody = { id: 'i1', incomeSourceName: 'Salary', ...requestBody } as IncomeDto
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.createIncome(requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/incomes`)
+    expect(init?.method).toBe('POST')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('puts an income update', async () => {
+    const requestBody: IncomeUpdateDto = {
+      incomeSourceId: 'is1',
+      date: '2026-07-01',
+      netValue: 3200,
+      bankId: null,
+      description: null,
+      grossValue: null,
+      splitToReserve: false,
+    }
+    const responseBody = { id: 'i1', incomeSourceName: 'Salary', ...requestBody } as IncomeDto
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.updateIncome('i1', requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/incomes/i1`)
+    expect(init?.method).toBe('PUT')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('deletes an income', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(undefined))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await client.deleteIncome('i1')
+
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/incomes/i1`)
+    expect(init?.method).toBe('DELETE')
+  })
+
+  it('gets card statements by month', async () => {
+    const responseBody: CardStatementDto[] = []
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.getCardStatementsByMonth(2026, 7)
+
+    expect(result).toEqual(responseBody)
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/card-statements/2026/7`)
+  })
+
+  it('posts a mark-card-statement-paid request', async () => {
+    const requestBody: MarkCardStatementPaidDto = { paymentSourceBankId: 'bank-barclays' }
+    const responseBody: CardStatementDto = {
+      id: 'cs1',
+      creditCardId: 'card-baamex',
+      creditCardName: 'BaAmex',
+      year: 2026,
+      month: 7,
+      isPaid: true,
+      outstandingTotal: 0,
+      accumulatedOutstandingTotal: 0,
+      warning: null,
+    }
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.markCardStatementPaid('cs1', requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/card-statements/cs1/mark-paid`)
+    expect(init?.method).toBe('POST')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('posts an unmark-card-statement-paid request', async () => {
+    const responseBody: CardStatementDto = {
+      id: 'cs1',
+      creditCardId: 'card-baamex',
+      creditCardName: 'BaAmex',
+      year: 2026,
+      month: 7,
+      isPaid: false,
+      outstandingTotal: 100,
+      accumulatedOutstandingTotal: 100,
+      warning: null,
+    }
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.unmarkCardStatementPaid('cs1')
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/card-statements/cs1/unmark-paid`)
+    expect(init?.method).toBe('POST')
+  })
+
+  it('gets category totals for a year', async () => {
+    const responseBody = { categoryTotals: [] } as unknown as CategoryTotalsAnnualDto
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.getCategoryTotalsAnnualForYear(2026)
+
+    expect(result).toEqual(responseBody)
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/annual-summary/2026/category-totals`)
+  })
+
+  it('gets the investment annual result for a year', async () => {
+    const responseBody = { accounts: [] } as unknown as InvestmentAnnualResultDto
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.getInvestmentAnnualResultForYear(2026)
+
+    expect(result).toEqual(responseBody)
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/annual-summary/2026/investment-annual-result`)
+  })
+
+  it('gets the historic summary average from a year', async () => {
+    const responseBody: CategoryAnnualAverageDto[] = [{ year: 2026, annualAverages: [{ category: 'Mercado', value: 250 }] }]
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.getHistoricSummaryAverageFromYear(2026)
+
+    expect(result).toEqual(responseBody)
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/annual-summary/2026/historic-summary-averages`)
   })
 })

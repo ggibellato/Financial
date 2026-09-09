@@ -497,4 +497,134 @@ describe('useReserva', () => {
     await waitFor(() => expect(result.current.saveMovementError).toBe('Bucket is required'))
     expect(updateReserveMovementMock).not.toHaveBeenCalled()
   })
+
+  it('rejects an income split with a missing date before calling the API', async () => {
+    const { result } = renderHook(() => useReserva())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.setSplitField('splitDate', ''))
+    act(() => result.current.submitIncomeSplit())
+
+    await waitFor(() => expect(result.current.splitError).toBe('Date is required'))
+    expect(postIncomeSplitMock).not.toHaveBeenCalled()
+  })
+
+  it('cancelSplitForm closes the split form and clears its fields', async () => {
+    const { result } = renderHook(() => useReserva())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showSplitForm())
+    act(() => result.current.setSplitField('splitDescription', 'Draft'))
+    act(() => result.current.cancelSplitForm())
+
+    expect(result.current.isSplitFormOpen).toBe(false)
+    expect(result.current.splitDescription).toBe('')
+  })
+
+  it('rejects a withdrawal with a missing date before calling the API', async () => {
+    const { result } = renderHook(() => useReserva())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.setWithdrawalField('withdrawalDate', ''))
+    act(() => result.current.setWithdrawalField('withdrawalDescription', 'Groceries'))
+    act(() => result.current.setWithdrawalField('withdrawalAmount', '10'))
+    act(() => result.current.submitWithdrawal(rejectUnexpectedConfirm))
+
+    await waitFor(() => expect(result.current.withdrawalError).toBe('Date is required'))
+    expect(postWithdrawalMock).not.toHaveBeenCalled()
+  })
+
+  it('rejects a withdrawal with a missing description before calling the API', async () => {
+    const { result } = renderHook(() => useReserva())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.setWithdrawalField('withdrawalDate', '2026-07-01'))
+    act(() => result.current.setWithdrawalField('withdrawalDescription', ''))
+    act(() => result.current.setWithdrawalField('withdrawalAmount', '10'))
+    act(() => result.current.submitWithdrawal(rejectUnexpectedConfirm))
+
+    await waitFor(() => expect(result.current.withdrawalError).toBe('Description is required'))
+    expect(postWithdrawalMock).not.toHaveBeenCalled()
+  })
+
+  it('surfaces a non-conflict withdrawal error from the backend', async () => {
+    postWithdrawalMock.mockRejectedValue(new Error('Withdrawal failed'))
+    const { result } = renderHook(() => useReserva())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.setWithdrawalField('withdrawalDate', '2026-07-01'))
+    act(() => result.current.setWithdrawalField('withdrawalDescription', 'Groceries'))
+    act(() => result.current.setWithdrawalField('withdrawalAmount', '10'))
+    act(() => result.current.submitWithdrawal(rejectUnexpectedConfirm))
+
+    await waitFor(() => expect(result.current.withdrawalError).toBe('Withdrawal failed'))
+  })
+
+  it('cancelWithdrawalForm closes the withdrawal form and resets its fields', async () => {
+    const { result } = renderHook(() => useReserva())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showWithdrawalForm())
+    act(() => result.current.setWithdrawalField('withdrawalDescription', 'Draft'))
+    act(() => result.current.cancelWithdrawalForm())
+
+    expect(result.current.isWithdrawalFormOpen).toBe(false)
+    expect(result.current.withdrawalDescription).toBe('')
+  })
+
+  it('rejects a movement edit with a missing date before calling the API', async () => {
+    const { result } = renderHook(() => useReserva())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showEditMovementForm(MOVEMENTS[0]))
+    act(() => result.current.setEditMovementField('editMovementDate', ''))
+    act(() => result.current.saveMovementEdit())
+
+    await waitFor(() => expect(result.current.saveMovementError).toBe('Date is required'))
+    expect(updateReserveMovementMock).not.toHaveBeenCalled()
+  })
+
+  it('rejects a movement edit with a non-numeric amount before calling the API', async () => {
+    const { result } = renderHook(() => useReserva())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showEditMovementForm(MOVEMENTS[0]))
+    act(() => result.current.setEditMovementField('editMovementAmount', 'not-a-number'))
+    act(() => result.current.saveMovementEdit())
+
+    await waitFor(() => expect(result.current.saveMovementError).toBe('Amount must be a number'))
+    expect(updateReserveMovementMock).not.toHaveBeenCalled()
+  })
+
+  it('surfaces a movement-edit error returned by the backend', async () => {
+    updateReserveMovementMock.mockRejectedValue(new Error('Movement not found'))
+    const { result } = renderHook(() => useReserva())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showEditMovementForm(MOVEMENTS[0]))
+    act(() => result.current.saveMovementEdit())
+
+    await waitFor(() => expect(result.current.saveMovementError).toBe('Movement not found'))
+  })
+
+  it('cancelEditMovement clears the editing movement and its form fields', async () => {
+    const { result } = renderHook(() => useReserva())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showEditMovementForm(MOVEMENTS[0]))
+    act(() => result.current.cancelEditMovement())
+
+    expect(result.current.editingMovementId).toBeNull()
+    expect(result.current.editMovementAmount).toBe('')
+  })
+
+  it('retry re-fetches balances and movements', async () => {
+    const { result } = renderHook(() => useReserva())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.retry())
+
+    await waitFor(() => expect(getReserveBalancesMock).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(getReserveMovementsMock).toHaveBeenCalledTimes(2))
+  })
 })

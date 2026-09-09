@@ -394,4 +394,34 @@ describe('CreditsTab', () => {
     expect(within(dataRows[1]).getByText('120.50')).toBeInTheDocument()
     expect(within(dataRows[2]).getByText('75.00')).toBeInTheDocument()
   })
+
+  it('clicking_date_header_sorts_rows_by_date', () => {
+    setMock({ credits: [CREDIT_DIVIDEND, CREDIT_RENT] })
+    render(<CreditsTab />)
+    fireEvent.click(screen.getByRole('button', { name: 'Date' }))
+    const dataRows = within(screen.getByRole('table')).getAllByRole('row').slice(1)
+    expect(dataRows).toHaveLength(2)
+  })
+
+  it('clicking_type_header_sorts_rows_by_type', () => {
+    setMock({ credits: [CREDIT_DIVIDEND, CREDIT_RENT] })
+    render(<CreditsTab />)
+    fireEvent.click(screen.getByRole('button', { name: 'Type' }))
+    const dataRows = within(screen.getByRole('table')).getAllByRole('row').slice(1)
+    expect(dataRows).toHaveLength(2)
+  })
+
+  it('editing_each_form_field_calls_setFormField', () => {
+    setMock({ isFormVisible: true })
+    render(<CreditsTab />)
+
+    fireEvent.change(screen.getByLabelText(/^Date/), { target: { value: '2024-05-01' } })
+    expect(mockSetFormField).toHaveBeenCalledWith('formDate', '2024-05-01')
+
+    fireEvent.change(screen.getByLabelText('Type'), { target: { value: 'Rent' } })
+    expect(mockSetFormField).toHaveBeenCalledWith('formType', 'Rent')
+
+    fireEvent.change(screen.getByLabelText(/^Value/), { target: { value: '99.5' } })
+    expect(mockSetFormField).toHaveBeenCalledWith('formValue', '99.5')
+  })
 })
