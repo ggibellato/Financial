@@ -66,6 +66,24 @@ describe('RecurringBillsPage', () => {
     expect(rows[1]).toHaveTextContent('INSS')
   })
 
+  it('sorts by Description, Value, Area and Status', async () => {
+    render(<RecurringBillsPage />)
+    await waitFor(() => expect(screen.getByText('INSS')).toBeInTheDocument())
+    const descriptionsOf = () => screen.getAllByRole('row').slice(1).map((r) => r.textContent)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Description' }))
+    expect(descriptionsOf()).toEqual([expect.stringContaining('INSS'), expect.stringContaining('Rent')])
+
+    fireEvent.click(screen.getByRole('button', { name: 'Value' }))
+    expect(descriptionsOf()).toEqual([expect.stringContaining('INSS'), expect.stringContaining('Rent')])
+
+    fireEvent.click(screen.getByRole('button', { name: 'Area' }))
+    expect(descriptionsOf()).toEqual([expect.stringContaining('INSS'), expect.stringContaining('Rent')])
+
+    fireEvent.click(screen.getByRole('button', { name: 'Status' }))
+    expect(descriptionsOf()).toEqual([expect.stringContaining('INSS'), expect.stringContaining('Rent')])
+  })
+
   it('creates a recurring bill through the Create Recurring Bill dialog', async () => {
     createMensaisBillMock.mockResolvedValue({
       id: 'b3',
@@ -146,5 +164,31 @@ describe('RecurringBillsPage', () => {
     fireEvent.click(confirmButtons[confirmButtons.length - 1])
 
     await waitFor(() => expect(deleteMensaisBillMock).toHaveBeenCalledWith('b1'))
+  })
+
+  it('closes the delete confirmation dialog on Cancel without deleting', async () => {
+    render(<RecurringBillsPage />)
+    await waitFor(() => expect(screen.getByText('INSS')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete INSS' }))
+    expect(screen.getByText(/will be permanently removed/)).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+
+    expect(screen.queryByText(/will be permanently removed/)).not.toBeInTheDocument()
+    expect(deleteMensaisBillMock).not.toHaveBeenCalled()
+  })
+
+  it('closes the delete confirmation dialog on Escape without deleting', async () => {
+    render(<RecurringBillsPage />)
+    await waitFor(() => expect(screen.getByText('INSS')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete INSS' }))
+    expect(screen.getByText(/will be permanently removed/)).toBeInTheDocument()
+
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape', code: 'Escape' })
+
+    await waitFor(() => expect(screen.queryByText(/will be permanently removed/)).not.toBeInTheDocument())
+    expect(deleteMensaisBillMock).not.toHaveBeenCalled()
   })
 })

@@ -66,4 +66,63 @@ describe('TickerCombobox', () => {
     fireEvent.mouseDown(document.body)
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
   })
+
+  it('pressing ArrowDown while closed opens the dropdown and activates the first option', () => {
+    Element.prototype.scrollIntoView = vi.fn()
+    renderCombobox()
+    const input = screen.getByLabelText('Ticker')
+
+    fireEvent.keyDown(input, { key: 'ArrowDown' })
+
+    expect(screen.getByRole('listbox')).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: 'KLBN4' })).toHaveClass('ticker-combobox__option--active')
+  })
+
+  it('pressing ArrowDown repeatedly moves the active option forward, capped at the last one', () => {
+    Element.prototype.scrollIntoView = vi.fn()
+    renderCombobox()
+    const input = screen.getByLabelText('Ticker')
+
+    for (let i = 0; i < 10; i++) {
+      fireEvent.keyDown(input, { key: 'ArrowDown' })
+    }
+
+    expect(screen.getByRole('option', { name: 'CSAN3' })).toHaveClass('ticker-combobox__option--active')
+  })
+
+  it('pressing ArrowUp moves the active option back, capped at the first one', () => {
+    Element.prototype.scrollIntoView = vi.fn()
+    renderCombobox()
+    const input = screen.getByLabelText('Ticker')
+
+    fireEvent.keyDown(input, { key: 'ArrowDown' })
+    fireEvent.keyDown(input, { key: 'ArrowDown' })
+    fireEvent.keyDown(input, { key: 'ArrowUp' })
+    fireEvent.keyDown(input, { key: 'ArrowUp' })
+    fireEvent.keyDown(input, { key: 'ArrowUp' })
+
+    expect(screen.getByRole('option', { name: 'KLBN4' })).toHaveClass('ticker-combobox__option--active')
+  })
+
+  it('pressing Enter on the active option calls onChange and closes the dropdown', () => {
+    Element.prototype.scrollIntoView = vi.fn()
+    const { onChange } = renderCombobox()
+    const input = screen.getByLabelText('Ticker')
+
+    fireEvent.keyDown(input, { key: 'ArrowDown' })
+    fireEvent.keyDown(input, { key: 'ArrowDown' })
+    fireEvent.keyDown(input, { key: 'Enter' })
+
+    expect(onChange).toHaveBeenCalledWith('TASA4')
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+  })
+
+  it('pressing Enter with no active option does nothing', () => {
+    const { onChange } = renderCombobox()
+    openDropdown()
+
+    fireEvent.keyDown(screen.getByLabelText('Ticker'), { key: 'Enter' })
+
+    expect(onChange).not.toHaveBeenCalled()
+  })
 })

@@ -130,6 +130,31 @@ describe('IncomeSection', () => {
     expect(sourceCellsDescending).toEqual(['Gleison', 'Lottery'])
   })
 
+  it('sorts rows by Date, Source, Gross, Bank and Description', () => {
+    render(<IncomeSection incomes={INCOMES} onEdit={vi.fn()} onDelete={vi.fn()} onNewIncome={vi.fn()} />)
+    const sourcesOf = () =>
+      screen
+        .getAllByRole('row')
+        .slice(1)
+        .map((row) => row.querySelectorAll('td')[1].textContent)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Date' }))
+    expect(sourcesOf()).toEqual(['Gleison', 'Lottery'])
+
+    fireEvent.click(screen.getByRole('button', { name: 'Source' }))
+    expect(sourcesOf()).toEqual(['Gleison', 'Lottery'])
+
+    // grossValue is null for Lottery; null/undefined accessor values always sort last.
+    fireEvent.click(screen.getByRole('button', { name: 'Gross' }))
+    expect(sourcesOf()).toEqual(['Gleison', 'Lottery'])
+
+    fireEvent.click(screen.getByRole('button', { name: 'Bank' }))
+    expect(sourcesOf()).toEqual(['Gleison', 'Lottery'])
+
+    fireEvent.click(screen.getByRole('button', { name: 'Description' }))
+    expect(sourcesOf()).toEqual(['Gleison', 'Lottery'])
+  })
+
   it('filters rows by Bank via the header checklist, and shows the empty message when nothing matches', () => {
     render(<IncomeSection incomes={INCOMES} onEdit={vi.fn()} onDelete={vi.fn()} onNewIncome={vi.fn()} />)
 

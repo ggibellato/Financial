@@ -498,4 +498,21 @@ describe('buildMonthlyNetInvested', () => {
     expect(summaryResult).toEqual(assetResult)
     expect(summaryResult.some((b) => b.netInvested === 420.5)).toBe(true)
   })
+
+  it('starts the range at the earliest transaction when the all-time filter is selected', () => {
+    const referenceDate = new Date(2024, 2, 31)
+    const buckets = buildMonthlyNetInvested([SUMMARY_ITEM_A, SUMMARY_ITEM_B], 'all-time', referenceDate)
+
+    expect(buckets[0].month).toBe(formatMonthKey(new Date(2024, 0, 10)))
+    expect(buckets[buckets.length - 1].month).toBe(formatMonthKey(referenceDate))
+  })
+
+  it('starts the range at the reference month when the all-time filter is selected with no transactions', () => {
+    const referenceDate = new Date(2024, 2, 31)
+    const buckets = buildMonthlyNetInvested([], 'all-time', referenceDate)
+
+    expect(buckets.length).toBe(1)
+    expect(buckets[0].month).toBe(formatMonthKey(referenceDate))
+    expect(buckets[0].netInvested).toBe(0)
+  })
 })

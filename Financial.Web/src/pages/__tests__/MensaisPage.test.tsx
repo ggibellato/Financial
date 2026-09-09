@@ -327,6 +327,56 @@ describe('MensaisPage', () => {
     expect(fieldLabels).toEqual(['Area', 'Description', 'Due Day', 'Value', 'Note'])
   })
 
+  it('changing the month input navigates to the chosen month', async () => {
+    render(<MensaisPage />)
+    await waitFor(() => expect(screen.getByText('INSS')).toBeInTheDocument())
+
+    const monthInput = screen.getByLabelText('Month')
+    fireEvent.change(monthInput, { target: { value: '2026-09' } })
+
+    expect(monthInput).toHaveValue('2026-09')
+  })
+
+  it('creates a UK bill with a note using the Area and Note fields', async () => {
+    createMensaisBillMock.mockResolvedValue({
+      id: 'b3',
+      dueDay: 20,
+      description: 'Council Tax 2',
+      value: 150,
+      area: 'UK',
+      note: 'Second property',
+      nitNumber: null,
+      minimumWageValue: null,
+      status: 'Unset',
+    })
+    render(<MensaisPage />)
+    await waitFor(() => expect(screen.getByText('INSS')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add Bill' }))
+    fireEvent.change(screen.getByLabelText(/^Area/), { target: { value: 'UK' } })
+    fireEvent.change(screen.getByLabelText(/^Description/), { target: { value: 'Council Tax 2' } })
+    fireEvent.change(screen.getByLabelText(/^Due Day/), { target: { value: '20' } })
+    fireEvent.change(screen.getByLabelText(/^Value/), { target: { value: '150' } })
+    fireEvent.change(screen.getByLabelText(/^Note/), { target: { value: 'Second property' } })
+
+    getMensaisBillsMock.mockResolvedValue([
+      ...BILLS,
+      { id: 'b3', dueDay: 20, description: 'Council Tax 2', area: 'UK', note: 'Second property', nitNumber: null, minimumWageValue: null, value: 150, status: 'Unset' },
+    ])
+    const addBillFormPanel = screen.getByRole('heading', { name: 'Add Bill' }).closest('div') as HTMLElement
+    fireEvent.click(within(addBillFormPanel).getByRole('button', { name: 'Add Bill' }))
+
+    await waitFor(() =>
+      expect(createMensaisBillMock).toHaveBeenCalledWith({
+        dueDay: 20,
+        description: 'Council Tax 2',
+        value: 150,
+        area: 'UK',
+        note: 'Second property',
+      }),
+    )
+  })
+
   it('deletes a bill after confirming the prompt', async () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true)
     deleteMensaisBillMock.mockResolvedValue(undefined)
@@ -419,5 +469,41 @@ describe('MensaisPage', () => {
       expect.stringContaining('Aluguel'),
       expect.stringContaining('INSS'),
     ])
+  })
+
+  it('sorts the Brasil grid by Due Day, Note, NIT, Min. Wage, Value and Status', async () => {
+    const bills: RecurringBillDto[] = [
+      { id: 'b1', dueDay: 10, description: 'INSS', area: 'Brasil', note: 'Boleto', nitNumber: '222', minimumWageValue: 1412, value: 850, status: 'Unset' },
+      { id: 'b2', dueDay: 5, description: 'Aluguel', area: 'Brasil', note: 'Aviso', nitNumber: '111', minimumWageValue: 706, value: 1200, status: 'Paid' },
+    ]
+    getMensaisBillsMock.mockResolvedValue(bills)
+
+    render(<MensaisPage />)
+    await waitFor(() => expect(screen.getByText('INSS')).toBeInTheDocument())
+
+    const brasilTable = screen.getAllByRole('table')[0]
+    const descriptionsOf = () =>
+      within(brasilTable)
+        .getAllByRole('row')
+        .slice(1)
+        .map((r) => r.querySelectorAll('td')[1].textContent)
+
+    fireEvent.click(within(brasilTable).getByRole('button', { name: 'Due Day' }))
+    expect(descriptionsOf()).toEqual(['Aluguel', 'INSS'])
+
+    fireEvent.click(within(brasilTable).getByRole('button', { name: 'Note' }))
+    expect(descriptionsOf()).toEqual(['Aluguel', 'INSS'])
+
+    fireEvent.click(within(brasilTable).getByRole('button', { name: 'NIT' }))
+    expect(descriptionsOf()).toEqual(['Aluguel', 'INSS'])
+
+    fireEvent.click(within(brasilTable).getByRole('button', { name: 'Min. Wage' }))
+    expect(descriptionsOf()).toEqual(['Aluguel', 'INSS'])
+
+    fireEvent.click(within(brasilTable).getByRole('button', { name: 'Value' }))
+    expect(descriptionsOf()).toEqual(['INSS', 'Aluguel'])
+
+    fireEvent.click(within(brasilTable).getByRole('button', { name: 'Status' }))
+    expect(descriptionsOf()).toEqual(['Aluguel', 'INSS'])
   })
 })

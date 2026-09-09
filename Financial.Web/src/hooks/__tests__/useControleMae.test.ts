@@ -200,4 +200,66 @@ describe('useControleMae', () => {
 
     await waitFor(() => expect(result.current.deleteError).toBe('Mae ledger entry not found.'))
   })
+
+  it('rejects a create submission with a blank date, description, and non-numeric value without calling the API', async () => {
+    const { result } = renderHook(() => useControleMae())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.setCreateField('createDate', ''))
+    act(() => result.current.setCreateField('createDescription', ''))
+    act(() => result.current.setCreateField('createSourceValue', ''))
+    act(() => result.current.submitCreate())
+
+    expect(createMaeLedgerEntryMock).not.toHaveBeenCalled()
+    expect(result.current.createErrorFields.createDate).toBe('Date is required')
+    expect(result.current.createErrorFields.createDescription).toBe('Description is required')
+    expect(result.current.createErrorFields.createSourceValue).toBe('Value must be a non-zero number')
+  })
+
+  it('cancelCreateForm resets the create form and closes it', async () => {
+    const { result } = renderHook(() => useControleMae())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showCreateForm())
+    act(() => result.current.setCreateField('createDescription', 'Draft'))
+    act(() => result.current.cancelCreateForm())
+
+    expect(result.current.isCreateFormOpen).toBe(false)
+    expect(result.current.createDescription).toBe('')
+  })
+
+  it('rejects a save with non-numeric BRL and GBP values without calling the API', async () => {
+    const { result } = renderHook(() => useControleMae())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showEditForm(ENTRIES[0]))
+    act(() => result.current.setEditField('editBrlValue', 'not-a-number'))
+    act(() => result.current.setEditField('editGbpValue', 'also-not-a-number'))
+    act(() => result.current.saveEdit())
+
+    expect(updateMaeLedgerEntryValuesMock).not.toHaveBeenCalled()
+    expect(result.current.saveErrorFields.editBrlValue).toBe('BRL value must be a number')
+    expect(result.current.saveErrorFields.editGbpValue).toBe('GBP value must be a number')
+  })
+
+  it('cancelEdit clears the editing entry and its form fields', async () => {
+    const { result } = renderHook(() => useControleMae())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showEditForm(ENTRIES[0]))
+    act(() => result.current.cancelEdit())
+
+    expect(result.current.editingId).toBeNull()
+    expect(result.current.editBrlValue).toBe('')
+  })
+
+  it('retry re-fetches entries and totals', async () => {
+    const { result } = renderHook(() => useControleMae())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.retry())
+
+    await waitFor(() => expect(getMaeLedgerEntriesFromDateMock).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(getMaeLedgerTotalsMock).toHaveBeenCalledTimes(2))
+  })
 })
