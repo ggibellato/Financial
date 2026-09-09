@@ -135,7 +135,9 @@ public class InvestmentSnapshotsViewModelTests
         viewModel.SuggestValuesCommand.Execute(null);
 
         viewModel.ApplySuggestionsCommand.Execute(null);
-        await Task.Delay(50);
+        var deadline = DateTime.UtcNow.AddSeconds(5);
+        while (viewModel.IsApplyingSuggestions && DateTime.UtcNow < deadline)
+            await Task.Delay(25);
 
         service.UpdateRequests.Should().BeEmpty();
         viewModel.FailedSuggestionRows.Should().ContainSingle(r => r.SnapshotId == id);

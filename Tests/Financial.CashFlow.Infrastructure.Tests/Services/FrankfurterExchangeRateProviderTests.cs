@@ -88,16 +88,4 @@ public class FrankfurterExchangeRateProviderTests
     private static HttpClient CreateClient(HttpMessageHandler handler) =>
         new(handler) { BaseAddress = new Uri("https://api.frankfurter.app/") };
 
-    private sealed class FakeHttpMessageHandler : HttpMessageHandler
-    {
-        private readonly Func<HttpRequestMessage, HttpResponseMessage> _responder;
-
-        public FakeHttpMessageHandler(Func<HttpRequestMessage, HttpResponseMessage> responder)
-        {
-            _responder = responder;
-        }
-
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
-            Task.FromResult(_responder(request));
-    }
 }
