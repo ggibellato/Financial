@@ -201,4 +201,17 @@ public class BrokersViewModelTests
 
         viewModel.ActionError.Should().Be("Broker is referenced elsewhere.");
     }
+
+    [Fact]
+    public async Task Properties_ExposeExpectedDefaultsAndCommands()
+    {
+        var (viewModel, _, _) = CreateViewModel();
+        await viewModel.RefreshAsync();
+
+        viewModel.IsLoading.Should().BeFalse();
+        viewModel.RetryCommand.Should().NotBeNull();
+        viewModel.CreateBrokerCommand.Should().NotBeNull();
+        viewModel.EditBrokerCommand.Should().NotBeNull();
+        viewModel.DeleteBrokerCommand.Should().NotBeNull();
+    }
 }

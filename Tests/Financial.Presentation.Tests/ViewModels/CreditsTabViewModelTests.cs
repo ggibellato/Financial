@@ -1,5 +1,6 @@
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Interfaces;
+using Financial.Presentation.App.Helpers;
 using Financial.Presentation.App.ViewModels;
 using Financial.Presentation.App.ViewModels.Investment;
 using FluentAssertions;
@@ -255,6 +256,216 @@ public class CreditsTabViewModelTests
 
         spy.Messages.Should().ContainSingle(m => m.Image == MessageBoxImage.Warning);
         spy.AppliedDetails.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Add_NullCreditService_ReturnsWithoutThrowingOrShowingMessage()
+    {
+        var spy = new Spy();
+        var viewModel = new CreditsTabViewModel(
+            null,
+            () => true,
+            () => BrokerName,
+            () => PortfolioName,
+            () => AssetName,
+            spy.ApplyDetails,
+            spy.ShowMessage);
+
+        await viewModel.Add(() => AsForm(ValidDialogData()));
+
+        spy.Messages.Should().BeEmpty();
+        spy.AppliedDetails.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Delete_NullCreditService_ReturnsWithoutThrowingOrShowingMessage()
+    {
+        var spy = new Spy();
+        var viewModel = new CreditsTabViewModel(
+            null,
+            () => true,
+            () => BrokerName,
+            () => PortfolioName,
+            () => AssetName,
+            spy.ApplyDetails,
+            spy.ShowMessage);
+        var selected = new CreditDTO { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Dividend", Value = 1m };
+
+        await viewModel.Delete(selected, () => true);
+
+        spy.Messages.Should().BeEmpty();
+        spy.AppliedDetails.Should().BeNull();
+    }
+
+    [Fact]
+    public void Properties_ExposeExpectedDefaultsAndCommands()
+    {
+        var (viewModel, _, _) = Build();
+
+        viewModel.IsCreditsAggregateView.Should().BeFalse();
+        viewModel.SelectedCredit.Should().BeNull();
+        viewModel.IsCreditFormOpen.Should().BeFalse();
+        viewModel.UpdateCreditCommand.Should().NotBeNull();
+        viewModel.DeleteCreditCommand.Should().NotBeNull();
+        viewModel.SelectCreditsFilterCommand.Should().NotBeNull();
+        viewModel.SelectCreditsTypeModeCommand.Should().NotBeNull();
+        viewModel.AddCreditCommand.CanExecute(null).Should().BeTrue();
+    }
+
+    [Fact]
+    public void AddCreditCommand_CanExecute_FollowsHasContext()
+    {
+        var (viewModel, _, _) = Build(hasContext: false);
+
+        viewModel.AddCreditCommand.CanExecute(null).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Load_WithCredits_PopulatesCollectionClearsSelectionAndBuildsPlot()
+    {
+        var (viewModel, _, _) = Build();
+        var credits = new List<CreditDTO> { new() { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Dividend", Value = 10m } };
+
+        viewModel.Load("ctx", credits);
+
+        viewModel.Credits.Should().ContainSingle();
+        viewModel.IsCreditsAggregateView.Should().BeFalse();
+        viewModel.SelectedCredit.Should().BeNull();
+        viewModel.CreditsPlotModel.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void UpdatePlotWidth_WithPlotModelAndPositiveWidth_AppliesLabelDensityWithoutThrowing()
+    {
+        var (viewModel, _, _) = Build();
+        viewModel.Load("ctx", [new() { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Dividend", Value = 10m }]);
+
+        var act = () => viewModel.UpdatePlotWidth(400);
+
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void UpdatePlotWidth_WithNonPositiveWidth_IsNoOp()
+    {
+        var (viewModel, _, _) = Build();
+        viewModel.Load("ctx", [new() { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Dividend", Value = 10m }]);
+
+        var act = () => viewModel.UpdatePlotWidth(0);
+
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void UpdateCreditCommand_WithParameterAndConfirmedForm_SelectsCreditOpensFormAndCallsService()
+    {
+        var expectedDetails = new AssetDetailsDTO { Name = AssetName, BrokerName = BrokerName, PortfolioName = PortfolioName, Ticker = "T" };
+        var service = new StubCreditService { UpdateResult = expectedDetails };
+        var (viewModel, svc, spy) = Build(service: service);
+        var credit = new CreditDTO { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Dividend", Value = 1m };
+
+        viewModel.UpdateCreditCommand.Execute(credit);
+
+        viewModel.SelectedCredit.Should().Be(credit);
+        viewModel.IsCreditFormOpen.Should().BeTrue();
+        viewModel.CreditFormViewModel.Should().NotBeNull();
+
+        viewModel.CreditFormViewModel!.Value = 42m;
+        viewModel.CreditFormViewModel!.ConfirmCommand.Execute(null);
+
+        viewModel.IsCreditFormOpen.Should().BeFalse();
+        viewModel.CreditFormViewModel.Should().BeNull();
+        svc.UpdateCallCount.Should().Be(1);
+        spy.AppliedDetails.Should().Be(expectedDetails);
+    }
+
+    [Fact]
+    public void UpdateCreditCommand_WithParameterAndCancelledForm_DoesNotCallService()
+    {
+        var (viewModel, svc, _) = Build();
+        var credit = new CreditDTO { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Dividend", Value = 1m };
+
+        viewModel.UpdateCreditCommand.Execute(credit);
+        viewModel.CreditFormViewModel!.CancelCommand.Execute(null);
+
+        viewModel.IsCreditFormOpen.Should().BeFalse();
+        svc.UpdateCallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public void DeleteCreditCommand_WithEmptyIdParameter_SelectsCreditAndShowsWarningWithoutOpeningRealDialog()
+    {
+        var (viewModel, svc, spy) = Build();
+        var credit = new CreditDTO { Id = Guid.Empty, Date = DateTime.Today, Type = "Dividend", Value = 1m };
+
+        viewModel.DeleteCreditCommand.Execute(credit);
+
+        viewModel.SelectedCredit.Should().Be(credit);
+        svc.DeleteCallCount.Should().Be(0);
+        spy.Messages.Should().ContainSingle(m => m.Image == MessageBoxImage.Warning);
+    }
+
+    [Fact]
+    public void SelectCreditsFilterCommand_WithDifferentValue_UpdatesSelection()
+    {
+        var (viewModel, _, _) = Build();
+
+        viewModel.SelectCreditsFilterCommand.Execute(PeriodFilter.ThisMonth);
+
+        viewModel.CreditsFilters.Should().Contain(o => o.Value == PeriodFilter.ThisMonth && o.IsSelected);
+    }
+
+    [Fact]
+    public void SelectCreditsFilterCommand_WithAlreadySelectedValue_IsNoOp()
+    {
+        var (viewModel, _, _) = Build();
+        var current = viewModel.CreditsFilters.First(o => o.IsSelected).Value;
+
+        var act = () => viewModel.SelectCreditsFilterCommand.Execute(current);
+
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void SelectCreditsTypeModeCommand_WithDifferentValue_UpdatesSelection()
+    {
+        var (viewModel, _, _) = Build();
+
+        viewModel.SelectCreditsTypeModeCommand.Execute(CreditsTypeChartMode.Grouped);
+
+        viewModel.CreditsTypeModes.Should().Contain(o => o.Value == CreditsTypeChartMode.Grouped && o.IsSelected);
+    }
+
+    [Fact]
+    public void SelectCreditsTypeModeCommand_WithAlreadySelectedValue_IsNoOp()
+    {
+        var (viewModel, _, _) = Build();
+        var current = viewModel.CreditsTypeModes.First(o => o.IsSelected).Value;
+
+        var act = () => viewModel.SelectCreditsTypeModeCommand.Execute(current);
+
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void SelectCreditsChartTypeCommand_WithDifferentValue_UpdatesSelection()
+    {
+        var (viewModel, _, _) = Build();
+
+        viewModel.SelectCreditsChartTypeCommand.Execute(CreditsChartType.Line);
+
+        viewModel.CreditsChartTypes.Should().Contain(o => o.Value == CreditsChartType.Line && o.IsSelected);
+    }
+
+    [Fact]
+    public void SelectCreditsChartTypeCommand_WithAlreadySelectedValue_IsNoOp()
+    {
+        var (viewModel, _, _) = Build();
+        var current = viewModel.CreditsChartTypes.First(o => o.IsSelected).Value;
+
+        var act = () => viewModel.SelectCreditsChartTypeCommand.Execute(current);
+
+        act.Should().NotThrow();
     }
 
     private sealed class Spy

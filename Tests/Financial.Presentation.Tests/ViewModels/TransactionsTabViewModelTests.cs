@@ -16,13 +16,14 @@ public class TransactionsTabViewModelTests
 
     private static (TransactionsTabViewModel ViewModel, StubTransactionService Service, Spy Spy) Build(
         bool hasContext = true,
-        ITransactionService? service = null)
+        ITransactionService? service = null,
+        ITransactionQueryService? queryService = null)
     {
         var stubService = service as StubTransactionService ?? new StubTransactionService();
         var spy = new Spy();
         var viewModel = new TransactionsTabViewModel(
             stubService,
-            new StubTransactionQueryService(),
+            queryService ?? new StubTransactionQueryService(),
             InvestmentScope.Active,
             () => hasContext,
             () => BrokerName,
@@ -263,6 +264,172 @@ public class TransactionsTabViewModelTests
 
         spy.Messages.Should().ContainSingle(m => m.Image == MessageBoxImage.Warning);
         spy.AppliedDetails.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Add_NullTransactionService_ReturnsWithoutThrowingOrShowingMessage()
+    {
+        var spy = new Spy();
+        var viewModel = new TransactionsTabViewModel(
+            null,
+            new StubTransactionQueryService(),
+            InvestmentScope.Active,
+            () => true,
+            () => BrokerName,
+            () => PortfolioName,
+            () => AssetName,
+            spy.ApplyDetails,
+            spy.ShowMessage);
+
+        await viewModel.Add(() => AsForm(ValidDialogData()));
+
+        spy.Messages.Should().BeEmpty();
+        spy.AppliedDetails.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Delete_NullTransactionService_ReturnsWithoutThrowingOrShowingMessage()
+    {
+        var spy = new Spy();
+        var viewModel = new TransactionsTabViewModel(
+            null,
+            new StubTransactionQueryService(),
+            InvestmentScope.Active,
+            () => true,
+            () => BrokerName,
+            () => PortfolioName,
+            () => AssetName,
+            spy.ApplyDetails,
+            spy.ShowMessage);
+        var selected = new TransactionDTO { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Buy", Quantity = 1m, UnitPrice = 1m, Fees = 0m };
+
+        await viewModel.Delete(selected, () => true);
+
+        spy.Messages.Should().BeEmpty();
+        spy.AppliedDetails.Should().BeNull();
+    }
+
+    [Fact]
+    public void Properties_ExposeExpectedDefaultsAndCommands()
+    {
+        var (viewModel, _, _) = Build();
+
+        viewModel.SelectedTransaction.Should().BeNull();
+        viewModel.IsTransactionFormOpen.Should().BeFalse();
+        viewModel.HasTransactionsError.Should().BeFalse();
+        viewModel.UpdateTransactionCommand.Should().NotBeNull();
+        viewModel.DeleteTransactionCommand.Should().NotBeNull();
+        viewModel.AddTransactionCommand.CanExecute(null).Should().BeTrue();
+    }
+
+    [Fact]
+    public void AddTransactionCommand_CanExecute_FollowsHasContext()
+    {
+        var (viewModel, _, _) = Build(hasContext: false);
+
+        viewModel.AddTransactionCommand.CanExecute(null).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Load_WithTransactions_BuildsPlotModelAndUpdatePlotWidthAppliesLabelDensity()
+    {
+        var (viewModel, _, _) = Build();
+        var transactions = new List<TransactionDTO>
+        {
+            new() { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Buy", Quantity = 10m, UnitPrice = 5m, Fees = 0m },
+        };
+
+        viewModel.Load("ctx", transactions);
+
+        viewModel.Transactions.Should().ContainSingle();
+        viewModel.SelectedTransaction.Should().BeNull();
+
+        var act = () => viewModel.UpdatePlotWidth(400);
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void UpdatePlotWidth_WithNonPositiveWidth_IsNoOp()
+    {
+        var (viewModel, _, _) = Build();
+        viewModel.Load("ctx", [new() { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Buy", Quantity = 10m, UnitPrice = 5m, Fees = 0m }]);
+
+        var act = () => viewModel.UpdatePlotWidth(0);
+
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public async Task LoadPortfolio_QueryServiceThrows_SetsErrorAndStopsLoading()
+    {
+        var queryService = new StubTransactionQueryService { ExceptionToThrow = new InvalidOperationException("boom") };
+        var (viewModel, _, _) = Build(queryService: queryService);
+
+        await viewModel.LoadPortfolio(BrokerName, PortfolioName);
+
+        viewModel.TransactionsError.Should().Be("Unable to load transactions");
+        viewModel.HasTransactionsError.Should().BeTrue();
+        viewModel.IsTransactionsLoading.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task LoadBroker_QueryServiceThrows_SetsErrorAndStopsLoading()
+    {
+        var queryService = new StubTransactionQueryService { ExceptionToThrow = new InvalidOperationException("boom") };
+        var (viewModel, _, _) = Build(queryService: queryService);
+
+        await viewModel.LoadBroker(BrokerName);
+
+        viewModel.TransactionsError.Should().Be("Unable to load transactions");
+        viewModel.IsTransactionsLoading.Should().BeFalse();
+    }
+
+    [Fact]
+    public void UpdateTransactionCommand_WithParameterAndConfirmedForm_SelectsTransactionOpensFormAndCallsService()
+    {
+        var expectedDetails = new AssetDetailsDTO { Name = AssetName, BrokerName = BrokerName, PortfolioName = PortfolioName, Ticker = "T" };
+        var service = new StubTransactionService { UpdateResult = expectedDetails };
+        var (viewModel, svc, spy) = Build(service: service);
+        var tx = new TransactionDTO { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Buy", Quantity = 10m, UnitPrice = 5m, Fees = 0m };
+
+        viewModel.UpdateTransactionCommand.Execute(tx);
+
+        viewModel.SelectedTransaction.Should().Be(tx);
+        viewModel.IsTransactionFormOpen.Should().BeTrue();
+        viewModel.TransactionFormViewModel.Should().NotBeNull();
+
+        viewModel.TransactionFormViewModel!.ConfirmCommand.Execute(null);
+
+        viewModel.IsTransactionFormOpen.Should().BeFalse();
+        viewModel.TransactionFormViewModel.Should().BeNull();
+        svc.UpdateCallCount.Should().Be(1);
+        spy.AppliedDetails.Should().Be(expectedDetails);
+    }
+
+    [Fact]
+    public void UpdateTransactionCommand_WithParameterAndCancelledForm_DoesNotCallService()
+    {
+        var (viewModel, svc, _) = Build();
+        var tx = new TransactionDTO { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Buy", Quantity = 10m, UnitPrice = 5m, Fees = 0m };
+
+        viewModel.UpdateTransactionCommand.Execute(tx);
+        viewModel.TransactionFormViewModel!.CancelCommand.Execute(null);
+
+        viewModel.IsTransactionFormOpen.Should().BeFalse();
+        svc.UpdateCallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public void DeleteTransactionCommand_WithEmptyIdParameter_SelectsTransactionAndShowsWarningWithoutOpeningRealDialog()
+    {
+        var (viewModel, svc, spy) = Build();
+        var tx = new TransactionDTO { Id = Guid.Empty, Date = DateTime.Today, Type = "Buy", Quantity = 10m, UnitPrice = 5m, Fees = 0m };
+
+        viewModel.DeleteTransactionCommand.Execute(tx);
+
+        viewModel.SelectedTransaction.Should().Be(tx);
+        svc.DeleteCallCount.Should().Be(0);
+        spy.Messages.Should().ContainSingle(m => m.Image == MessageBoxImage.Warning);
     }
 
     private sealed class Spy

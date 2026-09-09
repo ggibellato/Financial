@@ -215,4 +215,122 @@ public class ControleMaeViewModelTests
             w.Message.Should().NotContain("9999.99", "exception messages may embed ledger values and must stay out of the log");
         });
     }
+
+    [Fact]
+    public async Task CreateEntry_InvalidDate_AttributesErrorToDateFieldOnly()
+    {
+        var (viewModel, _) = CreateViewModel();
+        viewModel.ShowCreateFormCommand.Execute(null);
+        viewModel.CreateDate = null;
+        viewModel.CreateDescription = "Salary";
+        viewModel.CreateValue = "100";
+
+        await viewModel.SubmitCreateAsync();
+
+        viewModel.CreateDateFieldError.Should().NotBeNull();
+        viewModel.CreateDescriptionFieldError.Should().BeNull();
+        viewModel.CreateValueFieldError.Should().BeNull();
+        viewModel.CreateGeneralSaveError.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task CreateEntry_InvalidDescription_AttributesErrorToDescriptionFieldOnly()
+    {
+        var (viewModel, _) = CreateViewModel();
+        viewModel.ShowCreateFormCommand.Execute(null);
+        viewModel.CreateDate = DateTime.Today;
+        viewModel.CreateDescription = "";
+        viewModel.CreateValue = "100";
+
+        await viewModel.SubmitCreateAsync();
+
+        viewModel.CreateDescriptionFieldError.Should().NotBeNull();
+        viewModel.CreateDateFieldError.Should().BeNull();
+        viewModel.CreateValueFieldError.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task EditEntry_InvalidBrlValue_AttributesErrorToBrlFieldOnly()
+    {
+        var (viewModel, _) = CreateViewModel();
+        var entry = CreateEntry(DateOnly.FromDateTime(DateTime.Today));
+        viewModel.EditEntryCommand.Execute(entry);
+        viewModel.EditBrlValue = "not-a-number";
+        viewModel.EditGbpValue = "30";
+
+        await viewModel.SaveEditAsync();
+
+        viewModel.EditBrlValueFieldError.Should().NotBeNull();
+        viewModel.EditGbpValueFieldError.Should().BeNull();
+        viewModel.EditGeneralSaveError.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task EditEntry_InvalidGbpValue_AttributesErrorToGbpFieldOnly()
+    {
+        var (viewModel, _) = CreateViewModel();
+        var entry = CreateEntry(DateOnly.FromDateTime(DateTime.Today));
+        viewModel.EditEntryCommand.Execute(entry);
+        viewModel.EditBrlValue = "150";
+        viewModel.EditGbpValue = "not-a-number";
+
+        await viewModel.SaveEditAsync();
+
+        viewModel.EditGbpValueFieldError.Should().NotBeNull();
+        viewModel.EditBrlValueFieldError.Should().BeNull();
+    }
+
+    [Fact]
+    public void EditEntryCommand_NullEntry_DoesNothing()
+    {
+        var (viewModel, _) = CreateViewModel();
+
+        viewModel.EditEntryCommand.Execute(null);
+
+        viewModel.IsEditFormOpen.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task SaveEditAsync_NoEntrySelected_IsNoOp()
+    {
+        var (viewModel, service) = CreateViewModel();
+
+        await viewModel.SaveEditAsync();
+
+        service.LastUpdateRequest.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task DeleteEntryAsync_NullEntry_DoesNothing()
+    {
+        var (viewModel, service) = CreateViewModel();
+
+        await viewModel.DeleteEntryAsync(null);
+
+        service.LastDeletedId.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task DeleteEntryAsync_ServiceThrows_SetsDeleteError()
+    {
+        var (viewModel, service) = CreateViewModel();
+        var entry = CreateEntry(DateOnly.FromDateTime(DateTime.Today));
+        service.ThrowOnDelete = new InvalidOperationException("Delete failed.");
+
+        await viewModel.DeleteEntryAsync(entry);
+
+        viewModel.DeleteError.Should().Be("Delete failed.");
+    }
+
+    [Fact]
+    public void Properties_ExposeExpectedDefaultsAndCommands()
+    {
+        var (viewModel, _) = CreateViewModel();
+
+        viewModel.HasError.Should().BeFalse();
+        viewModel.RetryCommand.Should().NotBeNull();
+        viewModel.IsCreating.Should().BeFalse();
+        viewModel.IsSaving.Should().BeFalse();
+        viewModel.DeleteError.Should().BeNull();
+    }
 }

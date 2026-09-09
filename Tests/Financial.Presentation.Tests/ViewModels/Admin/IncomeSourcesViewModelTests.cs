@@ -205,4 +205,17 @@ public class IncomeSourcesViewModelTests
 
         viewModel.ActionError.Should().Be("Income source is referenced elsewhere.");
     }
+
+    [Fact]
+    public async Task Properties_ExposeExpectedDefaultsAndCommands()
+    {
+        var (viewModel, _, _) = CreateViewModel();
+        await viewModel.RefreshAsync();
+
+        viewModel.IsLoading.Should().BeFalse();
+        viewModel.RetryCommand.Should().NotBeNull();
+        viewModel.CreateIncomeSourceCommand.Should().NotBeNull();
+        viewModel.EditIncomeSourceCommand.Should().NotBeNull();
+        viewModel.DeleteIncomeSourceCommand.Should().NotBeNull();
+    }
 }

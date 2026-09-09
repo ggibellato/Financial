@@ -204,4 +204,17 @@ public class CreditCardsViewModelTests
 
         viewModel.ActionError.Should().Be("Credit card is referenced elsewhere.");
     }
+
+    [Fact]
+    public async Task Properties_ExposeExpectedDefaultsAndCommands()
+    {
+        var (viewModel, _, _) = CreateViewModel();
+        await viewModel.RefreshAsync();
+
+        viewModel.IsLoading.Should().BeFalse();
+        viewModel.RetryCommand.Should().NotBeNull();
+        viewModel.CreateCreditCardCommand.Should().NotBeNull();
+        viewModel.EditCreditCardCommand.Should().NotBeNull();
+        viewModel.DeleteCreditCardCommand.Should().NotBeNull();
+    }
 }

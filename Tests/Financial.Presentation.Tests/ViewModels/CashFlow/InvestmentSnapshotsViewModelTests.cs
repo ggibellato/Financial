@@ -49,6 +49,118 @@ public class InvestmentSnapshotsViewModelTests
     }
 
     [Fact]
+    public async Task SettingMonth_RefetchesSnapshots()
+    {
+        var (viewModel, service) = CreateViewModel();
+        await viewModel.RefreshAsync();
+        var callsAfterInitial = service.GetSnapshotsForMonthCallCount;
+
+        viewModel.Month = viewModel.Month == 1 ? 2 : 1;
+        await viewModel.RefreshAsync();
+
+        service.GetSnapshotsForMonthCallCount.Should().BeGreaterThan(callsAfterInitial);
+    }
+
+    [Fact]
+    public async Task RefreshAsync_ServiceThrows_SetsErrorThenClearsOnSuccess()
+    {
+        var (viewModel, service) = CreateViewModel();
+        service.ThrowOnGetSnapshots = new InvalidOperationException("Network down");
+
+        await viewModel.RefreshAsync();
+
+        viewModel.HasError.Should().BeTrue();
+        viewModel.Error.Should().Be("Network down");
+        viewModel.ShowContent.Should().BeFalse();
+
+        service.ThrowOnGetSnapshots = null;
+        await viewModel.RefreshAsync();
+
+        viewModel.HasError.Should().BeFalse();
+        viewModel.ShowContent.Should().BeTrue();
+    }
+
+    [Fact]
+    public void EditSnapshotCommand_NullRow_DoesNothing()
+    {
+        var (viewModel, _) = CreateViewModel();
+
+        viewModel.EditSnapshotCommand.Execute(null);
+
+        viewModel.IsEditFormOpen.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task SaveEditAsync_NoSnapshotSelected_IsNoOp()
+    {
+        var (viewModel, service) = CreateViewModel();
+
+        await viewModel.SaveEditAsync();
+
+        service.LastUpdateRequest.Should().BeNull();
+    }
+
+    [Fact]
+    public void Properties_ExposeExpectedDefaults()
+    {
+        var (viewModel, _) = CreateViewModel();
+
+        viewModel.RetryCommand.Should().NotBeNull();
+        viewModel.IsSaving.Should().BeFalse();
+        viewModel.HasSuggestionRows.Should().BeFalse();
+        viewModel.ShowEmptySuggestionsMessage.Should().BeTrue();
+        viewModel.HasNotUpdatedSuggestions.Should().BeFalse();
+        viewModel.HasFailedSuggestions.Should().BeFalse();
+        viewModel.IsApplyingSuggestions.Should().BeFalse();
+        viewModel.CanEditSuggestions.Should().BeTrue();
+        viewModel.HasCompletedApply.Should().BeFalse();
+        viewModel.CheckedSuggestionsCount.Should().Be(0);
+        viewModel.ApplyProgressCurrent.Should().Be(0);
+        viewModel.ApplyProgressTotal.Should().Be(0);
+        viewModel.ApplyProgressAccountName.Should().BeEmpty();
+        viewModel.ApplyProgressPercent.Should().Be(0);
+        viewModel.SucceededCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task ApplySuggestionsCommand_NegativeSuggestedValue_MarksRowAsErrorWithoutCallingService()
+    {
+        var (viewModel, service) = CreateViewModel();
+        var id = Guid.NewGuid();
+        service.Suggestions = new InvestmentSnapshotSuggestionsDTO
+        {
+            Suggestions = [CreateSuggestion(id, "PlatinumVisa8003", currentValue: 0m, suggestedValue: -5m)],
+            NotUpdated = [],
+        };
+        viewModel.SuggestValuesCommand.Execute(null);
+
+        viewModel.ApplySuggestionsCommand.Execute(null);
+        await Task.Delay(50);
+
+        service.UpdateRequests.Should().BeEmpty();
+        viewModel.FailedSuggestionRows.Should().ContainSingle(r => r.SnapshotId == id);
+    }
+
+    [Fact]
+    public void TogglingSuggestionRowIncluded_UpdatesCheckedSuggestionsCount()
+    {
+        var (viewModel, service) = CreateViewModel();
+        var id = Guid.NewGuid();
+        service.Suggestions = new InvestmentSnapshotSuggestionsDTO
+        {
+            Suggestions = [CreateSuggestion(id, "ReservasPessoais", currentValue: 5400m, suggestedValue: 5612.30m)],
+            NotUpdated = [],
+        };
+        viewModel.SuggestValuesCommand.Execute(null);
+        var row = viewModel.SuggestionRows.Single();
+        row.Included.Should().BeFalse();
+
+        row.Included = true;
+
+        viewModel.CheckedSuggestionsCount.Should().Be(1);
+    }
+
+    [Fact]
     public async Task SnapshotRow_LiabilityAccount_ShowsSuffixedLabel()
     {
         var (viewModel, service) = CreateViewModel();
