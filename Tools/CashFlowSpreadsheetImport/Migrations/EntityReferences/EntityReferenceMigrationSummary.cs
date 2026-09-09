@@ -66,18 +66,10 @@ public sealed class EntityReferenceMigrationSummary
         return builder.ToString();
     }
 
-    private static void RenderUnresolved(StringBuilder builder, string label, IReadOnlyList<(Guid Id, string Details)> unresolved)
-    {
-        if (unresolved.Count == 0)
-        {
-            return;
-        }
-
-        builder.AppendLine();
-        builder.AppendLine($"{label} whose legacy name does not match any seeded record (skipped, review manually):");
-        foreach (var (id, details) in unresolved)
-        {
-            builder.AppendLine($"  {id} {details}");
-        }
-    }
+    private static void RenderUnresolved(StringBuilder builder, string label, IReadOnlyList<(Guid Id, string Details)> unresolved) =>
+        MigrationSummaryBase.AppendUnresolvedSection(
+            builder,
+            $"{label} whose legacy name does not match any seeded record (skipped, review manually):",
+            unresolved,
+            item => $"{item.Id} {item.Details}");
 }

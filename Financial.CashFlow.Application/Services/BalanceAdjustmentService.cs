@@ -145,15 +145,8 @@ public sealed class BalanceAdjustmentService : IBalanceAdjustmentService
         return _tracer.StartServiceSpan("CashFlow", nameof(BalanceAdjustmentService), operationName, EntityType);
     }
 
-    private Bank ResolveBank(Guid bankId)
-    {
-        if (!EntityIdResolver.TryResolve(bankId, _repository.GetBanks(), b => b.Id, out var bank))
-        {
-            throw new ArgumentException($"Bank '{bankId}' was not found.");
-        }
-
-        return bank!;
-    }
+    private Bank ResolveBank(Guid bankId) =>
+        _repository.GetBanks().FirstOrThrow(b => b.Id == bankId, "Bank", bankId);
 
     private BalanceAdjustment FindAdjustmentOrThrow(Bank bank, Guid id) =>
         _repository.GetBalanceAdjustments()

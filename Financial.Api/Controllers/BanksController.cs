@@ -125,11 +125,6 @@ public sealed class BanksController : ControllerBase
             return BadRequest();
         }
 
-        if (!BankExists(id))
-        {
-            return NotFound();
-        }
-
         var adjustment = await _balanceAdjustmentService.AddAdjustmentAsync(id, request);
         return Ok(adjustment);
     }
@@ -150,11 +145,6 @@ public sealed class BanksController : ControllerBase
             return BadRequest();
         }
 
-        if (!BankExists(id))
-        {
-            return NotFound();
-        }
-
         var adjustment = await _balanceAdjustmentService.UpdateAdjustmentAsync(id, adjustmentId, request);
         return Ok(adjustment);
     }
@@ -168,11 +158,6 @@ public sealed class BanksController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteAdjustment(Guid id, Guid adjustmentId)
     {
-        if (!BankExists(id))
-        {
-            return NotFound();
-        }
-
         await _balanceAdjustmentService.DeleteAdjustmentAsync(id, adjustmentId);
         return Ok();
     }
@@ -187,6 +172,4 @@ public sealed class BanksController : ControllerBase
         var result = _balanceAdjustmentService.GetAdjustmentsByBank(id);
         return Ok(result);
     }
-
-    private bool BankExists(Guid id) => _bankService.GetBanks().Any(b => b.Id == id);
 }

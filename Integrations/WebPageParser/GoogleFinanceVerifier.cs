@@ -38,11 +38,6 @@ public static class GoogleFinanceVerifier
                     Console.WriteLine($"  Asset Name: {result.AssetName}");
                     Console.WriteLine($"  Price: {result.Price}");
                     Console.WriteLine($"  Timestamp: {result.Timestamp}");
-                    Console.WriteLine($"  Strategies Used:");
-                    Console.WriteLine($"    - Main Container: {result.MainContainerStrategy}");
-                    Console.WriteLine($"    - Asset Name: {result.AssetNameStrategy}");
-                    Console.WriteLine($"    - Price: {result.PriceStrategy}");
-                    Console.WriteLine($"    - Timestamp: {result.TimestampStrategy}");
                 }
                 else
                 {
@@ -50,12 +45,9 @@ public static class GoogleFinanceVerifier
                     Console.WriteLine("✗ FAILED");
                     Console.ResetColor();
                     Console.WriteLine($"  Error: {result.ErrorMessage}");
-                    Console.WriteLine($"  Strategies Used:");
-                    Console.WriteLine($"    - Main Container: {result.MainContainerStrategy}");
-                    Console.WriteLine($"    - Asset Name: {result.AssetNameStrategy}");
-                    Console.WriteLine($"    - Price: {result.PriceStrategy}");
-                    Console.WriteLine($"    - Timestamp: {result.TimestampStrategy}");
                 }
+
+                PrintStrategies(result);
             }
             catch (Exception ex)
             {
@@ -67,6 +59,15 @@ public static class GoogleFinanceVerifier
 
             Console.WriteLine();
         }
+    }
+
+    private static void PrintStrategies(VerificationResult result)
+    {
+        Console.WriteLine($"  Strategies Used:");
+        Console.WriteLine($"    - Main Container: {result.MainContainerStrategy}");
+        Console.WriteLine($"    - Asset Name: {result.AssetNameStrategy}");
+        Console.WriteLine($"    - Price: {result.PriceStrategy}");
+        Console.WriteLine($"    - Timestamp: {result.TimestampStrategy}");
     }
 
     private static VerificationResult VerifySingleUrl(string url)

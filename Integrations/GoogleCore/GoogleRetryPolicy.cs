@@ -23,6 +23,12 @@ public static class GoogleRetryPolicy
         }
     }
 
+    public static async Task ExecuteWithRetryAsync(Func<Task> action, int maxRetries = 5, Action<string>? logger = null) =>
+        await ExecuteWithRetryAsync(
+            async () => { await action().ConfigureAwait(false); return true; },
+            maxRetries,
+            logger).ConfigureAwait(false);
+
     public static T ExecuteWithRetry<T>(Func<T> action, int maxRetries = 5, Action<string>? logger = null)
     {
         try

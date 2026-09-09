@@ -22,7 +22,10 @@ public abstract class MigrationSummaryBase
         builder.AppendLine($"  {entityLabel}: {SeededCount} seeded, {AlreadyPresentCount} already present");
     }
 
-    protected static void AppendUnresolvedSection<T>(
+    /// <summary>Public (not just protected) so the reference-migration summaries below - which
+    /// don't share this base's Seeded/AlreadyPresent counters, only this rendering shape - can
+    /// call it without inheriting unrelated state.</summary>
+    public static void AppendUnresolvedSection<T>(
         StringBuilder builder, string header, IReadOnlyCollection<T> items, Func<T, string> formatItem)
     {
         if (items.Count == 0) return;
