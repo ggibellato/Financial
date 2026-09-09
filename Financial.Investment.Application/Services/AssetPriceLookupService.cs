@@ -3,6 +3,7 @@ using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Application.Validation;
 using Financial.Investment.Domain.Entities;
 using Financial.Shared.Abstractions.Observability;
+using Financial.Shared.Abstractions.Persistence;
 using Microsoft.Extensions.Logging;
 
 namespace Financial.Investment.Application.Services;
@@ -240,9 +241,8 @@ public sealed class AssetPriceLookupService : IAssetPriceLookupService
         AssetPriceSnapshot? displaced = null;
         var wrote = false;
 
-        try
-        {
-            await _repository.ApplyAndSaveAsync(() =>
+        await CompensatingSaveHelper.ApplyWithCompensationAsync(
+            () => _repository.ApplyAndSaveAsync(() =>
             {
                 var existing = asset.GetPriceForDate(today);
 
@@ -258,22 +258,16 @@ public sealed class AssetPriceLookupService : IAssetPriceLookupService
                 wrote = true;
                 asset.SetPrice(today, price, isManual: false);
                 return true;
-            }).ConfigureAwait(false);
-        }
-        catch
-        {
-            if (wrote)
-            {
-                // The undo edits the same graph, so it runs under the same exclusion the write did.
-                // Reporting no change keeps it in memory only - the failed write must not be retried.
-                await _repository.ApplyAndSaveAsync(() =>
+            }),
+            // Only undo when the write actually happened - a failure before that point (e.g. inside
+            // GetPriceForDate) never touched the graph, so restoring "no previous entry" here would
+            // wrongly delete an existing manual entry at today that this call never displaced.
+            () => wrote
+                ? _repository.ApplyAndSaveAsync(() =>
                 {
                     asset.RestorePrice(today, displaced);
                     return false;
-                }).ConfigureAwait(false);
-            }
-
-            throw;
-        }
+                })
+                : Task.FromResult(false)).ConfigureAwait(false);
     }
 }

@@ -14,8 +14,5 @@ public sealed class ShutdownFlushHostedService<TRepository> : IHostedService whe
 
     public Task StartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
-    public Task StopAsync(CancellationToken cancellationToken) =>
-        _repository is ISyncStatusProvider syncStatusProvider
-            ? syncStatusProvider.FlushAsync()
-            : Task.CompletedTask;
+    public Task StopAsync(CancellationToken cancellationToken) => _repository.FlushIfSupportedAsync();
 }

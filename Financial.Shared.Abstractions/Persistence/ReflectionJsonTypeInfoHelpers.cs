@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.Json.Serialization.Metadata;
 
@@ -30,7 +31,25 @@ public static class ReflectionJsonTypeInfoHelpers
         if (propInfo?.SetMethod is null)
             return;
 
-        var setter = propInfo.SetMethod;
-        jsonProp.Set = (obj, value) => setter.Invoke(obj, [value]);
+        jsonProp.Set = CompileSetter(propInfo.SetMethod);
+    }
+
+    /// <summary>
+    /// Compiles the property's setter once (here, at <see cref="JsonTypeInfo"/>-build time, which
+    /// System.Text.Json itself caches per <see cref="System.Text.Json.JsonSerializerOptions"/>)
+    /// into a typed delegate, instead of paying <see cref="MethodInfo.Invoke"/>'s per-call
+    /// argument-boxing and signature-check overhead on every property set during every full
+    /// document load.
+    /// </summary>
+    private static Action<object, object?> CompileSetter(MethodInfo setter)
+    {
+        var targetParam = Expression.Parameter(typeof(object), "target");
+        var valueParam = Expression.Parameter(typeof(object), "value");
+
+        var typedTarget = Expression.Convert(targetParam, setter.DeclaringType!);
+        var typedValue = Expression.Convert(valueParam, setter.GetParameters()[0].ParameterType);
+        var call = Expression.Call(typedTarget, setter, typedValue);
+
+        return Expression.Lambda<Action<object, object?>>(call, targetParam, valueParam).Compile();
     }
 }
