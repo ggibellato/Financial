@@ -194,6 +194,9 @@ public class Asset
     public AssetPriceSnapshot? GetPriceForDate(DateOnly date) =>
         _priceHistory.FirstOrDefault(entry => entry.Date == date);
 
+    public AssetPriceSnapshot? GetMostRecentPrice() =>
+        _priceHistory.OrderByDescending(entry => entry.Date).FirstOrDefault();
+
     public bool RemovePrice(DateOnly date)
     {
         var current = _priceHistory;

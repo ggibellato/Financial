@@ -36,10 +36,14 @@ public static class InvestmentInfrastructureServiceCollectionExtensions
             sp.GetRequiredService<YahooFinanceService>(),
             sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<FallbackFinanceService>>()));
         services.AddSingleton<StatusInvestFinanceService>();
+        services.AddSingleton<DicionarioDoInvestidorFinanceService>();
         services.AddSingleton<IAssetPriceFetcher, StandardAssetPriceFetcher>();
         services.AddSingleton<IAssetPriceFetcher, CryptocurrencyAssetPriceFetcher>();
         services.AddSingleton<IAssetPriceFetcher>(sp =>
-            new BondAssetPriceFetcher(sp.GetRequiredService<StatusInvestFinanceService>()));
+            new BondAssetPriceFetcher(new FallbackFinanceService(
+                sp.GetRequiredService<StatusInvestFinanceService>(),
+                sp.GetRequiredService<DicionarioDoInvestidorFinanceService>(),
+                sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<FallbackFinanceService>>())));
         services.AddSingleton<IInvestmentRepository>(sp =>
         {
             var settings = sp.GetRequiredService<IOptions<InvestmentRepositorySettingsOptions>>().Value;
