@@ -1,6 +1,8 @@
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Domain.Entities;
 using Financial.Investment.Domain.ValueObjects;
+using Financial.Investment.Infrastructure.DTOs;
+using Financial.Investment.Infrastructure.Interfaces;
 using Financial.Investment.Infrastructure.Services;
 using FluentAssertions;
 
@@ -21,7 +23,7 @@ public class BondAssetPriceFetcherTests
     {
         Action act = () => new BondAssetPriceFetcher(null!);
 
-        act.Should().Throw<ArgumentNullException>().WithParameterName("statusInvestFinanceService");
+        act.Should().Throw<ArgumentNullException>().WithParameterName("financeService");
     }
 
     [Fact]
@@ -68,5 +70,37 @@ public class BondAssetPriceFetcherTests
         var result = fetcher.GetSnapshot(request);
 
         result.Should().Be(snapshot);
+    }
+
+    [Fact]
+    public void GetSnapshot_ValidRequest_ForwardsExchangeAndTickerToFinanceService()
+    {
+        AssetValueRequestDTO? captured = null;
+        var snapshot = new AssetValueSnapshot("TESOURO IPCA+ 2029", "TESOURO IPCA+ 2029", 3775.97m, DateTimeOffset.UtcNow);
+        var fetcher = new BondAssetPriceFetcher(new FakeFinanceService(request =>
+        {
+            captured = request;
+            return snapshot;
+        }));
+        var request = new AssetPriceRequestDTO { Exchange = "BVMF", Ticker = "TESOURO IPCA+ 2029", Name = "TESOURO IPCA+ 2029" };
+
+        fetcher.GetSnapshot(request);
+
+        captured.Should().NotBeNull();
+        captured!.Exchange.Should().Be("BVMF");
+        captured.Ticker.Should().Be("TESOURO IPCA+ 2029");
+        captured.Name.Should().Be("TESOURO IPCA+ 2029");
+    }
+
+    private sealed class FakeFinanceService : IFinanceService
+    {
+        private readonly Func<AssetValueRequestDTO, AssetValueSnapshot> _behavior;
+
+        public FakeFinanceService(Func<AssetValueRequestDTO, AssetValueSnapshot> behavior)
+        {
+            _behavior = behavior;
+        }
+
+        public AssetValueSnapshot GetAssetValue(AssetValueRequestDTO request) => _behavior(request);
     }
 }

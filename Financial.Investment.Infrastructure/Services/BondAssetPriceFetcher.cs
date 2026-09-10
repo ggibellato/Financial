@@ -8,11 +8,11 @@ namespace Financial.Investment.Infrastructure.Services;
 
 public sealed class BondAssetPriceFetcher : IAssetPriceFetcher
 {
-    private readonly IFinanceService _statusInvestFinanceService;
+    private readonly IFinanceService _financeService;
 
-    public BondAssetPriceFetcher(IFinanceService statusInvestFinanceService)
+    public BondAssetPriceFetcher(IFinanceService financeService)
     {
-        _statusInvestFinanceService = statusInvestFinanceService ?? throw new ArgumentNullException(nameof(statusInvestFinanceService));
+        _financeService = financeService ?? throw new ArgumentNullException(nameof(financeService));
     }
 
     public bool Supports(GlobalAssetClass assetClass) => assetClass == GlobalAssetClass.Bond;
@@ -24,6 +24,11 @@ public sealed class BondAssetPriceFetcher : IAssetPriceFetcher
             throw new ArgumentException("Name is required for bond assets.", nameof(request));
         }
 
-        return _statusInvestFinanceService.GetAssetValue(new AssetValueRequestDTO { Name = request.Name });
+        return _financeService.GetAssetValue(new AssetValueRequestDTO
+        {
+            Name = request.Name,
+            Exchange = request.Exchange,
+            Ticker = request.Ticker
+        });
     }
 }
