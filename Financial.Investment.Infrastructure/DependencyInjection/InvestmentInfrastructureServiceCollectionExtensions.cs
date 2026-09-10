@@ -37,26 +37,13 @@ public static class InvestmentInfrastructureServiceCollectionExtensions
             sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<FallbackFinanceService>>()));
         services.AddSingleton<StatusInvestFinanceService>();
         services.AddSingleton<DicionarioDoInvestidorFinanceService>();
-        services.AddSingleton<RedentiaFinanceService>();
         services.AddSingleton<IAssetPriceFetcher, StandardAssetPriceFetcher>();
         services.AddSingleton<IAssetPriceFetcher, CryptocurrencyAssetPriceFetcher>();
         services.AddSingleton<IAssetPriceFetcher>(sp =>
-        {
-            var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<FallbackFinanceService>>();
-
-            // dicionariodoinvestidor.com only lists bonds Tesouro Direto currently offers for new
-            // purchase, so redentia.com.br - which covers every series, matured or not - sits behind
-            // it as a second fallback rather than a replacement.
-            var secondFallback = new FallbackFinanceService(
-                sp.GetRequiredService<DicionarioDoInvestidorFinanceService>(),
-                sp.GetRequiredService<RedentiaFinanceService>(),
-                logger);
-
-            return new BondAssetPriceFetcher(new FallbackFinanceService(
+            new BondAssetPriceFetcher(new FallbackFinanceService(
                 sp.GetRequiredService<StatusInvestFinanceService>(),
-                secondFallback,
-                logger));
-        });
+                sp.GetRequiredService<DicionarioDoInvestidorFinanceService>(),
+                sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<FallbackFinanceService>>())));
         services.AddSingleton<IInvestmentRepository>(sp =>
         {
             var settings = sp.GetRequiredService<IOptions<InvestmentRepositorySettingsOptions>>().Value;

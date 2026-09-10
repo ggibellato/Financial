@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Net;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using HtmlAgilityPack;
@@ -21,7 +22,7 @@ public static class StatusInvest
 
     public static WebAssetQuote GetSellValue(string bondTitle)
     {
-        var slug = TesouroDiretoSlug.Derive(bondTitle);
+        var slug = DeriveSlug(bondTitle);
         var url = BaseUrl + slug;
 
         var htmlDoc = LoadWithRetry(bondTitle, url);
@@ -71,7 +72,22 @@ public static class StatusInvest
         throw lastBlockedResponse!;
     }
 
-    internal static string DeriveSlug(string bondTitle) => TesouroDiretoSlug.Derive(bondTitle);
+    internal static string DeriveSlug(string bondTitle)
+    {
+        var formD = bondTitle.Trim().ToLowerInvariant().Normalize(NormalizationForm.FormD);
+        var stripped = new StringBuilder();
+        foreach (var c in formD)
+        {
+            if (CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
+            {
+                stripped.Append(c);
+            }
+        }
+
+        var cleaned = Regex.Replace(stripped.ToString(), @"[^a-z0-9\s-]", string.Empty);
+        var collapsed = Regex.Replace(cleaned, @"\s+", " ").Trim();
+        return collapsed.Replace(" ", "-");
+    }
 
     internal static decimal? ExtractSellPrice(string pageText)
     {
