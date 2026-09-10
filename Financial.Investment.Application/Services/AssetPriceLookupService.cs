@@ -121,7 +121,10 @@ public sealed class AssetPriceLookupService : IAssetPriceLookupService
         }
         catch (Exception ex)
         {
-            var fallback = asset.GetPriceForDate(DateOnly.FromDateTime(DateTime.Today));
+            // The most recent stored price, not only today's: the first live fetch of the day for
+            // an asset with no entry yet used to have nothing to fall back to, surfacing a scrape
+            // failure as a hard error even though yesterday's price is a better answer than none.
+            var fallback = asset.GetMostRecentPrice();
             if (fallback is null)
             {
                 throw;

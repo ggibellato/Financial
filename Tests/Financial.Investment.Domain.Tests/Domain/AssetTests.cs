@@ -374,6 +374,28 @@ public class AssetTests
         asset.PriceHistory.Should().HaveCount(2);
     }
 
+    [Fact]
+    public void GetMostRecentPrice_NoHistory_ReturnsNull()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+
+        asset.GetMostRecentPrice().Should().BeNull();
+    }
+
+    [Fact]
+    public void GetMostRecentPrice_SeveralEntries_ReturnsTheLatestByDate()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        asset.SetPrice(new DateOnly(2026, 8, 10), 90m, isManual: false);
+        asset.SetPrice(new DateOnly(2026, 8, 15), 100m, isManual: false);
+        asset.SetPrice(new DateOnly(2026, 8, 12), 95m, isManual: false);
+
+        var entry = asset.GetMostRecentPrice();
+
+        entry!.Date.Should().Be(new DateOnly(2026, 8, 15));
+        entry.Price.Should().Be(100m);
+    }
+
     /// <summary>
     /// A price fetch records into the same list the asset page is reading. Editing it in place broke
     /// the reader's enumeration, which is how a save surfaced "Collection was modified". No threads

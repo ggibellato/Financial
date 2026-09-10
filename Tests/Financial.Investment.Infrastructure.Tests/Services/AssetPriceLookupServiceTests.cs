@@ -205,6 +205,51 @@ public class AssetPriceLookupServiceTests
         }
     }
 
+    [Fact]
+    public async Task GetCurrentPriceAsync_LiveFetchFails_OnlyAnEarlierEntryExists_ReturnsThatPriceInsteadOfThrowing()
+    {
+        var (service, repository, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.Failure());
+        try
+        {
+            var yesterday = DateOnly.FromDateTime(DateTime.Today).AddDays(-1);
+            repository.GetAsset(BrokerName, PortfolioName, AssetName)!.SetPrice(yesterday, 75m, isManual: false);
+            await repository.ApplyAndSaveAsync(() => true);
+
+            var result = await service.GetCurrentPriceAsync(BuildRequest());
+
+            result.Price.Should().Be(75m);
+            result.AsOfDate.Should().Be(yesterday);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
+    public async Task GetCurrentPriceAsync_LiveFetchFails_SeveralEarlierEntriesExist_ReturnsTheMostRecentOne()
+    {
+        var (service, repository, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.Failure());
+        try
+        {
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var asset = repository.GetAsset(BrokerName, PortfolioName, AssetName)!;
+            asset.SetPrice(today.AddDays(-5), 50m, isManual: false);
+            asset.SetPrice(today.AddDays(-1), 75m, isManual: false);
+            asset.SetPrice(today.AddDays(-3), 60m, isManual: false);
+            await repository.ApplyAndSaveAsync(() => true);
+
+            var result = await service.GetCurrentPriceAsync(BuildRequest());
+
+            result.Price.Should().Be(75m);
+            result.AsOfDate.Should().Be(today.AddDays(-1));
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
     /// <summary>
     /// The fallback branch is the only one that swallows the fetch failure, so it is the only
     /// place the failure can still be reported. A whole portfolio grid of failed scrapes was
@@ -262,7 +307,7 @@ public class AssetPriceLookupServiceTests
     /// every such failure twice.
     /// </summary>
     [Fact]
-    public async Task GetCurrentPriceAsync_LiveFetchFails_NoEntryForToday_DoesNotLog()
+    public async Task GetCurrentPriceAsync_LiveFetchFails_NoHistoryAtAll_DoesNotLog()
     {
         var (service, _, logger, tempFile) = CreateRecordingServiceOverRepository(StubAssetPriceService.Failure());
         try
@@ -279,7 +324,7 @@ public class AssetPriceLookupServiceTests
     }
 
     [Fact]
-    public async Task GetCurrentPriceAsync_LiveFetchFails_NoEntryForToday_RethrowsOriginalException()
+    public async Task GetCurrentPriceAsync_LiveFetchFails_NoHistoryAtAll_RethrowsOriginalException()
     {
         var (service, _, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.Failure());
         try
