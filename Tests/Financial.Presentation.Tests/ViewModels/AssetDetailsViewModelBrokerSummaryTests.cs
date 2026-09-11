@@ -55,6 +55,54 @@ public class AssetDetailsViewModelBrokerSummaryTests
     }
 
     [Fact]
+    public void LoadBrokerSummary_SetsMarketValueAndReturns()
+    {
+        var vm = BuildViewModel();
+        var summary = new AggregatedSummaryDTO
+        {
+            MarketValue = 15000m,
+            HoldingCount = 6,
+            UnvaluedHoldingCount = 0,
+            PriceOnlyReturn = 0.05m,
+            TotalReturn = 0.07m,
+        };
+        vm.LoadBrokerSummary("XPI", summary, []);
+        vm.MarketValue.Should().Be(15000m);
+        vm.HoldingCount.Should().Be(6);
+        vm.PriceOnlyReturn.Should().Be(0.05m);
+        vm.TotalReturn.Should().Be(0.07m);
+        vm.HasIncompleteValuation.Should().BeFalse();
+    }
+
+    [Fact]
+    public void LoadBrokerSummary_NoValuedHolding_DistinguishableFromEmptyBroker()
+    {
+        var vm = BuildViewModel();
+        var nothingValuable = new AggregatedSummaryDTO { MarketValue = null, HoldingCount = 2, UnvaluedHoldingCount = 2 };
+        vm.LoadBrokerSummary("XPI", nothingValuable, []);
+        vm.HasIncompleteValuation.Should().BeTrue();
+        vm.IncompleteValuationMessage.Should().Be("None of the 2 holdings could be valued; returns are withheld.");
+
+        var empty = new AggregatedSummaryDTO { MarketValue = 0m, HoldingCount = 0, UnvaluedHoldingCount = 0 };
+        vm.LoadBrokerSummary("XPI", empty, []);
+        vm.HasIncompleteValuation.Should().BeFalse();
+        vm.MarketValue.Should().Be(0m);
+    }
+
+    [Fact]
+    public void Clear_AfterLoadBrokerSummary_ResetsMarketValueAndReturns()
+    {
+        var vm = BuildViewModel();
+        var summary = new AggregatedSummaryDTO { MarketValue = 15000m, HoldingCount = 6, PriceOnlyReturn = 0.05m, TotalReturn = 0.07m };
+        vm.LoadBrokerSummary("XPI", summary, []);
+        vm.Clear();
+        vm.MarketValue.Should().BeNull();
+        vm.HoldingCount.Should().Be(0);
+        vm.PriceOnlyReturn.Should().BeNull();
+        vm.TotalReturn.Should().BeNull();
+    }
+
+    [Fact]
     public void LoadBrokerSummary_LoadsCreditsForCreditsTab()
     {
         var vm = BuildViewModel();

@@ -41,3 +41,10 @@
 .aggregated-summary__value--blue {
   color: #1565c0;
 }
+
+.aggregated-summary__incomplete-notice {
+  margin: 10px 0 0;
+  font-size: 12px;
+  font-style: italic;
+  color: var(--danger);
+}

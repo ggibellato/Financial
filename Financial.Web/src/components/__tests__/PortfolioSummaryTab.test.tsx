@@ -257,7 +257,7 @@ describe('PortfolioSummaryTab', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [IDLE_ROW_PRICE] })
     renderComponent('historic')
-    expect(screen.getByText(/10[.,]00%/)).toBeInTheDocument()
+    expect(within(screen.getByRole('table')).getByText(/10[.,]00%/)).toBeInTheDocument()
   })
 
   it('computes_historic_profit_with_credits_percent_from_full_realized_gain_loss', () => {
@@ -430,7 +430,7 @@ describe('PortfolioSummaryTab', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [rowPrice] })
     renderComponent()
-    expect(screen.getByText(/10[.,]00%/)).toBeInTheDocument()
+    expect(within(screen.getByRole('table')).getByText(/10[.,]00%/)).toBeInTheDocument()
   })
 
   it('renders_xirr_when_the_row_rate_resolves', () => {

@@ -118,6 +118,78 @@ public class AssetDetailsViewModelPortfolioSummaryTests
     }
 
     [Fact]
+    public void LoadPortfolioSummary_SetsMarketValueAndReturns()
+    {
+        var vm = BuildViewModel();
+        var summary = new AggregatedSummaryDTO
+        {
+            MarketValue = 9000m,
+            HoldingCount = 3,
+            UnvaluedHoldingCount = 0,
+            PriceOnlyReturn = 0.08m,
+            TotalReturn = 0.1m,
+        };
+        vm.LoadPortfolioSummary("Broker", "Portfolio", summary, [], BuildItems());
+        vm.MarketValue.Should().Be(9000m);
+        vm.HoldingCount.Should().Be(3);
+        vm.UnvaluedHoldingCount.Should().Be(0);
+        vm.PriceOnlyReturn.Should().Be(0.08m);
+        vm.TotalReturn.Should().Be(0.1m);
+        vm.HasIncompleteValuation.Should().BeFalse();
+        vm.IncompleteValuationMessage.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void LoadPortfolioSummary_PartiallyValued_StatesShortfallAndWithholdsMessage()
+    {
+        var vm = BuildViewModel();
+        var summary = new AggregatedSummaryDTO
+        {
+            MarketValue = 5000m,
+            HoldingCount = 5,
+            UnvaluedHoldingCount = 2,
+            PriceOnlyReturn = null,
+            TotalReturn = null,
+        };
+        vm.LoadPortfolioSummary("Broker", "Portfolio", summary, [], BuildItems());
+        vm.HasIncompleteValuation.Should().BeTrue();
+        vm.IncompleteValuationMessage.Should().Be(
+            "2 of 5 holdings could not be valued; the total is incomplete and returns are withheld.");
+    }
+
+    [Fact]
+    public void LoadPortfolioSummary_NothingValuable_DistinctMessageFromPartial()
+    {
+        var vm = BuildViewModel();
+        var summary = new AggregatedSummaryDTO
+        {
+            MarketValue = null,
+            HoldingCount = 4,
+            UnvaluedHoldingCount = 4,
+            PriceOnlyReturn = null,
+            TotalReturn = null,
+        };
+        vm.LoadPortfolioSummary("Broker", "Portfolio", summary, [], BuildItems());
+        vm.HasIncompleteValuation.Should().BeTrue();
+        vm.IncompleteValuationMessage.Should().Be("None of the 4 holdings could be valued; returns are withheld.");
+    }
+
+    [Fact]
+    public void Clear_AfterLoadPortfolioSummary_ResetsMarketValueAndReturns()
+    {
+        var vm = BuildViewModel();
+        var summary = new AggregatedSummaryDTO { MarketValue = 9000m, HoldingCount = 3, PriceOnlyReturn = 0.08m, TotalReturn = 0.1m };
+        vm.LoadPortfolioSummary("Broker", "Portfolio", summary, [], BuildItems());
+        vm.Clear();
+        vm.MarketValue.Should().BeNull();
+        vm.HoldingCount.Should().Be(0);
+        vm.UnvaluedHoldingCount.Should().Be(0);
+        vm.PriceOnlyReturn.Should().BeNull();
+        vm.TotalReturn.Should().BeNull();
+        vm.HasIncompleteValuation.Should().BeFalse();
+    }
+
+    [Fact]
     public void LoadPortfolioSummary_LoadsCreditsForCreditsTab()
     {
         var vm = BuildViewModel();

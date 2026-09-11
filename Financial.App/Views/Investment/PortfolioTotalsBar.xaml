@@ -6,19 +6,42 @@
         and PortfolioSummaryTemplateHistoric — was duplicated verbatim in both. Binds
         against the ambient AssetDetails.* DataContext inherited from the host template.
     -->
-    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-        <TextBlock Text="Total Bought:" FontWeight="Bold" Margin="0,0,5,0"/>
-        <TextBlock Text="{Binding AssetDetails.TotalBought, Mode=OneWay, StringFormat=N2}"
-                   FontFamily="Consolas" Foreground="{DynamicResource SystemFillColorSuccessBrush}" Margin="0,0,20,0"/>
-        <TextBlock Text="Total Sold:" FontWeight="Bold" Margin="0,0,5,0"/>
-        <TextBlock Text="{Binding AssetDetails.TotalSold, Mode=OneWay, StringFormat=N2}"
-                   FontFamily="Consolas" Foreground="{DynamicResource SystemFillColorCriticalBrush}" Margin="0,0,20,0"/>
-        <TextBlock Text="Total Credits:" FontWeight="Bold" Margin="0,0,5,0"/>
-        <TextBlock Text="{Binding AssetDetails.TotalCredits, Mode=OneWay, StringFormat=N2}"
-                   FontFamily="Consolas" Foreground="Blue" Margin="0,0,20,0"/>
-        <TextBlock Text="Total Invested:" FontWeight="Bold" Margin="0,0,5,0"/>
-        <TextBlock Text="{Binding AssetDetails.TotalInvested, Mode=OneWay, StringFormat=N2}"
-                   FontFamily="Consolas"
-                   Foreground="{Binding AssetDetails.TotalInvested, Converter={StaticResource SignedValueToBrushConverter}}"/>
+    <StackPanel Margin="0,0,0,10">
+        <StackPanel Orientation="Horizontal">
+            <TextBlock Text="Total Bought:" FontWeight="Bold" Margin="0,0,5,0"/>
+            <TextBlock Text="{Binding AssetDetails.TotalBought, Mode=OneWay, StringFormat=N2}"
+                       FontFamily="Consolas" Foreground="{DynamicResource SystemFillColorSuccessBrush}" Margin="0,0,20,0"/>
+            <TextBlock Text="Total Sold:" FontWeight="Bold" Margin="0,0,5,0"/>
+            <TextBlock Text="{Binding AssetDetails.TotalSold, Mode=OneWay, StringFormat=N2}"
+                       FontFamily="Consolas" Foreground="{DynamicResource SystemFillColorCriticalBrush}" Margin="0,0,20,0"/>
+            <TextBlock Text="Total Credits:" FontWeight="Bold" Margin="0,0,5,0"/>
+            <TextBlock Text="{Binding AssetDetails.TotalCredits, Mode=OneWay, StringFormat=N2}"
+                       FontFamily="Consolas" Foreground="Blue" Margin="0,0,20,0"/>
+            <TextBlock Text="Total Invested:" FontWeight="Bold" Margin="0,0,5,0"/>
+            <TextBlock Text="{Binding AssetDetails.TotalInvested, Mode=OneWay, StringFormat=N2}"
+                       FontFamily="Consolas"
+                       Foreground="{Binding AssetDetails.TotalInvested, Converter={StaticResource SignedValueToBrushConverter}}"/>
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+            <TextBlock Text="Market Value:" FontWeight="Bold" Margin="0,0,5,0"/>
+            <TextBlock Text="{Binding AssetDetails.MarketValue, Mode=OneWay, StringFormat=N2, TargetNullValue='—'}"
+                       FontFamily="Consolas" Margin="0,0,20,0"/>
+            <TextBlock Text="Price-Only Return:" FontWeight="Bold" Margin="0,0,5,0"/>
+            <TextBlock Text="{Binding AssetDetails.PriceOnlyReturn, Mode=OneWay, StringFormat=P2, TargetNullValue='—'}"
+                       FontFamily="Consolas"
+                       Foreground="{Binding AssetDetails.PriceOnlyReturn, Converter={StaticResource SignedValueToBrushConverter}}"
+                       Margin="0,0,20,0"/>
+            <TextBlock Text="Total Return:" FontWeight="Bold" Margin="0,0,5,0"/>
+            <TextBlock Text="{Binding AssetDetails.TotalReturn, Mode=OneWay, StringFormat=P2, TargetNullValue='—'}"
+                       FontFamily="Consolas"
+                       Foreground="{Binding AssetDetails.TotalReturn, Converter={StaticResource SignedValueToBrushConverter}}"/>
+        </StackPanel>
+        <TextBlock Text="{Binding AssetDetails.IncompleteValuationMessage, Mode=OneWay}"
+                   Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                   FontStyle="Italic"
+                   TextWrapping="Wrap"
+                   Margin="0,6,0,0"
+                   AutomationProperties.LiveSetting="Polite"
+                   Visibility="{Binding AssetDetails.HasIncompleteValuation, Converter={StaticResource BoolToVisibilityConverter}}"/>
     </StackPanel>
 </UserControl>

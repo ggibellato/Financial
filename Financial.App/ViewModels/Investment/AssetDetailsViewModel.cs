@@ -71,6 +71,11 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private bool _isPriceStale;
     private decimal? _priceOnlyReturn;
     private decimal? _totalReturn;
+    private decimal? _summaryMarketValue;
+    private int _summaryHoldingCount;
+    private int _summaryUnvaluedHoldingCount;
+    private decimal? _summaryPriceOnlyReturn;
+    private decimal? _summaryTotalReturn;
 
     public string AssetName { get => _assetName; private set => SetProperty(ref _assetName, value); }
     public string BrokerName { get => _brokerName; private set => SetProperty(ref _brokerName, value); }
@@ -217,6 +222,21 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         get => _totalInvested;
         private set => SetProperty(ref _totalInvested, value);
     }
+
+    public decimal? MarketValue { get => _summaryMarketValue; private set => SetProperty(ref _summaryMarketValue, value); }
+    public int HoldingCount { get => _summaryHoldingCount; private set => SetProperty(ref _summaryHoldingCount, value); }
+    public int UnvaluedHoldingCount { get => _summaryUnvaluedHoldingCount; private set => SetProperty(ref _summaryUnvaluedHoldingCount, value); }
+    public decimal? PriceOnlyReturn { get => _summaryPriceOnlyReturn; private set => SetProperty(ref _summaryPriceOnlyReturn, value); }
+    public decimal? TotalReturn { get => _summaryTotalReturn; private set => SetProperty(ref _summaryTotalReturn, value); }
+
+    public bool HasIncompleteValuation => UnvaluedHoldingCount > 0;
+
+    public string IncompleteValuationMessage =>
+        !HasIncompleteValuation
+            ? string.Empty
+            : MarketValue is null
+                ? $"None of the {HoldingCount} holdings could be valued; returns are withheld."
+                : $"{UnvaluedHoldingCount} of {HoldingCount} holdings could not be valued; the total is incomplete and returns are withheld.";
 
     public PlotModel? OverallBreakdownPlotModel
     {
@@ -430,6 +450,13 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         IsBrokerView = false;
         IsAssetView = false;
         TotalInvested = 0m;
+        MarketValue = null;
+        HoldingCount = 0;
+        UnvaluedHoldingCount = 0;
+        PriceOnlyReturn = null;
+        TotalReturn = null;
+        OnPropertyChanged(nameof(HasIncompleteValuation));
+        OnPropertyChanged(nameof(IncompleteValuationMessage));
         ClearValuation();
         CancelAndResetBreakdownFetch();
         ClearAssetContext();
@@ -588,6 +615,13 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         TotalBought = summary.TotalBought;
         TotalSold = summary.TotalSold;
         HasCreditsContext = true;
+        MarketValue = summary.MarketValue;
+        HoldingCount = summary.HoldingCount;
+        UnvaluedHoldingCount = summary.UnvaluedHoldingCount;
+        PriceOnlyReturn = summary.PriceOnlyReturn;
+        TotalReturn = summary.TotalReturn;
+        OnPropertyChanged(nameof(HasIncompleteValuation));
+        OnPropertyChanged(nameof(IncompleteValuationMessage));
 
         Credits.LoadAggregate(contextKey, credits);
         TotalCredits = credits.Sum(credit => credit.Value);
