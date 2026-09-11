@@ -2,7 +2,6 @@ using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.Entities;
-using Financial.Investment.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.Logging;
 
@@ -89,27 +88,17 @@ public sealed class SummaryService : ISummaryService
         return _tracer.StartServiceSpan("Investment", nameof(SummaryService), operationName, EntityType);
     }
 
-    /// <summary>
-    /// Active-scope totals exclude a position sold down to zero quantity - a fully-closed portfolio is
-    /// routed to Historic wholesale, but a single asset closing out inside an otherwise-still-open
-    /// portfolio has nowhere else to go, so it must be filtered out here to keep "Active" meaning
-    /// currently-held capital. Historic scope must never apply this filter: every asset there has
-    /// Quantity == 0 by definition, so filtering would zero out every Historic total.
-    /// </summary>
     private static AggregatedSummaryDTO Aggregate(IEnumerable<Asset> assets, InvestmentScope scope)
     {
-        var relevantAssets = scope == InvestmentScope.Active
-            ? assets.Where(a => a.Quantity != 0)
-            : assets;
+        decimal totalBought = 0, totalSold = 0, totalCredits = 0, totalInvested = 0;
 
-        decimal totalBought = 0, totalSold = 0, totalCredits = 0;
-
-        foreach (var asset in relevantAssets)
+        foreach (var asset in assets)
         {
-            var (bought, sold, credits) = AssetTotalsCalculator.CalculateTotals(asset);
-            totalBought += bought;
-            totalSold += sold;
-            totalCredits += credits;
+            var totals = AssetTotals.For(asset);
+            totalBought += totals.TotalBought;
+            totalSold += totals.TotalSold;
+            totalCredits += totals.TotalCredits;
+            totalInvested += AssetAmountBases.For(scope, totals).InvestedAmount;
         }
 
         return new AggregatedSummaryDTO
@@ -117,7 +106,7 @@ public sealed class SummaryService : ISummaryService
             TotalBought = totalBought,
             TotalSold = totalSold,
             TotalCredits = totalCredits,
-            TotalInvested = totalBought - totalSold,
+            TotalInvested = totalInvested,
         };
     }
 }

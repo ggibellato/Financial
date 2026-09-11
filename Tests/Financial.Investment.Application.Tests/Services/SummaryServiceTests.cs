@@ -69,13 +69,8 @@ public class SummaryServiceTests
         result.TotalCredits.Should().Be(45m);
     }
 
-    /// <summary>
-    /// A single asset can close out (sell down to zero) inside a portfolio that otherwise stays active -
-    /// only whole portfolios get routed to Historic, not individual assets - so it must be excluded here
-    /// to keep "Active" totals meaning currently-held capital.
-    /// </summary>
     [Fact]
-    public void GetBrokerSummary_ActiveScope_ExcludesZeroQuantityAssetTotals()
+    public void GetBrokerSummary_ActiveScope_IncludesAssetClosedToZeroQuantity()
     {
         var asset1 = MakeAsset();
         asset1.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 10m, 5m, 0m));
@@ -89,16 +84,12 @@ public class SummaryServiceTests
         var result = CreateService().GetBrokerSummary("XPI");
 
         using var _ = new AssertionScope();
-        result.TotalBought.Should().Be(50m);
-        result.TotalSold.Should().Be(0m);
-        result.TotalCredits.Should().Be(20m);
+        result.TotalBought.Should().Be(100m);
+        result.TotalSold.Should().Be(50m);
+        result.TotalCredits.Should().Be(120m);
+        result.TotalInvested.Should().Be(50m);
     }
 
-    /// <summary>
-    /// Every asset under Historic scope has Quantity == 0 by definition (that is what makes a position
-    /// historic), so the Active-scope exclusion above must never apply here - it would zero out every
-    /// Historic total.
-    /// </summary>
     [Fact]
     public void GetBrokerSummary_HistoricScope_IncludesZeroQuantityAssetTotals()
     {
@@ -112,6 +103,7 @@ public class SummaryServiceTests
         result.TotalBought.Should().Be(50m);
         result.TotalSold.Should().Be(50m);
         result.TotalCredits.Should().Be(100m);
+        result.TotalInvested.Should().Be(50m);
     }
 
     [Fact]
@@ -158,11 +150,11 @@ public class SummaryServiceTests
     }
 
     [Fact]
-    public void GetBrokerSummary_TotalInvested_EqualsBoughtMinusSold()
+    public void GetBrokerSummary_ActiveScope_TotalInvested_EqualsCostOfUnitsCurrentlyHeld()
     {
         var asset = MakeAsset();
         asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 30m, 10m, 0m));
-        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 12m, 10m, 0m));
+        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 12m, 50m, 0m));
         _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", asset)];
 
         var result = CreateService().GetBrokerSummary("XPI");
@@ -171,16 +163,17 @@ public class SummaryServiceTests
     }
 
     [Fact]
-    public void GetBrokerSummary_TotalInvested_CanBeNegative()
+    public void GetBrokerSummary_ActiveScope_TotalInvested_ClampsToZeroWhenPositionIsOversold()
     {
         var asset = MakeAsset();
         asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 10m, 10m, 0m));
-        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 5m, 50m, 0m));
+        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 15m, 50m, 0m));
         _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", asset)];
 
         var result = CreateService().GetBrokerSummary("XPI");
 
-        result.TotalInvested.Should().Be(-150m);
+        asset.Quantity.Should().Be(-5m);
+        result.TotalInvested.Should().Be(0m);
     }
 
     [Theory]
@@ -236,13 +229,8 @@ public class SummaryServiceTests
         result.TotalCredits.Should().Be(50m);
     }
 
-    /// <summary>
-    /// Same rationale as the broker-scope twin above: a single asset can close out to zero quantity
-    /// inside a portfolio that otherwise stays active, and must be excluded from that portfolio's
-    /// Active-scope totals.
-    /// </summary>
     [Fact]
-    public void GetPortfolioSummary_ActiveScope_ExcludesZeroQuantityAssetTotals()
+    public void GetPortfolioSummary_ActiveScope_IncludesAssetClosedToZeroQuantity()
     {
         var asset1 = MakeAsset();
         asset1.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 5m, 10m, 0m));
@@ -255,14 +243,11 @@ public class SummaryServiceTests
         var result = CreateService().GetPortfolioSummary("XPI", "Default");
 
         using var _ = new AssertionScope();
-        result.TotalBought.Should().Be(50m);
-        result.TotalCredits.Should().Be(0m);
+        result.TotalBought.Should().Be(100m);
+        result.TotalCredits.Should().Be(999m);
+        result.TotalInvested.Should().Be(50m);
     }
 
-    /// <summary>
-    /// A Historic-scope portfolio's assets all have Quantity == 0 by definition, so the Active-scope
-    /// exclusion above must never apply here.
-    /// </summary>
     [Fact]
     public void GetPortfolioSummary_HistoricScope_IncludesZeroQuantityAssetTotals()
     {
@@ -276,6 +261,7 @@ public class SummaryServiceTests
         result.TotalBought.Should().Be(50m);
         result.TotalSold.Should().Be(50m);
         result.TotalCredits.Should().Be(999m);
+        result.TotalInvested.Should().Be(50m);
     }
 
     [Fact]
@@ -289,11 +275,11 @@ public class SummaryServiceTests
     }
 
     [Fact]
-    public void GetPortfolioSummary_TotalInvested_EqualsBoughtMinusSold()
+    public void GetPortfolioSummary_ActiveScope_TotalInvested_EqualsCostOfUnitsCurrentlyHeld()
     {
         var asset = MakeAsset();
         asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 20m, 10m, 0m));
-        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 5m, 10m, 0m));
+        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 5m, 40m, 0m));
         _repository.AssetsByBrokerPortfolio = [asset];
 
         var result = CreateService().GetPortfolioSummary("XPI", "Default");

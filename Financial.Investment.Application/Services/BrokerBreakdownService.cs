@@ -1,7 +1,6 @@
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
-using Financial.Investment.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.Logging;
 
@@ -42,11 +41,7 @@ public sealed class BrokerBreakdownService : IBrokerBreakdownService
                 return [];
             }
 
-            var result = BrokerBreakdownBuilder.Build(broker, asset =>
-            {
-                var (totalBought, totalSold, _) = AssetTotalsCalculator.CalculateTotals(asset);
-                return AssetInvestedAmountSelector.Select(scope, totalBought, totalSold);
-            });
+            var result = BrokerBreakdownBuilder.Build(broker, asset => AssetAmountBases.For(scope, AssetTotals.For(asset)).InvestedAmount);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetBrokerBreakdown");
