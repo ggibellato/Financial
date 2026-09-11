@@ -3,6 +3,24 @@
     "schemas": {
       "AggregatedSummaryDTO": {
         "properties": {
+          "holdingCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "marketValue": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "priceOnlyReturn": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
           "totalBought": {
             "format": "double",
             "type": "number"
@@ -15,9 +33,20 @@
             "format": "double",
             "type": "number"
           },
+          "totalReturn": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
           "totalSold": {
             "format": "double",
             "type": "number"
+          },
+          "unvaluedHoldingCount": {
+            "format": "int32",
+            "type": "integer"
           }
         },
         "type": "object"

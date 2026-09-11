@@ -14,12 +14,24 @@ public sealed class SummaryService : ISummaryService
     private readonly IInvestmentRepository _repository;
     private readonly ITelemetryTracer _tracer;
     private readonly ILogger<SummaryService> _logger;
+    private readonly IHoldingValuationService _holdingValuationService;
+    private readonly IXirrCalculationService _xirrCalculationService;
+    private readonly TimeProvider _timeProvider;
 
-    public SummaryService(IInvestmentRepository repository, ITelemetryTracer tracer, ILogger<SummaryService> logger)
+    public SummaryService(
+        IInvestmentRepository repository,
+        ITelemetryTracer tracer,
+        ILogger<SummaryService> logger,
+        IHoldingValuationService holdingValuationService,
+        IXirrCalculationService xirrCalculationService,
+        TimeProvider? timeProvider = null)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _holdingValuationService = holdingValuationService ?? throw new ArgumentNullException(nameof(holdingValuationService));
+        _xirrCalculationService = xirrCalculationService ?? throw new ArgumentNullException(nameof(xirrCalculationService));
+        _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
     public AggregatedSummaryDTO GetBrokerSummary(string brokerName, InvestmentScope scope = InvestmentScope.Active)
@@ -31,7 +43,7 @@ public sealed class SummaryService : ISummaryService
             {
                 span.MarkSuccess();
                 _logger.LogInformation("{Operation} completed", "GetBrokerSummary");
-                return new AggregatedSummaryDTO();
+                return EmptyResult();
             }
 
             var broker = _repository.GetBrokerList(scope).FirstOrDefault(b => b.Name == brokerName);
@@ -39,7 +51,7 @@ public sealed class SummaryService : ISummaryService
             {
                 span.MarkSuccess();
                 _logger.LogInformation("{Operation} completed", "GetBrokerSummary");
-                return new AggregatedSummaryDTO();
+                return EmptyResult();
             }
 
             var assets = broker.Portfolios.SelectMany(p => p.Assets);
@@ -65,7 +77,7 @@ public sealed class SummaryService : ISummaryService
             {
                 span.MarkSuccess();
                 _logger.LogInformation("{Operation} completed", "GetPortfolioSummary");
-                return new AggregatedSummaryDTO();
+                return EmptyResult();
             }
 
             var assets = _repository.GetAssetsByBrokerPortfolio(brokerName, portfolioName, scope);
@@ -88,17 +100,49 @@ public sealed class SummaryService : ISummaryService
         return _tracer.StartServiceSpan("Investment", nameof(SummaryService), operationName, EntityType);
     }
 
-    private static AggregatedSummaryDTO Aggregate(IEnumerable<Asset> assets, InvestmentScope scope)
-    {
-        decimal totalBought = 0, totalSold = 0, totalCredits = 0, totalInvested = 0;
+    private static AggregatedSummaryDTO EmptyResult() => new() { MarketValue = 0m };
 
-        foreach (var asset in assets)
+    private AggregatedSummaryDTO Aggregate(IEnumerable<Asset> assets, InvestmentScope scope)
+    {
+        var assetList = assets as IReadOnlyList<Asset> ?? assets.ToList();
+
+        decimal totalBought = 0, totalSold = 0, totalCredits = 0, totalInvested = 0;
+        decimal marketValueSum = 0;
+        var holdingCount = 0;
+        var unvaluedHoldingCount = 0;
+
+        foreach (var asset in assetList)
         {
             var totals = AssetTotals.For(asset);
             totalBought += totals.TotalBought;
             totalSold += totals.TotalSold;
             totalCredits += totals.TotalCredits;
             totalInvested += AssetAmountBases.For(scope, totals).InvestedAmount;
+
+            holdingCount++;
+            var valuation = _holdingValuationService.GetValuation(asset, scope);
+            if (valuation.MarketValue is null)
+            {
+                unvaluedHoldingCount++;
+            }
+            else
+            {
+                marketValueSum += valuation.MarketValue.Value;
+            }
+        }
+
+        decimal? marketValue = holdingCount == 0
+            ? 0m
+            : unvaluedHoldingCount == holdingCount ? null : marketValueSum;
+
+        decimal? priceOnlyReturn = null;
+        decimal? totalReturn = null;
+
+        if (holdingCount > 0 && unvaluedHoldingCount == 0)
+        {
+            var asOf = _timeProvider.GetUtcNow().UtcDateTime.Date;
+            priceOnlyReturn = _xirrCalculationService.Calculate(AssetCashFlowBuilder.ConcatenateWithoutCredits(assetList), marketValueSum, asOf);
+            totalReturn = _xirrCalculationService.Calculate(AssetCashFlowBuilder.ConcatenateWithCredits(assetList), marketValueSum, asOf);
         }
 
         return new AggregatedSummaryDTO
@@ -107,6 +151,11 @@ public sealed class SummaryService : ISummaryService
             TotalSold = totalSold,
             TotalCredits = totalCredits,
             TotalInvested = totalInvested,
+            MarketValue = marketValue,
+            HoldingCount = holdingCount,
+            UnvaluedHoldingCount = unvaluedHoldingCount,
+            PriceOnlyReturn = priceOnlyReturn,
+            TotalReturn = totalReturn,
         };
     }
 }

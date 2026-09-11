@@ -14,11 +14,14 @@ namespace Financial.Investment.Application.Services;
 /// </summary>
 public sealed class XirrCalculationService : IXirrCalculationService
 {
-    public decimal? Calculate(IReadOnlyList<AssetCashFlowDTO> cashFlows, decimal terminalValue)
+    public decimal? Calculate(IReadOnlyList<AssetCashFlowDTO> cashFlows, decimal terminalValue) =>
+        Calculate(cashFlows, terminalValue, DateTime.Today);
+
+    public decimal? Calculate(IReadOnlyList<AssetCashFlowDTO> cashFlows, decimal terminalValue, DateTime asOf)
     {
         var series = new List<(DateTime Date, decimal Amount)>(cashFlows.Count + 1);
         series.AddRange(cashFlows.Select(cf => (cf.Date, cf.Amount)));
-        series.Add((DateTime.Today, terminalValue));
+        series.Add((asOf, terminalValue));
 
         return XirrCalculator.Calculate(series);
     }

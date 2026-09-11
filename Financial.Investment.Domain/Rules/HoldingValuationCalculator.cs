@@ -20,7 +20,9 @@ public static class HoldingValuationCalculator
 
         if (price is null)
         {
-            return new HoldingValuation(null, costOfUnitsHeld, null, null, false, null, null);
+            return quantity == 0
+                ? new HoldingValuation(0m, costOfUnitsHeld, -costOfUnitsHeld, null, false, null, null)
+                : new HoldingValuation(null, costOfUnitsHeld, null, null, false, null, null);
         }
 
         var marketValue = quantity * price.Price;
