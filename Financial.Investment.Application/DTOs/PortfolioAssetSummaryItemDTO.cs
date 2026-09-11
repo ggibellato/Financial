@@ -19,6 +19,13 @@ public sealed class PortfolioAssetSummaryItemDTO
     public decimal TotalInvested { get; init; }
     public decimal RealizedGainLoss { get; init; }
     public decimal? PortfolioWeight { get; init; }
+    public decimal? MarketValue { get; init; }
+    public decimal CostOfUnitsHeld { get; init; }
+    public decimal? UnrealisedGain { get; init; }
+    public DateOnly? PriceAsOfDate { get; init; }
+    public bool IsPriceStale { get; init; }
+    public decimal? PriceOnlyReturn { get; init; }
+    public decimal? TotalReturn { get; init; }
     public decimal TotalCredits { get; init; }
     public IReadOnlyList<AssetCashFlowDTO> CashFlows { get; init; } = [];
     public decimal LastMonthCredits { get; init; }

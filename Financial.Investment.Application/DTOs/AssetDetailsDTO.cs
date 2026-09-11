@@ -6,27 +6,17 @@ namespace Financial.Investment.Application.DTOs;
 public class AssetDetailsDTO
 {
     public required string Name { get; set; }
-
     public required string BrokerName { get; set; }
-
     public required string PortfolioName { get; set; }
-
     public required string Ticker { get; set; }
-
     public string ISIN { get; set; } = string.Empty;
-
     public string Exchange { get; set; } = string.Empty;
-
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public CountryCode Country { get; set; } = CountryCode.Unknown;
-
     public string LocalTypeCode { get; set; } = string.Empty;
-
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public GlobalAssetClass Class { get; set; } = GlobalAssetClass.Unknown;
-
     public decimal Quantity { get; set; }
-
     public decimal AveragePrice { get; set; }
 
     /// <summary>
@@ -36,11 +26,8 @@ public class AssetDetailsDTO
 
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public PositionType PositionType { get; set; }
-
     public decimal TotalBought { get; set; }
-
     public decimal TotalSold { get; set; }
-
     public decimal TotalCredits { get; set; }
 
     /// <summary>
@@ -49,8 +36,14 @@ public class AssetDetailsDTO
     /// </summary>
     public decimal RealizedGainLoss { get; set; }
 
+    public decimal? MarketValue { get; set; }
+    public decimal CostOfUnitsHeld { get; set; }
+    public decimal? UnrealisedGain { get; set; }
+    public DateOnly? PriceAsOfDate { get; set; }
+    public bool IsPriceStale { get; set; }
+    public decimal? PriceOnlyReturn { get; set; }
+    public decimal? TotalReturn { get; set; }
     public List<TransactionDTO> Transactions { get; set; } = new();
-
     public List<CreditDTO> Credits { get; set; } = new();
 
     /// <summary>
@@ -59,7 +52,6 @@ public class AssetDetailsDTO
     public List<AssetPriceSnapshotDTO> PriceHistory { get; set; } = new();
 
     public IReadOnlyList<AssetCashFlowDTO> CashFlowsWithCredits { get; set; } = [];
-
     public IReadOnlyList<AssetCashFlowDTO> CashFlowsWithoutCredits { get; set; } = [];
 }
 

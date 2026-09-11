@@ -5594,15 +5594,24 @@ export interface components {
             cashFlowsWithCredits?: components["schemas"]["AssetCashFlowDTO"][];
             cashFlowsWithoutCredits?: components["schemas"]["AssetCashFlowDTO"][];
             class?: components["schemas"]["GlobalAssetClass"];
+            /** Format: double */
+            costOfUnitsHeld?: number;
             country?: components["schemas"]["CountryCode"];
             credits?: components["schemas"]["CreditDTO"][];
             exchange?: string;
+            isPriceStale?: boolean;
             isin?: string;
             localTypeCode?: string;
+            /** Format: double */
+            marketValue?: null | number;
             name: string;
             portfolioName: string;
             positionType?: components["schemas"]["PositionType"];
+            /** Format: date */
+            priceAsOfDate?: null | string;
             priceHistory?: components["schemas"]["AssetPriceSnapshotDTO"][];
+            /** Format: double */
+            priceOnlyReturn?: null | number;
             /** Format: double */
             quantity?: number;
             /** Format: double */
@@ -5613,8 +5622,12 @@ export interface components {
             /** Format: double */
             totalCredits?: number;
             /** Format: double */
+            totalReturn?: null | number;
+            /** Format: double */
             totalSold?: number;
             transactions?: components["schemas"]["TransactionDTO"][];
+            /** Format: double */
+            unrealisedGain?: null | number;
         };
         AssetNodeDTO: {
             /** Format: double */
@@ -6298,6 +6311,8 @@ export interface components {
             averageSellPrice: null | number;
             cashFlows: components["schemas"]["AssetCashFlowDTO"][];
             class: components["schemas"]["GlobalAssetClass"];
+            /** Format: double */
+            costOfUnitsHeld: number;
             /** Format: int32 */
             creditFrequencyPerYear: null | number;
             /** Format: double */
@@ -6311,13 +6326,20 @@ export interface components {
             exchange: string;
             /** Format: date-time */
             firstInvestmentDate: null | string;
+            isPriceStale: boolean;
             lastCreditMonth: null | string;
             /** Format: double */
             lastMonthCredits: number;
             /** Format: double */
             lastMonthCreditsPercent: null | number;
             /** Format: double */
+            marketValue: null | number;
+            /** Format: double */
             portfolioWeight: null | number;
+            /** Format: date */
+            priceAsOfDate: null | string;
+            /** Format: double */
+            priceOnlyReturn: null | number;
             /** Format: double */
             realizedGainLoss: number;
             ticker: string;
@@ -6328,7 +6350,11 @@ export interface components {
             /** Format: double */
             totalInvested: number;
             /** Format: double */
+            totalReturn: null | number;
+            /** Format: double */
             totalSold: number;
+            /** Format: double */
+            unrealisedGain: null | number;
         };
         PortfolioBreakdownItemDTO: {
             assets: components["schemas"]["AssetBreakdownItemDTO"][];

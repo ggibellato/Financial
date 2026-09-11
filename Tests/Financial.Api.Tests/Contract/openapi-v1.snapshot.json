@@ -219,6 +219,10 @@
           "class": {
             "$ref": "#/components/schemas/GlobalAssetClass"
           },
+          "costOfUnitsHeld": {
+            "format": "double",
+            "type": "number"
+          },
           "country": {
             "$ref": "#/components/schemas/CountryCode"
           },
@@ -231,11 +235,21 @@
           "exchange": {
             "type": "string"
           },
+          "isPriceStale": {
+            "type": "boolean"
+          },
           "isin": {
             "type": "string"
           },
           "localTypeCode": {
             "type": "string"
+          },
+          "marketValue": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
           },
           "name": {
             "type": "string"
@@ -246,11 +260,25 @@
           "positionType": {
             "$ref": "#/components/schemas/PositionType"
           },
+          "priceAsOfDate": {
+            "format": "date",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "priceHistory": {
             "items": {
               "$ref": "#/components/schemas/AssetPriceSnapshotDTO"
             },
             "type": "array"
+          },
+          "priceOnlyReturn": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
           },
           "quantity": {
             "format": "double",
@@ -271,6 +299,13 @@
             "format": "double",
             "type": "number"
           },
+          "totalReturn": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
           "totalSold": {
             "format": "double",
             "type": "number"
@@ -280,6 +315,13 @@
               "$ref": "#/components/schemas/TransactionDTO"
             },
             "type": "array"
+          },
+          "unrealisedGain": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
           }
         },
         "required": [
@@ -2504,6 +2546,10 @@
           "class": {
             "$ref": "#/components/schemas/GlobalAssetClass"
           },
+          "costOfUnitsHeld": {
+            "format": "double",
+            "type": "number"
+          },
           "creditFrequencyPerYear": {
             "format": "int32",
             "type": [
@@ -2543,6 +2589,9 @@
               "string"
             ]
           },
+          "isPriceStale": {
+            "type": "boolean"
+          },
           "lastCreditMonth": {
             "type": [
               "null",
@@ -2560,7 +2609,28 @@
               "number"
             ]
           },
+          "marketValue": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
           "portfolioWeight": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "priceAsOfDate": {
+            "format": "date",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "priceOnlyReturn": {
             "format": "double",
             "type": [
               "null",
@@ -2586,9 +2656,23 @@
             "format": "double",
             "type": "number"
           },
+          "totalReturn": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
           "totalSold": {
             "format": "double",
             "type": "number"
+          },
+          "unrealisedGain": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
           }
         },
         "type": "object"

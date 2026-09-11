@@ -1,6 +1,7 @@
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Application.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Financial.Investment.Application.DependencyInjection;
 
@@ -8,6 +9,8 @@ public static class InvestmentApplicationServiceCollectionExtensions
 {
     public static IServiceCollection AddFinancialApplication(this IServiceCollection services)
     {
+        services.TryAddSingleton(TimeProvider.System);
+        services.AddSingleton<IHoldingValuationService, HoldingValuationService>();
         services.AddSingleton<INavigationService, NavigationService>();
         services.AddSingleton<CreditService>();
         services.AddSingleton<ICreditService>(sp => sp.GetRequiredService<CreditService>());

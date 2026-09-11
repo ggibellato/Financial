@@ -26,7 +26,7 @@ public class TransactionServiceMutationTests
     [Fact]
     public void Constructor_WithNullTracer_Throws()
     {
-        Action act = () => new TransactionService(_repository, new NavigationService(_repository, Tracer, NullLogger<NavigationService>.Instance), null!, NullLogger<TransactionService>.Instance);
+        Action act = () => new TransactionService(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance), null!, NullLogger<TransactionService>.Instance);
         act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
     }
 
@@ -58,7 +58,7 @@ public class TransactionServiceMutationTests
     {
         _repository.Asset = MakeAsset();
         var tracer = new RecordingTelemetryTracer();
-        var service = new TransactionService(_repository, new NavigationService(_repository, Tracer, NullLogger<NavigationService>.Instance), tracer, NullLogger<TransactionService>.Instance);
+        var service = new TransactionService(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance), tracer, NullLogger<TransactionService>.Instance);
 
         await service.AddTransactionAsync(new TransactionCreateDTO
         {
@@ -381,7 +381,7 @@ public class TransactionServiceMutationTests
         _repository.WriteCallCount.Should().Be(0);
     }
 
-    private TransactionService CreateService() => new(_repository, new NavigationService(_repository, Tracer, NullLogger<NavigationService>.Instance), Tracer, NullLogger<TransactionService>.Instance);
+    private TransactionService CreateService() => new(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance), Tracer, NullLogger<TransactionService>.Instance);
 
     private static Asset MakeAsset(string name = "AAAA") =>
         Asset.Create(name, "ISIN", "BVMF", name);
@@ -390,7 +390,7 @@ public class TransactionServiceMutationTests
     [Fact]
     public void Constructor_WithNullLogger_Throws()
     {
-        Action act = () => new TransactionService(_repository, new NavigationService(_repository, Tracer, NullLogger<NavigationService>.Instance), Tracer, null!);
+        Action act = () => new TransactionService(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance), Tracer, null!);
 
         act.Should().Throw<ArgumentNullException>();
     }

@@ -14,12 +14,19 @@ public class NavigationServiceTests
     private static readonly ITelemetryTracer Tracer = new RecordingTelemetryTracer();
 
     private readonly StubInvestmentRepository _repository = new();
-    private NavigationService CreateService() => new(_repository, Tracer, NullLogger<NavigationService>.Instance);
+    private NavigationService CreateService() => new(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance);
+
+    [Fact]
+    public void Constructor_WithNullHoldingValuationService_Throws()
+    {
+        Action act = () => new NavigationService(new StubInvestmentRepository(), null!, Tracer, NullLogger<NavigationService>.Instance);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("holdingValuationService");
+    }
 
     [Fact]
     public void Constructor_WithNullTracer_Throws()
     {
-        Action act = () => new NavigationService(new StubInvestmentRepository(), null!, NullLogger<NavigationService>.Instance);
+        Action act = () => new NavigationService(new StubInvestmentRepository(), TestHoldingValuationService.Create(), null!, NullLogger<NavigationService>.Instance);
         act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
     }
 
@@ -27,7 +34,7 @@ public class NavigationServiceTests
     public void GetNavigationTree_RecordsSuccessfulSpan()
     {
         var tracer = new RecordingTelemetryTracer();
-        var service = new NavigationService(_repository, tracer, NullLogger<NavigationService>.Instance);
+        var service = new NavigationService(_repository, TestHoldingValuationService.Create(), tracer, NullLogger<NavigationService>.Instance);
 
         service.GetNavigationTree();
 
@@ -343,7 +350,7 @@ public class NavigationServiceTests
     [Fact]
     public void Constructor_WithNullLogger_Throws()
     {
-        Action act = () => new NavigationService(new StubInvestmentRepository(), Tracer, null!);
+        Action act = () => new NavigationService(new StubInvestmentRepository(), TestHoldingValuationService.Create(), Tracer, null!);
 
         act.Should().Throw<ArgumentNullException>();
     }

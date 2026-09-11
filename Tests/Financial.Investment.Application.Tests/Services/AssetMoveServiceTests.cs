@@ -239,7 +239,7 @@ public class AssetMoveServiceTests
         new(_repository, CreateNavigationService(), _tracer, _logger);
 
     private NavigationService CreateNavigationService() =>
-        new(_repository, _tracer, NullLogger<NavigationService>.Instance);
+        new(_repository, TestHoldingValuationService.Create(), _tracer, NullLogger<NavigationService>.Instance);
 
     private static ArchiveAssetRequestDTO CreateArchiveRequest() => new()
     {
