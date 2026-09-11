@@ -41,7 +41,7 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
                 (asset, transactionType) =>
                 {
                     var transaction = Transaction.Create(request.Date, transactionType, request.Quantity, request.UnitPrice, request.Fees);
-                    asset.AddTransaction(transaction);
+                    asset.RecordTransaction(transaction);
                     return true;
                 }).ConfigureAwait(false);
 
@@ -80,7 +80,7 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
                 (asset, transactionType) =>
                 {
                     var updatedTransaction = Transaction.CreateWithId(request.Id, request.Date, transactionType, request.Quantity, request.UnitPrice, request.Fees);
-                    return asset.UpdateTransaction(updatedTransaction);
+                    return asset.ReviseTransaction(updatedTransaction);
                 }).ConfigureAwait(false);
 
             span.MarkSuccess();
@@ -113,7 +113,7 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
                 request.BrokerName,
                 request.PortfolioName,
                 request.AssetName,
-                asset => asset.RemoveTransaction(request.Id)).ConfigureAwait(false);
+                asset => asset.RetractTransaction(request.Id)).ConfigureAwait(false);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "DeleteTransaction");

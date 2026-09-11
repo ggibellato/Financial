@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
+using Financial.Investment.Domain.Exceptions;
 using Financial.Investment.Domain.Rules;
 
 namespace Financial.Investment.Domain.Entities;
@@ -134,6 +136,68 @@ public class Asset
     public bool UpdateTransaction(Transaction updatedTransaction) => Transactions.Update(updatedTransaction);
 
     public bool RemoveTransaction(Guid transactionId) => Transactions.RemoveById(transactionId);
+
+    /// <exception cref="InvestmentRuleViolationException">
+    /// The resulting history would sell more than was held at some date.
+    /// </exception>
+    public void RecordTransaction(Transaction transaction)
+    {
+        EnsureNoUncoveredSale([.. Transactions, transaction], transaction.Id);
+        AddTransaction(transaction);
+    }
+
+    /// <exception cref="InvestmentRuleViolationException">
+    /// The resulting history would sell more than was held at some date.
+    /// </exception>
+    public bool ReviseTransaction(Transaction updatedTransaction)
+    {
+        if (Transactions.All(t => t.Id != updatedTransaction.Id))
+        {
+            return false;
+        }
+
+        var candidate = Transactions.Select(t => t.Id == updatedTransaction.Id ? updatedTransaction : t);
+        EnsureNoUncoveredSale(candidate, updatedTransaction.Id);
+        return UpdateTransaction(updatedTransaction);
+    }
+
+    /// <exception cref="InvestmentRuleViolationException">
+    /// The resulting history would sell more than was held at some date.
+    /// </exception>
+    public bool RetractTransaction(Guid transactionId)
+    {
+        if (Transactions.All(t => t.Id != transactionId))
+        {
+            return false;
+        }
+
+        var candidate = Transactions.Where(t => t.Id != transactionId);
+        EnsureNoUncoveredSale(candidate, subjectTransactionId: null);
+        return RemoveTransaction(transactionId);
+    }
+
+    /// <summary>
+    /// <paramref name="subjectTransactionId"/> is the transaction the caller is recording or
+    /// revising — when the offending sale *is* that transaction, the refusal reads as a direct
+    /// rejection (FR-009); when it is a different, later sale, the refusal names that sale and its
+    /// shortfall instead (FR-065, FR-066). A retraction passes null: the deleted transaction is
+    /// never the offending sale, since deleting it removes it from the candidate sequence.
+    /// </summary>
+    private static void EnsureNoUncoveredSale(IEnumerable<Transaction> candidate, Guid? subjectTransactionId)
+    {
+        var violation = SaleCoverageRule.FindFirstUncoveredSale(candidate);
+        if (violation is null)
+        {
+            return;
+        }
+
+        var heldQuantity = violation.QuantityHeld.ToString(CultureInfo.InvariantCulture);
+        var message = violation.OffendingSale.Id == subjectTransactionId
+            ? $"Cannot sell {violation.OffendingSale.Quantity.ToString(CultureInfo.InvariantCulture)} units on {violation.OffendingSale.Date:yyyy-MM-dd} — only {heldQuantity} were held on that date."
+            : $"This change would leave the sale of {violation.OffendingSale.Quantity.ToString(CultureInfo.InvariantCulture)} units on {violation.OffendingSale.Date:yyyy-MM-dd} short by {violation.Shortfall.ToString(CultureInfo.InvariantCulture)} units — only {heldQuantity} would be held on that date.";
+
+        throw new InvestmentRuleViolationException(message);
+    }
 
     public void AddCredit(Credit credit)
     {

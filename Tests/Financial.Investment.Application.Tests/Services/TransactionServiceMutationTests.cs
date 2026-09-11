@@ -1,6 +1,7 @@
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Services;
+using Financial.Investment.Domain.Exceptions;
 using Financial.Shared.Abstractions.Observability;
 using Financial.TestUtilities;
 using Financial.Investment.Domain.Entities;
@@ -305,6 +306,79 @@ public class TransactionServiceMutationTests
         });
 
         await act.Should().ThrowAsync<InvalidOperationException>();
+    }
+
+    [Fact]
+    public async Task AddTransactionAsync_SaleExceedsHeldQuantity_ThrowsAndWritesNothing()
+    {
+        var asset = MakeAsset();
+        asset.AddTransaction(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
+        _repository.Asset = asset;
+
+        var act = async () => await CreateService().AddTransactionAsync(new TransactionCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "AAAA",
+            Date = new DateTime(2024, 2, 1),
+            Type = "Sell",
+            Quantity = 15m,
+            UnitPrice = 6m,
+            Fees = 0m
+        });
+
+        (await act.Should().ThrowAsync<InvestmentRuleViolationException>()).WithMessage("*10*");
+        asset.Transactions.Should().ContainSingle();
+        _repository.WriteCallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task UpdateTransactionAsync_EditLeavesALaterSaleShort_ThrowsNamingTheLaterSaleAndWritesNothing()
+    {
+        var asset = MakeAsset();
+        var purchaseId = Guid.NewGuid();
+        asset.AddTransaction(Transaction.CreateWithId(purchaseId, new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 100m, 5m, 0m));
+        asset.AddTransaction(Transaction.Create(new DateTime(2024, 6, 1), Transaction.TransactionType.Sell, 80m, 6m, 0m));
+        _repository.Asset = asset;
+
+        var act = async () => await CreateService().UpdateTransactionAsync(new TransactionUpdateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "AAAA",
+            Id = purchaseId,
+            Date = new DateTime(2024, 1, 1),
+            Type = "Buy",
+            Quantity = 50m,
+            UnitPrice = 5m,
+            Fees = 0m
+        });
+
+        (await act.Should().ThrowAsync<InvestmentRuleViolationException>()).WithMessage("*30*");
+        asset.Transactions.Should().Contain(t => t.Id == purchaseId && t.Quantity == 100m);
+        _repository.WriteCallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task DeleteTransactionAsync_DeletingThePurchaseThatFundedALaterSale_ThrowsAndWritesNothing()
+    {
+        var asset = MakeAsset();
+        var purchaseId = Guid.NewGuid();
+        asset.AddTransaction(Transaction.CreateWithId(purchaseId, new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
+        asset.AddTransaction(Transaction.Create(new DateTime(2024, 2, 1), Transaction.TransactionType.Sell, 10m, 6m, 0m));
+        _repository.Asset = asset;
+
+        var act = async () => await CreateService().DeleteTransactionAsync(new TransactionDeleteDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "AAAA",
+            Id = purchaseId
+        });
+
+        await act.Should().ThrowAsync<InvestmentRuleViolationException>();
+        asset.Transactions.Should().HaveCount(2);
+        _repository.WriteCallCount.Should().Be(0);
     }
 
     private TransactionService CreateService() => new(_repository, new NavigationService(_repository, Tracer, NullLogger<NavigationService>.Instance), Tracer, NullLogger<TransactionService>.Instance);
