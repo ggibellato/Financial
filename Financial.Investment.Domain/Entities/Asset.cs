@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
+using Financial.Investment.Domain.Exceptions;
 using Financial.Investment.Domain.Rules;
 
 namespace Financial.Investment.Domain.Entities;
@@ -134,6 +136,52 @@ public class Asset
     public bool UpdateTransaction(Transaction updatedTransaction) => Transactions.Update(updatedTransaction);
 
     public bool RemoveTransaction(Guid transactionId) => Transactions.RemoveById(transactionId);
+
+    public void RecordTransaction(Transaction transaction)
+    {
+        EnsureNoUncoveredSale([.. Transactions, transaction], transaction.Id);
+        AddTransaction(transaction);
+    }
+
+    public bool ReviseTransaction(Transaction updatedTransaction)
+    {
+        if (Transactions.All(t => t.Id != updatedTransaction.Id))
+        {
+            return false;
+        }
+
+        var candidate = Transactions.Select(t => t.Id == updatedTransaction.Id ? updatedTransaction : t);
+        EnsureNoUncoveredSale(candidate, updatedTransaction.Id);
+        return UpdateTransaction(updatedTransaction);
+    }
+
+    public bool RetractTransaction(Guid transactionId)
+    {
+        if (Transactions.All(t => t.Id != transactionId))
+        {
+            return false;
+        }
+
+        var candidate = Transactions.Where(t => t.Id != transactionId);
+        EnsureNoUncoveredSale(candidate, subjectTransactionId: null);
+        return RemoveTransaction(transactionId);
+    }
+
+    private static void EnsureNoUncoveredSale(IEnumerable<Transaction> candidate, Guid? subjectTransactionId)
+    {
+        var violation = SaleCoverageRule.FindFirstUncoveredSale(candidate);
+        if (violation is null)
+        {
+            return;
+        }
+
+        var heldQuantity = violation.QuantityHeld.ToString(CultureInfo.InvariantCulture);
+        var message = violation.OffendingSale.Id == subjectTransactionId
+            ? $"Cannot sell {violation.OffendingSale.Quantity.ToString(CultureInfo.InvariantCulture)} units on {violation.OffendingSale.Date:yyyy-MM-dd} — only {heldQuantity} were held on that date."
+            : $"This change would leave the sale of {violation.OffendingSale.Quantity.ToString(CultureInfo.InvariantCulture)} units on {violation.OffendingSale.Date:yyyy-MM-dd} short by {violation.Shortfall.ToString(CultureInfo.InvariantCulture)} units — only {heldQuantity} would be held on that date.";
+
+        throw new InvestmentRuleViolationException(message);
+    }
 
     public void AddCredit(Credit credit)
     {

@@ -1,4 +1,5 @@
 using Financial.Investment.Domain.Entities;
+using Financial.Investment.Domain.Exceptions;
 using FluentAssertions;
 using FluentAssertions.Execution;
 
@@ -155,6 +156,97 @@ public class AssetTests
         Action act = () => asset.RemoveTransaction(Guid.Empty);
 
         act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void RecordTransaction_SaleExceedsHeldQuantity_ThrowsAndAddsNothing()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        asset.AddTransaction(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
+
+        Action act = () => asset.RecordTransaction(
+            Transaction.Create(new DateTime(2024, 2, 1), Transaction.TransactionType.Sell, 15m, 6m, 0m));
+
+        act.Should().Throw<InvestmentRuleViolationException>().WithMessage("*10*");
+        asset.Transactions.Should().ContainSingle();
+        asset.Quantity.Should().Be(10m);
+    }
+
+    [Fact]
+    public void RecordTransaction_SaleOfExactlyHeldQuantity_Succeeds()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        asset.AddTransaction(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
+
+        asset.RecordTransaction(Transaction.Create(new DateTime(2024, 2, 1), Transaction.TransactionType.Sell, 10m, 6m, 0m));
+
+        asset.Quantity.Should().Be(0m);
+    }
+
+    [Fact]
+    public void ReviseTransaction_EditLeavesTheEditedSaleUncovered_ThrowsAndChangesNothing()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        var saleId = Guid.NewGuid();
+        asset.AddTransaction(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
+        asset.AddTransaction(Transaction.CreateWithId(saleId, new DateTime(2024, 2, 1), Transaction.TransactionType.Sell, 5m, 6m, 0m));
+
+        var oversized = Transaction.CreateWithId(saleId, new DateTime(2024, 2, 1), Transaction.TransactionType.Sell, 20m, 6m, 0m);
+        Action act = () => asset.ReviseTransaction(oversized);
+
+        act.Should().Throw<InvestmentRuleViolationException>();
+        asset.Quantity.Should().Be(5m);
+    }
+
+    [Fact]
+    public void ReviseTransaction_EditLeavesALaterSaleUncovered_ThrowsNamingTheLaterSale()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        var editedPurchaseId = Guid.NewGuid();
+        asset.AddTransaction(Transaction.CreateWithId(editedPurchaseId, new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 100m, 5m, 0m));
+        asset.AddTransaction(Transaction.Create(new DateTime(2024, 6, 1), Transaction.TransactionType.Sell, 80m, 6m, 0m));
+
+        var reducedPurchase = Transaction.CreateWithId(editedPurchaseId, new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 50m, 5m, 0m);
+        Action act = () => asset.ReviseTransaction(reducedPurchase);
+
+        act.Should().Throw<InvestmentRuleViolationException>().WithMessage("*30*");
+        asset.Transactions.Should().Contain(t => t.Id == editedPurchaseId && t.Quantity == 100m);
+    }
+
+    [Fact]
+    public void ReviseTransaction_UnknownId_ReturnsFalseAndChangesNothing()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        asset.AddTransaction(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
+
+        var result = asset.ReviseTransaction(Transaction.CreateWithId(Guid.NewGuid(), new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 1m, 1m, 0m));
+
+        result.Should().BeFalse();
+        asset.Quantity.Should().Be(10m);
+    }
+
+    [Fact]
+    public void RetractTransaction_DeletingThePurchaseThatFundedALaterSale_ThrowsAndDeletesNothing()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        var purchaseId = Guid.NewGuid();
+        asset.AddTransaction(Transaction.CreateWithId(purchaseId, new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
+        asset.AddTransaction(Transaction.Create(new DateTime(2024, 2, 1), Transaction.TransactionType.Sell, 10m, 6m, 0m));
+
+        Action act = () => asset.RetractTransaction(purchaseId);
+
+        act.Should().Throw<InvestmentRuleViolationException>();
+        asset.Transactions.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public void RetractTransaction_UnknownId_ReturnsFalse()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+
+        var result = asset.RetractTransaction(Guid.NewGuid());
+
+        result.Should().BeFalse();
     }
 
     [Fact]

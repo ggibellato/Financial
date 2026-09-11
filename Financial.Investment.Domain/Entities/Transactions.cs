@@ -1,7 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
+using Financial.Investment.Domain.Rules;
 
 namespace Financial.Investment.Domain.Entities;
 
@@ -28,7 +28,7 @@ public class Transactions : ICollection<Transaction>
             throw new ArgumentNullException(nameof(transaction));
         }
 
-        if (_items.Count == 0 || CompareReplayOrder(_items[^1], transaction) <= 0)
+        if (_items.Count == 0 || TransactionReplayOrder.IsInOrder(_items[^1], transaction))
         {
             _items.Add(transaction);
             Apply(transaction);
@@ -85,10 +85,7 @@ public class Transactions : ICollection<Transaction>
 
     private void Recompute()
     {
-        var ordered = _items
-            .OrderBy(t => t.Date)
-            .ThenBy(t => t.Type == Transaction.TransactionType.Sell)
-            .ToList();
+        var ordered = new List<Transaction>(TransactionReplayOrder.Sort(_items));
 
         _items.Clear();
         Quantity = 0;
@@ -125,19 +122,6 @@ public class Transactions : ICollection<Transaction>
         Quantity += transaction.Type == Transaction.TransactionType.Buy
             ? transaction.Quantity
             : -transaction.Quantity;
-    }
-
-    private static int CompareReplayOrder(Transaction a, Transaction b)
-    {
-        var byDate = a.Date.CompareTo(b.Date);
-        if (byDate != 0)
-        {
-            return byDate;
-        }
-
-        var aIsSell = a.Type == Transaction.TransactionType.Sell;
-        var bIsSell = b.Type == Transaction.TransactionType.Sell;
-        return aIsSell.CompareTo(bIsSell);
     }
 
     public IEnumerator<Transaction> GetEnumerator() => _items.GetEnumerator();
