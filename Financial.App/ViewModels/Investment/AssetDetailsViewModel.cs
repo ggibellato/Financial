@@ -339,9 +339,9 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         foreach (var item in assetItems)
             PortfolioAssetSummaryRows.Add(new PortfolioAssetSummaryRowViewModel(item, _xirrCalculationService, _profitCalculationService));
 
-        FooterTotalInvested = assetItems.Sum(i => i.TotalInvested);
+        FooterTotalInvested = summary.TotalInvested;
         FooterRealizedGainLoss = assetItems.Sum(i => i.RealizedGainLoss);
-        FooterTotalCredits = assetItems.Sum(i => i.TotalCredits);
+        FooterTotalCredits = summary.TotalCredits;
         FooterCurrentMonthCredits = assetItems.Sum(i => i.CurrentMonthCredits);
         FooterCurrentMonthLabel = "Credits " + DateTime.Today.ToString("MMM yyyy", CultureInfo.InvariantCulture);
         var withEstimated = assetItems.Where(i => i.EstimatedAnnualCredits.HasValue).ToList();

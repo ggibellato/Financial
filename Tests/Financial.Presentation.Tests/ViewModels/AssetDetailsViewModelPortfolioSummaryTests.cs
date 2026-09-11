@@ -189,12 +189,13 @@ public class AssetDetailsViewModelPortfolioSummaryTests
     }
 
     [Fact]
-    public void LoadPortfolioSummary_SetsFooterTotalInvested_SumOfRows()
+    public void LoadPortfolioSummary_SetsFooterTotalInvested_FromServerSummary_NotClientSum()
     {
         var vm = BuildViewModel();
         var items = new[] { BuildItem(totalInvested: 1000m), BuildItem(totalInvested: 2000m) };
-        vm.LoadPortfolioSummary("Broker", "Portfolio", new AggregatedSummaryDTO(), [], items);
-        vm.FooterTotalInvested.Should().Be(3000m);
+        vm.LoadPortfolioSummary("Broker", "Portfolio", new AggregatedSummaryDTO { TotalInvested = 5000m }, [], items);
+        vm.FooterTotalInvested.Should().Be(5000m);
+        vm.FooterTotalInvested.Should().Be(vm.TotalInvested);
     }
 
     [Fact]
@@ -207,12 +208,12 @@ public class AssetDetailsViewModelPortfolioSummaryTests
     }
 
     [Fact]
-    public void LoadPortfolioSummary_SetsFooterTotalCredits_SumOfRows()
+    public void LoadPortfolioSummary_SetsFooterTotalCredits_FromServerSummary_NotClientSum()
     {
         var vm = BuildViewModel();
         var items = new[] { BuildItem(totalCredits: 50m), BuildItem(totalCredits: 75m) };
-        vm.LoadPortfolioSummary("Broker", "Portfolio", new AggregatedSummaryDTO(), [], items);
-        vm.FooterTotalCredits.Should().Be(125m);
+        vm.LoadPortfolioSummary("Broker", "Portfolio", new AggregatedSummaryDTO { TotalCredits = 999m }, [], items);
+        vm.FooterTotalCredits.Should().Be(999m);
     }
 
     [Fact]

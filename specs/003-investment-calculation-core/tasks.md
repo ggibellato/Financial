@@ -179,63 +179,63 @@ the same figures.
 
 ### Increment 5 — Separate the three figures; correct invested; SummaryService reconciles
 
-- [ ] T020 [P] [US3] Write Domain tests in new
+- [X] T020 [P] [US3] Write Domain tests in new
       `Tests/Financial.Investment.Domain.Tests/Domain/OpenPositionCostCalculatorTests.cs`:
       `CostOfUnitsHeld` clamps a negative product to zero (FR-021)
-- [ ] T021 [US3] Implement `Financial.Investment.Domain/Rules/OpenPositionCostCalculator.cs`:
+- [X] T021 [US3] Implement `Financial.Investment.Domain/Rules/OpenPositionCostCalculator.cs`:
       `CostOfUnitsHeld(asset) => Math.Max(0m, quantity * averagePrice)`, scope-free (FR-019, FR-021; R7)
-- [ ] T022 [US3] Extract `AssetTotals` into its own file
+- [X] T022 [US3] Extract `AssetTotals` into its own file
       `Financial.Investment.Application/Services/AssetTotals.cs` with a static `For(asset)` factory and
       a new `OpenPositionCost` field, removing the inline declaration from
       `Financial.Investment.Application/Services/PortfolioAssetSummaryBuilder.cs` so
       `BrokerBreakdownService` can reach it instead of re-deriving its own tuple (R7)
-- [ ] T023 [US3] Replace `Financial.Investment.Application/Services/AssetInvestedAmountSelector.cs`
+- [X] T023 [US3] Replace `Financial.Investment.Application/Services/AssetInvestedAmountSelector.cs`
       with `Financial.Investment.Application/Services/AssetAmountBases.cs`: three separately identified
       fields — `InvestedAmount`, `WeightBasis`, `IncomeYieldBasis` — keyed by `InvestmentScope`, never
       by quantity; `InvestedAmount`/`IncomeYieldBasis` become the corrected cost-of-open-units figure in
       Active, total purchases in Historic; `WeightBasis` stays on the *old* cost formula this increment
       (FR-018..FR-021, FR-025, amended FR-049; R7)
-- [ ] T024 [P] [US3] Write Application tests for `AssetAmountBases` covering Active vs. Historic for
+- [X] T024 [P] [US3] Write Application tests for `AssetAmountBases` covering Active vs. Historic for
       `InvestedAmount` and `IncomeYieldBasis`, non-negative invested (FR-021), and `WeightBasis`
       unchanged this increment
-- [ ] T025 [US3] Repoint
+- [X] T025 [US3] Repoint
       `Financial.Investment.Application/Services/PortfolioAssetSummaryBuilder.cs` and
       `Financial.Investment.Application/Services/PortfolioAssetSummaryService.cs` to
       `AssetAmountBases.InvestedAmount` and `AssetTotals.OpenPositionCost`; delete the `Quantity != 0`
       Active filter and its now-factually-wrong XML comment (FR-023; R9)
-- [ ] T026 [US3] Repoint `Financial.Investment.Application/Services/SummaryService.cs` to sum
+- [X] T026 [US3] Repoint `Financial.Investment.Application/Services/SummaryService.cs` to sum
       per-asset `AssetAmountBases.InvestedAmount` instead of the aggregate `ΣBought − ΣSold` formula
       (FR-018, FR-022; R9)
-- [ ] T027 [US3] Repoint `Financial.Investment.Application/Services/BrokerBreakdownService.cs` (and
+- [X] T027 [US3] Repoint `Financial.Investment.Application/Services/BrokerBreakdownService.cs` (and
       `BrokerBreakdownBuilder.cs` if it independently derives the tuple) to `AssetTotals.For` /
       `AssetAmountBases`, so the allocation chart includes exactly the holdings with `InvestedAmount >
       0` (FR-024, FR-070)
-- [ ] T028 [US3] Extend
+- [X] T028 [US3] Extend
       `Tests/Financial.Investment.Application.Tests/Services/SummaryServiceTests.cs` and
       `Tests/Financial.Investment.Application.Tests/Services/BrokerBreakdownServiceTests.cs`:
       portfolio/broker total equals sum of rows in both scopes (FR-022); a sold-to-zero Active holding
       treated identically by rows and total (FR-023); income-yield percentages measured against the
       corrected cost figure (amended FR-049, SC-011)
-- [ ] T029 [US3] Add an AC-tracing integration test through the API host asserting the FR-019
+- [X] T029 [US3] Add an AC-tracing integration test through the API host asserting the FR-019
       redefinition's actual **value** for a partially-sold holding — not just its shape, since the
       contract snapshot, `openapiFreshness.test.ts` and `tsc -b` are all blind to a same-shape
       meaning-change (contracts/README.md §3)
-- [ ] T030 [US3] Confirm `openapiFreshness.test.ts` still passes; regenerate the OpenAPI snapshot and
+- [X] T030 [US3] Confirm `openapiFreshness.test.ts` still passes; regenerate the OpenAPI snapshot and
       `Financial.Web` generated types only if a DTO shape actually changed this increment (`TotalInvested`
       keeps its name and type)
 
 ### Increment 6 — Front-end footers read the server total
 
-- [ ] T031 [US3] Lift the `useAggregatedSummary()` call out of `AggregatedSummaryTab` into
+- [X] T031 [US3] Lift the `useAggregatedSummary()` call out of `AggregatedSummaryTab` into
       `Financial.Web/src/components/PortfolioSummaryTab.tsx` and pass the summary down, so header and
       footer read one response object; stop deriving Total Invested and Total Credits client-side
       (FR-061; R10)
-- [ ] T032 [US3] In `Financial.App`, feed the already-loaded `summary` parameter of
+- [X] T032 [US3] In `Financial.App`, feed the already-loaded `summary` parameter of
       `LoadPortfolioSummary` into the footer so Total Invested and Total Credits read the server figure
       instead of a client sum (FR-061; R10)
-- [ ] T033 [US3] Update `Financial.Web/src/components/__tests__/PortfolioSummaryTab.test.tsx` and the
+- [X] T033 [US3] Update `Financial.Web/src/components/__tests__/PortfolioSummaryTab.test.tsx` and the
       corresponding WPF view-model tests to assert the footer equals the header's server-reported total
-- [ ] T034 [US3] Run quickstart Scenario 3 against the temp copy and record the expected movements in
+- [X] T034 [US3] Run quickstart Scenario 3 against the temp copy and record the expected movements in
       the PR body: 5 of 28 active invested amounts move (one −683.09→28.65), 4 active portfolio totals
       move by up to 711.74, all 15 historic portfolio totals move (e.g. XPI/FII 2,949.87→61,413.07), the
       allocation chart gains one slice, 4 yield percentages change (one flips sign) (SC-005)
