@@ -30,6 +30,10 @@ consumed by both front ends; portfolio- and broker-level return; a data-quality 
   per-market holiday calendar.
 - Q: Which holdings should the allocation chart include? → A: Only those with an invested amount above
   nought, which is today's behaviour stated explicitly rather than changed.
+- Q: What should the income yield percentages be measured against, given FR-049 froze a denominator
+  that is negative for one holding? → A: The corrected invested amount — still measured on cost, never
+  on market value. Four holdings' percentages change as a result, one flipping sign; FR-049 and SC-011
+  were amended accordingly.
 - Q: How should the 90 unclassified holdings be classified? → A: By hand, one instrument at a time.
   There is no mechanical conversion, so the feature reports the gap and never writes a classification;
   holdings already classified directly are left as they are, and nothing may require a classification
@@ -469,15 +473,21 @@ scope; and by confirming that running it leaves the data byte-for-byte unchanged
 - **FR-005**: Derived figures MUST NOT be stored. They are re-derived from the transactions whenever
   they are needed, so that no stored figure can disagree with the transactions it came from. Quantity,
   average price, realised gain and average sell price are already excluded from the stored file, but
-  whether a position is long, flat or short is not — it is written out on every holding despite being
-  derived from quantity alone, and it is stale the moment the transactions behind it change.
+  two derived figures are still written: whether a position is long, flat or short, on every holding,
+  and whether a portfolio is empty, on every portfolio. Both are derived from data stored alongside
+  them and are stale the moment that data changes. Neither is ever read back — both are computed
+  properties with no setter, so loading cannot populate them — which is what makes removing them safe
+  in both directions.
 - **FR-006**: Applying date order and FR-002 together MUST change the figures of exactly two stored
   holdings, and no others, and those two changes MUST be treated as corrections rather than
   regressions. Re-ordering by date alone changes nothing: only one holding is stored out of date
   order and its average price is unaffected by re-sorting. What does change is the two holdings that
-  store a sale ahead of a purchase on the same date — one moves both its average price and its
-  realised gain, the other its realised gain — because the sale is now booked against the average
-  cost that the same-day purchase has already contributed to. The figures they show today are an
+  store a sale ahead of a purchase on the same date — at the precision actually displayed, one moves
+  both its average price and its realised gain, the other only its realised gain — because the sale is
+  now booked against the average cost that the same-day purchase has already contributed to. At full
+  stored precision both holdings' average prices move; one of them rounds to the same displayed value
+  either way, so a test of this requirement MUST state which precision it asserts at or it will read
+  as a contradiction. The figures they show today are an
   artefact of the order the rows happen to sit in, which is precisely what this section removes; the
   requirement is stated as a bounded, enumerable change so that anything beyond those two is a defect.
 - **FR-007**: Realised gain MUST be accumulated against the average cost in force at the date of each
@@ -622,8 +632,11 @@ scope; and by confirming that running it leaves the data byte-for-byte unchanged
   last time a fetch succeeded, so without the date the user cannot either — and the difference
   between the two is the difference between a valuation and a guess.
 - **FR-032**: A value MUST be marked as stale wherever it appears when the price it was derived from
-  is dated earlier than the most recent weekday on or before the valuation date. A price from Friday
-  is therefore current when read on Monday, and stale when read on Tuesday. Weekends are skipped
+  is dated earlier than the most recent weekday *strictly before* the valuation date. A price dated
+  the valuation date itself is always current; a price from Friday is current when read on Monday, and
+  stale when read on Tuesday. The "strictly before" matters: the most recent weekday *on or before* a
+  Monday is that Monday, which would make every Friday price stale on Monday and contradict the rule's
+  own purpose. Weekends are skipped
   because no price is ever recorded on them, so a rule counting plain calendar days would mark every
   holding stale every Monday and the marker would stop carrying information.
 - **FR-069**: Staleness MUST NOT depend on a per-market holiday calendar. Holdings span more than one
@@ -650,6 +663,12 @@ scope; and by confirming that running it leaves the data byte-for-byte unchanged
   them reaches one screen and misses the others.
 - **FR-037**: Unrealised gain MUST be the difference between market value and the cost of the units
   held, and MUST be reported as unavailable whenever either of those is unavailable.
+- **FR-075**: In Historic Investments unrealised gain MUST NOT be reported at all. A position filed as
+  closed is measured by what it realised, not by what it might still gain, and FR-034 fixes its market
+  value at nought — so subtracting the cost of any units it still carries would report a loss that has
+  not happened. Four historic holdings still carry a quantity, one of them 28 units at just over 2,000
+  of cost, and applying FR-037 there uniformly would fabricate a 2,000 loss for a position nobody has
+  sold.
 
 **Portfolio and broker totals**
 
@@ -693,10 +712,15 @@ scope; and by confirming that running it leaves the data byte-for-byte unchanged
   is the opposite of true.
 - **FR-048**: A portfolio in which no holding can be valued MUST state once that no share can be
   computed, rather than reporting every row as unknown without explanation.
-- **FR-049**: The income yield percentages MUST be unchanged in value and in meaning by the move to
-  market-based shares, and MUST be labelled as yield on cost. They share the denominator being
-  changed today, so moving them along with it would silently convert every yield figure in the
-  application from yield on cost to yield on market value — a different measure that no one asked for.
+- **FR-049**: The income yield percentages MUST remain measured on cost and MUST NOT move to market
+  value when the portfolio share does, and they MUST be labelled as yield on cost. They MUST be
+  measured against the same cost figure the invested amount reports (FR-019, FR-020), so that a row's
+  income percentage and its invested amount refer to the same money. This changes four holdings'
+  percentages as a consequence of correcting the invested amount, one of them from negative to
+  positive: the denominator in use today is purchases minus sales, which for a holding that has
+  returned more cash than it consumed is a negative number, and a yield measured against a negative
+  base has its sign inverted. Preserving those values exactly would mean preserving that defect and
+  printing a yield against minus 683 beside an invested amount of 28.
 - **FR-050**: In Historic Investments, a holding's share MUST continue to be derived from cost,
   because a closed position has no market value to derive it from.
 - **FR-051**: A holding's share MUST be presented in one consistent format everywhere it appears in
@@ -833,8 +857,10 @@ scope; and by confirming that running it leaves the data byte-for-byte unchanged
   the 28 open positions, spread across five portfolios, three of which have no valued holding at all.
 - **SC-010**: A holding whose value is unavailable never renders as 0% of its portfolio, and the
   shortfall from 100% is stated once per affected portfolio.
-- **SC-011**: The income yield percentages are numerically unchanged by the move to market-based
-  shares, and are labelled as measured on cost on every surface that shows them.
+- **SC-011**: The income yield percentages are unaffected by the move to market-based shares — the
+  share basis changes and they do not follow it — and are labelled as measured on cost on every
+  surface that shows them. They are measured against the same cost figure the invested amount reports,
+  so no holding's yield is measured against a negative base, which one is today.
 - **SC-012**: One report names every holding the application cannot fully calculate — today 3 selling
   more than they hold, 7 with no recorded price, and 90 unclassified split as 3 open and 87 closed —
   and running it leaves the stored data byte-for-byte unchanged.
