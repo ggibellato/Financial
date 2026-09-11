@@ -18,6 +18,10 @@ public class AssetAdminUpdateDTO
 
     public string LocalTypeCode { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Left null to re-derive from Country/LocalTypeCode via <see cref="Domain.Rules.GlobalAssetClassMapping"/>,
+    /// matching <see cref="AssetAdminCreateDTO.Class"/>'s convention; set to override explicitly.
+    /// </summary>
     [JsonConverter(typeof(JsonStringEnumConverter))]
-    public GlobalAssetClass Class { get; set; } = GlobalAssetClass.Unknown;
+    public GlobalAssetClass? Class { get; set; }
 }

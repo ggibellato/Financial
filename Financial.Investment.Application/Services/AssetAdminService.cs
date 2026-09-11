@@ -98,6 +98,7 @@ public sealed class AssetAdminService : IAssetAdminService
             Required(currentName, nameof(currentName));
             var newName = Required(request.Name, nameof(request.Name));
             ValidateIsin(request.ISIN);
+            var assetClass = request.Class ?? GlobalAssetClassMapping.Resolve(request.Country, request.LocalTypeCode);
 
             Broker? broker = null;
             Portfolio? portfolio = null;
@@ -112,7 +113,7 @@ public sealed class AssetAdminService : IAssetAdminService
 
                 updated = portfolio.UpdateAssetIdentity(
                     currentName, newName, request.ISIN, request.Exchange, request.Ticker,
-                    request.Country, request.LocalTypeCode, request.Class);
+                    request.Country, request.LocalTypeCode, assetClass);
                 return true;
             }).ConfigureAwait(false);
 

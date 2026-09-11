@@ -241,7 +241,7 @@ public class AssetsViewModel : ViewModelBase
                 Ticker = dialog.Ticker,
                 Country = dialog.Country,
                 LocalTypeCode = dialog.LocalTypeCode,
-                Class = dialog.Class,
+                Class = dialog.Class == GlobalAssetClass.Unknown ? null : dialog.Class,
             });
             await RefreshAsync();
         }

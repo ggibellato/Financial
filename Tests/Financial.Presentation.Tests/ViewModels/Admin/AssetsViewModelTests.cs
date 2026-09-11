@@ -152,6 +152,36 @@ public class AssetsViewModelTests
     }
 
     [Fact]
+    public async Task EditAssetAsync_ClassLeftAtUnknown_SendsNullClassToReDerive()
+    {
+        // FR-072: leaving the Class picker at Unknown while correcting Country/LocalTypeCode must
+        // re-derive the class server-side, the same way create's null-Class convention already does.
+        var (viewModel, assetAdminService, _, _, dialog) = CreateViewModel();
+        var asset = MakeAsset("BCIA11", "XPI", "Default", 100);
+        dialog.OnShowAssetFormDialog = vm => vm.Name = "BCIA11";
+
+        await viewModel.EditAssetAsync(asset);
+
+        assetAdminService.LastUpdateRequest!.Value.Request.Class.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task EditAssetAsync_ClassExplicitlySet_SendsThatClass()
+    {
+        var (viewModel, assetAdminService, _, _, dialog) = CreateViewModel();
+        var asset = MakeAsset("BCIA11", "XPI", "Default", 100);
+        dialog.OnShowAssetFormDialog = vm =>
+        {
+            vm.Name = "BCIA11";
+            vm.Class = GlobalAssetClass.Equity;
+        };
+
+        await viewModel.EditAssetAsync(asset);
+
+        assetAdminService.LastUpdateRequest!.Value.Request.Class.Should().Be(GlobalAssetClass.Equity);
+    }
+
+    [Fact]
     public async Task DeleteAssetAsync_NonZeroQuantity_SurfacesErrorWithoutConfirmingOrCallingService()
     {
         var (viewModel, _, assetMoveService, _, dialog) = CreateViewModel();

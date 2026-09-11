@@ -102,8 +102,8 @@ public sealed partial class AssetFormDialogViewModel : ViewModelBase
 
     public IReadOnlyList<GlobalAssetClass> ClassOptions { get; } = Enum.GetValues<GlobalAssetClass>();
 
-    /// <summary>Left at Unknown on create means "auto-resolve from Country/LocalTypeCode"; any other
-    /// selection, or editing, is an explicit value. Mirrors Financial.Web's AssetFormDialog.</summary>
+    /// <summary>Left at Unknown means "auto-resolve from Country/LocalTypeCode", on create or edit;
+    /// any other selection is an explicit value. Mirrors Financial.Web's AssetFormDialog.</summary>
     public GlobalAssetClass Class { get; set; } = GlobalAssetClass.Unknown;
 
     public string ValidationMessage

@@ -508,13 +508,21 @@ report without a restart.
       `DataQualityReportDTO` literal directly, so no repository stub was even needed), registered in
       `Financial.slnx`, and added `[Financial.Investment.DataQualityReport]*` + a rationale comment to
       `coverlet.runsettings` (R15)
-- [ ] T079 [US7] Make correcting a holding's country and local type code through the asset-admin edit
-      path re-derive its class — today only creation does this — so the report reflects a classification
-      immediately with no restart (FR-072)
-- [ ] T080 [US7] Extend the asset-admin edit tests for class re-derivation on edit; run quickstart
-      Scenario 7 against the temp copy: run the report twice and diff against the original
-      (byte-identical); classify a holding through the app and confirm it drops from the report without a
-      restart
+- [X] T079 [US7] Made correcting a holding's country and local type code through the asset-admin edit
+      path re-derive its class (FR-072): `AssetAdminUpdateDTO.Class` widened to `GlobalAssetClass?`
+      (mirroring `AssetAdminCreateDTO`'s existing convention — a genuine wire break, OpenAPI snapshot
+      and `Financial.Web` types regenerated), `AssetAdminService.UpdateAssetAsync` now re-derives via
+      `GlobalAssetClassMapping.Resolve` when `Class` is null, and both front ends' edit-submit paths
+      (`AssetsPage.tsx`, `Financial.App/ViewModels/Admin/AssetsViewModel.cs`) now map an
+      Unknown/untouched Class picker to `null` on save, mirroring their own create-path convention
+- [X] T080 [US7] Extended the asset-admin edit tests (Application, WPF view-model, Web page) for class
+      re-derivation and explicit-override on edit; ran quickstart Scenario 7 end-to-end against a
+      scratchpad copy: the report ran twice with byte-identical output (confirmed in Increment 13 part
+      1); classified `XPI/Acoes/BBAS3F` through the live running API (`PUT .../assets/XPI/Acoes/BBAS3F`
+      with `country: BR`, `localTypeCode: Acoes`, no `class`) — the response showed `class: "Equity"`
+      immediately, no restart; re-running the report against the same file afterward showed
+      Unclassified holdings drop from 90 (3 active/87 historic) to 89 (2 active/87 historic), BBAS3F no
+      longer listed
 
 **Increment 13 note**: split into two PRs to stay within the 8-non-test-file budget — T075–T078 (the
 report itself, ship first) and T079–T080 (the asset-admin edit re-derivation fix + the full Scenario 7

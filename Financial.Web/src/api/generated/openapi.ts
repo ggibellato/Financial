@@ -5576,7 +5576,7 @@ export interface components {
             ticker?: string;
         };
         AssetAdminUpdateDTO: {
-            class?: components["schemas"]["GlobalAssetClass"];
+            class?: null | components["schemas"]["GlobalAssetClass"];
             country?: components["schemas"]["CountryCode"];
             exchange?: string;
             isin?: string;
