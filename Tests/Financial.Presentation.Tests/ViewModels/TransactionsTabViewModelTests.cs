@@ -1,6 +1,7 @@
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
+using Financial.Investment.Domain.Exceptions;
 using Financial.Presentation.App.ViewModels;
 using Financial.Presentation.App.ViewModels.Investment;
 using FluentAssertions;
@@ -111,6 +112,34 @@ public class TransactionsTabViewModelTests
     }
 
     [Fact]
+    public async Task Add_ServiceThrowsInvestmentRuleViolation_ShowsTheDomainMessageAndDoesNotCrashOrApplyDetails()
+    {
+        var service = new StubTransactionService { ExceptionToThrow = new InvestmentRuleViolationException("Cannot sell 15 units on 2024-02-01 — only 10 were held on that date.") };
+        var (viewModel, _, spy) = Build(service: service);
+        viewModel.Load("ctx", [new() { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Buy", Quantity = 10m, UnitPrice = 5m, Fees = 0m }]);
+
+        var act = async () => await viewModel.Add(() => AsForm(ValidDialogData()));
+
+        await act.Should().NotThrowAsync();
+        spy.Messages.Should().ContainSingle(m => m.Image == MessageBoxImage.Warning && m.Message == "Cannot sell 15 units on 2024-02-01 — only 10 were held on that date.");
+        spy.AppliedDetails.Should().BeNull();
+        viewModel.Transactions.Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task Add_ServiceThrowsUnexpectedException_ShowsGenericMessageAndDoesNotCrash()
+    {
+        var service = new StubTransactionService { ExceptionToThrow = new InvalidOperationException("boom") };
+        var (viewModel, _, spy) = Build(service: service);
+
+        var act = async () => await viewModel.Add(() => AsForm(ValidDialogData()));
+
+        await act.Should().NotThrowAsync();
+        spy.Messages.Should().ContainSingle(m => m.Image == MessageBoxImage.Warning && m.Message == "Transaction could not be added. Check the values and try again.");
+        spy.AppliedDetails.Should().BeNull();
+    }
+
+    [Fact]
     public async Task AddTransactionCommand_AfterSuccessfulAdd_PersistsDateAndTypeForNextOpen()
     {
         var expectedDetails = new AssetDetailsDTO { Name = AssetName, BrokerName = BrokerName, PortfolioName = PortfolioName, Ticker = "T" };
@@ -200,6 +229,20 @@ public class TransactionsTabViewModelTests
         await viewModel.Update(selected, () => AsForm(ValidDialogData(id)));
 
         spy.Messages.Should().ContainSingle(m => m.Image == MessageBoxImage.Warning);
+        spy.AppliedDetails.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Update_ServiceThrowsInvestmentRuleViolation_ShowsTheDomainMessageAndDoesNotCrashOrApplyDetails()
+    {
+        var service = new StubTransactionService { ExceptionToThrow = new InvestmentRuleViolationException("This change would leave the sale of 80 units on 2024-06-01 short by 30 units — only 50 would be held on that date.") };
+        var (viewModel, _, spy) = Build(service: service);
+        var selected = new TransactionDTO { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Buy", Quantity = 100m, UnitPrice = 5m, Fees = 0m };
+
+        var act = async () => await viewModel.Update(selected, () => AsForm(ValidDialogData(selected.Id)));
+
+        await act.Should().NotThrowAsync();
+        spy.Messages.Should().ContainSingle(m => m.Image == MessageBoxImage.Warning && m.Message == "This change would leave the sale of 80 units on 2024-06-01 short by 30 units — only 50 would be held on that date.");
         spy.AppliedDetails.Should().BeNull();
     }
 
@@ -306,6 +349,20 @@ public class TransactionsTabViewModelTests
         await viewModel.Delete(selected, () => true);
 
         spy.Messages.Should().BeEmpty();
+        spy.AppliedDetails.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Delete_ServiceThrowsInvestmentRuleViolation_ShowsTheDomainMessageAndDoesNotCrashOrApplyDetails()
+    {
+        var service = new StubTransactionService { ExceptionToThrow = new InvestmentRuleViolationException("This change would leave the sale of 10 units on 2024-02-01 short by 10 units — only 0 would be held on that date.") };
+        var (viewModel, _, spy) = Build(service: service);
+        var selected = new TransactionDTO { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Buy", Quantity = 10m, UnitPrice = 5m, Fees = 0m };
+
+        var act = async () => await viewModel.Delete(selected, () => true);
+
+        await act.Should().NotThrowAsync();
+        spy.Messages.Should().ContainSingle(m => m.Image == MessageBoxImage.Warning);
         spy.AppliedDetails.Should().BeNull();
     }
 
@@ -446,6 +503,7 @@ public class TransactionsTabViewModelTests
         public AssetDetailsDTO? AddResult { get; set; }
         public AssetDetailsDTO? UpdateResult { get; set; }
         public AssetDetailsDTO? DeleteResult { get; set; }
+        public Exception? ExceptionToThrow { get; set; }
         public int AddCallCount { get; private set; }
         public int UpdateCallCount { get; private set; }
         public int DeleteCallCount { get; private set; }
@@ -457,21 +515,21 @@ public class TransactionsTabViewModelTests
         {
             AddCallCount++;
             LastAddRequest = request;
-            return Task.FromResult(AddResult);
+            return ExceptionToThrow is not null ? Task.FromException<AssetDetailsDTO?>(ExceptionToThrow) : Task.FromResult(AddResult);
         }
 
         public Task<AssetDetailsDTO?> UpdateTransactionAsync(TransactionUpdateDTO request)
         {
             UpdateCallCount++;
             LastUpdateRequest = request;
-            return Task.FromResult(UpdateResult);
+            return ExceptionToThrow is not null ? Task.FromException<AssetDetailsDTO?>(ExceptionToThrow) : Task.FromResult(UpdateResult);
         }
 
         public Task<AssetDetailsDTO?> DeleteTransactionAsync(TransactionDeleteDTO request)
         {
             DeleteCallCount++;
             LastDeleteRequest = request;
-            return Task.FromResult(DeleteResult);
+            return ExceptionToThrow is not null ? Task.FromException<AssetDetailsDTO?>(ExceptionToThrow) : Task.FromResult(DeleteResult);
         }
     }
 }

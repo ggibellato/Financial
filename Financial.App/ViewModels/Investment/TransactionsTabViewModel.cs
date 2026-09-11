@@ -3,6 +3,7 @@ using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Application.Validation;
+using Financial.Investment.Domain.Exceptions;
 using Financial.Presentation.App.Helpers;
 using Financial.Presentation.App.Views.Investment;
 using OxyPlot;
@@ -254,17 +255,26 @@ public class TransactionsTabViewModel : ViewModelBase
             return;
         }
 
-        var updatedDetails = await _transactionService.AddTransactionAsync(new TransactionCreateDTO
+        AssetDetailsDTO? updatedDetails;
+        try
         {
-            BrokerName = _brokerName(),
-            PortfolioName = _portfolioName(),
-            AssetName = _assetName(),
-            Date = dialogData.Value.Date,
-            Type = normalizedType,
-            Quantity = dialogData.Value.Quantity,
-            UnitPrice = dialogData.Value.UnitPrice,
-            Fees = dialogData.Value.Fees
-        });
+            updatedDetails = await _transactionService.AddTransactionAsync(new TransactionCreateDTO
+            {
+                BrokerName = _brokerName(),
+                PortfolioName = _portfolioName(),
+                AssetName = _assetName(),
+                Date = dialogData.Value.Date,
+                Type = normalizedType,
+                Quantity = dialogData.Value.Quantity,
+                UnitPrice = dialogData.Value.UnitPrice,
+                Fees = dialogData.Value.Fees
+            });
+        }
+        catch (Exception ex)
+        {
+            ShowWarning(ex is InvestmentRuleViolationException ? ex.Message : "Transaction could not be added. Check the values and try again.");
+            return;
+        }
 
         if (updatedDetails == null)
         {
@@ -303,18 +313,27 @@ public class TransactionsTabViewModel : ViewModelBase
             return;
         }
 
-        var updatedDetails = await _transactionService.UpdateTransactionAsync(new TransactionUpdateDTO
+        AssetDetailsDTO? updatedDetails;
+        try
         {
-            BrokerName = _brokerName(),
-            PortfolioName = _portfolioName(),
-            AssetName = _assetName(),
-            Id = dialogData.Value.TransactionId,
-            Date = dialogData.Value.Date,
-            Type = normalizedType,
-            Quantity = dialogData.Value.Quantity,
-            UnitPrice = dialogData.Value.UnitPrice,
-            Fees = dialogData.Value.Fees
-        });
+            updatedDetails = await _transactionService.UpdateTransactionAsync(new TransactionUpdateDTO
+            {
+                BrokerName = _brokerName(),
+                PortfolioName = _portfolioName(),
+                AssetName = _assetName(),
+                Id = dialogData.Value.TransactionId,
+                Date = dialogData.Value.Date,
+                Type = normalizedType,
+                Quantity = dialogData.Value.Quantity,
+                UnitPrice = dialogData.Value.UnitPrice,
+                Fees = dialogData.Value.Fees
+            });
+        }
+        catch (Exception ex)
+        {
+            ShowWarning(ex is InvestmentRuleViolationException ? ex.Message : "Transaction could not be updated. Check the values and try again.");
+            return;
+        }
 
         if (updatedDetails == null)
         {
@@ -348,13 +367,22 @@ public class TransactionsTabViewModel : ViewModelBase
             return;
         }
 
-        var updatedDetails = await _transactionService.DeleteTransactionAsync(new TransactionDeleteDTO
+        AssetDetailsDTO? updatedDetails;
+        try
         {
-            BrokerName = _brokerName(),
-            PortfolioName = _portfolioName(),
-            AssetName = _assetName(),
-            Id = selectedTransaction.Id
-        });
+            updatedDetails = await _transactionService.DeleteTransactionAsync(new TransactionDeleteDTO
+            {
+                BrokerName = _brokerName(),
+                PortfolioName = _portfolioName(),
+                AssetName = _assetName(),
+                Id = selectedTransaction.Id
+            });
+        }
+        catch (Exception ex)
+        {
+            ShowWarning(ex is InvestmentRuleViolationException ? ex.Message : "Transaction could not be deleted. Check the values and try again.");
+            return;
+        }
 
         if (updatedDetails == null)
         {

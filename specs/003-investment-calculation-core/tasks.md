@@ -109,55 +109,55 @@ nothing persisted. Start the app and confirm the 3 already-breaching historic ho
 
 ### Increment 3 — SaleCoverageRule, TransactionReplayOrder, strict Asset methods, TransactionService repointed
 
-- [ ] T008 [P] [US2] Write Domain tests in new
+- [X] T008 [P] [US2] Write Domain tests in new
       `Tests/Financial.Investment.Domain.Tests/Domain/TransactionReplayOrderTests.cs`: date-ascending
       order, purchases before sales on a tie, stable source-order tie-break, no tertiary tiebreaker
-- [ ] T009 [P] [US2] Write Domain tests in new
+- [X] T009 [P] [US2] Write Domain tests in new
       `Tests/Financial.Investment.Domain.Tests/Domain/SaleCoverageRuleTests.cs`: no breach → null; a
       sale exceeding held quantity; a proposed edit/delete that leaves a *later* sale short (FR-065,
       FR-066, naming that sale and the shortfall); a sale of exactly the held quantity accepted
       (FR-011); the held-quantity value formatted round-trip, not `N2` (FR-012)
-- [ ] T010 [US2] Extract `Financial.Investment.Domain/Rules/TransactionReplayOrder.cs` (a `Sort` entry
+- [X] T010 [US2] Extract `Financial.Investment.Domain/Rules/TransactionReplayOrder.cs` (a `Sort` entry
       point) from the ordering logic T003 added inline to `Transactions.cs`, and repoint
       `Financial.Investment.Domain/Entities/Transactions.cs` to consume it, so `Transactions`, the
       coverage rule and the future report (Phase 10) share one owner of the FR-002 ordering (R12)
-- [ ] T011 [US2] Implement `Financial.Investment.Domain/Rules/SaleCoverageRule.cs`: a pure,
+- [X] T011 [US2] Implement `Financial.Investment.Domain/Rules/SaleCoverageRule.cs`: a pure,
       non-throwing `FindFirstUncoveredSale(IEnumerable<Transaction>)` built on `TransactionReplayOrder`,
       walking the whole candidate sequence — not just the changed transaction (FR-009..FR-012, FR-065,
       FR-066)
-- [ ] T012 [US2] Add strict `RecordTransaction` / `ReviseTransaction` / `RetractTransaction` methods to
+- [X] T012 [US2] Add strict `RecordTransaction` / `ReviseTransaction` / `RetractTransaction` methods to
       `Financial.Investment.Domain/Entities/Asset.cs` that run `SaleCoverageRule` then delegate to the
       existing tolerant `AddTransaction`/`UpdateTransaction`/`RemoveTransaction`, raising
       `InvestmentRuleViolationException` on a breach (FR-009, FR-010, FR-013..FR-015; R13) — leave the
       tolerant methods and `AddTransactions` untouched so loading and bulk import stay tolerant
       (FR-013, FR-014)
-- [ ] T013 [US2] Extend
+- [X] T013 [US2] Extend
       `Tests/Financial.Investment.Domain.Tests/Domain/AssetTests.cs` for the new strict methods:
       refusal on oversell/edit/delete with the held-quantity message; confirm existing tolerant-method
       fixtures (`PositionType_NegativeQuantity_ReturnsShort`, short-position builders) are untouched —
       if any of them needs editing, the check was put on the wrong method (R13)
-- [ ] T014 [US2] Repoint `Financial.Investment.Application/Services/TransactionService.cs` to call the
+- [X] T014 [US2] Repoint `Financial.Investment.Application/Services/TransactionService.cs` to call the
       new strict `Asset` methods inside the `ApplyAndSaveAsync` mutation lambda, so a thrown refusal
       means serialize-and-write never runs and nothing changes in memory (R12)
-- [ ] T015 [US2] Extend
+- [X] T015 [US2] Extend
       `Tests/Financial.Investment.Application.Tests/Services/TransactionServiceMutationTests.cs` with
       refusal cases for record/edit/delete, including the "later transaction left short" message naming
       the later sale and the shortfall, using `StubInvestmentRepository`
 
 ### Increment 4 — Both front ends surface the refusal, incl. the WPF crash fix
 
-- [ ] T016 [US2] Add `try`/`catch` around `Add`/`Update`/`Delete` in
+- [X] T016 [US2] Add `try`/`catch` around `Add`/`Update`/`Delete` in
       `Financial.App/ViewModels/Investment/TransactionsTabViewModel.cs`, catching
       `InvestmentRuleViolationException` and surfacing `ex.Message`, a generic message otherwise,
       following the `MainNavigationViewModelBase` precedent (FR-062; R16 — this is a pre-existing
       latent crash this feature makes reachable)
-- [ ] T017 [US2] Add WPF view-model tests for `TransactionsTabViewModel` covering the refused
+- [X] T017 [US2] Add WPF view-model tests for `TransactionsTabViewModel` covering the refused
       add/edit/delete state: the app does not crash, entered data is preserved, selection goes through
       `TreeNodeViewModel.IsSelected` (never by assigning `SelectedNode` directly)
-- [ ] T018 [US2] Verify `Financial.Web`'s existing `financialApiClient`/`saveError` path surfaces the
+- [X] T018 [US2] Verify `Financial.Web`'s existing `financialApiClient`/`saveError` path surfaces the
       409 ProblemDetails `detail` verbatim; add a regression test under
       `Financial.Web/src/components/__tests__/` if the refusal path isn't already covered
-- [ ] T019 [US2] Run quickstart Scenario 2 from both front ends (`dotnet run --project Financial.Api`
+- [X] T019 [US2] Run quickstart Scenario 2 from both front ends (`dotnet run --project Financial.Api`
       and `Financial.App`) against the temp copy: app starts, lists all 160 holdings, opens the 3
       historic holdings that already breach the rule; a fresh oversell/edit/delete is refused with the
       held quantity named to full precision (SC-003, SC-004)
