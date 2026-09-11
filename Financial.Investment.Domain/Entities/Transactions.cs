@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Financial.Investment.Domain.Entities;
 
@@ -27,22 +28,16 @@ public class Transactions : ICollection<Transaction>
             throw new ArgumentNullException(nameof(transaction));
         }
 
-        if (transaction.Type == Transaction.TransactionType.Buy)
+        if (_items.Count == 0 || CompareReplayOrder(_items[^1], transaction) <= 0)
         {
-            AveragePrice = (AveragePrice * Quantity + transaction.TotalPrice) / (Quantity + transaction.Quantity);
+            _items.Add(transaction);
+            Apply(transaction);
         }
         else
         {
-            RealizedCapitalGain += transaction.TotalPrice - (transaction.Quantity * AveragePrice);
-            _totalSoldValue += transaction.TotalPrice;
-            _totalSoldQuantity += transaction.Quantity;
+            _items.Add(transaction);
+            Recompute();
         }
-
-        Quantity += transaction.Type == Transaction.TransactionType.Buy
-            ? transaction.Quantity
-            : -transaction.Quantity;
-
-        _items.Add(transaction);
     }
 
     public void AddRange(IEnumerable<Transaction> transactions)
@@ -68,9 +63,8 @@ public class Transactions : ICollection<Transaction>
             return false;
         }
 
-        var replayList = new List<Transaction>(_items);
-        replayList[index] = updatedTransaction;
-        Rebuild(replayList);
+        _items[index] = updatedTransaction;
+        Recompute();
         return true;
     }
 
@@ -84,32 +78,77 @@ public class Transactions : ICollection<Transaction>
             return false;
         }
 
-        var replayList = new List<Transaction>(_items);
-        replayList.RemoveAt(index);
-        Rebuild(replayList);
+        _items.RemoveAt(index);
+        Recompute();
         return true;
     }
 
-    private void Rebuild(IEnumerable<Transaction> transactions)
+    private void Recompute()
     {
-        var replayList = new List<Transaction>(transactions);
+        var ordered = _items
+            .OrderBy(t => t.Date)
+            .ThenBy(t => t.Type == Transaction.TransactionType.Sell)
+            .ToList();
+
         _items.Clear();
         Quantity = 0;
         AveragePrice = 0;
         RealizedCapitalGain = 0;
         _totalSoldQuantity = 0;
         _totalSoldValue = 0;
-        foreach (var transaction in replayList)
+
+        foreach (var transaction in ordered)
         {
-            Add(transaction);
+            _items.Add(transaction);
+            Apply(transaction);
         }
+    }
+
+    private void Apply(Transaction transaction)
+    {
+        if (transaction.Type == Transaction.TransactionType.Buy)
+        {
+            // Zero-guard is Buy-only: applying it to an ordinary sell-to-flat would zero the
+            // average price of every closed historic holding instead of just an oversell recovery.
+            var resultingQuantity = Quantity + transaction.Quantity;
+            AveragePrice = resultingQuantity == 0
+                ? 0m
+                : (AveragePrice * Quantity + transaction.TotalPrice) / resultingQuantity;
+        }
+        else
+        {
+            RealizedCapitalGain += transaction.TotalPrice - (transaction.Quantity * AveragePrice);
+            _totalSoldValue += transaction.TotalPrice;
+            _totalSoldQuantity += transaction.Quantity;
+        }
+
+        Quantity += transaction.Type == Transaction.TransactionType.Buy
+            ? transaction.Quantity
+            : -transaction.Quantity;
+    }
+
+    private static int CompareReplayOrder(Transaction a, Transaction b)
+    {
+        var byDate = a.Date.CompareTo(b.Date);
+        if (byDate != 0)
+        {
+            return byDate;
+        }
+
+        var aIsSell = a.Type == Transaction.TransactionType.Sell;
+        var bIsSell = b.Type == Transaction.TransactionType.Sell;
+        return aIsSell.CompareTo(bIsSell);
     }
 
     public IEnumerator<Transaction> GetEnumerator() => _items.GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     bool ICollection<Transaction>.IsReadOnly => false;
-    void ICollection<Transaction>.Clear() => Rebuild([]);
+    void ICollection<Transaction>.Clear()
+    {
+        _items.Clear();
+        Recompute();
+    }
     bool ICollection<Transaction>.Contains(Transaction item) => item != null && _items.Contains(item);
     void ICollection<Transaction>.CopyTo(Transaction[] array, int arrayIndex) => _items.CopyTo(array, arrayIndex);
     bool ICollection<Transaction>.Remove(Transaction item) => item != null && RemoveById(item.Id);

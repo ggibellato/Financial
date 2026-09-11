@@ -34,19 +34,62 @@ public class InvestmentTypeInfoResolverTests
         typeInfo.Properties.Should().NotContain(p => p.Name == nameof(Asset.Quantity));
         typeInfo.Properties.Should().NotContain(p => p.Name == nameof(Asset.AverageSellPrice));
         typeInfo.Properties.Should().NotContain(p => p.Name == nameof(Asset.RealizedGainLoss));
+        typeInfo.Properties.Should().NotContain(p => p.Name == nameof(Asset.PositionType));
     }
 
     [Fact]
-    public void GetTypeInfo_ForManagedType_LeavesReadOnlyComputedPropertyUnwired()
+    public void GetTypeInfo_ForPortfolio_RemovesIsEmpty()
     {
         var options = CreateOptions();
 
-        var typeInfo = options.TypeInfoResolver!.GetTypeInfo(typeof(Asset), options);
+        var typeInfo = options.TypeInfoResolver!.GetTypeInfo(typeof(Portfolio), options);
 
-        // PositionType is a computed (get-only) property, not in the excluded list, so it's
-        // still present in the JSON output but WirePropertySetter can't find a setter for it.
-        var positionTypeProp = typeInfo!.Properties.Should().ContainSingle(p => p.Name == nameof(Asset.PositionType)).Subject;
-        positionTypeProp.Set.Should().BeNull();
+        typeInfo!.Properties.Should().NotContain(p => p.Name == nameof(Portfolio.IsEmpty));
+    }
+
+    [Fact]
+    public void GetTypeInfo_DeserializesAssetJsonStillContainingPositionType_LoadsCleanly()
+    {
+        // UnmappedMemberHandling defaults to Skip, so a still-present legacy key is ignored.
+        var options = CreateOptions();
+        const string legacyJson = """
+            {
+                "Name": "Test",
+                "ISIN": "ISIN",
+                "Exchange": "BVMF",
+                "Ticker": "TST",
+                "Country": 0,
+                "LocalTypeCode": "",
+                "Class": 0,
+                "PositionType": "Long",
+                "Transactions": [],
+                "Credits": []
+            }
+            """;
+
+        var deserialized = JsonSerializer.Deserialize<Asset>(legacyJson, options);
+
+        deserialized.Should().NotBeNull();
+        deserialized!.Name.Should().Be("Test");
+    }
+
+    [Fact]
+    public void GetTypeInfo_DeserializesPortfolioJsonStillContainingIsEmpty_LoadsCleanly()
+    {
+        var options = CreateOptions();
+        const string legacyJson = """
+            {
+                "Name": "Test Portfolio",
+                "IsEmpty": false,
+                "Assets": []
+            }
+            """;
+
+        var deserialized = JsonSerializer.Deserialize<Portfolio>(legacyJson, options);
+
+        deserialized.Should().NotBeNull();
+        deserialized!.Name.Should().Be("Test Portfolio");
+        deserialized.IsEmpty.Should().BeTrue();
     }
 
     [Fact]
@@ -83,6 +126,7 @@ public class InvestmentTypeInfoResolverTests
         var json = JsonSerializer.Serialize(asset, options);
         var deserialized = JsonSerializer.Deserialize<Asset>(json, options);
 
+        json.Should().NotContain(nameof(Asset.PositionType));
         deserialized.Should().NotBeNull();
         deserialized!.Quantity.Should().Be(5m);
         deserialized.AveragePrice.Should().Be(10m);
