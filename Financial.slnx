@@ -25,6 +25,7 @@
 	<Folder Name="/Tools/">
 		<Project Path="Tools/CashFlowSpreadsheetImport/CashFlowSpreadsheetImport.csproj" />
 		<Project Path="Tools/ImportGoogleSpreadSheets/ImportGoogleSpreadSheets.csproj" />
+		<Project Path="Tools/InvestmentDataQualityReport/InvestmentDataQualityReport.csproj" />
 		<Project Path="Tools/InvestmentSpreadsheetImport/InvestmentSpreadsheetImport.csproj" />
 	</Folder>
 	<Folder Name="/Tests/">
@@ -39,6 +40,7 @@
 		<Project Path="Tests/Financial.CashFlow.Application.Tests/Financial.CashFlow.Application.Tests.csproj" />
 		<Project Path="Tests/Financial.CashFlow.Infrastructure.Tests/Financial.CashFlow.Infrastructure.Tests.csproj" />
 		<Project Path="Tests/Financial.CashFlowSpreadsheetImport.Tests/Financial.CashFlowSpreadsheetImport.Tests.csproj" />
+		<Project Path="Tests/Financial.InvestmentDataQualityReport.Tests/Financial.InvestmentDataQualityReport.Tests.csproj" />
 		<Project Path="Tests/Financial.InvestmentSpreadsheetImport.Tests/Financial.InvestmentSpreadsheetImport.Tests.csproj" />
 		<Project Path="Tests/Financial.TestUtilities/Financial.TestUtilities.csproj" />
 	</Folder>
