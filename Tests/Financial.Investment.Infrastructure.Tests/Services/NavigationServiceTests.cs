@@ -28,23 +28,32 @@ public class NavigationServiceTests
 
     public NavigationServiceTests()
     {
-        _sut = new NavigationService(_repository, _tracer, NullLogger<NavigationService>.Instance);
+        _sut = new NavigationService(_repository, TestHoldingValuationService.Create(), _tracer, NullLogger<NavigationService>.Instance);
         _creditSut = new CreditService(_repository, _sut, _tracer, NullLogger<CreditService>.Instance);
     }
 
     [Fact]
     public void Constructor_WithNullRepository_ThrowsArgumentNullException()
     {
-        Action act = () => new NavigationService(null!, new RecordingTelemetryTracer(), NullLogger<NavigationService>.Instance);
+        Action act = () => new NavigationService(null!, TestHoldingValuationService.Create(), new RecordingTelemetryTracer(), NullLogger<NavigationService>.Instance);
 
         act.Should().Throw<ArgumentNullException>()
             .WithParameterName("repository");
     }
 
     [Fact]
+    public void Constructor_WithNullHoldingValuationService_ThrowsArgumentNullException()
+    {
+        Action act = () => new NavigationService(_repository, null!, new RecordingTelemetryTracer(), NullLogger<NavigationService>.Instance);
+
+        act.Should().Throw<ArgumentNullException>()
+            .WithParameterName("holdingValuationService");
+    }
+
+    [Fact]
     public void Constructor_WithNullTracer_ThrowsArgumentNullException()
     {
-        Action act = () => new NavigationService(_repository, null!, NullLogger<NavigationService>.Instance);
+        Action act = () => new NavigationService(_repository, TestHoldingValuationService.Create(), null!, NullLogger<NavigationService>.Instance);
 
         act.Should().Throw<ArgumentNullException>()
             .WithParameterName("tracer");

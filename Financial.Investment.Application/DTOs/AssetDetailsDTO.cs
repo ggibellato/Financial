@@ -49,6 +49,20 @@ public class AssetDetailsDTO
     /// </summary>
     public decimal RealizedGainLoss { get; set; }
 
+    public decimal? MarketValue { get; set; }
+
+    public decimal CostOfUnitsHeld { get; set; }
+
+    public decimal? UnrealisedGain { get; set; }
+
+    public DateOnly? PriceAsOfDate { get; set; }
+
+    public bool IsPriceStale { get; set; }
+
+    public decimal? PriceOnlyReturn { get; set; }
+
+    public decimal? TotalReturn { get; set; }
+
     public List<TransactionDTO> Transactions { get; set; } = new();
 
     public List<CreditDTO> Credits { get; set; } = new();

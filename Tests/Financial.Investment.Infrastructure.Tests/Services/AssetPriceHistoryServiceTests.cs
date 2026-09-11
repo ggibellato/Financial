@@ -268,7 +268,7 @@ public class AssetPriceHistoryServiceTests
     private static (AssetPriceHistoryService Service, InvestmentJsonRepository Repository, string TempFile) CreateServiceWithRepository()
     {
         var (repository, tracer, tempFile) = CreateRepositoryOverTempCopy();
-        var navigationService = new NavigationService(repository, tracer, NullLogger<NavigationService>.Instance);
+        var navigationService = new NavigationService(repository, TestHoldingValuationService.Create(), tracer, NullLogger<NavigationService>.Instance);
         var service = new AssetPriceHistoryService(repository, navigationService, tracer, NullLogger<AssetPriceHistoryService>.Instance);
 
         return (service, repository, tempFile);

@@ -592,4 +592,50 @@ public class AssetTests
 
         result.Should().BeFalse();
     }
+
+    [Fact]
+    public void GetPriceAsOf_ExactDateMatch_ReturnsThatEntry()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        asset.SetPrice(new DateOnly(2026, 8, 14), 100m, isManual: false);
+
+        asset.GetPriceAsOf(new DateOnly(2026, 8, 14))!.Price.Should().Be(100m);
+    }
+
+    [Fact]
+    public void GetPriceAsOf_NoExactMatch_ReturnsTheMostRecentEntryOnOrBefore()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        asset.SetPrice(new DateOnly(2026, 8, 10), 90m, isManual: false);
+        asset.SetPrice(new DateOnly(2026, 8, 14), 100m, isManual: false);
+
+        asset.GetPriceAsOf(new DateOnly(2026, 8, 17))!.Price.Should().Be(100m);
+    }
+
+    [Fact]
+    public void GetPriceAsOf_EntryAfterTheAsOfDate_IsIgnored()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        asset.SetPrice(new DateOnly(2026, 8, 10), 90m, isManual: false);
+        asset.SetPrice(new DateOnly(2026, 8, 20), 999m, isManual: false);
+
+        asset.GetPriceAsOf(new DateOnly(2026, 8, 14))!.Price.Should().Be(90m);
+    }
+
+    [Fact]
+    public void GetPriceAsOf_NoEntryOnOrBeforeTheAsOfDate_ReturnsNull()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        asset.SetPrice(new DateOnly(2026, 8, 20), 100m, isManual: false);
+
+        asset.GetPriceAsOf(new DateOnly(2026, 8, 14)).Should().BeNull();
+    }
+
+    [Fact]
+    public void GetPriceAsOf_NoPriceHistory_ReturnsNull()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+
+        asset.GetPriceAsOf(new DateOnly(2026, 8, 14)).Should().BeNull();
+    }
 }

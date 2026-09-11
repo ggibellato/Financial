@@ -571,7 +571,7 @@ public class AssetPriceLookupServiceTests
 
         var tracer = new RecordingTelemetryTracer();
         var repository = new InvestmentJsonRepository(investments, storage, serializer);
-        var navigationService = new NavigationService(repository, tracer, NullLogger<NavigationService>.Instance);
+        var navigationService = new NavigationService(repository, TestHoldingValuationService.Create(), tracer, NullLogger<NavigationService>.Instance);
         var service = new AssetPriceLookupService(
             repository, navigationService, assetPriceService, tracer, new RecordingLogger<AssetPriceLookupService>());
 
@@ -603,7 +603,7 @@ public class AssetPriceLookupServiceTests
         var tracer = new RecordingTelemetryTracer();
         var logger = new RecordingLogger<AssetPriceLookupService>();
         var repository = new InvestmentJsonRepository(investments, storage, serializer);
-        var navigationService = new NavigationService(repository, tracer, NullLogger<NavigationService>.Instance);
+        var navigationService = new NavigationService(repository, TestHoldingValuationService.Create(), tracer, NullLogger<NavigationService>.Instance);
 
         return (new AssetPriceLookupService(repository, navigationService, assetPriceService, tracer, logger), tracer, logger, tempFile);
     }
@@ -649,7 +649,7 @@ public class AssetPriceLookupServiceTests
     {
         var (repository, tracer, tempFile) = CreateRepositoryOverTempCopy();
         var logger = new RecordingLogger<AssetPriceLookupService>();
-        var navigationService = new NavigationService(repository, tracer, NullLogger<NavigationService>.Instance);
+        var navigationService = new NavigationService(repository, TestHoldingValuationService.Create(), tracer, NullLogger<NavigationService>.Instance);
 
         return (new AssetPriceLookupService(repository, navigationService, assetPriceService, tracer, logger), repository, logger, tempFile);
     }
@@ -658,7 +658,7 @@ public class AssetPriceLookupServiceTests
     {
         var (innerRepository, tracer, tempFile) = CreateRepositoryOverTempCopy();
         var repository = new CountingRepository(innerRepository);
-        var navigationService = new NavigationService(repository, tracer, NullLogger<NavigationService>.Instance);
+        var navigationService = new NavigationService(repository, TestHoldingValuationService.Create(), tracer, NullLogger<NavigationService>.Instance);
         var service = new AssetPriceLookupService(repository, navigationService, assetPriceService, tracer, NullLogger<AssetPriceLookupService>.Instance);
 
         return (service, repository, tempFile);

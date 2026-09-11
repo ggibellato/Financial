@@ -294,42 +294,42 @@ the as-of date. Open an unpriced holding → both say unavailable, not nought.
 
 ### Increment 8 — HoldingValuationCalculator + service + holding-level DTO fields
 
-- [ ] T041 [P] [US4] Write Domain tests in new
+- [X] T041 [P] [US4] Write Domain tests in new
       `Tests/Financial.Investment.Domain.Tests/Domain/HoldingValuationCalculatorTests.cs`: the
       invariants `UnrealisedGain is null ⟺ MarketValue is null` and `MarketValue is null ⟺
       PriceAsOfDate is null` (FR-037); staleness at the "strictly before the most recent weekday"
       boundary — a Friday price current on Monday, stale on Tuesday (FR-032); `NotMarkedToMarket` for
       Historic never reports unrealised gain (FR-034, FR-075)
-- [ ] T042 [US4] Implement the `HoldingValuation` record and `HoldingValuationCalculator` in
+- [X] T042 [US4] Implement the `HoldingValuation` record and `HoldingValuationCalculator` in
       `Financial.Investment.Domain/Rules/HoldingValuationCalculator.cs` with two named entry points —
       `Calculate(quantity, averagePrice, price, valuationDate)` and `NotMarkedToMarket(quantity,
       averagePrice)` — rather than a `bool` flag (FR-026..FR-037, FR-075; R1, R2, R4)
-- [ ] T043 [P] [US4] Write Domain tests for `GetPriceAsOf` in
+- [X] T043 [P] [US4] Write Domain tests for `GetPriceAsOf` in
       `Tests/Financial.Investment.Domain.Tests/Domain/AssetTests.cs`: most-recent-on-or-before
       semantics, a future-dated price ignored, no price returns null
-- [ ] T044 [US4] Add `GetPriceAsOf(DateOnly date)` to
+- [X] T044 [US4] Add `GetPriceAsOf(DateOnly date)` to
       `Financial.Investment.Domain/Entities/Asset.cs`; do **not** sort `_priceHistory` (would re-open
       the "Collection was modified" concurrency bug `UpsertPriceEntry` fixed) (FR-028, FR-033; R3)
-- [ ] T045 [US4] Define `Financial.Investment.Application/Interfaces/IHoldingValuationService.cs` and
+- [X] T045 [US4] Define `Financial.Investment.Application/Interfaces/IHoldingValuationService.cs` and
       implement `Financial.Investment.Application/Services/HoldingValuationService.cs` — an optional
       trailing `TimeProvider? timeProvider = null` defaulting to `TimeProvider.System`, calling
       `GetPriceAsOf` and dispatching Active/Historic to the two Domain entry points (R4)
-- [ ] T046 [US4] Register `IHoldingValuationService` and `services.TryAddSingleton(TimeProvider.System)`
+- [X] T046 [US4] Register `IHoldingValuationService` and `services.TryAddSingleton(TimeProvider.System)`
       in
       `Financial.Investment.Application/DependencyInjection/InvestmentApplicationServiceCollectionExtensions.cs`
       (R4 — `TryAdd` avoids a duplicate with CashFlow's unconditional registration)
-- [ ] T047 [US4] Write Application tests for `HoldingValuationService` using `FakeTimeProvider` and
+- [X] T047 [US4] Write Application tests for `HoldingValuationService` using `FakeTimeProvider` and
       `StubInvestmentRepository`, including the observability contract (success span with
       `OperationResult == Success`; failure records the exception and rethrows without logging, via
       `RecordingTelemetryTracer`) per `testing-guide-Financial`
-- [ ] T048 [US4] Add `MarketValue`, `CostOfUnitsHeld`, `UnrealisedGain`, `PriceAsOfDate`,
+- [X] T048 [US4] Add `MarketValue`, `CostOfUnitsHeld`, `UnrealisedGain`, `PriceAsOfDate`,
       `IsPriceStale`, `PriceOnlyReturn`, `TotalReturn` to
       `Financial.Investment.Application/DTOs/PortfolioAssetSummaryItemDTO.cs` and
       `Financial.Investment.Application/DTOs/AssetDetailsDTO.cs`
-- [ ] T049 [US4] Wire `Financial.Investment.Application/Services/PortfolioAssetSummaryBuilder.cs` /
+- [X] T049 [US4] Wire `Financial.Investment.Application/Services/PortfolioAssetSummaryBuilder.cs` /
       `PortfolioAssetSummaryService.cs` and the asset-details build path to call
       `IHoldingValuationService` and populate the new DTO fields
-- [ ] T050 [US4] Regenerate the OpenAPI snapshot and `Financial.Web` generated types for the DTO
+- [X] T050 [US4] Regenerate the OpenAPI snapshot and `Financial.Web` generated types for the DTO
       additions; commit both
 
 ### Increment 9 — Both front ends switch to server-computed valuation, incl. refresh-after-fetch

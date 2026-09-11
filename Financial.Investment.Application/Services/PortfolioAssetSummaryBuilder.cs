@@ -1,5 +1,6 @@
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Enums;
+using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.Entities;
 using Financial.Investment.Domain.Rules;
 
@@ -10,10 +11,11 @@ internal static class PortfolioAssetSummaryBuilder
     internal static IReadOnlyList<PortfolioAssetSummaryItemDTO> Build(
         IEnumerable<Asset> assets,
         DateTime today,
-        InvestmentScope scope)
+        InvestmentScope scope,
+        IHoldingValuationService holdingValuationService)
     {
         var computed = assets
-            .Select(a => ComputeAssetData(a, today, scope))
+            .Select(a => ComputeAssetData(a, today, scope, holdingValuationService))
             .ToList();
         var portfolioWeightBasis = computed.Sum(c => c.WeightBasis);
 
@@ -23,12 +25,14 @@ internal static class PortfolioAssetSummaryBuilder
             .ToList();
     }
 
-    private static AssetComputedData ComputeAssetData(Asset asset, DateTime today, InvestmentScope scope)
+    private static AssetComputedData ComputeAssetData(
+        Asset asset, DateTime today, InvestmentScope scope, IHoldingValuationService holdingValuationService)
     {
         var totals = AssetTotals.For(asset);
         var bases = AssetAmountBases.For(scope, totals);
         var realizedGainLoss = asset.RealizedGainLoss;
         var averageSellPrice = asset.AverageSellPrice;
+        var valuation = holdingValuationService.GetValuation(asset, scope);
 
         var firstBuyDate = asset.Transactions
             .Where(t => t.Type == Transaction.TransactionType.Buy)
@@ -43,7 +47,7 @@ internal static class PortfolioAssetSummaryBuilder
             asset.Name, asset.Ticker, asset.Exchange, asset.Class,
             firstBuyDate, asset.Quantity, asset.AveragePrice, averageSellPrice,
             totals.TotalBought, totals.TotalSold, bases.InvestedAmount, realizedGainLoss, bases.WeightBasis,
-            totals.TotalCredits, cashFlows,
+            totals.TotalCredits, cashFlows, valuation,
             creditsAnalysis.LastMonthCredits, creditsAnalysis.LastCreditMonth,
             creditsAnalysis.LastMonthCreditsPercent, creditsAnalysis.CreditFrequencyPerYear,
             creditsAnalysis.EstimatedAnnualCredits, creditsAnalysis.EstimatedAnnualPercent,
@@ -66,6 +70,13 @@ internal static class PortfolioAssetSummaryBuilder
             TotalInvested = c.TotalInvested,
             RealizedGainLoss = c.RealizedGainLoss,
             PortfolioWeight = weight,
+            MarketValue = c.Valuation.MarketValue,
+            CostOfUnitsHeld = c.Valuation.CostOfUnitsHeld,
+            UnrealisedGain = c.Valuation.UnrealisedGain,
+            PriceAsOfDate = c.Valuation.PriceAsOfDate,
+            IsPriceStale = c.Valuation.IsPriceStale,
+            PriceOnlyReturn = c.Valuation.PriceOnlyReturn,
+            TotalReturn = c.Valuation.TotalReturn,
             TotalCredits = c.TotalCredits,
             CashFlows = c.CashFlows,
             LastMonthCredits = c.LastMonthCredits,
@@ -84,7 +95,7 @@ internal static class PortfolioAssetSummaryBuilder
         string AssetName, string Ticker, string Exchange, GlobalAssetClass Class,
         DateTime? FirstInvestmentDate, decimal CurrentQuantity, decimal AveragePrice, decimal? AverageSellPrice,
         decimal TotalBought, decimal TotalSold, decimal TotalInvested, decimal RealizedGainLoss, decimal WeightBasis,
-        decimal TotalCredits, IReadOnlyList<AssetCashFlowDTO> CashFlows,
+        decimal TotalCredits, IReadOnlyList<AssetCashFlowDTO> CashFlows, HoldingValuation Valuation,
         decimal LastMonthCredits, string? LastCreditMonth, decimal? LastMonthCreditsPercent,
         int? CreditFrequencyPerYear, decimal? EstimatedAnnualCredits, decimal? EstimatedAnnualPercent,
         decimal CurrentMonthCredits);

@@ -18,7 +18,7 @@ public class CreditServiceTests
     [Fact]
     public void Constructor_WithNullRepository_Throws()
     {
-        Action act = () => new CreditService(null!, new NavigationService(_repository, Tracer, NullLogger<NavigationService>.Instance), Tracer, NullLogger<CreditService>.Instance);
+        Action act = () => new CreditService(null!, new NavigationService(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance), Tracer, NullLogger<CreditService>.Instance);
         act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
     }
 
@@ -32,7 +32,7 @@ public class CreditServiceTests
     [Fact]
     public void Constructor_WithNullTracer_Throws()
     {
-        Action act = () => new CreditService(_repository, new NavigationService(_repository, Tracer, NullLogger<NavigationService>.Instance), null!, NullLogger<CreditService>.Instance);
+        Action act = () => new CreditService(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance), null!, NullLogger<CreditService>.Instance);
         act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
     }
 
@@ -407,7 +407,7 @@ public class CreditServiceTests
         act.Should().Throw<InvalidOperationException>();
     }
 
-    private CreditService CreateService() => new(_repository, new NavigationService(_repository, Tracer, NullLogger<NavigationService>.Instance), Tracer, NullLogger<CreditService>.Instance);
+    private CreditService CreateService() => new(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance), Tracer, NullLogger<CreditService>.Instance);
 
     private static Asset MakeAsset(string name = "AAAA") =>
         Asset.Create(name, "ISIN", "BVMF", name);
@@ -416,7 +416,7 @@ public class CreditServiceTests
     [Fact]
     public void Constructor_WithNullLogger_Throws()
     {
-        Action act = () => new CreditService(_repository, new NavigationService(_repository, Tracer, NullLogger<NavigationService>.Instance), Tracer, null!);
+        Action act = () => new CreditService(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance), Tracer, null!);
 
         act.Should().Throw<ArgumentNullException>();
     }

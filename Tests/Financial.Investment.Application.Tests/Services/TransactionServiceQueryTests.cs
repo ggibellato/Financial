@@ -17,7 +17,7 @@ public class TransactionServiceQueryTests
     [Fact]
     public void Constructor_WithNullRepository_Throws()
     {
-        Action act = () => new TransactionService(null!, new NavigationService(_repository, Tracer, NullLogger<NavigationService>.Instance), Tracer, NullLogger<TransactionService>.Instance);
+        Action act = () => new TransactionService(null!, new NavigationService(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance), Tracer, NullLogger<TransactionService>.Instance);
         act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
     }
 
@@ -192,7 +192,7 @@ public class TransactionServiceQueryTests
         act.Should().Throw<InvalidOperationException>();
     }
 
-    private TransactionService CreateService() => new(_repository, new NavigationService(_repository, Tracer, NullLogger<NavigationService>.Instance), Tracer, NullLogger<TransactionService>.Instance);
+    private TransactionService CreateService() => new(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance), Tracer, NullLogger<TransactionService>.Instance);
 
     private static Asset MakeAsset(string name = "TEST") =>
         Asset.Create(name, "ISIN", "BVMF", name);

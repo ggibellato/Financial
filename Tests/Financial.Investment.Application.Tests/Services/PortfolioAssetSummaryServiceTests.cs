@@ -18,14 +18,21 @@ public class PortfolioAssetSummaryServiceTests
     [Fact]
     public void Constructor_WithNullRepository_Throws()
     {
-        Action act = () => new PortfolioAssetSummaryService(null!, Tracer, NullLogger<PortfolioAssetSummaryService>.Instance);
+        Action act = () => new PortfolioAssetSummaryService(null!, TestHoldingValuationService.Create(), Tracer, NullLogger<PortfolioAssetSummaryService>.Instance);
         act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
+    }
+
+    [Fact]
+    public void Constructor_WithNullHoldingValuationService_Throws()
+    {
+        Action act = () => new PortfolioAssetSummaryService(new StubInvestmentRepository(), null!, Tracer, NullLogger<PortfolioAssetSummaryService>.Instance);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("holdingValuationService");
     }
 
     [Fact]
     public void Constructor_WithNullTracer_Throws()
     {
-        Action act = () => new PortfolioAssetSummaryService(new StubInvestmentRepository(), null!, NullLogger<PortfolioAssetSummaryService>.Instance);
+        Action act = () => new PortfolioAssetSummaryService(new StubInvestmentRepository(), TestHoldingValuationService.Create(), null!, NullLogger<PortfolioAssetSummaryService>.Instance);
         act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
     }
 
@@ -744,7 +751,7 @@ public class PortfolioAssetSummaryServiceTests
         result[0].LastMonthCreditsPercent.Should().Be(1m);
     }
 
-    private PortfolioAssetSummaryService CreateService() => new(_repository, Tracer, NullLogger<PortfolioAssetSummaryService>.Instance);
+    private PortfolioAssetSummaryService CreateService() => new(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<PortfolioAssetSummaryService>.Instance);
 
     private static Asset MakeAsset(string name, string ticker, string exchange) =>
         Asset.Create(name, "ISIN", exchange, ticker);
@@ -753,7 +760,7 @@ public class PortfolioAssetSummaryServiceTests
     [Fact]
     public void Constructor_WithNullLogger_Throws()
     {
-        Action act = () => new PortfolioAssetSummaryService(new StubInvestmentRepository(), Tracer, null!);
+        Action act = () => new PortfolioAssetSummaryService(new StubInvestmentRepository(), TestHoldingValuationService.Create(), Tracer, null!);
 
         act.Should().Throw<ArgumentNullException>();
     }

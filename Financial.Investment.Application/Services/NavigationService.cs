@@ -14,12 +14,18 @@ public sealed class NavigationService : INavigationService
     private const string EntityType = "Navigation";
 
     private readonly IInvestmentRepository _repository;
+    private readonly IHoldingValuationService _holdingValuationService;
     private readonly ITelemetryTracer _tracer;
     private readonly ILogger<NavigationService> _logger;
 
-    public NavigationService(IInvestmentRepository repository, ITelemetryTracer tracer, ILogger<NavigationService> logger)
+    public NavigationService(
+        IInvestmentRepository repository,
+        IHoldingValuationService holdingValuationService,
+        ITelemetryTracer tracer,
+        ILogger<NavigationService> logger)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+        _holdingValuationService = holdingValuationService ?? throw new ArgumentNullException(nameof(holdingValuationService));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -90,6 +96,7 @@ public sealed class NavigationService : INavigationService
                 .ToList();
 
             var (totalBought, totalSold, totalCredits) = AssetTotalsCalculator.CalculateTotals(asset);
+            var valuation = _holdingValuationService.GetValuation(asset, scope);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetAssetDetails");
@@ -112,6 +119,13 @@ public sealed class NavigationService : INavigationService
                 TotalSold = totalSold,
                 TotalCredits = totalCredits,
                 RealizedGainLoss = asset.RealizedGainLoss,
+                MarketValue = valuation.MarketValue,
+                CostOfUnitsHeld = valuation.CostOfUnitsHeld,
+                UnrealisedGain = valuation.UnrealisedGain,
+                PriceAsOfDate = valuation.PriceAsOfDate,
+                IsPriceStale = valuation.IsPriceStale,
+                PriceOnlyReturn = valuation.PriceOnlyReturn,
+                TotalReturn = valuation.TotalReturn,
                 Transactions = transactions,
                 Credits = credits,
                 PriceHistory = priceHistory,

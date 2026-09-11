@@ -11,12 +11,18 @@ public sealed class PortfolioAssetSummaryService : IPortfolioAssetSummaryService
     private const string EntityType = "PortfolioAssetSummary";
 
     private readonly IInvestmentRepository _repository;
+    private readonly IHoldingValuationService _holdingValuationService;
     private readonly ITelemetryTracer _tracer;
     private readonly ILogger<PortfolioAssetSummaryService> _logger;
 
-    public PortfolioAssetSummaryService(IInvestmentRepository repository, ITelemetryTracer tracer, ILogger<PortfolioAssetSummaryService> logger)
+    public PortfolioAssetSummaryService(
+        IInvestmentRepository repository,
+        IHoldingValuationService holdingValuationService,
+        ITelemetryTracer tracer,
+        ILogger<PortfolioAssetSummaryService> logger)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+        _holdingValuationService = holdingValuationService ?? throw new ArgumentNullException(nameof(holdingValuationService));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -41,7 +47,7 @@ public sealed class PortfolioAssetSummaryService : IPortfolioAssetSummaryService
                 return [];
             }
 
-            var result = PortfolioAssetSummaryBuilder.Build(assets, DateTime.Today, scope);
+            var result = PortfolioAssetSummaryBuilder.Build(assets, DateTime.Today, scope, _holdingValuationService);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetPortfolioAssetsSummary");
