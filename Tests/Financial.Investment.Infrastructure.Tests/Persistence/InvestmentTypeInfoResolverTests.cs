@@ -37,8 +37,6 @@ public class InvestmentTypeInfoResolverTests
         typeInfo.Properties.Should().NotContain(p => p.Name == nameof(Asset.PositionType));
     }
 
-    /// <summary>FR-005: PositionType and Portfolio.IsEmpty are computed properties with no setter,
-    /// so excluding them from the write path is safe in both directions.</summary>
     [Fact]
     public void GetTypeInfo_ForPortfolio_RemovesIsEmpty()
     {
@@ -52,8 +50,7 @@ public class InvestmentTypeInfoResolverTests
     [Fact]
     public void GetTypeInfo_DeserializesAssetJsonStillContainingPositionType_LoadsCleanly()
     {
-        // Simulates a data file written before this feature existed, still carrying the two
-        // now-removed derived fields (FR-005). UnmappedMemberHandling defaults to Skip.
+        // UnmappedMemberHandling defaults to Skip, so a still-present legacy key is ignored.
         var options = CreateOptions();
         const string legacyJson = """
             {

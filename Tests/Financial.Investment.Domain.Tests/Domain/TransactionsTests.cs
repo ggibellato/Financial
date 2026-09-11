@@ -210,7 +210,6 @@ public class TransactionsTests
         target[0].Should().BeSameAs(transaction);
     }
 
-    /// <summary>SC-001: entry order must never change the derived figures.</summary>
     [Fact]
     public void Add_ShuffledOrder_ProducesSameFiguresAsChronologicalOrder()
     {
@@ -223,7 +222,6 @@ public class TransactionsTests
         chronological.AddRange([buy1, buy3, buy2, sell1]);
 
         var shuffled = new Transactions();
-        // A back-dated purchase (buy3) entered after a later sale — the case SC-001 exists for.
         shuffled.AddRange([sell1, buy2, buy1, buy3]);
 
         shuffled.Quantity.Should().Be(chronological.Quantity);
@@ -232,7 +230,6 @@ public class TransactionsTests
         shuffled.AverageSellPrice.Should().Be(chronological.AverageSellPrice);
     }
 
-    /// <summary>FR-002: on a shared date, the purchase applies before the sale.</summary>
     [Fact]
     public void Add_SameDatePurchaseAndSale_AppliesPurchaseFirst()
     {
@@ -240,7 +237,6 @@ public class TransactionsTests
         var buy = Transaction.Create(date, Transaction.TransactionType.Buy, 100m, 10m, 0m);
         var sell = Transaction.Create(date, Transaction.TransactionType.Sell, 100m, 11m, 0m);
 
-        // Stored (file) order is Sell before Buy; replay order must still apply the Buy first.
         _sut.Add(sell);
         _sut.Add(buy);
 
@@ -248,7 +244,6 @@ public class TransactionsTests
         _sut.RealizedCapitalGain.Should().Be(100m, "the sale is covered by the same-date purchase, at cost 10 x 100 = 1000 against proceeds 1100");
     }
 
-    /// <summary>FR-004: editing a transaction's date backwards must re-derive the figures.</summary>
     [Fact]
     public void Update_DateEditedBackwards_RederivesFiguresInNewOrder()
     {
@@ -268,7 +263,6 @@ public class TransactionsTests
         _sut.Select(t => t.Id).Should().Equal([backdated.Id, laterBuy.Id]);
     }
 
-    /// <summary>FR-008: a reopened position's average price starts fresh from post-reopen purchases only.</summary>
     [Fact]
     public void Add_BuyAfterClosingToFlat_AveragePriceIgnoresThePriorClosedRun()
     {
@@ -280,11 +274,9 @@ public class TransactionsTests
         _sut.AveragePrice.Should().Be(200m, "the closed run's average (50) must not leak into the reopened position");
     }
 
-    /// <summary>FR-016: a Buy that brings an oversold (negative) quantity back to zero must not divide by zero.</summary>
     [Fact]
     public void Add_BuyResultingInZeroQuantityFromNegative_DoesNotThrowAndZeroesAveragePrice()
     {
-        // Reproduces a stored oversell: Quantity ends negative with no coverage rule applied at load.
         _sut.Add(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 5m, 10m, 0m));
         _sut.Add(Transaction.Create(new DateTime(2024, 2, 1), Transaction.TransactionType.Sell, 10m, 12m, 0m));
         _sut.Quantity.Should().Be(-5m);
@@ -296,14 +288,6 @@ public class TransactionsTests
         _sut.AveragePrice.Should().Be(0m);
     }
 
-    /// <summary>
-    /// SC-002 / FR-006: the bounded-change regression. Reproduces the exact stored transaction
-    /// histories (as of `main @ 24bbf41d`) for the only two real holdings FR-002's purchases-before-
-    /// sales tie-break moves — Bitcoin and AGNC INVESTMENT CORP. (AGNC) 2 ISA, both carrying a same-date
-    /// Buy/Sell pair. Asserted at full stored decimal precision (18 significant digits), which is why
-    /// both average prices move even though AGNC's rounds to the same two-decimal-place display value
-    /// (7.09) either way.
-    /// </summary>
     [Fact]
     public void Add_BitcoinAndAgncSameDateShapes_ProduceExactlyTheSpecifiedFigures()
     {
@@ -316,14 +300,9 @@ public class TransactionsTests
         agnc.AddRange(AgncStoredOrderTransactions());
         agnc.RealizedCapitalGain.Should().BeApproximately(9.660847205052619m, 0.000000000001m);
 
-        // At 2 dp — the precision both front ends display — AGNC's average price is unchanged.
-        Math.Round(agnc.AveragePrice, 2).Should().Be(7.09m);
+        Math.Round(agnc.AveragePrice, 2).Should().Be(7.09m, "unchanged at the 2 dp both front ends display, even though full precision moves");
     }
 
-    /// <summary>
-    /// Stored (file) order for the Bitcoin holding, including the 2025-11-07 Sell-then-Buy pair that
-    /// FR-002 reorders to Buy-then-Sell on replay.
-    /// </summary>
     private static IEnumerable<Transaction> BitcoinStoredOrderTransactions() =>
     [
         Transaction.Create(new DateTime(2025, 3, 7), Transaction.TransactionType.Buy, 0.00141516m, 67949.91m, 3.84m),
@@ -345,10 +324,6 @@ public class TransactionsTests
         Transaction.Create(new DateTime(2026, 7, 31), Transaction.TransactionType.Buy, 0.00104326m, 47926.69m, 1.99m),
     ];
 
-    /// <summary>
-    /// Stored (file) order for the AGNC INVESTMENT CORP. (AGNC) 2 ISA holding, including the
-    /// 2026-07-17 Buy/Sell/Buy triple that FR-002 reorders to Buy-Buy-Sell on replay.
-    /// </summary>
     private static IEnumerable<Transaction> AgncStoredOrderTransactions() =>
     [
         Transaction.Create(new DateTime(2025, 4, 7), Transaction.TransactionType.Buy, 132m, 6.645681835587176m, 1.320000000000068m),

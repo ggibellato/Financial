@@ -5,15 +5,6 @@ using System.Linq;
 
 namespace Financial.Investment.Domain.Entities;
 
-/// <summary>
-/// Figures are derived by replaying transactions in date order, purchases before sales on a shared
-/// date (FR-001..FR-003). <see cref="Add"/> is the population entry point System.Text.Json calls once
-/// per stored transaction on load, so it must stay tolerant of arriving out of order: it applies
-/// incrementally while the incoming transaction still sorts last, and falls back to a full replay only
-/// when it does not — <c>Add</c> is therefore not O(1)-guaranteed (worst case O(n log n) on an
-/// out-of-order arrival). <see cref="Update"/> and <see cref="RemoveById"/> always replay, since an
-/// edited date can reorder the whole sequence.
-/// </summary>
 public class Transactions : ICollection<Transaction>
 {
     private readonly List<Transaction> _items = new();
@@ -92,13 +83,6 @@ public class Transactions : ICollection<Transaction>
         return true;
     }
 
-    /// <summary>
-    /// Sorts the whole current set by replay order and folds it from scratch, writing the ordered
-    /// sequence back into <see cref="_items"/> so storage order and figures never disagree (R11).
-    /// <c>OrderBy</c>/<c>ThenBy</c> are documented-stable, so a tie keeps its arrival order — the only
-    /// tiebreaker FR-003 needs, since weighted-average folding over buys is commutative and sells do
-    /// not move the average.
-    /// </summary>
     private void Recompute()
     {
         var ordered = _items
@@ -120,18 +104,12 @@ public class Transactions : ICollection<Transaction>
         }
     }
 
-    /// <summary>
-    /// Folds one transaction, already in replay order, into the running totals. The Buy branch guards
-    /// a zero resulting quantity (reachable only after a stored oversell leaves <see cref="Quantity"/>
-    /// negative) rather than dividing by zero, resetting <see cref="AveragePrice"/> to 0 — the same
-    /// value a flat, never-opened position reports. The guard is deliberately Buy-only: generalizing it
-    /// to the ordinary sell-to-flat path would zero the average price of every closed historic holding
-    /// (R14).
-    /// </summary>
     private void Apply(Transaction transaction)
     {
         if (transaction.Type == Transaction.TransactionType.Buy)
         {
+            // Zero-guard is Buy-only: applying it to an ordinary sell-to-flat would zero the
+            // average price of every closed historic holding instead of just an oversell recovery.
             var resultingQuantity = Quantity + transaction.Quantity;
             AveragePrice = resultingQuantity == 0
                 ? 0m
@@ -149,7 +127,6 @@ public class Transactions : ICollection<Transaction>
             : -transaction.Quantity;
     }
 
-    /// <summary>Date ascending, purchases before sales on a shared date (FR-002). No tertiary tiebreaker.</summary>
     private static int CompareReplayOrder(Transaction a, Transaction b)
     {
         var byDate = a.Date.CompareTo(b.Date);
