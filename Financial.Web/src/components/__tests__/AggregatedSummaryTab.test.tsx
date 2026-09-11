@@ -105,7 +105,55 @@ describe('AggregatedSummaryTab', () => {
     setMock({ summary: SUMMARY })
     renderComponent()
     const labels = screen.getAllByText(/^Total /).map((el) => el.textContent)
-    expect(labels).toEqual(['Total Bought', 'Total Sold', 'Total Credits', 'Total Invested'])
+    expect(labels).toEqual(['Total Bought', 'Total Sold', 'Total Credits', 'Total Invested', 'Total Return'])
+  })
+
+  it('renders_market_value', () => {
+    setMock({ summary: SUMMARY })
+    renderComponent()
+    const label = screen.getByText('Market Value')
+    expect(label.nextElementSibling?.textContent).toMatch(/18[.,]000[.,]00/)
+  })
+
+  it('renders_dash_for_unavailable_market_value', () => {
+    setMock({ summary: { ...SUMMARY, marketValue: null, unvaluedHoldingCount: 3 } })
+    renderComponent()
+    const label = screen.getByText('Market Value')
+    expect(label.nextElementSibling?.textContent).toBe('—')
+  })
+
+  it('renders_price_only_and_total_return_as_percentages', () => {
+    setMock({ summary: SUMMARY })
+    renderComponent()
+    expect(screen.getByText('Price-Only Return').nextElementSibling?.textContent).toBe('8.00%')
+    expect(screen.getByText('Total Return').nextElementSibling?.textContent).toBe('10.00%')
+  })
+
+  it('renders_dash_for_withheld_returns', () => {
+    setMock({ summary: { ...SUMMARY, priceOnlyReturn: null, totalReturn: null, unvaluedHoldingCount: 1 } })
+    renderComponent()
+    expect(screen.getByText('Price-Only Return').nextElementSibling?.textContent).toBe('—')
+    expect(screen.getByText('Total Return').nextElementSibling?.textContent).toBe('—')
+  })
+
+  it('does_not_render_incomplete_notice_when_fully_valued', () => {
+    setMock({ summary: SUMMARY })
+    renderComponent()
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+  })
+
+  it('renders_incomplete_notice_naming_shortfall_when_partially_valued', () => {
+    setMock({ summary: { ...SUMMARY, holdingCount: 5, unvaluedHoldingCount: 2, priceOnlyReturn: null, totalReturn: null } })
+    renderComponent()
+    expect(screen.getByRole('status')).toHaveTextContent(
+      '2 of 5 holdings could not be valued; the total is incomplete and returns are withheld.',
+    )
+  })
+
+  it('renders_incomplete_notice_for_nothing_valuable_distinct_from_partial', () => {
+    setMock({ summary: { ...SUMMARY, holdingCount: 4, unvaluedHoldingCount: 4, marketValue: null, priceOnlyReturn: null, totalReturn: null } })
+    renderComponent()
+    expect(screen.getByRole('status')).toHaveTextContent('None of the 4 holdings could be valued; returns are withheld.')
   })
 
   it('renders_total_invested_in_green_when_non_negative', () => {

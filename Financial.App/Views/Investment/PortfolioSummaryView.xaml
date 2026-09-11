@@ -251,6 +251,9 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
                     <TextBlock Grid.Row="0" Grid.Column="0" Text="Total Bought:" FontWeight="Bold" Margin="0,5"/>
@@ -285,31 +288,63 @@
                                Foreground="{Binding AssetDetails.TotalInvested, Converter={StaticResource SignedValueToBrushConverter}}"
                                Margin="10,5"/>
 
-                    <TextBlock Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="4"
+                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Market Value:" FontWeight="Bold" Margin="0,5"/>
+                    <TextBlock Grid.Row="2" Grid.Column="1"
+                               Text="{Binding AssetDetails.MarketValue, Mode=OneWay, StringFormat=N2, TargetNullValue='—'}"
+                               TextAlignment="Right"
+                               FontFamily="Consolas"
+                               Margin="10,5"/>
+
+                    <TextBlock Grid.Row="2" Grid.Column="2" Text="Price-Only Return:" FontWeight="Bold" Margin="20,5,0,5"/>
+                    <TextBlock Grid.Row="2" Grid.Column="3"
+                               Text="{Binding AssetDetails.PriceOnlyReturn, Mode=OneWay, StringFormat=P2, TargetNullValue='—'}"
+                               TextAlignment="Right"
+                               FontFamily="Consolas"
+                               Foreground="{Binding AssetDetails.PriceOnlyReturn, Converter={StaticResource SignedValueToBrushConverter}}"
+                               Margin="10,5"/>
+
+                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Total Return:" FontWeight="Bold" Margin="0,5"/>
+                    <TextBlock Grid.Row="3" Grid.Column="1"
+                               Text="{Binding AssetDetails.TotalReturn, Mode=OneWay, StringFormat=P2, TargetNullValue='—'}"
+                               TextAlignment="Right"
+                               FontFamily="Consolas"
+                               Foreground="{Binding AssetDetails.TotalReturn, Converter={StaticResource SignedValueToBrushConverter}}"
+                               Margin="10,5"/>
+
+                    <TextBlock Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="4"
+                               Text="{Binding AssetDetails.IncompleteValuationMessage, Mode=OneWay}"
+                               Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                               FontStyle="Italic"
+                               TextWrapping="Wrap"
+                               Margin="0,5"
+                               AutomationProperties.LiveSetting="Polite"
+                               Visibility="{Binding AssetDetails.HasIncompleteValuation, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                    <TextBlock Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="4"
                                Text="Loading breakdown..."
                                Margin="0,15,0,5"
                                Visibility="{Binding AssetDetails.IsBreakdownLoading, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
-                    <TextBlock Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="4"
+                    <TextBlock Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="4"
                                Text="{Binding AssetDetails.BreakdownError}"
                                Foreground="DarkRed"
                                Margin="0,15,0,5"
                                Visibility="{Binding AssetDetails.HasBreakdownError, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
-                    <TextBlock Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="4"
+                    <TextBlock Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="4"
                                Text="No active portfolios to display"
                                Foreground="Gray"
                                Margin="0,15,0,5"
                                Visibility="{Binding AssetDetails.ShowBreakdownEmptyState, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
-                    <StackPanel Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="4"
+                    <StackPanel Grid.Row="8" Grid.Column="0" Grid.ColumnSpan="4"
                                 Margin="0,15,0,0"
                                 Visibility="{Binding AssetDetails.HasBreakdownData, Converter={StaticResource BoolToVisibilityConverter}}">
                         <TextBlock Text="Portfolio Breakdown" FontWeight="Bold" Margin="0,0,0,5"/>
                         <oxy:PlotView Model="{Binding AssetDetails.OverallBreakdownPlotModel}" Height="260" Background="Transparent"/>
                     </StackPanel>
 
-                    <ItemsControl Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="4"
+                    <ItemsControl Grid.Row="9" Grid.Column="0" Grid.ColumnSpan="4"
                                   Margin="0,15,0,0"
                                   ItemsSource="{Binding AssetDetails.PortfolioBreakdownPieItems}"
                                   Visibility="{Binding AssetDetails.HasBreakdownData, Converter={StaticResource BoolToVisibilityConverter}}">

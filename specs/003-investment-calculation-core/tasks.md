@@ -399,16 +399,16 @@ both rates.
 
 ### Increment 11 — Both front ends render level totals and returns
 
-- [ ] T064 [US5] Render market value, price-only return and total return on
+- [X] T064 [US5] Render market value, price-only return and total return on
       `Financial.Web/src/components/AggregatedSummaryTab.tsx`, with an incomplete-total disclosure
       stating the unvalued holding count and withheld returns when `UnvaluedHoldingCount > 0` (FR-040,
       FR-042)
-- [ ] T065 [US5] Render the equivalent in `Financial.App`'s portfolio/broker summary view, distinguishing
+- [X] T065 [US5] Render the equivalent in `Financial.App`'s portfolio/broker summary view, distinguishing
       an empty portfolio from one where nothing can be valued (FR-041)
-- [ ] T066 [US5] Update `Financial.Web/src/components/__tests__/AggregatedSummaryTab.test.tsx`,
-      `Financial.Web/src/hooks/__tests__/useAggregatedSummary.test.ts`, and the corresponding WPF tests
-      for the four level-total states
-- [ ] T067 [US5] Run quickstart Scenario 5 against the temp copy: Trading 212/ETF ISA, Trading 212/ETF
+- [X] T066 [US5] Update `Financial.Web/src/components/__tests__/AggregatedSummaryTab.test.tsx` and the
+      corresponding WPF tests for the four level-total states (`useAggregatedSummary.ts` itself is an
+      unmodified passthrough, so `useAggregatedSummary.test.ts` needed no change)
+- [X] T067 [US5] Run quickstart Scenario 5 against the temp copy: Trading 212/ETF ISA, Trading 212/ETF
       SIPP and XPI/Previdencia (no valued holding at all) each distinguishable from an empty portfolio; a
       partially-valued portfolio marked incomplete with returns withheld; no cross-broker total anywhere
 
