@@ -667,9 +667,9 @@
                         <local:PortfolioFooterStat Margin="0,0,20,0" Label="Total Credits:"
                                                     Value="{Binding AssetDetails.FooterTotalCredits, StringFormat=N2}"/>
                         <StackPanel Orientation="Horizontal" Margin="0,0,20,0">
-                            <TextBlock Text="Current Value:" FontWeight="Bold" Margin="0,0,5,0"/>
+                            <TextBlock Text="Current Value:" Margin="0,0,5,0"/>
                             <TextBlock Text="{Binding AssetDetails.FooterCurrentValueDisplay}"
-                                       FontFamily="Consolas"/>
+                                       FontFamily="Consolas" FontWeight="Bold"/>
                         </StackPanel>
                         <local:PortfolioFooterStat Margin="0,0,20,0"
                                                     Label="{Binding AssetDetails.FooterCurrentMonthLabel, StringFormat='{}{0}:'}"
@@ -925,9 +925,9 @@
                         <local:PortfolioFooterStat Margin="0,0,20,0" Label="Total Credits:"
                                                     Value="{Binding AssetDetails.FooterTotalCredits, StringFormat=N2}"/>
                         <StackPanel Orientation="Horizontal" Margin="0,0,20,0">
-                            <TextBlock Text="Realized Gain/Loss:" FontWeight="Bold" Margin="0,0,5,0"/>
+                            <TextBlock Text="Realized Gain/Loss:" Margin="0,0,5,0"/>
                             <TextBlock Text="{Binding AssetDetails.FooterRealizedGainLoss, StringFormat=N2}"
-                                       FontFamily="Consolas"
+                                       FontFamily="Consolas" FontWeight="Bold"
                                        Foreground="{Binding AssetDetails.FooterRealizedGainLoss, Converter={StaticResource SignedValueToBrushConverter}}"/>
                         </StackPanel>
                         <local:PortfolioFooterStat Margin="0,0,20,0"

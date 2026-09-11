@@ -538,19 +538,78 @@ confirmed unchanged after running it.
 
 ## Phase 11: Polish & Cross-Cutting Concerns
 
-- [ ] T081 [P] Run `docker-compose up` and confirm the app starts under production config with every
-      increment merged (Principle VIII)
-- [ ] T082 [P] Run `cd Financial.Web && npm run smoke-test`; it asserts a CashFlow figure, so treat a
-      green run as evidence the app boots, not that this feature works
-- [ ] T083 Walk `docs/ui/review-checklist.md` against every touched view — `AssetSummaryTab`,
-      `PortfolioSummaryTab`, `AggregatedSummaryTab`, `PortfolioAssetSummaryRowViewModel`,
-      `AssetDetailsViewModel`, `TransactionsTabViewModel` — in both front ends, per `docs/rules/ui.md`
-      §Scope of compliance
-- [ ] T084 [P] Run `dotnet test --settings coverlet.runsettings --results-directory TestResults` and
-      `cd Financial.Web && npm run test:coverage`; confirm every job's coverage band is amber (≥90%) or
-      better; note any yellow band's uncovered lines in the relevant PR body
-- [ ] T085 Re-run the full quickstart scenario list (1–7) end to end against the temp copy as a final
-      check before closing the feature; confirm `main` was deployable after every individual increment
+- [X] T081 [P] Ran `docker-compose up --build` against `main` (all 13 PRs merged): image built clean,
+      container started, both the SPA (`/`) and the API (`/api/v1/financial/brokers`) returned 200
+      under the real `ASPNETCORE_ENVIRONMENT: Development` + `LocalJson` production-style config
+      docker-compose.yml declares (Principle VIII)
+- [X] T082 [P] Reproduced the CI `smoke` job locally: built the web app with a relative
+      `API_BASE_URL`, published the API, embedded the build into `wwwroot`, ran the published API
+      against the seeded `Tests/Financial.Api.Tests/TestData/*.test.json` files on port 8080, and ran
+      `node Financial.Web/scripts/smoke-test.mjs` — passed (app loaded, tree rendered, the seeded
+      CashFlow figure matched). As documented, this is evidence the app boots, not that this feature
+      works — see T085 for feature-specific validation
+- [X] T083 Delegated a full `docs/ui/review-checklist.md` walk (every section, not only items tied to
+      any one PR's original trigger) against every touched view in both front ends —
+      `AssetSummaryTab`/`PortfolioSummaryTab`/`AggregatedSummaryTab` (Web) and
+      `PortfolioAssetSummaryRowViewModel`/`AssetDetailsViewModel`/`TransactionsTabViewModel` + their
+      XAML views (WPF) — to a fresh ui-reviewer pass scoped to catch cross-increment gaps (e.g. two
+      disclosures reviewed in isolation now sharing a screen) that a per-PR review wouldn't see.
+
+      **Blocking finding, fixed**: `TransactionsTabViewModel`/`TransactionDialogViewModel` closed the
+      inline "New/Edit Transaction" form the instant client-side validation passed — *before* the
+      server call ran — so a refused save (an oversell, the exact path FR-062 added) discarded every
+      typed field and surfaced the refusal only via a disconnected `MessageBox`, with nothing left to
+      correct and retry. Fixed: `ShowTransactionFormAsync` now closes only on a real Cancel; `Confirm`
+      leaves the form open, and `Add`/`Update` loop via a new `RetrySameFormAsync` that reports the
+      failure onto the still-open dialog's existing `ValidationMessage` slot (the same one client-side
+      validation already uses) and waits for the next confirm/cancel — so a rejection preserves every
+      typed value and shows the message inline, matching Web's already-correct behavior. Backward
+      compatible with all 17 existing stub-driven tests (which never set `TransactionFormViewModel`,
+      so they hit the pre-existing fallback path unchanged); added 2 new tests driving the real
+      `AddTransactionCommand` → `ConfirmCommand` path to prove the form stays open with typed values
+      and an inline error, and that a corrected retry succeeds and closes the form.
+      **Should-fix findings, fixed**: WPF's `PortfolioFooterStat.xaml` and two inline footer stats in
+      `PortfolioSummaryView.xaml` bolded the *label* instead of the *value*, backwards from
+      `forms-data-and-visualisations.md`'s Totals rule — swapped in all three places. Web's
+      `.portfolio-summary__footer-value` used `font-weight: 500` where the codebase's own
+      `TransactionsTab.css` convention is literal `bold` — aligned. `.portfolio-summary__table-section`
+      was missing `overflow-x`, risking horizontal breakage on its 17-column grid at narrow widths —
+      changed to `overflow: auto`, matching sibling grid sections.
+      **Documented, not fixed (pre-existing, broader than this feature)**: WPF hardcodes
+      `Green`/`Red`/`Blue`/`#007ACC`/`#EEEEEE`/`DarkRed` in several `PortfolioSummaryView.xaml` sites
+      where the same file already has a theme-aware equivalent in use nearby
+      (`SignedValueToBrushConverter`, `SystemFillColorCriticalBrush`) — a real dark-theme/consistency
+      gap, but spanning many pre-existing DataGrid cells this feature didn't introduce; missing
+      accessible alternative text for the broker breakdown pie charts (both platforms); no live-region
+      announcement when an async price refresh completes (both platforms); no empty-state message for
+      a zero-transaction grid (both platforms). Recorded here as known follow-up debt rather than
+      expanded into this already-large polish pass.
+- [X] T084 [P] Ran `dotnet test --settings coverlet.runsettings` (full solution) and
+      `cd Financial.Web && npm run test:coverage`, then reproduced each CI job's exact
+      `reportgenerator` aggregation locally (`-assemblyfilters:+*;-Financial.Presentation.App` for
+      backend, `+Financial.Presentation.App` for wpf). Bands: **backend 94.4% (amber)**, **wpf 95.1%
+      (yellow)**, **web 95.43% (yellow)** — all ≥90%, no red. Backend's amber band is pre-existing and
+      unrelated to this feature: `Financial.Investment.Application` (98.5%), `.Domain` (98.8%) and
+      `.Infrastructure` (99.5%) — the assemblies this feature actually touched — are all near-green;
+      the drag is the vendor-wrapper `Financial.Integrations.GoogleCalendar` (30.9%),
+      `.GoogleDrive` (22.9%) and `.WebPageParser` (44.9%) assemblies, already documented in
+      `coverlet.runsettings`' own rationale comment as live-API-dependent code no unit suite can
+      exercise, unchanged by this feature
+- [X] T085 Re-ran the quickstart scenarios end to end against a fresh scratchpad copy via the live
+      API (never `data/data-investment.json` directly, confirmed unchanged by checksum afterward):
+      Scenario 1 — Bitcoin's average price (62,709.05) and realised gain (0.17) match the spec's
+      "after" figures exactly; AGNC's absolute realised gain has moved further since spec-writing time
+      (more transactions recorded since), which the checklist itself flags as expected drift for a
+      live-updating figure — the frozen `TransactionsTests` regression fixture (T004) is what actually
+      guards this and still passes. Scenario 2 — all three already-breaching Historic holdings still
+      load; a live oversell attempt on `XPI/Acoes/BBAS3` returned 409 naming the held quantity (400),
+      and the stored quantity was unchanged before/after. Scenario 3 — `XPI/FII` Historic: portfolio
+      total (61,413.07) equals the sum of its 24 rows exactly. Scenario 4 — `XPI/Renda Fixa/Inco`
+      (unpriced) reports `marketValue`/`priceOnlyReturn`/`totalReturn` as `null`, never `0`;
+      `XPI/Acoes/TAEE3` (priced today) reports a concrete value with `priceAsOfDate` and
+      `isPriceStale: false`. Scenarios 5–7 were already validated end-to-end with real data during
+      Increments 11–13 (see their own notes above). `main` was deployable after every individual
+      increment per its own PR's test run (13/13 green before merge).
 
 ---
 

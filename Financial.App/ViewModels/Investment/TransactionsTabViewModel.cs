@@ -244,48 +244,48 @@ public class TransactionsTabViewModel : ViewModelBase
         }
 
         var dialogData = await showForm();
-        if (dialogData == null)
+        while (dialogData != null)
         {
-            return;
-        }
-
-        if (!TransactionTypeParser.TryNormalize(dialogData.Value.Type, out var normalizedType))
-        {
-            ShowWarning("Transaction type must be 'Buy' or 'Sell'.");
-            return;
-        }
-
-        AssetDetailsDTO? updatedDetails;
-        try
-        {
-            updatedDetails = await _transactionService.AddTransactionAsync(new TransactionCreateDTO
+            if (!TransactionTypeParser.TryNormalize(dialogData.Value.Type, out var normalizedType))
             {
-                BrokerName = _brokerName(),
-                PortfolioName = _portfolioName(),
-                AssetName = _assetName(),
-                Date = dialogData.Value.Date,
-                Type = normalizedType,
-                Quantity = dialogData.Value.Quantity,
-                UnitPrice = dialogData.Value.UnitPrice,
-                Fees = dialogData.Value.Fees
-            });
-        }
-        catch (Exception ex)
-        {
-            ShowWarning(ex is InvestmentRuleViolationException ? ex.Message : "Transaction could not be added. Check the values and try again.");
+                dialogData = await RetrySameFormAsync("Transaction type must be 'Buy' or 'Sell'.");
+                continue;
+            }
+
+            AssetDetailsDTO? updatedDetails;
+            try
+            {
+                updatedDetails = await _transactionService.AddTransactionAsync(new TransactionCreateDTO
+                {
+                    BrokerName = _brokerName(),
+                    PortfolioName = _portfolioName(),
+                    AssetName = _assetName(),
+                    Date = dialogData.Value.Date,
+                    Type = normalizedType,
+                    Quantity = dialogData.Value.Quantity,
+                    UnitPrice = dialogData.Value.UnitPrice,
+                    Fees = dialogData.Value.Fees
+                });
+            }
+            catch (Exception ex)
+            {
+                dialogData = await RetrySameFormAsync(ex is InvestmentRuleViolationException ? ex.Message : "Transaction could not be added. Check the values and try again.");
+                continue;
+            }
+
+            if (updatedDetails == null)
+            {
+                dialogData = await RetrySameFormAsync("Transaction could not be added. Check the values and try again.");
+                continue;
+            }
+
+            _lastUsedTransactionDate = dialogData.Value.Date;
+            _lastUsedTransactionType = normalizedType;
+
+            _applyDetails(updatedDetails);
+            CloseTransactionForm();
             return;
         }
-
-        if (updatedDetails == null)
-        {
-            ShowWarning("Transaction could not be added. Check the values and try again.");
-            return;
-        }
-
-        _lastUsedTransactionDate = dialogData.Value.Date;
-        _lastUsedTransactionType = normalizedType;
-
-        _applyDetails(updatedDetails);
     }
 
     public async Task Update(TransactionDTO? selectedTransaction, Func<Task<TransactionDialogData?>> showForm)
@@ -302,46 +302,46 @@ public class TransactionsTabViewModel : ViewModelBase
         }
 
         var dialogData = await showForm();
-        if (dialogData == null)
+        while (dialogData != null)
         {
-            return;
-        }
-
-        if (!TransactionTypeParser.TryNormalize(dialogData.Value.Type, out var normalizedType))
-        {
-            ShowWarning("Transaction type must be 'Buy' or 'Sell'.");
-            return;
-        }
-
-        AssetDetailsDTO? updatedDetails;
-        try
-        {
-            updatedDetails = await _transactionService.UpdateTransactionAsync(new TransactionUpdateDTO
+            if (!TransactionTypeParser.TryNormalize(dialogData.Value.Type, out var normalizedType))
             {
-                BrokerName = _brokerName(),
-                PortfolioName = _portfolioName(),
-                AssetName = _assetName(),
-                Id = dialogData.Value.TransactionId,
-                Date = dialogData.Value.Date,
-                Type = normalizedType,
-                Quantity = dialogData.Value.Quantity,
-                UnitPrice = dialogData.Value.UnitPrice,
-                Fees = dialogData.Value.Fees
-            });
-        }
-        catch (Exception ex)
-        {
-            ShowWarning(ex is InvestmentRuleViolationException ? ex.Message : "Transaction could not be updated. Check the values and try again.");
+                dialogData = await RetrySameFormAsync("Transaction type must be 'Buy' or 'Sell'.");
+                continue;
+            }
+
+            AssetDetailsDTO? updatedDetails;
+            try
+            {
+                updatedDetails = await _transactionService.UpdateTransactionAsync(new TransactionUpdateDTO
+                {
+                    BrokerName = _brokerName(),
+                    PortfolioName = _portfolioName(),
+                    AssetName = _assetName(),
+                    Id = dialogData.Value.TransactionId,
+                    Date = dialogData.Value.Date,
+                    Type = normalizedType,
+                    Quantity = dialogData.Value.Quantity,
+                    UnitPrice = dialogData.Value.UnitPrice,
+                    Fees = dialogData.Value.Fees
+                });
+            }
+            catch (Exception ex)
+            {
+                dialogData = await RetrySameFormAsync(ex is InvestmentRuleViolationException ? ex.Message : "Transaction could not be updated. Check the values and try again.");
+                continue;
+            }
+
+            if (updatedDetails == null)
+            {
+                dialogData = await RetrySameFormAsync("Transaction could not be updated. Check the values and try again.");
+                continue;
+            }
+
+            _applyDetails(updatedDetails);
+            CloseTransactionForm();
             return;
         }
-
-        if (updatedDetails == null)
-        {
-            ShowWarning("Transaction could not be updated. Check the values and try again.");
-            return;
-        }
-
-        _applyDetails(updatedDetails);
     }
 
     public async Task Delete(TransactionDTO? selectedTransaction, Func<bool> confirmDialog)
@@ -420,23 +420,55 @@ public class TransactionsTabViewModel : ViewModelBase
     // ConfirmCommand/CancelCommand raise CloseRequested exactly like the old
     // dialog did, so this just awaits that event instead of a blocking
     // ShowDialog() call. Delete stays a real (confirmation) dialog below.
+    //
+    // A Confirm result leaves the form open rather than closing it here: a server-side refusal
+    // (e.g. an oversell) must not discard what the user typed, so Add/Update alone decide when the
+    // save has actually succeeded and the form should close (via CloseTransactionForm/RetrySameFormAsync
+    // below). Only a real Cancel closes it immediately.
     private Task<TransactionDialogData?> ShowTransactionFormAsync(TransactionDialogViewModel vm)
     {
+        TransactionFormViewModel = vm;
+        IsTransactionFormOpen = true;
+
         var tcs = new TaskCompletionSource<TransactionDialogData?>();
         void OnClosed(object? sender, bool? result)
         {
             vm.CloseRequested -= OnClosed;
-            IsTransactionFormOpen = false;
-            TransactionFormViewModel = null;
-            tcs.SetResult(result == true
-                ? new TransactionDialogData(vm.TransactionId, vm.Date, vm.Type, vm.Quantity, vm.UnitPrice, vm.Fees)
-                : null);
+            if (result != true)
+            {
+                IsTransactionFormOpen = false;
+                TransactionFormViewModel = null;
+                tcs.SetResult(null);
+                return;
+            }
+
+            tcs.SetResult(new TransactionDialogData(vm.TransactionId, vm.Date, vm.Type, vm.Quantity, vm.UnitPrice, vm.Fees));
         }
 
         vm.CloseRequested += OnClosed;
-        TransactionFormViewModel = vm;
-        IsTransactionFormOpen = true;
         return tcs.Task;
+    }
+
+    private void CloseTransactionForm()
+    {
+        IsTransactionFormOpen = false;
+        TransactionFormViewModel = null;
+    }
+
+    /// <summary>Surfaces a save failure on the still-open form and waits for the user's next
+    /// confirm/cancel, preserving every value they already typed. Falls back to a one-shot warning
+    /// when no form is open to retry against (e.g. a test driving Add/Update with a bare stub).</summary>
+    private Task<TransactionDialogData?> RetrySameFormAsync(string message)
+    {
+        var vm = TransactionFormViewModel;
+        if (vm == null)
+        {
+            ShowWarning(message);
+            return Task.FromResult<TransactionDialogData?>(null);
+        }
+
+        vm.ReportSubmitFailed(message);
+        return ShowTransactionFormAsync(vm);
     }
 
     private Task<TransactionDialogData?> ShowAddTransactionFormAsync() =>

@@ -14,7 +14,7 @@
 .portfolio-summary__table-section {
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
+  overflow: auto;
 }
 
 .portfolio-summary__share-notice {
@@ -104,7 +104,7 @@
 
 .portfolio-summary__footer-value {
   font-size: 13px;
-  font-weight: 500;
+  font-weight: bold;
   border: none;
   background: transparent;
   padding: 0;

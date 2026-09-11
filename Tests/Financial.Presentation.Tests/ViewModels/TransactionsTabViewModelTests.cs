@@ -127,6 +127,81 @@ public class TransactionsTabViewModelTests
     }
 
     [Fact]
+    public async Task AddTransactionCommand_ServerRejectsOversell_KeepsInlineFormOpenWithEnteredValuesAndInlineError()
+    {
+        var service = new StubTransactionService { ExceptionToThrow = new InvestmentRuleViolationException("Cannot sell 15 units on 2024-02-01 — only 10 were held on that date.") };
+        var (viewModel, _, spy) = Build(service: service);
+        viewModel.Load("ctx", []);
+
+        viewModel.AddTransactionCommand.Execute(null);
+        await WaitUntilAsync(() => viewModel.TransactionFormViewModel != null);
+        var formVm = viewModel.TransactionFormViewModel!;
+        formVm.Type = "Sell";
+        formVm.Quantity = 15m;
+        formVm.UnitPrice = 10m;
+        formVm.Date = new DateTime(2024, 2, 1);
+
+        formVm.ConfirmCommand.Execute(null);
+        await WaitUntilAsync(() => !string.IsNullOrEmpty(formVm.ValidationMessage));
+
+        // The refusal must not discard what was typed: the same inline form stays open, on the
+        // same view-model instance, with the server's message surfacing where client-side
+        // validation already does - not via a disconnected MessageBox that leaves nothing to retry.
+        viewModel.IsTransactionFormOpen.Should().BeTrue();
+        viewModel.TransactionFormViewModel.Should().BeSameAs(formVm);
+        formVm.ValidationMessage.Should().Be("Cannot sell 15 units on 2024-02-01 — only 10 were held on that date.");
+        formVm.Quantity.Should().Be(15m);
+        formVm.UnitPrice.Should().Be(10m);
+        spy.AppliedDetails.Should().BeNull();
+        spy.Messages.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task AddTransactionCommand_RetryAfterRejectionSucceeds_ClosesFormAndAppliesDetails()
+    {
+        var expectedDetails = new AssetDetailsDTO { Name = AssetName, BrokerName = BrokerName, PortfolioName = PortfolioName, Ticker = "T" };
+        var service = new StubTransactionService { ExceptionToThrow = new InvestmentRuleViolationException("Cannot sell 15 units on 2024-02-01 — only 10 were held on that date.") };
+        var (viewModel, _, spy) = Build(service: service);
+        viewModel.Load("ctx", []);
+
+        viewModel.AddTransactionCommand.Execute(null);
+        await WaitUntilAsync(() => viewModel.TransactionFormViewModel != null);
+        var formVm = viewModel.TransactionFormViewModel!;
+        formVm.Type = "Sell";
+        formVm.Quantity = 15m;
+        formVm.UnitPrice = 10m;
+        formVm.Date = new DateTime(2024, 2, 1);
+        formVm.ConfirmCommand.Execute(null);
+        await WaitUntilAsync(() => !string.IsNullOrEmpty(formVm.ValidationMessage));
+
+        service.ExceptionToThrow = null;
+        service.AddResult = expectedDetails;
+        formVm.Quantity = 5m;
+        formVm.ConfirmCommand.Execute(null);
+        await WaitUntilAsync(() => spy.AppliedDetails != null);
+
+        viewModel.IsTransactionFormOpen.Should().BeFalse();
+        viewModel.TransactionFormViewModel.Should().BeNull();
+        spy.AppliedDetails.Should().Be(expectedDetails);
+    }
+
+    /// <summary>Polls rather than assumes synchronous continuation timing: the production code
+    /// path under test runs through an `async void` command handler, whose continuations xUnit's
+    /// own tracked SynchronizationContext may post rather than run inline.</summary>
+    private static async Task WaitUntilAsync(Func<bool> condition, int timeoutMs = 2000)
+    {
+        var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+        while (!condition())
+        {
+            if (DateTime.UtcNow > deadline)
+            {
+                throw new TimeoutException("Condition was not met within the timeout.");
+            }
+            await Task.Delay(10);
+        }
+    }
+
+    [Fact]
     public async Task Add_ServiceThrowsUnexpectedException_ShowsGenericMessageAndDoesNotCrash()
     {
         var service = new StubTransactionService { ExceptionToThrow = new InvalidOperationException("boom") };
