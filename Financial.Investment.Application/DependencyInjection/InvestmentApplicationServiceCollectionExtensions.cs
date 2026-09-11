@@ -30,6 +30,7 @@ public static class InvestmentApplicationServiceCollectionExtensions
         services.AddSingleton<ISummaryService, SummaryService>();
         services.AddSingleton<IXirrCalculationService, XirrCalculationService>();
         services.AddSingleton<IProfitCalculationService, ProfitCalculationService>();
+        services.AddSingleton<IDataQualityReportService, DataQualityReportService>();
 
         return services;
     }

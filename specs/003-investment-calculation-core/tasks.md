@@ -484,23 +484,30 @@ report without a restart.
 
 ### Increment 13 — Data-quality report (logic in Application, thin `Tools/` printer)
 
-- [ ] T075 [P] [US7] Write Application tests for the report logic: names the 3 sales-exceed-purchases
+- [X] T075 [P] [US7] Write Application tests for the report logic: names the 3 sales-exceed-purchases
       holdings with shortfall (FR-054), the 7 unpriced open holdings (FR-055), the 90 unclassified split
       3 active/87 historic (FR-056), the 4 historic holdings still carrying a quantity (FR-074); treats
       Bitcoin/BOVA11/IVVB11 as classified (FR-057); links an unclassified holding's missing price to its
       missing classification for bonds/crypto (FR-073); never writes to the repository (FR-059); running
-      twice produces the same result
-- [ ] T076 [US7] Implement the report logic in a new
+      twice produces the same result — `Tests/Financial.Investment.Application.Tests/Services/DataQualityReportServiceTests.cs`
+- [X] T076 [US7] Implemented the report logic in a new
       `Financial.Investment.Application/Services/DataQualityReportService.cs`, reusing
-      `SaleCoverageRule`/`TransactionReplayOrder` for FR-054, never inferring, guessing or writing an
-      asset class or local type code (FR-053, FR-058, FR-071; R15)
-- [ ] T077 [US7] Create `Tools/InvestmentDataQualityReport/InvestmentDataQualityReport.csproj` as a
-      thin `Program.cs` resolving the Application service and printing the report, following the
-      `Tools/InvestmentSpreadsheetImport` shape; register it in `Financial.slnx`
-- [ ] T078 [US7] Add `Tests/Financial.InvestmentDataQualityReport.Tests` (plain `net10.0` xUnit,
-      one `ProjectReference`, hand-written stubs, no mocking framework), register it in `Financial.slnx`,
-      and add its explicit assembly entry + rationale comment to `coverlet.runsettings` (R15 — `Tools/*`
-      is not wildcard-excluded and still needs tests even where excluded from the coverage gate)
+      `SaleCoverageRule` (which internally reuses `TransactionReplayOrder`) for FR-054, never inferring,
+      guessing or writing an asset class or local type code (FR-053, FR-058, FR-071; R15). "Unclassified"
+      is exactly `Class == Unknown` (FR-057's carve-out falls out for free: a class set directly is
+      never `Unknown` regardless of `LocalTypeCode`); "open" is Active-scope membership, matching the
+      spec's own 28-holding count; FR-073's linkage is the intersection of the unclassified and
+      unpriced-open sets, computed structurally rather than hand-listed
+- [X] T077 [US7] Created `Tools/InvestmentDataQualityReport/InvestmentDataQualityReport.csproj` — a thin
+      `Program.cs` that loads the JSON file directly (`InvestmentLoader`/`InvestmentJsonRepository`,
+      matching `Tools/CashFlowSpreadsheetImport`'s manual-construction style rather than a full DI
+      container, since the report needs no HTTP price-fetch services) and a separate, unit-tested
+      `DataQualityReportFormatter` for the printed text; registered in `Financial.slnx`
+- [X] T078 [US7] Added `Tests/Financial.InvestmentDataQualityReport.Tests` (plain `net10.0` xUnit, one
+      `ProjectReference` to the Tools project, no mocking framework — the formatter takes a
+      `DataQualityReportDTO` literal directly, so no repository stub was even needed), registered in
+      `Financial.slnx`, and added `[Financial.Investment.DataQualityReport]*` + a rationale comment to
+      `coverlet.runsettings` (R15)
 - [ ] T079 [US7] Make correcting a holding's country and local type code through the asset-admin edit
       path re-derive its class — today only creation does this — so the report reflects a classification
       immediately with no restart (FR-072)
@@ -508,6 +515,14 @@ report without a restart.
       Scenario 7 against the temp copy: run the report twice and diff against the original
       (byte-identical); classify a holding through the app and confirm it drops from the report without a
       restart
+
+**Increment 13 note**: split into two PRs to stay within the 8-non-test-file budget — T075–T078 (the
+report itself, ship first) and T079–T080 (the asset-admin edit re-derivation fix + the full Scenario 7
+validation, which needs both halves merged). Verified against the live data via a scratchpad copy: sales
+exceed purchases (3), unpriced open holdings (7), unclassified (90: 3 active/87 historic), historic still
+open (4, one at 28 units / 2,000.43 cost) — every count matches the spec's stated figures exactly. Two
+runs of the tool against the same unchanged file produced byte-identical output; the file's checksum was
+confirmed unchanged after running it.
 
 **Checkpoint**: The data-quality report is available, accurate against current data, and writes nothing.
 
