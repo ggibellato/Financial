@@ -256,23 +256,23 @@ unknown-rendering; the value itself is still always non-null after this phase.
 
 ### Increment 7 — Compatibility boundary: weight nullable + one format, value still never null
 
-- [ ] T035 [US6] Widen `PortfolioWeight` from `decimal` to `decimal?` in
+- [X] T035 [US6] Widen `PortfolioWeight` from `decimal` to `decimal?` in
       `Financial.Investment.Application/DTOs/PortfolioAssetSummaryItemDTO.cs` (FR-047; R8)
-- [ ] T036 [US6] Regenerate the OpenAPI snapshot
+- [X] T036 [US6] Regenerate the OpenAPI snapshot
       (`$env:UPDATE_OPENAPI_SNAPSHOT=1; dotnet test Tests/Financial.Api.Tests; Remove-Item
       Env:\UPDATE_OPENAPI_SNAPSHOT`) and `Financial.Web`'s generated types (`npm run
       generate-api-types`); commit both
-- [ ] T037 [US6] Fix the resulting compile break in
+- [X] T037 [US6] Fix the resulting compile break in
       `Financial.Web/src/components/PortfolioSummaryTab.tsx`: render `—` for a null weight, format to 2
       decimal places (matching `lastMonthCreditsPercent` beside it), and give the sort accessor a
       defined position for unknowns (R8)
-- [ ] T038 [US6] Fix the resulting compile break in
+- [X] T038 [US6] Fix the resulting compile break in
       `Financial.App/ViewModels/Investment/PortfolioAssetSummaryRowViewModel.cs`: render `—` for a null
       weight and switch its format string from 1 dp to 2 dp (R8, FR-051)
-- [ ] T039 [US6] Confirm `Financial.Web/src/components/AssetSummaryTab.tsx` and its WPF detail-view
+- [X] T039 [US6] Confirm `Financial.Web/src/components/AssetSummaryTab.tsx` and its WPF detail-view
       equivalent (already null-safe, gated to Historic scope) render at 2 dp consistently with the grids
       (FR-051)
-- [ ] T040 [US6] Extend `Financial.Web/src/components/__tests__/PortfolioSummaryTab.test.tsx` and the
+- [X] T040 [US6] Extend `Financial.Web/src/components/__tests__/PortfolioSummaryTab.test.tsx` and the
       WPF row view-model tests for null-weight rendering and 2-dp formatting; add a parity test at a
       `.005` rounding boundary comparing WPF `F2` (`MidpointRounding.AwayFromZero` on `decimal`) against
       `Intl.NumberFormat` (half-even on `double`) — flagged as a real risk in R8 under FR-060's

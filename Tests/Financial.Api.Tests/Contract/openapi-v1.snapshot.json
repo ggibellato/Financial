@@ -2562,7 +2562,10 @@
           },
           "portfolioWeight": {
             "format": "double",
-            "type": "number"
+            "type": [
+              "null",
+              "number"
+            ]
           },
           "realizedGainLoss": {
             "format": "double",
