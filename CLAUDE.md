@@ -233,28 +233,16 @@ workflow visible in either front end.
    color-only meaning, support zoom/text scaling, and provide accessible
    equivalents for important charts and status information.
 
-## Comments
-
+## Code comments policy (strict)
 **Priority rule:** never remove a comment used by Swagger or any other tooling. It outranks every removal criterion below.
-
-**Default stance:** do not add comments.
-
-- Prefer self-explanatory code: clear names, small functions, explicit types.
-- Only add a comment if:
-  - It is required by tooling (e.g., Swagger XML comments), OR
-  - It documents a non-obvious business rule / constraint that cannot be expressed in the code, OR
-  - It records a critical workaround or historical reason that would otherwise be impossible to infer.
-
-**Never add comments that:**
-
-- Restate what the code already says.
-- Explain how something will be used elsewhere (that belongs in the caller or in docs, not inline).
-- Describe obvious implementation details.
-
-When editing existing code:
-
-- Do not introduce new comments unless one of the allowed cases above applies.
-- If an existing comment is redundant or obvious, you may remove it (as long as it’s not used by tooling).
+- The default rule is: NO COMMENTS.
+- Do not add comments that explain what the code does, how it works, or restate the logic.
+- Comments are allowed ONLY for:
+  - Non-obvious exceptions to the normal rules.
+  - Important gotchas, pitfalls, or surprising behaviour that cannot be inferred from the code alone.
+- If a piece of logic needs explanation, prefer refactoring the code (better names, smaller functions, clearer structure) instead of adding a comment.
+- Any comment that merely describes the code must be removed.
+- When in doubt, assume: no comment is better than a descriptive comment.
 
 ## Behaviour
 When working in automatic mode on tasks that create pull requests, always check whether the current GitHub account has permission to merge PRs before proceeding. If you detect that you cannot merge (for example, due to branch protection rules, missing write/merge permissions, or a failed permission check), stop the automation immediately, explain clearly that the PR cannot be merged with the current account, and wait for the user to confirm that the PR has been merged (or to switch to an account with merge rights) before creating any follow-up PRs or continuing with dependent work.
