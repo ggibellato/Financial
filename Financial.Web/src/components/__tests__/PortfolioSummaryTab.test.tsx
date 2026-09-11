@@ -174,8 +174,26 @@ describe('PortfolioSummaryTab', () => {
     renderComponent()
     expect(screen.getByText('ALZR11')).toBeInTheDocument()
     expect(screen.getByText('01/03/2021')).toBeInTheDocument()
-    expect(screen.getByText(/23\.4%/)).toBeInTheDocument()
+    expect(screen.getByText(/23\.40%/)).toBeInTheDocument()
     expect(screen.getByText(/75[.,]50/)).toBeInTheDocument()
+  })
+
+  it('renders_dash_for_null_portfolio_weight', () => {
+    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, portfolioWeight: null }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item], rowPrices: [IDLE_ROW_PRICE] })
+    renderComponent()
+    const row = screen.getByText('ALZR11').closest('tr')!
+    const weightCell = within(row).getAllByRole('cell')[3]
+    expect(weightCell).toHaveTextContent('—')
+  })
+
+  it('renders_portfolio_weight_at_rounding_boundary_matching_wpf_f2', () => {
+    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, portfolioWeight: 23.995 }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item], rowPrices: [IDLE_ROW_PRICE] })
+    renderComponent()
+    expect(screen.getByText(/24\.00%/)).toBeInTheDocument()
   })
 
   it('renders_realized_gain_loss_for_historic_asset', () => {

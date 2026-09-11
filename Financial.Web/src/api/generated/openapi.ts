@@ -6317,7 +6317,7 @@ export interface components {
             /** Format: double */
             lastMonthCreditsPercent: null | number;
             /** Format: double */
-            portfolioWeight: number;
+            portfolioWeight: null | number;
             /** Format: double */
             realizedGainLoss: number;
             ticker: string;

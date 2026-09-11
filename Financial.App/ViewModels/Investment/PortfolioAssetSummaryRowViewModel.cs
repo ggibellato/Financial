@@ -33,7 +33,7 @@ public class PortfolioAssetSummaryRowViewModel : ViewModelBase
     public decimal TotalBought { get; }
     public decimal TotalInvested { get; }
     public decimal RealizedGainLoss { get; }
-    public decimal PortfolioWeight { get; }
+    public decimal? PortfolioWeight { get; }
     public decimal TotalCredits { get; }
     public IReadOnlyList<AssetCashFlowDTO> CashFlows { get; }
     public decimal LastMonthCredits { get; }
@@ -58,7 +58,7 @@ public class PortfolioAssetSummaryRowViewModel : ViewModelBase
     public string DisplayCurrentQuantity => CurrentQuantity.ToString("N8");
     public string DisplayAveragePrice => AveragePrice.ToString("N2");
     public string DisplayTotalInvested => TotalInvested.ToString("N2");
-    public string DisplayPortfolioWeight => $"{PortfolioWeight:F1}%";
+    public string DisplayPortfolioWeight => PortfolioWeight.HasValue ? $"{PortfolioWeight.Value:F2}%" : "—";
     public string DisplayTotalCredits => TotalCredits.ToString("N2");
 
     public string DisplayLastMonthCredits =>

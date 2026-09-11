@@ -8,7 +8,7 @@ import type { RowPriceState } from '../hooks/usePortfolioAssetSummary'
 import { useAggregatedSummary } from '../hooks/useAggregatedSummary'
 import type { PortfolioAssetSummaryItemDto } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
-import { formatMonthYear, formatN2, formatN8, formatPercent1, formatShortDate, signClass } from '../utils/formatters'
+import { formatMonthYear, formatN2, formatN8, formatShortDate, signClass } from '../utils/formatters'
 import { AggregatedSummaryView } from './AggregatedSummaryTab'
 import './PortfolioSummaryTab.css'
 
@@ -115,7 +115,7 @@ function AssetRow({ item, rowPrice, isHistoric }: AssetRowProps) {
       <td>{item.assetName}</td>
       <td>{formatShortDate(item.firstInvestmentDate)}</td>
       <td>{formatN8(item.currentQuantity)}</td>
-      <td>{formatPercent1(item.portfolioWeight)}</td>
+      <td>{item.portfolioWeight === null ? '—' : `${formatN2(item.portfolioWeight)}%`}</td>
       <td>{formatN2(item.totalInvested)}</td>
       {isHistoric && (
         <td>

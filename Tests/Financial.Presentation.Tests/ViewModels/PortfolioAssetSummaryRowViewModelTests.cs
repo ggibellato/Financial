@@ -12,7 +12,7 @@ public class PortfolioAssetSummaryRowViewModelTests
         decimal currentQuantity = 25m,
         decimal averagePrice = 0m,
         decimal totalInvested = 250m,
-        decimal portfolioWeight = 0m,
+        decimal? portfolioWeight = 0m,
         decimal totalCredits = 0m,
         DateTime? firstInvestmentDate = null,
         IReadOnlyList<AssetCashFlowDTO>? cashFlows = null,
@@ -88,16 +88,31 @@ public class PortfolioAssetSummaryRowViewModelTests
     }
 
     [Fact]
-    public void DisplayPortfolioWeight_FormatsOneDecimalPercent()
+    public void DisplayPortfolioWeight_FormatsTwoDecimalPercent()
     {
-        var dto = new PortfolioAssetSummaryItemDTO
-        {
-            AssetName = "Test", Ticker = "T", Exchange = "E",
-            CurrentQuantity = 1m, TotalBought = 1m, TotalSold = 0m,
-            TotalInvested = 1m, PortfolioWeight = 23.4567m
-        };
-        var row = new PortfolioAssetSummaryRowViewModel(dto, new XirrCalculationService(), new ProfitCalculationService());
-        row.DisplayPortfolioWeight.Should().Be("23.5%");
+        var row = BuildRow(portfolioWeight: 23.4567m);
+        row.DisplayPortfolioWeight.Should().Be("23.46%");
+    }
+
+    [Fact]
+    public void DisplayPortfolioWeight_WhenNull_ReturnsDash()
+    {
+        var row = BuildRow(portfolioWeight: null);
+        row.DisplayPortfolioWeight.Should().Be("—");
+    }
+
+    [Fact]
+    public void PortfolioWeight_WhenNull_ExposesNullRatherThanZero()
+    {
+        var row = BuildRow(portfolioWeight: null);
+        row.PortfolioWeight.Should().BeNull();
+    }
+
+    [Fact]
+    public void DisplayPortfolioWeight_AtRoundingBoundary_RoundsAwayFromZero()
+    {
+        var row = BuildRow(portfolioWeight: 23.995m);
+        row.DisplayPortfolioWeight.Should().Be("24.00%");
     }
 
     [Fact]
