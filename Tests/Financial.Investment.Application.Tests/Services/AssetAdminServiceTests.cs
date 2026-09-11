@@ -167,6 +167,46 @@ public class AssetAdminServiceTests
     }
 
     [Fact]
+    public async Task UpdateAssetAsync_ClassLeftUnset_ReDerivesFromCorrectedCountryAndLocalTypeCode()
+    {
+        // FR-072: correcting an unclassified holding's country and local type code must re-derive
+        // its class, the same way creation already does - today, editing kept whatever class the
+        // form submitted, leaving a "corrected" holding still Unknown with no indication why.
+        _repository.Investments = Investments.Create();
+        var broker = Broker.Create("XPI", "BRL");
+        broker.CreatePortfolio("Default").RegisterAsset(Asset.Create("AAAA", "ISIN123", "", ""));
+        _repository.Investments.AddActiveBroker(broker);
+
+        var result = await CreateService().UpdateAssetAsync("XPI", "Default", "AAAA", new AssetAdminUpdateDTO
+        {
+            Name = "AAAA",
+            Country = CountryCode.BR,
+            LocalTypeCode = "FII"
+        });
+
+        result.Class.Should().Be(GlobalAssetClass.RealEstate);
+    }
+
+    [Fact]
+    public async Task UpdateAssetAsync_ClassSetExplicitly_OverridesDerivation()
+    {
+        _repository.Investments = Investments.Create();
+        var broker = Broker.Create("XPI", "BRL");
+        broker.CreatePortfolio("Default").RegisterAsset(Asset.Create("AAAA", "ISIN123", "", ""));
+        _repository.Investments.AddActiveBroker(broker);
+
+        var result = await CreateService().UpdateAssetAsync("XPI", "Default", "AAAA", new AssetAdminUpdateDTO
+        {
+            Name = "AAAA",
+            Country = CountryCode.BR,
+            LocalTypeCode = "FII",
+            Class = GlobalAssetClass.Cryptocurrency
+        });
+
+        result.Class.Should().Be(GlobalAssetClass.Cryptocurrency);
+    }
+
+    [Fact]
     public async Task UpdateAssetAsync_AssetMissing_ThrowsNotFoundAndWritesNothing()
     {
         _repository.Investments = Investments.Create();

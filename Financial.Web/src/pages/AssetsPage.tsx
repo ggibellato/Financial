@@ -67,7 +67,10 @@ export default function AssetsPage() {
           ticker: values.ticker,
           country: values.country as AssetAdminDto['country'],
           localTypeCode: values.localTypeCode,
-          class: values.assetClass as AssetAdminDto['class'],
+          // Left at its default ('Unknown') means the user never touched the Class picker, so the
+          // backend re-derives it from the (possibly just-corrected) Country/LocalTypeCode; any
+          // other selection is an explicit override.
+          class: values.assetClass === 'Unknown' ? null : (values.assetClass as AssetAdminDto['class']),
         })
       : await createAsset({
           brokerName: values.brokerName,

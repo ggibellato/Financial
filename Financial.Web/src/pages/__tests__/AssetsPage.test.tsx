@@ -128,6 +128,22 @@ describe('AssetsPage', () => {
     await waitFor(() => expect(updateAssetMock).toHaveBeenCalledWith('XPI', 'Default', 'BCIA11', expect.objectContaining({ name: 'BCIA11B' })))
   })
 
+  it('sends a null class when editing with the class picker left at Unknown, so the backend re-derives it', async () => {
+    // FR-072: correcting an unclassified holding's country/local type code must re-derive its
+    // class server-side; sending 'Unknown' verbatim would leave it unclassified with no reason why.
+    updateAssetMock.mockResolvedValue({ ...ASSETS[1], localTypeCode: 'FII' })
+    render(<AssetsPage />)
+    await waitFor(() => expect(screen.getByText('CLOSEDASSET')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit CLOSEDASSET' }))
+    fireEvent.change(screen.getByLabelText(/^Local Type Code/), { target: { value: 'FII' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    await waitFor(() =>
+      expect(updateAssetMock).toHaveBeenCalledWith('XPI', 'Uncategorized', 'CLOSEDASSET', expect.objectContaining({ class: null })),
+    )
+  })
+
   it('disables delete confirmation when the asset still holds a position', async () => {
     render(<AssetsPage />)
     await waitFor(() => expect(screen.getByText('BCIA11')).toBeInTheDocument())

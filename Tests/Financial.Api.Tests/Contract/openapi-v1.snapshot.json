@@ -166,7 +166,14 @@
       "AssetAdminUpdateDTO": {
         "properties": {
           "class": {
-            "$ref": "#/components/schemas/GlobalAssetClass"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/GlobalAssetClass"
+              }
+            ]
           },
           "country": {
             "$ref": "#/components/schemas/CountryCode"

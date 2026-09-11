@@ -3,6 +3,7 @@ using Financial.CashFlow.Application.Interfaces;
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
+using Financial.Investment.Domain.Entities;
 using Financial.Presentation.App.Services;
 using Financial.Presentation.App.ViewModels.Admin;
 using Financial.Presentation.App.ViewModels.CashFlow;
@@ -633,7 +634,7 @@ internal sealed class StubAssetAdminService : IAssetAdminService
             Ticker = request.Ticker,
             Country = request.Country,
             LocalTypeCode = request.LocalTypeCode,
-            Class = request.Class,
+            Class = request.Class ?? GlobalAssetClass.Unknown,
             Quantity = 0,
         };
         return Task.FromResult(updated);
