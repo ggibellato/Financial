@@ -238,6 +238,15 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
                 ? $"None of the {HoldingCount} holdings could be valued; returns are withheld."
                 : $"{UnvaluedHoldingCount} of {HoldingCount} holdings could not be valued; the total is incomplete and returns are withheld.";
 
+    public bool HasIncompleteShareBasis => IsActiveScope && HasIncompleteValuation;
+
+    public string IncompleteShareBasisMessage =>
+        !HasIncompleteShareBasis
+            ? string.Empty
+            : MarketValue is null
+                ? "No portfolio share can be computed for the same reason."
+                : "Portfolio shares also do not total 100% for the same reason.";
+
     public PlotModel? OverallBreakdownPlotModel
     {
         get => _overallBreakdownPlotModel;
@@ -457,6 +466,8 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         TotalReturn = null;
         OnPropertyChanged(nameof(HasIncompleteValuation));
         OnPropertyChanged(nameof(IncompleteValuationMessage));
+        OnPropertyChanged(nameof(HasIncompleteShareBasis));
+        OnPropertyChanged(nameof(IncompleteShareBasisMessage));
         ClearValuation();
         CancelAndResetBreakdownFetch();
         ClearAssetContext();
@@ -622,6 +633,8 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         TotalReturn = summary.TotalReturn;
         OnPropertyChanged(nameof(HasIncompleteValuation));
         OnPropertyChanged(nameof(IncompleteValuationMessage));
+        OnPropertyChanged(nameof(HasIncompleteShareBasis));
+        OnPropertyChanged(nameof(IncompleteShareBasisMessage));
 
         Credits.LoadAggregate(contextKey, credits);
         TotalCredits = credits.Sum(credit => credit.Value);

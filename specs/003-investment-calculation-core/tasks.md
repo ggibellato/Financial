@@ -430,32 +430,42 @@ numerically unchanged and labelled "on cost".
 
 ### Increment 12 — Weight basis → market value + shortfall disclosure
 
-- [ ] T068 [US6] Repoint `AssetAmountBases.WeightBasis` (from T023) from the cost-based formula to
+- [X] T068 [US6] Repoint `AssetAmountBases.WeightBasis` (from T023) from the cost-based formula to
       market value in Active Investments; Historic stays on cost (FR-046, FR-050; R7) —
       `Financial.Investment.Application/Services/AssetAmountBases.cs`
-- [ ] T069 [US6] Resolve the open item from research.md: add the wire field(s) needed for the
-      FR-047/FR-048 shortfall disclosure (a portfolio stating once that shares don't total 100%, or that
-      no share can be computed) — most likely additive fields on the parent of
-      `PortfolioAssetSummaryItemDTO`'s response; regenerate the OpenAPI snapshot and `Financial.Web`
-      generated types once the shape is decided
-- [ ] T070 [US6] Wire
-      `Financial.Investment.Application/Services/PortfolioAssetSummaryBuilder.cs` /
-      `PortfolioAssetSummaryService.cs` to report a null (unknown) share for an unvaluable holding
-      instead of 0%, and to populate the portfolio-level shortfall disclosure from T069 (FR-047, FR-048,
-      FR-052)
-- [ ] T071 [US6] Update `Financial.Web/src/components/PortfolioSummaryTab.tsx` and
-      `Financial.App/ViewModels/Investment/PortfolioAssetSummaryRowViewModel.cs` to render the
-      market-based share, the unknown-share marker, and the once-per-portfolio shortfall disclosure
-- [ ] T072 [US6] Extend
-      `Tests/Financial.Investment.Application.Tests/Services/PortfolioAssetSummaryServiceTests.cs` and
-      the corresponding front-end tests for the market-based share, the unknown-share state, and the
-      portfolio-level disclosure
-- [ ] T073 [US6] Add a regression test asserting income-yield percentages stay numerically unchanged
-      and labelled "on cost" in both front ends after T068 (FR-049, SC-011) — no source change expected
-      here; this proves the yield basis did not silently follow the weight basis
-- [ ] T074 [US6] Run quickstart Scenario 6 against the temp copy: an appreciated holding's share exceeds
-      its cost-based share; an unvaluable holding shows `—` not `0.0%`; the shortfall/no-share-computable
-      statements appear as specified; the share renders at 2 dp everywhere
+- [X] T069 [US6] Resolved the open item from research.md **with no wire change**: `AggregatedSummaryDTO`
+      already carries `HoldingCount`/`UnvaluedHoldingCount`/`MarketValue` (shipped in Increment 10) for
+      the exact same scope and asset set as `PortfolioAssetSummaryItemDTO`'s array, and in Active
+      Investments a holding's share is unknown exactly when its market value is unavailable — the same
+      predicate `UnvaluedHoldingCount` already counts. Both front ends already fetch this DTO alongside
+      the assets array (Increment 11), so no OpenAPI snapshot or type regeneration was needed.
+- [X] T070 [US6] Wired
+      `Financial.Investment.Application/Services/PortfolioAssetSummaryBuilder.cs` to pass each holding's
+      `HoldingValuation.MarketValue` into `AssetAmountBases.For` and to report a null (unknown) share —
+      via a nullable-aware `CalculateWeight` — for an unvaluable holding instead of 0% (FR-047, FR-052);
+      the portfolio-level shortfall disclosure is computed client-side from the T069 fields (FR-048)
+- [X] T071 [US6] Updated `Financial.Web/src/components/PortfolioSummaryTab.tsx` (new
+      `incompleteShareBasisMessage` + `.portfolio-summary__share-notice`, Active scope only) and
+      `Financial.App/ViewModels/Investment/AssetDetailsViewModel.cs` (`HasIncompleteShareBasis` /
+      `IncompleteShareBasisMessage`, rendered in `PortfolioSummaryView.xaml`'s `PortfolioSummaryTemplate`)
+      for the once-per-portfolio shortfall disclosure; the market-based share and unknown-share marker
+      needed no rendering change — both grids already handled a null `PortfolioWeight` since Increment 7
+- [X] T072 [US6] Extended
+      `Tests/Financial.Investment.Application.Tests/Services/PortfolioAssetSummaryServiceTests.cs`
+      (market-based weight, appreciated-vs-cost divergence, unknown share for one/all unpriced holdings)
+      and `Tests/Financial.Api.Tests/SummaryEndpointsTests.cs` (renamed the now-outdated
+      `..._WeightStaysOnPriorBasis` AC test to assert the new null-share behaviour against the shared
+      fixture), plus `PortfolioSummaryTab.test.tsx` and `AssetDetailsViewModelPortfolioSummaryTests.cs`
+      for the portfolio-level disclosure states
+- [X] T073 [US6] Added `GetPortfolioAssetsSummary_ActiveScope_IncomeYieldPercentagesStayOnCost_UnaffectedByMarketValue`
+      (Application) confirming yield-on-cost is unaffected by a large market-value/cost divergence; no
+      source change was needed since `AssetAmountBases.IncomeYieldBasis` was already untouched by T068
+- [X] T074 [US6] Ran quickstart Scenario 6 against the scratchpad copy via the running API: XPI/Acoes
+      (partially valued) shows real weights on the 5 priced holdings and a null weight on the one
+      unpriced holding (Guepardo), with TAEE3's market-based share (62.92%) diverging from its cost-based
+      share; Trading 212/ETF ISA (nothing valuable) shows every holding's weight and market value null;
+      `GetPortfolioAssetsSummary_ActiveScope_IncomeYieldPercentagesStayOnCost_...` confirms yield-on-cost
+      unaffected; both grids already render weight at 2 dp (R8/Increment 7)
 
 **Checkpoint**: Allocation reflects market value; unvaluable holdings never render as 0%; yield-on-cost
 is unaffected.

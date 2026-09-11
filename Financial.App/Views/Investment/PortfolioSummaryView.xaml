@@ -372,13 +372,23 @@
             <Grid Margin="10">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
                 <local:PortfolioTotalsBar Grid.Row="0"/>
 
-                <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                <TextBlock Grid.Row="1"
+                           Text="{Binding AssetDetails.IncompleteShareBasisMessage, Mode=OneWay}"
+                           Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                           FontStyle="Italic"
+                           TextWrapping="Wrap"
+                           Margin="0,0,0,10"
+                           AutomationProperties.LiveSetting="Polite"
+                           Visibility="{Binding AssetDetails.HasIncompleteShareBasis, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                <ScrollViewer Grid.Row="2" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -647,7 +657,7 @@
                         </DataGrid>
                     </Grid>
                 </ScrollViewer>
-                <Border Grid.Row="2"
+                <Border Grid.Row="3"
                         Background="{x:Static SystemColors.ControlBrush}"
                         Padding="8,6"
                         Margin="0,4,0,0">

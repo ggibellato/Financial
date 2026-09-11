@@ -55,6 +55,7 @@ public class PortfolioAssetSummaryServiceTests
         asset.AddTransaction(Transaction.Create(new DateTime(2021, 3, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
         asset.AddTransaction(Transaction.Create(new DateTime(2021, 5, 1), Transaction.TransactionType.Buy, 15m, 100m, 0m));
         asset.AddTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 110m, 0m));
+        asset.SetPrice(DateOnly.FromDateTime(DateTime.Today), 120m, isManual: false);
         _repository.AssetsByBrokerPortfolio = [asset];
 
         var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
@@ -89,7 +90,66 @@ public class PortfolioAssetSummaryServiceTests
     }
 
     [Fact]
-    public void GetPortfolioAssetsSummary_ComputesPortfolioWeight()
+    public void GetPortfolioAssetsSummary_ActiveScope_ComputesPortfolioWeightFromMarketValue()
+    {
+        var asset1 = MakeAsset("ALPHA", "ALP", "BVMF");
+        asset1.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 1m, 300m, 0m));
+        asset1.SetPrice(DateOnly.FromDateTime(DateTime.Today), 300m, isManual: false);
+
+        var asset2 = MakeAsset("BETA", "BET", "BVMF");
+        asset2.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 1m, 700m, 0m));
+        asset2.SetPrice(DateOnly.FromDateTime(DateTime.Today), 700m, isManual: false);
+
+        _repository.AssetsByBrokerPortfolio = [asset1, asset2];
+
+        var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
+
+        using var _ = new AssertionScope();
+        result.First(i => i.AssetName == "ALPHA").PortfolioWeight.Should().Be(30m);
+        result.First(i => i.AssetName == "BETA").PortfolioWeight.Should().Be(70m);
+    }
+
+    [Fact]
+    public void GetPortfolioAssetsSummary_ActiveScope_AppreciatedHoldingsShareExceedsItsCostBasedShare()
+    {
+        var appreciated = MakeAsset("APPRECIATED", "APR", "BVMF");
+        appreciated.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 1m, 100m, 0m));
+        appreciated.SetPrice(DateOnly.FromDateTime(DateTime.Today), 400m, isManual: false);
+
+        var flat = MakeAsset("FLAT", "FLT", "BVMF");
+        flat.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 1m, 100m, 0m));
+        flat.SetPrice(DateOnly.FromDateTime(DateTime.Today), 100m, isManual: false);
+
+        _repository.AssetsByBrokerPortfolio = [appreciated, flat];
+
+        var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
+
+        // Cost-based share would be 50%/50% (both cost 100); market-based share is 80%/20% (400 vs 100).
+        result.First(i => i.AssetName == "APPRECIATED").PortfolioWeight.Should().Be(80m);
+        result.First(i => i.AssetName == "FLAT").PortfolioWeight.Should().Be(20m);
+    }
+
+    [Fact]
+    public void GetPortfolioAssetsSummary_ActiveScope_UnpricedHolding_ReportsUnknownShareNotZero()
+    {
+        var priced = MakeAsset("PRICED", "PRD", "BVMF");
+        priced.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 1m, 100m, 0m));
+        priced.SetPrice(DateOnly.FromDateTime(DateTime.Today), 100m, isManual: false);
+
+        var unpriced = MakeAsset("UNPRICED", "UNP", "BVMF");
+        unpriced.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 1m, 500m, 0m));
+
+        _repository.AssetsByBrokerPortfolio = [priced, unpriced];
+
+        var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
+
+        using var _ = new AssertionScope();
+        result.First(i => i.AssetName == "UNPRICED").PortfolioWeight.Should().BeNull();
+        result.First(i => i.AssetName == "PRICED").PortfolioWeight.Should().Be(100m);
+    }
+
+    [Fact]
+    public void GetPortfolioAssetsSummary_ActiveScope_AllHoldingsUnpriced_EveryShareIsUnknown()
     {
         var asset1 = MakeAsset("ALPHA", "ALP", "BVMF");
         asset1.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 1m, 300m, 0m));
@@ -101,9 +161,22 @@ public class PortfolioAssetSummaryServiceTests
 
         var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
 
-        using var _ = new AssertionScope();
-        result.First(i => i.AssetName == "ALPHA").PortfolioWeight.Should().Be(30m);
-        result.First(i => i.AssetName == "BETA").PortfolioWeight.Should().Be(70m);
+        result.Should().AllSatisfy(i => i.PortfolioWeight.Should().BeNull());
+    }
+
+    [Fact]
+    public void GetPortfolioAssetsSummary_ActiveScope_IncomeYieldPercentagesStayOnCost_UnaffectedByMarketValue()
+    {
+        var asset = MakeAsset("TEST", "TST", "BVMF");
+        asset.AddTransaction(Transaction.Create(new DateTime(2020, 1, 1), Transaction.TransactionType.Buy, 1m, 100m, 0m));
+        asset.SetPrice(DateOnly.FromDateTime(DateTime.Today), 100000m, isManual: false);
+        asset.AddCredit(Credit.Create(new DateTime(2024, 6, 1), Credit.CreditType.Dividend, 10m));
+        _repository.AssetsByBrokerPortfolio = [asset];
+
+        var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
+
+        // Yield on cost (10/100*100 = 10%) must not silently follow the market-value weight basis.
+        result[0].LastMonthCreditsPercent.Should().Be(10m);
     }
 
     [Fact]

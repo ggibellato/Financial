@@ -6,11 +6,18 @@ import { useSortableRows, type SortAccessor, type SortDirection } from '../hooks
 import { usePortfolioAssetSummary } from '../hooks/usePortfolioAssetSummary'
 import type { RowPriceState } from '../hooks/usePortfolioAssetSummary'
 import { useAggregatedSummary } from '../hooks/useAggregatedSummary'
-import type { PortfolioAssetSummaryItemDto } from '../api/types'
+import type { AggregatedSummaryDto, PortfolioAssetSummaryItemDto } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
 import { formatMonthYear, formatN2, formatN8, formatShortDate, signClass } from '../utils/formatters'
 import { AggregatedSummaryView } from './AggregatedSummaryTab'
 import './PortfolioSummaryTab.css'
+
+function incompleteShareBasisMessage(summary: AggregatedSummaryDto): string | null {
+  if (summary.unvaluedHoldingCount === 0) return null
+  return summary.marketValue === null
+    ? 'No portfolio share can be computed for the same reason.'
+    : 'Portfolio shares also do not total 100% for the same reason.'
+}
 
 function parseCreditMonth(yearMonth: string): Date {
   const [year, month] = yearMonth.split('-').map(Number)
@@ -225,6 +232,8 @@ export default function PortfolioSummaryTab() {
         })()
       : null
 
+  const shareBasisMessage = !isHistoric && summary ? incompleteShareBasisMessage(summary) : null
+
   return (
     <div className="portfolio-summary">
       <div className="portfolio-summary__totals">
@@ -232,6 +241,12 @@ export default function PortfolioSummaryTab() {
         {summaryError && <ErrorState message={summaryError} onRetry={retrySummary} />}
         {!isSummaryLoading && !summaryError && summary && <AggregatedSummaryView summary={summary} />}
       </div>
+
+      {shareBasisMessage && (
+        <p className="portfolio-summary__share-notice" role="status">
+          {shareBasisMessage}
+        </p>
+      )}
 
       <div className="portfolio-summary__table-section">
         {isLoading && <LoadingState />}

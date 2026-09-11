@@ -175,6 +175,57 @@ public class AssetDetailsViewModelPortfolioSummaryTests
     }
 
     [Fact]
+    public void LoadPortfolioSummary_ActiveScope_PartiallyValued_StatesSharesDoNotTotal100Percent()
+    {
+        var vm = BuildViewModel(scope: InvestmentScope.Active);
+        var summary = new AggregatedSummaryDTO { MarketValue = 5000m, HoldingCount = 5, UnvaluedHoldingCount = 2 };
+        vm.LoadPortfolioSummary("Broker", "Portfolio", summary, [], BuildItems());
+        vm.HasIncompleteShareBasis.Should().BeTrue();
+        vm.IncompleteShareBasisMessage.Should().Be("Portfolio shares also do not total 100% for the same reason.");
+    }
+
+    [Fact]
+    public void LoadPortfolioSummary_ActiveScope_NothingValuable_StatesNoShareCanBeComputed()
+    {
+        var vm = BuildViewModel(scope: InvestmentScope.Active);
+        var summary = new AggregatedSummaryDTO { MarketValue = null, HoldingCount = 3, UnvaluedHoldingCount = 3 };
+        vm.LoadPortfolioSummary("Broker", "Portfolio", summary, [], BuildItems());
+        vm.HasIncompleteShareBasis.Should().BeTrue();
+        vm.IncompleteShareBasisMessage.Should().Be("No portfolio share can be computed for the same reason.");
+    }
+
+    [Fact]
+    public void LoadPortfolioSummary_ActiveScope_FullyValued_NoShareDisclosure()
+    {
+        var vm = BuildViewModel(scope: InvestmentScope.Active);
+        var summary = new AggregatedSummaryDTO { MarketValue = 9000m, HoldingCount = 3, UnvaluedHoldingCount = 0 };
+        vm.LoadPortfolioSummary("Broker", "Portfolio", summary, [], BuildItems());
+        vm.HasIncompleteShareBasis.Should().BeFalse();
+        vm.IncompleteShareBasisMessage.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void LoadPortfolioSummary_HistoricScope_NeverShowsShareDisclosure_EvenIfUnvalued()
+    {
+        var vm = BuildViewModel(scope: InvestmentScope.Historic);
+        var summary = new AggregatedSummaryDTO { MarketValue = null, HoldingCount = 2, UnvaluedHoldingCount = 2 };
+        vm.LoadPortfolioSummary("Broker", "Portfolio", summary, [], BuildItems());
+        vm.HasIncompleteShareBasis.Should().BeFalse();
+        vm.IncompleteShareBasisMessage.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Clear_AfterLoadPortfolioSummary_ResetsShareBasisDisclosure()
+    {
+        var vm = BuildViewModel(scope: InvestmentScope.Active);
+        var summary = new AggregatedSummaryDTO { MarketValue = null, HoldingCount = 3, UnvaluedHoldingCount = 3 };
+        vm.LoadPortfolioSummary("Broker", "Portfolio", summary, [], BuildItems());
+        vm.Clear();
+        vm.HasIncompleteShareBasis.Should().BeFalse();
+        vm.IncompleteShareBasisMessage.Should().BeEmpty();
+    }
+
+    [Fact]
     public void Clear_AfterLoadPortfolioSummary_ResetsMarketValueAndReturns()
     {
         var vm = BuildViewModel();

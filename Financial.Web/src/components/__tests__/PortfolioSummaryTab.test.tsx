@@ -929,4 +929,36 @@ describe('PortfolioSummaryTab', () => {
     expect(document.querySelector('.portfolio-summary__footer')).not.toBeNull()
     expect(document.querySelector('table tfoot')).toBeNull()
   })
+
+  it('does_not_render_share_notice_when_fully_valued', () => {
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [ITEM_1], rowPrices: [IDLE_ROW_PRICE] })
+    renderComponent()
+    expect(document.querySelector('.portfolio-summary__share-notice')).toBeNull()
+  })
+
+  it('renders_share_notice_when_portfolio_partially_valued', () => {
+    setAggregatedMock({ summary: { ...SUMMARY, holdingCount: 4, unvaluedHoldingCount: 1 } })
+    setPortfolioMock({ items: [ITEM_1], rowPrices: [IDLE_ROW_PRICE] })
+    renderComponent()
+    expect(document.querySelector('.portfolio-summary__share-notice')).toHaveTextContent(
+      'Portfolio shares also do not total 100% for the same reason.',
+    )
+  })
+
+  it('renders_share_notice_for_nothing_valuable_distinct_from_partial', () => {
+    setAggregatedMock({ summary: { ...SUMMARY, holdingCount: 2, unvaluedHoldingCount: 2, marketValue: null } })
+    setPortfolioMock({ items: [ITEM_1], rowPrices: [IDLE_ROW_PRICE] })
+    renderComponent()
+    expect(document.querySelector('.portfolio-summary__share-notice')).toHaveTextContent(
+      'No portfolio share can be computed for the same reason.',
+    )
+  })
+
+  it('does_not_render_share_notice_in_historic_scope', () => {
+    setAggregatedMock({ summary: { ...SUMMARY, holdingCount: 2, unvaluedHoldingCount: 2, marketValue: null } })
+    setPortfolioMock({ items: [ITEM_1], rowPrices: [IDLE_ROW_PRICE] })
+    renderComponent('historic')
+    expect(document.querySelector('.portfolio-summary__share-notice')).toBeNull()
+  })
 })

@@ -22,7 +22,7 @@ public class SummaryEndpointsTests : ApiEndpointTests
         items.Should().AllSatisfy(i =>
         {
             i.TotalBought.Should().BeGreaterThanOrEqualTo(0m);
-            i.PortfolioWeight.Should().BeGreaterThanOrEqualTo(0m);
+            if (i.PortfolioWeight.HasValue) i.PortfolioWeight.Value.Should().BeGreaterThanOrEqualTo(0m);
             i.TotalCredits.Should().BeGreaterThanOrEqualTo(0m);
             i.CashFlows.Should().NotBeNull();
             i.LastMonthCredits.Should().BeGreaterThanOrEqualTo(0m);
@@ -199,7 +199,7 @@ public class SummaryEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
-    public async Task GetPortfolioAssetsSummary_ScopeActive_InvestedIsCostOfUnitsHeld_WeightStaysOnPriorBasis()
+    public async Task GetPortfolioAssetsSummary_ScopeActive_InvestedIsCostOfUnitsHeld_WeightUsesMarketValue()
     {
         var response = await Client.GetAsync("/api/v1/financial/summary/portfolio/XPI/Default/assets?scope=active");
 
@@ -209,7 +209,9 @@ public class SummaryEndpointsTests : ApiEndpointTests
         items.Should().NotBeNull();
         var bcia11 = items!.Single(i => i.AssetName == "BCIA11");
         bcia11.TotalInvested.Should().Be(800m);
-        bcia11.PortfolioWeight.Should().Be(100m);
+        // BCIA11 has no recorded price in this fixture: its market value is unavailable, so its
+        // share must read unknown (null), never 100% from the old cost-based basis (FR-047).
+        bcia11.PortfolioWeight.Should().BeNull();
         bcia11.RealizedGainLoss.Should().Be(31m);
     }
 
