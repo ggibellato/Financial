@@ -41,8 +41,6 @@ public class SaleCoverageRuleTests
     public void FindFirstUncoveredSale_EditLeavesALaterSaleShort_NamesTheLaterSale()
     {
         var laterSale = Transaction.Create(new DateTime(2024, 6, 1), Transaction.TransactionType.Sell, 80m, 12m, 0m);
-        // A back-dated sale of 50 in March, on a holding that bought 100 in January and sold 80 in
-        // June: valid at its own date (50 held in March) but leaves June 30 short.
         var transactions = new[]
         {
             Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 100m, 10m, 0m),

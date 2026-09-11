@@ -137,18 +137,12 @@ public class Asset
 
     public bool RemoveTransaction(Guid transactionId) => Transactions.RemoveById(transactionId);
 
-    /// <exception cref="InvestmentRuleViolationException">
-    /// The resulting history would sell more than was held at some date.
-    /// </exception>
     public void RecordTransaction(Transaction transaction)
     {
         EnsureNoUncoveredSale([.. Transactions, transaction], transaction.Id);
         AddTransaction(transaction);
     }
 
-    /// <exception cref="InvestmentRuleViolationException">
-    /// The resulting history would sell more than was held at some date.
-    /// </exception>
     public bool ReviseTransaction(Transaction updatedTransaction)
     {
         if (Transactions.All(t => t.Id != updatedTransaction.Id))
@@ -161,9 +155,6 @@ public class Asset
         return UpdateTransaction(updatedTransaction);
     }
 
-    /// <exception cref="InvestmentRuleViolationException">
-    /// The resulting history would sell more than was held at some date.
-    /// </exception>
     public bool RetractTransaction(Guid transactionId)
     {
         if (Transactions.All(t => t.Id != transactionId))
@@ -176,13 +167,6 @@ public class Asset
         return RemoveTransaction(transactionId);
     }
 
-    /// <summary>
-    /// <paramref name="subjectTransactionId"/> is the transaction the caller is recording or
-    /// revising — when the offending sale *is* that transaction, the refusal reads as a direct
-    /// rejection (FR-009); when it is a different, later sale, the refusal names that sale and its
-    /// shortfall instead (FR-065, FR-066). A retraction passes null: the deleted transaction is
-    /// never the offending sale, since deleting it removes it from the candidate sequence.
-    /// </summary>
     private static void EnsureNoUncoveredSale(IEnumerable<Transaction> candidate, Guid? subjectTransactionId)
     {
         var violation = SaleCoverageRule.FindFirstUncoveredSale(candidate);
