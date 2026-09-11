@@ -1,20 +1,19 @@
 using Financial.Investment.Application.DTOs;
+using Financial.Investment.Application.Enums;
 using Financial.Investment.Domain.Entities;
 using Financial.Investment.Domain.Rules;
 
 namespace Financial.Investment.Application.Services;
-
-internal readonly record struct AssetTotals(decimal TotalBought, decimal TotalSold, decimal TotalCredits);
 
 internal static class PortfolioAssetSummaryBuilder
 {
     internal static IReadOnlyList<PortfolioAssetSummaryItemDTO> Build(
         IEnumerable<Asset> assets,
         DateTime today,
-        Func<AssetTotals, decimal> weightBasisSelector)
+        InvestmentScope scope)
     {
         var computed = assets
-            .Select(a => ComputeAssetData(a, today, weightBasisSelector))
+            .Select(a => ComputeAssetData(a, today, scope))
             .ToList();
         var portfolioWeightBasis = computed.Sum(c => c.WeightBasis);
 
@@ -24,14 +23,10 @@ internal static class PortfolioAssetSummaryBuilder
             .ToList();
     }
 
-    private static AssetComputedData ComputeAssetData(
-        Asset asset,
-        DateTime today,
-        Func<AssetTotals, decimal> weightBasisSelector)
+    private static AssetComputedData ComputeAssetData(Asset asset, DateTime today, InvestmentScope scope)
     {
-        var (totalBought, totalSold, totalCredits) = AssetTotalsCalculator.CalculateTotals(asset);
-        var totals = new AssetTotals(totalBought, totalSold, totalCredits);
-        var weightBasis = weightBasisSelector(totals);
+        var totals = AssetTotals.For(asset);
+        var bases = AssetAmountBases.For(scope, totals);
         var realizedGainLoss = asset.RealizedGainLoss;
         var averageSellPrice = asset.AverageSellPrice;
 
@@ -42,13 +37,13 @@ internal static class PortfolioAssetSummaryBuilder
             .Min();
 
         var cashFlows = AssetCashFlowBuilder.BuildWithCredits(asset);
-        var creditsAnalysis = CreditsAnalysisCalculator.Calculate(asset.Credits, weightBasis, today);
+        var creditsAnalysis = CreditsAnalysisCalculator.Calculate(asset.Credits, bases.IncomeYieldBasis, today);
 
         return new AssetComputedData(
             asset.Name, asset.Ticker, asset.Exchange, asset.Class,
             firstBuyDate, asset.Quantity, asset.AveragePrice, averageSellPrice,
-            totalBought, totalSold, totalBought - totalSold, realizedGainLoss, weightBasis,
-            totalCredits, cashFlows,
+            totals.TotalBought, totals.TotalSold, bases.InvestedAmount, realizedGainLoss, bases.WeightBasis,
+            totals.TotalCredits, cashFlows,
             creditsAnalysis.LastMonthCredits, creditsAnalysis.LastCreditMonth,
             creditsAnalysis.LastMonthCreditsPercent, creditsAnalysis.CreditFrequencyPerYear,
             creditsAnalysis.EstimatedAnnualCredits, creditsAnalysis.EstimatedAnnualPercent,

@@ -638,22 +638,32 @@ describe('PortfolioSummaryTab', () => {
     expect(header).toHaveClass('portfolio-summary__credits-separator')
   })
 
-  it('renders_footer_with_total_invested_sum', () => {
+  it('renders_footer_total_invested_from_the_server_summary_not_a_client_sum', () => {
     const item1: PortfolioAssetSummaryItemDto = { ...ITEM_1, totalInvested: 1000 }
     const item2: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'MXRF11', totalInvested: 2000, totalCredits: 0 }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item1, item2], rowPrices: [LOADING_ROW_PRICE, LOADING_ROW_PRICE] })
     renderComponent()
-    expect(screen.getByDisplayValue(/3[,.]000[.,]00/)).toBeInTheDocument()
+    expect(screen.getByDisplayValue(formatN2(SUMMARY.totalInvested))).toBeInTheDocument()
+    expect(screen.queryByDisplayValue(/3[,.]000[.,]00/)).not.toBeInTheDocument()
   })
 
-  it('renders_footer_with_total_credits_sum', () => {
+  it('renders_footer_total_credits_from_the_server_summary_not_a_client_sum', () => {
     const item1: PortfolioAssetSummaryItemDto = { ...ITEM_1, totalCredits: 50, totalInvested: 1000 }
     const item2: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'MXRF11', totalCredits: 75, totalInvested: 2000 }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item1, item2], rowPrices: [LOADING_ROW_PRICE, LOADING_ROW_PRICE] })
     renderComponent()
-    expect(screen.getByDisplayValue(/125[.,]00/)).toBeInTheDocument()
+    expect(screen.getByDisplayValue(formatN2(SUMMARY.totalCredits))).toBeInTheDocument()
+    expect(screen.queryByDisplayValue(/125[.,]00/)).not.toBeInTheDocument()
+  })
+
+  it('renders_footer_total_invested_and_header_total_invested_as_the_same_value', () => {
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [ITEM_1], rowPrices: [LOADING_ROW_PRICE] })
+    renderComponent()
+    const formatted = formatN2(SUMMARY.totalInvested)
+    expect(screen.getAllByText(formatted).length + screen.getAllByDisplayValue(formatted).length).toBeGreaterThanOrEqual(2)
   })
 
   it('renders_footer_credits_label_with_current_month_and_year', () => {

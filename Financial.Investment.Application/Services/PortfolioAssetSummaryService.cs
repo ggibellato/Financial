@@ -41,9 +41,7 @@ public sealed class PortfolioAssetSummaryService : IPortfolioAssetSummaryService
                 return [];
             }
 
-            var result = PortfolioAssetSummaryBuilder.Build(
-                assets, DateTime.Today,
-                totals => AssetInvestedAmountSelector.Select(scope, totals.TotalBought, totals.TotalSold));
+            var result = PortfolioAssetSummaryBuilder.Build(assets, DateTime.Today, scope);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetPortfolioAssetsSummary");

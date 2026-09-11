@@ -47,6 +47,35 @@ public class BrokerBreakdownServiceTests
         portfolio.Assets.Should().Contain(a => a.AssetName == "BBBB" && a.TotalInvested == 200m);
     }
 
+    [Fact]
+    public void GetBrokerBreakdown_ActiveScope_UsesCostOfUnitsHeld_NotBoughtMinusSold()
+    {
+        var asset = MakeAsset("AAAA", "AAAA");
+        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 20m, 10m, 0m));
+        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 5m, 40m, 0m));
+        _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", asset)];
+
+        var result = CreateService().GetBrokerBreakdown("XPI", InvestmentScope.Active);
+
+        var portfolio = result.Single();
+        portfolio.Assets.Should().ContainSingle(a => a.AssetName == "AAAA" && a.TotalInvested == 150m);
+        portfolio.TotalInvested.Should().Be(150m);
+    }
+
+    [Fact]
+    public void GetBrokerBreakdown_HistoricScope_UsesTotalBought()
+    {
+        var asset = MakeAsset("AAAA", "AAAA");
+        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 20m, 10m, 0m));
+        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 20m, 40m, 0m));
+        _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", asset)];
+
+        var result = CreateService().GetBrokerBreakdown("XPI", InvestmentScope.Historic);
+
+        var portfolio = result.Single();
+        portfolio.Assets.Should().ContainSingle(a => a.AssetName == "AAAA" && a.TotalInvested == 200m);
+    }
+
     [Theory]
     [InlineData(InvestmentScope.Active)]
     [InlineData(InvestmentScope.Historic)]

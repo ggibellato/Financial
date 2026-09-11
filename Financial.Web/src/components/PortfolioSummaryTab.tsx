@@ -5,10 +5,11 @@ import SortableColumnHeader from './grid/SortableColumnHeader'
 import { useSortableRows, type SortAccessor, type SortDirection } from '../hooks/useSortableRows'
 import { usePortfolioAssetSummary } from '../hooks/usePortfolioAssetSummary'
 import type { RowPriceState } from '../hooks/usePortfolioAssetSummary'
+import { useAggregatedSummary } from '../hooks/useAggregatedSummary'
 import type { PortfolioAssetSummaryItemDto } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
 import { formatMonthYear, formatN2, formatN8, formatPercent1, formatShortDate, signClass } from '../utils/formatters'
-import AggregatedSummaryTab from './AggregatedSummaryTab'
+import { AggregatedSummaryView } from './AggregatedSummaryTab'
 import './PortfolioSummaryTab.css'
 
 function parseCreditMonth(yearMonth: string): Date {
@@ -189,6 +190,7 @@ export default function PortfolioSummaryTab() {
   const { scope } = useSelectedNode()
   const isHistoric = scope === 'historic'
   const { items, rowPrices, isLoading, error, retry } = usePortfolioAssetSummary()
+  const { summary, isLoading: isSummaryLoading, error: summaryError, retry: retrySummary } = useAggregatedSummary()
 
   const tableRows: AssetTableRow[] = (items ?? []).map((item, index) => ({
     item,
@@ -224,10 +226,10 @@ export default function PortfolioSummaryTab() {
   const creditsLabel = `Credits ${formatMonthYear(new Date())}`
 
   const footer =
-    items && items.length > 0
+    items && items.length > 0 && summary
       ? (() => {
-          const totalInvested = items.reduce((acc, it) => acc + it.totalInvested, 0)
-          const totalCredits = items.reduce((acc, it) => acc + it.totalCredits, 0)
+          const totalInvested = summary.totalInvested
+          const totalCredits = summary.totalCredits
           const currentMonthCredits = items.reduce((acc, it) => acc + it.currentMonthCredits, 0)
           const hasAnyAnnual = items.some(it => it.estimatedAnnualCredits !== null)
           const estAnnualCredits = hasAnyAnnual
@@ -242,7 +244,9 @@ export default function PortfolioSummaryTab() {
   return (
     <div className="portfolio-summary">
       <div className="portfolio-summary__totals">
-        <AggregatedSummaryTab />
+        {isSummaryLoading && <LoadingState />}
+        {summaryError && <ErrorState message={summaryError} onRetry={retrySummary} />}
+        {!isSummaryLoading && !summaryError && summary && <AggregatedSummaryView summary={summary} />}
       </div>
 
       <div className="portfolio-summary__table-section">

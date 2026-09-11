@@ -63,7 +63,7 @@ public class SummaryEndpointsTests : ApiEndpointTests
         dto!.TotalBought.Should().BeGreaterThanOrEqualTo(0m);
         dto.TotalSold.Should().BeGreaterThanOrEqualTo(0m);
         dto.TotalCredits.Should().BeGreaterThanOrEqualTo(0m);
-        dto.TotalInvested.Should().Be(dto.TotalBought - dto.TotalSold);
+        dto.TotalInvested.Should().BeGreaterThanOrEqualTo(0m);
     }
 
     [Fact]
@@ -78,7 +78,21 @@ public class SummaryEndpointsTests : ApiEndpointTests
         dto!.TotalBought.Should().BeGreaterThanOrEqualTo(0m);
         dto.TotalSold.Should().BeGreaterThanOrEqualTo(0m);
         dto.TotalCredits.Should().BeGreaterThanOrEqualTo(0m);
-        dto.TotalInvested.Should().Be(dto.TotalBought - dto.TotalSold);
+        dto.TotalInvested.Should().BeGreaterThanOrEqualTo(0m);
+    }
+
+    [Theory]
+    [InlineData("XPI", "Default", "active")]
+    [InlineData("XPI", "Uncategorized", "historic")]
+    public async Task GetPortfolioSummary_TotalInvested_EqualsSumOfAssetRowsInBothScopes(string brokerName, string portfolioName, string scope)
+    {
+        var summaryResponse = await Client.GetAsync($"/api/v1/financial/summary/portfolio/{brokerName}/{portfolioName}?scope={scope}");
+        var summary = await summaryResponse.Content.ReadFromJsonAsync<AggregatedSummaryDTO>();
+
+        var assetsResponse = await Client.GetAsync($"/api/v1/financial/summary/portfolio/{brokerName}/{portfolioName}/assets?scope={scope}");
+        var assets = await assetsResponse.Content.ReadFromJsonAsync<List<PortfolioAssetSummaryItemDTO>>();
+
+        summary!.TotalInvested.Should().Be(assets!.Sum(a => a.TotalInvested));
     }
 
     [Fact]
@@ -185,7 +199,7 @@ public class SummaryEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
-    public async Task GetPortfolioAssetsSummary_ScopeActive_PreservesNetInvestedWeightingAndComputesRealizedGainLoss()
+    public async Task GetPortfolioAssetsSummary_ScopeActive_InvestedIsCostOfUnitsHeld_WeightStaysOnPriorBasis()
     {
         var response = await Client.GetAsync("/api/v1/financial/summary/portfolio/XPI/Default/assets?scope=active");
 
@@ -193,10 +207,8 @@ public class SummaryEndpointsTests : ApiEndpointTests
 
         var items = await response.Content.ReadFromJsonAsync<List<PortfolioAssetSummaryItemDTO>>();
         items.Should().NotBeNull();
-        // BCIA11: bought 10 x 100 = 1000, sold 2 x 110 = 220 — active weighting stays net invested (780), 100% of the portfolio
-        // RealizedGainLoss = capital gain (220 - 2 x 100 average cost = 20) + credits (5 + 6 = 11) = 31
         var bcia11 = items!.Single(i => i.AssetName == "BCIA11");
-        bcia11.TotalInvested.Should().Be(780m);
+        bcia11.TotalInvested.Should().Be(800m);
         bcia11.PortfolioWeight.Should().Be(100m);
         bcia11.RealizedGainLoss.Should().Be(31m);
     }
@@ -217,7 +229,7 @@ public class SummaryEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
-    public async Task GetBrokerBreakdown_ScopeActive_PreservesNetInvestedBehavior()
+    public async Task GetBrokerBreakdown_ScopeActive_UsesCostOfUnitsHeld()
     {
         var response = await Client.GetAsync("/api/v1/financial/summary/broker/XPI/breakdown?scope=active");
 
@@ -225,7 +237,6 @@ public class SummaryEndpointsTests : ApiEndpointTests
 
         var items = await response.Content.ReadFromJsonAsync<List<PortfolioBreakdownItemDTO>>();
         items.Should().NotBeNull();
-        // BCIA11: bought 10 x 100 = 1000, sold 2 x 110 = 220 — active sizing stays net invested (780)
-        items!.SelectMany(p => p.Assets).Should().Contain(a => a.AssetName == "BCIA11" && a.TotalInvested == 780m);
+        items!.SelectMany(p => p.Assets).Should().Contain(a => a.AssetName == "BCIA11" && a.TotalInvested == 800m);
     }
 }

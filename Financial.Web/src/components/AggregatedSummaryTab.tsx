@@ -4,24 +4,12 @@ import LoadingState from './LoadingState'
 import { useAggregatedSummary } from '../hooks/useAggregatedSummary'
 import { useSelectedNode } from '../context/SelectedNodeContext'
 import { formatN2, signClass } from '../utils/formatters'
+import type { AggregatedSummaryDto } from '../api/types'
 import './AggregatedSummaryTab.css'
 
-export default function AggregatedSummaryTab() {
-  const { summary, isLoading, error, retry } = useAggregatedSummary()
+export function AggregatedSummaryView({ summary }: { summary: AggregatedSummaryDto }) {
   const { selectedNode } = useSelectedNode()
   const isBroker = selectedNode?.nodeType === 'Broker'
-
-  if (isLoading) {
-    return <LoadingState />
-  }
-
-  if (error) {
-    return <ErrorState message={error} onRetry={retry} />
-  }
-
-  if (!summary) {
-    return null
-  }
 
   return (
     <div className="aggregated-summary">
@@ -54,4 +42,22 @@ export default function AggregatedSummaryTab() {
       {isBroker && <BrokerBreakdownCharts />}
     </div>
   )
+}
+
+export default function AggregatedSummaryTab() {
+  const { summary, isLoading, error, retry } = useAggregatedSummary()
+
+  if (isLoading) {
+    return <LoadingState />
+  }
+
+  if (error) {
+    return <ErrorState message={error} onRetry={retry} />
+  }
+
+  if (!summary) {
+    return null
+  }
+
+  return <AggregatedSummaryView summary={summary} />
 }
