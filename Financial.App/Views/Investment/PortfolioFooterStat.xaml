@@ -10,7 +10,7 @@
         ambient DataContext, so each stays an independently wrappable WrapPanel child.
     -->
     <StackPanel Orientation="Horizontal">
-        <TextBlock Text="{Binding Label, ElementName=Root}" FontWeight="Bold" Margin="0,0,5,0"/>
-        <TextBlock Text="{Binding Value, ElementName=Root}" FontFamily="Consolas"/>
+        <TextBlock Text="{Binding Label, ElementName=Root}" Margin="0,0,5,0"/>
+        <TextBlock Text="{Binding Value, ElementName=Root}" FontFamily="Consolas" FontWeight="Bold"/>
     </StackPanel>
 </UserControl>

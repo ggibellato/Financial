@@ -211,6 +211,15 @@ public sealed class TransactionDialogViewModel : ViewModelBase
         CloseRequested?.Invoke(this, false);
     }
 
+    /// <summary>Surfaces a server-side refusal (e.g. an oversell) inline, in the same slot as
+    /// client-side validation. Reusing <see cref="ValidationMessage"/> also disables Confirm until
+    /// the user changes a field, since resubmitting the same values would fail identically.</summary>
+    public void ReportSubmitFailed(string message)
+    {
+        ValidationMessage = message;
+        ConfirmCommand.RaiseCanExecuteChanged();
+    }
+
     private bool CanConfirm()
     {
         if (Mode == TransactionDialogMode.Delete)
