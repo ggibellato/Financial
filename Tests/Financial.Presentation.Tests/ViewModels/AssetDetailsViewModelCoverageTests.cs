@@ -15,6 +15,8 @@ public class AssetDetailsViewModelCoverageTests
         ICreditService? creditService = null,
         IAssetPriceHistoryService? priceHistoryService = null,
         IAssetPriceLookupService? priceLookupService = null,
+        INavigationService? navigationService = null,
+        IPortfolioAssetSummaryService? portfolioAssetSummaryService = null,
         InvestmentScope scope = InvestmentScope.Active) =>
         new(
             transactionService ?? new StubTransactionService(),
@@ -22,7 +24,8 @@ public class AssetDetailsViewModelCoverageTests
             new NotUsedAssetPriceService(),
             new StubBrokerBreakdownService(),
             new StubTransactionQueryService(),
-            new XirrCalculationService(),
+            navigationService ?? new FakeNavigationService(),
+            portfolioAssetSummaryService ?? new FakePortfolioAssetSummaryService(),
             new ProfitCalculationService(),
             scope,
             priceLookupService,

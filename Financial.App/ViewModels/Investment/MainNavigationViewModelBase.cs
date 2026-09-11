@@ -558,6 +558,14 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
         LoadSelectionDetails(SelectedNode);
     }
 
+    public void ReloadSelectedNodeDetails()
+    {
+        if (SelectedNode != null)
+        {
+            LoadSelectionDetails(SelectedNode);
+        }
+    }
+
     private void LoadSelectionDetails(TreeNodeViewModel selectedNode)
     {
         if (selectedNode.NodeType == TreeNodeType.Asset)

@@ -12,8 +12,6 @@ interface SummaryState {
   price: AssetPriceDto | null
   isLoadingPrice: boolean
   priceError: string | null
-  xirr: number | null
-  xirrWithCredits: number | null
   portfolioWeight: number | null
 }
 
@@ -23,11 +21,10 @@ type SummaryAction =
   | { type: 'ASSET_FETCH_SUCCESS'; payload: AssetDetailsDto }
   | { type: 'ASSET_FETCH_ERROR'; payload: string }
   | { type: 'ASSET_RETRY' }
+  | { type: 'ASSET_REFRESHED'; payload: AssetDetailsDto }
   | { type: 'PRICE_FETCH_START' }
   | { type: 'PRICE_FETCH_SUCCESS'; payload: AssetPriceDto }
   | { type: 'PRICE_FETCH_ERROR'; payload: string }
-  | { type: 'XIRR_RESET' }
-  | { type: 'XIRR_FETCH_SUCCESS'; xirr: number | null; xirrWithCredits: number | null }
   | { type: 'PORTFOLIO_WEIGHT_SUCCESS'; portfolioWeight: number | null }
 
 function resolvePriceFetchArgs(
@@ -50,8 +47,6 @@ const INITIAL_STATE: SummaryState = {
   price: null,
   isLoadingPrice: false,
   priceError: null,
-  xirr: null,
-  xirrWithCredits: null,
   portfolioWeight: null,
 }
 
@@ -75,16 +70,14 @@ function reducer(state: SummaryState, action: SummaryAction): SummaryState {
       return { ...state, isLoadingAsset: false, assetError: action.payload }
     case 'ASSET_RETRY':
       return { ...state, assetRetryCount: state.assetRetryCount + 1 }
+    case 'ASSET_REFRESHED':
+      return { ...state, asset: action.payload }
     case 'PRICE_FETCH_START':
-      return { ...state, isLoadingPrice: true, priceError: null, price: null, xirr: null, xirrWithCredits: null }
+      return { ...state, isLoadingPrice: true, priceError: null, price: null }
     case 'PRICE_FETCH_SUCCESS':
       return { ...state, isLoadingPrice: false, price: action.payload }
     case 'PRICE_FETCH_ERROR':
       return { ...state, isLoadingPrice: false, priceError: action.payload, price: null }
-    case 'XIRR_RESET':
-      return { ...state, xirr: null, xirrWithCredits: null }
-    case 'XIRR_FETCH_SUCCESS':
-      return { ...state, xirr: action.xirr, xirrWithCredits: action.xirrWithCredits }
     case 'PORTFOLIO_WEIGHT_SUCCESS':
       return { ...state, portfolioWeight: action.portfolioWeight }
     default:
@@ -103,12 +96,6 @@ export interface AssetSummaryData {
   canRefresh: boolean
   refresh: () => void
   showCurrentSection: boolean
-  totalCurrentValue: number
-  resultPercent: number
-  totalCurrentPlusCredits: number
-  resultWithCreditsPercent: number
-  xirr: number | null
-  xirrWithCredits: number | null
   portfolioWeight: number | null
 }
 
@@ -121,20 +108,31 @@ export function useAssetSummary(): AssetSummaryData {
     !!selectedNode.portfolioName &&
     !!selectedNode.assetName
 
+  // Fetching a price also records it into the asset's price history server-side, so once it
+  // settles the just-fetched market value/return figures are re-read from the server rather
+  // than derived here - a fetch that fails leaves the prior valuation in place.
   const fetchPrice = useCallback(
     (
       exchange: string,
       ticker: string,
-      assetClass?: string,
-      brokerName?: string,
-      name?: string,
-      portfolioName?: string,
-      assetName?: string,
+      assetClass: string | undefined,
+      brokerName: string | undefined,
+      name: string | undefined,
+      portfolioName: string | undefined,
+      assetName: string | undefined,
     ) => {
       dispatch({ type: 'PRICE_FETCH_START' })
       void apiClient
         .getCurrentPrice(exchange, ticker, assetClass, brokerName, name, portfolioName, assetName)
-        .then((result) => dispatch({ type: 'PRICE_FETCH_SUCCESS', payload: result }))
+        .then((result) => {
+          dispatch({ type: 'PRICE_FETCH_SUCCESS', payload: result })
+          return brokerName && portfolioName && assetName
+            ? apiClient.getAssetDetails(brokerName, portfolioName, assetName, 'active')
+            : null
+        })
+        .then((refreshed) => {
+          if (refreshed) dispatch({ type: 'ASSET_REFRESHED', payload: refreshed })
+        })
         .catch((err: unknown) => {
           dispatch({
             type: 'PRICE_FETCH_ERROR',
@@ -210,60 +208,10 @@ export function useAssetSummary(): AssetSummaryData {
     )
   }, [isAsset, selectedNode, fetchPrice])
 
-  useEffect(() => {
-    if (!state.asset) {
-      dispatch({ type: 'XIRR_RESET' })
-      return
-    }
-
-    if (scope === 'active' && !state.price) {
-      dispatch({ type: 'XIRR_RESET' })
-      return
-    }
-
-    // Historic positions are fully closed: every buy/sell/credit is already a dated entry
-    // in the cash flow series, so there is no remaining position to mark-to-market — the
-    // terminal value is 0 rather than a live price.
-    const currentValue =
-      scope === 'active' && state.price ? state.price.price * state.asset.quantity : 0
-    // cashFlowsWithCredits already carries every credit as a dated positive flow, so both series
-    // share the same terminal value. Adding totalCredits here would count each credit twice.
-    let cancelled = false
-
-    void Promise.all([
-      apiClient.calculateXirr(state.asset.cashFlowsWithoutCredits, currentValue),
-      apiClient.calculateXirr(state.asset.cashFlowsWithCredits, currentValue),
-    ])
-      .then(([withoutCredits, withCredits]) => {
-        if (cancelled) return
-        dispatch({ type: 'XIRR_FETCH_SUCCESS', xirr: withoutCredits.xirr, xirrWithCredits: withCredits.xirr })
-      })
-      .catch(() => {
-        if (!cancelled) dispatch({ type: 'XIRR_RESET' })
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [state.asset, state.price, scope])
-
   const canRefresh = !state.isLoadingPrice
 
   const showCurrentSection =
     !!state.asset && state.asset.quantity !== 0 && state.asset.averagePrice !== 0
-
-  const totalCurrentValue =
-    state.price && state.asset ? state.price.price * state.asset.quantity : 0
-
-  const costBasis = state.asset ? state.asset.quantity * state.asset.averagePrice : 0
-
-  const resultPercent =
-    costBasis !== 0 ? (totalCurrentValue - costBasis) / costBasis : 0
-
-  const totalCurrentPlusCredits = state.asset ? totalCurrentValue + state.asset.totalCredits : 0
-
-  const resultWithCreditsPercent =
-    costBasis !== 0 ? (totalCurrentPlusCredits - costBasis) / costBasis : 0
 
   return {
     asset: state.asset,
@@ -276,12 +224,6 @@ export function useAssetSummary(): AssetSummaryData {
     canRefresh,
     refresh,
     showCurrentSection,
-    totalCurrentValue,
-    resultPercent,
-    totalCurrentPlusCredits,
-    resultWithCreditsPercent,
-    xirr: state.xirr,
-    xirrWithCredits: state.xirrWithCredits,
     portfolioWeight: state.portfolioWeight,
   }
 }

@@ -7,7 +7,6 @@ namespace Financial.Presentation.App.ViewModels.Investment;
 
 public class PortfolioAssetSummaryRowViewModel : ViewModelBase
 {
-    private readonly IXirrCalculationService _xirrCalculationService;
     private readonly IProfitCalculationService _profitCalculationService;
 
     private bool _isLoadingPrice = true;
@@ -18,6 +17,7 @@ public class PortfolioAssetSummaryRowViewModel : ViewModelBase
     private decimal? _profitPercent;
     private decimal? _profitWithCreditsPercent;
     private decimal? _xirr;
+    private bool _isPriceStale;
     private readonly decimal? _historicProfitPercent;
     private readonly decimal? _historicProfitWithCreditsPercent;
     private readonly decimal? _historicXirr;
@@ -51,6 +51,7 @@ public class PortfolioAssetSummaryRowViewModel : ViewModelBase
     public decimal? ProfitPercent => _profitPercent;
     public decimal? ProfitWithCreditsPercent => _profitWithCreditsPercent;
     public decimal? Xirr => _xirr;
+    public bool IsPriceStale => _isPriceStale;
 
     public string DisplayFirstInvestmentDate =>
         FirstInvestmentDate.HasValue ? FirstInvestmentDate.Value.ToString("dd/MM/yyyy") : string.Empty;
@@ -136,9 +137,8 @@ public class PortfolioAssetSummaryRowViewModel : ViewModelBase
     public bool HistoricXirrIsPositive => HistoricXirr > 0;
     public bool HistoricXirrIsNegative => HistoricXirr < 0;
 
-    public PortfolioAssetSummaryRowViewModel(PortfolioAssetSummaryItemDTO dto, IXirrCalculationService xirrCalculationService, IProfitCalculationService profitCalculationService)
+    public PortfolioAssetSummaryRowViewModel(PortfolioAssetSummaryItemDTO dto, IProfitCalculationService profitCalculationService)
     {
-        _xirrCalculationService = xirrCalculationService ?? throw new ArgumentNullException(nameof(xirrCalculationService));
         _profitCalculationService = profitCalculationService ?? throw new ArgumentNullException(nameof(profitCalculationService));
         AssetName = dto.AssetName;
         Ticker = dto.Ticker;
@@ -163,23 +163,26 @@ public class PortfolioAssetSummaryRowViewModel : ViewModelBase
 
         _historicProfitPercent = _profitCalculationService.CalculateProfitPercent(RealizedGainLoss - TotalCredits + TotalBought, TotalBought);
         _historicProfitWithCreditsPercent = _profitCalculationService.CalculateProfitPercent(RealizedGainLoss + TotalBought, TotalBought);
-        var historicXirrFraction = _xirrCalculationService.Calculate(CashFlows, 0m);
-        _historicXirr = historicXirrFraction.HasValue ? historicXirrFraction.Value * 100 : null;
+        _historicXirr = dto.PriceOnlyReturn.HasValue ? dto.PriceOnlyReturn.Value * 100 : null;
+
+        SetValuation(dto.MarketValue, dto.CostOfUnitsHeld, dto.UnrealisedGain, dto.PriceOnlyReturn);
+        _isPriceStale = dto.IsPriceStale;
+    }
+
+    private void SetValuation(decimal? marketValue, decimal costOfUnitsHeld, decimal? unrealisedGain, decimal? priceOnlyReturn)
+    {
+        _currentValue = marketValue;
+        _profitPercent = unrealisedGain.HasValue && costOfUnitsHeld != 0 ? unrealisedGain.Value / costOfUnitsHeld * 100 : null;
+        _profitWithCreditsPercent = unrealisedGain.HasValue && costOfUnitsHeld != 0
+            ? (unrealisedGain.Value + TotalCredits) / costOfUnitsHeld * 100
+            : null;
+        _xirr = priceOnlyReturn.HasValue ? priceOnlyReturn.Value * 100 : null;
     }
 
     public void ApplyPrice(decimal price, bool isManual = false)
     {
         _currentPrice = price;
-        _currentValue = price * CurrentQuantity;
         _currentValueIsManual = isManual;
-
-        var costBasis = CurrentQuantity * AveragePrice;
-
-        _profitPercent = _profitCalculationService.CalculateProfitPercent(_currentValue.Value, costBasis);
-        _profitWithCreditsPercent = _profitCalculationService.CalculateProfitPercent(_currentValue.Value + TotalCredits, costBasis);
-
-        var xirrFraction = _xirrCalculationService.Calculate(CashFlows, _currentValue.Value);
-        _xirr = xirrFraction.HasValue ? xirrFraction.Value * 100 : null;
         _isLoadingPrice = false;
 
         OnPropertyChanged(nameof(IsLoadingPrice));
@@ -200,6 +203,28 @@ public class PortfolioAssetSummaryRowViewModel : ViewModelBase
         OnPropertyChanged(nameof(DisplayXirr));
         OnPropertyChanged(nameof(XirrIsPositive));
         OnPropertyChanged(nameof(XirrIsNegative));
+    }
+
+    public void ApplyValuation(PortfolioAssetSummaryItemDTO dto)
+    {
+        SetValuation(dto.MarketValue, dto.CostOfUnitsHeld, dto.UnrealisedGain, dto.PriceOnlyReturn);
+        _isPriceStale = dto.IsPriceStale;
+
+        OnPropertyChanged(nameof(CurrentValue));
+        OnPropertyChanged(nameof(DisplayCurrentValue));
+        OnPropertyChanged(nameof(ProfitPercent));
+        OnPropertyChanged(nameof(DisplayProfitPercent));
+        OnPropertyChanged(nameof(ProfitIsPositive));
+        OnPropertyChanged(nameof(ProfitIsNegative));
+        OnPropertyChanged(nameof(ProfitWithCreditsPercent));
+        OnPropertyChanged(nameof(DisplayProfitWithCreditsPercent));
+        OnPropertyChanged(nameof(ProfitWithCreditsIsPositive));
+        OnPropertyChanged(nameof(ProfitWithCreditsIsNegative));
+        OnPropertyChanged(nameof(Xirr));
+        OnPropertyChanged(nameof(DisplayXirr));
+        OnPropertyChanged(nameof(XirrIsPositive));
+        OnPropertyChanged(nameof(XirrIsNegative));
+        OnPropertyChanged(nameof(IsPriceStale));
     }
 
     public void MarkPriceFailed()

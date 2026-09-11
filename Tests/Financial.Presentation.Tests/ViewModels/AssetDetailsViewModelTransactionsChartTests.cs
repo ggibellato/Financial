@@ -31,7 +31,8 @@ public class AssetDetailsViewModelTransactionsChartTests
             new StubAssetPriceService(),
             brokerBreakdownService ?? new StubBrokerBreakdownService(),
             transactionQueryService ?? _transactionQueryService,
-            new XirrCalculationService(),
+            new FakeNavigationService(),
+            new FakePortfolioAssetSummaryService(),
             new ProfitCalculationService(),
             scope);
     }

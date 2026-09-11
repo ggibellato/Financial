@@ -44,6 +44,46 @@ internal sealed class StubBrokerBreakdownService : IBrokerBreakdownService
     }
 }
 
+internal sealed class FakeNavigationService : INavigationService
+{
+    public AssetDetailsDTO? AssetDetails { get; set; }
+    public string? LastBrokerName { get; private set; }
+    public string? LastPortfolioName { get; private set; }
+    public string? LastAssetName { get; private set; }
+    public InvestmentScope? LastScope { get; private set; }
+
+    public TreeNodeDTO GetNavigationTree(InvestmentScope scope = InvestmentScope.Active) =>
+        new() { NodeType = TreeNodeType.Broker, DisplayName = "Root", Metadata = [], Children = [] };
+
+    public AssetDetailsDTO? GetAssetDetails(string brokerName, string portfolioName, string assetName, InvestmentScope scope = InvestmentScope.Active)
+    {
+        LastBrokerName = brokerName;
+        LastPortfolioName = portfolioName;
+        LastAssetName = assetName;
+        LastScope = scope;
+        return AssetDetails;
+    }
+
+    public IEnumerable<BrokerNodeDTO> GetBrokers(InvestmentScope scope = InvestmentScope.Active) => [];
+    public IEnumerable<AssetNodeDTO> GetAssetsByBrokerPortfolio(string brokerName, string portfolioName) => [];
+}
+
+internal sealed class FakePortfolioAssetSummaryService : IPortfolioAssetSummaryService
+{
+    public IReadOnlyList<PortfolioAssetSummaryItemDTO> Items { get; set; } = [];
+    public string? LastBrokerName { get; private set; }
+    public string? LastPortfolioName { get; private set; }
+    public InvestmentScope? LastScope { get; private set; }
+
+    public IReadOnlyList<PortfolioAssetSummaryItemDTO> GetPortfolioAssetsSummary(string brokerName, string portfolioName, InvestmentScope scope = InvestmentScope.Active)
+    {
+        LastBrokerName = brokerName;
+        LastPortfolioName = portfolioName;
+        LastScope = scope;
+        return Items;
+    }
+}
+
 internal sealed class StubTransactionQueryService : ITransactionQueryService
 {
     public IReadOnlyList<TransactionSummaryItemDTO> BrokerTransactions { get; set; } = [];

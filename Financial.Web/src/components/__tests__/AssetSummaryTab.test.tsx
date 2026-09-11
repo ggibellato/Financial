@@ -27,12 +27,6 @@ const mockHookValue: AssetSummaryData = {
   canRefresh: true,
   refresh: mockRefresh,
   showCurrentSection: false,
-  totalCurrentValue: 0,
-  resultPercent: 0,
-  totalCurrentPlusCredits: 0,
-  resultWithCreditsPercent: 0,
-  xirr: null,
-  xirrWithCredits: null,
   portfolioWeight: null,
 }
 
@@ -99,12 +93,6 @@ describe('AssetSummaryTab', () => {
       priceError: null,
       canRefresh: true,
       showCurrentSection: false,
-      totalCurrentValue: 0,
-      resultPercent: 0,
-      totalCurrentPlusCredits: 0,
-      resultWithCreditsPercent: 0,
-      xirr: null,
-      xirrWithCredits: null,
     })
   })
 
@@ -160,13 +148,9 @@ describe('AssetSummaryTab', () => {
 
   it('renders_current_section_when_quantity_and_price_nonzero', () => {
     setMock({
-      asset: ASSET,
+      asset: { ...ASSET, marketValue: 2500, unrealisedGain: 500 },
       price: PRICE,
       showCurrentSection: true,
-      totalCurrentValue: 2500,
-      resultPercent: 0.25,
-      totalCurrentPlusCredits: 2550,
-      resultWithCreditsPercent: 0.275,
     })
     renderAssetSummaryTab()
     expect(screen.getByText('Current')).toBeInTheDocument()
@@ -246,11 +230,9 @@ describe('AssetSummaryTab', () => {
 
   it('renders_realized_totals_section_for_historic_scope', () => {
     setMock({
-      asset: { ...ASSET, quantity: 0, realizedGainLoss: -50 },
+      asset: { ...ASSET, quantity: 0, realizedGainLoss: -50, priceOnlyReturn: -0.1, totalReturn: -0.05 },
       showCurrentSection: false,
       portfolioWeight: 100,
-      xirr: -0.1,
-      xirrWithCredits: -0.05,
     })
     renderAssetSummaryTab('historic')
     expect(screen.getByText('Realized')).toBeInTheDocument()
@@ -268,8 +250,6 @@ describe('AssetSummaryTab', () => {
       asset: { ...ASSET, quantity: 0, realizedGainLoss: -50 },
       showCurrentSection: false,
       portfolioWeight: 100,
-      xirr: null,
-      xirrWithCredits: null,
     })
     renderAssetSummaryTab('historic')
     const xirrLabel = screen.getByText('XIRR')
@@ -315,13 +295,9 @@ describe('AssetSummaryTab', () => {
 
   it('renders_positive_result_percent_in_green', () => {
     setMock({
-      asset: ASSET,
+      asset: { ...ASSET, marketValue: 2500, unrealisedGain: 500 },
       price: PRICE,
       showCurrentSection: true,
-      totalCurrentValue: 2500,
-      resultPercent: 0.25,
-      totalCurrentPlusCredits: 2550,
-      resultWithCreditsPercent: 0.275,
     })
     renderAssetSummaryTab()
     const resultLabel = screen.getByText('Result %')
@@ -331,13 +307,9 @@ describe('AssetSummaryTab', () => {
 
   it('renders_negative_result_percent_in_red', () => {
     setMock({
-      asset: ASSET,
+      asset: { ...ASSET, marketValue: 1500, unrealisedGain: -500 },
       price: PRICE,
       showCurrentSection: true,
-      totalCurrentValue: 1500,
-      resultPercent: -0.25,
-      totalCurrentPlusCredits: 1550,
-      resultWithCreditsPercent: -0.225,
     })
     renderAssetSummaryTab()
     const resultLabel = screen.getByText('Result %')
@@ -355,7 +327,7 @@ describe('AssetSummaryTab', () => {
   })
 
   it('refresh_button_enabled_after_price_load', () => {
-    setMock({ asset: ASSET, price: PRICE, showCurrentSection: true, canRefresh: true, totalCurrentValue: 2500, resultPercent: 0.25, totalCurrentPlusCredits: 2550, resultWithCreditsPercent: 0.275 })
+    setMock({ asset: { ...ASSET, marketValue: 2500, unrealisedGain: 500 }, price: PRICE, showCurrentSection: true, canRefresh: true })
     renderAssetSummaryTab()
     expect(screen.getByRole('button', { name: 'Refresh' })).not.toBeDisabled()
   })
@@ -367,7 +339,7 @@ describe('AssetSummaryTab', () => {
   })
 
   it('calls_refresh_on_button_click', () => {
-    setMock({ asset: ASSET, price: PRICE, showCurrentSection: true, canRefresh: true, totalCurrentValue: 2500, resultPercent: 0.25, totalCurrentPlusCredits: 2550, resultWithCreditsPercent: 0.275 })
+    setMock({ asset: { ...ASSET, marketValue: 2500, unrealisedGain: 500 }, price: PRICE, showCurrentSection: true, canRefresh: true })
     renderAssetSummaryTab()
     fireEvent.click(screen.getByRole('button', { name: 'Refresh' }))
     expect(mockRefresh).toHaveBeenCalledTimes(1)
@@ -375,13 +347,9 @@ describe('AssetSummaryTab', () => {
 
   it('renders_dash_for_xirr_while_not_yet_computed', () => {
     setMock({
-      asset: ASSET,
+      asset: { ...ASSET, marketValue: 2500, unrealisedGain: 500 },
       price: PRICE,
       showCurrentSection: true,
-      totalCurrentValue: 2500,
-      totalCurrentPlusCredits: 2550,
-      xirr: null,
-      xirrWithCredits: null,
     })
     renderAssetSummaryTab()
     const xirrLabel = screen.getByText('XIRR')
@@ -392,13 +360,9 @@ describe('AssetSummaryTab', () => {
 
   it('renders_positive_xirr_in_green', () => {
     setMock({
-      asset: ASSET,
+      asset: { ...ASSET, marketValue: 2500, unrealisedGain: 500, priceOnlyReturn: 0.1234, totalReturn: 0.15 },
       price: PRICE,
       showCurrentSection: true,
-      totalCurrentValue: 2500,
-      totalCurrentPlusCredits: 2550,
-      xirr: 0.1234,
-      xirrWithCredits: 0.15,
     })
     renderAssetSummaryTab()
     const xirrLabel = screen.getByText('XIRR')
@@ -407,13 +371,9 @@ describe('AssetSummaryTab', () => {
 
   it('renders_negative_xirr_in_red', () => {
     setMock({
-      asset: ASSET,
+      asset: { ...ASSET, marketValue: 1500, unrealisedGain: -500, priceOnlyReturn: -0.1234, totalReturn: -0.1 },
       price: PRICE,
       showCurrentSection: true,
-      totalCurrentValue: 1500,
-      totalCurrentPlusCredits: 1550,
-      xirr: -0.1234,
-      xirrWithCredits: -0.1,
     })
     renderAssetSummaryTab()
     const xirrLabel = screen.getByText('XIRR')

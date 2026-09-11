@@ -21,7 +21,8 @@ public class AssetDetailsViewModelBrokerSummaryTests
             new StubAssetPriceService(),
             brokerBreakdownService ?? new StubBrokerBreakdownService(),
             transactionQueryService ?? new StubTransactionQueryService(),
-            new XirrCalculationService(),
+            new FakeNavigationService(),
+            new FakePortfolioAssetSummaryService(),
             new ProfitCalculationService(),
             scope);
     }

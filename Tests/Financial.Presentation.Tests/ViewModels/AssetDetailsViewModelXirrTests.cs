@@ -11,7 +11,10 @@ namespace Financial.Presentation.Tests.ViewModels;
 
 public class AssetDetailsViewModelXirrTests
 {
-    private static AssetDetailsViewModel BuildViewModel(IAssetPriceLookupService? priceService = null, InvestmentScope scope = InvestmentScope.Active)
+    private static AssetDetailsViewModel BuildViewModel(
+        IAssetPriceLookupService? priceService = null,
+        InvestmentScope scope = InvestmentScope.Active,
+        INavigationService? navigationService = null)
     {
         return new AssetDetailsViewModel(
             new StubTransactionService(),
@@ -19,17 +22,21 @@ public class AssetDetailsViewModelXirrTests
             new NotUsedAssetPriceService(),
             new StubBrokerBreakdownService(),
             new StubTransactionQueryService(),
-            new XirrCalculationService(),
+            navigationService ?? new FakeNavigationService(),
+            new FakePortfolioAssetSummaryService(),
             new ProfitCalculationService(),
             scope,
             priceService ?? new FixedPriceService(0m));
     }
 
     private static AssetDetailsDTO BuildAssetDetails(
-        IReadOnlyList<AssetCashFlowDTO> cashFlowsWithoutCredits,
-        IReadOnlyList<AssetCashFlowDTO> cashFlowsWithCredits,
         decimal totalCredits = 0m,
-        decimal realizedGainLoss = 0m) => new()
+        decimal realizedGainLoss = 0m,
+        decimal? marketValue = null,
+        decimal costOfUnitsHeld = 1000m,
+        decimal? unrealisedGain = null,
+        decimal? priceOnlyReturn = null,
+        decimal? totalReturn = null) => new()
     {
         Name = "TEST",
         BrokerName = "XPI",
@@ -40,8 +47,11 @@ public class AssetDetailsViewModelXirrTests
         AveragePrice = 1000m,
         TotalCredits = totalCredits,
         RealizedGainLoss = realizedGainLoss,
-        CashFlowsWithoutCredits = cashFlowsWithoutCredits,
-        CashFlowsWithCredits = cashFlowsWithCredits
+        MarketValue = marketValue,
+        CostOfUnitsHeld = costOfUnitsHeld,
+        UnrealisedGain = unrealisedGain,
+        PriceOnlyReturn = priceOnlyReturn,
+        TotalReturn = totalReturn,
     };
 
     [Fact]
@@ -54,28 +64,24 @@ public class AssetDetailsViewModelXirrTests
     }
 
     [Fact]
-    public async Task Xirr_AfterLoadAssetDetailsAndPriceFetched_ComputesApproximateRate()
+    public async Task Xirr_AfterPriceFetchSettles_ReflectsRefreshedAssetDetails()
     {
-        var buyDate = DateTime.Today.AddYears(-1);
-        var cashFlows = new List<AssetCashFlowDTO> { new() { Date = buyDate, Amount = -1000m } };
-        var vm = BuildViewModel(new FixedPriceService(1100m));
+        var navigationService = new FakeNavigationService { AssetDetails = BuildAssetDetails(priceOnlyReturn: 0.10m) };
+        var vm = BuildViewModel(new FixedPriceService(1100m), navigationService: navigationService);
 
-        vm.LoadAssetDetails(BuildAssetDetails(cashFlows, cashFlows));
+        vm.LoadAssetDetails(BuildAssetDetails());
         await vm.EnsureTodayInfoLoadedAsync();
 
-        vm.Xirr.Should().NotBeNull();
-        vm.Xirr!.Value.Should().BeApproximately(0.10m, 0.01m);
+        vm.Xirr.Should().Be(0.10m);
     }
 
     [Fact]
     public async Task EnsureTodayInfoLoadedAsync_HistoricScope_DoesNotFetchPriceOrChangeState()
     {
-        var buyDate = DateTime.Today.AddYears(-1);
-        var cashFlows = new List<AssetCashFlowDTO> { new() { Date = buyDate, Amount = -1000m } };
         var priceService = new FixedPriceService(1100m);
         var vm = BuildViewModel(priceService, scope: InvestmentScope.Historic);
 
-        vm.LoadAssetDetails(BuildAssetDetails(cashFlows, cashFlows));
+        vm.LoadAssetDetails(BuildAssetDetails());
         await vm.EnsureTodayInfoLoadedAsync();
 
         priceService.CallCount.Should().Be(0);
@@ -85,62 +91,43 @@ public class AssetDetailsViewModelXirrTests
     }
 
     [Fact]
-    public async Task XirrWithCredits_CountsEachCreditOnceAsADatedFlow()
+    public async Task XirrWithCredits_ReadsTheCreditsBearingSeriesSeparatelyFromXirr()
     {
-        var vm = await LoadViewModelWithOneCredit();
+        var navigationService = new FakeNavigationService
+        {
+            AssetDetails = BuildAssetDetails(totalCredits: 50m, priceOnlyReturn: 0.05m, totalReturn: 0.0513m),
+        };
+        var vm = BuildViewModel(new FixedPriceService(1000m), navigationService: navigationService);
 
-        vm.Xirr.Should().NotBeNull();
-        vm.XirrWithCredits.Should().NotBeNull();
+        vm.LoadAssetDetails(BuildAssetDetails(totalCredits: 50m));
+        await vm.EnsureTodayInfoLoadedAsync();
+
+        vm.Xirr.Should().Be(0.05m);
+        vm.XirrWithCredits.Should().Be(0.0513m);
         vm.XirrWithCredits!.Value.Should().BeGreaterThan(vm.Xirr!.Value, "a credit received improves the rate");
-        vm.XirrWithCredits.Value.Should().BeApproximately(0.0513m, 0.003m);
-    }
-
-    /// <summary>
-    /// The credits-bearing series already carries the credit as a dated flow, so pairing it with
-    /// TotalCurrentValueWithCredits counted that credit twice. For this position the inflated
-    /// figure is roughly 10.2% against a true 5.1%.
-    /// </summary>
-    [Fact]
-    public async Task XirrWithCredits_DoesNotAddCreditsToTheTerminalValue()
-    {
-        var vm = await LoadViewModelWithOneCredit();
-
-        vm.XirrWithCredits!.Value.Should().BeLessThan(0.08m, "0.1025 would mean the credit was counted twice");
     }
 
     [Fact]
-    public async Task XirrWithCredits_TerminalValueMatchesTheSeriesWithoutCredits()
+    public async Task TotalCurrentValueWithCredits_AddsTotalCreditsToMarketValue()
     {
-        var vm = await LoadViewModelWithOneCredit();
+        var navigationService = new FakeNavigationService
+        {
+            AssetDetails = BuildAssetDetails(totalCredits: 50m, marketValue: 1000m),
+        };
+        var vm = BuildViewModel(new FixedPriceService(1000m), navigationService: navigationService);
+
+        vm.LoadAssetDetails(BuildAssetDetails(totalCredits: 50m));
+        await vm.EnsureTodayInfoLoadedAsync();
 
         vm.TotalCurrentValue.Should().Be(1000m);
-        vm.TotalCurrentValueWithCredits.Should().Be(1050m, "the displayed figure is unchanged by this fix");
-    }
-
-    private static async Task<AssetDetailsViewModel> LoadViewModelWithOneCredit()
-    {
-        var buyDate = DateTime.Today.AddYears(-1);
-        var creditDate = DateTime.Today.AddMonths(-6);
-        var withoutCredits = new List<AssetCashFlowDTO> { new() { Date = buyDate, Amount = -1000m } };
-        var withCredits = new List<AssetCashFlowDTO>
-        {
-            new() { Date = buyDate, Amount = -1000m },
-            new() { Date = creditDate, Amount = 50m }
-        };
-        var vm = BuildViewModel(new FixedPriceService(1000m));
-
-        vm.LoadAssetDetails(BuildAssetDetails(withoutCredits, withCredits, totalCredits: 50m));
-        await vm.EnsureTodayInfoLoadedAsync();
-        return vm;
+        vm.TotalCurrentValueWithCredits.Should().Be(1050m);
     }
 
     [Fact]
     public void Clear_ResetsXirrToNull()
     {
-        var buyDate = DateTime.Today.AddYears(-1);
-        var cashFlows = new List<AssetCashFlowDTO> { new() { Date = buyDate, Amount = -1000m } };
         var vm = BuildViewModel(new FixedPriceService(1100m));
-        vm.LoadAssetDetails(BuildAssetDetails(cashFlows, cashFlows));
+        vm.LoadAssetDetails(BuildAssetDetails(priceOnlyReturn: 0.10m, totalReturn: 0.10m));
 
         vm.Clear();
 
@@ -151,11 +138,9 @@ public class AssetDetailsViewModelXirrTests
     [Fact]
     public void LoadAssetDetails_SetsRealizedGainLossFromDto()
     {
-        var buyDate = DateTime.Today.AddYears(-1);
-        var cashFlows = new List<AssetCashFlowDTO> { new() { Date = buyDate, Amount = -1000m } };
         var vm = BuildViewModel();
 
-        vm.LoadAssetDetails(BuildAssetDetails(cashFlows, cashFlows, realizedGainLoss: 62m));
+        vm.LoadAssetDetails(BuildAssetDetails(realizedGainLoss: 62m));
 
         vm.RealizedGainLoss.Should().Be(62m);
     }
@@ -163,10 +148,8 @@ public class AssetDetailsViewModelXirrTests
     [Fact]
     public void Clear_ResetsRealizedGainLossToZero()
     {
-        var buyDate = DateTime.Today.AddYears(-1);
-        var cashFlows = new List<AssetCashFlowDTO> { new() { Date = buyDate, Amount = -1000m } };
         var vm = BuildViewModel();
-        vm.LoadAssetDetails(BuildAssetDetails(cashFlows, cashFlows, realizedGainLoss: 62m));
+        vm.LoadAssetDetails(BuildAssetDetails(realizedGainLoss: 62m));
 
         vm.Clear();
 
@@ -183,60 +166,35 @@ public class AssetDetailsViewModelXirrTests
     }
 
     [Fact]
-    public void RealizedXirr_ComputesFromCashFlowsWithZeroTerminalValue()
+    public void RealizedXirr_ReadsPriceOnlyReturnFromDto()
     {
-        // One buy at -1000 exactly 2 years ago; the position's proceeds are already recorded
-        // as a +1210 cash flow today (fully realized) instead of a live terminal mark-to-market -
-        // matching the Web app's equivalent calculation for a closed position.
-        var buyDate = DateTime.Today.AddYears(-2);
-        var cashFlows = new List<AssetCashFlowDTO>
-        {
-            new() { Date = buyDate, Amount = -1000m },
-            new() { Date = DateTime.Today, Amount = 1210m }
-        };
+        // Historic's market value is a concrete zero (not unavailable), so the server always
+        // solves PriceOnlyReturn/TotalReturn against it - RealizedXirr is the same field Xirr
+        // reads, not a second client-side calculation.
         var vm = BuildViewModel(scope: InvestmentScope.Historic);
 
-        vm.LoadAssetDetails(BuildAssetDetails(cashFlows, cashFlows));
+        vm.LoadAssetDetails(BuildAssetDetails(priceOnlyReturn: 0.10m));
 
-        vm.RealizedXirr.Should().NotBeNull();
-        vm.RealizedXirr!.Value.Should().BeApproximately(0.10m, 0.01m);
+        vm.RealizedXirr.Should().Be(0.10m);
     }
 
     [Fact]
-    public void RealizedXirrWithCredits_UsesCreditsCashFlowsSeries()
+    public void RealizedXirrWithCredits_ReadsTotalReturnFromDto()
     {
-        var buyDate = DateTime.Today.AddYears(-2);
-        var withoutCredits = new List<AssetCashFlowDTO>
-        {
-            new() { Date = buyDate, Amount = -1000m },
-            new() { Date = DateTime.Today, Amount = 1210m }
-        };
-        var withCredits = new List<AssetCashFlowDTO>
-        {
-            new() { Date = buyDate, Amount = -1000m },
-            new() { Date = DateTime.Today.AddMonths(-6), Amount = 50m },
-            new() { Date = DateTime.Today, Amount = 1210m }
-        };
         var vm = BuildViewModel(scope: InvestmentScope.Historic);
 
-        vm.LoadAssetDetails(BuildAssetDetails(withoutCredits, withCredits, totalCredits: 50m));
+        vm.LoadAssetDetails(BuildAssetDetails(totalCredits: 50m, priceOnlyReturn: 0.10m, totalReturn: 0.12m));
 
-        vm.RealizedXirr.Should().NotBeNull();
-        vm.RealizedXirrWithCredits.Should().NotBeNull();
+        vm.RealizedXirr.Should().Be(0.10m);
+        vm.RealizedXirrWithCredits.Should().Be(0.12m);
         vm.RealizedXirrWithCredits!.Value.Should().BeGreaterThan(vm.RealizedXirr!.Value);
     }
 
     [Fact]
     public void Clear_ResetsRealizedXirrToNull()
     {
-        var buyDate = DateTime.Today.AddYears(-2);
-        var cashFlows = new List<AssetCashFlowDTO>
-        {
-            new() { Date = buyDate, Amount = -1000m },
-            new() { Date = DateTime.Today, Amount = 1210m }
-        };
         var vm = BuildViewModel(scope: InvestmentScope.Historic);
-        vm.LoadAssetDetails(BuildAssetDetails(cashFlows, cashFlows));
+        vm.LoadAssetDetails(BuildAssetDetails(priceOnlyReturn: 0.10m, totalReturn: 0.10m));
 
         vm.Clear();
 
@@ -249,7 +207,7 @@ public class AssetDetailsViewModelXirrTests
     {
         var vm = BuildViewModel();
 
-        vm.LoadAssetDetails(BuildAssetDetails([], []), realizedPortfolioWeight: 5.15m);
+        vm.LoadAssetDetails(BuildAssetDetails(), realizedPortfolioWeight: 5.15m);
 
         vm.RealizedPortfolioWeight.Should().Be(5.15m);
         vm.DisplayRealizedPortfolioWeight.Should().Be("5.15%");
@@ -260,7 +218,7 @@ public class AssetDetailsViewModelXirrTests
     {
         var vm = BuildViewModel();
 
-        vm.LoadAssetDetails(BuildAssetDetails([], []));
+        vm.LoadAssetDetails(BuildAssetDetails());
 
         vm.RealizedPortfolioWeight.Should().BeNull();
         vm.DisplayRealizedPortfolioWeight.Should().Be("—");
@@ -270,7 +228,7 @@ public class AssetDetailsViewModelXirrTests
     public void Clear_ResetsRealizedPortfolioWeightToNull()
     {
         var vm = BuildViewModel();
-        vm.LoadAssetDetails(BuildAssetDetails([], []), realizedPortfolioWeight: 5.15m);
+        vm.LoadAssetDetails(BuildAssetDetails(), realizedPortfolioWeight: 5.15m);
 
         vm.Clear();
 

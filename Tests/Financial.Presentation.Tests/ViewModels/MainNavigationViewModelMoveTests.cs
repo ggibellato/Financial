@@ -9,7 +9,7 @@ using FluentAssertions.Execution;
 
 // The doubles these tests need already exist next door; reuse beats a second copy.
 using SpyAssetDetailsViewModel = Financial.Presentation.Tests.ViewModels.MainNavigationViewModelBaseTests.SpyAssetDetailsViewModel;
-using StubNavigationService = Financial.Presentation.Tests.ViewModels.MainNavigationViewModelBaseTests.StubNavigationService;
+using MoveTestStubNavigationService = Financial.Presentation.Tests.ViewModels.MainNavigationViewModelBaseTests.StubNavigationService;
 using StubSummaryService = Financial.Presentation.Tests.ViewModels.MainNavigationViewModelBaseTests.StubSummaryService;
 using TestableNavigationViewModel = Financial.Presentation.Tests.ViewModels.MainNavigationViewModelBaseTests.TestableNavigationViewModel;
 
@@ -605,7 +605,7 @@ public class MainNavigationViewModelMoveTests
         InvestmentScope scope = InvestmentScope.Active,
         bool secondBroker = false)
     {
-        var navigationService = new StubNavigationService
+        var navigationService = new MoveTestStubNavigationService
         {
             Tree = BuildTree(assetPortfolio: "Default", assetQuantity: assetQuantity, secondBroker: secondBroker)
         };

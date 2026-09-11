@@ -56,6 +56,12 @@
   font-size: 12px;
 }
 
+.asset-summary__stale-badge {
+  color: var(--error);
+  font-style: italic;
+  font-size: 12px;
+}
+
 .asset-summary__separator {
   grid-column: 1 / -1;
   height: 1px;

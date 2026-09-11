@@ -55,6 +55,12 @@
   font-size: 11px;
 }
 
+.portfolio-summary__stale-badge {
+  color: var(--error);
+  font-style: italic;
+  font-size: 11px;
+}
+
 .portfolio-summary__credits-separator {
   border-left: 3px solid var(--accent);
   padding-left: 10px;

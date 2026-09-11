@@ -11,7 +11,11 @@ namespace Financial.Presentation.Tests.ViewModels;
 
 public class AssetDetailsViewModelPortfolioSummaryTests
 {
-    private static AssetDetailsViewModel BuildViewModel(IAssetPriceLookupService? priceService = null, InvestmentScope scope = InvestmentScope.Active)
+    private static AssetDetailsViewModel BuildViewModel(
+        IAssetPriceLookupService? priceService = null,
+        InvestmentScope scope = InvestmentScope.Active,
+        INavigationService? navigationService = null,
+        IPortfolioAssetSummaryService? portfolioAssetSummaryService = null)
     {
         return new AssetDetailsViewModel(
             new StubTransactionService(),
@@ -19,7 +23,8 @@ public class AssetDetailsViewModelPortfolioSummaryTests
             new NotUsedAssetPriceService(),
             new StubBrokerBreakdownService(),
             new StubTransactionQueryService(),
-            new XirrCalculationService(),
+            navigationService ?? new FakeNavigationService(),
+            portfolioAssetSummaryService ?? new FakePortfolioAssetSummaryService(),
             new ProfitCalculationService(),
             scope,
             priceService ?? new NeverResolvingPriceService());
@@ -47,7 +52,8 @@ public class AssetDetailsViewModelPortfolioSummaryTests
         decimal totalCredits = 0m,
         decimal currentMonthCredits = 0m,
         decimal? estimatedAnnualCredits = null,
-        decimal realizedGainLoss = 0m)
+        decimal realizedGainLoss = 0m,
+        decimal? marketValue = null)
     {
         return new PortfolioAssetSummaryItemDTO
         {
@@ -62,7 +68,8 @@ public class AssetDetailsViewModelPortfolioSummaryTests
             PortfolioWeight = 50m,
             TotalCredits = totalCredits,
             CurrentMonthCredits = currentMonthCredits,
-            EstimatedAnnualCredits = estimatedAnnualCredits
+            EstimatedAnnualCredits = estimatedAnnualCredits,
+            MarketValue = marketValue
         };
     }
 
@@ -266,13 +273,13 @@ public class AssetDetailsViewModelPortfolioSummaryTests
         var vm = BuildViewModel(new NeverResolvingPriceService());
         var items = new[]
         {
-            BuildItem(currentQuantity: 5m),
-            BuildItem(currentQuantity: 2m)
+            BuildItem(currentQuantity: 5m, marketValue: 50m),
+            BuildItem(currentQuantity: 2m, marketValue: 40m)
         };
         vm.LoadPortfolioSummary("Broker", "Portfolio", new AggregatedSummaryDTO(), [], items);
 
-        vm.PortfolioAssetSummaryRows[0].ApplyPrice(10m);  // CV = 50
-        vm.PortfolioAssetSummaryRows[1].ApplyPrice(20m);  // CV = 40
+        vm.PortfolioAssetSummaryRows[0].ApplyPrice(10m);
+        vm.PortfolioAssetSummaryRows[1].ApplyPrice(20m);
 
         vm.FooterCurrentValueDisplay.Should().Be("90.00");
     }

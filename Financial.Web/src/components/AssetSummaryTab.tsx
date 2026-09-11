@@ -37,12 +37,6 @@ export default function AssetSummaryTab() {
     canRefresh,
     refresh,
     showCurrentSection,
-    totalCurrentValue,
-    resultPercent,
-    totalCurrentPlusCredits,
-    resultWithCreditsPercent,
-    xirr,
-    xirrWithCredits,
     portfolioWeight,
   } = useAssetSummary()
 
@@ -58,8 +52,21 @@ export default function AssetSummaryTab() {
     return null
   }
 
-  const resultClass = signClass(resultPercent, 'asset-summary__value')
-  const resultWithCreditsClass = signClass(resultWithCreditsPercent, 'asset-summary__value')
+  const marketValue = asset.marketValue
+  const totalCurrentPlusCredits = marketValue === null ? null : marketValue + asset.totalCredits
+  const resultPercent =
+    marketValue === null || asset.unrealisedGain === null || asset.costOfUnitsHeld === 0
+      ? null
+      : asset.unrealisedGain / asset.costOfUnitsHeld
+  const resultWithCreditsPercent =
+    marketValue === null || asset.unrealisedGain === null || asset.costOfUnitsHeld === 0
+      ? null
+      : (asset.unrealisedGain + asset.totalCredits) / asset.costOfUnitsHeld
+  const xirr = asset.priceOnlyReturn
+  const xirrWithCredits = asset.totalReturn
+
+  const resultClass = resultPercent === null ? '' : signClass(resultPercent, 'asset-summary__value')
+  const resultWithCreditsClass = resultWithCreditsPercent === null ? '' : signClass(resultWithCreditsPercent, 'asset-summary__value')
   const xirrClass = xirr === null ? '' : signClass(xirr, 'asset-summary__value')
   const xirrWithCreditsClass = xirrWithCredits === null ? '' : signClass(xirrWithCredits, 'asset-summary__value')
 
@@ -182,30 +189,38 @@ export default function AssetSummaryTab() {
               <span className="asset-summary__label">As of</span>
               <span className="asset-summary__value">
                 {isLoadingPrice ? '—' : formatAsOf(price)}
+                {!isLoadingPrice && asset.isPriceStale && (
+                  <span className="asset-summary__stale-badge" title="This price is older than the most recent weekday.">
+                    {' '}
+                    (Stale)
+                  </span>
+                )}
               </span>
             </div>
 
-            {price && !isLoadingPrice && (
+            {!isLoadingPrice && (
               <>
                 <div className="asset-summary__field">
                   <span className="asset-summary__label">Total Current Value</span>
-                  <span className="asset-summary__value">{formatN2(totalCurrentValue)}</span>
+                  <span className="asset-summary__value">{marketValue === null ? '—' : formatN2(marketValue)}</span>
                 </div>
                 <div className="asset-summary__field">
                   <span className="asset-summary__label">Result %</span>
                   <span className={`asset-summary__value ${resultClass}`}>
-                    {formatPercentFraction(resultPercent)}
+                    {resultPercent === null ? '—' : formatPercentFraction(resultPercent)}
                   </span>
                 </div>
 
                 <div className="asset-summary__field">
                   <span className="asset-summary__label">Total Current + Credits</span>
-                  <span className="asset-summary__value">{formatN2(totalCurrentPlusCredits)}</span>
+                  <span className="asset-summary__value">
+                    {totalCurrentPlusCredits === null ? '—' : formatN2(totalCurrentPlusCredits)}
+                  </span>
                 </div>
                 <div className="asset-summary__field">
                   <span className="asset-summary__label">Result % with Credits</span>
                   <span className={`asset-summary__value ${resultWithCreditsClass}`}>
-                    {formatPercentFraction(resultWithCreditsPercent)}
+                    {resultWithCreditsPercent === null ? '—' : formatPercentFraction(resultWithCreditsPercent)}
                   </span>
                 </div>
 

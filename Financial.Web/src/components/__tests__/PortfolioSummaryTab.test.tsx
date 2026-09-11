@@ -80,9 +80,9 @@ const ITEM_1: PortfolioAssetSummaryItemDto = {
   currentMonthCredits: 0,
 }
 
-const LOADING_ROW_PRICE: RowPriceState = { isLoading: true, currentPrice: null, fetchFailed: false, isManual: false, xirr: null, isLoadingXirr: true }
-const FAILED_ROW_PRICE: RowPriceState = { isLoading: false, currentPrice: null, fetchFailed: true, isManual: false, xirr: null, isLoadingXirr: false }
-const IDLE_ROW_PRICE: RowPriceState = { isLoading: false, currentPrice: null, fetchFailed: false, isManual: false, xirr: null, isLoadingXirr: false }
+const LOADING_ROW_PRICE: RowPriceState = { isLoading: true, currentPrice: null, fetchFailed: false, isManual: false }
+const FAILED_ROW_PRICE: RowPriceState = { isLoading: false, currentPrice: null, fetchFailed: true, isManual: false }
+const IDLE_ROW_PRICE: RowPriceState = { isLoading: false, currentPrice: null, fetchFailed: false, isManual: false }
 
 function setAggregatedMock(overrides: Partial<AggregatedSummaryData>) {
   Object.assign(mockAggregatedHookValue, overrides)
@@ -281,9 +281,9 @@ describe('PortfolioSummaryTab', () => {
   })
 
   it('renders_historic_xirr_from_the_resolved_row_rate', () => {
-    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1 }
+    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, priceOnlyReturn: 0.15 }
     setAggregatedMock({ summary: SUMMARY })
-    setPortfolioMock({ items: [item], rowPrices: [{ ...IDLE_ROW_PRICE, xirr: 0.15 }] })
+    setPortfolioMock({ items: [item], rowPrices: [IDLE_ROW_PRICE] })
     renderComponent('historic')
     expect(screen.getByText(/15[.,]00%/)).toBeInTheDocument()
   })
@@ -323,15 +323,16 @@ describe('PortfolioSummaryTab', () => {
   })
 
   it('renders_current_value_when_price_resolves', () => {
-    const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false, isManual: false, xirr: null, isLoadingXirr: false }
+    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, marketValue: 262.5 }
+    const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false, isManual: false }
     setAggregatedMock({ summary: SUMMARY })
-    setPortfolioMock({ items: [ITEM_1], rowPrices: [rowPrice] })
+    setPortfolioMock({ items: [item], rowPrices: [rowPrice] })
     renderComponent()
     expect(screen.getByText(/262[.,]50/)).toBeInTheDocument()
   })
 
   it('renders_manual_badge_when_row_price_is_manual', () => {
-    const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false, isManual: true, xirr: null, isLoadingXirr: false }
+    const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false, isManual: true }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [ITEM_1], rowPrices: [rowPrice] })
     renderComponent()
@@ -339,15 +340,41 @@ describe('PortfolioSummaryTab', () => {
   })
 
   it('does_not_render_manual_badge_when_row_price_is_not_manual', () => {
-    const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false, isManual: false, xirr: null, isLoadingXirr: false }
+    const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false, isManual: false }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [ITEM_1], rowPrices: [rowPrice] })
     renderComponent()
     expect(screen.queryByText('(M)')).not.toBeInTheDocument()
   })
 
+  it('renders_stale_badge_when_row_price_is_stale', () => {
+    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, isPriceStale: true }
+    const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false, isManual: false }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item], rowPrices: [rowPrice] })
+    renderComponent()
+    expect(screen.getByText('(S)')).toBeInTheDocument()
+  })
+
+  it('does_not_render_stale_badge_when_row_price_is_not_stale', () => {
+    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, isPriceStale: false }
+    const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false, isManual: false }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item], rowPrices: [rowPrice] })
+    renderComponent()
+    expect(screen.queryByText('(S)')).not.toBeInTheDocument()
+  })
+
+  it('does_not_render_stale_badge_in_historic_scope_even_when_flagged_stale', () => {
+    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, isPriceStale: true }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item], rowPrices: [IDLE_ROW_PRICE] })
+    renderComponent('historic')
+    expect(screen.queryByText('(S)')).not.toBeInTheDocument()
+  })
+
   it('renders_current_price_when_price_resolves', () => {
-    const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false, isManual: false, xirr: null, isLoadingXirr: false }
+    const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false, isManual: false }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [ITEM_1], rowPrices: [rowPrice] })
     renderComponent()
@@ -363,9 +390,16 @@ describe('PortfolioSummaryTab', () => {
   })
 
   it('renders_correct_profit_percent', () => {
-    // costBasis = quantity x averagePrice = 25 x 10 = 250
-    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, currentQuantity: 25, averagePrice: 10, totalInvested: 250 }
-    const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false, isManual: false, xirr: null, isLoadingXirr: false }
+    // costOfUnitsHeld = 250; unrealisedGain = currentValue(262.50) - costOfUnitsHeld = 12.50
+    const item: PortfolioAssetSummaryItemDto = {
+      ...ITEM_1,
+      currentQuantity: 25,
+      averagePrice: 10,
+      totalInvested: 250,
+      costOfUnitsHeld: 250,
+      unrealisedGain: 12.5,
+    }
+    const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false, isManual: false }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [rowPrice] })
     renderComponent()
@@ -376,16 +410,18 @@ describe('PortfolioSummaryTab', () => {
   })
 
   it('renders_correct_profit_with_credits_percent', () => {
-    // currentValue = 10.5 * 25 = 262.50; costBasis = 25 x 10 = 250
-    // profitWithCreditsPercent = (262.50 + 12.50 - 250) / 250 * 100 = 10.00%
+    // unrealisedGain = currentValue(262.50) - costOfUnitsHeld(250) = 12.50
+    // profitWithCreditsPercent = (12.50 + 12.50) / 250 * 100 = 10.00%
     const item: PortfolioAssetSummaryItemDto = {
       ...ITEM_1,
       currentQuantity: 25,
       averagePrice: 10,
       totalInvested: 250,
+      costOfUnitsHeld: 250,
+      unrealisedGain: 12.5,
       totalCredits: 12.5,
     }
-    const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false, isManual: false, xirr: null, isLoadingXirr: false }
+    const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false, isManual: false }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [rowPrice] })
     renderComponent()
@@ -393,15 +429,16 @@ describe('PortfolioSummaryTab', () => {
   })
 
   it('renders_xirr_when_the_row_rate_resolves', () => {
-    const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false, isManual: false, xirr: 0.1234, isLoadingXirr: false }
+    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, priceOnlyReturn: 0.1234 }
+    const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false, isManual: false }
     setAggregatedMock({ summary: SUMMARY })
-    setPortfolioMock({ items: [ITEM_1], rowPrices: [rowPrice] })
+    setPortfolioMock({ items: [item], rowPrices: [rowPrice] })
     renderComponent()
     expect(screen.getByText(/12[.,]34%/)).toBeInTheDocument()
   })
 
-  it('renders_loading_in_xirr_while_the_row_rate_is_outstanding', () => {
-    const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false, isManual: false, xirr: null, isLoadingXirr: true }
+  it('renders_loading_in_xirr_while_the_row_price_is_outstanding', () => {
+    const rowPrice: RowPriceState = { isLoading: true, currentPrice: null, fetchFailed: false, isManual: false }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [ITEM_1], rowPrices: [rowPrice] })
     renderComponent()
@@ -418,8 +455,14 @@ describe('PortfolioSummaryTab', () => {
   })
 
   it('renders_dash_in_profit_when_total_invested_is_zero', () => {
-    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, averagePrice: 0, totalInvested: 0 }
-    const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false, isManual: false, xirr: null, isLoadingXirr: false }
+    const item: PortfolioAssetSummaryItemDto = {
+      ...ITEM_1,
+      averagePrice: 0,
+      totalInvested: 0,
+      costOfUnitsHeld: 0,
+      marketValue: 262.5,
+    }
+    const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false, isManual: false }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [rowPrice] })
     renderComponent()
@@ -429,7 +472,7 @@ describe('PortfolioSummaryTab', () => {
   })
 
   it('renders_dash_in_xirr_when_the_series_admits_no_rate', () => {
-    const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false, isManual: false, xirr: null, isLoadingXirr: false }
+    const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false, isManual: false }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [ITEM_1], rowPrices: [rowPrice] })
     renderComponent()
@@ -446,7 +489,7 @@ describe('PortfolioSummaryTab', () => {
   }[] = [
     {
       name: 'positive profit',
-      // costBasis = 25 x 8 = 200; currentValue = 10.5 x 25 = 262.50; profit% = (262.50-200)/200*100
+      // costOfUnitsHeld = 25 x 8 = 200; currentValue = 10.5 x 25 = 262.50; unrealisedGain = 62.50
       // totalCredits is non-zero so "Profit %" and "Profit % w/ Credits" render different text
       // (both would otherwise show 31.25% and make getByText ambiguous).
       setup: () => {
@@ -456,15 +499,17 @@ describe('PortfolioSummaryTab', () => {
           averagePrice: 8,
           totalInvested: 200,
           totalCredits: 10,
+          costOfUnitsHeld: 200,
+          unrealisedGain: 62.5,
         }
-        setPortfolioMock({ items: [item], rowPrices: [{ isLoading: false, currentPrice: 10.5, fetchFailed: false, isManual: false, xirr: null, isLoadingXirr: false }] })
+        setPortfolioMock({ items: [item], rowPrices: [{ isLoading: false, currentPrice: 10.5, fetchFailed: false, isManual: false }] })
       },
       expectedPercent: 31.25,
       expectedClass: 'portfolio-summary__profit--green',
     },
     {
       name: 'negative profit',
-      // costBasis = 25 x 12 = 300; currentValue = 262.50; profit% = (262.50-300)/300*100
+      // costOfUnitsHeld = 25 x 12 = 300; currentValue = 262.50; unrealisedGain = -37.50
       // totalCredits is non-zero for the same reason as the "positive profit" case above.
       setup: () => {
         const item: PortfolioAssetSummaryItemDto = {
@@ -473,16 +518,18 @@ describe('PortfolioSummaryTab', () => {
           averagePrice: 12,
           totalInvested: 300,
           totalCredits: 10,
+          costOfUnitsHeld: 300,
+          unrealisedGain: -37.5,
         }
-        setPortfolioMock({ items: [item], rowPrices: [{ isLoading: false, currentPrice: 10.5, fetchFailed: false, isManual: false, xirr: null, isLoadingXirr: false }] })
+        setPortfolioMock({ items: [item], rowPrices: [{ isLoading: false, currentPrice: 10.5, fetchFailed: false, isManual: false }] })
       },
       expectedPercent: -12.5,
       expectedClass: 'portfolio-summary__profit--red',
     },
     {
       name: 'positive profit with credits',
-      // costBasis = 25 x 12 = 300; currentValue = 262.50; totalCredits = 50
-      // profitWithCredits% = (262.50 + 50 - 300) / 300 * 100
+      // costOfUnitsHeld = 25 x 12 = 300; currentValue = 262.50; unrealisedGain = -37.50; totalCredits = 50
+      // profitWithCredits% = (-37.50 + 50) / 300 * 100
       setup: () => {
         const item: PortfolioAssetSummaryItemDto = {
           ...ITEM_1,
@@ -490,25 +537,28 @@ describe('PortfolioSummaryTab', () => {
           averagePrice: 12,
           totalInvested: 300,
           totalCredits: 50,
+          costOfUnitsHeld: 300,
+          unrealisedGain: -37.5,
         }
-        setPortfolioMock({ items: [item], rowPrices: [{ isLoading: false, currentPrice: 10.5, fetchFailed: false, isManual: false, xirr: null, isLoadingXirr: false }] })
+        setPortfolioMock({ items: [item], rowPrices: [{ isLoading: false, currentPrice: 10.5, fetchFailed: false, isManual: false }] })
       },
       expectedPercent: (262.5 + 50 - 300) / 300 * 100,
       expectedClass: 'portfolio-summary__profit--green',
     },
     {
       name: 'negative profit with credits',
-      // averagePrice is NOT overridden here, so costBasis uses ITEM_1's averagePrice (100), not totalInvested:
-      // costBasis = 25 x 100 = 2500; currentValue = 262.50; totalCredits = 10
-      // profitWithCredits% = (262.50 + 10 - 2500) / 2500 * 100
+      // averagePrice is NOT overridden here, so costOfUnitsHeld uses ITEM_1's default (2500), not totalInvested:
+      // currentValue = 262.50; unrealisedGain = 262.50 - 2500 = -2237.50; totalCredits = 10
+      // profitWithCredits% = (-2237.50 + 10) / 2500 * 100
       setup: () => {
         const item: PortfolioAssetSummaryItemDto = {
           ...ITEM_1,
           currentQuantity: 25,
           totalInvested: 400,
           totalCredits: 10,
+          unrealisedGain: -2237.5,
         }
-        setPortfolioMock({ items: [item], rowPrices: [{ isLoading: false, currentPrice: 10.5, fetchFailed: false, isManual: false, xirr: null, isLoadingXirr: false }] })
+        setPortfolioMock({ items: [item], rowPrices: [{ isLoading: false, currentPrice: 10.5, fetchFailed: false, isManual: false }] })
       },
       expectedPercent: (262.5 + 10 - 2500) / 2500 * 100,
       expectedClass: 'portfolio-summary__profit--red',
@@ -516,7 +566,8 @@ describe('PortfolioSummaryTab', () => {
     {
       name: 'positive xirr',
       setup: () => {
-        setPortfolioMock({ items: [ITEM_1], rowPrices: [{ isLoading: false, currentPrice: 10.5, fetchFailed: false, isManual: false, xirr: 0.1234, isLoadingXirr: false }] })
+        const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, priceOnlyReturn: 0.1234 }
+        setPortfolioMock({ items: [item], rowPrices: [{ isLoading: false, currentPrice: 10.5, fetchFailed: false, isManual: false }] })
       },
       expectedPercent: 12.34,
       expectedClass: 'portfolio-summary__profit--green',
@@ -524,7 +575,8 @@ describe('PortfolioSummaryTab', () => {
     {
       name: 'negative xirr',
       setup: () => {
-        setPortfolioMock({ items: [ITEM_1], rowPrices: [{ isLoading: false, currentPrice: 10.5, fetchFailed: false, isManual: false, xirr: -0.05, isLoadingXirr: false }] })
+        const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, priceOnlyReturn: -0.05 }
+        setPortfolioMock({ items: [item], rowPrices: [{ isLoading: false, currentPrice: 10.5, fetchFailed: false, isManual: false }] })
       },
       expectedPercent: -5,
       expectedClass: 'portfolio-summary__profit--red',
@@ -739,9 +791,9 @@ describe('PortfolioSummaryTab', () => {
   })
 
   it('renders_footer_current_value_as_partial_sum_with_asterisk_while_prices_loading', () => {
-    const item1: PortfolioAssetSummaryItemDto = { ...ITEM_1, currentQuantity: 5 }
+    const item1: PortfolioAssetSummaryItemDto = { ...ITEM_1, currentQuantity: 5, marketValue: 50 }
     const item2: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'MXRF11' }
-    const resolvedPrice: RowPriceState = { isLoading: false, currentPrice: 10, fetchFailed: false, isManual: false, xirr: null, isLoadingXirr: false }
+    const resolvedPrice: RowPriceState = { isLoading: false, currentPrice: 10, fetchFailed: false, isManual: false }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item1, item2], rowPrices: [resolvedPrice, LOADING_ROW_PRICE] })
     renderComponent()
@@ -750,10 +802,10 @@ describe('PortfolioSummaryTab', () => {
   })
 
   it('renders_footer_current_value_as_clean_sum_when_all_prices_resolved', () => {
-    const item1: PortfolioAssetSummaryItemDto = { ...ITEM_1, currentQuantity: 5 }
-    const item2: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'MXRF11', currentQuantity: 10 }
-    const price1: RowPriceState = { isLoading: false, currentPrice: 10, fetchFailed: false, isManual: false, xirr: null, isLoadingXirr: false }
-    const price2: RowPriceState = { isLoading: false, currentPrice: 5, fetchFailed: false, isManual: false, xirr: null, isLoadingXirr: false }
+    const item1: PortfolioAssetSummaryItemDto = { ...ITEM_1, currentQuantity: 5, marketValue: 50 }
+    const item2: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'MXRF11', currentQuantity: 10, marketValue: 50 }
+    const price1: RowPriceState = { isLoading: false, currentPrice: 10, fetchFailed: false, isManual: false }
+    const price2: RowPriceState = { isLoading: false, currentPrice: 5, fetchFailed: false, isManual: false }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item1, item2], rowPrices: [price1, price2] })
     renderComponent()
@@ -762,10 +814,10 @@ describe('PortfolioSummaryTab', () => {
   })
 
   it('renders_footer_current_value_including_manually_priced_rows', () => {
-    const item1: PortfolioAssetSummaryItemDto = { ...ITEM_1, currentQuantity: 5 }
-    const item2: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'MXRF11', currentQuantity: 10 }
-    const livePrice: RowPriceState = { isLoading: false, currentPrice: 10, fetchFailed: false, isManual: false, xirr: null, isLoadingXirr: false }
-    const manualPrice: RowPriceState = { isLoading: false, currentPrice: 5, fetchFailed: false, isManual: true, xirr: null, isLoadingXirr: false }
+    const item1: PortfolioAssetSummaryItemDto = { ...ITEM_1, currentQuantity: 5, marketValue: 50 }
+    const item2: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'MXRF11', currentQuantity: 10, marketValue: 50 }
+    const livePrice: RowPriceState = { isLoading: false, currentPrice: 10, fetchFailed: false, isManual: false }
+    const manualPrice: RowPriceState = { isLoading: false, currentPrice: 5, fetchFailed: false, isManual: true }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item1, item2], rowPrices: [livePrice, manualPrice] })
     renderComponent()
@@ -805,13 +857,13 @@ describe('PortfolioSummaryTab', () => {
   })
 
   it('sorts_rows_by_a_derived_column_using_the_underlying_current_value_not_display_text', () => {
-    // currentValue = currentPrice x quantity: item1 = 10 x 5 = 50; item2 = 2 x 100 = 200.
+    // currentValue = item.marketValue: item1 = 50; item2 = 200.
     // Sorting ascending by Current Value must put item1 first even though its formatted
     // string ("50.00") would sort after item2's ("200.00") under a naive string compare.
-    const item1: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'AAA11', currentQuantity: 5 }
-    const item2: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'BBB11', currentQuantity: 100 }
-    const price1: RowPriceState = { isLoading: false, currentPrice: 10, fetchFailed: false, isManual: false, xirr: null, isLoadingXirr: false }
-    const price2: RowPriceState = { isLoading: false, currentPrice: 2, fetchFailed: false, isManual: false, xirr: null, isLoadingXirr: false }
+    const item1: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'AAA11', currentQuantity: 5, marketValue: 50 }
+    const item2: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'BBB11', currentQuantity: 100, marketValue: 200 }
+    const price1: RowPriceState = { isLoading: false, currentPrice: 10, fetchFailed: false, isManual: false }
+    const price2: RowPriceState = { isLoading: false, currentPrice: 2, fetchFailed: false, isManual: false }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item1, item2], rowPrices: [price1, price2] })
     renderComponent()

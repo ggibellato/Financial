@@ -18,7 +18,8 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private readonly IAssetPriceHistoryService? _priceHistoryService;
     private readonly IAssetPriceService _assetPriceService;
     private readonly IBrokerBreakdownService _brokerBreakdownService;
-    private readonly IXirrCalculationService _xirrCalculationService;
+    private readonly INavigationService _navigationService;
+    private readonly IPortfolioAssetSummaryService _portfolioAssetSummaryService;
     private readonly IProfitCalculationService _profitCalculationService;
     private readonly InvestmentScope _scope;
     private readonly TodayInfoTracker _todayInfo;
@@ -64,6 +65,12 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private readonly List<(PortfolioAssetSummaryRowViewModel Row, PropertyChangedEventHandler Handler)> _rowSubscriptions = new();
     private IReadOnlyList<AssetCashFlowDTO> _cashFlowsWithCredits = Array.Empty<AssetCashFlowDTO>();
     private IReadOnlyList<AssetCashFlowDTO> _cashFlowsWithoutCredits = Array.Empty<AssetCashFlowDTO>();
+    private decimal? _marketValue;
+    private decimal _costOfUnitsHeld;
+    private decimal? _unrealisedGain;
+    private bool _isPriceStale;
+    private decimal? _priceOnlyReturn;
+    private decimal? _totalReturn;
 
     public string AssetName { get => _assetName; private set => SetProperty(ref _assetName, value); }
     public string BrokerName { get => _brokerName; private set => SetProperty(ref _brokerName, value); }
@@ -137,26 +144,27 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     public string TodayCurrentValueAsOf { get => _todayCurrentValueAsOf; private set => SetProperty(ref _todayCurrentValueAsOf, value); }
     public string TodayInfoMessage { get => _todayInfoMessage; private set => SetProperty(ref _todayInfoMessage, value); }
     public bool TodayCurrentValueIsManual { get => _todayCurrentValueIsManual; private set => SetProperty(ref _todayCurrentValueIsManual, value); }
+    public bool IsPriceStale => _isPriceStale;
 
-    public decimal TotalCurrentValue => TodayCurrentValue * Quantity;
-    public decimal ResultPercent => _profitCalculationService.CalculateResultFraction(AveragePrice, Quantity, TotalCurrentValue);
-    public decimal TotalCurrentValueWithCredits => TotalCurrentValue + TotalCredits;
-    public decimal ResultPercentWithCredits => _profitCalculationService.CalculateResultFraction(AveragePrice, Quantity, TotalCurrentValueWithCredits);
+    public decimal? TotalCurrentValue => _marketValue;
+    public decimal? ResultPercent => _unrealisedGain.HasValue && _costOfUnitsHeld != 0 ? _unrealisedGain.Value / _costOfUnitsHeld : null;
+    public decimal? TotalCurrentValueWithCredits => _marketValue.HasValue ? _marketValue.Value + TotalCredits : null;
+
+    public decimal? ResultPercentWithCredits =>
+        _unrealisedGain.HasValue && _costOfUnitsHeld != 0 ? (_unrealisedGain.Value + TotalCredits) / _costOfUnitsHeld : null;
+
     public bool HasAveragePrice => _profitCalculationService.HasCostBasis(AveragePrice, Quantity);
     public bool IsActiveScope => _scope == InvestmentScope.Active;
     public bool IsHistoricScope => _scope == InvestmentScope.Historic;
-    public decimal? Xirr => _xirrCalculationService.Calculate(_cashFlowsWithoutCredits, TotalCurrentValue);
+    public decimal? Xirr => _priceOnlyReturn;
+    public decimal? XirrWithCredits => _totalReturn;
 
-    // The credits-bearing series already carries every credit as a dated positive flow, so the
-    // terminal value is the market value alone. Adding TotalCurrentValueWithCredits here would
-    // count each credit a second time and flatter the result.
-    public decimal? XirrWithCredits => _xirrCalculationService.Calculate(_cashFlowsWithCredits, TotalCurrentValue);
-
-    // Historic (closed) positions have no live price to mark-to-market: XIRR is derived from
-    // already-realized cash flows alone, with a 0 terminal value (every buy/sell/credit is
-    // already a dated entry), matching the Web app's equivalent calculation.
-    public decimal? RealizedXirr => _xirrCalculationService.Calculate(_cashFlowsWithoutCredits, 0m);
-    public decimal? RealizedXirrWithCredits => _xirrCalculationService.Calculate(_cashFlowsWithCredits, 0m);
+    // Historic (closed) positions have no live price to mark-to-market: the server solves this
+    // against a 0 terminal value (every buy/sell/credit is already a dated entry), which is the
+    // same PriceOnlyReturn/TotalReturn field the Active scope reads - Historic's market value is
+    // a concrete zero, not unavailable, so the server always populates these.
+    public decimal? RealizedXirr => _priceOnlyReturn;
+    public decimal? RealizedXirrWithCredits => _totalReturn;
 
     public decimal? RealizedPortfolioWeight
     {
@@ -283,7 +291,8 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         IAssetPriceService assetPriceService,
         IBrokerBreakdownService brokerBreakdownService,
         ITransactionQueryService transactionQueryService,
-        IXirrCalculationService xirrCalculationService,
+        INavigationService navigationService,
+        IPortfolioAssetSummaryService portfolioAssetSummaryService,
         IProfitCalculationService profitCalculationService,
         InvestmentScope scope = InvestmentScope.Active,
         IAssetPriceLookupService? priceLookupService = null,
@@ -294,7 +303,8 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         _priceHistoryService = priceHistoryService;
         _assetPriceService = assetPriceService ?? throw new ArgumentNullException(nameof(assetPriceService));
         _brokerBreakdownService = brokerBreakdownService ?? throw new ArgumentNullException(nameof(brokerBreakdownService));
-        _xirrCalculationService = xirrCalculationService ?? throw new ArgumentNullException(nameof(xirrCalculationService));
+        _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
+        _portfolioAssetSummaryService = portfolioAssetSummaryService ?? throw new ArgumentNullException(nameof(portfolioAssetSummaryService));
         _profitCalculationService = profitCalculationService ?? throw new ArgumentNullException(nameof(profitCalculationService));
         _scope = scope;
         _todayInfo = new TodayInfoTracker(ApplyTodayInfo, ResetTodayInfo, UpdateCommandStates);
@@ -337,7 +347,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
 
         PortfolioAssetSummaryRows.Clear();
         foreach (var item in assetItems)
-            PortfolioAssetSummaryRows.Add(new PortfolioAssetSummaryRowViewModel(item, _xirrCalculationService, _profitCalculationService));
+            PortfolioAssetSummaryRows.Add(new PortfolioAssetSummaryRowViewModel(item, _profitCalculationService));
 
         FooterTotalInvested = summary.TotalInvested;
         FooterRealizedGainLoss = assetItems.Sum(i => i.RealizedGainLoss);
@@ -394,6 +404,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         RealizedGainLoss = details.RealizedGainLoss;
         RealizedPortfolioWeight = realizedPortfolioWeight;
         HasCreditsContext = true;
+        ApplyValuation(details);
 
         Transactions.Load(BuildCreditsAssetKey(details.BrokerName, details.PortfolioName, details.Name), details.Transactions);
 
@@ -419,6 +430,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         IsBrokerView = false;
         IsAssetView = false;
         TotalInvested = 0m;
+        ClearValuation();
         CancelAndResetBreakdownFetch();
         ClearAssetContext();
         Credits.Clear();
@@ -486,17 +498,32 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
 
     private async void RefreshTodayInfo() => await RefreshTodayInfoAsync(forceRefresh: true);
 
-    private Task RefreshTodayInfoAsync(bool forceRefresh)
+    private async Task RefreshTodayInfoAsync(bool forceRefresh)
     {
         if (_scope == InvestmentScope.Historic)
         {
-            return Task.CompletedTask;
+            return;
         }
 
-        return _todayInfo.RefreshAsync(
+        var brokerName = BrokerName;
+        var portfolioName = PortfolioName;
+        var assetName = AssetName;
+
+        var applied = await _todayInfo.RefreshAsync(
             forceRefresh, HasAssetContext, _priceLookupService,
-            Class, BrokerName,
-            Exchange, Ticker, AssetName, PortfolioName, AssetName, message => TodayInfoMessage = message);
+            Class, brokerName,
+            Exchange, Ticker, assetName, portfolioName, assetName, message => TodayInfoMessage = message);
+
+        if (!applied)
+        {
+            return;
+        }
+
+        var refreshed = _navigationService.GetAssetDetails(brokerName, portfolioName, assetName, _scope);
+        if (refreshed != null)
+        {
+            ApplyValuation(refreshed);
+        }
     }
 
     private void ResetTodayInfo()
@@ -526,6 +553,29 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         OnPropertyChanged(nameof(XirrWithCredits));
         OnPropertyChanged(nameof(RealizedXirr));
         OnPropertyChanged(nameof(RealizedXirrWithCredits));
+        OnPropertyChanged(nameof(IsPriceStale));
+    }
+
+    private void ApplyValuation(AssetDetailsDTO details)
+    {
+        _marketValue = details.MarketValue;
+        _costOfUnitsHeld = details.CostOfUnitsHeld;
+        _unrealisedGain = details.UnrealisedGain;
+        _isPriceStale = details.IsPriceStale;
+        _priceOnlyReturn = details.PriceOnlyReturn;
+        _totalReturn = details.TotalReturn;
+        NotifyCurrentValueChanged();
+    }
+
+    private void ClearValuation()
+    {
+        _marketValue = null;
+        _costOfUnitsHeld = 0m;
+        _unrealisedGain = null;
+        _isPriceStale = false;
+        _priceOnlyReturn = null;
+        _totalReturn = null;
+        NotifyCurrentValueChanged();
     }
 
     private void LoadAggregateCredits(string contextKey, AggregatedSummaryDTO summary, IReadOnlyList<CreditDTO> credits)
@@ -549,39 +599,67 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
 
     private void FetchRowPricesAsync(IReadOnlyList<PortfolioAssetSummaryRowViewModel> rows, CancellationToken cancellationToken, string brokerName, string portfolioName)
     {
-        foreach (var row in rows)
-        {
-            var capturedRow = row;
-            Task.Run(async () =>
-            {
-                try
-                {
-                    if (cancellationToken.IsCancellationRequested) return;
-                    if (_priceLookupService == null)
-                    {
-                        capturedRow.MarkPriceFailed();
-                        return;
-                    }
+        var rowTasks = rows.Select(row => FetchRowPriceAsync(row, cancellationToken, brokerName, portfolioName)).ToArray();
+        _ = RefreshPortfolioValuationAsync(rowTasks, cancellationToken, brokerName, portfolioName);
+    }
 
-                    var price = await _priceLookupService.GetCurrentPriceAsync(new AssetPriceRequestDTO
-                    {
-                        Exchange = capturedRow.Exchange,
-                        Ticker = capturedRow.Ticker,
-                        AssetClass = capturedRow.Class,
-                        BrokerName = brokerName,
-                        Name = capturedRow.AssetName,
-                        PortfolioName = portfolioName,
-                        AssetName = capturedRow.AssetName
-                    });
-                    if (cancellationToken.IsCancellationRequested) return;
-                    capturedRow.ApplyPrice(price.Price, price.IsManual);
-                }
-                catch
+    private Task FetchRowPriceAsync(PortfolioAssetSummaryRowViewModel row, CancellationToken cancellationToken, string brokerName, string portfolioName)
+    {
+        return Task.Run(async () =>
+        {
+            try
+            {
+                if (cancellationToken.IsCancellationRequested) return;
+                if (_priceLookupService == null)
                 {
-                    if (!cancellationToken.IsCancellationRequested)
-                        capturedRow.MarkPriceFailed();
+                    row.MarkPriceFailed();
+                    return;
                 }
-            }, cancellationToken);
+
+                var price = await _priceLookupService.GetCurrentPriceAsync(new AssetPriceRequestDTO
+                {
+                    Exchange = row.Exchange,
+                    Ticker = row.Ticker,
+                    AssetClass = row.Class,
+                    BrokerName = brokerName,
+                    Name = row.AssetName,
+                    PortfolioName = portfolioName,
+                    AssetName = row.AssetName
+                });
+                if (cancellationToken.IsCancellationRequested) return;
+                row.ApplyPrice(price.Price, price.IsManual);
+            }
+            catch
+            {
+                if (!cancellationToken.IsCancellationRequested)
+                    row.MarkPriceFailed();
+            }
+        }, cancellationToken);
+    }
+
+    // Each row fetch also records its price into the asset's price history server-side, so
+    // once every row has settled the grid re-reads the server-computed valuation rather than
+    // deriving it here.
+    private async Task RefreshPortfolioValuationAsync(Task[] rowTasks, CancellationToken cancellationToken, string brokerName, string portfolioName)
+    {
+        await Task.WhenAll(rowTasks).ConfigureAwait(false);
+        if (cancellationToken.IsCancellationRequested) return;
+
+        try
+        {
+            var refreshed = _portfolioAssetSummaryService.GetPortfolioAssetsSummary(brokerName, portfolioName, _scope);
+            if (cancellationToken.IsCancellationRequested) return;
+
+            var byName = refreshed.ToDictionary(item => item.AssetName);
+            foreach (var row in PortfolioAssetSummaryRows)
+            {
+                if (byName.TryGetValue(row.AssetName, out var item))
+                    row.ApplyValuation(item);
+            }
+            OnPropertyChanged(nameof(FooterCurrentValueDisplay));
+        }
+        catch
+        {
         }
     }
 
