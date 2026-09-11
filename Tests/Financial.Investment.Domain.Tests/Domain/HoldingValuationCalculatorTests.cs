@@ -95,6 +95,39 @@ public class HoldingValuationCalculatorTests
     }
 
     [Fact]
+    public void Calculate_ZeroQuantityAndNoPrice_MarketValueIsZero_NotUnavailable()
+    {
+        var result = HoldingValuationCalculator.Calculate(0m, 5m, price: null, new DateOnly(2026, 9, 10));
+
+        result.MarketValue.Should().Be(0m);
+    }
+
+    [Fact]
+    public void Calculate_ZeroQuantityAndNoPrice_UnrealisedGainIsZero()
+    {
+        var result = HoldingValuationCalculator.Calculate(0m, 5m, price: null, new DateOnly(2026, 9, 10));
+
+        result.UnrealisedGain.Should().Be(0m);
+    }
+
+    [Fact]
+    public void Calculate_ZeroQuantityAndNoPrice_ReportsNoPriceAsOfDateAndIsNeverStale()
+    {
+        var result = HoldingValuationCalculator.Calculate(0m, 5m, price: null, new DateOnly(2026, 9, 10));
+
+        result.PriceAsOfDate.Should().BeNull();
+        result.IsPriceStale.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Calculate_NonZeroQuantityAndNoPrice_StillReportsUnavailable()
+    {
+        var result = HoldingValuationCalculator.Calculate(10m, 5m, price: null, new DateOnly(2026, 9, 10));
+
+        result.MarketValue.Should().BeNull();
+    }
+
+    [Fact]
     public void NotMarkedToMarket_MarketValueIsZero_NotNull()
     {
         var result = HoldingValuationCalculator.NotMarkedToMarket(28m, 71.5m);

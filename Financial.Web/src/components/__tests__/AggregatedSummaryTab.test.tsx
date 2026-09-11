@@ -43,6 +43,11 @@ const SUMMARY: AggregatedSummaryDto = {
   totalSold: 3200.0,
   totalCredits: 842.3,
   totalInvested: 12220.5,
+  marketValue: 18000.0,
+  holdingCount: 3,
+  unvaluedHoldingCount: 0,
+  priceOnlyReturn: 0.08,
+  totalReturn: 0.1,
 }
 
 function setMock(overrides: Partial<AggregatedSummaryData>) {
@@ -126,6 +131,11 @@ describe('AggregatedSummaryTab', () => {
         totalSold: 3200.1234,
         totalCredits: 842.9999,
         totalInvested: 12220.5678,
+        marketValue: 18000.1234,
+        holdingCount: 3,
+        unvaluedHoldingCount: 0,
+        priceOnlyReturn: 0.08,
+        totalReturn: 0.1,
       },
     })
     renderComponent()
@@ -136,7 +146,19 @@ describe('AggregatedSummaryTab', () => {
   })
 
   it('renders_zero_values_without_error', () => {
-    setMock({ summary: { totalBought: 0, totalSold: 0, totalCredits: 0, totalInvested: 0 } })
+    setMock({
+      summary: {
+        totalBought: 0,
+        totalSold: 0,
+        totalCredits: 0,
+        totalInvested: 0,
+        marketValue: 0,
+        holdingCount: 0,
+        unvaluedHoldingCount: 0,
+        priceOnlyReturn: null,
+        totalReturn: null,
+      },
+    })
     renderComponent()
     expect(screen.getByText('Total Bought')).toBeInTheDocument()
     expect(screen.getByText('Total Sold')).toBeInTheDocument()

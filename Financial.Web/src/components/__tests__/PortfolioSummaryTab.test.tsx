@@ -46,6 +46,11 @@ const SUMMARY: AggregatedSummaryDto = {
   totalSold: 3200.0,
   totalCredits: 842.3,
   totalInvested: 12220.5,
+  marketValue: 18000.0,
+  holdingCount: 3,
+  unvaluedHoldingCount: 0,
+  priceOnlyReturn: 0.08,
+  totalReturn: 0.1,
 }
 
 const ITEM_1: PortfolioAssetSummaryItemDto = {

@@ -373,28 +373,28 @@ both rates.
 
 ### Increment 10 — Level aggregation + AggregatedSummaryDTO fields
 
-- [ ] T057 [P] [US5] Write Application tests for the cash-flow concatenation helper: plain
+- [X] T057 [P] [US5] Write Application tests for the cash-flow concatenation helper: plain
       concatenation, no same-date merging (R5 — merging can only reduce the XIRR gate's entry count and
       can turn a solvable sign-changed series into a null)
-- [ ] T058 [US5] Implement the concatenation helper alongside
+- [X] T058 [US5] Implement the concatenation helper alongside
       `Financial.Investment.Application/Services/AssetCashFlowBuilder.cs`, aggregating a portfolio's or
       broker's holdings' dated amounts both excluding and including income (FR-042, FR-067, FR-068; R5)
-- [ ] T059 [US5] Add an `asOf` overload to
+- [X] T059 [US5] Add an `asOf` overload to
       `Financial.Investment.Application/Interfaces/IXirrCalculationService.cs` and
       `Financial.Investment.Application/Services/XirrCalculationService.cs`; the existing two-arg
       member delegates with `DateTime.Today` — `XirrController` and its OpenAPI path stay unchanged (R5)
-- [ ] T060 [US5] Add `MarketValue` (`decimal?`), `HoldingCount` (`int`), `UnvaluedHoldingCount` (`int`),
+- [X] T060 [US5] Add `MarketValue` (`decimal?`), `HoldingCount` (`int`), `UnvaluedHoldingCount` (`int`),
       `PriceOnlyReturn` (`decimal?`), `TotalReturn` (`decimal?`) to
       `Financial.Investment.Application/DTOs/AggregatedSummaryDTO.cs` (FR-038..FR-043; R6)
-- [ ] T061 [US5] Wire `Financial.Investment.Application/Services/SummaryService.cs` to populate the
+- [X] T061 [US5] Wire `Financial.Investment.Application/Services/SummaryService.cs` to populate the
       five fields per the state table in data-model.md §5: `MarketValue` null only when holdings exist
       and none could be valued, `0m` with `HoldingCount == 0` for an empty portfolio; both returns
       `null` whenever `UnvaluedHoldingCount > 0`; no all-brokers aggregation entry point (FR-039..FR-045;
       R6)
-- [ ] T062 [US5] Extend `Tests/Financial.Investment.Application.Tests/Services/SummaryServiceTests.cs`
+- [X] T062 [US5] Extend `Tests/Financial.Investment.Application.Tests/Services/SummaryServiceTests.cs`
       for the four level-total states (empty / fully valued / partially valued / nothing valuable) and
       confirm no total spans more than one broker (FR-045)
-- [ ] T063 [US5] Regenerate the OpenAPI snapshot and `Financial.Web` generated types for the
+- [X] T063 [US5] Regenerate the OpenAPI snapshot and `Financial.Web` generated types for the
       `AggregatedSummaryDTO` additions; commit both
 
 ### Increment 11 — Both front ends render level totals and returns

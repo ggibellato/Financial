@@ -23,6 +23,12 @@ internal static class AssetCashFlowBuilder
         return flows;
     }
 
+    public static IReadOnlyList<AssetCashFlowDTO> ConcatenateWithCredits(IEnumerable<Asset> assets) =>
+        assets.SelectMany(BuildWithCredits).ToList();
+
+    public static IReadOnlyList<AssetCashFlowDTO> ConcatenateWithoutCredits(IEnumerable<Asset> assets) =>
+        assets.SelectMany(BuildWithoutCredits).ToList();
+
     private static List<AssetCashFlowDTO> BuildFromTransactions(Asset asset)
     {
         var flows = new List<AssetCashFlowDTO>();

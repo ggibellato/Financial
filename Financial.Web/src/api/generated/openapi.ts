@@ -5525,6 +5525,12 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         AggregatedSummaryDTO: {
+            /** Format: int32 */
+            holdingCount: number;
+            /** Format: double */
+            marketValue: null | number;
+            /** Format: double */
+            priceOnlyReturn: null | number;
             /** Format: double */
             totalBought: number;
             /** Format: double */
@@ -5532,7 +5538,11 @@ export interface components {
             /** Format: double */
             totalInvested: number;
             /** Format: double */
+            totalReturn: null | number;
+            /** Format: double */
             totalSold: number;
+            /** Format: int32 */
+            unvaluedHoldingCount: number;
         };
         ArchiveAssetRequestDTO: {
             assetName: string;
