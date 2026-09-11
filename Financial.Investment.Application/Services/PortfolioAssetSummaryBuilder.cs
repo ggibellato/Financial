@@ -17,7 +17,9 @@ internal static class PortfolioAssetSummaryBuilder
         var computed = assets
             .Select(a => ComputeAssetData(a, today, scope, holdingValuationService))
             .ToList();
-        var portfolioWeightBasis = computed.Sum(c => c.WeightBasis);
+        var portfolioWeightBasis = computed
+            .Where(c => c.WeightBasis.HasValue)
+            .Sum(c => c.WeightBasis!.Value);
 
         return computed
             .OrderBy(c => c.AssetName, StringComparer.CurrentCultureIgnoreCase)
@@ -29,10 +31,10 @@ internal static class PortfolioAssetSummaryBuilder
         Asset asset, DateTime today, InvestmentScope scope, IHoldingValuationService holdingValuationService)
     {
         var totals = AssetTotals.For(asset);
-        var bases = AssetAmountBases.For(scope, totals);
+        var valuation = holdingValuationService.GetValuation(asset, scope);
+        var bases = AssetAmountBases.For(scope, totals, valuation.MarketValue);
         var realizedGainLoss = asset.RealizedGainLoss;
         var averageSellPrice = asset.AverageSellPrice;
-        var valuation = holdingValuationService.GetValuation(asset, scope);
 
         var firstBuyDate = asset.Transactions
             .Where(t => t.Type == Transaction.TransactionType.Buy)
@@ -54,7 +56,7 @@ internal static class PortfolioAssetSummaryBuilder
             creditsAnalysis.CurrentMonthCredits);
     }
 
-    private static PortfolioAssetSummaryItemDTO ToDTO(AssetComputedData c, decimal weight) =>
+    private static PortfolioAssetSummaryItemDTO ToDTO(AssetComputedData c, decimal? weight) =>
         new()
         {
             AssetName = c.AssetName,
@@ -88,13 +90,16 @@ internal static class PortfolioAssetSummaryBuilder
             CurrentMonthCredits = c.CurrentMonthCredits
         };
 
-    private static decimal CalculateWeight(decimal weightBasis, decimal portfolioWeightBasis) =>
-        portfolioWeightBasis == 0m ? 0m : weightBasis / portfolioWeightBasis * 100m;
+    private static decimal? CalculateWeight(decimal? weightBasis, decimal portfolioWeightBasis)
+    {
+        if (weightBasis is null) return null;
+        return portfolioWeightBasis == 0m ? 0m : weightBasis.Value / portfolioWeightBasis * 100m;
+    }
 
     private sealed record AssetComputedData(
         string AssetName, string Ticker, string Exchange, GlobalAssetClass Class,
         DateTime? FirstInvestmentDate, decimal CurrentQuantity, decimal AveragePrice, decimal? AverageSellPrice,
-        decimal TotalBought, decimal TotalSold, decimal TotalInvested, decimal RealizedGainLoss, decimal WeightBasis,
+        decimal TotalBought, decimal TotalSold, decimal TotalInvested, decimal RealizedGainLoss, decimal? WeightBasis,
         decimal TotalCredits, IReadOnlyList<AssetCashFlowDTO> CashFlows, HoldingValuation Valuation,
         decimal LastMonthCredits, string? LastCreditMonth, decimal? LastMonthCreditsPercent,
         int? CreditFrequencyPerYear, decimal? EstimatedAnnualCredits, decimal? EstimatedAnnualPercent,
