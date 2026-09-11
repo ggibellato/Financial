@@ -157,15 +157,22 @@
                     </StackPanel>
                     <TextBlock Grid.Row="11" Grid.Column="2" Text="As of:" FontWeight="Bold" Margin="20,5,0,5"
                                Visibility="{Binding AssetDetails.IsActiveScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                    <TextBlock Grid.Row="11" Grid.Column="3"
-                               Text="{Binding AssetDetails.TodayCurrentValueAsOf, Mode=OneWay}"
-                               Margin="10,5"
-                               Visibility="{Binding AssetDetails.IsActiveScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                    <StackPanel Grid.Row="11" Grid.Column="3"
+                                Orientation="Horizontal"
+                                Margin="10,5"
+                                Visibility="{Binding AssetDetails.IsActiveScope, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <TextBlock Text="{Binding AssetDetails.TodayCurrentValueAsOf, Mode=OneWay}"/>
+                        <TextBlock Text=" (Stale)"
+                                   Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                                   FontStyle="Italic"
+                                   ToolTip="This price is older than the most recent weekday."
+                                   Visibility="{Binding AssetDetails.IsPriceStale, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                    </StackPanel>
 
                     <TextBlock Grid.Row="12" Grid.Column="0" Text="Total Current Value:" FontWeight="Bold" Margin="0,5"
                                Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
                     <TextBlock Grid.Row="12" Grid.Column="1"
-                               Text="{Binding AssetDetails.TotalCurrentValue, Mode=OneWay, StringFormat=N2}"
+                               Text="{Binding AssetDetails.TotalCurrentValue, Mode=OneWay, StringFormat=N2, TargetNullValue='—'}"
                                TextAlignment="Right"
                                FontFamily="Consolas"
                                Margin="10,5"
@@ -173,7 +180,7 @@
                     <TextBlock Grid.Row="12" Grid.Column="2" Text="Result %:" FontWeight="Bold" Margin="20,5,0,5"
                                Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
                     <TextBlock Grid.Row="12" Grid.Column="3"
-                               Text="{Binding AssetDetails.ResultPercent, Mode=OneWay, StringFormat=P2}"
+                               Text="{Binding AssetDetails.ResultPercent, Mode=OneWay, StringFormat=P2, TargetNullValue='—'}"
                                TextAlignment="Right"
                                FontFamily="Consolas"
                                Foreground="{Binding AssetDetails.ResultPercent, Converter={StaticResource SignedValueToBrushConverter}}"
@@ -183,7 +190,7 @@
                     <TextBlock Grid.Row="13" Grid.Column="0" Text="Total Current + Credits:" FontWeight="Bold" Margin="0,5"
                                Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
                     <TextBlock Grid.Row="13" Grid.Column="1"
-                               Text="{Binding AssetDetails.TotalCurrentValueWithCredits, Mode=OneWay, StringFormat=N2}"
+                               Text="{Binding AssetDetails.TotalCurrentValueWithCredits, Mode=OneWay, StringFormat=N2, TargetNullValue='—'}"
                                TextAlignment="Right"
                                FontFamily="Consolas"
                                Margin="10,5"
@@ -191,7 +198,7 @@
                     <TextBlock Grid.Row="13" Grid.Column="2" Text="Result %:" FontWeight="Bold" Margin="20,5,0,5"
                                Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
                     <TextBlock Grid.Row="13" Grid.Column="3"
-                               Text="{Binding AssetDetails.ResultPercentWithCredits, Mode=OneWay, StringFormat=P2}"
+                               Text="{Binding AssetDetails.ResultPercentWithCredits, Mode=OneWay, StringFormat=P2, TargetNullValue='—'}"
                                TextAlignment="Right"
                                FontFamily="Consolas"
                                Foreground="{Binding AssetDetails.ResultPercentWithCredits, Converter={StaticResource SignedValueToBrushConverter}}"
@@ -455,18 +462,40 @@
                                 <DataGridTemplateColumn Header="Current Price" SortMemberPath="CurrentPrice" Width="{Binding Source={StaticResource ColWidths}, Path=CurrentPrice, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <TextBlock TextAlignment="Right" Padding="8" VerticalAlignment="Center">
-                                                <TextBlock.Style>
-                                                    <Style TargetType="TextBlock">
-                                                        <Setter Property="Text" Value="{Binding DisplayCurrentPrice}"/>
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding IsLoadingPrice}" Value="True">
-                                                                <Setter Property="Text" Value="..."/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </TextBlock.Style>
-                                            </TextBlock>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="8" VerticalAlignment="Center">
+                                                <TextBlock TextAlignment="Right">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Text" Value="{Binding DisplayCurrentPrice}"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsLoadingPrice}" Value="True">
+                                                                    <Setter Property="Text" Value="..."/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                                <TextBlock Text=" (S)"
+                                                           Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                                                           FontStyle="Italic"
+                                                           ToolTip="This price is older than the most recent weekday.">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                            <Style.Triggers>
+                                                                <MultiDataTrigger>
+                                                                    <MultiDataTrigger.Conditions>
+                                                                        <Condition Binding="{Binding IsPriceStale}" Value="True"/>
+                                                                        <Condition Binding="{Binding IsLoadingPrice}" Value="False"/>
+                                                                        <Condition Binding="{Binding PriceFetchFailed}" Value="False"/>
+                                                                    </MultiDataTrigger.Conditions>
+                                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                                </MultiDataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </StackPanel>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>

@@ -38,6 +38,7 @@ public class AssetPriceFetchViewModel : ViewModelBase
 
     public ObservableCollection<AssetPriceFetchResult> Results { get; } = new();
     public RelayCommand FetchCommand { get; }
+    public event EventHandler? FetchCompleted;
 
     public AssetPriceFetchViewModel(
         INavigationService navigationService,
@@ -112,6 +113,7 @@ public class AssetPriceFetchViewModel : ViewModelBase
             IsFetching = false;
             ProgressPercent = 0;
             FetchCommand.RaiseCanExecuteChanged();
+            FetchCompleted?.Invoke(this, EventArgs.Empty);
         }
     }
 }

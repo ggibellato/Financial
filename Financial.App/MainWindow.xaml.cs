@@ -67,6 +67,12 @@ namespace Financial.Presentation.App
             _navigationViewModel = navigationViewModel ?? throw new ArgumentNullException(nameof(navigationViewModel));
             _navigationViewModelHistoric = navigationViewModelHistoric ?? throw new ArgumentNullException(nameof(navigationViewModelHistoric));
 
+            assetPriceView.ViewModel.FetchCompleted += (_, _) =>
+            {
+                _navigationViewModel.ReloadSelectedNodeDetails();
+                _navigationViewModelHistoric.ReloadSelectedNodeDetails();
+            };
+
             InitializeComponent();
 
             var viewsByKey = new Dictionary<string, object>

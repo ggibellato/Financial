@@ -17,7 +17,8 @@ public class AssetDetailsViewModelPriceHistoryChartTests
             new StubAssetPriceService(),
             new StubBrokerBreakdownService(),
             new StubTransactionQueryService(),
-            new XirrCalculationService(),
+            new FakeNavigationService(),
+            new FakePortfolioAssetSummaryService(),
             new ProfitCalculationService());
     }
 

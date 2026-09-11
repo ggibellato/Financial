@@ -4,6 +4,9 @@ public interface IMainNavigationViewModel
 {
     IAssetDetailsViewModel AssetDetails { get; }
 
+    /// <summary>Reloads whichever node is currently selected, picking up freshly fetched prices.</summary>
+    void ReloadSelectedNodeDetails();
+
     /// <summary>Whether dropping one node on another would do anything.</summary>
     bool CanAcceptDrop(TreeNodeViewModel? dragged, TreeNodeViewModel? target);
 

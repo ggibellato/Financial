@@ -63,7 +63,9 @@ public sealed class TodayInfoTracker
         ?? price.AsOfDate?.ToString("d")
         ?? "—";
 
-    public async Task RefreshAsync(
+    /// <returns>True when a freshly fetched price was applied - false when the refresh was
+    /// skipped, superseded by a newer asset selection, or failed.</returns>
+    public async Task<bool> RefreshAsync(
         bool forceRefresh,
         bool hasAssetContext,
         IAssetPriceLookupService? priceService,
@@ -79,13 +81,13 @@ public sealed class TodayInfoTracker
         if (!hasAssetContext)
         {
             setMessage("Select an asset to load current values.");
-            return;
+            return false;
         }
 
         if (priceService == null)
         {
             setMessage("Current value service is not available.");
-            return;
+            return false;
         }
 
         var isCryptocurrency = assetClass == GlobalAssetClass.Cryptocurrency;
@@ -94,7 +96,7 @@ public sealed class TodayInfoTracker
         if (string.IsNullOrWhiteSpace(ticker))
         {
             setMessage("Asset exchange or ticker is missing.");
-            return;
+            return false;
         }
 
         if (isBond)
@@ -102,13 +104,13 @@ public sealed class TodayInfoTracker
             if (string.IsNullOrWhiteSpace(name))
             {
                 setMessage("Asset name is missing.");
-                return;
+                return false;
             }
         }
         else if (!isCryptocurrency && string.IsNullOrWhiteSpace(exchange))
         {
             setMessage("Asset exchange or ticker is missing.");
-            return;
+            return false;
         }
 
         await _lock.WaitAsync();
@@ -117,7 +119,7 @@ public sealed class TodayInfoTracker
         {
             if (!forceRefresh && _attempted)
             {
-                return;
+                return false;
             }
 
             _attempted = true;
@@ -138,22 +140,24 @@ public sealed class TodayInfoTracker
             var price = await priceService.GetCurrentPriceAsync(request);
             if (!string.Equals(_assetKey, assetKey, StringComparison.Ordinal))
             {
-                return;
+                return false;
             }
 
             var asOf = FormatAsOf(price);
             var snapshot = new TodayInfoSnapshot(price.Price, asOf, price.IsManual);
             _applySnapshot(snapshot);
             _cache[assetKey] = snapshot;
+            return true;
         }
         catch (Exception ex)
         {
             if (!string.Equals(_assetKey, assetKey, StringComparison.Ordinal))
             {
-                return;
+                return false;
             }
 
             setMessage($"Error: {ex.Message}");
+            return false;
         }
         finally
         {

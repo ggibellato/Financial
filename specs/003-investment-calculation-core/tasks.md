@@ -334,25 +334,25 @@ the as-of date. Open an unpriced holding → both say unavailable, not nought.
 
 ### Increment 9 — Both front ends switch to server-computed valuation, incl. refresh-after-fetch
 
-- [ ] T051 [US4] Remove the ten sites (5 web, 2 desktop deriving market value; 3 further deriving cost
+- [X] T051 [US4] Remove the ten sites (5 web, 2 desktop deriving market value; 3 further deriving cost
       of units held — SC-007) that derive a value from a price and a quantity of their own, replacing
       each with the corresponding server-computed DTO field from T048 (FR-036, FR-061) — search
       `Financial.Web/src` and `Financial.App/ViewModels/Investment` for price×quantity-shaped
       arithmetic before editing
-- [ ] T052 [US4] Render unavailable (`—`) and stale-price markers distinctly from computed values at
+- [X] T052 [US4] Render unavailable (`—`) and stale-price markers distinctly from computed values at
       every site touched in T051, in both front ends (FR-030, FR-032, FR-064)
-- [ ] T053 [US4] Wire a summary refetch after a bulk price fetch completes in both the
+- [X] T053 [US4] Wire a summary refetch after a bulk price fetch completes in both the
       `Financial.Web` price-fetch hook and the `Financial.App`
       `AssetPriceFetchViewModel`/`AssetPriceFetchResult` path, so valuation reflects a newly fetched
       price without further user action (FR-035, FR-063 — flagged in research.md as the step most
       likely to be missed)
-- [ ] T054 [US4] Update `Financial.Web/src/components/__tests__/AssetSummaryTab.test.tsx`,
+- [X] T054 [US4] Update `Financial.Web/src/components/__tests__/AssetSummaryTab.test.tsx`,
       `PortfolioSummaryTab.test.tsx` and the corresponding WPF view-model tests to assert
       server-computed values render verbatim with no remaining client arithmetic
-- [ ] T055 [US4] Add a parity AC-tracing test confirming `Financial.Web` and `Financial.App` report
+- [X] T055 [US4] Add a parity AC-tracing test confirming `Financial.Web` and `Financial.App` report
       identical market value, cost of units held, unrealised gain and both returns for the same holding,
       to the last digit displayed, each naming the as-of date (FR-060, SC-006)
-- [ ] T056 [US4] Run quickstart Scenario 4 against the temp copy: a priced holding parity-checked in
+- [X] T056 [US4] Run quickstart Scenario 4 against the temp copy: a priced holding parity-checked in
       both front ends; one of the 7 unpriced holdings reports unavailable in both, never nought; a
       Friday-priced holding read on Monday (current) vs. Tuesday (stale), pinned with `FakeTimeProvider`
 

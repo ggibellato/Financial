@@ -25,44 +25,28 @@ function getProfitClass(value: number): string {
   return signClass(value, 'portfolio-summary__profit')
 }
 
-function computeCostBasis(item: PortfolioAssetSummaryItemDto): number {
-  return item.currentQuantity * item.averagePrice
-}
-
-function computeCurrentValue(
-  item: PortfolioAssetSummaryItemDto,
-  rowPrice: RowPriceState,
-  isHistoric: boolean,
-): number | null {
-  return !isHistoric && rowPrice.currentPrice !== null ? rowPrice.currentPrice * item.currentQuantity : null
+function computeCurrentValue(item: PortfolioAssetSummaryItemDto, isHistoric: boolean): number | null {
+  return isHistoric ? null : item.marketValue
 }
 
 // Historic positions are closed: "Profit %" reflects the realized capital gain alone
 // (credits excluded, matching the active-scope semantic where credits are a separate
 // "w/ Credits" column), while "Profit % w/ Credits" uses the full realized gain/loss.
-function computeProfitPercent(
-  item: PortfolioAssetSummaryItemDto,
-  currentValue: number | null,
-  isHistoric: boolean,
-): number | null {
+function computeProfitPercent(item: PortfolioAssetSummaryItemDto, isHistoric: boolean): number | null {
   if (isHistoric) {
     return item.totalBought !== 0 ? ((item.realizedGainLoss - item.totalCredits) / item.totalBought) * 100 : null
   }
-  const costBasis = computeCostBasis(item)
-  return currentValue !== null && costBasis !== 0 ? ((currentValue - costBasis) / costBasis) * 100 : null
+  return item.unrealisedGain !== null && item.costOfUnitsHeld !== 0
+    ? (item.unrealisedGain / item.costOfUnitsHeld) * 100
+    : null
 }
 
-function computeProfitWithCreditsPercent(
-  item: PortfolioAssetSummaryItemDto,
-  currentValue: number | null,
-  isHistoric: boolean,
-): number | null {
+function computeProfitWithCreditsPercent(item: PortfolioAssetSummaryItemDto, isHistoric: boolean): number | null {
   if (isHistoric) {
     return item.totalBought !== 0 ? (item.realizedGainLoss / item.totalBought) * 100 : null
   }
-  const costBasis = computeCostBasis(item)
-  return currentValue !== null && costBasis !== 0
-    ? ((currentValue + item.totalCredits - costBasis) / costBasis) * 100
+  return item.unrealisedGain !== null && item.costOfUnitsHeld !== 0
+    ? ((item.unrealisedGain + item.totalCredits) / item.costOfUnitsHeld) * 100
     : null
 }
 
@@ -76,8 +60,6 @@ const DEFAULT_ROW_PRICE: RowPriceState = {
   currentPrice: null,
   fetchFailed: false,
   isManual: false,
-  xirr: null,
-  isLoadingXirr: false,
 }
 
 function renderGatedCell(
@@ -98,13 +80,10 @@ interface AssetRowProps {
 }
 
 function AssetRow({ item, rowPrice, isHistoric }: AssetRowProps) {
-  const currentValue = computeCurrentValue(item, rowPrice, isHistoric)
-  const profitPercent = computeProfitPercent(item, currentValue, isHistoric)
-  const profitWithCreditsPercent = computeProfitWithCreditsPercent(item, currentValue, isHistoric)
-
-  // Solved server-side by POST /xirr/calculate, the same solver the asset tab uses, so a
-  // correction to it cannot reach one surface and miss the other.
-  const xirrValue = rowPrice.xirr
+  const currentValue = computeCurrentValue(item, isHistoric)
+  const profitPercent = computeProfitPercent(item, isHistoric)
+  const profitWithCreditsPercent = computeProfitWithCreditsPercent(item, isHistoric)
+  const xirrValue = item.priceOnlyReturn
 
   const priceValue = isHistoric ? item.averageSellPrice : rowPrice.currentPrice
   const cellLoading = !isHistoric && rowPrice.isLoading
@@ -138,7 +117,15 @@ function AssetRow({ item, rowPrice, isHistoric }: AssetRowProps) {
       )}
       <td>{formatN2(item.totalCredits)}</td>
       <td>{formatN2(item.averagePrice)}</td>
-      <td>{renderGatedCell(cellLoading, cellUnavailable, priceValue, v => formatN2(v))}</td>
+      <td>
+        {renderGatedCell(cellLoading, cellUnavailable, priceValue, v => formatN2(v))}
+        {!isHistoric && !cellLoading && !cellUnavailable && item.isPriceStale && (
+          <span className="portfolio-summary__stale-badge" title="This price is older than the most recent weekday.">
+            {' '}
+            (S)
+          </span>
+        )}
+      </td>
       <td>
         {renderGatedCell(cellLoading, cellUnavailable, profitPercent, v => (
           <span className={getProfitClass(v)}>{formatN2(v)}%</span>
@@ -150,7 +137,7 @@ function AssetRow({ item, rowPrice, isHistoric }: AssetRowProps) {
         ))}
       </td>
       <td>
-        {renderGatedCell(rowPrice.isLoadingXirr, false, xirrValue, v => (
+        {renderGatedCell(cellLoading, false, xirrValue, v => (
           <span className={getProfitClass(v)}>{formatN2(v * 100)}%</span>
         ))}
       </td>
@@ -173,9 +160,7 @@ function computeCurrentValueFooter(
   const resolved = items
     .map((item, i) => {
       const rp = rowPrices[i]
-      return rp && !rp.isLoading && rp.currentPrice !== null
-        ? rp.currentPrice * item.currentQuantity
-        : null
+      return rp && !rp.isLoading ? item.marketValue : null
     })
     .filter((v): v is number => v !== null)
 
@@ -204,14 +189,13 @@ export default function PortfolioSummaryTab() {
     portfolioWeight: (r) => r.item.portfolioWeight,
     totalInvested: (r) => r.item.totalInvested,
     realizedGainLoss: (r) => r.item.realizedGainLoss,
-    currentValue: (r) => computeCurrentValue(r.item, r.rowPrice, isHistoric),
+    currentValue: (r) => computeCurrentValue(r.item, isHistoric),
     totalCredits: (r) => r.item.totalCredits,
     averagePrice: (r) => r.item.averagePrice,
     price: (r) => (isHistoric ? r.item.averageSellPrice : r.rowPrice.currentPrice),
-    profitPercent: (r) => computeProfitPercent(r.item, computeCurrentValue(r.item, r.rowPrice, isHistoric), isHistoric),
-    profitWithCreditsPercent: (r) =>
-      computeProfitWithCreditsPercent(r.item, computeCurrentValue(r.item, r.rowPrice, isHistoric), isHistoric),
-    xirr: (r) => r.rowPrice.xirr,
+    profitPercent: (r) => computeProfitPercent(r.item, isHistoric),
+    profitWithCreditsPercent: (r) => computeProfitWithCreditsPercent(r.item, isHistoric),
+    xirr: (r) => r.item.priceOnlyReturn,
     lastMonthCredits: (r) => (r.item.lastCreditMonth === null ? null : r.item.lastMonthCredits),
     lastCreditMonth: (r) => (r.item.lastCreditMonth === null ? null : parseCreditMonth(r.item.lastCreditMonth)),
     lastMonthCreditsPercent: (r) => r.item.lastMonthCreditsPercent,
