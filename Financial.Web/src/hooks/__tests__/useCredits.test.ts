@@ -69,13 +69,17 @@ const CREDIT_A: CreditDto = {
   date: '2024-03-15T00:00:00',
   type: 'Dividend',
   value: 120.5,
+  withheld: 0,
+  netAmount: 120.5,
 }
 
 const CREDIT_B: CreditDto = {
   id: 'bbb',
   date: '2024-01-10T00:00:00',
-  type: 'Rent',
+  type: 'SecuritiesLendingIncome',
   value: 350.0,
+  withheld: 0,
+  netAmount: 350.0,
 }
 
 const ASSET_DETAILS: AssetDetailsDto = {
@@ -356,6 +360,7 @@ describe('useCredits', () => {
         date: '2024-06-01',
         type: 'Dividend',
         value: 120.5,
+        withheld: 0,
       }),
     )
     await waitFor(() => expect(result.current.isFormVisible).toBe(false))
@@ -474,8 +479,8 @@ describe('useCredits', () => {
   })
 
   it('aggregateByMonth_computesByTypeDynamically', async () => {
-    const creditA: CreditDto = { id: 'sm1', date: '2024-03-05T00:00:00', type: 'Dividend', value: 100 }
-    const creditB: CreditDto = { id: 'sm2', date: '2024-03-20T00:00:00', type: 'Rent', value: 50 }
+    const creditA: CreditDto = { id: 'sm1', date: '2024-03-05T00:00:00', type: 'Dividend', value: 100, withheld: 0, netAmount: 100 }
+    const creditB: CreditDto = { id: 'sm2', date: '2024-03-20T00:00:00', type: 'SecuritiesLendingIncome', value: 50, withheld: 0, netAmount: 50 }
     getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, credits: [creditA, creditB] })
     const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useCredits(), { wrapper })
@@ -485,12 +490,12 @@ describe('useCredits', () => {
 
     const bucket = result.current.chartData.find((b) => b.month === '03/2024')
     expect(bucket?.byType.Dividend).toBe(100)
-    expect(bucket?.byType.Rent).toBe(50)
+    expect(bucket?.byType.SecuritiesLendingIncome).toBe(50)
   })
 
   it('aggregateByMonth_computesTotalAsSumOfByType', async () => {
-    const creditA: CreditDto = { id: 'sm1', date: '2024-03-05T00:00:00', type: 'Dividend', value: 100 }
-    const creditB: CreditDto = { id: 'sm2', date: '2024-03-20T00:00:00', type: 'Rent', value: 50 }
+    const creditA: CreditDto = { id: 'sm1', date: '2024-03-05T00:00:00', type: 'Dividend', value: 100, withheld: 0, netAmount: 100 }
+    const creditB: CreditDto = { id: 'sm2', date: '2024-03-20T00:00:00', type: 'SecuritiesLendingIncome', value: 50, withheld: 0, netAmount: 50 }
     getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, credits: [creditA, creditB] })
     const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useCredits(), { wrapper })
@@ -503,9 +508,9 @@ describe('useCredits', () => {
   })
 
   it('aggregateByMonth_supportsAThirdCreditType', async () => {
-    const creditA: CreditDto = { id: 'sm1', date: '2024-03-05T00:00:00', type: 'Dividend', value: 100 }
-    const creditB: CreditDto = { id: 'sm2', date: '2024-03-20T00:00:00', type: 'Rent', value: 50 }
-    const creditC: CreditDto = { id: 'sm3', date: '2024-03-10T00:00:00', type: 'Interest', value: 30 }
+    const creditA: CreditDto = { id: 'sm1', date: '2024-03-05T00:00:00', type: 'Dividend', value: 100, withheld: 0, netAmount: 100 }
+    const creditB: CreditDto = { id: 'sm2', date: '2024-03-20T00:00:00', type: 'SecuritiesLendingIncome', value: 50, withheld: 0, netAmount: 50 }
+    const creditC: CreditDto = { id: 'sm3', date: '2024-03-10T00:00:00', type: 'Interest', value: 30, withheld: 0, netAmount: 30 }
     getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, credits: [creditA, creditB, creditC] })
     const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useCredits(), { wrapper })
@@ -513,7 +518,7 @@ describe('useCredits', () => {
     await waitFor(() => expect(result.current.credits).toHaveLength(3))
     act(() => result.current.setFilter('all-time'))
 
-    expect(result.current.creditTypes).toEqual(['Dividend', 'Interest', 'Rent'])
+    expect(result.current.creditTypes).toEqual(['Dividend', 'Interest', 'SecuritiesLendingIncome'])
     const bucket = result.current.chartData.find((b) => b.month === '03/2024')
     expect(bucket?.byType.Interest).toBe(30)
     expect(bucket?.total).toBe(180)

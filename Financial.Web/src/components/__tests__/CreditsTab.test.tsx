@@ -41,13 +41,17 @@ const CREDIT_DIVIDEND: CreditDto = {
   date: '2024-03-15T00:00:00',
   type: 'Dividend',
   value: 120.5,
+  withheld: 0,
+  netAmount: 120.5,
 }
 
-const CREDIT_RENT: CreditDto = {
+const CREDIT_SECURITIES_LENDING_INCOME: CreditDto = {
   id: 'bbb',
   date: '2024-01-10T00:00:00',
-  type: 'Rent',
+  type: 'SecuritiesLendingIncome',
   value: 350.0,
+  withheld: 0,
+  netAmount: 350.0,
 }
 
 const CREDIT_JCP: CreditDto = {
@@ -55,6 +59,8 @@ const CREDIT_JCP: CreditDto = {
   date: '2024-02-20T00:00:00',
   type: 'JCP',
   value: 75.0,
+  withheld: 0,
+  netAmount: 75.0,
 }
 
 const DEFAULT_HOOK: CreditsData = {
@@ -75,6 +81,7 @@ const DEFAULT_HOOK: CreditsData = {
   formDate: '',
   formType: 'Dividend',
   formValue: '',
+  formWithheld: '',
   isSaving: false,
   saveError: null,
   saveErrorFields: {},
@@ -169,11 +176,11 @@ describe('CreditsTab', () => {
     expect(typeCell).toHaveClass('credits-tab__type--dividend')
   })
 
-  it('renders_rent_type_with_rent_class', () => {
-    setMock({ credits: [CREDIT_RENT] })
+  it('renders_securities_lending_income_type_with_its_class', () => {
+    setMock({ credits: [CREDIT_SECURITIES_LENDING_INCOME] })
     render(<CreditsTab />)
-    const typeCell = screen.getByText('Rent')
-    expect(typeCell).toHaveClass('credits-tab__type--rent')
+    const typeCell = screen.getByText('Securities Lending Income')
+    expect(typeCell).toHaveClass('credits-tab__type--securities-lending-income')
   })
 
   it('renders_jcp_type_with_jcp_class', () => {
@@ -186,7 +193,8 @@ describe('CreditsTab', () => {
   it('renders_value_in_n2_bold', () => {
     setMock({ credits: [CREDIT_DIVIDEND] })
     render(<CreditsTab />)
-    const valueCell = screen.getByText('120.50')
+    // Value and Net both read 120.50 here (withheld is zero) - the Value column is the first match.
+    const [valueCell] = screen.getAllByText('120.50')
     expect(valueCell).toHaveClass('credits-tab__value')
   })
 
@@ -221,7 +229,7 @@ describe('CreditsTab', () => {
     render(<CreditsTab />)
     const select = screen.getByLabelText('Type') as HTMLSelectElement
     const optionValues = Array.from(select.options).map((o) => o.value)
-    expect(optionValues).toEqual(['Dividend', 'Rent', 'JCP'])
+    expect(optionValues).toEqual(['Dividend', 'SecuritiesLendingIncome', 'JCP', 'Coupon'])
   })
 
   it('form_title_is_new_credit_when_no_editing_id', () => {
@@ -355,8 +363,8 @@ describe('CreditsTab', () => {
     setMock({
       selectedChartType: 'Line',
       selectedMode: 'Grouped',
-      creditTypes: ['Dividend', 'Rent'],
-      chartData: [{ month: '03/2024', total: 150, byType: { Dividend: 100, Rent: 50 } }],
+      creditTypes: ['Dividend', 'SecuritiesLendingIncome'],
+      chartData: [{ month: '03/2024', total: 150, byType: { Dividend: 100, SecuritiesLendingIncome: 50 } }],
     })
     render(<CreditsTab />)
     const lines = screen.getAllByTestId('line')
@@ -368,35 +376,37 @@ describe('CreditsTab', () => {
     setMock({
       selectedChartType: 'Line',
       selectedMode: 'Stacked',
-      creditTypes: ['Dividend', 'Rent'],
-      chartData: [{ month: '03/2024', total: 150, byType: { Dividend: 100, Rent: 50 } }],
+      creditTypes: ['Dividend', 'SecuritiesLendingIncome'],
+      chartData: [{ month: '03/2024', total: 150, byType: { Dividend: 100, SecuritiesLendingIncome: 50 } }],
     })
     render(<CreditsTab />)
     const lines = screen.getAllByTestId('line')
     expect(lines).toHaveLength(2)
-    expect(lines.map((l) => l.getAttribute('data-name'))).toEqual(['Dividend', 'Rent'])
+    expect(lines.map((l) => l.getAttribute('data-name'))).toEqual(['Dividend', 'SecuritiesLendingIncome'])
   })
 
   it('clicking_value_header_sorts_rows_ascending_then_descending', () => {
-    setMock({ credits: [CREDIT_DIVIDEND, CREDIT_RENT, CREDIT_JCP] })
+    setMock({ credits: [CREDIT_DIVIDEND, CREDIT_SECURITIES_LENDING_INCOME, CREDIT_JCP] })
     render(<CreditsTab />)
     const table = screen.getByRole('table')
 
+    // Value and Net read identically here (withheld is zero for every fixture), so each row has
+    // two cells with the same text - assert against the row's first (Value) match.
     fireEvent.click(screen.getByRole('button', { name: 'Value' }))
     let dataRows = within(table).getAllByRole('row').slice(1)
-    expect(within(dataRows[0]).getByText('75.00')).toBeInTheDocument()
-    expect(within(dataRows[1]).getByText('120.50')).toBeInTheDocument()
-    expect(within(dataRows[2]).getByText('350.00')).toBeInTheDocument()
+    expect(within(dataRows[0]).getAllByText('75.00')[0]).toBeInTheDocument()
+    expect(within(dataRows[1]).getAllByText('120.50')[0]).toBeInTheDocument()
+    expect(within(dataRows[2]).getAllByText('350.00')[0]).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Value' }))
     dataRows = within(table).getAllByRole('row').slice(1)
-    expect(within(dataRows[0]).getByText('350.00')).toBeInTheDocument()
-    expect(within(dataRows[1]).getByText('120.50')).toBeInTheDocument()
-    expect(within(dataRows[2]).getByText('75.00')).toBeInTheDocument()
+    expect(within(dataRows[0]).getAllByText('350.00')[0]).toBeInTheDocument()
+    expect(within(dataRows[1]).getAllByText('120.50')[0]).toBeInTheDocument()
+    expect(within(dataRows[2]).getAllByText('75.00')[0]).toBeInTheDocument()
   })
 
   it('clicking_date_header_sorts_rows_by_date', () => {
-    setMock({ credits: [CREDIT_DIVIDEND, CREDIT_RENT] })
+    setMock({ credits: [CREDIT_DIVIDEND, CREDIT_SECURITIES_LENDING_INCOME] })
     render(<CreditsTab />)
     fireEvent.click(screen.getByRole('button', { name: 'Date' }))
     const dataRows = within(screen.getByRole('table')).getAllByRole('row').slice(1)
@@ -404,7 +414,7 @@ describe('CreditsTab', () => {
   })
 
   it('clicking_type_header_sorts_rows_by_type', () => {
-    setMock({ credits: [CREDIT_DIVIDEND, CREDIT_RENT] })
+    setMock({ credits: [CREDIT_DIVIDEND, CREDIT_SECURITIES_LENDING_INCOME] })
     render(<CreditsTab />)
     fireEvent.click(screen.getByRole('button', { name: 'Type' }))
     const dataRows = within(screen.getByRole('table')).getAllByRole('row').slice(1)
@@ -418,8 +428,8 @@ describe('CreditsTab', () => {
     fireEvent.change(screen.getByLabelText(/^Date/), { target: { value: '2024-05-01' } })
     expect(mockSetFormField).toHaveBeenCalledWith('formDate', '2024-05-01')
 
-    fireEvent.change(screen.getByLabelText('Type'), { target: { value: 'Rent' } })
-    expect(mockSetFormField).toHaveBeenCalledWith('formType', 'Rent')
+    fireEvent.change(screen.getByLabelText('Type'), { target: { value: 'SecuritiesLendingIncome' } })
+    expect(mockSetFormField).toHaveBeenCalledWith('formType', 'SecuritiesLendingIncome')
 
     fireEvent.change(screen.getByLabelText(/^Value/), { target: { value: '99.5' } })
     expect(mockSetFormField).toHaveBeenCalledWith('formValue', '99.5')

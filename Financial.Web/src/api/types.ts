@@ -74,6 +74,7 @@ export type AssetAdminUpdateDto = Schema<'AssetAdminUpdateDTO'>
 export type TransactionCreateDto = Schema<'TransactionCreateDTO'>
 export type TransactionUpdateDto = Schema<'TransactionUpdateDTO'>
 export type TransactionDeleteDto = Schema<'TransactionDeleteDTO'>
+export type TransactionTypeEffectDto = Schema<'TransactionTypeEffectDTO'>
 export type CreditCreateDto = Schema<'CreditCreateDTO'>
 export type CreditUpdateDto = Schema<'CreditUpdateDTO'>
 export type CreditDeleteDto = Schema<'CreditDeleteDTO'>

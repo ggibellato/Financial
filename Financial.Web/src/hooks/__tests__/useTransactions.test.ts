@@ -13,6 +13,7 @@ const {
   deleteTransactionMock,
   getTransactionsByBrokerMock,
   getTransactionsByPortfolioMock,
+  getTransactionTypeEffectsMock,
 } = vi.hoisted(() => ({
   getAssetDetailsMock: vi.fn<FinancialApiClient['getAssetDetails']>(),
   addTransactionMock: vi.fn<FinancialApiClient['addTransaction']>(),
@@ -20,6 +21,7 @@ const {
   deleteTransactionMock: vi.fn<FinancialApiClient['deleteTransaction']>(),
   getTransactionsByBrokerMock: vi.fn<FinancialApiClient['getTransactionsByBroker']>(),
   getTransactionsByPortfolioMock: vi.fn<FinancialApiClient['getTransactionsByPortfolio']>(),
+  getTransactionTypeEffectsMock: vi.fn<FinancialApiClient['getTransactionTypeEffects']>(),
 }))
 
 vi.mock('../../api/financialApiClient', () => ({
@@ -30,6 +32,7 @@ vi.mock('../../api/financialApiClient', () => ({
     deleteTransaction: deleteTransactionMock,
     getTransactionsByBroker: getTransactionsByBrokerMock,
     getTransactionsByPortfolio: getTransactionsByPortfolioMock,
+    getTransactionTypeEffects: getTransactionTypeEffectsMock,
   } as Partial<FinancialApiClient>,
 }))
 
@@ -59,14 +62,14 @@ const SUMMARY_ITEM_A: TransactionSummaryItemDto = {
   assetName: 'KLBN4',
   date: '2024-03-15T00:00:00',
   type: 'Buy',
-  totalPrice: 420.5,
+  netCash: -420.5,
 }
 
 const SUMMARY_ITEM_B: TransactionSummaryItemDto = {
   assetName: 'PETR4',
   date: '2024-01-10T00:00:00',
   type: 'Sell',
-  totalPrice: 251.0,
+  netCash: 251.0,
 }
 
 const TRANSACTION_A: TransactionDto = {
@@ -76,7 +79,8 @@ const TRANSACTION_A: TransactionDto = {
   quantity: 100,
   unitPrice: 4.2,
   fees: 0.5,
-  totalPrice: 420.5,
+  withheld: 0,
+  netCash: -420.5,
 }
 
 const TRANSACTION_B: TransactionDto = {
@@ -86,7 +90,8 @@ const TRANSACTION_B: TransactionDto = {
   quantity: 50,
   unitPrice: 5.0,
   fees: 1.0,
-  totalPrice: 251.0,
+  withheld: 0,
+  netCash: 251.0,
 }
 
 const ASSET_DETAILS: AssetDetailsDto = {
@@ -129,6 +134,7 @@ describe('useTransactions', () => {
     deleteTransactionMock.mockReset()
     getTransactionsByBrokerMock.mockReset().mockResolvedValue([])
     getTransactionsByPortfolioMock.mockReset().mockResolvedValue([])
+    getTransactionTypeEffectsMock.mockReset().mockResolvedValue([])
     sessionStorage.clear()
   })
 
@@ -295,6 +301,7 @@ describe('useTransactions', () => {
       quantity: 50,
       unitPrice: 10,
       fees: 0.5,
+      withheld: 0,
     }))
     await waitFor(() => expect(result.current.isFormVisible).toBe(false))
     expect(result.current.asset).toEqual(updatedAsset)
@@ -488,8 +495,8 @@ describe('buildMonthlyNetInvested', () => {
     const referenceDate = new Date(2024, 0, 31)
     const buckets = buildMonthlyNetInvested(
       [
-        { date: '2024-01-05', type: 'Buy', totalPrice: 500 },
-        { date: '2024-01-20', type: 'Sell', totalPrice: 200 },
+        { date: '2024-01-05', netCash: -500 },
+        { date: '2024-01-20', netCash: 200 },
       ],
       'ytd',
       referenceDate,

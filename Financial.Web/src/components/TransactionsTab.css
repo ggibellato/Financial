@@ -67,6 +67,10 @@
   font-weight: bold;
 }
 
+.transactions-tab__type--neutral {
+  font-weight: bold;
+}
+
 .transactions-tab__total {
   font-weight: bold;
 }

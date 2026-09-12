@@ -38,13 +38,41 @@ const CHART_MODE_OPTIONS: { value: ChartDisplayMode; label: string }[] = [
   { value: 'Line', label: 'Line' },
 ]
 
+const TRANSACTION_TYPE_OPTIONS = [
+  { value: 'Buy', label: 'Buy' },
+  { value: 'Sell', label: 'Sell' },
+  { value: 'Fee', label: 'Fee' },
+  { value: 'Redemption', label: 'Redemption' },
+  { value: 'TransferIn', label: 'Transfer In' },
+  { value: 'TransferOut', label: 'Transfer Out' },
+  { value: 'CapitalCall', label: 'Capital Call' },
+  { value: 'ReturnOfCapital', label: 'Return of Capital' },
+]
+
 const SORT_ACCESSORS: Record<string, SortAccessor<TransactionDto>> = {
   date: (t) => new Date(t.date),
   type: (t) => t.type,
   quantity: (t) => t.quantity,
   unitPrice: (t) => t.unitPrice,
   fees: (t) => t.fees,
-  total: (t) => t.totalPrice,
+  withheld: (t) => t.withheld,
+  total: (t) => t.netCash,
+}
+
+// Purely a display grouping (color coding), independent of the server's TransactionTypeEffect
+// table: an outflow-typed transaction reads as "buy-like", an inflow-typed one as "sell-like",
+// and a type with no cash effect of its own (a Transfer) as neutral.
+const OUTFLOW_TYPES = new Set(['Buy', 'Fee', 'CapitalCall'])
+const INFLOW_TYPES = new Set(['Sell', 'Redemption', 'ReturnOfCapital'])
+
+function typeDisplayClass(type: string): string {
+  if (OUTFLOW_TYPES.has(type)) return 'transactions-tab__type--buy'
+  if (INFLOW_TYPES.has(type)) return 'transactions-tab__type--sell'
+  return 'transactions-tab__type--neutral'
+}
+
+function typeDisplayLabel(type: string): string {
+  return TRANSACTION_TYPE_OPTIONS.find((o) => o.value === type)?.label ?? type
 }
 
 interface TransactionRowProps {
@@ -54,20 +82,16 @@ interface TransactionRowProps {
 }
 
 function TransactionRow({ transaction, onEdit, onDelete }: TransactionRowProps) {
-  const typeClass =
-    transaction.type === 'Buy'
-      ? 'transactions-tab__type--buy'
-      : 'transactions-tab__type--sell'
-
   return (
     <TableRow>
       <TableCell>{formatShortDate(transaction.date)}</TableCell>
-      <TableCell className={typeClass}>{transaction.type}</TableCell>
+      <TableCell className={typeDisplayClass(transaction.type)}>{typeDisplayLabel(transaction.type)}</TableCell>
       <TableCell className="data-table__col--numeric">{formatN8(transaction.quantity)}</TableCell>
       <TableCell className="data-table__col--numeric">{formatN2(transaction.unitPrice)}</TableCell>
       <TableCell className="data-table__col--numeric">{formatN2(transaction.fees)}</TableCell>
+      <TableCell className="data-table__col--numeric">{formatN2(transaction.withheld)}</TableCell>
       <TableCell className="data-table__col--numeric transactions-tab__total">
-        {formatN2(transaction.totalPrice)}
+        {formatN2(transaction.netCash)}
       </TableCell>
       <TableCell className="data-table__col--action">
         <div className="data-table__actions-cell">
@@ -98,6 +122,8 @@ interface InlineFormProps {
   formQuantity: string
   formUnitPrice: string
   formFees: string
+  formWithheld: string
+  formTypeHasQuantityEffect: boolean
   isSaving: boolean
   saveError: string | null
   saveErrorFields: Partial<Record<TransactionFormField, string>>
@@ -113,6 +139,8 @@ function InlineForm({
   formQuantity,
   formUnitPrice,
   formFees,
+  formWithheld,
+  formTypeHasQuantityEffect,
   isSaving,
   saveError,
   saveErrorFields,
@@ -142,40 +170,47 @@ function InlineForm({
 
         <Field label="Type">
           <Select value={formType} onChange={(e) => onFieldChange('formType', e.target.value)}>
-            <option value="Buy">Buy</option>
-            <option value="Sell">Sell</option>
+            {TRANSACTION_TYPE_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
           </Select>
         </Field>
 
-        <Field
-          label="Quantity"
-          required
-          validationState={fieldError('formQuantity') ? 'error' : 'none'}
-          validationMessage={fieldError('formQuantity')}
-        >
-          <Input
-            type="number"
-            step="0.0001"
-            min="0"
-            value={formQuantity}
-            onChange={(e) => onFieldChange('formQuantity', e.target.value)}
-          />
-        </Field>
+        {formTypeHasQuantityEffect && (
+          <>
+            <Field
+              label="Quantity"
+              required
+              validationState={fieldError('formQuantity') ? 'error' : 'none'}
+              validationMessage={fieldError('formQuantity')}
+            >
+              <Input
+                type="number"
+                step="0.0001"
+                min="0"
+                value={formQuantity}
+                onChange={(e) => onFieldChange('formQuantity', e.target.value)}
+              />
+            </Field>
 
-        <Field
-          label="Unit Price"
-          required
-          validationState={fieldError('formUnitPrice') ? 'error' : 'none'}
-          validationMessage={fieldError('formUnitPrice')}
-        >
-          <Input
-            type="number"
-            step="0.0001"
-            min="0"
-            value={formUnitPrice}
-            onChange={(e) => onFieldChange('formUnitPrice', e.target.value)}
-          />
-        </Field>
+            <Field
+              label="Unit Price"
+              required
+              validationState={fieldError('formUnitPrice') ? 'error' : 'none'}
+              validationMessage={fieldError('formUnitPrice')}
+            >
+              <Input
+                type="number"
+                step="0.0001"
+                min="0"
+                value={formUnitPrice}
+                onChange={(e) => onFieldChange('formUnitPrice', e.target.value)}
+              />
+            </Field>
+          </>
+        )}
 
         <Field label="Fees">
           <Input
@@ -184,6 +219,16 @@ function InlineForm({
             min="0"
             value={formFees}
             onChange={(e) => onFieldChange('formFees', e.target.value)}
+          />
+        </Field>
+
+        <Field label="Withheld">
+          <Input
+            type="number"
+            step="0.0001"
+            min="0"
+            value={formWithheld}
+            onChange={(e) => onFieldChange('formWithheld', e.target.value)}
           />
         </Field>
       </div>
@@ -294,6 +339,8 @@ export default function TransactionsTab() {
     formQuantity,
     formUnitPrice,
     formFees,
+    formWithheld,
+    formTypeHasQuantityEffect,
     isSaving,
     saveError,
     saveErrorFields,
@@ -359,6 +406,8 @@ export default function TransactionsTab() {
           formQuantity={formQuantity}
           formUnitPrice={formUnitPrice}
           formFees={formFees}
+          formWithheld={formWithheld}
+          formTypeHasQuantityEffect={formTypeHasQuantityEffect}
           isSaving={isSaving}
           saveError={saveError}
           saveErrorFields={saveErrorFields}
@@ -406,7 +455,14 @@ export default function TransactionsTab() {
                 onSort={requestSort}
               />
               <SortableColumnHeader
-                label="Total"
+                label="Withheld"
+                columnKey="withheld"
+                numeric
+                sortDirection={sortState?.columnKey === 'withheld' ? sortState.direction : undefined}
+                onSort={requestSort}
+              />
+              <SortableColumnHeader
+                label="Net"
                 columnKey="total"
                 numeric
                 sortDirection={sortState?.columnKey === 'total' ? sortState.direction : undefined}

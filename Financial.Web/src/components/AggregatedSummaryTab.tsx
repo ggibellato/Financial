@@ -61,11 +61,19 @@ export function AggregatedSummaryView({ summary }: { summary: AggregatedSummaryD
           </span>
         </div>
         <div className="aggregated-summary__field">
-          <span className="aggregated-summary__label">Total Return</span>
+          <span className="aggregated-summary__label">Total Return (Gross)</span>
           <span
             className={`aggregated-summary__value ${summary.totalReturn === null ? '' : signClass(summary.totalReturn, 'aggregated-summary__value')}`}
           >
             {summary.totalReturn === null ? '—' : formatPercentFraction(summary.totalReturn)}
+          </span>
+        </div>
+        <div className="aggregated-summary__field">
+          <span className="aggregated-summary__label">Total Return (Net of Tax)</span>
+          <span
+            className={`aggregated-summary__value ${summary.totalReturnNetOfTax === null ? '' : signClass(summary.totalReturnNetOfTax, 'aggregated-summary__value')}`}
+          >
+            {summary.totalReturnNetOfTax === null ? '—' : formatPercentFraction(summary.totalReturnNetOfTax)}
           </span>
         </div>
       </div>

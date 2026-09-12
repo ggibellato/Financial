@@ -5209,6 +5209,45 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/transactions/type-effects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lists every transaction type's declared quantity/cash effect, so a client can decide
+         *                 which fields a given type needs without duplicating the rule itself.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description 200 OK with the type-effect table. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TransactionTypeEffectDTO"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/transfers": {
         parameters: {
             query?: never;
@@ -5539,6 +5578,8 @@ export interface components {
             totalInvested: number;
             /** Format: double */
             totalReturn: null | number;
+            /** Format: double */
+            totalReturnNetOfTax: null | number;
             /** Format: double */
             totalSold: number;
             /** Format: int32 */
@@ -5897,15 +5938,21 @@ export interface components {
             type: string;
             /** Format: double */
             value?: number;
+            /** Format: double */
+            withheld?: number;
         };
         CreditDTO: {
             /** Format: date-time */
             date?: string;
             /** Format: uuid */
             id?: string;
+            /** Format: double */
+            netAmount?: number;
             type: string;
             /** Format: double */
             value?: number;
+            /** Format: double */
+            withheld?: number;
         };
         CreditDeleteDTO: {
             assetName: string;
@@ -5925,6 +5972,8 @@ export interface components {
             type: string;
             /** Format: double */
             value?: number;
+            /** Format: double */
+            withheld?: number;
         };
         DeleteAssetPriceDTO: {
             assetName: string;
@@ -6362,6 +6411,8 @@ export interface components {
             /** Format: double */
             totalReturn: null | number;
             /** Format: double */
+            totalReturnNetOfTax: null | number;
+            /** Format: double */
             totalSold: number;
             /** Format: double */
             unrealisedGain: null | number;
@@ -6555,6 +6606,8 @@ export interface components {
             type: string;
             /** Format: double */
             unitPrice?: number;
+            /** Format: double */
+            withheld?: number;
         };
         TransactionDTO: {
             /** Format: date-time */
@@ -6564,12 +6617,14 @@ export interface components {
             /** Format: uuid */
             id?: string;
             /** Format: double */
-            quantity?: number;
+            netCash?: number;
             /** Format: double */
-            totalPrice?: number;
+            quantity?: number;
             type: string;
             /** Format: double */
             unitPrice?: number;
+            /** Format: double */
+            withheld?: number;
         };
         TransactionDeleteDTO: {
             assetName: string;
@@ -6583,7 +6638,12 @@ export interface components {
             /** Format: date-time */
             date?: string;
             /** Format: double */
-            totalPrice?: number;
+            netCash?: number;
+            type: string;
+        };
+        TransactionTypeEffectDTO: {
+            cashEffect: string;
+            quantityEffect: string;
             type: string;
         };
         TransactionUpdateDTO: {
@@ -6601,6 +6661,8 @@ export interface components {
             type: string;
             /** Format: double */
             unitPrice?: number;
+            /** Format: double */
+            withheld?: number;
         };
         TransferCreateDTO: {
             /** Format: double */

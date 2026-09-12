@@ -59,6 +59,7 @@ const ITEM_1: PortfolioAssetSummaryItemDto = {
   isPriceStale: false,
   priceOnlyReturn: null,
   totalReturn: null,
+  totalReturnNetOfTax: null,
   totalCredits: 125,
   cashFlows: [
     { date: '2021-03-01T00:00:00', amount: -2500 },
@@ -95,6 +96,7 @@ const ITEM_2: PortfolioAssetSummaryItemDto = {
   isPriceStale: false,
   priceOnlyReturn: null,
   totalReturn: null,
+  totalReturnNetOfTax: null,
   totalCredits: 0,
   cashFlows: [
     { date: '2021-05-15T00:00:00', amount: -1000 },

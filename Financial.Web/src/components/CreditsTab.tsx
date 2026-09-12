@@ -69,6 +69,8 @@ const SORT_ACCESSORS: Record<string, SortAccessor<CreditDto>> = {
   date: (c) => new Date(c.date),
   type: (c) => c.type,
   value: (c) => c.value,
+  withheld: (c) => c.withheld,
+  netAmount: (c) => c.netAmount,
 }
 
 interface CreditRowProps {
@@ -79,8 +81,20 @@ interface CreditRowProps {
 
 const TYPE_CLASSES: Record<string, string> = {
   Dividend: 'credits-tab__type--dividend',
-  Rent: 'credits-tab__type--rent',
+  SecuritiesLendingIncome: 'credits-tab__type--securities-lending-income',
   JCP: 'credits-tab__type--jcp',
+  Coupon: 'credits-tab__type--coupon',
+}
+
+const TYPE_LABELS: Record<string, string> = {
+  Dividend: 'Dividend',
+  SecuritiesLendingIncome: 'Securities Lending Income',
+  JCP: 'JCP',
+  Coupon: 'Coupon',
+}
+
+function typeLabel(type: string): string {
+  return TYPE_LABELS[type] ?? type
 }
 
 function CreditRow({ credit, onEdit, onDelete }: CreditRowProps) {
@@ -89,8 +103,10 @@ function CreditRow({ credit, onEdit, onDelete }: CreditRowProps) {
   return (
     <TableRow>
       <TableCell>{formatShortDate(credit.date)}</TableCell>
-      <TableCell className={typeClass}>{credit.type}</TableCell>
+      <TableCell className={typeClass}>{typeLabel(credit.type)}</TableCell>
       <TableCell className="data-table__col--numeric credits-tab__value">{formatN2(credit.value)}</TableCell>
+      <TableCell className="data-table__col--numeric">{formatN2(credit.withheld)}</TableCell>
+      <TableCell className="data-table__col--numeric credits-tab__value">{formatN2(credit.netAmount)}</TableCell>
       <TableCell className="data-table__col--action">
         <div className="data-table__actions-cell">
           <Button
@@ -118,6 +134,7 @@ interface InlineFormProps {
   formDate: string
   formType: string
   formValue: string
+  formWithheld: string
   isSaving: boolean
   saveError: string | null
   saveErrorFields: Partial<Record<CreditFormField, string>>
@@ -131,6 +148,7 @@ function InlineForm({
   formDate,
   formType,
   formValue,
+  formWithheld,
   isSaving,
   saveError,
   saveErrorFields,
@@ -161,8 +179,9 @@ function InlineForm({
         <Field label="Type">
           <Select value={formType} onChange={(e) => onFieldChange('formType', e.target.value)}>
             <option value="Dividend">Dividend</option>
-            <option value="Rent">Rent</option>
+            <option value="SecuritiesLendingIncome">Securities Lending Income</option>
             <option value="JCP">JCP</option>
+            <option value="Coupon">Coupon</option>
           </Select>
         </Field>
 
@@ -170,14 +189,23 @@ function InlineForm({
           label="Value"
           required
           validationState={fieldError('formValue') ? 'error' : 'none'}
-          validationMessage={fieldError('formValue')}
+          validationMessage={fieldError('formValue') ?? 'A negative value records a correction to a previous payment'}
         >
           <Input
             type="number"
             step="0.01"
-            min="0"
             value={formValue}
             onChange={(e) => onFieldChange('formValue', e.target.value)}
+          />
+        </Field>
+
+        <Field label="Withheld">
+          <Input
+            type="number"
+            step="0.01"
+            min="0"
+            value={formWithheld}
+            onChange={(e) => onFieldChange('formWithheld', e.target.value)}
           />
         </Field>
       </div>
@@ -301,6 +329,7 @@ export default function CreditsTab() {
     formDate,
     formType,
     formValue,
+    formWithheld,
     isSaving,
     saveError,
     saveErrorFields,
@@ -364,6 +393,7 @@ export default function CreditsTab() {
           formDate={formDate}
           formType={formType}
           formValue={formValue}
+          formWithheld={formWithheld}
           isSaving={isSaving}
           saveError={saveError}
           saveErrorFields={saveErrorFields}
@@ -394,6 +424,20 @@ export default function CreditsTab() {
                 columnKey="value"
                 numeric
                 sortDirection={sortState?.columnKey === 'value' ? sortState.direction : undefined}
+                onSort={requestSort}
+              />
+              <SortableColumnHeader
+                label="Withheld"
+                columnKey="withheld"
+                numeric
+                sortDirection={sortState?.columnKey === 'withheld' ? sortState.direction : undefined}
+                onSort={requestSort}
+              />
+              <SortableColumnHeader
+                label="Net"
+                columnKey="netAmount"
+                numeric
+                sortDirection={sortState?.columnKey === 'netAmount' ? sortState.direction : undefined}
                 onSort={requestSort}
               />
               <TableHeaderCell className="data-table__col--action" />

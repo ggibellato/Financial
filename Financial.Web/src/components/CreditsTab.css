@@ -6,16 +6,18 @@
   /* Categorical credit-type colors — component-local, not part of the
      global token contract in docs/ui/design-tokens.md. */
   --credit-type-dividend: #1565c0;
-  --credit-type-rent: #0277bd;
+  --credit-type-securities-lending-income: #0277bd;
   --credit-type-jcp: #00838f;
+  --credit-type-coupon: #6a1b9a;
 }
 
-/* Same three hues, lightened for dark mode — the light-mode values fall to
+/* Same hues, lightened for dark mode — the light-mode values fall to
    3.1-4.0:1 against the dark background (WCAG 2.2 AA needs 4.5:1 for text). */
 :root[data-theme='dark'] .credits-tab {
   --credit-type-dividend: #5b9bd8;
-  --credit-type-rent: #4dabf7;
+  --credit-type-securities-lending-income: #4dabf7;
   --credit-type-jcp: #3bc9db;
+  --credit-type-coupon: #b39ddb;
 }
 
 .credits-tab__controls {
@@ -70,12 +72,16 @@
   color: var(--credit-type-dividend);
 }
 
-.credits-tab__type--rent {
-  color: var(--credit-type-rent);
+.credits-tab__type--securities-lending-income {
+  color: var(--credit-type-securities-lending-income);
 }
 
 .credits-tab__type--jcp {
   color: var(--credit-type-jcp);
+}
+
+.credits-tab__type--coupon {
+  color: var(--credit-type-coupon);
 }
 
 .credits-tab__value {

@@ -9,11 +9,11 @@ import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
 
 export type ViewMode = 'Stacked' | 'Grouped'
 export type ChartType = 'Bar' | 'Line'
-export type CreditFormField = 'formDate' | 'formType' | 'formValue'
+export type CreditFormField = 'formDate' | 'formType' | 'formValue' | 'formWithheld'
 
 const DATE_KEY = 'investmentCredit.date'
 const TYPE_KEY = 'investmentCredit.type'
-const TYPES = ['Dividend', 'Rent', 'JCP']
+const TYPES = ['Dividend', 'SecuritiesLendingIncome', 'JCP', 'Coupon']
 
 export interface MonthBucket {
   month: string
@@ -44,6 +44,7 @@ interface CreditsState {
   formDate: string
   formType: string
   formValue: string
+  formWithheld: string
   isSaving: boolean
   saveError: string | null
   saveErrorFields: Partial<Record<CreditFormField, string>>
@@ -75,6 +76,7 @@ const BLANK_FORM = {
   formDate: '',
   formType: 'Dividend',
   formValue: '',
+  formWithheld: '',
   isSaving: false,
   saveError: null,
   saveErrorFields: {},
@@ -150,6 +152,7 @@ function reducer(state: CreditsState, action: CreditsAction): CreditsState {
         formDate: action.payload.date,
         formType: action.payload.type,
         formValue: '',
+        formWithheld: '',
         saveError: null,
         saveErrorFields: {},
         isSaving: false,
@@ -163,6 +166,7 @@ function reducer(state: CreditsState, action: CreditsAction): CreditsState {
         formDate: toInputDate(c.date),
         formType: c.type,
         formValue: String(c.value),
+        formWithheld: String(c.withheld),
         saveError: null,
         saveErrorFields: {},
         isSaving: false,
@@ -240,6 +244,7 @@ export interface CreditsData {
   formDate: string
   formType: string
   formValue: string
+  formWithheld: string
   isSaving: boolean
   saveError: string | null
   saveErrorFields: Partial<Record<CreditFormField, string>>
@@ -369,7 +374,7 @@ export function useCredits(): CreditsData {
   const saveForm = useCallback(() => {
     if (!selectedNode?.portfolioName || !selectedNode.assetName) return
 
-    const { formDate, formType, formValue, editingId } = state
+    const { formDate, formType, formValue, formWithheld, editingId } = state
     const errors: Partial<Record<CreditFormField, string>> = {}
 
     if (!formDate.trim()) {
@@ -377,14 +382,16 @@ export function useCredits(): CreditsData {
     }
 
     const value = parseValidatedNumber(formValue)
-    if (value === null || value <= 0) {
-      errors.formValue = 'Value must be a positive number'
+    if (value === null || value === 0) {
+      errors.formValue = 'Value must not be zero (negative is a correction)'
     }
 
     if (Object.keys(errors).length > 0) {
       dispatch({ type: 'SAVE_ERROR', payload: { message: Object.values(errors)[0] ?? null, fields: errors } })
       return
     }
+
+    const withheld = formWithheld.trim() === '' ? 0 : parseFloat(formWithheld)
 
     dispatch({ type: 'SAVE_START' })
 
@@ -395,6 +402,7 @@ export function useCredits(): CreditsData {
       date: formDate,
       type: formType,
       value: value as number,
+      withheld,
     }
 
     const call = editingId
@@ -455,6 +463,7 @@ export function useCredits(): CreditsData {
     formDate: state.formDate,
     formType: state.formType,
     formValue: state.formValue,
+    formWithheld: state.formWithheld,
     isSaving: state.isSaving,
     saveError: state.saveError,
     saveErrorFields: state.saveErrorFields,

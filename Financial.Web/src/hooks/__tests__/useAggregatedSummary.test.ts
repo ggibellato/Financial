@@ -48,6 +48,7 @@ const SUMMARY_DTO: AggregatedSummaryDto = {
   unvaluedHoldingCount: 0,
   priceOnlyReturn: 0.08,
   totalReturn: 0.1,
+  totalReturnNetOfTax: 0.09,
 }
 
 describe('useAggregatedSummary', () => {

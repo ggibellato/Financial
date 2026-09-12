@@ -14,6 +14,7 @@ const {
   getPortfolioAssetsSummaryMock,
   getTransactionsByBrokerMock,
   getTransactionsByPortfolioMock,
+  getTransactionTypeEffectsMock,
   deleteEmptyPortfolioMock,
 } = vi.hoisted(() => ({
   getAssetDetailsMock: vi.fn(),
@@ -23,6 +24,7 @@ const {
   getPortfolioAssetsSummaryMock: vi.fn(),
   getTransactionsByBrokerMock: vi.fn().mockResolvedValue([]),
   getTransactionsByPortfolioMock: vi.fn().mockResolvedValue([]),
+  getTransactionTypeEffectsMock: vi.fn().mockResolvedValue([]),
   deleteEmptyPortfolioMock: vi.fn(),
 }))
 
@@ -35,6 +37,7 @@ vi.mock('../../api/financialApiClient', () => ({
     getPortfolioAssetsSummary: getPortfolioAssetsSummaryMock,
     getTransactionsByBroker: getTransactionsByBrokerMock,
     getTransactionsByPortfolio: getTransactionsByPortfolioMock,
+    getTransactionTypeEffects: getTransactionTypeEffectsMock,
     deleteEmptyPortfolio: deleteEmptyPortfolioMock,
   } as Partial<FinancialApiClient>,
 }))

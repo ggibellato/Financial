@@ -55,7 +55,8 @@ const BUY_TRANSACTION: TransactionDto = {
   quantity: 10,
   unitPrice: 105,
   fees: 1,
-  totalPrice: 1051,
+  withheld: 0,
+  netCash: -1051,
 }
 
 const ASSET_DETAILS: AssetDetailsDto = {
