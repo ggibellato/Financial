@@ -45,7 +45,8 @@ public sealed class HoldingValuationService : IHoldingValuationService
             {
                 var priceOnlyReturn = _xirrCalculationService.Calculate(AssetCashFlowBuilder.BuildWithoutCredits(asset), valuation.MarketValue.Value);
                 var totalReturn = _xirrCalculationService.Calculate(AssetCashFlowBuilder.BuildWithCredits(asset), valuation.MarketValue.Value);
-                valuation = valuation with { PriceOnlyReturn = priceOnlyReturn, TotalReturn = totalReturn };
+                var totalReturnNetOfTax = _xirrCalculationService.Calculate(AssetCashFlowBuilder.BuildNetOfTaxWithCredits(asset), valuation.MarketValue.Value);
+                valuation = valuation with { PriceOnlyReturn = priceOnlyReturn, TotalReturn = totalReturn, TotalReturnNetOfTax = totalReturnNetOfTax };
             }
 
             span.MarkSuccess();

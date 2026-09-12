@@ -11,4 +11,5 @@ public sealed class AggregatedSummaryDTO
     public int UnvaluedHoldingCount { get; init; }
     public decimal? PriceOnlyReturn { get; init; }
     public decimal? TotalReturn { get; init; }
+    public decimal? TotalReturnNetOfTax { get; init; }
 }

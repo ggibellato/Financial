@@ -90,7 +90,7 @@ unaffected.
 - [X] T022 [P] [US1] Extend `Tests/Financial.Investment.Application.Tests/Services/TransactionServiceQueryTests.cs` for `NetCash` in query results (depends on T018, T019)
 - [X] T023 [P] [US1] Extend `Tests/Financial.Investment.Application.Tests/Services/AssetCashFlowBuilderTests.cs` for the `NetCash`-based amount calculation across every type (depends on T020)
 - [X] T024 [P] [US1] Extend `Tests/Financial.Api.Tests/TransactionEndpointsTests.cs`: POST each new type and assert the response's quantity/`NetCash`/type; assert `409 Conflict` with the shortfall message for an oversold `Redemption`/`TransferOut` (matching `DomainExceptionMappingMiddleware`'s existing `InvestmentRuleViolationException` → 409 mapping, not 400) (depends on T016, T017)
-- [ ] T025 [US1] Regenerate the OpenAPI snapshot (`UPDATE_OPENAPI_SNAPSHOT=1 dotnet test Tests/Financial.Api.Tests`, review the diff, unset the env var) for the widened `Type` enum and `TransactionDTO` shape; regenerate `Financial.Web`'s types (`npm run generate-api-types`) (depends on T024)
+- [X] T025 [US1] Regenerate the OpenAPI snapshot (`UPDATE_OPENAPI_SNAPSHOT=1 dotnet test Tests/Financial.Api.Tests`, review the diff, unset the env var) for the widened `Type` enum and `TransactionDTO` shape; regenerate `Financial.Web`'s types (`npm run generate-api-types`) (depends on T024)
 
 **Checkpoint**: US1 is independently testable via the API — every new transaction type records and
 queries correctly; oversell parity holds; Buy/Sell is unaffected.
@@ -126,8 +126,8 @@ reads `SecuritiesLendingIncome` with an unchanged value.
 - [X] T036 [P] [US2] Extend `Tests/Financial.Investment.Domain.Tests/Domain/CreditTests.cs` for the renamed/added kinds, negative `Value` (correction), `Withheld`, `NetAmount`, and the "invalid only if zero" validation (depends on T026)
 - [X] T037 [P] [US2] Extend both `Tests/Financial.Investment.Application.Tests/Services/CreditServiceTests.cs` and `Tests/Financial.Investment.Infrastructure.Tests/Services/CreditServiceTests.cs` for `SecuritiesLendingIncome`, `Coupon`, a negative-value correction, and `Withheld`/`NetAmount` (depends on T032, T033)
 - [X] T038 [P] [US2] Extend `Tests/Financial.Api.Tests/CreditEndpointsTests.cs`: POST `SecuritiesLendingIncome`, `Coupon`, and a negative-value correction; assert `Withheld`/`NetAmount` in the response (depends on T032, T033)
-- [ ] T039 [US2] Regenerate the OpenAPI snapshot for the widened `CreditDTO`/`Type` enum (same procedure as T025); regenerate `Financial.Web`'s types (depends on T038)
-- [ ] T040 [US2] Run the migration tool against a temp copy of `data/data-investment.json` per `quickstart.md` §2 (verify the rewritten-row count and that no other field changed), then run it against the real file and **restart every process that reads it** (API, `Financial.App` if running) — a restart alone never runs the migration (depends on T029, T030, T035)
+- [X] T039 [US2] Regenerate the OpenAPI snapshot for the widened `CreditDTO`/`Type` enum (same procedure as T025); regenerate `Financial.Web`'s types (depends on T038)
+- [X] T040 [US2] Run the migration tool against a temp copy of `data/data-investment.json` per `quickstart.md` §2 (verify the rewritten-row count and that no other field changed), then run it against the real file and **restart every process that reads it** (API, `Financial.App` if running) — a restart alone never runs the migration (depends on T029, T030, T035)
 
 **Checkpoint**: US2 is independently testable — every income kind (including the corrected
 vocabulary) and every transaction shows gross/withheld/net; the existing ~899 transactions / ~1,485
@@ -147,18 +147,18 @@ tax; confirm a holding with zero withholding shows the same figure for both (FR-
 
 ### Implementation for User Story 3
 
-- [ ] T041 [US3] Add `BuildNetOfTaxWithCredits`/`ConcatenateNetOfTaxWithCredits` to `Financial.Investment.Application/Services/AssetCashFlowBuilder.cs` per research.md #4 (corrected): transaction amount = `NetCash` (same formula the existing Gross series already uses — Transaction-level withholding is effectively never nonzero in this domain, so both series share it); credit amount = `c.NetAmount` (the one place the two series actually diverge). `BuildWithCredits`/`ConcatenateWithCredits` are unchanged and remain the Gross series; there is no Net counterpart to `BuildWithoutCredits` (price-only already excludes all income) (depends on T020, T026)
-- [ ] T042 [US3] Add `TotalReturnNetOfTax` to the `HoldingValuation` record in `Financial.Investment.Domain/Rules/HoldingValuationCalculator.cs`, and compute it in `Financial.Investment.Application/Services/HoldingValuationService.cs`'s `GetValuation` using T041's net series alongside the existing `TotalReturn` (depends on T041)
-- [ ] T043 [US3] Add `TotalReturnNetOfTax` to `AggregatedSummaryDTO` and compute it in `Financial.Investment.Application/Services/SummaryService.cs`'s `Aggregate`, using T041's net series and Wave 0's existing null-when-incomplete rule (depends on T041)
+- [X] T041 [US3] Add `BuildNetOfTaxWithCredits`/`ConcatenateNetOfTaxWithCredits` to `Financial.Investment.Application/Services/AssetCashFlowBuilder.cs` per research.md #4 (corrected): transaction amount = `NetCash` (same formula the existing Gross series already uses — Transaction-level withholding is effectively never nonzero in this domain, so both series share it); credit amount = `c.NetAmount` (the one place the two series actually diverge). `BuildWithCredits`/`ConcatenateWithCredits` are unchanged and remain the Gross series; there is no Net counterpart to `BuildWithoutCredits` (price-only already excludes all income) (depends on T020, T026)
+- [X] T042 [US3] Add `TotalReturnNetOfTax` to the `HoldingValuation` record in `Financial.Investment.Domain/Rules/HoldingValuationCalculator.cs`, and compute it in `Financial.Investment.Application/Services/HoldingValuationService.cs`'s `GetValuation` using T041's net series alongside the existing `TotalReturn` (depends on T041)
+- [X] T043 [US3] Add `TotalReturnNetOfTax` to `AggregatedSummaryDTO` and compute it in `Financial.Investment.Application/Services/SummaryService.cs`'s `Aggregate`, using T041's net series and Wave 0's existing null-when-incomplete rule (depends on T041)
 
 ### Tests for User Story 3
 
-- [ ] T044 [P] [US3] Extend `Tests/Financial.Investment.Application.Tests/Services/AssetCashFlowBuilderTests.cs` for the Gross/Net split, including a case with `Withheld > 0` where the two series differ (depends on T041)
-- [ ] T045 [P] [US3] Extend `Tests/Financial.Investment.Application.Tests/Services/HoldingValuationServiceTests.cs` for `TotalReturnNetOfTax`, including the "equal to `TotalReturn` when never withheld" case (FR-018) (depends on T042)
-- [ ] T046 [P] [US3] Extend `Tests/Financial.Investment.Application.Tests/Services/SummaryServiceTests.cs` for `TotalReturnNetOfTax`, including the FR-018 equality case and the "null when a valuation is missing" case matching `TotalReturn`'s existing rule (depends on T043)
-- [ ] T047 [US3] Confirm the exact DTO currently surfacing `HoldingValuation.TotalReturn` to `Financial.Api` (per contracts/api-contract.md's note — none was found as of the plan) and add `TotalReturnNetOfTax` alongside it there (depends on T042)
-- [ ] T048 [US3] Regenerate the OpenAPI snapshot for `AggregatedSummaryDTO` and the asset-level valuation surface from T047 (same procedure as T025) (depends on T043, T047)
-- [ ] T049 [P] [US3] Add an integration test in `Tests/Financial.Api.Tests` confirming a broker/portfolio summary endpoint returns equal `totalReturn`/`totalReturnNetOfTax` with no withholding, and differing values once a withheld income exists (depends on T048)
+- [X] T044 [P] [US3] Extend `Tests/Financial.Investment.Application.Tests/Services/AssetCashFlowBuilderTests.cs` for the Gross/Net split, including a case with `Withheld > 0` where the two series differ (depends on T041)
+- [X] T045 [P] [US3] Extend `Tests/Financial.Investment.Application.Tests/Services/HoldingValuationServiceTests.cs` for `TotalReturnNetOfTax`, including the "equal to `TotalReturn` when never withheld" case (FR-018) (depends on T042)
+- [X] T046 [P] [US3] Extend `Tests/Financial.Investment.Application.Tests/Services/SummaryServiceTests.cs` for `TotalReturnNetOfTax`, including the FR-018 equality case and the "null when a valuation is missing" case matching `TotalReturn`'s existing rule (depends on T043)
+- [X] T047 [US3] Confirm the exact DTO currently surfacing `HoldingValuation.TotalReturn` to `Financial.Api` (per contracts/api-contract.md's note — none was found as of the plan) and add `TotalReturnNetOfTax` alongside it there (depends on T042)
+- [X] T048 [US3] Regenerate the OpenAPI snapshot for `AggregatedSummaryDTO` and the asset-level valuation surface from T047 (same procedure as T025) (depends on T043, T047)
+- [X] T049 [P] [US3] Add an integration test in `Tests/Financial.Api.Tests` confirming a broker/portfolio summary endpoint returns equal `totalReturn`/`totalReturnNetOfTax` with no withholding, and differing values once a withheld income exists (depends on T048)
 
 **Checkpoint**: US3 is independently testable — gross and net-of-tax return are both visible via the
 API at every level Wave 0 established (FR-017/FR-018).
@@ -179,18 +179,18 @@ order for the same holding, and vice versa.
 
 ### Implementation for User Story 4 — shared backend surface
 
-- [ ] T050 [US4] Add `GET /transactions/type-effects` to `Financial.Api/Controllers/TransactionsController.cs`, backed by a small query returning `TransactionTypeEffects`' table as a DTO list (contracts/api-contract.md) (depends on T002)
-- [ ] T051 [P] [US4] Add an integration test for the new endpoint in `Tests/Financial.Api.Tests` (depends on T050)
-- [ ] T052 [US4] Regenerate the OpenAPI snapshot + `Financial.Web`'s generated types for the new endpoint (same procedure as T025) (depends on T025, T039, T048, T050)
+- [X] T050 [US4] Add `GET /transactions/type-effects` to `Financial.Api/Controllers/TransactionsController.cs`, backed by a small query returning `TransactionTypeEffects`' table as a DTO list (contracts/api-contract.md) (depends on T002)
+- [X] T051 [P] [US4] Add an integration test for the new endpoint in `Tests/Financial.Api.Tests` (depends on T050)
+- [X] T052 [US4] Regenerate the OpenAPI snapshot + `Financial.Web`'s generated types for the new endpoint (same procedure as T025) (depends on T025, T039, T048, T050)
 
 ### Implementation for User Story 4 — Web (`Financial.Web`)
 
-- [ ] T053 [P] [US4] Update `Financial.Web/src/hooks/useTransactions.ts`: widened `Type` union, `Withheld` field, `NetCash` replacing `totalPrice`, fetch the type-effects list (depends on T052)
-- [ ] T054 [P] [US4] Update `Financial.Web/src/hooks/useCredits.ts`: widened `Type` union (`SecuritiesLendingIncome`, `Coupon`), `Withheld`/`NetAmount` (depends on T052)
-- [ ] T055 [US4] Update `Financial.Web/src/components/TransactionsTab.tsx`: new type options in the entry form; hide Quantity/UnitPrice as required when the selected type's quantity effect is `None` (FR-022); display Gross/Fees/Withheld/Net columns (depends on T053)
-- [ ] T056 [US4] Update `Financial.Web/src/components/CreditsTab.tsx`: renamed/added income-kind options ("Securities Lending Income", "Coupon"); allow a negative `Value` entry for a correction; display Gross/Withheld/Net (depends on T054)
-- [ ] T057 [US4] Surface `totalReturn`/`totalReturnNetOfTax` with a distinct label (FR-020, never position/order alone) wherever the existing return figure is shown in `Financial.Web` (depends on T052)
-- [ ] T058 [P] [US4] Add/extend Vitest component and hook tests for T053–T057 (co-located `__tests__`, matching existing convention) (depends on T053, T054, T055, T056, T057)
+- [X] T053 [P] [US4] Update `Financial.Web/src/hooks/useTransactions.ts`: widened `Type` union, `Withheld` field, `NetCash` replacing `totalPrice`, fetch the type-effects list (depends on T052)
+- [X] T054 [P] [US4] Update `Financial.Web/src/hooks/useCredits.ts`: widened `Type` union (`SecuritiesLendingIncome`, `Coupon`), `Withheld`/`NetAmount` (depends on T052)
+- [X] T055 [US4] Update `Financial.Web/src/components/TransactionsTab.tsx`: new type options in the entry form; hide Quantity/UnitPrice as required when the selected type's quantity effect is `None` (FR-022); display Gross/Fees/Withheld/Net columns (depends on T053)
+- [X] T056 [US4] Update `Financial.Web/src/components/CreditsTab.tsx`: renamed/added income-kind options ("Securities Lending Income", "Coupon"); allow a negative `Value` entry for a correction; display Gross/Withheld/Net (depends on T054)
+- [X] T057 [US4] Surface `totalReturn`/`totalReturnNetOfTax` with a distinct label (FR-020, never position/order alone) wherever the existing return figure is shown in `Financial.Web` (depends on T052)
+- [X] T058 [P] [US4] Add/extend Vitest component and hook tests for T053–T057 (co-located `__tests__`, matching existing convention) (depends on T053, T054, T055, T056, T057)
 
 ### Implementation for User Story 4 — WPF (`Financial.App`)
 

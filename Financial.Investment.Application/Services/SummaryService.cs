@@ -137,12 +137,14 @@ public sealed class SummaryService : ISummaryService
 
         decimal? priceOnlyReturn = null;
         decimal? totalReturn = null;
+        decimal? totalReturnNetOfTax = null;
 
         if (holdingCount > 0 && unvaluedHoldingCount == 0)
         {
             var asOf = _timeProvider.GetUtcNow().UtcDateTime.Date;
             priceOnlyReturn = _xirrCalculationService.Calculate(AssetCashFlowBuilder.ConcatenateWithoutCredits(assetList), marketValueSum, asOf);
             totalReturn = _xirrCalculationService.Calculate(AssetCashFlowBuilder.ConcatenateWithCredits(assetList), marketValueSum, asOf);
+            totalReturnNetOfTax = _xirrCalculationService.Calculate(AssetCashFlowBuilder.ConcatenateNetOfTaxWithCredits(assetList), marketValueSum, asOf);
         }
 
         return new AggregatedSummaryDTO
@@ -156,6 +158,7 @@ public sealed class SummaryService : ISummaryService
             UnvaluedHoldingCount = unvaluedHoldingCount,
             PriceOnlyReturn = priceOnlyReturn,
             TotalReturn = totalReturn,
+            TotalReturnNetOfTax = totalReturnNetOfTax,
         };
     }
 }

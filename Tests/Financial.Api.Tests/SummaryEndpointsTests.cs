@@ -231,6 +231,43 @@ public class SummaryEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
+    public async Task GetPortfolioSummary_GrossAndNetOfTaxReturn_EqualWithoutWithholdingThenDifferWithIt()
+    {
+        var priceResponse = await Client.PutAsJsonAsync("/api/v1/financial/prices", new SetAssetPriceDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "BCIA11",
+            Date = DateOnly.FromDateTime(DateTime.UtcNow),
+            Price = 15m
+        });
+        priceResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var beforeWithholding = await Client.GetAsync("/api/v1/financial/summary/portfolio/XPI/Default");
+        var beforeDto = await beforeWithholding.Content.ReadFromJsonAsync<AggregatedSummaryDTO>();
+        beforeDto!.TotalReturn.Should().NotBeNull();
+        beforeDto.TotalReturnNetOfTax.Should().Be(beforeDto.TotalReturn, "FR-018: identical, not merely close, when nothing was ever withheld");
+
+        var creditResponse = await Client.PostAsJsonAsync("/api/v1/financial/credits", new CreditCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "BCIA11",
+            Date = new DateTime(2024, 6, 1),
+            Type = "Dividend",
+            Value = 100m,
+            Withheld = 15m
+        });
+        creditResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var afterWithholding = await Client.GetAsync("/api/v1/financial/summary/portfolio/XPI/Default");
+        var afterDto = await afterWithholding.Content.ReadFromJsonAsync<AggregatedSummaryDTO>();
+        afterDto!.TotalReturn.Should().NotBeNull();
+        afterDto.TotalReturnNetOfTax.Should().NotBeNull();
+        afterDto.TotalReturnNetOfTax.Should().NotBe(afterDto.TotalReturn);
+    }
+
+    [Fact]
     public async Task GetBrokerBreakdown_ScopeActive_UsesCostOfUnitsHeld()
     {
         var response = await Client.GetAsync("/api/v1/financial/summary/broker/XPI/breakdown?scope=active");

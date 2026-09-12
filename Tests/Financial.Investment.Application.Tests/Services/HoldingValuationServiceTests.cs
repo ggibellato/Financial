@@ -102,6 +102,49 @@ public class HoldingValuationServiceTests
     }
 
     [Fact]
+    public void GetValuation_NoWithholdingEver_TotalReturnNetOfTaxEqualsTotalReturn()
+    {
+        var asset = MakeAsset();
+        asset.AddTransaction(Transaction.Create(new DateTime(2025, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
+        asset.AddCredit(Credit.Create(new DateTime(2025, 6, 1), Credit.CreditType.Dividend, 5m));
+        asset.SetPrice(new DateOnly(2026, 8, 14), 8m, isManual: false);
+        var service = CreateService();
+
+        var result = service.GetValuation(asset, InvestmentScope.Active);
+
+        result.TotalReturnNetOfTax.Should().NotBeNull();
+        result.TotalReturnNetOfTax.Should().Be(result.TotalReturn, "FR-018: gross and net-of-tax must be numerically identical, not merely close, when nothing was ever withheld");
+    }
+
+    [Fact]
+    public void GetValuation_DividendWithholding_TotalReturnNetOfTaxDiffersFromTotalReturn()
+    {
+        var asset = MakeAsset();
+        asset.AddTransaction(Transaction.Create(new DateTime(2025, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
+        asset.AddCredit(Credit.Create(new DateTime(2025, 6, 1), Credit.CreditType.Dividend, 100m, withheld: 15m));
+        asset.SetPrice(new DateOnly(2026, 8, 14), 8m, isManual: false);
+        var service = CreateService();
+
+        var result = service.GetValuation(asset, InvestmentScope.Active);
+
+        result.TotalReturnNetOfTax.Should().NotBeNull();
+        result.TotalReturn.Should().NotBeNull();
+        result.TotalReturnNetOfTax.Should().NotBe(result.TotalReturn);
+    }
+
+    [Fact]
+    public void GetValuation_NoMarketValue_TotalReturnNetOfTaxIsNull()
+    {
+        var asset = MakeAsset();
+        asset.AddTransaction(Transaction.Create(new DateTime(2026, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
+        var service = CreateService();
+
+        var result = service.GetValuation(asset, InvestmentScope.Active);
+
+        result.TotalReturnNetOfTax.Should().BeNull();
+    }
+
+    [Fact]
     public void GetValuation_UsesTheAsOfDateThePriceWasRecordedOn_NotAnExactDateMatchRequirement()
     {
         var asset = MakeAsset();

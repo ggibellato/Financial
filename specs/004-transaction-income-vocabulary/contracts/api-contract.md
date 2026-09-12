@@ -67,14 +67,16 @@ directly in-process, per Constitution Principle III (WPF is not an HTTP client o
 | `TotalReturnNetOfTax` | **New**, nullable `decimal` — computed via the Net cash-flow series (`research.md` #4), same null-when-incomplete rule Wave 0 established (a total missing a valuation withholds both figures, per spec Edge Cases / User Story 3 Scenario 3). |
 | `PriceOnlyReturn` | **Unchanged, no Net counterpart** — it already excludes all income by construction, so withheld tax (which only arises on income and, vanishingly rarely, on a transaction) does not create a meaningful second figure here; FR-017's "both available wherever a return figure is shown" is scoped to `TotalReturn`, which is the figure User Story 3 is about. |
 
-## Asset-level holding valuation
+## Asset-level holding valuation — `PortfolioAssetSummaryItemDTO`
 
-Wave 0 (`specs/003-investment-calculation-core/`) introduced `HoldingValuationCalculator`'s
-`TotalReturn` as a Domain-level figure; confirm at implementation time (`/speckit-tasks`) exactly
-which DTO currently surfaces it to `Financial.Api`/`Financial.Web` (no dedicated
-`HoldingValuationDTO` exists in the codebase as of this plan) and add `TotalReturnNetOfTax`
-alongside it there, following the identical Gross/Net pairing pattern as `AggregatedSummaryDTO`
-above.
+`Financial.Investment.Application/DTOs/PortfolioAssetSummaryItemDTO.cs` — found during
+implementation to be the DTO `PortfolioAssetSummaryBuilder` maps `HoldingValuation` into (there is
+no separate `HoldingValuationDTO`); this is what surfaces the per-holding grid row, including
+Wave 0's `TotalReturn`, to `Financial.Api`/`Financial.Web`.
+
+| Field | Change |
+|---|---|
+| `TotalReturnNetOfTax` | **New**, nullable `decimal`, alongside the existing `TotalReturn` — same Gross/Net pairing as `AggregatedSummaryDTO`, sourced from `HoldingValuation.TotalReturnNetOfTax` (`HoldingValuationService.GetValuation`). |
 
 ## Regeneration checklist (per `CLAUDE.md`)
 

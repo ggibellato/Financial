@@ -3,6 +3,7 @@ using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Application.Validation;
 using Financial.Investment.Domain.Entities;
+using Financial.Investment.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.Logging;
 
@@ -173,6 +174,20 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
             throw;
         }
     }
+
+    public IReadOnlyList<TransactionTypeEffectDTO> GetTransactionTypeEffects() =>
+        Enum.GetValues<Transaction.TransactionType>()
+            .Select(type =>
+            {
+                var effect = TransactionTypeEffects.For(type);
+                return new TransactionTypeEffectDTO
+                {
+                    Type = type.ToString(),
+                    QuantityEffect = effect.Quantity.ToString(),
+                    CashEffect = effect.Cash.ToString()
+                };
+            })
+            .ToList();
 
     private ITelemetrySpan StartSpan(string operationName)
     {

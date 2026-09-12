@@ -347,6 +347,20 @@ public class TransactionEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
+    public async Task GetTransactionTypeEffects_Returns200WithEveryType()
+    {
+        var response = await Client.GetAsync("/api/v1/financial/transactions/type-effects");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var items = await response.Content.ReadFromJsonAsync<List<TransactionTypeEffectDTO>>();
+        items.Should().NotBeNull();
+        items!.Select(i => i.Type).Should().BeEquivalentTo(
+            ["Buy", "Sell", "Fee", "Redemption", "TransferIn", "TransferOut", "CapitalCall", "ReturnOfCapital"]);
+        items.Should().Contain(i => i.Type == "TransferIn" && i.QuantityEffect == "Increase" && i.CashEffect == "None");
+        items.Should().Contain(i => i.Type == "Fee" && i.QuantityEffect == "None" && i.CashEffect == "Out");
+    }
+
+    [Fact]
     public async Task GetTransactionsByPortfolio_DefaultScope_DoesNotReturnHistoricOnlyPortfolio()
     {
         var response = await Client.GetAsync("/api/v1/financial/transactions/portfolio/XPI/Uncategorized");

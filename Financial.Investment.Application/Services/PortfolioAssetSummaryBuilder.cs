@@ -79,6 +79,7 @@ internal static class PortfolioAssetSummaryBuilder
             IsPriceStale = c.Valuation.IsPriceStale,
             PriceOnlyReturn = c.Valuation.PriceOnlyReturn,
             TotalReturn = c.Valuation.TotalReturn,
+            TotalReturnNetOfTax = c.Valuation.TotalReturnNetOfTax,
             TotalCredits = c.TotalCredits,
             CashFlows = c.CashFlows,
             LastMonthCredits = c.LastMonthCredits,

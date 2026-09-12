@@ -245,5 +245,7 @@ public class AssetDetailsViewModelTransactionsChartTests
             _blocker.Wait(MaxBlockDuration);
             return [];
         }
+
+        public IReadOnlyList<TransactionTypeEffectDTO> GetTransactionTypeEffects() => [];
     }
 }
