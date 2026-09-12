@@ -102,6 +102,16 @@
           "exchange": {
             "type": "string"
           },
+          "incomePolicy": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/IncomePolicy"
+              }
+            ]
+          },
           "isin": {
             "type": "string"
           },
@@ -116,6 +126,16 @@
           },
           "ticker": {
             "type": "string"
+          },
+          "valuationMethod": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ValuationMethod"
+              }
+            ]
           }
         },
         "required": [
@@ -142,6 +162,9 @@
           "exchange": {
             "type": "string"
           },
+          "incomePolicy": {
+            "$ref": "#/components/schemas/IncomePolicy"
+          },
           "isin": {
             "type": "string"
           },
@@ -160,6 +183,9 @@
           },
           "ticker": {
             "type": "string"
+          },
+          "valuationMethod": {
+            "$ref": "#/components/schemas/ValuationMethod"
           }
         },
         "required": [
@@ -188,6 +214,16 @@
           "exchange": {
             "type": "string"
           },
+          "incomePolicy": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/IncomePolicy"
+              }
+            ]
+          },
           "isin": {
             "type": "string"
           },
@@ -199,6 +235,16 @@
           },
           "ticker": {
             "type": "string"
+          },
+          "valuationMethod": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ValuationMethod"
+              }
+            ]
           }
         },
         "required": [
@@ -310,18 +356,18 @@
               "string"
             ]
           },
-          "priceHistory": {
-            "items": {
-              "$ref": "#/components/schemas/AssetPriceSnapshotDTO"
-            },
-            "type": "array"
-          },
           "priceOnlyReturn": {
             "format": "double",
             "type": [
               "null",
               "number"
             ]
+          },
+          "priceSnapshots": {
+            "items": {
+              "$ref": "#/components/schemas/AssetPriceSnapshotDTO"
+            },
+            "type": "array"
           },
           "quantity": {
             "format": "double",
@@ -465,6 +511,9 @@
       },
       "AssetPriceSnapshotDTO": {
         "properties": {
+          "currency": {
+            "type": "string"
+          },
           "date": {
             "format": "date",
             "type": "string"
@@ -475,6 +524,22 @@
           "price": {
             "format": "double",
             "type": "number"
+          },
+          "retrievedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "source": {
+            "$ref": "#/components/schemas/PriceSource"
+          },
+          "sourceReference": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "valuationMethod": {
+            "$ref": "#/components/schemas/ValuationMethod"
           }
         },
         "type": "object"
@@ -1929,6 +1994,13 @@
         ],
         "type": "object"
       },
+      "IncomePolicy": {
+        "enum": [
+          "Unknown",
+          "Distributing",
+          "Accumulating"
+        ]
+      },
       "IncomeSourceCreateDTO": {
         "properties": {
           "autoSplitToReserve": {
@@ -2853,6 +2925,18 @@
           "Short"
         ]
       },
+      "PriceSource": {
+        "enum": [
+          "Unknown",
+          "Manual",
+          "ProviderValuation",
+          "Google",
+          "Yahoo",
+          "StatusInvest",
+          "DicionarioDoInvestidor",
+          "Redentia"
+        ]
+      },
       "ProblemDetails": {
         "properties": {
           "detail": {
@@ -3193,6 +3277,12 @@
           "brokerName": {
             "type": "string"
           },
+          "currency": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "date": {
             "format": "date",
             "type": "string"
@@ -3203,6 +3293,12 @@
           "price": {
             "format": "double",
             "type": "number"
+          },
+          "sourceReference": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         },
         "required": [
@@ -3656,6 +3752,16 @@
           "Broker",
           "Portfolio",
           "Asset"
+        ]
+      },
+      "ValuationMethod": {
+        "enum": [
+          "Unspecified",
+          "MarketPrice",
+          "NAV",
+          "ProviderValue",
+          "Manual",
+          "BondQuote"
         ]
       },
       "WatchlistItemDTO": {

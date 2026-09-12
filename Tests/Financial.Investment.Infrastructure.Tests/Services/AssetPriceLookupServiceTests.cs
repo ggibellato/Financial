@@ -375,9 +375,71 @@ public class AssetPriceLookupServiceTests
                 Task.Run(() => service.GetCurrentPriceAsync(BuildRequest())));
 
             repository.SaveCount.Should().Be(1);
-            ReloadAssetFromDisk(tempFile)!.PriceHistory
+            ReloadAssetFromDisk(tempFile)!.PriceSnapshots
                 .Count(entry => entry.Date == DateOnly.FromDateTime(DateTime.Today))
                 .Should().Be(1);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
+    public async Task GetCurrentPriceAsync_ProviderValueMethod_ReturnsOldRecordedValueWithoutFetching()
+    {
+        var (service, repository, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.NotUsed());
+        try
+        {
+            var oldDate = DateOnly.FromDateTime(DateTime.Today).AddDays(-30);
+            var asset = repository.GetAsset(BrokerName, PortfolioName, AssetName)!;
+            asset.SetValuationMethod(ValuationMethod.ProviderValue);
+            asset.SetPrice(oldDate, 5000m, isManual: false);
+
+            var result = await service.GetCurrentPriceAsync(BuildRequest());
+
+            result.Price.Should().Be(5000m);
+            repository.SaveCount.Should().Be(0);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
+    public async Task GetCurrentPriceAsync_ManualMethod_ReturnsOldRecordedValueWithoutFetching()
+    {
+        var (service, repository, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.NotUsed());
+        try
+        {
+            var oldDate = DateOnly.FromDateTime(DateTime.Today).AddDays(-30);
+            var asset = repository.GetAsset(BrokerName, PortfolioName, AssetName)!;
+            asset.SetValuationMethod(ValuationMethod.Manual);
+            asset.SetPrice(oldDate, 1234.56m, isManual: false);
+
+            var result = await service.GetCurrentPriceAsync(BuildRequest());
+
+            result.Price.Should().Be(1234.56m);
+            repository.SaveCount.Should().Be(0);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
+    public async Task GetCurrentPriceAsync_ProviderValueMethod_NoRecordedValueYet_Throws()
+    {
+        var (service, repository, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.NotUsed());
+        try
+        {
+            repository.GetAsset(BrokerName, PortfolioName, AssetName)!.SetValuationMethod(ValuationMethod.ProviderValue);
+
+            var act = async () => await service.GetCurrentPriceAsync(BuildRequest());
+
+            await act.Should().ThrowAsync<InvalidOperationException>();
         }
         finally
         {

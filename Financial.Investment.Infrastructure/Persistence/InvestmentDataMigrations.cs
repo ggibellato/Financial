@@ -10,7 +10,7 @@ namespace Financial.Investment.Infrastructure.Persistence;
 /// </summary>
 internal static class InvestmentDataMigrations
 {
-    public const int CurrentVersion = 2;
+    public const int CurrentVersion = 3;
 
     private static readonly string[] BrokerGroupNames = ["ActiveBrokers", "HistoricBrokers"];
 
@@ -19,6 +19,11 @@ internal static class InvestmentDataMigrations
         if (fromVersion < 2)
         {
             RenameCreditType(root, "Rent", "SecuritiesLendingIncome");
+        }
+
+        if (fromVersion < 3)
+        {
+            RenamePriceHistoryToPriceSnapshots(root);
         }
     }
 
@@ -36,7 +41,53 @@ internal static class InvestmentDataMigrations
         }
     }
 
+    /// <summary>
+    /// Renames the "PriceHistory" collection to "PriceSnapshots" (matching the Domain-internal
+    /// <c>Asset.PriceHistory</c>→<c>PriceSnapshots</c> rename), and maps each existing entry's
+    /// "IsManual" bool onto the new "Source" string — "Manual" or "Unknown" (an honest "some
+    /// automatic provider, which one is lost to history", never conflated with "no data").
+    /// </summary>
+    private static void RenamePriceHistoryToPriceSnapshots(JsonObject root)
+    {
+        foreach (var brokerGroupName in BrokerGroupNames)
+        {
+            foreach (var asset in EnumerateAssets(root, brokerGroupName))
+            {
+                if (!asset.TryGetPropertyValue("PriceHistory", out var priceHistory) || priceHistory is not JsonArray snapshots)
+                {
+                    continue;
+                }
+
+                foreach (var snapshot in snapshots.OfType<JsonObject>())
+                {
+                    var wasManual = snapshot.TryGetPropertyValue("IsManual", out var isManualNode) && isManualNode?.GetValue<bool>() == true;
+                    snapshot.Remove("IsManual");
+                    snapshot["Source"] = wasManual ? "Manual" : "Unknown";
+                }
+
+                asset.Remove("PriceHistory");
+                asset["PriceSnapshots"] = priceHistory;
+            }
+        }
+    }
+
     private static IEnumerable<JsonObject> EnumerateCredits(JsonObject root, string brokerGroupName)
+    {
+        foreach (var asset in EnumerateAssets(root, brokerGroupName))
+        {
+            if (asset["Credits"] is not JsonArray credits)
+            {
+                continue;
+            }
+
+            foreach (var credit in credits.OfType<JsonObject>())
+            {
+                yield return credit;
+            }
+        }
+    }
+
+    private static IEnumerable<JsonObject> EnumerateAssets(JsonObject root, string brokerGroupName)
     {
         if (root[brokerGroupName] is not JsonArray brokers)
         {
@@ -59,15 +110,7 @@ internal static class InvestmentDataMigrations
 
                 foreach (var asset in assets.OfType<JsonObject>())
                 {
-                    if (asset["Credits"] is not JsonArray credits)
-                    {
-                        continue;
-                    }
-
-                    foreach (var credit in credits.OfType<JsonObject>())
-                    {
-                        yield return credit;
-                    }
+                    yield return asset;
                 }
             }
         }

@@ -159,6 +159,19 @@ public class HoldingValuationServiceTests
     }
 
     [Fact]
+    public void GetValuation_ProviderValueMethod_MarketValueIsTheRecordedFigureDirectly()
+    {
+        var asset = MakeAsset();
+        asset.SetValuationMethod(ValuationMethod.ProviderValue);
+        asset.SetPrice(new DateOnly(2026, 8, 14), 5000m, isManual: false);
+        var service = CreateService();
+
+        var result = service.GetValuation(asset, InvestmentScope.Active);
+
+        result.MarketValue.Should().Be(5000m);
+    }
+
+    [Fact]
     public void GetValuation_Historic_MarketValueIsZeroNotNull()
     {
         var asset = MakeAsset();

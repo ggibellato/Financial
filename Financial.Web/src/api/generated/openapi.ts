@@ -5596,11 +5596,13 @@ export interface components {
             class?: null | components["schemas"]["GlobalAssetClass"];
             country?: components["schemas"]["CountryCode"];
             exchange?: string;
+            incomePolicy?: null | components["schemas"]["IncomePolicy"];
             isin?: string;
             localTypeCode?: string;
             name: string;
             portfolioName: string;
             ticker?: string;
+            valuationMethod?: null | components["schemas"]["ValuationMethod"];
         };
         AssetAdminDTO: {
             brokerName: string;
@@ -5608,6 +5610,7 @@ export interface components {
             class?: components["schemas"]["GlobalAssetClass"];
             country?: components["schemas"]["CountryCode"];
             exchange?: string;
+            incomePolicy?: components["schemas"]["IncomePolicy"];
             isin?: string;
             localTypeCode?: string;
             name: string;
@@ -5615,15 +5618,18 @@ export interface components {
             /** Format: double */
             quantity?: number;
             ticker?: string;
+            valuationMethod?: components["schemas"]["ValuationMethod"];
         };
         AssetAdminUpdateDTO: {
             class?: null | components["schemas"]["GlobalAssetClass"];
             country?: components["schemas"]["CountryCode"];
             exchange?: string;
+            incomePolicy?: null | components["schemas"]["IncomePolicy"];
             isin?: string;
             localTypeCode?: string;
             name: string;
             ticker?: string;
+            valuationMethod?: null | components["schemas"]["ValuationMethod"];
         };
         AssetBreakdownItemDTO: {
             assetName: string;
@@ -5660,9 +5666,9 @@ export interface components {
             positionType?: components["schemas"]["PositionType"];
             /** Format: date */
             priceAsOfDate?: null | string;
-            priceHistory?: components["schemas"]["AssetPriceSnapshotDTO"][];
             /** Format: double */
             priceOnlyReturn?: null | number;
+            priceSnapshots?: components["schemas"]["AssetPriceSnapshotDTO"][];
             /** Format: double */
             quantity?: number;
             /** Format: double */
@@ -5711,11 +5717,17 @@ export interface components {
             ticker: string;
         };
         AssetPriceSnapshotDTO: {
+            currency: string;
             /** Format: date */
             date: string;
             isManual: boolean;
             /** Format: double */
             price: number;
+            /** Format: date-time */
+            retrievedAt: string;
+            source: components["schemas"]["PriceSource"];
+            sourceReference: null | string;
+            valuationMethod: components["schemas"]["ValuationMethod"];
         };
         BalanceAdjustmentCreateDTO: {
             /** Format: date */
@@ -6175,6 +6187,8 @@ export interface components {
             netValue: number;
             splitToReserve: boolean;
         };
+        /** @enum {unknown} */
+        IncomePolicy: "Unknown" | "Distributing" | "Accumulating";
         IncomeSourceCreateDTO: {
             autoSplitToReserve: boolean;
             group: string;
@@ -6449,6 +6463,8 @@ export interface components {
         };
         /** @enum {unknown} */
         PositionType: "Long" | "Flat" | "Short";
+        /** @enum {unknown} */
+        PriceSource: "Unknown" | "Manual" | "ProviderValuation" | "Google" | "Yahoo" | "StatusInvest" | "DicionarioDoInvestidor" | "Redentia";
         ProblemDetails: {
             detail: null | string;
             instance: null | string;
@@ -6551,11 +6567,13 @@ export interface components {
         SetAssetPriceDTO: {
             assetName: string;
             brokerName: string;
+            currency?: null | string;
             /** Format: date */
             date?: string;
             portfolioName: string;
             /** Format: double */
             price?: number;
+            sourceReference?: null | string;
         };
         /** @description One bounded context's current persistence status. */
         SyncStatusDTO: {
@@ -6709,6 +6727,8 @@ export interface components {
         };
         /** @enum {unknown} */
         TreeNodeType: "Investments" | "Broker" | "Portfolio" | "Asset";
+        /** @enum {unknown} */
+        ValuationMethod: "Unspecified" | "MarketPrice" | "NAV" | "ProviderValue" | "Manual" | "BondQuote";
         WatchlistItemDTO: {
             group: string;
             name: string;

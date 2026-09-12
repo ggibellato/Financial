@@ -69,12 +69,22 @@ const MANUAL_ENTRY: AssetPriceSnapshotDto = {
   date: '2024-03-15T00:00:00',
   price: 120.5,
   isManual: true,
+  currency: 'BRL',
+  source: 'Manual',
+  sourceReference: null,
+  valuationMethod: 'MarketPrice',
+  retrievedAt: '2024-03-15T00:00:00Z',
 }
 
 const AUTOMATIC_ENTRY: AssetPriceSnapshotDto = {
   date: '2024-01-10T00:00:00',
   price: 350.0,
   isManual: false,
+  currency: 'BRL',
+  source: 'Google',
+  sourceReference: null,
+  valuationMethod: 'MarketPrice',
+  retrievedAt: '2024-01-10T00:00:00Z',
 }
 
 const DEFAULT_HOOK: PriceHistoryData = {

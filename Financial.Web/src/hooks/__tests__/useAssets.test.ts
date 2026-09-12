@@ -14,6 +14,8 @@ const CREATE_REQUEST: AssetAdminCreateDto = {
   country: 'Unknown',
   localTypeCode: '',
   class: null,
+  valuationMethod: null,
+  incomePolicy: null,
 }
 
 const UPDATE_REQUEST: AssetAdminUpdateDto = {
@@ -24,6 +26,8 @@ const UPDATE_REQUEST: AssetAdminUpdateDto = {
   country: 'Unknown',
   localTypeCode: '',
   class: 'Unknown',
+  valuationMethod: null,
+  incomePolicy: null,
 }
 
 const { getAdminAssetsMock, createAssetMock, updateAssetMock, archiveAssetMock } = vi.hoisted(() => ({
@@ -54,6 +58,8 @@ const ASSETS: AssetAdminDto[] = [
     country: 'BR',
     localTypeCode: 'FII',
     class: 'RealEstate',
+    valuationMethod: 'Unspecified',
+    incomePolicy: 'Unknown',
     quantity: 100,
   },
   {
@@ -67,6 +73,8 @@ const ASSETS: AssetAdminDto[] = [
     country: 'Unknown',
     localTypeCode: '',
     class: 'Unknown',
+    valuationMethod: 'Unspecified',
+    incomePolicy: 'Unknown',
     quantity: 0,
   },
 ]

@@ -8,28 +8,58 @@ public class AssetPriceSnapshot
 
     public decimal Price { get; private set; }
 
-    public bool IsManual { get; private set; }
+    public string Currency { get; private set; } = string.Empty;
+
+    public PriceSource Source { get; private set; }
+
+    public string? SourceReference { get; private set; }
+
+    public ValuationMethod ValuationMethod { get; private set; }
+
+    public DateTimeOffset RetrievedAt { get; private set; }
+
+    public bool IsManual => Source == PriceSource.Manual;
 
     private AssetPriceSnapshot() { }
 
-    public static AssetPriceSnapshot Create(DateOnly date, decimal price, bool isManual)
+    public static AssetPriceSnapshot Create(
+        DateOnly date,
+        decimal price,
+        ValuationMethod valuationMethod,
+        PriceSource source,
+        string currency,
+        string? sourceReference,
+        DateTimeOffset retrievedAt)
     {
-        ValidatePrice(price);
+        ValidatePrice(price, valuationMethod);
         ValidateDate(date);
 
         return new()
         {
             Date = date,
             Price = price,
-            IsManual = isManual
+            Currency = currency,
+            Source = source,
+            SourceReference = sourceReference,
+            ValuationMethod = valuationMethod,
+            RetrievedAt = retrievedAt
         };
     }
 
-    private static void ValidatePrice(decimal price)
+    /// <summary>
+    /// A value-based/manual holding's recorded figure is its total worth, not a per-unit market
+    /// price — zero is a valid, distinct value there (a holding written down to nothing), so only
+    /// a negative figure is ever invalid for those two methods. Every other method keeps rejecting
+    /// zero or below, since a market price can never legitimately be zero.
+    /// </summary>
+    private static void ValidatePrice(decimal price, ValuationMethod valuationMethod)
     {
-        if (price <= 0)
+        var allowsZero = valuationMethod is ValuationMethod.ProviderValue or ValuationMethod.Manual;
+        if (allowsZero ? price < 0 : price <= 0)
         {
-            throw new ArgumentException("Price must be greater than zero.");
+            throw new ArgumentException(allowsZero
+                ? "Price must not be negative."
+                : "Price must be greater than zero.");
         }
     }
 

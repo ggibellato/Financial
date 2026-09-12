@@ -369,9 +369,9 @@ public class NavigationServiceTests
         var details = CreateService().GetAssetDetails("Broker", "Portfolio", "ASSET1");
 
         details.Should().NotBeNull();
-        details!.PriceHistory.Should().HaveCount(2);
-        details.PriceHistory[0].Date.Should().Be(new DateOnly(2024, 2, 1));
-        details.PriceHistory[1].Date.Should().Be(new DateOnly(2024, 1, 1));
+        details!.PriceSnapshots.Should().HaveCount(2);
+        details.PriceSnapshots[0].Date.Should().Be(new DateOnly(2024, 2, 1));
+        details.PriceSnapshots[1].Date.Should().Be(new DateOnly(2024, 1, 1));
     }
 
     [Fact]

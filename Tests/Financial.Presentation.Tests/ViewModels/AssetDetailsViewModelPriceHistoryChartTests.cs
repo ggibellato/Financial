@@ -33,7 +33,7 @@ public class AssetDetailsViewModelPriceHistoryChartTests
         PortfolioName = "Default",
         Ticker = assetName,
         Exchange = "BVMF",
-        PriceHistory = priceHistory.ToList(),
+        PriceSnapshots = priceHistory.ToList(),
         Transactions = (transactions ?? []).ToList()
     };
 

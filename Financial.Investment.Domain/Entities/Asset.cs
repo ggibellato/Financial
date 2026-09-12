@@ -23,6 +23,10 @@ public class Asset
 
     public GlobalAssetClass Class { get; private set; } = GlobalAssetClass.Unknown;
 
+    public ValuationMethod ValuationMethod { get; private set; } = ValuationMethod.Unspecified;
+
+    public IncomePolicy IncomePolicy { get; private set; } = IncomePolicy.Unknown;
+
     public Transactions Transactions { get; private set; } = new();
 
     public decimal AveragePrice => Transactions.AveragePrice;
@@ -56,9 +60,9 @@ public class Asset
         }
     }
 
-    private List<AssetPriceSnapshot> _priceHistory = new List<AssetPriceSnapshot>();
-    public IReadOnlyCollection<AssetPriceSnapshot> PriceHistory { get => _priceHistory.AsReadOnly(); private set => SetPriceHistory(value); }
-    private void SetPriceHistory(IReadOnlyCollection<AssetPriceSnapshot> data)
+    private List<AssetPriceSnapshot> _priceSnapshots = new List<AssetPriceSnapshot>();
+    public IReadOnlyCollection<AssetPriceSnapshot> PriceSnapshots { get => _priceSnapshots.AsReadOnly(); private set => SetPriceSnapshots(value); }
+    private void SetPriceSnapshots(IReadOnlyCollection<AssetPriceSnapshot> data)
     {
         var replacement = new List<AssetPriceSnapshot>(data.Count);
         foreach (var entry in data)
@@ -66,7 +70,7 @@ public class Asset
             UpsertInto(replacement, entry);
         }
 
-        _priceHistory = replacement;
+        _priceSnapshots = replacement;
     }
 
     private Asset() { }
@@ -233,24 +237,38 @@ public class Asset
         }
     }
 
-    public void SetPrice(DateOnly date, decimal price, bool isManual)
+    public void SetValuationMethod(ValuationMethod valuationMethod) => ValuationMethod = valuationMethod;
+
+    public void SetIncomePolicy(IncomePolicy incomePolicy) => IncomePolicy = incomePolicy;
+
+    /// <summary>
+    /// Simple path: maps <paramref name="isManual"/> onto <see cref="PriceSource.Manual"/>/
+    /// <see cref="PriceSource.Unknown"/>, and defaults the rest of a snapshot's provenance (no
+    /// currency known, retrieved now, no source reference). This is the overload every existing
+    /// caller (mostly test fixtures with no interest in provenance) keeps using unchanged; a caller
+    /// that actually knows a snapshot's full provenance uses the overload below instead.
+    /// </summary>
+    public void SetPrice(DateOnly date, decimal price, bool isManual) =>
+        SetPrice(date, price, isManual ? PriceSource.Manual : PriceSource.Unknown, currency: string.Empty, sourceReference: null, DateTimeOffset.UtcNow);
+
+    public void SetPrice(DateOnly date, decimal price, PriceSource source, string currency, string? sourceReference, DateTimeOffset retrievedAt)
     {
-        var entry = AssetPriceSnapshot.Create(date, price, isManual);
+        var entry = AssetPriceSnapshot.Create(date, price, ValuationMethod, source, currency, sourceReference, retrievedAt);
         UpsertPriceEntry(entry);
     }
 
     public AssetPriceSnapshot? GetPriceForDate(DateOnly date) =>
-        _priceHistory.FirstOrDefault(entry => entry.Date == date);
+        _priceSnapshots.FirstOrDefault(entry => entry.Date == date);
 
     public AssetPriceSnapshot? GetMostRecentPrice() =>
-        _priceHistory.OrderByDescending(entry => entry.Date).FirstOrDefault();
+        _priceSnapshots.OrderByDescending(entry => entry.Date).FirstOrDefault();
 
     public AssetPriceSnapshot? GetPriceAsOf(DateOnly date) =>
-        _priceHistory.Where(entry => entry.Date <= date).MaxBy(entry => entry.Date);
+        _priceSnapshots.Where(entry => entry.Date <= date).MaxBy(entry => entry.Date);
 
     public bool RemovePrice(DateOnly date)
     {
-        var current = _priceHistory;
+        var current = _priceSnapshots;
         var index = current.FindIndex(entry => entry.Date == date);
         if (index < 0 || !current[index].IsManual)
         {
@@ -259,7 +277,7 @@ public class Asset
 
         var updated = new List<AssetPriceSnapshot>(current);
         updated.RemoveAt(index);
-        _priceHistory = updated;
+        _priceSnapshots = updated;
         return true;
     }
 
@@ -283,7 +301,7 @@ public class Asset
             return;
         }
 
-        var current = _priceHistory;
+        var current = _priceSnapshots;
         var index = current.FindIndex(entry => entry.Date == date);
         if (index < 0)
         {
@@ -292,7 +310,7 @@ public class Asset
 
         var updated = new List<AssetPriceSnapshot>(current);
         updated.RemoveAt(index);
-        _priceHistory = updated;
+        _priceSnapshots = updated;
     }
 
     /// <summary>
@@ -306,9 +324,9 @@ public class Asset
     /// </summary>
     private void UpsertPriceEntry(AssetPriceSnapshot entry)
     {
-        var updated = new List<AssetPriceSnapshot>(_priceHistory);
+        var updated = new List<AssetPriceSnapshot>(_priceSnapshots);
         UpsertInto(updated, entry);
-        _priceHistory = updated;
+        _priceSnapshots = updated;
     }
 
     private static void UpsertInto(List<AssetPriceSnapshot> entries, AssetPriceSnapshot entry)

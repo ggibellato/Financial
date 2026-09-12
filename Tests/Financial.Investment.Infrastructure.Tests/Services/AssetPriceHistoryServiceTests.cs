@@ -1,5 +1,6 @@
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Services;
+using Financial.Investment.Domain.Entities;
 using Financial.Investment.Infrastructure.Persistence;
 using Financial.Shared.Infrastructure.Persistence;
 using Financial.Investment.Infrastructure.Repositories;
@@ -239,6 +240,54 @@ public class AssetPriceHistoryServiceTests
             });
 
             result.Should().BeNull();
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
+    public async Task SetPriceAsync_AssetClassifiedProviderValue_RecordsProviderValuationSource()
+    {
+        var (service, repository, tempFile) = CreateServiceWithRepository();
+        try
+        {
+            repository.GetAsset(BrokerName, PortfolioName, AssetName)!.SetValuationMethod(ValuationMethod.ProviderValue);
+
+            var result = await service.SetPriceAsync(new SetAssetPriceDTO
+            {
+                BrokerName = BrokerName,
+                PortfolioName = PortfolioName,
+                AssetName = AssetName,
+                Date = new DateOnly(2026, 8, 15),
+                Price = 5000m
+            });
+
+            result!.PriceSnapshots.Should().ContainSingle(p => p.Date == new DateOnly(2026, 8, 15) && p.Source == PriceSource.ProviderValuation);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
+    public async Task SetPriceAsync_AssetLeftAtDefaultValuationMethod_RecordsManualSource()
+    {
+        var (service, tempFile) = CreateService();
+        try
+        {
+            var result = await service.SetPriceAsync(new SetAssetPriceDTO
+            {
+                BrokerName = BrokerName,
+                PortfolioName = PortfolioName,
+                AssetName = AssetName,
+                Date = new DateOnly(2026, 8, 15),
+                Price = 100m
+            });
+
+            result!.PriceSnapshots.Should().ContainSingle(p => p.Date == new DateOnly(2026, 8, 15) && p.Source == PriceSource.Manual);
         }
         finally
         {

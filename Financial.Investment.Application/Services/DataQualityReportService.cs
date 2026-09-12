@@ -43,7 +43,7 @@ public sealed class DataQualityReportService : IDataQualityReportService
                 .ToList();
 
             var unpricedOpenHoldings = activeHoldings
-                .Where(h => h.Asset.PriceHistory.Count == 0)
+                .Where(h => h.Asset.PriceSnapshots.Count == 0)
                 .Select(h => new UnpricedOpenHoldingFinding(h.BrokerName, h.PortfolioName, h.Asset.Name))
                 .OrderBy(f => f.BrokerName).ThenBy(f => f.PortfolioName).ThenBy(f => f.AssetName)
                 .ToList();

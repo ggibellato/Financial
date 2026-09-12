@@ -141,6 +141,99 @@ public class AssetAdminServiceTests
     }
 
     [Fact]
+    public async Task CreateAssetAsync_ValuationMethodAndIncomePolicyLeftUnset_DefaultToUnspecifiedAndUnknown()
+    {
+        _repository.Investments = Investments.Create();
+        var broker = Broker.Create("XPI", "BRL");
+        broker.CreatePortfolio("Default");
+        _repository.Investments.AddActiveBroker(broker);
+
+        var result = await CreateService().CreateAssetAsync(new AssetAdminCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            Name = "AAAA"
+        });
+
+        using (new AssertionScope())
+        {
+            result.ValuationMethod.Should().Be(ValuationMethod.Unspecified);
+            result.IncomePolicy.Should().Be(IncomePolicy.Unknown);
+        }
+    }
+
+    [Fact]
+    public async Task CreateAssetAsync_ValuationMethodAndIncomePolicySet_ArePersisted()
+    {
+        _repository.Investments = Investments.Create();
+        var broker = Broker.Create("XPI", "BRL");
+        broker.CreatePortfolio("Default");
+        _repository.Investments.AddActiveBroker(broker);
+
+        var result = await CreateService().CreateAssetAsync(new AssetAdminCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            Name = "AAAA",
+            ValuationMethod = ValuationMethod.ProviderValue,
+            IncomePolicy = IncomePolicy.Distributing
+        });
+
+        using (new AssertionScope())
+        {
+            result.ValuationMethod.Should().Be(ValuationMethod.ProviderValue);
+            result.IncomePolicy.Should().Be(IncomePolicy.Distributing);
+        }
+    }
+
+    [Fact]
+    public async Task UpdateAssetAsync_ValuationMethodAndIncomePolicyLeftUnset_PreservesExistingValues()
+    {
+        _repository.Investments = Investments.Create();
+        var broker = Broker.Create("XPI", "BRL");
+        var asset = Asset.Create("AAAA", "ISIN123", "NYSE", "AAA");
+        asset.SetValuationMethod(ValuationMethod.Manual);
+        asset.SetIncomePolicy(IncomePolicy.Accumulating);
+        broker.CreatePortfolio("Default").RegisterAsset(asset);
+        _repository.Investments.AddActiveBroker(broker);
+
+        var result = await CreateService().UpdateAssetAsync("XPI", "Default", "AAAA", new AssetAdminUpdateDTO
+        {
+            Name = "AAAA"
+        });
+
+        using (new AssertionScope())
+        {
+            result.ValuationMethod.Should().Be(ValuationMethod.Manual);
+            result.IncomePolicy.Should().Be(IncomePolicy.Accumulating);
+        }
+    }
+
+    [Fact]
+    public async Task UpdateAssetAsync_ValuationMethodAndIncomePolicySetExplicitly_Override()
+    {
+        _repository.Investments = Investments.Create();
+        var broker = Broker.Create("XPI", "BRL");
+        var asset = Asset.Create("AAAA", "ISIN123", "NYSE", "AAA");
+        asset.SetValuationMethod(ValuationMethod.Manual);
+        broker.CreatePortfolio("Default").RegisterAsset(asset);
+        _repository.Investments.AddActiveBroker(broker);
+
+        var result = await CreateService().UpdateAssetAsync("XPI", "Default", "AAAA", new AssetAdminUpdateDTO
+        {
+            Name = "AAAA",
+            ValuationMethod = ValuationMethod.BondQuote,
+            IncomePolicy = IncomePolicy.Distributing
+        });
+
+        using (new AssertionScope())
+        {
+            result.ValuationMethod.Should().Be(ValuationMethod.BondQuote);
+            result.IncomePolicy.Should().Be(IncomePolicy.Distributing);
+        }
+    }
+
+    [Fact]
     public async Task UpdateAssetAsync_ValidRequest_UpdatesIdentityAndPersistsOnce()
     {
         _repository.Investments = Investments.Create();

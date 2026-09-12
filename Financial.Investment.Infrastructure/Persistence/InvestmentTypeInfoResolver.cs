@@ -27,7 +27,8 @@ public class InvestmentTypeInfoResolver : DefaultJsonTypeInfoResolver
         (typeof(Asset), nameof(Asset.PositionType)),
         (typeof(Portfolio), nameof(Portfolio.IsEmpty)),
         (typeof(Transaction), nameof(Transaction.NetCash)),
-        (typeof(Credit), nameof(Credit.NetAmount))
+        (typeof(Credit), nameof(Credit.NetAmount)),
+        (typeof(AssetPriceSnapshot), nameof(AssetPriceSnapshot.IsManual))
     ];
 
     public override JsonTypeInfo GetTypeInfo(Type type, JsonSerializerOptions options)

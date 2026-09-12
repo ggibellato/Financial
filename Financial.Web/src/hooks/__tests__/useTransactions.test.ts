@@ -121,7 +121,7 @@ const ASSET_DETAILS: AssetDetailsDto = {
   totalReturn: null,
   transactions: [TRANSACTION_A, TRANSACTION_B],
   credits: [],
-  priceHistory: [],
+  priceSnapshots: [],
   cashFlowsWithCredits: [],
   cashFlowsWithoutCredits: [],
 }

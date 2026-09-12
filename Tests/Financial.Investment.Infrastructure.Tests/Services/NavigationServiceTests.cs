@@ -249,7 +249,7 @@ public class NavigationServiceTests
     }
 
     [Fact]
-    public void GetAssetDetails_ShouldIncludePriceHistory()
+    public void GetAssetDetails_ShouldIncludePriceSnapshots()
     {
         const string brokerName = "XPI";
         const string portfolioName = "Default";
@@ -260,11 +260,11 @@ public class NavigationServiceTests
         var result = _sut.GetAssetDetails(brokerName, portfolioName, assetName);
 
         result.Should().NotBeNull();
-        result!.PriceHistory.Should().ContainSingle(p => p.Date == date && p.Price == 123.45m && p.IsManual);
+        result!.PriceSnapshots.Should().ContainSingle(p => p.Date == date && p.Price == 123.45m && p.IsManual);
     }
 
     [Fact]
-    public void GetAssetDetails_WithNoPriceHistory_ReturnsEmptyList()
+    public void GetAssetDetails_WithNoPriceSnapshots_ReturnsEmptyList()
     {
         const string brokerName = "XPI";
         const string portfolioName = "Default";
@@ -273,7 +273,7 @@ public class NavigationServiceTests
         var result = _sut.GetAssetDetails(brokerName, portfolioName, assetName);
 
         result.Should().NotBeNull();
-        result!.PriceHistory.Should().BeEmpty();
+        result!.PriceSnapshots.Should().BeEmpty();
     }
 
     [Fact]

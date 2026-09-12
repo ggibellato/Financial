@@ -45,8 +45,8 @@ const BROKER_NODE: SelectedNode = {
   brokerName: 'XPI',
 }
 
-const ENTRY_A: AssetPriceSnapshotDto = { date: '2026-08-15', price: 110.5, isManual: true }
-const ENTRY_B: AssetPriceSnapshotDto = { date: '2026-08-01', price: 100, isManual: false }
+const ENTRY_A: AssetPriceSnapshotDto = { date: '2026-08-15', price: 110.5, isManual: true, currency: 'BRL', source: 'Manual', sourceReference: null, valuationMethod: 'MarketPrice', retrievedAt: '2026-08-15T00:00:00Z' }
+const ENTRY_B: AssetPriceSnapshotDto = { date: '2026-08-01', price: 100, isManual: false, currency: 'BRL', source: 'Google', sourceReference: null, valuationMethod: 'MarketPrice', retrievedAt: '2026-08-01T00:00:00Z' }
 
 const BUY_TRANSACTION: TransactionDto = {
   id: 'tx-1',
@@ -86,7 +86,7 @@ const ASSET_DETAILS: AssetDetailsDto = {
   totalReturn: null,
   transactions: [],
   credits: [],
-  priceHistory: [ENTRY_A, ENTRY_B],
+  priceSnapshots: [ENTRY_A, ENTRY_B],
   cashFlowsWithCredits: [],
   cashFlowsWithoutCredits: [],
 }
@@ -202,7 +202,7 @@ describe('usePriceHistory', () => {
 
   it('persists date after a successful save, for the next new-entry form', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
-    setAssetPriceMock.mockResolvedValue({ ...ASSET_DETAILS, priceHistory: [ENTRY_A, ENTRY_B] })
+    setAssetPriceMock.mockResolvedValue({ ...ASSET_DETAILS, priceSnapshots: [ENTRY_A, ENTRY_B] })
     const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => usePriceHistory(), { wrapper })
     setNode(ASSET_NODE)
@@ -246,7 +246,7 @@ describe('usePriceHistory', () => {
 
   it('save_calls_setAssetPrice_and_updates_entries', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
-    const updated = { ...ASSET_DETAILS, priceHistory: [ENTRY_A] }
+    const updated = { ...ASSET_DETAILS, priceSnapshots: [ENTRY_A] }
     setAssetPriceMock.mockResolvedValue(updated)
     const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => usePriceHistory(), { wrapper })
@@ -265,6 +265,8 @@ describe('usePriceHistory', () => {
         assetName: 'KLBN4',
         date: '2026-08-20',
         price: 125.75,
+        currency: null,
+        sourceReference: null,
       }),
     )
     await waitFor(() => expect(result.current.isFormVisible).toBe(false))
@@ -320,7 +322,7 @@ describe('usePriceHistory', () => {
 
   it('delete_entry_calls_api_and_updates_entries', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
-    const updated = { ...ASSET_DETAILS, priceHistory: [ENTRY_B] }
+    const updated = { ...ASSET_DETAILS, priceSnapshots: [ENTRY_B] }
     deleteAssetPriceMock.mockResolvedValue(updated)
     const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => usePriceHistory(), { wrapper })
@@ -351,9 +353,9 @@ describe('usePriceHistory', () => {
   })
 
   it('filteredEntries_excludes_entries_outside_the_selected_window', async () => {
-    const recent: AssetPriceSnapshotDto = { date: new Date().toISOString().slice(0, 10), price: 100, isManual: true }
-    const old: AssetPriceSnapshotDto = { date: '2020-01-01', price: 50, isManual: false }
-    getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, priceHistory: [recent, old] })
+    const recent: AssetPriceSnapshotDto = { date: new Date().toISOString().slice(0, 10), price: 100, isManual: true, currency: 'BRL', source: 'Manual', sourceReference: null, valuationMethod: 'MarketPrice', retrievedAt: new Date().toISOString() }
+    const old: AssetPriceSnapshotDto = { date: '2020-01-01', price: 50, isManual: false, currency: 'BRL', source: 'Google', sourceReference: null, valuationMethod: 'MarketPrice', retrievedAt: '2020-01-01T00:00:00Z' }
+    getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, priceSnapshots: [recent, old] })
     const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => usePriceHistory(), { wrapper })
     setNode(ASSET_NODE)

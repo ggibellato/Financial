@@ -45,6 +45,17 @@ public sealed class AssetPriceLookupService : IAssetPriceLookupService
 
             var describedRequest = DescribeWith(asset, request);
 
+            // A ProviderValue/Manual holding's worth only ever changes when the investor records
+            // one - never from a fetch, at any date, not just "today" (FR-007). Its most recently
+            // recorded snapshot is authoritative regardless of age.
+            if (asset.ValuationMethod is ValuationMethod.ProviderValue or ValuationMethod.Manual)
+            {
+                var recorded = asset.GetMostRecentPrice()
+                    ?? throw new InvalidOperationException(
+                        $"\"{request.AssetName}\" has no recorded value yet - record one before requesting its current price.");
+                return CompleteSuccessfully(span, BuildPriceFrom(recorded, describedRequest));
+            }
+
             // A manual price for today is authoritative: the rest of the app refuses to edit or
             // delete an automatic entry and tells the user to add a manual one to override, so a
             // scrape must not overwrite it. No fetch is made at all, since its result would be

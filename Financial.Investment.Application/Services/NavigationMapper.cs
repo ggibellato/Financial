@@ -132,7 +132,12 @@ internal static class NavigationMapper
         {
             Date = entry.Date,
             Price = entry.Price,
-            IsManual = entry.IsManual
+            IsManual = entry.IsManual,
+            Currency = entry.Currency,
+            Source = entry.Source,
+            SourceReference = entry.SourceReference,
+            ValuationMethod = entry.ValuationMethod,
+            RetrievedAt = entry.RetrievedAt
         };
     }
 

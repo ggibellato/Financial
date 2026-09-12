@@ -164,7 +164,7 @@ public class InvestmentTypeInfoResolverTests
     }
 
     [Fact]
-    public void GetTypeInfo_RoundTripsAssetWithPriceHistory_PreservesEntries()
+    public void GetTypeInfo_RoundTripsAssetWithPriceSnapshots_PreservesEntries()
     {
         var options = CreateOptions();
         var asset = Asset.Create("Test", "ISIN", "BVMF", "TST");
@@ -175,7 +175,7 @@ public class InvestmentTypeInfoResolverTests
         var deserialized = JsonSerializer.Deserialize<Asset>(json, options);
 
         deserialized.Should().NotBeNull();
-        deserialized!.PriceHistory.Should().HaveCount(2);
+        deserialized!.PriceSnapshots.Should().HaveCount(2);
         var manualEntry = deserialized.GetPriceForDate(new DateOnly(2026, 8, 15));
         manualEntry.Should().NotBeNull();
         manualEntry!.Price.Should().Be(105m);
@@ -183,9 +183,9 @@ public class InvestmentTypeInfoResolverTests
     }
 
     [Fact]
-    public void GetTypeInfo_DeserializesAssetJsonWithoutPriceHistoryProperty_LoadsAsEmptyCollection()
+    public void GetTypeInfo_DeserializesAssetJsonWithoutPriceSnapshotsProperty_LoadsAsEmptyCollection()
     {
-        // Simulates a data file written before this feature existed: no "PriceHistory"
+        // Simulates a data file written before this feature existed: no "PriceSnapshots"
         // property at all, not even an empty array.
         var options = CreateOptions();
         const string legacyJson = """
@@ -205,6 +205,6 @@ public class InvestmentTypeInfoResolverTests
         var deserialized = JsonSerializer.Deserialize<Asset>(legacyJson, options);
 
         deserialized.Should().NotBeNull();
-        deserialized!.PriceHistory.Should().BeEmpty();
+        deserialized!.PriceSnapshots.Should().BeEmpty();
     }
 }

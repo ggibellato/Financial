@@ -1577,7 +1577,7 @@ describe('financialApiClient', () => {
   })
 
   it('puts a manual asset price', async () => {
-    const requestBody: SetAssetPriceDto = { brokerName: 'XPI', portfolioName: 'Default', assetName: 'BCIA11', date: '2026-07-01', price: 12.5 }
+    const requestBody: SetAssetPriceDto = { brokerName: 'XPI', portfolioName: 'Default', assetName: 'BCIA11', date: '2026-07-01', price: 12.5, currency: null, sourceReference: null }
     const responseBody = { name: 'BCIA11' } as AssetDetailsDto
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
