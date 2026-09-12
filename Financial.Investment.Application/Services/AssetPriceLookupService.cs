@@ -289,7 +289,9 @@ public sealed class AssetPriceLookupService : IAssetPriceLookupService
 
                 // A manual entry is never overwritten. GetCurrentPriceAsync returns before reaching this
                 // point when one exists, so this is the second line of defence rather than the first.
-                var needsWrite = existing is null || (!existing.IsManual && existing.Price != price);
+                // Source is compared too: an entry recorded before this provenance fix shipped would
+                // otherwise sit at Unknown indefinitely whenever today's price hasn't moved since.
+                var needsWrite = existing is null || (!existing.IsManual && (existing.Price != price || existing.Source != source));
                 if (!needsWrite)
                 {
                     return false;

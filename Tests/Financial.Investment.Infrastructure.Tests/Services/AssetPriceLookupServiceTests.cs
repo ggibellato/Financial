@@ -85,6 +85,30 @@ public class AssetPriceLookupServiceTests
     }
 
     [Fact]
+    public async Task GetCurrentPriceAsync_LiveFetchSucceeds_SamePriceButDifferentRecordedSource_RewritesTheSource()
+    {
+        var (service, repository, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.Success(123.45m, PriceSource.Google));
+        try
+        {
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var asset = repository.GetAsset(BrokerName, PortfolioName, AssetName)!;
+            asset.SetPrice(today, 123.45m, PriceSource.Unknown, currency: string.Empty, sourceReference: null, DateTimeOffset.UtcNow);
+            await repository.ApplyAndSaveAsync(() => true);
+
+            await service.GetCurrentPriceAsync(BuildRequest());
+
+            var entry = repository.GetAsset(BrokerName, PortfolioName, AssetName)!.GetPriceForDate(today);
+            entry.Should().NotBeNull();
+            entry!.Source.Should().Be(PriceSource.Google);
+            entry.Price.Should().Be(123.45m);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
     public async Task GetCurrentPriceAsync_LiveFetchFails_FallsBackToStoredPrice_PropagatesItsRecordedSource()
     {
         var (service, repository, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.Failure());
