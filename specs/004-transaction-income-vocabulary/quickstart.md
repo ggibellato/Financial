@@ -57,7 +57,7 @@ the call; the transaction list includes a `Fee` entry distinct from any `Buy`/`S
 Repeat for `Redemption`, `TransferIn`, `TransferOut`, `CapitalCall`, `ReturnOfCapital` against a
 holding with existing quantity, matching each Acceptance Scenario in User Story 1. For
 `TransferOut`/`Redemption`, also verify the oversell-parity rule (FR-004): attempting to record one
-for more units than held returns `400 Bad Request` with a message naming the shortfall, the same
+for more units than held returns `409 Conflict` with a message naming the shortfall, the same
 shape `SaleCoverageRule` already produces for an oversell `Sell`.
 
 ## 4. Gross/fees/withheld/net visibility (User Story 2)

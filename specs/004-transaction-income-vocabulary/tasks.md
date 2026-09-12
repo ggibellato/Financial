@@ -78,18 +78,18 @@ unaffected.
 
 ### Implementation for User Story 1
 
-- [ ] T016 [P] [US1] Update `Financial.Investment.Application/DTOs/TransactionDTO.cs`: remove `TotalPrice`, add `NetCash`
-- [ ] T017 [P] [US1] Update `Financial.Investment.Application/DTOs/TransactionCreateDTO.cs` and `TransactionUpdateDTO.cs`: add `Withheld`
-- [ ] T018 [US1] Update `Financial.Investment.Application/DTOs/TransactionSummaryItemDTO.cs`: rename `TotalPrice` to `NetCash` (depends on T016)
-- [ ] T019 [US1] Update `Financial.Investment.Application/Services/NavigationMapper.cs`'s two transaction-mapping methods (`MapTransaction`, `MapTransactionSummaryItem`) to map `NetCash` instead of `TotalPrice` (depends on T016, T018)
-- [ ] T020 [US1] Update `Financial.Investment.Application/Services/AssetCashFlowBuilder.cs`'s `BuildFromTransactions` to use `transaction.NetCash` instead of the `Buy`/`Sell` sign switch, so every type (including `Fee`/`CapitalCall`/etc.) contributes correctly to the existing (Gross) cash-flow series (depends on T016)
+- [X] T016 [P] [US1] Update `Financial.Investment.Application/DTOs/TransactionDTO.cs`: remove `TotalPrice`, add `NetCash`
+- [X] T017 [P] [US1] Update `Financial.Investment.Application/DTOs/TransactionCreateDTO.cs` and `TransactionUpdateDTO.cs`: add `Withheld`
+- [X] T018 [US1] Update `Financial.Investment.Application/DTOs/TransactionSummaryItemDTO.cs`: rename `TotalPrice` to `NetCash` (depends on T016)
+- [X] T019 [US1] Update `Financial.Investment.Application/Services/NavigationMapper.cs`'s two transaction-mapping methods (`MapTransaction`, `MapTransactionSummaryItem`) to map `NetCash` instead of `TotalPrice` (depends on T016, T018)
+- [X] T020 [US1] Update `Financial.Investment.Application/Services/AssetCashFlowBuilder.cs`'s `BuildFromTransactions` to use `transaction.NetCash` instead of the `Buy`/`Sell` sign switch, so every type (including `Fee`/`CapitalCall`/etc.) contributes correctly to the existing (Gross) cash-flow series (depends on T016)
 
 ### Tests for User Story 1
 
-- [ ] T021 [P] [US1] Extend `Tests/Financial.Investment.Application.Tests/Services/TransactionServiceMutationTests.cs`: add each new transaction type end-to-end through `TransactionService.AddTransactionAsync`, including a rejected oversell for `Redemption`/`TransferOut` (depends on T016, T017)
-- [ ] T022 [P] [US1] Extend `Tests/Financial.Investment.Application.Tests/Services/TransactionServiceQueryTests.cs` for `NetCash` in query results (depends on T018, T019)
-- [ ] T023 [P] [US1] Extend `Tests/Financial.Investment.Application.Tests/Services/AssetCashFlowBuilderTests.cs` for the `NetCash`-based amount calculation across every type (depends on T020)
-- [ ] T024 [P] [US1] Extend `Tests/Financial.Api.Tests/TransactionEndpointsTests.cs`: POST each new type and assert the response's quantity/`NetCash`/type; assert `400` with the shortfall message for an oversold `Redemption`/`TransferOut` (depends on T016, T017)
+- [X] T021 [P] [US1] Extend `Tests/Financial.Investment.Application.Tests/Services/TransactionServiceMutationTests.cs`: add each new transaction type end-to-end through `TransactionService.AddTransactionAsync`, including a rejected oversell for `Redemption`/`TransferOut` (depends on T016, T017)
+- [X] T022 [P] [US1] Extend `Tests/Financial.Investment.Application.Tests/Services/TransactionServiceQueryTests.cs` for `NetCash` in query results (depends on T018, T019)
+- [X] T023 [P] [US1] Extend `Tests/Financial.Investment.Application.Tests/Services/AssetCashFlowBuilderTests.cs` for the `NetCash`-based amount calculation across every type (depends on T020)
+- [X] T024 [P] [US1] Extend `Tests/Financial.Api.Tests/TransactionEndpointsTests.cs`: POST each new type and assert the response's quantity/`NetCash`/type; assert `409 Conflict` with the shortfall message for an oversold `Redemption`/`TransferOut` (matching `DomainExceptionMappingMiddleware`'s existing `InvestmentRuleViolationException` → 409 mapping, not 400) (depends on T016, T017)
 - [ ] T025 [US1] Regenerate the OpenAPI snapshot (`UPDATE_OPENAPI_SNAPSHOT=1 dotnet test Tests/Financial.Api.Tests`, review the diff, unset the env var) for the widened `Type` enum and `TransactionDTO` shape; regenerate `Financial.Web`'s types (`npm run generate-api-types`) (depends on T024)
 
 **Checkpoint**: US1 is independently testable via the API — every new transaction type records and

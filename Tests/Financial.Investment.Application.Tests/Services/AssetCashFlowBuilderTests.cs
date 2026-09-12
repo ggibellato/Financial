@@ -80,4 +80,38 @@ public class AssetCashFlowBuilderTests
 
         result.Should().BeEmpty();
     }
+
+    [Fact]
+    public void ConcatenateWithoutCredits_FeeTransaction_ContributesItsFeeAsAnOutflow()
+    {
+        var asset = MakeAsset("AAAA");
+        asset.AddTransaction(Transaction.Create(new DateTime(2025, 1, 1), Transaction.TransactionType.Fee, 0m, 0m, fees: 12m));
+
+        var result = AssetCashFlowBuilder.ConcatenateWithoutCredits([asset]);
+
+        result.Should().ContainSingle(cf => cf.Amount == -12m);
+    }
+
+    [Fact]
+    public void ConcatenateWithoutCredits_TransferInWithNoFee_ContributesNoCashFlow()
+    {
+        var asset = MakeAsset("AAAA");
+        asset.AddTransaction(Transaction.Create(new DateTime(2025, 1, 1), Transaction.TransactionType.TransferIn, 10m, 100m, 0m));
+
+        var result = AssetCashFlowBuilder.ConcatenateWithoutCredits([asset]);
+
+        result.Should().ContainSingle(cf => cf.Amount == 0m, "the transfer itself has no cash effect even though it has a notional Gross value");
+    }
+
+    [Fact]
+    public void ConcatenateWithoutCredits_Redemption_ContributesItsNetCashAsAnInflow()
+    {
+        var asset = MakeAsset("AAAA");
+        asset.AddTransaction(Transaction.Create(new DateTime(2025, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
+        asset.AddTransaction(Transaction.Create(new DateTime(2025, 6, 1), Transaction.TransactionType.Redemption, 10m, 6m, 1m));
+
+        var result = AssetCashFlowBuilder.ConcatenateWithoutCredits([asset]);
+
+        result.Should().Contain(cf => cf.Amount == 59m);
+    }
 }

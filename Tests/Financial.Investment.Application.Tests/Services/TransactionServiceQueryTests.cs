@@ -38,6 +38,18 @@ public class TransactionServiceQueryTests
     }
 
     [Fact]
+    public void GetTransactionsByBroker_FeeTransaction_ReportsNegativeNetCash()
+    {
+        var asset = MakeAsset("AAAA");
+        asset.AddTransaction(Transaction.Create(new DateTime(2026, 1, 5), Transaction.TransactionType.Fee, 0m, 0m, fees: 10m));
+        _repository.AssetsByBroker = [asset];
+
+        var result = CreateService().GetTransactionsByBroker("XPI");
+
+        result.Should().ContainSingle(t => t.Type == "Fee" && t.NetCash == -10m);
+    }
+
+    [Fact]
     public void GetTransactionsByBroker_IncludesInactiveAssets()
     {
         var activeAsset = MakeAsset("AAAA");

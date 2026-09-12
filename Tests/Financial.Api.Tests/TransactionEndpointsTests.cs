@@ -31,6 +31,98 @@ public class TransactionEndpointsTests : ApiEndpointTests
         asset!.Transactions.Count.Should().BeGreaterThan(0);
     }
 
+    [Theory]
+    [InlineData("Fee", 0, 0)]
+    [InlineData("CapitalCall", 0, 0)]
+    [InlineData("ReturnOfCapital", 0, 0)]
+    public async Task AddTransaction_NoQuantityEffectType_ReturnsOk(string type, decimal quantity, decimal unitPrice)
+    {
+        var request = new TransactionCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "BCIA11",
+            Date = DateTime.UtcNow,
+            Type = type,
+            Quantity = quantity,
+            UnitPrice = unitPrice,
+            Fees = 5
+        };
+
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/transactions", request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var asset = await response.Content.ReadFromJsonAsync<AssetDetailsDTO>();
+        asset!.Transactions.Should().Contain(t => t.Type == type && t.NetCash == -5m);
+    }
+
+    [Fact]
+    public async Task AddTransaction_TransferInThenTransferOut_ReturnsOk()
+    {
+        var transferIn = await Client.PostAsJsonAsync("/api/v1/financial/transactions", new TransactionCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "BCIA11",
+            Date = new DateTime(2024, 1, 5),
+            Type = "TransferIn",
+            Quantity = 10,
+            UnitPrice = 12,
+            Fees = 0
+        });
+        transferIn.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var transferOut = await Client.PostAsJsonAsync("/api/v1/financial/transactions", new TransactionCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "BCIA11",
+            Date = new DateTime(2024, 1, 6),
+            Type = "TransferOut",
+            Quantity = 5,
+            UnitPrice = 12,
+            Fees = 0
+        });
+
+        transferOut.StatusCode.Should().Be(HttpStatusCode.OK);
+        var asset = await transferOut.Content.ReadFromJsonAsync<AssetDetailsDTO>();
+        asset!.Transactions.Should().Contain(t => t.Type == "TransferIn" && t.NetCash == 0m);
+        asset.Transactions.Should().Contain(t => t.Type == "TransferOut" && t.NetCash == 0m);
+    }
+
+    [Theory]
+    [InlineData("Redemption")]
+    [InlineData("TransferOut")]
+    public async Task AddTransaction_TypeExceedsHeldQuantity_ReturnsBadRequest(string type)
+    {
+        var buy = await Client.PostAsJsonAsync("/api/v1/financial/transactions", new TransactionCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "BCIA11",
+            Date = new DateTime(2024, 1, 5),
+            Type = "Buy",
+            Quantity = 10,
+            UnitPrice = 12,
+            Fees = 0
+        });
+        buy.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/transactions", new TransactionCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "BCIA11",
+            Date = new DateTime(2024, 1, 6),
+            Type = type,
+            Quantity = 999,
+            UnitPrice = 12,
+            Fees = 0
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict, "an oversell is a well-formed request the domain refuses on its own rules, not a malformed one");
+    }
+
     [Fact]
     public async Task AddTransaction_InvalidType_ReturnsBadRequest()
     {
