@@ -303,6 +303,57 @@ public class TransactionsTests
         Math.Round(agnc.AveragePrice, 2).Should().Be(7.09m, "unchanged at the 2 dp both front ends display, even though full precision moves");
     }
 
+    [Fact]
+    public void Add_Redemption_BehavesLikeASaleForQuantityAndRealizedGain()
+    {
+        _sut.Add(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+
+        _sut.Add(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Redemption, 10m, 100m, 0m));
+
+        _sut.Quantity.Should().Be(0m);
+        _sut.RealizedCapitalGain.Should().Be(0m);
+        _sut.AverageSellPrice.Should().Be(100m);
+    }
+
+    [Fact]
+    public void Add_TransferIn_FeedsAveragePriceLikeABuyWithNoCashEffect()
+    {
+        _sut.Add(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+
+        _sut.Add(Transaction.Create(new DateTime(2024, 2, 1), Transaction.TransactionType.TransferIn, 10m, 120m, 0m));
+
+        _sut.Quantity.Should().Be(20m);
+        _sut.AveragePrice.Should().Be(110m, "TransferIn contributes its own recorded cost basis to the weighted average, same as a Buy");
+    }
+
+    [Fact]
+    public void Add_TransferOut_ReducesQuantityAtExistingAveragePriceWithZeroRealizedGain()
+    {
+        _sut.Add(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+
+        _sut.Add(Transaction.Create(new DateTime(2024, 2, 1), Transaction.TransactionType.TransferOut, 4m, 999m, 0m));
+
+        _sut.Quantity.Should().Be(6m);
+        _sut.AveragePrice.Should().Be(100m, "a TransferOut never changes the average price of what remains");
+        _sut.RealizedCapitalGain.Should().Be(0m, "no consideration changed hands, so no gain or loss is realized");
+        _sut.AverageSellPrice.Should().BeNull("a TransferOut is not a sale for this metric's purpose");
+    }
+
+    [Theory]
+    [InlineData(Transaction.TransactionType.Fee)]
+    [InlineData(Transaction.TransactionType.CapitalCall)]
+    [InlineData(Transaction.TransactionType.ReturnOfCapital)]
+    public void Add_NoQuantityEffectType_LeavesQuantityAveragePriceAndRealizedGainUnchanged(Transaction.TransactionType type)
+    {
+        _sut.Add(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+
+        _sut.Add(Transaction.Create(new DateTime(2024, 2, 1), type, 0m, 0m, fees: 5m));
+
+        _sut.Quantity.Should().Be(10m);
+        _sut.AveragePrice.Should().Be(100m);
+        _sut.RealizedCapitalGain.Should().Be(0m);
+    }
+
     private static IEnumerable<Transaction> BitcoinStoredOrderTransactions() =>
     [
         Transaction.Create(new DateTime(2025, 3, 7), Transaction.TransactionType.Buy, 0.00141516m, 67949.91m, 3.84m),

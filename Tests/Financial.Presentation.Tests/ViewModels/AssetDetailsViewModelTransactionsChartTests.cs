@@ -72,7 +72,7 @@ public class AssetDetailsViewModelTransactionsChartTests
     [Fact]
     public async Task LoadBrokerTransactions_PopulatesTransactionsPlotModel_OnSuccess()
     {
-        _transactionQueryService.BrokerTransactions = [new() { AssetName = "BBAS3", Date = DateTime.Today, Type = "Buy", TotalPrice = 1000m }];
+        _transactionQueryService.BrokerTransactions = [new() { AssetName = "BBAS3", Date = DateTime.Today, Type = "Buy", NetCash = 1000m }];
         var vm = BuildViewModel();
 
         await vm.Transactions.LoadBroker("XPI");
@@ -141,7 +141,7 @@ public class AssetDetailsViewModelTransactionsChartTests
         var vm = BuildViewModel();
 
         vm.LoadAssetDetails(BuildAssetDetails([
-            new() { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Buy", Quantity = 100m, UnitPrice = 20m, Fees = 0m, TotalPrice = 2000m },
+            new() { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Buy", Quantity = 100m, UnitPrice = 20m, Fees = 0m, NetCash = 2000m },
         ]));
 
         vm.Transactions.TransactionsPlotModel.Should().NotBeNull();
@@ -212,7 +212,7 @@ public class AssetDetailsViewModelTransactionsChartTests
     [Fact]
     public async Task Clear_AfterLoadBrokerTransactions_ResetsTransactionsState()
     {
-        _transactionQueryService.BrokerTransactions = [new() { AssetName = "BBAS3", Date = DateTime.Today, Type = "Buy", TotalPrice = 500m }];
+        _transactionQueryService.BrokerTransactions = [new() { AssetName = "BBAS3", Date = DateTime.Today, Type = "Buy", NetCash = 500m }];
         var vm = BuildViewModel();
         vm.LoadBrokerSummary("XPI", new AggregatedSummaryDTO(), []);
         await vm.Transactions.LoadBroker("XPI");

@@ -10,4 +10,5 @@ public class TransactionCreateDTO
     public decimal Quantity { get; set; }
     public decimal UnitPrice { get; set; }
     public decimal Fees { get; set; }
+    public decimal Withheld { get; set; }
 }

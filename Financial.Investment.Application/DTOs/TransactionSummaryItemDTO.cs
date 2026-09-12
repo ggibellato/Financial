@@ -8,5 +8,5 @@ public class TransactionSummaryItemDTO
 
     public required string Type { get; set; }
 
-    public decimal TotalPrice { get; set; }
+    public decimal NetCash { get; set; }
 }

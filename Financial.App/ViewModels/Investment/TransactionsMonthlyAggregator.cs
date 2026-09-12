@@ -6,21 +6,24 @@ internal sealed record TransactionMonthNet(DateTime Month, decimal NetInvested);
 
 internal static class TransactionsMonthlyAggregator
 {
-    private const string BuyType = "Buy";
-
+    /// <summary>
+    /// Net invested for a month is the money that left the investor's pocket for these holdings
+    /// minus the money that came back - the negation of <c>NetCash</c> (which is signed the other
+    /// way: negative for an outflow, positive for an inflow), so no per-type branching is needed
+    /// here: it falls out of every type's own declared cash effect.
+    /// </summary>
     public static IReadOnlyList<TransactionMonthNet> BuildMonthlyNetInvested(
-        IEnumerable<(DateTime Date, string Type, decimal TotalPrice)> transactions,
+        IEnumerable<(DateTime Date, decimal NetCash)> transactions,
         PeriodFilter filter,
         DateTime referenceDate)
     {
         var items = transactions.ToList();
 
         var netByMonth = new Dictionary<DateTime, decimal>();
-        foreach (var (date, type, totalPrice) in items)
+        foreach (var (date, netCash) in items)
         {
             var month = StartOfMonth(date);
-            var delta = string.Equals(type, BuyType, StringComparison.OrdinalIgnoreCase) ? totalPrice : -totalPrice;
-            netByMonth[month] = netByMonth.GetValueOrDefault(month) + delta;
+            netByMonth[month] = netByMonth.GetValueOrDefault(month) - netCash;
         }
 
         var (periodStart, _) = PeriodFilterHelper.GetDateRange(filter, referenceDate);

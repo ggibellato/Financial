@@ -78,8 +78,8 @@ public class PriceHistoryChartBuilderTests
     {
         var transactions = new List<TransactionDTO>
         {
-            new() { Id = Guid.NewGuid(), Date = new DateTime(2026, 8, 15), Type = "Sell", Quantity = 5m, UnitPrice = 120m, Fees = 1m, TotalPrice = 599m },
-            new() { Id = Guid.NewGuid(), Date = new DateTime(2026, 8, 14), Type = "Buy", Quantity = 10m, UnitPrice = 100m, Fees = 1m, TotalPrice = 1001m },
+            new() { Id = Guid.NewGuid(), Date = new DateTime(2026, 8, 15), Type = "Sell", Quantity = 5m, UnitPrice = 120m, Fees = 1m, NetCash = 599m },
+            new() { Id = Guid.NewGuid(), Date = new DateTime(2026, 8, 14), Type = "Buy", Quantity = 10m, UnitPrice = 100m, Fees = 1m, NetCash = 1001m },
         };
 
         var model = PriceHistoryChartBuilder.Build([], transactions);
@@ -101,8 +101,8 @@ public class PriceHistoryChartBuilderTests
         };
         var transactions = new List<TransactionDTO>
         {
-            new() { Id = Guid.NewGuid(), Date = new DateTime(2026, 8, 15), Type = "Sell", Quantity = 5m, UnitPrice = 120m, Fees = 1m, TotalPrice = 599m },
-            new() { Id = Guid.NewGuid(), Date = new DateTime(2026, 8, 14), Type = "Buy", Quantity = 10m, UnitPrice = 100m, Fees = 1m, TotalPrice = 1001m },
+            new() { Id = Guid.NewGuid(), Date = new DateTime(2026, 8, 15), Type = "Sell", Quantity = 5m, UnitPrice = 120m, Fees = 1m, NetCash = 599m },
+            new() { Id = Guid.NewGuid(), Date = new DateTime(2026, 8, 14), Type = "Buy", Quantity = 10m, UnitPrice = 100m, Fees = 1m, NetCash = 1001m },
         };
 
         var model = PriceHistoryChartBuilder.Build(entries, transactions);

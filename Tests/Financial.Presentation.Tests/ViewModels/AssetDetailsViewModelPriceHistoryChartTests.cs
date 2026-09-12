@@ -114,8 +114,8 @@ public class AssetDetailsViewModelPriceHistoryChartTests
     {
         var transactions = new List<TransactionDTO>
         {
-            new() { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Buy", Quantity = 10m, UnitPrice = 90m, Fees = 1m, TotalPrice = 901m },
-            new() { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Sell", Quantity = 5m, UnitPrice = 130m, Fees = 1m, TotalPrice = 649m },
+            new() { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Buy", Quantity = 10m, UnitPrice = 90m, Fees = 1m, NetCash = 901m },
+            new() { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Sell", Quantity = 5m, UnitPrice = 130m, Fees = 1m, NetCash = 649m },
         };
         var vm = BuildViewModel();
 
@@ -131,8 +131,8 @@ public class AssetDetailsViewModelPriceHistoryChartTests
     {
         var transactions = new List<TransactionDTO>
         {
-            new() { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Buy", Quantity = 10m, UnitPrice = 90m, Fees = 1m, TotalPrice = 901m },
-            new() { Id = Guid.NewGuid(), Date = DateTime.Today.AddYears(-2), Type = "Buy", Quantity = 10m, UnitPrice = 80m, Fees = 1m, TotalPrice = 801m },
+            new() { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Buy", Quantity = 10m, UnitPrice = 90m, Fees = 1m, NetCash = 901m },
+            new() { Id = Guid.NewGuid(), Date = DateTime.Today.AddYears(-2), Type = "Buy", Quantity = 10m, UnitPrice = 80m, Fees = 1m, NetCash = 801m },
         };
         var vm = BuildViewModel();
         vm.LoadAssetDetails(BuildAssetDetails("XPI", "TEST", [], transactions));

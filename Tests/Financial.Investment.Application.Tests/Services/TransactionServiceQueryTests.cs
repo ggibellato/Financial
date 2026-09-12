@@ -33,8 +33,8 @@ public class TransactionServiceQueryTests
         var result = CreateService().GetTransactionsByBroker("XPI");
 
         result.Should().HaveCount(2);
-        result.Should().Contain(t => t.AssetName == "AAAA" && t.Type == "Buy" && t.TotalPrice == 100m);
-        result.Should().Contain(t => t.AssetName == "BBBB" && t.Type == "Sell" && t.TotalPrice == 100m);
+        result.Should().Contain(t => t.AssetName == "AAAA" && t.Type == "Buy" && t.NetCash == -100m);
+        result.Should().Contain(t => t.AssetName == "BBBB" && t.Type == "Sell" && t.NetCash == 100m);
     }
 
     [Fact]

@@ -35,8 +35,7 @@ internal static class AssetCashFlowBuilder
 
         foreach (var t in asset.Transactions)
         {
-            var amount = t.Type == Transaction.TransactionType.Buy ? -t.TotalPrice : t.TotalPrice;
-            flows.Add(new AssetCashFlowDTO { Date = t.Date, Amount = amount });
+            flows.Add(new AssetCashFlowDTO { Date = t.Date, Amount = t.NetCash });
         }
 
         return flows;

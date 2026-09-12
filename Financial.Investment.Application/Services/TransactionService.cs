@@ -40,7 +40,7 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
                 TransactionTypeParser.TryParse,
                 (asset, transactionType) =>
                 {
-                    var transaction = Transaction.Create(request.Date, transactionType, request.Quantity, request.UnitPrice, request.Fees);
+                    var transaction = Transaction.Create(request.Date, transactionType, request.Quantity, request.UnitPrice, request.Fees, request.Withheld);
                     asset.RecordTransaction(transaction);
                     return true;
                 }).ConfigureAwait(false);
@@ -79,7 +79,7 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
                 TransactionTypeParser.TryParse,
                 (asset, transactionType) =>
                 {
-                    var updatedTransaction = Transaction.CreateWithId(request.Id, request.Date, transactionType, request.Quantity, request.UnitPrice, request.Fees);
+                    var updatedTransaction = Transaction.CreateWithId(request.Id, request.Date, transactionType, request.Quantity, request.UnitPrice, request.Fees, request.Withheld);
                     return asset.ReviseTransaction(updatedTransaction);
                 }).ConfigureAwait(false);
 

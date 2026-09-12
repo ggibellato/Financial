@@ -10,10 +10,15 @@ public static class AssetTotalsCalculator
         decimal totalBought = 0, totalSold = 0;
         foreach (var t in asset.Transactions)
         {
-            if (t.Type == Transaction.TransactionType.Buy)
-                totalBought += t.TotalPrice;
-            else
-                totalSold += t.TotalPrice;
+            switch (TransactionTypeEffects.For(t.Type).Cash)
+            {
+                case CashEffect.Out:
+                    totalBought += -t.NetCash;
+                    break;
+                case CashEffect.In:
+                    totalSold += t.NetCash;
+                    break;
+            }
         }
 
         var totalCredits = asset.Credits.Sum(c => c.Value);
