@@ -35,7 +35,7 @@ public sealed class AssetPriceService : IAssetPriceService
         // Falling back to the first registered fetcher used to hide an unsupported class behind
         // a lookup that was always going to fail - a private-credit holding was asked for as an
         // equity ticker. An unsupported class is now named as such.
-        var fetcher = _fetchers.FirstOrDefault(f => f.Supports(request.AssetClass))
+        var fetcher = _fetchers.FirstOrDefault(f => f.Supports(request.AssetClass, request.ValuationMethod))
             ?? throw new UnsupportedAssetClassException($"No price source supports the asset class '{request.AssetClass}'.");
 
         var snapshot = fetcher.GetSnapshot(request);

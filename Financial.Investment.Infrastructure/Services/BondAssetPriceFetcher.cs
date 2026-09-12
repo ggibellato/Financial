@@ -15,7 +15,9 @@ public sealed class BondAssetPriceFetcher : IAssetPriceFetcher
         _financeService = financeService ?? throw new ArgumentNullException(nameof(financeService));
     }
 
-    public bool Supports(GlobalAssetClass assetClass) => assetClass == GlobalAssetClass.Bond;
+    public bool Supports(GlobalAssetClass assetClass, ValuationMethod valuationMethod) =>
+        valuationMethod == ValuationMethod.BondQuote
+        || (valuationMethod == ValuationMethod.Unspecified && assetClass == GlobalAssetClass.Bond);
 
     public AssetValueSnapshot GetSnapshot(AssetPriceRequestDTO request)
     {

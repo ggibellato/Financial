@@ -6,7 +6,7 @@ namespace Financial.Investment.Infrastructure.Interfaces;
 
 public interface IAssetPriceFetcher
 {
-    bool Supports(GlobalAssetClass assetClass);
+    bool Supports(GlobalAssetClass assetClass, ValuationMethod valuationMethod);
 
     AssetValueSnapshot GetSnapshot(AssetPriceRequestDTO request);
 }

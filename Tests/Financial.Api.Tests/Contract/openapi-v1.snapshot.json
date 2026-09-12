@@ -8912,6 +8912,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "description": "Optional valuation method (e.g. \u0022BondQuote\u0022, \u0022ProviderValue\u0022); overrides \u0060assetClass\u0060 for fetch routing when supplied and the asset can\u0027t be resolved from broker/portfolio/asset name.",
+            "in": "query",
+            "name": "valuationMethod",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {

@@ -159,21 +159,21 @@ routed appropriately, and an unclassified holding still resolves through today's
 
 ### Implementation for User Story 3
 
-- [ ] T056 [US3] Widen `IAssetPriceFetcher.Supports` in `Financial.Investment.Infrastructure/Interfaces/IAssetPriceFetcher.cs` to `Supports(GlobalAssetClass assetClass, ValuationMethod valuationMethod)` (depends on T002)
-- [ ] T057 [P] [US3] Update `StandardAssetPriceFetcher.cs`'s `Supports`: `valuationMethod is MarketPrice or NAV`, or `Unspecified` with today's `ExchangeListedClasses` check (research.md #4) (depends on T056)
-- [ ] T058 [P] [US3] Update `BondAssetPriceFetcher.cs`'s `Supports`: `valuationMethod == BondQuote`, or `Unspecified` with `assetClass == Bond` (research.md #4) (depends on T056)
-- [ ] T059 [P] [US3] Update `CryptocurrencyAssetPriceFetcher.cs`'s `Supports`: unchanged `assetClass == Cryptocurrency` logic, new signature (depends on T056)
-- [ ] T060 [US3] Update `AssetPriceService.cs`'s `GetCurrentPrice` to call `fetcher.Supports(request.AssetClass, request.ValuationMethod)` (depends on T056)
-- [ ] T061 [US3] Widen `AssetPriceRequestDTO` in `Financial.Investment.Application/DTOs/AssetPriceRequestDTO.cs`: add `ValuationMethod` (default `Unspecified`) (depends on T002)
-- [ ] T062 [US3] Update `AssetPriceLookupService.cs`'s `DescribeWith` to populate `ValuationMethod` from `asset.ValuationMethod` (depends on T061)
-- [ ] T063 [US3] Add a `valuationMethod` query parameter to `Financial.Api/Controllers/AssetPricesController.cs`'s `GetCurrentPrice`, parsed the same `Enum.TryParse<ValuationMethod>(..., ignoreCase: true)` way `assetClass` already is (depends on T061)
+- [X] T056 [US3] Widen `IAssetPriceFetcher.Supports` in `Financial.Investment.Infrastructure/Interfaces/IAssetPriceFetcher.cs` to `Supports(GlobalAssetClass assetClass, ValuationMethod valuationMethod)` (depends on T002)
+- [X] T057 [P] [US3] Update `StandardAssetPriceFetcher.cs`'s `Supports`: `valuationMethod is MarketPrice or NAV`, or `Unspecified` with today's `ExchangeListedClasses` check (research.md #4) (depends on T056)
+- [X] T058 [P] [US3] Update `BondAssetPriceFetcher.cs`'s `Supports`: `valuationMethod == BondQuote`, or `Unspecified` with `assetClass == Bond` (research.md #4) (depends on T056)
+- [X] T059 [P] [US3] Update `CryptocurrencyAssetPriceFetcher.cs`'s `Supports`: unchanged `assetClass == Cryptocurrency` logic, new signature (depends on T056)
+- [X] T060 [US3] Update `AssetPriceService.cs`'s `GetCurrentPrice` to call `fetcher.Supports(request.AssetClass, request.ValuationMethod)` (depends on T056)
+- [X] T061 [US3] Widen `AssetPriceRequestDTO` in `Financial.Investment.Application/DTOs/AssetPriceRequestDTO.cs`: add `ValuationMethod` (default `Unspecified`) (depends on T002)
+- [X] T062 [US3] Update `AssetPriceLookupService.cs`'s `DescribeWith` to populate `ValuationMethod` from `asset.ValuationMethod` (depends on T061)
+- [X] T063 [US3] Add a `valuationMethod` query parameter to `Financial.Api/Controllers/AssetPricesController.cs`'s `GetCurrentPrice`, parsed the same `Enum.TryParse<ValuationMethod>(..., ignoreCase: true)` way `assetClass` already is (depends on T061)
 
 ### Tests for User Story 3
 
-- [ ] T064 [P] [US3] Extend `Tests/Financial.Investment.Infrastructure.Tests/Services/AssetPriceServiceTests.cs` (or the per-fetcher test files, whichever exist) for the widened `Supports`, including an `Unknown`-class asset explicitly marked `BondQuote` routing to the bond fetcher (depends on T057, T058, T059, T060)
-- [ ] T065 [P] [US3] Extend `Tests/Financial.Investment.Application.Tests`/`Infrastructure.Tests` `AssetPriceLookupServiceTests.cs` for `ValuationMethod`-driven routing end-to-end (depends on T062)
-- [ ] T066 [US3] Extend `Tests/Financial.Api.Tests/AssetPriceEndpointsTests.cs` for the new `valuationMethod` query parameter routing an `Unknown`-class bond correctly (depends on T063)
-- [ ] T067 [US3] Regenerate the OpenAPI snapshot + `Financial.Web` generated types for the new query parameter (same procedure as T036) (depends on T063, T066)
+- [X] T064 [P] [US3] Extend `Tests/Financial.Investment.Infrastructure.Tests/Services/AssetPriceServiceTests.cs` (or the per-fetcher test files, whichever exist) for the widened `Supports`, including an `Unknown`-class asset explicitly marked `BondQuote` routing to the bond fetcher (depends on T057, T058, T059, T060)
+- [X] T065 [P] [US3] Extend `Tests/Financial.Investment.Application.Tests`/`Infrastructure.Tests` `AssetPriceLookupServiceTests.cs` for `ValuationMethod`-driven routing end-to-end (depends on T062)
+- [X] T066 [US3] Extend `Tests/Financial.Api.Tests/AssetPriceEndpointsTests.cs` for the new `valuationMethod` query parameter routing an `Unknown`-class bond correctly (depends on T063)
+- [X] T067 [US3] Regenerate the OpenAPI snapshot + `Financial.Web` generated types for the new query parameter (same procedure as T036) (depends on T063, T066)
 
 **Checkpoint**: US3 is independently testable — fetch routing honors an explicit `ValuationMethod`
 over `GlobalAssetClass`, and unclassified holdings are unaffected.

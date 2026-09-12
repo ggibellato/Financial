@@ -31,7 +31,9 @@ public sealed class StandardAssetPriceFetcher : IAssetPriceFetcher
         GlobalAssetClass.ETF
     ];
 
-    public bool Supports(GlobalAssetClass assetClass) => ExchangeListedClasses.Contains(assetClass);
+    public bool Supports(GlobalAssetClass assetClass, ValuationMethod valuationMethod) =>
+        valuationMethod is ValuationMethod.MarketPrice or ValuationMethod.NAV
+        || (valuationMethod == ValuationMethod.Unspecified && ExchangeListedClasses.Contains(assetClass));
 
     public AssetValueSnapshot GetSnapshot(AssetPriceRequestDTO request)
     {
