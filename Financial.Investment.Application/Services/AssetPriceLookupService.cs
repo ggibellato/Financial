@@ -2,6 +2,7 @@ using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Application.Validation;
 using Financial.Investment.Domain.Entities;
+using Financial.Investment.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
 using Financial.Shared.Abstractions.Persistence;
 using Microsoft.Extensions.Logging;
@@ -50,10 +51,8 @@ public sealed class AssetPriceLookupService : IAssetPriceLookupService
             // recorded snapshot is authoritative regardless of age.
             if (asset.ValuationMethod is ValuationMethod.ProviderValue or ValuationMethod.Manual)
             {
-                var recorded = asset.GetMostRecentPrice()
-                    ?? throw new InvalidOperationException(
-                        $"\"{request.AssetName}\" has no recorded value yet - record one before requesting its current price.");
-                return CompleteSuccessfully(span, BuildPriceFrom(recorded, describedRequest));
+                var recorded = asset.GetMostRecentPrice();
+                return CompleteSuccessfully(span, recorded is null ? UnavailablePriceFor(describedRequest) : BuildPriceFrom(recorded, describedRequest));
             }
 
             // A manual price for today is authoritative: the rest of the app refuses to edit or
@@ -138,7 +137,14 @@ public sealed class AssetPriceLookupService : IAssetPriceLookupService
             var fallback = asset.GetMostRecentPrice();
             if (fallback is null)
             {
-                throw;
+                // Nothing was ever fetched or recorded for this holding - a graceful Unavailable
+                // status, not an error, since the caller asked a perfectly valid question and this
+                // is a perfectly valid (if unhelpful) answer.
+                _logger.LogWarning(
+                    "{Operation} found no price to report after {ErrorType}",
+                    "GetCurrentPrice",
+                    ex.GetType().Name);
+                return (UnavailablePriceFor(request), false);
             }
 
             // Only this branch swallows the failure, so only this branch logs. Without it a
@@ -236,7 +242,28 @@ public sealed class AssetPriceLookupService : IAssetPriceLookupService
             Price = snapshot.Price,
             AsOf = null,
             AsOfDate = snapshot.Date,
-            IsManual = snapshot.IsManual
+            IsManual = snapshot.IsManual,
+            Source = snapshot.Source,
+            MarketStatus = MarketStatusCalculator.For(snapshot.Date, DateOnly.FromDateTime(DateTime.Today))
+        };
+
+    /// <summary>
+    /// Nothing was ever fetched or recorded for this holding - <see cref="AssetPriceDTO.Price"/>
+    /// carries no meaningful value here; callers MUST check <see cref="AssetPriceDTO.MarketStatus"/>
+    /// rather than trusting it as a real zero.
+    /// </summary>
+    private static AssetPriceDTO UnavailablePriceFor(AssetPriceRequestDTO request) =>
+        new()
+        {
+            Exchange = request.Exchange,
+            Ticker = request.Ticker,
+            Name = request.Name ?? string.Empty,
+            Price = 0m,
+            AsOf = null,
+            AsOfDate = null,
+            IsManual = false,
+            Source = PriceSource.Unknown,
+            MarketStatus = MarketStatus.Unavailable
         };
 
     /// <summary>

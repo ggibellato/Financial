@@ -107,24 +107,16 @@
                                 </Style>
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
-                        <DataGridTemplateColumn Header="Source" SortMemberPath="IsManual" Width="*">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <TextBlock>
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock" BasedOn="{StaticResource PlainColumnTextStyle}">
-                                                <Setter Property="Text" Value="Automatic"/>
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsManual}" Value="True">
-                                                        <Setter Property="Text" Value="Manual"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="Source"
+                                            Binding="{Binding Source}"
+                                            SortMemberPath="Source"
+                                            Width="*">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource PlainColumnTextStyle}">
+                                    <Setter Property="ToolTip" Value="{Binding SourceReference}"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
                         <DataGridTemplateColumn Header="" Width="Auto">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>

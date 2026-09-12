@@ -44,6 +44,8 @@ const ASSET: AssetDetailsDto = {
   country: 'BR',
   localTypeCode: 'ON',
   class: 'Equity',
+  valuationMethod: 'Unspecified',
+  incomePolicy: 'Unknown',
   quantity: 100,
   averagePrice: 20,
   averageSellPrice: null,
@@ -56,7 +58,7 @@ const ASSET: AssetDetailsDto = {
   costOfUnitsHeld: 2000,
   unrealisedGain: null,
   priceAsOfDate: null,
-  isPriceStale: false,
+  marketStatus: 'Current',
   priceOnlyReturn: null,
   totalReturn: null,
   transactions: [],
@@ -74,6 +76,8 @@ const PRICE: AssetPriceDto = {
   asOf: '2026-06-26T10:00:00',
   asOfDate: null,
   isManual: false,
+  marketStatus: 'Current',
+  source: 'Unknown',
 }
 
 function setMock(overrides: Partial<AssetSummaryData>) {
@@ -167,6 +171,37 @@ describe('AssetSummaryTab', () => {
     })
     renderAssetSummaryTab()
     expect(screen.getByText('(Manual)')).toBeInTheDocument()
+  })
+
+  it('renders_stale_badge_when_asset_market_status_is_stale', () => {
+    setMock({
+      asset: { ...ASSET, marketStatus: 'Stale' },
+      price: PRICE,
+      showCurrentSection: true,
+    })
+    renderAssetSummaryTab()
+    expect(screen.getByText('(Stale)')).toBeInTheDocument()
+  })
+
+  it('renders_unavailable_badge_when_asset_market_status_is_unavailable', () => {
+    setMock({
+      asset: { ...ASSET, marketStatus: 'Unavailable' },
+      price: PRICE,
+      showCurrentSection: true,
+    })
+    renderAssetSummaryTab()
+    expect(screen.getByText('(Unavailable)')).toBeInTheDocument()
+  })
+
+  it('does_not_render_stale_or_unavailable_badge_when_asset_market_status_is_current', () => {
+    setMock({
+      asset: { ...ASSET, marketStatus: 'Current' },
+      price: PRICE,
+      showCurrentSection: true,
+    })
+    renderAssetSummaryTab()
+    expect(screen.queryByText('(Stale)')).not.toBeInTheDocument()
+    expect(screen.queryByText('(Unavailable)')).not.toBeInTheDocument()
   })
 
   it('renders_the_stored_entry_date_under_as_of_for_a_price_read_from_history', () => {

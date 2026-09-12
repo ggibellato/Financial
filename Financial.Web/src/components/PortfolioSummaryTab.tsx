@@ -126,10 +126,16 @@ function AssetRow({ item, rowPrice, isHistoric }: AssetRowProps) {
       <td>{formatN2(item.averagePrice)}</td>
       <td>
         {renderGatedCell(cellLoading, cellUnavailable, priceValue, v => formatN2(v))}
-        {!isHistoric && !cellLoading && !cellUnavailable && item.isPriceStale && (
+        {!isHistoric && !cellLoading && !cellUnavailable && item.marketStatus === 'Stale' && (
           <span className="portfolio-summary__stale-badge" title="This price is older than the most recent weekday.">
             {' '}
             (S)
+          </span>
+        )}
+        {!isHistoric && !cellLoading && !cellUnavailable && item.marketStatus === 'Unavailable' && (
+          <span className="portfolio-summary__stale-badge" title="No price or value has been recorded for this holding yet.">
+            {' '}
+            (U)
           </span>
         )}
       </td>

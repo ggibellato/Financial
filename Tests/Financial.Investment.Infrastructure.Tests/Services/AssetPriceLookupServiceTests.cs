@@ -3,6 +3,7 @@ using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Application.Services;
 using Financial.Investment.Domain.Entities;
+using Financial.Investment.Domain.Rules;
 using Financial.Investment.Infrastructure.Persistence;
 using Financial.Shared.Abstractions.Observability;
 using Financial.Shared.Abstractions.Persistence;
@@ -40,6 +41,45 @@ public class AssetPriceLookupServiceTests
             entry!.Price.Should().Be(123.45m);
             entry.IsManual.Should().BeFalse();
             repository.SaveCount.Should().Be(1);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
+    public async Task GetCurrentPriceAsync_LiveFetchSucceeds_PropagatesTheFetchedSourceAndReportsCurrent()
+    {
+        var (service, _, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.Success(123.45m, PriceSource.Yahoo));
+        try
+        {
+            var result = await service.GetCurrentPriceAsync(BuildRequest());
+
+            result.Source.Should().Be(PriceSource.Yahoo);
+            result.MarketStatus.Should().Be(MarketStatus.Current);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
+    public async Task GetCurrentPriceAsync_LiveFetchFails_FallsBackToStoredPrice_PropagatesItsRecordedSource()
+    {
+        var (service, repository, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.Failure());
+        try
+        {
+            var oldDate = DateOnly.FromDateTime(DateTime.Today).AddDays(-10);
+            var asset = repository.GetAsset(BrokerName, PortfolioName, AssetName)!;
+            asset.SetPrice(oldDate, 88m, PriceSource.StatusInvest, currency: "BRL", sourceReference: null, DateTimeOffset.UtcNow);
+
+            var result = await service.GetCurrentPriceAsync(BuildRequest());
+
+            result.Price.Should().Be(88m);
+            result.Source.Should().Be(PriceSource.StatusInvest);
+            result.MarketStatus.Should().Be(MarketStatus.Stale);
         }
         finally
         {
@@ -307,15 +347,15 @@ public class AssetPriceLookupServiceTests
     /// every such failure twice.
     /// </summary>
     [Fact]
-    public async Task GetCurrentPriceAsync_LiveFetchFails_NoHistoryAtAll_DoesNotLog()
+    public async Task GetCurrentPriceAsync_LiveFetchFails_NoHistoryAtAll_LogsAWarningButDoesNotThrow()
     {
         var (service, _, logger, tempFile) = CreateRecordingServiceOverRepository(StubAssetPriceService.Failure());
         try
         {
-            Func<Task> act = () => service.GetCurrentPriceAsync(BuildRequest());
+            var result = await service.GetCurrentPriceAsync(BuildRequest());
 
-            await act.Should().ThrowAsync<InvalidOperationException>();
-            logger.Entries.Should().NotContain(recorded => recorded.Level == LogLevel.Warning);
+            result.MarketStatus.Should().Be(MarketStatus.Unavailable);
+            logger.Entries.Should().Contain(recorded => recorded.Level == LogLevel.Warning);
         }
         finally
         {
@@ -324,14 +364,14 @@ public class AssetPriceLookupServiceTests
     }
 
     [Fact]
-    public async Task GetCurrentPriceAsync_LiveFetchFails_NoHistoryAtAll_RethrowsOriginalException()
+    public async Task GetCurrentPriceAsync_LiveFetchFails_NoHistoryAtAll_ReturnsUnavailableInsteadOfThrowing()
     {
         var (service, _, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.Failure());
         try
         {
-            Func<Task> act = () => service.GetCurrentPriceAsync(BuildRequest());
+            var result = await service.GetCurrentPriceAsync(BuildRequest());
 
-            await act.Should().ThrowAsync<InvalidOperationException>();
+            result.MarketStatus.Should().Be(MarketStatus.Unavailable);
         }
         finally
         {
@@ -430,16 +470,16 @@ public class AssetPriceLookupServiceTests
     }
 
     [Fact]
-    public async Task GetCurrentPriceAsync_ProviderValueMethod_NoRecordedValueYet_Throws()
+    public async Task GetCurrentPriceAsync_ProviderValueMethod_NoRecordedValueYet_ReturnsUnavailableInsteadOfThrowing()
     {
         var (service, repository, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.NotUsed());
         try
         {
             repository.GetAsset(BrokerName, PortfolioName, AssetName)!.SetValuationMethod(ValuationMethod.ProviderValue);
 
-            var act = async () => await service.GetCurrentPriceAsync(BuildRequest());
+            var result = await service.GetCurrentPriceAsync(BuildRequest());
 
-            await act.Should().ThrowAsync<InvalidOperationException>();
+            result.MarketStatus.Should().Be(MarketStatus.Unavailable);
         }
         finally
         {
@@ -736,7 +776,10 @@ public class AssetPriceLookupServiceTests
         }
 
         public static StubAssetPriceService Success(decimal price) =>
-            new(request => new AssetPriceDTO { Exchange = request.Exchange, Ticker = request.Ticker, Price = price });
+            new(request => new AssetPriceDTO { Exchange = request.Exchange, Ticker = request.Ticker, Price = price, MarketStatus = MarketStatus.Current });
+
+        public static StubAssetPriceService Success(decimal price, PriceSource source) =>
+            new(request => new AssetPriceDTO { Exchange = request.Exchange, Ticker = request.Ticker, Price = price, Source = source, MarketStatus = MarketStatus.Current });
 
         public static StubAssetPriceService Failure() =>
             new(_ => throw new InvalidOperationException("No asset price fetcher is registered."));

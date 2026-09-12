@@ -450,7 +450,7 @@ public class PortfolioAssetSummaryRowViewModelTests
             CostOfUnitsHeld = 250m,
             UnrealisedGain = 12.50m,
             PriceOnlyReturn = 0.10m,
-            IsPriceStale = true,
+            MarketStatus = Financial.Investment.Domain.Rules.MarketStatus.Stale,
         };
         row.ApplyValuation(refreshed);
 
@@ -487,6 +487,7 @@ public class PortfolioAssetSummaryRowViewModelTests
         raised.Should().Contain(nameof(row.DisplayProfitWithCreditsPercent));
         raised.Should().Contain(nameof(row.DisplayXirr));
         raised.Should().Contain(nameof(row.IsPriceStale));
+        raised.Should().Contain(nameof(row.IsPriceUnavailable));
     }
 
     [Fact]
@@ -502,11 +503,33 @@ public class PortfolioAssetSummaryRowViewModelTests
             TotalSold = 0m,
             TotalInvested = 1m,
             PortfolioWeight = 0m,
-            IsPriceStale = true,
+            MarketStatus = Financial.Investment.Domain.Rules.MarketStatus.Stale,
         };
         var row = new PortfolioAssetSummaryRowViewModel(dto, new ProfitCalculationService());
 
         row.IsPriceStale.Should().BeTrue();
+        row.IsPriceUnavailable.Should().BeFalse();
+    }
+
+    [Fact]
+    public void IsPriceUnavailable_DefaultsFromDtoAtConstruction()
+    {
+        var dto = new PortfolioAssetSummaryItemDTO
+        {
+            AssetName = "Test Asset",
+            Ticker = "TST",
+            Exchange = "LSE",
+            CurrentQuantity = 1m,
+            TotalBought = 1m,
+            TotalSold = 0m,
+            TotalInvested = 1m,
+            PortfolioWeight = 0m,
+            MarketStatus = Financial.Investment.Domain.Rules.MarketStatus.Unavailable,
+        };
+        var row = new PortfolioAssetSummaryRowViewModel(dto, new ProfitCalculationService());
+
+        row.IsPriceUnavailable.Should().BeTrue();
+        row.IsPriceStale.Should().BeFalse();
     }
 
     [Fact]

@@ -1,3 +1,4 @@
+using Financial.Investment.Domain.Entities;
 using Financial.Investment.Domain.ValueObjects;
 using Financial.Investment.Infrastructure.DTOs;
 using Financial.Integrations.WebPageParser;
@@ -10,7 +11,7 @@ public sealed class StatusInvestFinanceService : IFinanceService
     private readonly Func<string, AssetValueSnapshot> _lookup;
 
     public StatusInvestFinanceService()
-        : this(name => WebPageParserMappers.ToAssetValueSnapshot(StatusInvest.GetSellValue(name)))
+        : this(name => WebPageParserMappers.ToAssetValueSnapshot(StatusInvest.GetSellValue(name), PriceSource.StatusInvest))
     {
     }
 

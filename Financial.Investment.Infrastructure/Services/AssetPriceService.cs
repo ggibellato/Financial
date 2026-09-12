@@ -1,6 +1,7 @@
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Exceptions;
 using Financial.Investment.Application.Interfaces;
+using Financial.Investment.Domain.Rules;
 using Financial.Investment.Infrastructure.Interfaces;
 
 namespace Financial.Investment.Infrastructure.Services;
@@ -45,7 +46,9 @@ public sealed class AssetPriceService : IAssetPriceService
             Ticker = snapshot.Ticker,
             Name = snapshot.Name,
             Price = snapshot.Price,
-            AsOf = snapshot.AsOf
+            AsOf = snapshot.AsOf,
+            Source = snapshot.Source,
+            MarketStatus = MarketStatus.Current
         };
     }
 }

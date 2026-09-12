@@ -1,6 +1,7 @@
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.Entities;
+using Financial.Investment.Domain.Rules;
 using System.Globalization;
 
 namespace Financial.Presentation.App.ViewModels.Investment;
@@ -18,6 +19,7 @@ public class PortfolioAssetSummaryRowViewModel : ViewModelBase
     private decimal? _profitWithCreditsPercent;
     private decimal? _xirr;
     private bool _isPriceStale;
+    private bool _isPriceUnavailable;
     private readonly decimal? _historicProfitPercent;
     private readonly decimal? _historicProfitWithCreditsPercent;
     private readonly decimal? _historicXirr;
@@ -52,6 +54,7 @@ public class PortfolioAssetSummaryRowViewModel : ViewModelBase
     public decimal? ProfitWithCreditsPercent => _profitWithCreditsPercent;
     public decimal? Xirr => _xirr;
     public bool IsPriceStale => _isPriceStale;
+    public bool IsPriceUnavailable => _isPriceUnavailable;
 
     public string DisplayFirstInvestmentDate =>
         FirstInvestmentDate.HasValue ? FirstInvestmentDate.Value.ToString("dd/MM/yyyy") : string.Empty;
@@ -166,7 +169,8 @@ public class PortfolioAssetSummaryRowViewModel : ViewModelBase
         _historicXirr = dto.PriceOnlyReturn.HasValue ? dto.PriceOnlyReturn.Value * 100 : null;
 
         SetValuation(dto.MarketValue, dto.CostOfUnitsHeld, dto.UnrealisedGain, dto.PriceOnlyReturn);
-        _isPriceStale = dto.IsPriceStale;
+        _isPriceStale = dto.MarketStatus == MarketStatus.Stale;
+        _isPriceUnavailable = dto.MarketStatus == MarketStatus.Unavailable;
     }
 
     private void SetValuation(decimal? marketValue, decimal costOfUnitsHeld, decimal? unrealisedGain, decimal? priceOnlyReturn)
@@ -208,7 +212,8 @@ public class PortfolioAssetSummaryRowViewModel : ViewModelBase
     public void ApplyValuation(PortfolioAssetSummaryItemDTO dto)
     {
         SetValuation(dto.MarketValue, dto.CostOfUnitsHeld, dto.UnrealisedGain, dto.PriceOnlyReturn);
-        _isPriceStale = dto.IsPriceStale;
+        _isPriceStale = dto.MarketStatus == MarketStatus.Stale;
+        _isPriceUnavailable = dto.MarketStatus == MarketStatus.Unavailable;
 
         OnPropertyChanged(nameof(CurrentValue));
         OnPropertyChanged(nameof(DisplayCurrentValue));
@@ -225,6 +230,7 @@ public class PortfolioAssetSummaryRowViewModel : ViewModelBase
         OnPropertyChanged(nameof(XirrIsPositive));
         OnPropertyChanged(nameof(XirrIsNegative));
         OnPropertyChanged(nameof(IsPriceStale));
+        OnPropertyChanged(nameof(IsPriceUnavailable));
     }
 
     public void MarkPriceFailed()

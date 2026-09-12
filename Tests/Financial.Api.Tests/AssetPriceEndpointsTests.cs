@@ -2,6 +2,7 @@ using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Exceptions;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.Entities;
+using Financial.Investment.Domain.Rules;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -142,7 +143,7 @@ public class AssetPriceEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
-    public async Task GetCurrentPrice_WithIdentity_LiveFetchFails_NoHistoryEntry_ReturnsBadRequest()
+    public async Task GetCurrentPrice_WithIdentity_LiveFetchFails_NoHistoryEntry_ReturnsOkWithUnavailableStatus()
     {
         await using var factory = CreateFactory(new FailingAssetPriceServiceStub());
         using var client = factory.CreateClient();
@@ -150,7 +151,9 @@ public class AssetPriceEndpointsTests : ApiEndpointTests
         var response = await client.GetAsync(
             "/api/v1/financial/prices/current?exchange=BVMF&ticker=BCIA11&brokerName=XPI&portfolioName=Default&assetName=BCIA11");
 
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var price = await response.Content.ReadFromJsonAsync<AssetPriceDTO>();
+        price!.MarketStatus.Should().Be(MarketStatus.Unavailable);
     }
 
     [Fact]

@@ -189,10 +189,10 @@ describe('PriceHistoryTab', () => {
     expect(sourceCell).toHaveClass('price-history-tab__source--manual')
   })
 
-  it('renders_automatic_source_label', () => {
+  it('renders_named_provider_source_label', () => {
     setMock({ entries: [AUTOMATIC_ENTRY] })
     render(<PriceHistoryTab />)
-    const sourceCell = screen.getByText('Automatic', { selector: 'td' })
+    const sourceCell = screen.getByText('Google', { selector: 'td' })
     expect(sourceCell).toHaveClass('price-history-tab__source--automatic')
   })
 

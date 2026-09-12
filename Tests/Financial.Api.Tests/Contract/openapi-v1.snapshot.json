@@ -324,14 +324,17 @@
           "exchange": {
             "type": "string"
           },
-          "isPriceStale": {
-            "type": "boolean"
+          "incomePolicy": {
+            "$ref": "#/components/schemas/IncomePolicy"
           },
           "isin": {
             "type": "string"
           },
           "localTypeCode": {
             "type": "string"
+          },
+          "marketStatus": {
+            "$ref": "#/components/schemas/MarketStatus"
           },
           "marketValue": {
             "format": "double",
@@ -411,6 +414,9 @@
               "null",
               "number"
             ]
+          },
+          "valuationMethod": {
+            "$ref": "#/components/schemas/ValuationMethod"
           }
         },
         "required": [
@@ -492,12 +498,18 @@
           "isManual": {
             "type": "boolean"
           },
+          "marketStatus": {
+            "$ref": "#/components/schemas/MarketStatus"
+          },
           "name": {
             "type": "string"
           },
           "price": {
             "format": "double",
             "type": "number"
+          },
+          "source": {
+            "$ref": "#/components/schemas/PriceSource"
           },
           "ticker": {
             "type": "string"
@@ -2559,6 +2571,13 @@
         },
         "type": "object"
       },
+      "MarketStatus": {
+        "enum": [
+          "Current",
+          "Stale",
+          "Unavailable"
+        ]
+      },
       "MoveAssetRequestDTO": {
         "properties": {
           "assetName": {
@@ -2720,9 +2739,6 @@
               "string"
             ]
           },
-          "isPriceStale": {
-            "type": "boolean"
-          },
           "lastCreditMonth": {
             "type": [
               "null",
@@ -2739,6 +2755,9 @@
               "null",
               "number"
             ]
+          },
+          "marketStatus": {
+            "$ref": "#/components/schemas/MarketStatus"
           },
           "marketValue": {
             "format": "double",

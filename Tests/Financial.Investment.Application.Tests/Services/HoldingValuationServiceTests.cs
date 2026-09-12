@@ -1,6 +1,7 @@
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Services;
 using Financial.Investment.Domain.Entities;
+using Financial.Investment.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
 using Financial.TestUtilities;
 using FluentAssertions;
@@ -81,7 +82,7 @@ public class HoldingValuationServiceTests
         result.MarketValue.Should().Be(80m);
         result.UnrealisedGain.Should().Be(30m);
         result.PriceAsOfDate.Should().Be(new DateOnly(2026, 8, 14));
-        result.IsPriceStale.Should().BeFalse();
+        result.MarketStatus.Should().Be(MarketStatus.Current);
     }
 
     [Fact]

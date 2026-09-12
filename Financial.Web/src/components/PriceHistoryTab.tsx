@@ -40,10 +40,21 @@ const BUY_COLOR = '#2e7d32'
 const SELL_COLOR = '#c62828'
 const MARKER_RADIUS = 4
 
+const SOURCE_LABELS: Record<AssetPriceSnapshotDto['source'], string> = {
+  Unknown: 'Unknown',
+  Manual: 'Manual',
+  ProviderValuation: 'Provider Valuation',
+  Google: 'Google',
+  Yahoo: 'Yahoo',
+  StatusInvest: 'StatusInvest',
+  DicionarioDoInvestidor: 'Dicionario do Investidor',
+  Redentia: 'Redentia',
+}
+
 const SORT_ACCESSORS: Record<string, SortAccessor<AssetPriceSnapshotDto>> = {
   date: (entry) => new Date(entry.date),
   price: (entry) => entry.price,
-  source: (entry) => (entry.isManual ? 'Manual' : 'Automatic'),
+  source: (entry) => SOURCE_LABELS[entry.source],
 }
 
 interface PriceRowProps {
@@ -59,8 +70,9 @@ function PriceRow({ entry, onEdit, onDelete }: PriceRowProps) {
       <TableCell className="data-table__col--numeric price-history-tab__price">{formatN2(entry.price)}</TableCell>
       <TableCell
         className={entry.isManual ? 'price-history-tab__source--manual' : 'price-history-tab__source--automatic'}
+        title={entry.sourceReference ?? undefined}
       >
-        {entry.isManual ? 'Manual' : 'Automatic'}
+        {SOURCE_LABELS[entry.source]}
       </TableCell>
       <TableCell className="data-table__col--action">
         {entry.isManual && (

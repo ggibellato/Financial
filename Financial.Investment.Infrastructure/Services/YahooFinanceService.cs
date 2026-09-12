@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Financial.Investment.Domain.Entities;
 using Financial.Investment.Domain.ValueObjects;
 using Financial.Investment.Infrastructure.DTOs;
 using Financial.Investment.Infrastructure.Interfaces;
@@ -103,7 +104,7 @@ public sealed class YahooFinanceService : IFinanceService
                 ? DateTimeOffset.FromUnixTimeSeconds(unixSeconds)
                 : DateTimeOffset.UtcNow;
 
-            return new AssetValueSnapshot(ticker, name, price, asOf);
+            return new AssetValueSnapshot(ticker, name, price, asOf, PriceSource.Yahoo);
         }
     }
 

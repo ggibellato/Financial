@@ -1,3 +1,4 @@
+using Financial.Investment.Domain.Entities;
 using Financial.Investment.Domain.ValueObjects;
 using Financial.Investment.Infrastructure.DTOs;
 using Financial.Integrations.WebPageParser;
@@ -10,7 +11,7 @@ public sealed class RedentiaFinanceService : IFinanceService
     private readonly Func<string, AssetValueSnapshot> _lookup;
 
     public RedentiaFinanceService()
-        : this(name => WebPageParserMappers.ToAssetValueSnapshot(Redentia.GetSellValue(name)))
+        : this(name => WebPageParserMappers.ToAssetValueSnapshot(Redentia.GetSellValue(name), PriceSource.Redentia))
     {
     }
 

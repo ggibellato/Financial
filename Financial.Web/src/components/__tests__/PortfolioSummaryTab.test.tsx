@@ -72,7 +72,7 @@ const ITEM_1: PortfolioAssetSummaryItemDto = {
   costOfUnitsHeld: 2500,
   unrealisedGain: null,
   priceAsOfDate: null,
-  isPriceStale: false,
+  marketStatus: 'Current',
   priceOnlyReturn: null,
   totalReturn: null,
   totalReturnNetOfTax: null,
@@ -355,7 +355,7 @@ describe('PortfolioSummaryTab', () => {
   })
 
   it('renders_stale_badge_when_row_price_is_stale', () => {
-    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, isPriceStale: true }
+    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, marketStatus: 'Stale' }
     const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false, isManual: false }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [rowPrice] })
@@ -364,7 +364,7 @@ describe('PortfolioSummaryTab', () => {
   })
 
   it('does_not_render_stale_badge_when_row_price_is_not_stale', () => {
-    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, isPriceStale: false }
+    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, marketStatus: 'Current' }
     const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false, isManual: false }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [rowPrice] })
@@ -372,8 +372,26 @@ describe('PortfolioSummaryTab', () => {
     expect(screen.queryByText('(S)')).not.toBeInTheDocument()
   })
 
+  it('renders_unavailable_badge_when_row_price_is_unavailable', () => {
+    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, marketStatus: 'Unavailable' }
+    const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false, isManual: false }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item], rowPrices: [rowPrice] })
+    renderComponent()
+    expect(screen.getByText('(U)')).toBeInTheDocument()
+  })
+
+  it('does_not_render_unavailable_badge_when_row_price_is_current', () => {
+    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, marketStatus: 'Current' }
+    const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false, isManual: false }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item], rowPrices: [rowPrice] })
+    renderComponent()
+    expect(screen.queryByText('(U)')).not.toBeInTheDocument()
+  })
+
   it('does_not_render_stale_badge_in_historic_scope_even_when_flagged_stale', () => {
-    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, isPriceStale: true }
+    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, marketStatus: 'Stale' }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [IDLE_ROW_PRICE] })
     renderComponent('historic')

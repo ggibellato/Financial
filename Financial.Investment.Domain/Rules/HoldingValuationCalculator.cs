@@ -8,7 +8,7 @@ public sealed record HoldingValuation(
     decimal CostOfUnitsHeld,
     decimal? UnrealisedGain,
     DateOnly? PriceAsOfDate,
-    bool IsPriceStale,
+    MarketStatus MarketStatus,
     decimal? PriceOnlyReturn,
     decimal? TotalReturn,
     decimal? TotalReturnNetOfTax = null);
@@ -22,8 +22,8 @@ public static class HoldingValuationCalculator
         if (price is null)
         {
             return quantity == 0
-                ? new HoldingValuation(0m, costOfUnitsHeld, -costOfUnitsHeld, null, false, null, null)
-                : new HoldingValuation(null, costOfUnitsHeld, null, null, false, null, null);
+                ? new HoldingValuation(0m, costOfUnitsHeld, -costOfUnitsHeld, null, MarketStatus.Current, null, null)
+                : new HoldingValuation(null, costOfUnitsHeld, null, null, MarketStatus.Unavailable, null, null);
         }
 
         var marketValue = price.ValuationMethod is ValuationMethod.ProviderValue or ValuationMethod.Manual
@@ -35,22 +35,11 @@ public static class HoldingValuationCalculator
             costOfUnitsHeld,
             marketValue - costOfUnitsHeld,
             price.Date,
-            price.Date < PreviousWeekday(valuationDate),
+            MarketStatusCalculator.For(price.Date, valuationDate),
             null,
             null);
     }
 
     public static HoldingValuation NotMarkedToMarket(decimal quantity, decimal averagePrice) =>
-        new(0m, OpenPositionCostCalculator.CostOfUnitsHeld(quantity, averagePrice), null, null, false, null, null);
-
-    private static DateOnly PreviousWeekday(DateOnly date)
-    {
-        var previous = date.AddDays(-1);
-        while (previous.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
-        {
-            previous = previous.AddDays(-1);
-        }
-
-        return previous;
-    }
+        new(0m, OpenPositionCostCalculator.CostOfUnitsHeld(quantity, averagePrice), null, null, MarketStatus.Current, null, null);
 }
