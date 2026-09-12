@@ -38,7 +38,7 @@ public class CryptocurrencyAssetPriceFetcherTests
     [Fact]
     public void Supports_Cryptocurrency_ReturnsTrue()
     {
-        var result = _sut.Supports(GlobalAssetClass.Cryptocurrency);
+        var result = _sut.Supports(GlobalAssetClass.Cryptocurrency, ValuationMethod.Unspecified);
 
         result.Should().BeTrue();
     }
@@ -46,7 +46,7 @@ public class CryptocurrencyAssetPriceFetcherTests
     [Fact]
     public void Supports_Equity_ReturnsFalse()
     {
-        var result = _sut.Supports(GlobalAssetClass.Equity);
+        var result = _sut.Supports(GlobalAssetClass.Equity, ValuationMethod.Unspecified);
 
         result.Should().BeFalse();
     }
@@ -54,7 +54,7 @@ public class CryptocurrencyAssetPriceFetcherTests
     [Fact]
     public void Supports_Unknown_ReturnsFalse()
     {
-        var result = _sut.Supports(GlobalAssetClass.Unknown);
+        var result = _sut.Supports(GlobalAssetClass.Unknown, ValuationMethod.Unspecified);
 
         result.Should().BeFalse();
     }

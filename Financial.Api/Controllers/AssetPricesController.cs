@@ -34,6 +34,7 @@ public sealed class AssetPricesController : ApiControllerBase
     /// <param name="name">Optional display name, used as a lookup fallback.</param>
     /// <param name="portfolioName">Optional portfolio name; enables the Price History fallback/record path when supplied together with <paramref name="assetName"/>.</param>
     /// <param name="assetName">Optional asset name; enables the Price History fallback/record path when supplied together with <paramref name="portfolioName"/>.</param>
+    /// <param name="valuationMethod">Optional valuation method (e.g. "BondQuote", "ProviderValue"); overrides <paramref name="assetClass"/> for fetch routing when supplied and the asset can't be resolved from broker/portfolio/asset name.</param>
     /// <returns>200 OK with the current price; 400 Bad Request if <paramref name="ticker"/> is missing or invalid;
     /// 422 Unprocessable Entity if no price source supports the asset's class.</returns>
     [HttpGet("current")]
@@ -47,7 +48,8 @@ public sealed class AssetPricesController : ApiControllerBase
         [FromQuery] string? brokerName,
         [FromQuery] string? name,
         [FromQuery] string? portfolioName,
-        [FromQuery] string? assetName)
+        [FromQuery] string? assetName,
+        [FromQuery] string? valuationMethod)
     {
         if (string.IsNullOrWhiteSpace(ticker))
         {
@@ -58,11 +60,16 @@ public sealed class AssetPricesController : ApiControllerBase
             ? parsed
             : GlobalAssetClass.Unknown;
 
+        var parsedValuationMethod = Enum.TryParse<ValuationMethod>(valuationMethod, ignoreCase: true, out var parsedMethod)
+            ? parsedMethod
+            : ValuationMethod.Unspecified;
+
         var result = await _priceLookupService.GetCurrentPriceAsync(new AssetPriceRequestDTO
         {
             Exchange = exchange?.Trim() ?? string.Empty,
             Ticker = ticker.Trim(),
             AssetClass = parsedAssetClass,
+            ValuationMethod = parsedValuationMethod,
             BrokerName = brokerName?.Trim(),
             Name = name?.Trim(),
             PortfolioName = portfolioName?.Trim(),

@@ -90,6 +90,33 @@ public class AssetPriceEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
+    public async Task GetCurrentPrice_UnknownAssetClassWithExplicitBondQuoteValuationMethod_PropagatesValuationMethod()
+    {
+        var stub = new AssetPriceServiceStub();
+        await using var factory = CreateFactory(stub);
+        using var client = factory.CreateClient();
+        var response = await client.GetAsync("/api/v1/financial/prices/current?exchange=BVMF&ticker=TESOURO+IPCA%2B+2029&name=TESOURO+IPCA%2B+2029&valuationMethod=BondQuote");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        stub.LastRequest.Should().NotBeNull();
+        stub.LastRequest!.AssetClass.Should().Be(GlobalAssetClass.Unknown);
+        stub.LastRequest.ValuationMethod.Should().Be(ValuationMethod.BondQuote);
+    }
+
+    [Fact]
+    public async Task GetCurrentPrice_UnrecognizedValuationMethod_DefaultsToUnspecified()
+    {
+        var stub = new AssetPriceServiceStub();
+        await using var factory = CreateFactory(stub);
+        using var client = factory.CreateClient();
+        var response = await client.GetAsync("/api/v1/financial/prices/current?exchange=BVMF&ticker=BCIA11&valuationMethod=NotARealMethod");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        stub.LastRequest.Should().NotBeNull();
+        stub.LastRequest!.ValuationMethod.Should().Be(ValuationMethod.Unspecified);
+    }
+
+    [Fact]
     public async Task GetCurrentPrice_BondWithoutName_ReturnsBadRequest()
     {
         await using var factory = CreateFactory();

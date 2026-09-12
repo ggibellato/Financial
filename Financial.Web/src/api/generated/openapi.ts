@@ -4185,6 +4185,8 @@ export interface paths {
                     portfolioName?: string;
                     /** @description Optional asset name; enables the Price History fallback/record path when supplied together with `portfolioName`. */
                     assetName?: string;
+                    /** @description Optional valuation method (e.g. "BondQuote", "ProviderValue"); overrides `assetClass` for fetch routing when supplied and the asset can't be resolved from broker/portfolio/asset name. */
+                    valuationMethod?: string;
                 };
                 header?: never;
                 path?: never;

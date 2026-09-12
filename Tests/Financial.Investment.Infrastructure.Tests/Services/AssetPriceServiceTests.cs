@@ -162,7 +162,7 @@ public class AssetPriceServiceTests
 
         public int SnapshotCallCount { get; private set; }
 
-        public bool Supports(GlobalAssetClass assetClass) => _supports(assetClass);
+        public bool Supports(GlobalAssetClass assetClass, ValuationMethod valuationMethod) => _supports(assetClass);
 
         public AssetValueSnapshot GetSnapshot(AssetPriceRequestDTO request)
         {

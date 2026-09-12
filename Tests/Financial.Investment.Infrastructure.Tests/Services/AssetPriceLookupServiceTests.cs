@@ -66,6 +66,30 @@ public class AssetPriceLookupServiceTests
     }
 
     [Fact]
+    public async Task GetCurrentPriceAsync_AssetHasExplicitValuationMethod_PropagatesItToTheFetchRequest()
+    {
+        var capturingService = new CapturingAssetPriceService(123.45m);
+        var (innerRepository, tracer, tempFile) = CreateRepositoryOverTempCopy();
+        var repository = new CountingRepository(innerRepository);
+        var navigationService = new NavigationService(repository, TestHoldingValuationService.Create(), tracer, NullLogger<NavigationService>.Instance);
+        var service = new AssetPriceLookupService(repository, navigationService, capturingService, tracer, NullLogger<AssetPriceLookupService>.Instance);
+        try
+        {
+            repository.GetAsset(BrokerName, PortfolioName, AssetName)!.SetValuationMethod(ValuationMethod.BondQuote);
+            await repository.ApplyAndSaveAsync(() => true);
+
+            await service.GetCurrentPriceAsync(BuildRequest());
+
+            capturingService.LastRequest.Should().NotBeNull();
+            capturingService.LastRequest!.ValuationMethod.Should().Be(ValuationMethod.BondQuote);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
     public async Task GetCurrentPriceAsync_LiveFetchSucceeds_PersistsTheFetchedSourceOnTheSnapshot()
     {
         var (service, repository, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.Success(123.45m, PriceSource.Google));
@@ -831,6 +855,24 @@ public class AssetPriceLookupServiceTests
             new(_ => throw new NotImplementedException("Not expected to be called in this test."));
 
         public AssetPriceDTO GetCurrentPrice(AssetPriceRequestDTO request) => _handler(request);
+    }
+
+    private sealed class CapturingAssetPriceService : IAssetPriceService
+    {
+        private readonly decimal _price;
+
+        public CapturingAssetPriceService(decimal price)
+        {
+            _price = price;
+        }
+
+        public AssetPriceRequestDTO? LastRequest { get; private set; }
+
+        public AssetPriceDTO GetCurrentPrice(AssetPriceRequestDTO request)
+        {
+            LastRequest = request;
+            return new AssetPriceDTO { Exchange = request.Exchange, Ticker = request.Ticker, Price = _price, MarketStatus = MarketStatus.Current };
+        }
     }
 
     private sealed class CountingRepository : IInvestmentRepository

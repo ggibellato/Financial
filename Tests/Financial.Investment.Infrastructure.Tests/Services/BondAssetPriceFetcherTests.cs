@@ -29,7 +29,7 @@ public class BondAssetPriceFetcherTests
     [Fact]
     public void Supports_Bond_ReturnsTrue()
     {
-        var result = _sut.Supports(GlobalAssetClass.Bond);
+        var result = _sut.Supports(GlobalAssetClass.Bond, ValuationMethod.Unspecified);
 
         result.Should().BeTrue();
     }
@@ -37,7 +37,7 @@ public class BondAssetPriceFetcherTests
     [Fact]
     public void Supports_Equity_ReturnsFalse()
     {
-        var result = _sut.Supports(GlobalAssetClass.Equity);
+        var result = _sut.Supports(GlobalAssetClass.Equity, ValuationMethod.Unspecified);
 
         result.Should().BeFalse();
     }
@@ -45,9 +45,25 @@ public class BondAssetPriceFetcherTests
     [Fact]
     public void Supports_Cryptocurrency_ReturnsFalse()
     {
-        var result = _sut.Supports(GlobalAssetClass.Cryptocurrency);
+        var result = _sut.Supports(GlobalAssetClass.Cryptocurrency, ValuationMethod.Unspecified);
 
         result.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Supports_ExplicitBondQuote_ReturnsTrueRegardlessOfAssetClass()
+    {
+        var result = _sut.Supports(GlobalAssetClass.Unknown, ValuationMethod.BondQuote);
+
+        result.Should().BeTrue("an unresolved-class holding explicitly marked BondQuote must still route here");
+    }
+
+    [Fact]
+    public void Supports_ExplicitMarketPrice_ReturnsFalse()
+    {
+        var result = _sut.Supports(GlobalAssetClass.Bond, ValuationMethod.MarketPrice);
+
+        result.Should().BeFalse("MarketPrice is routed to the standard fetcher, not this one");
     }
 
     [Fact]

@@ -113,6 +113,7 @@ public sealed class AssetPriceLookupService : IAssetPriceLookupService
             Exchange = request.Exchange,
             Ticker = request.Ticker,
             AssetClass = asset.Class,
+            ValuationMethod = asset.ValuationMethod,
             BrokerName = request.BrokerName,
             Name = string.IsNullOrWhiteSpace(request.Name) ? asset.Name : request.Name,
             PortfolioName = request.PortfolioName,

@@ -28,7 +28,7 @@ public class StandardAssetPriceFetcherTests
     [Fact]
     public void Supports_Cryptocurrency_ReturnsFalse()
     {
-        var result = _sut.Supports(GlobalAssetClass.Cryptocurrency);
+        var result = _sut.Supports(GlobalAssetClass.Cryptocurrency, ValuationMethod.Unspecified);
 
         result.Should().BeFalse();
     }
@@ -36,7 +36,7 @@ public class StandardAssetPriceFetcherTests
     [Fact]
     public void Supports_Equity_ReturnsTrue()
     {
-        var result = _sut.Supports(GlobalAssetClass.Equity);
+        var result = _sut.Supports(GlobalAssetClass.Equity, ValuationMethod.Unspecified);
 
         result.Should().BeTrue();
     }
@@ -44,7 +44,7 @@ public class StandardAssetPriceFetcherTests
     [Fact]
     public void Supports_Unknown_ReturnsTrue()
     {
-        var result = _sut.Supports(GlobalAssetClass.Unknown);
+        var result = _sut.Supports(GlobalAssetClass.Unknown, ValuationMethod.Unspecified);
 
         result.Should().BeTrue();
     }
@@ -52,9 +52,27 @@ public class StandardAssetPriceFetcherTests
     [Fact]
     public void Supports_Bond_ReturnsFalse()
     {
-        var result = _sut.Supports(GlobalAssetClass.Bond);
+        var result = _sut.Supports(GlobalAssetClass.Bond, ValuationMethod.Unspecified);
 
         result.Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData(ValuationMethod.MarketPrice)]
+    [InlineData(ValuationMethod.NAV)]
+    public void Supports_ExplicitMarketPriceOrNav_ReturnsTrueRegardlessOfAssetClass(ValuationMethod valuationMethod)
+    {
+        var result = _sut.Supports(GlobalAssetClass.PrivateCredit, valuationMethod);
+
+        result.Should().BeTrue("an explicit method overrides class-based routing");
+    }
+
+    [Fact]
+    public void Supports_ExplicitBondQuote_ReturnsFalse()
+    {
+        var result = _sut.Supports(GlobalAssetClass.Equity, ValuationMethod.BondQuote);
+
+        result.Should().BeFalse("BondQuote is routed to the bond fetcher, not this one");
     }
 
     [Fact]
@@ -85,7 +103,7 @@ public class StandardAssetPriceFetcherTests
     [InlineData(GlobalAssetClass.ETF)]
     public void Supports_RemainingExchangeListedClasses_ReturnsTrue(GlobalAssetClass assetClass)
     {
-        _sut.Supports(assetClass).Should().BeTrue();
+        _sut.Supports(assetClass, ValuationMethod.Unspecified).Should().BeTrue();
     }
 
     /// <summary>
@@ -100,6 +118,6 @@ public class StandardAssetPriceFetcherTests
     [InlineData(GlobalAssetClass.PrivateCredit)]
     public void Supports_ClassesWithoutAnExchangeQuote_ReturnsFalse(GlobalAssetClass assetClass)
     {
-        _sut.Supports(assetClass).Should().BeFalse();
+        _sut.Supports(assetClass, ValuationMethod.Unspecified).Should().BeFalse();
     }
 }
