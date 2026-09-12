@@ -24,6 +24,8 @@ const EXISTING_ASSET: AssetAdminDto = {
   country: 'BR',
   localTypeCode: 'FII',
   class: 'RealEstate',
+  valuationMethod: 'Unspecified',
+  incomePolicy: 'Unknown',
   quantity: 100,
 }
 

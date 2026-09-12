@@ -72,6 +72,8 @@ public sealed class AssetAdminService : IAssetAdminService
                     ?? throw new KeyNotFoundException($"Portfolio \"{portfolioName}\" was not found under broker \"{brokerName}\".");
 
                 created = Asset.Create(name, request.ISIN, request.Exchange, request.Ticker, request.Country, request.LocalTypeCode, assetClass);
+                created.SetValuationMethod(request.ValuationMethod ?? ValuationMethod.Unspecified);
+                created.SetIncomePolicy(request.IncomePolicy ?? IncomePolicy.Unknown);
                 portfolio.RegisterAsset(created);
                 return true;
             }).ConfigureAwait(false);
@@ -114,6 +116,8 @@ public sealed class AssetAdminService : IAssetAdminService
                 updated = portfolio.UpdateAssetIdentity(
                     currentName, newName, request.ISIN, request.Exchange, request.Ticker,
                     request.Country, request.LocalTypeCode, assetClass);
+                updated.SetValuationMethod(request.ValuationMethod ?? updated.ValuationMethod);
+                updated.SetIncomePolicy(request.IncomePolicy ?? updated.IncomePolicy);
                 return true;
             }).ConfigureAwait(false);
 
@@ -156,6 +160,8 @@ public sealed class AssetAdminService : IAssetAdminService
         Country = asset.Country,
         LocalTypeCode = asset.LocalTypeCode,
         Class = asset.Class,
+        ValuationMethod = asset.ValuationMethod,
+        IncomePolicy = asset.IncomePolicy,
         Quantity = asset.Quantity
     };
 }

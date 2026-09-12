@@ -71,6 +71,10 @@ export default function AssetsPage() {
           // backend re-derives it from the (possibly just-corrected) Country/LocalTypeCode; any
           // other selection is an explicit override.
           class: values.assetClass === 'Unknown' ? null : (values.assetClass as AssetAdminDto['class']),
+          // No form field yet for either of these - left null so the backend preserves whatever the
+          // asset already has (valuation method / income policy pickers are a later increment).
+          valuationMethod: null,
+          incomePolicy: null,
         })
       : await createAsset({
           brokerName: values.brokerName,
@@ -85,6 +89,10 @@ export default function AssetsPage() {
           // backend auto-resolves it from Country/LocalTypeCode; any other selection is an explicit
           // override.
           class: values.assetClass === 'Unknown' ? null : (values.assetClass as AssetAdminDto['class']),
+          // No form field yet for either of these - left null so the backend defaults them
+          // (valuation method / income policy pickers are a later increment).
+          valuationMethod: null,
+          incomePolicy: null,
         })
     closeFormDialog()
     return result

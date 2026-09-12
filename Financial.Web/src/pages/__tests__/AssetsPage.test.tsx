@@ -43,6 +43,8 @@ const ASSETS: AssetAdminDto[] = [
     country: 'BR',
     localTypeCode: 'FII',
     class: 'RealEstate',
+    valuationMethod: 'Unspecified',
+    incomePolicy: 'Unknown',
     quantity: 100,
   },
   {
@@ -56,6 +58,8 @@ const ASSETS: AssetAdminDto[] = [
     country: 'Unknown',
     localTypeCode: '',
     class: 'Unknown',
+    valuationMethod: 'Unspecified',
+    incomePolicy: 'Unknown',
     quantity: 0,
   },
 ]

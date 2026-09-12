@@ -19,7 +19,7 @@ public class HoldingValuationCalculatorTests
     [Fact]
     public void Calculate_WithPrice_MarketValueAndUnrealisedGainAndPriceAsOfDateAreAllPopulated()
     {
-        var price = AssetPriceSnapshot.Create(new DateOnly(2026, 9, 10), 8m, isManual: false);
+        var price = CreatePrice(new DateOnly(2026, 9, 10), 8m);
 
         var result = HoldingValuationCalculator.Calculate(10m, 5m, price, new DateOnly(2026, 9, 10));
 
@@ -31,7 +31,7 @@ public class HoldingValuationCalculatorTests
     [Fact]
     public void Calculate_CostOfUnitsHeld_UsesOpenPositionCostCalculator()
     {
-        var price = AssetPriceSnapshot.Create(new DateOnly(2026, 9, 10), 8m, isManual: false);
+        var price = CreatePrice(new DateOnly(2026, 9, 10), 8m);
 
         var result = HoldingValuationCalculator.Calculate(10m, 5m, price, new DateOnly(2026, 9, 10));
 
@@ -41,7 +41,7 @@ public class HoldingValuationCalculatorTests
     [Fact]
     public void Calculate_UnrealisedGain_IsMarketValueMinusCostOfUnitsHeld()
     {
-        var price = AssetPriceSnapshot.Create(new DateOnly(2026, 9, 10), 3m, isManual: false);
+        var price = CreatePrice(new DateOnly(2026, 9, 10), 3m);
 
         var result = HoldingValuationCalculator.Calculate(10m, 5m, price, new DateOnly(2026, 9, 10));
 
@@ -54,7 +54,7 @@ public class HoldingValuationCalculatorTests
     public void Calculate_PriceDatedTheValuationDate_IsNotStale()
     {
         var valuationDate = new DateOnly(2026, 8, 31); // Monday
-        var price = AssetPriceSnapshot.Create(valuationDate, 8m, isManual: false);
+        var price = CreatePrice(valuationDate, 8m);
 
         var result = HoldingValuationCalculator.Calculate(10m, 5m, price, valuationDate);
 
@@ -66,7 +66,7 @@ public class HoldingValuationCalculatorTests
     {
         var friday = new DateOnly(2026, 8, 28);
         var monday = new DateOnly(2026, 8, 31);
-        var price = AssetPriceSnapshot.Create(friday, 8m, isManual: false);
+        var price = CreatePrice(friday, 8m);
 
         var result = HoldingValuationCalculator.Calculate(10m, 5m, price, monday);
 
@@ -78,7 +78,7 @@ public class HoldingValuationCalculatorTests
     {
         var friday = new DateOnly(2026, 8, 28);
         var tuesday = new DateOnly(2026, 9, 1);
-        var price = AssetPriceSnapshot.Create(friday, 8m, isManual: false);
+        var price = CreatePrice(friday, 8m);
 
         var result = HoldingValuationCalculator.Calculate(10m, 5m, price, tuesday);
 
@@ -159,4 +159,7 @@ public class HoldingValuationCalculatorTests
 
         result.CostOfUnitsHeld.Should().Be(OpenPositionCostCalculator.CostOfUnitsHeld(28m, 71.5m));
     }
+
+    private static AssetPriceSnapshot CreatePrice(DateOnly date, decimal price) =>
+        AssetPriceSnapshot.Create(date, price, ValuationMethod.MarketPrice, PriceSource.Unknown, currency: string.Empty, sourceReference: null, DateTimeOffset.UtcNow);
 }

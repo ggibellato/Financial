@@ -101,7 +101,7 @@ public class BrokerTests
         var realizedGainLoss = asset.RealizedGainLoss;
         var transactionCount = asset.Transactions.Count;
         var creditCount = asset.Credits.Count;
-        var priceCount = asset.PriceHistory.Count;
+        var priceCount = asset.PriceSnapshots.Count;
 
         broker.MoveAsset("Default", "Asset A", "ISA");
 
@@ -113,7 +113,7 @@ public class BrokerTests
             moved.RealizedGainLoss.Should().Be(realizedGainLoss);
             moved.Transactions.Count.Should().Be(transactionCount);
             moved.Credits.Count.Should().Be(creditCount);
-            moved.PriceHistory.Count.Should().Be(priceCount);
+            moved.PriceSnapshots.Count.Should().Be(priceCount);
             moved.GetPriceForDate(new DateOnly(2024, 3, 1))!.IsManual.Should().BeTrue();
         }
     }

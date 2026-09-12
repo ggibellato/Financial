@@ -28,4 +28,12 @@ public class AssetAdminCreateDTO
     /// </summary>
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public GlobalAssetClass? Class { get; set; }
+
+    /// <summary>Left null to default to <see cref="ValuationMethod.Unspecified"/> (today's asset-class-based routing).</summary>
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public ValuationMethod? ValuationMethod { get; set; }
+
+    /// <summary>Left null to default to <see cref="IncomePolicy.Unknown"/>.</summary>
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public IncomePolicy? IncomePolicy { get; set; }
 }

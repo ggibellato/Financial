@@ -47,9 +47,9 @@ public class AssetDetailsDTO
     public List<CreditDTO> Credits { get; set; } = new();
 
     /// <summary>
-    /// Recorded price history, newest first (manual and automatically-fetched entries)
+    /// Recorded price/value snapshots, newest first (manual and automatically-fetched entries)
     /// </summary>
-    public List<AssetPriceSnapshotDTO> PriceHistory { get; set; } = new();
+    public List<AssetPriceSnapshotDTO> PriceSnapshots { get; set; } = new();
 
     public IReadOnlyList<AssetCashFlowDTO> CashFlowsWithCredits { get; set; } = [];
     public IReadOnlyList<AssetCashFlowDTO> CashFlowsWithoutCredits { get; set; } = [];

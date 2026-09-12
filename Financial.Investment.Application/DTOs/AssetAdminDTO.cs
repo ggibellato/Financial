@@ -27,5 +27,11 @@ public class AssetAdminDTO
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public GlobalAssetClass Class { get; set; } = GlobalAssetClass.Unknown;
 
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public ValuationMethod ValuationMethod { get; set; } = ValuationMethod.Unspecified;
+
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public IncomePolicy IncomePolicy { get; set; } = IncomePolicy.Unknown;
+
     public decimal Quantity { get; set; }
 }

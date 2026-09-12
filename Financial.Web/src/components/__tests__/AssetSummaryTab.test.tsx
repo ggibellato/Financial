@@ -61,7 +61,7 @@ const ASSET: AssetDetailsDto = {
   totalReturn: null,
   transactions: [],
   credits: [],
-  priceHistory: [],
+  priceSnapshots: [],
   cashFlowsWithCredits: [],
   cashFlowsWithoutCredits: [],
 }

@@ -80,7 +80,7 @@ public class InvestmentSerializerAdapterTests
     {
         var json = Serializer.Serialize(Investments.Create());
 
-        json.Should().Contain("\"Version\": 2");
+        json.Should().Contain("\"Version\": 3");
     }
 
     [Fact]
@@ -114,6 +114,101 @@ public class InvestmentSerializerAdapterTests
 
         var credit = result.ActiveBrokers.Single().Portfolios.Single().Assets.Single().Credits.Single();
         credit.Type.Should().Be(Credit.CreditType.SecuritiesLendingIncome);
+    }
+
+    [Theory]
+    [InlineData(true, "Manual")]
+    [InlineData(false, "Unknown")]
+    public void Deserialize_Version2_RenamesPriceHistoryKeyAndMapsIsManualToSource(bool isManual, string expectedSource)
+    {
+        var json = BuildDocumentWithPriceHistory(isManual, version: 2);
+
+        var result = Serializer.Deserialize(json);
+
+        var asset = result.ActiveBrokers.Single().Portfolios.Single().Assets.Single();
+        asset.PriceSnapshots.Should().ContainSingle();
+        var snapshot = asset.GetPriceForDate(new DateOnly(2026, 1, 1));
+        snapshot.Should().NotBeNull();
+        snapshot!.Price.Should().Be(100m);
+        snapshot.Source.Should().Be(Enum.Parse<PriceSource>(expectedSource));
+    }
+
+    [Fact]
+    public void Deserialize_NoVersionProperty_AlsoRenamesPriceHistoryKey()
+    {
+        var json = BuildDocumentWithPriceHistory(isManual: true, version: null);
+
+        var result = Serializer.Deserialize(json);
+
+        var asset = result.ActiveBrokers.Single().Portfolios.Single().Assets.Single();
+        asset.PriceSnapshots.Should().ContainSingle();
+    }
+
+    [Fact]
+    public void Deserialize_CurrentVersion_DoesNotAttemptPriceHistoryRename()
+    {
+        const string json = """
+            {
+              "Version": 3,
+              "ActiveBrokers": [
+                {
+                  "Name": "Broker A",
+                  "Currency": "USD",
+                  "Portfolios": [
+                    {
+                      "Name": "Default",
+                      "Assets": [
+                        {
+                          "Name": "Asset A",
+                          "PriceSnapshots": [
+                            { "Date": "2026-01-01", "Price": 100, "Source": "Manual" }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+            """;
+
+        var result = Serializer.Deserialize(json);
+
+        var asset = result.ActiveBrokers.Single().Portfolios.Single().Assets.Single();
+        asset.PriceSnapshots.Should().ContainSingle();
+        asset.GetPriceForDate(new DateOnly(2026, 1, 1))!.IsManual.Should().BeTrue();
+    }
+
+    private static string BuildDocumentWithPriceHistory(bool isManual, int? version)
+    {
+        var versionProperty = version is null ? string.Empty : $"""
+            "Version": {version},
+            """;
+
+        return $$"""
+            {
+              {{versionProperty}}
+              "ActiveBrokers": [
+                {
+                  "Name": "Broker A",
+                  "Currency": "USD",
+                  "Portfolios": [
+                    {
+                      "Name": "Default",
+                      "Assets": [
+                        {
+                          "Name": "Asset A",
+                          "PriceHistory": [
+                            { "Date": "2026-01-01", "Price": 100, "IsManual": {{(isManual ? "true" : "false")}} }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+            """;
     }
 
     private static string BuildDocumentWithCreditType(string creditType, int? version)

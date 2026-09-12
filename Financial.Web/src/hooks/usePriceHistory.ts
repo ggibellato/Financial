@@ -203,7 +203,7 @@ export function usePriceHistory(): PriceHistoryData {
       .then((result) =>
         dispatch({
           type: 'FETCH_SUCCESS',
-          payload: { priceHistory: result.priceHistory, transactions: result.transactions },
+          payload: { priceHistory: result.priceSnapshots, transactions: result.transactions },
         }),
       )
       .catch((err: unknown) => {
@@ -286,12 +286,14 @@ export function usePriceHistory(): PriceHistoryData {
         assetName: selectedNode.assetName,
         date: formDate,
         price: price as number,
+        currency: null,
+        sourceReference: null,
       })
       .then((result) => {
         setStoredDefault(DATE_KEY, formDate)
         dispatch({
           type: 'SAVE_SUCCESS',
-          payload: { priceHistory: result.priceHistory, transactions: result.transactions },
+          payload: { priceHistory: result.priceSnapshots, transactions: result.transactions },
         })
       })
       .catch((err: unknown) => {
@@ -316,7 +318,7 @@ export function usePriceHistory(): PriceHistoryData {
         .then((result) =>
           dispatch({
             type: 'DELETE_SUCCESS',
-            payload: { priceHistory: result.priceHistory, transactions: result.transactions },
+            payload: { priceHistory: result.priceSnapshots, transactions: result.transactions },
           }),
         )
         .catch((err: unknown) => {

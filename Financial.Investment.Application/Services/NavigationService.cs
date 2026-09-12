@@ -90,7 +90,7 @@ public sealed class NavigationService : INavigationService
                 .OrderByDescending(c => c.Date)
                 .ToList();
 
-            var priceHistory = asset.PriceHistory
+            var priceSnapshots = asset.PriceSnapshots
                 .Select(NavigationMapper.MapPriceEntry)
                 .OrderByDescending(p => p.Date)
                 .ToList();
@@ -128,7 +128,7 @@ public sealed class NavigationService : INavigationService
                 TotalReturn = valuation.TotalReturn,
                 Transactions = transactions,
                 Credits = credits,
-                PriceHistory = priceHistory,
+                PriceSnapshots = priceSnapshots,
                 CashFlowsWithCredits = AssetCashFlowBuilder.BuildWithCredits(asset),
                 CashFlowsWithoutCredits = AssetCashFlowBuilder.BuildWithoutCredits(asset)
             };

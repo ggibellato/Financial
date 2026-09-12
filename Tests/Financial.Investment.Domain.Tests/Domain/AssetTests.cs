@@ -378,7 +378,7 @@ public class AssetTests
         asset.RestorePrice(date, previous: null);
 
         asset.GetPriceForDate(date).Should().BeNull();
-        asset.PriceHistory.Should().BeEmpty();
+        asset.PriceSnapshots.Should().BeEmpty();
     }
 
     [Fact]
@@ -392,7 +392,7 @@ public class AssetTests
 
         asset.RestorePrice(date, displaced);
 
-        asset.PriceHistory.Should().ContainSingle();
+        asset.PriceSnapshots.Should().ContainSingle();
         asset.GetPriceForDate(date)!.Price.Should().Be(100m);
     }
 
@@ -425,7 +425,7 @@ public class AssetTests
 
         asset.RestorePrice(new DateOnly(2026, 8, 15), previous: null);
 
-        asset.PriceHistory.Should().ContainSingle();
+        asset.PriceSnapshots.Should().ContainSingle();
         asset.GetPriceForDate(new DateOnly(2026, 8, 14))!.Price.Should().Be(90m);
     }
 
@@ -437,7 +437,7 @@ public class AssetTests
 
         asset.SetPrice(date, 100m, isManual: true);
 
-        asset.PriceHistory.Should().ContainSingle();
+        asset.PriceSnapshots.Should().ContainSingle();
         asset.GetPriceForDate(date).Should().NotBeNull();
         asset.GetPriceForDate(date)!.Price.Should().Be(100m);
     }
@@ -451,7 +451,7 @@ public class AssetTests
 
         asset.SetPrice(date, 150m, isManual: true);
 
-        asset.PriceHistory.Should().ContainSingle();
+        asset.PriceSnapshots.Should().ContainSingle();
         var entry = asset.GetPriceForDate(date);
         entry!.Price.Should().Be(150m);
         entry.IsManual.Should().BeTrue();
@@ -479,7 +479,7 @@ public class AssetTests
         asset.SetPrice(new DateOnly(2026, 8, 14), 100m, isManual: false);
         asset.SetPrice(new DateOnly(2026, 8, 15), 105m, isManual: false);
 
-        asset.PriceHistory.Should().HaveCount(2);
+        asset.PriceSnapshots.Should().HaveCount(2);
     }
 
     [Fact]
@@ -510,56 +510,56 @@ public class AssetTests
     /// needed to prove it: mutating part way through a foreach is the same violation.
     /// </summary>
     [Fact]
-    public void SetPrice_WhilePriceHistoryIsBeingEnumerated_DoesNotDisturbTheEnumeration()
+    public void SetPrice_WhilePriceSnapshotsIsBeingEnumerated_DoesNotDisturbTheEnumeration()
     {
         var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
         asset.SetPrice(new DateOnly(2026, 8, 14), 100m, isManual: false);
         asset.SetPrice(new DateOnly(2026, 8, 15), 105m, isManual: false);
 
         var seen = new List<AssetPriceSnapshot>();
-        foreach (var entry in asset.PriceHistory)
+        foreach (var entry in asset.PriceSnapshots)
         {
             seen.Add(entry);
             asset.SetPrice(new DateOnly(2026, 8, 16), 110m, isManual: false);
         }
 
         seen.Should().HaveCount(2);
-        asset.PriceHistory.Should().HaveCount(3);
+        asset.PriceSnapshots.Should().HaveCount(3);
     }
 
     [Fact]
-    public void RemovePrice_WhilePriceHistoryIsBeingEnumerated_DoesNotDisturbTheEnumeration()
+    public void RemovePrice_WhilePriceSnapshotsIsBeingEnumerated_DoesNotDisturbTheEnumeration()
     {
         var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
         asset.SetPrice(new DateOnly(2026, 8, 14), 100m, isManual: true);
         asset.SetPrice(new DateOnly(2026, 8, 15), 105m, isManual: true);
 
         var seen = new List<AssetPriceSnapshot>();
-        foreach (var entry in asset.PriceHistory)
+        foreach (var entry in asset.PriceSnapshots)
         {
             seen.Add(entry);
             asset.RemovePrice(new DateOnly(2026, 8, 14));
         }
 
         seen.Should().HaveCount(2);
-        asset.PriceHistory.Should().ContainSingle();
+        asset.PriceSnapshots.Should().ContainSingle();
     }
 
     /// <summary>
-    /// The guarantee the readers rely on: what PriceHistory handed out stays as it was, so a caller
+    /// The guarantee the readers rely on: what PriceSnapshots handed out stays as it was, so a caller
     /// part way through projecting it never sees a half-applied write.
     /// </summary>
     [Fact]
-    public void PriceHistory_TakenBeforeAWrite_IsNotChangedByIt()
+    public void PriceSnapshots_TakenBeforeAWrite_IsNotChangedByIt()
     {
         var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
         asset.SetPrice(new DateOnly(2026, 8, 14), 100m, isManual: false);
-        var takenEarlier = asset.PriceHistory;
+        var takenEarlier = asset.PriceSnapshots;
 
         asset.SetPrice(new DateOnly(2026, 8, 15), 105m, isManual: false);
 
         takenEarlier.Should().ContainSingle();
-        asset.PriceHistory.Should().HaveCount(2);
+        asset.PriceSnapshots.Should().HaveCount(2);
     }
 
     [Fact]
@@ -648,7 +648,7 @@ public class AssetTests
     }
 
     [Fact]
-    public void GetPriceAsOf_NoPriceHistory_ReturnsNull()
+    public void GetPriceAsOf_NoPriceSnapshots_ReturnsNull()
     {
         var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
 

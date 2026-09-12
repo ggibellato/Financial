@@ -168,7 +168,7 @@ public class AssetPriceEndpointsTests : ApiEndpointTests
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var asset = await response.Content.ReadFromJsonAsync<AssetDetailsDTO>();
         asset.Should().NotBeNull();
-        asset!.PriceHistory.Should().Contain(p => p.Date == new DateOnly(2026, 8, 15) && p.Price == 123.45m && p.IsManual);
+        asset!.PriceSnapshots.Should().Contain(p => p.Date == new DateOnly(2026, 8, 15) && p.Price == 123.45m && p.IsManual);
     }
 
     [Fact]
@@ -244,7 +244,7 @@ public class AssetPriceEndpointsTests : ApiEndpointTests
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var asset = await response.Content.ReadFromJsonAsync<AssetDetailsDTO>();
         asset.Should().NotBeNull();
-        asset!.PriceHistory.Should().NotContain(p => p.Date == date);
+        asset!.PriceSnapshots.Should().NotContain(p => p.Date == date);
     }
 
     [Fact]

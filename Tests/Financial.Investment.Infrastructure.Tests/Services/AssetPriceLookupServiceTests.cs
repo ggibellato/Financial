@@ -375,7 +375,7 @@ public class AssetPriceLookupServiceTests
                 Task.Run(() => service.GetCurrentPriceAsync(BuildRequest())));
 
             repository.SaveCount.Should().Be(1);
-            ReloadAssetFromDisk(tempFile)!.PriceHistory
+            ReloadAssetFromDisk(tempFile)!.PriceSnapshots
                 .Count(entry => entry.Date == DateOnly.FromDateTime(DateTime.Today))
                 .Should().Be(1);
         }
