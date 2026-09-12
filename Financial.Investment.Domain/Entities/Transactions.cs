@@ -101,27 +101,44 @@ public class Transactions : ICollection<Transaction>
         }
     }
 
+    /// <summary>
+    /// Generalizes Buy/Sell's original two-way split to every <see cref="QuantityEffect"/>: an
+    /// Increase (Buy, TransferIn) feeds <see cref="AveragePrice"/>; a Decrease with a real cash
+    /// effect (Sell, Redemption) realizes gain/loss against its proceeds; a Decrease with no cash
+    /// effect (TransferOut) realizes zero gain/loss, since no consideration changed hands - it
+    /// reduces quantity at the existing average price instead. A None-quantity-effect type (Fee,
+    /// CapitalCall, ReturnOfCapital) is a pure cash entry with no effect here at all.
+    /// </summary>
     private void Apply(Transaction transaction)
     {
-        if (transaction.Type == Transaction.TransactionType.Buy)
-        {
-            // Zero-guard is Buy-only: applying it to an ordinary sell-to-flat would zero the
-            // average price of every closed historic holding instead of just an oversell recovery.
-            var resultingQuantity = Quantity + transaction.Quantity;
-            AveragePrice = resultingQuantity == 0
-                ? 0m
-                : (AveragePrice * Quantity + transaction.TotalPrice) / resultingQuantity;
-        }
-        else
-        {
-            RealizedCapitalGain += transaction.TotalPrice - (transaction.Quantity * AveragePrice);
-            _totalSoldValue += transaction.TotalPrice;
-            _totalSoldQuantity += transaction.Quantity;
-        }
+        var effect = TransactionTypeEffects.For(transaction.Type);
 
-        Quantity += transaction.Type == Transaction.TransactionType.Buy
-            ? transaction.Quantity
-            : -transaction.Quantity;
+        switch (effect.Quantity)
+        {
+            case QuantityEffect.Increase:
+                // Zero-guard is Increase-only: applying it to an ordinary decrease-to-flat would
+                // zero the average price of every closed historic holding instead of just an
+                // oversell recovery.
+                var resultingQuantity = Quantity + transaction.Quantity;
+                var cost = transaction.UnitPrice * transaction.Quantity + transaction.Fees;
+                AveragePrice = resultingQuantity == 0
+                    ? 0m
+                    : (AveragePrice * Quantity + cost) / resultingQuantity;
+                Quantity = resultingQuantity;
+                break;
+
+            case QuantityEffect.Decrease:
+                if (effect.Cash != CashEffect.None)
+                {
+                    var proceeds = transaction.NetCash;
+                    RealizedCapitalGain += proceeds - (transaction.Quantity * AveragePrice);
+                    _totalSoldValue += proceeds;
+                    _totalSoldQuantity += transaction.Quantity;
+                }
+
+                Quantity -= transaction.Quantity;
+                break;
+        }
     }
 
     public IEnumerator<Transaction> GetEnumerator() => _items.GetEnumerator();

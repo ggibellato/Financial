@@ -14,5 +14,7 @@ public class TransactionDTO
 
     public decimal Fees { get; set; }
 
-    public decimal TotalPrice { get; set; }
+    public decimal Withheld { get; set; }
+
+    public decimal NetCash { get; set; }
 }

@@ -13,7 +13,14 @@ public static class SaleCoverageRule
 
         foreach (var transaction in TransactionReplayOrder.Sort(transactions))
         {
-            if (transaction.Type == Transaction.TransactionType.Buy)
+            var quantityEffect = TransactionTypeEffects.For(transaction.Type).Quantity;
+
+            if (quantityEffect == QuantityEffect.None)
+            {
+                continue;
+            }
+
+            if (quantityEffect == QuantityEffect.Increase)
             {
                 quantity += transaction.Quantity;
                 continue;

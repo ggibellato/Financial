@@ -409,6 +409,7 @@ public class MainNavigationViewModelConstructorGuardTests
     {
         public IReadOnlyList<TransactionSummaryItemDTO> GetTransactionsByBroker(string brokerName, InvestmentScope scope = InvestmentScope.Active) => throw new NotImplementedException();
         public IReadOnlyList<TransactionSummaryItemDTO> GetTransactionsByPortfolio(string brokerName, string portfolioName, InvestmentScope scope = InvestmentScope.Active) => throw new NotImplementedException();
+        public IReadOnlyList<TransactionTypeEffectDTO> GetTransactionTypeEffects() => throw new NotImplementedException();
     }
 
     private sealed class StubProfitCalculationService : IProfitCalculationService

@@ -51,6 +51,7 @@ const SUMMARY: AggregatedSummaryDto = {
   unvaluedHoldingCount: 0,
   priceOnlyReturn: 0.08,
   totalReturn: 0.1,
+  totalReturnNetOfTax: 0.09,
 }
 
 const ITEM_1: PortfolioAssetSummaryItemDto = {
@@ -74,6 +75,7 @@ const ITEM_1: PortfolioAssetSummaryItemDto = {
   isPriceStale: false,
   priceOnlyReturn: null,
   totalReturn: null,
+  totalReturnNetOfTax: null,
   totalCredits: 0,
   cashFlows: [],
   lastMonthCredits: 0,

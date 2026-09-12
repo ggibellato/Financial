@@ -110,12 +110,12 @@ public class CreditsTabViewModelTests
         var (viewModel, _, _) = Build(service: service);
         var usedDate = DateTime.Today.AddDays(-3);
 
-        await viewModel.Add(() => AsForm(ValidDialogData() with { Date = usedDate, Type = "Rent" }));
+        await viewModel.Add(() => AsForm(ValidDialogData() with { Date = usedDate, Type = "SecuritiesLendingIncome" }));
 
         viewModel.AddCreditCommand.Execute(null);
 
         viewModel.CreditFormViewModel!.Date.Should().Be(usedDate);
-        viewModel.CreditFormViewModel!.Type.Should().Be("Rent");
+        viewModel.CreditFormViewModel!.Type.Should().Be("SecuritiesLendingIncome");
     }
 
     [Fact]
@@ -172,11 +172,11 @@ public class CreditsTabViewModelTests
         var id = Guid.NewGuid();
         var selected = new CreditDTO { Id = id, Date = DateTime.Today, Type = "Dividend", Value = 1m };
 
-        await viewModel.Update(selected, () => AsForm(ValidDialogData(id) with { Type = "Rent", Value = 99m }));
+        await viewModel.Update(selected, () => AsForm(ValidDialogData(id) with { Type = "SecuritiesLendingIncome", Value = 99m }));
 
         service.LastUpdateRequest.Should().NotBeNull();
         service.LastUpdateRequest!.Id.Should().Be(id);
-        service.LastUpdateRequest.Type.Should().Be("Rent");
+        service.LastUpdateRequest.Type.Should().Be("SecuritiesLendingIncome");
         service.LastUpdateRequest.Value.Should().Be(99m);
         spy.AppliedDetails.Should().Be(expectedDetails);
     }

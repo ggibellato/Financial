@@ -10,7 +10,8 @@ public sealed record HoldingValuation(
     DateOnly? PriceAsOfDate,
     bool IsPriceStale,
     decimal? PriceOnlyReturn,
-    decimal? TotalReturn);
+    decimal? TotalReturn,
+    decimal? TotalReturnNetOfTax = null);
 
 public static class HoldingValuationCalculator
 {

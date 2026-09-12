@@ -76,7 +76,7 @@ public class SummaryServiceTests
         var asset = MakeAsset();
         asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 10m, 10m, 0m));
         asset.AddCredit(Credit.Create(DateTime.Today, Credit.CreditType.Dividend, 30m));
-        asset.AddCredit(Credit.Create(DateTime.Today, Credit.CreditType.Rent, 15m));
+        asset.AddCredit(Credit.Create(DateTime.Today, Credit.CreditType.SecuritiesLendingIncome, 15m));
         _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", asset)];
 
         var result = CreateService().GetBrokerSummary("XPI");
@@ -404,6 +404,25 @@ public class SummaryServiceTests
         result.MarketValue.Should().Be(80m + 12m);
         result.PriceOnlyReturn.Should().NotBeNull();
         result.TotalReturn.Should().NotBeNull();
+        result.TotalReturnNetOfTax.Should().NotBeNull();
+        result.TotalReturnNetOfTax.Should().Be(result.TotalReturn, "FR-018: identical, not merely close, when nothing was ever withheld");
+    }
+
+    [Fact]
+    public void GetPortfolioSummary_DividendWithholdingSomewhere_TotalReturnNetOfTaxDiffersFromTotalReturn()
+    {
+        var asset = MakeAsset("AAAA", "AAAA");
+        asset.AddTransaction(Transaction.Create(new DateTime(2025, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
+        asset.AddCredit(Credit.Create(new DateTime(2025, 6, 1), Credit.CreditType.Dividend, 100m, withheld: 15m));
+        asset.SetPrice(DateOnly.FromDateTime(Today.UtcDateTime), 8m, isManual: false);
+
+        _repository.AssetsByBrokerPortfolio = [asset];
+
+        var result = CreateService(new FakeTimeProvider(Today)).GetPortfolioSummary("XPI", "Default");
+
+        result.TotalReturn.Should().NotBeNull();
+        result.TotalReturnNetOfTax.Should().NotBeNull();
+        result.TotalReturnNetOfTax.Should().NotBe(result.TotalReturn);
     }
 
     [Fact]
@@ -426,6 +445,7 @@ public class SummaryServiceTests
         result.MarketValue.Should().Be(80m);
         result.PriceOnlyReturn.Should().BeNull();
         result.TotalReturn.Should().BeNull();
+        result.TotalReturnNetOfTax.Should().BeNull();
     }
 
     [Fact]

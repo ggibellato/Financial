@@ -35,7 +35,8 @@ const TRANSACTION_BUY: TransactionDto = {
   quantity: 100,
   unitPrice: 4.2,
   fees: 0.5,
-  totalPrice: 420.5,
+  withheld: 0,
+  netCash: -420.5,
 }
 
 const TRANSACTION_SELL: TransactionDto = {
@@ -45,7 +46,8 @@ const TRANSACTION_SELL: TransactionDto = {
   quantity: 50,
   unitPrice: 5.0,
   fees: 1.0,
-  totalPrice: 251.0,
+  withheld: 0,
+  netCash: 251.0,
 }
 
 const CHART_DATA: TransactionMonthBucket[] = [
@@ -74,6 +76,8 @@ const DEFAULT_HOOK: TransactionsData = {
   formQuantity: '',
   formUnitPrice: '',
   formFees: '',
+  formWithheld: '',
+  formTypeHasQuantityEffect: true,
   isSaving: false,
   saveError: null,
   saveErrorFields: {},
@@ -183,7 +187,8 @@ describe('TransactionsTab', () => {
     expect(screen.getByText('Quantity')).toBeInTheDocument()
     expect(screen.getByText('Unit Price')).toBeInTheDocument()
     expect(screen.getByText('Fees')).toBeInTheDocument()
-    expect(screen.getByText('Total')).toBeInTheDocument()
+    expect(screen.getByText('Withheld')).toBeInTheDocument()
+    expect(screen.getByText('Net')).toBeInTheDocument()
   })
 
   it('renders_date_in_dd_MM_yyyy_format', () => {
@@ -215,7 +220,7 @@ describe('TransactionsTab', () => {
   it('renders_total_in_bold', () => {
     setMock({ transactions: [TRANSACTION_BUY] })
     render(<TransactionsTab />)
-    const totalCell = screen.getByText('420.50')
+    const totalCell = screen.getByText('-420.50')
     expect(totalCell).toHaveClass('transactions-tab__total')
   })
 
@@ -234,6 +239,31 @@ describe('TransactionsTab', () => {
     expect(screen.getByLabelText(/^Quantity/)).toBeInTheDocument()
     expect(screen.getByLabelText(/^Unit Price/)).toBeInTheDocument()
     expect(screen.getByLabelText('Fees')).toBeInTheDocument()
+    expect(screen.getByLabelText('Withheld')).toBeInTheDocument()
+  })
+
+  it('hides_quantity_and_unit_price_when_type_has_no_quantity_effect', () => {
+    setMock({ isFormVisible: true, formTypeHasQuantityEffect: false })
+    render(<TransactionsTab />)
+    expect(screen.queryByLabelText(/^Quantity/)).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/^Unit Price/)).not.toBeInTheDocument()
+  })
+
+  it('type_select_includes_every_new_transaction_type', () => {
+    setMock({ isFormVisible: true })
+    render(<TransactionsTab />)
+    const select = screen.getByLabelText('Type') as HTMLSelectElement
+    const optionValues = Array.from(select.options).map((o) => o.value)
+    expect(optionValues).toEqual([
+      'Buy',
+      'Sell',
+      'Fee',
+      'Redemption',
+      'TransferIn',
+      'TransferOut',
+      'CapitalCall',
+      'ReturnOfCapital',
+    ])
   })
 
   it('renders_edit_transaction_title_when_editing', () => {
@@ -295,15 +325,15 @@ describe('TransactionsTab', () => {
     render(<TransactionsTab />)
     const table = screen.getByRole('table')
 
-    fireEvent.click(screen.getByRole('button', { name: 'Total' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Net' }))
     let dataRows = within(table).getAllByRole('row').slice(1)
-    expect(within(dataRows[0]).getByText('251.00')).toBeInTheDocument()
-    expect(within(dataRows[1]).getByText('420.50')).toBeInTheDocument()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Total' }))
-    dataRows = within(table).getAllByRole('row').slice(1)
-    expect(within(dataRows[0]).getByText('420.50')).toBeInTheDocument()
+    expect(within(dataRows[0]).getByText('-420.50')).toBeInTheDocument()
     expect(within(dataRows[1]).getByText('251.00')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Net' }))
+    dataRows = within(table).getAllByRole('row').slice(1)
+    expect(within(dataRows[0]).getByText('251.00')).toBeInTheDocument()
+    expect(within(dataRows[1]).getByText('-420.50')).toBeInTheDocument()
   })
 
   it('clicking_date_header_sorts_rows_by_date', () => {

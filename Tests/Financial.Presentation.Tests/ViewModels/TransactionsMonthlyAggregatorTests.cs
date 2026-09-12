@@ -14,7 +14,7 @@ public class TransactionsMonthlyAggregatorTests
     {
         var transactions = new[]
         {
-            (Date: new DateTime(2026, 5, 10), Type: "Buy", TotalPrice: 500m),
+            (Date: new DateTime(2026, 5, 10), NetCash: -500m),
         };
 
         var result = TransactionsMonthlyAggregator.BuildMonthlyNetInvested(
@@ -33,8 +33,8 @@ public class TransactionsMonthlyAggregatorTests
     {
         var transactions = new[]
         {
-            (Date: new DateTime(2026, 7, 5), Type: "Buy", TotalPrice: 1000m),
-            (Date: new DateTime(2026, 7, 20), Type: "Sell", TotalPrice: 300m),
+            (Date: new DateTime(2026, 7, 5), NetCash: -1000m),
+            (Date: new DateTime(2026, 7, 20), NetCash: 300m),
         };
 
         var result = TransactionsMonthlyAggregator.BuildMonthlyNetInvested(
@@ -49,8 +49,8 @@ public class TransactionsMonthlyAggregatorTests
     {
         var transactions = new[]
         {
-            (Date: new DateTime(2023, 1, 15), Type: "Buy", TotalPrice: 100m),
-            (Date: new DateTime(2026, 6, 1), Type: "Buy", TotalPrice: 200m),
+            (Date: new DateTime(2023, 1, 15), NetCash: -100m),
+            (Date: new DateTime(2026, 6, 1), NetCash: -200m),
         };
 
         var result = TransactionsMonthlyAggregator.BuildMonthlyNetInvested(
@@ -64,7 +64,7 @@ public class TransactionsMonthlyAggregatorTests
     public void BuildMonthlyNetInvested_EmptyInput_ReturnsSingleZeroMonth()
     {
         var result = TransactionsMonthlyAggregator.BuildMonthlyNetInvested(
-            Array.Empty<(DateTime Date, string Type, decimal TotalPrice)>(),
+            Array.Empty<(DateTime Date, decimal NetCash)>(),
             PeriodFilter.ThisMonth,
             ReferenceDate);
 
@@ -78,7 +78,7 @@ public class TransactionsMonthlyAggregatorTests
     {
         var transactions = new[]
         {
-            (Date: new DateTime(2026, 7, 1), Type: "Sell", TotalPrice: 400m),
+            (Date: new DateTime(2026, 7, 1), NetCash: 400m),
         };
 
         var result = TransactionsMonthlyAggregator.BuildMonthlyNetInvested(

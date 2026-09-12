@@ -244,7 +244,7 @@ public class CreditServiceTests
 
         var shortAsset = MakeAsset("SHORT");
         shortAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 1m, 10m, 0m));
-        shortAsset.AddCredit(Credit.Create(new DateTime(2024, 1, 2), Credit.CreditType.Rent, 7m));
+        shortAsset.AddCredit(Credit.Create(new DateTime(2024, 1, 2), Credit.CreditType.SecuritiesLendingIncome, 7m));
 
         _repository.AssetsByBroker = [flatAsset, shortAsset];
 
@@ -288,7 +288,7 @@ public class CreditServiceTests
 
         var shortAsset = MakeAsset("SHORT");
         shortAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 1m, 10m, 0m));
-        shortAsset.AddCredit(Credit.Create(new DateTime(2024, 1, 2), Credit.CreditType.Rent, 7m));
+        shortAsset.AddCredit(Credit.Create(new DateTime(2024, 1, 2), Credit.CreditType.SecuritiesLendingIncome, 7m));
 
         _repository.AssetsByBrokerPortfolio = [flatAsset, shortAsset];
 
@@ -405,6 +405,66 @@ public class CreditServiceTests
         Action act = () => CreateService().GetCreditsByPortfolio("XPI", "Default");
 
         act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public async Task AddCreditAsync_CouponType_AddsSuccessfully()
+    {
+        var asset = MakeAsset();
+        _repository.Asset = asset;
+
+        var result = await CreateService().AddCreditAsync(new CreditCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "AAAA",
+            Date = new DateTime(2024, 1, 1),
+            Type = "Coupon",
+            Value = 10m
+        });
+
+        result.Should().NotBeNull();
+        asset.Credits.Should().ContainSingle(c => c.Type == Credit.CreditType.Coupon);
+    }
+
+    [Fact]
+    public async Task AddCreditAsync_WithWithheld_AddsCreditWithNetAmount()
+    {
+        var asset = MakeAsset();
+        _repository.Asset = asset;
+
+        await CreateService().AddCreditAsync(new CreditCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "AAAA",
+            Date = new DateTime(2024, 1, 1),
+            Type = "Dividend",
+            Value = 100m,
+            Withheld = 15m
+        });
+
+        asset.Credits.Should().ContainSingle(c => c.Withheld == 15m && c.NetAmount == 85m);
+    }
+
+    [Fact]
+    public async Task AddCreditAsync_NegativeValue_AddsAsACorrection()
+    {
+        var asset = MakeAsset();
+        _repository.Asset = asset;
+
+        var result = await CreateService().AddCreditAsync(new CreditCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "AAAA",
+            Date = new DateTime(2024, 1, 1),
+            Type = "Dividend",
+            Value = -20m
+        });
+
+        result.Should().NotBeNull();
+        asset.Credits.Should().ContainSingle(c => c.Value == -20m && c.Type == Credit.CreditType.Dividend);
     }
 
     private CreditService CreateService() => new(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance), Tracer, NullLogger<CreditService>.Instance);

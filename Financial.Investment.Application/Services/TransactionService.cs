@@ -3,6 +3,7 @@ using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Application.Validation;
 using Financial.Investment.Domain.Entities;
+using Financial.Investment.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.Logging;
 
@@ -40,7 +41,7 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
                 TransactionTypeParser.TryParse,
                 (asset, transactionType) =>
                 {
-                    var transaction = Transaction.Create(request.Date, transactionType, request.Quantity, request.UnitPrice, request.Fees);
+                    var transaction = Transaction.Create(request.Date, transactionType, request.Quantity, request.UnitPrice, request.Fees, request.Withheld);
                     asset.RecordTransaction(transaction);
                     return true;
                 }).ConfigureAwait(false);
@@ -79,7 +80,7 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
                 TransactionTypeParser.TryParse,
                 (asset, transactionType) =>
                 {
-                    var updatedTransaction = Transaction.CreateWithId(request.Id, request.Date, transactionType, request.Quantity, request.UnitPrice, request.Fees);
+                    var updatedTransaction = Transaction.CreateWithId(request.Id, request.Date, transactionType, request.Quantity, request.UnitPrice, request.Fees, request.Withheld);
                     return asset.ReviseTransaction(updatedTransaction);
                 }).ConfigureAwait(false);
 
@@ -173,6 +174,20 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
             throw;
         }
     }
+
+    public IReadOnlyList<TransactionTypeEffectDTO> GetTransactionTypeEffects() =>
+        Enum.GetValues<Transaction.TransactionType>()
+            .Select(type =>
+            {
+                var effect = TransactionTypeEffects.For(type);
+                return new TransactionTypeEffectDTO
+                {
+                    Type = type.ToString(),
+                    QuantityEffect = effect.Quantity.ToString(),
+                    CashEffect = effect.Cash.ToString()
+                };
+            })
+            .ToList();
 
     private ITelemetrySpan StartSpan(string operationName)
     {

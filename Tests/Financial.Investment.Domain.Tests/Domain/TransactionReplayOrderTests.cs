@@ -104,4 +104,33 @@ public class TransactionReplayOrderTests
 
         TransactionReplayOrder.IsInOrder(first, second).Should().BeTrue();
     }
+
+    [Theory]
+    [InlineData(Transaction.TransactionType.Redemption)]
+    [InlineData(Transaction.TransactionType.TransferOut)]
+    public void Sort_SameDateIncreaseAndDecreaseType_PutsIncreaseFirst(Transaction.TransactionType decreaseType)
+    {
+        var date = new DateTime(2024, 1, 1);
+        var decrease = Transaction.Create(date, decreaseType, 1m, 10m, 0m);
+        var increase = Transaction.Create(date, Transaction.TransactionType.TransferIn, 1m, 10m, 0m);
+
+        var sorted = TransactionReplayOrder.Sort([decrease, increase]).ToList();
+
+        sorted.Should().Equal([increase, decrease]);
+    }
+
+    [Theory]
+    [InlineData(Transaction.TransactionType.Fee)]
+    [InlineData(Transaction.TransactionType.CapitalCall)]
+    [InlineData(Transaction.TransactionType.ReturnOfCapital)]
+    public void Sort_SameDateNoQuantityEffectType_SortsBeforeADecreaseType(Transaction.TransactionType noEffectType)
+    {
+        var date = new DateTime(2024, 1, 1);
+        var sell = Transaction.Create(date, Transaction.TransactionType.Sell, 1m, 10m, 0m);
+        var noEffect = Transaction.Create(date, noEffectType, 0m, 0m, fees: 1m);
+
+        var sorted = TransactionReplayOrder.Sort([sell, noEffect]).ToList();
+
+        sorted.Should().Equal([noEffect, sell]);
+    }
 }

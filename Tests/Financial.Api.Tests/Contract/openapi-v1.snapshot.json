@@ -40,6 +40,13 @@
               "number"
             ]
           },
+          "totalReturnNetOfTax": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
           "totalSold": {
             "format": "double",
             "type": "number"
@@ -1224,6 +1231,10 @@
           "value": {
             "format": "double",
             "type": "number"
+          },
+          "withheld": {
+            "format": "double",
+            "type": "number"
           }
         },
         "required": [
@@ -1244,10 +1255,18 @@
             "format": "uuid",
             "type": "string"
           },
+          "netAmount": {
+            "format": "double",
+            "type": "number"
+          },
           "type": {
             "type": "string"
           },
           "value": {
+            "format": "double",
+            "type": "number"
+          },
+          "withheld": {
             "format": "double",
             "type": "number"
           }
@@ -1303,6 +1322,10 @@
             "type": "string"
           },
           "value": {
+            "format": "double",
+            "type": "number"
+          },
+          "withheld": {
             "format": "double",
             "type": "number"
           }
@@ -2699,6 +2722,13 @@
               "number"
             ]
           },
+          "totalReturnNetOfTax": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
           "totalSold": {
             "format": "double",
             "type": "number"
@@ -3319,6 +3349,10 @@
           "unitPrice": {
             "format": "double",
             "type": "number"
+          },
+          "withheld": {
+            "format": "double",
+            "type": "number"
           }
         },
         "required": [
@@ -3343,11 +3377,11 @@
             "format": "uuid",
             "type": "string"
           },
-          "quantity": {
+          "netCash": {
             "format": "double",
             "type": "number"
           },
-          "totalPrice": {
+          "quantity": {
             "format": "double",
             "type": "number"
           },
@@ -3355,6 +3389,10 @@
             "type": "string"
           },
           "unitPrice": {
+            "format": "double",
+            "type": "number"
+          },
+          "withheld": {
             "format": "double",
             "type": "number"
           }
@@ -3396,7 +3434,7 @@
             "format": "date-time",
             "type": "string"
           },
-          "totalPrice": {
+          "netCash": {
             "format": "double",
             "type": "number"
           },
@@ -3407,6 +3445,25 @@
         "required": [
           "assetName",
           "type"
+        ],
+        "type": "object"
+      },
+      "TransactionTypeEffectDTO": {
+        "properties": {
+          "cashEffect": {
+            "type": "string"
+          },
+          "quantityEffect": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "quantityEffect",
+          "cashEffect"
         ],
         "type": "object"
       },
@@ -3441,6 +3498,10 @@
             "type": "string"
           },
           "unitPrice": {
+            "format": "double",
+            "type": "number"
+          },
+          "withheld": {
             "format": "double",
             "type": "number"
           }
@@ -9962,6 +10023,29 @@
           }
         },
         "summary": "Lists transactions for a specific portfolio.",
+        "tags": [
+          "Transactions"
+        ]
+      }
+    },
+    "/transactions/type-effects": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TransactionTypeEffectDTO"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "200 OK with the type-effect table."
+          }
+        },
+        "summary": "Lists every transaction type\u0027s declared quantity/cash effect, so a client can decide\n            which fields a given type needs without duplicating the rule itself.",
         "tags": [
           "Transactions"
         ]

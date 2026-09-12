@@ -97,7 +97,8 @@ internal static class NavigationMapper
             Quantity = transaction.Quantity,
             UnitPrice = transaction.UnitPrice,
             Fees = transaction.Fees,
-            TotalPrice = transaction.TotalPrice
+            Withheld = transaction.Withheld,
+            NetCash = transaction.NetCash
         };
     }
 
@@ -108,7 +109,7 @@ internal static class NavigationMapper
             AssetName = asset.Name,
             Date = transaction.Date,
             Type = transaction.Type.ToString(),
-            TotalPrice = transaction.TotalPrice
+            NetCash = transaction.NetCash
         };
     }
 
@@ -119,7 +120,9 @@ internal static class NavigationMapper
             Id = credit.Id,
             Date = credit.Date,
             Type = credit.Type.ToString(),
-            Value = credit.Value
+            Value = credit.Value,
+            Withheld = credit.Withheld,
+            NetAmount = credit.NetAmount
         };
     }
 

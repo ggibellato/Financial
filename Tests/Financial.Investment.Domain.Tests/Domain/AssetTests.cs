@@ -183,6 +183,22 @@ public class AssetTests
         asset.Quantity.Should().Be(0m);
     }
 
+    [Theory]
+    [InlineData(Transaction.TransactionType.Redemption)]
+    [InlineData(Transaction.TransactionType.TransferOut)]
+    public void RecordTransaction_TypeExceedsHeldQuantity_ThrowsAndAddsNothing(Transaction.TransactionType type)
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        asset.AddTransaction(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
+
+        Action act = () => asset.RecordTransaction(
+            Transaction.Create(new DateTime(2024, 2, 1), type, 15m, 6m, 0m));
+
+        act.Should().Throw<InvestmentRuleViolationException>().WithMessage("*10*");
+        asset.Transactions.Should().ContainSingle();
+        asset.Quantity.Should().Be(10m);
+    }
+
     [Fact]
     public void ReviseTransaction_EditLeavesTheEditedSaleUncovered_ThrowsAndChangesNothing()
     {
@@ -278,7 +294,7 @@ public class AssetTests
         var credits = new[]
         {
             Credit.CreateWithId(Guid.NewGuid(), new DateTime(2024, 2, 1), Credit.CreditType.Dividend, 10m),
-            Credit.CreateWithId(Guid.NewGuid(), new DateTime(2024, 3, 1), Credit.CreditType.Rent, 20m),
+            Credit.CreateWithId(Guid.NewGuid(), new DateTime(2024, 3, 1), Credit.CreditType.SecuritiesLendingIncome, 20m),
         };
 
         asset.AddCredits(credits);

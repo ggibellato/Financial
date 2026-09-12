@@ -79,6 +79,7 @@ import type {
   TransactionCreateDto,
   TransactionDeleteDto,
   TransactionSummaryItemDto,
+  TransactionTypeEffectDto,
   TransactionUpdateDto,
   TransferDto,
   TransferCreateDto,
@@ -115,6 +116,7 @@ export interface FinancialApiClient {
   getBrokerBreakdown: (brokerName: string, scope?: InvestmentScope) => Promise<PortfolioBreakdownItemDto[]>
   getTransactionsByBroker: (brokerName: string, scope?: InvestmentScope) => Promise<TransactionSummaryItemDto[]>
   getTransactionsByPortfolio: (brokerName: string, portfolioName: string, scope?: InvestmentScope) => Promise<TransactionSummaryItemDto[]>
+  getTransactionTypeEffects: () => Promise<TransactionTypeEffectDto[]>
   moveAsset: (request: MoveAssetRequestDto) => Promise<AssetDetailsDto>
   archiveAsset: (request: ArchiveAssetRequestDto) => Promise<AssetDetailsDto>
   getAdminPortfolios: () => Promise<PortfolioDto[]>
@@ -341,6 +343,7 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       request<TransactionSummaryItemDto[]>(
         `/transactions/portfolio/${encodeURIComponent(brokerName)}/${encodeURIComponent(portfolioName)}${buildScopeQuery(scope)}`,
       ),
+    getTransactionTypeEffects: () => request<TransactionTypeEffectDto[]>('/transactions/type-effects'),
     moveAsset: (requestBody) =>
       request<AssetDetailsDto>('/assets/move', {
         method: 'POST',

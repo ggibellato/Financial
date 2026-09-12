@@ -543,9 +543,9 @@ public class TransactionsTabViewModel : ViewModelBase
 
     private void ApplyTransactionsFilter()
     {
-        IEnumerable<(DateTime Date, string Type, decimal TotalPrice)> source = IsTransactionsAggregateView
-            ? _brokerPortfolioTransactions.Select(t => (t.Date, t.Type, t.TotalPrice))
-            : Transactions.Select(t => (t.Date, t.Type, t.TotalPrice));
+        IEnumerable<(DateTime Date, decimal NetCash)> source = IsTransactionsAggregateView
+            ? _brokerPortfolioTransactions.Select(t => (t.Date, t.NetCash))
+            : Transactions.Select(t => (t.Date, t.NetCash));
 
         var months = TransactionsMonthlyAggregator.BuildMonthlyNetInvested(source, _transactionsFilterGroup.SelectedValue, DateTime.Today);
         _transactionsChartMonths = months;

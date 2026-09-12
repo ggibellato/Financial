@@ -142,6 +142,7 @@ describe('useAssetSummary', () => {
       isPriceStale: false,
       priceOnlyReturn: null,
       totalReturn: null,
+      totalReturnNetOfTax: null,
       totalCredits: 50,
       cashFlows: [],
       lastMonthCredits: 0,

@@ -107,4 +107,15 @@ public sealed class TransactionsController : ApiControllerBase
         var result = _transactionQueryService.GetTransactionsByPortfolio(brokerName, portfolioName, InvestmentScopeParser.ParseOrDefault(scope));
         return Ok(result);
     }
+
+    /// <summary>Lists every transaction type's declared quantity/cash effect, so a client can decide
+    /// which fields a given type needs without duplicating the rule itself.</summary>
+    /// <returns>200 OK with the type-effect table.</returns>
+    [HttpGet("type-effects")]
+    [ProducesResponseType(typeof(IReadOnlyList<TransactionTypeEffectDTO>), StatusCodes.Status200OK)]
+    public ActionResult<IReadOnlyList<TransactionTypeEffectDTO>> GetTransactionTypeEffects()
+    {
+        var result = _transactionQueryService.GetTransactionTypeEffects();
+        return Ok(result);
+    }
 }

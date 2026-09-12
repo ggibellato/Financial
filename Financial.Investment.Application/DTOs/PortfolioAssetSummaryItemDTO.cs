@@ -26,6 +26,7 @@ public sealed class PortfolioAssetSummaryItemDTO
     public bool IsPriceStale { get; init; }
     public decimal? PriceOnlyReturn { get; init; }
     public decimal? TotalReturn { get; init; }
+    public decimal? TotalReturnNetOfTax { get; init; }
     public decimal TotalCredits { get; init; }
     public IReadOnlyList<AssetCashFlowDTO> CashFlows { get; init; } = [];
     public decimal LastMonthCredits { get; init; }

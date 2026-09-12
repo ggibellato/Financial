@@ -9,4 +9,5 @@ public class CreditUpdateDTO
     public DateTime Date { get; set; }
     public required string Type { get; set; }
     public decimal Value { get; set; }
+    public decimal Withheld { get; set; }
 }

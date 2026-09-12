@@ -111,4 +111,6 @@ internal sealed class StubTransactionQueryService : ITransactionQueryService
         if (ExceptionToThrow != null) throw ExceptionToThrow;
         return PortfolioTransactions;
     }
+
+    public IReadOnlyList<TransactionTypeEffectDTO> GetTransactionTypeEffects() => [];
 }

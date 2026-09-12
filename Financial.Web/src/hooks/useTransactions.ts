@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useReducer } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { apiClient } from '../api/financialApiClient'
-import type { AssetDetailsDto, TransactionDto, TransactionSummaryItemDto } from '../api/types'
+import type { AssetDetailsDto, TransactionDto, TransactionSummaryItemDto, TransactionTypeEffectDto } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
 import { buildSelectionKey } from './useCredits'
 import type { PeriodFilterOption } from '../utils/periodFilter'
@@ -8,12 +8,12 @@ import { DEFAULT_FILTER, getPeriodFilterStartDate } from '../utils/periodFilter'
 import { formatMonthInputValue, formatMonthKey, getErrorMessage, parseValidatedNumber, toInputDate, todayIsoDate } from '../utils/formatters'
 import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
 
-export type TransactionFormField = 'formDate' | 'formType' | 'formQuantity' | 'formUnitPrice' | 'formFees'
+export type TransactionFormField = 'formDate' | 'formType' | 'formQuantity' | 'formUnitPrice' | 'formFees' | 'formWithheld'
 export type ChartDisplayMode = 'Bar' | 'Line'
 
 const DATE_KEY = 'investmentTransaction.date'
 const TYPE_KEY = 'investmentTransaction.type'
-const TYPES = ['Buy', 'Sell']
+const TYPES = ['Buy', 'Sell', 'Fee', 'Redemption', 'TransferIn', 'TransferOut', 'CapitalCall', 'ReturnOfCapital']
 
 export interface TransactionMonthBucket {
   month: string
@@ -22,8 +22,7 @@ export interface TransactionMonthBucket {
 
 interface MinimalTransaction {
   date: string
-  type: string
-  totalPrice: number
+  netCash: number
 }
 
 interface PersistedChartPrefs {
@@ -53,8 +52,10 @@ export function buildMonthlyNetInvested(
   const netByMonth = new Map<string, number>()
   for (const t of transactions) {
     const key = monthKey(new Date(t.date))
-    const delta = t.type === 'Buy' ? t.totalPrice : -t.totalPrice
-    netByMonth.set(key, (netByMonth.get(key) ?? 0) + delta)
+    // Net invested is the negation of netCash (which is signed the other way: negative for an
+    // outflow, positive for an inflow) - no per-type branching needed, it falls out of every
+    // type's own declared cash effect.
+    netByMonth.set(key, (netByMonth.get(key) ?? 0) - t.netCash)
   }
 
   const periodStart = getPeriodFilterStartDate(filter, referenceDate)
@@ -95,6 +96,7 @@ interface TransactionsState {
   formQuantity: string
   formUnitPrice: string
   formFees: string
+  formWithheld: string
   isSaving: boolean
   saveError: string | null
   saveErrorFields: Partial<Record<TransactionFormField, string>>
@@ -128,6 +130,7 @@ const BLANK_FORM = {
   formQuantity: '',
   formUnitPrice: '',
   formFees: '',
+  formWithheld: '',
   isSaving: false,
   saveError: null,
   saveErrorFields: {},
@@ -189,6 +192,7 @@ function reducer(state: TransactionsState, action: TransactionsAction): Transact
         formQuantity: '',
         formUnitPrice: '',
         formFees: '',
+        formWithheld: '',
         saveError: null,
         saveErrorFields: {},
         isSaving: false,
@@ -204,6 +208,7 @@ function reducer(state: TransactionsState, action: TransactionsAction): Transact
         formQuantity: String(t.quantity),
         formUnitPrice: String(t.unitPrice),
         formFees: String(t.fees),
+        formWithheld: String(t.withheld),
         saveError: null,
         saveErrorFields: {},
         isSaving: false,
@@ -246,11 +251,14 @@ export interface TransactionsData {
   formQuantity: string
   formUnitPrice: string
   formFees: string
+  formWithheld: string
   isSaving: boolean
   saveError: string | null
   saveErrorFields: Partial<Record<TransactionFormField, string>>
   deleteError: string | null
   nodeType: string | undefined
+  /** Whether the selected form type has a quantity effect - when false, Quantity/UnitPrice are not required (FR-022). */
+  formTypeHasQuantityEffect: boolean
   showNewForm: () => void
   showEditForm: (transaction: TransactionDto) => void
   cancelForm: () => void
@@ -262,6 +270,11 @@ export interface TransactionsData {
 export function useTransactions(): TransactionsData {
   const { selectedNode, scope } = useSelectedNode()
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
+  const [typeEffects, setTypeEffects] = useState<TransactionTypeEffectDto[]>([])
+
+  useEffect(() => {
+    void apiClient.getTransactionTypeEffects().then(setTypeEffects).catch(() => setTypeEffects([]))
+  }, [])
 
   useEffect(() => {
     if (!selectedNode) {
@@ -366,24 +379,38 @@ export function useTransactions(): TransactionsData {
     dispatch({ type: 'SET_FORM_FIELD', payload: { field, value } })
   }, [])
 
+  const formTypeHasQuantityEffect = useMemo(
+    () => typeEffects.find((e) => e.type === state.formType)?.quantityEffect !== 'None',
+    [typeEffects, state.formType],
+  )
+
   const saveForm = useCallback(() => {
     if (!selectedNode?.portfolioName || !selectedNode.assetName) return
 
-    const { formDate, formType, formQuantity, formUnitPrice, formFees, editingId } = state
+    const { formDate, formType, formQuantity, formUnitPrice, formFees, formWithheld, editingId } = state
+    const hasQuantityEffect = typeEffects.find((e) => e.type === formType)?.quantityEffect !== 'None'
     const errors: Partial<Record<TransactionFormField, string>> = {}
 
     if (!formDate.trim()) {
       errors.formDate = 'Date is required'
     }
 
-    const quantity = parseValidatedNumber(formQuantity)
-    if (quantity === null || quantity <= 0) {
-      errors.formQuantity = 'Quantity must be a positive number'
-    }
+    let quantity = 0
+    let unitPrice = 0
+    if (hasQuantityEffect) {
+      const parsedQuantity = parseValidatedNumber(formQuantity)
+      if (parsedQuantity === null || parsedQuantity <= 0) {
+        errors.formQuantity = 'Quantity must be a positive number'
+      } else {
+        quantity = parsedQuantity
+      }
 
-    const unitPrice = parseValidatedNumber(formUnitPrice)
-    if (unitPrice === null || unitPrice <= 0) {
-      errors.formUnitPrice = 'Unit Price must be a positive number'
+      const parsedUnitPrice = parseValidatedNumber(formUnitPrice)
+      if (parsedUnitPrice === null || parsedUnitPrice <= 0) {
+        errors.formUnitPrice = 'Unit Price must be a positive number'
+      } else {
+        unitPrice = parsedUnitPrice
+      }
     }
 
     if (Object.keys(errors).length > 0) {
@@ -392,6 +419,7 @@ export function useTransactions(): TransactionsData {
     }
 
     const fees = formFees.trim() === '' ? 0 : parseFloat(formFees)
+    const withheld = formWithheld.trim() === '' ? 0 : parseFloat(formWithheld)
 
     dispatch({ type: 'SAVE_START' })
 
@@ -401,9 +429,10 @@ export function useTransactions(): TransactionsData {
       assetName: selectedNode.assetName,
       date: formDate,
       type: formType,
-      quantity: quantity as number,
-      unitPrice: unitPrice as number,
+      quantity,
+      unitPrice,
       fees,
+      withheld,
     }
 
     const call = editingId
@@ -422,7 +451,7 @@ export function useTransactions(): TransactionsData {
           payload: { message: getErrorMessage(err, 'Failed to save transaction'), fields: {} },
         })
       })
-  }, [selectedNode, state])
+  }, [selectedNode, state, typeEffects])
 
   const deleteTransaction = useCallback(
     (id: string) => {
@@ -464,10 +493,12 @@ export function useTransactions(): TransactionsData {
     formQuantity: state.formQuantity,
     formUnitPrice: state.formUnitPrice,
     formFees: state.formFees,
+    formWithheld: state.formWithheld,
     isSaving: state.isSaving,
     saveError: state.saveError,
     saveErrorFields: state.saveErrorFields,
     deleteError: state.deleteError,
+    formTypeHasQuantityEffect,
     nodeType: selectedNode?.nodeType,
     showNewForm,
     showEditForm,

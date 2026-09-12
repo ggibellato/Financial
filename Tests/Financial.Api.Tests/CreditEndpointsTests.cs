@@ -127,7 +127,7 @@ public class CreditEndpointsTests : ApiEndpointTests
             AssetName = "BCIA11",
             Id = creditId,
             Date = new DateTime(2024, 2, 2),
-            Type = "Rent",
+            Type = "SecuritiesLendingIncome",
             Value = 6.75m
         });
 
@@ -135,7 +135,7 @@ public class CreditEndpointsTests : ApiEndpointTests
         var asset = await response.Content.ReadFromJsonAsync<AssetDetailsDTO>();
         asset.Should().NotBeNull();
         var updated = asset!.Credits.Single(credit => credit.Id == creditId);
-        updated.Type.Should().Be("Rent");
+        updated.Type.Should().Be("SecuritiesLendingIncome");
         updated.Value.Should().Be(6.75m);
     }
 
@@ -174,6 +174,63 @@ public class CreditEndpointsTests : ApiEndpointTests
         var asset = await response.Content.ReadFromJsonAsync<AssetDetailsDTO>();
         asset.Should().NotBeNull();
         asset!.Credits.Should().NotContain(credit => credit.Id == creditId);
+    }
+
+    [Theory]
+    [InlineData("SecuritiesLendingIncome")]
+    [InlineData("Coupon")]
+    public async Task AddCredit_NewIncomeKind_ReturnsOk(string type)
+    {
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/credits", new CreditCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "BCIA11",
+            Date = new DateTime(2024, 2, 6),
+            Type = type,
+            Value = 5m
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var asset = await response.Content.ReadFromJsonAsync<AssetDetailsDTO>();
+        asset!.Credits.Should().Contain(c => c.Type == type);
+    }
+
+    [Fact]
+    public async Task AddCredit_WithWithheld_ReturnsNetAmountInResponse()
+    {
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/credits", new CreditCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "BCIA11",
+            Date = new DateTime(2024, 2, 7),
+            Type = "Dividend",
+            Value = 100m,
+            Withheld = 15m
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var asset = await response.Content.ReadFromJsonAsync<AssetDetailsDTO>();
+        asset!.Credits.Should().Contain(c => c.Withheld == 15m && c.NetAmount == 85m);
+    }
+
+    [Fact]
+    public async Task AddCredit_NegativeValue_ReturnsOkAsACorrection()
+    {
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/credits", new CreditCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "BCIA11",
+            Date = new DateTime(2024, 2, 8),
+            Type = "Dividend",
+            Value = -10m
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var asset = await response.Content.ReadFromJsonAsync<AssetDetailsDTO>();
+        asset!.Credits.Should().Contain(c => c.Value == -10m);
     }
 
     [Fact]

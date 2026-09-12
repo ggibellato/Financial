@@ -316,7 +316,7 @@ public class GoogleSheetsAssetReaderTests
     }
 
     [Fact]
-    public async Task ReadCreditsAsync_RentType_MapsToRentCreditType()
+    public async Task ReadCreditsAsync_RentType_MapsToSecuritiesLendingIncomeCreditType()
     {
         _dataSource.Rows = new List<IList<object>>
         {
@@ -325,7 +325,7 @@ public class GoogleSheetsAssetReaderTests
 
         var result = await _sut.ReadCreditsAsync("file1", "Sheet1");
 
-        result.Should().ContainSingle().Which.Type.Should().Be(Credit.CreditType.Rent);
+        result.Should().ContainSingle().Which.Type.Should().Be(Credit.CreditType.SecuritiesLendingIncome);
     }
 
     [Fact]

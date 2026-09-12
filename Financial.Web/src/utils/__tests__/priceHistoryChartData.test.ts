@@ -12,7 +12,8 @@ const BUY_TRANSACTION: TransactionDto = {
   quantity: 10,
   unitPrice: 90,
   fees: 1,
-  totalPrice: 901,
+  withheld: 0,
+  netCash: -901,
 }
 
 const SELL_TRANSACTION: TransactionDto = {
@@ -22,7 +23,8 @@ const SELL_TRANSACTION: TransactionDto = {
   quantity: 5,
   unitPrice: 130,
   fees: 1,
-  totalPrice: 649,
+  withheld: 0,
+  netCash: 649,
 }
 
 describe('buildChartData', () => {

@@ -48,6 +48,7 @@ const SUMMARY: AggregatedSummaryDto = {
   unvaluedHoldingCount: 0,
   priceOnlyReturn: 0.08,
   totalReturn: 0.1,
+  totalReturnNetOfTax: 0.09,
 }
 
 function setMock(overrides: Partial<AggregatedSummaryData>) {
@@ -105,7 +106,14 @@ describe('AggregatedSummaryTab', () => {
     setMock({ summary: SUMMARY })
     renderComponent()
     const labels = screen.getAllByText(/^Total /).map((el) => el.textContent)
-    expect(labels).toEqual(['Total Bought', 'Total Sold', 'Total Credits', 'Total Invested', 'Total Return'])
+    expect(labels).toEqual([
+      'Total Bought',
+      'Total Sold',
+      'Total Credits',
+      'Total Invested',
+      'Total Return (Gross)',
+      'Total Return (Net of Tax)',
+    ])
   })
 
   it('renders_market_value', () => {
@@ -126,14 +134,18 @@ describe('AggregatedSummaryTab', () => {
     setMock({ summary: SUMMARY })
     renderComponent()
     expect(screen.getByText('Price-Only Return').nextElementSibling?.textContent).toBe('8.00%')
-    expect(screen.getByText('Total Return').nextElementSibling?.textContent).toBe('10.00%')
+    expect(screen.getByText('Total Return (Gross)').nextElementSibling?.textContent).toBe('10.00%')
+    expect(screen.getByText('Total Return (Net of Tax)').nextElementSibling?.textContent).toBe('9.00%')
   })
 
   it('renders_dash_for_withheld_returns', () => {
-    setMock({ summary: { ...SUMMARY, priceOnlyReturn: null, totalReturn: null, unvaluedHoldingCount: 1 } })
+    setMock({
+      summary: { ...SUMMARY, priceOnlyReturn: null, totalReturn: null, totalReturnNetOfTax: null, unvaluedHoldingCount: 1 },
+    })
     renderComponent()
     expect(screen.getByText('Price-Only Return').nextElementSibling?.textContent).toBe('—')
-    expect(screen.getByText('Total Return').nextElementSibling?.textContent).toBe('—')
+    expect(screen.getByText('Total Return (Gross)').nextElementSibling?.textContent).toBe('—')
+    expect(screen.getByText('Total Return (Net of Tax)').nextElementSibling?.textContent).toBe('—')
   })
 
   it('does_not_render_incomplete_notice_when_fully_valued', () => {
@@ -184,6 +196,7 @@ describe('AggregatedSummaryTab', () => {
         unvaluedHoldingCount: 0,
         priceOnlyReturn: 0.08,
         totalReturn: 0.1,
+        totalReturnNetOfTax: 0.09,
       },
     })
     renderComponent()
@@ -205,6 +218,7 @@ describe('AggregatedSummaryTab', () => {
         unvaluedHoldingCount: 0,
         priceOnlyReturn: null,
         totalReturn: null,
+        totalReturnNetOfTax: null,
       },
     })
     renderComponent()
