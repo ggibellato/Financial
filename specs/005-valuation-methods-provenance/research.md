@@ -116,6 +116,14 @@ interprets it:
   called "no unit-free contribution" (G8) together with the P47 vocabulary and this feature's
   valuation side.
 
+**Refined during implementation**: `HoldingValuationCalculator.Calculate` needs no new parameter for
+this — it already receives the `AssetPriceSnapshot` being valued, and that snapshot already carries
+its own `ValuationMethod` (decision #7). The branch reads `price.ValuationMethod` directly rather than
+threading a separate `Asset.ValuationMethod` argument through `HoldingValuationService.GetValuation`
+and `Calculate`'s signature — simpler, and automatically correct for a snapshot recorded under a
+*previous* method after the holding's current method has since changed (exactly what decision #7 was
+for).
+
 **Rationale**: Avoids inventing a parallel "valuation record" entity/table/endpoint. `AssetPriceSnapshot`
 already has everything needed (a date, a recorded figure, provenance fields from decision #2); only the
 *interpretation* of `Price` at read time depends on `ValuationMethod`, exactly the kind of branch

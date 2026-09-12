@@ -26,7 +26,9 @@ public static class HoldingValuationCalculator
                 : new HoldingValuation(null, costOfUnitsHeld, null, null, false, null, null);
         }
 
-        var marketValue = quantity * price.Price;
+        var marketValue = price.ValuationMethod is ValuationMethod.ProviderValue or ValuationMethod.Manual
+            ? price.Price
+            : quantity * price.Price;
 
         return new HoldingValuation(
             marketValue,

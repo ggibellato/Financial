@@ -187,6 +187,61 @@ public class AssetPriceEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
+    public async Task SetPrice_ZeroPrice_AssetClassifiedProviderValue_ReturnsOk()
+    {
+        var updateResponse = await Client.PutAsJsonAsync("/api/v1/financial/assets/XPI/Default/BCIA11", new AssetAdminUpdateDTO
+        {
+            Name = "BCIA11",
+            ISIN = "",
+            Exchange = "BVMF",
+            Ticker = "BCIA11",
+            ValuationMethod = ValuationMethod.ProviderValue
+        });
+        updateResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var response = await Client.PutAsJsonAsync("/api/v1/financial/prices", new SetAssetPriceDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "BCIA11",
+            Date = new DateOnly(2026, 8, 15),
+            Price = 0m
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var asset = await response.Content.ReadFromJsonAsync<AssetDetailsDTO>();
+        asset!.MarketValue.Should().Be(0m);
+    }
+
+    [Fact]
+    public async Task GetCurrentPrice_AssetClassifiedManual_ReturnsRecordedValueWithoutFetching()
+    {
+        await Client.PutAsJsonAsync("/api/v1/financial/assets/XPI/Default/BCIA11", new AssetAdminUpdateDTO
+        {
+            Name = "BCIA11",
+            ISIN = "",
+            Exchange = "BVMF",
+            Ticker = "BCIA11",
+            ValuationMethod = ValuationMethod.Manual
+        });
+        await Client.PutAsJsonAsync("/api/v1/financial/prices", new SetAssetPriceDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "BCIA11",
+            Date = DateOnly.FromDateTime(DateTime.Today).AddDays(-30),
+            Price = 1234.56m
+        });
+
+        var response = await Client.GetAsync(
+            "/api/v1/financial/prices/current?exchange=BVMF&ticker=BCIA11&brokerName=XPI&portfolioName=Default&assetName=BCIA11");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var price = await response.Content.ReadFromJsonAsync<AssetPriceDTO>();
+        price!.Price.Should().Be(1234.56m);
+    }
+
+    [Fact]
     public async Task SetPrice_FutureDate_ReturnsBadRequest()
     {
         var response = await Client.PutAsJsonAsync("/api/v1/financial/prices", new SetAssetPriceDTO
