@@ -76,6 +76,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private int _summaryUnvaluedHoldingCount;
     private decimal? _summaryPriceOnlyReturn;
     private decimal? _summaryTotalReturn;
+    private decimal? _summaryTotalReturnNetOfTax;
 
     public string AssetName { get => _assetName; private set => SetProperty(ref _assetName, value); }
     public string BrokerName { get => _brokerName; private set => SetProperty(ref _brokerName, value); }
@@ -228,6 +229,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     public int UnvaluedHoldingCount { get => _summaryUnvaluedHoldingCount; private set => SetProperty(ref _summaryUnvaluedHoldingCount, value); }
     public decimal? PriceOnlyReturn { get => _summaryPriceOnlyReturn; private set => SetProperty(ref _summaryPriceOnlyReturn, value); }
     public decimal? TotalReturn { get => _summaryTotalReturn; private set => SetProperty(ref _summaryTotalReturn, value); }
+    public decimal? TotalReturnNetOfTax { get => _summaryTotalReturnNetOfTax; private set => SetProperty(ref _summaryTotalReturnNetOfTax, value); }
 
     public bool HasIncompleteValuation => UnvaluedHoldingCount > 0;
 
@@ -464,6 +466,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         UnvaluedHoldingCount = 0;
         PriceOnlyReturn = null;
         TotalReturn = null;
+        TotalReturnNetOfTax = null;
         OnPropertyChanged(nameof(HasIncompleteValuation));
         OnPropertyChanged(nameof(IncompleteValuationMessage));
         OnPropertyChanged(nameof(HasIncompleteShareBasis));
@@ -631,6 +634,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         UnvaluedHoldingCount = summary.UnvaluedHoldingCount;
         PriceOnlyReturn = summary.PriceOnlyReturn;
         TotalReturn = summary.TotalReturn;
+        TotalReturnNetOfTax = summary.TotalReturnNetOfTax;
         OnPropertyChanged(nameof(HasIncompleteValuation));
         OnPropertyChanged(nameof(IncompleteValuationMessage));
         OnPropertyChanged(nameof(HasIncompleteShareBasis));

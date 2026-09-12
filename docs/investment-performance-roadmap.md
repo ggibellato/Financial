@@ -58,7 +58,7 @@ trivially diffable.
 | Valuation snapshots | `AssetPriceSnapshot(Date, Price, IsManual)` + per-asset `PriceHistory`, write-failure visibility | ~40% of the brief's snapshot entity. **[corrected 2026-09-10]** "Manual precedence" overstates it — see G10 |
 | Multiple valuation sources | `IAssetPriceFetcher` → Standard / Bond / Cryptocurrency; `FallbackFinanceService` chains Google → Yahoo → StatusInvest | Extensible to NAV / provider value |
 | Instrument classification | `CountryCode` x `LocalTypeCode` → `GlobalAssetClass` (11 classes incl. RealEstate, Bond, Fund, Pension, PrivateCredit, Cryptocurrency) | Covers every class in the brief |
-| Income separate from price movement | `Credit` (Dividend / Rent / JCP) is a distinct dated entity | Right separation, wrong granularity |
+| Income separate from price movement | `Credit` (Dividend / Securities Lending Income / JCP / Coupon) is a distinct dated entity | **[corrected 2026-09-12]** Granularity fixed by P47 — see G12 |
 | Income analytics | `CreditFrequencyAnalyzer`, estimated annual yield, last-month yield | Yield is on **cost**, not market value |
 | Delivery machinery | 45 PRDs, 769 PRs, PRD → spec → feature workflow, OpenAPI snapshot contract tests, generated TS types, coverage gates, affected-only CI | Proven at exactly this scale |
 
@@ -234,8 +234,16 @@ causes an absent price.
 - **`PortfolioWeight` is cost-based, not market-based** (`PortfolioAssetSummaryBuilder`
   `weightBasis`). The brief's allocation views require market value.
 - **Yield percentages are yield-on-cost**, not market yield. Legitimate, but currently unlabelled.
-- **`Credit.Type.Rent`** is a naming leak for FII distributions.
+- **`Credit.Type.Rent`** is a naming leak for FII distributions. **[disproven & fixed 2026-09-12]**
+  Checked against `data/data-investment.json` during P47's clarification session: every `Rent`
+  credit sits on non-RealEstate holdings (BBAS3, BOVA11, GOLD11, IVVB11), while every RealEstate
+  holding already uses `Dividend` — this is Brazilian securities-lending income (share loan fees),
+  not a mislabeled FII distribution. Renamed to `SecuritiesLendingIncome`; `Coupon` (bond interest)
+  added alongside it.
 - **`Credit.Value > 0` only** — corrections and return-of-capital cannot be recorded.
+  **[fixed 2026-09-12]** P47 relaxed this to "invalid only if `== 0`", so a negative `Value` records
+  a correction to a previous payment; `Credit.Withheld`/`NetAmount` also added for the gross/net
+  breakdown.
 - **`CountryCode` is `{ Unknown, BR, US, UK }`** — an extensibility ceiling.
 
 ### G13 — `CountryCode` records custody, not domicile **[new 2026-09-10]**

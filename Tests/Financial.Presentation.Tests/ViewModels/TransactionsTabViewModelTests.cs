@@ -41,7 +41,8 @@ public class TransactionsTabViewModelTests
         Type: "Buy",
         Quantity: 10m,
         UnitPrice: 25m,
-        Fees: 1.5m);
+        Fees: 1.5m,
+        Withheld: 0m);
 
     private static Task<TransactionDialogData?> AsForm(TransactionDialogData? data) => Task.FromResult(data);
 

@@ -33,6 +33,7 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
@@ -53,11 +54,12 @@
                 <TextBlock Text="Type" Style="{StaticResource FieldLabelStyle}"/>
                 <ComboBox AutomationProperties.Name="Type"
                           SelectedValue="{Binding Type, UpdateSourceTrigger=PropertyChanged}"
-                          SelectedValuePath="Content"
+                          SelectedValuePath="Tag"
                           IsEnabled="{Binding IsEditable}">
-                    <ComboBoxItem Content="Dividend"/>
-                    <ComboBoxItem Content="Rent"/>
-                    <ComboBoxItem Content="JCP"/>
+                    <ComboBoxItem Content="Dividend" Tag="Dividend"/>
+                    <ComboBoxItem Content="Securities Lending Income" Tag="SecuritiesLendingIncome"/>
+                    <ComboBoxItem Content="JCP" Tag="JCP"/>
+                    <ComboBoxItem Content="Coupon" Tag="Coupon"/>
                 </ComboBox>
             </StackPanel>
 
@@ -69,11 +71,24 @@
                          behaviors:DecimalInputBehavior.IsEnabled="True"/>
             </StackPanel>
 
-            <TextBlock Grid.Row="2" Grid.ColumnSpan="3" TextWrapping="Wrap" Margin="0,0,0,8"
+            <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,8,8">
+                <TextBlock Text="Withheld" Style="{StaticResource FieldLabelStyle}"/>
+                <TextBox AutomationProperties.Name="Withheld"
+                         Text="{Binding Withheld, UpdateSourceTrigger=LostFocus}"
+                         IsReadOnly="{Binding IsReadOnly}"
+                         behaviors:DecimalInputBehavior.IsEnabled="True"/>
+            </StackPanel>
+
+            <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,0,8,8">
+                <TextBlock Text="Net" Style="{StaticResource FieldLabelStyle}"/>
+                <TextBlock Text="{Binding NetAmount, StringFormat=N2}" VerticalAlignment="Center" FontWeight="Bold"/>
+            </StackPanel>
+
+            <TextBlock Grid.Row="3" Grid.ColumnSpan="3" TextWrapping="Wrap" Margin="0,0,0,8"
                        Foreground="{DynamicResource SystemFillColorCriticalBrush}"
                        Text="{Binding ValidationMessage}"/>
 
-            <StackPanel Grid.Row="3" Grid.ColumnSpan="3" Orientation="Horizontal">
+            <StackPanel Grid.Row="4" Grid.ColumnSpan="3" Orientation="Horizontal">
                 <ui:Button Content="{Binding ConfirmLabel}" MinWidth="90" Appearance="Primary"
                            Command="{Binding ConfirmCommand}"/>
                 <ui:Button Content="Cancel" MinWidth="90" Margin="8,0,0,0" Appearance="Secondary"

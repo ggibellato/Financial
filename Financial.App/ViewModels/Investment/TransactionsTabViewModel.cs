@@ -248,7 +248,7 @@ public class TransactionsTabViewModel : ViewModelBase
         {
             if (!TransactionTypeParser.TryNormalize(dialogData.Value.Type, out var normalizedType))
             {
-                dialogData = await RetrySameFormAsync("Transaction type must be 'Buy' or 'Sell'.");
+                dialogData = await RetrySameFormAsync("Transaction type is invalid.");
                 continue;
             }
 
@@ -264,7 +264,8 @@ public class TransactionsTabViewModel : ViewModelBase
                     Type = normalizedType,
                     Quantity = dialogData.Value.Quantity,
                     UnitPrice = dialogData.Value.UnitPrice,
-                    Fees = dialogData.Value.Fees
+                    Fees = dialogData.Value.Fees,
+                    Withheld = dialogData.Value.Withheld
                 });
             }
             catch (Exception ex)
@@ -306,7 +307,7 @@ public class TransactionsTabViewModel : ViewModelBase
         {
             if (!TransactionTypeParser.TryNormalize(dialogData.Value.Type, out var normalizedType))
             {
-                dialogData = await RetrySameFormAsync("Transaction type must be 'Buy' or 'Sell'.");
+                dialogData = await RetrySameFormAsync("Transaction type is invalid.");
                 continue;
             }
 
@@ -323,7 +324,8 @@ public class TransactionsTabViewModel : ViewModelBase
                     Type = normalizedType,
                     Quantity = dialogData.Value.Quantity,
                     UnitPrice = dialogData.Value.UnitPrice,
-                    Fees = dialogData.Value.Fees
+                    Fees = dialogData.Value.Fees,
+                    Withheld = dialogData.Value.Withheld
                 });
             }
             catch (Exception ex)
@@ -442,7 +444,7 @@ public class TransactionsTabViewModel : ViewModelBase
                 return;
             }
 
-            tcs.SetResult(new TransactionDialogData(vm.TransactionId, vm.Date, vm.Type, vm.Quantity, vm.UnitPrice, vm.Fees));
+            tcs.SetResult(new TransactionDialogData(vm.TransactionId, vm.Date, vm.Type, vm.Quantity, vm.UnitPrice, vm.Fees, vm.Withheld));
         }
 
         vm.CloseRequested += OnClosed;
@@ -483,7 +485,7 @@ public class TransactionsTabViewModel : ViewModelBase
         var vm = TransactionDialogViewModel.CreateForUpdate(
             _brokerName(), _portfolioName(), _assetName(),
             SelectedTransaction.Id, SelectedTransaction.Date, SelectedTransaction.Type,
-            SelectedTransaction.Quantity, SelectedTransaction.UnitPrice, SelectedTransaction.Fees);
+            SelectedTransaction.Quantity, SelectedTransaction.UnitPrice, SelectedTransaction.Fees, SelectedTransaction.Withheld);
         return ShowTransactionFormAsync(vm);
     }
 
@@ -493,7 +495,7 @@ public class TransactionsTabViewModel : ViewModelBase
         var vm = TransactionDialogViewModel.CreateForDelete(
             _brokerName(), _portfolioName(), _assetName(),
             SelectedTransaction.Id, SelectedTransaction.Date, SelectedTransaction.Type,
-            SelectedTransaction.Quantity, SelectedTransaction.UnitPrice, SelectedTransaction.Fees);
+            SelectedTransaction.Quantity, SelectedTransaction.UnitPrice, SelectedTransaction.Fees, SelectedTransaction.Withheld);
         var dialog = new TransactionDialog(vm) { Owner = System.Windows.Application.Current?.MainWindow };
         return dialog.ShowDialog() == true;
     }
@@ -590,4 +592,5 @@ public readonly record struct TransactionDialogData(
     string Type,
     decimal Quantity,
     decimal UnitPrice,
-    decimal Fees);
+    decimal Fees,
+    decimal Withheld);

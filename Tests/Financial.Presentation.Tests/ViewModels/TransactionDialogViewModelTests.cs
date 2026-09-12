@@ -13,7 +13,7 @@ public class TransactionDialogViewModelTests
     [InlineData(TransactionDialogMode.Delete, "Delete Transaction", "Delete")]
     public void TitleAndConfirmLabel_ReflectMode(TransactionDialogMode mode, string expectedTitle, string expectedConfirmLabel)
     {
-        var viewModel = new TransactionDialogViewModel(mode, "XPI", "Default", "PETR4", Guid.NewGuid(), DateTime.Today, "Buy", 10m, 5m, 0m);
+        var viewModel = new TransactionDialogViewModel(mode, "XPI", "Default", "PETR4", Guid.NewGuid(), DateTime.Today, "Buy", 10m, 5m, 0m, 0m);
 
         viewModel.Title.Should().Be(expectedTitle);
         viewModel.ConfirmLabel.Should().Be(expectedConfirmLabel);
@@ -22,29 +22,31 @@ public class TransactionDialogViewModelTests
     [Fact]
     public void IsReadOnlyAndIsEditable_OnDeleteMode_AreOppositeAndReadOnly()
     {
-        var viewModel = TransactionDialogViewModel.CreateForDelete("XPI", "Default", "PETR4", Guid.NewGuid(), DateTime.Today, "Buy", 10m, 5m, 0m);
+        var viewModel = TransactionDialogViewModel.CreateForDelete("XPI", "Default", "PETR4", Guid.NewGuid(), DateTime.Today, "Buy", 10m, 5m, 0m, 0m);
 
         viewModel.IsReadOnly.Should().BeTrue();
         viewModel.IsEditable.Should().BeFalse();
     }
 
     [Fact]
-    public void TotalPrice_ComputesFromQuantityUnitPriceAndFees()
+    public void NetCash_ComputesFromQuantityUnitPriceFeesAndWithheld()
     {
         var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4");
 
         viewModel.Quantity = 10m;
         viewModel.UnitPrice = 5m;
         viewModel.Fees = 2m;
+        viewModel.Withheld = 1m;
 
-        viewModel.TotalPrice.Should().Be(52m);
+        viewModel.NetCash.Should().Be(-53m);
     }
 
     [Theory]
     [InlineData(nameof(TransactionDialogViewModel.Quantity))]
     [InlineData(nameof(TransactionDialogViewModel.UnitPrice))]
     [InlineData(nameof(TransactionDialogViewModel.Fees))]
-    public void SettingQuantityUnitPriceOrFees_RaisesTotalPricePropertyChanged(string propertyToSet)
+    [InlineData(nameof(TransactionDialogViewModel.Withheld))]
+    public void SettingQuantityUnitPriceFeesOrWithheld_RaisesNetCashPropertyChanged(string propertyToSet)
     {
         var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4");
         var raisedProperties = new List<string?>();
@@ -61,9 +63,12 @@ public class TransactionDialogViewModelTests
             case nameof(TransactionDialogViewModel.Fees):
                 viewModel.Fees = 1m;
                 break;
+            case nameof(TransactionDialogViewModel.Withheld):
+                viewModel.Withheld = 1m;
+                break;
         }
 
-        raisedProperties.Should().Contain(nameof(TransactionDialogViewModel.TotalPrice));
+        raisedProperties.Should().Contain(nameof(TransactionDialogViewModel.NetCash));
     }
 
     [Fact]
@@ -93,7 +98,7 @@ public class TransactionDialogViewModelTests
     [Fact]
     public void ConfirmCommand_CanExecute_AlwaysTrueOnDeleteModeRegardlessOfFieldValidity()
     {
-        var viewModel = TransactionDialogViewModel.CreateForDelete("XPI", "Default", "PETR4", Guid.NewGuid(), DateTime.MinValue, "NotAType", 0m, -1m, -1m);
+        var viewModel = TransactionDialogViewModel.CreateForDelete("XPI", "Default", "PETR4", Guid.NewGuid(), DateTime.MinValue, "NotAType", 0m, -1m, -1m, -1m);
 
         viewModel.ConfirmCommand.CanExecute(null).Should().BeTrue();
     }
@@ -143,7 +148,7 @@ public class TransactionDialogViewModelTests
         var id = Guid.NewGuid();
         var date = new DateTime(2026, 7, 1);
 
-        var viewModel = TransactionDialogViewModel.CreateForUpdate("XPI", "Default", "PETR4", id, date, "Sell", 20m, 15m, 1m);
+        var viewModel = TransactionDialogViewModel.CreateForUpdate("XPI", "Default", "PETR4", id, date, "Sell", 20m, 15m, 1m, 2m);
 
         viewModel.TransactionId.Should().Be(id);
         viewModel.Date.Should().Be(date);
@@ -151,5 +156,6 @@ public class TransactionDialogViewModelTests
         viewModel.Quantity.Should().Be(20m);
         viewModel.UnitPrice.Should().Be(15m);
         viewModel.Fees.Should().Be(1m);
+        viewModel.Withheld.Should().Be(2m);
     }
 }

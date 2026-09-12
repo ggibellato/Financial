@@ -35,7 +35,8 @@ public class CreditsTabViewModelTests
         CreditId: id ?? Guid.NewGuid(),
         Date: DateTime.Today,
         Type: "Dividend",
-        Value: 12.5m);
+        Value: 12.5m,
+        Withheld: 0m);
 
     private static Task<CreditDialogData?> AsForm(CreditDialogData? data) => Task.FromResult(data);
 
