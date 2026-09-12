@@ -34,6 +34,7 @@
         <converters:CalendarSyncStateToBrushConverter x:Key="CalendarSyncStateToBrushConverter"/>
         <converters:IntToNullableDoubleConverter x:Key="IntToNullableDoubleConverter"/>
         <converters:InvestmentAccountSourceDisplayConverter x:Key="InvestmentAccountSourceDisplayConverter"/>
+        <converters:PriceSourceToLabelConverter x:Key="PriceSourceToLabelConverter"/>
 
         <!-- Assigning a DataGridColumn.Header to a ColumnFilterViewModelBase instance (in a
              view's code-behind, since DataGridColumn isn't part of the visual tree and can't

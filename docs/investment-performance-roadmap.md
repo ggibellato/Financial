@@ -370,7 +370,7 @@ independently deployable; it is simply larger than the feature count suggests.
 **Deliverable:** net-of-tax return exists; every fee and withholding is an individually auditable
 dated event.
 
-### Wave 2 — P48 · Valuation methods and provenance
+### Wave 2 — P48 · Valuation methods and provenance **[delivered 2026-09-12]**
 
 *Unblocks the two instrument types that cannot be represented today.*
 
@@ -381,6 +381,15 @@ dated event.
 | F03 | Value-based holdings: contribution / withdrawal / provider valuation without inventing units — **funds without units, Inco** |
 | F04 | React: as-of, source, market status, stale-data warning |
 | F05 | WPF parity |
+
+Shipped as `specs/005-valuation-methods-provenance` across four merged PRs: #797 (Foundational +
+User Story 1 — F02's `ValuationMethod`/`IncomePolicy` plus F01/F03's widened snapshot and
+value-based recording), #798 (User Story 2 — F01/F04/F05's provenance and market-status display in
+both front ends), #799 (fix — automatic fetches now persist the real provider as `Source` instead
+of `Unknown`), and #800 (User Story 3 — F02's fetcher routing keyed off `ValuationMethod`). Setting
+`ValuationMethod`/`IncomePolicy` from either front end's Admin Asset form remains a follow-up — both
+DTOs carry the fields, but only the API sets them today (`docs/investment-performance-roadmap.md`
+does not track UI backlog items; see `specs/005-valuation-methods-provenance/tasks.md` T074's note).
 
 ### Wave 3 — P49 · Multi-currency and reporting currency
 
