@@ -108,7 +108,7 @@
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
                         <DataGridTextColumn Header="Source"
-                                            Binding="{Binding Source}"
+                                            Binding="{Binding Source, Converter={StaticResource PriceSourceToLabelConverter}}"
                                             SortMemberPath="Source"
                                             Width="*">
                             <DataGridTextColumn.ElementStyle>
