@@ -66,6 +66,25 @@ public class AssetPriceLookupServiceTests
     }
 
     [Fact]
+    public async Task GetCurrentPriceAsync_LiveFetchSucceeds_PersistsTheFetchedSourceOnTheSnapshot()
+    {
+        var (service, repository, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.Success(123.45m, PriceSource.Google));
+        try
+        {
+            await service.GetCurrentPriceAsync(BuildRequest());
+
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var entry = repository.GetAsset(BrokerName, PortfolioName, AssetName)!.GetPriceForDate(today);
+            entry.Should().NotBeNull();
+            entry!.Source.Should().Be(PriceSource.Google);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
     public async Task GetCurrentPriceAsync_LiveFetchFails_FallsBackToStoredPrice_PropagatesItsRecordedSource()
     {
         var (service, repository, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.Failure());
