@@ -75,7 +75,7 @@ public sealed class AssetPriceLookupService : IAssetPriceLookupService
             // inside, a persistence failure fell into the fallback branch, which found the entry
             // that SetPrice had just added in memory, and so returned a successful response for a
             // write that never happened.
-            var persistenceError = await TryRecordAutomaticPriceAsync(asset, price.Price, request);
+            var persistenceError = await TryRecordAutomaticPriceAsync(asset, price, request);
             if (persistenceError is null)
             {
                 return CompleteSuccessfully(span, price);
@@ -167,12 +167,12 @@ public sealed class AssetPriceLookupService : IAssetPriceLookupService
     /// </summary>
     private async Task<Exception?> TryRecordAutomaticPriceAsync(
         Asset asset,
-        decimal price,
+        AssetPriceDTO price,
         AssetPriceRequestDTO request)
     {
         try
         {
-            await RecordAutomaticPriceIfNeededAsync(asset, price);
+            await RecordAutomaticPriceIfNeededAsync(asset, price.Price, price.Source);
             return null;
         }
         catch (Exception ex)
@@ -276,7 +276,7 @@ public sealed class AssetPriceLookupService : IAssetPriceLookupService
     /// claiming otherwise.
     /// </para>
     /// </summary>
-    private async Task RecordAutomaticPriceIfNeededAsync(Asset asset, decimal price)
+    private async Task RecordAutomaticPriceIfNeededAsync(Asset asset, decimal price, PriceSource source)
     {
         var today = DateOnly.FromDateTime(DateTime.Today);
         AssetPriceSnapshot? displaced = null;
@@ -289,7 +289,9 @@ public sealed class AssetPriceLookupService : IAssetPriceLookupService
 
                 // A manual entry is never overwritten. GetCurrentPriceAsync returns before reaching this
                 // point when one exists, so this is the second line of defence rather than the first.
-                var needsWrite = existing is null || (!existing.IsManual && existing.Price != price);
+                // Source is compared too: an entry recorded before this provenance fix shipped would
+                // otherwise sit at Unknown indefinitely whenever today's price hasn't moved since.
+                var needsWrite = existing is null || (!existing.IsManual && (existing.Price != price || existing.Source != source));
                 if (!needsWrite)
                 {
                     return false;
@@ -297,7 +299,9 @@ public sealed class AssetPriceLookupService : IAssetPriceLookupService
 
                 displaced = existing;
                 wrote = true;
-                asset.SetPrice(today, price, isManual: false);
+                // The named provider that actually answered (research.md #2) - not the generic
+                // "automatic" the simple SetPrice(date, price, isManual) overload would stamp.
+                asset.SetPrice(today, price, source, currency: string.Empty, sourceReference: null, DateTimeOffset.UtcNow);
                 return true;
             }),
             // Only undo when the write actually happened - a failure before that point (e.g. inside
