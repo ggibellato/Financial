@@ -189,10 +189,16 @@ export default function AssetSummaryTab() {
               <span className="asset-summary__label">As of</span>
               <span className="asset-summary__value">
                 {isLoadingPrice ? '—' : formatAsOf(price)}
-                {!isLoadingPrice && asset.isPriceStale && (
+                {!isLoadingPrice && asset.marketStatus === 'Stale' && (
                   <span className="asset-summary__stale-badge" title="This price is older than the most recent weekday.">
                     {' '}
                     (Stale)
+                  </span>
+                )}
+                {!isLoadingPrice && asset.marketStatus === 'Unavailable' && (
+                  <span className="asset-summary__stale-badge" title="No price or value has been recorded for this holding yet.">
+                    {' '}
+                    (Unavailable)
                   </span>
                 )}
               </span>

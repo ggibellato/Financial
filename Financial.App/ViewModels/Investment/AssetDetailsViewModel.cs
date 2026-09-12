@@ -2,6 +2,7 @@ using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.Entities;
+using Financial.Investment.Domain.Rules;
 using Financial.Presentation.App.Helpers;
 using OxyPlot;
 using System.Collections.ObjectModel;
@@ -69,6 +70,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private decimal _costOfUnitsHeld;
     private decimal? _unrealisedGain;
     private bool _isPriceStale;
+    private bool _isPriceUnavailable;
     private decimal? _priceOnlyReturn;
     private decimal? _totalReturn;
     private decimal? _summaryMarketValue;
@@ -151,6 +153,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     public string TodayInfoMessage { get => _todayInfoMessage; private set => SetProperty(ref _todayInfoMessage, value); }
     public bool TodayCurrentValueIsManual { get => _todayCurrentValueIsManual; private set => SetProperty(ref _todayCurrentValueIsManual, value); }
     public bool IsPriceStale => _isPriceStale;
+    public bool IsPriceUnavailable => _isPriceUnavailable;
 
     public decimal? TotalCurrentValue => _marketValue;
     public decimal? ResultPercent => _unrealisedGain.HasValue && _costOfUnitsHeld != 0 ? _unrealisedGain.Value / _costOfUnitsHeld : null;
@@ -595,6 +598,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         OnPropertyChanged(nameof(RealizedXirr));
         OnPropertyChanged(nameof(RealizedXirrWithCredits));
         OnPropertyChanged(nameof(IsPriceStale));
+        OnPropertyChanged(nameof(IsPriceUnavailable));
     }
 
     private void ApplyValuation(AssetDetailsDTO details)
@@ -602,7 +606,8 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         _marketValue = details.MarketValue;
         _costOfUnitsHeld = details.CostOfUnitsHeld;
         _unrealisedGain = details.UnrealisedGain;
-        _isPriceStale = details.IsPriceStale;
+        _isPriceStale = details.MarketStatus == MarketStatus.Stale;
+        _isPriceUnavailable = details.MarketStatus == MarketStatus.Unavailable;
         _priceOnlyReturn = details.PriceOnlyReturn;
         _totalReturn = details.TotalReturn;
         NotifyCurrentValueChanged();
@@ -614,6 +619,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         _costOfUnitsHeld = 0m;
         _unrealisedGain = null;
         _isPriceStale = false;
+        _isPriceUnavailable = false;
         _priceOnlyReturn = null;
         _totalReturn = null;
         NotifyCurrentValueChanged();

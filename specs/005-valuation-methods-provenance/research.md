@@ -50,6 +50,14 @@ free once the concrete services stamp themselves.
 `Unknown = 0, Manual, ProviderValuation, Google, Yahoo, StatusInvest, DicionarioDoInvestidor, Redentia`.
 `IsManual` (FR-009) becomes a computed property: `Source == PriceSource.Manual`.
 
+**Found during implementation**: `AssetSnapshotSourceAdapter.cs` (used for dividend-lookup snapshots,
+`IAssetSnapshotSource`, unrelated to `IAssetPriceFetcher`) is a sixth caller of
+`WebPageParserMappers.ToAssetValueSnapshot`, wrapping `GoogleFinance` directly — not discovered by the
+DI-registration read above since it isn't wired through `IAssetPriceFetcher`. `ToAssetValueSnapshot`
+gained a required `PriceSource` parameter (only ~6 call sites total, all in this same Infrastructure
+project) rather than a default, so every caller states its source explicitly and a future new caller
+can't silently default to `Unknown`.
+
 **Rationale**: Satisfies G10's actual stated goal ("detecting provider corrections") — a coarse
 Automatic/Manual flag can't distinguish a correction from a different provider from a repeated read
 of the same one.

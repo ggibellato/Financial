@@ -73,6 +73,7 @@ public class PortfolioAssetSummaryServiceTests
         item.TotalInvested.Should().Be(2000m);
         item.RealizedGainLoss.Should().Be(50m);
         item.PortfolioWeight.Should().Be(100m);
+        item.MarketStatus.Should().Be(Financial.Investment.Domain.Rules.MarketStatus.Current);
     }
 
     [Fact]

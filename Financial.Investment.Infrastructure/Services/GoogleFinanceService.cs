@@ -1,3 +1,4 @@
+using Financial.Investment.Domain.Entities;
 using Financial.Investment.Domain.ValueObjects;
 using Financial.Investment.Infrastructure.DTOs;
 using Financial.Integrations.WebPageParser;
@@ -12,8 +13,8 @@ public sealed class GoogleFinanceService : IFinanceService
 
     public GoogleFinanceService()
         : this(
-            (exchange, ticker) => WebPageParserMappers.ToAssetValueSnapshot(GoogleFinance.GetFinancialInfoSnapshot(exchange, ticker)),
-            (currency, ticker) => WebPageParserMappers.ToAssetValueSnapshot(GoogleFinance.GetCryptocurrencyFinancialInfoSnapshot(currency, ticker)))
+            (exchange, ticker) => WebPageParserMappers.ToAssetValueSnapshot(GoogleFinance.GetFinancialInfoSnapshot(exchange, ticker), PriceSource.Google),
+            (currency, ticker) => WebPageParserMappers.ToAssetValueSnapshot(GoogleFinance.GetCryptocurrencyFinancialInfoSnapshot(currency, ticker), PriceSource.Google))
     {
     }
 

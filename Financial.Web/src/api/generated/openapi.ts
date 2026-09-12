@@ -5656,9 +5656,10 @@ export interface components {
             country?: components["schemas"]["CountryCode"];
             credits?: components["schemas"]["CreditDTO"][];
             exchange?: string;
-            isPriceStale?: boolean;
+            incomePolicy?: components["schemas"]["IncomePolicy"];
             isin?: string;
             localTypeCode?: string;
+            marketStatus?: components["schemas"]["MarketStatus"];
             /** Format: double */
             marketValue?: null | number;
             name: string;
@@ -5685,6 +5686,7 @@ export interface components {
             transactions?: components["schemas"]["TransactionDTO"][];
             /** Format: double */
             unrealisedGain?: null | number;
+            valuationMethod?: components["schemas"]["ValuationMethod"];
         };
         AssetNodeDTO: {
             /** Format: double */
@@ -5711,9 +5713,11 @@ export interface components {
             asOfDate?: null | string;
             exchange: string;
             isManual?: boolean;
+            marketStatus?: components["schemas"]["MarketStatus"];
             name?: string;
             /** Format: double */
             price?: number;
+            source?: components["schemas"]["PriceSource"];
             ticker: string;
         };
         AssetPriceSnapshotDTO: {
@@ -6351,6 +6355,8 @@ export interface components {
             /** Format: uuid */
             paymentSourceBankId: null | string;
         };
+        /** @enum {unknown} */
+        MarketStatus: "Current" | "Stale" | "Unavailable";
         MoveAssetRequestDTO: {
             assetName: string;
             brokerName: string;
@@ -6399,12 +6405,12 @@ export interface components {
             exchange: string;
             /** Format: date-time */
             firstInvestmentDate: null | string;
-            isPriceStale: boolean;
             lastCreditMonth: null | string;
             /** Format: double */
             lastMonthCredits: number;
             /** Format: double */
             lastMonthCreditsPercent: null | number;
+            marketStatus: components["schemas"]["MarketStatus"];
             /** Format: double */
             marketValue: null | number;
             /** Format: double */

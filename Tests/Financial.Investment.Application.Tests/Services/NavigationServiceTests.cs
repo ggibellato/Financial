@@ -112,6 +112,24 @@ public class NavigationServiceTests
         assets.Should().ContainSingle().Which.PositionType.Should().Be(expectedPositionType);
     }
 
+    [Fact]
+    public void GetAssetDetails_ReturnsValuationMethodAndIncomePolicyFromAsset()
+    {
+        var broker = Broker.Create("Broker", "BRL");
+        var portfolio = broker.AddPortfolio("Portfolio");
+        var asset = BuildAssetWithQuantity("ASSET1", 0m);
+        asset.SetValuationMethod(ValuationMethod.ProviderValue);
+        asset.SetIncomePolicy(IncomePolicy.Distributing);
+        portfolio.AddAsset(asset);
+        _repository.Broker = broker;
+
+        var result = CreateService().GetAssetDetails("Broker", "Portfolio", "ASSET1");
+
+        result.Should().NotBeNull();
+        result!.ValuationMethod.Should().Be(ValuationMethod.ProviderValue);
+        result.IncomePolicy.Should().Be(IncomePolicy.Distributing);
+    }
+
     [Theory]
     [InlineData(10, PositionType.Long)]
     [InlineData(0, PositionType.Flat)]

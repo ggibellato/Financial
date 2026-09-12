@@ -1,3 +1,7 @@
+using System.Text.Json.Serialization;
+using Financial.Investment.Domain.Entities;
+using Financial.Investment.Domain.Rules;
+
 namespace Financial.Investment.Application.DTOs;
 
 public class AssetPriceDTO
@@ -17,4 +21,14 @@ public class AssetPriceDTO
     public DateOnly? AsOfDate { get; set; }
 
     public bool IsManual { get; set; }
+
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public PriceSource Source { get; set; }
+
+    /// <summary>
+    /// Freshness/availability of this price, never the trading venue's session state. `Unavailable`
+    /// means <see cref="Price"/> carries no meaningful value (nothing was ever fetched or recorded).
+    /// </summary>
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public MarketStatus MarketStatus { get; set; }
 }

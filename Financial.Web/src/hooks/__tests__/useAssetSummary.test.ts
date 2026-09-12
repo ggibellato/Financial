@@ -45,6 +45,8 @@ const ASSET_DETAILS: AssetDetailsDto = {
   country: 'BR',
   localTypeCode: 'ON',
   class: 'Equity',
+  valuationMethod: 'Unspecified',
+  incomePolicy: 'Unknown',
   quantity: 100,
   averagePrice: 20,
   averageSellPrice: null,
@@ -57,7 +59,7 @@ const ASSET_DETAILS: AssetDetailsDto = {
   costOfUnitsHeld: 2000,
   unrealisedGain: null,
   priceAsOfDate: null,
-  isPriceStale: false,
+  marketStatus: 'Current',
   priceOnlyReturn: null,
   totalReturn: null,
   transactions: [],
@@ -75,6 +77,8 @@ const PRICE: AssetPriceDto = {
   asOf: '2026-06-26T10:00:00',
   asOfDate: null,
   isManual: false,
+  marketStatus: 'Current',
+  source: 'Unknown',
 }
 
 const REFRESHED_ASSET_DETAILS: AssetDetailsDto = {
@@ -83,7 +87,7 @@ const REFRESHED_ASSET_DETAILS: AssetDetailsDto = {
   costOfUnitsHeld: 2000,
   unrealisedGain: 500,
   priceAsOfDate: '2026-06-26',
-  isPriceStale: false,
+  marketStatus: 'Current',
   priceOnlyReturn: 0.12,
   totalReturn: 0.15,
 }
@@ -139,7 +143,7 @@ describe('useAssetSummary', () => {
       costOfUnitsHeld: 0,
       unrealisedGain: null,
       priceAsOfDate: null,
-      isPriceStale: false,
+      marketStatus: 'Current',
       priceOnlyReturn: null,
       totalReturn: null,
       totalReturnNetOfTax: null,

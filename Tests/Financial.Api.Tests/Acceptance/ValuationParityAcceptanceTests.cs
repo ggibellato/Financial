@@ -33,7 +33,7 @@ public class ValuationParityAcceptanceTests : ApiEndpointTests
         desktopAsset.PriceOnlyReturn.Should().Be(webAsset.PriceOnlyReturn);
         desktopAsset.TotalReturn.Should().Be(webAsset.TotalReturn);
         desktopAsset.PriceAsOfDate.Should().Be(webAsset.PriceAsOfDate);
-        desktopAsset.IsPriceStale.Should().Be(webAsset.IsPriceStale);
+        desktopAsset.MarketStatus.Should().Be(webAsset.MarketStatus);
     }
 
     [Fact]

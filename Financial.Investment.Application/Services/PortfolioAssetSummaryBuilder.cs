@@ -76,7 +76,7 @@ internal static class PortfolioAssetSummaryBuilder
             CostOfUnitsHeld = c.Valuation.CostOfUnitsHeld,
             UnrealisedGain = c.Valuation.UnrealisedGain,
             PriceAsOfDate = c.Valuation.PriceAsOfDate,
-            IsPriceStale = c.Valuation.IsPriceStale,
+            MarketStatus = c.Valuation.MarketStatus,
             PriceOnlyReturn = c.Valuation.PriceOnlyReturn,
             TotalReturn = c.Valuation.TotalReturn,
             TotalReturnNetOfTax = c.Valuation.TotalReturnNetOfTax,

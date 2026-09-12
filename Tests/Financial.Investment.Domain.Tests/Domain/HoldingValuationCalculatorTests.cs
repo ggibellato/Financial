@@ -58,7 +58,7 @@ public class HoldingValuationCalculatorTests
 
         var result = HoldingValuationCalculator.Calculate(10m, 5m, price, valuationDate);
 
-        result.IsPriceStale.Should().BeFalse();
+        result.MarketStatus.Should().Be(MarketStatus.Current);
     }
 
     [Fact]
@@ -70,7 +70,7 @@ public class HoldingValuationCalculatorTests
 
         var result = HoldingValuationCalculator.Calculate(10m, 5m, price, monday);
 
-        result.IsPriceStale.Should().BeFalse();
+        result.MarketStatus.Should().Be(MarketStatus.Current);
     }
 
     [Fact]
@@ -82,7 +82,7 @@ public class HoldingValuationCalculatorTests
 
         var result = HoldingValuationCalculator.Calculate(10m, 5m, price, tuesday);
 
-        result.IsPriceStale.Should().BeTrue();
+        result.MarketStatus.Should().Be(MarketStatus.Stale);
     }
 
     [Fact]
@@ -116,7 +116,7 @@ public class HoldingValuationCalculatorTests
         var result = HoldingValuationCalculator.Calculate(0m, 5m, price: null, new DateOnly(2026, 9, 10));
 
         result.PriceAsOfDate.Should().BeNull();
-        result.IsPriceStale.Should().BeFalse();
+        result.MarketStatus.Should().Be(MarketStatus.Current);
     }
 
     [Fact]
@@ -125,6 +125,7 @@ public class HoldingValuationCalculatorTests
         var result = HoldingValuationCalculator.Calculate(10m, 5m, price: null, new DateOnly(2026, 9, 10));
 
         result.MarketValue.Should().BeNull();
+        result.MarketStatus.Should().Be(MarketStatus.Unavailable);
     }
 
     [Fact]
@@ -149,7 +150,7 @@ public class HoldingValuationCalculatorTests
         var result = HoldingValuationCalculator.NotMarkedToMarket(28m, 71.5m);
 
         result.PriceAsOfDate.Should().BeNull();
-        result.IsPriceStale.Should().BeFalse();
+        result.MarketStatus.Should().Be(MarketStatus.Current);
     }
 
     [Fact]

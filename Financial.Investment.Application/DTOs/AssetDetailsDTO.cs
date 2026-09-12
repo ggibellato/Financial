@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Financial.Investment.Domain.Entities;
+using Financial.Investment.Domain.Rules;
 
 namespace Financial.Investment.Application.DTOs;
 
@@ -16,6 +17,13 @@ public class AssetDetailsDTO
     public string LocalTypeCode { get; set; } = string.Empty;
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public GlobalAssetClass Class { get; set; } = GlobalAssetClass.Unknown;
+
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public ValuationMethod ValuationMethod { get; set; } = ValuationMethod.Unspecified;
+
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public IncomePolicy IncomePolicy { get; set; } = IncomePolicy.Unknown;
+
     public decimal Quantity { get; set; }
     public decimal AveragePrice { get; set; }
 
@@ -40,7 +48,10 @@ public class AssetDetailsDTO
     public decimal CostOfUnitsHeld { get; set; }
     public decimal? UnrealisedGain { get; set; }
     public DateOnly? PriceAsOfDate { get; set; }
-    public bool IsPriceStale { get; set; }
+
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public MarketStatus MarketStatus { get; set; }
+
     public decimal? PriceOnlyReturn { get; set; }
     public decimal? TotalReturn { get; set; }
     public List<TransactionDTO> Transactions { get; set; } = new();

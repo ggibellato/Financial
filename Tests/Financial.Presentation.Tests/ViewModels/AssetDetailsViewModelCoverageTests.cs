@@ -62,6 +62,32 @@ public class AssetDetailsViewModelCoverageTests
     }
 
     [Fact]
+    public void LoadAssetDetails_MarketStatusStale_SetsIsPriceStaleOnly()
+    {
+        var vm = BuildViewModel();
+        var details = BuildAssetDetails();
+        details.MarketStatus = Financial.Investment.Domain.Rules.MarketStatus.Stale;
+
+        vm.LoadAssetDetails(details);
+
+        vm.IsPriceStale.Should().BeTrue();
+        vm.IsPriceUnavailable.Should().BeFalse();
+    }
+
+    [Fact]
+    public void LoadAssetDetails_MarketStatusUnavailable_SetsIsPriceUnavailableOnly()
+    {
+        var vm = BuildViewModel();
+        var details = BuildAssetDetails();
+        details.MarketStatus = Financial.Investment.Domain.Rules.MarketStatus.Unavailable;
+
+        vm.LoadAssetDetails(details);
+
+        vm.IsPriceUnavailable.Should().BeTrue();
+        vm.IsPriceStale.Should().BeFalse();
+    }
+
+    [Fact]
     public void RefreshTodayInfoCommandAndCopyAssetNameCommand_CanExecute_ReflectAssetContext()
     {
         var vm = BuildViewModel();

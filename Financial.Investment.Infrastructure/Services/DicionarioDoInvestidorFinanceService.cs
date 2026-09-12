@@ -1,3 +1,4 @@
+using Financial.Investment.Domain.Entities;
 using Financial.Investment.Domain.ValueObjects;
 using Financial.Investment.Infrastructure.DTOs;
 using Financial.Integrations.WebPageParser;
@@ -10,7 +11,7 @@ public sealed class DicionarioDoInvestidorFinanceService : IFinanceService
     private readonly Func<string, AssetValueSnapshot> _lookup;
 
     public DicionarioDoInvestidorFinanceService()
-        : this(name => WebPageParserMappers.ToAssetValueSnapshot(DicionarioDoInvestidor.GetSellValue(name)))
+        : this(name => WebPageParserMappers.ToAssetValueSnapshot(DicionarioDoInvestidor.GetSellValue(name), PriceSource.DicionarioDoInvestidor))
     {
     }
 

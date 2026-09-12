@@ -304,6 +304,8 @@ describe('financialApiClient', () => {
       asOf: '2024-02-01T00:00:00Z',
       asOfDate: null,
       isManual: false,
+      marketStatus: 'Current',
+      source: 'Unknown',
     } satisfies AssetPriceDto
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({
@@ -328,6 +330,8 @@ describe('financialApiClient', () => {
       asOf: '2024-02-01T00:00:00Z',
       asOfDate: null,
       isManual: false,
+      marketStatus: 'Current',
+      source: 'Unknown',
     } satisfies AssetPriceDto
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({
@@ -353,6 +357,8 @@ describe('financialApiClient', () => {
       asOf: '2024-02-01T00:00:00Z',
       asOfDate: null,
       isManual: false,
+      marketStatus: 'Current',
+      source: 'Unknown',
     } satisfies AssetPriceDto
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({
@@ -378,6 +384,8 @@ describe('financialApiClient', () => {
       asOf: null,
       asOfDate: null,
       isManual: true,
+      marketStatus: 'Current',
+      source: 'Unknown',
     } satisfies AssetPriceDto
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({
@@ -411,6 +419,8 @@ describe('financialApiClient', () => {
       asOf: '2024-02-01T00:00:00Z',
       asOfDate: null,
       isManual: false,
+      marketStatus: 'Current',
+      source: 'Unknown',
     } satisfies AssetPriceDto
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({

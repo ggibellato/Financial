@@ -1,12 +1,13 @@
 using Financial.Integrations.WebPageParser;
+using Financial.Investment.Domain.Entities;
 using Financial.Investment.Domain.ValueObjects;
 
 namespace Financial.Investment.Infrastructure.Services;
 
 internal static class WebPageParserMappers
 {
-    internal static AssetValueSnapshot ToAssetValueSnapshot(WebAssetQuote quote) =>
-        new(quote.Ticker, quote.Name, quote.Price, quote.AsOf);
+    internal static AssetValueSnapshot ToAssetValueSnapshot(WebAssetQuote quote, PriceSource source) =>
+        new(quote.Ticker, quote.Name, quote.Price, quote.AsOf, source);
 
     internal static List<DividendValue> ToDividendValues(IEnumerable<WebDividendRecord> records) =>
         records.Select(ToDividendValue).ToList();

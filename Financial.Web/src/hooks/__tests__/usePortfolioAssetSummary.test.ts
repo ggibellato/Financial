@@ -56,7 +56,7 @@ const ITEM_1: PortfolioAssetSummaryItemDto = {
   costOfUnitsHeld: 2500,
   unrealisedGain: null,
   priceAsOfDate: null,
-  isPriceStale: false,
+  marketStatus: 'Current',
   priceOnlyReturn: null,
   totalReturn: null,
   totalReturnNetOfTax: null,
@@ -93,7 +93,7 @@ const ITEM_2: PortfolioAssetSummaryItemDto = {
   costOfUnitsHeld: 1000,
   unrealisedGain: null,
   priceAsOfDate: null,
-  isPriceStale: false,
+  marketStatus: 'Current',
   priceOnlyReturn: null,
   totalReturn: null,
   totalReturnNetOfTax: null,
@@ -118,6 +118,8 @@ const PRICE_DTO: AssetPriceDto = {
   asOf: '2024-01-01T10:00:00',
   asOfDate: null,
   isManual: false,
+  marketStatus: 'Current',
+  source: 'Unknown',
 }
 
 describe('usePortfolioAssetSummary', () => {

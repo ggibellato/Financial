@@ -55,6 +55,8 @@ const makePrice = (ticker: string, price = 10.5): AssetPriceDto => ({
   asOf: '2024-02-01T00:00:00Z',
   asOfDate: null,
   isManual: false,
+  marketStatus: 'Current',
+  source: 'Unknown',
 })
 
 describe('CurrentValuesPage', () => {
@@ -360,6 +362,8 @@ describe('CurrentValuesPage', () => {
       asOf: '2024-02-01T00:00:00Z',
       asOfDate: null,
       isManual: false,
+      marketStatus: 'Current',
+      source: 'Unknown',
     } satisfies AssetPriceDto)
 
     render(<CurrentValuesPage />)
@@ -392,6 +396,8 @@ describe('CurrentValuesPage', () => {
       asOf: '2024-02-01T00:00:00Z',
       asOfDate: null,
       isManual: false,
+      marketStatus: 'Current',
+      source: 'Unknown',
     } satisfies AssetPriceDto)
 
     render(<CurrentValuesPage />)

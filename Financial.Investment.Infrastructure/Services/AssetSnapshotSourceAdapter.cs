@@ -1,4 +1,5 @@
 using Financial.Investment.Application.Interfaces;
+using Financial.Investment.Domain.Entities;
 using Financial.Investment.Domain.ValueObjects;
 using Financial.Integrations.WebPageParser;
 
@@ -9,7 +10,7 @@ public sealed class AssetSnapshotSourceAdapter : IAssetSnapshotSource
     private readonly Func<string, string, AssetValueSnapshot> _lookup;
 
     public AssetSnapshotSourceAdapter()
-        : this((exchange, ticker) => WebPageParserMappers.ToAssetValueSnapshot(GoogleFinance.GetFinancialInfoSnapshot(exchange, ticker)))
+        : this((exchange, ticker) => WebPageParserMappers.ToAssetValueSnapshot(GoogleFinance.GetFinancialInfoSnapshot(exchange, ticker), PriceSource.Google))
     {
     }
 

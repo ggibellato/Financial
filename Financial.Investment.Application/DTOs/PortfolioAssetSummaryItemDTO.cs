@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Financial.Investment.Domain.Entities;
+using Financial.Investment.Domain.Rules;
 
 namespace Financial.Investment.Application.DTOs;
 
@@ -23,7 +24,10 @@ public sealed class PortfolioAssetSummaryItemDTO
     public decimal CostOfUnitsHeld { get; init; }
     public decimal? UnrealisedGain { get; init; }
     public DateOnly? PriceAsOfDate { get; init; }
-    public bool IsPriceStale { get; init; }
+
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public MarketStatus MarketStatus { get; init; }
+
     public decimal? PriceOnlyReturn { get; init; }
     public decimal? TotalReturn { get; init; }
     public decimal? TotalReturnNetOfTax { get; init; }
