@@ -303,12 +303,20 @@
                                Foreground="{Binding AssetDetails.PriceOnlyReturn, Converter={StaticResource SignedValueToBrushConverter}}"
                                Margin="10,5"/>
 
-                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Total Return:" FontWeight="Bold" Margin="0,5"/>
+                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Total Return (Gross):" FontWeight="Bold" Margin="0,5"/>
                     <TextBlock Grid.Row="3" Grid.Column="1"
                                Text="{Binding AssetDetails.TotalReturn, Mode=OneWay, StringFormat=P2, TargetNullValue='—'}"
                                TextAlignment="Right"
                                FontFamily="Consolas"
                                Foreground="{Binding AssetDetails.TotalReturn, Converter={StaticResource SignedValueToBrushConverter}}"
+                               Margin="10,5"/>
+
+                    <TextBlock Grid.Row="3" Grid.Column="2" Text="Total Return (Net of Tax):" FontWeight="Bold" Margin="20,5,0,5"/>
+                    <TextBlock Grid.Row="3" Grid.Column="3"
+                               Text="{Binding AssetDetails.TotalReturnNetOfTax, Mode=OneWay, StringFormat=P2, TargetNullValue='—'}"
+                               TextAlignment="Right"
+                               FontFamily="Consolas"
+                               Foreground="{Binding AssetDetails.TotalReturnNetOfTax, Converter={StaticResource SignedValueToBrushConverter}}"
                                Margin="10,5"/>
 
                     <TextBlock Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="4"

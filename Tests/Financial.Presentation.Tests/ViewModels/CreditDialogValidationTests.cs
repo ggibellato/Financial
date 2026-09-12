@@ -12,7 +12,7 @@ public class CreditDialogValidationTests
     public void BuildValidationMessage_DeleteMode_ReturnsEmpty()
     {
         var result = CreditDialogValidation.BuildValidationMessage(
-            isDeleteMode: true, date: DateTime.MinValue, type: null, value: -1);
+            isDeleteMode: true, date: DateTime.MinValue, type: null, value: -1, withheld: 0);
 
         result.Should().BeEmpty();
     }
@@ -21,7 +21,7 @@ public class CreditDialogValidationTests
     public void BuildValidationMessage_AllFieldsValid_ReturnsEmpty()
     {
         var result = CreditDialogValidation.BuildValidationMessage(
-            isDeleteMode: false, date: ValidDate, type: "Dividend", value: 10);
+            isDeleteMode: false, date: ValidDate, type: "Dividend", value: 10, withheld: 0);
 
         result.Should().BeEmpty();
     }
@@ -30,7 +30,7 @@ public class CreditDialogValidationTests
     public void BuildValidationMessage_DateIsMinValue_IncludesDateError()
     {
         var result = CreditDialogValidation.BuildValidationMessage(
-            isDeleteMode: false, date: DateTime.MinValue, type: "Dividend", value: 10);
+            isDeleteMode: false, date: DateTime.MinValue, type: "Dividend", value: 10, withheld: 0);
 
         result.Should().Contain("Date is required.");
     }
@@ -39,31 +39,57 @@ public class CreditDialogValidationTests
     public void BuildValidationMessage_InvalidType_IncludesTypeError()
     {
         var result = CreditDialogValidation.BuildValidationMessage(
-            isDeleteMode: false, date: ValidDate, type: "Invalid", value: 10);
+            isDeleteMode: false, date: ValidDate, type: "Invalid", value: 10, withheld: 0);
 
         result.Should().Contain("Type must be Dividend, Securities Lending Income, JCP, or Coupon.");
     }
 
-    [Theory]
-    [InlineData(0)]
-    [InlineData(-1)]
-    public void BuildValidationMessage_ValueNotPositive_IncludesValueError(decimal value)
+    [Fact]
+    public void BuildValidationMessage_ValueZero_IncludesValueError()
     {
         var result = CreditDialogValidation.BuildValidationMessage(
-            isDeleteMode: false, date: ValidDate, type: "Dividend", value: value);
+            isDeleteMode: false, date: ValidDate, type: "Dividend", value: 0, withheld: 0);
 
-        result.Should().Contain("Value must be greater than zero.");
+        result.Should().Contain("Value must not be zero.");
+    }
+
+    [Fact]
+    public void BuildValidationMessage_NegativeValueCorrection_ReturnsEmpty()
+    {
+        var result = CreditDialogValidation.BuildValidationMessage(
+            isDeleteMode: false, date: ValidDate, type: "Dividend", value: -10, withheld: 0);
+
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void BuildValidationMessage_WithheldOppositeSignToValue_IncludesWithheldError()
+    {
+        var result = CreditDialogValidation.BuildValidationMessage(
+            isDeleteMode: false, date: ValidDate, type: "Dividend", value: 10, withheld: -1);
+
+        result.Should().Contain("Withheld must share Value's sign and must not exceed it in magnitude.");
+    }
+
+    [Fact]
+    public void BuildValidationMessage_WithheldExceedsValueMagnitude_IncludesWithheldError()
+    {
+        var result = CreditDialogValidation.BuildValidationMessage(
+            isDeleteMode: false, date: ValidDate, type: "Dividend", value: 10, withheld: 11);
+
+        result.Should().Contain("Withheld must share Value's sign and must not exceed it in magnitude.");
     }
 
     [Fact]
     public void BuildValidationMessage_AllFieldsInvalid_IncludesEveryError()
     {
         var result = CreditDialogValidation.BuildValidationMessage(
-            isDeleteMode: false, date: DateTime.MinValue, type: null, value: 0);
+            isDeleteMode: false, date: DateTime.MinValue, type: null, value: 0, withheld: 1);
 
         result.Should().Contain("Date is required.");
         result.Should().Contain("Type must be Dividend, Securities Lending Income, JCP, or Coupon.");
-        result.Should().Contain("Value must be greater than zero.");
+        result.Should().Contain("Value must not be zero.");
+        result.Should().Contain("Withheld must share Value's sign and must not exceed it in magnitude.");
     }
 
     [Theory]

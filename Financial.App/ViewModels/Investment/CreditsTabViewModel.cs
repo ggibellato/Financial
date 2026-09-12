@@ -189,7 +189,7 @@ public class CreditsTabViewModel : ViewModelBase
 
         if (!CreditTypeParser.TryNormalize(dialogData.Value.Type, out var normalizedType))
         {
-            ShowWarning("Credit type must be 'Dividend', 'Rent', or 'JCP'.");
+            ShowWarning("Credit type is invalid.");
             return;
         }
 
@@ -200,7 +200,8 @@ public class CreditsTabViewModel : ViewModelBase
             AssetName = _assetName(),
             Date = dialogData.Value.Date,
             Type = normalizedType,
-            Value = dialogData.Value.Value
+            Value = dialogData.Value.Value,
+            Withheld = dialogData.Value.Withheld
         });
 
         if (updatedDetails == null)
@@ -236,7 +237,7 @@ public class CreditsTabViewModel : ViewModelBase
 
         if (!CreditTypeParser.TryNormalize(dialogData.Value.Type, out var normalizedType))
         {
-            ShowWarning("Credit type must be 'Dividend', 'Rent', or 'JCP'.");
+            ShowWarning("Credit type is invalid.");
             return;
         }
 
@@ -248,7 +249,8 @@ public class CreditsTabViewModel : ViewModelBase
             Id = dialogData.Value.CreditId,
             Date = dialogData.Value.Date,
             Type = normalizedType,
-            Value = dialogData.Value.Value
+            Value = dialogData.Value.Value,
+            Withheld = dialogData.Value.Withheld
         });
 
         if (updatedDetails == null)
@@ -330,7 +332,7 @@ public class CreditsTabViewModel : ViewModelBase
             IsCreditFormOpen = false;
             CreditFormViewModel = null;
             tcs.SetResult(result == true
-                ? new CreditDialogData(vm.CreditId, vm.Date, vm.Type, vm.Value)
+                ? new CreditDialogData(vm.CreditId, vm.Date, vm.Type, vm.Value, vm.Withheld)
                 : null);
         }
 
@@ -351,7 +353,7 @@ public class CreditsTabViewModel : ViewModelBase
         if (SelectedCredit == null) return Task.FromResult<CreditDialogData?>(null);
         var vm = CreditDialogViewModel.CreateForUpdate(
             _brokerName(), _portfolioName(), _assetName(),
-            SelectedCredit.Id, SelectedCredit.Date, SelectedCredit.Type, SelectedCredit.Value);
+            SelectedCredit.Id, SelectedCredit.Date, SelectedCredit.Type, SelectedCredit.Value, SelectedCredit.Withheld);
         return ShowCreditFormAsync(vm);
     }
 
@@ -360,7 +362,7 @@ public class CreditsTabViewModel : ViewModelBase
         if (SelectedCredit == null) return false;
         var vm = CreditDialogViewModel.CreateForDelete(
             _brokerName(), _portfolioName(), _assetName(),
-            SelectedCredit.Id, SelectedCredit.Date, SelectedCredit.Type, SelectedCredit.Value);
+            SelectedCredit.Id, SelectedCredit.Date, SelectedCredit.Type, SelectedCredit.Value, SelectedCredit.Withheld);
         var dialog = new CreditDialog(vm) { Owner = System.Windows.Application.Current?.MainWindow };
         return dialog.ShowDialog() == true;
     }
@@ -482,4 +484,5 @@ public readonly record struct CreditDialogData(
     Guid CreditId,
     DateTime Date,
     string Type,
-    decimal Value);
+    decimal Value,
+    decimal Withheld);

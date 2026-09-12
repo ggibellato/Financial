@@ -12,7 +12,7 @@ public class CreditDialogViewModelTests
     [InlineData(CreditDialogMode.Delete, "Delete Credit", "Delete")]
     public void TitleAndConfirmLabel_ReflectMode(CreditDialogMode mode, string expectedTitle, string expectedConfirmLabel)
     {
-        var viewModel = new CreditDialogViewModel(mode, "XPI", "Default", "PETR4", Guid.NewGuid(), DateTime.Today, "Dividend", 10m);
+        var viewModel = new CreditDialogViewModel(mode, "XPI", "Default", "PETR4", Guid.NewGuid(), DateTime.Today, "Dividend", 10m, 0m);
 
         viewModel.Title.Should().Be(expectedTitle);
         viewModel.ConfirmLabel.Should().Be(expectedConfirmLabel);
@@ -21,7 +21,7 @@ public class CreditDialogViewModelTests
     [Fact]
     public void IsReadOnlyAndIsEditable_OnDeleteMode_AreOppositeAndReadOnly()
     {
-        var viewModel = CreditDialogViewModel.CreateForDelete("XPI", "Default", "PETR4", Guid.NewGuid(), DateTime.Today, "Dividend", 10m);
+        var viewModel = CreditDialogViewModel.CreateForDelete("XPI", "Default", "PETR4", Guid.NewGuid(), DateTime.Today, "Dividend", 10m, 0m);
 
         viewModel.IsReadOnly.Should().BeTrue();
         viewModel.IsEditable.Should().BeFalse();
@@ -32,7 +32,7 @@ public class CreditDialogViewModelTests
     [InlineData(CreditDialogMode.Update)]
     public void IsReadOnlyAndIsEditable_OnNonDeleteMode_AreOppositeAndEditable(CreditDialogMode mode)
     {
-        var viewModel = new CreditDialogViewModel(mode, "XPI", "Default", "PETR4", Guid.NewGuid(), DateTime.Today, "Dividend", 10m);
+        var viewModel = new CreditDialogViewModel(mode, "XPI", "Default", "PETR4", Guid.NewGuid(), DateTime.Today, "Dividend", 10m, 0m);
 
         viewModel.IsReadOnly.Should().BeFalse();
         viewModel.IsEditable.Should().BeTrue();
@@ -73,7 +73,7 @@ public class CreditDialogViewModelTests
     [Fact]
     public void ConfirmCommand_CanExecute_AlwaysTrueOnDeleteModeRegardlessOfFieldValidity()
     {
-        var viewModel = CreditDialogViewModel.CreateForDelete("XPI", "Default", "PETR4", Guid.NewGuid(), DateTime.MinValue, "NotAType", 0m);
+        var viewModel = CreditDialogViewModel.CreateForDelete("XPI", "Default", "PETR4", Guid.NewGuid(), DateTime.MinValue, "NotAType", 0m, 0m);
 
         viewModel.ConfirmCommand.CanExecute(null).Should().BeTrue();
     }
@@ -124,11 +124,23 @@ public class CreditDialogViewModelTests
         var id = Guid.NewGuid();
         var date = new DateTime(2026, 7, 1);
 
-        var viewModel = CreditDialogViewModel.CreateForUpdate("XPI", "Default", "PETR4", id, date, "Rent", 25m);
+        var viewModel = CreditDialogViewModel.CreateForUpdate("XPI", "Default", "PETR4", id, date, "SecuritiesLendingIncome", 25m, 5m);
 
         viewModel.CreditId.Should().Be(id);
         viewModel.Date.Should().Be(date);
-        viewModel.Type.Should().Be("Rent");
+        viewModel.Type.Should().Be("SecuritiesLendingIncome");
         viewModel.Value.Should().Be(25m);
+        viewModel.Withheld.Should().Be(5m);
+    }
+
+    [Fact]
+    public void NetAmount_ComputesFromValueAndWithheld()
+    {
+        var viewModel = CreditDialogViewModel.CreateForAdd("XPI", "Default", "PETR4");
+
+        viewModel.Value = 10m;
+        viewModel.Withheld = 3m;
+
+        viewModel.NetAmount.Should().Be(7m);
     }
 }

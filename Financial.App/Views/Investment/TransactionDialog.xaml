@@ -3,12 +3,13 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:behaviors="clr-namespace:Financial.Presentation.App.Behaviors"
         Title="{Binding Title}"
-        Height="360"
+        Height="400"
         Width="420"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize">
     <Grid Margin="16">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -42,10 +43,16 @@
         <TextBlock Grid.Row="2" Grid.Column="0" Text="Type:" VerticalAlignment="Center"/>
         <ComboBox Grid.Row="2" Grid.Column="1"
                   SelectedValue="{Binding Type, UpdateSourceTrigger=PropertyChanged}"
-                  SelectedValuePath="Content"
+                  SelectedValuePath="Tag"
                   IsEnabled="{Binding IsEditable}">
-            <ComboBoxItem Content="Buy"/>
-            <ComboBoxItem Content="Sell"/>
+            <ComboBoxItem Content="Buy" Tag="Buy"/>
+            <ComboBoxItem Content="Sell" Tag="Sell"/>
+            <ComboBoxItem Content="Fee" Tag="Fee"/>
+            <ComboBoxItem Content="Redemption" Tag="Redemption"/>
+            <ComboBoxItem Content="Transfer In" Tag="TransferIn"/>
+            <ComboBoxItem Content="Transfer Out" Tag="TransferOut"/>
+            <ComboBoxItem Content="Capital Call" Tag="CapitalCall"/>
+            <ComboBoxItem Content="Return of Capital" Tag="ReturnOfCapital"/>
         </ComboBox>
 
         <TextBlock Grid.Row="3" Grid.Column="0" Text="Quantity:" VerticalAlignment="Center"/>
@@ -66,17 +73,23 @@
                  IsReadOnly="{Binding IsReadOnly}"
                  behaviors:DecimalInputBehavior.IsEnabled="True"/>
 
-        <TextBlock Grid.Row="6" Grid.Column="0" Text="Total:" VerticalAlignment="Center"/>
-        <TextBlock Grid.Row="6" Grid.Column="1"
-                   Text="{Binding TotalPrice, StringFormat=N2}"/>
+        <TextBlock Grid.Row="6" Grid.Column="0" Text="Withheld:" VerticalAlignment="Center"/>
+        <TextBox Grid.Row="6" Grid.Column="1"
+                 Text="{Binding Withheld, UpdateSourceTrigger=LostFocus}"
+                 IsReadOnly="{Binding IsReadOnly}"
+                 behaviors:DecimalInputBehavior.IsEnabled="True"/>
 
-        <TextBlock Grid.Row="7" Grid.ColumnSpan="2"
+        <TextBlock Grid.Row="7" Grid.Column="0" Text="Net:" VerticalAlignment="Center"/>
+        <TextBlock Grid.Row="7" Grid.Column="1"
+                   Text="{Binding NetCash, StringFormat=N2}"/>
+
+        <TextBlock Grid.Row="8" Grid.ColumnSpan="2"
                    Foreground="{DynamicResource SystemFillColorCriticalBrush}"
                    TextWrapping="Wrap"
                    Text="{Binding ValidationMessage}"
                    Margin="0,8,0,0"/>
 
-        <StackPanel Grid.Row="8" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,12,0,0">
+        <StackPanel Grid.Row="9" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,12,0,0">
             <Button Content="{Binding ConfirmLabel}" Width="90" Command="{Binding ConfirmCommand}"/>
             <Button Content="Cancel" Width="90" Margin="8,0,0,0" Command="{Binding CancelCommand}"/>
         </StackPanel>

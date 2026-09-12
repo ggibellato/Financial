@@ -194,11 +194,11 @@ order for the same holding, and vice versa.
 
 ### Implementation for User Story 4 — WPF (`Financial.App`)
 
-- [ ] T059 [P] [US4] Update `Financial.App/ViewModels/Investment/TransactionDialogViewModel.cs` and `TransactionDialogValidation.cs`: new type options, hide Quantity/UnitPrice when not applicable, `Withheld` field (depends on T002, T016, T017)
-- [ ] T060 [P] [US4] Update `Financial.App/ViewModels/Investment/CreditDialogViewModel.cs` and `CreditDialogValidation.cs`: renamed/added income-kind options, negative-value correction entry, `Withheld` field (depends on T026, T032, T033)
-- [ ] T061 [US4] Update `Financial.App/ViewModels/Investment/TransactionsTabViewModel.cs`: rename `TotalPrice` to `NetCash` in the aggregate-view tuple and bound columns (depends on T018)
-- [ ] T062 [US4] Surface `TotalReturnNetOfTax` with a distinct label alongside the existing return figure in the relevant WPF views (portfolio/asset summary) (depends on T042, T043, T047)
-- [ ] T063 [P] [US4] Extend `Tests/Financial.Presentation.Tests/ViewModels/TransactionDialogViewModelTests.cs`, `CreditDialogViewModelTests.cs`, and `CreditDialogValidationTests.cs` for T059–T062 (depends on T059, T060, T061, T062)
+- [X] T059 [P] [US4] Update `Financial.App/ViewModels/Investment/TransactionDialogViewModel.cs` and `TransactionDialogValidation.cs`: new type options, hide Quantity/UnitPrice when not applicable, `Withheld` field (depends on T002, T016, T017) — also widened `TransactionFormView.xaml`/`TransactionDialog.xaml`'s ComboBox to all 8 types (Tag-based value binding), added a Withheld field, and renamed Total→Net (`NetCash`)
+- [X] T060 [P] [US4] Update `Financial.App/ViewModels/Investment/CreditDialogViewModel.cs` and `CreditDialogValidation.cs`: renamed/added income-kind options, negative-value correction entry, `Withheld` field (depends on T026, T032, T033) — also widened `CreditFormView.xaml`/`CreditDialog.xaml`'s ComboBox to all 4 kinds, added Withheld/Net fields
+- [X] T061 [US4] Update `Financial.App/ViewModels/Investment/TransactionsTabViewModel.cs`: rename `TotalPrice` to `NetCash` in the aggregate-view tuple and bound columns (depends on T018) — `TransactionDialogData`/`CreditDialogData` also gained `Withheld`, wired through Add/Update DTO construction
+- [X] T062 [US4] Surface `TotalReturnNetOfTax` with a distinct label alongside the existing return figure in the relevant WPF views (portfolio/asset summary) (depends on T042, T043, T047) — `AssetDetailsViewModel.TotalReturnNetOfTax` + `PortfolioSummaryView.xaml`'s "Total Return (Gross)"/"Total Return (Net of Tax)" pair
+- [X] T063 [P] [US4] Extend `Tests/Financial.Presentation.Tests/ViewModels/TransactionDialogViewModelTests.cs`, `CreditDialogViewModelTests.cs`, and `CreditDialogValidationTests.cs` for T059–T062 (depends on T059, T060, T061, T062)
 
 **Checkpoint**: US4 is independently testable — recording a new type or a withheld income from
 either front end shows identically in the other (FR-021, SC-005).
@@ -210,8 +210,8 @@ either front end shows identically in the other (FR-021, SC-005).
 **Purpose**: Whole-feature verification and documentation cleanup — depends on all four stories
 being complete.
 
-- [ ] T064 [P] Run `npm run lint && npm run build` in `Financial.Web` — `tsc -b` (inside `build`) is what catches any remaining call site reading the removed `totalPrice`/`Value`-as-always-positive assumptions
-- [ ] T065 [P] Run `npm run smoke-test` (Playwright) against a locally published build
+- [X] T064 [P] Run `npm run lint && npm run build` in `Financial.Web` — `tsc -b` (inside `build`) is what catches any remaining call site reading the removed `totalPrice`/`Value`-as-always-positive assumptions
+- [X] T065 [P] Run `npm run smoke-test` (Playwright) against a locally published build
 - [ ] T066 Execute all seven sections of `quickstart.md` end-to-end against a full local run, including the §7 before/after diff (SC-003 regression guard)
 - [ ] T067 Correct `docs/investment-performance-roadmap.md` §3 (G12): the "Rent is an FII/REIT naming leak" claim was disproven against live data during this feature's clarification session (spec.md's Clarifications section) — update it to record the actual finding (share-lending income)
 - [ ] T068 Self-review the full diff against `docs/rules/implementation.md`'s Definition of Done, and `docs/ui/review-checklist.md` in full for the US4 changes (per `docs/rules/ui.md`'s scope-of-compliance rule, not only the items tied to this feature's original trigger)

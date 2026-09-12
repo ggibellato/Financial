@@ -56,14 +56,21 @@
                 <TextBlock Text="Type" Style="{StaticResource FieldLabelStyle}"/>
                 <ComboBox AutomationProperties.Name="Type"
                           SelectedValue="{Binding Type, UpdateSourceTrigger=PropertyChanged}"
-                          SelectedValuePath="Content"
+                          SelectedValuePath="Tag"
                           IsEnabled="{Binding IsEditable}">
-                    <ComboBoxItem Content="Buy"/>
-                    <ComboBoxItem Content="Sell"/>
+                    <ComboBoxItem Content="Buy" Tag="Buy"/>
+                    <ComboBoxItem Content="Sell" Tag="Sell"/>
+                    <ComboBoxItem Content="Fee" Tag="Fee"/>
+                    <ComboBoxItem Content="Redemption" Tag="Redemption"/>
+                    <ComboBoxItem Content="Transfer In" Tag="TransferIn"/>
+                    <ComboBoxItem Content="Transfer Out" Tag="TransferOut"/>
+                    <ComboBoxItem Content="Capital Call" Tag="CapitalCall"/>
+                    <ComboBoxItem Content="Return of Capital" Tag="ReturnOfCapital"/>
                 </ComboBox>
             </StackPanel>
 
-            <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,8,8">
+            <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,8,8"
+                        Visibility="{Binding HasQuantityEffect, Converter={StaticResource BoolToVisibilityConverter}}">
                 <TextBlock Text="Quantity" Style="{StaticResource FieldLabelStyle}"/>
                 <TextBox AutomationProperties.Name="Quantity"
                          Text="{Binding Quantity, UpdateSourceTrigger=LostFocus}"
@@ -71,7 +78,8 @@
                          behaviors:DecimalInputBehavior.IsEnabled="True"/>
             </StackPanel>
 
-            <StackPanel Grid.Row="1" Grid.Column="3" Margin="0,0,0,8">
+            <StackPanel Grid.Row="1" Grid.Column="3" Margin="0,0,0,8"
+                        Visibility="{Binding HasQuantityEffect, Converter={StaticResource BoolToVisibilityConverter}}">
                 <TextBlock Text="Unit Price" Style="{StaticResource FieldLabelStyle}"/>
                 <TextBox AutomationProperties.Name="Unit price"
                          Text="{Binding UnitPrice, UpdateSourceTrigger=LostFocus}"
@@ -88,8 +96,16 @@
             </StackPanel>
 
             <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,0,8,8">
-                <TextBlock Text="Total" Style="{StaticResource FieldLabelStyle}"/>
-                <TextBlock Text="{Binding TotalPrice, StringFormat=N2}" VerticalAlignment="Center" FontWeight="Bold"/>
+                <TextBlock Text="Withheld" Style="{StaticResource FieldLabelStyle}"/>
+                <TextBox AutomationProperties.Name="Withheld"
+                         Text="{Binding Withheld, UpdateSourceTrigger=LostFocus}"
+                         IsReadOnly="{Binding IsReadOnly}"
+                         behaviors:DecimalInputBehavior.IsEnabled="True"/>
+            </StackPanel>
+
+            <StackPanel Grid.Row="2" Grid.Column="2" Margin="0,0,8,8">
+                <TextBlock Text="Net" Style="{StaticResource FieldLabelStyle}"/>
+                <TextBlock Text="{Binding NetCash, StringFormat=N2}" VerticalAlignment="Center" FontWeight="Bold"/>
             </StackPanel>
 
             <TextBlock Grid.Row="3" Grid.ColumnSpan="4" TextWrapping="Wrap" Margin="0,0,0,8"

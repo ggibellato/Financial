@@ -12,6 +12,7 @@ public sealed class CreditDialogViewModel : ViewModelBase
     private DateTime _date;
     private string _type = string.Empty;
     private decimal _value;
+    private decimal _withheld;
     private string _validationMessage = string.Empty;
 
     public CreditDialogMode Mode { get; }
@@ -71,9 +72,27 @@ public sealed class CreditDialogViewModel : ViewModelBase
             if (SetProperty(ref _value, value))
             {
                 Validate();
+                OnPropertyChanged(nameof(NetAmount));
             }
         }
     }
+
+    public decimal Withheld
+    {
+        get => _withheld;
+        set
+        {
+            if (SetProperty(ref _withheld, value))
+            {
+                Validate();
+                OnPropertyChanged(nameof(NetAmount));
+            }
+        }
+    }
+
+    /// <summary>Live preview mirroring <see cref="Financial.Investment.Domain.Entities.Credit.NetAmount"/>'s
+    /// formula exactly so the number shown here never drifts from what the server computes and persists.</summary>
+    public decimal NetAmount => Value - Withheld;
 
     public string ValidationMessage
     {
@@ -94,7 +113,8 @@ public sealed class CreditDialogViewModel : ViewModelBase
         Guid creditId,
         DateTime date,
         string type,
-        decimal value)
+        decimal value,
+        decimal withheld)
     {
         Mode = mode;
         BrokerName = brokerName;
@@ -105,6 +125,7 @@ public sealed class CreditDialogViewModel : ViewModelBase
         _date = date;
         _type = type;
         _value = value;
+        _withheld = withheld;
 
         ConfirmCommand = new RelayCommand(Confirm, CanConfirm);
         CancelCommand = new RelayCommand(Cancel);
@@ -125,10 +146,11 @@ public sealed class CreditDialogViewModel : ViewModelBase
             Guid.Empty,
             date,
             type,
+            0,
             0);
     }
 
-    public static CreditDialogViewModel CreateForUpdate(string brokerName, string portfolioName, string assetName, Guid id, DateTime date, string type, decimal value)
+    public static CreditDialogViewModel CreateForUpdate(string brokerName, string portfolioName, string assetName, Guid id, DateTime date, string type, decimal value, decimal withheld)
     {
         return new CreditDialogViewModel(
             CreditDialogMode.Update,
@@ -138,10 +160,11 @@ public sealed class CreditDialogViewModel : ViewModelBase
             id,
             date,
             type,
-            value);
+            value,
+            withheld);
     }
 
-    public static CreditDialogViewModel CreateForDelete(string brokerName, string portfolioName, string assetName, Guid id, DateTime date, string type, decimal value)
+    public static CreditDialogViewModel CreateForDelete(string brokerName, string portfolioName, string assetName, Guid id, DateTime date, string type, decimal value, decimal withheld)
     {
         return new CreditDialogViewModel(
             CreditDialogMode.Delete,
@@ -151,7 +174,8 @@ public sealed class CreditDialogViewModel : ViewModelBase
             id,
             date,
             type,
-            value);
+            value,
+            withheld);
     }
 
     private void Confirm()
@@ -186,9 +210,8 @@ public sealed class CreditDialogViewModel : ViewModelBase
             Mode == CreditDialogMode.Delete,
             Date,
             Type,
-            Value);
+            Value,
+            Withheld);
         ConfirmCommand.RaiseCanExecuteChanged();
     }
 }
-
-
