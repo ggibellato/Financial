@@ -27,7 +27,6 @@
 		<Project Path="Tools/ImportGoogleSpreadSheets/ImportGoogleSpreadSheets.csproj" />
 		<Project Path="Tools/InvestmentDataQualityReport/InvestmentDataQualityReport.csproj" />
 		<Project Path="Tools/InvestmentSpreadsheetImport/InvestmentSpreadsheetImport.csproj" />
-		<Project Path="Tools/InvestmentTransactionIncomeVocabularyMigration/InvestmentTransactionIncomeVocabularyMigration.csproj" />
 	</Folder>
 	<Folder Name="/Tests/">
 		<Project Path="Tests/Financial.Investment.Application.Tests/Financial.Investment.Application.Tests.csproj" />
@@ -43,7 +42,6 @@
 		<Project Path="Tests/Financial.CashFlowSpreadsheetImport.Tests/Financial.CashFlowSpreadsheetImport.Tests.csproj" />
 		<Project Path="Tests/Financial.InvestmentDataQualityReport.Tests/Financial.InvestmentDataQualityReport.Tests.csproj" />
 		<Project Path="Tests/Financial.InvestmentSpreadsheetImport.Tests/Financial.InvestmentSpreadsheetImport.Tests.csproj" />
-		<Project Path="Tests/Financial.InvestmentTransactionIncomeVocabularyMigration.Tests/Financial.InvestmentTransactionIncomeVocabularyMigration.Tests.csproj" />
 		<Project Path="Tests/Financial.TestUtilities/Financial.TestUtilities.csproj" />
 	</Folder>
 	<Folder Name="/Tests/Integrations/">

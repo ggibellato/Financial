@@ -324,7 +324,8 @@ for the same holding, and vice versa.
   specifically** — the roadmap (G3) flags this as a tax-basis limitation for a future wave, not
   something this feature's gross/fees/withheld/net block is meant to retroactively fix for the two
   existing types.
-- **The migration tool for existing `Credit` rows follows the roadmap's own decision D4**: rewritten in
-  place, verified against a temp copy first, with the existing `Value` field preserved as the derived
-  net amount for backward compatibility, exactly as Wave 0's own migrations verify against
-  `data/data-investment.json` never directly.
+- **Existing `Credit` rows storing the legacy `"Rent"` type are rewritten on load**, via a document
+  version the JSON serializer upgrades on the fly (no separate migration tool or manual run), with
+  the existing `Value` field preserved as the derived net amount for backward compatibility — verified
+  against a temp copy first, exactly as Wave 0's own migrations verify against
+  `data/data-investment.json` never directly (research.md #6).

@@ -189,6 +189,36 @@ This feature's migration tool follows that exact shape as a new sibling project,
 that turned out, on inspection, to already serve two other purposes (Google Sheets import, hosted
 inside a WPF GUI) it shouldn't be made to also carry a one-shot JSON migration.
 
+**Decision — superseded after real-data verification**: the standalone `Tools/InvestmentTransactionIncomeVocabularyMigration`
+console tool above was built, verified against a temp copy, and run once against the real
+`data/data-investment.json` (52 rows rewritten). The user then asked for a structural change: a
+one-shot tool is a dead end for every *future* stored-vocabulary rename, since each one would need
+its own tool, its own manual run, and a restart timed just right. Replaced with a persistent
+**document version** the serializer itself upgrades on load, so no separate tool or manual run is
+ever needed again:
+
+- `InvestmentSerializerAdapter.Serialize` writes a top-level `"Version"` integer (`InvestmentDataMigrations.CurrentVersion`,
+  currently `2`) into the JSON alongside the existing `ActiveBrokers`/`HistoricBrokers` — a
+  persistence-envelope concern added via `JsonNode` post-processing, not a property on the `Investments`
+  domain entity (Domain must not know about persistence versioning).
+- `InvestmentSerializerAdapter.Deserialize` parses the raw JSON as a `JsonNode` first, reads
+  `"Version"` (a document with none — every file written before this change — is treated as `1`),
+  and runs `InvestmentDataMigrations.Apply(root, storedVersion)` before the normal typed
+  deserialization. `InvestmentDataMigrations` holds one step per version gap — today just "rewrite
+  every `Credit.Type` `\"Rent\"` string to `\"SecuritiesLendingIncome\"` for `fromVersion < 2`", the
+  exact tree-walk the removed tool used — so the next stored-vocabulary rename adds one more step and
+  bumps `CurrentVersion`, never a new project.
+- The already-migrated real data file has no `Version` key yet (it predates this change), so it is
+  read as version 1: the rename step re-runs but is a no-op (nothing left to match), and the very
+  next save stamps it `Version: 2`. No manual data-file edit or backfill is needed.
+- `Tools/InvestmentTransactionIncomeVocabularyMigration/` and its test project were deleted; the
+  migration coverage moved into `InvestmentSerializerAdapterTests` (missing-version, explicit
+  version-1, and already-current-version cases).
+- `Financial.CashFlow.Infrastructure/Persistence/CashFlowSerializerAdapter.cs` gained the same
+  `"Version"` envelope (constant `1`, no migration steps yet) so the *shape* exists in both bounded
+  contexts before either one actually needs a second version — cheap to add now, and CashFlow's own
+  first rename won't need this same research cycle repeated.
+
 ## 7. Enum/validation plumbing for new types
 
 **Decision**: `Transaction.TransactionType` gains `Fee, Redemption, TransferIn, TransferOut,

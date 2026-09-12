@@ -24,8 +24,8 @@ type. See `research.md` for the design decisions behind each of these.
 
 ## Technical Context
 
-**Language/Version**: C# / .NET 10 (`Financial.Investment.*`, `Financial.Api`, `Financial.App`,
-`Tools/InvestmentTransactionIncomeVocabularyMigration`); TypeScript 5 / React 18 (`Financial.Web`)
+**Language/Version**: C# / .NET 10 (`Financial.Investment.*`, `Financial.Api`, `Financial.App`);
+TypeScript 5 / React 18 (`Financial.Web`)
 
 **Primary Dependencies**: ASP.NET Core (API controllers); `System.Text.Json` with a custom
 `DefaultJsonTypeInfoResolver` (`InvestmentTypeInfoResolver`) for private-setter persistence; xUnit +
@@ -70,14 +70,14 @@ require the rename migration (re-count at implementation time)
 
 | Principle | Assessment |
 |---|---|
-| I. Clean Architecture, Strictly Layered | **Pass.** `TransactionTypeEffects`, widened `Transaction`/`Credit`, `SaleCoverageRule` extension live in Domain; `AssetCashFlowBuilder` Gross/Net split, DTO changes, migration orchestration live in Application/Infrastructure/Tools; `Financial.Api` controllers, `Financial.Web`, `Financial.App` are presentation-only consumers. No layer reaches backward. |
-| II. Bounded Context Isolation | **Pass.** Entirely within Investment. The migration tool *pattern* from `Tools/CashFlowSpreadsheetImport` is reused as a shape (backup-then-rewrite, summary counters), not as shared code — Investment's tool defines its own summary type rather than referencing `Financial.CashFlow.Infrastructure` (research.md #6). |
+| I. Clean Architecture, Strictly Layered | **Pass.** `TransactionTypeEffects`, widened `Transaction`/`Credit`, `SaleCoverageRule` extension live in Domain; `AssetCashFlowBuilder` Gross/Net split, DTO changes, and the document-version upgrade (`InvestmentDataMigrations`) live in Application/Infrastructure; `Financial.Api` controllers, `Financial.Web`, `Financial.App` are presentation-only consumers. No layer reaches backward. The version envelope is added by `InvestmentSerializerAdapter` via `JsonNode` post-processing, not a property on the `Investments` domain entity, keeping the persistence concern out of Domain. |
+| II. Bounded Context Isolation | **Pass.** Entirely within Investment. `CashFlowSerializerAdapter` independently gained the same `"Version"` envelope shape (constant `1`, no migration steps yet) without either context referencing the other's serializer (research.md #6, "superseded" entry). |
 | III. WPF/Web Feature Parity | **Pass, with the same deliberate deviation Wave 0 recorded**: each user story's front-end slice (React + WPF) must land in the same increment, not React-then-WPF sequentially — shipping one without the other would show two different figures/vocabularies for the same holding, which is a parity regression, not an unfinished increment. `Financial.App` continues resolving Application interfaces in-process. |
 | IV. Right-Sized Engineering | **Pass.** Eight transaction types (not the full, absent "seventeen" from the external research brief) per spec.md's own Assumptions; `TransactionTypeEffects` is a single `switch` expression, not a plugin/rule-engine abstraction. |
 | V. Test-Backed Changes | **Pass, to be detailed in `/speckit-tasks`.** xUnit + FluentAssertions, no new mocking framework; extends existing `SaleCoverageRuleTests`/`TransactionsTests`/`AssetCashFlowBuilderTests` patterns; API round-trip tests via `WebApplicationFactory`; Vitest/RTL for the widened entry forms; WPF ViewModel tests through existing conventions. |
 | VI. Evidence-Based, Spec-Driven Change | **Pass, exemplified during this feature's own clarification session**: the roadmap's G12 claim ("Rent is an FII/REIT naming leak") was checked against `data/data-investment.json` and found false — every `Rent` credit sits on non-RealEstate holdings (BBAS3/BOVA11/GOLD11/IVVB11), while every RealEstate holding already uses `Dividend`. The spec was corrected to `SecuritiesLendingIncome` before this plan was written, rather than building on the roadmap's unverified claim. |
 | VII. Incremental Vertical Delivery | **Pass.** `/speckit-tasks` slices by the spec's own priority order (US1 → US2 → US3 → US4), each a complete, independently testable/deployable increment per the spec's own "Independent Test" for each story. |
-| VIII. Production Deployability After Every Merge | **Conditional pass — one explicit deployment step required.** The `Rent` → `SecuritiesLendingIncome` enum rename is **not safely deployable on its own** without the raw-JSON migration having already run against `data/data-investment.json`, because `JsonStringEnumConverter` throws on an unrecognized stored string (research.md #5). The PR that ships the rename MUST document "run the migration tool against the production data file, then restart" as a required deployment step — the same pattern `CLAUDE.md` already establishes for every schema-widening change in this codebase ("container restart != migration run"), not a new kind of risk. |
+| VIII. Production Deployability After Every Merge | **Pass.** The `Rent` → `SecuritiesLendingIncome` enum rename ships as an on-the-fly document-version upgrade (`InvestmentDataMigrations`, research.md #6 "superseded" entry): `InvestmentSerializerAdapter.Deserialize` upgrades any document below the current version on load, so a plain process restart is the only deployment step, with no separate migration-tool run and no risk of a restart landing before a migration does. |
 
 No unjustified violations — Complexity Tracking is not needed.
 
@@ -119,9 +119,12 @@ Financial.Investment.Application/
 
 Financial.Investment.Infrastructure/
 └── Persistence/
-    └── InvestmentTypeInfoResolver.cs  # exclude new computed properties (NetCash, NetAmount)
+    ├── InvestmentTypeInfoResolver.cs     # exclude new computed properties (NetCash, NetAmount)
+    ├── InvestmentSerializerAdapter.cs    # NEW: writes/reads top-level "Version"; upgrades on load
+    └── InvestmentDataMigrations.cs       # NEW: version-gated upgrade steps (research.md #6, "superseded" entry)
 
-Tools/InvestmentTransactionIncomeVocabularyMigration/   # NEW project — Program.cs, migrator + summary (research.md #6)
+Financial.CashFlow.Infrastructure/Persistence/
+└── CashFlowSerializerAdapter.cs          # same "Version" envelope (constant 1, no steps yet)
 
 Financial.Api/Controllers/
 ├── TransactionsController.cs          # +GET /transactions/type-effects
@@ -140,19 +143,17 @@ Tests/
 ├── Financial.Investment.Domain.Tests/          # TransactionTypeEffects, widened Transactions/SaleCoverageRule/Credit
 ├── Financial.Investment.Application.Tests/     # AssetCashFlowBuilder Net mode, Summary/HoldingValuation NetOfTax
 ├── Financial.Api.Tests/                        # round-trip + OpenAPI contract snapshot
-├── Financial.InvestmentTransactionIncomeVocabularyMigration.Tests/ # migration tool
+├── Financial.Investment.Infrastructure.Tests/  # InvestmentSerializerAdapterTests: version upgrade cases
 ├── Financial.Presentation.Tests/               # WPF ViewModel tests
 └── Financial.Web (Vitest, co-located)
 ```
 
 **Structure Decision**: This feature widens existing files in the established Investment
-bounded-context layout (Domain → Application → Infrastructure → Api/App/Web), plus **one new
-project**: `Tools/InvestmentTransactionIncomeVocabularyMigration`, a small standalone console tool
-matching the shape of the existing `Tools/InvestmentDataQualityReport` (Wave 0's precedent for a
-one-purpose Investment console tool with a top-level `Program.cs`) — `Tools/InvestmentSpreadsheetImport`
-was considered but rejected as the host for this migration once inspection showed it is a class
-library with no entry point of its own, consumed only by the WPF GUI `Tools/ImportGoogleSpreadSheets`
-(research.md #6).
+bounded-context layout (Domain → Application → Infrastructure → Api/App/Web). No new project is
+needed: a standalone console migration tool (`Tools/InvestmentTransactionIncomeVocabularyMigration`)
+was built, verified against a temp copy, and run once against real data, but was then superseded by
+an on-the-fly document-version upgrade built into `InvestmentSerializerAdapter` — the tool and its
+test project were deleted (research.md #6, "superseded" entry).
 
 ## Complexity Tracking
 

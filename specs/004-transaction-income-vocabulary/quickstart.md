@@ -13,33 +13,32 @@ cd Financial.Web && npm run lint && npm test && npm run build
 `npm run build` (not just `npm test`) is required — `tsc -b` is what catches every call site still
 reading the removed `TransactionDTO.totalPrice` field after the OpenAPI regeneration step below.
 
-## 2. Migration dry run (before touching real data)
+## 2. Data version upgrade check (on-the-fly, no separate tool)
 
-Per `docs/rules/*` and the Constitution: never run a migration against the live file first.
+`InvestmentSerializerAdapter` upgrades the JSON document on load: a file with no top-level
+`"Version"` property (every file written before this feature) is treated as version 1, and
+`InvestmentDataMigrations.Apply` rewrites every `Credit.Type` string `"Rent"` to
+`"SecuritiesLendingIncome"` before the normal typed deserialization runs — no separate migration
+tool, dry run, or manual invocation is needed (research.md #6, "superseded" entry).
+
+Verify against a temp copy first (never the live file):
 
 ```bash
-cp data/data-investment.json /tmp/data-investment.migration-check.json   # or Copy-Item on Windows
-dotnet run --project Tools/InvestmentTransactionIncomeVocabularyMigration -- \
-  /tmp/data-investment.migration-check.json
+cp data/data-investment.json /tmp/data-investment.version-check.json   # or Copy-Item on Windows
 ```
 
-(Matches `Tools/InvestmentDataQualityReport`'s own "optional data-path as `args[0]`" convention —
-see research.md #6.)
-
-Verify against the copy:
-- Every `Credit.Type` string `"Rent"` in the copy is now `"SecuritiesLendingIncome"` — confirm with
-  `grep -c '"Type": "Rent"'` (expect the count in the migration tool's own summary output, not left
-  at the pre-migration count) and `grep -c '"Type": "SecuritiesLendingIncome"'` (expect the sum of
-  both counts to match the pre-migration `"Rent"` count).
+- Point a local run at the copy (`Investment:DataJsonFile` / `--project Tools/InvestmentDataQualityReport <path>`)
+  and confirm it loads without error and every `Credit` that was `"Rent"` now reports
+  `SecuritiesLendingIncome`.
+- Save through that same run (any write path — e.g. the data-quality report tool doesn't write, so
+  use the API/App against the copy) and confirm the file now has a top-level `"Version": 2` and no
+  remaining `"Type": "Rent"` strings.
 - No other field in any existing `Transaction`/`Credit` row changed value (diff the copy against
-  the original with a JSON-aware diff, or the migration tool's own report — SC-003).
-- The migration tool's summary reports the same count of rewritten rows as the pre-migration `Rent`
-  count established in the clarification session (52 at the time this spec was written — re-count
-  against the current file, since the live data changes over time).
+  the original with a JSON-aware diff — SC-003).
 
-Only after this passes: run the same command against `data/data-investment.json` directly, then
-**restart every process that reads it** (API, and `Financial.App` if running) — a restart alone
-never runs a migration (Constitution: Technology & Persistence Constraints).
+Once satisfied, **restart every process that reads the real file** (API, and `Financial.App` if
+running) — the upgrade runs automatically on that next load; a restart alone is enough, since the
+serializer (not a separate tool) performs the upgrade.
 
 ## 3. New transaction types (User Story 1)
 
