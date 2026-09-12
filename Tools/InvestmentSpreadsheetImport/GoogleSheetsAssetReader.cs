@@ -140,7 +140,7 @@ internal sealed class GoogleSheetsAssetReader
             {
                 var type = value.Count > CreditTypeColumn ? (string)value[CreditTypeColumn] : string.Empty;
                 var creditType = type == RentCreditType
-                    ? Credit.CreditType.Rent
+                    ? Credit.CreditType.SecuritiesLendingIncome
                     : type.Contains(JcpCreditTypeKeyword, StringComparison.OrdinalIgnoreCase)
                         ? Credit.CreditType.JCP
                         : Credit.CreditType.Dividend;

@@ -76,7 +76,7 @@ public class SummaryServiceTests
         var asset = MakeAsset();
         asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 10m, 10m, 0m));
         asset.AddCredit(Credit.Create(DateTime.Today, Credit.CreditType.Dividend, 30m));
-        asset.AddCredit(Credit.Create(DateTime.Today, Credit.CreditType.Rent, 15m));
+        asset.AddCredit(Credit.Create(DateTime.Today, Credit.CreditType.SecuritiesLendingIncome, 15m));
         _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", asset)];
 
         var result = CreateService().GetBrokerSummary("XPI");

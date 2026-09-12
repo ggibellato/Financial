@@ -69,13 +69,13 @@ public class CreditServiceTests
                 AssetName = "BCIA11",
                 Id = creditId,
                 Date = new DateTime(2024, 2, 2),
-                Type = "Rent",
+                Type = "SecuritiesLendingIncome",
                 Value = 8.75m
             });
 
             updated.Should().NotBeNull();
             var updatedCredit = updated!.Credits.Single(credit => credit.Id == creditId);
-            updatedCredit.Type.Should().Be("Rent");
+            updatedCredit.Type.Should().Be("SecuritiesLendingIncome");
             updatedCredit.Value.Should().Be(8.75m);
         }
         finally
@@ -112,6 +112,60 @@ public class CreditServiceTests
 
             updated.Should().NotBeNull();
             updated!.Credits.Should().NotContain(credit => credit.Id == creditId);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
+    public async Task AddCredit_CouponWithWithheld_PersistsAndRoundTripsNetAmount()
+    {
+        var (service, tempFile) = CreateService();
+        try
+        {
+            var result = await service.AddCreditAsync(new CreditCreateDTO
+            {
+                BrokerName = "XPI",
+                PortfolioName = "Default",
+                AssetName = "BCIA11",
+                Date = new DateTime(2024, 2, 4),
+                Type = "Coupon",
+                Value = 100m,
+                Withheld = 15m
+            });
+
+            result.Should().NotBeNull();
+            var credit = result!.Credits.Single(c => c.Date == new DateTime(2024, 2, 4));
+            credit.Type.Should().Be("Coupon");
+            credit.Withheld.Should().Be(15m);
+            credit.NetAmount.Should().Be(85m);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
+    public async Task AddCredit_NegativeValue_PersistsAsACorrection()
+    {
+        var (service, tempFile) = CreateService();
+        try
+        {
+            var result = await service.AddCreditAsync(new CreditCreateDTO
+            {
+                BrokerName = "XPI",
+                PortfolioName = "Default",
+                AssetName = "BCIA11",
+                Date = new DateTime(2024, 2, 5),
+                Type = "Dividend",
+                Value = -20m
+            });
+
+            result.Should().NotBeNull();
+            result!.Credits.Should().Contain(c => c.Date == new DateTime(2024, 2, 5) && c.Value == -20m);
         }
         finally
         {

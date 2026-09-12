@@ -40,7 +40,7 @@ public sealed class CreditService : ICreditService, ICreditQueryService
                 CreditTypeParser.TryParse,
                 (asset, creditType) =>
                 {
-                    var credit = Credit.Create(request.Date, creditType, request.Value);
+                    var credit = Credit.Create(request.Date, creditType, request.Value, request.Withheld);
                     asset.AddCredit(credit);
                     return true;
                 }).ConfigureAwait(false);
@@ -79,7 +79,7 @@ public sealed class CreditService : ICreditService, ICreditQueryService
                 CreditTypeParser.TryParse,
                 (asset, creditType) =>
                 {
-                    var updatedCredit = Credit.CreateWithId(request.Id, request.Date, creditType, request.Value);
+                    var updatedCredit = Credit.CreateWithId(request.Id, request.Date, creditType, request.Value, request.Withheld);
                     return asset.UpdateCredit(updatedCredit);
                 }).ConfigureAwait(false);
 

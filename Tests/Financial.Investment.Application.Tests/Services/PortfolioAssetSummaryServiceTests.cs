@@ -275,7 +275,7 @@ public class PortfolioAssetSummaryServiceTests
         var asset = MakeAsset("TEST", "TST", "BVMF");
         asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 1m, 10m, 0m));
         asset.AddCredit(Credit.Create(new DateTime(2023, 1, 1), Credit.CreditType.Dividend, 30m));
-        asset.AddCredit(Credit.Create(new DateTime(2023, 6, 1), Credit.CreditType.Rent, 15m));
+        asset.AddCredit(Credit.Create(new DateTime(2023, 6, 1), Credit.CreditType.SecuritiesLendingIncome, 15m));
         _repository.AssetsByBrokerPortfolio = [asset];
 
         var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");

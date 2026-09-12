@@ -294,7 +294,7 @@ public class AssetTests
         var credits = new[]
         {
             Credit.CreateWithId(Guid.NewGuid(), new DateTime(2024, 2, 1), Credit.CreditType.Dividend, 10m),
-            Credit.CreateWithId(Guid.NewGuid(), new DateTime(2024, 3, 1), Credit.CreditType.Rent, 20m),
+            Credit.CreateWithId(Guid.NewGuid(), new DateTime(2024, 3, 1), Credit.CreditType.SecuritiesLendingIncome, 20m),
         };
 
         asset.AddCredits(credits);

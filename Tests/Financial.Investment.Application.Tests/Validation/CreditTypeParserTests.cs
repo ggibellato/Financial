@@ -15,8 +15,8 @@ public class CreditTypeParserTests
     [InlineData("Dividend", "Dividend")]
     [InlineData("DIVIDEND", "Dividend")]
     [InlineData("dividend", "Dividend")]
-    [InlineData("Rent", "Rent")]
-    [InlineData("rENT", "Rent")]
+    [InlineData("SecuritiesLendingIncome", "SecuritiesLendingIncome")]
+    [InlineData("secURITIESlendingincome", "SecuritiesLendingIncome")]
     [InlineData("JCP", "JCP")]
     [InlineData("jcp", "JCP")]
     public void TryNormalize_WhenValueMatches_ReturnsCanonicalValue(string value, string expected)
@@ -73,8 +73,8 @@ public class CreditTypeParserTests
 
     [Theory]
     [InlineData("Dividend", Credit.CreditType.Dividend)]
-    [InlineData("RENT", Credit.CreditType.Rent)]
-    [InlineData(" Rent ", Credit.CreditType.Rent)]
+    [InlineData("SECURITIESLENDINGINCOME", Credit.CreditType.SecuritiesLendingIncome)]
+    [InlineData(" SecuritiesLendingIncome ", Credit.CreditType.SecuritiesLendingIncome)]
     [InlineData("JCP", Credit.CreditType.JCP)]
     [InlineData(" jcp ", Credit.CreditType.JCP)]
     public void TryParse_WhenValueValid_ReturnsTrueAndParsed(string value, Credit.CreditType expected)

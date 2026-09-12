@@ -120,7 +120,9 @@ internal static class NavigationMapper
             Id = credit.Id,
             Date = credit.Date,
             Type = credit.Type.ToString(),
-            Value = credit.Value
+            Value = credit.Value,
+            Withheld = credit.Withheld,
+            NetAmount = credit.NetAmount
         };
     }
 

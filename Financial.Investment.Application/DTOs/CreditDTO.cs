@@ -9,5 +9,9 @@ public class CreditDTO
     public required string Type { get; set; }
 
     public decimal Value { get; set; }
+
+    public decimal Withheld { get; set; }
+
+    public decimal NetAmount { get; set; }
 }
 

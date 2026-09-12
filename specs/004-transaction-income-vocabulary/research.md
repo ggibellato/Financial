@@ -70,17 +70,33 @@ type per FR-006, not as a `Credit`).
 
 ## 4. Cash-flow builder: Gross vs Net series (FR-016, FR-017)
 
-**Decision**: `AssetCashFlowBuilder` (`Financial.Investment.Application/Services/AssetCashFlowBuilder.cs`)
-gains two build modes instead of one:
+**Decision — refined during implementation**: `AssetCashFlowBuilder`
+(`Financial.Investment.Application/Services/AssetCashFlowBuilder.cs`) gains a Net-of-tax build mode
+alongside the existing one, but the two series differ **only on the credit (income) side**, not on
+the transaction side:
 
-- **Gross series**: transaction amount = signed `(Gross ± Fees)` ignoring Withheld; income amount =
-  `Gross`. This is "what the return would be if no tax had ever been withheld" — the existing
-  `BuildWithCredits`/`BuildWithoutCredits` behavior, extended to the full type vocabulary via
-  decision #2's `NetCash`-minus-Withheld variant.
-- **Net series**: transaction amount = `NetCash` (decision #2, Withheld included); income amount =
-  `NetAmount` (decision #3).
-- Types with `QuantityEffect = None` and `CashEffect = None` never occur (Transfer In/Out always
-  have a quantity effect); every other type contributes to both series per decisions #1–#3.
+- **Transaction side (both series, unchanged)**: amount = `Transaction.NetCash` (decision #2). A
+  Transaction's own `Withheld` is real but the spec and this codebase's data both treat it as
+  effectively never occurring in practice (withholding happens on income, not on a buy/sell/fee) —
+  splitting a second "ignore Transaction.Withheld" transaction figure out of `NetCash` would add a
+  property and a formula whose two outputs are identical for every transaction that exists today,
+  to satisfy a case the domain doesn't produce. If a Transaction ever *does* carry a nonzero
+  `Withheld`, both series reflect it identically, which does not violate FR-017/FR-018 — those
+  requirements are about a *portfolio* being able to show a differing figure when withholding
+  exists anywhere, not about attributing that difference to a specific side.
+- **Credit (income) side**: Gross series uses `Credit.Value`; Net series uses `Credit.NetAmount`
+  (decision #3). This is the one place the two series actually diverge, since income withholding is
+  where FR-017/FR-018's "tax already taken into account" scenario lives (spec.md User Story 3 is
+  framed entirely around "an income payment", never a transaction).
+- The existing `BuildWithCredits`/`BuildWithoutCredits`/`ConcatenateWithCredits`/`ConcatenateWithoutCredits`
+  method names and bodies are therefore the **Gross** series unchanged (no edit needed beyond the
+  already-landed `NetCash`/`NetAmount` widening); a new `BuildNetOfTaxWithCredits`/
+  `ConcatenateNetOfTaxWithCredits` pair adds the Net series, reusing `BuildFromTransactions` and
+  substituting `c.NetAmount` for `c.Value` on the credit side.
+- `BuildWithoutCredits`/`ConcatenateWithoutCredits` (price-only, no income at all) has no Net
+  counterpart — per contracts/api-contract.md, `PriceOnlyReturn` already excludes all income by
+  construction, so a "net of tax" variant of a series with no income in it is not a meaningful
+  second figure.
 
 `XirrCalculator` itself (`Financial.Investment.Domain/Rules/XirrCalculator.cs`) is unchanged (FR-019)
 — it is a pure solver over `(DateTime, decimal)` pairs; only the series `AssetCashFlowBuilder` and
