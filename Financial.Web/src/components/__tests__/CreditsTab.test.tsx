@@ -440,4 +440,26 @@ describe('CreditsTab', () => {
     fireEvent.change(screen.getByLabelText(/^Value/), { target: { value: '99.5' } })
     expect(mockSetFormField).toHaveBeenCalledWith('formValue', '99.5')
   })
+
+  it('shows_the_fx_provenance_affordance_for_a_credit_with_a_captured_snapshot', () => {
+    setMock({
+      credits: [
+        {
+          ...CREDIT_DIVIDEND,
+          currency: 'BRL',
+          fxRateSnapshot: { toCurrency: 'GBP', rate: 0.146, source: 'Frankfurter', retrievedAt: '2026-07-01T08:00:00Z' },
+        },
+      ],
+    })
+    render(<CreditsTab />)
+
+    expect(screen.getByRole('button', { name: 'FX conversion details' })).toBeInTheDocument()
+  })
+
+  it('does_not_show_the_fx_provenance_affordance_for_a_credit_without_a_captured_snapshot', () => {
+    setMock({ credits: [{ ...CREDIT_DIVIDEND, currency: 'GBP', fxRateSnapshot: null }] })
+    render(<CreditsTab />)
+
+    expect(screen.queryByRole('button', { name: 'FX conversion details' })).not.toBeInTheDocument()
+  })
 })
