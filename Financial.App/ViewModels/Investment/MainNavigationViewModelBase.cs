@@ -576,13 +576,13 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
 
         if (selectedNode.NodeType == TreeNodeType.Portfolio)
         {
-            LoadPortfolioCredits(selectedNode);
+            _ = LoadPortfolioCreditsAsync(selectedNode);
             return;
         }
 
         if (selectedNode.NodeType == TreeNodeType.Broker)
         {
-            LoadBrokerCredits(selectedNode);
+            _ = LoadBrokerCreditsAsync(selectedNode);
             return;
         }
 
@@ -628,7 +628,7 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
         }
     }
 
-    private void LoadPortfolioCredits(TreeNodeViewModel portfolioNode)
+    private async Task LoadPortfolioCreditsAsync(TreeNodeViewModel portfolioNode)
     {
         var portfolioName = portfolioNode.GetMetadata<string>(NavigationMetadataKeys.PortfolioName);
         var brokerNode = portfolioNode.Parent;
@@ -646,14 +646,14 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
             return;
         }
 
-        var summary = _summaryService.GetPortfolioSummary(brokerName, portfolioName, _scope);
+        var summary = await _summaryService.GetPortfolioSummaryAsync(brokerName, portfolioName, _scope);
         var credits = _creditQueryService.GetCreditsByPortfolio(brokerName, portfolioName, _scope);
         var assetItems = _portfolioAssetSummaryService.GetPortfolioAssetsSummary(brokerName, portfolioName, _scope);
         AssetDetails.LoadPortfolioSummary(brokerName, portfolioName, summary, credits, assetItems);
         _ = AssetDetails.Transactions.LoadPortfolio(brokerName, portfolioName);
     }
 
-    private void LoadBrokerCredits(TreeNodeViewModel brokerNode)
+    private async Task LoadBrokerCreditsAsync(TreeNodeViewModel brokerNode)
     {
         var brokerName = brokerNode.GetMetadata<string>(NavigationMetadataKeys.BrokerName);
         if (brokerName == null)
@@ -662,7 +662,7 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
             return;
         }
 
-        var summary = _summaryService.GetBrokerSummary(brokerName, _scope);
+        var summary = await _summaryService.GetBrokerSummaryAsync(brokerName, _scope);
         var credits = _creditQueryService.GetCreditsByBroker(brokerName, _scope);
         AssetDetails.LoadBrokerSummary(brokerName, summary, credits);
         _ = AssetDetails.LoadBrokerBreakdown(brokerName);

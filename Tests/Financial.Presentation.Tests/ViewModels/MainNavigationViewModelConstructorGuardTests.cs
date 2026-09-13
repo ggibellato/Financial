@@ -372,8 +372,8 @@ public class MainNavigationViewModelConstructorGuardTests
 
     private sealed class StubSummaryService : ISummaryService
     {
-        public AggregatedSummaryDTO GetBrokerSummary(string brokerName, InvestmentScope scope = InvestmentScope.Active) => throw new NotImplementedException();
-        public AggregatedSummaryDTO GetPortfolioSummary(string brokerName, string portfolioName, InvestmentScope scope = InvestmentScope.Active) => throw new NotImplementedException();
+        public Task<AggregatedSummaryDTO> GetBrokerSummaryAsync(string brokerName, InvestmentScope scope = InvestmentScope.Active) => throw new NotImplementedException();
+        public Task<AggregatedSummaryDTO> GetPortfolioSummaryAsync(string brokerName, string portfolioName, InvestmentScope scope = InvestmentScope.Active) => throw new NotImplementedException();
     }
 
     private sealed class StubPortfolioAssetSummaryService : IPortfolioAssetSummaryService
