@@ -103,6 +103,34 @@ public class AssetDetailsViewModelBrokerSummaryTests
     }
 
     [Fact]
+    public void Clear_AfterLoadBrokerSummary_ResetsConvertedFieldsAndReportingCurrency()
+    {
+        var vm = BuildViewModel();
+        var summary = new AggregatedSummaryDTO
+        {
+            ReportingCurrency = "GBP",
+            ConvertedMarketValue = 100m,
+            ConvertedInvested = 90m,
+            ConvertedUnrealisedGainLoss = 10m,
+            ConvertedTotalReturn = 0.1m,
+            ConvertedTotalReturnNetOfTax = 0.09m,
+            IsPartial = true,
+        };
+        vm.LoadBrokerSummary("XPI", summary, []);
+
+        vm.Clear();
+
+        vm.ReportingCurrency.Should().BeEmpty();
+        vm.ConvertedMarketValue.Should().BeNull();
+        vm.ConvertedInvested.Should().BeNull();
+        vm.ConvertedUnrealisedGainLoss.Should().BeNull();
+        vm.ConvertedTotalReturn.Should().BeNull();
+        vm.ConvertedTotalReturnNetOfTax.Should().BeNull();
+        vm.IsPartial.Should().BeFalse();
+        vm.IsReportingCurrencyUnavailable.Should().BeFalse();
+    }
+
+    [Fact]
     public void LoadBrokerSummary_LoadsCreditsForCreditsTab()
     {
         var vm = BuildViewModel();
@@ -387,6 +415,59 @@ public class AssetDetailsViewModelBrokerSummaryTests
 
         vm.OverallBreakdownPlotModel.Should().BeNull();
         vm.PortfolioBreakdownPieItems.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void LoadBrokerSummary_SetsEveryConvertedFieldAndReportingCurrency()
+    {
+        var vm = BuildViewModel();
+        var summary = new AggregatedSummaryDTO
+        {
+            ReportingCurrency = "GBP",
+            ConvertedMarketValue = 168.55m,
+            ConvertedInvested = 146.60m,
+            ConvertedUnrealisedGainLoss = 21.95m,
+            ConvertedTotalReturn = 0.145m,
+            ConvertedTotalReturnNetOfTax = 0.135m,
+            IsPartial = false,
+            IsReportingCurrencyUnavailable = false,
+        };
+
+        vm.LoadBrokerSummary("XPI", summary, []);
+
+        vm.ReportingCurrency.Should().Be("GBP");
+        vm.ConvertedMarketValue.Should().Be(168.55m);
+        vm.ConvertedInvested.Should().Be(146.60m);
+        vm.ConvertedUnrealisedGainLoss.Should().Be(21.95m);
+        vm.ConvertedTotalReturn.Should().Be(0.145m);
+        vm.ConvertedTotalReturnNetOfTax.Should().Be(0.135m);
+        vm.IsPartial.Should().BeFalse();
+        vm.IsReportingCurrencyUnavailable.Should().BeFalse();
+        vm.IsReportingCurrencyAvailable.Should().BeTrue();
+    }
+
+    [Fact]
+    public void LoadBrokerSummary_WithPartial_SetsIsPartialTrue()
+    {
+        var vm = BuildViewModel();
+        var summary = new AggregatedSummaryDTO { ReportingCurrency = "GBP", IsPartial = true };
+
+        vm.LoadBrokerSummary("XPI", summary, []);
+
+        vm.IsPartial.Should().BeTrue();
+        vm.IsReportingCurrencyUnavailable.Should().BeFalse();
+    }
+
+    [Fact]
+    public void LoadBrokerSummary_WithReportingCurrencyUnavailable_SetsFlagAndIsReportingCurrencyAvailableFalse()
+    {
+        var vm = BuildViewModel();
+        var summary = new AggregatedSummaryDTO { ReportingCurrency = "GBP", IsReportingCurrencyUnavailable = true };
+
+        vm.LoadBrokerSummary("XPI", summary, []);
+
+        vm.IsReportingCurrencyUnavailable.Should().BeTrue();
+        vm.IsReportingCurrencyAvailable.Should().BeFalse();
     }
 
     private sealed class BlockingBrokerBreakdownService : IBrokerBreakdownService

@@ -259,6 +259,7 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
                     <TextBlock Grid.Row="0" Grid.Column="0" Text="Total Bought:" FontWeight="Bold" Margin="0,5"/>
@@ -375,6 +376,69 @@
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
+
+                    <StackPanel Grid.Row="10" Grid.Column="0" Grid.ColumnSpan="4" Margin="0,15,0,0"
+                                Visibility="{Binding AssetDetails.IsReportingCurrencyAvailable, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <Border BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" BorderThickness="0,1,0,0" Margin="0,0,0,10"/>
+                        <TextBlock Text="{Binding AssetDetails.ReportingCurrency, StringFormat='Converted to {0}'}" FontWeight="Bold" FontSize="13" Margin="0,0,0,8"/>
+                        <TextBlock Text="Some figures could not be converted; showing a partial total."
+                                   Foreground="{DynamicResource SystemFillColorCautionBrush}"
+                                   FontStyle="Italic"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,8"
+                                   AutomationProperties.LiveSetting="Polite"
+                                   Visibility="{Binding AssetDetails.IsPartial, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Invested:" FontWeight="Bold" Margin="0,5"/>
+                            <TextBlock Grid.Row="0" Grid.Column="1"
+                                       Text="{Binding AssetDetails.ConvertedInvested, Mode=OneWay, StringFormat=N2, TargetNullValue='—'}"
+                                       TextAlignment="Right" FontFamily="Consolas" Margin="10,5"
+                                       Foreground="{Binding AssetDetails.ConvertedInvested, Converter={StaticResource SignedValueToBrushConverter}}"/>
+
+                            <TextBlock Grid.Row="0" Grid.Column="2" Text="Market Value:" FontWeight="Bold" Margin="20,5,0,5"/>
+                            <TextBlock Grid.Row="0" Grid.Column="3"
+                                       Text="{Binding AssetDetails.ConvertedMarketValue, Mode=OneWay, StringFormat=N2, TargetNullValue='—'}"
+                                       TextAlignment="Right" FontFamily="Consolas" Margin="10,5"/>
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Unrealised Gain/Loss:" FontWeight="Bold" Margin="0,5"/>
+                            <TextBlock Grid.Row="1" Grid.Column="1"
+                                       Text="{Binding AssetDetails.ConvertedUnrealisedGainLoss, Mode=OneWay, StringFormat=N2, TargetNullValue='—'}"
+                                       TextAlignment="Right" FontFamily="Consolas" Margin="10,5"
+                                       Foreground="{Binding AssetDetails.ConvertedUnrealisedGainLoss, Converter={StaticResource SignedValueToBrushConverter}}"/>
+
+                            <TextBlock Grid.Row="1" Grid.Column="2" Text="Total Return:" FontWeight="Bold" Margin="20,5,0,5"/>
+                            <TextBlock Grid.Row="1" Grid.Column="3"
+                                       Text="{Binding AssetDetails.ConvertedTotalReturn, Mode=OneWay, StringFormat=P2, TargetNullValue='—'}"
+                                       TextAlignment="Right" FontFamily="Consolas" Margin="10,5"
+                                       Foreground="{Binding AssetDetails.ConvertedTotalReturn, Converter={StaticResource SignedValueToBrushConverter}}"/>
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Total Return (Net of Tax):" FontWeight="Bold" Margin="0,5"/>
+                            <TextBlock Grid.Row="2" Grid.Column="1"
+                                       Text="{Binding AssetDetails.ConvertedTotalReturnNetOfTax, Mode=OneWay, StringFormat=P2, TargetNullValue='—'}"
+                                       TextAlignment="Right" FontFamily="Consolas" Margin="10,5"
+                                       Foreground="{Binding AssetDetails.ConvertedTotalReturnNetOfTax, Converter={StaticResource SignedValueToBrushConverter}}"/>
+                        </Grid>
+                    </StackPanel>
+
+                    <TextBlock Grid.Row="10" Grid.Column="0" Grid.ColumnSpan="4" Margin="0,15,0,0"
+                               Text="Converted totals unavailable — showing native-currency figures only."
+                               Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                               FontStyle="Italic"
+                               TextWrapping="Wrap"
+                               AutomationProperties.LiveSetting="Polite"
+                               Visibility="{Binding AssetDetails.IsReportingCurrencyUnavailable, Converter={StaticResource BoolToVisibilityConverter}}"/>
                 </Grid>
             </ScrollViewer>
         </DataTemplate>
