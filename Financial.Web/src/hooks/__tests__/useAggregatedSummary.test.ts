@@ -49,6 +49,14 @@ const SUMMARY_DTO: AggregatedSummaryDto = {
   priceOnlyReturn: 0.08,
   totalReturn: 0.1,
   totalReturnNetOfTax: 0.09,
+  reportingCurrency: 'GBP',
+  convertedMarketValue: null,
+  convertedInvested: null,
+  convertedUnrealisedGainLoss: null,
+  convertedTotalReturn: null,
+  convertedTotalReturnNetOfTax: null,
+  isPartial: false,
+  isReportingCurrencyUnavailable: false,
 }
 
 describe('useAggregatedSummary', () => {

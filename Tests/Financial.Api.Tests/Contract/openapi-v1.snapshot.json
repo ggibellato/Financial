@@ -3,9 +3,50 @@
     "schemas": {
       "AggregatedSummaryDTO": {
         "properties": {
+          "convertedInvested": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "convertedMarketValue": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "convertedTotalReturn": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "convertedTotalReturnNetOfTax": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "convertedUnrealisedGainLoss": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
           "holdingCount": {
             "format": "int32",
             "type": "integer"
+          },
+          "isPartial": {
+            "type": "boolean"
+          },
+          "isReportingCurrencyUnavailable": {
+            "type": "boolean"
           },
           "marketValue": {
             "format": "double",
@@ -20,6 +61,9 @@
               "null",
               "number"
             ]
+          },
+          "reportingCurrency": {
+            "type": "string"
           },
           "totalBought": {
             "format": "double",

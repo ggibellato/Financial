@@ -33,9 +33,9 @@ public sealed class SummaryController : ControllerBase
     [HttpGet("broker/{brokerName}")]
     [ProducesResponseType(typeof(AggregatedSummaryDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public ActionResult<AggregatedSummaryDTO> GetBrokerSummary(string brokerName, [FromQuery] string? scope)
+    public async Task<ActionResult<AggregatedSummaryDTO>> GetBrokerSummary(string brokerName, [FromQuery] string? scope)
     {
-        var dto = _summaryService.GetBrokerSummary(brokerName, InvestmentScopeParser.ParseOrDefault(scope));
+        var dto = await _summaryService.GetBrokerSummaryAsync(brokerName, InvestmentScopeParser.ParseOrDefault(scope)).ConfigureAwait(false);
         return Ok(dto);
     }
 
@@ -47,12 +47,12 @@ public sealed class SummaryController : ControllerBase
     [HttpGet("portfolio/{brokerName}/{portfolioName}")]
     [ProducesResponseType(typeof(AggregatedSummaryDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public ActionResult<AggregatedSummaryDTO> GetPortfolioSummary(
+    public async Task<ActionResult<AggregatedSummaryDTO>> GetPortfolioSummary(
         string brokerName,
         string portfolioName,
         [FromQuery] string? scope)
     {
-        var dto = _summaryService.GetPortfolioSummary(brokerName, portfolioName, InvestmentScopeParser.ParseOrDefault(scope));
+        var dto = await _summaryService.GetPortfolioSummaryAsync(brokerName, portfolioName, InvestmentScopeParser.ParseOrDefault(scope)).ConfigureAwait(false);
         return Ok(dto);
     }
 

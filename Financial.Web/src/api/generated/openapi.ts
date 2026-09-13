@@ -5637,12 +5637,25 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         AggregatedSummaryDTO: {
+            /** Format: double */
+            convertedInvested: null | number;
+            /** Format: double */
+            convertedMarketValue: null | number;
+            /** Format: double */
+            convertedTotalReturn: null | number;
+            /** Format: double */
+            convertedTotalReturnNetOfTax: null | number;
+            /** Format: double */
+            convertedUnrealisedGainLoss: null | number;
             /** Format: int32 */
             holdingCount: number;
+            isPartial: boolean;
+            isReportingCurrencyUnavailable: boolean;
             /** Format: double */
             marketValue: null | number;
             /** Format: double */
             priceOnlyReturn: null | number;
+            reportingCurrency: string;
             /** Format: double */
             totalBought: number;
             /** Format: double */

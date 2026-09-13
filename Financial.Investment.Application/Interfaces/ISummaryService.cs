@@ -5,6 +5,6 @@ namespace Financial.Investment.Application.Interfaces;
 
 public interface ISummaryService
 {
-    AggregatedSummaryDTO GetBrokerSummary(string brokerName, InvestmentScope scope = InvestmentScope.Active);
-    AggregatedSummaryDTO GetPortfolioSummary(string brokerName, string portfolioName, InvestmentScope scope = InvestmentScope.Active);
+    Task<AggregatedSummaryDTO> GetBrokerSummaryAsync(string brokerName, InvestmentScope scope = InvestmentScope.Active);
+    Task<AggregatedSummaryDTO> GetPortfolioSummaryAsync(string brokerName, string portfolioName, InvestmentScope scope = InvestmentScope.Active);
 }

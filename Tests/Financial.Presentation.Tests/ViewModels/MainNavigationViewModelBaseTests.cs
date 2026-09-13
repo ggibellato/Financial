@@ -788,27 +788,27 @@ public class MainNavigationViewModelBaseTests
 
     internal sealed class StubSummaryService : ISummaryService
     {
-        public AggregatedSummaryDTO BrokerSummary { get; set; } = new();
-        public AggregatedSummaryDTO PortfolioSummary { get; set; } = new();
+        public AggregatedSummaryDTO BrokerSummary { get; set; } = new() { ReportingCurrency = "GBP" };
+        public AggregatedSummaryDTO PortfolioSummary { get; set; } = new() { ReportingCurrency = "GBP" };
         public string? LastBrokerNameForBroker { get; private set; }
         public string? LastBrokerNameForPortfolio { get; private set; }
         public string? LastPortfolioName { get; private set; }
         public InvestmentScope? LastScopeForBroker { get; private set; }
         public InvestmentScope? LastScopeForPortfolio { get; private set; }
 
-        public AggregatedSummaryDTO GetBrokerSummary(string brokerName, InvestmentScope scope = InvestmentScope.Active)
+        public Task<AggregatedSummaryDTO> GetBrokerSummaryAsync(string brokerName, InvestmentScope scope = InvestmentScope.Active)
         {
             LastBrokerNameForBroker = brokerName;
             LastScopeForBroker = scope;
-            return BrokerSummary;
+            return Task.FromResult(BrokerSummary);
         }
 
-        public AggregatedSummaryDTO GetPortfolioSummary(string brokerName, string portfolioName, InvestmentScope scope = InvestmentScope.Active)
+        public Task<AggregatedSummaryDTO> GetPortfolioSummaryAsync(string brokerName, string portfolioName, InvestmentScope scope = InvestmentScope.Active)
         {
             LastBrokerNameForPortfolio = brokerName;
             LastPortfolioName = portfolioName;
             LastScopeForPortfolio = scope;
-            return PortfolioSummary;
+            return Task.FromResult(PortfolioSummary);
         }
     }
 

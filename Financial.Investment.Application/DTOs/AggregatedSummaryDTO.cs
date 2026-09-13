@@ -12,4 +12,18 @@ public sealed class AggregatedSummaryDTO
     public decimal? PriceOnlyReturn { get; init; }
     public decimal? TotalReturn { get; init; }
     public decimal? TotalReturnNetOfTax { get; init; }
+
+    /// <summary>The currency every <c>Converted*</c> figure below is expressed in.</summary>
+    public string ReportingCurrency { get; init; } = string.Empty;
+    public decimal? ConvertedMarketValue { get; init; }
+    public decimal? ConvertedInvested { get; init; }
+    public decimal? ConvertedUnrealisedGainLoss { get; init; }
+    public decimal? ConvertedTotalReturn { get; init; }
+    public decimal? ConvertedTotalReturnNetOfTax { get; init; }
+
+    /// <summary>True when some, but not all, contributing records converted successfully.</summary>
+    public bool IsPartial { get; init; }
+
+    /// <summary>True when no contributing record could be converted; every <c>Converted*</c> figure above is null.</summary>
+    public bool IsReportingCurrencyUnavailable { get; init; }
 }
