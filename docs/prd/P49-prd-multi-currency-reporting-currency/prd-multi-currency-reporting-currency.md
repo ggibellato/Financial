@@ -431,12 +431,12 @@ graph TD
       while native-currency figures stay visible
 
 ### F05. WPF — Reporting Currency
-- [ ] The same "Reporting Currency" control, same three options, and the same persistence via F03's
+- [x] **P49-F05-wpf-reporting-currency-01** The same "Reporting Currency" control, same three options, and the same persistence via F03's
       setting endpoint are present in `Financial.App`'s Settings area
-- [ ] The portfolio dashboard and broker-level views show the same converted-total presentation and
+- [x] **P49-F05-wpf-reporting-currency-02** The portfolio dashboard and broker-level views show the same converted-total presentation and
       labelling as `Financial.Web`, for the same underlying data
-- [ ] The same provenance affordance (rate, source, retrieved-at) is available for a converted figure
-- [ ] `Partial` and `ReportingCurrencyUnavailable` states are shown with the same meaning and the same
+- [x] **P49-F05-wpf-reporting-currency-03** The same provenance affordance (rate, source, retrieved-at) is available for a converted figure
+- [x] **P49-F05-wpf-reporting-currency-04** `Partial` and `ReportingCurrencyUnavailable` states are shown with the same meaning and the same
       native-currency fallback behaviour as `Financial.Web`
 
 ### Cross-Feature Integration
@@ -445,8 +445,8 @@ graph TD
 - [ ] A Transaction/Credit's `Currency`, amount and date (F02) feed correctly into F03's per-record
       conversion, and the resulting converted portfolio/broker total is arithmetically consistent with
       summing each record's own converted amount
-- [ ] F03's reporting-currency setting and converted totals render identically (same numbers, same
+- [x] F03's reporting-currency setting and converted totals render identically (same numbers, same
       labels, same partial/unavailable flags) in both F04 (React) and F05 (WPF) for the same underlying
       data
-- [ ] F02's entry-time `FxRateSnapshot` for a given record displays identically (rate, source,
+- [x] F02's entry-time `FxRateSnapshot` for a given record displays identically (rate, source,
       retrieved-at) in both F04 and F05's provenance affordance
