@@ -107,16 +107,23 @@ public class Expense
         {
             ValidatePaymentShape(paymentSourceBank, creditCard);
 
-            // Only Settle() is meant to make Date diverge from ChargeDate; keep them in sync
-            // while still unsettled so a corrected Date doesn't leave ChargeDate stale.
-            if (PaymentStatus == ExpensePaymentStatus.CreditCardCharge && creditCard is not null)
+            var wasCardCharge = PaymentStatus == ExpensePaymentStatus.CreditCardCharge;
+
+            if (creditCard is not null)
             {
-                if (InvoiceDate == FirstOfMonth(Date))
+                // Only Settle() is meant to make Date diverge from ChargeDate; keep them in sync
+                // while still unsettled so a corrected Date doesn't leave ChargeDate stale.
+                if (!wasCardCharge || InvoiceDate == FirstOfMonth(Date))
                 {
                     InvoiceDate = FirstOfMonth(date);
                 }
 
                 ChargeDate = date;
+            }
+            else if (wasCardCharge)
+            {
+                ChargeDate = null;
+                InvoiceDate = null;
             }
 
             PaymentSourceBank = paymentSourceBank;
