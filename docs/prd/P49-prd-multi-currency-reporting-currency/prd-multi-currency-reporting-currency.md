@@ -403,19 +403,19 @@ graph TD
       untouched by the backfill rather than writing a guessed value
 
 ### F03. Reporting Currency Setting and Converted Totals
-- [ ] **P49-F03-reporting-currency-setting-and-converted-totals-01** The reporting-currency setting persists server-side and defaults to `GBP` before the user ever
+- [x] **P49-F03-reporting-currency-setting-and-converted-totals-01** The reporting-currency setting persists server-side and defaults to `GBP` before the user ever
       changes it
-- [ ] **P49-F03-reporting-currency-setting-and-converted-totals-02** `AggregatedSummaryDTO` at portfolio level and at each broker level includes the converted fields
+- [x] **P49-F03-reporting-currency-setting-and-converted-totals-02** `AggregatedSummaryDTO` at portfolio level and at each broker level includes the converted fields
       alongside every existing native-currency field, unchanged
-- [ ] **P49-F03-reporting-currency-setting-and-converted-totals-03** Changing the reporting-currency setting changes the converted figures on the very next read, with
+- [x] **P49-F03-reporting-currency-setting-and-converted-totals-03** Changing the reporting-currency setting changes the converted figures on the very next read, with
       no stale cached value
-- [ ] **P49-F03-reporting-currency-setting-and-converted-totals-04** A flow-based converted figure (invested, realised, income, total return) equals the sum of each
+- [x] **P49-F03-reporting-currency-setting-and-converted-totals-04** A flow-based converted figure (invested, realised, income, total return) equals the sum of each
       contributing transaction/credit converted individually at its own date's rate, not the native
       total converted by a single spot rate
-- [ ] **P49-F03-reporting-currency-setting-and-converted-totals-05** Market value converts using the most recent available rate as of the query date
-- [ ] **P49-F03-reporting-currency-setting-and-converted-totals-06** When some contributing records cannot be converted, the response is flagged `Partial` and still
+- [x] **P49-F03-reporting-currency-setting-and-converted-totals-05** Market value converts using the most recent available rate as of the query date
+- [x] **P49-F03-reporting-currency-setting-and-converted-totals-06** When some contributing records cannot be converted, the response is flagged `Partial` and still
       returns the total computed from what did convert
-- [ ] **P49-F03-reporting-currency-setting-and-converted-totals-07** When the FX provider is unreachable for the whole request, the response is flagged
+- [x] **P49-F03-reporting-currency-setting-and-converted-totals-07** When the FX provider is unreachable for the whole request, the response is flagged
       `ReportingCurrencyUnavailable` and every native-currency field is still returned correctly
 
 ### F04. React — Reporting Currency
