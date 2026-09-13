@@ -121,6 +121,8 @@ describe('AggregatedSummaryTab', () => {
       'Total Invested',
       'Total Return (Gross)',
       'Total Return (Net of Tax)',
+      'Total Return (converted to GBP)',
+      'Total Return Net of Tax (converted to GBP)',
     ])
   })
 
@@ -262,5 +264,62 @@ describe('AggregatedSummaryTab', () => {
     setMock({ summary: SUMMARY })
     renderComponentWithNode({ nodeType: 'Portfolio', brokerName: 'XPI', portfolioName: 'Acoes' })
     expect(screen.queryByTestId('broker-breakdown-charts')).not.toBeInTheDocument()
+  })
+
+  it('[AC P49-F04-react-reporting-currency-02] renders every converted figure labelled with the reporting currency alongside the native ones', () => {
+    setMock({
+      summary: {
+        ...SUMMARY,
+        reportingCurrency: 'GBP',
+        convertedMarketValue: 20880.0,
+        convertedInvested: 14175.78,
+        convertedUnrealisedGainLoss: 500.25,
+        convertedTotalReturn: 0.11,
+        convertedTotalReturnNetOfTax: 0.1,
+      },
+    })
+    renderComponent()
+
+    expect(screen.getByText('Market Value (converted to GBP)')).toBeInTheDocument()
+    expect(screen.getByText('Invested (converted to GBP)')).toBeInTheDocument()
+    expect(screen.getByText('Unrealised Gain/Loss (converted to GBP)')).toBeInTheDocument()
+    expect(screen.getByText('Total Return (converted to GBP)')).toBeInTheDocument()
+    expect(screen.getByText('Total Return Net of Tax (converted to GBP)')).toBeInTheDocument()
+    const marketValueLabel = screen.getByText('Market Value (converted to GBP)')
+    expect(marketValueLabel.nextElementSibling?.textContent).toMatch(/20[.,]880[.,]00/)
+    expect(screen.getByText('Total Bought')).toBeInTheDocument()
+  })
+
+  it('[AC P49-F04-react-reporting-currency-04] shows a visible inline warning when the converted total is Partial', () => {
+    setMock({ summary: { ...SUMMARY, isPartial: true } })
+    renderComponent()
+
+    expect(screen.getByText(/could not be converted/)).toBeInTheDocument()
+  })
+
+  it('does_not_show_the_partial_warning_when_not_flagged', () => {
+    setMock({ summary: { ...SUMMARY, isPartial: false } })
+    renderComponent()
+
+    expect(screen.queryByText(/could not be converted/)).not.toBeInTheDocument()
+  })
+
+  it('[AC P49-F04-react-reporting-currency-05] hides the converted figures with a retry affordance when ReportingCurrencyUnavailable, leaving native figures visible', () => {
+    setMock({ summary: { ...SUMMARY, isReportingCurrencyUnavailable: true } })
+    renderComponent()
+
+    expect(screen.getByRole('alert')).toHaveTextContent(/Converted totals unavailable/)
+    expect(screen.queryByText(/Market Value \(converted to/)).not.toBeInTheDocument()
+    expect(screen.getByText('Total Bought')).toBeInTheDocument()
+    expect(screen.getByText('Market Value')).toBeInTheDocument()
+  })
+
+  it('retrying_after_ReportingCurrencyUnavailable_calls_retry', () => {
+    setMock({ summary: { ...SUMMARY, isReportingCurrencyUnavailable: true } })
+    renderComponent()
+
+    screen.getByRole('button', { name: 'Try again' }).click()
+
+    expect(mockRetry).toHaveBeenCalled()
   })
 })

@@ -48,3 +48,23 @@
   font-style: italic;
   color: var(--danger);
 }
+
+.aggregated-summary__converted {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border, #e5e4e7);
+}
+
+.aggregated-summary__converted-heading {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-h, #242424);
+}
+
+.aggregated-summary__partial-notice {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-style: italic;
+  color: var(--warning-text, #8a6d00);
+}
