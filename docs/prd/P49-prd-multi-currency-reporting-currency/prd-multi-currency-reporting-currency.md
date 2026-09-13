@@ -372,16 +372,16 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Shared Exchange Rate Provider
-- [ ] **P49-F01-shared-exchange-rate-provider-01** `Financial.Shared.Abstractions` exposes `IExchangeRateProvider` with the same
+- [x] **P49-F01-shared-exchange-rate-provider-01** `Financial.Shared.Abstractions` exposes `IExchangeRateProvider` with the same
       `GetHistoricalRateAsync(DateOnly, Currency, Currency)` signature, supporting `GBP`, `BRL` and `USD`
-- [ ] **P49-F01-shared-exchange-rate-provider-02** `Financial.CashFlow.Application.Interfaces.IExchangeRateProvider` and its
+- [x] **P49-F01-shared-exchange-rate-provider-02** `Financial.CashFlow.Application.Interfaces.IExchangeRateProvider` and its
       `FrankfurterExchangeRateProvider` implementation no longer exist as a separate copy
-- [ ] **P49-F01-shared-exchange-rate-provider-03** The Frankfurter HTTP implementation lives in a new `Integrations/Frankfurter` project referencing
+- [x] **P49-F01-shared-exchange-rate-provider-03** The Frankfurter HTTP implementation lives in a new `Integrations/Frankfurter` project referencing
       only the shared interface, no bounded-context types
-- [ ] **P49-F01-shared-exchange-rate-provider-04** `ControleMaeService`'s existing tests pass unchanged after switching to the shared interface
-- [ ] **P49-F01-shared-exchange-rate-provider-05** A request for a date with no rate (weekend/holiday) returns the rate from the nearest earlier
+- [x] **P49-F01-shared-exchange-rate-provider-04** `ControleMaeService`'s existing tests pass unchanged after switching to the shared interface
+- [x] **P49-F01-shared-exchange-rate-provider-05** A request for a date with no rate (weekend/holiday) returns the rate from the nearest earlier
       date within 10 calendar days
-- [ ] **P49-F01-shared-exchange-rate-provider-06** A request for a date with no rate anywhere in that 10-day window returns `null`, not an exception
+- [x] **P49-F01-shared-exchange-rate-provider-06** A request for a date with no rate anywhere in that 10-day window returns `null`, not an exception
 
 ### F02. Transaction and Credit Currency
 - [ ] Every newly recorded Transaction and Credit carries a `Currency` auto-filled from its asset's
