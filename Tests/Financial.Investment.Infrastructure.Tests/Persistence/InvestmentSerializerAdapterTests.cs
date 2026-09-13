@@ -112,7 +112,7 @@ public class InvestmentSerializerAdapterTests
     {
         var json = Serializer.Serialize(Investments.Create());
 
-        json.Should().Contain("\"Version\": 3");
+        json.Should().Contain("\"Version\": 4");
     }
 
     [Fact]
@@ -209,6 +209,82 @@ public class InvestmentSerializerAdapterTests
         var asset = result.ActiveBrokers.Single().Portfolios.Single().Assets.Single();
         asset.PriceSnapshots.Should().ContainSingle();
         asset.GetPriceForDate(new DateOnly(2026, 1, 1))!.IsManual.Should().BeTrue();
+    }
+
+    [Fact]
+    [Trait("AC", "P49-F02-transaction-and-credit-currency-04")]
+    public void Deserialize_TransactionAndCreditMissingCurrency_BackfillsFromBroker()
+    {
+        var json = BuildDocumentWithCurrency(transactionCurrency: null, creditCurrency: null, brokerCurrency: "BRL", version: 3);
+
+        var result = Serializer.Deserialize(json);
+
+        var asset = result.ActiveBrokers.Single().Portfolios.Single().Assets.Single();
+        asset.Transactions.Single().Currency.Should().Be(Currency.BRL);
+        asset.Credits.Single().Currency.Should().Be(Currency.BRL);
+    }
+
+    [Fact]
+    [Trait("AC", "P49-F02-transaction-and-credit-currency-06")]
+    public void Deserialize_BrokerWithBlankCurrency_LeavesItsRecordsUntouched()
+    {
+        var json = BuildDocumentWithCurrency(transactionCurrency: null, creditCurrency: null, brokerCurrency: "", version: 3);
+
+        var result = Serializer.Deserialize(json);
+
+        var asset = result.ActiveBrokers.Single().Portfolios.Single().Assets.Single();
+        asset.Transactions.Single().Currency.Should().Be(default(Currency));
+        asset.Credits.Single().Currency.Should().Be(default(Currency));
+    }
+
+    [Fact]
+    [Trait("AC", "P49-F02-transaction-and-credit-currency-05")]
+    public void Deserialize_RecordAlreadyHavingCurrency_IsNotOverwritten()
+    {
+        var json = BuildDocumentWithCurrency(transactionCurrency: "USD", creditCurrency: "GBP", brokerCurrency: "BRL", version: 3);
+
+        var result = Serializer.Deserialize(json);
+
+        var asset = result.ActiveBrokers.Single().Portfolios.Single().Assets.Single();
+        asset.Transactions.Single().Currency.Should().Be(Currency.USD);
+        asset.Credits.Single().Currency.Should().Be(Currency.GBP);
+    }
+
+    private static string BuildDocumentWithCurrency(string? transactionCurrency, string? creditCurrency, string brokerCurrency, int? version)
+    {
+        var versionProperty = version is null ? string.Empty : $"""
+            "Version": {version},
+            """;
+        var transactionCurrencyProperty = transactionCurrency is null ? string.Empty : $""", "Currency": "{transactionCurrency}" """;
+        var creditCurrencyProperty = creditCurrency is null ? string.Empty : $""", "Currency": "{creditCurrency}" """;
+
+        return $$"""
+            {
+              {{versionProperty}}
+              "ActiveBrokers": [
+                {
+                  "Name": "Broker A",
+                  "Currency": "{{brokerCurrency}}",
+                  "Portfolios": [
+                    {
+                      "Name": "Default",
+                      "Assets": [
+                        {
+                          "Name": "Asset A",
+                          "Transactions": [
+                            { "Id": "11111111-1111-1111-1111-111111111111", "Date": "2026-01-01", "Type": "Buy", "Quantity": 1, "UnitPrice": 10, "Fees": 0{{transactionCurrencyProperty}} }
+                          ],
+                          "Credits": [
+                            { "Id": "22222222-2222-2222-2222-222222222222", "Date": "2026-01-01", "Type": "Dividend", "Value": 10, "Withheld": 0{{creditCurrencyProperty}} }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+            """;
     }
 
     private static string BuildDocumentWithPriceHistory(bool isManual, int? version)

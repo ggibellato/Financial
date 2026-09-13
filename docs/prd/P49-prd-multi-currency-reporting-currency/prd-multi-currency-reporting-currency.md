@@ -105,8 +105,7 @@ is untouched by this feature.
 ### F02. Transaction and Credit Currency
 - As the system, I want every new Transaction and Credit to record its own currency so that a holding's cash flows are no longer inferred from its broker alone
 - As the system, I want an immutable snapshot of the exchange rate that applied when a Transaction or Credit was recorded so that I can show the user what rate was in effect at that time
-- As a user, I want my existing transactions and credits to be migrated with their currency and a historical rate snapshot so that nothing I already recorded loses its currency identity
-- As a user, I want the migration to run against a temporary copy first and report what it would change before touching my real data so that a mistake in the migration can't corrupt my records
+- As a user, I want my existing transactions and credits to pick up their currency automatically the next time the app loads my data, with no separate tool to run, so that nothing I already recorded loses its currency identity and rolling back to an older data file never leaves me needing to re-run a fix-up step
 
 ### F03. Reporting Currency Setting and Converted Totals
 - As a user, I want to choose a reporting currency (GBP, BRL or USD) so that I can see one combined figure for my whole portfolio
@@ -182,29 +181,30 @@ signal for this feature.
   and never recomputed afterward — it is a fixed audit record of "what rate applied when this was
   recorded," not an input to later conversion math. When a record's own `Currency` already matches the
   reporting currency at entry time, no snapshot is created (the implicit rate is 1).
-- **One-time migration tool**, following the repo's established pattern (temp-copy verification, diff
-  report before touching the live file, one console tool per prior `CashFlowSpreadsheetImport`
-  precedent): backfills `Currency` on all 899 existing transactions and 1,485 existing credits from
-  each record's asset's broker currency, then backfills `FxRateSnapshot` using F01's provider for each
-  record's own date, applying the same 10-day fallback rule as F01. A record whose date yields no rate
-  even after fallback is left with a null snapshot and named in the migration's report, never guessed.
-- Migration is idempotent: re-running it after a partial failure only processes records still missing
-  a `Currency` or snapshot.
+- **Automatic backfill on load**, following the repo's established versioned-JSON-migration pattern
+  (`Financial.Investment.Infrastructure.Persistence.InvestmentDataMigrations`, the same mechanism
+  already used for the Version 1→2 and 2→3 shape changes): every existing Transaction and Credit
+  missing a `Currency` has it set from its own asset's broker currency the next time
+  `data-investment.json` is loaded, with no separate tool, no manual backup step, and no ceremony —
+  the same way every earlier schema change in this file already self-heals on load. Idempotent by
+  construction (only a record without a `Currency` is ever touched).
+- Backfilling a historical `FxRateSnapshot` for these pre-existing records is explicitly **out of
+  scope** (see §7): the on-load migration is synchronous, in-memory JSON reshaping with no external
+  call, and a live FX lookup has no place there. A record backfilled this way carries no
+  rate/source/retrieved-at provenance — the identical shape a record whose currency already matched
+  the reporting currency at entry time has (§7 "Retroactively re-targeting a historical
+  `FxRateSnapshot`").
 
 **Experience:**
 No new user-facing surface in this feature. Transaction and Credit entry forms (React and WPF) are
 unchanged — currency is derived automatically, not prompted for.
 
 **Error Handling:**
-- Migration always runs against a temporary copy of `data-investment.json` first and produces a diff
-  report; it is never invoked against the live file directly (per the repo's standing migration
-  policy).
-- If the FX provider is unreachable partway through the migration, the tool stops, reports exactly
-  which records were and were not yet processed, and is safe to re-run (idempotent) rather than
-  partially committing a mix of migrated and un-migrated records.
-- A record with no obtainable rate (provider down for that whole 10-day window) is recorded with
-  `Currency` set but `FxRateSnapshot` left null and listed in the report — it does not block the
-  migration for every other record.
+- The migration only ever sets a field that's absent; it never overwrites an already-populated
+  `Currency`, so it is safe to run on a file that mixes already-migrated and legacy records (or one
+  written by a version of the app newer than the reader's).
+- A broker whose stored `Currency` string is missing or blank leaves that broker's transactions and
+  credits untouched by the migration rather than writing a guessed value.
 
 ### F03. Reporting Currency Setting and Converted Totals
 
@@ -313,6 +313,11 @@ control markup.
 - Converting individual asset/holding rows — only portfolio- and broker-level aggregates convert.
 - Retroactively re-targeting a historical `FxRateSnapshot` when the reporting-currency setting
   changes — the snapshot is a fixed audit record of the rate at entry time, not live-updated.
+- Backfilling a historical `FxRateSnapshot` for a Transaction/Credit that predates F02 — the
+  automatic on-load `Currency` migration is synchronous JSON reshaping with no external call; these
+  records simply carry no rate/source/retrieved-at provenance. F03's converted totals are unaffected
+  by this gap, since they compute conversions live from each record's `Currency` and date rather than
+  from any stored snapshot.
 - Any UI for manually overriding or correcting a captured FX rate.
 
 **Domicile vs. custody**
@@ -390,14 +395,12 @@ graph TD
       populated `FxRateSnapshot` (rate, source, retrieved-at)
 - [x] **P49-F02-transaction-and-credit-currency-03** A Transaction/Credit whose currency matches the reporting currency at entry time carries no
       snapshot (or an explicit rate of 1)
-- [x] **P49-F02-transaction-and-credit-currency-04** The migration tool run against a temp copy of `data-investment.json` reports the exact set of
-      changes before any write to the live file
-- [x] **P49-F02-transaction-and-credit-currency-05** After migration, all 899 pre-existing transactions and 1,485 pre-existing credits carry a
-      `Currency`
-- [x] **P49-F02-transaction-and-credit-currency-06** A record whose date yields no obtainable rate is left with a null `FxRateSnapshot` and is named
-      explicitly in the migration report
-- [x] **P49-F02-transaction-and-credit-currency-07** Re-running the migration after a partial failure only touches records still missing data, and
-      produces no duplicate or conflicting snapshots
+- [x] **P49-F02-transaction-and-credit-currency-04** A Transaction/Credit that predates F02 has its `Currency` backfilled automatically from its
+      asset's broker the next time `data-investment.json` loads, with no separate tool or manual step
+- [x] **P49-F02-transaction-and-credit-currency-05** The backfill never overwrites a `Currency` a record already carries, so it is safe on a file
+      mixing already-migrated and legacy records (idempotent by construction)
+- [x] **P49-F02-transaction-and-credit-currency-06** A broker with a missing or blank stored `Currency` leaves its transactions and credits
+      untouched by the backfill rather than writing a guessed value
 
 ### F03. Reporting Currency Setting and Converted Totals
 - [ ] The reporting-currency setting persists server-side and defaults to `GBP` before the user ever
