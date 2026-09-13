@@ -2,7 +2,7 @@ using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
-using Financial.CashFlow.Domain.Enums;
+using Financial.Shared.Abstractions.Currencies;
 using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.Logging;
 
@@ -42,7 +42,8 @@ public sealed class ControleMaeService : IControleMaeService
                 throw new ArgumentException("Source value must not be zero.");
             }
 
-            if (!CurrencyParser.TryParse(request.SourceCurrency, out var sourceCurrency))
+            if (!CurrencyParser.TryParse(request.SourceCurrency, out var sourceCurrency) ||
+                (sourceCurrency != Currency.BRL && sourceCurrency != Currency.GBP))
             {
                 throw new ArgumentException($"Currency '{request.SourceCurrency}' is not recognized.");
             }

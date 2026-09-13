@@ -1,6 +1,5 @@
 using Financial.CashFlow.Application.DTOs;
-using Financial.CashFlow.Application.Interfaces;
-using Financial.CashFlow.Domain.Enums;
+using Financial.Shared.Abstractions.Currencies;
 using FluentAssertions;
 using System.Net;
 using System.Net.Http.Json;
