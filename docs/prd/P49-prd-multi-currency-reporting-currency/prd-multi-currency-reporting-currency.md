@@ -419,15 +419,15 @@ graph TD
       `ReportingCurrencyUnavailable` and every native-currency field is still returned correctly
 
 ### F04. React — Reporting Currency
-- [ ] A "Reporting Currency" control appears under Settings, offering GBP/BRL/USD, and persists the
+- [ ] **P49-F04-react-reporting-currency-01** A "Reporting Currency" control appears under Settings, offering GBP/BRL/USD, and persists the
       chosen value via F03's setting endpoint
-- [ ] The portfolio dashboard and broker-level views show the converted total clearly labelled with its
+- [ ] **P49-F04-react-reporting-currency-02** The portfolio dashboard and broker-level views show the converted total clearly labelled with its
       currency, next to the existing native-currency figures which remain visible and unchanged
-- [ ] A provenance affordance on a converted figure displays the underlying rate, source and
+- [ ] **P49-F04-react-reporting-currency-03** A provenance affordance on a converted figure displays the underlying rate, source and
       retrieved-at date
-- [ ] A `Partial`-flagged converted total shows a visible inline warning rather than presenting an
+- [ ] **P49-F04-react-reporting-currency-04** A `Partial`-flagged converted total shows a visible inline warning rather than presenting an
       incomplete figure as complete
-- [ ] A `ReportingCurrencyUnavailable` response hides the converted figures with a retry affordance
+- [ ] **P49-F04-react-reporting-currency-05** A `ReportingCurrencyUnavailable` response hides the converted figures with a retry affordance
       while native-currency figures stay visible
 
 ### F05. WPF — Reporting Currency

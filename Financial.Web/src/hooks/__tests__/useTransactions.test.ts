@@ -81,6 +81,8 @@ const TRANSACTION_A: TransactionDto = {
   fees: 0.5,
   withheld: 0,
   netCash: -420.5,
+  currency: 'GBP',
+  fxRateSnapshot: null,
 }
 
 const TRANSACTION_B: TransactionDto = {
@@ -92,6 +94,8 @@ const TRANSACTION_B: TransactionDto = {
   fees: 1.0,
   withheld: 0,
   netCash: 251.0,
+  currency: 'GBP',
+  fxRateSnapshot: null,
 }
 
 const ASSET_DETAILS: AssetDetailsDto = {

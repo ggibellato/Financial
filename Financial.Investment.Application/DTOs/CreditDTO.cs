@@ -13,5 +13,9 @@ public class CreditDTO
     public decimal Withheld { get; set; }
 
     public decimal NetAmount { get; set; }
+
+    public string Currency { get; set; } = string.Empty;
+
+    public FxRateSnapshotDTO? FxRateSnapshot { get; set; }
 }
 

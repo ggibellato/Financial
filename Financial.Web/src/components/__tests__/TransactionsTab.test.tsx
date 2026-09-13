@@ -37,6 +37,8 @@ const TRANSACTION_BUY: TransactionDto = {
   fees: 0.5,
   withheld: 0,
   netCash: -420.5,
+  currency: 'GBP',
+  fxRateSnapshot: null,
 }
 
 const TRANSACTION_SELL: TransactionDto = {
@@ -48,6 +50,8 @@ const TRANSACTION_SELL: TransactionDto = {
   fees: 1.0,
   withheld: 0,
   netCash: 251.0,
+  currency: 'GBP',
+  fxRateSnapshot: null,
 }
 
 const CHART_DATA: TransactionMonthBucket[] = [

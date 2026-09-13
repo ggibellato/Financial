@@ -43,6 +43,8 @@ const CREDIT_DIVIDEND: CreditDto = {
   value: 120.5,
   withheld: 0,
   netAmount: 120.5,
+  currency: 'GBP',
+  fxRateSnapshot: null,
 }
 
 const CREDIT_SECURITIES_LENDING_INCOME: CreditDto = {
@@ -52,6 +54,8 @@ const CREDIT_SECURITIES_LENDING_INCOME: CreditDto = {
   value: 350.0,
   withheld: 0,
   netAmount: 350.0,
+  currency: 'GBP',
+  fxRateSnapshot: null,
 }
 
 const CREDIT_JCP: CreditDto = {
@@ -61,6 +65,8 @@ const CREDIT_JCP: CreditDto = {
   value: 75.0,
   withheld: 0,
   netAmount: 75.0,
+  currency: 'GBP',
+  fxRateSnapshot: null,
 }
 
 const DEFAULT_HOOK: CreditsData = {

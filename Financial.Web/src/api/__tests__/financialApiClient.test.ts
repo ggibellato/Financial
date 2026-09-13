@@ -1355,7 +1355,9 @@ describe('financialApiClient', () => {
   })
 
   it('gets credits by broker', async () => {
-    const responseBody: CreditDto[] = [{ id: 'c1', type: 'Dividend', value: 10, withheld: 0, netAmount: 10, date: '2026-07-01T00:00:00Z' }]
+    const responseBody: CreditDto[] = [
+      { id: 'c1', type: 'Dividend', value: 10, withheld: 0, netAmount: 10, date: '2026-07-01T00:00:00Z', currency: 'GBP', fxRateSnapshot: null },
+    ]
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 

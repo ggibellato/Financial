@@ -1368,9 +1368,22 @@
       },
       "CreditDTO": {
         "properties": {
+          "currency": {
+            "type": "string"
+          },
           "date": {
             "format": "date-time",
             "type": "string"
+          },
+          "fxRateSnapshot": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/FxRateSnapshotDTO"
+              }
+            ]
           },
           "id": {
             "format": "uuid",
@@ -1778,6 +1791,29 @@
           "description",
           "value",
           "categoryId"
+        ],
+        "type": "object"
+      },
+      "FxRateSnapshotDTO": {
+        "properties": {
+          "rate": {
+            "format": "double",
+            "type": "number"
+          },
+          "retrievedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "toCurrency": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "toCurrency",
+          "source"
         ],
         "type": "object"
       },
@@ -3535,6 +3571,9 @@
       },
       "TransactionDTO": {
         "properties": {
+          "currency": {
+            "type": "string"
+          },
           "date": {
             "format": "date-time",
             "type": "string"
@@ -3542,6 +3581,16 @@
           "fees": {
             "format": "double",
             "type": "number"
+          },
+          "fxRateSnapshot": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/FxRateSnapshotDTO"
+              }
+            ]
           },
           "id": {
             "format": "uuid",
