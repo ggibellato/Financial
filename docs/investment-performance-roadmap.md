@@ -18,6 +18,12 @@ counts and staleness ages change hourly because the application is running and f
 day this revision was written the data file gained five prices. Treat every count here as
 illustration, never as something to build a rule on.
 
+**Revised 2026-09-13.** Waves 0, 1 and 2 have since shipped in full — `specs/003-investment-calculation-core/`
+(P46, 12 PRs, merged 2026-09-11), `specs/004-transaction-income-vocabulary/` (P47, 2 PRs, merged
+2026-09-12) and `specs/005-valuation-methods-provenance/` (P48, 5 PRs, merged 2026-09-12). §6 below
+records what each wave actually delivered against its plan; several gaps in §3 that motivated Wave 0
+and Wave 1 are now closed or narrowed and are marked inline.
+
 ---
 
 ## 1. Verdict
@@ -73,7 +79,7 @@ foundations are sound; this programme builds on them rather than around them.
 
 Ordered by dependency — G1 is the root, most others are downstream of it.
 
-### G1 — Transaction vocabulary is two values
+### G1 — Transaction vocabulary is two values **[substantially addressed 2026-09-12]**
 
 `Transaction.TransactionType` is `{ Buy, Sell }`. The brief specifies seventeen. Fees exist only
 as a field on a buy/sell; tax withheld, return of capital, capital calls, transfers, redemption,
@@ -81,6 +87,13 @@ maturity, splits, and standalone valuation adjustments are **unrepresentable**. 
 three income types and a single positive `Value` — no gross, no withheld, no net, no
 return-of-capital. This is the root gap: net-of-tax return, tax reporting, and most instrument
 rules are all blocked behind it.
+
+P47 (#794/#795) widened `TransactionType` to eight values (adds `Fee`, `Redemption`, `TransferIn`,
+`TransferOut`, `CapitalCall`, `ReturnOfCapital`) driven by a data-driven `TransactionTypeEffects`
+table, added a gross/fees/withheld/net money block to both `Transaction` (`NetCash`) and `Credit`
+(`NetAmount`), and produced a `TotalReturnNetOfTax` series alongside the existing gross one. Splits
+and standalone valuation adjustments remain out of scope by design (Wave 7/Wave 2 respectively);
+tax reporting itself is still Wave 5.
 
 ### G2 — No currency on transactions, no FX
 
@@ -90,7 +103,7 @@ honest all-brokers total. An `IExchangeRateProvider` (Frankfurter) exists but si
 Infrastructure — bounded-context isolation forbids Investment referencing it, so it must be
 promoted to a shared abstraction rather than reused in place.
 
-### G3 — Cost basis is hard-coded and order-dependent
+### G3 — Cost basis is hard-coded and order-dependent **[fixed 2026-09-11]**
 
 `Transactions` computes weighted-average cost inline, and replays **in insertion order, not date
 order** (`Transactions.Rebuild` walks `_items`; `TransactionService.AddTransactionAsync` appends).
@@ -108,6 +121,11 @@ Two consequences:
 Fees are also folded into `AveragePrice` via `Transaction.TotalPrice`, which conflates acquisition
 cost with allowable costs. Defensible for economic return; not separable for a tax basis.
 
+**[fixed 2026-09-11]** P46-F01 (#781, User Story 1) made date-ordered replay the single owner of
+position figures, with the same-date purchases-before-sales tie-break described under G12 below.
+The FIFO/specific-identification limitation is unchanged — still Wave 4 (P50) — and fees are still
+folded into `AveragePrice`, unchanged until Wave 1's money-block work (G1) separates them.
+
 ### G4 — No disposal record
 
 Realised gain is a running scalar (`Transactions.RealizedCapitalGain`) recomputed by full replay.
@@ -120,7 +138,7 @@ result — today, changing anything replays everything.
 Zero fields anywhere: no jurisdiction, tax year, event classification, withheld amount, exempt
 amount, evidence reference, or calculation status. No net-of-tax return of any kind.
 
-### G6 — Valuation maths lives in the front ends
+### G6 — Valuation maths lives in the front ends **[fixed 2026-09-11]**
 
 Market value, cost basis, unrealised gain/loss and result % are computed in
 `Financial.Web/src/hooks/useAssetSummary.ts` **and** in
@@ -135,13 +153,25 @@ derived in **five** React sites (`useAssetSummary.ts:228` and `:256`, `usePortfo
 total. They already disagree on units: `useAssetSummary.ts` returns fractions, `PortfolioSummaryTab.tsx`
 returns percentages.
 
-### G7 — No portfolio-level return, no dashboard
+**[fixed 2026-09-11]** P46-F02 (#785, User Story 4) added the single `HoldingValuation` domain rule
+(market value, cost basis of open units, unrealised P/L, price-only return, total return); P46-F04/F05
+(#786) deleted all ten sites above and switched both `Financial.Web` and `Financial.App` to consume it
+— the WPF app resolves the Application service in-process via DI, not over HTTP, per the correction
+under Wave 0 below.
+
+### G7 — No portfolio-level return, no dashboard **[partially fixed 2026-09-11]**
 
 XIRR is per-asset only. `AggregatedSummaryDTO` is four numbers (bought / sold / credits /
 invested): no market value, no unrealised total, no income YTD, no allocation by currency, country
 or provider, no gross-vs-net portfolio return, no data-quality warnings.
 
-### G8 — Valuation method is implicit
+P46-F06 (#787/#788, User Story 5) added `MarketValue`, `HoldingCount`, `UnvaluedHoldingCount`,
+`PriceOnlyReturn` and `TotalReturn` to `AggregatedSummaryDTO` at both portfolio and broker level, in
+both front ends — the first aggregate return figures the brief asked for. Income YTD, allocation by
+currency/country/provider, gross-vs-net portfolio return and data-quality warnings on the dashboard
+itself remain open — Wave 6 (P52).
+
+### G8 — Valuation method is implicit **[fixed 2026-09-12]**
 
 Every asset is priced by ticker lookup. There is no `valuationMethod`
 (market price / NAV / provider value / manual / bond quote), so **value-based funds and
@@ -149,17 +179,29 @@ property-platform investments (Inco) have no honest representation**. `Transacti
 `quantity <= 0` and `unitPrice <= 0`, so a plain "I contributed £5,000" cannot be recorded without
 inventing units.
 
+P48 (`specs/005-valuation-methods-provenance/`, #797–#801) added `Asset.ValuationMethod`
+(market price / NAV / provider value / manual / bond quote) and `IncomePolicy`, drove fetcher
+routing from method rather than asset class alone, and added a provider-valued holding path that
+records a value directly with no quantity change — closing the gap for the two instrument types
+named in §4 (value-based funds, Inco). See Wave 2 under §6 for the full breakdown.
+
 ### G9 — No corporate actions
 
 Splits, consolidations, rights issues, mergers and spin-offs would silently corrupt quantity and
 average price.
 
-### G10 — Provenance is thin
+### G10 — Provenance is thin **[asset-price half fixed 2026-09-12]**
 
 `AssetPriceSnapshot` has Date / Price / IsManual — no source, source reference, market status,
 currency, or retrieved-at. `Transaction` has no source, source reference, estimated flag, or
 created/updated timestamps. The brief requires all of these for reproducibility and for detecting
 provider corrections.
+
+P48 (#797/#798/#799) widened `AssetPriceSnapshot` with currency, source, source reference, market
+status and retrieved-at, made `IsManual` derived from source, and made both front ends show
+as-of/source/market-status plus a stale-data warning. The `Transaction` half of this gap (source,
+source reference, estimated flag, created/updated timestamps) is untouched — still open, folded
+into Wave 1's/Wave 3's later work rather than a wave of its own.
 
 **[corrected 2026-09-10]** Three further facts about price history that the brief's snapshot work has
 to accommodate, none of them in the original assessment:
@@ -200,6 +242,10 @@ which fetcher a price comes from: `Unknown` is routed as exchange-listed, which 
 fund or ETF and **wrong for a bond or cryptocurrency**, so for those two an absent class silently
 causes an absent price.
 
+**[delivered 2026-09-11]** P46-F07 (#790/#791, User Story 7) shipped the report-only tool this section
+anticipated: it names every `Unknown`/unclassified holding, G12's three impossible sales, and G14's
+four mis-filed Historic holdings, and writes nothing back to the data file.
+
 ### G12 — Smaller correctness and labelling issues
 
 - **Oversell is not rejected.** `Transactions.Add` never checks sell quantity against held
@@ -211,12 +257,18 @@ causes an absent price.
   *correct*, since replay runs on every edit. The latent `DivideByZeroException` is also worse than it
   looks — positions rebuild while the file is being read and nothing on that path catches it, so it
   would fail **startup**, not one holding.
+  **[fixed 2026-09-11]** P46-F03 (#782, User Story 2) rejects a new sale that would take a holding
+  negative, without touching the three pre-existing holdings already in that state on load — the
+  load-path and replay-time concerns above are why the rule is enforced only at the point of a new
+  sell.
 - **The same-date tie-break is undefined, and defining it moves real figures.** **[new 2026-09-10]**
   A transaction carries a date but no time, so any date-ordered replay must decide how to order
   same-date rows. Two holdings store a sale ahead of a purchase on one date; ordering purchases first
   (the rule chosen) changes Bitcoin's average price from 62,713.15 to 62,709.05 and its realised gain
   from 0.25 to 0.17, and AGNC's realised gain from 9.98 to 9.66. Small, one-off and defensible as a
   correction — but it must be stated, not discovered.
+  **[fixed 2026-09-11]** Purchases-before-sales on a tied date shipped as part of P46-F01 (#781); the
+  two figure changes above are the actual, intended effect of that PR.
 - **`TotalInvested = TotalBought - TotalSold`** (`AssetInvestedAmountSelector`) understates the
   cost basis of a partially-sold position. Buy 100 @ £10, sell 50 @ £20 → reported invested = £0
   while 50 units are still held at £500 cost. **[corrected 2026-09-10]** There are **five** independent
@@ -226,14 +278,25 @@ causes an absent price.
   ends therefore already print two different "total invested" figures on the same screen. All 15
   Historic portfolios disagree today; the 10 Active ones reconcile only because no active holding
   currently has quantity zero — the code paths diverge, the data just has not exposed it yet.
+  **[fixed 2026-09-11]** P46-F03 (#783, User Story 3) gave the five derivations one meaning: invested
+  is now cost basis of currently-held units, computed once and consumed everywhere, so a partially-sold
+  position no longer reports £0 invested.
 - **The invested figure cannot be redefined in isolation.** **[new 2026-09-10]** The same number
   serves three purposes at once: the invested amount, the basis for portfolio weight, and the
   denominator of the income yield percentages. Changing it for one purpose silently moves the other
   two — so market-based weight cannot be introduced without accidentally converting yield-on-cost into
   yield-on-market. The three must be separated before either change ships.
+  **[fixed 2026-09-11]** The three were separated as planned: #783 fixed invested-amount; #784 made
+  `PortfolioWeight` nullable as a compatibility boundary ahead of #789 repointing its basis to market
+  value; yield percentages were deliberately left yield-on-cost (see below), now on a figure that no
+  longer also carries the other two concerns.
 - **`PortfolioWeight` is cost-based, not market-based** (`PortfolioAssetSummaryBuilder`
   `weightBasis`). The brief's allocation views require market value.
+  **[fixed 2026-09-11]** P46-F03 (#789, User Story 6) repointed `AssetAmountBases.WeightBasis` in
+  Active Investments to each holding's market value, with a disclosed shortfall for holdings with no
+  price; Historic stays cost-based since historic terminal value is 0 (G14).
 - **Yield percentages are yield-on-cost**, not market yield. Legitimate, but currently unlabelled.
+  Still open — unchanged by Wave 0.
 - **`Credit.Type.Rent`** is a naming leak for FII distributions. **[disproven & fixed 2026-09-12]**
   Checked against `data/data-investment.json` during P47's clarification session: every `Rent`
   credit sits on non-RealEstate holdings (BBAS3, BOVA11, GOLD11, IVVB11), while every RealEstate
@@ -322,7 +385,7 @@ Eight waves, each one PRD, each feature one PR (max 8 non-test code files, per
 `docs/rules/design.md`). Slice order within every feature stays the house standard: Domain →
 Application → Infrastructure → API → React → WPF → tests. Next available PRD number is **P46**.
 
-### Wave 0 — P46 · Investment calculation core
+### Wave 0 — P46 · Investment calculation core **[delivered 2026-09-11]**
 
 *Make what exists correct and server-owned before adding anything.* No schema change.
 
@@ -354,7 +417,19 @@ Application → Infrastructure → API → React → WPF → tests. Next availab
 PRs, and the invested-amount and weight work need two each. The wave is still one PRD and still
 independently deployable; it is simply larger than the feature count suggests.
 
-### Wave 1 — P47 · Transaction and income event vocabulary
+Shipped as `specs/003-investment-calculation-core` across 12 merged PRs, one per user story
+(spec.md's 7 user stories, P1–P7) plus two bugfixes found along the way: #781 (US1 — date-ordered
+replay, F01), #782 (US2 — reject oversell, part of F03), #783 (US3 — one meaning for `TotalInvested`,
+part of F03), #784 (US6 part 1 — `PortfolioWeight` made nullable as a compatibility boundary, part of
+F03), #785 (US4 — the `HoldingValuation` domain rule, F02), #786 (US4 — both front ends switched to
+it, F04/F05), #787 (US5 — portfolio/broker `AggregatedSummaryDTO` fields, F06), #788 (US5 — both front
+ends render the level totals, F06), #789 (US6 part 2 — `PortfolioWeight` repointed to market value
+with shortfall disclosure, F03), #790 (US7 — the data-quality report, F07), #791 (fix — asset-admin
+edit now re-derives `GlobalAssetClass` the same way create already does) and #792 (fix — a refused
+transaction save no longer discards what was typed; found during the mandatory UI-review-checklist
+pass, `docs/ui/review-checklist.md`).
+
+### Wave 1 — P47 · Transaction and income event vocabulary **[delivered 2026-09-12]**
 
 *The root gap. Everything downstream depends on it.*
 
@@ -370,6 +445,18 @@ independently deployable; it is simply larger than the feature count suggests.
 **Deliverable:** net-of-tax return exists; every fee and withholding is an individually auditable
 dated event.
 
+Shipped as `specs/004-transaction-income-vocabulary` across two merged PRs, smaller than the
+six-feature table implied because CI's `web` job (`openapiFreshness.test.ts`) enforces that generated
+TypeScript types never drift from the OpenAPI snapshot — a backend-only PR cannot be green on its own
+in this repo, so F01–F05 landed together: #794 (backend + `Financial.Web` — F01's 8-value
+`TransactionType` behind a data-driven `TransactionTypeEffects` table, F02's gross/fees/withheld/net
+money block, F03's widened `Credit` — including the `Rent`→`SecuritiesLendingIncome` rename and
+negative-value corrections — F04's `TotalReturnNetOfTax` series, and F05's React parity; plus an
+on-the-fly JSON-envelope migration replacing the one-shot console-tool pattern) and #795 (`Financial.App`
+WPF parity, F06, completing User Story 4). The roadmap corrections this feature's clarification session
+produced (the disproven `Credit.Type.Rent` naming-leak claim, the now-fixed `Credit.Value > 0`
+limitation) are folded into §3 above rather than tracked separately.
+
 ### Wave 2 — P48 · Valuation methods and provenance **[delivered 2026-09-12]**
 
 *Unblocks the two instrument types that cannot be represented today.*
@@ -382,11 +469,14 @@ dated event.
 | F04 | React: as-of, source, market status, stale-data warning |
 | F05 | WPF parity |
 
-Shipped as `specs/005-valuation-methods-provenance` across four merged PRs: #797 (Foundational +
+Shipped as `specs/005-valuation-methods-provenance` across five merged PRs: #797 (Foundational +
 User Story 1 — F02's `ValuationMethod`/`IncomePolicy` plus F01/F03's widened snapshot and
 value-based recording), #798 (User Story 2 — F01/F04/F05's provenance and market-status display in
 both front ends), #799 (fix — automatic fetches now persist the real provider as `Source` instead
-of `Unknown`), and #800 (User Story 3 — F02's fetcher routing keyed off `ValuationMethod`). Setting
+of `Unknown`), #800 (User Story 3 — F02's fetcher routing keyed off `ValuationMethod`), and #801
+(polish/whole-feature verification — fixed a WPF/React terminology mismatch on the price-source label,
+via a `PriceSourceToLabelConverter` mirroring `Financial.Web`'s `SOURCE_LABELS` map, plus the
+quickstart.md walkthrough and full UI-review-checklist pass required to close the feature). Setting
 `ValuationMethod`/`IncomePolicy` from either front end's Admin Asset form remains a follow-up — both
 DTOs carry the fields, but only the API sets them today (`docs/investment-performance-roadmap.md`
 does not track UI backlog items; see `specs/005-valuation-methods-provenance/tasks.md` T074's note).
@@ -455,11 +545,21 @@ Approximately 43 PRs plus migration tools — **[corrected 2026-09-10]** likely 
 measured at ~13 rather than the 7 its feature count implied, and the same undercount probably applies
 to the later waves.
 
-P46 delivers standalone value: it fixes a real defect, removes the React/WPF calculation duplication,
-and produces the first portfolio-level return figure. It is now specified in full at
-**`specs/003-investment-calculation-core/spec.md`** (74 functional requirements, 14 success criteria,
-7 user stories), with the decisions taken during that work recorded in its Clarifications section and
-its `checklists/requirements.md`. Read the spec, not this section, before planning P46.
+**[revised 2026-09-13]** The undercount held for P46 (12 actual PRs, close to the ~13 estimate) but
+inverted for P47: it shipped in **2** PRs against a 6-feature table, because CI's `openapiFreshness.test.ts`
+gate forces a backend contract change and its `Financial.Web` consumer into the same PR — F01–F05
+landed together in one PR, WPF parity in a second. P48 landed in **5**, one more than its four-feature
+table implied, the extra PR being the whole-feature polish/verification pass. Net across the three
+delivered waves so far: 19 PRs against a combined ~24-feature estimate — treat the per-wave PR count
+as similarly unreliable going forward and expect the actual number only once each wave is delivered.
+
+P46, P47 and P48 all shipped (§6 above) — P46 fixed a real defect, removed the React/WPF calculation
+duplication, and produced the first portfolio-level return figure (`specs/003-investment-calculation-core/spec.md`,
+74 functional requirements, 14 success criteria, 7 user stories); P47 widened the transaction/income
+vocabulary and added net-of-tax return (`specs/004-transaction-income-vocabulary/`); P48 added
+valuation methods and price provenance (`specs/005-valuation-methods-provenance/`). Read each spec,
+not this section, for the decisions taken during that work. Wave 3 (P49) is next per the sequencing
+above.
 
 ---
 
@@ -469,7 +569,7 @@ its `checklists/requirements.md`. Read the spec, not this section, before planni
 |---|---|---|
 | D1 | Tax scope | Reporting support only (§5). Records and classifies; never computes tax due. |
 | D2 | Cost-basis default | Weighted average — it matches both BR and UK (Section 104) practice. FIFO and specific-ID ship in P50 as options, not defaults. |
-| D3 | Reporting currency | Defer P49 until P48 ships. Per-broker views are correct without it; only the all-brokers total needs it. |
+| D3 | Reporting currency | Defer P49 until P48 ships. Per-broker views are correct without it; only the all-brokers total needs it. **[2026-09-13]** P48 shipped 2026-09-12 — P49 is now unblocked, though the sequencing diagram in §6 already treats it as independent of the P47→P48 chain. |
 | D4 | `Credit` migration | Rewrite in place with a tool + temp-copy verification, keeping `Value` as derived net, rather than dual-writing a parallel collection. |
 | D5 | ~~Historic `Unknown` assets~~ **Unclassified assets** | **[corrected 2026-09-10] Overturned.** A backfill is not possible — classification is manual, one instrument at a time (G11), and 87 of the 90 are closed positions where it changes nothing on screen. P46-F07 therefore reports and never writes. **The dependency inverts:** P48's valuation methods and P51's tax profiles must each define their behaviour for an unclassified holding rather than assuming the rows were cleaned first. Nothing in P46 may require a classification. |
 | D6 | Inco / value-based funds | Model as provider-valued holdings in P48-F03 — not as synthetic single-unit assets. |
