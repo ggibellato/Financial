@@ -16,6 +16,7 @@ import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import type { CreditDto } from '../api/types'
 import ErrorState from './ErrorState'
 import FilterTabList from './FilterTabList'
+import FxProvenanceTooltip from './FxProvenanceTooltip'
 import LoadingState from './LoadingState'
 import SplitPanel from './SplitPanel'
 import SortableColumnHeader from './grid/SortableColumnHeader'
@@ -107,6 +108,9 @@ function CreditRow({ credit, onEdit, onDelete }: CreditRowProps) {
       <TableCell className="data-table__col--numeric credits-tab__value">{formatN2(credit.value)}</TableCell>
       <TableCell className="data-table__col--numeric">{formatN2(credit.withheld)}</TableCell>
       <TableCell className="data-table__col--numeric credits-tab__value">{formatN2(credit.netAmount)}</TableCell>
+      <TableCell>
+        <FxProvenanceTooltip currency={credit.currency} fxRateSnapshot={credit.fxRateSnapshot} />
+      </TableCell>
       <TableCell className="data-table__col--action">
         <div className="data-table__actions-cell">
           <Button
@@ -440,6 +444,7 @@ export default function CreditsTab() {
                 sortDirection={sortState?.columnKey === 'netAmount' ? sortState.direction : undefined}
                 onSort={requestSort}
               />
+              <TableHeaderCell>FX</TableHeaderCell>
               <TableHeaderCell className="data-table__col--action" />
             </TableRow>
           </TableHeader>

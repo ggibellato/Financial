@@ -15,6 +15,7 @@ import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import type { TransactionDto } from '../api/types'
 import ErrorState from './ErrorState'
 import FilterTabList from './FilterTabList'
+import FxProvenanceTooltip from './FxProvenanceTooltip'
 import LoadingState from './LoadingState'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import { useFormPanelStyles } from './formPanelStyles'
@@ -92,6 +93,9 @@ function TransactionRow({ transaction, onEdit, onDelete }: TransactionRowProps) 
       <TableCell className="data-table__col--numeric">{formatN2(transaction.withheld)}</TableCell>
       <TableCell className="data-table__col--numeric transactions-tab__total">
         {formatN2(transaction.netCash)}
+      </TableCell>
+      <TableCell>
+        <FxProvenanceTooltip currency={transaction.currency} fxRateSnapshot={transaction.fxRateSnapshot} />
       </TableCell>
       <TableCell className="data-table__col--action">
         <div className="data-table__actions-cell">
@@ -468,6 +472,7 @@ export default function TransactionsTab() {
                 sortDirection={sortState?.columnKey === 'total' ? sortState.direction : undefined}
                 onSort={requestSort}
               />
+              <TableHeaderCell>FX</TableHeaderCell>
               <TableHeaderCell className="data-table__col--action" />
             </TableRow>
           </TableHeader>

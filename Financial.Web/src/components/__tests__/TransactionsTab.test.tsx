@@ -399,4 +399,26 @@ describe('TransactionsTab', () => {
     fireEvent.change(screen.getByLabelText('Fees'), { target: { value: '0.1' } })
     expect(mockSetFormField).toHaveBeenCalledWith('formFees', '0.1')
   })
+
+  it('shows_the_fx_provenance_affordance_for_a_transaction_with_a_captured_snapshot', () => {
+    setMock({
+      transactions: [
+        {
+          ...TRANSACTION_BUY,
+          currency: 'BRL',
+          fxRateSnapshot: { toCurrency: 'GBP', rate: 0.146, source: 'Frankfurter', retrievedAt: '2026-07-01T08:00:00Z' },
+        },
+      ],
+    })
+    render(<TransactionsTab />)
+
+    expect(screen.getByRole('button', { name: 'FX conversion details' })).toBeInTheDocument()
+  })
+
+  it('does_not_show_the_fx_provenance_affordance_for_a_transaction_without_a_captured_snapshot', () => {
+    setMock({ transactions: [{ ...TRANSACTION_BUY, currency: 'GBP', fxRateSnapshot: null }] })
+    render(<TransactionsTab />)
+
+    expect(screen.queryByRole('button', { name: 'FX conversion details' })).not.toBeInTheDocument()
+  })
 })
