@@ -19,6 +19,7 @@
 		<Project Path="Integrations/GoogleCore/GoogleCore.csproj" />
 		<Project Path="Integrations/GoogleDrive/GoogleDrive.csproj" />
 		<Project Path="Integrations/GoogleSheets/GoogleSheets.csproj" />
+		<Project Path="Integrations/Frankfurter/Frankfurter.csproj" />
 		<Project Path="Integrations/Observability/Observability.csproj" />
 		<Project Path="Integrations/WebPageParser/WebPageParser.csproj" />
 	</Folder>
@@ -46,6 +47,7 @@
 	</Folder>
 	<Folder Name="/Tests/Integrations/">
 		<Project Path="Tests/Financial.GoogleIntegrations.Tests/Financial.GoogleIntegrations.Tests.csproj" />
+		<Project Path="Tests/Financial.Frankfurter.Tests/Financial.Frankfurter.Tests.csproj" />
 		<Project Path="Tests/Financial.Observability.Tests/Financial.Observability.Tests.csproj" />
 		<Project Path="Tests/Financial.WebPageParser.Tests/Financial.WebPageParser.Tests.csproj" />
 	</Folder>
