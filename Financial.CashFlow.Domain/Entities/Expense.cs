@@ -107,10 +107,8 @@ public class Expense
         {
             ValidatePaymentShape(paymentSourceBank, creditCard);
 
-            // Keeps ChargeDate/InvoiceDate from silently drifting from a corrected Date while
-            // still unsettled - only Settle() is meant to make Date diverge from ChargeDate.
-            // InvoiceDate only follows along if it hadn't been pinned away from the plain
-            // date-derived default (see SetInvoiceDate).
+            // Only Settle() is meant to make Date diverge from ChargeDate; keep them in sync
+            // while still unsettled so a corrected Date doesn't leave ChargeDate stale.
             if (PaymentStatus == ExpensePaymentStatus.CreditCardCharge && creditCard is not null)
             {
                 if (InvoiceDate == FirstOfMonth(Date))
