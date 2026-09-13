@@ -10,6 +10,7 @@ using Financial.Shared.Abstractions.Currencies;
 using Financial.Shared.Abstractions.Persistence;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 
 namespace Financial.CashFlow.Infrastructure.DependencyInjection;
@@ -28,7 +29,12 @@ public static class CashFlowInfrastructureServiceCollectionExtensions
             options.GoogleDriveFilePath = configuration[CashFlowRepositoryConfigurationKeys.GoogleDriveFilePath];
         });
         services.AddSingleton<ICashFlowSerializer, CashFlowSerializerAdapter>();
-        services.AddHttpClient<IExchangeRateProvider, FrankfurterExchangeRateProvider>();
+        services.AddHttpClient<FrankfurterExchangeRateProvider>();
+        // TryAdd: Investment's own AddFinancialInfrastructure registers the same shared
+        // IExchangeRateProvider - both bounded contexts are composed together in the same process,
+        // so only the first registration to run should win, keeping a single shared cache instance.
+        services.TryAddSingleton<IExchangeRateProvider>(sp =>
+            new InMemoryCachedExchangeRateProvider(() => sp.GetRequiredService<FrankfurterExchangeRateProvider>()));
         services.AddSingleton<ICashFlowRepository>(sp =>
         {
             var settings = sp.GetRequiredService<IOptions<CashFlowRepositorySettingsOptions>>().Value;
