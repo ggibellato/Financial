@@ -266,7 +266,7 @@ describe('AggregatedSummaryTab', () => {
     expect(screen.queryByTestId('broker-breakdown-charts')).not.toBeInTheDocument()
   })
 
-  it('[AC P49-F04-react-reporting-currency-02] renders every converted figure labelled with the reporting currency alongside the native ones', () => {
+  it('renders every converted figure labelled with the reporting currency alongside the native ones', () => {
     setMock({
       summary: {
         ...SUMMARY,
@@ -290,7 +290,7 @@ describe('AggregatedSummaryTab', () => {
     expect(screen.getByText('Total Bought')).toBeInTheDocument()
   })
 
-  it('[AC P49-F04-react-reporting-currency-04] shows a visible inline warning when the converted total is Partial', () => {
+  it('shows a visible inline warning when the converted total is Partial', () => {
     setMock({ summary: { ...SUMMARY, isPartial: true } })
     renderComponent()
 
@@ -304,7 +304,7 @@ describe('AggregatedSummaryTab', () => {
     expect(screen.queryByText(/could not be converted/)).not.toBeInTheDocument()
   })
 
-  it('[AC P49-F04-react-reporting-currency-05] hides the converted figures with a retry affordance when ReportingCurrencyUnavailable, leaving native figures visible', () => {
+  it('hides the converted figures with a retry affordance when ReportingCurrencyUnavailable, leaving native figures visible', () => {
     setMock({ summary: { ...SUMMARY, isReportingCurrencyUnavailable: true } })
     renderComponent()
 

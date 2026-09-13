@@ -12,13 +12,13 @@ const SNAPSHOT: FxRateSnapshotDto = {
 }
 
 describe('FxProvenanceTooltip', () => {
-  it('[AC P49-F04-react-reporting-currency-03] renders_nothing_when_fxRateSnapshot_is_null', () => {
+  it('renders_nothing_when_fxRateSnapshot_is_null', () => {
     render(<FxProvenanceTooltip currency="BRL" fxRateSnapshot={null} />)
 
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
   })
 
-  it('[AC P49-F04-react-reporting-currency-03] shows_rate_source_and_retrieved_at_on_hover', async () => {
+  it('shows_rate_source_and_retrieved_at_on_hover', async () => {
     const user = userEvent.setup()
     render(<FxProvenanceTooltip currency="BRL" fxRateSnapshot={SNAPSHOT} />)
 
