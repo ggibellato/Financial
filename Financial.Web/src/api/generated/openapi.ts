@@ -4231,6 +4231,77 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/reporting-currency": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Returns the current reporting-currency setting. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description 200 OK with the current setting. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ReportingCurrencySettingDTO"];
+                    };
+                };
+            };
+        };
+        /** Changes the reporting-currency setting. */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/*+json": null | components["schemas"]["ReportingCurrencySettingDTO"];
+                    "application/json": null | components["schemas"]["ReportingCurrencySettingDTO"];
+                    "text/json": null | components["schemas"]["ReportingCurrencySettingDTO"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ReportingCurrencySettingDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/reserve-buckets": {
         parameters: {
             query?: never;
@@ -6520,6 +6591,9 @@ export interface components {
             status: string;
             /** Format: double */
             value: number;
+        };
+        ReportingCurrencySettingDTO: {
+            currency: string;
         };
         ReserveBucketBalanceDTO: {
             /** Format: double */
