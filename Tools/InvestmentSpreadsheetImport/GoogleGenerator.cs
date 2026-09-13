@@ -1,5 +1,6 @@
 using Financial.Investment.Domain.Entities;
 using Financial.Investment.Infrastructure.Persistence;
+using Financial.Shared.Abstractions.Currencies;
 using Financial.Shared.Abstractions.Persistence;
 using Financial.Integrations.GoogleDrive;
 using Financial.Integrations.GoogleSheets;
@@ -132,8 +133,9 @@ public sealed class GoogleGenerator
             assetData.assetClass);
         portfolio.AddAsset(asset);
 
-        asset.AddTransactions(await _sheetsReader.ReadTransactionsAsync(fileId, spreadsheet.Name, progress, issues));
+        var currency = Enum.Parse<Currency>(broker.Currency, ignoreCase: true);
+        asset.AddTransactions(await _sheetsReader.ReadTransactionsAsync(fileId, spreadsheet.Name, progress, issues, currency));
         await Task.Delay(DelayBetweenOperationsMs);
-        asset.AddCredits(await _sheetsReader.ReadCreditsAsync(fileId, spreadsheet.Name));
+        asset.AddCredits(await _sheetsReader.ReadCreditsAsync(fileId, spreadsheet.Name, currency));
     }
 }

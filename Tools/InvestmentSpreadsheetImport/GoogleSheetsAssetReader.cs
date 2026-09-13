@@ -1,6 +1,7 @@
 using Financial.Investment.Domain.Entities;
 using Financial.Investment.Domain.Rules;
 using Financial.Integrations.GoogleSheets;
+using Financial.Shared.Abstractions.Currencies;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -67,7 +68,7 @@ internal sealed class GoogleSheetsAssetReader
     /// looking exactly like a clean one.
     /// </summary>
     internal async Task<List<Transaction>> ReadTransactionsAsync(
-        string fileId, string spreadSheetName, IProgress<string> progress = null, ICollection<string> issues = null)
+        string fileId, string spreadSheetName, IProgress<string> progress = null, ICollection<string> issues = null, Currency currency = default)
     {
         var transactions = new List<Transaction>();
         var values = await _service.GetSpreadSheetDataAsync(fileId, $"{spreadSheetName}!A3:G");
@@ -119,12 +120,12 @@ internal sealed class GoogleSheetsAssetReader
                 issues?.Add(message);
             }
 
-            transactions.Add(Transaction.Create(transactionDate, transactionType, quantity, unitPrice, fees));
+            transactions.Add(Transaction.Create(transactionDate, transactionType, quantity, unitPrice, fees, currency: currency));
         }
         return transactions;
     }
 
-    internal async Task<List<Credit>> ReadCreditsAsync(string fileId, string spreadSheetName)
+    internal async Task<List<Credit>> ReadCreditsAsync(string fileId, string spreadSheetName, Currency currency = default)
     {
         var credits = new List<Credit>();
         var values = await _service.GetSpreadSheetDataAsync(fileId, $"{spreadSheetName}!K3:N");
@@ -147,7 +148,8 @@ internal sealed class GoogleSheetsAssetReader
                 credits.Add(Credit.Create(
                     DateTime.FromOADate((long)value[CreditDateColumn]),
                     creditType,
-                    GoogleSheetValueParser.ToDecimal(value[CreditValueColumn])));
+                    GoogleSheetValueParser.ToDecimal(value[CreditValueColumn]),
+                    currency: currency));
             }
         }
         return credits;
