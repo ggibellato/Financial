@@ -29,8 +29,8 @@ internal static class ConvertedSummaryBuilder
         IReadOnlyList<Asset> assets,
         Currency brokerCurrency,
         Currency reportingCurrency,
-        decimal marketValueSum,
-        decimal unrealisedGainSum,
+        decimal? marketValueSum,
+        decimal? unrealisedGainSum,
         IExchangeRateProvider exchangeRateProvider,
         IXirrCalculationService xirrCalculationService,
         DateTime asOf)
@@ -39,8 +39,12 @@ internal static class ConvertedSummaryBuilder
         var rateCache = new Dictionary<DateOnly, decimal?>();
         var today = DateOnly.FromDateTime(asOf);
 
-        var convertedMarketValue = await ConvertAsync(marketValueSum, brokerCurrency, reportingCurrency, today, exchangeRateProvider, rateCache, tracker).ConfigureAwait(false);
-        var convertedUnrealisedGainLoss = await ConvertAsync(unrealisedGainSum, brokerCurrency, reportingCurrency, today, exchangeRateProvider, rateCache, tracker).ConfigureAwait(false);
+        var convertedMarketValue = marketValueSum is decimal nativeMarketValue
+            ? await ConvertAsync(nativeMarketValue, brokerCurrency, reportingCurrency, today, exchangeRateProvider, rateCache, tracker).ConfigureAwait(false)
+            : null;
+        var convertedUnrealisedGainLoss = unrealisedGainSum is decimal nativeUnrealisedGain
+            ? await ConvertAsync(nativeUnrealisedGain, brokerCurrency, reportingCurrency, today, exchangeRateProvider, rateCache, tracker).ConfigureAwait(false)
+            : null;
 
         decimal convertedTotalBought = 0m, convertedTotalSold = 0m;
         var grossFlows = new List<AssetCashFlowDTO>();

@@ -532,4 +532,68 @@ public class SummaryServiceTests
 
         result.TotalBought.Should().Be(50m);
     }
+
+    [Fact]
+    public async Task GetBrokerSummary_ReportingCurrencyDiffersFromBroker_PopulatesConvertedFields()
+    {
+        var asset = MakeAsset();
+        asset.AddTransaction(Transaction.Create(new DateTime(2025, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
+        asset.SetPrice(DateOnly.FromDateTime(Today.UtcDateTime), 8m, isManual: false);
+        _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", asset)];
+
+        var service = new SummaryService(
+            _repository, Tracer, NullLogger<SummaryService>.Instance, TestHoldingValuationService.Create(new FakeTimeProvider(Today)),
+            new XirrCalculationService(), new StubExchangeRateProvider(0.2m), new StubReportingCurrencyProvider(Currency.GBP),
+            new FakeTimeProvider(Today));
+
+        var result = await service.GetBrokerSummaryAsync("XPI");
+
+        using var _ = new AssertionScope();
+        result.ReportingCurrency.Should().Be("GBP");
+        result.ConvertedMarketValue.Should().Be(result.MarketValue * 0.2m);
+        result.ConvertedInvested.Should().Be(result.TotalBought * 0.2m);
+        result.IsPartial.Should().BeFalse();
+        result.IsReportingCurrencyUnavailable.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task GetBrokerSummary_ExchangeRateProviderUnavailable_FlagsUnavailable_NativeFieldsStillCorrect()
+    {
+        var asset = MakeAsset();
+        asset.AddTransaction(Transaction.Create(new DateTime(2025, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
+        _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", asset)];
+
+        var service = new SummaryService(
+            _repository, Tracer, NullLogger<SummaryService>.Instance, TestHoldingValuationService.Create(new FakeTimeProvider(Today)),
+            new XirrCalculationService(), new StubExchangeRateProvider(null), new StubReportingCurrencyProvider(Currency.GBP),
+            new FakeTimeProvider(Today));
+
+        var result = await service.GetBrokerSummaryAsync("XPI");
+
+        using var _ = new AssertionScope();
+        result.IsReportingCurrencyUnavailable.Should().BeTrue();
+        result.ConvertedMarketValue.Should().BeNull();
+        result.ConvertedInvested.Should().BeNull();
+        result.TotalBought.Should().Be(50m);
+    }
+
+    [Fact]
+    public async Task GetBrokerSummary_NothingPriced_ConvertedMarketValueIsNullNotZero()
+    {
+        var asset = MakeAsset();
+        asset.AddTransaction(Transaction.Create(new DateTime(2025, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
+        _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", asset)];
+
+        var service = new SummaryService(
+            _repository, Tracer, NullLogger<SummaryService>.Instance, TestHoldingValuationService.Create(new FakeTimeProvider(Today)),
+            new XirrCalculationService(), new StubExchangeRateProvider(0.2m), new StubReportingCurrencyProvider(Currency.GBP),
+            new FakeTimeProvider(Today));
+
+        var result = await service.GetBrokerSummaryAsync("XPI");
+
+        using var _ = new AssertionScope();
+        result.MarketValue.Should().BeNull();
+        result.ConvertedMarketValue.Should().BeNull("the holding has no price, so there is nothing to convert - not a zero-valued conversion");
+        result.ConvertedUnrealisedGainLoss.Should().BeNull();
+    }
 }

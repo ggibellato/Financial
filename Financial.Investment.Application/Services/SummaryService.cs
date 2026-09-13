@@ -156,6 +156,7 @@ public sealed class SummaryService : ISummaryService
         decimal? marketValue = holdingCount == 0
             ? 0m
             : unvaluedHoldingCount == holdingCount ? null : marketValueSum;
+        decimal? unrealisedGain = holdingCount > 0 && unvaluedHoldingCount == holdingCount ? null : unrealisedGainSum;
 
         decimal? priceOnlyReturn = null;
         decimal? totalReturn = null;
@@ -177,7 +178,7 @@ public sealed class SummaryService : ISummaryService
         }
 
         var converted = await ConvertedSummaryBuilder.BuildAsync(
-            assetList, brokerCurrency, reportingCurrency, marketValueSum, unrealisedGainSum,
+            assetList, brokerCurrency, reportingCurrency, marketValue, unrealisedGain,
             _exchangeRateProvider, _xirrCalculationService, asOf).ConfigureAwait(false);
 
         return new AggregatedSummaryDTO
