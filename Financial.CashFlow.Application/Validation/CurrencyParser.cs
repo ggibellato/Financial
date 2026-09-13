@@ -1,4 +1,4 @@
-using Financial.CashFlow.Domain.Enums;
+using Financial.Shared.Abstractions.Currencies;
 using Financial.Shared.Abstractions.Validation;
 
 namespace Financial.CashFlow.Application.Validation;

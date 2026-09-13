@@ -1,5 +1,5 @@
 using Financial.CashFlow.Application.Validation;
-using Financial.CashFlow.Domain.Enums;
+using Financial.Shared.Abstractions.Currencies;
 using FluentAssertions;
 
 namespace Financial.CashFlow.Application.Tests.Validation;
@@ -16,9 +16,18 @@ public class CurrencyParserTests
     }
 
     [Fact]
+    public void TryParse_Usd_ReturnsTrueAndParsedValue()
+    {
+        var result = CurrencyParser.TryParse("USD", out var currency);
+
+        result.Should().BeTrue();
+        currency.Should().Be(Currency.USD);
+    }
+
+    [Fact]
     public void TryParse_UnknownName_ReturnsFalse()
     {
-        var result = CurrencyParser.TryParse("USD", out _);
+        var result = CurrencyParser.TryParse("EUR", out _);
 
         result.Should().BeFalse();
     }

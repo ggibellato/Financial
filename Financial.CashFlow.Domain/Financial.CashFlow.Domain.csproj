@@ -5,4 +5,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Financial.Shared.Abstractions\Financial.Shared.Abstractions.csproj" />
+  </ItemGroup>
+
 </Project>

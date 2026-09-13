@@ -5,7 +5,9 @@ using Financial.Investment.Infrastructure.Interfaces;
 using Financial.Investment.Infrastructure.Persistence;
 using Financial.Investment.Infrastructure.Repositories;
 using Financial.Investment.Infrastructure.Services;
+using Financial.Integrations.Frankfurter;
 using Financial.Shared.Abstractions.Configuration;
+using Financial.Shared.Abstractions.Currencies;
 using Financial.Shared.Abstractions.Persistence;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,6 +17,8 @@ namespace Financial.Investment.Infrastructure.DependencyInjection;
 
 public static class InvestmentInfrastructureServiceCollectionExtensions
 {
+    private const string FrankfurterBaseAddress = "https://api.frankfurter.app/";
+
     public static IServiceCollection AddFinancialInfrastructure(
         this IServiceCollection services,
         IConfiguration configuration)
@@ -66,6 +70,10 @@ public static class InvestmentInfrastructureServiceCollectionExtensions
                 sp.GetRequiredService<IJsonStorageFactory>()).Create(options);
         });
         services.AddSingleton<IAssetPriceService, AssetPriceService>();
+        services.AddHttpClient<IExchangeRateProvider, FrankfurterExchangeRateProvider>(client =>
+        {
+            client.BaseAddress = new Uri(FrankfurterBaseAddress);
+        });
 
         return services;
     }

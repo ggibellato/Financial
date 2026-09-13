@@ -1,5 +1,6 @@
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Infrastructure.DependencyInjection;
+using Financial.Shared.Abstractions.Currencies;
 using Financial.Shared.Abstractions.Persistence;
 using Financial.Shared.Infrastructure.Persistence;
 using Financial.TestUtilities;
@@ -37,6 +38,20 @@ public class InvestmentInfrastructureServiceCollectionExtensionsTests
         var repository = provider.GetRequiredService<IInvestmentRepository>();
 
         repository.Should().NotBeNull();
+    }
+
+    [Fact]
+    [Trait("AC", "P49-F01-shared-exchange-rate-provider-01")]
+    public void AddFinancialInfrastructure_RegistersSharedExchangeRateProvider()
+    {
+        var provider = BuildServiceProvider(new Dictionary<string, string?>
+        {
+            ["Investment:DataJsonFile"] = TestDataPaths.DataJsonFile
+        });
+
+        var exchangeRateProvider = provider.GetRequiredService<IExchangeRateProvider>();
+
+        exchangeRateProvider.Should().NotBeNull();
     }
 
     private static IServiceProvider BuildServiceProvider(Dictionary<string, string?> settings)

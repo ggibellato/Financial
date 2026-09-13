@@ -1,5 +1,5 @@
 using ClosedXML.Excel;
-using Financial.CashFlow.Domain.Enums;
+using Financial.Shared.Abstractions.Currencies;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Reporting;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.SheetImporters;
 using FluentAssertions;

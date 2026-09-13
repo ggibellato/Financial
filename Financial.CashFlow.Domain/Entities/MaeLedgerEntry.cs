@@ -1,5 +1,5 @@
 using System;
-using Financial.CashFlow.Domain.Enums;
+using Financial.Shared.Abstractions.Currencies;
 
 namespace Financial.CashFlow.Domain.Entities;
 

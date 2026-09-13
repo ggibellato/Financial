@@ -1,4 +1,5 @@
 using Financial.CashFlow.Application.Interfaces;
+using Financial.Shared.Abstractions.Currencies;
 using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace Financial.Api.Tests;

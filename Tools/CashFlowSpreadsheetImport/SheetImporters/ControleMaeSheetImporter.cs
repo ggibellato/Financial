@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
 using ClosedXML.Excel;
 using Financial.CashFlow.Domain.Entities;
-using Financial.CashFlow.Domain.Enums;
+using Financial.Shared.Abstractions.Currencies;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Parsing;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Reporting;
 
