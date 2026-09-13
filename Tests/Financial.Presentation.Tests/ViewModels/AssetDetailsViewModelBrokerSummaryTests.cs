@@ -109,6 +109,7 @@ public class AssetDetailsViewModelBrokerSummaryTests
         var summary = new AggregatedSummaryDTO
         {
             ReportingCurrency = "GBP",
+            IsReportingCurrencyEnabled = false,
             ConvertedMarketValue = 100m,
             ConvertedInvested = 90m,
             ConvertedUnrealisedGainLoss = 10m,
@@ -121,6 +122,7 @@ public class AssetDetailsViewModelBrokerSummaryTests
         vm.Clear();
 
         vm.ReportingCurrency.Should().BeEmpty();
+        vm.IsReportingCurrencyEnabled.Should().BeTrue();
         vm.ConvertedMarketValue.Should().BeNull();
         vm.ConvertedInvested.Should().BeNull();
         vm.ConvertedUnrealisedGainLoss.Should().BeNull();
@@ -468,6 +470,30 @@ public class AssetDetailsViewModelBrokerSummaryTests
 
         vm.IsReportingCurrencyUnavailable.Should().BeTrue();
         vm.IsReportingCurrencyAvailable.Should().BeFalse();
+    }
+
+    [Fact]
+    public void LoadBrokerSummary_WithReportingCurrencyDisabled_SetsFlagAndIsReportingCurrencyAvailableFalse()
+    {
+        var vm = BuildViewModel();
+        var summary = new AggregatedSummaryDTO { ReportingCurrency = "GBP", IsReportingCurrencyEnabled = false };
+
+        vm.LoadBrokerSummary("XPI", summary, []);
+
+        vm.IsReportingCurrencyEnabled.Should().BeFalse();
+        vm.IsReportingCurrencyUnavailable.Should().BeFalse("disabled is a deliberate choice, not a failure");
+        vm.IsReportingCurrencyAvailable.Should().BeFalse();
+    }
+
+    [Fact]
+    public void LoadBrokerSummary_WithReportingCurrencyEnabled_IsReportingCurrencyAvailableTrue()
+    {
+        var vm = BuildViewModel();
+        var summary = new AggregatedSummaryDTO { ReportingCurrency = "GBP", IsReportingCurrencyEnabled = true };
+
+        vm.LoadBrokerSummary("XPI", summary, []);
+
+        vm.IsReportingCurrencyAvailable.Should().BeTrue();
     }
 
     private sealed class BlockingBrokerBreakdownService : IBrokerBreakdownService

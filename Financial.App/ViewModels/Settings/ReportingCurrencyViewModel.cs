@@ -15,6 +15,7 @@ public class ReportingCurrencyViewModel : ViewModelBase
     private readonly IReportingCurrencyProvider _reportingCurrencyProvider;
     private readonly ILogger<ReportingCurrencyViewModel> _logger;
     private Currency _currency;
+    private bool _isEnabled;
     private string? _saveError;
 
     public ReportingCurrencyViewModel(IReportingCurrencyProvider reportingCurrencyProvider, ILogger<ReportingCurrencyViewModel> logger)
@@ -22,9 +23,18 @@ public class ReportingCurrencyViewModel : ViewModelBase
         _reportingCurrencyProvider = reportingCurrencyProvider ?? throw new ArgumentNullException(nameof(reportingCurrencyProvider));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _currency = _reportingCurrencyProvider.GetReportingCurrency();
+        _isEnabled = _reportingCurrencyProvider.IsReportingCurrencyEnabled();
     }
 
     public string? SaveError { get => _saveError; private set => SetProperty(ref _saveError, value); }
+
+    /// <summary>Also gates the currency radio buttons' XAML <c>IsEnabled</c> - choosing a currency
+    /// has no effect while conversion itself is off.</summary>
+    public bool IsEnabled
+    {
+        get => _isEnabled;
+        set { if (value != _isEnabled) _ = SetEnabledAsync(value); }
+    }
 
     public bool IsGbpSelected
     {
@@ -66,6 +76,26 @@ public class ReportingCurrencyViewModel : ViewModelBase
         finally
         {
             NotifySelectionChanged();
+        }
+    }
+
+    internal async Task SetEnabledAsync(bool enabled)
+    {
+        SaveError = null;
+
+        try
+        {
+            await _reportingCurrencyProvider.SetReportingCurrencyEnabledAsync(enabled);
+            _isEnabled = enabled;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("ReportingCurrency enabled save failed with {ErrorType}", ex.GetType().Name);
+            SaveError = ex.Message;
+        }
+        finally
+        {
+            OnPropertyChanged(nameof(IsEnabled));
         }
     }
 

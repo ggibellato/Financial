@@ -142,6 +142,18 @@ public class AssetDetailsViewModelPortfolioSummaryTests
     }
 
     [Fact]
+    public void LoadPortfolioSummary_ReportingCurrencyDisabled_IsReportingCurrencyAvailableFalse()
+    {
+        var vm = BuildViewModel();
+        var summary = new AggregatedSummaryDTO { ReportingCurrency = "BRL", IsReportingCurrencyEnabled = false };
+
+        vm.LoadPortfolioSummary("Broker", "Portfolio", summary, [], BuildItems());
+
+        vm.IsReportingCurrencyEnabled.Should().BeFalse();
+        vm.IsReportingCurrencyAvailable.Should().BeFalse();
+    }
+
+    [Fact]
     public void LoadPortfolioSummary_SetsMarketValueAndReturns()
     {
         var vm = BuildViewModel();
