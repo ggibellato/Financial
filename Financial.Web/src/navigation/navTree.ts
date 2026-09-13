@@ -78,6 +78,7 @@ export const NAV_TREE: NavCategory[] = [
     label: 'Settings',
     children: [
       { id: 'appearance', label: 'Appearance', route: '/settings/appearance' },
+      { id: 'reporting-currency', label: 'Reporting Currency', route: '/settings/reporting-currency' },
       { id: 'integrations', label: 'Integrations', route: '/settings/integrations' },
     ],
   },

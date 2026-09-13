@@ -20,6 +20,7 @@ import {
   MonthlyPage,
   PortfoliosPage,
   RecurringBillsPage,
+  ReportingCurrencyPage,
   ReservaPage,
   ReserveBucketsPage,
 } from './lazyPages'
@@ -61,5 +62,6 @@ export const PAGE_ROUTES: PageRoute[] = [
   { path: 'admin/cashflow/recurring-bills', element: <RecurringBillsPage /> },
   { path: 'admin/cashflow/reserve-buckets', element: <ReserveBucketsPage /> },
   { path: 'settings/appearance', element: <AppearancePage /> },
+  { path: 'settings/reporting-currency', element: <ReportingCurrencyPage /> },
   { path: 'settings/integrations', element: <IntegrationsPage /> },
 ]
