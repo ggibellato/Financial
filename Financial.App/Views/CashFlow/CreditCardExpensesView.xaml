@@ -33,7 +33,7 @@
                   AutoGenerateColumns="False" IsReadOnly="True" CanUserResizeRows="False" CanUserSortColumns="True"
                   GridLinesVisibility="Horizontal" HeadersVisibility="Column" SelectionMode="Single">
             <DataGrid.Columns>
-                <DataGridTextColumn Binding="{Binding ChargeDate, Converter={StaticResource DateFormatConverter}}" Header="Date" Width="100"
+                <DataGridTextColumn Binding="{Binding Date, Converter={StaticResource DateFormatConverter}}" Header="Date" Width="100"
                                      ElementStyle="{StaticResource PlainColumnTextStyle}"/>
                 <DataGridTextColumn Binding="{Binding Description}" Header="Description" Width="*"
                                      ElementStyle="{StaticResource PlainColumnTextStyle}"/>

@@ -106,6 +106,26 @@ public class Expense
         else
         {
             ValidatePaymentShape(paymentSourceBank, creditCard);
+
+            var wasCardCharge = PaymentStatus == ExpensePaymentStatus.CreditCardCharge;
+
+            if (creditCard is not null)
+            {
+                // Only Settle() is meant to make Date diverge from ChargeDate; keep them in sync
+                // while still unsettled so a corrected Date doesn't leave ChargeDate stale.
+                if (!wasCardCharge || InvoiceDate == FirstOfMonth(Date))
+                {
+                    InvoiceDate = FirstOfMonth(date);
+                }
+
+                ChargeDate = date;
+            }
+            else if (wasCardCharge)
+            {
+                ChargeDate = null;
+                InvoiceDate = null;
+            }
+
             PaymentSourceBank = paymentSourceBank;
             CreditCard = creditCard;
         }
@@ -151,9 +171,9 @@ public class Expense
     }
 
     /// <summary>
-    /// One-time backfill for a pre-F01 record migrated by ExpenseChargeDateMigrator.
-    /// ChargeDate/InvoiceDate are otherwise only ever set at creation; this is the sole other
-    /// entry point, and only usable once (while ChargeDate is still unset).
+    /// One-time backfill for a pre-F01 record migrated by ExpenseChargeDateMigrator, for a record
+    /// that predates ChargeDate/InvoiceDate existing at all. Only usable once, while ChargeDate is
+    /// still unset - <see cref="UpdateDetails"/> is the ordinary way they change afterward.
     /// </summary>
     public void MigrateLegacyDates(DateOnly chargeDate, DateOnly invoiceDate, DateOnly? settledDate)
     {

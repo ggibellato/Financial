@@ -45,6 +45,9 @@ interface ExpenseFormState {
   creditCardId: string
   creditCardName: string
   invoiceDate: string
+  // False until the user directly edits the invoice field - mirrors ExpenseWorkflowViewModel's
+  // _invoiceDateTouchedByUser.
+  invoiceDateTouched: boolean
   roundUpAmount: string
   // True until the user directly edits the round-up field, or an edit form loads a saved
   // amount - both "freeze" it so later Value/PaymentSource edits stop recomputing it.
@@ -66,6 +69,7 @@ type ExpenseFormAction =
   | { type: 'CANCEL_FORM' }
   | { type: 'SET_FIELD'; payload: { field: ExpenseFormField; value: string } }
   | { type: 'SET_ROUND_UP_SUGGESTION'; payload: { value: string } }
+  | { type: 'SET_INVOICE_DATE_DEFAULT'; payload: { value: string } }
   | { type: 'SAVE_START' }
   | { type: 'SAVE_SUCCESS' }
   | { type: 'SAVE_ERROR'; payload: { message: string | null; fields: Partial<Record<ExpenseFormField, string>> } }
@@ -79,6 +83,7 @@ const BLANK_FORM = {
   creditCardId: '',
   creditCardName: '',
   invoiceDate: '',
+  invoiceDateTouched: false,
   roundUpAmount: '',
   roundUpAmountAuto: true,
   countsAsTithe: 'true',
@@ -128,6 +133,7 @@ function reducer(state: ExpenseFormState, action: ExpenseFormAction): ExpenseFor
         creditCardId: action.payload.creditCardId ?? '',
         creditCardName: action.payload.creditCardName ?? '',
         invoiceDate: action.payload.invoiceDate ? action.payload.invoiceDate.slice(0, 7) : '',
+        invoiceDateTouched: false,
         roundUpAmount: action.payload.roundUpAmount != null ? String(action.payload.roundUpAmount) : '',
         // A saved amount is frozen (not auto-recomputed), same as a user-typed one, so
         // re-editing Value/PaymentSource here doesn't silently change what was saved.
@@ -141,11 +147,17 @@ function reducer(state: ExpenseFormState, action: ExpenseFormAction): ExpenseFor
     case 'CANCEL_FORM':
       return { ...state, ...BLANK_FORM, isOpen: false, isEditing: false, editingId: null, saveError: null, saveErrorFields: {} }
     case 'SET_FIELD':
-      return action.payload.field === 'roundUpAmount'
-        ? { ...state, roundUpAmount: action.payload.value, roundUpAmountAuto: false }
-        : { ...state, [action.payload.field]: action.payload.value }
+      if (action.payload.field === 'roundUpAmount') {
+        return { ...state, roundUpAmount: action.payload.value, roundUpAmountAuto: false }
+      }
+      if (action.payload.field === 'invoiceDate') {
+        return { ...state, invoiceDate: action.payload.value, invoiceDateTouched: true }
+      }
+      return { ...state, [action.payload.field]: action.payload.value }
     case 'SET_ROUND_UP_SUGGESTION':
       return { ...state, roundUpAmount: action.payload.value, roundUpAmountAuto: true }
+    case 'SET_INVOICE_DATE_DEFAULT':
+      return { ...state, invoiceDate: action.payload.value }
     case 'SAVE_START':
       return { ...state, isSaving: true, saveError: null, saveErrorFields: {} }
     case 'SAVE_SUCCESS':
@@ -219,6 +231,12 @@ export function useExpenseForm(
       const expenseValue = field === 'value' ? value : state.value
       const suggestion = suggestRoundUpAmount(banks, bankId, expenseValue)
       dispatch({ type: 'SET_ROUND_UP_SUGGESTION', payload: { value: suggestion ?? '' } })
+    }
+    if ((field === 'date' || field === 'creditCardId') && state.paymentMode === 'card' && !state.invoiceDateTouched) {
+      const date = field === 'date' ? value : state.date
+      const creditCardId = field === 'creditCardId' ? value : state.creditCardId
+      const defaultMonth = computeDefaultInvoiceMonth(date, creditCardId, creditCards)
+      dispatch({ type: 'SET_INVOICE_DATE_DEFAULT', payload: { value: defaultMonth } })
     }
   }
 

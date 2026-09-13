@@ -194,6 +194,114 @@ public class ExpenseTests
             expense.PaymentSourceBank.Should().BeNull();
             expense.CreditCard.Should().Be(ChaseMaster4023);
             expense.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
+            expense.ChargeDate.Should().Be(newDate);
+            expense.InvoiceDate.Should().Be(new DateOnly(2026, 8, 1));
+        }
+    }
+
+    [Fact]
+    public void UpdateDetails_SwitchingBankExpenseToCardPayment_InitializesChargeDateAndInvoiceDate()
+    {
+        var expense = CreateImmediateExpense();
+        var newDate = new DateOnly(2026, 8, 24);
+
+        expense.UpdateDetails(newDate, expense.Description, expense.Value, expense.Category, null, ChaseMaster4023);
+
+        using (new AssertionScope())
+        {
+            expense.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
+            expense.ChargeDate.Should().Be(newDate);
+            expense.InvoiceDate.Should().Be(new DateOnly(2026, 8, 1));
+        }
+    }
+
+    [Fact]
+    public void UpdateDetails_SwitchingUnsettledCardChargeToBankPayment_ClearsChargeDateAndInvoiceDate()
+    {
+        var expense = CreateCardCharge();
+
+        expense.UpdateDetails(expense.Date, expense.Description, expense.Value, expense.Category, Chase, null);
+
+        using (new AssertionScope())
+        {
+            expense.PaymentStatus.Should().Be(ExpensePaymentStatus.ImmediatePayment);
+            expense.ChargeDate.Should().BeNull();
+            expense.InvoiceDate.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public void UpdateDetails_OnBankExpense_ChangingDate_ChargeDateAndInvoiceDateStayNull()
+    {
+        var expense = CreateImmediateExpense();
+        var newDate = new DateOnly(2026, 8, 1);
+
+        expense.UpdateDetails(newDate, expense.Description, expense.Value, expense.Category, Chase, null);
+
+        using (new AssertionScope())
+        {
+            expense.Date.Should().Be(newDate);
+            expense.ChargeDate.Should().BeNull();
+            expense.InvoiceDate.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public void UpdateDetails_OnSettledCardCharge_ChangingDate_UpdatesDateButLeavesChargeDateAndInvoiceDateUnchanged()
+    {
+        var expense = CreateSettledExpense();
+        var originalChargeDate = expense.ChargeDate;
+        var originalInvoiceDate = expense.InvoiceDate;
+        var correctedPaymentDate = new DateOnly(2026, 8, 3);
+
+        expense.UpdateDetails(
+            correctedPaymentDate, expense.Description, expense.Value, expense.Category,
+            expense.PaymentSourceBank, expense.CreditCard);
+
+        using (new AssertionScope())
+        {
+            expense.Date.Should().Be(correctedPaymentDate);
+            expense.ChargeDate.Should().Be(originalChargeDate);
+            expense.InvoiceDate.Should().Be(originalInvoiceDate);
+            expense.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardSettled);
+        }
+    }
+
+    [Fact]
+    public void UpdateDetails_OnUnsettledCardCharge_ChangingDate_SyncsChargeDateToNewDate()
+    {
+        var expense = CreateCardCharge();
+        var newDate = new DateOnly(2026, 8, 24);
+
+        expense.UpdateDetails(newDate, expense.Description, expense.Value, expense.Category, null, ChaseMaster4023);
+
+        expense.ChargeDate.Should().Be(newDate);
+    }
+
+    [Fact]
+    public void UpdateDetails_OnUnsettledCardCharge_ChangingDate_MovesInvoiceDateWhenStillAtDefault()
+    {
+        var expense = CreateCardCharge();
+        var newDate = new DateOnly(2026, 8, 24);
+
+        expense.UpdateDetails(newDate, expense.Description, expense.Value, expense.Category, null, ChaseMaster4023);
+
+        expense.InvoiceDate.Should().Be(new DateOnly(2026, 8, 1));
+    }
+
+    [Fact]
+    public void UpdateDetails_OnUnsettledCardCharge_ChangingDate_PreservesInvoiceDatePinnedToADifferentMonth()
+    {
+        var expense = CreateCardCharge();
+        expense.SetInvoiceDate(new DateOnly(2026, 9, 1));
+        var newDate = new DateOnly(2026, 8, 24);
+
+        expense.UpdateDetails(newDate, expense.Description, expense.Value, expense.Category, null, ChaseMaster4023);
+
+        using (new AssertionScope())
+        {
+            expense.ChargeDate.Should().Be(newDate);
+            expense.InvoiceDate.Should().Be(new DateOnly(2026, 9, 1));
         }
     }
 

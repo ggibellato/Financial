@@ -297,6 +297,53 @@ describe('useExpenseForm', () => {
     expect(result.current.isSettled).toBe(false)
   })
 
+  it('editing the date of an unsettled card charge moves the invoice month along with it', async () => {
+    const charge: ExpenseDto = {
+      ...EXPENSE,
+      id: 'e7',
+      date: '2026-10-24',
+      paymentSourceBankId: null,
+      paymentSourceBankName: null,
+      creditCardId: 'card-baamex',
+      creditCardName: 'BaAmex',
+      chargeDate: '2026-10-24',
+      invoiceDate: '2026-10-01',
+      paymentStatus: 'CreditCardCharge',
+    }
+    updateExpenseMock.mockResolvedValue(charge)
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+
+    act(() => result.current.showEditForm(charge))
+    act(() => result.current.setField('date', '2026-08-24'))
+    await act(() => result.current.submit())
+
+    expect(updateExpenseMock).toHaveBeenCalledWith('e7', expect.objectContaining({ invoiceDate: '2026-08-01' }))
+  })
+
+  it("editing the date of an unsettled card charge preserves a manually-pinned invoice month", async () => {
+    const charge: ExpenseDto = {
+      ...EXPENSE,
+      id: 'e8',
+      date: '2026-10-24',
+      paymentSourceBankId: null,
+      paymentSourceBankName: null,
+      creditCardId: 'card-baamex',
+      creditCardName: 'BaAmex',
+      chargeDate: '2026-10-24',
+      invoiceDate: '2026-10-01',
+      paymentStatus: 'CreditCardCharge',
+    }
+    updateExpenseMock.mockResolvedValue(charge)
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+
+    act(() => result.current.showEditForm(charge))
+    act(() => result.current.setField('invoiceDate', '2026-11'))
+    act(() => result.current.setField('date', '2026-08-24'))
+    await act(() => result.current.submit())
+
+    expect(updateExpenseMock).toHaveBeenCalledWith('e8', expect.objectContaining({ invoiceDate: '2026-11-01' }))
+  })
+
   it('saves a settled expense with its payment fields unchanged', async () => {
     const settled: ExpenseDto = {
       ...EXPENSE,
