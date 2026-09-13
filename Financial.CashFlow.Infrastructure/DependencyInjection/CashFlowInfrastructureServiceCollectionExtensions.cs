@@ -16,8 +16,6 @@ namespace Financial.CashFlow.Infrastructure.DependencyInjection;
 
 public static class CashFlowInfrastructureServiceCollectionExtensions
 {
-    private const string FrankfurterBaseAddress = "https://api.frankfurter.app/";
-
     public static IServiceCollection AddFinancialCashFlowInfrastructure(
         this IServiceCollection services,
         IConfiguration configuration)
@@ -30,10 +28,7 @@ public static class CashFlowInfrastructureServiceCollectionExtensions
             options.GoogleDriveFilePath = configuration[CashFlowRepositoryConfigurationKeys.GoogleDriveFilePath];
         });
         services.AddSingleton<ICashFlowSerializer, CashFlowSerializerAdapter>();
-        services.AddHttpClient<IExchangeRateProvider, FrankfurterExchangeRateProvider>(client =>
-        {
-            client.BaseAddress = new Uri(FrankfurterBaseAddress);
-        });
+        services.AddHttpClient<IExchangeRateProvider, FrankfurterExchangeRateProvider>();
         services.AddSingleton<ICashFlowRepository>(sp =>
         {
             var settings = sp.GetRequiredService<IOptions<CashFlowRepositorySettingsOptions>>().Value;

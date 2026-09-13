@@ -7,6 +7,8 @@ namespace Financial.Integrations.Frankfurter;
 
 public sealed class FrankfurterExchangeRateProvider : IExchangeRateProvider
 {
+    public const string BaseAddress = "https://api.frankfurter.app/";
+
     private const int MaxFallbackDays = 10;
 
     private readonly HttpClient _httpClient;
@@ -16,6 +18,7 @@ public sealed class FrankfurterExchangeRateProvider : IExchangeRateProvider
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _httpClient.BaseAddress ??= new Uri(BaseAddress);
     }
 
     public async Task<decimal?> GetHistoricalRateAsync(DateOnly date, Currency from, Currency to)
