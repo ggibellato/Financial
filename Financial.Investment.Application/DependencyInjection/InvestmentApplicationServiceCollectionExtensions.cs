@@ -10,7 +10,7 @@ public static class InvestmentApplicationServiceCollectionExtensions
     public static IServiceCollection AddFinancialApplication(this IServiceCollection services)
     {
         services.TryAddSingleton(TimeProvider.System);
-        services.TryAddSingleton<IReportingCurrencyProvider, FixedReportingCurrencyProvider>();
+        services.TryAddSingleton<IReportingCurrencyProvider, ReportingCurrencySettingService>();
         services.AddSingleton<IHoldingValuationService, HoldingValuationService>();
         services.AddSingleton<INavigationService, NavigationService>();
         services.AddSingleton<CreditService>();

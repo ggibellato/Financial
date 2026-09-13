@@ -31,7 +31,7 @@ public class NavigationServiceTests
     {
         _sut = new NavigationService(_repository, TestHoldingValuationService.Create(), _tracer, NullLogger<NavigationService>.Instance);
         IExchangeRateProvider exchangeRateProvider = new StubExchangeRateProvider(0.15m);
-        _creditSut = new CreditService(_repository, _sut, exchangeRateProvider, new FixedReportingCurrencyProvider(), TimeProvider.System, _tracer, NullLogger<CreditService>.Instance);
+        _creditSut = new CreditService(_repository, _sut, exchangeRateProvider, new StubReportingCurrencyProvider(), TimeProvider.System, _tracer, NullLogger<CreditService>.Instance);
     }
 
     [Fact]

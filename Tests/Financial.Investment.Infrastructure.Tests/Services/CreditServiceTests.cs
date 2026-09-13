@@ -185,7 +185,7 @@ public class CreditServiceTests
         var tracer = new RecordingTelemetryTracer();
         var navigationService = new NavigationService(repository, TestHoldingValuationService.Create(), tracer, NullLogger<NavigationService>.Instance);
         IExchangeRateProvider exchangeRateProvider = new StubExchangeRateProvider(0.15m);
-        var service = new CreditService(repository, navigationService, exchangeRateProvider, new FixedReportingCurrencyProvider(), TimeProvider.System, tracer, NullLogger<CreditService>.Instance);
+        var service = new CreditService(repository, navigationService, exchangeRateProvider, new StubReportingCurrencyProvider(), TimeProvider.System, tracer, NullLogger<CreditService>.Instance);
 
         return (service, tempFile);
     }

@@ -8,7 +8,7 @@ namespace Financial.Investment.Application.Tests.Services;
 
 public class FxEntryCaptureHelperTests
 {
-    private static readonly FixedReportingCurrencyProvider ReportingCurrencyProvider = new();
+    private static readonly StubReportingCurrencyProvider ReportingCurrencyProvider = new();
 
     [Fact]
     public async Task CaptureAsync_WhenBrokerCurrencyMatchesReportingCurrency_ReturnsNoSnapshot()
