@@ -19,6 +19,7 @@ namespace Financial.InvestmentCurrencyBackfill.Tests;
 public class CurrencyBackfillEndToEndTests
 {
     [Fact]
+    [Trait("AC", "P49-F02-transaction-and-credit-currency-04")]
     public async Task MigrateAsync_AgainstATempDataFile_BackfillsAndPersists()
     {
         var tempFile = Path.Combine(Path.GetTempPath(), $"data.currency-backfill.{Guid.NewGuid():N}.json");

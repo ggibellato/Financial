@@ -9,6 +9,7 @@ namespace Financial.InvestmentCurrencyBackfill.Tests;
 public class CurrencyBackfillMigratorTests
 {
     [Fact]
+    [Trait("AC", "P49-F02-transaction-and-credit-currency-05")]
     public async Task MigrateAsync_TransactionMissingCurrency_BackfillsCurrencyAndSnapshot()
     {
         var (investments, asset) = BuildGraph("XPI", "BRL");
@@ -42,6 +43,7 @@ public class CurrencyBackfillMigratorTests
     }
 
     [Fact]
+    [Trait("AC", "P49-F02-transaction-and-credit-currency-07")]
     public async Task MigrateAsync_TransactionAlreadyBackfilled_IsSkipped()
     {
         var (investments, asset) = BuildGraph("XPI", "BRL");
@@ -73,6 +75,7 @@ public class CurrencyBackfillMigratorTests
     }
 
     [Fact]
+    [Trait("AC", "P49-F02-transaction-and-credit-currency-06")]
     public async Task MigrateAsync_WhenNoRateIsObtainable_LeavesSnapshotNullAndNamesTheRecord()
     {
         var (investments, asset) = BuildGraph("XPI", "BRL");

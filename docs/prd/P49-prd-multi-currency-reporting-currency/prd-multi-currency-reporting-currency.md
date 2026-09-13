@@ -384,19 +384,19 @@ graph TD
 - [x] **P49-F01-shared-exchange-rate-provider-06** A request for a date with no rate anywhere in that 10-day window returns `null`, not an exception
 
 ### F02. Transaction and Credit Currency
-- [ ] Every newly recorded Transaction and Credit carries a `Currency` auto-filled from its asset's
+- [ ] **P49-F02-transaction-and-credit-currency-01** Every newly recorded Transaction and Credit carries a `Currency` auto-filled from its asset's
       broker
-- [ ] A Transaction/Credit whose currency differs from the reporting currency at entry time carries a
+- [ ] **P49-F02-transaction-and-credit-currency-02** A Transaction/Credit whose currency differs from the reporting currency at entry time carries a
       populated `FxRateSnapshot` (rate, source, retrieved-at)
-- [ ] A Transaction/Credit whose currency matches the reporting currency at entry time carries no
+- [ ] **P49-F02-transaction-and-credit-currency-03** A Transaction/Credit whose currency matches the reporting currency at entry time carries no
       snapshot (or an explicit rate of 1)
-- [ ] The migration tool run against a temp copy of `data-investment.json` reports the exact set of
+- [ ] **P49-F02-transaction-and-credit-currency-04** The migration tool run against a temp copy of `data-investment.json` reports the exact set of
       changes before any write to the live file
-- [ ] After migration, all 899 pre-existing transactions and 1,485 pre-existing credits carry a
+- [ ] **P49-F02-transaction-and-credit-currency-05** After migration, all 899 pre-existing transactions and 1,485 pre-existing credits carry a
       `Currency`
-- [ ] A record whose date yields no obtainable rate is left with a null `FxRateSnapshot` and is named
+- [ ] **P49-F02-transaction-and-credit-currency-06** A record whose date yields no obtainable rate is left with a null `FxRateSnapshot` and is named
       explicitly in the migration report
-- [ ] Re-running the migration after a partial failure only touches records still missing data, and
+- [ ] **P49-F02-transaction-and-credit-currency-07** Re-running the migration after a partial failure only touches records still missing data, and
       produces no duplicate or conflicting snapshots
 
 ### F03. Reporting Currency Setting and Converted Totals
