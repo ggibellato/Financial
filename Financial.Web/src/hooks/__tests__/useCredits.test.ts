@@ -71,6 +71,8 @@ const CREDIT_A: CreditDto = {
   value: 120.5,
   withheld: 0,
   netAmount: 120.5,
+  currency: 'GBP',
+  fxRateSnapshot: null,
 }
 
 const CREDIT_B: CreditDto = {
@@ -80,6 +82,8 @@ const CREDIT_B: CreditDto = {
   value: 350.0,
   withheld: 0,
   netAmount: 350.0,
+  currency: 'GBP',
+  fxRateSnapshot: null,
 }
 
 const ASSET_DETAILS: AssetDetailsDto = {
@@ -481,8 +485,12 @@ describe('useCredits', () => {
   })
 
   it('aggregateByMonth_computesByTypeDynamically', async () => {
-    const creditA: CreditDto = { id: 'sm1', date: '2024-03-05T00:00:00', type: 'Dividend', value: 100, withheld: 0, netAmount: 100 }
-    const creditB: CreditDto = { id: 'sm2', date: '2024-03-20T00:00:00', type: 'SecuritiesLendingIncome', value: 50, withheld: 0, netAmount: 50 }
+    const creditA: CreditDto = {
+      id: 'sm1', date: '2024-03-05T00:00:00', type: 'Dividend', value: 100, withheld: 0, netAmount: 100, currency: 'GBP', fxRateSnapshot: null,
+    }
+    const creditB: CreditDto = {
+      id: 'sm2', date: '2024-03-20T00:00:00', type: 'SecuritiesLendingIncome', value: 50, withheld: 0, netAmount: 50, currency: 'GBP', fxRateSnapshot: null,
+    }
     getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, credits: [creditA, creditB] })
     const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useCredits(), { wrapper })
@@ -496,8 +504,12 @@ describe('useCredits', () => {
   })
 
   it('aggregateByMonth_computesTotalAsSumOfByType', async () => {
-    const creditA: CreditDto = { id: 'sm1', date: '2024-03-05T00:00:00', type: 'Dividend', value: 100, withheld: 0, netAmount: 100 }
-    const creditB: CreditDto = { id: 'sm2', date: '2024-03-20T00:00:00', type: 'SecuritiesLendingIncome', value: 50, withheld: 0, netAmount: 50 }
+    const creditA: CreditDto = {
+      id: 'sm1', date: '2024-03-05T00:00:00', type: 'Dividend', value: 100, withheld: 0, netAmount: 100, currency: 'GBP', fxRateSnapshot: null,
+    }
+    const creditB: CreditDto = {
+      id: 'sm2', date: '2024-03-20T00:00:00', type: 'SecuritiesLendingIncome', value: 50, withheld: 0, netAmount: 50, currency: 'GBP', fxRateSnapshot: null,
+    }
     getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, credits: [creditA, creditB] })
     const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useCredits(), { wrapper })
@@ -510,9 +522,15 @@ describe('useCredits', () => {
   })
 
   it('aggregateByMonth_supportsAThirdCreditType', async () => {
-    const creditA: CreditDto = { id: 'sm1', date: '2024-03-05T00:00:00', type: 'Dividend', value: 100, withheld: 0, netAmount: 100 }
-    const creditB: CreditDto = { id: 'sm2', date: '2024-03-20T00:00:00', type: 'SecuritiesLendingIncome', value: 50, withheld: 0, netAmount: 50 }
-    const creditC: CreditDto = { id: 'sm3', date: '2024-03-10T00:00:00', type: 'Interest', value: 30, withheld: 0, netAmount: 30 }
+    const creditA: CreditDto = {
+      id: 'sm1', date: '2024-03-05T00:00:00', type: 'Dividend', value: 100, withheld: 0, netAmount: 100, currency: 'GBP', fxRateSnapshot: null,
+    }
+    const creditB: CreditDto = {
+      id: 'sm2', date: '2024-03-20T00:00:00', type: 'SecuritiesLendingIncome', value: 50, withheld: 0, netAmount: 50, currency: 'GBP', fxRateSnapshot: null,
+    }
+    const creditC: CreditDto = {
+      id: 'sm3', date: '2024-03-10T00:00:00', type: 'Interest', value: 30, withheld: 0, netAmount: 30, currency: 'GBP', fxRateSnapshot: null,
+    }
     getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, credits: [creditA, creditB, creditC] })
     const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useCredits(), { wrapper })

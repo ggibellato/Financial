@@ -14,6 +14,8 @@ const BUY_TRANSACTION: TransactionDto = {
   fees: 1,
   withheld: 0,
   netCash: -901,
+  currency: 'GBP',
+  fxRateSnapshot: null,
 }
 
 const SELL_TRANSACTION: TransactionDto = {
@@ -25,6 +27,8 @@ const SELL_TRANSACTION: TransactionDto = {
   fees: 1,
   withheld: 0,
   netCash: 649,
+  currency: 'GBP',
+  fxRateSnapshot: null,
 }
 
 describe('buildChartData', () => {

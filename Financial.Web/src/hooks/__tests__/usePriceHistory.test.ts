@@ -57,6 +57,8 @@ const BUY_TRANSACTION: TransactionDto = {
   fees: 1,
   withheld: 0,
   netCash: -1051,
+  currency: 'GBP',
+  fxRateSnapshot: null,
 }
 
 const ASSET_DETAILS: AssetDetailsDto = {

@@ -98,7 +98,9 @@ internal static class NavigationMapper
             UnitPrice = transaction.UnitPrice,
             Fees = transaction.Fees,
             Withheld = transaction.Withheld,
-            NetCash = transaction.NetCash
+            NetCash = transaction.NetCash,
+            Currency = transaction.Currency.ToString(),
+            FxRateSnapshot = MapFxRateSnapshot(transaction.FxRateSnapshot)
         };
     }
 
@@ -122,9 +124,22 @@ internal static class NavigationMapper
             Type = credit.Type.ToString(),
             Value = credit.Value,
             Withheld = credit.Withheld,
-            NetAmount = credit.NetAmount
+            NetAmount = credit.NetAmount,
+            Currency = credit.Currency.ToString(),
+            FxRateSnapshot = MapFxRateSnapshot(credit.FxRateSnapshot)
         };
     }
+
+    private static FxRateSnapshotDTO? MapFxRateSnapshot(FxRateSnapshot? snapshot) =>
+        snapshot is null
+            ? null
+            : new FxRateSnapshotDTO
+            {
+                ToCurrency = snapshot.ToCurrency.ToString(),
+                Rate = snapshot.Rate,
+                Source = snapshot.Source.ToString(),
+                RetrievedAt = snapshot.RetrievedAt
+            };
 
     internal static AssetPriceSnapshotDTO MapPriceEntry(AssetPriceSnapshot entry)
     {

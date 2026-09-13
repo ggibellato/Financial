@@ -6044,8 +6044,10 @@ export interface components {
             withheld?: number;
         };
         CreditDTO: {
+            currency?: string;
             /** Format: date-time */
             date?: string;
+            fxRateSnapshot?: null | components["schemas"]["FxRateSnapshotDTO"];
             /** Format: uuid */
             id?: string;
             /** Format: double */
@@ -6179,6 +6181,14 @@ export interface components {
             roundUpAmount?: null | number;
             /** Format: double */
             value: number;
+        };
+        FxRateSnapshotDTO: {
+            /** Format: double */
+            rate?: number;
+            /** Format: date-time */
+            retrievedAt?: string;
+            source: string;
+            toCurrency: string;
         };
         /** @enum {unknown} */
         GlobalAssetClass: "Unknown" | "Equity" | "RealEstate" | "Bond" | "Fund" | "ETF" | "Cash" | "Pension" | "Other" | "Cryptocurrency" | "PrivateCredit";
@@ -6723,10 +6733,12 @@ export interface components {
             withheld?: number;
         };
         TransactionDTO: {
+            currency?: string;
             /** Format: date-time */
             date?: string;
             /** Format: double */
             fees?: number;
+            fxRateSnapshot?: null | components["schemas"]["FxRateSnapshotDTO"];
             /** Format: uuid */
             id?: string;
             /** Format: double */
