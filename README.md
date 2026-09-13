@@ -224,6 +224,16 @@ Defaults to reading `Despesas.xlsx` from the Downloads folder and writing to `da
 
 Legacy WPF desktop utility for a one-time import of Investment portfolio data from Google Sheets into `data-investment.json`. Not runnable headless — open and run it from Visual Studio.
 
+### InvestmentCurrencyBackfill
+
+One-time migration backfilling `Currency` and an `FxRateSnapshot` audit record onto every existing Transaction and Credit in `data-investment.json` (P49 F02). Always verify against a temp copy first — never point it at the live file directly.
+
+```bash
+dotnet run --project Tools/InvestmentCurrencyBackfill -- <path-to-data-investment.json>
+```
+
+Defaults to `data/data-investment.json` if no path is given. Backs up the target file automatically (timestamped sibling file) before writing, and prints a summary of what was backfilled, what was already set, and any record left without a rate. Idempotent — safe to re-run.
+
 ## Local deploy tooling
 
 `scripts/deploy.ps1` publishes the current local state of `Financial.App` (WPF) and `Financial.Api` (API + SPA) to a local `deploy/` folder. Manual, local-only tooling — not part of CI/CD, and `deploy/` itself is git-ignored.
