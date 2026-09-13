@@ -1,5 +1,6 @@
 using Financial.Investment.Domain.Entities;
 using Financial.Investment.Infrastructure.Persistence;
+using Financial.Shared.Abstractions.Currencies;
 using FluentAssertions;
 
 namespace Financial.Investment.Infrastructure.Tests.Persistence;
@@ -35,6 +36,37 @@ public class InvestmentSerializerAdapterTests
         var historicBrokerResult = result.HistoricBrokers.Should().ContainSingle().Which;
         var historicPortfolioResult = historicBrokerResult.Portfolios.Should().ContainSingle().Which;
         historicPortfolioResult.Assets.Should().ContainSingle().Which.Name.Should().Be("Asset B");
+    }
+
+    [Fact]
+    public void SerializeDeserialize_RoundTripPreservesCurrencyAndFxRateSnapshot()
+    {
+        var investments = Investments.Create();
+        var broker = Broker.Create("XPI", "BRL");
+        var portfolio = broker.AddPortfolio("Default");
+        var asset = Asset.Create("Asset A", "ISIN123", "BVMF", "AAA");
+        var snapshot = FxRateSnapshot.Create(Currency.GBP, 0.146m, FxRateSource.Frankfurter, new DateTimeOffset(2026, 7, 1, 9, 0, 0, TimeSpan.Zero));
+        asset.AddTransaction(Transaction.Create(new DateTime(2026, 7, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m, currency: Currency.BRL, fxRateSnapshot: snapshot));
+        asset.AddCredit(Credit.Create(new DateTime(2026, 7, 1), Credit.CreditType.Dividend, 10m, currency: Currency.BRL, fxRateSnapshot: snapshot));
+        portfolio.AddAsset(asset);
+        investments.AddActiveBroker(broker);
+
+        var json = Serializer.Serialize(investments);
+        var result = Serializer.Deserialize(json);
+
+        var resultAsset = result.ActiveBrokers.Single().Portfolios.Single().Assets.Single();
+        var transaction = resultAsset.Transactions.Should().ContainSingle().Subject;
+        transaction.Currency.Should().Be(Currency.BRL);
+        transaction.FxRateSnapshot.Should().NotBeNull();
+        transaction.FxRateSnapshot!.ToCurrency.Should().Be(Currency.GBP);
+        transaction.FxRateSnapshot!.Rate.Should().Be(0.146m);
+        transaction.FxRateSnapshot!.Source.Should().Be(FxRateSource.Frankfurter);
+        transaction.FxRateSnapshot!.RetrievedAt.Should().Be(snapshot.RetrievedAt);
+
+        var credit = resultAsset.Credits.Should().ContainSingle().Subject;
+        credit.Currency.Should().Be(Currency.BRL);
+        credit.FxRateSnapshot.Should().NotBeNull();
+        credit.FxRateSnapshot!.Rate.Should().Be(0.146m);
     }
 
     [Fact]

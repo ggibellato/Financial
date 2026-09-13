@@ -1,7 +1,9 @@
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Enums;
+using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Application.Services;
 using Financial.Investment.Domain.Exceptions;
+using Financial.Shared.Abstractions.Currencies;
 using Financial.Shared.Abstractions.Observability;
 using Financial.TestUtilities;
 using Financial.Investment.Domain.Entities;
@@ -13,20 +15,25 @@ namespace Financial.Investment.Application.Tests.Services;
 public class TransactionServiceMutationTests
 {
     private static readonly ITelemetryTracer Tracer = new RecordingTelemetryTracer();
+    private static readonly IExchangeRateProvider ExchangeRateProvider = new StubExchangeRateProvider(0.15m);
+    private static readonly IReportingCurrencyProvider ReportingCurrencyProvider = new FixedReportingCurrencyProvider();
 
-    private readonly StubInvestmentRepository _repository = new();
+    private readonly StubInvestmentRepository _repository = new()
+    {
+        Brokers = [Broker.Create("XPI", "BRL")]
+    };
 
     [Fact]
     public void Constructor_WithNullNavigationService_Throws()
     {
-        Action act = () => new TransactionService(_repository, null!, Tracer, NullLogger<TransactionService>.Instance);
+        Action act = () => new TransactionService(_repository, null!, ExchangeRateProvider, ReportingCurrencyProvider, TimeProvider.System, Tracer, NullLogger<TransactionService>.Instance);
         act.Should().Throw<ArgumentNullException>().WithParameterName("navigationService");
     }
 
     [Fact]
     public void Constructor_WithNullTracer_Throws()
     {
-        Action act = () => new TransactionService(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance), null!, NullLogger<TransactionService>.Instance);
+        Action act = () => new TransactionService(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance), ExchangeRateProvider, ReportingCurrencyProvider, TimeProvider.System, null!, NullLogger<TransactionService>.Instance);
         act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
     }
 
@@ -54,11 +61,35 @@ public class TransactionServiceMutationTests
     }
 
     [Fact]
+    public async Task AddTransactionAsync_CapturesCurrencyAndFxRateSnapshotFromTheBroker()
+    {
+        var asset = MakeAsset();
+        _repository.Asset = asset;
+
+        await CreateService().AddTransactionAsync(new TransactionCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "AAAA",
+            Date = new DateTime(2024, 1, 1),
+            Type = "Buy",
+            Quantity = 10m,
+            UnitPrice = 5m,
+            Fees = 0m
+        });
+
+        var transaction = asset.Transactions.Should().ContainSingle().Subject;
+        transaction.Currency.Should().Be(Currency.BRL, "XPI's broker currency differs from the fixed GBP reporting currency");
+        transaction.FxRateSnapshot.Should().NotBeNull();
+        transaction.FxRateSnapshot!.ToCurrency.Should().Be(Currency.GBP);
+    }
+
+    [Fact]
     public async Task AddTransactionAsync_ValidRequest_RecordsSuccessfulSpan()
     {
         _repository.Asset = MakeAsset();
         var tracer = new RecordingTelemetryTracer();
-        var service = new TransactionService(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance), tracer, NullLogger<TransactionService>.Instance);
+        var service = new TransactionService(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance), ExchangeRateProvider, ReportingCurrencyProvider, TimeProvider.System, tracer, NullLogger<TransactionService>.Instance);
 
         await service.AddTransactionAsync(new TransactionCreateDTO
         {
@@ -175,6 +206,35 @@ public class TransactionServiceMutationTests
 
         result.Should().NotBeNull();
         asset.Quantity.Should().Be(20m);
+    }
+
+    [Fact]
+    public async Task UpdateTransactionAsync_PreservesTheOriginalCurrencyAndFxRateSnapshot_WithoutCallingTheProvider()
+    {
+        var asset = MakeAsset();
+        var txId = Guid.NewGuid();
+        var originalSnapshot = FxRateSnapshot.Create(Currency.GBP, 0.146m, FxRateSource.Frankfurter, DateTimeOffset.UtcNow);
+        asset.AddTransaction(Transaction.CreateWithId(txId, new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m, currency: Currency.BRL, fxRateSnapshot: originalSnapshot));
+        _repository.Asset = asset;
+        var provider = new StubExchangeRateProvider(0.99m);
+        var service = new TransactionService(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance), provider, ReportingCurrencyProvider, TimeProvider.System, Tracer, NullLogger<TransactionService>.Instance);
+
+        await service.UpdateTransactionAsync(new TransactionUpdateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "AAAA",
+            Id = txId,
+            Date = new DateTime(2024, 1, 1),
+            Type = "Buy",
+            Quantity = 20m,
+            UnitPrice = 5m
+        });
+
+        var updated = asset.Transactions.Should().ContainSingle().Subject;
+        updated.Currency.Should().Be(Currency.BRL);
+        updated.FxRateSnapshot.Should().Be(originalSnapshot);
+        provider.CallCount.Should().Be(0, "revising a transaction must not recapture its entry-time FX rate");
     }
 
     [Fact]
@@ -439,7 +499,7 @@ public class TransactionServiceMutationTests
         _repository.WriteCallCount.Should().Be(0);
     }
 
-    private TransactionService CreateService() => new(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance), Tracer, NullLogger<TransactionService>.Instance);
+    private TransactionService CreateService() => new(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance), ExchangeRateProvider, ReportingCurrencyProvider, TimeProvider.System, Tracer, NullLogger<TransactionService>.Instance);
 
     private static Asset MakeAsset(string name = "AAAA") =>
         Asset.Create(name, "ISIN", "BVMF", name);
@@ -448,7 +508,7 @@ public class TransactionServiceMutationTests
     [Fact]
     public void Constructor_WithNullLogger_Throws()
     {
-        Action act = () => new TransactionService(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance), Tracer, null!);
+        Action act = () => new TransactionService(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance), ExchangeRateProvider, ReportingCurrencyProvider, TimeProvider.System, Tracer, null!);
 
         act.Should().Throw<ArgumentNullException>();
     }

@@ -1,6 +1,8 @@
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Enums;
+using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Application.Services;
+using Financial.Shared.Abstractions.Currencies;
 using Financial.Shared.Abstractions.Observability;
 using Financial.TestUtilities;
 using Financial.Investment.Domain.Entities;
@@ -12,27 +14,32 @@ namespace Financial.Investment.Application.Tests.Services;
 public class CreditServiceTests
 {
     private static readonly ITelemetryTracer Tracer = new RecordingTelemetryTracer();
+    private static readonly IExchangeRateProvider ExchangeRateProvider = new StubExchangeRateProvider(0.15m);
+    private static readonly IReportingCurrencyProvider ReportingCurrencyProvider = new FixedReportingCurrencyProvider();
 
-    private readonly StubInvestmentRepository _repository = new();
+    private readonly StubInvestmentRepository _repository = new()
+    {
+        Brokers = [Broker.Create("XPI", "BRL")]
+    };
 
     [Fact]
     public void Constructor_WithNullRepository_Throws()
     {
-        Action act = () => new CreditService(null!, new NavigationService(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance), Tracer, NullLogger<CreditService>.Instance);
+        Action act = () => new CreditService(null!, new NavigationService(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance), ExchangeRateProvider, ReportingCurrencyProvider, TimeProvider.System, Tracer, NullLogger<CreditService>.Instance);
         act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
     }
 
     [Fact]
     public void Constructor_WithNullNavigationService_Throws()
     {
-        Action act = () => new CreditService(_repository, null!, Tracer, NullLogger<CreditService>.Instance);
+        Action act = () => new CreditService(_repository, null!, ExchangeRateProvider, ReportingCurrencyProvider, TimeProvider.System, Tracer, NullLogger<CreditService>.Instance);
         act.Should().Throw<ArgumentNullException>().WithParameterName("navigationService");
     }
 
     [Fact]
     public void Constructor_WithNullTracer_Throws()
     {
-        Action act = () => new CreditService(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance), null!, NullLogger<CreditService>.Instance);
+        Action act = () => new CreditService(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance), ExchangeRateProvider, ReportingCurrencyProvider, TimeProvider.System, null!, NullLogger<CreditService>.Instance);
         act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
     }
 
@@ -55,6 +62,28 @@ public class CreditServiceTests
         result.Should().NotBeNull();
         asset.Credits.Should().ContainSingle(c => c.Value == 10m);
         _repository.WriteCallCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task AddCreditAsync_CapturesCurrencyAndFxRateSnapshotFromTheBroker()
+    {
+        var asset = MakeAsset();
+        _repository.Asset = asset;
+
+        await CreateService().AddCreditAsync(new CreditCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "AAAA",
+            Date = new DateTime(2024, 1, 1),
+            Type = "Dividend",
+            Value = 10m
+        });
+
+        var credit = asset.Credits.Should().ContainSingle().Subject;
+        credit.Currency.Should().Be(Currency.BRL, "XPI's broker currency differs from the fixed GBP reporting currency");
+        credit.FxRateSnapshot.Should().NotBeNull();
+        credit.FxRateSnapshot!.ToCurrency.Should().Be(Currency.GBP);
     }
 
     [Fact]
@@ -148,6 +177,34 @@ public class CreditServiceTests
 
         result.Should().NotBeNull();
         asset.Credits.Should().ContainSingle().Which.Value.Should().Be(25m);
+    }
+
+    [Fact]
+    public async Task UpdateCreditAsync_PreservesTheOriginalCurrencyAndFxRateSnapshot_WithoutCallingTheProvider()
+    {
+        var asset = MakeAsset();
+        var creditId = Guid.NewGuid();
+        var originalSnapshot = FxRateSnapshot.Create(Currency.GBP, 0.146m, FxRateSource.Frankfurter, DateTimeOffset.UtcNow);
+        asset.AddCredit(Credit.CreateWithId(creditId, new DateTime(2024, 1, 1), Credit.CreditType.Dividend, 5m, currency: Currency.BRL, fxRateSnapshot: originalSnapshot));
+        _repository.Asset = asset;
+        var provider = new StubExchangeRateProvider(0.99m);
+        var service = new CreditService(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance), provider, ReportingCurrencyProvider, TimeProvider.System, Tracer, NullLogger<CreditService>.Instance);
+
+        await service.UpdateCreditAsync(new CreditUpdateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "AAAA",
+            Id = creditId,
+            Date = new DateTime(2024, 1, 1),
+            Type = "Dividend",
+            Value = 25m
+        });
+
+        var updated = asset.Credits.Should().ContainSingle().Subject;
+        updated.Currency.Should().Be(Currency.BRL);
+        updated.FxRateSnapshot.Should().Be(originalSnapshot);
+        provider.CallCount.Should().Be(0, "revising a credit must not recapture its entry-time FX rate");
     }
 
     [Fact]
@@ -467,7 +524,7 @@ public class CreditServiceTests
         asset.Credits.Should().ContainSingle(c => c.Value == -20m && c.Type == Credit.CreditType.Dividend);
     }
 
-    private CreditService CreateService() => new(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance), Tracer, NullLogger<CreditService>.Instance);
+    private CreditService CreateService() => new(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance), ExchangeRateProvider, ReportingCurrencyProvider, TimeProvider.System, Tracer, NullLogger<CreditService>.Instance);
 
     private static Asset MakeAsset(string name = "AAAA") =>
         Asset.Create(name, "ISIN", "BVMF", name);
@@ -476,7 +533,7 @@ public class CreditServiceTests
     [Fact]
     public void Constructor_WithNullLogger_Throws()
     {
-        Action act = () => new CreditService(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance), Tracer, null!);
+        Action act = () => new CreditService(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance), ExchangeRateProvider, ReportingCurrencyProvider, TimeProvider.System, Tracer, null!);
 
         act.Should().Throw<ArgumentNullException>();
     }
