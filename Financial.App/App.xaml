@@ -35,6 +35,8 @@
         <converters:IntToNullableDoubleConverter x:Key="IntToNullableDoubleConverter"/>
         <converters:InvestmentAccountSourceDisplayConverter x:Key="InvestmentAccountSourceDisplayConverter"/>
         <converters:PriceSourceToLabelConverter x:Key="PriceSourceToLabelConverter"/>
+        <converters:FxRateSnapshotToVisibilityConverter x:Key="FxRateSnapshotToVisibilityConverter"/>
+        <converters:FxRateSnapshotToTooltipConverter x:Key="FxRateSnapshotToTooltipConverter"/>
 
         <!-- Assigning a DataGridColumn.Header to a ColumnFilterViewModelBase instance (in a
              view's code-behind, since DataGridColumn isn't part of the visual tree and can't
