@@ -50,6 +50,7 @@ const SUMMARY_DTO: AggregatedSummaryDto = {
   totalReturn: 0.1,
   totalReturnNetOfTax: 0.09,
   reportingCurrency: 'GBP',
+  isReportingCurrencyEnabled: true,
   convertedMarketValue: null,
   convertedInvested: null,
   convertedUnrealisedGainLoss: null,

@@ -20,4 +20,13 @@ public sealed class ReportingCurrencySettingService : IReportingCurrencyProvider
             _repository.GetInvestments().SetReportingCurrency(currency);
             return true;
         });
+
+    public bool IsReportingCurrencyEnabled() => _repository.GetInvestments().ReportingCurrencyEnabled;
+
+    public Task SetReportingCurrencyEnabledAsync(bool enabled) =>
+        _repository.ApplyAndSaveAsync(() =>
+        {
+            _repository.GetInvestments().SetReportingCurrencyEnabled(enabled);
+            return true;
+        });
 }

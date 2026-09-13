@@ -72,9 +72,11 @@ import type {
   MaeLedgerEntryDto,
   MaeLedgerTotalsDto,
   RecurringBillDto,
+  ReportingCurrencySettingDto,
   ReserveBucketBalanceDto,
   ReserveBucketDto,
   ReserveMovementDto,
+  SetReportingCurrencyEnabledRequestDto,
   SyncStatusResponseDto,
   TransferDto,
   TreeNodeDto,
@@ -2184,5 +2186,20 @@ describe('financialApiClient', () => {
 
     expect(result).toEqual(responseBody)
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/annual-summary/2026/historic-summary-averages`)
+  })
+
+  it('puts the reporting-currency enabled setting', async () => {
+    const requestBody: SetReportingCurrencyEnabledRequestDto = { enabled: false }
+    const responseBody: ReportingCurrencySettingDto = { currency: 'GBP', enabled: false }
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.setReportingCurrencyEnabled(requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/reporting-currency/enabled`)
+    expect(init?.method).toBe('PUT')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
   })
 })

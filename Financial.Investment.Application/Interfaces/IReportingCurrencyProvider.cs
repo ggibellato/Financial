@@ -10,4 +10,8 @@ public interface IReportingCurrencyProvider
     Currency GetReportingCurrency();
 
     Task SetReportingCurrencyAsync(Currency currency);
+
+    bool IsReportingCurrencyEnabled();
+
+    Task SetReportingCurrencyEnabledAsync(bool enabled);
 }

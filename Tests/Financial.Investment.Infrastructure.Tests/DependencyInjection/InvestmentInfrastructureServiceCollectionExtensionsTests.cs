@@ -52,6 +52,7 @@ public class InvestmentInfrastructureServiceCollectionExtensionsTests
         var exchangeRateProvider = provider.GetRequiredService<IExchangeRateProvider>();
 
         exchangeRateProvider.Should().NotBeNull();
+        exchangeRateProvider.Should().BeOfType<InMemoryCachedExchangeRateProvider>();
     }
 
     private static IServiceProvider BuildServiceProvider(Dictionary<string, string?> settings)

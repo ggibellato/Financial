@@ -596,4 +596,47 @@ public class SummaryServiceTests
         result.ConvertedMarketValue.Should().BeNull("the holding has no price, so there is nothing to convert - not a zero-valued conversion");
         result.ConvertedUnrealisedGainLoss.Should().BeNull();
     }
+
+    [Fact]
+    public async Task GetBrokerSummary_ReportingCurrencyDisabled_SkipsConversionEntirely()
+    {
+        var asset = MakeAsset();
+        asset.AddTransaction(Transaction.Create(new DateTime(2025, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
+        asset.SetPrice(DateOnly.FromDateTime(Today.UtcDateTime), 8m, isManual: false);
+        _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", asset)];
+        var exchangeRateProvider = new StubExchangeRateProvider(0.2m);
+
+        var service = new SummaryService(
+            _repository, Tracer, NullLogger<SummaryService>.Instance, TestHoldingValuationService.Create(new FakeTimeProvider(Today)),
+            new XirrCalculationService(), exchangeRateProvider, new StubReportingCurrencyProvider(Currency.GBP, enabled: false),
+            new FakeTimeProvider(Today));
+
+        var result = await service.GetBrokerSummaryAsync("XPI");
+
+        using var _ = new AssertionScope();
+        result.IsReportingCurrencyEnabled.Should().BeFalse();
+        result.ReportingCurrency.Should().Be("GBP", "the underlying setting still reports its configured value even while off");
+        result.ConvertedMarketValue.Should().BeNull();
+        result.ConvertedInvested.Should().BeNull();
+        result.ConvertedUnrealisedGainLoss.Should().BeNull();
+        result.ConvertedTotalReturn.Should().BeNull();
+        result.ConvertedTotalReturnNetOfTax.Should().BeNull();
+        result.IsPartial.Should().BeFalse();
+        result.IsReportingCurrencyUnavailable.Should().BeFalse();
+        exchangeRateProvider.CallCount.Should().Be(0, "disabling reporting currency must avoid every exchange-rate lookup, not just hide the result");
+        result.TotalBought.Should().Be(50m, "native figures are unaffected by the toggle");
+    }
+
+    [Fact]
+    public async Task GetPortfolioSummary_ReportingCurrencyEnabled_SetsFlagTrue()
+    {
+        var asset = MakeAsset();
+        asset.AddTransaction(Transaction.Create(new DateTime(2025, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
+        _repository.AssetsByBrokerPortfolio = [asset];
+        _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", asset)];
+
+        var result = await CreateService().GetPortfolioSummaryAsync("XPI", "Default");
+
+        result.IsReportingCurrencyEnabled.Should().BeTrue();
+    }
 }

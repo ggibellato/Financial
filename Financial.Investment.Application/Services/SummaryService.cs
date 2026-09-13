@@ -177,11 +177,7 @@ public sealed class SummaryService : ISummaryService
             throw new ArgumentException($"Broker currency \"{brokerCurrencyRaw}\" is not recognized.", nameof(brokerCurrencyRaw));
         }
 
-        var converted = await ConvertedSummaryBuilder.BuildAsync(
-            assetList, brokerCurrency, reportingCurrency, marketValue, unrealisedGain,
-            _exchangeRateProvider, _xirrCalculationService, asOf).ConfigureAwait(false);
-
-        return new AggregatedSummaryDTO
+        AggregatedSummaryDTO BuildResult(ConvertedSummaryResult? converted) => new()
         {
             TotalBought = totalBought,
             TotalSold = totalSold,
@@ -193,14 +189,26 @@ public sealed class SummaryService : ISummaryService
             PriceOnlyReturn = priceOnlyReturn,
             TotalReturn = totalReturn,
             TotalReturnNetOfTax = totalReturnNetOfTax,
-            ReportingCurrency = converted.ReportingCurrency.ToString(),
-            ConvertedMarketValue = converted.ConvertedMarketValue,
-            ConvertedInvested = converted.ConvertedInvested,
-            ConvertedUnrealisedGainLoss = converted.ConvertedUnrealisedGainLoss,
-            ConvertedTotalReturn = converted.ConvertedTotalReturn,
-            ConvertedTotalReturnNetOfTax = converted.ConvertedTotalReturnNetOfTax,
-            IsPartial = converted.IsPartial,
-            IsReportingCurrencyUnavailable = converted.IsReportingCurrencyUnavailable,
+            ReportingCurrency = reportingCurrency.ToString(),
+            IsReportingCurrencyEnabled = converted is not null,
+            ConvertedMarketValue = converted?.ConvertedMarketValue,
+            ConvertedInvested = converted?.ConvertedInvested,
+            ConvertedUnrealisedGainLoss = converted?.ConvertedUnrealisedGainLoss,
+            ConvertedTotalReturn = converted?.ConvertedTotalReturn,
+            ConvertedTotalReturnNetOfTax = converted?.ConvertedTotalReturnNetOfTax,
+            IsPartial = converted?.IsPartial ?? false,
+            IsReportingCurrencyUnavailable = converted?.IsReportingCurrencyUnavailable ?? false,
         };
+
+        if (!_reportingCurrencyProvider.IsReportingCurrencyEnabled())
+        {
+            return BuildResult(converted: null);
+        }
+
+        var converted = await ConvertedSummaryBuilder.BuildAsync(
+            assetList, brokerCurrency, reportingCurrency, marketValue, unrealisedGain,
+            _exchangeRateProvider, _xirrCalculationService, asOf).ConfigureAwait(false);
+
+        return BuildResult(converted);
     }
 }

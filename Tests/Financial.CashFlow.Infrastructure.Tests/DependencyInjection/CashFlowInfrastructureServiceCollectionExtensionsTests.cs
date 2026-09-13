@@ -1,6 +1,7 @@
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Infrastructure.DependencyInjection;
 using Financial.Integrations.GoogleCalendar;
+using Financial.Shared.Abstractions.Currencies;
 using Financial.Shared.Abstractions.Persistence;
 using Financial.Shared.Infrastructure.Persistence;
 using FluentAssertions;
@@ -52,6 +53,20 @@ public class CashFlowInfrastructureServiceCollectionExtensionsTests
 
         provider.GetRequiredService<ICalendarConnectionStore>().Should().NotBeNull();
         provider.GetRequiredService<ICalendarProvider>().Should().NotBeNull();
+    }
+
+    [Fact]
+    public void AddFinancialCashFlowInfrastructure_RegistersCachedExchangeRateProvider()
+    {
+        var missingPath = Path.Combine(Path.GetTempPath(), $"cashflow-di-{Guid.NewGuid()}.json");
+        var provider = BuildServiceProvider(new Dictionary<string, string?>
+        {
+            ["CashFlow:DataJsonFile"] = missingPath
+        });
+
+        var exchangeRateProvider = provider.GetRequiredService<IExchangeRateProvider>();
+
+        exchangeRateProvider.Should().BeOfType<InMemoryCachedExchangeRateProvider>();
     }
 
     private static IServiceProvider BuildServiceProvider(Dictionary<string, string?> settings)

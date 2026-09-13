@@ -80,6 +80,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private decimal? _summaryTotalReturn;
     private decimal? _summaryTotalReturnNetOfTax;
     private string _reportingCurrency = string.Empty;
+    private bool _isReportingCurrencyEnabled = true;
     private decimal? _convertedMarketValue;
     private decimal? _convertedInvested;
     private decimal? _convertedUnrealisedGainLoss;
@@ -243,6 +244,18 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     public decimal? TotalReturnNetOfTax { get => _summaryTotalReturnNetOfTax; private set => SetProperty(ref _summaryTotalReturnNetOfTax, value); }
 
     public string ReportingCurrency { get => _reportingCurrency; private set => SetProperty(ref _reportingCurrency, value); }
+
+    public bool IsReportingCurrencyEnabled
+    {
+        get => _isReportingCurrencyEnabled;
+        private set
+        {
+            if (SetProperty(ref _isReportingCurrencyEnabled, value))
+            {
+                OnPropertyChanged(nameof(IsReportingCurrencyAvailable));
+            }
+        }
+    }
     public decimal? ConvertedMarketValue { get => _convertedMarketValue; private set => SetProperty(ref _convertedMarketValue, value); }
     public decimal? ConvertedInvested { get => _convertedInvested; private set => SetProperty(ref _convertedInvested, value); }
     public decimal? ConvertedUnrealisedGainLoss { get => _convertedUnrealisedGainLoss; private set => SetProperty(ref _convertedUnrealisedGainLoss, value); }
@@ -262,7 +275,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         }
     }
 
-    public bool IsReportingCurrencyAvailable => !IsReportingCurrencyUnavailable;
+    public bool IsReportingCurrencyAvailable => IsReportingCurrencyEnabled && !IsReportingCurrencyUnavailable;
 
     public bool HasIncompleteValuation => UnvaluedHoldingCount > 0;
 
@@ -501,6 +514,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         TotalReturn = null;
         TotalReturnNetOfTax = null;
         ReportingCurrency = string.Empty;
+        IsReportingCurrencyEnabled = true;
         ConvertedMarketValue = null;
         ConvertedInvested = null;
         ConvertedUnrealisedGainLoss = null;
@@ -680,6 +694,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         TotalReturn = summary.TotalReturn;
         TotalReturnNetOfTax = summary.TotalReturnNetOfTax;
         ReportingCurrency = summary.ReportingCurrency;
+        IsReportingCurrencyEnabled = summary.IsReportingCurrencyEnabled;
         ConvertedMarketValue = summary.ConvertedMarketValue;
         ConvertedInvested = summary.ConvertedInvested;
         ConvertedUnrealisedGainLoss = summary.ConvertedUnrealisedGainLoss;

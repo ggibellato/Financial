@@ -68,6 +68,7 @@ import type {
   PortfolioUpdateDto,
   RecurringBillDto,
   ReportingCurrencySettingDto,
+  SetReportingCurrencyEnabledRequestDto,
   ReserveBucketBalanceDto,
   ReserveBucketCreateDto,
   ReserveBucketDto,
@@ -112,6 +113,7 @@ export interface FinancialApiClient {
   getAssetDetails: (brokerName: string, portfolioName: string, assetName: string, scope?: InvestmentScope) => Promise<AssetDetailsDto>
   getReportingCurrency: () => Promise<ReportingCurrencySettingDto>
   setReportingCurrency: (request: ReportingCurrencySettingDto) => Promise<ReportingCurrencySettingDto>
+  setReportingCurrencyEnabled: (request: SetReportingCurrencyEnabledRequestDto) => Promise<ReportingCurrencySettingDto>
   getCreditsByBroker: (brokerName: string, scope?: InvestmentScope) => Promise<CreditDto[]>
   getCreditsByPortfolio: (brokerName: string, portfolioName: string, scope?: InvestmentScope) => Promise<CreditDto[]>
   getSummaryByBroker: (brokerName: string, scope?: InvestmentScope) => Promise<AggregatedSummaryDto>
@@ -329,6 +331,8 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
     getReportingCurrency: () => request<ReportingCurrencySettingDto>('/reporting-currency'),
     setReportingCurrency: (requestBody) =>
       request<ReportingCurrencySettingDto>('/reporting-currency', { method: 'PUT', body: JSON.stringify(requestBody) }),
+    setReportingCurrencyEnabled: (requestBody) =>
+      request<ReportingCurrencySettingDto>('/reporting-currency/enabled', { method: 'PUT', body: JSON.stringify(requestBody) }),
     getCreditsByBroker: (brokerName, scope = 'active') =>
       request<CreditDto[]>(`/credits/broker/${encodeURIComponent(brokerName)}${buildScopeQuery(scope)}`),
     getCreditsByPortfolio: (brokerName, portfolioName, scope = 'active') =>

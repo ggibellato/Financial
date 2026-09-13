@@ -45,6 +45,9 @@
           "isPartial": {
             "type": "boolean"
           },
+          "isReportingCurrencyEnabled": {
+            "type": "boolean"
+          },
           "isReportingCurrencyUnavailable": {
             "type": "boolean"
           },
@@ -3212,6 +3215,9 @@
         "properties": {
           "currency": {
             "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -3416,6 +3422,14 @@
           "portfolioName",
           "assetName"
         ],
+        "type": "object"
+      },
+      "SetReportingCurrencyEnabledRequestDTO": {
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          }
+        },
         "type": "object"
       },
       "SyncStatusDTO": {
@@ -9147,6 +9161,76 @@
           }
         },
         "summary": "Changes the reporting-currency setting.",
+        "tags": [
+          "ReportingCurrency"
+        ]
+      }
+    },
+    "/reporting-currency/enabled": {
+      "put": {
+        "requestBody": {
+          "content": {
+            "application/*\u002Bjson": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/SetReportingCurrencyEnabledRequestDTO"
+                  }
+                ]
+              }
+            },
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/SetReportingCurrencyEnabledRequestDTO"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/SetReportingCurrencyEnabledRequestDTO"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportingCurrencySettingDTO"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          }
+        },
+        "summary": "Turns reporting-currency conversion on or off, independently of the chosen currency.",
         "tags": [
           "ReportingCurrency"
         ]

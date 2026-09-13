@@ -39,4 +39,28 @@ public class ReportingCurrencySettingServiceTests
 
         act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
     }
+
+    [Fact]
+    public void IsReportingCurrencyEnabled_ReflectsTheAggregatesCurrentValue()
+    {
+        var investments = Investments.Create();
+        investments.SetReportingCurrencyEnabled(false);
+        var repository = new StubInvestmentRepository { Investments = investments };
+        var service = new ReportingCurrencySettingService(repository);
+
+        service.IsReportingCurrencyEnabled().Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task SetReportingCurrencyEnabledAsync_PersistsThroughTheRepository()
+    {
+        var investments = Investments.Create();
+        var repository = new StubInvestmentRepository { Investments = investments };
+        var service = new ReportingCurrencySettingService(repository);
+
+        await service.SetReportingCurrencyEnabledAsync(false);
+
+        investments.ReportingCurrencyEnabled.Should().BeFalse();
+        repository.WriteCallCount.Should().Be(1);
+    }
 }

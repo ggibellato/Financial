@@ -15,6 +15,10 @@ public sealed class AggregatedSummaryDTO
 
     /// <summary>The currency every <c>Converted*</c> figure below is expressed in.</summary>
     public string ReportingCurrency { get; init; } = string.Empty;
+
+    /// <summary>False when the reporting-currency setting is turned off; every <c>Converted*</c>
+    /// figure is then null and no conversion is attempted.</summary>
+    public bool IsReportingCurrencyEnabled { get; init; } = true;
     public decimal? ConvertedMarketValue { get; init; }
     public decimal? ConvertedInvested { get; init; }
     public decimal? ConvertedUnrealisedGainLoss { get; init; }

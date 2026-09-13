@@ -50,6 +50,7 @@ const SUMMARY: AggregatedSummaryDto = {
   totalReturn: 0.1,
   totalReturnNetOfTax: 0.09,
   reportingCurrency: 'GBP',
+  isReportingCurrencyEnabled: true,
   convertedMarketValue: null,
   convertedInvested: null,
   convertedUnrealisedGainLoss: null,
@@ -208,6 +209,7 @@ describe('AggregatedSummaryTab', () => {
         totalReturn: 0.1,
         totalReturnNetOfTax: 0.09,
         reportingCurrency: 'GBP',
+        isReportingCurrencyEnabled: true,
         convertedMarketValue: null,
         convertedInvested: null,
         convertedUnrealisedGainLoss: null,
@@ -238,6 +240,7 @@ describe('AggregatedSummaryTab', () => {
         totalReturn: null,
         totalReturnNetOfTax: null,
         reportingCurrency: 'GBP',
+        isReportingCurrencyEnabled: true,
         convertedMarketValue: null,
         convertedInvested: null,
         convertedUnrealisedGainLoss: null,
@@ -321,5 +324,15 @@ describe('AggregatedSummaryTab', () => {
     screen.getByRole('button', { name: 'Try again' }).click()
 
     expect(mockRetry).toHaveBeenCalled()
+  })
+
+  it('hides the converted block entirely (no message, no retry) when reporting currency is disabled', () => {
+    setMock({ summary: { ...SUMMARY, isReportingCurrencyEnabled: false } })
+    renderComponent()
+
+    expect(screen.queryByText(/Converted totals unavailable/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Market Value \(converted to/)).not.toBeInTheDocument()
+    expect(screen.getByText('Total Bought')).toBeInTheDocument()
+    expect(screen.getByText('Market Value')).toBeInTheDocument()
   })
 })

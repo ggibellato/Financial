@@ -90,7 +90,7 @@ export function AggregatedSummaryView({ summary, retry }: { summary: AggregatedS
           {incompleteMessage}
         </p>
       )}
-      {summary.isReportingCurrencyUnavailable ? (
+      {!summary.isReportingCurrencyEnabled ? null : summary.isReportingCurrencyUnavailable ? (
         <ErrorState
           message={`Converted totals unavailable — showing native-currency figures only.`}
           onRetry={retry}

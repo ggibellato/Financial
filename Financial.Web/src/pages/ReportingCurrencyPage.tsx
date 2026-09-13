@@ -1,4 +1,4 @@
-import { MessageBar, MessageBarBody, Radio, RadioGroup } from '@fluentui/react-components'
+import { MessageBar, MessageBarBody, Radio, RadioGroup, Switch } from '@fluentui/react-components'
 import type { RadioGroupOnChangeData } from '@fluentui/react-components'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
@@ -12,10 +12,14 @@ const CURRENCY_OPTIONS = [
 ]
 
 export default function ReportingCurrencyPage() {
-  const { currency, isLoading, error, retry, saveError, setCurrency } = useReportingCurrency()
+  const { currency, enabled, isLoading, error, retry, saveError, setCurrency, setEnabled } = useReportingCurrency()
 
   const handleChange = (_event: unknown, data: RadioGroupOnChangeData) => {
     void setCurrency(data.value)
+  }
+
+  const handleEnabledChange = (_event: unknown, data: { checked: boolean }) => {
+    void setEnabled(data.checked)
   }
 
   if (isLoading) {
@@ -31,9 +35,10 @@ export default function ReportingCurrencyPage() {
       <header className="reporting-currency-page__header">
         <h2>Reporting Currency</h2>
       </header>
+      <Switch label="Show converted totals" checked={enabled ?? true} onChange={handleEnabledChange} />
       <div className="reporting-currency-page__field">
         <span className="reporting-currency-page__label">Currency</span>
-        <RadioGroup value={currency ?? undefined} onChange={handleChange} layout="horizontal">
+        <RadioGroup value={currency ?? undefined} onChange={handleChange} layout="horizontal" disabled={!enabled}>
           {CURRENCY_OPTIONS.map((option) => (
             <Radio key={option.value} value={option.value} label={option.label} />
           ))}

@@ -27,6 +27,24 @@ public class InvestmentsTests
     }
 
     [Fact]
+    public void Create_DefaultsReportingCurrencyEnabledToTrue()
+    {
+        var investments = Investments.Create();
+
+        investments.ReportingCurrencyEnabled.Should().BeTrue();
+    }
+
+    [Fact]
+    public void SetReportingCurrencyEnabled_UpdatesTheValue()
+    {
+        var investments = Investments.Create();
+
+        investments.SetReportingCurrencyEnabled(false);
+
+        investments.ReportingCurrencyEnabled.Should().BeFalse();
+    }
+
+    [Fact]
     public void AddActiveBroker_AddsBrokerToActiveCollection()
     {
         var investments = Investments.Create();
