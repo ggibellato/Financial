@@ -325,4 +325,14 @@ describe('AggregatedSummaryTab', () => {
 
     expect(mockRetry).toHaveBeenCalled()
   })
+
+  it('hides the converted block entirely (no message, no retry) when reporting currency is disabled', () => {
+    setMock({ summary: { ...SUMMARY, isReportingCurrencyEnabled: false } })
+    renderComponent()
+
+    expect(screen.queryByText(/Converted totals unavailable/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Market Value \(converted to/)).not.toBeInTheDocument()
+    expect(screen.getByText('Total Bought')).toBeInTheDocument()
+    expect(screen.getByText('Market Value')).toBeInTheDocument()
+  })
 })
