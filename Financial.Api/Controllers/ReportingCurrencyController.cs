@@ -44,5 +44,26 @@ public sealed class ReportingCurrencyController : ControllerBase
         return Ok(ToDto(currency));
     }
 
-    private static ReportingCurrencySettingDTO ToDto(Currency currency) => new() { Currency = currency.ToString() };
+    /// <summary>Turns reporting-currency conversion on or off, independently of the chosen currency.</summary>
+    /// <param name="request">The new enabled state.</param>
+    /// <returns>200 OK with the updated setting, or 400 Bad Request if the request body is missing.</returns>
+    [HttpPut("enabled")]
+    [ProducesResponseType(typeof(ReportingCurrencySettingDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ReportingCurrencySettingDTO>> SetReportingCurrencyEnabled([FromBody] SetReportingCurrencyEnabledRequestDTO? request)
+    {
+        if (request is null)
+        {
+            return BadRequest();
+        }
+
+        await _reportingCurrencyProvider.SetReportingCurrencyEnabledAsync(request.Enabled).ConfigureAwait(false);
+        return Ok(ToDto(_reportingCurrencyProvider.GetReportingCurrency()));
+    }
+
+    private ReportingCurrencySettingDTO ToDto(Currency currency) => new()
+    {
+        Currency = currency.ToString(),
+        Enabled = _reportingCurrencyProvider.IsReportingCurrencyEnabled(),
+    };
 }

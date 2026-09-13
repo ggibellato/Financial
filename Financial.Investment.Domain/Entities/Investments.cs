@@ -22,6 +22,12 @@ public class Investments
     /// </summary>
     public Currency ReportingCurrency { get; private set; } = Currency.GBP;
 
+    /// <summary>
+    /// Defaults to true so a pre-existing data file with no "ReportingCurrencyEnabled" key (every
+    /// file written before this setting existed) keeps behaving exactly as it already did.
+    /// </summary>
+    public bool ReportingCurrencyEnabled { get; private set; } = true;
+
     private Investments() { }
 
     public static Investments Create() => new();
@@ -37,6 +43,8 @@ public class Investments
     }
 
     public void SetReportingCurrency(Currency currency) => ReportingCurrency = currency;
+
+    public void SetReportingCurrencyEnabled(bool enabled) => ReportingCurrencyEnabled = enabled;
 
     public Broker? FindActiveBroker(string name) => _activeBrokers.FirstOrDefault(broker => broker.Name == name);
 
