@@ -52,6 +52,7 @@ public class ControleMaeServiceTests
     }
 
     [Fact]
+    [Trait("AC", "P49-F01-shared-exchange-rate-provider-04")]
     public async Task CreateEntryAsync_WithSuccessfulRateLookup_PopulatesBothCurrenciesAndSaves()
     {
         var provider = new StubExchangeRateProvider(0.146m);
