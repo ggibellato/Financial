@@ -1,5 +1,6 @@
 using Financial.Investment.Domain.Entities;
 using Financial.Investment.Domain.Rules;
+using Financial.Shared.Abstractions.Currencies;
 using FluentAssertions;
 
 namespace Financial.Investment.Domain.Tests;
@@ -13,6 +14,44 @@ public class TransactionTests
 
         transaction.Id.Should().NotBe(Guid.Empty);
         transaction.NetCash.Should().Be(-21m);
+    }
+
+    [Fact]
+    public void Create_AssignsCurrencyAndFxRateSnapshot()
+    {
+        var retrievedAt = new DateTimeOffset(2026, 8, 15, 10, 0, 0, TimeSpan.Zero);
+        var snapshot = FxRateSnapshot.Create(Currency.GBP, 0.146m, FxRateSource.Frankfurter, retrievedAt);
+
+        var transaction = Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 2m, 10m, 1m, withheld: 0m, currency: Currency.BRL, fxRateSnapshot: snapshot);
+
+        using (new FluentAssertions.Execution.AssertionScope())
+        {
+            transaction.Currency.Should().Be(Currency.BRL);
+            transaction.FxRateSnapshot.Should().Be(snapshot);
+        }
+    }
+
+    [Fact]
+    public void Create_WithoutCurrencyOrSnapshot_DefaultsToNoSnapshot()
+    {
+        var transaction = Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 2m, 10m, 1m);
+
+        transaction.FxRateSnapshot.Should().BeNull();
+    }
+
+    [Fact]
+    public void CreateWithId_AssignsCurrencyAndFxRateSnapshot()
+    {
+        var id = Guid.NewGuid();
+        var snapshot = FxRateSnapshot.Create(Currency.USD, 1.27m, FxRateSource.Frankfurter, DateTimeOffset.UtcNow);
+
+        var transaction = Transaction.CreateWithId(id, new DateTime(2024, 1, 1), Transaction.TransactionType.Sell, 1m, 5m, 0m, currency: Currency.GBP, fxRateSnapshot: snapshot);
+
+        using (new FluentAssertions.Execution.AssertionScope())
+        {
+            transaction.Currency.Should().Be(Currency.GBP);
+            transaction.FxRateSnapshot.Should().Be(snapshot);
+        }
     }
 
     [Fact]
