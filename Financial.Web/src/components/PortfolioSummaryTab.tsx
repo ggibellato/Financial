@@ -245,7 +245,7 @@ export default function PortfolioSummaryTab() {
       <div className="portfolio-summary__totals">
         {isSummaryLoading && <LoadingState />}
         {summaryError && <ErrorState message={summaryError} onRetry={retrySummary} />}
-        {!isSummaryLoading && !summaryError && summary && <AggregatedSummaryView summary={summary} />}
+        {!isSummaryLoading && !summaryError && summary && <AggregatedSummaryView summary={summary} retry={retrySummary} />}
       </div>
 
       {shareBasisMessage && (

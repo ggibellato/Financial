@@ -14,7 +14,15 @@ function incompleteValuationMessage(summary: AggregatedSummaryDto): string | nul
     : `${summary.unvaluedHoldingCount} of ${summary.holdingCount} holdings could not be valued; the total is incomplete and returns are withheld.`
 }
 
-export function AggregatedSummaryView({ summary }: { summary: AggregatedSummaryDto }) {
+function formatConvertedAmount(value: number | null): string {
+  return value === null ? '—' : formatN2(value)
+}
+
+function formatConvertedPercent(value: number | null): string {
+  return value === null ? '—' : formatPercentFraction(value)
+}
+
+export function AggregatedSummaryView({ summary, retry }: { summary: AggregatedSummaryDto; retry: () => void }) {
   const { selectedNode } = useSelectedNode()
   const isBroker = selectedNode?.nodeType === 'Broker'
   const incompleteMessage = incompleteValuationMessage(summary)
@@ -82,6 +90,59 @@ export function AggregatedSummaryView({ summary }: { summary: AggregatedSummaryD
           {incompleteMessage}
         </p>
       )}
+      {summary.isReportingCurrencyUnavailable ? (
+        <ErrorState
+          message={`Converted totals unavailable — showing native-currency figures only.`}
+          onRetry={retry}
+        />
+      ) : (
+        <div className="aggregated-summary__converted">
+          <h3 className="aggregated-summary__converted-heading">Converted to {summary.reportingCurrency}</h3>
+          {summary.isPartial && (
+            <p className="aggregated-summary__partial-notice" role="status">
+              Some figures could not be converted to {summary.reportingCurrency} — showing a partial total.
+            </p>
+          )}
+          <div className="aggregated-summary__grid">
+            <div className="aggregated-summary__field">
+              <span className="aggregated-summary__label">Market Value (converted to {summary.reportingCurrency})</span>
+              <span className="aggregated-summary__value">{formatConvertedAmount(summary.convertedMarketValue)}</span>
+            </div>
+            <div className="aggregated-summary__field">
+              <span className="aggregated-summary__label">Invested (converted to {summary.reportingCurrency})</span>
+              <span
+                className={`aggregated-summary__value ${summary.convertedInvested === null ? '' : signClass(summary.convertedInvested, 'aggregated-summary__value')}`}
+              >
+                {formatConvertedAmount(summary.convertedInvested)}
+              </span>
+            </div>
+            <div className="aggregated-summary__field">
+              <span className="aggregated-summary__label">Unrealised Gain/Loss (converted to {summary.reportingCurrency})</span>
+              <span
+                className={`aggregated-summary__value ${summary.convertedUnrealisedGainLoss === null ? '' : signClass(summary.convertedUnrealisedGainLoss, 'aggregated-summary__value')}`}
+              >
+                {formatConvertedAmount(summary.convertedUnrealisedGainLoss)}
+              </span>
+            </div>
+            <div className="aggregated-summary__field">
+              <span className="aggregated-summary__label">Total Return (converted to {summary.reportingCurrency})</span>
+              <span
+                className={`aggregated-summary__value ${summary.convertedTotalReturn === null ? '' : signClass(summary.convertedTotalReturn, 'aggregated-summary__value')}`}
+              >
+                {formatConvertedPercent(summary.convertedTotalReturn)}
+              </span>
+            </div>
+            <div className="aggregated-summary__field">
+              <span className="aggregated-summary__label">Total Return Net of Tax (converted to {summary.reportingCurrency})</span>
+              <span
+                className={`aggregated-summary__value ${summary.convertedTotalReturnNetOfTax === null ? '' : signClass(summary.convertedTotalReturnNetOfTax, 'aggregated-summary__value')}`}
+              >
+                {formatConvertedPercent(summary.convertedTotalReturnNetOfTax)}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
       {isBroker && <BrokerBreakdownCharts />}
     </div>
   )
@@ -102,5 +163,5 @@ export default function AggregatedSummaryTab() {
     return null
   }
 
-  return <AggregatedSummaryView summary={summary} />
+  return <AggregatedSummaryView summary={summary} retry={retry} />
 }
