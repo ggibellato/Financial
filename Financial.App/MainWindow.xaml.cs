@@ -39,6 +39,7 @@ namespace Financial.Presentation.App
             PaymentDueBannerViewModel paymentDueBannerViewModel,
             ColourModeViewModel colourModeViewModel,
             Financial.Presentation.App.Views.Settings.AppearanceView appearanceView,
+            Financial.Presentation.App.Views.Settings.ReportingCurrencyView reportingCurrencyView,
             Financial.Presentation.App.Views.Settings.SettingsIntegrationsView settingsIntegrationsView)
         {
             ArgumentNullException.ThrowIfNull(dividendCheckView);
@@ -63,6 +64,7 @@ namespace Financial.Presentation.App
             ArgumentNullException.ThrowIfNull(paymentDueBannerViewModel);
             ArgumentNullException.ThrowIfNull(colourModeViewModel);
             ArgumentNullException.ThrowIfNull(appearanceView);
+            ArgumentNullException.ThrowIfNull(reportingCurrencyView);
             ArgumentNullException.ThrowIfNull(settingsIntegrationsView);
             _navigationViewModel = navigationViewModel ?? throw new ArgumentNullException(nameof(navigationViewModel));
             _navigationViewModelHistoric = navigationViewModelHistoric ?? throw new ArgumentNullException(nameof(navigationViewModelHistoric));
@@ -98,6 +100,7 @@ namespace Financial.Presentation.App
                 ["admin-recurring-bills"] = recurringBillsView,
                 ["admin-reserve-buckets"] = reserveBucketsView,
                 ["settings-appearance"] = appearanceView,
+                ["settings-reporting-currency"] = reportingCurrencyView,
                 ["settings-integrations"] = settingsIntegrationsView,
             };
 

@@ -16,7 +16,7 @@ public class NavTreeTests
     }
 
     [Fact]
-    public void SettingsCategory_HasAppearanceAndIntegrationsChildren()
+    public void SettingsCategory_HasAppearanceReportingCurrencyAndIntegrationsChildren()
     {
         var settings = NavTree.Categories.Single(c => c.Id == "settings");
 
@@ -24,6 +24,7 @@ public class NavTreeTests
         settings.Groups.Should().BeNull();
         settings.Children.Select(c => (c.Id, c.Label, c.ViewKey)).Should().Equal(
             ("appearance", "Appearance", "settings-appearance"),
+            ("reporting-currency", "Reporting Currency", "settings-reporting-currency"),
             ("integrations", "Integrations", "settings-integrations"));
     }
 
@@ -96,6 +97,6 @@ public class NavTreeTests
         var viewKeys = directViewKeys.Concat(groupedViewKeys).ToList();
 
         viewKeys.Should().OnlyHaveUniqueItems();
-        viewKeys.Should().HaveCount(22);
+        viewKeys.Should().HaveCount(23);
     }
 }
