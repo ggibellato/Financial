@@ -66,6 +66,7 @@ export type TransactionSummaryItemDto = Schema<'TransactionSummaryItemDTO'>
 export type CreditDto = Schema<'CreditDTO'>
 export type FxRateSnapshotDto = Schema<'FxRateSnapshotDTO'>
 export type ReportingCurrencySettingDto = Schema<'ReportingCurrencySettingDTO'>
+export type SetReportingCurrencyEnabledRequestDto = Schema<'SetReportingCurrencyEnabledRequestDTO'>
 export type AssetPriceSnapshotDto = Schema<'AssetPriceSnapshotDTO'>
 export type AssetDetailsDto = Schema<'AssetDetailsDTO'>
 export type ArchiveAssetRequestDto = Schema<'ArchiveAssetRequestDTO'>

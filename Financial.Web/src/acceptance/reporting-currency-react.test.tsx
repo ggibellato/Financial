@@ -46,6 +46,7 @@ const SUMMARY: AggregatedSummaryDto = {
   totalReturn: 0.14,
   totalReturnNetOfTax: 0.13,
   reportingCurrency: 'GBP',
+  isReportingCurrencyEnabled: true,
   convertedMarketValue: 168.55,
   convertedInvested: 146.6,
   convertedUnrealisedGainLoss: 21.95,
@@ -123,8 +124,8 @@ describe('P49 F04 — React Reporting Currency acceptance', () => {
   })
 
   it('[AC P49-F04-react-reporting-currency-01] a Reporting Currency control appears under Settings, offering GBP/BRL/USD, and persists the chosen value via the setting endpoint', async () => {
-    getReportingCurrencyMock.mockResolvedValue({ currency: 'GBP' })
-    setReportingCurrencyMock.mockResolvedValue({ currency: 'BRL' })
+    getReportingCurrencyMock.mockResolvedValue({ currency: 'GBP', enabled: true })
+    setReportingCurrencyMock.mockResolvedValue({ currency: 'BRL', enabled: true })
     render(<ReportingCurrencyPage />)
 
     expect(await screen.findByRole('radio', { name: 'GBP' })).toBeChecked()
@@ -133,7 +134,7 @@ describe('P49 F04 — React Reporting Currency acceptance', () => {
 
     screen.getByRole('radio', { name: 'BRL' }).click()
 
-    await waitFor(() => expect(setReportingCurrencyMock).toHaveBeenCalledWith({ currency: 'BRL' }))
+    await waitFor(() => expect(setReportingCurrencyMock).toHaveBeenCalledWith({ currency: 'BRL', enabled: true }))
   })
 
   it('[AC P49-F04-react-reporting-currency-02] the broker summary view shows the converted total clearly labelled with its currency, next to the unchanged native-currency figures', async () => {

@@ -4302,6 +4302,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/reporting-currency/enabled": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Turns reporting-currency conversion on or off, independently of the chosen currency. */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/*+json": null | components["schemas"]["SetReportingCurrencyEnabledRequestDTO"];
+                    "application/json": null | components["schemas"]["SetReportingCurrencyEnabledRequestDTO"];
+                    "text/json": null | components["schemas"]["SetReportingCurrencyEnabledRequestDTO"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ReportingCurrencySettingDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/reserve-buckets": {
         parameters: {
             query?: never;
@@ -5650,6 +5701,7 @@ export interface components {
             /** Format: int32 */
             holdingCount: number;
             isPartial: boolean;
+            isReportingCurrencyEnabled: boolean;
             isReportingCurrencyUnavailable: boolean;
             /** Format: double */
             marketValue: null | number;
@@ -6617,6 +6669,7 @@ export interface components {
         };
         ReportingCurrencySettingDTO: {
             currency: string;
+            enabled?: boolean;
         };
         ReserveBucketBalanceDTO: {
             /** Format: double */
@@ -6679,6 +6732,9 @@ export interface components {
             /** Format: double */
             price?: number;
             sourceReference?: null | string;
+        };
+        SetReportingCurrencyEnabledRequestDTO: {
+            enabled: boolean;
         };
         /** @description One bounded context's current persistence status. */
         SyncStatusDTO: {
