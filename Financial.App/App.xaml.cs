@@ -155,6 +155,8 @@ namespace Financial.Presentation.App
                             });
                     });
                     services.AddTransient<Financial.Presentation.App.Views.Settings.AppearanceView>();
+                    services.AddTransient<Financial.Presentation.App.ViewModels.Settings.ReportingCurrencyViewModel>();
+                    services.AddTransient<Financial.Presentation.App.Views.Settings.ReportingCurrencyView>();
                     services.AddSingleton<Financial.Presentation.App.Services.IBrowserLauncher, Financial.Presentation.App.Services.BrowserLauncher>();
                     services.AddSingleton<Financial.Presentation.App.Services.ICalendarOAuthCallbackListener, Financial.Presentation.App.Services.CalendarOAuthCallbackListener>();
                     services.AddTransient<Financial.Presentation.App.ViewModels.Settings.SettingsIntegrationsViewModel>();
