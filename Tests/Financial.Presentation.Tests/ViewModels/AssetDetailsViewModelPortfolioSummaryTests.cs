@@ -118,6 +118,30 @@ public class AssetDetailsViewModelPortfolioSummaryTests
     }
 
     [Fact]
+    public void LoadPortfolioSummary_SetsEveryConvertedFieldAndReportingCurrency()
+    {
+        var vm = BuildViewModel();
+        var summary = new AggregatedSummaryDTO
+        {
+            ReportingCurrency = "BRL",
+            ConvertedMarketValue = 5800.25m,
+            ConvertedInvested = 5000.50m,
+            ConvertedUnrealisedGainLoss = 799.75m,
+            ConvertedTotalReturn = 0.11m,
+            ConvertedTotalReturnNetOfTax = 0.10m,
+        };
+
+        vm.LoadPortfolioSummary("Broker", "Portfolio", summary, [], BuildItems());
+
+        vm.ReportingCurrency.Should().Be("BRL");
+        vm.ConvertedMarketValue.Should().Be(5800.25m);
+        vm.ConvertedInvested.Should().Be(5000.50m);
+        vm.ConvertedUnrealisedGainLoss.Should().Be(799.75m);
+        vm.ConvertedTotalReturn.Should().Be(0.11m);
+        vm.ConvertedTotalReturnNetOfTax.Should().Be(0.10m);
+    }
+
+    [Fact]
     public void LoadPortfolioSummary_SetsMarketValueAndReturns()
     {
         var vm = BuildViewModel();

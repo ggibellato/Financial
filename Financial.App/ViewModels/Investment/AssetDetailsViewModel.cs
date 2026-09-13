@@ -79,6 +79,14 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private decimal? _summaryPriceOnlyReturn;
     private decimal? _summaryTotalReturn;
     private decimal? _summaryTotalReturnNetOfTax;
+    private string _reportingCurrency = string.Empty;
+    private decimal? _convertedMarketValue;
+    private decimal? _convertedInvested;
+    private decimal? _convertedUnrealisedGainLoss;
+    private decimal? _convertedTotalReturn;
+    private decimal? _convertedTotalReturnNetOfTax;
+    private bool _isPartial;
+    private bool _isReportingCurrencyUnavailable;
 
     public string AssetName { get => _assetName; private set => SetProperty(ref _assetName, value); }
     public string BrokerName { get => _brokerName; private set => SetProperty(ref _brokerName, value); }
@@ -233,6 +241,28 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     public decimal? PriceOnlyReturn { get => _summaryPriceOnlyReturn; private set => SetProperty(ref _summaryPriceOnlyReturn, value); }
     public decimal? TotalReturn { get => _summaryTotalReturn; private set => SetProperty(ref _summaryTotalReturn, value); }
     public decimal? TotalReturnNetOfTax { get => _summaryTotalReturnNetOfTax; private set => SetProperty(ref _summaryTotalReturnNetOfTax, value); }
+
+    public string ReportingCurrency { get => _reportingCurrency; private set => SetProperty(ref _reportingCurrency, value); }
+    public decimal? ConvertedMarketValue { get => _convertedMarketValue; private set => SetProperty(ref _convertedMarketValue, value); }
+    public decimal? ConvertedInvested { get => _convertedInvested; private set => SetProperty(ref _convertedInvested, value); }
+    public decimal? ConvertedUnrealisedGainLoss { get => _convertedUnrealisedGainLoss; private set => SetProperty(ref _convertedUnrealisedGainLoss, value); }
+    public decimal? ConvertedTotalReturn { get => _convertedTotalReturn; private set => SetProperty(ref _convertedTotalReturn, value); }
+    public decimal? ConvertedTotalReturnNetOfTax { get => _convertedTotalReturnNetOfTax; private set => SetProperty(ref _convertedTotalReturnNetOfTax, value); }
+    public bool IsPartial { get => _isPartial; private set => SetProperty(ref _isPartial, value); }
+
+    public bool IsReportingCurrencyUnavailable
+    {
+        get => _isReportingCurrencyUnavailable;
+        private set
+        {
+            if (SetProperty(ref _isReportingCurrencyUnavailable, value))
+            {
+                OnPropertyChanged(nameof(IsReportingCurrencyAvailable));
+            }
+        }
+    }
+
+    public bool IsReportingCurrencyAvailable => !IsReportingCurrencyUnavailable;
 
     public bool HasIncompleteValuation => UnvaluedHoldingCount > 0;
 
@@ -470,6 +500,14 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         PriceOnlyReturn = null;
         TotalReturn = null;
         TotalReturnNetOfTax = null;
+        ReportingCurrency = string.Empty;
+        ConvertedMarketValue = null;
+        ConvertedInvested = null;
+        ConvertedUnrealisedGainLoss = null;
+        ConvertedTotalReturn = null;
+        ConvertedTotalReturnNetOfTax = null;
+        IsPartial = false;
+        IsReportingCurrencyUnavailable = false;
         OnPropertyChanged(nameof(HasIncompleteValuation));
         OnPropertyChanged(nameof(IncompleteValuationMessage));
         OnPropertyChanged(nameof(HasIncompleteShareBasis));
@@ -641,6 +679,14 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         PriceOnlyReturn = summary.PriceOnlyReturn;
         TotalReturn = summary.TotalReturn;
         TotalReturnNetOfTax = summary.TotalReturnNetOfTax;
+        ReportingCurrency = summary.ReportingCurrency;
+        ConvertedMarketValue = summary.ConvertedMarketValue;
+        ConvertedInvested = summary.ConvertedInvested;
+        ConvertedUnrealisedGainLoss = summary.ConvertedUnrealisedGainLoss;
+        ConvertedTotalReturn = summary.ConvertedTotalReturn;
+        ConvertedTotalReturnNetOfTax = summary.ConvertedTotalReturnNetOfTax;
+        IsPartial = summary.IsPartial;
+        IsReportingCurrencyUnavailable = summary.IsReportingCurrencyUnavailable;
         OnPropertyChanged(nameof(HasIncompleteValuation));
         OnPropertyChanged(nameof(IncompleteValuationMessage));
         OnPropertyChanged(nameof(HasIncompleteShareBasis));
