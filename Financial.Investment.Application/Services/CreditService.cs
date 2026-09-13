@@ -3,6 +3,7 @@ using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Application.Validation;
 using Financial.Investment.Domain.Entities;
+using Financial.Shared.Abstractions.Currencies;
 using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.Logging;
 
@@ -14,13 +15,26 @@ public sealed class CreditService : ICreditService, ICreditQueryService
 
     private readonly IInvestmentRepository _repository;
     private readonly INavigationService _navigationService;
+    private readonly IExchangeRateProvider _exchangeRateProvider;
+    private readonly IReportingCurrencyProvider _reportingCurrencyProvider;
+    private readonly TimeProvider _timeProvider;
     private readonly ITelemetryTracer _tracer;
     private readonly ILogger<CreditService> _logger;
 
-    public CreditService(IInvestmentRepository repository, INavigationService navigationService, ITelemetryTracer tracer, ILogger<CreditService> logger)
+    public CreditService(
+        IInvestmentRepository repository,
+        INavigationService navigationService,
+        IExchangeRateProvider exchangeRateProvider,
+        IReportingCurrencyProvider reportingCurrencyProvider,
+        TimeProvider timeProvider,
+        ITelemetryTracer tracer,
+        ILogger<CreditService> logger)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
+        _exchangeRateProvider = exchangeRateProvider ?? throw new ArgumentNullException(nameof(exchangeRateProvider));
+        _reportingCurrencyProvider = reportingCurrencyProvider ?? throw new ArgumentNullException(nameof(reportingCurrencyProvider));
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -30,6 +44,17 @@ public sealed class CreditService : ICreditService, ICreditQueryService
         using var span = StartSpan("AddCredit");
         try
         {
+            var captured = await FxEntryCaptureHelper.CaptureAsync(
+                _repository, _exchangeRateProvider, _reportingCurrencyProvider, _timeProvider, request.BrokerName, request.Date).ConfigureAwait(false);
+            if (captured is null)
+            {
+                span.MarkSuccess();
+                _logger.LogInformation("{Operation} completed", "AddCredit");
+                return null;
+            }
+
+            var (currency, fxRateSnapshot) = captured.Value;
+
             var result = await AssetMutationHelper.ExecuteParsedMutationAsync<Credit.CreditType>(
                 _repository,
                 _navigationService,
@@ -40,7 +65,7 @@ public sealed class CreditService : ICreditService, ICreditQueryService
                 CreditTypeParser.TryParse,
                 (asset, creditType) =>
                 {
-                    var credit = Credit.Create(request.Date, creditType, request.Value, request.Withheld);
+                    var credit = Credit.Create(request.Date, creditType, request.Value, request.Withheld, currency, fxRateSnapshot);
                     asset.AddCredit(credit);
                     return true;
                 }).ConfigureAwait(false);
@@ -79,7 +104,10 @@ public sealed class CreditService : ICreditService, ICreditQueryService
                 CreditTypeParser.TryParse,
                 (asset, creditType) =>
                 {
-                    var updatedCredit = Credit.CreateWithId(request.Id, request.Date, creditType, request.Value, request.Withheld);
+                    var existing = asset.Credits.FirstOrDefault(c => c.Id == request.Id);
+                    var updatedCredit = Credit.CreateWithId(
+                        request.Id, request.Date, creditType, request.Value, request.Withheld,
+                        existing?.Currency ?? default, existing?.FxRateSnapshot);
                     return asset.UpdateCredit(updatedCredit);
                 }).ConfigureAwait(false);
 

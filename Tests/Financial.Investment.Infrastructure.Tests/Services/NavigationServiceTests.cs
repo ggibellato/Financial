@@ -3,6 +3,7 @@ using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Application.Services;
 using Financial.Investment.Domain.Entities;
 using Financial.Investment.Infrastructure.Persistence;
+using Financial.Shared.Abstractions.Currencies;
 using Financial.Shared.Abstractions.Observability;
 using Financial.Shared.Infrastructure.Persistence;
 using Financial.Investment.Infrastructure.Repositories;
@@ -29,7 +30,8 @@ public class NavigationServiceTests
     public NavigationServiceTests()
     {
         _sut = new NavigationService(_repository, TestHoldingValuationService.Create(), _tracer, NullLogger<NavigationService>.Instance);
-        _creditSut = new CreditService(_repository, _sut, _tracer, NullLogger<CreditService>.Instance);
+        IExchangeRateProvider exchangeRateProvider = new StubExchangeRateProvider(0.15m);
+        _creditSut = new CreditService(_repository, _sut, exchangeRateProvider, new FixedReportingCurrencyProvider(), TimeProvider.System, _tracer, NullLogger<CreditService>.Instance);
     }
 
     [Fact]

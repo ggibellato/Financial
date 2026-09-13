@@ -1,6 +1,7 @@
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Services;
 using Financial.Investment.Infrastructure.Persistence;
+using Financial.Shared.Abstractions.Currencies;
 using Financial.Shared.Abstractions.Observability;
 using Financial.Shared.Infrastructure.Persistence;
 using Financial.Investment.Infrastructure.Repositories;
@@ -183,7 +184,8 @@ public class CreditServiceTests
         var repository = new InvestmentJsonRepository(InvestmentLoader.LoadSync(storage, serializer), storage, serializer);
         var tracer = new RecordingTelemetryTracer();
         var navigationService = new NavigationService(repository, TestHoldingValuationService.Create(), tracer, NullLogger<NavigationService>.Instance);
-        var service = new CreditService(repository, navigationService, tracer, NullLogger<CreditService>.Instance);
+        IExchangeRateProvider exchangeRateProvider = new StubExchangeRateProvider(0.15m);
+        var service = new CreditService(repository, navigationService, exchangeRateProvider, new FixedReportingCurrencyProvider(), TimeProvider.System, tracer, NullLogger<CreditService>.Instance);
 
         return (service, tempFile);
     }

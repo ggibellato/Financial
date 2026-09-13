@@ -15,7 +15,8 @@ public class InvestmentTypeInfoResolver : DefaultJsonTypeInfoResolver
         typeof(Asset),
         typeof(Transaction),
         typeof(Credit),
-        typeof(AssetPriceSnapshot)
+        typeof(AssetPriceSnapshot),
+        typeof(FxRateSnapshot)
     ];
 
     private static readonly HashSet<(Type, string)> ExcludedProperties =

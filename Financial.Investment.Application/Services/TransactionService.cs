@@ -4,6 +4,7 @@ using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Application.Validation;
 using Financial.Investment.Domain.Entities;
 using Financial.Investment.Domain.Rules;
+using Financial.Shared.Abstractions.Currencies;
 using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.Logging;
 
@@ -15,13 +16,26 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
 
     private readonly IInvestmentRepository _repository;
     private readonly INavigationService _navigationService;
+    private readonly IExchangeRateProvider _exchangeRateProvider;
+    private readonly IReportingCurrencyProvider _reportingCurrencyProvider;
+    private readonly TimeProvider _timeProvider;
     private readonly ITelemetryTracer _tracer;
     private readonly ILogger<TransactionService> _logger;
 
-    public TransactionService(IInvestmentRepository repository, INavigationService navigationService, ITelemetryTracer tracer, ILogger<TransactionService> logger)
+    public TransactionService(
+        IInvestmentRepository repository,
+        INavigationService navigationService,
+        IExchangeRateProvider exchangeRateProvider,
+        IReportingCurrencyProvider reportingCurrencyProvider,
+        TimeProvider timeProvider,
+        ITelemetryTracer tracer,
+        ILogger<TransactionService> logger)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
+        _exchangeRateProvider = exchangeRateProvider ?? throw new ArgumentNullException(nameof(exchangeRateProvider));
+        _reportingCurrencyProvider = reportingCurrencyProvider ?? throw new ArgumentNullException(nameof(reportingCurrencyProvider));
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -31,6 +45,17 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
         using var span = StartSpan("AddTransaction");
         try
         {
+            var captured = await FxEntryCaptureHelper.CaptureAsync(
+                _repository, _exchangeRateProvider, _reportingCurrencyProvider, _timeProvider, request.BrokerName, request.Date).ConfigureAwait(false);
+            if (captured is null)
+            {
+                span.MarkSuccess();
+                _logger.LogInformation("{Operation} completed", "AddTransaction");
+                return null;
+            }
+
+            var (currency, fxRateSnapshot) = captured.Value;
+
             var result = await AssetMutationHelper.ExecuteParsedMutationAsync<Transaction.TransactionType>(
                 _repository,
                 _navigationService,
@@ -41,7 +66,7 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
                 TransactionTypeParser.TryParse,
                 (asset, transactionType) =>
                 {
-                    var transaction = Transaction.Create(request.Date, transactionType, request.Quantity, request.UnitPrice, request.Fees, request.Withheld);
+                    var transaction = Transaction.Create(request.Date, transactionType, request.Quantity, request.UnitPrice, request.Fees, request.Withheld, currency, fxRateSnapshot);
                     asset.RecordTransaction(transaction);
                     return true;
                 }).ConfigureAwait(false);
@@ -80,7 +105,10 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
                 TransactionTypeParser.TryParse,
                 (asset, transactionType) =>
                 {
-                    var updatedTransaction = Transaction.CreateWithId(request.Id, request.Date, transactionType, request.Quantity, request.UnitPrice, request.Fees, request.Withheld);
+                    var existing = asset.Transactions.FirstOrDefault(t => t.Id == request.Id);
+                    var updatedTransaction = Transaction.CreateWithId(
+                        request.Id, request.Date, transactionType, request.Quantity, request.UnitPrice, request.Fees, request.Withheld,
+                        existing?.Currency ?? default, existing?.FxRateSnapshot);
                     return asset.ReviseTransaction(updatedTransaction);
                 }).ConfigureAwait(false);
 
