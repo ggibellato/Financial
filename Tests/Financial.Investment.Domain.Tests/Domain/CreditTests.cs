@@ -1,4 +1,5 @@
 using Financial.Investment.Domain.Entities;
+using Financial.Shared.Abstractions.Currencies;
 using FluentAssertions;
 
 namespace Financial.Investment.Domain.Tests;
@@ -11,6 +12,28 @@ public class CreditTests
         var credit = Credit.Create(new DateTime(2024, 1, 1), Credit.CreditType.Dividend, 10m);
 
         credit.Id.Should().NotBe(Guid.Empty);
+    }
+
+    [Fact]
+    public void Create_AssignsCurrencyAndFxRateSnapshot()
+    {
+        var snapshot = FxRateSnapshot.Create(Currency.GBP, 0.146m, FxRateSource.Frankfurter, DateTimeOffset.UtcNow);
+
+        var credit = Credit.Create(new DateTime(2024, 1, 1), Credit.CreditType.Dividend, 10m, withheld: 0m, currency: Currency.BRL, fxRateSnapshot: snapshot);
+
+        using (new FluentAssertions.Execution.AssertionScope())
+        {
+            credit.Currency.Should().Be(Currency.BRL);
+            credit.FxRateSnapshot.Should().Be(snapshot);
+        }
+    }
+
+    [Fact]
+    public void Create_WithoutCurrencyOrSnapshot_DefaultsToNoSnapshot()
+    {
+        var credit = Credit.Create(new DateTime(2024, 1, 1), Credit.CreditType.Dividend, 10m);
+
+        credit.FxRateSnapshot.Should().BeNull();
     }
 
     [Fact]

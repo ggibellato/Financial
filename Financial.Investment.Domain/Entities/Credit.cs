@@ -1,4 +1,5 @@
 using System;
+using Financial.Shared.Abstractions.Currencies;
 
 namespace Financial.Investment.Domain.Entities;
 
@@ -11,12 +12,14 @@ public class Credit
     public CreditType Type { get; private set; }
     public decimal Value { get; private set; }
     public decimal Withheld { get; private set; }
+    public Currency Currency { get; private set; }
+    public FxRateSnapshot? FxRateSnapshot { get; private set; }
 
     public decimal NetAmount => Value - Withheld;
 
     private Credit() { }
 
-    private Credit(Guid id, DateTime date, CreditType type, decimal value, decimal withheld)
+    private Credit(Guid id, DateTime date, CreditType type, decimal value, decimal withheld, Currency currency, FxRateSnapshot? fxRateSnapshot)
     {
         ValidateValue(value);
         ValidateWithheld(value, withheld);
@@ -26,13 +29,15 @@ public class Credit
         Type = type;
         Value = value;
         Withheld = withheld;
+        Currency = currency;
+        FxRateSnapshot = fxRateSnapshot;
     }
 
-    public static Credit Create(DateTime date, CreditType type, decimal value, decimal withheld = 0m) =>
-        new(Guid.NewGuid(), date, type, value, withheld);
+    public static Credit Create(DateTime date, CreditType type, decimal value, decimal withheld = 0m, Currency currency = default, FxRateSnapshot? fxRateSnapshot = null) =>
+        new(Guid.NewGuid(), date, type, value, withheld, currency, fxRateSnapshot);
 
-    public static Credit CreateWithId(Guid id, DateTime date, CreditType type, decimal value, decimal withheld = 0m) =>
-        new(id, date, type, value, withheld);
+    public static Credit CreateWithId(Guid id, DateTime date, CreditType type, decimal value, decimal withheld = 0m, Currency currency = default, FxRateSnapshot? fxRateSnapshot = null) =>
+        new(id, date, type, value, withheld, currency, fxRateSnapshot);
 
     private static void ValidateValue(decimal value)
     {

@@ -1,5 +1,6 @@
 using System;
 using Financial.Investment.Domain.Rules;
+using Financial.Shared.Abstractions.Currencies;
 
 namespace Financial.Investment.Domain.Entities;
 
@@ -14,6 +15,8 @@ public class Transaction
     public decimal UnitPrice { get; private set; }
     public decimal Fees { get; private set; }
     public decimal Withheld { get; private set; }
+    public Currency Currency { get; private set; }
+    public FxRateSnapshot? FxRateSnapshot { get; private set; }
 
     /// <summary>
     /// The cash this transaction actually moves, keyed on its declared <see cref="CashEffect"/>
@@ -44,7 +47,7 @@ public class Transaction
     /// property setters, so stored history is loaded as written rather than silently repaired.
     /// </para>
     /// </summary>
-    private Transaction(Guid id, DateTime date, TransactionType type, decimal quantity, decimal unitPrice, decimal fees, decimal withheld)
+    private Transaction(Guid id, DateTime date, TransactionType type, decimal quantity, decimal unitPrice, decimal fees, decimal withheld, Currency currency, FxRateSnapshot? fxRateSnapshot)
     {
         var effect = TransactionTypeEffects.For(type);
         ValidateQuantity(quantity, effect.Quantity);
@@ -57,13 +60,15 @@ public class Transaction
         UnitPrice = unitPrice;
         Fees = fees < 0 ? 0 : fees;
         Withheld = withheld < 0 ? 0 : withheld;
+        Currency = currency;
+        FxRateSnapshot = fxRateSnapshot;
     }
 
-    public static Transaction Create(DateTime date, TransactionType type, decimal quantity, decimal unitPrice, decimal fees, decimal withheld = 0m) =>
-        new(Guid.NewGuid(), date, type, quantity, unitPrice, fees, withheld);
+    public static Transaction Create(DateTime date, TransactionType type, decimal quantity, decimal unitPrice, decimal fees, decimal withheld = 0m, Currency currency = default, FxRateSnapshot? fxRateSnapshot = null) =>
+        new(Guid.NewGuid(), date, type, quantity, unitPrice, fees, withheld, currency, fxRateSnapshot);
 
-    public static Transaction CreateWithId(Guid id, DateTime date, TransactionType type, decimal quantity, decimal unitPrice, decimal fees, decimal withheld = 0m) =>
-        new(id, date, type, quantity, unitPrice, fees, withheld);
+    public static Transaction CreateWithId(Guid id, DateTime date, TransactionType type, decimal quantity, decimal unitPrice, decimal fees, decimal withheld = 0m, Currency currency = default, FxRateSnapshot? fxRateSnapshot = null) =>
+        new(id, date, type, quantity, unitPrice, fees, withheld, currency, fxRateSnapshot);
 
     private static void ValidateQuantity(decimal quantity, QuantityEffect effect)
     {
