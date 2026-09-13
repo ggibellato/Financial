@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Financial.Investment.Domain.Exceptions;
+using Financial.Shared.Abstractions.Currencies;
 
 namespace Financial.Investment.Domain.Entities;
 
@@ -13,6 +14,13 @@ public class Investments
     private List<Broker> _historicBrokers = new List<Broker>();
     public IReadOnlyCollection<Broker> HistoricBrokers { get => _historicBrokers.AsReadOnly(); private set => SetHistoricBrokers(value); }
     private void SetHistoricBrokers(IReadOnlyCollection<Broker> data) => EntityGuard.ReplaceAll(_historicBrokers, data);
+
+    /// <summary>
+    /// Defaults to GBP - matching three of the four existing brokers - both for a freshly created
+    /// aggregate and for a pre-existing data file with no "ReportingCurrency" key, since
+    /// deserialization still runs this property's initializer via the real (private) constructor.
+    /// </summary>
+    public Currency ReportingCurrency { get; private set; } = Currency.GBP;
 
     private Investments() { }
 
@@ -27,6 +35,8 @@ public class Investments
     {
         _historicBrokers.Add(broker);
     }
+
+    public void SetReportingCurrency(Currency currency) => ReportingCurrency = currency;
 
     public Broker? FindActiveBroker(string name) => _activeBrokers.FirstOrDefault(broker => broker.Name == name);
 

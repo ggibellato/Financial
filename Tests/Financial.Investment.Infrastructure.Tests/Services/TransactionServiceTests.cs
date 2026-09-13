@@ -142,7 +142,7 @@ public class TransactionServiceTests
         var tracer = new RecordingTelemetryTracer();
         var navigationService = new NavigationService(repository, TestHoldingValuationService.Create(), tracer, NullLogger<NavigationService>.Instance);
         IExchangeRateProvider exchangeRateProvider = new StubExchangeRateProvider(0.15m);
-        var service = new TransactionService(repository, navigationService, exchangeRateProvider, new FixedReportingCurrencyProvider(), TimeProvider.System, tracer, NullLogger<TransactionService>.Instance);
+        var service = new TransactionService(repository, navigationService, exchangeRateProvider, new StubReportingCurrencyProvider(), TimeProvider.System, tracer, NullLogger<TransactionService>.Instance);
 
         return (service, tempFile);
     }

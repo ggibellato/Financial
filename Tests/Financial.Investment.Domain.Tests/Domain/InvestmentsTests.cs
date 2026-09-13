@@ -1,5 +1,6 @@
 using Financial.Investment.Domain.Entities;
 using Financial.Investment.Domain.Exceptions;
+using Financial.Shared.Abstractions.Currencies;
 using FluentAssertions;
 using FluentAssertions.Execution;
 
@@ -7,6 +8,24 @@ namespace Financial.Investment.Domain.Tests;
 
 public class InvestmentsTests
 {
+    [Fact]
+    public void Create_DefaultsReportingCurrencyToGbp()
+    {
+        var investments = Investments.Create();
+
+        investments.ReportingCurrency.Should().Be(Currency.GBP);
+    }
+
+    [Fact]
+    public void SetReportingCurrency_UpdatesTheValue()
+    {
+        var investments = Investments.Create();
+
+        investments.SetReportingCurrency(Currency.BRL);
+
+        investments.ReportingCurrency.Should().Be(Currency.BRL);
+    }
+
     [Fact]
     public void AddActiveBroker_AddsBrokerToActiveCollection()
     {

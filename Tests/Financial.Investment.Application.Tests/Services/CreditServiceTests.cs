@@ -15,7 +15,7 @@ public class CreditServiceTests
 {
     private static readonly ITelemetryTracer Tracer = new RecordingTelemetryTracer();
     private static readonly IExchangeRateProvider ExchangeRateProvider = new StubExchangeRateProvider(0.15m);
-    private static readonly IReportingCurrencyProvider ReportingCurrencyProvider = new FixedReportingCurrencyProvider();
+    private static readonly IReportingCurrencyProvider ReportingCurrencyProvider = new StubReportingCurrencyProvider();
 
     private readonly StubInvestmentRepository _repository = new()
     {
