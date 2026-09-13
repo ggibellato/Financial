@@ -198,6 +198,44 @@ public class ExpenseTests
     }
 
     [Fact]
+    public void UpdateDetails_OnUnsettledCardCharge_ChangingDate_SyncsChargeDateToNewDate()
+    {
+        var expense = CreateCardCharge();
+        var newDate = new DateOnly(2026, 8, 24);
+
+        expense.UpdateDetails(newDate, expense.Description, expense.Value, expense.Category, null, ChaseMaster4023);
+
+        expense.ChargeDate.Should().Be(newDate);
+    }
+
+    [Fact]
+    public void UpdateDetails_OnUnsettledCardCharge_ChangingDate_MovesInvoiceDateWhenStillAtDefault()
+    {
+        var expense = CreateCardCharge();
+        var newDate = new DateOnly(2026, 8, 24);
+
+        expense.UpdateDetails(newDate, expense.Description, expense.Value, expense.Category, null, ChaseMaster4023);
+
+        expense.InvoiceDate.Should().Be(new DateOnly(2026, 8, 1));
+    }
+
+    [Fact]
+    public void UpdateDetails_OnUnsettledCardCharge_ChangingDate_PreservesInvoiceDatePinnedToADifferentMonth()
+    {
+        var expense = CreateCardCharge();
+        expense.SetInvoiceDate(new DateOnly(2026, 9, 1));
+        var newDate = new DateOnly(2026, 8, 24);
+
+        expense.UpdateDetails(newDate, expense.Description, expense.Value, expense.Category, null, ChaseMaster4023);
+
+        using (new AssertionScope())
+        {
+            expense.ChargeDate.Should().Be(newDate);
+            expense.InvoiceDate.Should().Be(new DateOnly(2026, 9, 1));
+        }
+    }
+
+    [Fact]
     public void Create_WithoutCountsAsTithe_DefaultsToTrue()
     {
         var expense = Expense.Create(new DateOnly(2026, 7, 1), "Tithe payment", 200m, Dizimo, Barclays, null);
