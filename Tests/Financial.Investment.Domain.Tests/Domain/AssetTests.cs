@@ -1,5 +1,6 @@
 using Financial.Investment.Domain.Entities;
 using Financial.Investment.Domain.Exceptions;
+using Financial.Investment.Domain.Rules;
 using FluentAssertions;
 using FluentAssertions.Execution;
 
@@ -653,5 +654,86 @@ public class AssetTests
         var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
 
         asset.GetPriceAsOf(new DateOnly(2026, 8, 14)).Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData(Transaction.TransactionType.Sell)]
+    [InlineData(Transaction.TransactionType.Redemption)]
+    public void RecordTransaction_DisposingType_CreatesExactlyOneActiveDisposalRecord(Transaction.TransactionType type)
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        asset.AddTransaction(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
+
+        asset.RecordTransaction(Transaction.Create(new DateTime(2024, 2, 1), type, 4m, 6m, 0m));
+
+        asset.DisposalRecords.Should().ContainSingle();
+        asset.DisposalRecords.Single().Status.Should().Be(DisposalRecordStatus.Active);
+    }
+
+    [Theory]
+    [InlineData(Transaction.TransactionType.Buy)]
+    [InlineData(Transaction.TransactionType.TransferIn)]
+    [InlineData(Transaction.TransactionType.TransferOut)]
+    public void RecordTransaction_NonDisposingType_CreatesNoDisposalRecord(Transaction.TransactionType type)
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        asset.AddTransaction(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
+
+        asset.RecordTransaction(Transaction.Create(new DateTime(2024, 2, 1), type, 4m, 6m, 0m));
+
+        asset.DisposalRecords.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void RecordTransaction_Fee_CreatesNoDisposalRecord()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        asset.AddTransaction(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
+
+        asset.RecordTransaction(Transaction.Create(new DateTime(2024, 2, 1), Transaction.TransactionType.Fee, 0m, 0m, 3m));
+
+        asset.DisposalRecords.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void RealizedGainLoss_UnderAverageCost_MatchesPreFeatureWeightedAverageFigure()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 3, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 5, 1), Transaction.TransactionType.Buy, 15m, 100m, 0m));
+        asset.RecordTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 110m, 0m));
+        asset.AddCredit(Credit.Create(new DateTime(2021, 6, 1), Credit.CreditType.Dividend, 12m));
+
+        asset.RealizedGainLoss.Should().Be(62m, "550 proceeds minus 5x100 cost basis, plus 12 in credits");
+    }
+
+    [Fact]
+    public void RecordTransaction_UnderFifo_TransactionsRealizedCapitalGainReflectsDisposalRecordsNotWeightedAverage()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        asset.AddTransaction(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        asset.AddTransaction(Transaction.Create(new DateTime(2024, 1, 2), Transaction.TransactionType.Buy, 10m, 200m, 0m));
+
+        asset.RecordTransaction(Transaction.Create(new DateTime(2024, 1, 3), Transaction.TransactionType.Sell, 10m, 250m, 0m), CostBasisMethod.FIFO);
+
+        asset.Transactions.RealizedCapitalGain.Should().Be(1500m, "FIFO consumes the 100-cost lot first (2500 proceeds - 1000 cost), not the 150 weighted-average cost");
+    }
+
+    [Fact]
+    public void RecordTransaction_SpecificIdAllocationMismatch_ThrowsAndAddsNothing()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        var lotId = Guid.NewGuid();
+        asset.AddTransaction(Transaction.CreateWithId(lotId, new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
+
+        var allocation = new[] { new SpecificLotAllocation(lotId, 3m) };
+        Action act = () => asset.RecordTransaction(
+            Transaction.Create(new DateTime(2024, 2, 1), Transaction.TransactionType.Sell, 4m, 6m, 0m),
+            CostBasisMethod.SpecificId,
+            allocation);
+
+        act.Should().Throw<InvestmentRuleViolationException>();
+        asset.Transactions.Should().ContainSingle();
+        asset.DisposalRecords.Should().BeEmpty();
     }
 }

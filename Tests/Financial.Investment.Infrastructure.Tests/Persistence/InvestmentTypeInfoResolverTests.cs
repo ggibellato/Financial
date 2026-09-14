@@ -141,7 +141,7 @@ public class InvestmentTypeInfoResolverTests
         var options = CreateOptions();
         var asset = Asset.Create("Test", "ISIN", "BVMF", "TST");
         asset.AddTransaction(Transaction.Create(new DateTime(2021, 3, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
-        asset.AddTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 110m, 0m));
+        asset.RecordTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 110m, 0m));
         asset.AddCredit(Credit.Create(new DateTime(2021, 6, 1), Credit.CreditType.Dividend, 12m));
 
         var json = JsonSerializer.Serialize(asset, options);

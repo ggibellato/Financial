@@ -35,12 +35,8 @@ public class Asset
 
     public decimal? AverageSellPrice => Transactions.AverageSellPrice;
 
-    /// <summary>
-    /// Realized gain/loss from closed (sold) quantity plus credits. Composes
-    /// Transactions' pure capital-gain figure with Credits, since Transactions
-    /// itself has no knowledge of Credits.
-    /// </summary>
-    public decimal RealizedGainLoss => Transactions.RealizedCapitalGain + Credits.Sum(c => c.Value);
+    public decimal RealizedGainLoss =>
+        DisposalRecords.Where(d => d.Status == DisposalRecordStatus.Active).Sum(d => d.GainLoss) + Credits.Sum(c => c.Value);
 
     public PositionType PositionType => Quantity switch
     {
@@ -48,6 +44,9 @@ public class Asset
         < 0 => PositionType.Short,
         _ => PositionType.Flat
     };
+
+    private List<DisposalRecord> _disposalRecords = new List<DisposalRecord>();
+    public IReadOnlyCollection<DisposalRecord> DisposalRecords { get => _disposalRecords.AsReadOnly(); private set => EntityGuard.ReplaceAll(_disposalRecords, value); }
 
     private List<Credit> _credits = new List<Credit>();
     public IReadOnlyCollection<Credit> Credits { get => _credits.AsReadOnly(); private set => SetCredits(value); }
@@ -141,11 +140,34 @@ public class Asset
 
     public bool RemoveTransaction(Guid transactionId) => Transactions.RemoveById(transactionId);
 
-    public void RecordTransaction(Transaction transaction)
+    public void RecordTransaction(Transaction transaction, CostBasisMethod method = CostBasisMethod.AverageCost, IReadOnlyList<SpecificLotAllocation>? allocation = null)
     {
         EnsureNoUncoveredSale([.. Transactions, transaction], transaction.Id);
+
+        var effect = TransactionTypeEffects.For(transaction.Type);
+        var isDisposing = effect.Quantity == QuantityEffect.Decrease && effect.Cash != CashEffect.None;
+        if (isDisposing)
+        {
+            var disposalRecord = DisposalRecordCalculator.Calculate(transaction, Transactions, method, transaction.Currency.ToString(), allocation);
+            _disposalRecords.Add(disposalRecord);
+        }
+
         AddTransaction(transaction);
+
+        if (isDisposing)
+        {
+            RefreshRealizedCapitalGain();
+        }
     }
+
+    internal void AppendBackfilledDisposalRecord(DisposalRecord record)
+    {
+        _disposalRecords.Add(record);
+        RefreshRealizedCapitalGain();
+    }
+
+    internal void RefreshRealizedCapitalGain() =>
+        Transactions.SetRealizedCapitalGain(_disposalRecords.Where(r => r.Status == DisposalRecordStatus.Active).Sum(r => r.GainLoss));
 
     public bool ReviseTransaction(Transaction updatedTransaction)
     {
