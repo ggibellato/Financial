@@ -2,6 +2,7 @@ using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Services;
 using Financial.Investment.Domain.Entities;
 using Financial.Investment.Domain.Exceptions;
+using Financial.Investment.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
 using Financial.TestUtilities;
 using FluentAssertions;
@@ -115,6 +116,64 @@ public class BrokerServiceTests
 
         await act.Should().ThrowAsync<InvestmentRuleViolationException>();
         _repository.WriteCallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task SetCostBasisMethodAsync_ValidBroker_ChangesMethodAndRegeneratesDisposals()
+    {
+        var broker = Broker.Create("Trading 212", "GBP");
+        var portfolio = broker.AddPortfolio("ISA");
+        var asset = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 50m, 0m));
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 6, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        asset.RecordTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 10m, 200m, 0m));
+        portfolio.AddAsset(asset);
+        _repository.Investments!.AddActiveBroker(broker);
+        var originalRecord = asset.DisposalRecords.Single();
+
+        var result = await CreateService().SetCostBasisMethodAsync("Trading 212", CostBasisMethod.FIFO);
+
+        using (new AssertionScope())
+        {
+            result.Name.Should().Be("Trading 212");
+            broker.CostBasisMethod.Should().Be(CostBasisMethod.FIFO);
+            originalRecord.Status.Should().Be(DisposalRecordStatus.Superseded);
+            asset.DisposalRecords.Should().HaveCount(2);
+            _repository.WriteCallCount.Should().Be(1);
+        }
+    }
+
+    [Fact]
+    public async Task SetCostBasisMethodAsync_UnknownBroker_ThrowsAndWritesNothing()
+    {
+        var act = async () => await CreateService().SetCostBasisMethodAsync("Nope", CostBasisMethod.FIFO);
+
+        await act.Should().ThrowAsync<KeyNotFoundException>();
+        _repository.WriteCallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task SetCostBasisMethodAsync_RegenerationThrows_MethodAndDisposalsUnchangedAndWritesNothing()
+    {
+        var broker = Broker.Create("Trading 212", "GBP");
+        var portfolio = broker.AddPortfolio("ISA");
+        var asset = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 50m, 0m));
+        asset.RecordTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 10m, 200m, 0m));
+        portfolio.AddAsset(asset);
+        _repository.Investments!.AddActiveBroker(broker);
+        var originalRecord = asset.DisposalRecords.Single();
+
+        var act = async () => await CreateService().SetCostBasisMethodAsync("Trading 212", CostBasisMethod.SpecificId);
+
+        await act.Should().ThrowAsync<InvestmentRuleViolationException>();
+        using (new AssertionScope())
+        {
+            broker.CostBasisMethod.Should().Be(CostBasisMethod.AverageCost);
+            originalRecord.Status.Should().Be(DisposalRecordStatus.Active);
+            asset.DisposalRecords.Should().ContainSingle();
+            _repository.WriteCallCount.Should().Be(0);
+        }
     }
 
     [Fact]

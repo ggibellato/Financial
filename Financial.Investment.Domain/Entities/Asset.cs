@@ -144,6 +144,21 @@ public class Asset
     {
         EnsureNoUncoveredSale([.. Transactions, transaction], transaction.Id);
 
+        if (transaction.Date <= LatestActiveDisposalDate())
+        {
+            AddTransaction(transaction);
+            try
+            {
+                DisposalRecordRegenerator.RegenerateAsset(this, method, transaction.Date, transaction.Id, allocation);
+            }
+            catch
+            {
+                RemoveTransaction(transaction.Id);
+                throw;
+            }
+            return;
+        }
+
         var effect = TransactionTypeEffects.For(transaction.Type);
         var isDisposing = effect.Quantity == QuantityEffect.Decrease && effect.Cash != CashEffect.None;
         if (isDisposing)
@@ -160,6 +175,12 @@ public class Asset
         }
     }
 
+    private DateTime? LatestActiveDisposalDate()
+    {
+        var activeDates = _disposalRecords.Where(r => r.Status == DisposalRecordStatus.Active).Select(r => r.Date).ToList();
+        return activeDates.Count == 0 ? null : activeDates.Max();
+    }
+
     internal void AppendBackfilledDisposalRecord(DisposalRecord record)
     {
         _disposalRecords.Add(record);
@@ -169,28 +190,69 @@ public class Asset
     internal void RefreshRealizedCapitalGain() =>
         Transactions.SetRealizedCapitalGain(_disposalRecords.Where(r => r.Status == DisposalRecordStatus.Active).Sum(r => r.GainLoss));
 
-    public bool ReviseTransaction(Transaction updatedTransaction)
+    public bool ReviseTransaction(Transaction updatedTransaction, CostBasisMethod method = CostBasisMethod.AverageCost)
     {
-        if (Transactions.All(t => t.Id != updatedTransaction.Id))
+        var previous = Transactions.FirstOrDefault(t => t.Id == updatedTransaction.Id);
+        if (previous is null)
         {
             return false;
         }
 
         var candidate = Transactions.Select(t => t.Id == updatedTransaction.Id ? updatedTransaction : t);
         EnsureNoUncoveredSale(candidate, updatedTransaction.Id);
-        return UpdateTransaction(updatedTransaction);
+
+        if (!UpdateTransaction(updatedTransaction))
+        {
+            return false;
+        }
+
+        var anchor = previous.Date <= updatedTransaction.Date ? previous.Date : updatedTransaction.Date;
+        if (anchor <= LatestActiveDisposalDate())
+        {
+            try
+            {
+                DisposalRecordRegenerator.RegenerateAsset(this, method, anchor);
+            }
+            catch
+            {
+                UpdateTransaction(previous);
+                throw;
+            }
+        }
+
+        return true;
     }
 
-    public bool RetractTransaction(Guid transactionId)
+    public bool RetractTransaction(Guid transactionId, CostBasisMethod method = CostBasisMethod.AverageCost)
     {
-        if (Transactions.All(t => t.Id != transactionId))
+        var removed = Transactions.FirstOrDefault(t => t.Id == transactionId);
+        if (removed is null)
         {
             return false;
         }
 
         var candidate = Transactions.Where(t => t.Id != transactionId);
         EnsureNoUncoveredSale(candidate, subjectTransactionId: null);
-        return RemoveTransaction(transactionId);
+
+        if (!RemoveTransaction(transactionId))
+        {
+            return false;
+        }
+
+        if (removed.Date <= LatestActiveDisposalDate())
+        {
+            try
+            {
+                DisposalRecordRegenerator.RegenerateAsset(this, method, removed.Date);
+            }
+            catch
+            {
+                AddTransaction(removed);
+                throw;
+            }
+        }
+
+        return true;
     }
 
     private static void EnsureNoUncoveredSale(IEnumerable<Transaction> candidate, Guid? subjectTransactionId)

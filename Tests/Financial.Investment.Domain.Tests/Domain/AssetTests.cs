@@ -736,4 +736,84 @@ public class AssetTests
         asset.Transactions.Should().ContainSingle();
         asset.DisposalRecords.Should().BeEmpty();
     }
+
+    [Fact]
+    public void RecordTransaction_BackdatedBuyAtOrBeforeLatestDisposal_RegeneratesExistingDisposal()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        asset.AddTransaction(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        asset.RecordTransaction(Transaction.Create(new DateTime(2024, 2, 1), Transaction.TransactionType.Sell, 5m, 150m, 0m));
+        var original = asset.DisposalRecords.Single();
+
+        asset.RecordTransaction(Transaction.Create(new DateTime(2023, 1, 1), Transaction.TransactionType.Buy, 10m, 50m, 0m));
+
+        original.Status.Should().Be(DisposalRecordStatus.Superseded);
+        asset.DisposalRecords.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public void RecordTransaction_ForwardDatedAdd_DoesNotRegenerateExistingDisposal()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        asset.AddTransaction(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        asset.RecordTransaction(Transaction.Create(new DateTime(2024, 2, 1), Transaction.TransactionType.Sell, 5m, 150m, 0m));
+        var original = asset.DisposalRecords.Single();
+
+        asset.RecordTransaction(Transaction.Create(new DateTime(2024, 3, 1), Transaction.TransactionType.Buy, 5m, 90m, 0m));
+
+        original.Status.Should().Be(DisposalRecordStatus.Active);
+        asset.DisposalRecords.Should().ContainSingle();
+    }
+
+    [Fact]
+    public void ReviseTransaction_BackdatedEditAtOrBeforeLatestDisposal_RegeneratesExistingDisposal()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        var buy = Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m);
+        asset.AddTransaction(buy);
+        asset.RecordTransaction(Transaction.Create(new DateTime(2024, 2, 1), Transaction.TransactionType.Sell, 5m, 150m, 0m));
+        var original = asset.DisposalRecords.Single();
+
+        var revisedBuy = Transaction.CreateWithId(buy.Id, buy.Date, buy.Type, buy.Quantity, 50m, buy.Fees, buy.Withheld, buy.Currency, buy.FxRateSnapshot);
+        asset.ReviseTransaction(revisedBuy);
+
+        original.Status.Should().Be(DisposalRecordStatus.Superseded);
+        asset.DisposalRecords.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public void RetractTransaction_DeletingASaleAtOrBeforeLatestDisposal_RegeneratesAndRetiresItsRecord()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        asset.AddTransaction(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 20m, 100m, 0m));
+        var firstSell = Transaction.Create(new DateTime(2024, 2, 1), Transaction.TransactionType.Sell, 5m, 150m, 0m);
+        asset.RecordTransaction(firstSell);
+        asset.RecordTransaction(Transaction.Create(new DateTime(2024, 3, 1), Transaction.TransactionType.Sell, 5m, 160m, 0m));
+        var firstRecord = asset.DisposalRecords.First(r => r.TransactionId == firstSell.Id);
+
+        asset.RetractTransaction(firstSell.Id);
+
+        firstRecord.Status.Should().Be(DisposalRecordStatus.Superseded);
+        firstRecord.SupersededByRecordId.Should().BeNull();
+        asset.DisposalRecords.Where(r => r.Status == DisposalRecordStatus.Active).Should().HaveCount(1);
+    }
+
+    [Fact]
+    public void ReviseTransaction_RegenerationThrows_RevertsTheEditAndRethrows()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        var buy1 = Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m);
+        var buy2 = Transaction.Create(new DateTime(2024, 1, 2), Transaction.TransactionType.Buy, 10m, 100m, 0m);
+        asset.AddTransaction(buy1);
+        asset.AddTransaction(buy2);
+        var sell = Transaction.Create(new DateTime(2024, 2, 1), Transaction.TransactionType.Sell, 10m, 150m, 0m);
+        asset.RecordTransaction(sell, CostBasisMethod.SpecificId, new[] { new SpecificLotAllocation(buy2.Id, 10m) });
+
+        var shrunkBuy2 = Transaction.CreateWithId(buy2.Id, buy2.Date, buy2.Type, 5m, buy2.UnitPrice, buy2.Fees, buy2.Withheld, buy2.Currency, buy2.FxRateSnapshot);
+        Action act = () => asset.ReviseTransaction(shrunkBuy2, CostBasisMethod.SpecificId);
+
+        act.Should().Throw<InvestmentRuleViolationException>();
+        asset.Transactions.Single(t => t.Id == buy2.Id).Quantity.Should().Be(10m);
+        asset.DisposalRecords.Single().Status.Should().Be(DisposalRecordStatus.Active);
+    }
 }

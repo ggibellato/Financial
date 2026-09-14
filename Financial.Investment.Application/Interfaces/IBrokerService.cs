@@ -1,4 +1,5 @@
 using Financial.Investment.Application.DTOs;
+using Financial.Investment.Domain.Entities;
 
 namespace Financial.Investment.Application.Interfaces;
 
@@ -34,4 +35,7 @@ public interface IBrokerService
     /// <exception cref="KeyNotFoundException">No broker by this name exists.</exception>
     /// <exception cref="Domain.Exceptions.InvestmentRuleViolationException">The broker still has portfolios.</exception>
     Task DeleteBrokerAsync(string name);
+
+    /// <exception cref="KeyNotFoundException">No broker by this name exists.</exception>
+    Task<BrokerDTO> SetCostBasisMethodAsync(string brokerName, CostBasisMethod method);
 }
