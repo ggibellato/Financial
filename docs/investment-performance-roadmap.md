@@ -24,6 +24,13 @@ illustration, never as something to build a rule on.
 records what each wave actually delivered against its plan; several gaps in §3 that motivated Wave 0
 and Wave 1 are now closed or narrowed and are marked inline.
 
+**Revised 2026-09-14.** Wave 3 has since shipped in full —
+`docs/prd/P49-prd-multi-currency-reporting-currency/` (P49, 16 PRs across F01–F05, merged 2026-09-13),
+plus two same-day follow-ups outside the original feature table: a performance fix (#822, in-memory FX
+rate cache + a reporting-currency on/off toggle, prompted by live use surfacing slow navigation on
+brokers whose currency differs from the reporting currency) and a gap-closing cross-feature test (#823).
+G2 is closed; D3 is resolved. Wave 4 (P50 · Disposals and cost basis) is next.
+
 ---
 
 ## 1. Verdict
@@ -95,13 +102,29 @@ table, added a gross/fees/withheld/net money block to both `Transaction` (`NetCa
 and standalone valuation adjustments remain out of scope by design (Wave 7/Wave 2 respectively);
 tax reporting itself is still Wave 5.
 
-### G2 — No currency on transactions, no FX
+### G2 — No currency on transactions, no FX **[fixed 2026-09-13]**
 
 Currency lives on `Broker` only (`Trading 212` / `Coinbase` / `FreeTrade` = GBP, `XPI` = BRL).
 There is no per-transaction currency, no reporting currency, no dated FX rate, and therefore no
 honest all-brokers total. An `IExchangeRateProvider` (Frankfurter) exists but sits in **CashFlow**
 Infrastructure — bounded-context isolation forbids Investment referencing it, so it must be
 promoted to a shared abstraction rather than reused in place.
+
+P49 closed this in full: F01 promoted `IExchangeRateProvider` to `Financial.Shared.Abstractions`
+with its Frankfurter implementation in its own `Integrations/Frankfurter` project, cut over
+`ControleMaeService` (CashFlow) to the shared interface, and added the 10-calendar-day
+nearest-earlier-date fallback for weekends/holidays. F02 added `Currency` (auto-filled from the
+broker) and a dated `FxRateSnapshot` to `Transaction`/`Credit`, backfilled automatically on load
+for pre-existing records. F03 added the persisted reporting-currency setting (defaults GBP) and
+converted totals — each flow-based figure is the sum of its contributing records converted
+individually at each one's own date, not the native total converted by a single spot rate — with
+`Partial`/`ReportingCurrencyUnavailable` flags and native figures always preserved. F04/F05 gave
+both front ends the Settings control, the converted totals alongside native ones, and a per-record
+FX provenance affordance (rate, source, retrieved-at). A same-day follow-up (#822) added an
+in-memory (session-lifetime, unpersisted) rate cache and a reporting-currency on/off toggle after
+live use surfaced slow navigation on brokers whose currency differs from the reporting currency —
+every unique transaction/credit date was re-fetched from Frankfurter on every click with no
+caching; the toggle lets a user skip the conversion path entirely rather than pay that cost.
 
 ### G3 — Cost basis is hard-coded and order-dependent **[fixed 2026-09-11]**
 
@@ -481,17 +504,30 @@ quickstart.md walkthrough and full UI-review-checklist pass required to close th
 DTOs carry the fields, but only the API sets them today (`docs/investment-performance-roadmap.md`
 does not track UI backlog items; see `specs/005-valuation-methods-provenance/tasks.md` T074's note).
 
-### Wave 3 — P49 · Multi-currency and reporting currency
+### Wave 3 — P49 · Multi-currency and reporting currency **[delivered 2026-09-13]**
 
 *Gates only the all-brokers consolidated view; per-broker views work without it.*
 
-| # | Feature |
-|---|---|
-| F01 | Promote `IExchangeRateProvider` to `Financial.Shared.Abstractions`; implementation into its own `Integrations/` project |
-| F02 | `Transaction.Currency` + dated FX rate captured and stored at record time |
-| F03 | Reporting-currency setting; converted totals with original currency always preserved and shown |
-| F04 | React |
-| F05 | WPF parity |
+| # | Feature | Notes |
+|---|---|---|
+| F01 | Promote `IExchangeRateProvider` to `Financial.Shared.Abstractions`; implementation into its own `Integrations/` project | Also cut `Financial.CashFlow`'s `ControleMaeService` over to the shared interface — a separate copy no longer exists. |
+| F02 | `Transaction.Currency` + dated FX rate captured and stored at record time | Auto-filled from the broker; pre-existing records backfilled automatically on the next load, no separate tool. |
+| F03 | Reporting-currency setting; converted totals with original currency always preserved and shown | Each flow-based converted figure sums its contributing records converted individually at each one's own date. |
+| F04 | React | Settings control, converted totals, per-record FX provenance affordance (rate/source/retrieved-at). |
+| F05 | WPF parity | Same control, same totals, same provenance affordance — WPF composes the Investment Application layer in-process, no HTTP round trip. |
+
+**Deliverable:** an honest all-brokers total exists; every converted figure states its provenance and degrades visibly (`Partial`/`ReportingCurrencyUnavailable`) rather than silently.
+
+Unlike Waves 0–2, P49 used the `docs/prd/` spec-writer + implement-feature workflow rather than
+`specs/00N-.../` — shipped as `docs/prd/P49-prd-multi-currency-reporting-currency/` across **16 PRs**
+for F01–F05 (#803–#821, several features split into 2–4 stacked PRs each to stay within the
+8-non-test-file limit), close to one PR per feature-stage rather than one per feature. Two same-day
+follow-ups outside the original table: #822 (in-memory FX rate cache + a reporting-currency on/off
+toggle, after live use on the merged branch surfaced slow broker navigation — every unique
+transaction/credit date was re-fetched from Frankfurter on every click with no caching at all) and
+#823 (a cross-feature acceptance test proving F01's shared rate provider gives F02's entry-time
+snapshot and F03's on-demand conversion the identical rate for the same date, closing the last two
+unchecked PRD boxes). 18 PRs total for the wave.
 
 ### Wave 4 — P50 · Disposals and cost basis
 
@@ -538,7 +574,7 @@ P46 ──> P47 ──┬──> P48 ──┬──> P52 ──> P53
               │          │
               └──> P50 ──> P51
 
-P49 (independent; required only for all-brokers consolidated totals)
+P49 [delivered 2026-09-13] (independent; required only for all-brokers consolidated totals)
 ```
 
 Approximately 43 PRs plus migration tools — **[corrected 2026-09-10]** likely more, since P46 alone
@@ -549,16 +585,23 @@ to the later waves.
 inverted for P47: it shipped in **2** PRs against a 6-feature table, because CI's `openapiFreshness.test.ts`
 gate forces a backend contract change and its `Financial.Web` consumer into the same PR — F01–F05
 landed together in one PR, WPF parity in a second. P48 landed in **5**, one more than its four-feature
-table implied, the extra PR being the whole-feature polish/verification pass. Net across the three
-delivered waves so far: 19 PRs against a combined ~24-feature estimate — treat the per-wave PR count
-as similarly unreliable going forward and expect the actual number only once each wave is delivered.
+table implied, the extra PR being the whole-feature polish/verification pass.
 
-P46, P47 and P48 all shipped (§6 above) — P46 fixed a real defect, removed the React/WPF calculation
+**[revised 2026-09-14]** P49 landed in **16** PRs against its five-feature table (each feature split
+into 2–4 stacked PRs to stay within the 8-non-test-file limit), plus 2 same-day follow-up PRs outside
+the table (a performance fix and a gap-closing test) — 18 total for the wave. Running total across the
+four delivered waves so far: **37 PRs** (12 + 2 + 5 + 18). Treat the per-wave PR count as unreliable
+against any feature-count estimate going forward and expect the actual number only once each wave is
+delivered.
+
+P46, P47, P48 and P49 all shipped (§6 above) — P46 fixed a real defect, removed the React/WPF calculation
 duplication, and produced the first portfolio-level return figure (`specs/003-investment-calculation-core/spec.md`,
 74 functional requirements, 14 success criteria, 7 user stories); P47 widened the transaction/income
 vocabulary and added net-of-tax return (`specs/004-transaction-income-vocabulary/`); P48 added
-valuation methods and price provenance (`specs/005-valuation-methods-provenance/`). Read each spec,
-not this section, for the decisions taken during that work. Wave 3 (P49) is next per the sequencing
+valuation methods and price provenance (`specs/005-valuation-methods-provenance/`); P49 added
+multi-currency support and an honest all-brokers total
+(`docs/prd/P49-prd-multi-currency-reporting-currency/`). Read each spec/PRD, not this section, for the
+decisions taken during that work. Wave 4 (P50 · Disposals and cost basis) is next per the sequencing
 above.
 
 ---
@@ -569,7 +612,7 @@ above.
 |---|---|---|
 | D1 | Tax scope | Reporting support only (§5). Records and classifies; never computes tax due. |
 | D2 | Cost-basis default | Weighted average — it matches both BR and UK (Section 104) practice. FIFO and specific-ID ship in P50 as options, not defaults. |
-| D3 | Reporting currency | Defer P49 until P48 ships. Per-broker views are correct without it; only the all-brokers total needs it. **[2026-09-13]** P48 shipped 2026-09-12 — P49 is now unblocked, though the sequencing diagram in §6 already treats it as independent of the P47→P48 chain. |
+| D3 | Reporting currency | Defer P49 until P48 ships. Per-broker views are correct without it; only the all-brokers total needs it. **[2026-09-13]** P48 shipped 2026-09-12 — P49 is now unblocked, though the sequencing diagram in §6 already treats it as independent of the P47→P48 chain. **[delivered 2026-09-13]** P49 shipped — see G2 and §6 Wave 3. |
 | D4 | `Credit` migration | Rewrite in place with a tool + temp-copy verification, keeping `Value` as derived net, rather than dual-writing a parallel collection. |
 | D5 | ~~Historic `Unknown` assets~~ **Unclassified assets** | **[corrected 2026-09-10] Overturned.** A backfill is not possible — classification is manual, one instrument at a time (G11), and 87 of the 90 are closed positions where it changes nothing on screen. P46-F07 therefore reports and never writes. **The dependency inverts:** P48's valuation methods and P51's tax profiles must each define their behaviour for an unclassified holding rather than assuming the rows were cleaned first. Nothing in P46 may require a classification. |
 | D6 | Inco / value-based funds | Model as provider-valued holdings in P48-F03 — not as synthetic single-unit assets. |
