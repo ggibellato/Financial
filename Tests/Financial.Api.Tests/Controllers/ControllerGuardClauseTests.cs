@@ -141,6 +141,16 @@ public class ControllerGuardClauseTests
     }
 
     [Fact]
+    public async Task BrokersController_SetCostBasisMethod_NullRequest_ReturnsBadRequest()
+    {
+        var controller = new BrokersController(new StubBrokerService());
+
+        var result = await controller.SetCostBasisMethod("XPI", null);
+
+        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
+    }
+
+    [Fact]
     public void NavigationController_NullNavigationService_Throws()
     {
         Action act = () => new NavigationController(null!);

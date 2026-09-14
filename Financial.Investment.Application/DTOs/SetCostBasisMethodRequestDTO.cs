@@ -3,12 +3,8 @@ using Financial.Investment.Domain.Entities;
 
 namespace Financial.Investment.Application.DTOs;
 
-public class BrokerCreateDTO
+public class SetCostBasisMethodRequestDTO
 {
-    public required string Name { get; set; }
-
-    public required string Currency { get; set; }
-
     [JsonConverter(typeof(JsonStringEnumConverter))]
-    public CostBasisMethod? CostBasisMethod { get; set; }
+    public CostBasisMethod Method { get; set; }
 }

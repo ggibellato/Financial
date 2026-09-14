@@ -33,7 +33,9 @@ const PORTFOLIOS: PortfolioDto[] = [
   { name: 'Old', brokerName: 'Avenue', brokerStatus: 'Historic', assetCount: 0 },
 ]
 
-const BROKERS: BrokerDto[] = [{ name: 'XPI', currency: 'BRL', status: 'Active', portfolioCount: 1 }]
+const BROKERS: BrokerDto[] = [
+  { name: 'XPI', currency: 'BRL', status: 'Active', portfolioCount: 1, costBasisMethod: 'AverageCost' },
+]
 
 describe('PortfoliosPage', () => {
   beforeEach(() => {

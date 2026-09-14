@@ -21,8 +21,8 @@ vi.mock('../../api/financialApiClient', () => ({
 }))
 
 const BROKERS: BrokerDto[] = [
-  { name: 'XPI', currency: 'BRL', status: 'Active', portfolioCount: 2 },
-  { name: 'Avenue', currency: 'USD', status: 'Active', portfolioCount: 0 },
+  { name: 'XPI', currency: 'BRL', status: 'Active', portfolioCount: 2, costBasisMethod: 'AverageCost' },
+  { name: 'Avenue', currency: 'USD', status: 'Active', portfolioCount: 0, costBasisMethod: 'AverageCost' },
 ]
 
 describe('BrokersPage', () => {
@@ -56,7 +56,13 @@ describe('BrokersPage', () => {
   })
 
   it('creates a broker through the Create Broker dialog', async () => {
-    createBrokerMock.mockResolvedValue({ name: 'New Broker', currency: 'BRL', status: 'Active', portfolioCount: 0 })
+    createBrokerMock.mockResolvedValue({
+      name: 'New Broker',
+      currency: 'BRL',
+      status: 'Active',
+      portfolioCount: 0,
+      costBasisMethod: 'AverageCost',
+    })
     render(<BrokersPage />)
     await waitFor(() => expect(screen.getByText('XPI')).toBeInTheDocument())
 
@@ -64,12 +70,20 @@ describe('BrokersPage', () => {
     fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'New Broker' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
-    await waitFor(() => expect(createBrokerMock).toHaveBeenCalledWith({ name: 'New Broker', currency: 'BRL' }))
+    await waitFor(() =>
+      expect(createBrokerMock).toHaveBeenCalledWith({ name: 'New Broker', currency: 'BRL', costBasisMethod: null }),
+    )
     await waitFor(() => expect(screen.queryByRole('heading', { name: 'Create Broker' })).not.toBeInTheDocument())
   })
 
   it('edits a broker through its row action', async () => {
-    updateBrokerMock.mockResolvedValue({ name: 'XPI Renamed', currency: 'BRL', status: 'Active', portfolioCount: 2 })
+    updateBrokerMock.mockResolvedValue({
+      name: 'XPI Renamed',
+      currency: 'BRL',
+      status: 'Active',
+      portfolioCount: 2,
+      costBasisMethod: 'AverageCost',
+    })
     render(<BrokersPage />)
     await waitFor(() => expect(screen.getByText('XPI')).toBeInTheDocument())
 

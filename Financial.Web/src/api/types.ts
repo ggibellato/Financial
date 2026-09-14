@@ -55,6 +55,7 @@ export type TreeNodeDto = Schema<'TreeNodeDTO'>
 export type BrokerNodeDto = Schema<'BrokerNodeDTO'>
 export type BrokerDto = Schema<'BrokerDTO'>
 export type BrokerCreateDto = Schema<'BrokerCreateDTO'>
+export type SetCostBasisMethodRequestDto = Schema<'SetCostBasisMethodRequestDTO'>
 export type BrokerUpdateDto = Schema<'BrokerUpdateDTO'>
 export type PortfolioDto = Schema<'PortfolioDTO'>
 export type PortfolioCreateDto = Schema<'PortfolioCreateDTO'>
