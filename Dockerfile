@@ -27,6 +27,7 @@ COPY Integrations/GoogleSheets/GoogleSheets.csproj Integrations/GoogleSheets/
 COPY Integrations/GoogleCalendar/GoogleCalendar.csproj Integrations/GoogleCalendar/
 COPY Integrations/WebPageParser/WebPageParser.csproj Integrations/WebPageParser/
 COPY Integrations/Observability/Observability.csproj Integrations/Observability/
+COPY Integrations/Frankfurter/Frankfurter.csproj Integrations/Frankfurter/
 
 RUN dotnet restore Financial.Api/Financial.Api.csproj
 
@@ -45,6 +46,7 @@ COPY Integrations/GoogleSheets/ Integrations/GoogleSheets/
 COPY Integrations/GoogleCalendar/ Integrations/GoogleCalendar/
 COPY Integrations/WebPageParser/ Integrations/WebPageParser/
 COPY Integrations/Observability/ Integrations/Observability/
+COPY Integrations/Frankfurter/ Integrations/Frankfurter/
 
 RUN dotnet publish Financial.Api/Financial.Api.csproj -c Release -o /app/publish
 
