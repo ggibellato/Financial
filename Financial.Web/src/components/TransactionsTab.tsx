@@ -17,16 +17,19 @@ import ErrorState from './ErrorState'
 import FilterTabList from './FilterTabList'
 import FxProvenanceTooltip from './FxProvenanceTooltip'
 import LoadingState from './LoadingState'
+import LotAllocationPicker from './LotAllocationPicker'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import { useFormPanelStyles } from './formPanelStyles'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { useFieldError } from '../hooks/useFieldError'
+import { useOpenLots } from '../hooks/useOpenLots'
 import type { ChartDisplayMode, TransactionFormField, TransactionMonthBucket } from '../hooks/useTransactions'
 import { useTransactions } from '../hooks/useTransactions'
 import { confirmThenRun } from '../utils/confirmThenRun'
 import { PERIOD_FILTER_OPTIONS } from '../utils/periodFilter'
 import type { PeriodFilterOption } from '../utils/periodFilter'
-import { formatN2, formatN8, formatShortDate } from '../utils/formatters'
+import { formatN2, formatN8, formatShortDate, parseValidatedNumber } from '../utils/formatters'
+import { hasOverAllocatedLot, isAllocationExact, sumAllocations } from '../utils/lotAllocation'
 import './TransactionsTab.css'
 
 // Matches the blue already established by CreditsTab/PriceHistoryTab
@@ -127,11 +130,14 @@ interface InlineFormProps {
   formUnitPrice: string
   formFees: string
   formWithheld: string
+  formLotAllocations: Record<string, string>
   formTypeHasQuantityEffect: boolean
+  requiresLotAllocation: boolean
   isSaving: boolean
   saveError: string | null
   saveErrorFields: Partial<Record<TransactionFormField, string>>
   onFieldChange: (field: TransactionFormField, value: string) => void
+  onLotAllocationChange: (sourceTransactionId: string, value: string) => void
   onSave: () => void
   onCancel: () => void
 }
@@ -144,17 +150,28 @@ function InlineForm({
   formUnitPrice,
   formFees,
   formWithheld,
+  formLotAllocations,
   formTypeHasQuantityEffect,
+  requiresLotAllocation,
   isSaving,
   saveError,
   saveErrorFields,
   onFieldChange,
+  onLotAllocationChange,
   onSave,
   onCancel,
 }: InlineFormProps) {
+  const { openLots, isLoading: isLoadingOpenLots, error: openLotsError, retry: retryOpenLots } =
+    useOpenLots(requiresLotAllocation)
   const styles = useFormPanelStyles()
   const fieldError = useFieldError(saveErrorFields)
   const title = editingId ? 'Edit transaction' : 'New transaction'
+
+  const saleQuantity = parseValidatedNumber(formQuantity) ?? 0
+  const allocatedTotal = sumAllocations(formLotAllocations)
+  const allocationSatisfied =
+    !requiresLotAllocation ||
+    (isAllocationExact(allocatedTotal, saleQuantity) && !hasOverAllocatedLot(openLots, formLotAllocations))
 
   return (
     <div className={styles.panel}>
@@ -237,8 +254,21 @@ function InlineForm({
         </Field>
       </div>
 
+      {requiresLotAllocation && (
+        <LotAllocationPicker
+          openLots={openLots}
+          isLoading={isLoadingOpenLots}
+          error={openLotsError}
+          onRetry={retryOpenLots}
+          saleQuantity={saleQuantity}
+          allocations={formLotAllocations}
+          onChange={onLotAllocationChange}
+          errorMessage={fieldError('formLotAllocations')}
+        />
+      )}
+
       <div className={styles.actions}>
-        <Button appearance="primary" disabled={isSaving} onClick={onSave}>
+        <Button appearance="primary" disabled={isSaving || !allocationSatisfied} onClick={onSave}>
           {isSaving ? 'Saving...' : editingId ? 'Save' : 'Add transaction'}
         </Button>
         <Button appearance="secondary" onClick={onCancel}>
@@ -344,7 +374,9 @@ export default function TransactionsTab() {
     formUnitPrice,
     formFees,
     formWithheld,
+    formLotAllocations,
     formTypeHasQuantityEffect,
+    requiresLotAllocation,
     isSaving,
     saveError,
     saveErrorFields,
@@ -354,6 +386,7 @@ export default function TransactionsTab() {
     showEditForm,
     cancelForm,
     setFormField,
+    setLotAllocation,
     saveForm,
     deleteTransaction,
   } = useTransactions()
@@ -411,11 +444,14 @@ export default function TransactionsTab() {
           formUnitPrice={formUnitPrice}
           formFees={formFees}
           formWithheld={formWithheld}
+          formLotAllocations={formLotAllocations}
           formTypeHasQuantityEffect={formTypeHasQuantityEffect}
+          requiresLotAllocation={requiresLotAllocation}
           isSaving={isSaving}
           saveError={saveError}
           saveErrorFields={saveErrorFields}
           onFieldChange={setFormField}
+          onLotAllocationChange={setLotAllocation}
           onSave={saveForm}
           onCancel={cancelForm}
         />

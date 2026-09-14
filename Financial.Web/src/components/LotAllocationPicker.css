@@ -1,0 +1,38 @@
+.lot-allocation-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lot-allocation-picker__table input {
+  width: 100px;
+}
+
+.lot-allocation-picker__input--error {
+  border-color: var(--danger);
+}
+
+.lot-allocation-picker__row-error {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--danger);
+}
+
+.lot-allocation-picker__empty {
+  color: var(--text-muted, #888);
+}
+
+.lot-allocation-picker__summary--match {
+  color: var(--success);
+  font-weight: 600;
+}
+
+.lot-allocation-picker__summary--mismatch {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.lot-allocation-picker__error {
+  color: var(--danger);
+  margin: 0;
+}

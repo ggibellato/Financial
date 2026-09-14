@@ -475,22 +475,22 @@ graph TD
       persisted
 
 ### F04. React — Disposals and Cost Basis
-- [ ] **P50-F04-react-disposals-and-cost-basis-01** An asset's Disposals section lists every `Active`
+- [x] **P50-F04-react-disposals-and-cost-basis-01** An asset's Disposals section lists every `Active`
       `DisposalRecord` with date, quantity, method, proceeds, cost basis, gain/loss and tax year,
       newest first
-- [ ] **P50-F04-react-disposals-and-cost-basis-02** The tax-year filter shows only the tax years
+- [x] **P50-F04-react-disposals-and-cost-basis-02** The tax-year filter shows only the tax years
       actually present in that holding's disposal history, and selecting one with no disposals shows
       an explicit empty message
-- [ ] **P50-F04-react-disposals-and-cost-basis-03** Expanding a disposal's audit trail shows every
+- [x] **P50-F04-react-disposals-and-cost-basis-03** Expanding a disposal's audit trail shows every
       `Superseded` predecessor for it
-- [ ] **P50-F04-react-disposals-and-cost-basis-04** The Admin Broker form includes a Cost Basis Method
+- [x] **P50-F04-react-disposals-and-cost-basis-04** The Admin Broker form includes a Cost Basis Method
       field (AverageCost/FIFO/SpecificId) that persists via F01's setting
-- [ ] **P50-F04-react-disposals-and-cost-basis-05** Selling from a SpecificId-broker holding shows the
+- [x] **P50-F04-react-disposals-and-cost-basis-05** Selling from a SpecificId-broker holding shows the
       open lots and blocks submission until the allocated quantity exactly matches the sale quantity
-- [ ] **P50-F04-react-disposals-and-cost-basis-06** A rejected SpecificId sale (lot shortfall/excess, or
+- [x] **P50-F04-react-disposals-and-cost-basis-06** A rejected SpecificId sale (lot shortfall/excess, or
       a lot already consumed) shows the server's message inline without discarding the rest of the
       entered form
-- [ ] **P50-F04-react-disposals-and-cost-basis-07** Recording a Sell/Redemption updates the Disposals
+- [x] **P50-F04-react-disposals-and-cost-basis-07** Recording a Sell/Redemption updates the Disposals
       list with the new record without a full page reload
 
 ### F05. WPF — Disposals and Cost Basis
@@ -513,7 +513,7 @@ graph TD
       data for each of the three methods
 - [x] F03's regeneration correctly reads F01's (possibly newly changed) `CostBasisMethod` and F02's
       existing `DisposalRecords` to determine exactly what becomes superseded
-- [ ] F04 correctly renders F01's method options and open lots, F02's `DisposalRecord` fields, and
+- [x] F04 correctly renders F01's method options and open lots, F02's `DisposalRecord` fields, and
       F03's superseded chain for the same underlying disposal
 - [ ] F05 renders identical data to F04 for F01/F02/F03, with no discrepancy between the two front ends
       for the same holding's disposal history
