@@ -66,6 +66,25 @@ public sealed class BrokersController : ControllerBase
         return Ok(broker);
     }
 
+    /// <summary>Changes a broker's cost-basis method, regenerating every disposal record under it.</summary>
+    /// <param name="name">The broker's name.</param>
+    /// <param name="request">The broker's new cost-basis method.</param>
+    /// <returns>200 OK with the updated broker, 400 Bad Request if invalid, or 404 Not Found if the broker doesn't exist.</returns>
+    [HttpPut("{name}/cost-basis-method")]
+    [ProducesResponseType(typeof(BrokerDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<BrokerDTO>> SetCostBasisMethod(string name, [FromBody] SetCostBasisMethodRequestDTO? request)
+    {
+        if (request is null)
+        {
+            return BadRequest();
+        }
+
+        var broker = await _brokerService.SetCostBasisMethodAsync(name, request.Method);
+        return Ok(broker);
+    }
+
     /// <summary>Deletes an empty broker: an Active one archives to Historic, a Historic one is removed permanently.</summary>
     /// <param name="name">The broker's name.</param>
     /// <returns>204 No Content when deleted, 404 Not Found if the broker doesn't exist, or 409 Conflict if it still has portfolios.</returns>

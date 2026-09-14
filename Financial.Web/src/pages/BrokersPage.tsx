@@ -35,7 +35,7 @@ export default function BrokersPage() {
   const handleSubmit = (name: string, currency: string) =>
     editingBroker
       ? updateBroker(editingBroker.name, { name, currency })
-      : createBroker({ name, currency })
+      : createBroker({ name, currency, costBasisMethod: null })
 
   const closeFormDialog = () => {
     setEditingBroker(null)

@@ -43,6 +43,22 @@ public class BrokerServiceTests
         _repository.WriteCallCount.Should().Be(0);
     }
 
+    [Fact]
+    public async Task CreateBrokerAsync_WithNoCostBasisMethodRequested_DefaultsToAverageCost()
+    {
+        var result = await CreateService().CreateBrokerAsync(new BrokerCreateDTO { Name = "XPI", Currency = "BRL" });
+
+        result.CostBasisMethod.Should().Be(CostBasisMethod.AverageCost);
+    }
+
+    [Fact]
+    public async Task CreateBrokerAsync_WithCostBasisMethodRequested_AppliesItWithoutRegenerating()
+    {
+        var result = await CreateService().CreateBrokerAsync(new BrokerCreateDTO { Name = "XPI", Currency = "BRL", CostBasisMethod = CostBasisMethod.FIFO });
+
+        result.CostBasisMethod.Should().Be(CostBasisMethod.FIFO);
+    }
+
     [Theory]
     [InlineData("", "BRL")]
     [InlineData("XPI", "")]
@@ -192,6 +208,18 @@ public class BrokerServiceTests
             result.Should().ContainSingle(b => b.Name == "XPI" && b.Status == "Active" && b.PortfolioCount == 1);
             result.Should().ContainSingle(b => b.Name == "Avenue" && b.Status == "Historic" && b.PortfolioCount == 0);
         }
+    }
+
+    [Fact]
+    public void GetBrokers_ReturnsEachBrokersConfiguredCostBasisMethod()
+    {
+        var broker = Broker.Create("Trading 212", "GBP");
+        broker.SetCostBasisMethod(CostBasisMethod.SpecificId);
+        _repository.Investments!.AddActiveBroker(broker);
+
+        var result = CreateService().GetBrokers();
+
+        result.Should().ContainSingle().Which.CostBasisMethod.Should().Be(CostBasisMethod.SpecificId);
     }
 
     private BrokerService CreateService() => new(_repository, _tracer, _logger);

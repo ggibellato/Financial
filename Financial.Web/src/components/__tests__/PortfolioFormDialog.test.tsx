@@ -4,8 +4,8 @@ import PortfolioFormDialog from '../PortfolioFormDialog'
 import type { BrokerDto } from '../../api/types'
 
 const ACTIVE_BROKERS: BrokerDto[] = [
-  { name: 'XPI', currency: 'BRL', status: 'Active', portfolioCount: 1 },
-  { name: 'Avenue', currency: 'USD', status: 'Active', portfolioCount: 0 },
+  { name: 'XPI', currency: 'BRL', status: 'Active', portfolioCount: 1, costBasisMethod: 'AverageCost' },
+  { name: 'Avenue', currency: 'USD', status: 'Active', portfolioCount: 0, costBasisMethod: 'AverageCost' },
 ]
 
 describe('PortfolioFormDialog', () => {

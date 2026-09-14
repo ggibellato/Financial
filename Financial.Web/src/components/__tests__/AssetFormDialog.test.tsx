@@ -4,8 +4,8 @@ import AssetFormDialog from '../AssetFormDialog'
 import type { AssetAdminDto, BrokerDto, PortfolioDto } from '../../api/types'
 
 const ACTIVE_BROKERS: BrokerDto[] = [
-  { name: 'XPI', currency: 'BRL', status: 'Active', portfolioCount: 1 },
-  { name: 'Avenue', currency: 'USD', status: 'Active', portfolioCount: 1 },
+  { name: 'XPI', currency: 'BRL', status: 'Active', portfolioCount: 1, costBasisMethod: 'AverageCost' },
+  { name: 'Avenue', currency: 'USD', status: 'Active', portfolioCount: 1, costBasisMethod: 'AverageCost' },
 ]
 
 const PORTFOLIOS: PortfolioDto[] = [

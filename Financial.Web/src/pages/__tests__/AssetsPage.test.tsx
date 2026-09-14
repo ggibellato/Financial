@@ -64,7 +64,9 @@ const ASSETS: AssetAdminDto[] = [
   },
 ]
 
-const BROKERS: BrokerDto[] = [{ name: 'XPI', currency: 'BRL', status: 'Active', portfolioCount: 1 }]
+const BROKERS: BrokerDto[] = [
+  { name: 'XPI', currency: 'BRL', status: 'Active', portfolioCount: 1, costBasisMethod: 'AverageCost' },
+]
 const PORTFOLIOS: PortfolioDto[] = [{ name: 'Default', brokerName: 'XPI', brokerStatus: 'Active', assetCount: 1 }]
 
 describe('AssetsPage', () => {

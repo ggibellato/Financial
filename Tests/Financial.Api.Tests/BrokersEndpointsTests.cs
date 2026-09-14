@@ -1,4 +1,5 @@
 using Financial.Investment.Application.DTOs;
+using Financial.Investment.Domain.Entities;
 using FluentAssertions;
 using System.Net;
 using System.Net.Http.Json;
@@ -100,6 +101,30 @@ public class BrokersEndpointsTests : ApiEndpointTests
             new BrokerUpdateDTO { Name = "TestBrokerB", Currency = "BRL" });
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+    }
+
+    [Fact]
+    public async Task SetCostBasisMethod_ValidRequest_ReturnsOkWithUpdatedMethod()
+    {
+        await Client.PostAsJsonAsync("/api/v1/financial/brokers", ValidBrokerRequest("TestBrokerA"));
+
+        var response = await Client.PutAsJsonAsync(
+            "/api/v1/financial/brokers/TestBrokerA/cost-basis-method",
+            new SetCostBasisMethodRequestDTO { Method = CostBasisMethod.FIFO });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var broker = await response.Content.ReadFromJsonAsync<BrokerDTO>();
+        broker!.CostBasisMethod.Should().Be(CostBasisMethod.FIFO);
+    }
+
+    [Fact]
+    public async Task SetCostBasisMethod_UnknownBroker_ReturnsNotFound()
+    {
+        var response = await Client.PutAsJsonAsync(
+            "/api/v1/financial/brokers/Nope/cost-basis-method",
+            new SetCostBasisMethodRequestDTO { Method = CostBasisMethod.FIFO });
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Fact]

@@ -1209,6 +1209,69 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/brokers/{name}/cost-basis-method": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Changes a broker's cost-basis method, regenerating every disposal record under it. */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The broker's name. */
+                    name: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/*+json": null | components["schemas"]["SetCostBasisMethodRequestDTO"];
+                    "application/json": null | components["schemas"]["SetCostBasisMethodRequestDTO"];
+                    "text/json": null | components["schemas"]["SetCostBasisMethodRequestDTO"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BrokerDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/card-statements/{id}/mark-paid": {
         parameters: {
             query?: never;
@@ -5987,10 +6050,12 @@ export interface components {
             roundUpEnabled: boolean;
         };
         BrokerCreateDTO: {
+            costBasisMethod?: null | components["schemas"]["CostBasisMethod"];
             currency: string;
             name: string;
         };
         BrokerDTO: {
+            costBasisMethod?: components["schemas"]["CostBasisMethod"];
             currency: string;
             name: string;
             /** Format: int32 */
@@ -6836,6 +6901,9 @@ export interface components {
             /** Format: double */
             price?: number;
             sourceReference?: null | string;
+        };
+        SetCostBasisMethodRequestDTO: {
+            method: components["schemas"]["CostBasisMethod"];
         };
         SetReportingCurrencyEnabledRequestDTO: {
             enabled: boolean;

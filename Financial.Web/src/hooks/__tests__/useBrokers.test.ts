@@ -21,8 +21,8 @@ vi.mock('../../api/financialApiClient', () => ({
 }))
 
 const BROKERS: BrokerDto[] = [
-  { name: 'XPI', currency: 'BRL', status: 'Active', portfolioCount: 2 },
-  { name: 'Avenue', currency: 'USD', status: 'Historic', portfolioCount: 0 },
+  { name: 'XPI', currency: 'BRL', status: 'Active', portfolioCount: 2, costBasisMethod: 'AverageCost' },
+  { name: 'Avenue', currency: 'USD', status: 'Historic', portfolioCount: 0, costBasisMethod: 'AverageCost' },
 ]
 
 describe('useBrokers', () => {
@@ -63,15 +63,21 @@ describe('useBrokers', () => {
   })
 
   it('createBroker calls the API and re-fetches the list', async () => {
-    createBrokerMock.mockResolvedValue({ name: 'New Broker', currency: 'BRL', status: 'Active', portfolioCount: 0 })
+    createBrokerMock.mockResolvedValue({
+      name: 'New Broker',
+      currency: 'BRL',
+      status: 'Active',
+      portfolioCount: 0,
+      costBasisMethod: 'AverageCost',
+    })
     const { result } = renderHook(() => useBrokers())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     await act(async () => {
-      await result.current.createBroker({ name: 'New Broker', currency: 'BRL' })
+      await result.current.createBroker({ name: 'New Broker', currency: 'BRL', costBasisMethod: null })
     })
 
-    expect(createBrokerMock).toHaveBeenCalledWith({ name: 'New Broker', currency: 'BRL' })
+    expect(createBrokerMock).toHaveBeenCalledWith({ name: 'New Broker', currency: 'BRL', costBasisMethod: null })
     await waitFor(() => expect(getAdminBrokersMock).toHaveBeenCalledTimes(2))
   })
 
@@ -80,13 +86,19 @@ describe('useBrokers', () => {
     const { result } = renderHook(() => useBrokers())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
-    await expect(result.current.createBroker({ name: 'XPI', currency: 'BRL' })).rejects.toThrow(
-      'A broker named "XPI" already exists.',
-    )
+    await expect(
+      result.current.createBroker({ name: 'XPI', currency: 'BRL', costBasisMethod: null }),
+    ).rejects.toThrow('A broker named "XPI" already exists.')
   })
 
   it('updateBroker calls the API and re-fetches the list', async () => {
-    updateBrokerMock.mockResolvedValue({ name: 'XPI Renamed', currency: 'USD', status: 'Active', portfolioCount: 2 })
+    updateBrokerMock.mockResolvedValue({
+      name: 'XPI Renamed',
+      currency: 'USD',
+      status: 'Active',
+      portfolioCount: 2,
+      costBasisMethod: 'AverageCost',
+    })
     const { result } = renderHook(() => useBrokers())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 

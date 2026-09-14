@@ -57,6 +57,7 @@ public sealed class BrokerService : IBrokerService
             await _repository.ApplyAndSaveAsync(() =>
             {
                 created = _repository.GetInvestments().CreateActiveBroker(name, currency);
+                created.SetCostBasisMethod(request.CostBasisMethod ?? CostBasisMethod.AverageCost);
                 return true;
             }).ConfigureAwait(false);
 
@@ -176,6 +177,7 @@ public sealed class BrokerService : IBrokerService
         Name = broker.Name,
         Currency = broker.Currency,
         Status = status,
-        PortfolioCount = broker.Portfolios.Count
+        PortfolioCount = broker.Portfolios.Count,
+        CostBasisMethod = broker.CostBasisMethod
     };
 }

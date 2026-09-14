@@ -13,7 +13,7 @@ describe('BrokerFormDialog', () => {
   it('renders in edit mode pre-filled with the broker being edited', () => {
     render(
       <BrokerFormDialog
-        broker={{ name: 'XPI', currency: 'USD', status: 'Active', portfolioCount: 0 }}
+        broker={{ name: 'XPI', currency: 'USD', status: 'Active', portfolioCount: 0, costBasisMethod: 'AverageCost' }}
         onCancel={vi.fn()}
         onSubmit={vi.fn()}
       />,

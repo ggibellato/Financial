@@ -799,6 +799,16 @@
       },
       "BrokerCreateDTO": {
         "properties": {
+          "costBasisMethod": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CostBasisMethod"
+              }
+            ]
+          },
           "currency": {
             "type": "string"
           },
@@ -814,6 +824,9 @@
       },
       "BrokerDTO": {
         "properties": {
+          "costBasisMethod": {
+            "$ref": "#/components/schemas/CostBasisMethod"
+          },
           "currency": {
             "type": "string"
           },
@@ -3549,6 +3562,14 @@
         ],
         "type": "object"
       },
+      "SetCostBasisMethodRequestDTO": {
+        "properties": {
+          "method": {
+            "$ref": "#/components/schemas/CostBasisMethod"
+          }
+        },
+        "type": "object"
+      },
       "SetReportingCurrencyEnabledRequestDTO": {
         "properties": {
           "enabled": {
@@ -5661,6 +5682,97 @@
           }
         },
         "summary": "Renames and/or re-currencies an existing broker.",
+        "tags": [
+          "Brokers"
+        ]
+      }
+    },
+    "/brokers/{name}/cost-basis-method": {
+      "put": {
+        "parameters": [
+          {
+            "description": "The broker\u0027s name.",
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/*\u002Bjson": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/SetCostBasisMethodRequestDTO"
+                  }
+                ]
+              }
+            },
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/SetCostBasisMethodRequestDTO"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/SetCostBasisMethodRequestDTO"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrokerDTO"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "summary": "Changes a broker\u0027s cost-basis method, regenerating every disposal record under it.",
         "tags": [
           "Brokers"
         ]

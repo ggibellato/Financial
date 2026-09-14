@@ -691,7 +691,9 @@ describe('financialApiClient', () => {
   })
 
   it('gets the admin brokers list', async () => {
-    const responseBody: BrokerDto[] = [{ name: 'XPI', currency: 'BRL', status: 'Active', portfolioCount: 2 }]
+    const responseBody: BrokerDto[] = [
+      { name: 'XPI', currency: 'BRL', status: 'Active', portfolioCount: 2, costBasisMethod: 'AverageCost' },
+    ]
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
@@ -703,8 +705,8 @@ describe('financialApiClient', () => {
   })
 
   it('posts a broker create request', async () => {
-    const requestBody: BrokerCreateDto = { name: 'XPI', currency: 'BRL' }
-    const responseBody: BrokerDto = { ...requestBody, status: 'Active', portfolioCount: 0 }
+    const requestBody: BrokerCreateDto = { name: 'XPI', currency: 'BRL', costBasisMethod: null }
+    const responseBody: BrokerDto = { ...requestBody, status: 'Active', portfolioCount: 0, costBasisMethod: 'AverageCost' }
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
@@ -719,7 +721,7 @@ describe('financialApiClient', () => {
 
   it('puts a broker update', async () => {
     const requestBody: BrokerUpdateDto = { name: 'XP Investimentos', currency: 'USD' }
-    const responseBody: BrokerDto = { ...requestBody, status: 'Active', portfolioCount: 0 }
+    const responseBody: BrokerDto = { ...requestBody, status: 'Active', portfolioCount: 0, costBasisMethod: 'AverageCost' }
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
