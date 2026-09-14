@@ -73,6 +73,7 @@ export type CostBasisMethod = Schema<'CostBasisMethod'>
 export type DisposalRecordStatus = Schema<'DisposalRecordStatus'>
 export type DisposalLotConsumptionDto = Schema<'DisposalLotConsumptionDTO'>
 export type DisposalRecordDto = Schema<'DisposalRecordDTO'>
+export type OpenLotDto = Schema<'OpenLotDTO'>
 export type ArchiveAssetRequestDto = Schema<'ArchiveAssetRequestDTO'>
 export type MoveAssetRequestDto = Schema<'MoveAssetRequestDTO'>
 export type AssetAdminDto = Schema<'AssetAdminDTO'>

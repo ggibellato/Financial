@@ -95,6 +95,30 @@ public sealed class AssetsController : ControllerBase
         return Ok(asset);
     }
 
+    /// <summary>Returns the open lots (Buy/TransferIn transactions not yet fully consumed) for a single asset.</summary>
+    /// <param name="brokerName">The broker's name.</param>
+    /// <param name="portfolioName">The portfolio's name.</param>
+    /// <param name="assetName">The asset's name.</param>
+    /// <param name="scope">Optional investment scope filter (e.g. "all", "active-only").</param>
+    /// <returns>200 OK with the open lots, or 404 Not Found if no such asset exists.</returns>
+    [HttpGet("{brokerName}/{portfolioName}/{assetName}/open-lots")]
+    [ProducesResponseType(typeof(IReadOnlyList<OpenLotDTO>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public ActionResult<IReadOnlyList<OpenLotDTO>> GetOpenLots(
+        string brokerName,
+        string portfolioName,
+        string assetName,
+        [FromQuery] string? scope)
+    {
+        var openLots = _navigationService.GetOpenLots(brokerName, portfolioName, assetName, InvestmentScopeParser.ParseOrDefault(scope));
+        if (openLots is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(openLots);
+    }
+
     /// <summary>Moves an asset into another portfolio of the same broker.</summary>
     /// <param name="request">The asset to move and where it should go. The destination portfolio is created when the name is one the broker does not have yet.</param>
     /// <returns>

@@ -1,6 +1,7 @@
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Domain.Entities;
+using Financial.Investment.Domain.Rules;
 
 namespace Financial.Investment.Application.Services;
 
@@ -184,6 +185,17 @@ internal static class NavigationMapper
             SourceReference = entry.SourceReference,
             ValuationMethod = entry.ValuationMethod,
             RetrievedAt = entry.RetrievedAt
+        };
+    }
+
+    internal static OpenLotDTO MapOpenLot(OpenLot lot)
+    {
+        return new OpenLotDTO
+        {
+            SourceTransactionId = lot.SourceTransactionId,
+            Date = lot.Date,
+            RemainingQuantity = lot.RemainingQuantity,
+            UnitCost = lot.UnitCost
         };
     }
 

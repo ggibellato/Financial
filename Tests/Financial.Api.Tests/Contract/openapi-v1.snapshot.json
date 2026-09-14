@@ -2833,6 +2833,27 @@
         ],
         "type": "object"
       },
+      "OpenLotDTO": {
+        "properties": {
+          "date": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "remainingQuantity": {
+            "format": "double",
+            "type": "number"
+          },
+          "sourceTransactionId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "unitCost": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
       "PaymentDueDTO": {
         "properties": {
           "daysRemaining": {
@@ -4691,6 +4712,76 @@
           }
         },
         "summary": "Updates an existing asset\u0027s identity fields, regardless of its transaction history.",
+        "tags": [
+          "Assets"
+        ]
+      }
+    },
+    "/assets/{brokerName}/{portfolioName}/{assetName}/open-lots": {
+      "get": {
+        "parameters": [
+          {
+            "description": "The broker\u0027s name.",
+            "in": "path",
+            "name": "brokerName",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The portfolio\u0027s name.",
+            "in": "path",
+            "name": "portfolioName",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The asset\u0027s name.",
+            "in": "path",
+            "name": "assetName",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Optional investment scope filter (e.g. \u0022all\u0022, \u0022active-only\u0022).",
+            "in": "query",
+            "name": "scope",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/OpenLotDTO"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "summary": "Returns the open lots (Buy/TransferIn transactions not yet fully consumed) for a single asset.",
         "tags": [
           "Assets"
         ]

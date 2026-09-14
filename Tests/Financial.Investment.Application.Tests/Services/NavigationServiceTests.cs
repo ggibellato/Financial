@@ -500,4 +500,62 @@ public class NavigationServiceTests
 
         act.Should().Throw<InvalidOperationException>();
     }
+
+    [Fact]
+    public void GetOpenLots_WithAPartiallyConsumedBuy_ReturnsItsRemainingQuantity()
+    {
+        var broker = Broker.Create("Broker", "BRL");
+        var portfolio = broker.AddPortfolio("Portfolio");
+        var asset = Asset.Create("ASSET1", "ISIN", "BVMF", "ASSET1", CountryCode.BR, "FII", GlobalAssetClass.Equity);
+        var buy = Transaction.Create(new DateTime(2021, 3, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m);
+        asset.AddTransaction(buy);
+        asset.RecordTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 4m, 110m, 0m));
+        portfolio.AddAsset(asset);
+        _repository.Broker = broker;
+
+        var openLots = CreateService().GetOpenLots("Broker", "Portfolio", "ASSET1");
+
+        openLots.Should().NotBeNull();
+        var lot = openLots!.Should().ContainSingle().Which;
+        lot.SourceTransactionId.Should().Be(buy.Id);
+        lot.RemainingQuantity.Should().Be(6m);
+        lot.UnitCost.Should().Be(100m);
+    }
+
+    [Fact]
+    public void GetOpenLots_FullyConsumedBuy_IsExcluded()
+    {
+        var broker = Broker.Create("Broker", "BRL");
+        var portfolio = broker.AddPortfolio("Portfolio");
+        var asset = Asset.Create("ASSET1", "ISIN", "BVMF", "ASSET1", CountryCode.BR, "FII", GlobalAssetClass.Equity);
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 3, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        asset.RecordTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 10m, 110m, 0m));
+        portfolio.AddAsset(asset);
+        _repository.Broker = broker;
+
+        var openLots = CreateService().GetOpenLots("Broker", "Portfolio", "ASSET1");
+
+        openLots.Should().NotBeNull();
+        openLots.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void GetOpenLots_UnknownAsset_ReturnsNull()
+    {
+        _repository.Broker = Broker.Create("Broker", "BRL");
+
+        var openLots = CreateService().GetOpenLots("Broker", "Portfolio", "UNKNOWN");
+
+        openLots.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetOpenLots_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    {
+        _repository.ThrowOnGetAsset = new InvalidOperationException("simulated failure");
+
+        Action act = () => CreateService().GetOpenLots("Broker", "Portfolio", "ASSET1");
+
+        act.Should().Throw<InvalidOperationException>();
+    }
 }

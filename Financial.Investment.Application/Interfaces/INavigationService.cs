@@ -9,4 +9,5 @@ public interface INavigationService
     AssetDetailsDTO? GetAssetDetails(string brokerName, string portfolioName, string assetName, InvestmentScope scope = InvestmentScope.Active);
     IEnumerable<BrokerNodeDTO> GetBrokers(InvestmentScope scope = InvestmentScope.Active);
     IEnumerable<AssetNodeDTO> GetAssetsByBrokerPortfolio(string brokerName, string portfolioName);
+    IReadOnlyList<OpenLotDTO>? GetOpenLots(string brokerName, string portfolioName, string assetName, InvestmentScope scope = InvestmentScope.Active);
 }

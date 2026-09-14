@@ -503,6 +503,61 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/assets/{brokerName}/{portfolioName}/{assetName}/open-lots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Returns the open lots (Buy/TransferIn transactions not yet fully consumed) for a single asset. */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Optional investment scope filter (e.g. "all", "active-only"). */
+                    scope?: string;
+                };
+                header?: never;
+                path: {
+                    /** @description The broker's name. */
+                    brokerName: string;
+                    /** @description The portfolio's name. */
+                    portfolioName: string;
+                    /** @description The asset's name. */
+                    assetName: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OpenLotDTO"][];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/banks": {
         parameters: {
             query?: never;
@@ -6560,6 +6615,16 @@ export interface components {
             monthlyValues: number[];
             /** Format: double */
             sumOfMonthResults: number;
+        };
+        OpenLotDTO: {
+            /** Format: date-time */
+            date: string;
+            /** Format: double */
+            remainingQuantity: number;
+            /** Format: uuid */
+            sourceTransactionId: string;
+            /** Format: double */
+            unitCost: number;
         };
         PaymentDueDTO: {
             /** Format: int32 */
