@@ -130,6 +130,37 @@ internal static class NavigationMapper
         };
     }
 
+    internal static DisposalRecordDTO MapDisposalRecord(DisposalRecord record)
+    {
+        return new DisposalRecordDTO
+        {
+            Id = record.Id,
+            TransactionId = record.TransactionId,
+            Date = record.Date,
+            Method = record.Method,
+            LotsConsumed = record.LotsConsumed.Select(MapDisposalLotConsumption).ToList(),
+            QuantityDisposed = record.QuantityDisposed,
+            Proceeds = record.Proceeds,
+            CostBasis = record.CostBasis,
+            GainLoss = record.GainLoss,
+            Currency = record.Currency.ToString(),
+            TaxYear = record.TaxYear,
+            Status = record.Status,
+            SupersededByRecordId = record.SupersededByRecordId,
+            CreatedAt = record.CreatedAt
+        };
+    }
+
+    private static DisposalLotConsumptionDTO MapDisposalLotConsumption(DisposalLotConsumption lot)
+    {
+        return new DisposalLotConsumptionDTO
+        {
+            SourceTransactionId = lot.SourceTransactionId,
+            Quantity = lot.Quantity,
+            UnitCost = lot.UnitCost
+        };
+    }
+
     private static FxRateSnapshotDTO? MapFxRateSnapshot(FxRateSnapshot? snapshot) =>
         snapshot is null
             ? null

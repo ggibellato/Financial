@@ -93,6 +93,8 @@ const ASSET_DETAILS: AssetDetailsDto = {
   priceSnapshots: [ENTRY_A, ENTRY_B],
   cashFlowsWithCredits: [],
   cashFlowsWithoutCredits: [],
+  disposalRecords: [],
+  costBasisMethod: 'AverageCost',
 }
 
 describe('usePriceHistory', () => {
