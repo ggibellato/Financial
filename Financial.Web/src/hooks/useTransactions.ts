@@ -1,19 +1,34 @@
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { apiClient } from '../api/financialApiClient'
-import type { AssetDetailsDto, TransactionDto, TransactionSummaryItemDto, TransactionTypeEffectDto } from '../api/types'
+import type {
+  AssetDetailsDto,
+  SpecificLotAllocationDto,
+  TransactionDto,
+  TransactionSummaryItemDto,
+  TransactionTypeEffectDto,
+} from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
 import { buildSelectionKey } from './useCredits'
 import type { PeriodFilterOption } from '../utils/periodFilter'
 import { DEFAULT_FILTER, getPeriodFilterStartDate } from '../utils/periodFilter'
 import { formatMonthInputValue, formatMonthKey, getErrorMessage, parseValidatedNumber, toInputDate, todayIsoDate } from '../utils/formatters'
+import { isAllocationExact } from '../utils/lotAllocation'
 import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
 
-export type TransactionFormField = 'formDate' | 'formType' | 'formQuantity' | 'formUnitPrice' | 'formFees' | 'formWithheld'
+export type TransactionFormField =
+  | 'formDate'
+  | 'formType'
+  | 'formQuantity'
+  | 'formUnitPrice'
+  | 'formFees'
+  | 'formWithheld'
+  | 'formLotAllocations'
 export type ChartDisplayMode = 'Bar' | 'Line'
 
 const DATE_KEY = 'investmentTransaction.date'
 const TYPE_KEY = 'investmentTransaction.type'
 const TYPES = ['Buy', 'Sell', 'Fee', 'Redemption', 'TransferIn', 'TransferOut', 'CapitalCall', 'ReturnOfCapital']
+const LOT_ALLOCATION_TYPES = new Set(['Sell', 'Redemption'])
 
 export interface TransactionMonthBucket {
   month: string
@@ -97,6 +112,7 @@ interface TransactionsState {
   formUnitPrice: string
   formFees: string
   formWithheld: string
+  formLotAllocations: Record<string, string>
   isSaving: boolean
   saveError: string | null
   saveErrorFields: Partial<Record<TransactionFormField, string>>
@@ -116,6 +132,7 @@ type TransactionsAction =
   | { type: 'SHOW_EDIT_FORM'; payload: TransactionDto }
   | { type: 'CANCEL_FORM' }
   | { type: 'SET_FORM_FIELD'; payload: { field: TransactionFormField; value: string } }
+  | { type: 'SET_LOT_ALLOCATION'; payload: { sourceTransactionId: string; value: string } }
   | { type: 'SAVE_START' }
   | { type: 'SAVE_SUCCESS'; payload: AssetDetailsDto }
   | { type: 'SAVE_ERROR'; payload: { message: string | null; fields: Partial<Record<TransactionFormField, string>> } }
@@ -131,6 +148,7 @@ const BLANK_FORM = {
   formUnitPrice: '',
   formFees: '',
   formWithheld: '',
+  formLotAllocations: {},
   isSaving: false,
   saveError: null,
   saveErrorFields: {},
@@ -193,6 +211,7 @@ function reducer(state: TransactionsState, action: TransactionsAction): Transact
         formUnitPrice: '',
         formFees: '',
         formWithheld: '',
+        formLotAllocations: {},
         saveError: null,
         saveErrorFields: {},
         isSaving: false,
@@ -209,6 +228,7 @@ function reducer(state: TransactionsState, action: TransactionsAction): Transact
         formUnitPrice: String(t.unitPrice),
         formFees: String(t.fees),
         formWithheld: String(t.withheld),
+        formLotAllocations: {},
         saveError: null,
         saveErrorFields: {},
         isSaving: false,
@@ -218,6 +238,11 @@ function reducer(state: TransactionsState, action: TransactionsAction): Transact
       return { ...state, ...BLANK_FORM }
     case 'SET_FORM_FIELD':
       return { ...state, [action.payload.field]: action.payload.value }
+    case 'SET_LOT_ALLOCATION':
+      return {
+        ...state,
+        formLotAllocations: { ...state.formLotAllocations, [action.payload.sourceTransactionId]: action.payload.value },
+      }
     case 'SAVE_START':
       return { ...state, isSaving: true, saveError: null, saveErrorFields: {} }
     case 'SAVE_SUCCESS':
@@ -252,6 +277,7 @@ export interface TransactionsData {
   formUnitPrice: string
   formFees: string
   formWithheld: string
+  formLotAllocations: Record<string, string>
   isSaving: boolean
   saveError: string | null
   saveErrorFields: Partial<Record<TransactionFormField, string>>
@@ -259,10 +285,14 @@ export interface TransactionsData {
   nodeType: string | undefined
   /** Whether the selected form type has a quantity effect - when false, Quantity/UnitPrice are not required (FR-022). */
   formTypeHasQuantityEffect: boolean
+  /** Whether a SpecificId lot picker must be shown and satisfied before this sale can be saved -
+   * only true when entering (not editing) a Sell/Redemption against a SpecificId broker. */
+  requiresLotAllocation: boolean
   showNewForm: () => void
   showEditForm: (transaction: TransactionDto) => void
   cancelForm: () => void
   setFormField: (field: TransactionFormField, value: string) => void
+  setLotAllocation: (sourceTransactionId: string, value: string) => void
   saveForm: () => void
   deleteTransaction: (id: string) => void
 }
@@ -384,10 +414,23 @@ export function useTransactions(): TransactionsData {
     [typeEffects, state.formType],
   )
 
+  const requiresLotAllocation = useMemo(
+    () =>
+      state.editingId === null &&
+      LOT_ALLOCATION_TYPES.has(state.formType) &&
+      state.asset?.costBasisMethod === 'SpecificId',
+    [state.editingId, state.formType, state.asset],
+  )
+
+  const setLotAllocation = useCallback((sourceTransactionId: string, value: string) => {
+    dispatch({ type: 'SET_LOT_ALLOCATION', payload: { sourceTransactionId, value } })
+  }, [])
+
   const saveForm = useCallback(() => {
     if (!selectedNode?.portfolioName || !selectedNode.assetName) return
 
-    const { formDate, formType, formQuantity, formUnitPrice, formFees, formWithheld, editingId } = state
+    const { formDate, formType, formQuantity, formUnitPrice, formFees, formWithheld, formLotAllocations, editingId } =
+      state
     const hasQuantityEffect = typeEffects.find((e) => e.type === formType)?.quantityEffect !== 'None'
     const errors: Partial<Record<TransactionFormField, string>> = {}
 
@@ -410,6 +453,24 @@ export function useTransactions(): TransactionsData {
         errors.formUnitPrice = 'Unit Price must be a positive number'
       } else {
         unitPrice = parsedUnitPrice
+      }
+    }
+
+    let specificLotAllocations: SpecificLotAllocationDto[] | null = null
+    if (requiresLotAllocation && quantity > 0) {
+      const allocations: SpecificLotAllocationDto[] = []
+      let allocatedTotal = 0
+      for (const [sourceTransactionId, rawValue] of Object.entries(formLotAllocations)) {
+        const parsed = parseValidatedNumber(rawValue)
+        if (parsed === null || parsed <= 0) continue
+        allocations.push({ sourceTransactionId, quantity: parsed })
+        allocatedTotal += parsed
+      }
+
+      if (allocations.length === 0 || !isAllocationExact(allocatedTotal, quantity)) {
+        errors.formLotAllocations = `Allocate exactly ${quantity} across one or more lots (currently allocated: ${allocatedTotal})`
+      } else {
+        specificLotAllocations = allocations
       }
     }
 
@@ -437,7 +498,7 @@ export function useTransactions(): TransactionsData {
 
     const call = editingId
       ? apiClient.updateTransaction({ ...base, id: editingId })
-      : apiClient.addTransaction({ ...base, specificLotAllocations: null })
+      : apiClient.addTransaction({ ...base, specificLotAllocations })
 
     void call
       .then((result) => {
@@ -451,7 +512,7 @@ export function useTransactions(): TransactionsData {
           payload: { message: getErrorMessage(err, 'Failed to save transaction'), fields: {} },
         })
       })
-  }, [selectedNode, state, typeEffects])
+  }, [selectedNode, state, typeEffects, requiresLotAllocation])
 
   const deleteTransaction = useCallback(
     (id: string) => {
@@ -494,16 +555,19 @@ export function useTransactions(): TransactionsData {
     formUnitPrice: state.formUnitPrice,
     formFees: state.formFees,
     formWithheld: state.formWithheld,
+    formLotAllocations: state.formLotAllocations,
     isSaving: state.isSaving,
     saveError: state.saveError,
     saveErrorFields: state.saveErrorFields,
     deleteError: state.deleteError,
     formTypeHasQuantityEffect,
+    requiresLotAllocation,
     nodeType: selectedNode?.nodeType,
     showNewForm,
     showEditForm,
     cancelForm,
     setFormField,
+    setLotAllocation,
     saveForm,
     deleteTransaction,
   }

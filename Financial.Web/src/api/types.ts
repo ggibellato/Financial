@@ -80,6 +80,7 @@ export type MoveAssetRequestDto = Schema<'MoveAssetRequestDTO'>
 export type AssetAdminDto = Schema<'AssetAdminDTO'>
 export type AssetAdminCreateDto = Schema<'AssetAdminCreateDTO'>
 export type AssetAdminUpdateDto = Schema<'AssetAdminUpdateDTO'>
+export type SpecificLotAllocationDto = Schema<'SpecificLotAllocationDTO'>
 export type TransactionCreateDto = Schema<'TransactionCreateDTO'>
 export type TransactionUpdateDto = Schema<'TransactionUpdateDTO'>
 export type TransactionDeleteDto = Schema<'TransactionDeleteDTO'>

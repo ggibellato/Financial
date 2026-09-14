@@ -335,6 +335,118 @@ describe('useTransactions', () => {
     expect(result.current.asset).toEqual(updatedAsset)
   })
 
+  it('requiresLotAllocation is true only for a new Sell/Redemption against a SpecificId broker', async () => {
+    const specificIdAsset = { ...ASSET_DETAILS, costBasisMethod: 'SpecificId' as const }
+    getAssetDetailsMock.mockResolvedValue(specificIdAsset)
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useTransactions(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.asset).not.toBeNull())
+
+    act(() => result.current.showNewForm())
+    expect(result.current.requiresLotAllocation).toBe(false)
+
+    act(() => result.current.setFormField('formType', 'Sell'))
+    expect(result.current.requiresLotAllocation).toBe(true)
+
+    act(() => result.current.setFormField('formType', 'Buy'))
+    expect(result.current.requiresLotAllocation).toBe(false)
+  })
+
+  it('requiresLotAllocation is false when editing, even for a Sell against a SpecificId broker', async () => {
+    const specificIdAsset = { ...ASSET_DETAILS, costBasisMethod: 'SpecificId' as const }
+    getAssetDetailsMock.mockResolvedValue(specificIdAsset)
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useTransactions(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.asset).not.toBeNull())
+
+    act(() => result.current.showEditForm(TRANSACTION_B))
+    expect(result.current.formType).toBe('Sell')
+    expect(result.current.requiresLotAllocation).toBe(false)
+  })
+
+  it('save_specificId_sale_with_matching_allocation_includes_specificLotAllocations', async () => {
+    const specificIdAsset = { ...ASSET_DETAILS, costBasisMethod: 'SpecificId' as const }
+    getAssetDetailsMock.mockResolvedValue(specificIdAsset)
+    addTransactionMock.mockResolvedValue(specificIdAsset)
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useTransactions(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.asset).not.toBeNull())
+
+    act(() => result.current.showNewForm())
+    act(() => {
+      result.current.setFormField('formDate', '2026-01-01')
+      result.current.setFormField('formType', 'Sell')
+      result.current.setFormField('formQuantity', '10')
+      result.current.setFormField('formUnitPrice', '5')
+      result.current.setLotAllocation('lot-1', '4')
+      result.current.setLotAllocation('lot-2', '6')
+    })
+    act(() => result.current.saveForm())
+
+    await waitFor(() =>
+      expect(addTransactionMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          specificLotAllocations: [
+            { sourceTransactionId: 'lot-1', quantity: 4 },
+            { sourceTransactionId: 'lot-2', quantity: 6 },
+          ],
+        }),
+      ),
+    )
+  })
+
+  it('save_specificId_sale_with_mismatched_allocation_blocks_save', async () => {
+    const specificIdAsset = { ...ASSET_DETAILS, costBasisMethod: 'SpecificId' as const }
+    getAssetDetailsMock.mockResolvedValue(specificIdAsset)
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useTransactions(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.asset).not.toBeNull())
+
+    act(() => result.current.showNewForm())
+    act(() => {
+      result.current.setFormField('formDate', '2026-01-01')
+      result.current.setFormField('formType', 'Sell')
+      result.current.setFormField('formQuantity', '10')
+      result.current.setFormField('formUnitPrice', '5')
+      result.current.setLotAllocation('lot-1', '4')
+    })
+    act(() => result.current.saveForm())
+
+    expect(addTransactionMock).not.toHaveBeenCalled()
+    expect(result.current.saveErrorFields.formLotAllocations).toBeDefined()
+    // The #792 pattern: a blocked/rejected save must not discard what was already entered.
+    expect(result.current.formLotAllocations).toEqual({ 'lot-1': '4' })
+  })
+
+  it('a rejected specificId sale preserves the entered lot allocation', async () => {
+    const specificIdAsset = { ...ASSET_DETAILS, costBasisMethod: 'SpecificId' as const }
+    getAssetDetailsMock.mockResolvedValue(specificIdAsset)
+    addTransactionMock.mockRejectedValue(new Error('Lot already consumed by a concurrent edit.'))
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useTransactions(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.asset).not.toBeNull())
+
+    act(() => result.current.showNewForm())
+    act(() => {
+      result.current.setFormField('formDate', '2026-01-01')
+      result.current.setFormField('formType', 'Sell')
+      result.current.setFormField('formQuantity', '10')
+      result.current.setFormField('formUnitPrice', '5')
+      result.current.setLotAllocation('lot-1', '10')
+    })
+    act(() => result.current.saveForm())
+
+    await waitFor(() => expect(result.current.saveError).toBe('Lot already consumed by a concurrent edit.'))
+    expect(result.current.isFormVisible).toBe(true)
+    expect(result.current.formQuantity).toBe('10')
+    expect(result.current.formLotAllocations).toEqual({ 'lot-1': '10' })
+  })
+
   it('save_sets_error_on_api_failure', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
     addTransactionMock.mockRejectedValue(new Error('Server error'))

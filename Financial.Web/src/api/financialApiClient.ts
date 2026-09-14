@@ -57,6 +57,7 @@ import type {
   InvestmentSnapshotSuggestionsDto,
   MaeLedgerEntryDto,
   MoveAssetRequestDto,
+  OpenLotDto,
   MaeLedgerTotalsDto,
   MarkCardStatementPaidDto,
   PaymentDueDto,
@@ -113,6 +114,7 @@ export interface FinancialApiClient {
   setCostBasisMethod: (name: string, request: SetCostBasisMethodRequestDto) => Promise<BrokerDto>
   deleteBroker: (name: string) => Promise<void>
   getAssetDetails: (brokerName: string, portfolioName: string, assetName: string, scope?: InvestmentScope) => Promise<AssetDetailsDto>
+  getOpenLots: (brokerName: string, portfolioName: string, assetName: string, scope?: InvestmentScope) => Promise<OpenLotDto[]>
   getReportingCurrency: () => Promise<ReportingCurrencySettingDto>
   setReportingCurrency: (request: ReportingCurrencySettingDto) => Promise<ReportingCurrencySettingDto>
   setReportingCurrencyEnabled: (request: SetReportingCurrencyEnabledRequestDto) => Promise<ReportingCurrencySettingDto>
@@ -334,6 +336,10 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
     getAssetDetails: (brokerName, portfolioName, assetName, scope = 'active') =>
       request<AssetDetailsDto>(
         `/assets/${encodeURIComponent(brokerName)}/${encodeURIComponent(portfolioName)}/${encodeURIComponent(assetName)}${buildScopeQuery(scope)}`,
+      ),
+    getOpenLots: (brokerName, portfolioName, assetName, scope = 'active') =>
+      request<OpenLotDto[]>(
+        `/assets/${encodeURIComponent(brokerName)}/${encodeURIComponent(portfolioName)}/${encodeURIComponent(assetName)}/open-lots${buildScopeQuery(scope)}`,
       ),
     getReportingCurrency: () => request<ReportingCurrencySettingDto>('/reporting-currency'),
     setReportingCurrency: (requestBody) =>

@@ -24,6 +24,7 @@ const mockShowNewForm = vi.fn()
 const mockShowEditForm = vi.fn()
 const mockCancelForm = vi.fn()
 const mockSetFormField = vi.fn()
+const mockSetLotAllocation = vi.fn()
 const mockSaveForm = vi.fn()
 const mockDeleteTransaction = vi.fn()
 const mockRetry = vi.fn()
@@ -81,7 +82,9 @@ const DEFAULT_HOOK: TransactionsData = {
   formUnitPrice: '',
   formFees: '',
   formWithheld: '',
+  formLotAllocations: {},
   formTypeHasQuantityEffect: true,
+  requiresLotAllocation: false,
   isSaving: false,
   saveError: null,
   saveErrorFields: {},
@@ -91,6 +94,7 @@ const DEFAULT_HOOK: TransactionsData = {
   showEditForm: mockShowEditForm,
   cancelForm: mockCancelForm,
   setFormField: mockSetFormField,
+  setLotAllocation: mockSetLotAllocation,
   saveForm: mockSaveForm,
   deleteTransaction: mockDeleteTransaction,
 }
@@ -101,8 +105,27 @@ vi.mock('../../hooks/useTransactions', () => ({
   useTransactions: () => mockHookValue,
 }))
 
+interface OpenLotsMockValue {
+  openLots: import('../../api/types').OpenLotDto[]
+  isLoading: boolean
+  error: string | null
+  retry: () => void
+}
+
+const mockRetryOpenLots = vi.fn()
+const DEFAULT_OPEN_LOTS: OpenLotsMockValue = { openLots: [], isLoading: false, error: null, retry: mockRetryOpenLots }
+let mockOpenLotsValue: OpenLotsMockValue = { ...DEFAULT_OPEN_LOTS }
+
+vi.mock('../../hooks/useOpenLots', () => ({
+  useOpenLots: () => mockOpenLotsValue,
+}))
+
 function setMock(overrides: Partial<TransactionsData>) {
   mockHookValue = { ...DEFAULT_HOOK, ...overrides }
+}
+
+function setOpenLotsMock(overrides: Partial<OpenLotsMockValue>) {
+  mockOpenLotsValue = { ...DEFAULT_OPEN_LOTS, ...overrides }
 }
 
 describe('TransactionsTab', () => {
@@ -114,10 +137,13 @@ describe('TransactionsTab', () => {
     mockShowEditForm.mockReset()
     mockCancelForm.mockReset()
     mockSetFormField.mockReset()
+    mockSetLotAllocation.mockReset()
     mockSaveForm.mockReset()
     mockDeleteTransaction.mockReset()
     mockRetry.mockReset()
     mockHookValue = { ...DEFAULT_HOOK }
+    mockOpenLotsValue = { ...DEFAULT_OPEN_LOTS }
+    mockRetryOpenLots.mockReset()
   })
 
   it('renders_loading_state', () => {
@@ -281,6 +307,62 @@ describe('TransactionsTab', () => {
     render(<TransactionsTab />)
     const saveBtn = screen.getByRole('button', { name: 'Saving...' })
     expect(saveBtn).toBeDisabled()
+  })
+
+  it('does not show the lot allocation picker when requiresLotAllocation is false', () => {
+    setMock({ isFormVisible: true, requiresLotAllocation: false })
+    render(<TransactionsTab />)
+    expect(screen.queryByText(/Allocated/)).not.toBeInTheDocument()
+  })
+
+  it('shows the lot allocation picker when requiresLotAllocation is true', () => {
+    setOpenLotsMock({
+      openLots: [{ sourceTransactionId: 'lot-a', date: '2024-06-01T00:00:00', remainingQuantity: 15, unitCost: 12.5 }],
+    })
+    setMock({ isFormVisible: true, requiresLotAllocation: true, formType: 'Sell', formQuantity: '10' })
+    render(<TransactionsTab />)
+    expect(screen.getByText('15.00000000')).toBeInTheDocument()
+    expect(screen.getByText(/Allocated 0.00000000 of 10.00000000/)).toBeInTheDocument()
+  })
+
+  it('editing a lot allocation input calls setLotAllocation', () => {
+    setOpenLotsMock({
+      openLots: [{ sourceTransactionId: 'lot-a', date: '2024-06-01T00:00:00', remainingQuantity: 15, unitCost: 12.5 }],
+    })
+    setMock({ isFormVisible: true, requiresLotAllocation: true, formType: 'Sell', formQuantity: '10' })
+    render(<TransactionsTab />)
+    fireEvent.change(screen.getByRole('spinbutton', { name: /Allocate quantity/ }), { target: { value: '10' } })
+    expect(mockSetLotAllocation).toHaveBeenCalledWith('lot-a', '10')
+  })
+
+  it('disables Save until the allocation exactly matches the sale quantity', () => {
+    setOpenLotsMock({
+      openLots: [{ sourceTransactionId: 'lot-a', date: '2024-06-01T00:00:00', remainingQuantity: 15, unitCost: 12.5 }],
+    })
+    setMock({
+      isFormVisible: true,
+      requiresLotAllocation: true,
+      formType: 'Sell',
+      formQuantity: '10',
+      formLotAllocations: { 'lot-a': '4' },
+    })
+    render(<TransactionsTab />)
+    expect(screen.getByRole('button', { name: 'Add transaction' })).toBeDisabled()
+  })
+
+  it('enables Save once the allocation exactly matches the sale quantity', () => {
+    setOpenLotsMock({
+      openLots: [{ sourceTransactionId: 'lot-a', date: '2024-06-01T00:00:00', remainingQuantity: 15, unitCost: 12.5 }],
+    })
+    setMock({
+      isFormVisible: true,
+      requiresLotAllocation: true,
+      formType: 'Sell',
+      formQuantity: '10',
+      formLotAllocations: { 'lot-a': '10' },
+    })
+    render(<TransactionsTab />)
+    expect(screen.getByRole('button', { name: 'Add transaction' })).not.toBeDisabled()
   })
 
   it('edit_icon_calls_show_edit_form', () => {
