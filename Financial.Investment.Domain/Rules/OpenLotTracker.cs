@@ -7,14 +7,7 @@ namespace Financial.Investment.Domain.Rules;
 
 public sealed record OpenLot(Guid SourceTransactionId, DateTime Date, decimal RemainingQuantity, decimal UnitCost);
 
-/// <summary>
-/// Replays an asset's transaction history to compute its currently-open purchase lots. Every
-/// Decrease-effect transaction (Sell, Redemption, TransferOut) depletes the oldest open lot(s)
-/// first regardless of the broker's configured CostBasisMethod — a broker's method only changes
-/// how a *new* disposal is computed, not how past quantity is tracked. For SpecificId this is a
-/// deliberate fallback until DisposalRecord.LotsConsumed (a later feature) exists to source real
-/// historical allocation; it remains correct for any broker before its first disposal.
-/// </summary>
+// Depletes oldest-first even for SpecificId brokers, as a fallback until DisposalRecord.LotsConsumed exists.
 public static class OpenLotTracker
 {
     private sealed class MutableLot
