@@ -11,4 +11,5 @@ public class TransactionCreateDTO
     public decimal UnitPrice { get; set; }
     public decimal Fees { get; set; }
     public decimal Withheld { get; set; }
+    public IReadOnlyList<SpecificLotAllocationDTO>? SpecificLotAllocations { get; set; }
 }

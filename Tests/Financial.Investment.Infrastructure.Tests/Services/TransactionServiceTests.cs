@@ -1,5 +1,6 @@
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Services;
+using Financial.Investment.Domain.Entities;
 using Financial.Investment.Infrastructure.Persistence;
 using Financial.Shared.Abstractions.Currencies;
 using Financial.Shared.Abstractions.Observability;
@@ -8,6 +9,7 @@ using Financial.Investment.Infrastructure.Repositories;
 using Financial.TestUtilities;
 using FluentAssertions;
 using System.IO;
+using System.Linq;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Financial.Investment.Infrastructure.Tests.Services;
@@ -131,7 +133,45 @@ public class TransactionServiceTests
         }
     }
 
+    [Fact]
+    public async Task AddTransaction_Sell_ResolvesBrokersCostBasisMethod_AndCreatesDisposalRecord()
+    {
+        var (service, repository, tempFile) = CreateServiceWithRepository();
+        try
+        {
+            var result = await service.AddTransactionAsync(new TransactionCreateDTO
+            {
+                BrokerName = "XPI",
+                PortfolioName = "Default",
+                AssetName = "BCIA11",
+                Date = new DateTime(2024, 1, 6),
+                Type = "Sell",
+                Quantity = 1m,
+                UnitPrice = 120m,
+                Fees = 0m
+            });
+
+            result.Should().NotBeNull();
+            var asset = repository.GetInvestments().ActiveBrokers
+                .Single(b => b.Name == "XPI").Portfolios
+                .Single(p => p.Name == "Default").Assets
+                .Single(a => a.Name == "BCIA11");
+
+            asset.DisposalRecords.Should().Contain(record => record.Method == CostBasisMethod.AverageCost);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
     private static (TransactionService Service, string TempFile) CreateService()
+    {
+        var (service, _, tempFile) = CreateServiceWithRepository();
+        return (service, tempFile);
+    }
+
+    private static (TransactionService Service, InvestmentJsonRepository Repository, string TempFile) CreateServiceWithRepository()
     {
         var tempFile = Path.Combine(Path.GetTempPath(), $"data.test.{Guid.NewGuid():N}.json");
         File.Copy(TestDataPaths.DataJsonFile, tempFile, true);
@@ -144,6 +184,6 @@ public class TransactionServiceTests
         IExchangeRateProvider exchangeRateProvider = new StubExchangeRateProvider(0.15m);
         var service = new TransactionService(repository, navigationService, exchangeRateProvider, new StubReportingCurrencyProvider(), TimeProvider.System, tracer, NullLogger<TransactionService>.Instance);
 
-        return (service, tempFile);
+        return (service, repository, tempFile);
     }
 }

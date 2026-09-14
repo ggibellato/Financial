@@ -308,6 +308,7 @@ describe('useTransactions', () => {
       unitPrice: 10,
       fees: 0.5,
       withheld: 0,
+      specificLotAllocations: null,
     }))
     await waitFor(() => expect(result.current.isFormVisible).toBe(false))
     expect(result.current.asset).toEqual(updatedAsset)

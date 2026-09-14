@@ -6736,6 +6736,12 @@ export interface components {
         SetReportingCurrencyEnabledRequestDTO: {
             enabled: boolean;
         };
+        SpecificLotAllocationDTO: {
+            /** Format: double */
+            quantity?: number;
+            /** Format: uuid */
+            sourceTransactionId: string;
+        };
         /** @description One bounded context's current persistence status. */
         SyncStatusDTO: {
             /** @description The triggering error's message when  is "Failed"; otherwise null. */
@@ -6782,6 +6788,7 @@ export interface components {
             portfolioName: string;
             /** Format: double */
             quantity?: number;
+            specificLotAllocations?: null | components["schemas"]["SpecificLotAllocationDTO"][];
             type: string;
             /** Format: double */
             unitPrice?: number;
