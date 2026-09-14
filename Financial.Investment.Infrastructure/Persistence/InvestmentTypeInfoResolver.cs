@@ -16,7 +16,8 @@ public class InvestmentTypeInfoResolver : DefaultJsonTypeInfoResolver
         typeof(Transaction),
         typeof(Credit),
         typeof(AssetPriceSnapshot),
-        typeof(FxRateSnapshot)
+        typeof(FxRateSnapshot),
+        typeof(DisposalRecord)
     ];
 
     private static readonly HashSet<(Type, string)> ExcludedProperties =
@@ -29,7 +30,9 @@ public class InvestmentTypeInfoResolver : DefaultJsonTypeInfoResolver
         (typeof(Portfolio), nameof(Portfolio.IsEmpty)),
         (typeof(Transaction), nameof(Transaction.NetCash)),
         (typeof(Credit), nameof(Credit.NetAmount)),
-        (typeof(AssetPriceSnapshot), nameof(AssetPriceSnapshot.IsManual))
+        (typeof(AssetPriceSnapshot), nameof(AssetPriceSnapshot.IsManual)),
+        (typeof(DisposalRecord), nameof(DisposalRecord.CostBasis)),
+        (typeof(DisposalRecord), nameof(DisposalRecord.GainLoss))
     ];
 
     public override JsonTypeInfo GetTypeInfo(Type type, JsonSerializerOptions options)

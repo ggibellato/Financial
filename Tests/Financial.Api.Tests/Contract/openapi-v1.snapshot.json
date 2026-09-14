@@ -3432,6 +3432,22 @@
         },
         "type": "object"
       },
+      "SpecificLotAllocationDTO": {
+        "properties": {
+          "quantity": {
+            "format": "double",
+            "type": "number"
+          },
+          "sourceTransactionId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sourceTransactionId"
+        ],
+        "type": "object"
+      },
       "SyncStatusDTO": {
         "description": "One bounded context\u0027s current persistence status.",
         "properties": {
@@ -3562,6 +3578,15 @@
           "quantity": {
             "format": "double",
             "type": "number"
+          },
+          "specificLotAllocations": {
+            "items": {
+              "$ref": "#/components/schemas/SpecificLotAllocationDTO"
+            },
+            "type": [
+              "null",
+              "array"
+            ]
           },
           "type": {
             "type": "string"

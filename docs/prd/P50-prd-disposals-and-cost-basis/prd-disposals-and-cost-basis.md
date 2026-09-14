@@ -435,25 +435,25 @@ graph TD
       and unit cost
 
 ### F02. Disposal Record
-- [ ] **P50-F02-disposal-record-01** Recording a Sell or Redemption automatically creates exactly one
+- [x] **P50-F02-disposal-record-01** Recording a Sell or Redemption automatically creates exactly one
       `Active` `DisposalRecord` for the disposing transaction, computed under the asset's broker's
       configured method
-- [ ] **P50-F02-disposal-record-02** Recording any transaction type other than Sell/Redemption creates
+- [x] **P50-F02-disposal-record-02** Recording any transaction type other than Sell/Redemption creates
       no `DisposalRecord`
-- [ ] **P50-F02-disposal-record-03** A `DisposalRecord`'s `Proceeds` equals the disposing transaction's
+- [x] **P50-F02-disposal-record-03** A `DisposalRecord`'s `Proceeds` equals the disposing transaction's
       `NetCash`, and `GainLoss` equals `Proceeds` minus `CostBasis`
-- [ ] **P50-F02-disposal-record-04** A `DisposalRecord`'s `TaxYear` is the BR calendar year for a BRL
+- [x] **P50-F02-disposal-record-04** A `DisposalRecord`'s `TaxYear` is the BR calendar year for a BRL
       broker and the UK Apr 6–Apr 5 tax year for every other broker
-- [ ] **P50-F02-disposal-record-05** Every existing Sell/Redemption across the data file gains an
+- [x] **P50-F02-disposal-record-05** Every existing Sell/Redemption across the data file gains an
       `Active` `DisposalRecord` (computed under AverageCost) the first time the app loads after this
       ships, with no separate tool run
-- [ ] **P50-F02-disposal-record-06** The backfill never creates a duplicate `DisposalRecord` for a
+- [x] **P50-F02-disposal-record-06** The backfill never creates a duplicate `DisposalRecord` for a
       disposing transaction that already has one, so re-running it (e.g. after a rollback) is a no-op
-- [ ] **P50-F02-disposal-record-07** `Transactions.RealizedCapitalGain` for an asset equals the sum of
+- [x] **P50-F02-disposal-record-07** `Transactions.RealizedCapitalGain` for an asset equals the sum of
       `GainLoss` across that asset's `Active` `DisposalRecords`
-- [ ] **P50-F02-disposal-record-08** A SpecificId sale whose selected lots don't sum to exactly the
+- [x] **P50-F02-disposal-record-08** A SpecificId sale whose selected lots don't sum to exactly the
       sale quantity is rejected before any transaction or `DisposalRecord` is created
-- [ ] **P50-F02-disposal-record-09** A SpecificId sale referencing a lot with fewer open units than
+- [x] **P50-F02-disposal-record-09** A SpecificId sale referencing a lot with fewer open units than
       requested is rejected
 
 ### F03. Disposal Recalculation Policy
@@ -509,7 +509,7 @@ graph TD
       `Financial.App`
 
 ### Cross-Feature Integration
-- [ ] F02's `DisposalRecord` computation correctly uses F01's configured `CostBasisMethod` and open-lot
+- [x] F02's `DisposalRecord` computation correctly uses F01's configured `CostBasisMethod` and open-lot
       data for each of the three methods
 - [ ] F03's regeneration correctly reads F01's (possibly newly changed) `CostBasisMethod` and F02's
       existing `DisposalRecords` to determine exactly what becomes superseded

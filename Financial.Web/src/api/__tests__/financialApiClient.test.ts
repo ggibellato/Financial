@@ -275,6 +275,7 @@ describe('financialApiClient', () => {
       unitPrice: 10,
       fees: 0,
       withheld: 0,
+      specificLotAllocations: null,
     })
 
     const [url, init] = fetchMock.mock.calls[0]
@@ -293,6 +294,7 @@ describe('financialApiClient', () => {
         unitPrice: 10,
         fees: 0,
         withheld: 0,
+        specificLotAllocations: null,
       }),
     )
   })

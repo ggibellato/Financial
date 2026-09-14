@@ -67,7 +67,11 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
                 (asset, transactionType) =>
                 {
                     var transaction = Transaction.Create(request.Date, transactionType, request.Quantity, request.UnitPrice, request.Fees, request.Withheld, currency, fxRateSnapshot);
-                    asset.RecordTransaction(transaction);
+                    var method = ResolveCostBasisMethod(request.BrokerName);
+                    var allocation = request.SpecificLotAllocations?
+                        .Select(entry => new SpecificLotAllocation(entry.SourceTransactionId, entry.Quantity))
+                        .ToList();
+                    asset.RecordTransaction(transaction, method, allocation);
                     return true;
                 }).ConfigureAwait(false);
 
@@ -216,6 +220,10 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
                 };
             })
             .ToList();
+
+    private CostBasisMethod ResolveCostBasisMethod(string brokerName) =>
+        _repository.GetBrokerList(InvestmentScope.Active).FirstOrDefault(b => string.Equals(b.Name, brokerName, StringComparison.Ordinal))?.CostBasisMethod
+        ?? CostBasisMethod.AverageCost;
 
     private ITelemetrySpan StartSpan(string operationName)
     {

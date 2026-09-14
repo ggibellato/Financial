@@ -54,7 +54,7 @@ public class PortfolioAssetSummaryServiceTests
         var asset = MakeAsset("ALZR11", "ALZR11", "BVMF");
         asset.AddTransaction(Transaction.Create(new DateTime(2021, 3, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
         asset.AddTransaction(Transaction.Create(new DateTime(2021, 5, 1), Transaction.TransactionType.Buy, 15m, 100m, 0m));
-        asset.AddTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 110m, 0m));
+        asset.RecordTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 110m, 0m));
         asset.SetPrice(DateOnly.FromDateTime(DateTime.Today), 120m, isManual: false);
         _repository.AssetsByBrokerPortfolio = [asset];
 
@@ -726,7 +726,7 @@ public class PortfolioAssetSummaryServiceTests
     {
         var asset = MakeAsset("TEST", "TST", "BVMF");
         asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 5m, 60m, 0m));
-        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 5m, 50m, 0m));
+        asset.RecordTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 5m, 50m, 0m));
         _repository.AssetsByBrokerPortfolio = [asset];
 
         var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
@@ -766,7 +766,7 @@ public class PortfolioAssetSummaryServiceTests
     {
         var asset = MakeAsset("CLOSEDASSET", "CLOSEDASSET", "BVMF");
         asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 5m, 60m, 0m));
-        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 5m, 50m, 0m));
+        asset.RecordTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 5m, 50m, 0m));
         asset.AddCredit(Credit.Create(DateTime.Today, Credit.CreditType.Dividend, 20m));
         _repository.AssetsByBrokerPortfolio = [asset];
 

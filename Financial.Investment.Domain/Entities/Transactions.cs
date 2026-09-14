@@ -17,6 +17,8 @@ public class Transactions : ICollection<Transaction>
     /// <summary>Pure capital gain/loss from closed (sold) quantity. Does NOT include Credits.</summary>
     public decimal RealizedCapitalGain { get; private set; }
 
+    internal void SetRealizedCapitalGain(decimal value) => RealizedCapitalGain = value;
+
     public decimal? AverageSellPrice => _totalSoldQuantity == 0 ? null : _totalSoldValue / _totalSoldQuantity;
 
     public int Count => _items.Count;

@@ -437,7 +437,7 @@ export function useTransactions(): TransactionsData {
 
     const call = editingId
       ? apiClient.updateTransaction({ ...base, id: editingId })
-      : apiClient.addTransaction(base)
+      : apiClient.addTransaction({ ...base, specificLotAllocations: null })
 
     void call
       .then((result) => {
