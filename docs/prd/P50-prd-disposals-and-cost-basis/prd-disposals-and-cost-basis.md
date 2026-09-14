@@ -417,20 +417,20 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Cost Basis Method Strategy
-- [ ] **P50-F01-cost-basis-method-strategy-01** Every `Broker` exposes a `CostBasisMethod` defaulting
+- [x] **P50-F01-cost-basis-method-strategy-01** Every `Broker` exposes a `CostBasisMethod` defaulting
       to `AverageCost`, both for a newly created broker and for every broker in a pre-existing data
       file with no stored value
-- [ ] **P50-F01-cost-basis-method-strategy-02** A broker's `CostBasisMethod` can be set to
+- [x] **P50-F01-cost-basis-method-strategy-02** A broker's `CostBasisMethod` can be set to
       `AverageCost`, `FIFO` or `SpecificId` and is read back correctly after a save/reload
-- [ ] **P50-F01-cost-basis-method-strategy-03** Under FIFO, a holding's open lots are ordered
+- [x] **P50-F01-cost-basis-method-strategy-03** Under FIFO, a holding's open lots are ordered
       oldest-date-first, with the existing purchases-before-sales same-date tie-break applied
-- [ ] **P50-F01-cost-basis-method-strategy-04** Under FIFO, a disposal larger than the oldest open lot
+- [x] **P50-F01-cost-basis-method-strategy-04** Under FIFO, a disposal larger than the oldest open lot
       splits across the next-oldest lot(s) automatically until the disposal quantity is fully covered
-- [ ] **P50-F01-cost-basis-method-strategy-05** A TransferOut transaction reduces open-lot quantity
+- [x] **P50-F01-cost-basis-method-strategy-05** A TransferOut transaction reduces open-lot quantity
       without generating a disposal or any gain/loss
-- [ ] **P50-F01-cost-basis-method-strategy-06** Under AverageCost, no per-lot data is exposed — cost
+- [x] **P50-F01-cost-basis-method-strategy-06** Under AverageCost, no per-lot data is exposed — cost
       basis remains the existing blended weighted-average figure, unchanged from today
-- [ ] **P50-F01-cost-basis-method-strategy-07** A SpecificId lot query for a holding returns exactly
+- [x] **P50-F01-cost-basis-method-strategy-07** A SpecificId lot query for a holding returns exactly
       the lots still open as of that point in the transaction history, with their remaining quantity
       and unit cost
 
