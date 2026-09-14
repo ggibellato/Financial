@@ -56,6 +56,10 @@ public class AssetDetailsDTO
     public decimal? TotalReturn { get; set; }
     public List<TransactionDTO> Transactions { get; set; } = new();
     public List<CreditDTO> Credits { get; set; } = new();
+    public List<DisposalRecordDTO> DisposalRecords { get; set; } = new();
+
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public CostBasisMethod CostBasisMethod { get; set; } = CostBasisMethod.AverageCost;
 
     /// <summary>
     /// Recorded price/value snapshots, newest first (manual and automatically-fetched entries)

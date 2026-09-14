@@ -393,6 +393,75 @@ public class NavigationServiceTests
     }
 
     [Fact]
+    public void GetAssetDetails_AfterASale_ReturnsMatchingDisposalRecord()
+    {
+        var broker = Broker.Create("Broker", "BRL");
+        var portfolio = broker.AddPortfolio("Portfolio");
+        var asset = Asset.Create("ASSET1", "ISIN", "BVMF", "ASSET1", CountryCode.BR, "FII", GlobalAssetClass.Equity);
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 3, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        var sale = Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 110m, 0m);
+        asset.RecordTransaction(sale, CostBasisMethod.AverageCost);
+        portfolio.AddAsset(asset);
+        _repository.Broker = broker;
+
+        var details = CreateService().GetAssetDetails("Broker", "Portfolio", "ASSET1");
+
+        details.Should().NotBeNull();
+        var record = details!.DisposalRecords.Should().ContainSingle().Which;
+        record.TransactionId.Should().Be(sale.Id);
+        record.Method.Should().Be(CostBasisMethod.AverageCost);
+        record.QuantityDisposed.Should().Be(5m);
+        record.Proceeds.Should().Be(sale.NetCash);
+        record.GainLoss.Should().Be(record.Proceeds - record.CostBasis);
+        record.Status.Should().Be(DisposalRecordStatus.Active);
+    }
+
+    [Fact]
+    public void GetAssetDetails_WithNoDisposingTransactions_ReturnsEmptyDisposalRecords()
+    {
+        var broker = Broker.Create("Broker", "BRL");
+        var portfolio = broker.AddPortfolio("Portfolio");
+        var asset = Asset.Create("ASSET1", "ISIN", "BVMF", "ASSET1", CountryCode.BR, "FII", GlobalAssetClass.Equity);
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 3, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        portfolio.AddAsset(asset);
+        _repository.Broker = broker;
+
+        var details = CreateService().GetAssetDetails("Broker", "Portfolio", "ASSET1");
+
+        details.Should().NotBeNull();
+        details!.DisposalRecords.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void GetAssetDetails_ReturnsTheBrokersConfiguredCostBasisMethod()
+    {
+        var broker = Broker.Create("Broker", "BRL");
+        broker.SetCostBasisMethod(CostBasisMethod.FIFO);
+        var portfolio = broker.AddPortfolio("Portfolio");
+        portfolio.AddAsset(BuildAssetWithQuantity("ASSET1", 10m));
+        _repository.Broker = broker;
+
+        var details = CreateService().GetAssetDetails("Broker", "Portfolio", "ASSET1");
+
+        details.Should().NotBeNull();
+        details!.CostBasisMethod.Should().Be(CostBasisMethod.FIFO);
+    }
+
+    [Fact]
+    public void GetAssetDetails_WithNoCostBasisMethodExplicitlySet_DefaultsToAverageCost()
+    {
+        var broker = Broker.Create("Broker", "BRL");
+        var portfolio = broker.AddPortfolio("Portfolio");
+        portfolio.AddAsset(BuildAssetWithQuantity("ASSET1", 10m));
+        _repository.Broker = broker;
+
+        var details = CreateService().GetAssetDetails("Broker", "Portfolio", "ASSET1");
+
+        details.Should().NotBeNull();
+        details!.CostBasisMethod.Should().Be(CostBasisMethod.AverageCost);
+    }
+
+    [Fact]
     public void GetNavigationTree_WhenRepositoryThrowsUnexpectedly_Rethrows()
     {
         _repository.ThrowOnGetBrokerList = new InvalidOperationException("simulated failure");

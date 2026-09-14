@@ -355,6 +355,9 @@
           "class": {
             "$ref": "#/components/schemas/GlobalAssetClass"
           },
+          "costBasisMethod": {
+            "$ref": "#/components/schemas/CostBasisMethod"
+          },
           "costOfUnitsHeld": {
             "format": "double",
             "type": "number"
@@ -365,6 +368,12 @@
           "credits": {
             "items": {
               "$ref": "#/components/schemas/CreditDTO"
+            },
+            "type": "array"
+          },
+          "disposalRecords": {
+            "items": {
+              "$ref": "#/components/schemas/DisposalRecordDTO"
             },
             "type": "array"
           },
@@ -1222,6 +1231,13 @@
         ],
         "type": "object"
       },
+      "CostBasisMethod": {
+        "enum": [
+          "AverageCost",
+          "FIFO",
+          "SpecificId"
+        ]
+      },
       "CountryCode": {
         "enum": [
           "Unknown",
@@ -1497,6 +1513,94 @@
           "assetName"
         ],
         "type": "object"
+      },
+      "DisposalLotConsumptionDTO": {
+        "properties": {
+          "quantity": {
+            "format": "double",
+            "type": "number"
+          },
+          "sourceTransactionId": {
+            "format": "uuid",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "unitCost": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "DisposalRecordDTO": {
+        "properties": {
+          "costBasis": {
+            "format": "double",
+            "type": "number"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "date": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "gainLoss": {
+            "format": "double",
+            "type": "number"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "lotsConsumed": {
+            "items": {
+              "$ref": "#/components/schemas/DisposalLotConsumptionDTO"
+            },
+            "type": "array"
+          },
+          "method": {
+            "$ref": "#/components/schemas/CostBasisMethod"
+          },
+          "proceeds": {
+            "format": "double",
+            "type": "number"
+          },
+          "quantityDisposed": {
+            "format": "double",
+            "type": "number"
+          },
+          "status": {
+            "$ref": "#/components/schemas/DisposalRecordStatus"
+          },
+          "supersededByRecordId": {
+            "format": "uuid",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "taxYear": {
+            "type": "string"
+          },
+          "transactionId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "DisposalRecordStatus": {
+        "enum": [
+          "Active",
+          "Superseded"
+        ]
       },
       "DividendHistoryItemDTO": {
         "properties": {

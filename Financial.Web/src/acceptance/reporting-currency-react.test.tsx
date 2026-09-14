@@ -101,6 +101,8 @@ const ASSET: AssetDetailsDto = {
   priceSnapshots: [],
   cashFlowsWithCredits: [],
   cashFlowsWithoutCredits: [],
+  disposalRecords: [],
+  costBasisMethod: 'AverageCost',
 }
 
 function renderBrokerSummary(summary: AggregatedSummaryDto) {

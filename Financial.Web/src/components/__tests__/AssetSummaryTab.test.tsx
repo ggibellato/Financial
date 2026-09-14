@@ -66,6 +66,8 @@ const ASSET: AssetDetailsDto = {
   priceSnapshots: [],
   cashFlowsWithCredits: [],
   cashFlowsWithoutCredits: [],
+  disposalRecords: [],
+  costBasisMethod: 'AverageCost',
 }
 
 const PRICE: AssetPriceDto = {

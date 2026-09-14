@@ -95,6 +95,14 @@ public sealed class NavigationService : INavigationService
                 .OrderByDescending(p => p.Date)
                 .ToList();
 
+            var disposalRecords = asset.DisposalRecords
+                .Select(NavigationMapper.MapDisposalRecord)
+                .ToList();
+
+            var broker = _repository.GetBrokerList(InvestmentScope.Active).FirstOrDefault(b => b.Name == brokerName)
+                ?? _repository.GetBrokerList(InvestmentScope.Historic).FirstOrDefault(b => b.Name == brokerName);
+            var costBasisMethod = broker?.CostBasisMethod ?? CostBasisMethod.AverageCost;
+
             var (totalBought, totalSold, totalCredits) = AssetTotalsCalculator.CalculateTotals(asset);
             var valuation = _holdingValuationService.GetValuation(asset, scope);
 
@@ -131,6 +139,8 @@ public sealed class NavigationService : INavigationService
                 Transactions = transactions,
                 Credits = credits,
                 PriceSnapshots = priceSnapshots,
+                DisposalRecords = disposalRecords,
+                CostBasisMethod = costBasisMethod,
                 CashFlowsWithCredits = AssetCashFlowBuilder.BuildWithCredits(asset),
                 CashFlowsWithoutCredits = AssetCashFlowBuilder.BuildWithoutCredits(asset)
             };

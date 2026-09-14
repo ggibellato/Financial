@@ -5789,10 +5789,12 @@ export interface components {
             cashFlowsWithCredits?: components["schemas"]["AssetCashFlowDTO"][];
             cashFlowsWithoutCredits?: components["schemas"]["AssetCashFlowDTO"][];
             class?: components["schemas"]["GlobalAssetClass"];
+            costBasisMethod?: components["schemas"]["CostBasisMethod"];
             /** Format: double */
             costOfUnitsHeld?: number;
             country?: components["schemas"]["CountryCode"];
             credits?: components["schemas"]["CreditDTO"][];
+            disposalRecords?: components["schemas"]["DisposalRecordDTO"][];
             exchange?: string;
             incomePolicy?: components["schemas"]["IncomePolicy"];
             isin?: string;
@@ -6053,6 +6055,8 @@ export interface components {
             name: string;
         };
         /** @enum {unknown} */
+        CostBasisMethod: "AverageCost" | "FIFO" | "SpecificId";
+        /** @enum {unknown} */
         CountryCode: "Unknown" | "BR" | "US" | "UK";
         CreditCardCalendarSyncStatusDTO: {
             /** Format: uuid */
@@ -6138,6 +6142,41 @@ export interface components {
             date?: string;
             portfolioName: string;
         };
+        DisposalLotConsumptionDTO: {
+            /** Format: double */
+            quantity: number;
+            /** Format: uuid */
+            sourceTransactionId: null | string;
+            /** Format: double */
+            unitCost: number;
+        };
+        DisposalRecordDTO: {
+            /** Format: double */
+            costBasis: number;
+            /** Format: date-time */
+            createdAt: string;
+            currency: string;
+            /** Format: date-time */
+            date: string;
+            /** Format: double */
+            gainLoss: number;
+            /** Format: uuid */
+            id: string;
+            lotsConsumed: components["schemas"]["DisposalLotConsumptionDTO"][];
+            method: components["schemas"]["CostBasisMethod"];
+            /** Format: double */
+            proceeds: number;
+            /** Format: double */
+            quantityDisposed: number;
+            status: components["schemas"]["DisposalRecordStatus"];
+            /** Format: uuid */
+            supersededByRecordId: null | string;
+            taxYear: string;
+            /** Format: uuid */
+            transactionId: string;
+        };
+        /** @enum {unknown} */
+        DisposalRecordStatus: "Active" | "Superseded";
         DividendHistoryItemDTO: {
             /** Format: date-time */
             date?: string;
