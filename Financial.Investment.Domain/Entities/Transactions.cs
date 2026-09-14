@@ -116,14 +116,11 @@ public class Transactions : ICollection<Transaction>
         switch (effect.Quantity)
         {
             case QuantityEffect.Increase:
-                // Zero-guard is Increase-only: applying it to an ordinary decrease-to-flat would
-                // zero the average price of every closed historic holding instead of just an
-                // oversell recovery.
+                // Zero-guard (inside AverageCostReplay) is Increase-only: applying it to an
+                // ordinary decrease-to-flat would zero the average price of every closed historic
+                // holding instead of just an oversell recovery.
                 var resultingQuantity = Quantity + transaction.Quantity;
-                var cost = transaction.UnitPrice * transaction.Quantity + transaction.Fees;
-                AveragePrice = resultingQuantity == 0
-                    ? 0m
-                    : (AveragePrice * Quantity + cost) / resultingQuantity;
+                AveragePrice = AverageCostReplay.Apply(Quantity, AveragePrice, transaction);
                 Quantity = resultingQuantity;
                 break;
 
