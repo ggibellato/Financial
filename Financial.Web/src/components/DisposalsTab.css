@@ -1,0 +1,46 @@
+.disposals-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.disposals-tab__controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.disposals-tab__empty {
+  color: var(--text-muted, #888);
+}
+
+.disposals-tab__table-wrapper {
+  overflow: auto;
+}
+
+.disposals-tab__col--expand {
+  width: 40px;
+}
+
+.disposals-tab__history-row td {
+  background: var(--bg-subtle);
+}
+
+.disposals-tab__history-title {
+  font-size: 12px;
+  font-weight: 600;
+  margin: 0 0 4px;
+  color: var(--text-muted, #888);
+}
+
+.disposals-tab__history-table {
+  font-size: 12px;
+}
+
+.disposals-tab__value--green {
+  color: var(--success);
+}
+
+.disposals-tab__value--red {
+  color: var(--danger);
+}
