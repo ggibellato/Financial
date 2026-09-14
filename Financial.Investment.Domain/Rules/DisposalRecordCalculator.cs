@@ -6,14 +6,6 @@ using Financial.Investment.Domain.Exceptions;
 
 namespace Financial.Investment.Domain.Rules;
 
-/// <summary>
-/// Builds one DisposalRecord for a disposing transaction (Sell/Redemption) under the asset's
-/// broker's configured CostBasisMethod: AverageCost replays the weighted-average price as of the
-/// moment immediately before the disposal (a full historical replay, not Transactions' current
-/// value, so backfilling a historic sell is correct); FIFO auto-consumes OpenLotTracker's oldest
-/// open lot(s), splitting across lots as needed; SpecificId consumes exactly the caller-supplied
-/// allocation, rejecting a sum mismatch or an over-requested lot before anything is created.
-/// </summary>
 public static class DisposalRecordCalculator
 {
     public static DisposalRecord Calculate(
@@ -46,9 +38,6 @@ public static class DisposalRecordCalculator
             taxYear);
     }
 
-    /// <summary>Replays every preceding transaction's quantity/average-price effect (mirroring
-    /// Transactions.Apply's own replay) to find the weighted-average price immediately before this
-    /// disposal, then records a single synthetic lot with no source transaction.</summary>
     private static IReadOnlyList<DisposalLotConsumption> BuildAverageCostLot(
         Transaction disposingTransaction, IReadOnlyList<Transaction> preceding)
     {

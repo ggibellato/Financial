@@ -5,12 +5,6 @@ using Financial.Shared.Abstractions.Currencies;
 
 namespace Financial.Investment.Domain.Entities;
 
-/// <summary>
-/// An immutable, auditable record of what a Sell/Redemption actually disposed of, at what basis,
-/// computed under the asset's broker's configured CostBasisMethod at the moment it was created.
-/// Nothing here mutates after construction: a later correction or method change (a future feature)
-/// marks this record Superseded and links to its replacement rather than rewriting it in place.
-/// </summary>
 public sealed class DisposalRecord
 {
     public Guid Id { get; private set; }
@@ -24,8 +18,6 @@ public sealed class DisposalRecord
     public decimal QuantityDisposed { get; private set; }
     public decimal Proceeds { get; private set; }
 
-    /// <summary>Sum of each consumed lot's quantity x unit cost — never stored separately from
-    /// LotsConsumed, so the two can never drift apart.</summary>
     public decimal CostBasis => _lotsConsumed.Sum(lot => lot.Quantity * lot.UnitCost);
 
     public decimal GainLoss => Proceeds - CostBasis;
