@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using Financial.Investment.Domain.Entities;
+using Financial.Investment.Domain.Rules;
 using Financial.Shared.Abstractions.Persistence;
 
 namespace Financial.Investment.Infrastructure.Persistence;
@@ -14,6 +16,13 @@ public static class InvestmentLoader
             .GetAwaiter()
             .GetResult();
 
-        return serializer.Deserialize(json);
+        var investments = serializer.Deserialize(json);
+
+        foreach (var failure in DisposalRecordBackfill.Apply(investments))
+        {
+            Trace.TraceWarning($"DisposalRecord backfill skipped transaction {failure.TransactionId}: {failure.Message}");
+        }
+
+        return investments;
     }
 }
