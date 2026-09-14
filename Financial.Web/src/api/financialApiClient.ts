@@ -68,6 +68,7 @@ import type {
   PortfolioUpdateDto,
   RecurringBillDto,
   ReportingCurrencySettingDto,
+  SetCostBasisMethodRequestDto,
   SetReportingCurrencyEnabledRequestDto,
   ReserveBucketBalanceDto,
   ReserveBucketCreateDto,
@@ -109,6 +110,7 @@ export interface FinancialApiClient {
   getAdminBrokers: () => Promise<BrokerDto[]>
   createBroker: (request: BrokerCreateDto) => Promise<BrokerDto>
   updateBroker: (currentName: string, request: BrokerUpdateDto) => Promise<BrokerDto>
+  setCostBasisMethod: (name: string, request: SetCostBasisMethodRequestDto) => Promise<BrokerDto>
   deleteBroker: (name: string) => Promise<void>
   getAssetDetails: (brokerName: string, portfolioName: string, assetName: string, scope?: InvestmentScope) => Promise<AssetDetailsDto>
   getReportingCurrency: () => Promise<ReportingCurrencySettingDto>
@@ -320,6 +322,11 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       request<BrokerDto>('/brokers', { method: 'POST', body: JSON.stringify(requestBody) }),
     updateBroker: (currentName, requestBody) =>
       request<BrokerDto>(`/brokers/${encodeURIComponent(currentName)}`, {
+        method: 'PUT',
+        body: JSON.stringify(requestBody),
+      }),
+    setCostBasisMethod: (name, requestBody) =>
+      request<BrokerDto>(`/brokers/${encodeURIComponent(name)}/cost-basis-method`, {
         method: 'PUT',
         body: JSON.stringify(requestBody),
       }),

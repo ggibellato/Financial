@@ -7,14 +7,17 @@ import {
   DialogSurface,
   DialogTitle,
   Field,
+  InfoLabel,
   Input,
   MessageBar,
   MessageBarBody,
   Select,
 } from '@fluentui/react-components'
-import type { BrokerDto } from '../api/types'
+import type { LabelProps } from '@fluentui/react-components'
+import type { BrokerDto, CostBasisMethod } from '../api/types'
 import { useFormPanelStyles } from './formPanelStyles'
 import { getErrorMessage } from '../utils/formatters'
+import { COST_BASIS_METHODS, COST_BASIS_METHOD_LABELS } from '../utils/costBasisMethod'
 
 /** The Investment bounded context has no shared currency enum (CashFlow's Currency is BRL/GBP only
  * and out of reach across the bounded-context boundary); these are the values already observed in
@@ -24,7 +27,7 @@ const CURRENCIES = ['BRL', 'GBP', 'USD']
 interface BrokerFormDialogProps {
   broker: BrokerDto | null
   onCancel: () => void
-  onSubmit: (name: string, currency: string) => Promise<unknown>
+  onSubmit: (name: string, currency: string, costBasisMethod: CostBasisMethod) => Promise<unknown>
 }
 
 export default function BrokerFormDialog({ broker, onCancel, onSubmit }: BrokerFormDialogProps) {
@@ -32,6 +35,7 @@ export default function BrokerFormDialog({ broker, onCancel, onSubmit }: BrokerF
   const isEditing = broker !== null
   const [name, setName] = useState(broker?.name ?? '')
   const [currency, setCurrency] = useState(broker?.currency ?? CURRENCIES[0])
+  const [costBasisMethod, setCostBasisMethod] = useState<CostBasisMethod>(broker?.costBasisMethod ?? 'AverageCost')
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -45,7 +49,7 @@ export default function BrokerFormDialog({ broker, onCancel, onSubmit }: BrokerF
     setIsSaving(true)
     setError(null)
     try {
-      await onSubmit(trimmedName, currency)
+      await onSubmit(trimmedName, currency, costBasisMethod)
     } catch (err: unknown) {
       setError(getErrorMessage(err, 'The broker could not be saved.'))
       setIsSaving(false)
@@ -72,6 +76,32 @@ export default function BrokerFormDialog({ broker, onCancel, onSubmit }: BrokerF
                 {CURRENCIES.map((c) => (
                   <option key={c} value={c}>
                     {c}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+
+            <Field
+              label={{
+                children: (_: unknown, props: LabelProps) => (
+                  <InfoLabel
+                    {...props}
+                    info="Changing this for an existing broker recalculates every disposal record under it."
+                  >
+                    Cost Basis Method
+                  </InfoLabel>
+                ),
+              }}
+              required
+            >
+              <Select
+                value={costBasisMethod}
+                onChange={(e) => setCostBasisMethod(e.target.value as CostBasisMethod)}
+                disabled={isSaving}
+              >
+                {COST_BASIS_METHODS.map((method) => (
+                  <option key={method} value={method}>
+                    {COST_BASIS_METHOD_LABELS[method]}
                   </option>
                 ))}
               </Select>

@@ -4,18 +4,21 @@ import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { BrokerDto } from '../../api/types'
 import { useBrokers } from '../useBrokers'
 
-const { getAdminBrokersMock, createBrokerMock, updateBrokerMock, deleteBrokerMock } = vi.hoisted(() => ({
-  getAdminBrokersMock: vi.fn<FinancialApiClient['getAdminBrokers']>(),
-  createBrokerMock: vi.fn<FinancialApiClient['createBroker']>(),
-  updateBrokerMock: vi.fn<FinancialApiClient['updateBroker']>(),
-  deleteBrokerMock: vi.fn<FinancialApiClient['deleteBroker']>(),
-}))
+const { getAdminBrokersMock, createBrokerMock, updateBrokerMock, setCostBasisMethodMock, deleteBrokerMock } =
+  vi.hoisted(() => ({
+    getAdminBrokersMock: vi.fn<FinancialApiClient['getAdminBrokers']>(),
+    createBrokerMock: vi.fn<FinancialApiClient['createBroker']>(),
+    updateBrokerMock: vi.fn<FinancialApiClient['updateBroker']>(),
+    setCostBasisMethodMock: vi.fn<FinancialApiClient['setCostBasisMethod']>(),
+    deleteBrokerMock: vi.fn<FinancialApiClient['deleteBroker']>(),
+  }))
 
 vi.mock('../../api/financialApiClient', () => ({
   apiClient: {
     getAdminBrokers: getAdminBrokersMock,
     createBroker: createBrokerMock,
     updateBroker: updateBrokerMock,
+    setCostBasisMethod: setCostBasisMethodMock,
     deleteBroker: deleteBrokerMock,
   } as Partial<FinancialApiClient>,
 }))
@@ -30,6 +33,7 @@ describe('useBrokers', () => {
     getAdminBrokersMock.mockReset()
     createBrokerMock.mockReset()
     updateBrokerMock.mockReset()
+    setCostBasisMethodMock.mockReset()
     deleteBrokerMock.mockReset()
     getAdminBrokersMock.mockResolvedValue(BROKERS)
   })
@@ -107,6 +111,25 @@ describe('useBrokers', () => {
     })
 
     expect(updateBrokerMock).toHaveBeenCalledWith('XPI', { name: 'XPI Renamed', currency: 'USD' })
+    await waitFor(() => expect(getAdminBrokersMock).toHaveBeenCalledTimes(2))
+  })
+
+  it('setCostBasisMethod calls the API and re-fetches the list', async () => {
+    setCostBasisMethodMock.mockResolvedValue({
+      name: 'XPI',
+      currency: 'BRL',
+      status: 'Active',
+      portfolioCount: 2,
+      costBasisMethod: 'FIFO',
+    })
+    const { result } = renderHook(() => useBrokers())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    await act(async () => {
+      await result.current.setCostBasisMethod('XPI', 'FIFO')
+    })
+
+    expect(setCostBasisMethodMock).toHaveBeenCalledWith('XPI', { method: 'FIFO' })
     await waitFor(() => expect(getAdminBrokersMock).toHaveBeenCalledTimes(2))
   })
 

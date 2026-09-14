@@ -4,18 +4,21 @@ import BrokersPage from '../BrokersPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { BrokerDto } from '../../api/types'
 
-const { getAdminBrokersMock, createBrokerMock, updateBrokerMock, deleteBrokerMock } = vi.hoisted(() => ({
-  getAdminBrokersMock: vi.fn<FinancialApiClient['getAdminBrokers']>(),
-  createBrokerMock: vi.fn<FinancialApiClient['createBroker']>(),
-  updateBrokerMock: vi.fn<FinancialApiClient['updateBroker']>(),
-  deleteBrokerMock: vi.fn<FinancialApiClient['deleteBroker']>(),
-}))
+const { getAdminBrokersMock, createBrokerMock, updateBrokerMock, setCostBasisMethodMock, deleteBrokerMock } =
+  vi.hoisted(() => ({
+    getAdminBrokersMock: vi.fn<FinancialApiClient['getAdminBrokers']>(),
+    createBrokerMock: vi.fn<FinancialApiClient['createBroker']>(),
+    updateBrokerMock: vi.fn<FinancialApiClient['updateBroker']>(),
+    setCostBasisMethodMock: vi.fn<FinancialApiClient['setCostBasisMethod']>(),
+    deleteBrokerMock: vi.fn<FinancialApiClient['deleteBroker']>(),
+  }))
 
 vi.mock('../../api/financialApiClient', () => ({
   apiClient: {
     getAdminBrokers: getAdminBrokersMock,
     createBroker: createBrokerMock,
     updateBroker: updateBrokerMock,
+    setCostBasisMethod: setCostBasisMethodMock,
     deleteBroker: deleteBrokerMock,
   } as Partial<FinancialApiClient>,
 }))
@@ -30,6 +33,7 @@ describe('BrokersPage', () => {
     getAdminBrokersMock.mockReset()
     createBrokerMock.mockReset()
     updateBrokerMock.mockReset()
+    setCostBasisMethodMock.mockReset()
     deleteBrokerMock.mockReset()
     getAdminBrokersMock.mockResolvedValue(BROKERS)
   })
@@ -71,7 +75,11 @@ describe('BrokersPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
     await waitFor(() =>
-      expect(createBrokerMock).toHaveBeenCalledWith({ name: 'New Broker', currency: 'BRL', costBasisMethod: null }),
+      expect(createBrokerMock).toHaveBeenCalledWith({
+        name: 'New Broker',
+        currency: 'BRL',
+        costBasisMethod: 'AverageCost',
+      }),
     )
     await waitFor(() => expect(screen.queryByRole('heading', { name: 'Create Broker' })).not.toBeInTheDocument())
   })
@@ -95,6 +103,55 @@ describe('BrokersPage', () => {
     await waitFor(() =>
       expect(updateBrokerMock).toHaveBeenCalledWith('XPI', { name: 'XPI Renamed', currency: 'BRL' }),
     )
+    expect(setCostBasisMethodMock).not.toHaveBeenCalled()
+  })
+
+  it('also calls setCostBasisMethod when editing changes the cost basis method', async () => {
+    updateBrokerMock.mockResolvedValue({
+      name: 'XPI',
+      currency: 'BRL',
+      status: 'Active',
+      portfolioCount: 2,
+      costBasisMethod: 'AverageCost',
+    })
+    setCostBasisMethodMock.mockResolvedValue({
+      name: 'XPI',
+      currency: 'BRL',
+      status: 'Active',
+      portfolioCount: 2,
+      costBasisMethod: 'FIFO',
+    })
+    render(<BrokersPage />)
+    await waitFor(() => expect(screen.getByText('XPI')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit XPI' }))
+    fireEvent.change(screen.getByRole('combobox', { name: /^Cost Basis Method/ }), { target: { value: 'FIFO' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    await waitFor(() => expect(setCostBasisMethodMock).toHaveBeenCalledWith('XPI', { method: 'FIFO' }))
+  })
+
+  it('reports a partial-success error (not a full-failure one) when the rename commits but the method change fails', async () => {
+    updateBrokerMock.mockResolvedValue({
+      name: 'XPI Renamed',
+      currency: 'BRL',
+      status: 'Active',
+      portfolioCount: 2,
+      costBasisMethod: 'AverageCost',
+    })
+    setCostBasisMethodMock.mockRejectedValue(new Error('Regeneration failed'))
+    render(<BrokersPage />)
+    await waitFor(() => expect(screen.getByText('XPI')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit XPI' }))
+    fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'XPI Renamed' } })
+    fireEvent.change(screen.getByRole('combobox', { name: /^Cost Basis Method/ }), { target: { value: 'FIFO' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    expect(await screen.findByText(/"XPI Renamed" was saved, but its cost basis method could not be changed/)).toBeInTheDocument()
+    // The dialog must still be open, targeting the already-renamed broker - not the old name,
+    // which no longer exists server-side after the partial success.
+    expect(screen.getByRole('heading', { name: 'Edit Broker' })).toBeInTheDocument()
   })
 
   it('disables delete confirmation when the broker still has portfolios', async () => {
