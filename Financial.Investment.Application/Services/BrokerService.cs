@@ -1,6 +1,7 @@
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.Entities;
+using Financial.Investment.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.Logging;
 using static Financial.Investment.Application.Validation.RequiredValueValidator;
@@ -116,6 +117,46 @@ public sealed class BrokerService : IBrokerService
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "DeleteBroker");
+        }
+        catch (Exception ex)
+        {
+            span.MarkFailed(ex);
+            throw;
+        }
+    }
+
+    public async Task<BrokerDTO> SetCostBasisMethodAsync(string brokerName, CostBasisMethod method)
+    {
+        using var span = StartSpan("SetCostBasisMethod");
+        try
+        {
+            var required = Required(brokerName, nameof(brokerName));
+
+            Broker? updated = null;
+            string? status = null;
+            await _repository.ApplyAndSaveAsync(() =>
+            {
+                var investments = _repository.GetInvestments();
+                updated = investments.FindActiveBroker(required) ?? investments.FindHistoricBroker(required)
+                    ?? throw new KeyNotFoundException($"Broker \"{required}\" was not found.");
+                var previousMethod = updated.CostBasisMethod;
+                updated.SetCostBasisMethod(method);
+                try
+                {
+                    DisposalRecordRegenerator.RegenerateBroker(updated);
+                }
+                catch
+                {
+                    updated.SetCostBasisMethod(previousMethod);
+                    throw;
+                }
+                status = investments.FindActiveBroker(updated.Name) is not null ? "Active" : "Historic";
+                return true;
+            }).ConfigureAwait(false);
+
+            span.MarkSuccess();
+            _logger.LogInformation("{Operation} completed", "SetCostBasisMethod");
+            return ToDto(updated!, status!);
         }
         catch (Exception ex)
         {

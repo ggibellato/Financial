@@ -527,6 +527,9 @@ internal sealed class StubBrokerService : IBrokerService
         Brokers.RemoveAll(b => b.Name == name);
         return Task.CompletedTask;
     }
+
+    public Task<BrokerDTO> SetCostBasisMethodAsync(string brokerName, CostBasisMethod method) =>
+        throw new NotImplementedException();
 }
 
 internal sealed class StubPortfolioService : IPortfolioService

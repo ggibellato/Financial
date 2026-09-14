@@ -457,20 +457,20 @@ graph TD
       requested is rejected
 
 ### F03. Disposal Recalculation Policy
-- [ ] **P50-F03-disposal-recalculation-policy-01** Editing, adding or deleting a transaction dated on
+- [x] **P50-F03-disposal-recalculation-policy-01** Editing, adding or deleting a transaction dated on
       or before an asset's latest `DisposalRecord` date regenerates every `DisposalRecord` for that
       asset from the earliest affected date forward
-- [ ] **P50-F03-disposal-recalculation-policy-02** Changing a broker's `CostBasisMethod` regenerates
+- [x] **P50-F03-disposal-recalculation-policy-02** Changing a broker's `CostBasisMethod` regenerates
       every `DisposalRecord` for every asset under that broker from each asset's earliest transaction
-- [ ] **P50-F03-disposal-recalculation-policy-03** A regenerated `DisposalRecord` never overwrites the
+- [x] **P50-F03-disposal-recalculation-policy-03** A regenerated `DisposalRecord` never overwrites the
       record it replaces: the old record is marked `Superseded` with `SupersededByRecordId` pointing at
       the new one, and both remain in the data file
-- [ ] **P50-F03-disposal-recalculation-policy-04** A `Superseded` `DisposalRecord` is excluded from
+- [x] **P50-F03-disposal-recalculation-policy-04** A `Superseded` `DisposalRecord` is excluded from
       `RealizedCapitalGain` and from every current total, while remaining readable as history
-- [ ] **P50-F03-disposal-recalculation-policy-05** A chain of two or more successive recalculations for
+- [x] **P50-F03-disposal-recalculation-policy-05** A chain of two or more successive recalculations for
       the same disposal is followable from the newest `Active` record back through each `Superseded`
       predecessor
-- [ ] **P50-F03-disposal-recalculation-policy-06** If regeneration cannot complete, the triggering
+- [x] **P50-F03-disposal-recalculation-policy-06** If regeneration cannot complete, the triggering
       transaction edit or method change is rejected in full and no partial disposal history is
       persisted
 
@@ -511,7 +511,7 @@ graph TD
 ### Cross-Feature Integration
 - [x] F02's `DisposalRecord` computation correctly uses F01's configured `CostBasisMethod` and open-lot
       data for each of the three methods
-- [ ] F03's regeneration correctly reads F01's (possibly newly changed) `CostBasisMethod` and F02's
+- [x] F03's regeneration correctly reads F01's (possibly newly changed) `CostBasisMethod` and F02's
       existing `DisposalRecords` to determine exactly what becomes superseded
 - [ ] F04 correctly renders F01's method options and open lots, F02's `DisposalRecord` fields, and
       F03's superseded chain for the same underlying disposal

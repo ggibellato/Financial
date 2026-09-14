@@ -6,6 +6,7 @@ using Financial.Investment.Application.Configuration;
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
+using Financial.Investment.Domain.Entities;
 using FluentAssertions;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
@@ -634,6 +635,7 @@ public class ControllerGuardClauseTests
         public Task<BrokerDTO> CreateBrokerAsync(BrokerCreateDTO request) => throw new NotImplementedException();
         public Task<BrokerDTO> UpdateBrokerAsync(string currentName, BrokerUpdateDTO request) => throw new NotImplementedException();
         public Task DeleteBrokerAsync(string name) => throw new NotImplementedException();
+        public Task<BrokerDTO> SetCostBasisMethodAsync(string brokerName, CostBasisMethod method) => throw new NotImplementedException();
     }
 
     private sealed class StubAssetPriceHistoryService : IAssetPriceHistoryService

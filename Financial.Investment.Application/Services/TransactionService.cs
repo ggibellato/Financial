@@ -113,7 +113,8 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
                     var updatedTransaction = Transaction.CreateWithId(
                         request.Id, request.Date, transactionType, request.Quantity, request.UnitPrice, request.Fees, request.Withheld,
                         existing?.Currency ?? default, existing?.FxRateSnapshot);
-                    return asset.ReviseTransaction(updatedTransaction);
+                    var method = ResolveCostBasisMethod(request.BrokerName);
+                    return asset.ReviseTransaction(updatedTransaction, method);
                 }).ConfigureAwait(false);
 
             span.MarkSuccess();
@@ -146,7 +147,7 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
                 request.BrokerName,
                 request.PortfolioName,
                 request.AssetName,
-                asset => asset.RetractTransaction(request.Id)).ConfigureAwait(false);
+                asset => asset.RetractTransaction(request.Id, ResolveCostBasisMethod(request.BrokerName))).ConfigureAwait(false);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "DeleteTransaction");
