@@ -69,4 +69,45 @@ public class DisposalRecordTests
         record.Id.Should().Be(id);
         record.CreatedAt.Should().Be(createdAt);
     }
+
+    [Fact]
+    public void Supersede_ActiveRecord_SetsStatusAndLink()
+    {
+        var record = CreateActiveRecord();
+        var replacementId = Guid.NewGuid();
+
+        record.Supersede(replacementId);
+
+        record.Status.Should().Be(DisposalRecordStatus.Superseded);
+        record.SupersededByRecordId.Should().Be(replacementId);
+    }
+
+    [Fact]
+    public void Supersede_WithNoReplacement_SetsStatusWithNullLink()
+    {
+        var record = CreateActiveRecord();
+
+        record.Supersede(null);
+
+        record.Status.Should().Be(DisposalRecordStatus.Superseded);
+        record.SupersededByRecordId.Should().BeNull();
+    }
+
+    [Fact]
+    public void Supersede_AlreadySuperseded_Throws()
+    {
+        var record = CreateActiveRecord();
+        record.Supersede(Guid.NewGuid());
+
+        Action act = () => record.Supersede(Guid.NewGuid());
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    private static DisposalRecord CreateActiveRecord()
+    {
+        var lots = new List<DisposalLotConsumption> { new(null, 10m, 8m) };
+        return DisposalRecord.Create(
+            Guid.NewGuid(), new DateTime(2026, 5, 1), CostBasisMethod.AverageCost, lots, 10m, 95m, Currency.GBP, "2026/27");
+    }
 }

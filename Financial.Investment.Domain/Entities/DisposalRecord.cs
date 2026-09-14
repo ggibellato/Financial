@@ -71,6 +71,17 @@ public sealed class DisposalRecord
         string taxYear) =>
         new(Guid.NewGuid(), transactionId, date, method, lotsConsumed, quantityDisposed, proceeds, currency, taxYear, DateTimeOffset.UtcNow);
 
+    public void Supersede(Guid? supersededByRecordId)
+    {
+        if (Status == DisposalRecordStatus.Superseded)
+        {
+            throw new InvalidOperationException("This disposal record has already been superseded.");
+        }
+
+        Status = DisposalRecordStatus.Superseded;
+        SupersededByRecordId = supersededByRecordId;
+    }
+
     public static DisposalRecord CreateWithId(
         Guid id,
         Guid transactionId,
