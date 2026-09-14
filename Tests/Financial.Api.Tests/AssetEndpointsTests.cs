@@ -46,6 +46,25 @@ public class AssetEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
+    public async Task GetOpenLots_ReturnsOkWithTheAssetsOpenLots()
+    {
+        var response = await Client.GetAsync("/api/v1/financial/assets/XPI/Default/BCIA11/open-lots");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var openLots = await response.Content.ReadFromJsonAsync<List<OpenLotDTO>>();
+        openLots.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task GetOpenLots_UnknownAsset_ReturnsNotFound()
+    {
+        var response = await Client.GetAsync("/api/v1/financial/assets/XPI/Default/UNKNOWNASSET/open-lots");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
     public async Task MoveAsset_ToAPortfolioThatDoesNotExist_CreatesItAndMovesTheAsset()
     {
         var response = await Client.PostAsJsonAsync("/api/v1/financial/assets/move", MoveRequest(destination: "ISA"));

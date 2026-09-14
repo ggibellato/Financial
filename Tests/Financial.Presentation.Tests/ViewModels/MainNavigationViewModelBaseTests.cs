@@ -835,6 +835,7 @@ public class MainNavigationViewModelBaseTests
 
         public IEnumerable<BrokerNodeDTO> GetBrokers(InvestmentScope scope = InvestmentScope.Active) => [];
         public IEnumerable<AssetNodeDTO> GetAssetsByBrokerPortfolio(string brokerName, string portfolioName) => [];
+        public IReadOnlyList<OpenLotDTO>? GetOpenLots(string brokerName, string portfolioName, string assetName, InvestmentScope scope = InvestmentScope.Active) => [];
     }
 
     private sealed class StubCreditQueryService : ICreditQueryService

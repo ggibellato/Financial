@@ -362,6 +362,7 @@ public class MainNavigationViewModelConstructorGuardTests
         public AssetDetailsDTO? GetAssetDetails(string brokerName, string portfolioName, string assetName, InvestmentScope scope = InvestmentScope.Active) => throw new NotImplementedException();
         public IEnumerable<BrokerNodeDTO> GetBrokers(InvestmentScope scope = InvestmentScope.Active) => throw new NotImplementedException();
         public IEnumerable<AssetNodeDTO> GetAssetsByBrokerPortfolio(string brokerName, string portfolioName) => throw new NotImplementedException();
+        public IReadOnlyList<OpenLotDTO>? GetOpenLots(string brokerName, string portfolioName, string assetName, InvestmentScope scope = InvestmentScope.Active) => throw new NotImplementedException();
     }
 
     private sealed class StubCreditQueryService : ICreditQueryService

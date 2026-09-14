@@ -191,6 +191,34 @@ public sealed class NavigationService : INavigationService
         }
     }
 
+    public IReadOnlyList<OpenLotDTO>? GetOpenLots(string brokerName, string portfolioName, string assetName, InvestmentScope scope = InvestmentScope.Active)
+    {
+        using var span = StartSpan("GetOpenLots");
+        try
+        {
+            var asset = _repository.GetAsset(brokerName, portfolioName, assetName, scope);
+            if (asset is null)
+            {
+                span.MarkSuccess();
+                _logger.LogInformation("{Operation} completed", "GetOpenLots");
+                return null;
+            }
+
+            var result = OpenLotTracker.GetOpenLots(asset.Transactions)
+                .Select(NavigationMapper.MapOpenLot)
+                .ToList();
+
+            span.MarkSuccess();
+            _logger.LogInformation("{Operation} completed", "GetOpenLots");
+            return result;
+        }
+        catch (Exception ex)
+        {
+            span.MarkFailed(ex);
+            throw;
+        }
+    }
+
     private ITelemetrySpan StartSpan(string operationName)
     {
         _logger.LogInformation("{Operation} started", operationName);

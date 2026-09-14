@@ -211,6 +211,8 @@ public class AssetPriceFetchViewModelTests
 
         public IEnumerable<AssetNodeDTO> GetAssetsByBrokerPortfolio(string brokerName, string portfolioName) =>
             AssetsByBrokerPortfolio.TryGetValue((brokerName, portfolioName), out var assets) ? assets : [];
+
+        public IReadOnlyList<OpenLotDTO>? GetOpenLots(string brokerName, string portfolioName, string assetName, InvestmentScope scope = InvestmentScope.Active) => throw new NotImplementedException();
     }
 
     private sealed class StubPriceService : IAssetPriceLookupService
