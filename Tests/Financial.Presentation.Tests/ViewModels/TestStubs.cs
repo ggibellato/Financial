@@ -66,6 +66,7 @@ internal sealed class FakeNavigationService : INavigationService
 
     public IEnumerable<BrokerNodeDTO> GetBrokers(InvestmentScope scope = InvestmentScope.Active) => [];
     public IEnumerable<AssetNodeDTO> GetAssetsByBrokerPortfolio(string brokerName, string portfolioName) => [];
+    public IReadOnlyList<OpenLotDTO>? GetOpenLots(string brokerName, string portfolioName, string assetName, InvestmentScope scope = InvestmentScope.Active) => [];
 }
 
 internal sealed class FakePortfolioAssetSummaryService : IPortfolioAssetSummaryService
