@@ -440,9 +440,9 @@ graph TD
       native-currency fallback behaviour as `Financial.Web`
 
 ### Cross-Feature Integration
-- [ ] A rate fetched via F01 for a given date/currency pair is the same rate F02's entry-time snapshot
+- [x] A rate fetched via F01 for a given date/currency pair is the same rate F02's entry-time snapshot
       and F03's on-demand conversion both use for that date/currency pair
-- [ ] A Transaction/Credit's `Currency`, amount and date (F02) feed correctly into F03's per-record
+- [x] A Transaction/Credit's `Currency`, amount and date (F02) feed correctly into F03's per-record
       conversion, and the resulting converted portfolio/broker total is arithmetically consistent with
       summing each record's own converted amount
 - [x] F03's reporting-currency setting and converted totals render identically (same numbers, same
