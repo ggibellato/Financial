@@ -5,3 +5,5 @@ export const COST_BASIS_METHOD_LABELS: Record<CostBasisMethod, string> = {
   FIFO: 'FIFO',
   SpecificId: 'Specific ID',
 }
+
+export const COST_BASIS_METHODS: CostBasisMethod[] = ['AverageCost', 'FIFO', 'SpecificId']

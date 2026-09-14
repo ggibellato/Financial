@@ -21,31 +21,60 @@ import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
 import { useFormPanelStyles } from '../components/formPanelStyles'
 import { useBrokers } from '../hooks/useBrokers'
-import type { BrokerDto } from '../api/types'
+import type { BrokerDto, CostBasisMethod } from '../api/types'
+import { getErrorMessage } from '../utils/formatters'
 import './BrokersPage.css'
 
 export default function BrokersPage() {
   const styles = useFormPanelStyles()
-  const { brokers, isLoading, error, retry, createBroker, updateBroker, deletingName, deleteError, deleteBroker } =
-    useBrokers()
+  const {
+    brokers,
+    isLoading,
+    error,
+    retry,
+    createBroker,
+    updateBroker,
+    setCostBasisMethod,
+    deletingName,
+    deleteError,
+    deleteBroker,
+  } = useBrokers()
   const [editingBroker, setEditingBroker] = useState<BrokerDto | null>(null)
   const [isCreating, setIsCreating] = useState(false)
   const [confirmingDelete, setConfirmingDelete] = useState<BrokerDto | null>(null)
-
-  const handleSubmit = (name: string, currency: string) =>
-    editingBroker
-      ? updateBroker(editingBroker.name, { name, currency })
-      : createBroker({ name, currency, costBasisMethod: null })
 
   const closeFormDialog = () => {
     setEditingBroker(null)
     setIsCreating(false)
   }
 
-  const handleFormSubmit = async (name: string, currency: string) => {
-    const result = await handleSubmit(name, currency)
-    closeFormDialog()
-    return result
+  const handleFormSubmit = async (name: string, currency: string, costBasisMethod: CostBasisMethod) => {
+    if (!editingBroker) {
+      const created = await createBroker({ name, currency, costBasisMethod })
+      closeFormDialog()
+      return created
+    }
+
+    const renamed = await updateBroker(editingBroker.name, { name, currency })
+    // The rename already committed server-side by this point, so a thrown error from here on
+    // must not be reported as if nothing was saved - and a resubmit must target the new name,
+    // not the one that no longer exists.
+    setEditingBroker(renamed)
+    if (costBasisMethod === editingBroker.costBasisMethod) {
+      closeFormDialog()
+      return renamed
+    }
+
+    try {
+      const updated = await setCostBasisMethod(renamed.name, costBasisMethod)
+      closeFormDialog()
+      return updated
+    } catch (err: unknown) {
+      throw new Error(
+        `"${renamed.name}" was saved, but its cost basis method could not be changed: ${getErrorMessage(err, 'unknown error')}`,
+        { cause: err },
+      )
+    }
   }
 
   const handleConfirmDelete = () => {

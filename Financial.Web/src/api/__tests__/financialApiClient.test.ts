@@ -18,6 +18,7 @@ import type {
   BrokerDto,
   BrokerNodeDto,
   BrokerUpdateDto,
+  SetCostBasisMethodRequestDto,
   CalendarConnectionStatusDto,
   CalendarDisconnectResultDto,
   CardStatementDto,
@@ -730,6 +731,21 @@ describe('financialApiClient', () => {
     expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/brokers/XPI`)
+    expect(init?.method).toBe('PUT')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('puts a broker cost basis method change', async () => {
+    const requestBody: SetCostBasisMethodRequestDto = { method: 'FIFO' }
+    const responseBody: BrokerDto = { name: 'XPI', currency: 'BRL', status: 'Active', portfolioCount: 0, costBasisMethod: 'FIFO' }
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.setCostBasisMethod('XPI', requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/brokers/XPI/cost-basis-method`)
     expect(init?.method).toBe('PUT')
     expect(JSON.parse(init?.body as string)).toEqual(requestBody)
   })

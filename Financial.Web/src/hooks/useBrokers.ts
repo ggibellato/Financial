@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
-import type { BrokerCreateDto, BrokerDto, BrokerUpdateDto } from '../api/types'
+import type { BrokerCreateDto, BrokerDto, BrokerUpdateDto, CostBasisMethod } from '../api/types'
 import { getErrorMessage } from '../utils/formatters'
 
 interface BrokersState {
@@ -58,6 +58,7 @@ export interface BrokersData {
   retry: () => void
   createBroker: (request: BrokerCreateDto) => Promise<BrokerDto>
   updateBroker: (currentName: string, request: BrokerUpdateDto) => Promise<BrokerDto>
+  setCostBasisMethod: (name: string, method: CostBasisMethod) => Promise<BrokerDto>
   deletingName: string | null
   deleteError: string | null
   deleteBroker: (name: string) => void
@@ -90,6 +91,12 @@ export function useBrokers(): BrokersData {
     return updated
   }, [])
 
+  const setCostBasisMethod = useCallback(async (name: string, method: CostBasisMethod) => {
+    const updated = await apiClient.setCostBasisMethod(name, { method })
+    dispatch({ type: 'RETRY' })
+    return updated
+  }, [])
+
   const deleteBroker = useCallback((name: string) => {
     dispatch({ type: 'DELETE_START', payload: name })
 
@@ -111,6 +118,7 @@ export function useBrokers(): BrokersData {
     retry,
     createBroker,
     updateBroker,
+    setCostBasisMethod,
     deletingName: state.deletingName,
     deleteError: state.deleteError,
     deleteBroker,
