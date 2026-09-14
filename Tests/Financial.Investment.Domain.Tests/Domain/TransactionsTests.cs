@@ -339,6 +339,23 @@ public class TransactionsTests
         _sut.AverageSellPrice.Should().BeNull("a TransferOut is not a sale for this metric's purpose");
     }
 
+    [Fact]
+    public void AveragePrice_And_RealizedCapitalGain_AreUnaffectedByComputingOpenLots()
+    {
+        var buy = Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 1m);
+        var sell = Transaction.Create(new DateTime(2024, 2, 1), Transaction.TransactionType.Sell, 4m, 120m, 1m);
+        _sut.Add(buy);
+        _sut.Add(sell);
+
+        var averagePriceBefore = _sut.AveragePrice;
+        var realizedGainBefore = _sut.RealizedCapitalGain;
+
+        Financial.Investment.Domain.Rules.OpenLotTracker.GetOpenLots(_sut);
+
+        _sut.AveragePrice.Should().Be(averagePriceBefore, "AverageCost's replay is unchanged by this feature");
+        _sut.RealizedCapitalGain.Should().Be(realizedGainBefore, "AverageCost's replay is unchanged by this feature");
+    }
+
     [Theory]
     [InlineData(Transaction.TransactionType.Fee)]
     [InlineData(Transaction.TransactionType.CapitalCall)]

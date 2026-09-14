@@ -10,6 +10,11 @@ public class Broker
     public string Name { get; private set; } = string.Empty;
     public string Currency { get; private set; } = string.Empty;
 
+    /// <summary>Defaults to <see cref="CostBasisMethod.AverageCost"/> so a pre-existing data file with
+    /// no "CostBasisMethod" key (every broker before this feature) keeps today's behaviour unchanged,
+    /// the same default-on-missing-key pattern as <see cref="Investments.ReportingCurrencyEnabled"/>.</summary>
+    public CostBasisMethod CostBasisMethod { get; private set; } = CostBasisMethod.AverageCost;
+
     private List<Portfolio> _portfolios = new List<Portfolio>();
     public IReadOnlyCollection<Portfolio> Portfolios { get => _portfolios.AsReadOnly(); private set => SetPortfolios(value); }
     private void SetPortfolios(IReadOnlyCollection<Portfolio> data) => EntityGuard.ReplaceAll(_portfolios, data);
@@ -31,6 +36,13 @@ public class Broker
         Name = name;
         Currency = currency;
     }
+
+    /// <summary>
+    /// Sets this broker's cost-basis method. Storing the value is all this does — regenerating
+    /// existing DisposalRecords for the new method is a separate future concern (recalculation
+    /// policy), not something this method triggers on its own.
+    /// </summary>
+    public void SetCostBasisMethod(CostBasisMethod costBasisMethod) => CostBasisMethod = costBasisMethod;
 
     public Portfolio AddPortfolio(string name)
     {
