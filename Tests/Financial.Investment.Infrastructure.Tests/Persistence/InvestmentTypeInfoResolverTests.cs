@@ -207,4 +207,38 @@ public class InvestmentTypeInfoResolverTests
         deserialized.Should().NotBeNull();
         deserialized!.PriceSnapshots.Should().BeEmpty();
     }
+
+    [Fact]
+    public void GetTypeInfo_DeserializesBrokerJsonWithoutCostBasisMethodProperty_DefaultsToAverageCost()
+    {
+        // Simulates a data file written before this feature existed: no "CostBasisMethod"
+        // property at all, not even an explicit "AverageCost" entry.
+        var options = CreateOptions();
+        const string legacyJson = """
+            {
+                "Name": "Broker A",
+                "Currency": "USD",
+                "Portfolios": []
+            }
+            """;
+
+        var deserialized = JsonSerializer.Deserialize<Broker>(legacyJson, options);
+
+        deserialized.Should().NotBeNull();
+        deserialized!.CostBasisMethod.Should().Be(CostBasisMethod.AverageCost);
+    }
+
+    [Fact]
+    public void GetTypeInfo_RoundTripsBrokerCostBasisMethod()
+    {
+        var options = CreateOptions();
+        var broker = Broker.Create("Broker A", "USD");
+        broker.SetCostBasisMethod(CostBasisMethod.FIFO);
+
+        var json = JsonSerializer.Serialize(broker, options);
+        var deserialized = JsonSerializer.Deserialize<Broker>(json, options);
+
+        deserialized.Should().NotBeNull();
+        deserialized!.CostBasisMethod.Should().Be(CostBasisMethod.FIFO);
+    }
 }
