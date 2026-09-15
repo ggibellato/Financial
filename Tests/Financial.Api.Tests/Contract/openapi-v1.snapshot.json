@@ -928,6 +928,14 @@
         },
         "type": "object"
       },
+      "CalculationStatus": {
+        "enum": [
+          "RequiresReview",
+          "Incomplete",
+          "Estimated",
+          "Final"
+        ]
+      },
       "CalendarConnectionStatusDTO": {
         "properties": {
           "accountEmail": {
@@ -3653,6 +3661,59 @@
         ],
         "type": "object"
       },
+      "TaxCategoryTotalDTO": {
+        "properties": {
+          "eventCategory": {
+            "$ref": "#/components/schemas/EventCategory"
+          },
+          "totalCostBasis": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "totalGainLoss": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "totalGrossAmount": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "totalNetAmount": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "totalProceeds": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "totalWithheldAmount": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "required": [
+          "eventCategory"
+        ],
+        "type": "object"
+      },
       "TaxRuleCreateDTO": {
         "properties": {
           "description": {
@@ -3749,6 +3810,138 @@
         "required": [
           "label",
           "effectiveFrom"
+        ],
+        "type": "object"
+      },
+      "TaxWorkbookDTO": {
+        "properties": {
+          "calculationStatus": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CalculationStatus"
+              }
+            ]
+          },
+          "categoryTotals": {
+            "items": {
+              "$ref": "#/components/schemas/TaxCategoryTotalDTO"
+            },
+            "type": "array"
+          },
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/TaxWorkbookEntryDTO"
+            },
+            "type": "array"
+          },
+          "jurisdiction": {
+            "$ref": "#/components/schemas/Jurisdiction"
+          },
+          "taxYear": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "jurisdiction",
+          "taxYear",
+          "entries",
+          "categoryTotals"
+        ],
+        "type": "object"
+      },
+      "TaxWorkbookEntryDTO": {
+        "properties": {
+          "calculationStatus": {
+            "$ref": "#/components/schemas/CalculationStatus"
+          },
+          "costBasis": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "date": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "eventCategory": {
+            "$ref": "#/components/schemas/EventCategory"
+          },
+          "evidenceReference": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "gainLoss": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "grossAmount": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "netAmount": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "proceeds": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "taxRuleLabel": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "withheldAmount": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "date",
+          "eventCategory",
+          "calculationStatus",
+          "evidenceReference"
+        ],
+        "type": "object"
+      },
+      "TaxWorkbookOptionDTO": {
+        "properties": {
+          "jurisdiction": {
+            "$ref": "#/components/schemas/Jurisdiction"
+          },
+          "taxYear": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "jurisdiction",
+          "taxYear"
         ],
         "type": "object"
       },
@@ -10662,6 +10855,77 @@
         ]
       }
     },
+    "/tax-workbook": {
+      "get": {
+        "parameters": [
+          {
+            "description": "",
+            "in": "query",
+            "name": "jurisdiction",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "",
+            "in": "query",
+            "name": "taxYear",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxWorkbookDTO"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "TaxWorkbook"
+        ]
+      }
+    },
+    "/tax-workbook/options": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TaxWorkbookOptionDTO"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "TaxWorkbook"
+        ]
+      }
+    },
     "/tithe/month/{year}/{month}": {
       "get": {
         "parameters": [
@@ -11605,6 +11869,9 @@
     },
     {
       "name": "TaxRules"
+    },
+    {
+      "name": "TaxWorkbook"
     },
     {
       "name": "Tithe"

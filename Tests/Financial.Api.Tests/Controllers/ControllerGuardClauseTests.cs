@@ -589,6 +589,13 @@ public class ControllerGuardClauseTests
     }
 
     [Fact]
+    public void TaxWorkbookController_NullTaxWorkbookService_Throws()
+    {
+        Action act = () => new TaxWorkbookController(null!);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("taxWorkbookService");
+    }
+
+    [Fact]
     public async Task TaxRulesController_CreateTaxRule_NullRequest_ReturnsBadRequest()
     {
         var controller = new TaxRulesController(new StubTaxRuleService());

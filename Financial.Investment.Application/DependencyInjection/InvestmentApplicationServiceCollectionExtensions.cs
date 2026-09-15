@@ -33,6 +33,7 @@ public static class InvestmentApplicationServiceCollectionExtensions
         services.AddSingleton<IProfitCalculationService, ProfitCalculationService>();
         services.AddSingleton<IDataQualityReportService, DataQualityReportService>();
         services.AddSingleton<ITaxRuleService, TaxRuleService>();
+        services.AddSingleton<ITaxWorkbookService, TaxWorkbookService>();
 
         return services;
     }
