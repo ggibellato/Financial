@@ -70,6 +70,31 @@ public class InvestmentSerializerAdapterTests
     }
 
     [Fact]
+    public void SerializeDeserialize_RoundTripPreservesTaxRules()
+    {
+        var investments = Investments.Create();
+        investments.CreateTaxRule(
+            Jurisdiction.BR, EventCategory.Dividend, "BR dividend withholding", "desc",
+            new DateOnly(2026, 1, 1), new DateOnly(2027, 1, 1));
+        investments.CreateTaxRule(
+            Jurisdiction.UK, EventCategory.Interest, "UK interest", "desc2",
+            new DateOnly(2026, 1, 1), null);
+
+        var json = Serializer.Serialize(investments);
+        var result = Serializer.Deserialize(json);
+
+        result.TaxRules.Should().HaveCount(2);
+        var bounded = result.TaxRules.Should().ContainSingle(r => r.Jurisdiction == Jurisdiction.BR).Subject;
+        bounded.EventCategory.Should().Be(EventCategory.Dividend);
+        bounded.Label.Should().Be("BR dividend withholding");
+        bounded.EffectiveFrom.Should().Be(new DateOnly(2026, 1, 1));
+        bounded.EffectiveTo.Should().Be(new DateOnly(2027, 1, 1));
+
+        var openEnded = result.TaxRules.Should().ContainSingle(r => r.Jurisdiction == Jurisdiction.UK).Subject;
+        openEnded.EffectiveTo.Should().BeNull();
+    }
+
+    [Fact]
     public void Serialize_ProducesValidJson()
     {
         var investments = Investments.Create();

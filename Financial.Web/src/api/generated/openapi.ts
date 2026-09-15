@@ -5129,6 +5129,182 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/tax-rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TaxRuleDTO"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/*+json": null | components["schemas"]["TaxRuleCreateDTO"];
+                    "application/json": null | components["schemas"]["TaxRuleCreateDTO"];
+                    "text/json": null | components["schemas"]["TaxRuleCreateDTO"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TaxRuleDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tax-rules/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/*+json": null | components["schemas"]["TaxRuleUpdateDTO"];
+                    "application/json": null | components["schemas"]["TaxRuleUpdateDTO"];
+                    "text/json": null | components["schemas"]["TaxRuleUpdateDTO"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TaxRuleDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/tithe/month/{year}/{month}": {
         parameters: {
             query?: never;
@@ -6329,6 +6505,8 @@ export interface components {
             /** Format: int32 */
             year: number;
         };
+        /** @enum {unknown} */
+        EventCategory: "CapitalGain" | "Dividend" | "Interest" | "SecuritiesLendingIncome";
         ExpenseCreateDTO: {
             /** Format: uuid */
             categoryId: string;
@@ -6624,6 +6802,8 @@ export interface components {
             /** Format: double */
             value: number;
         };
+        /** @enum {unknown} */
+        Jurisdiction: "BR" | "UK";
         MaeLedgerEntryCreateDTO: {
             /** Format: date */
             date: string;
@@ -6930,6 +7110,36 @@ export interface components {
         SyncStatusResponseDTO: {
             cashFlow: components["schemas"]["SyncStatusDTO"];
             investment: components["schemas"]["SyncStatusDTO"];
+        };
+        TaxRuleCreateDTO: {
+            description?: string;
+            /** Format: date */
+            effectiveFrom: string;
+            /** Format: date */
+            effectiveTo?: null | string;
+            eventCategory: components["schemas"]["EventCategory"];
+            jurisdiction: components["schemas"]["Jurisdiction"];
+            label: string;
+        };
+        TaxRuleDTO: {
+            description?: string;
+            /** Format: date */
+            effectiveFrom: string;
+            /** Format: date */
+            effectiveTo?: null | string;
+            eventCategory: components["schemas"]["EventCategory"];
+            /** Format: uuid */
+            id: string;
+            jurisdiction: components["schemas"]["Jurisdiction"];
+            label: string;
+        };
+        TaxRuleUpdateDTO: {
+            description?: string;
+            /** Format: date */
+            effectiveFrom: string;
+            /** Format: date */
+            effectiveTo?: null | string;
+            label: string;
         };
         TitheCarryForwardDTO: {
             /** Format: double */
