@@ -24,4 +24,5 @@ public interface IDialogService
     bool ShowReserveBucketFormDialog(ReserveBucketFormDialogViewModel viewModel);
     bool ShowRecurringBillFormDialog(RecurringBillFormDialogViewModel viewModel);
     bool ShowUkExpensePromptDialog(UkExpensePromptDialogViewModel viewModel);
+    string? ShowSaveFileDialog(string suggestedFileName, string filter);
 }

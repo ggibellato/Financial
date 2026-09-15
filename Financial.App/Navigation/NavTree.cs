@@ -32,6 +32,7 @@ public static class NavTree
                 new NavChild("historic-investments", "Historic Investments", "historic-investments"),
                 new NavChild("dividend-check", "Shares Dividend check", "dividend-check"),
                 new NavChild("current-values", "Read Assets current values", "current-values"),
+                new NavChild("tax", "Tax", "tax"),
             ]),
         new NavCategory(
             "cashflow",

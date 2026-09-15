@@ -334,6 +334,36 @@ internal sealed class StubReserveBucketService : IReserveBucketService
     }
 }
 
+internal sealed class StubTaxWorkbookService : ITaxWorkbookService
+{
+    public List<TaxWorkbookOptionDTO> Options { get; set; } = [];
+    public Func<string, string, TaxWorkbookDTO>? WorkbookFactory { get; set; }
+    public Exception? ThrowOnGetWorkbookOptions { get; set; }
+    public Exception? ThrowOnGetWorkbook { get; set; }
+    public (string Jurisdiction, string TaxYear)? LastGetWorkbookRequest { get; private set; }
+
+    public IReadOnlyList<TaxWorkbookOptionDTO> GetWorkbookOptions() =>
+        ThrowOnGetWorkbookOptions is null ? Options : throw ThrowOnGetWorkbookOptions;
+
+    public TaxWorkbookDTO GetWorkbook(string jurisdiction, string taxYear)
+    {
+        LastGetWorkbookRequest = (jurisdiction, taxYear);
+        if (ThrowOnGetWorkbook is not null)
+        {
+            throw ThrowOnGetWorkbook;
+        }
+
+        return WorkbookFactory?.Invoke(jurisdiction, taxYear) ?? new TaxWorkbookDTO
+        {
+            Jurisdiction = Enum.Parse<Jurisdiction>(jurisdiction),
+            TaxYear = taxYear,
+            Entries = [],
+            CategoryTotals = [],
+            CalculationStatus = null,
+        };
+    }
+}
+
 internal sealed class StubMensaisService : IMensaisService
 {
     public List<RecurringBillDTO> Bills { get; set; } = [];
@@ -835,5 +865,14 @@ internal sealed class StubDialogService : IDialogService
         LastUkExpensePromptDialog = viewModel;
         OnShowUkExpensePromptDialog?.Invoke(viewModel);
         return ShowUkExpensePromptDialogResult;
+    }
+
+    public string? SaveFileDialogResult { get; set; }
+    public (string SuggestedFileName, string Filter)? LastSaveFileDialogRequest { get; private set; }
+
+    public string? ShowSaveFileDialog(string suggestedFileName, string filter)
+    {
+        LastSaveFileDialogRequest = (suggestedFileName, filter);
+        return SaveFileDialogResult;
     }
 }
