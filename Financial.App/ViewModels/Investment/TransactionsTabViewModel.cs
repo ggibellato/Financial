@@ -15,6 +15,8 @@ public class TransactionsTabViewModel : ViewModelBase
 {
     private readonly ITransactionService? _transactionService;
     private readonly ITransactionQueryService _transactionQueryService;
+    private readonly INavigationService? _navigationService;
+    private readonly Func<bool> _isSpecificIdBroker;
     private readonly InvestmentScope _scope;
     private readonly Func<bool> _hasContext;
     private readonly Func<string> _brokerName;
@@ -61,10 +63,14 @@ public class TransactionsTabViewModel : ViewModelBase
         Func<string> portfolioName,
         Func<string> assetName,
         Action<AssetDetailsDTO> applyDetails,
-        Action<string, string, MessageBoxImage> showMessage)
+        Action<string, string, MessageBoxImage> showMessage,
+        INavigationService? navigationService = null,
+        Func<bool>? isSpecificIdBroker = null)
     {
         _transactionService = transactionService;
         _transactionQueryService = transactionQueryService ?? throw new ArgumentNullException(nameof(transactionQueryService));
+        _navigationService = navigationService;
+        _isSpecificIdBroker = isSpecificIdBroker ?? (() => false);
         _scope = scope;
         _hasContext = hasContext ?? throw new ArgumentNullException(nameof(hasContext));
         _brokerName = brokerName ?? throw new ArgumentNullException(nameof(brokerName));
@@ -265,7 +271,8 @@ public class TransactionsTabViewModel : ViewModelBase
                     Quantity = dialogData.Value.Quantity,
                     UnitPrice = dialogData.Value.UnitPrice,
                     Fees = dialogData.Value.Fees,
-                    Withheld = dialogData.Value.Withheld
+                    Withheld = dialogData.Value.Withheld,
+                    SpecificLotAllocations = dialogData.Value.SpecificLotAllocations
                 });
             }
             catch (Exception ex)
@@ -444,7 +451,9 @@ public class TransactionsTabViewModel : ViewModelBase
                 return;
             }
 
-            tcs.SetResult(new TransactionDialogData(vm.TransactionId, vm.Date, vm.Type, vm.Quantity, vm.UnitPrice, vm.Fees, vm.Withheld));
+            tcs.SetResult(new TransactionDialogData(
+                vm.TransactionId, vm.Date, vm.Type, vm.Quantity, vm.UnitPrice, vm.Fees, vm.Withheld,
+                BuildSpecificLotAllocations(vm)));
         }
 
         vm.CloseRequested += OnClosed;
@@ -473,11 +482,51 @@ public class TransactionsTabViewModel : ViewModelBase
         return ShowTransactionFormAsync(vm);
     }
 
-    private Task<TransactionDialogData?> ShowAddTransactionFormAsync() =>
-        ShowTransactionFormAsync(TransactionDialogViewModel.CreateForAdd(
+    internal Task<TransactionDialogData?> ShowAddTransactionFormAsync()
+    {
+        TransactionDialogViewModel? vm = null;
+        vm = TransactionDialogViewModel.CreateForAdd(
             _brokerName(), _portfolioName(), _assetName(),
             _lastUsedTransactionDate ?? DateTime.Today,
-            _lastUsedTransactionType ?? "Buy"));
+            _lastUsedTransactionType ?? "Buy",
+            _isSpecificIdBroker(),
+            () => _ = FetchOpenLotsAsync(vm!));
+        return ShowTransactionFormAsync(vm);
+    }
+
+    private static IReadOnlyList<SpecificLotAllocationDTO>? BuildSpecificLotAllocations(TransactionDialogViewModel vm)
+    {
+        if (!vm.RequiresLotAllocation)
+        {
+            return null;
+        }
+
+        return vm.OpenLots
+            .Where(row => row.Quantity > 0)
+            .Select(row => new SpecificLotAllocationDTO { SourceTransactionId = row.SourceTransactionId, Quantity = row.Quantity })
+            .ToList();
+    }
+
+    internal async Task FetchOpenLotsAsync(TransactionDialogViewModel vm)
+    {
+        vm.SetOpenLotsLoading();
+
+        if (_navigationService == null)
+        {
+            vm.SetOpenLotsError("Unable to load open lots.");
+            return;
+        }
+
+        try
+        {
+            var lots = await Task.Run(() => _navigationService.GetOpenLots(_brokerName(), _portfolioName(), _assetName(), _scope));
+            vm.SetOpenLots(lots ?? []);
+        }
+        catch
+        {
+            vm.SetOpenLotsError("Unable to load open lots.");
+        }
+    }
 
     private Task<TransactionDialogData?> ShowUpdateTransactionFormAsync()
     {
@@ -593,4 +642,5 @@ public readonly record struct TransactionDialogData(
     decimal Quantity,
     decimal UnitPrice,
     decimal Fees,
-    decimal Withheld);
+    decimal Withheld,
+    IReadOnlyList<SpecificLotAllocationDTO>? SpecificLotAllocations = null);

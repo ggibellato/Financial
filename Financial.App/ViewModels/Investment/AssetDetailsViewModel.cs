@@ -88,6 +88,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private decimal? _convertedTotalReturnNetOfTax;
     private bool _isPartial;
     private bool _isReportingCurrencyUnavailable;
+    private CostBasisMethod _costBasisMethod = CostBasisMethod.AverageCost;
 
     public string AssetName { get => _assetName; private set => SetProperty(ref _assetName, value); }
     public string BrokerName { get => _brokerName; private set => SetProperty(ref _brokerName, value); }
@@ -361,6 +362,12 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
 
     public DisposalsTabViewModel Disposals { get; }
 
+    public CostBasisMethod CostBasisMethod
+    {
+        get => _costBasisMethod;
+        private set => SetProperty(ref _costBasisMethod, value);
+    }
+
     public RelayCommand RefreshTodayInfoCommand => _refreshTodayInfoCommand;
     public RelayCommand CopyAssetNameCommand => _copyAssetNameCommand;
 
@@ -396,7 +403,9 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
             () => PortfolioName,
             () => AssetName,
             details => LoadAssetDetails(details),
-            (message, caption, image) => MessageBox.Show(message, caption, MessageBoxButton.OK, image));
+            (message, caption, image) => MessageBox.Show(message, caption, MessageBoxButton.OK, image),
+            _navigationService,
+            () => CostBasisMethod == CostBasisMethod.SpecificId);
         Credits = new CreditsTabViewModel(
             _creditService,
             () => HasAssetContext,
@@ -493,6 +502,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         PriceHistory.Load(BuildCreditsAssetKey(details.BrokerName, details.PortfolioName, details.Name), details.PriceSnapshots, details.Transactions);
 
         Disposals.Load(BuildCreditsAssetKey(details.BrokerName, details.PortfolioName, details.Name), details.DisposalRecords);
+        CostBasisMethod = details.CostBasisMethod;
 
         UpdateCommandStates();
     }
@@ -537,6 +547,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         Credits.Clear();
         PriceHistory.Clear();
         Disposals.Clear();
+        CostBasisMethod = CostBasisMethod.AverageCost;
         HasCreditsContext = false;
         Transactions.Clear();
         UpdateCommandStates();

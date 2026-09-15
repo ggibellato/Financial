@@ -51,6 +51,9 @@ internal sealed class FakeNavigationService : INavigationService
     public string? LastPortfolioName { get; private set; }
     public string? LastAssetName { get; private set; }
     public InvestmentScope? LastScope { get; private set; }
+    public IReadOnlyList<OpenLotDTO> OpenLotsToReturn { get; set; } = [];
+    public int GetOpenLotsCallCount { get; private set; }
+    public Exception? ThrowOnGetOpenLots { get; set; }
 
     public TreeNodeDTO GetNavigationTree(InvestmentScope scope = InvestmentScope.Active) =>
         new() { NodeType = TreeNodeType.Broker, DisplayName = "Root", Metadata = [], Children = [] };
@@ -66,7 +69,17 @@ internal sealed class FakeNavigationService : INavigationService
 
     public IEnumerable<BrokerNodeDTO> GetBrokers(InvestmentScope scope = InvestmentScope.Active) => [];
     public IEnumerable<AssetNodeDTO> GetAssetsByBrokerPortfolio(string brokerName, string portfolioName) => [];
-    public IReadOnlyList<OpenLotDTO>? GetOpenLots(string brokerName, string portfolioName, string assetName, InvestmentScope scope = InvestmentScope.Active) => [];
+
+    public IReadOnlyList<OpenLotDTO>? GetOpenLots(string brokerName, string portfolioName, string assetName, InvestmentScope scope = InvestmentScope.Active)
+    {
+        GetOpenLotsCallCount++;
+        if (ThrowOnGetOpenLots is not null)
+        {
+            throw ThrowOnGetOpenLots;
+        }
+
+        return OpenLotsToReturn;
+    }
 }
 
 internal sealed class FakePortfolioAssetSummaryService : IPortfolioAssetSummaryService

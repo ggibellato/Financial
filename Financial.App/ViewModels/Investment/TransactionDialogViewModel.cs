@@ -1,6 +1,10 @@
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Validation;
 using Financial.Investment.Domain.Entities;
 using Financial.Investment.Domain.Rules;
+using Financial.Presentation.App.Helpers;
 
 namespace Financial.Presentation.App.ViewModels.Investment;
 
@@ -13,6 +17,12 @@ public enum TransactionDialogMode
 
 public sealed class TransactionDialogViewModel : ViewModelBase
 {
+    private static readonly HashSet<string> LotAllocationTypes = new(StringComparer.OrdinalIgnoreCase) { "Sell", "Redemption" };
+
+    private readonly bool _isSpecificIdBroker;
+    private readonly Action? _fetchOpenLots;
+    private bool _openLotsFetchStarted;
+
     private DateTime _date;
     private string _type = string.Empty;
     private decimal _quantity;
@@ -20,6 +30,8 @@ public sealed class TransactionDialogViewModel : ViewModelBase
     private decimal _fees;
     private decimal _withheld;
     private string _validationMessage = string.Empty;
+    private bool _isLoadingOpenLots;
+    private string? _openLotsError;
 
     public TransactionDialogMode Mode { get; }
     public Guid TransactionId { get; }
@@ -65,12 +77,56 @@ public sealed class TransactionDialogViewModel : ViewModelBase
         {
             if (SetProperty(ref _type, value))
             {
-                Validate();
                 OnPropertyChanged(nameof(HasQuantityEffect));
                 OnPropertyChanged(nameof(NetCash));
+                OnPropertyChanged(nameof(RequiresLotAllocation));
+                OnPropertyChanged(nameof(IsAllocationExact));
+                if (RequiresLotAllocation) EnsureOpenLotsRequested();
+                Validate();
             }
         }
     }
+
+    /// <summary>True only when entering (never editing) a Sell/Redemption against a SpecificId
+    /// broker - matches F04's Decision 6: lot allocation is a creation-time-only control.</summary>
+    public bool RequiresLotAllocation =>
+        Mode == TransactionDialogMode.Add && _isSpecificIdBroker && LotAllocationTypes.Contains(Type);
+
+    public ObservableCollection<LotAllocationRowViewModel> OpenLots { get; } = new();
+
+    public bool IsLoadingOpenLots
+    {
+        get => _isLoadingOpenLots;
+        private set
+        {
+            if (SetProperty(ref _isLoadingOpenLots, value))
+            {
+                Validate();
+            }
+        }
+    }
+
+    public string? OpenLotsError
+    {
+        get => _openLotsError;
+        private set
+        {
+            if (SetProperty(ref _openLotsError, value))
+            {
+                OnPropertyChanged(nameof(HasOpenLotsError));
+                Validate();
+            }
+        }
+    }
+
+    public bool HasOpenLotsError => OpenLotsError != null;
+
+    public decimal AllocatedTotal => LotAllocationCalculator.SumAllocations(OpenLots);
+    public bool HasOverAllocatedLot => LotAllocationCalculator.HasOverAllocatedLot(OpenLots);
+    public bool IsAllocationExact => LotAllocationCalculator.IsAllocationExact(AllocatedTotal, Quantity);
+    public bool HasSaleQuantity => Quantity > 0;
+
+    public RelayCommand RetryOpenLotsCommand { get; }
 
     public decimal Quantity
     {
@@ -79,8 +135,10 @@ public sealed class TransactionDialogViewModel : ViewModelBase
         {
             if (SetProperty(ref _quantity, value))
             {
-                Validate();
                 OnPropertyChanged(nameof(NetCash));
+                OnPropertyChanged(nameof(IsAllocationExact));
+                OnPropertyChanged(nameof(HasSaleQuantity));
+                Validate();
             }
         }
     }
@@ -173,13 +231,17 @@ public sealed class TransactionDialogViewModel : ViewModelBase
         decimal quantity,
         decimal unitPrice,
         decimal fees,
-        decimal withheld)
+        decimal withheld,
+        bool isSpecificIdBroker = false,
+        Action? fetchOpenLots = null)
     {
         Mode = mode;
         BrokerName = brokerName;
         PortfolioName = portfolioName;
         AssetName = assetName;
         TransactionId = transactionId;
+        _isSpecificIdBroker = isSpecificIdBroker;
+        _fetchOpenLots = fetchOpenLots;
 
         _date = date;
         _type = type;
@@ -190,14 +252,24 @@ public sealed class TransactionDialogViewModel : ViewModelBase
 
         ConfirmCommand = new RelayCommand(Confirm, CanConfirm);
         CancelCommand = new RelayCommand(Cancel);
+        RetryOpenLotsCommand = new RelayCommand(RetryOpenLots);
+
+        if (RequiresLotAllocation) EnsureOpenLotsRequested();
 
         Validate();
     }
 
     public static TransactionDialogViewModel CreateForAdd(string brokerName, string portfolioName, string assetName) =>
-        CreateForAdd(brokerName, portfolioName, assetName, DateTime.Today, "Buy");
+        CreateForAdd(brokerName, portfolioName, assetName, DateTime.Today, "Buy", false, null);
 
-    public static TransactionDialogViewModel CreateForAdd(string brokerName, string portfolioName, string assetName, DateTime date, string type)
+    public static TransactionDialogViewModel CreateForAdd(
+        string brokerName,
+        string portfolioName,
+        string assetName,
+        DateTime date,
+        string type,
+        bool isSpecificIdBroker = false,
+        Action? fetchOpenLots = null)
     {
         return new TransactionDialogViewModel(
             TransactionDialogMode.Add,
@@ -210,7 +282,9 @@ public sealed class TransactionDialogViewModel : ViewModelBase
             0,
             0,
             0,
-            0);
+            0,
+            isSpecificIdBroker,
+            fetchOpenLots);
     }
 
     public static TransactionDialogViewModel CreateForUpdate(string brokerName, string portfolioName, string assetName, Guid id, DateTime date, string type, decimal quantity, decimal unitPrice, decimal fees, decimal withheld)
@@ -277,7 +351,17 @@ public sealed class TransactionDialogViewModel : ViewModelBase
             return true;
         }
 
-        return string.IsNullOrWhiteSpace(ValidationMessage);
+        if (!string.IsNullOrWhiteSpace(ValidationMessage))
+        {
+            return false;
+        }
+
+        if (!RequiresLotAllocation)
+        {
+            return true;
+        }
+
+        return !IsLoadingOpenLots && !HasOpenLotsError && IsAllocationExact && !HasOverAllocatedLot;
     }
 
     private void Validate()
@@ -291,5 +375,67 @@ public sealed class TransactionDialogViewModel : ViewModelBase
             Fees,
             Withheld);
         ConfirmCommand.RaiseCanExecuteChanged();
+    }
+
+    private void EnsureOpenLotsRequested()
+    {
+        if (_openLotsFetchStarted)
+        {
+            return;
+        }
+
+        _openLotsFetchStarted = true;
+        _fetchOpenLots?.Invoke();
+    }
+
+    private void RetryOpenLots() => _fetchOpenLots?.Invoke();
+
+    public void SetOpenLotsLoading()
+    {
+        OpenLots.Clear();
+        IsLoadingOpenLots = true;
+        OpenLotsError = null;
+    }
+
+    public void SetOpenLots(IReadOnlyList<OpenLotDTO> lots)
+    {
+        foreach (var row in OpenLots)
+        {
+            row.PropertyChanged -= OnOpenLotRowChanged;
+        }
+
+        OpenLots.Clear();
+        foreach (var lot in lots)
+        {
+            var row = new LotAllocationRowViewModel(lot);
+            row.PropertyChanged += OnOpenLotRowChanged;
+            OpenLots.Add(row);
+        }
+
+        IsLoadingOpenLots = false;
+        OpenLotsError = null;
+        RaiseAllocationChanged();
+    }
+
+    public void SetOpenLotsError(string message)
+    {
+        IsLoadingOpenLots = false;
+        OpenLotsError = message;
+    }
+
+    private void OnOpenLotRowChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(LotAllocationRowViewModel.Quantity))
+        {
+            RaiseAllocationChanged();
+        }
+    }
+
+    private void RaiseAllocationChanged()
+    {
+        OnPropertyChanged(nameof(AllocatedTotal));
+        OnPropertyChanged(nameof(HasOverAllocatedLot));
+        OnPropertyChanged(nameof(IsAllocationExact));
+        Validate();
     }
 }

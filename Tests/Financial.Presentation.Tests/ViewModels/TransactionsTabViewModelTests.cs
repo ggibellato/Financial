@@ -18,7 +18,9 @@ public class TransactionsTabViewModelTests
     private static (TransactionsTabViewModel ViewModel, StubTransactionService Service, Spy Spy) Build(
         bool hasContext = true,
         ITransactionService? service = null,
-        ITransactionQueryService? queryService = null)
+        ITransactionQueryService? queryService = null,
+        INavigationService? navigationService = null,
+        Func<bool>? isSpecificIdBroker = null)
     {
         var stubService = service as StubTransactionService ?? new StubTransactionService();
         var spy = new Spy();
@@ -31,7 +33,9 @@ public class TransactionsTabViewModelTests
             () => PortfolioName,
             () => AssetName,
             spy.ApplyDetails,
-            spy.ShowMessage);
+            spy.ShowMessage,
+            navigationService,
+            isSpecificIdBroker);
         return (viewModel, stubService, spy);
     }
 
@@ -563,6 +567,106 @@ public class TransactionsTabViewModelTests
         viewModel.SelectedTransaction.Should().Be(tx);
         svc.DeleteCallCount.Should().Be(0);
         spy.Messages.Should().ContainSingle(m => m.Image == MessageBoxImage.Warning);
+    }
+
+    [Fact]
+    public void ShowAddTransactionFormAsync_SpecificIdBroker_DialogRequiresLotAllocationForSellType()
+    {
+        var (viewModel, _, _) = Build(isSpecificIdBroker: () => true);
+
+        viewModel.ShowAddTransactionFormAsync();
+        var vm = viewModel.TransactionFormViewModel!;
+        vm.Type = "Sell";
+
+        vm.RequiresLotAllocation.Should().BeTrue();
+    }
+
+    [Fact]
+    public void ShowAddTransactionFormAsync_NotSpecificIdBroker_DialogNeverRequiresLotAllocation()
+    {
+        var (viewModel, _, _) = Build(isSpecificIdBroker: () => false);
+
+        viewModel.ShowAddTransactionFormAsync();
+        var vm = viewModel.TransactionFormViewModel!;
+        vm.Type = "Sell";
+
+        vm.RequiresLotAllocation.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ShowAddTransactionFormAsync_NotSpecificIdBroker_ConfirmProducesNullSpecificLotAllocations()
+    {
+        var (viewModel, _, _) = Build(isSpecificIdBroker: () => false);
+
+        var formTask = viewModel.ShowAddTransactionFormAsync();
+        var vm = viewModel.TransactionFormViewModel!;
+        vm.Type = "Sell";
+        vm.Quantity = 5m;
+        vm.UnitPrice = 1m;
+        vm.ConfirmCommand.Execute(null);
+
+        var result = await formTask;
+        result!.Value.SpecificLotAllocations.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task FetchOpenLotsAsync_PopulatesDialogOpenLotsFromNavigationService()
+    {
+        var lot = new OpenLotDTO { SourceTransactionId = Guid.NewGuid(), Date = DateTime.Today, RemainingQuantity = 10m, UnitCost = 5m };
+        var navigationService = new FakeNavigationService { OpenLotsToReturn = [lot] };
+        var (viewModel, _, _) = Build(navigationService: navigationService, isSpecificIdBroker: () => true);
+        var dialogVm = TransactionDialogViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName, DateTime.Today, "Sell", true, null);
+
+        await viewModel.FetchOpenLotsAsync(dialogVm);
+
+        dialogVm.OpenLots.Should().ContainSingle(row => row.SourceTransactionId == lot.SourceTransactionId);
+        dialogVm.IsLoadingOpenLots.Should().BeFalse();
+        dialogVm.HasOpenLotsError.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task FetchOpenLotsAsync_ServiceThrows_SetsOpenLotsError()
+    {
+        var navigationService = new FakeNavigationService { ThrowOnGetOpenLots = new InvalidOperationException("boom") };
+        var (viewModel, _, _) = Build(navigationService: navigationService, isSpecificIdBroker: () => true);
+        var dialogVm = TransactionDialogViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName, DateTime.Today, "Sell", true, null);
+
+        await viewModel.FetchOpenLotsAsync(dialogVm);
+
+        dialogVm.HasOpenLotsError.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task FetchOpenLotsAsync_NullNavigationService_SetsOpenLotsError()
+    {
+        var (viewModel, _, _) = Build(isSpecificIdBroker: () => true);
+        var dialogVm = TransactionDialogViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName, DateTime.Today, "Sell", true, null);
+
+        await viewModel.FetchOpenLotsAsync(dialogVm);
+
+        dialogVm.HasOpenLotsError.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Add_WithLotAllocations_IncludesSpecificLotAllocationsInCreateRequest()
+    {
+        var (viewModel, service, _) = Build();
+        var allocations = new List<SpecificLotAllocationDTO> { new() { SourceTransactionId = Guid.NewGuid(), Quantity = 5m } };
+        var dialogData = ValidDialogData() with { SpecificLotAllocations = allocations };
+
+        await viewModel.Add(() => AsForm(dialogData));
+
+        service.LastAddRequest!.SpecificLotAllocations.Should().BeEquivalentTo(allocations);
+    }
+
+    [Fact]
+    public async Task Add_WithoutLotAllocations_LeavesSpecificLotAllocationsNull()
+    {
+        var (viewModel, service, _) = Build();
+
+        await viewModel.Add(() => AsForm(ValidDialogData()));
+
+        service.LastAddRequest!.SpecificLotAllocations.Should().BeNull();
     }
 
     private sealed class Spy

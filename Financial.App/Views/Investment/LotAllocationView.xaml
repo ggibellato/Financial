@@ -1,0 +1,166 @@
+<UserControl x:Class="Financial.Presentation.App.Views.Investment.LotAllocationView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:behaviors="clr-namespace:Financial.Presentation.App.Behaviors"
+             Visibility="{Binding RequiresLotAllocation, Converter={StaticResource BoolToVisibilityConverter}}">
+    <!--
+        Mirrors Financial.Web's LotAllocationPicker.tsx: an editable-Quantity-column DataGrid
+        (this codebase's first inline-editable grid - no prior precedent, user's explicit choice
+        over an ItemsControl of rows, see the F05 spec) plus a running allocated/remaining
+        summary. DataContext is inherited from TransactionFormView (the owning
+        TransactionDialogViewModel) - not overridden here.
+    -->
+    <Border BorderThickness="1" Padding="8" Margin="0,0,0,8"
+            BorderBrush="{DynamicResource ControlElevationBorderBrush}"
+            Background="{DynamicResource ControlFillColorSecondaryBrush}"
+            CornerRadius="4">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <StackPanel Grid.Row="0" Orientation="Horizontal"
+                        Visibility="{Binding IsLoadingOpenLots, Converter={StaticResource BoolToVisibilityConverter}}">
+                <TextBlock Text="Loading open lots..." Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+            </StackPanel>
+
+            <StackPanel Grid.Row="0" Orientation="Horizontal"
+                        Visibility="{Binding HasOpenLotsError, Converter={StaticResource BoolToVisibilityConverter}}">
+                <TextBlock Text="{Binding OpenLotsError}" Foreground="{DynamicResource SystemFillColorCriticalBrush}" Margin="0,0,8,0"/>
+                <ui:Button Content="Try again" Appearance="Secondary" Command="{Binding RetryOpenLotsCommand}"/>
+            </StackPanel>
+
+            <TextBlock Grid.Row="0" Text="No open lots available for this holding."
+                       Foreground="{DynamicResource TextFillColorSecondaryBrush}">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding IsLoadingOpenLots}" Value="False"/>
+                                    <Condition Binding="{Binding HasOpenLotsError}" Value="False"/>
+                                    <Condition Binding="{Binding OpenLots.Count}" Value="0"/>
+                                </MultiDataTrigger.Conditions>
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </MultiDataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+
+            <DataGrid Grid.Row="1"
+                      ItemsSource="{Binding OpenLots}"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      Margin="0,0,0,8">
+                <DataGrid.Style>
+                    <Style TargetType="DataGrid">
+                        <Setter Property="Visibility" Value="Visible"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsLoadingOpenLots}" Value="True">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding HasOpenLotsError}" Value="True">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding OpenLots.Count}" Value="0">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </DataGrid.Style>
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Purchased"
+                                        Binding="{Binding Date, Converter={StaticResource DateFormatConverter}, ConverterParameter='d'}"
+                                        IsReadOnly="True"
+                                        Width="Auto">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock" BasedOn="{StaticResource PlainColumnTextStyle}"/>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Header="Remaining"
+                                        Binding="{Binding RemainingQuantity, StringFormat=N8}"
+                                        IsReadOnly="True"
+                                        Width="Auto">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Header="Unit Cost"
+                                        Binding="{Binding UnitCost, StringFormat=N2}"
+                                        IsReadOnly="True"
+                                        Width="Auto">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+                    <DataGridTemplateColumn Header="Allocate" Width="*">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel>
+                                    <TextBox Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}"
+                                             behaviors:DecimalInputBehavior.IsEnabled="True"
+                                             AutomationProperties.Name="{Binding Date, StringFormat='Allocate quantity from the lot purchased {0:d}'}">
+                                        <TextBox.Style>
+                                            <Style TargetType="TextBox">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsOverAllocated}" Value="True">
+                                                        <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorCriticalBrush}"/>
+                                                        <Setter Property="BorderThickness" Value="1.5"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBox.Style>
+                                    </TextBox>
+                                    <TextBlock Text="{Binding RemainingQuantity, StringFormat='Exceeds the {0:N8} remaining on this lot'}"
+                                               Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                                               FontSize="11"
+                                               Visibility="{Binding IsOverAllocated, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <TextBlock Grid.Row="2"
+                       Text="Enter a sale quantity, then allocate it across the lots above."
+                       Foreground="{DynamicResource TextFillColorSecondaryBrush}">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding HasSaleQuantity}" Value="False">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+
+            <TextBlock Grid.Row="2" FontWeight="SemiBold"
+                       Visibility="{Binding HasSaleQuantity, Converter={StaticResource BoolToVisibilityConverter}}">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsAllocationExact}" Value="False">
+                                <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+                <TextBlock.Text>
+                    <MultiBinding StringFormat="Allocated {0:N8} of {1:N8}">
+                        <Binding Path="AllocatedTotal"/>
+                        <Binding Path="Quantity"/>
+                    </MultiBinding>
+                </TextBlock.Text>
+            </TextBlock>
+        </Grid>
+    </Border>
+</UserControl>

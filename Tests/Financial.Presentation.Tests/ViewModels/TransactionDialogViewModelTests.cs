@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using Financial.Investment.Application.DTOs;
 using Financial.Presentation.App.ViewModels;
 using Financial.Presentation.App.ViewModels.Investment;
 using FluentAssertions;
@@ -157,5 +158,154 @@ public class TransactionDialogViewModelTests
         viewModel.UnitPrice.Should().Be(15m);
         viewModel.Fees.Should().Be(1m);
         viewModel.Withheld.Should().Be(2m);
+    }
+
+    private static OpenLotDTO Lot(decimal remaining, decimal unitCost = 10m) => new()
+    {
+        SourceTransactionId = Guid.NewGuid(),
+        Date = new DateTime(2024, 1, 1),
+        RemainingQuantity = remaining,
+        UnitCost = unitCost
+    };
+
+    [Fact]
+    public void RequiresLotAllocation_AddModeSellTypeSpecificIdBroker_IsTrue()
+    {
+        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", DateTime.Today, "Sell", isSpecificIdBroker: true);
+
+        viewModel.RequiresLotAllocation.Should().BeTrue();
+    }
+
+    [Fact]
+    public void RequiresLotAllocation_AddModeBuyTypeSpecificIdBroker_IsFalse()
+    {
+        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", DateTime.Today, "Buy", isSpecificIdBroker: true);
+
+        viewModel.RequiresLotAllocation.Should().BeFalse();
+    }
+
+    [Fact]
+    public void RequiresLotAllocation_NotSpecificIdBroker_IsFalseEvenForSellType()
+    {
+        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", DateTime.Today, "Sell", isSpecificIdBroker: false);
+
+        viewModel.RequiresLotAllocation.Should().BeFalse();
+    }
+
+    [Fact]
+    public void RequiresLotAllocation_UpdateMode_IsAlwaysFalse()
+    {
+        var viewModel = TransactionDialogViewModel.CreateForUpdate("XPI", "Default", "PETR4", Guid.NewGuid(), DateTime.Today, "Sell", 10m, 5m, 0m, 0m);
+
+        viewModel.RequiresLotAllocation.Should().BeFalse();
+    }
+
+    [Fact]
+    public void ChangingTypeToSell_ForSpecificIdBroker_TriggersOpenLotsFetchOnce()
+    {
+        var fetchCount = 0;
+        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", DateTime.Today, "Buy", true, () => fetchCount++);
+
+        viewModel.Type = "Sell";
+        viewModel.Type = "Redemption";
+
+        fetchCount.Should().Be(1);
+    }
+
+    [Fact]
+    public void CreateForAdd_InitialTypeAlreadyRequiresLotAllocation_FetchesImmediately()
+    {
+        var fetchCount = 0;
+        TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", DateTime.Today, "Sell", true, () => fetchCount++);
+
+        fetchCount.Should().Be(1);
+    }
+
+    [Fact]
+    public void SetOpenLots_PopulatesRowsAndComputesAllocatedTotal()
+    {
+        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", DateTime.Today, "Sell", isSpecificIdBroker: true);
+        var lot = Lot(15m);
+
+        viewModel.SetOpenLots([lot]);
+        viewModel.OpenLots.Single().Quantity = 5m;
+
+        viewModel.AllocatedTotal.Should().Be(5m);
+    }
+
+    [Fact]
+    public void CanConfirm_RequiresLotAllocation_FalseUntilAllocationExactlyMatchesQuantity()
+    {
+        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", DateTime.Today, "Sell", isSpecificIdBroker: true);
+        viewModel.Quantity = 10m;
+        viewModel.UnitPrice = 5m;
+        viewModel.SetOpenLots([Lot(15m)]);
+
+        viewModel.OpenLots.Single().Quantity = 6m;
+        viewModel.ConfirmCommand.CanExecute(null).Should().BeFalse();
+
+        viewModel.OpenLots.Single().Quantity = 10m;
+        viewModel.ConfirmCommand.CanExecute(null).Should().BeTrue();
+    }
+
+    [Fact]
+    public void CanConfirm_RequiresLotAllocation_FalseWhenALotIsOverAllocated()
+    {
+        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", DateTime.Today, "Sell", isSpecificIdBroker: true);
+        viewModel.Quantity = 10m;
+        viewModel.UnitPrice = 5m;
+        viewModel.SetOpenLots([Lot(5m)]);
+
+        viewModel.OpenLots.Single().Quantity = 8m;
+
+        viewModel.OpenLots.Single().IsOverAllocated.Should().BeTrue();
+        viewModel.ConfirmCommand.CanExecute(null).Should().BeFalse();
+    }
+
+    [Fact]
+    public void CanConfirm_RequiresLotAllocation_FalseWhileLoadingOpenLots()
+    {
+        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", DateTime.Today, "Sell", isSpecificIdBroker: true);
+        viewModel.Quantity = 10m;
+        viewModel.UnitPrice = 5m;
+
+        viewModel.SetOpenLotsLoading();
+
+        viewModel.ConfirmCommand.CanExecute(null).Should().BeFalse();
+    }
+
+    [Fact]
+    public void CanConfirm_RequiresLotAllocation_FalseOnOpenLotsError()
+    {
+        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", DateTime.Today, "Sell", isSpecificIdBroker: true);
+        viewModel.Quantity = 10m;
+        viewModel.UnitPrice = 5m;
+
+        viewModel.SetOpenLotsError("Unable to load open lots.");
+
+        viewModel.ConfirmCommand.CanExecute(null).Should().BeFalse();
+    }
+
+    [Fact]
+    public void RetryOpenLotsCommand_InvokesFetchCallbackEvenAfterInitialFetch()
+    {
+        var fetchCount = 0;
+        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", DateTime.Today, "Sell", true, () => fetchCount++);
+
+        viewModel.RetryOpenLotsCommand.Execute(null);
+
+        fetchCount.Should().Be(2);
+    }
+
+    [Fact]
+    public void ReportSubmitFailed_PreservesEnteredLotAllocation()
+    {
+        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", DateTime.Today, "Sell", isSpecificIdBroker: true);
+        viewModel.SetOpenLots([Lot(15m)]);
+        viewModel.OpenLots.Single().Quantity = 7m;
+
+        viewModel.ReportSubmitFailed("Lot already consumed by a concurrent edit.");
+
+        viewModel.OpenLots.Single().Quantity.Should().Be(7m);
     }
 }
