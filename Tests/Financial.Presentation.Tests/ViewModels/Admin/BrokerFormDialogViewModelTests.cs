@@ -19,12 +19,22 @@ public class BrokerFormDialogViewModelTests
     [Fact]
     public void Constructor_WithCurrentName_IsEditModePreFilled()
     {
-        var viewModel = new BrokerFormDialogViewModel("XPI", "USD");
+        var viewModel = new BrokerFormDialogViewModel("XPI", "USD", "FIFO");
 
         viewModel.IsEditing.Should().BeTrue();
         viewModel.Title.Should().Be("Edit Broker");
         viewModel.Name.Should().Be("XPI");
         viewModel.Currency.Should().Be("USD");
+        viewModel.CostBasisMethod.Should().Be("FIFO");
+    }
+
+    [Fact]
+    public void Constructor_NoCurrentCostBasisMethod_DefaultsToAverageCost()
+    {
+        var viewModel = new BrokerFormDialogViewModel();
+
+        viewModel.CostBasisMethod.Should().Be(BrokerFormDialogViewModel.CostBasisMethods[0]);
+        viewModel.CostBasisMethod.Should().Be("AverageCost");
     }
 
     [Fact]

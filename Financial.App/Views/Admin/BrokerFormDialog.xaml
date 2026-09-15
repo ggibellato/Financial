@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         Title="{Binding Title}"
-        Height="260"
+        Height="340"
         Width="360"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
@@ -18,6 +18,9 @@
     </Window.Resources>
     <Grid Margin="16">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -43,14 +46,31 @@
             <ComboBoxItem Content="USD"/>
         </ComboBox>
 
-        <TextBlock Grid.Row="4"
+        <TextBlock Grid.Row="4" Text="Cost Basis Method" Margin="0,0,0,4"/>
+        <ComboBox Grid.Row="5"
+                  AutomationProperties.Name="Cost Basis Method"
+                  SelectedValuePath="Content"
+                  SelectedValue="{Binding CostBasisMethod, UpdateSourceTrigger=PropertyChanged}"
+                  Margin="0,0,0,4">
+            <ComboBoxItem Content="AverageCost"/>
+            <ComboBoxItem Content="FIFO"/>
+            <ComboBoxItem Content="SpecificId"/>
+        </ComboBox>
+        <TextBlock Grid.Row="6"
+                   Text="Changing this for an existing broker recalculates every disposal record under it."
+                   TextWrapping="Wrap"
+                   FontSize="11"
+                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                   Margin="0,0,0,10"/>
+
+        <TextBlock Grid.Row="7"
                    AutomationProperties.LiveSetting="Polite"
                    Foreground="{DynamicResource SystemFillColorCriticalBrush}"
                    TextWrapping="Wrap"
                    Text="{Binding ValidationMessage}"
                    Margin="0,0,0,10"/>
 
-        <StackPanel Grid.Row="5" Orientation="Horizontal" Margin="0,8,0,0">
+        <StackPanel Grid.Row="8" Orientation="Horizontal" Margin="0,8,0,0">
             <ui:Button Content="Save" Appearance="Primary" MinWidth="90" Command="{Binding ConfirmCommand}" IsDefault="True"/>
             <ui:Button Content="Cancel" Appearance="Secondary" MinWidth="90" Margin="8,0,0,0" Command="{Binding CancelCommand}" IsCancel="True"/>
         </StackPanel>

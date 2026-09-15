@@ -1,4 +1,5 @@
 using Financial.Investment.Application.DTOs;
+using Financial.Investment.Domain.Entities;
 using Financial.Presentation.App.ViewModels.Admin;
 using Financial.TestUtilities;
 using FluentAssertions;
@@ -73,15 +74,69 @@ public class BrokersViewModelTests
     public async Task EditBrokerAsync_PreFillsDialogWithCurrentValuesAndCallsUpdate()
     {
         var (viewModel, service, dialog) = CreateViewModel();
-        var broker = new BrokerDTO { Name = "XPI", Currency = "BRL", Status = "Active", PortfolioCount = 0 };
+        var broker = new BrokerDTO { Name = "XPI", Currency = "BRL", Status = "Active", PortfolioCount = 0, CostBasisMethod = CostBasisMethod.AverageCost };
         dialog.OnShowBrokerFormDialog = vm => vm.Currency = "USD";
 
         await viewModel.EditBrokerAsync(broker);
 
         dialog.LastBrokerFormDialog!.Name.Should().Be("XPI");
         dialog.LastBrokerFormDialog.Currency.Should().Be("USD");
+        dialog.LastBrokerFormDialog.CostBasisMethod.Should().Be("AverageCost");
         service.LastUpdateRequest!.Value.CurrentName.Should().Be("XPI");
         service.LastUpdateRequest.Value.Request.Currency.Should().Be("USD");
+    }
+
+    [Fact]
+    public async Task CreateBrokerAsync_PassesSelectedCostBasisMethod()
+    {
+        var (viewModel, service, dialog) = CreateViewModel();
+        dialog.OnShowBrokerFormDialog = vm =>
+        {
+            vm.Name = "New Broker";
+            vm.CostBasisMethod = "FIFO";
+        };
+
+        await viewModel.CreateBrokerAsync();
+
+        service.LastCreateRequest!.CostBasisMethod.Should().Be(CostBasisMethod.FIFO);
+    }
+
+    [Fact]
+    public async Task EditBrokerAsync_CostBasisMethodUnchanged_DoesNotCallSetCostBasisMethod()
+    {
+        var (viewModel, service, dialog) = CreateViewModel();
+        var broker = new BrokerDTO { Name = "XPI", Currency = "BRL", Status = "Active", PortfolioCount = 0, CostBasisMethod = CostBasisMethod.AverageCost };
+
+        await viewModel.EditBrokerAsync(broker);
+
+        service.LastSetCostBasisMethodRequest.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task EditBrokerAsync_CostBasisMethodChanged_CallsSetCostBasisMethodAfterUpdate()
+    {
+        var (viewModel, service, dialog) = CreateViewModel();
+        var broker = new BrokerDTO { Name = "XPI", Currency = "BRL", Status = "Active", PortfolioCount = 0, CostBasisMethod = CostBasisMethod.AverageCost };
+        dialog.OnShowBrokerFormDialog = vm => vm.CostBasisMethod = "FIFO";
+
+        await viewModel.EditBrokerAsync(broker);
+
+        service.LastSetCostBasisMethodRequest.Should().Be(("XPI", CostBasisMethod.FIFO));
+        viewModel.ActionError.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task EditBrokerAsync_SetCostBasisMethodFails_SurfacesSavedButErrorWithoutLosingRename()
+    {
+        var (viewModel, service, dialog) = CreateViewModel();
+        var broker = new BrokerDTO { Name = "XPI", Currency = "BRL", Status = "Active", PortfolioCount = 0, CostBasisMethod = CostBasisMethod.AverageCost };
+        dialog.OnShowBrokerFormDialog = vm => vm.CostBasisMethod = "FIFO";
+        service.ThrowOnSetCostBasisMethod = new InvalidOperationException("regeneration failed");
+
+        await viewModel.EditBrokerAsync(broker);
+
+        service.LastUpdateRequest.Should().NotBeNull();
+        viewModel.ActionError.Should().Contain("XPI").And.Contain("regeneration failed");
     }
 
     [Fact]
