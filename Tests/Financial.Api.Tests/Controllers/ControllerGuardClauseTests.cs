@@ -581,6 +581,33 @@ public class ControllerGuardClauseTests
         act.Should().Throw<ArgumentNullException>().WithParameterName("paymentsDueService");
     }
 
+    [Fact]
+    public void TaxRulesController_NullTaxRuleService_Throws()
+    {
+        Action act = () => new TaxRulesController(null!);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("taxRuleService");
+    }
+
+    [Fact]
+    public async Task TaxRulesController_CreateTaxRule_NullRequest_ReturnsBadRequest()
+    {
+        var controller = new TaxRulesController(new StubTaxRuleService());
+
+        var result = await controller.CreateTaxRule(null);
+
+        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
+    }
+
+    [Fact]
+    public async Task TaxRulesController_UpdateTaxRule_NullRequest_ReturnsBadRequest()
+    {
+        var controller = new TaxRulesController(new StubTaxRuleService());
+
+        var result = await controller.UpdateTaxRule(Guid.NewGuid(), null);
+
+        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
+    }
+
     private sealed class StubHostEnvironment : IHostEnvironment
     {
         public string EnvironmentName { get; set; } = "Development";
@@ -723,6 +750,14 @@ public class ControllerGuardClauseTests
         public IReadOnlyList<Financial.CashFlow.Application.DTOs.ReserveMovementDTO> GetMovementHistory() => throw new NotImplementedException();
         public Task<Financial.CashFlow.Application.DTOs.ReserveMovementDTO> UpdateMovementAsync(Guid id, Financial.CashFlow.Application.DTOs.ReserveMovementUpdateDTO request) => throw new NotImplementedException();
         public Task DeleteMovementAsync(Guid id) => throw new NotImplementedException();
+    }
+
+    private sealed class StubTaxRuleService : ITaxRuleService
+    {
+        public IReadOnlyList<TaxRuleDTO> GetTaxRules() => throw new NotImplementedException();
+        public Task<TaxRuleDTO> CreateTaxRuleAsync(TaxRuleCreateDTO request) => throw new NotImplementedException();
+        public Task<TaxRuleDTO> UpdateTaxRuleAsync(Guid id, TaxRuleUpdateDTO request) => throw new NotImplementedException();
+        public Task DeleteTaxRuleAsync(Guid id) => throw new NotImplementedException();
     }
 
     private sealed class StubMensaisService : IMensaisService

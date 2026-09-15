@@ -1704,6 +1704,14 @@
         },
         "type": "object"
       },
+      "EventCategory": {
+        "enum": [
+          "CapitalGain",
+          "Dividend",
+          "Interest",
+          "SecuritiesLendingIncome"
+        ]
+      },
       "ExpenseCreateDTO": {
         "properties": {
           "categoryId": {
@@ -2651,6 +2659,12 @@
           "value"
         ],
         "type": "object"
+      },
+      "Jurisdiction": {
+        "enum": [
+          "BR",
+          "UK"
+        ]
       },
       "MaeLedgerEntryCreateDTO": {
         "properties": {
@@ -3635,6 +3649,105 @@
         "required": [
           "cashFlow",
           "investment"
+        ],
+        "type": "object"
+      },
+      "TaxRuleCreateDTO": {
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "effectiveFrom": {
+            "format": "date",
+            "type": "string"
+          },
+          "effectiveTo": {
+            "format": "date",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "eventCategory": {
+            "$ref": "#/components/schemas/EventCategory"
+          },
+          "jurisdiction": {
+            "$ref": "#/components/schemas/Jurisdiction"
+          },
+          "label": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "jurisdiction",
+          "eventCategory",
+          "label",
+          "effectiveFrom"
+        ],
+        "type": "object"
+      },
+      "TaxRuleDTO": {
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "effectiveFrom": {
+            "format": "date",
+            "type": "string"
+          },
+          "effectiveTo": {
+            "format": "date",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "eventCategory": {
+            "$ref": "#/components/schemas/EventCategory"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "jurisdiction": {
+            "$ref": "#/components/schemas/Jurisdiction"
+          },
+          "label": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "jurisdiction",
+          "eventCategory",
+          "label",
+          "effectiveFrom"
+        ],
+        "type": "object"
+      },
+      "TaxRuleUpdateDTO": {
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "effectiveFrom": {
+            "format": "date",
+            "type": "string"
+          },
+          "effectiveTo": {
+            "format": "date",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "label": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "effectiveFrom"
         ],
         "type": "object"
       },
@@ -10312,6 +10425,242 @@
         ]
       }
     },
+    "/tax-rules": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TaxRuleDTO"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "TaxRules"
+        ]
+      },
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/*\u002Bjson": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/TaxRuleCreateDTO"
+                  }
+                ]
+              }
+            },
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/TaxRuleCreateDTO"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/TaxRuleCreateDTO"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxRuleDTO"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "TaxRules"
+        ]
+      }
+    },
+    "/tax-rules/{id}": {
+      "delete": {
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "TaxRules"
+        ]
+      },
+      "put": {
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/*\u002Bjson": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/TaxRuleUpdateDTO"
+                  }
+                ]
+              }
+            },
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/TaxRuleUpdateDTO"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/TaxRuleUpdateDTO"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxRuleDTO"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "TaxRules"
+        ]
+      }
+    },
     "/tithe/month/{year}/{month}": {
       "get": {
         "parameters": [
@@ -11252,6 +11601,9 @@
     },
     {
       "name": "SyncStatus"
+    },
+    {
+      "name": "TaxRules"
     },
     {
       "name": "Tithe"

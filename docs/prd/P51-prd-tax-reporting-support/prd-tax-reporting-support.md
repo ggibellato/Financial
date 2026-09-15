@@ -431,17 +431,17 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Tax Rules
-- [ ] **P51-F01-tax-rules-01** A `TaxRule` can be created with a jurisdiction, event category, label,
+- [x] **P51-F01-tax-rules-01** A `TaxRule` can be created with a jurisdiction, event category, label,
       description, effective-from date and optional effective-to date, and is read back correctly
       after a save/reload
-- [ ] **P51-F01-tax-rules-02** Creating or editing a rule whose effective range overlaps an existing
+- [x] **P51-F01-tax-rules-02** Creating or editing a rule whose effective range overlaps an existing
       rule for the same jurisdiction and event category is rejected
-- [ ] **P51-F01-tax-rules-03** A rule with `EffectiveFrom` on or after `EffectiveTo` is rejected
+- [x] **P51-F01-tax-rules-03** A rule with `EffectiveFrom` on or after `EffectiveTo` is rejected
 - [ ] **P51-F01-tax-rules-04** No numeric rate, threshold or formula field exists anywhere on
       `TaxRule` — only classification/audit metadata
 - [ ] **P51-F01-tax-rules-05** Deleting a rule that at least one `Final`-status `TaxClassification`
       currently resolves through is rejected, naming the affected tax year(s)
-- [ ] **P51-F01-tax-rules-06** A rule lookup for a given jurisdiction, event category and date returns
+- [x] **P51-F01-tax-rules-06** A rule lookup for a given jurisdiction, event category and date returns
       at most one applicable rule, or none
 
 ### F02. Tax Profile and Classification
