@@ -234,9 +234,15 @@ screen.
   1. `RequiresReview` — the source event's `Credit.Type` (or, for a future disposal type this wave
      doesn't anticipate) has no recognized `EventCategory` mapping at all.
   2. `Incomplete` — no `TaxRule` covers this event's jurisdiction, category and date yet.
-  3. `Estimated` — a `TaxRule` applies, but the event's own amounts are provisional (e.g. the credit's
-     reporting-currency conversion is `Partial`/`ReportingCurrencyUnavailable` per P49).
-  4. `Final` — a `TaxRule` applies and the event's amounts are complete.
+  3. `Final` — a `TaxRule` applies.
+  **[scoped 2026-09-15]** A 4th value, `Estimated`, stays defined on the enum but is never produced
+  this wave. Its originally-stated trigger — a `TaxRule` applies but the event's own amounts are
+  provisional (e.g. `Partial`/`ReportingCurrencyUnavailable` per P49) — turned out to have no
+  per-event Domain equivalent: P49's flags are an Application-layer, read-time concept computed
+  across a whole portfolio-summary batch, not a stored fact on any single `Credit`/`DisposalRecord`,
+  and `DisposalRecord` carries no FX data to be provisional about at all. Confirmed with the user:
+  rather than inventing an approximate per-event proxy, `Estimated` is reserved for a future feature
+  that tracks real per-event data quality.
 - A `TaxClassification` is created automatically and synchronously whenever a qualifying event is
   recorded: every `DisposalRecord` (P50-F02) and every Dividend/Coupon/JCP/SecuritiesLendingIncome
   `Credit` (P47-F03). No other credit type produces one this wave.
@@ -456,7 +462,11 @@ graph TD
       uses the same BR-calendar-year/UK-Apr6–Apr5 derivation as `DisposalRecord.TaxYear`
 - [ ] **P51-F02-tax-profile-and-classification-05** `CalculationStatus` is `RequiresReview` for an
       unrecognized event type, `Incomplete` when no rule covers the event's jurisdiction/category/date,
-      `Estimated` when a rule applies but the event's amounts are provisional, and `Final` otherwise
+      and `Final` otherwise. **[scoped 2026-09-15]** `Estimated` stays defined on the enum but is never
+      produced this wave — its PRD-stated trigger (P49's `IsPartial`/`IsReportingCurrencyUnavailable`)
+      is a batch-level, read-time concept with no per-event Domain equivalent today; confirmed with the
+      user rather than inventing an approximate proxy. Reserved for a future feature that tracks
+      per-event data quality.
 - [ ] **P51-F02-tax-profile-and-classification-06** Every existing `DisposalRecord` and qualifying
       credit gains an `Active` `TaxClassification` the first time the app loads after this ships, with
       no separate tool run, and re-running the load is a no-op
