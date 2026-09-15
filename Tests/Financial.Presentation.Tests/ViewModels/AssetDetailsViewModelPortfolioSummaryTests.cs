@@ -355,6 +355,43 @@ public class AssetDetailsViewModelPortfolioSummaryTests
     }
 
     [Fact]
+    public void LoadAssetDetails_WithMultipleTaxJurisdictions_JoinsThemWithComma()
+    {
+        var vm = BuildViewModel();
+        vm.LoadAssetDetails(new AssetDetailsDTO
+        {
+            Name = "Asset A", BrokerName = "Broker", PortfolioName = "Portfolio",
+            Ticker = "T", ISIN = "", Exchange = "LSE",
+            Country = Financial.Investment.Domain.Entities.CountryCode.Unknown,
+            LocalTypeCode = "", Class = Financial.Investment.Domain.Entities.GlobalAssetClass.Unknown,
+            Quantity = 0m, AveragePrice = 0m,
+            TotalBought = 0m, TotalSold = 0m, TotalCredits = 0m,
+            Transactions = [], Credits = [],
+            TaxJurisdictions = ["BR", "UK"]
+        });
+
+        vm.TaxJurisdictionsDisplay.Should().Be("BR, UK");
+    }
+
+    [Fact]
+    public void LoadAssetDetails_WithNoTaxJurisdictions_DisplaysEmDash()
+    {
+        var vm = BuildViewModel();
+        vm.LoadAssetDetails(new AssetDetailsDTO
+        {
+            Name = "Asset A", BrokerName = "Broker", PortfolioName = "Portfolio",
+            Ticker = "T", ISIN = "", Exchange = "LSE",
+            Country = Financial.Investment.Domain.Entities.CountryCode.Unknown,
+            LocalTypeCode = "", Class = Financial.Investment.Domain.Entities.GlobalAssetClass.Unknown,
+            Quantity = 0m, AveragePrice = 0m,
+            TotalBought = 0m, TotalSold = 0m, TotalCredits = 0m,
+            Transactions = [], Credits = []
+        });
+
+        vm.TaxJurisdictionsDisplay.Should().Be("—");
+    }
+
+    [Fact]
     public void LoadPortfolioSummary_SetsFooterTotalInvested_FromServerSummary_NotClientSum()
     {
         var vm = BuildViewModel();
