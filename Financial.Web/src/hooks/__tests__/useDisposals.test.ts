@@ -84,6 +84,7 @@ const ASSET_DETAILS: AssetDetailsDto = {
   cashFlowsWithoutCredits: [],
   disposalRecords: [],
   costBasisMethod: 'AverageCost',
+  taxJurisdictions: [],
 }
 
 describe('useDisposals', () => {

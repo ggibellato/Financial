@@ -6190,6 +6190,7 @@ export interface components {
             quantity?: number;
             /** Format: double */
             realizedGainLoss?: number;
+            taxJurisdictions?: string[];
             ticker: string;
             /** Format: double */
             totalBought?: number;

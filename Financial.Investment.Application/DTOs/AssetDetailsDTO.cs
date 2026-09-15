@@ -68,5 +68,7 @@ public class AssetDetailsDTO
 
     public IReadOnlyList<AssetCashFlowDTO> CashFlowsWithCredits { get; set; } = [];
     public IReadOnlyList<AssetCashFlowDTO> CashFlowsWithoutCredits { get; set; } = [];
+
+    public IReadOnlyList<string> TaxJurisdictions { get; set; } = [];
 }
 

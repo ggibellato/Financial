@@ -99,6 +99,14 @@ public sealed class NavigationService : INavigationService
                 .Select(NavigationMapper.MapDisposalRecord)
                 .ToList();
 
+            var taxJurisdictions = asset.TaxClassifications
+                .Where(c => c.Status == TaxClassificationStatus.Active)
+                .Select(c => c.Jurisdiction)
+                .Distinct()
+                .OrderBy(j => j.ToString(), StringComparer.Ordinal)
+                .Select(j => j.ToString())
+                .ToList();
+
             var broker = _repository.GetBrokerList(InvestmentScope.Active).FirstOrDefault(b => b.Name == brokerName)
                 ?? _repository.GetBrokerList(InvestmentScope.Historic).FirstOrDefault(b => b.Name == brokerName);
             var costBasisMethod = broker?.CostBasisMethod ?? CostBasisMethod.AverageCost;
@@ -142,7 +150,8 @@ public sealed class NavigationService : INavigationService
                 DisposalRecords = disposalRecords,
                 CostBasisMethod = costBasisMethod,
                 CashFlowsWithCredits = AssetCashFlowBuilder.BuildWithCredits(asset),
-                CashFlowsWithoutCredits = AssetCashFlowBuilder.BuildWithoutCredits(asset)
+                CashFlowsWithoutCredits = AssetCashFlowBuilder.BuildWithoutCredits(asset),
+                TaxJurisdictions = taxJurisdictions
             };
         }
         catch (Exception ex)

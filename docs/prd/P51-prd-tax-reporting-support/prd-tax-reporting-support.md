@@ -473,7 +473,7 @@ graph TD
 - [x] **P51-F02-tax-profile-and-classification-07** When P50-F03 supersedes a `DisposalRecord`, its
       `TaxClassification` is marked `Superseded` in the same write, and a new `Active` classification
       is created for the replacement record
-- [ ] **P51-F02-tax-profile-and-classification-08** An asset's `TaxProfile` lists exactly the distinct
+- [x] **P51-F02-tax-profile-and-classification-08** An asset's `TaxProfile` lists exactly the distinct
       jurisdictions present across that asset's own classification history
 
 ### F03. Tax Year Workbook

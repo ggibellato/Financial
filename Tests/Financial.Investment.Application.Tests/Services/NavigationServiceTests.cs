@@ -1,6 +1,7 @@
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Services;
+using Financial.Shared.Abstractions.Currencies;
 using Financial.Shared.Abstractions.Observability;
 using Financial.TestUtilities;
 using Financial.Investment.Domain.Entities;
@@ -128,6 +129,36 @@ public class NavigationServiceTests
         result.Should().NotBeNull();
         result!.ValuationMethod.Should().Be(ValuationMethod.ProviderValue);
         result.IncomePolicy.Should().Be(IncomePolicy.Distributing);
+    }
+
+    [Fact]
+    public void GetAssetDetails_WithActiveTaxClassifications_ReturnsDistinctJurisdictions()
+    {
+        var broker = Broker.Create("Broker", "BRL");
+        var portfolio = broker.AddPortfolio("Portfolio");
+        var asset = BuildAssetWithQuantity("ASSET1", 0m);
+        var investments = Investments.Create();
+        asset.AddCredit(Credit.Create(new DateTime(2026, 1, 1), Credit.CreditType.Dividend, 100m, currency: Currency.BRL), investments);
+        asset.AddCredit(Credit.Create(new DateTime(2026, 1, 1), Credit.CreditType.Dividend, 50m, currency: Currency.GBP), investments);
+        portfolio.AddAsset(asset);
+        _repository.Broker = broker;
+
+        var details = CreateService().GetAssetDetails("Broker", "Portfolio", "ASSET1");
+
+        details!.TaxJurisdictions.Should().BeEquivalentTo(["BR", "UK"]);
+    }
+
+    [Fact]
+    public void GetAssetDetails_WithNoTaxClassifications_ReturnsEmptyJurisdictions()
+    {
+        var broker = Broker.Create("Broker", "BRL");
+        var portfolio = broker.AddPortfolio("Portfolio");
+        portfolio.AddAsset(BuildAssetWithQuantity("ASSET1", 0m));
+        _repository.Broker = broker;
+
+        var details = CreateService().GetAssetDetails("Broker", "Portfolio", "ASSET1");
+
+        details!.TaxJurisdictions.Should().BeEmpty();
     }
 
     [Theory]
