@@ -510,7 +510,7 @@ graph TD
       identical column output for the same selection
 - [ ] **P51-F05-wpf-tax-reporting-03** `Financial.App` includes the same Admin Tax Rules screen with
       equivalent create/edit/delete and validation behaviour
-- [ ] **P51-F05-wpf-tax-reporting-04** `Financial.App`'s asset detail view shows the same `TaxProfile`
+- [x] **P51-F05-wpf-tax-reporting-04** `Financial.App`'s asset detail view shows the same `TaxProfile`
       jurisdiction(s) as `Financial.Web`
 
 ### Cross-Feature Integration
