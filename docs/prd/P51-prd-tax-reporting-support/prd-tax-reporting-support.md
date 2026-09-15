@@ -477,15 +477,15 @@ graph TD
       jurisdictions present across that asset's own classification history
 
 ### F03. Tax Year Workbook
-- [ ] **P51-F03-tax-year-workbook-01** A workbook for a given jurisdiction and tax year includes every
+- [x] **P51-F03-tax-year-workbook-01** A workbook for a given jurisdiction and tax year includes every
       `Active` classification matching both, across every asset
-- [ ] **P51-F03-tax-year-workbook-02** Workbook entries are correctly grouped and totalled by event
+- [x] **P51-F03-tax-year-workbook-02** Workbook entries are correctly grouped and totalled by event
       category
-- [ ] **P51-F03-tax-year-workbook-03** The workbook's overall `CalculationStatus` equals the least-ready
+- [x] **P51-F03-tax-year-workbook-03** The workbook's overall `CalculationStatus` equals the least-ready
       status among its entries (RequiresReview > Incomplete > Estimated > Final)
-- [ ] **P51-F03-tax-year-workbook-04** Every entry carries an evidence reference resolving back to its
+- [x] **P51-F03-tax-year-workbook-04** Every entry carries an evidence reference resolving back to its
       source `DisposalRecord` or `Credit`
-- [ ] **P51-F03-tax-year-workbook-05** The selectable jurisdiction/tax-year list contains exactly the
+- [x] **P51-F03-tax-year-workbook-05** The selectable jurisdiction/tax-year list contains exactly the
       pairs that have at least one classification, with no hardcoded year range
 
 ### F04. React — Tax Reporting
@@ -516,7 +516,7 @@ graph TD
 ### Cross-Feature Integration
 - [x] F02's classification correctly resolves F01's applicable tax rule (or its absence) for each
       event's jurisdiction, category and date
-- [ ] F03's workbook correctly aggregates F02's classification entries and reflects F01's rule labels
+- [x] F03's workbook correctly aggregates F02's classification entries and reflects F01's rule labels
       for evidence context
 - [ ] F04 correctly renders F03's workbook, F02's `TaxProfile`, and F01's rules on the Admin screen,
       for the same underlying data

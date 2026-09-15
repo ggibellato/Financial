@@ -5305,6 +5305,88 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/tax-workbook": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    jurisdiction?: string;
+                    taxYear?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TaxWorkbookDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tax-workbook/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TaxWorkbookOptionDTO"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/tithe/month/{year}/{month}": {
         parameters: {
             query?: never;
@@ -6263,6 +6345,8 @@ export interface components {
             /** Format: double */
             terminalValue: number;
         };
+        /** @enum {unknown} */
+        CalculationStatus: "RequiresReview" | "Incomplete" | "Estimated" | "Final";
         CalendarConnectionStatusDTO: {
             accountEmail?: null | string;
             calendarId?: null | string;
@@ -7111,6 +7195,21 @@ export interface components {
             cashFlow: components["schemas"]["SyncStatusDTO"];
             investment: components["schemas"]["SyncStatusDTO"];
         };
+        TaxCategoryTotalDTO: {
+            eventCategory: components["schemas"]["EventCategory"];
+            /** Format: double */
+            totalCostBasis?: null | number;
+            /** Format: double */
+            totalGainLoss?: null | number;
+            /** Format: double */
+            totalGrossAmount?: null | number;
+            /** Format: double */
+            totalNetAmount?: null | number;
+            /** Format: double */
+            totalProceeds?: null | number;
+            /** Format: double */
+            totalWithheldAmount?: null | number;
+        };
         TaxRuleCreateDTO: {
             description?: string;
             /** Format: date */
@@ -7140,6 +7239,40 @@ export interface components {
             /** Format: date */
             effectiveTo?: null | string;
             label: string;
+        };
+        TaxWorkbookDTO: {
+            calculationStatus?: null | components["schemas"]["CalculationStatus"];
+            categoryTotals: components["schemas"]["TaxCategoryTotalDTO"][];
+            entries: components["schemas"]["TaxWorkbookEntryDTO"][];
+            jurisdiction: components["schemas"]["Jurisdiction"];
+            taxYear: string;
+        };
+        TaxWorkbookEntryDTO: {
+            calculationStatus: components["schemas"]["CalculationStatus"];
+            /** Format: double */
+            costBasis?: null | number;
+            /** Format: date-time */
+            date: string;
+            eventCategory: components["schemas"]["EventCategory"];
+            /** Format: uuid */
+            evidenceReference: string;
+            /** Format: double */
+            gainLoss?: null | number;
+            /** Format: double */
+            grossAmount?: null | number;
+            /** Format: uuid */
+            id: string;
+            /** Format: double */
+            netAmount?: null | number;
+            /** Format: double */
+            proceeds?: null | number;
+            taxRuleLabel?: null | string;
+            /** Format: double */
+            withheldAmount?: null | number;
+        };
+        TaxWorkbookOptionDTO: {
+            jurisdiction: components["schemas"]["Jurisdiction"];
+            taxYear: string;
         };
         TitheCarryForwardDTO: {
             /** Format: double */
