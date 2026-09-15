@@ -33,6 +33,7 @@ namespace Financial.Presentation.App
             Financial.Presentation.App.Views.Admin.IncomeSourcesView incomeSourcesView,
             Financial.Presentation.App.Views.Admin.InvestmentAccountsView investmentAccountsView,
             Financial.Presentation.App.Views.Admin.ReserveBucketsView reserveBucketsView,
+            Financial.Presentation.App.Views.Admin.TaxRulesView taxRulesView,
             Financial.Presentation.App.Views.Admin.RecurringBillsView recurringBillsView,
             MainNavigationViewModel navigationViewModel,
             MainNavigationViewModelHistoric navigationViewModelHistoric,
@@ -61,6 +62,7 @@ namespace Financial.Presentation.App
             ArgumentNullException.ThrowIfNull(incomeSourcesView);
             ArgumentNullException.ThrowIfNull(investmentAccountsView);
             ArgumentNullException.ThrowIfNull(reserveBucketsView);
+            ArgumentNullException.ThrowIfNull(taxRulesView);
             ArgumentNullException.ThrowIfNull(recurringBillsView);
             ArgumentNullException.ThrowIfNull(syncStatusViewModel);
             ArgumentNullException.ThrowIfNull(paymentDueBannerViewModel);
@@ -102,6 +104,7 @@ namespace Financial.Presentation.App
                 ["admin-investment-accounts"] = investmentAccountsView,
                 ["admin-recurring-bills"] = recurringBillsView,
                 ["admin-reserve-buckets"] = reserveBucketsView,
+                ["admin-tax-rules"] = taxRulesView,
                 ["settings-appearance"] = appearanceView,
                 ["settings-reporting-currency"] = reportingCurrencyView,
                 ["settings-integrations"] = settingsIntegrationsView,

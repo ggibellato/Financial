@@ -23,6 +23,7 @@ public class MainShellViewModelTests
         ["admin-assets"] = new object(),
         ["admin-brokers"] = new object(),
         ["admin-portfolios"] = new object(),
+        ["admin-tax-rules"] = new object(),
         ["admin-banks"] = new object(),
         ["admin-categories"] = new object(),
         ["admin-credit-cards"] = new object(),

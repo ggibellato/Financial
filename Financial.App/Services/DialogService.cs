@@ -57,4 +57,7 @@ public sealed class DialogService : IDialogService
         var dialog = new Microsoft.Win32.SaveFileDialog { FileName = suggestedFileName, Filter = filter };
         return dialog.ShowDialog() == true ? dialog.FileName : null;
     }
+
+    public bool ShowTaxRuleFormDialog(TaxRuleFormDialogViewModel viewModel) =>
+        new TaxRuleFormDialog(viewModel) { Owner = System.Windows.Application.Current?.MainWindow }.ShowDialog() == true;
 }

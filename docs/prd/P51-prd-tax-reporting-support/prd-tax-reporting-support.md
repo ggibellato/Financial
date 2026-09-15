@@ -508,7 +508,7 @@ graph TD
       selectors, entries, category totals and status indicators as `Financial.Web`
 - [x] **P51-F05-wpf-tax-reporting-02** `Financial.App` includes the same CSV export producing
       identical column output for the same selection
-- [ ] **P51-F05-wpf-tax-reporting-03** `Financial.App` includes the same Admin Tax Rules screen with
+- [x] **P51-F05-wpf-tax-reporting-03** `Financial.App` includes the same Admin Tax Rules screen with
       equivalent create/edit/delete and validation behaviour
 - [x] **P51-F05-wpf-tax-reporting-04** `Financial.App`'s asset detail view shows the same `TaxProfile`
       jurisdiction(s) as `Financial.Web`

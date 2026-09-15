@@ -60,6 +60,7 @@ public static class NavTree
                         new NavChild("admin-assets", "Assets", "admin-assets"),
                         new NavChild("admin-brokers", "Brokers", "admin-brokers"),
                         new NavChild("admin-portfolios", "Portfolios", "admin-portfolios"),
+                        new NavChild("admin-tax-rules", "Tax Rules", "admin-tax-rules"),
                     ]),
                 new NavGroup(
                     "cashflow",

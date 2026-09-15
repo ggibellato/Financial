@@ -25,4 +25,5 @@ public interface IDialogService
     bool ShowRecurringBillFormDialog(RecurringBillFormDialogViewModel viewModel);
     bool ShowUkExpensePromptDialog(UkExpensePromptDialogViewModel viewModel);
     string? ShowSaveFileDialog(string suggestedFileName, string filter);
+    bool ShowTaxRuleFormDialog(TaxRuleFormDialogViewModel viewModel);
 }
