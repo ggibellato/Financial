@@ -23,6 +23,7 @@ import {
   ReportingCurrencyPage,
   ReservaPage,
   ReserveBucketsPage,
+  TaxPage,
 } from './lazyPages'
 
 export interface PageRoute {
@@ -45,6 +46,7 @@ export const PAGE_ROUTES: PageRoute[] = [
   { path: 'investments/historic-investments', element: <HistoricInvestmentsPage /> },
   { path: 'investments/dividend-check', element: <DividendCheckPage /> },
   { path: 'investments/current-values', element: <CurrentValuesPage /> },
+  { path: 'investments/tax', element: <TaxPage /> },
   { path: 'cashflow/monthly', element: <MonthlyPage /> },
   { path: 'cashflow/investment-snapshots', element: <InvestmentSnapshotsPage /> },
   { path: 'cashflow/annual-summary', element: <AnnualSummaryPage /> },

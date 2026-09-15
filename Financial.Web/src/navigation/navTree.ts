@@ -28,6 +28,7 @@ export const NAV_TREE: NavCategory[] = [
       { id: 'historic-investments', label: 'Historic Investments', route: '/investments/historic-investments' },
       { id: 'dividend-check', label: 'Shares Dividend Check', route: '/investments/dividend-check' },
       { id: 'current-values', label: 'Read Assets Current Values', route: '/investments/current-values' },
+      { id: 'tax', label: 'Tax', route: '/investments/tax' },
     ],
   },
   {

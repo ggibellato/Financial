@@ -174,3 +174,7 @@ export type PaymentDueDto = Schema<'PaymentDueDTO'>
 export type CalendarConnectionStatusDto = Schema<'CalendarConnectionStatusDTO'>
 export type CalendarDisconnectResultDto = Schema<'CalendarDisconnectResultDTO'>
 export type CreditCardCalendarSyncStatusDto = Schema<'CreditCardCalendarSyncStatusDTO'>
+export type TaxWorkbookOptionDto = Schema<'TaxWorkbookOptionDTO'>
+export type TaxWorkbookEntryDto = Schema<'TaxWorkbookEntryDTO'>
+export type TaxCategoryTotalDto = Schema<'TaxCategoryTotalDTO'>
+export type TaxWorkbookDto = Schema<'TaxWorkbookDTO'>

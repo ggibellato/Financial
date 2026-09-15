@@ -489,18 +489,18 @@ graph TD
       pairs that have at least one classification, with no hardcoded year range
 
 ### F04. React — Tax Reporting
-- [ ] **P51-F04-react-tax-reporting-01** The Tax page's jurisdiction and tax-year selectors show only
+- [x] **P51-F04-react-tax-reporting-01** The Tax page's jurisdiction and tax-year selectors show only
       combinations with at least one classification, and selecting one shows its workbook
-- [ ] **P51-F04-react-tax-reporting-02** Each of the 4 calculation statuses renders with a visually
+- [x] **P51-F04-react-tax-reporting-02** Each of the 4 calculation statuses renders with a visually
       distinct indicator, on both entries and the workbook's aggregate status
-- [ ] **P51-F04-react-tax-reporting-03** Exporting a workbook produces a CSV with exactly the 13
+- [x] **P51-F04-react-tax-reporting-03** Exporting a workbook produces a CSV with exactly the 13
       specified columns and one row per entry
 - [ ] **P51-F04-react-tax-reporting-04** The Admin Tax Rules screen supports create, edit and delete,
       rejecting an invalid or overlapping range inline before submission
 - [ ] **P51-F04-react-tax-reporting-05** A rejected rule deletion shows the server's message inline,
       naming the affected tax year(s)
-- [ ] **P51-F04-react-tax-reporting-06** An asset's detail view shows its `TaxProfile` jurisdiction(s)
-- [ ] **P51-F04-react-tax-reporting-07** The CSV export action is disabled when the selected workbook
+- [x] **P51-F04-react-tax-reporting-06** An asset's detail view shows its `TaxProfile` jurisdiction(s)
+- [x] **P51-F04-react-tax-reporting-07** The CSV export action is disabled when the selected workbook
       has zero entries
 
 ### F05. WPF — Tax Reporting

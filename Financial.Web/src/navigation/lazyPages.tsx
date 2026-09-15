@@ -27,3 +27,4 @@ export const RecurringBillsPage = lazy(() => import('../pages/RecurringBillsPage
 export const ReportingCurrencyPage = lazy(() => import('../pages/ReportingCurrencyPage'))
 export const ReservaPage = lazy(() => import('../pages/ReservaPage'))
 export const ReserveBucketsPage = lazy(() => import('../pages/ReserveBucketsPage'))
+export const TaxPage = lazy(() => import('../pages/TaxPage'))
