@@ -495,9 +495,9 @@ graph TD
       distinct indicator, on both entries and the workbook's aggregate status
 - [x] **P51-F04-react-tax-reporting-03** Exporting a workbook produces a CSV with exactly the 13
       specified columns and one row per entry
-- [ ] **P51-F04-react-tax-reporting-04** The Admin Tax Rules screen supports create, edit and delete,
+- [x] **P51-F04-react-tax-reporting-04** The Admin Tax Rules screen supports create, edit and delete,
       rejecting an invalid or overlapping range inline before submission
-- [ ] **P51-F04-react-tax-reporting-05** A rejected rule deletion shows the server's message inline,
+- [x] **P51-F04-react-tax-reporting-05** A rejected rule deletion shows the server's message inline,
       naming the affected tax year(s)
 - [x] **P51-F04-react-tax-reporting-06** An asset's detail view shows its `TaxProfile` jurisdiction(s)
 - [x] **P51-F04-react-tax-reporting-07** The CSV export action is disabled when the selected workbook
@@ -518,7 +518,7 @@ graph TD
       event's jurisdiction, category and date
 - [x] F03's workbook correctly aggregates F02's classification entries and reflects F01's rule labels
       for evidence context
-- [ ] F04 correctly renders F03's workbook, F02's `TaxProfile`, and F01's rules on the Admin screen,
+- [x] F04 correctly renders F03's workbook, F02's `TaxProfile`, and F01's rules on the Admin screen,
       for the same underlying data
 - [ ] F05 renders identical data to F04 for F01/F02/F03, with no discrepancy between the two front
       ends for the same jurisdiction/tax year

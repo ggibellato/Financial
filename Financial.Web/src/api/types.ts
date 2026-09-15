@@ -178,3 +178,6 @@ export type TaxWorkbookOptionDto = Schema<'TaxWorkbookOptionDTO'>
 export type TaxWorkbookEntryDto = Schema<'TaxWorkbookEntryDTO'>
 export type TaxCategoryTotalDto = Schema<'TaxCategoryTotalDTO'>
 export type TaxWorkbookDto = Schema<'TaxWorkbookDTO'>
+export type TaxRuleDto = Schema<'TaxRuleDTO'>
+export type TaxRuleCreateDto = Schema<'TaxRuleCreateDTO'>
+export type TaxRuleUpdateDto = Schema<'TaxRuleUpdateDTO'>

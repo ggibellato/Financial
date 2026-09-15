@@ -78,6 +78,9 @@ import type {
   ReserveMovementDto,
   SetAssetPriceDto,
   SyncStatusResponseDto,
+  TaxRuleCreateDto,
+  TaxRuleDto,
+  TaxRuleUpdateDto,
   TaxWorkbookDto,
   TaxWorkbookOptionDto,
   TitheCarryForwardUpdateDto,
@@ -245,6 +248,10 @@ export interface FinancialApiClient {
   buildCalendarConnectUrl: () => string
   getTaxWorkbookOptions: () => Promise<TaxWorkbookOptionDto[]>
   getTaxWorkbook: (jurisdiction: string, taxYear: string) => Promise<TaxWorkbookDto>
+  getTaxRules: () => Promise<TaxRuleDto[]>
+  createTaxRule: (request: TaxRuleCreateDto) => Promise<TaxRuleDto>
+  updateTaxRule: (id: string, request: TaxRuleUpdateDto) => Promise<TaxRuleDto>
+  deleteTaxRule: (id: string) => Promise<void>
 }
 
 export interface FinancialApiClientOptions {
@@ -680,6 +687,12 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
     getTaxWorkbookOptions: () => request<TaxWorkbookOptionDto[]>('/tax-workbook/options'),
     getTaxWorkbook: (jurisdiction, taxYear) =>
       request<TaxWorkbookDto>(`/tax-workbook?jurisdiction=${encodeURIComponent(jurisdiction)}&taxYear=${encodeURIComponent(taxYear)}`),
+    getTaxRules: () => request<TaxRuleDto[]>('/tax-rules'),
+    createTaxRule: (requestBody) =>
+      request<TaxRuleDto>('/tax-rules', { method: 'POST', body: JSON.stringify(requestBody) }),
+    updateTaxRule: (id, requestBody) =>
+      request<TaxRuleDto>(`/tax-rules/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(requestBody) }),
+    deleteTaxRule: (id) => requestVoid(`/tax-rules/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   }
 }
 
