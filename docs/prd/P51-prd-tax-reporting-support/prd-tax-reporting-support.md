@@ -451,16 +451,16 @@ graph TD
       at most one applicable rule, or none
 
 ### F02. Tax Profile and Classification
-- [ ] **P51-F02-tax-profile-and-classification-01** Recording a `DisposalRecord` automatically
+- [x] **P51-F02-tax-profile-and-classification-01** Recording a `DisposalRecord` automatically
       creates exactly one `Active` `TaxClassification` with `EventCategory = CapitalGain`
-- [ ] **P51-F02-tax-profile-and-classification-02** Recording a Dividend, Coupon, JCP or Securities
+- [x] **P51-F02-tax-profile-and-classification-02** Recording a Dividend, Coupon, JCP or Securities
       Lending Income credit automatically creates exactly one `Active` `TaxClassification` with the
       correct `EventCategory` (JCP and Coupon both map to `Interest`)
-- [ ] **P51-F02-tax-profile-and-classification-03** A classification's `Jurisdiction` is `BR` for a
+- [x] **P51-F02-tax-profile-and-classification-03** A classification's `Jurisdiction` is `BR` for a
       BRL-currency event and `UK` for any other currency, regardless of `Asset.CountryCode`
-- [ ] **P51-F02-tax-profile-and-classification-04** A `Credit`-sourced classification's `TaxYear`
+- [x] **P51-F02-tax-profile-and-classification-04** A `Credit`-sourced classification's `TaxYear`
       uses the same BR-calendar-year/UK-Apr6–Apr5 derivation as `DisposalRecord.TaxYear`
-- [ ] **P51-F02-tax-profile-and-classification-05** `CalculationStatus` is `RequiresReview` for an
+- [x] **P51-F02-tax-profile-and-classification-05** `CalculationStatus` is `RequiresReview` for an
       unrecognized event type, `Incomplete` when no rule covers the event's jurisdiction/category/date,
       and `Final` otherwise. **[scoped 2026-09-15]** `Estimated` stays defined on the enum but is never
       produced this wave — its PRD-stated trigger (P49's `IsPartial`/`IsReportingCurrencyUnavailable`)
@@ -470,7 +470,7 @@ graph TD
 - [x] **P51-F02-tax-profile-and-classification-06** Every existing `DisposalRecord` and qualifying
       credit gains an `Active` `TaxClassification` the first time the app loads after this ships, with
       no separate tool run, and re-running the load is a no-op
-- [ ] **P51-F02-tax-profile-and-classification-07** When P50-F03 supersedes a `DisposalRecord`, its
+- [x] **P51-F02-tax-profile-and-classification-07** When P50-F03 supersedes a `DisposalRecord`, its
       `TaxClassification` is marked `Superseded` in the same write, and a new `Active` classification
       is created for the replacement record
 - [ ] **P51-F02-tax-profile-and-classification-08** An asset's `TaxProfile` lists exactly the distinct
@@ -514,7 +514,7 @@ graph TD
       jurisdiction(s) as `Financial.Web`
 
 ### Cross-Feature Integration
-- [ ] F02's classification correctly resolves F01's applicable tax rule (or its absence) for each
+- [x] F02's classification correctly resolves F01's applicable tax rule (or its absence) for each
       event's jurisdiction, category and date
 - [ ] F03's workbook correctly aggregates F02's classification entries and reflects F01's rule labels
       for evidence context

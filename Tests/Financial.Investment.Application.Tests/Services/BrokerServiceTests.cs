@@ -160,6 +160,25 @@ public class BrokerServiceTests
     }
 
     [Fact]
+    public async Task SetCostBasisMethodAsync_RegeneratesTaxClassificationsAlongsideDisposalRecords()
+    {
+        var broker = Broker.Create("Trading 212", "GBP");
+        var portfolio = broker.AddPortfolio("ISA");
+        var asset = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 50m, 0m));
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 6, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        portfolio.AddAsset(asset);
+        _repository.Investments!.AddActiveBroker(broker);
+        asset.RecordTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 10m, 200m, 0m), investments: _repository.Investments);
+        var originalClassification = asset.TaxClassifications.Single();
+
+        await CreateService().SetCostBasisMethodAsync("Trading 212", CostBasisMethod.FIFO);
+
+        originalClassification.Status.Should().Be(TaxClassificationStatus.Superseded);
+        asset.TaxClassifications.Should().ContainSingle(c => c.Status == TaxClassificationStatus.Active);
+    }
+
+    [Fact]
     public async Task SetCostBasisMethodAsync_UnknownBroker_ThrowsAndWritesNothing()
     {
         var act = async () => await CreateService().SetCostBasisMethodAsync("Nope", CostBasisMethod.FIFO);

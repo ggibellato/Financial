@@ -143,7 +143,11 @@ public class Asset
 
     public bool RemoveTransaction(Guid transactionId) => Transactions.RemoveById(transactionId);
 
-    public void RecordTransaction(Transaction transaction, CostBasisMethod method = CostBasisMethod.AverageCost, IReadOnlyList<SpecificLotAllocation>? allocation = null)
+    public void RecordTransaction(
+        Transaction transaction,
+        CostBasisMethod method = CostBasisMethod.AverageCost,
+        IReadOnlyList<SpecificLotAllocation>? allocation = null,
+        Investments? investments = null)
     {
         EnsureNoUncoveredSale([.. Transactions, transaction], transaction.Id);
 
@@ -152,7 +156,7 @@ public class Asset
             AddTransaction(transaction);
             try
             {
-                DisposalRecordRegenerator.RegenerateAsset(this, method, transaction.Date, transaction.Id, allocation);
+                DisposalRecordRegenerator.RegenerateAsset(this, method, transaction.Date, transaction.Id, allocation, investments);
             }
             catch
             {
@@ -168,6 +172,10 @@ public class Asset
         {
             var disposalRecord = DisposalRecordCalculator.Calculate(transaction, Transactions, method, transaction.Currency.ToString(), allocation);
             _disposalRecords.Add(disposalRecord);
+            if (investments is not null)
+            {
+                AppendTaxClassification(TaxClassificationCalculator.CalculateForDisposal(disposalRecord, investments));
+            }
         }
 
         AddTransaction(transaction);
@@ -212,7 +220,7 @@ public class Asset
     internal void RefreshRealizedCapitalGain() =>
         Transactions.SetRealizedCapitalGain(_disposalRecords.Where(r => r.Status == DisposalRecordStatus.Active).Sum(r => r.GainLoss));
 
-    public bool ReviseTransaction(Transaction updatedTransaction, CostBasisMethod method = CostBasisMethod.AverageCost)
+    public bool ReviseTransaction(Transaction updatedTransaction, CostBasisMethod method = CostBasisMethod.AverageCost, Investments? investments = null)
     {
         var previous = Transactions.FirstOrDefault(t => t.Id == updatedTransaction.Id);
         if (previous is null)
@@ -233,7 +241,7 @@ public class Asset
         {
             try
             {
-                DisposalRecordRegenerator.RegenerateAsset(this, method, anchor);
+                DisposalRecordRegenerator.RegenerateAsset(this, method, anchor, investments: investments);
             }
             catch
             {
@@ -245,7 +253,7 @@ public class Asset
         return true;
     }
 
-    public bool RetractTransaction(Guid transactionId, CostBasisMethod method = CostBasisMethod.AverageCost)
+    public bool RetractTransaction(Guid transactionId, CostBasisMethod method = CostBasisMethod.AverageCost, Investments? investments = null)
     {
         var removed = Transactions.FirstOrDefault(t => t.Id == transactionId);
         if (removed is null)
@@ -265,7 +273,7 @@ public class Asset
         {
             try
             {
-                DisposalRecordRegenerator.RegenerateAsset(this, method, removed.Date);
+                DisposalRecordRegenerator.RegenerateAsset(this, method, removed.Date, investments: investments);
             }
             catch
             {
@@ -293,7 +301,7 @@ public class Asset
         throw new InvestmentRuleViolationException(message);
     }
 
-    public void AddCredit(Credit credit)
+    public void AddCredit(Credit credit, Investments? investments = null)
     {
         if (credit == null)
         {
@@ -301,9 +309,14 @@ public class Asset
         }
 
         _credits.Add(credit);
+
+        if (investments is not null)
+        {
+            AppendTaxClassification(TaxClassificationCalculator.CalculateForCredit(credit, investments));
+        }
     }
 
-    public bool UpdateCredit(Credit updatedCredit)
+    public bool UpdateCredit(Credit updatedCredit, Investments? investments = null)
     {
         if (updatedCredit == null)
         {
@@ -319,6 +332,13 @@ public class Asset
         }
 
         _credits[index] = updatedCredit;
+
+        RemoveTaxClassificationBySource(SourceType.Credit, updatedCredit.Id);
+        if (investments is not null)
+        {
+            AppendTaxClassification(TaxClassificationCalculator.CalculateForCredit(updatedCredit, investments));
+        }
+
         return true;
     }
 
@@ -333,6 +353,7 @@ public class Asset
         }
 
         _credits.RemoveAt(index);
+        RemoveTaxClassificationBySource(SourceType.Credit, creditId);
         return true;
     }
     public void AddCredits(IEnumerable<Credit> credits)

@@ -499,6 +499,30 @@ public class TransactionServiceMutationTests
         _repository.WriteCallCount.Should().Be(0);
     }
 
+    [Fact]
+    public async Task AddTransactionAsync_DisposingTransaction_ClassifiesItInTheSameCall()
+    {
+        var asset = MakeAsset();
+        asset.AddTransaction(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
+        _repository.Asset = asset;
+
+        await CreateService().AddTransactionAsync(new TransactionCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "AAAA",
+            Date = new DateTime(2024, 6, 1),
+            Type = "Sell",
+            Quantity = 5m,
+            UnitPrice = 6m,
+            Fees = 0m
+        });
+
+        var classification = asset.TaxClassifications.Should().ContainSingle().Subject;
+        classification.SourceType.Should().Be(SourceType.Disposal);
+        classification.SourceId.Should().Be(asset.DisposalRecords.Single().Id);
+    }
+
     private TransactionService CreateService() => new(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance), ExchangeRateProvider, ReportingCurrencyProvider, TimeProvider.System, Tracer, NullLogger<TransactionService>.Instance);
 
     private static Asset MakeAsset(string name = "AAAA") =>

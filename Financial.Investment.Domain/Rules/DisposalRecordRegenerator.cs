@@ -18,11 +18,12 @@ public static class DisposalRecordRegenerator
         CostBasisMethod method,
         DateTime anchor,
         Guid? seedTransactionId = null,
-        IReadOnlyList<SpecificLotAllocation>? seedAllocation = null) =>
-        Commit(ComputePlan(asset, method, anchor, seedTransactionId, seedAllocation));
+        IReadOnlyList<SpecificLotAllocation>? seedAllocation = null,
+        Investments? investments = null) =>
+        Commit(ComputePlan(asset, method, anchor, seedTransactionId, seedAllocation), investments);
 
     // Every asset's plan is computed before any is committed, so a throw for any one asset leaves every asset untouched.
-    public static void RegenerateBroker(Broker broker)
+    public static void RegenerateBroker(Broker broker, Investments? investments = null)
     {
         var plans = broker.Portfolios
             .SelectMany(portfolio => portfolio.Assets)
@@ -31,7 +32,7 @@ public static class DisposalRecordRegenerator
 
         foreach (var plan in plans)
         {
-            Commit(plan);
+            Commit(plan, investments);
         }
     }
 
@@ -83,22 +84,36 @@ public static class DisposalRecordRegenerator
         return new RegenerationPlan(asset, toRetire, replacements, newOnly);
     }
 
-    private static void Commit(RegenerationPlan plan)
+    private static void Commit(RegenerationPlan plan, Investments? investments)
     {
         foreach (var record in plan.ToRetire)
         {
             record.Supersede(null);
+            if (investments is not null)
+            {
+                plan.Asset.SupersedeTaxClassificationBySource(SourceType.Disposal, record.Id, null);
+            }
         }
 
         foreach (var (existing, newRecord) in plan.Replacements)
         {
             existing.Supersede(newRecord.Id);
             plan.Asset.AppendBackfilledDisposalRecord(newRecord);
+            if (investments is not null)
+            {
+                var newClassification = TaxClassificationCalculator.CalculateForDisposal(newRecord, investments);
+                plan.Asset.SupersedeTaxClassificationBySource(SourceType.Disposal, existing.Id, newClassification.Id);
+                plan.Asset.AppendTaxClassification(newClassification);
+            }
         }
 
         foreach (var newRecord in plan.NewOnly)
         {
             plan.Asset.AppendBackfilledDisposalRecord(newRecord);
+            if (investments is not null)
+            {
+                plan.Asset.AppendTaxClassification(TaxClassificationCalculator.CalculateForDisposal(newRecord, investments));
+            }
         }
 
         plan.Asset.RefreshRealizedCapitalGain();

@@ -121,9 +121,15 @@ public sealed class StubInvestmentRepository : IInvestmentRepository
             : Asset;
     }
 
-    public Investments GetInvestments() =>
-        Investments ?? throw new InvalidOperationException(
-            $"This test reached the aggregate root; set {nameof(StubInvestmentRepository)}.{nameof(Investments)} to the graph it should see.");
+    /// <summary>
+    /// Returns <see cref="Investments"/> when the test set it, or a fresh empty graph otherwise -
+    /// safe for the tax-classification lookups every credit/transaction mutation now makes
+    /// opportunistically (an empty graph has no tax rules, which is the correct "not configured"
+    /// answer), without ever storing the fallback back into <see cref="Investments"/> and thereby
+    /// silently flipping <see cref="GetAsset"/>/<see cref="GetAssetsByBroker"/> into graph-resolution
+    /// mode for a test that never opted into it.
+    /// </summary>
+    public Investments GetInvestments() => Investments ?? Financial.Investment.Domain.Entities.Investments.Create();
 
     /// <summary>Runs the mutation for real - the delegate is where the change now lives, so a
     /// stub that only counted would silently stop exercising it.</summary>
