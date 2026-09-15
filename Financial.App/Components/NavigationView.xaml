@@ -190,6 +190,10 @@
                          Visibility="{Binding AssetDetails.IsAssetView, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
                     <views:PriceHistoryView/>
                 </TabItem>
+                <TabItem Header="Disposals"
+                         Visibility="{Binding AssetDetails.IsAssetView, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <views:DisposalsView/>
+                </TabItem>
             </TabControl>
 
             <StackPanel Grid.Row="1" 

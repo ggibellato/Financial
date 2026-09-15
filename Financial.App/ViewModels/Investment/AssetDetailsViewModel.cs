@@ -359,6 +359,8 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
 
     public PriceHistoryTabViewModel PriceHistory { get; }
 
+    public DisposalsTabViewModel Disposals { get; }
+
     public RelayCommand RefreshTodayInfoCommand => _refreshTodayInfoCommand;
     public RelayCommand CopyAssetNameCommand => _copyAssetNameCommand;
 
@@ -411,6 +413,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
             () => AssetName,
             details => LoadAssetDetails(details),
             (message, caption, image) => MessageBox.Show(message, caption, MessageBoxButton.OK, image));
+        Disposals = new DisposalsTabViewModel();
         _refreshTodayInfoCommand = new RelayCommand(RefreshTodayInfo, CanRefreshTodayInfo);
         _copyAssetNameCommand = new RelayCommand(CopyAssetName, CanCopyAssetName);
     }
@@ -489,6 +492,8 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
 
         PriceHistory.Load(BuildCreditsAssetKey(details.BrokerName, details.PortfolioName, details.Name), details.PriceSnapshots, details.Transactions);
 
+        Disposals.Load(BuildCreditsAssetKey(details.BrokerName, details.PortfolioName, details.Name), details.DisposalRecords);
+
         UpdateCommandStates();
     }
 
@@ -531,6 +536,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         ClearAssetContext();
         Credits.Clear();
         PriceHistory.Clear();
+        Disposals.Clear();
         HasCreditsContext = false;
         Transactions.Clear();
         UpdateCommandStates();
