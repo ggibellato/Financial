@@ -916,4 +916,114 @@ public class AssetTests
 
         removed.Should().BeFalse();
     }
+
+    [Fact]
+    public void RecordTransaction_WithInvestmentsAndApplicableRule_ClassifiesTheDisposalAsFinal()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "BVMF", "AAA");
+        var investments = Investments.Create();
+        var rule = investments.CreateTaxRule(
+            Jurisdiction.BR, EventCategory.CapitalGain, "BR capital gains", "desc", new DateOnly(2021, 1, 1), null);
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+
+        asset.RecordTransaction(Transaction.Create(new DateTime(2021, 6, 1), Transaction.TransactionType.Sell, 5m, 110m, 0m), investments: investments);
+
+        var classification = asset.TaxClassifications.Should().ContainSingle().Subject;
+        classification.SourceType.Should().Be(SourceType.Disposal);
+        classification.CalculationStatus.Should().Be(CalculationStatus.Final);
+        classification.TaxRuleId.Should().Be(rule.Id);
+    }
+
+    [Fact]
+    public void RecordTransaction_WithInvestmentsAndNoApplicableRule_ClassifiesTheDisposalAsIncomplete()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "BVMF", "AAA");
+        var investments = Investments.Create();
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+
+        asset.RecordTransaction(Transaction.Create(new DateTime(2021, 6, 1), Transaction.TransactionType.Sell, 5m, 110m, 0m), investments: investments);
+
+        asset.TaxClassifications.Should().ContainSingle().Which.CalculationStatus.Should().Be(CalculationStatus.Incomplete);
+    }
+
+    [Fact]
+    public void RecordTransaction_WithoutInvestments_CreatesNoClassification()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "BVMF", "AAA");
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+
+        asset.RecordTransaction(Transaction.Create(new DateTime(2021, 6, 1), Transaction.TransactionType.Sell, 5m, 110m, 0m));
+
+        asset.TaxClassifications.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void AddCredit_WithInvestments_ClassifiesTheCredit()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "BVMF", "AAA");
+        var investments = Investments.Create();
+
+        asset.AddCredit(Credit.Create(new DateTime(2026, 6, 1), Credit.CreditType.Dividend, 100m, 0m), investments);
+
+        var classification = asset.TaxClassifications.Should().ContainSingle().Subject;
+        classification.SourceType.Should().Be(SourceType.Credit);
+        classification.EventCategory.Should().Be(EventCategory.Dividend);
+    }
+
+    [Fact]
+    public void AddCredit_WithoutInvestments_CreatesNoClassification()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "BVMF", "AAA");
+
+        asset.AddCredit(Credit.Create(new DateTime(2026, 6, 1), Credit.CreditType.Dividend, 100m, 0m));
+
+        asset.TaxClassifications.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void UpdateCredit_WithInvestments_ReplacesTheExistingClassification()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "BVMF", "AAA");
+        var investments = Investments.Create();
+        var creditId = Guid.NewGuid();
+        asset.AddCredit(Credit.CreateWithId(creditId, new DateTime(2026, 6, 1), Credit.CreditType.Dividend, 100m), investments);
+        var originalClassification = asset.TaxClassifications.Single();
+
+        asset.UpdateCredit(Credit.CreateWithId(creditId, new DateTime(2026, 6, 1), Credit.CreditType.Coupon, 200m), investments);
+
+        using (new AssertionScope())
+        {
+            asset.TaxClassifications.Should().ContainSingle();
+            var updated = asset.TaxClassifications.Single();
+            updated.Id.Should().NotBe(originalClassification.Id);
+            updated.EventCategory.Should().Be(EventCategory.Interest);
+            updated.GrossAmount.Should().Be(200m);
+        }
+    }
+
+    [Fact]
+    public void UpdateCredit_WithoutInvestments_RemovesTheStaleClassificationButCreatesNoNewOne()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "BVMF", "AAA");
+        var investments = Investments.Create();
+        var creditId = Guid.NewGuid();
+        asset.AddCredit(Credit.CreateWithId(creditId, new DateTime(2026, 6, 1), Credit.CreditType.Dividend, 100m), investments);
+
+        asset.UpdateCredit(Credit.CreateWithId(creditId, new DateTime(2026, 6, 1), Credit.CreditType.Coupon, 200m));
+
+        asset.TaxClassifications.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void RemoveCredit_RemovesItsMatchingClassification()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "BVMF", "AAA");
+        var investments = Investments.Create();
+        var creditId = Guid.NewGuid();
+        asset.AddCredit(Credit.CreateWithId(creditId, new DateTime(2026, 6, 1), Credit.CreditType.Dividend, 100m), investments);
+
+        asset.RemoveCredit(creditId);
+
+        asset.TaxClassifications.Should().BeEmpty();
+    }
 }

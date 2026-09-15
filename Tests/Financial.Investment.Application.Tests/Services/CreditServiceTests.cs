@@ -524,6 +524,71 @@ public class CreditServiceTests
         asset.Credits.Should().ContainSingle(c => c.Value == -20m && c.Type == Credit.CreditType.Dividend);
     }
 
+    [Fact]
+    public async Task AddCreditAsync_ClassifiesItInTheSameCall()
+    {
+        var asset = MakeAsset();
+        _repository.Asset = asset;
+
+        await CreateService().AddCreditAsync(new CreditCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "AAAA",
+            Date = new DateTime(2024, 1, 1),
+            Type = "Dividend",
+            Value = 10m
+        });
+
+        var classification = asset.TaxClassifications.Should().ContainSingle().Subject;
+        classification.SourceType.Should().Be(SourceType.Credit);
+        classification.EventCategory.Should().Be(EventCategory.Dividend);
+    }
+
+    [Fact]
+    public async Task UpdateCreditAsync_ReplacesTheExistingClassification()
+    {
+        var asset = MakeAsset();
+        var creditId = Guid.NewGuid();
+        asset.AddCredit(Credit.CreateWithId(creditId, new DateTime(2024, 1, 1), Credit.CreditType.Dividend, 5m), Investments.Create());
+        var originalClassification = asset.TaxClassifications.Single();
+        _repository.Asset = asset;
+
+        await CreateService().UpdateCreditAsync(new CreditUpdateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "AAAA",
+            Id = creditId,
+            Date = new DateTime(2024, 1, 1),
+            Type = "Coupon",
+            Value = 25m
+        });
+
+        var updated = asset.TaxClassifications.Should().ContainSingle().Subject;
+        updated.Id.Should().NotBe(originalClassification.Id);
+        updated.EventCategory.Should().Be(EventCategory.Interest);
+    }
+
+    [Fact]
+    public async Task DeleteCreditAsync_RemovesTheMatchingClassification()
+    {
+        var asset = MakeAsset();
+        var creditId = Guid.NewGuid();
+        asset.AddCredit(Credit.CreateWithId(creditId, new DateTime(2024, 1, 1), Credit.CreditType.Dividend, 5m), Investments.Create());
+        _repository.Asset = asset;
+
+        await CreateService().DeleteCreditAsync(new CreditDeleteDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "AAAA",
+            Id = creditId
+        });
+
+        asset.TaxClassifications.Should().BeEmpty();
+    }
+
     private CreditService CreateService() => new(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance), ExchangeRateProvider, ReportingCurrencyProvider, TimeProvider.System, Tracer, NullLogger<CreditService>.Instance);
 
     private static Asset MakeAsset(string name = "AAAA") =>

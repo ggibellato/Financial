@@ -154,4 +154,80 @@ public class DisposalRecordRegeneratorTests
         original.SupersededByRecordId.Should().BeNull();
         asset.DisposalRecords.Should().NotContain(r => r.Status == DisposalRecordStatus.Active);
     }
+
+    [Fact]
+    public void RegenerateAsset_WithInvestments_BackdatedBuy_SupersedesOldClassificationAndCreatesNewOne()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "BVMF", "AAA");
+        var investments = Investments.Create();
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 3, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        asset.RecordTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 110m, 0m), investments: investments);
+        var originalRecord = asset.DisposalRecords.Single();
+        var originalClassification = asset.TaxClassifications.Single();
+
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 50m, 0m));
+        DisposalRecordRegenerator.RegenerateAsset(asset, CostBasisMethod.AverageCost, new DateTime(2021, 1, 1), investments: investments);
+
+        var replacementRecord = asset.DisposalRecords.Single(r => r.Status == DisposalRecordStatus.Active);
+        var activeClassification = asset.TaxClassifications.Single(c => c.Status == TaxClassificationStatus.Active);
+
+        using (new FluentAssertions.Execution.AssertionScope())
+        {
+            originalClassification.Status.Should().Be(TaxClassificationStatus.Superseded);
+            originalClassification.SupersededByClassificationId.Should().Be(activeClassification.Id);
+            activeClassification.SourceId.Should().Be(replacementRecord.Id);
+            asset.TaxClassifications.Should().HaveCount(2);
+        }
+    }
+
+    [Fact]
+    public void RegenerateAsset_WithInvestments_TransactionDeleted_SupersedesClassificationWithNoReplacement()
+    {
+        var asset = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");
+        var investments = Investments.Create();
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 50m, 0m));
+        var sell = Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 100m, 0m);
+        asset.RecordTransaction(sell, investments: investments);
+        var originalClassification = asset.TaxClassifications.Single();
+
+        asset.RemoveTransaction(sell.Id);
+        DisposalRecordRegenerator.RegenerateAsset(asset, CostBasisMethod.AverageCost, sell.Date, investments: investments);
+
+        originalClassification.Status.Should().Be(TaxClassificationStatus.Superseded);
+        originalClassification.SupersededByClassificationId.Should().BeNull();
+        asset.TaxClassifications.Should().NotContain(c => c.Status == TaxClassificationStatus.Active);
+    }
+
+    [Fact]
+    public void RegenerateBroker_WithInvestments_MethodChanged_RegeneratesClassificationForEveryAsset()
+    {
+        var broker = Broker.Create("Trading 212", "GBP");
+        var investments = Investments.Create();
+        var portfolio = broker.AddPortfolio("ISA");
+        var asset = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 50m, 0m));
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 6, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        asset.RecordTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 10m, 200m, 0m), investments: investments);
+        portfolio.AddAsset(asset);
+        var originalClassification = asset.TaxClassifications.Single();
+
+        broker.SetCostBasisMethod(CostBasisMethod.FIFO);
+        DisposalRecordRegenerator.RegenerateBroker(broker, investments);
+
+        originalClassification.Status.Should().Be(TaxClassificationStatus.Superseded);
+        asset.TaxClassifications.Should().ContainSingle(c => c.Status == TaxClassificationStatus.Active);
+    }
+
+    [Fact]
+    public void RegenerateAsset_WithoutInvestments_NeverTouchesClassifications()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "BVMF", "AAA");
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 3, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        asset.RecordTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 110m, 0m));
+
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 50m, 0m));
+        DisposalRecordRegenerator.RegenerateAsset(asset, CostBasisMethod.AverageCost, new DateTime(2021, 1, 1));
+
+        asset.TaxClassifications.Should().BeEmpty();
+    }
 }

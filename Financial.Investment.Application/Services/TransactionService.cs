@@ -71,7 +71,7 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
                     var allocation = request.SpecificLotAllocations?
                         .Select(entry => new SpecificLotAllocation(entry.SourceTransactionId, entry.Quantity))
                         .ToList();
-                    asset.RecordTransaction(transaction, method, allocation);
+                    asset.RecordTransaction(transaction, method, allocation, _repository.GetInvestments());
                     return true;
                 }).ConfigureAwait(false);
 
@@ -114,7 +114,7 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
                         request.Id, request.Date, transactionType, request.Quantity, request.UnitPrice, request.Fees, request.Withheld,
                         existing?.Currency ?? default, existing?.FxRateSnapshot);
                     var method = ResolveCostBasisMethod(request.BrokerName);
-                    return asset.ReviseTransaction(updatedTransaction, method);
+                    return asset.ReviseTransaction(updatedTransaction, method, _repository.GetInvestments());
                 }).ConfigureAwait(false);
 
             span.MarkSuccess();
@@ -147,7 +147,7 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
                 request.BrokerName,
                 request.PortfolioName,
                 request.AssetName,
-                asset => asset.RetractTransaction(request.Id, ResolveCostBasisMethod(request.BrokerName))).ConfigureAwait(false);
+                asset => asset.RetractTransaction(request.Id, ResolveCostBasisMethod(request.BrokerName), _repository.GetInvestments())).ConfigureAwait(false);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "DeleteTransaction");
