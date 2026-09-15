@@ -1,0 +1,143 @@
+<UserControl x:Class="Financial.Presentation.App.Views.Investment.DisposalsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!--
+        Mirrors Financial.Web's DisposalsTab.tsx: tax-year filter row, then the
+        list, with a per-row Expander (WPF's closest equivalent to Web's Fluent
+        Accordion) showing the superseded audit trail. See docs/rules/ui.md and
+        the F05 spec's "Superseded audit trail" decision.
+    -->
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <ItemsControl Grid.Row="0"
+                      ItemsSource="{Binding AssetDetails.Disposals.TaxYearFilters}"
+                      HorizontalAlignment="Left"
+                      Margin="0,0,0,8"
+                      Visibility="{Binding AssetDetails.Disposals.HasAnyDisposals, Converter={StaticResource BoolToVisibilityConverter}}">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <StackPanel Orientation="Horizontal"/>
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Button Command="{Binding DataContext.AssetDetails.Disposals.SelectTaxYearCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            CommandParameter="{Binding}"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Padding="4,0"
+                            Margin="0,0,12,0">
+                        <TextBlock Text="{Binding Label}" Style="{StaticResource FilterToggleTextStyle}"/>
+                    </Button>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <TextBlock Grid.Row="1"
+                   Text="No disposals yet. Selling or redeeming from this holding will record a disposal here."
+                   TextWrapping="Wrap"
+                   HorizontalAlignment="Center"
+                   Margin="0,24,0,0"
+                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                   Visibility="{Binding AssetDetails.Disposals.HasNoDisposalsAtAll, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+        <TextBlock Grid.Row="1"
+                   Text="No disposals in this tax year."
+                   TextWrapping="Wrap"
+                   HorizontalAlignment="Center"
+                   Margin="0,24,0,0"
+                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                   Visibility="{Binding AssetDetails.Disposals.HasNoDisposalsInSelectedTaxYear, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+        <DataGrid Grid.Row="1"
+                  ItemsSource="{Binding AssetDetails.Disposals.Disposals}"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  IsReadOnly="True"
+                  RowDetailsVisibilityMode="Visible"
+                  Visibility="{Binding AssetDetails.Disposals.HasVisibleDisposals, Converter={StaticResource BoolToVisibilityConverter}}">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Date"
+                                    Binding="{Binding Date, Converter={StaticResource DateFormatConverter}, ConverterParameter='d'}"
+                                    Width="Auto">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock" BasedOn="{StaticResource PlainColumnTextStyle}"/>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+                <DataGridTextColumn Header="Quantity"
+                                    Binding="{Binding QuantityDisposed, StringFormat=N8}"
+                                    Width="Auto">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+                <DataGridTextColumn Header="Method"
+                                    Binding="{Binding Method}"
+                                    Width="Auto">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock" BasedOn="{StaticResource PlainColumnTextStyle}"/>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+                <DataGridTextColumn Header="Proceeds"
+                                    Binding="{Binding Proceeds, StringFormat=N2}"
+                                    Width="Auto">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+                <DataGridTextColumn Header="Cost Basis"
+                                    Binding="{Binding CostBasis, StringFormat=N2}"
+                                    Width="Auto">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+                <DataGridTextColumn Header="Gain/Loss"
+                                    Binding="{Binding GainLoss, StringFormat=N2}"
+                                    Width="Auto">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}">
+                            <Setter Property="FontWeight" Value="Bold"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+                <DataGridTextColumn Header="Tax Year"
+                                    Binding="{Binding TaxYear}"
+                                    Width="*">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock" BasedOn="{StaticResource PlainColumnTextStyle}"/>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+            </DataGrid.Columns>
+            <DataGrid.RowDetailsTemplate>
+                <DataTemplate>
+                    <Expander Margin="24,4,0,8"
+                              Visibility="{Binding HasHistory, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <Expander.Header>
+                            <TextBlock Text="Superseded history" FontWeight="SemiBold"/>
+                        </Expander.Header>
+                        <ItemsControl ItemsSource="{Binding SupersededHistory}" Margin="8,4,0,0">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" Margin="0,2">
+                                        <TextBlock Text="{Binding Date, Converter={StaticResource DateFormatConverter}, ConverterParameter='d'}" Margin="0,0,12,0"/>
+                                        <TextBlock Text="Quantity" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,4,0"/>
+                                        <TextBlock Text="{Binding QuantityDisposed, StringFormat=N8}" Margin="0,0,12,0"/>
+                                        <TextBlock Text="Cost Basis" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,4,0"/>
+                                        <TextBlock Text="{Binding CostBasis, StringFormat=N2}" Margin="0,0,12,0"/>
+                                        <TextBlock Text="Gain/Loss" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,4,0"/>
+                                        <TextBlock Text="{Binding GainLoss, StringFormat=N2}"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Expander>
+                </DataTemplate>
+            </DataGrid.RowDetailsTemplate>
+        </DataGrid>
+    </Grid>
+</UserControl>
