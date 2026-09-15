@@ -1,0 +1,19 @@
+.tax-rules-page {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.tax-rules-page__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tax-rules-page__empty {
+  color: var(--text, #333);
+}

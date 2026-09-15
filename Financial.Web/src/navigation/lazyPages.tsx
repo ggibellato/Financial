@@ -28,3 +28,4 @@ export const ReportingCurrencyPage = lazy(() => import('../pages/ReportingCurren
 export const ReservaPage = lazy(() => import('../pages/ReservaPage'))
 export const ReserveBucketsPage = lazy(() => import('../pages/ReserveBucketsPage'))
 export const TaxPage = lazy(() => import('../pages/TaxPage'))
+export const TaxRulesPage = lazy(() => import('../pages/TaxRulesPage'))
