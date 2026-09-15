@@ -92,6 +92,13 @@ export default function AssetSummaryTab() {
         </div>
 
         <div className="asset-summary__field">
+          <span className="asset-summary__label">Tax Jurisdiction</span>
+          <span className="asset-summary__value">
+            {asset.taxJurisdictions.length > 0 ? asset.taxJurisdictions.join(', ') : '—'}
+          </span>
+        </div>
+
+        <div className="asset-summary__field">
           <span className="asset-summary__label">Local Type</span>
           <span className="asset-summary__value">{asset.localTypeCode || '—'}</span>
         </div>

@@ -68,6 +68,7 @@ const ASSET: AssetDetailsDto = {
   cashFlowsWithoutCredits: [],
   disposalRecords: [],
   costBasisMethod: 'AverageCost',
+  taxJurisdictions: ['BR'],
 }
 
 const PRICE: AssetPriceDto = {
@@ -121,11 +122,22 @@ describe('AssetSummaryTab', () => {
     expect(screen.getByText('Quantity')).toBeInTheDocument()
     expect(screen.getByText('Average Price')).toBeInTheDocument()
     expect(screen.getByText('ISIN')).toBeInTheDocument()
-    expect(screen.getByText('Country')).toBeInTheDocument()
     expect(screen.getByText('Local Type')).toBeInTheDocument()
     expect(screen.getByText('Asset Class')).toBeInTheDocument()
-    expect(screen.getByText('BR')).toBeInTheDocument()
+    expect(screen.getByText('Country').nextElementSibling).toHaveTextContent('BR')
     expect(screen.getByText('Equity')).toBeInTheDocument()
+  })
+
+  it('renders_tax_jurisdictions_joined_by_comma', () => {
+    setMock({ asset: { ...ASSET, taxJurisdictions: ['BR', 'UK'] } })
+    renderAssetSummaryTab()
+    expect(screen.getByText('Tax Jurisdiction').nextElementSibling).toHaveTextContent('BR, UK')
+  })
+
+  it('renders_em_dash_when_asset_has_no_tax_jurisdictions_yet', () => {
+    setMock({ asset: { ...ASSET, taxJurisdictions: [] } })
+    renderAssetSummaryTab()
+    expect(screen.getByText('Tax Jurisdiction').nextElementSibling).toHaveTextContent('—')
   })
 
   it('renders_total_bought_in_green', () => {

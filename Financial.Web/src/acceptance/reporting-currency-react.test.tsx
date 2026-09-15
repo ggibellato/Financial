@@ -103,6 +103,7 @@ const ASSET: AssetDetailsDto = {
   cashFlowsWithoutCredits: [],
   disposalRecords: [],
   costBasisMethod: 'AverageCost',
+  taxJurisdictions: [],
 }
 
 function renderBrokerSummary(summary: AggregatedSummaryDto) {

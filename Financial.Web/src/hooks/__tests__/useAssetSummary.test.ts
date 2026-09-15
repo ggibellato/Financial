@@ -69,6 +69,7 @@ const ASSET_DETAILS: AssetDetailsDto = {
   cashFlowsWithoutCredits: [{ date: '2024-01-01T00:00:00', amount: -2000 }],
   disposalRecords: [],
   costBasisMethod: 'AverageCost',
+  taxJurisdictions: [],
 }
 
 const PRICE: AssetPriceDto = {

@@ -436,6 +436,12 @@
             "format": "double",
             "type": "number"
           },
+          "taxJurisdictions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
           "ticker": {
             "type": "string"
           },
