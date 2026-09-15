@@ -364,6 +364,75 @@ internal sealed class StubTaxWorkbookService : ITaxWorkbookService
     }
 }
 
+internal sealed class StubTaxRuleService : ITaxRuleService
+{
+    public List<TaxRuleDTO> TaxRules { get; set; } = [];
+    public TaxRuleCreateDTO? LastCreateRequest { get; private set; }
+    public (Guid Id, TaxRuleUpdateDTO Request)? LastUpdateRequest { get; private set; }
+    public Guid? LastDeletedId { get; private set; }
+    public Exception? ThrowOnCreate { get; set; }
+    public Exception? ThrowOnUpdate { get; set; }
+    public Exception? ThrowOnDelete { get; set; }
+
+    public IReadOnlyList<TaxRuleDTO> GetTaxRules() => TaxRules;
+
+    public Task<TaxRuleDTO> CreateTaxRuleAsync(TaxRuleCreateDTO request)
+    {
+        LastCreateRequest = request;
+        if (ThrowOnCreate is not null)
+        {
+            throw ThrowOnCreate;
+        }
+
+        var created = new TaxRuleDTO
+        {
+            Id = Guid.NewGuid(),
+            Jurisdiction = request.Jurisdiction,
+            EventCategory = request.EventCategory,
+            Label = request.Label,
+            Description = request.Description,
+            EffectiveFrom = request.EffectiveFrom,
+            EffectiveTo = request.EffectiveTo,
+        };
+        TaxRules.Add(created);
+        return Task.FromResult(created);
+    }
+
+    public Task<TaxRuleDTO> UpdateTaxRuleAsync(Guid id, TaxRuleUpdateDTO request)
+    {
+        LastUpdateRequest = (id, request);
+        if (ThrowOnUpdate is not null)
+        {
+            throw ThrowOnUpdate;
+        }
+
+        var existing = TaxRules.First(r => r.Id == id);
+        var updated = new TaxRuleDTO
+        {
+            Id = id,
+            Jurisdiction = existing.Jurisdiction,
+            EventCategory = existing.EventCategory,
+            Label = request.Label,
+            Description = request.Description,
+            EffectiveFrom = request.EffectiveFrom,
+            EffectiveTo = request.EffectiveTo,
+        };
+        return Task.FromResult(updated);
+    }
+
+    public Task DeleteTaxRuleAsync(Guid id)
+    {
+        LastDeletedId = id;
+        if (ThrowOnDelete is not null)
+        {
+            throw ThrowOnDelete;
+        }
+
+        TaxRules.RemoveAll(r => r.Id == id);
+        return Task.CompletedTask;
+    }
+}
+
 internal sealed class StubMensaisService : IMensaisService
 {
     public List<RecurringBillDTO> Bills { get; set; } = [];
@@ -874,5 +943,16 @@ internal sealed class StubDialogService : IDialogService
     {
         LastSaveFileDialogRequest = (suggestedFileName, filter);
         return SaveFileDialogResult;
+    }
+
+    public bool ShowTaxRuleFormDialogResult { get; set; } = true;
+    public TaxRuleFormDialogViewModel? LastTaxRuleFormDialog { get; private set; }
+    public Action<TaxRuleFormDialogViewModel>? OnShowTaxRuleFormDialog { get; set; }
+
+    public bool ShowTaxRuleFormDialog(TaxRuleFormDialogViewModel viewModel)
+    {
+        LastTaxRuleFormDialog = viewModel;
+        OnShowTaxRuleFormDialog?.Invoke(viewModel);
+        return ShowTaxRuleFormDialogResult;
     }
 }

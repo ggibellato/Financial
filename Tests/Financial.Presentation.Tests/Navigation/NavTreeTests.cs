@@ -69,12 +69,12 @@ public class NavTreeTests
     }
 
     [Fact]
-    public void AdminInvestmentGroup_HasAssetsBrokersPortfoliosInAcOrder()
+    public void AdminInvestmentGroup_HasAssetsBrokersPortfoliosTaxRulesInAcOrder()
     {
         var investmentGroup = NavTree.Categories.Single(c => c.Id == "admin").Groups!.Single(g => g.Id == "investment");
 
         investmentGroup.Label.Should().Be("Investment");
-        investmentGroup.Children.Select(c => c.Label).Should().Equal("Assets", "Brokers", "Portfolios");
+        investmentGroup.Children.Select(c => c.Label).Should().Equal("Assets", "Brokers", "Portfolios", "Tax Rules");
     }
 
     [Fact]
@@ -98,6 +98,6 @@ public class NavTreeTests
         var viewKeys = directViewKeys.Concat(groupedViewKeys).ToList();
 
         viewKeys.Should().OnlyHaveUniqueItems();
-        viewKeys.Should().HaveCount(24);
+        viewKeys.Should().HaveCount(25);
     }
 }

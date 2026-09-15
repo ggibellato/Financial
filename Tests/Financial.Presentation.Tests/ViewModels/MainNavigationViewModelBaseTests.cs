@@ -680,6 +680,8 @@ public class MainNavigationViewModelBaseTests
             public bool ShowUkExpensePromptDialog(Financial.Presentation.App.ViewModels.CashFlow.UkExpensePromptDialogViewModel viewModel) =>
                 throw new NotImplementedException();
             public string? ShowSaveFileDialog(string suggestedFileName, string filter) => throw new NotImplementedException();
+            public bool ShowTaxRuleFormDialog(Financial.Presentation.App.ViewModels.Admin.TaxRuleFormDialogViewModel viewModel) =>
+                throw new NotImplementedException();
         }
     }
 
