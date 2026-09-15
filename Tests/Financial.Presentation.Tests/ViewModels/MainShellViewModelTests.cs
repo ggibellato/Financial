@@ -13,6 +13,7 @@ public class MainShellViewModelTests
         ["historic-investments"] = new object(),
         ["dividend-check"] = new object(),
         ["current-values"] = new object(),
+        ["tax"] = new object(),
         ["monthly"] = new object(),
         ["reserva"] = new object(),
         ["mensais"] = new object(),

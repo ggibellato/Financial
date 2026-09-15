@@ -29,7 +29,7 @@ public class NavTreeTests
     }
 
     [Fact]
-    public void InvestmentsCategory_HasFourChildrenInExistingTabOrder()
+    public void InvestmentsCategory_HasFiveChildrenInExistingTabOrder()
     {
         var investments = NavTree.Categories.Single(c => c.Id == "investments");
 
@@ -38,7 +38,8 @@ public class NavTreeTests
             ("active-investments", "Active Investments", "active-investments"),
             ("historic-investments", "Historic Investments", "historic-investments"),
             ("dividend-check", "Shares Dividend check", "dividend-check"),
-            ("current-values", "Read Assets current values", "current-values"));
+            ("current-values", "Read Assets current values", "current-values"),
+            ("tax", "Tax", "tax"));
     }
 
     [Fact]
@@ -97,6 +98,6 @@ public class NavTreeTests
         var viewKeys = directViewKeys.Concat(groupedViewKeys).ToList();
 
         viewKeys.Should().OnlyHaveUniqueItems();
-        viewKeys.Should().HaveCount(23);
+        viewKeys.Should().HaveCount(24);
     }
 }

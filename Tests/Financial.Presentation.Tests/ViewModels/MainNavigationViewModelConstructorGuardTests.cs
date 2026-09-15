@@ -472,5 +472,6 @@ public class MainNavigationViewModelConstructorGuardTests
             throw new NotImplementedException();
         public bool ShowUkExpensePromptDialog(Financial.Presentation.App.ViewModels.CashFlow.UkExpensePromptDialogViewModel viewModel) =>
             throw new NotImplementedException();
+        public string? ShowSaveFileDialog(string suggestedFileName, string filter) => throw new NotImplementedException();
     }
 }

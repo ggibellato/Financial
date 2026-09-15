@@ -23,6 +23,7 @@ namespace Financial.Presentation.App
             ControleMaeView controleMaeView,
             InvestmentSnapshotsView investmentSnapshotsView,
             AnnualSummaryView annualSummaryView,
+            TaxView taxView,
             Financial.Presentation.App.Views.Admin.BrokersView brokersView,
             Financial.Presentation.App.Views.Admin.PortfoliosView portfoliosView,
             Financial.Presentation.App.Views.Admin.AssetsView assetsView,
@@ -50,6 +51,7 @@ namespace Financial.Presentation.App
             ArgumentNullException.ThrowIfNull(controleMaeView);
             ArgumentNullException.ThrowIfNull(investmentSnapshotsView);
             ArgumentNullException.ThrowIfNull(annualSummaryView);
+            ArgumentNullException.ThrowIfNull(taxView);
             ArgumentNullException.ThrowIfNull(brokersView);
             ArgumentNullException.ThrowIfNull(portfoliosView);
             ArgumentNullException.ThrowIfNull(assetsView);
@@ -89,6 +91,7 @@ namespace Financial.Presentation.App
                 ["controle-mae"] = controleMaeView,
                 ["investment-snapshots"] = investmentSnapshotsView,
                 ["annual-summary"] = annualSummaryView,
+                ["tax"] = taxView,
                 ["admin-assets"] = assetsView,
                 ["admin-brokers"] = brokersView,
                 ["admin-portfolios"] = portfoliosView,

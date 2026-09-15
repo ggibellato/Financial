@@ -51,4 +51,10 @@ public sealed class DialogService : IDialogService
 
     public bool ShowUkExpensePromptDialog(UkExpensePromptDialogViewModel viewModel) =>
         new UkExpensePromptDialog(viewModel) { Owner = System.Windows.Application.Current?.MainWindow }.ShowDialog() == true;
+
+    public string? ShowSaveFileDialog(string suggestedFileName, string filter)
+    {
+        var dialog = new Microsoft.Win32.SaveFileDialog { FileName = suggestedFileName, Filter = filter };
+        return dialog.ShowDialog() == true ? dialog.FileName : null;
+    }
 }

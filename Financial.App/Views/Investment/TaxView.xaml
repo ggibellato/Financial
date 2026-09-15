@@ -1,0 +1,141 @@
+<UserControl x:Class="Financial.Presentation.App.Views.Investment.TaxView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <!-- Matches Financial.Web's accent — see ExpenseFormView.xaml / ADR-005. -->
+            <SolidColorBrush x:Key="AccentButtonBackground" Color="#0F6CBD"/>
+            <SolidColorBrush x:Key="AccentButtonBackgroundPointerOver" Color="#115EA3"/>
+            <SolidColorBrush x:Key="AccentButtonBackgroundPressed" Color="#0C3B5E"/>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Loading..." FontSize="14"
+                    Visibility="{Binding IsLoadingOptions, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+        <StackPanel Grid.Row="0" Visibility="{Binding HasOptionsError, Converter={StaticResource BoolToVisibilityConverter}}">
+            <TextBlock Text="{Binding OptionsError}" Foreground="{DynamicResource SystemFillColorCriticalBrush}" TextWrapping="Wrap"/>
+            <Button Content="Retry" Command="{Binding RetryOptionsCommand}" HorizontalAlignment="Left" Margin="0,8,0,0"/>
+        </StackPanel>
+
+        <Grid Grid.Row="0" Visibility="{Binding ShowContent, Converter={StaticResource BoolToVisibilityConverter}}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0" Text="Tax" FontSize="20" FontWeight="Bold" Margin="0,0,0,12"/>
+
+            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,12">
+                <TextBlock Text="Jurisdiction:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <ComboBox Width="90" AutomationProperties.Name="Jurisdiction"
+                          ItemsSource="{Binding Jurisdictions}"
+                          SelectedItem="{Binding SelectedJurisdiction}"/>
+
+                <TextBlock Text="Tax Year:" VerticalAlignment="Center" Margin="20,0,8,0"/>
+                <ComboBox Width="110" AutomationProperties.Name="Tax Year"
+                          ItemsSource="{Binding TaxYearsForJurisdiction}"
+                          SelectedItem="{Binding SelectedTaxYear}"/>
+            </StackPanel>
+
+            <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,12">
+                <ui:Button Content="Export CSV" Appearance="Primary" Icon="{ui:SymbolIcon Symbol=ArrowDownload20}"
+                           IsEnabled="{Binding CanExportCsv}" Command="{Binding ExportCsvCommand}"/>
+
+                <StackPanel Orientation="Horizontal" Margin="16,0,0,0"
+                            Visibility="{Binding HasAggregateStatus, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <TextBlock Text="Overall status:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <Border Background="{Binding AggregateStatusBrush}"
+                            CornerRadius="4"
+                            Padding="6,2"
+                            AutomationProperties.Name="{Binding AggregateStatusLabel}">
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon Symbol="{Binding AggregateStatusSymbol}"
+                                           Filled="{Binding AggregateStatusSymbolFilled}"
+                                           Foreground="{Binding AggregateStatusForeground}"/>
+                            <TextBlock Text="{Binding AggregateStatusLabel}"
+                                       Foreground="{Binding AggregateStatusForeground}"
+                                       Margin="4,0,0,0"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </StackPanel>
+
+            <Grid Grid.Row="3">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="150"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Text="Loading..." FontSize="14"
+                           Visibility="{Binding IsLoadingWorkbook, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                <StackPanel Grid.Row="0" Visibility="{Binding HasWorkbookError, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <TextBlock Text="{Binding WorkbookError}" Foreground="{DynamicResource SystemFillColorCriticalBrush}" TextWrapping="Wrap"/>
+                    <Button Content="Retry" Command="{Binding RetryWorkbookCommand}" HorizontalAlignment="Left" Margin="0,8,0,0"/>
+                </StackPanel>
+
+                <DataGrid Grid.Row="0" ItemsSource="{Binding Entries}" AutoGenerateColumns="False" IsReadOnly="True"
+                          AutomationProperties.Name="Tax Workbook Entries"
+                          Visibility="{Binding ShowWorkbookContent, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Binding="{Binding Date, StringFormat=dd/MM/yyyy}" Header="Date" Width="100" ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                        <DataGridTextColumn Binding="{Binding EventCategory}" Header="Category" Width="140" ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                        <DataGridTextColumn Binding="{Binding Proceeds, StringFormat=N2, TargetNullValue='—'}" Header="Proceeds" Width="90" ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                        <DataGridTextColumn Binding="{Binding CostBasis, StringFormat=N2, TargetNullValue='—'}" Header="Cost Basis" Width="90" ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                        <DataGridTextColumn Binding="{Binding GainLoss, StringFormat=N2, TargetNullValue='—'}" Header="Gain/Loss" Width="90" ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                        <DataGridTextColumn Binding="{Binding GrossAmount, StringFormat=N2, TargetNullValue='—'}" Header="Gross" Width="90" ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                        <DataGridTextColumn Binding="{Binding WithheldAmount, StringFormat=N2, TargetNullValue='—'}" Header="Withheld" Width="90" ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                        <DataGridTextColumn Binding="{Binding NetAmount, StringFormat=N2, TargetNullValue='—'}" Header="Net" Width="90" ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                        <DataGridTemplateColumn Header="Status" Width="140">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Border Background="{Binding StatusBrush}"
+                                            CornerRadius="4"
+                                            Padding="6,2"
+                                            HorizontalAlignment="Left"
+                                            AutomationProperties.Name="{Binding StatusAccessibleLabel}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <ui:SymbolIcon Symbol="{Binding StatusSymbol}"
+                                                           Filled="{Binding StatusSymbolFilled}"
+                                                           Foreground="{Binding StatusForeground}"/>
+                                            <TextBlock Text="{Binding StatusLabel}"
+                                                       Foreground="{Binding StatusForeground}"
+                                                       Margin="4,0,0,0"/>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Binding="{Binding EvidenceReference}" Header="Evidence" Width="100" ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <TextBlock Grid.Row="1" Text="Category Totals" FontSize="14" FontWeight="Bold" Margin="0,12,0,8"
+                           Visibility="{Binding ShowWorkbookContent, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                <DataGrid Grid.Row="2" ItemsSource="{Binding CategoryTotals}" AutoGenerateColumns="False" IsReadOnly="True"
+                          AutomationProperties.Name="Tax Category Totals"
+                          Visibility="{Binding ShowWorkbookContent, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Binding="{Binding EventCategory}" Header="Category" Width="140" FontWeight="Bold" ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                        <DataGridTextColumn Binding="{Binding TotalProceeds, StringFormat=N2, TargetNullValue='—'}" Header="Proceeds" Width="90" FontWeight="Bold" ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                        <DataGridTextColumn Binding="{Binding TotalCostBasis, StringFormat=N2, TargetNullValue='—'}" Header="Cost Basis" Width="90" FontWeight="Bold" ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                        <DataGridTextColumn Binding="{Binding TotalGainLoss, StringFormat=N2, TargetNullValue='—'}" Header="Gain/Loss" Width="90" FontWeight="Bold" ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                        <DataGridTextColumn Binding="{Binding TotalGrossAmount, StringFormat=N2, TargetNullValue='—'}" Header="Gross" Width="90" FontWeight="Bold" ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                        <DataGridTextColumn Binding="{Binding TotalWithheldAmount, StringFormat=N2, TargetNullValue='—'}" Header="Withheld" Width="90" FontWeight="Bold" ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                        <DataGridTextColumn Binding="{Binding TotalNetAmount, StringFormat=N2, TargetNullValue='—'}" Header="Net" Width="90" FontWeight="Bold" ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
+        </Grid>
+    </Grid>
+</UserControl>
