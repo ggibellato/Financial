@@ -33,6 +33,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private string _isin = string.Empty;
     private string _exchange = string.Empty;
     private CountryCode _country = CountryCode.Unknown;
+    private string _taxJurisdictionsDisplay = "—";
     private string _localTypeCode = string.Empty;
     private GlobalAssetClass _class = GlobalAssetClass.Unknown;
     private decimal _quantity;
@@ -97,6 +98,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     public string ISIN { get => _isin; private set => SetProperty(ref _isin, value); }
     public string Exchange { get => _exchange; private set => SetProperty(ref _exchange, value); }
     public CountryCode Country { get => _country; private set => SetProperty(ref _country, value); }
+    public string TaxJurisdictionsDisplay { get => _taxJurisdictionsDisplay; private set => SetProperty(ref _taxJurisdictionsDisplay, value); }
     public string LocalTypeCode { get => _localTypeCode; private set => SetProperty(ref _localTypeCode, value); }
     public GlobalAssetClass Class { get => _class; private set => SetProperty(ref _class, value); }
 
@@ -483,6 +485,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         ISIN = details.ISIN;
         Exchange = details.Exchange;
         Country = details.Country;
+        TaxJurisdictionsDisplay = details.TaxJurisdictions.Count > 0 ? string.Join(", ", details.TaxJurisdictions) : "—";
         LocalTypeCode = details.LocalTypeCode;
         Class = details.Class;
         Quantity = details.Quantity;
@@ -884,6 +887,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         ISIN = string.Empty;
         Exchange = string.Empty;
         Country = CountryCode.Unknown;
+        TaxJurisdictionsDisplay = "—";
         LocalTypeCode = string.Empty;
         Class = GlobalAssetClass.Unknown;
         Quantity = 0;

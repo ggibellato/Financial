@@ -32,6 +32,7 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
                     <TextBlock Grid.Row="0" Grid.Column="0" Text="Quantity:" FontWeight="Bold" Margin="0,5"/>
@@ -236,6 +237,9 @@
                                Visibility="{Binding AssetDetails.IsActiveScope, Converter={StaticResource BoolToVisibilityConverter}}"
                                Margin="10,5"
                                Foreground="DarkRed"/>
+
+                    <TextBlock Grid.Row="16" Grid.Column="0" Text="Tax Jurisdiction:" FontWeight="Bold" Margin="0,5"/>
+                    <TextBlock Grid.Row="16" Grid.Column="1" Text="{Binding AssetDetails.TaxJurisdictionsDisplay, Mode=OneWay}" Margin="10,5"/>
                 </Grid>
             </ScrollViewer>
         </DataTemplate>
