@@ -504,9 +504,9 @@ graph TD
       has zero entries
 
 ### F05. WPF — Tax Reporting
-- [ ] **P51-F05-wpf-tax-reporting-01** `Financial.App` includes an equivalent Tax page with the same
+- [x] **P51-F05-wpf-tax-reporting-01** `Financial.App` includes an equivalent Tax page with the same
       selectors, entries, category totals and status indicators as `Financial.Web`
-- [ ] **P51-F05-wpf-tax-reporting-02** `Financial.App` includes the same CSV export producing
+- [x] **P51-F05-wpf-tax-reporting-02** `Financial.App` includes the same CSV export producing
       identical column output for the same selection
 - [ ] **P51-F05-wpf-tax-reporting-03** `Financial.App` includes the same Admin Tax Rules screen with
       equivalent create/edit/delete and validation behaviour
