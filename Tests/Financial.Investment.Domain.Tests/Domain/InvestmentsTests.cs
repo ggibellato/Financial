@@ -410,6 +410,194 @@ public class InvestmentsTests
         act.Should().Throw<KeyNotFoundException>();
     }
 
+    [Fact]
+    public void TaxRules_StartsEmpty()
+    {
+        var investments = Investments.Create();
+
+        investments.TaxRules.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void CreateTaxRule_AddsToTaxRulesAndReturnsIt()
+    {
+        var investments = Investments.Create();
+
+        var rule = investments.CreateTaxRule(
+            Jurisdiction.BR, EventCategory.Dividend, "BR dividend", "desc", new DateOnly(2026, 1, 1), null);
+
+        investments.TaxRules.Should().ContainSingle().Which.Should().BeSameAs(rule);
+    }
+
+    [Fact]
+    public void CreateTaxRule_OverlappingRangeForSameJurisdictionAndCategory_ThrowsAndAddsNothing()
+    {
+        var investments = Investments.Create();
+        investments.CreateTaxRule(
+            Jurisdiction.BR, EventCategory.Dividend, "First rule", "desc",
+            new DateOnly(2026, 1, 1), new DateOnly(2027, 1, 1));
+
+        var act = () => investments.CreateTaxRule(
+            Jurisdiction.BR, EventCategory.Dividend, "Second rule", "desc",
+            new DateOnly(2026, 6, 1), null);
+
+        act.Should().Throw<InvestmentRuleViolationException>().WithMessage("*First rule*");
+        investments.TaxRules.Should().ContainSingle();
+    }
+
+    [Fact]
+    public void CreateTaxRule_SameRangeButDifferentJurisdiction_Succeeds()
+    {
+        var investments = Investments.Create();
+        investments.CreateTaxRule(
+            Jurisdiction.BR, EventCategory.Dividend, "BR rule", "desc", new DateOnly(2026, 1, 1), null);
+
+        investments.CreateTaxRule(
+            Jurisdiction.UK, EventCategory.Dividend, "UK rule", "desc", new DateOnly(2026, 1, 1), null);
+
+        investments.TaxRules.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public void CreateTaxRule_SameRangeButDifferentCategory_Succeeds()
+    {
+        var investments = Investments.Create();
+        investments.CreateTaxRule(
+            Jurisdiction.BR, EventCategory.Dividend, "Dividend rule", "desc", new DateOnly(2026, 1, 1), null);
+
+        investments.CreateTaxRule(
+            Jurisdiction.BR, EventCategory.Interest, "Interest rule", "desc", new DateOnly(2026, 1, 1), null);
+
+        investments.TaxRules.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public void CreateTaxRule_AdjacentNonOverlappingRange_Succeeds()
+    {
+        var investments = Investments.Create();
+        investments.CreateTaxRule(
+            Jurisdiction.BR, EventCategory.Dividend, "First rule", "desc",
+            new DateOnly(2026, 1, 1), new DateOnly(2027, 1, 1));
+
+        investments.CreateTaxRule(
+            Jurisdiction.BR, EventCategory.Dividend, "Second rule", "desc",
+            new DateOnly(2027, 1, 1), null);
+
+        investments.TaxRules.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public void UpdateTaxRule_ChangesLabelAndRange()
+    {
+        var investments = Investments.Create();
+        var rule = investments.CreateTaxRule(
+            Jurisdiction.BR, EventCategory.Dividend, "Original", "desc", new DateOnly(2026, 1, 1), null);
+
+        var updated = investments.UpdateTaxRule(
+            rule.Id, "Updated", "desc2", new DateOnly(2026, 6, 1), new DateOnly(2027, 1, 1));
+
+        using (new AssertionScope())
+        {
+            updated.Should().BeSameAs(rule);
+            updated.Label.Should().Be("Updated");
+            updated.EffectiveFrom.Should().Be(new DateOnly(2026, 6, 1));
+        }
+    }
+
+    [Fact]
+    public void UpdateTaxRule_ExcludesItselfFromItsOwnOverlapCheck()
+    {
+        var investments = Investments.Create();
+        var rule = investments.CreateTaxRule(
+            Jurisdiction.BR, EventCategory.Dividend, "Original", "desc",
+            new DateOnly(2026, 1, 1), new DateOnly(2027, 1, 1));
+
+        var act = () => investments.UpdateTaxRule(
+            rule.Id, "Original", "desc", new DateOnly(2026, 3, 1), new DateOnly(2026, 9, 1));
+
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void UpdateTaxRule_OverlappingADifferentRule_ThrowsAndLeavesBothUnchanged()
+    {
+        var investments = Investments.Create();
+        var first = investments.CreateTaxRule(
+            Jurisdiction.BR, EventCategory.Dividend, "First", "desc",
+            new DateOnly(2026, 1, 1), new DateOnly(2027, 1, 1));
+        var second = investments.CreateTaxRule(
+            Jurisdiction.BR, EventCategory.Dividend, "Second", "desc",
+            new DateOnly(2027, 1, 1), null);
+
+        var act = () => investments.UpdateTaxRule(
+            second.Id, "Second", "desc", new DateOnly(2026, 6, 1), null);
+
+        act.Should().Throw<InvestmentRuleViolationException>().WithMessage("*First*");
+        using (new AssertionScope())
+        {
+            first.EffectiveFrom.Should().Be(new DateOnly(2026, 1, 1));
+            second.EffectiveFrom.Should().Be(new DateOnly(2027, 1, 1));
+        }
+    }
+
+    [Fact]
+    public void UpdateTaxRule_UnknownId_ThrowsKeyNotFound()
+    {
+        var investments = Investments.Create();
+
+        var act = () => investments.UpdateTaxRule(Guid.NewGuid(), "Label", "desc", new DateOnly(2026, 1, 1), null);
+
+        act.Should().Throw<KeyNotFoundException>();
+    }
+
+    [Fact]
+    public void DeleteTaxRule_RemovesIt()
+    {
+        var investments = Investments.Create();
+        var rule = investments.CreateTaxRule(
+            Jurisdiction.BR, EventCategory.Dividend, "Original", "desc", new DateOnly(2026, 1, 1), null);
+
+        investments.DeleteTaxRule(rule.Id);
+
+        investments.TaxRules.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void DeleteTaxRule_UnknownId_ThrowsKeyNotFound()
+    {
+        var investments = Investments.Create();
+
+        var act = () => investments.DeleteTaxRule(Guid.NewGuid());
+
+        act.Should().Throw<KeyNotFoundException>();
+    }
+
+    [Fact]
+    public void FindApplicableTaxRule_ReturnsTheMatchingRule()
+    {
+        var investments = Investments.Create();
+        var rule = investments.CreateTaxRule(
+            Jurisdiction.BR, EventCategory.Dividend, "Rule", "desc",
+            new DateOnly(2026, 1, 1), new DateOnly(2027, 1, 1));
+
+        var found = investments.FindApplicableTaxRule(Jurisdiction.BR, EventCategory.Dividend, new DateOnly(2026, 6, 1));
+
+        found.Should().BeSameAs(rule);
+    }
+
+    [Fact]
+    public void FindApplicableTaxRule_NoMatchingRule_ReturnsNull()
+    {
+        var investments = Investments.Create();
+        investments.CreateTaxRule(
+            Jurisdiction.BR, EventCategory.Dividend, "Rule", "desc",
+            new DateOnly(2026, 1, 1), new DateOnly(2027, 1, 1));
+
+        var found = investments.FindApplicableTaxRule(Jurisdiction.BR, EventCategory.Dividend, new DateOnly(2027, 6, 1));
+
+        found.Should().BeNull();
+    }
+
     /// <summary>
     /// Active XPI holding "VOD", bought then fully sold with a dividend along the way: closed, but
     /// with a record worth keeping.

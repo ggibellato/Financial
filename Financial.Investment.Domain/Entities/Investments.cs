@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Financial.Investment.Domain.Exceptions;
@@ -27,6 +28,10 @@ public class Investments
     /// file written before this setting existed) keeps behaving exactly as it already did.
     /// </summary>
     public bool ReportingCurrencyEnabled { get; private set; } = true;
+
+    private List<TaxRule> _taxRules = new List<TaxRule>();
+    public IReadOnlyCollection<TaxRule> TaxRules { get => _taxRules.AsReadOnly(); private set => SetTaxRules(value); }
+    private void SetTaxRules(IReadOnlyCollection<TaxRule> data) => EntityGuard.ReplaceAll(_taxRules, data);
 
     private Investments() { }
 
@@ -201,5 +206,68 @@ public class Investments
 
         // A broker created this instant holds nothing, so there is no name to clash with.
         return historicBroker.AddPortfolio(destinationName);
+    }
+
+    public TaxRule CreateTaxRule(
+        Jurisdiction jurisdiction,
+        EventCategory eventCategory,
+        string label,
+        string description,
+        DateOnly effectiveFrom,
+        DateOnly? effectiveTo)
+    {
+        EnsureNoOverlap(jurisdiction, eventCategory, effectiveFrom, effectiveTo, excluding: null);
+
+        var rule = TaxRule.Create(jurisdiction, eventCategory, label, description, effectiveFrom, effectiveTo);
+        _taxRules.Add(rule);
+        return rule;
+    }
+
+    public TaxRule UpdateTaxRule(Guid id, string label, string description, DateOnly effectiveFrom, DateOnly? effectiveTo)
+    {
+        var rule = FindTaxRule(id) ?? throw new KeyNotFoundException($"Tax rule \"{id}\" was not found.");
+
+        EnsureNoOverlap(rule.Jurisdiction, rule.EventCategory, effectiveFrom, effectiveTo, excluding: rule);
+        rule.Update(label, description, effectiveFrom, effectiveTo);
+        return rule;
+    }
+
+    public void DeleteTaxRule(Guid id)
+    {
+        var rule = FindTaxRule(id) ?? throw new KeyNotFoundException($"Tax rule \"{id}\" was not found.");
+        _taxRules.Remove(rule);
+    }
+
+    public TaxRule? FindTaxRule(Guid id) => _taxRules.FirstOrDefault(rule => rule.Id == id);
+
+    public TaxRule? FindApplicableTaxRule(Jurisdiction jurisdiction, EventCategory eventCategory, DateOnly date) =>
+        _taxRules.FirstOrDefault(rule =>
+            rule.Jurisdiction == jurisdiction && rule.EventCategory == eventCategory && rule.Applies(date));
+
+    private void EnsureNoOverlap(
+        Jurisdiction jurisdiction,
+        EventCategory eventCategory,
+        DateOnly effectiveFrom,
+        DateOnly? effectiveTo,
+        TaxRule? excluding)
+    {
+        var overlapping = _taxRules.FirstOrDefault(rule =>
+            !ReferenceEquals(rule, excluding) &&
+            rule.Jurisdiction == jurisdiction &&
+            rule.EventCategory == eventCategory &&
+            RangesOverlap(effectiveFrom, effectiveTo, rule.EffectiveFrom, rule.EffectiveTo));
+
+        if (overlapping is not null)
+        {
+            throw new InvestmentRuleViolationException(
+                $"This range overlaps existing rule \"{overlapping.Label}\" ({overlapping.EffectiveFrom:yyyy-MM-dd}–{(overlapping.EffectiveTo?.ToString("yyyy-MM-dd") ?? "present")}).");
+        }
+    }
+
+    private static bool RangesOverlap(DateOnly aFrom, DateOnly? aTo, DateOnly bFrom, DateOnly? bTo)
+    {
+        var aEnd = aTo ?? DateOnly.MaxValue;
+        var bEnd = bTo ?? DateOnly.MaxValue;
+        return aFrom < bEnd && bFrom < aEnd;
     }
 }
