@@ -31,6 +31,12 @@ rate cache + a reporting-currency on/off toggle, prompted by live use surfacing 
 brokers whose currency differs from the reporting currency) and a gap-closing cross-feature test (#823).
 G2 is closed; D3 is resolved. Wave 4 (P50 · Disposals and cost basis) is next.
 
+**Revised 2026-09-15.** Wave 4 has since shipped in full —
+`docs/prd/P50-prd-disposals-and-cost-basis/` (P50, 15 PRs across F01–F05, merged 2026-09-14/15). G3's
+remaining FIFO/specific-identification limitation and G4 (no disposal record) are both closed; D2 is
+confirmed. D7 (custody vs. domicile, previously deferred to P51) was also resolved during this
+revision — see §7 — closing G13. Wave 5 (P51 · Tax reporting support) is next.
+
 ---
 
 ## 1. Verdict
@@ -149,12 +155,22 @@ position figures, with the same-date purchases-before-sales tie-break described 
 The FIFO/specific-identification limitation is unchanged — still Wave 4 (P50) — and fees are still
 folded into `AveragePrice`, unchanged until Wave 1's money-block work (G1) separates them.
 
-### G4 — No disposal record
+**[FIFO/specific-identification delivered 2026-09-15]** P50-F01 (#825) added a `CostBasisMethod`
+strategy (AverageCost / FIFO / SpecificId) selectable per broker; P50-F02 (#826/#828) persists the
+method, basis and units actually used on each disposal. Fees remain folded into `AveragePrice`,
+still unchanged until G1's money-block work reaches this figure.
+
+### G4 — No disposal record **[fixed 2026-09-15]**
 
 Realised gain is a running scalar (`Transactions.RealizedCapitalGain`) recomputed by full replay.
 Nothing persists *which* units were disposed, under which method, at what basis, in which tax
 year. The brief requires that a later configuration change must not retroactively rewrite a filed
 result — today, changing anything replays everything.
+
+**[fixed 2026-09-15]** P50-F02 (#826/#828) added a persisted, immutable `DisposalRecord` per
+sell/redemption — date, units, method, basis, proceeds, fees, gain/loss, tax year. P50-F03 (#829)
+defined the recalculation policy the brief required: a later method change or backdated correction
+supersedes an existing record rather than rewriting it, so a full audit chain survives.
 
 ### G5 — No tax domain at all
 
@@ -332,7 +348,7 @@ four mis-filed Historic holdings, and writes nothing back to the data file.
   breakdown.
 - **`CountryCode` is `{ Unknown, BR, US, UK }`** — an extensibility ceiling.
 
-### G13 — `CountryCode` records custody, not domicile **[new 2026-09-10]**
+### G13 — `CountryCode` records custody, not domicile **[new 2026-09-10]** **[resolved 2026-09-15]**
 
 Country is not a data-quality gap — all 160 assets carry one — but it does not mean what a tax module
 would assume. It tracks the **broker's jurisdiction**: every holding at the Brazilian broker is BR and
@@ -348,6 +364,16 @@ This is harmless for classification, which resolves through `UK/Stock` as intend
 valuation routing is unaffected because the venue is what determines where a price is fetched. It is
 **not** harmless for P51: withholding on a US-domiciled dividend is a US matter whichever account holds
 it, so a tax profile derived from this field would be wrong for those fifty-odd holdings. See D7.
+
+**[resolved 2026-09-15]** Confirmed with the user: tax is filed and paid in the broker's (custody)
+jurisdiction regardless of where the underlying issuer is domiciled — a US-domiciled ETF held at a UK
+broker is a UK filing matter, not a US one. D7 is therefore resolved as "custody only" — but not via
+`CountryCode` itself, since this section already shows it's inconsistently set (AGNC recorded as US
+once, UK twice, under the same broker). P51 instead derives jurisdiction from each disposal/income
+event's own `Currency` (`BRL` → BR, any other currency → UK), the same signal P50-F02 already uses for
+`DisposalRecord.TaxYear` — no new domicile field, no ISIN-prefix derivation, and `CountryCode` is not
+consulted at all. This closes G13 as *not applicable* to tax-profile derivation, rather than fixed by
+a data-model change.
 
 ### G14 — "Historic" is a filing convention, not an enforced state **[new 2026-09-10]**
 
@@ -529,7 +555,7 @@ transaction/credit date was re-fetched from Frankfurter on every click with no c
 snapshot and F03's on-demand conversion the identical rate for the same date, closing the last two
 unchecked PRD boxes). 18 PRs total for the wave.
 
-### Wave 4 — P50 · Disposals and cost basis
+### Wave 4 — P50 · Disposals and cost basis **[delivered 2026-09-15]**
 
 | # | Feature |
 |---|---|
@@ -538,6 +564,22 @@ unchecked PRD boxes). 18 PRs total for the wave.
 | F03 | Recalculation policy — changing method never rewrites an existing record; recalculation from a date creates new ones |
 | F04 | React disposal view |
 | F05 | WPF parity |
+
+**Deliverable:** every sell or redemption produces a persisted, immutable `DisposalRecord`;
+AverageCost, FIFO or SpecificId can be selected per broker without ever rewriting a filed result — a
+later method change or backdated correction supersedes, never overwrites, and a full audit chain
+survives.
+
+Like Wave 3, P50 used the `docs/prd/` spec-writer + implement-feature workflow — shipped as
+`docs/prd/P50-prd-disposals-and-cost-basis/` across **15 PRs** for F01–F05 (#825–#840, skipping #836,
+an unrelated Docker fix), each feature split into 1–6 stacked PRs to stay within the 8-non-test-file
+limit: F01 in 2 (#825 the `CostBasisMethod` strategy, #827 a same-day refactor stripping descriptive
+comments the review checklist flagged), F02 in 2 (#826 the disposal record calculator, #828 its
+wiring, backfill and app plumbing), F03 in 1 (#829, the recalculation/supersession policy), F04 in 6
+(#830 the API read surface, #831 the open-lots endpoint, #832 the broker cost-basis method write
+path, #833 the React disposals tab, #834 the admin broker cost-basis-method field, #835 specific-ID
+lot allocation on sell/redemption entry), and F05 in 4 (#837–#839 WPF parity for the same four
+capabilities, #840 a docs-only PR marking Section 9 acceptance criteria complete).
 
 ### Wave 5 — P51 · Tax reporting support
 
@@ -604,6 +646,17 @@ multi-currency support and an honest all-brokers total
 decisions taken during that work. Wave 4 (P50 · Disposals and cost basis) is next per the sequencing
 above.
 
+**[revised 2026-09-15]** P50 landed in **15** PRs against its five-feature table — F04 alone split
+into 6 stacked PRs, F05 into 3 feature PRs plus a closing docs-only PR, both to stay within the
+8-non-test-file limit — closer to P49's density than P46's. Running total across the five delivered
+waves so far: **52 PRs** (12 + 2 + 5 + 18 + 15).
+
+P46 through P50 have now all shipped (§6 above); P50 added persisted, immutable disposal records with
+a per-broker choice of cost-basis method (AverageCost / FIFO / SpecificId) and a supersede-never-rewrite
+recalculation policy (`docs/prd/P50-prd-disposals-and-cost-basis/`). D7 (custody vs. domicile) was also
+resolved during this revision, ahead of Wave 5's implementation — see §7 — closing G13. Wave 5 (P51 ·
+Tax reporting support) is next per the sequencing above.
+
 ---
 
 ## 7. Decisions required before slicing
@@ -611,12 +664,12 @@ above.
 | # | Decision | Recommendation |
 |---|---|---|
 | D1 | Tax scope | Reporting support only (§5). Records and classifies; never computes tax due. |
-| D2 | Cost-basis default | Weighted average — it matches both BR and UK (Section 104) practice. FIFO and specific-ID ship in P50 as options, not defaults. |
+| D2 | Cost-basis default | Weighted average — it matches both BR and UK (Section 104) practice. FIFO and specific-ID ship in P50 as options, not defaults. **[delivered 2026-09-15]** P50 shipped exactly this — AverageCost remains the default; FIFO and SpecificId are selectable per broker (P50-F01). |
 | D3 | Reporting currency | Defer P49 until P48 ships. Per-broker views are correct without it; only the all-brokers total needs it. **[2026-09-13]** P48 shipped 2026-09-12 — P49 is now unblocked, though the sequencing diagram in §6 already treats it as independent of the P47→P48 chain. **[delivered 2026-09-13]** P49 shipped — see G2 and §6 Wave 3. |
 | D4 | `Credit` migration | Rewrite in place with a tool + temp-copy verification, keeping `Value` as derived net, rather than dual-writing a parallel collection. |
 | D5 | ~~Historic `Unknown` assets~~ **Unclassified assets** | **[corrected 2026-09-10] Overturned.** A backfill is not possible — classification is manual, one instrument at a time (G11), and 87 of the 90 are closed positions where it changes nothing on screen. P46-F07 therefore reports and never writes. **The dependency inverts:** P48's valuation methods and P51's tax profiles must each define their behaviour for an unclassified holding rather than assuming the rows were cleaned first. Nothing in P46 may require a classification. |
 | D6 | Inco / value-based funds | Model as provider-valued holdings in P48-F03 — not as synthetic single-unit assets. |
-| D7 | **Country: custody or domicile?** **[new 2026-09-10]** | Decide in **P51**, not before. `CountryCode` currently records where a holding is *held*, not where the issuer is domiciled (G13), which is correct for classification and price routing but wrong for withholding. The options are to split the field into custody and domicile, or to derive domicile from the ISIN prefix, which is already present and already contradicts the country field on at least two holdings. P46–P50 need no change. |
+| D7 | **Country: custody or domicile?** **[new 2026-09-10]** **[resolved 2026-09-15]** | Decide in **P51**, not before. `CountryCode` currently records where a holding is *held*, not where the issuer is domiciled (G13), which is correct for classification and price routing but wrong for withholding. The options are to split the field into custody and domicile, or to derive domicile from the ISIN prefix, which is already present and already contradicts the country field on at least two holdings. P46–P50 need no change. **[resolved 2026-09-15]** Custody only — the user files and pays tax in the broker's jurisdiction regardless of the issuer's domicile. Rather than `CountryCode` (already shown above to be inconsistently set), P51's `TaxProfile` derives jurisdiction from each event's own `Currency` — the same signal P50-F02 already uses for `DisposalRecord.TaxYear`. No new domicile field, no ISIN-prefix derivation, `CountryCode` not consulted. Closes G13 as not applicable to tax-profile derivation. |
 
 ---
 
