@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Interfaces;
+using Financial.Investment.Domain.Entities;
 using Financial.Presentation.App.Services;
 using Microsoft.Extensions.Logging;
 using static Financial.Presentation.App.Helpers.ObservableCollectionHelper;
@@ -107,7 +108,12 @@ public class BrokersViewModel : ViewModelBase
         ActionError = null;
         try
         {
-            await _brokerService.CreateBrokerAsync(new BrokerCreateDTO { Name = dialog.Name, Currency = dialog.Currency });
+            await _brokerService.CreateBrokerAsync(new BrokerCreateDTO
+            {
+                Name = dialog.Name,
+                Currency = dialog.Currency,
+                CostBasisMethod = Enum.Parse<CostBasisMethod>(dialog.CostBasisMethod)
+            });
             await RefreshAsync();
         }
         catch (Exception ex)
@@ -124,23 +130,42 @@ public class BrokersViewModel : ViewModelBase
             return;
         }
 
-        var dialog = new BrokerFormDialogViewModel(broker.Name, broker.Currency);
+        var dialog = new BrokerFormDialogViewModel(broker.Name, broker.Currency, broker.CostBasisMethod.ToString());
         if (!_dialogService.ShowBrokerFormDialog(dialog))
         {
             return;
         }
 
         ActionError = null;
+        BrokerDTO renamed;
         try
         {
-            await _brokerService.UpdateBrokerAsync(broker.Name, new BrokerUpdateDTO { Name = dialog.Name, Currency = dialog.Currency });
-            await RefreshAsync();
+            renamed = await _brokerService.UpdateBrokerAsync(broker.Name, new BrokerUpdateDTO { Name = dialog.Name, Currency = dialog.Currency });
         }
         catch (Exception ex)
         {
             _logger.LogError("Broker update failed with {ErrorType}", ex.GetType().Name);
             ActionError = ex.Message;
+            return;
         }
+
+        var selectedMethod = Enum.Parse<CostBasisMethod>(dialog.CostBasisMethod);
+        if (selectedMethod != broker.CostBasisMethod)
+        {
+            try
+            {
+                await _brokerService.SetCostBasisMethodAsync(renamed.Name, selectedMethod);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Broker cost basis method change failed with {ErrorType}", ex.GetType().Name);
+                ActionError = $"\"{renamed.Name}\" was saved, but its cost basis method could not be changed: {ex.Message}";
+                await RefreshAsync();
+                return;
+            }
+        }
+
+        await RefreshAsync();
     }
 
     internal async Task DeleteBrokerAsync(BrokerDTO? broker)

@@ -483,11 +483,13 @@ internal sealed class StubBrokerService : IBrokerService
     public List<BrokerDTO> Brokers { get; set; } = [];
     public BrokerCreateDTO? LastCreateRequest { get; private set; }
     public (string CurrentName, BrokerUpdateDTO Request)? LastUpdateRequest { get; private set; }
+    public (string BrokerName, CostBasisMethod Method)? LastSetCostBasisMethodRequest { get; private set; }
     public string? LastDeletedName { get; private set; }
     public Exception? ThrowOnCreate { get; set; }
     public Exception? ThrowOnUpdate { get; set; }
     public Exception? ThrowOnDelete { get; set; }
     public Exception? ThrowOnGetBrokers { get; set; }
+    public Exception? ThrowOnSetCostBasisMethod { get; set; }
 
     public IReadOnlyList<BrokerDTO> GetBrokers() => ThrowOnGetBrokers is null ? Brokers : throw ThrowOnGetBrokers;
 
@@ -499,7 +501,14 @@ internal sealed class StubBrokerService : IBrokerService
             throw ThrowOnCreate;
         }
 
-        var created = new BrokerDTO { Name = request.Name, Currency = request.Currency, Status = "Active", PortfolioCount = 0 };
+        var created = new BrokerDTO
+        {
+            Name = request.Name,
+            Currency = request.Currency,
+            Status = "Active",
+            PortfolioCount = 0,
+            CostBasisMethod = request.CostBasisMethod ?? CostBasisMethod.AverageCost
+        };
         Brokers.Add(created);
         return Task.FromResult(created);
     }
@@ -512,7 +521,15 @@ internal sealed class StubBrokerService : IBrokerService
             throw ThrowOnUpdate;
         }
 
-        var updated = new BrokerDTO { Name = request.Name, Currency = request.Currency, Status = "Active", PortfolioCount = 0 };
+        var existing = Brokers.FirstOrDefault(b => b.Name == currentName);
+        var updated = new BrokerDTO
+        {
+            Name = request.Name,
+            Currency = request.Currency,
+            Status = "Active",
+            PortfolioCount = 0,
+            CostBasisMethod = existing?.CostBasisMethod ?? CostBasisMethod.AverageCost
+        };
         return Task.FromResult(updated);
     }
 
@@ -528,8 +545,17 @@ internal sealed class StubBrokerService : IBrokerService
         return Task.CompletedTask;
     }
 
-    public Task<BrokerDTO> SetCostBasisMethodAsync(string brokerName, CostBasisMethod method) =>
-        throw new NotImplementedException();
+    public Task<BrokerDTO> SetCostBasisMethodAsync(string brokerName, CostBasisMethod method)
+    {
+        LastSetCostBasisMethodRequest = (brokerName, method);
+        if (ThrowOnSetCostBasisMethod is not null)
+        {
+            throw ThrowOnSetCostBasisMethod;
+        }
+
+        var updated = new BrokerDTO { Name = brokerName, Currency = "GBP", Status = "Active", PortfolioCount = 0, CostBasisMethod = method };
+        return Task.FromResult(updated);
+    }
 }
 
 internal sealed class StubPortfolioService : IPortfolioService

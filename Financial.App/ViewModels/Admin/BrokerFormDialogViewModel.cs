@@ -10,12 +10,17 @@ public sealed class BrokerFormDialogViewModel : ViewModelBase
 {
     private string _name;
     private string _currency;
+    private string _costBasisMethod;
     private string _validationMessage = string.Empty;
 
     /// <summary>The Investment bounded context has no shared currency enum (CashFlow's Currency is
     /// BRL/GBP only and out of reach across the bounded-context boundary); these are the values
     /// already observed in this codebase's broker fixtures - matches BrokerFormDialog.tsx.</summary>
     public static readonly string[] Currencies = ["BRL", "GBP", "USD"];
+
+    /// <summary>Mirrors the Domain's CostBasisMethod enum (AverageCost/FIFO/SpecificId) as display
+    /// strings, matching BrokerFormDialog.tsx's Select options.</summary>
+    public static readonly string[] CostBasisMethods = ["AverageCost", "FIFO", "SpecificId"];
 
     public bool IsEditing { get; }
 
@@ -39,6 +44,12 @@ public sealed class BrokerFormDialogViewModel : ViewModelBase
         set => SetProperty(ref _currency, value);
     }
 
+    public string CostBasisMethod
+    {
+        get => _costBasisMethod;
+        set => SetProperty(ref _costBasisMethod, value);
+    }
+
     public string ValidationMessage
     {
         get => _validationMessage;
@@ -51,11 +62,12 @@ public sealed class BrokerFormDialogViewModel : ViewModelBase
 
     public event EventHandler<bool?>? CloseRequested;
 
-    public BrokerFormDialogViewModel(string? currentName = null, string? currentCurrency = null)
+    public BrokerFormDialogViewModel(string? currentName = null, string? currentCurrency = null, string? currentCostBasisMethod = null)
     {
         IsEditing = currentName is not null;
         _name = currentName ?? string.Empty;
         _currency = currentCurrency ?? Currencies[0];
+        _costBasisMethod = currentCostBasisMethod ?? CostBasisMethods[0];
 
         ConfirmCommand = new RelayCommand(Confirm, CanConfirm);
         CancelCommand = new RelayCommand(Cancel);
