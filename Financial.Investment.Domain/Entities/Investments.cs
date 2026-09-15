@@ -235,10 +235,33 @@ public class Investments
     public void DeleteTaxRule(Guid id)
     {
         var rule = FindTaxRule(id) ?? throw new KeyNotFoundException($"Tax rule \"{id}\" was not found.");
+
+        var affectedTaxYears = FinalClassificationTaxYearsForRule(id);
+        if (affectedTaxYears.Count > 0)
+        {
+            throw new InvestmentRuleViolationException(
+                $"Cannot delete tax rule \"{rule.Label}\" while a final classification still depends on it, " +
+                $"for tax year(s): {string.Join(", ", affectedTaxYears)}.");
+        }
+
         _taxRules.Remove(rule);
     }
 
     public TaxRule? FindTaxRule(Guid id) => _taxRules.FirstOrDefault(rule => rule.Id == id);
+
+    private IReadOnlyList<string> FinalClassificationTaxYearsForRule(Guid taxRuleId) =>
+        ActiveBrokers.Concat(HistoricBrokers)
+            .SelectMany(broker => broker.Portfolios)
+            .SelectMany(portfolio => portfolio.Assets)
+            .SelectMany(asset => asset.TaxClassifications)
+            .Where(classification =>
+                classification.Status == TaxClassificationStatus.Active &&
+                classification.CalculationStatus == CalculationStatus.Final &&
+                classification.TaxRuleId == taxRuleId)
+            .Select(classification => classification.TaxYear)
+            .Distinct()
+            .OrderBy(taxYear => taxYear, StringComparer.Ordinal)
+            .ToList();
 
     public TaxRule? FindApplicableTaxRule(Jurisdiction jurisdiction, EventCategory eventCategory, DateOnly date) =>
         _taxRules.FirstOrDefault(rule =>

@@ -445,7 +445,7 @@ graph TD
 - [x] **P51-F01-tax-rules-03** A rule with `EffectiveFrom` on or after `EffectiveTo` is rejected
 - [ ] **P51-F01-tax-rules-04** No numeric rate, threshold or formula field exists anywhere on
       `TaxRule` — only classification/audit metadata
-- [ ] **P51-F01-tax-rules-05** Deleting a rule that at least one `Final`-status `TaxClassification`
+- [x] **P51-F01-tax-rules-05** Deleting a rule that at least one `Final`-status `TaxClassification`
       currently resolves through is rejected, naming the affected tax year(s)
 - [x] **P51-F01-tax-rules-06** A rule lookup for a given jurisdiction, event category and date returns
       at most one applicable rule, or none
@@ -467,7 +467,7 @@ graph TD
       is a batch-level, read-time concept with no per-event Domain equivalent today; confirmed with the
       user rather than inventing an approximate proxy. Reserved for a future feature that tracks
       per-event data quality.
-- [ ] **P51-F02-tax-profile-and-classification-06** Every existing `DisposalRecord` and qualifying
+- [x] **P51-F02-tax-profile-and-classification-06** Every existing `DisposalRecord` and qualifying
       credit gains an `Active` `TaxClassification` the first time the app loads after this ships, with
       no separate tool run, and re-running the load is a no-op
 - [ ] **P51-F02-tax-profile-and-classification-07** When P50-F03 supersedes a `DisposalRecord`, its

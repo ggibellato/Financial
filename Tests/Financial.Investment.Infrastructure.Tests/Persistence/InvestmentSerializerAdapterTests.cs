@@ -1,4 +1,5 @@
 using Financial.Investment.Domain.Entities;
+using Financial.Investment.Domain.Rules;
 using Financial.Investment.Infrastructure.Persistence;
 using Financial.Shared.Abstractions.Currencies;
 using FluentAssertions;
@@ -92,6 +93,48 @@ public class InvestmentSerializerAdapterTests
 
         var openEnded = result.TaxRules.Should().ContainSingle(r => r.Jurisdiction == Jurisdiction.UK).Subject;
         openEnded.EffectiveTo.Should().BeNull();
+    }
+
+    [Fact]
+    public void SerializeDeserialize_RoundTripPreservesTaxClassifications()
+    {
+        var investments = Investments.Create();
+        var broker = Broker.Create("XPI", "BRL");
+        var asset = Asset.Create("Asset A", "ISIN123", "BVMF", "AAA");
+        var rule = investments.CreateTaxRule(
+            Jurisdiction.BR, EventCategory.Dividend, "BR dividend", "desc", new DateOnly(2026, 1, 1), null);
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 3, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        asset.RecordTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 110m, 0m));
+        asset.AddCredit(Credit.Create(new DateTime(2026, 6, 1), Credit.CreditType.Dividend, 100m, 10m, Currency.BRL));
+        broker.AddPortfolio("Default").AddAsset(asset);
+        investments.AddActiveBroker(broker);
+        TaxClassificationBackfill.Apply(investments);
+        var disposalClassification = asset.TaxClassifications.Single(c => c.SourceType == SourceType.Disposal);
+        var creditClassification = asset.TaxClassifications.Single(c => c.SourceType == SourceType.Credit);
+        creditClassification.Supersede(disposalClassification.Id);
+
+        var json = Serializer.Serialize(investments);
+        var result = Serializer.Deserialize(json);
+
+        var resultAsset = result.ActiveBrokers.Single().Portfolios.Single().Assets.Single();
+        resultAsset.TaxClassifications.Should().HaveCount(2);
+
+        var disposalResult = resultAsset.TaxClassifications.Should().ContainSingle(c => c.SourceType == SourceType.Disposal).Subject;
+        disposalResult.Jurisdiction.Should().Be(Jurisdiction.BR);
+        disposalResult.EventCategory.Should().Be(EventCategory.CapitalGain);
+        disposalResult.Proceeds.Should().Be(550m);
+        disposalResult.CostBasis.Should().Be(500m);
+        disposalResult.GainLoss.Should().Be(50m);
+        disposalResult.TaxRuleId.Should().BeNull();
+        disposalResult.Status.Should().Be(TaxClassificationStatus.Active);
+
+        var creditResult = resultAsset.TaxClassifications.Should().ContainSingle(c => c.SourceType == SourceType.Credit).Subject;
+        creditResult.GrossAmount.Should().Be(100m);
+        creditResult.WithheldAmount.Should().Be(10m);
+        creditResult.NetAmount.Should().Be(90m);
+        creditResult.TaxRuleId.Should().Be(rule.Id);
+        creditResult.Status.Should().Be(TaxClassificationStatus.Superseded);
+        creditResult.SupersededByClassificationId.Should().Be(disposalClassification.Id);
     }
 
     [Fact]

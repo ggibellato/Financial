@@ -23,6 +23,11 @@ public static class InvestmentLoader
             Trace.TraceWarning($"DisposalRecord backfill skipped transaction {failure.TransactionId}: {failure.Message}");
         }
 
+        foreach (var failure in TaxClassificationBackfill.Apply(investments))
+        {
+            Trace.TraceWarning($"TaxClassification backfill skipped source {failure.SourceId}: {failure.Message}");
+        }
+
         return investments;
     }
 }

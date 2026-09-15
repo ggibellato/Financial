@@ -573,6 +573,60 @@ public class InvestmentsTests
     }
 
     [Fact]
+    [Trait("AC", "P51-F01-tax-rules-05")]
+    public void DeleteTaxRule_NoDependentClassification_Succeeds()
+    {
+        var investments = Investments.Create();
+        var rule = investments.CreateTaxRule(
+            Jurisdiction.BR, EventCategory.Dividend, "BR dividend", "desc", new DateOnly(2026, 1, 1), null);
+
+        investments.DeleteTaxRule(rule.Id);
+
+        investments.TaxRules.Should().BeEmpty();
+    }
+
+    [Fact]
+    [Trait("AC", "P51-F01-tax-rules-05")]
+    public void DeleteTaxRule_ActiveFinalClassificationDependsOnIt_ThrowsAndRemovesNothing()
+    {
+        var investments = Investments.Create();
+        var rule = investments.CreateTaxRule(
+            Jurisdiction.BR, EventCategory.Dividend, "BR dividend", "desc", new DateOnly(2026, 1, 1), null);
+        var broker = Broker.Create("XPI", "BRL");
+        var asset = Asset.Create("Asset A", "ISIN123", "BVMF", "AAA");
+        asset.AppendTaxClassification(TaxClassification.CreateForCredit(
+            Guid.NewGuid(), Jurisdiction.BR, "2026", EventCategory.Dividend, 100m, 0m, 100m, CalculationStatus.Final, rule.Id));
+        broker.AddPortfolio("Default").AddAsset(asset);
+        investments.AddActiveBroker(broker);
+
+        var act = () => investments.DeleteTaxRule(rule.Id);
+
+        act.Should().Throw<InvestmentRuleViolationException>().WithMessage("*BR dividend*");
+        investments.TaxRules.Should().ContainSingle();
+    }
+
+    [Fact]
+    [Trait("AC", "P51-F01-tax-rules-05")]
+    public void DeleteTaxRule_OnlySupersededClassificationDependsOnIt_Succeeds()
+    {
+        var investments = Investments.Create();
+        var rule = investments.CreateTaxRule(
+            Jurisdiction.BR, EventCategory.Dividend, "BR dividend", "desc", new DateOnly(2026, 1, 1), null);
+        var broker = Broker.Create("XPI", "BRL");
+        var asset = Asset.Create("Asset A", "ISIN123", "BVMF", "AAA");
+        var classification = TaxClassification.CreateForCredit(
+            Guid.NewGuid(), Jurisdiction.BR, "2026", EventCategory.Dividend, 100m, 0m, 100m, CalculationStatus.Final, rule.Id);
+        classification.Supersede(null);
+        asset.AppendTaxClassification(classification);
+        broker.AddPortfolio("Default").AddAsset(asset);
+        investments.AddActiveBroker(broker);
+
+        investments.DeleteTaxRule(rule.Id);
+
+        investments.TaxRules.Should().BeEmpty();
+    }
+
+    [Fact]
     public void FindApplicableTaxRule_ReturnsTheMatchingRule()
     {
         var investments = Investments.Create();
