@@ -1709,7 +1709,8 @@
           "CapitalGain",
           "Dividend",
           "Interest",
-          "SecuritiesLendingIncome"
+          "SecuritiesLendingIncome",
+          "Unrecognized"
         ]
       },
       "ExpenseCreateDTO": {

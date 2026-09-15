@@ -816,4 +816,104 @@ public class AssetTests
         asset.Transactions.Single(t => t.Id == buy2.Id).Quantity.Should().Be(10m);
         asset.DisposalRecords.Single().Status.Should().Be(DisposalRecordStatus.Active);
     }
+
+    [Fact]
+    public void TaxClassifications_StartsEmpty()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+
+        asset.TaxClassifications.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void AppendTaxClassification_AddsToTaxClassifications()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        var classification = TaxClassification.CreateForCredit(
+            Guid.NewGuid(), Jurisdiction.BR, "2026", EventCategory.Dividend, 100m, 0m, 100m, CalculationStatus.Incomplete, null);
+
+        asset.AppendTaxClassification(classification);
+
+        asset.TaxClassifications.Should().ContainSingle().Which.Should().BeSameAs(classification);
+    }
+
+    [Fact]
+    public void FindTaxClassificationBySource_MatchingSourceTypeAndId_ReturnsIt()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        var sourceId = Guid.NewGuid();
+        var classification = TaxClassification.CreateForCredit(
+            sourceId, Jurisdiction.BR, "2026", EventCategory.Dividend, 100m, 0m, 100m, CalculationStatus.Incomplete, null);
+        asset.AppendTaxClassification(classification);
+
+        var found = asset.FindTaxClassificationBySource(SourceType.Credit, sourceId);
+
+        found.Should().BeSameAs(classification);
+    }
+
+    [Fact]
+    public void FindTaxClassificationBySource_NoMatch_ReturnsNull()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+
+        var found = asset.FindTaxClassificationBySource(SourceType.Credit, Guid.NewGuid());
+
+        found.Should().BeNull();
+    }
+
+    [Fact]
+    public void SupersedeTaxClassificationBySource_MatchingEntry_SupersedesIt()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        var sourceId = Guid.NewGuid();
+        var classification = TaxClassification.CreateForCredit(
+            sourceId, Jurisdiction.BR, "2026", EventCategory.Dividend, 100m, 0m, 100m, CalculationStatus.Incomplete, null);
+        asset.AppendTaxClassification(classification);
+        var replacementId = Guid.NewGuid();
+
+        asset.SupersedeTaxClassificationBySource(SourceType.Credit, sourceId, replacementId);
+
+        using (new AssertionScope())
+        {
+            classification.Status.Should().Be(TaxClassificationStatus.Superseded);
+            classification.SupersededByClassificationId.Should().Be(replacementId);
+        }
+    }
+
+    [Fact]
+    public void SupersedeTaxClassificationBySource_NoMatch_DoesNothing()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+
+        Action act = () => asset.SupersedeTaxClassificationBySource(SourceType.Credit, Guid.NewGuid(), null);
+
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void RemoveTaxClassificationBySource_MatchingEntry_RemovesItAndReturnsTrue()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        var sourceId = Guid.NewGuid();
+        asset.AppendTaxClassification(TaxClassification.CreateForCredit(
+            sourceId, Jurisdiction.BR, "2026", EventCategory.Dividend, 100m, 0m, 100m, CalculationStatus.Incomplete, null));
+
+        var removed = asset.RemoveTaxClassificationBySource(SourceType.Credit, sourceId);
+
+        using (new AssertionScope())
+        {
+            removed.Should().BeTrue();
+            asset.TaxClassifications.Should().BeEmpty();
+        }
+    }
+
+    [Fact]
+    public void RemoveTaxClassificationBySource_NoMatch_ReturnsFalse()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+
+        var removed = asset.RemoveTaxClassificationBySource(SourceType.Credit, Guid.NewGuid());
+
+        removed.Should().BeFalse();
+    }
 }

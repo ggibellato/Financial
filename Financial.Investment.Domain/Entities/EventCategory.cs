@@ -5,5 +5,6 @@ public enum EventCategory
     CapitalGain,
     Dividend,
     Interest,
-    SecuritiesLendingIncome
+    SecuritiesLendingIncome,
+    Unrecognized
 }

@@ -59,6 +59,9 @@ public class Asset
         }
     }
 
+    private List<TaxClassification> _taxClassifications = new List<TaxClassification>();
+    public IReadOnlyCollection<TaxClassification> TaxClassifications { get => _taxClassifications.AsReadOnly(); private set => EntityGuard.ReplaceAll(_taxClassifications, value); }
+
     private List<AssetPriceSnapshot> _priceSnapshots = new List<AssetPriceSnapshot>();
     public IReadOnlyCollection<AssetPriceSnapshot> PriceSnapshots { get => _priceSnapshots.AsReadOnly(); private set => SetPriceSnapshots(value); }
     private void SetPriceSnapshots(IReadOnlyCollection<AssetPriceSnapshot> data)
@@ -185,6 +188,25 @@ public class Asset
     {
         _disposalRecords.Add(record);
         RefreshRealizedCapitalGain();
+    }
+
+    internal void AppendTaxClassification(TaxClassification classification) => _taxClassifications.Add(classification);
+
+    internal TaxClassification? FindTaxClassificationBySource(SourceType sourceType, Guid sourceId) =>
+        _taxClassifications.FirstOrDefault(c => c.SourceType == sourceType && c.SourceId == sourceId && c.Status == TaxClassificationStatus.Active);
+
+    internal void SupersedeTaxClassificationBySource(SourceType sourceType, Guid sourceId, Guid? supersededByClassificationId) =>
+        FindTaxClassificationBySource(sourceType, sourceId)?.Supersede(supersededByClassificationId);
+
+    internal bool RemoveTaxClassificationBySource(SourceType sourceType, Guid sourceId)
+    {
+        var classification = FindTaxClassificationBySource(sourceType, sourceId);
+        if (classification is null)
+        {
+            return false;
+        }
+
+        return _taxClassifications.Remove(classification);
     }
 
     internal void RefreshRealizedCapitalGain() =>
