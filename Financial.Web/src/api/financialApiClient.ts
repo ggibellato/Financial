@@ -78,6 +78,8 @@ import type {
   ReserveMovementDto,
   SetAssetPriceDto,
   SyncStatusResponseDto,
+  TaxWorkbookDto,
+  TaxWorkbookOptionDto,
   TitheCarryForwardUpdateDto,
   TitheSummaryDto,
   TransactionCreateDto,
@@ -241,6 +243,8 @@ export interface FinancialApiClient {
   resyncAllCalendars: () => Promise<CreditCardCalendarSyncStatusDto[]>
   /** Not a fetch call - the connect endpoint is a browser redirect target, opened directly (e.g. via window.open). */
   buildCalendarConnectUrl: () => string
+  getTaxWorkbookOptions: () => Promise<TaxWorkbookOptionDto[]>
+  getTaxWorkbook: (jurisdiction: string, taxYear: string) => Promise<TaxWorkbookDto>
 }
 
 export interface FinancialApiClientOptions {
@@ -673,6 +677,9 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
     resyncAllCalendars: () =>
       request<CreditCardCalendarSyncStatusDto[]>('/integrations/calendar/resync-all', { method: 'POST' }),
     buildCalendarConnectUrl: () => `${baseUrl}/integrations/calendar/connect`,
+    getTaxWorkbookOptions: () => request<TaxWorkbookOptionDto[]>('/tax-workbook/options'),
+    getTaxWorkbook: (jurisdiction, taxYear) =>
+      request<TaxWorkbookDto>(`/tax-workbook?jurisdiction=${encodeURIComponent(jurisdiction)}&taxYear=${encodeURIComponent(taxYear)}`),
   }
 }
 
