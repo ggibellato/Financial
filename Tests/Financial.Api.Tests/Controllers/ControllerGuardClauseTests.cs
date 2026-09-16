@@ -207,6 +207,13 @@ public class ControllerGuardClauseTests
     }
 
     [Fact]
+    public void UpcomingIncomeController_NullUpcomingIncomeService_Throws()
+    {
+        Action act = () => new UpcomingIncomeController(null!);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("upcomingIncomeService");
+    }
+
+    [Fact]
     public void CreditsController_NullCreditQueryService_Throws()
     {
         Action act = () => new CreditsController(null!, new StubCreditService());
