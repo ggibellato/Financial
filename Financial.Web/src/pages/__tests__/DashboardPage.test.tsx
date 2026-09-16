@@ -1,9 +1,46 @@
-import { render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { render, screen } from '../../test/renderWithFluent'
+import type { FinancialApiClient } from '../../api/financialApiClient'
+import type { PortfolioDashboardDto } from '../../api/types'
 import DashboardPage from '../DashboardPage'
 import Sidebar from '../../components/Sidebar'
 import { NAV_TREE } from '../../navigation/navTree'
+
+const { getDashboardMock } = vi.hoisted(() => ({
+  getDashboardMock: vi.fn<FinancialApiClient['getDashboard']>(),
+}))
+
+vi.mock('../../api/financialApiClient', () => ({
+  apiClient: {
+    getDashboard: getDashboardMock,
+  } as Partial<FinancialApiClient>,
+}))
+
+const SUMMARY: PortfolioDashboardDto = {
+  marketValue: 18000,
+  invested: 12220.5,
+  unrealisedGainLoss: 5779.5,
+  realisedGainLoss: 1200,
+  incomeYtd: 340.25,
+  incomeLifetime: 2840.75,
+  grossXirr: 0.1234,
+  netXirr: 0.0987,
+  isPartial: false,
+  unvaluedHoldingCount: 0,
+  reportingCurrency: 'GBP',
+  isReportingCurrencyEnabled: false,
+  isReportingCurrencyPartial: false,
+  isReportingCurrencyUnavailable: false,
+  convertedMarketValue: null,
+  convertedInvested: null,
+  convertedUnrealisedGainLoss: null,
+  convertedRealisedGainLoss: null,
+  convertedIncomeYtd: null,
+  convertedIncomeLifetime: null,
+  convertedGrossXirr: null,
+  convertedNetXirr: null,
+}
 
 const renderDashboardRoute = () =>
   render(
@@ -16,6 +53,11 @@ const renderDashboardRoute = () =>
   )
 
 describe('DashboardPage', () => {
+  beforeEach(() => {
+    getDashboardMock.mockReset()
+    getDashboardMock.mockResolvedValue(SUMMARY)
+  })
+
   afterEach(() => {
     localStorage.clear()
   })
@@ -40,5 +82,13 @@ describe('DashboardPage', () => {
       route: '/investments/dashboard',
     })
     expect(screen.getByRole('link', { name: 'Dashboard' })).toHaveAttribute('href', '/investments/dashboard')
+  })
+
+  it('renders_the_kpi_tiles_from_the_dashboard_endpoint', async () => {
+    renderDashboardRoute()
+
+    expect(await screen.findByText('Market Value')).toBeInTheDocument()
+    expect(screen.getByText('Net XIRR (of Tax)')).toBeInTheDocument()
+    expect(getDashboardMock).toHaveBeenCalledTimes(1)
   })
 })
