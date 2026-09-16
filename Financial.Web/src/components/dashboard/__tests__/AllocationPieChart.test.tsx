@@ -63,10 +63,13 @@ describe('AllocationPieChart', () => {
     expect(headers).toEqual(['Label', 'Market Value', 'Percentage'])
   })
 
-  it('renders_the_chart_title_as_the_legend_table_caption', () => {
+  it('renders_the_chart_title_as_a_heading_labelling_the_graphic_and_the_table', () => {
     renderChart()
 
-    expect(screen.getByText('Allocation by asset class')).toBeInTheDocument()
+    const heading = screen.getByRole('heading', { name: 'Allocation by asset class', level: 4 })
+    expect(screen.getByRole('img')).toHaveAccessibleName('Allocation by asset class')
+    expect(screen.getByRole('table')).toHaveAccessibleName('Allocation by asset class')
+    expect(heading).toBeInTheDocument()
   })
 
   it('renders_legend_rows_in_the_order_the_props_provide_without_re_sorting', () => {
