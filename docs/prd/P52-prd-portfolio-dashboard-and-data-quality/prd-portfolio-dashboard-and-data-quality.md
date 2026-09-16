@@ -432,9 +432,9 @@ graph TD
       holdings whose `MarketStatus` is `Stale`
 
 ### F04. Upcoming Income
-- [ ] **P52-F04-upcoming-income-01** A holding with a detected monthly/quarterly/four-monthly
+- [x] **P52-F04-upcoming-income-01** A holding with a detected monthly/quarterly/four-monthly
       frequency shows a projected entry dated exactly one interval after its last credit
-- [ ] **P52-F04-upcoming-income-02** A holding with no detectable frequency is omitted from the list
+- [x] **P52-F04-upcoming-income-02** A holding with no detectable frequency is omitted from the list
 - [ ] **P52-F04-upcoming-income-03** Changing the window filter (30/90/180 days) changes exactly which
       projected entries are shown, with no change to the projected dates themselves
 - [ ] **P52-F04-upcoming-income-04** The empty state shows when no holding has a projection inside the
