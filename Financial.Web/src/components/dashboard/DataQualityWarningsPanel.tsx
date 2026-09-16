@@ -1,4 +1,4 @@
-import { forwardRef, useImperativeHandle, useRef, useState } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import {
   Accordion,
   AccordionHeader,
@@ -136,7 +136,7 @@ function CategoryGroup({ categories, report, openItems, onOpenChange, onSelectRo
     >
       {populated.map(({ category, rows }) => (
         <AccordionItem key={category.id} value={category.id}>
-          <AccordionHeader>
+          <AccordionHeader as="h4" button={{ id: `warning-category-header-${category.id}` }}>
             {category.label} ({rows.length})
           </AccordionHeader>
           <AccordionPanel>
@@ -166,14 +166,26 @@ const DataQualityWarningsPanel = forwardRef<DataQualityWarningsPanelHandle, Data
     const containerRef = useRef<HTMLDivElement>(null)
     const [openItems, setOpenItems] = useState<WarningCategoryId[]>([])
     const [navigationError, setNavigationError] = useState<string | null>(null)
+    const focusCategoryRef = useRef<WarningCategoryId | null>(null)
+    const [focusToken, setFocusToken] = useState(0)
     const { navigateToHolding } = useHoldingNavigation()
 
     useImperativeHandle(ref, () => ({
       expandCategory: (categoryId) => {
         setOpenItems((current) => (current.includes(categoryId) ? current : [...current, categoryId]))
         containerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        focusCategoryRef.current = categoryId
+        setFocusToken((token) => token + 1)
       },
     }))
+
+    // The accordion header a cross-panel link opens isn't in the DOM yet when expandCategory runs -
+    // move focus once its own render lands, not scroll alone, so keyboard/screen-reader users get
+    // the same "you're here now" signal a sighted mouse user gets from the scroll.
+    useEffect(() => {
+      if (focusToken === 0) return
+      containerRef.current?.querySelector<HTMLElement>(`#warning-category-header-${focusCategoryRef.current}`)?.focus()
+    }, [focusToken, openItems])
 
     // Two accordions render either side of the stale-valuation row to keep the PRD's severity
     // order, so each one's toggle must leave the other one's open items alone.
@@ -213,7 +225,7 @@ const DataQualityWarningsPanel = forwardRef<DataQualityWarningsPanelHandle, Data
     return (
       <div className="data-quality-warnings" ref={containerRef}>
         {navigationError && (
-          <MessageBar intent="warning">
+          <MessageBar intent="warning" role="alert">
             <MessageBarBody>{navigationError}</MessageBarBody>
             <MessageBarActions
               containerAction={

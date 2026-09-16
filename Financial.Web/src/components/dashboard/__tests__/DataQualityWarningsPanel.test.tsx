@@ -122,6 +122,7 @@ describe('DataQualityWarningsPanel', () => {
       'Unable to locate VUSA — it may have moved or been archived since this report was generated.',
     )
     expect(warning).toBeInTheDocument()
+    expect(screen.getByRole('alert')).toContainElement(warning)
 
     fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }))
 
@@ -158,6 +159,23 @@ describe('DataQualityWarningsPanel', () => {
 
     await waitFor(() => expect(screen.getByText('VUSA')).toBeInTheDocument())
     expect(Element.prototype.scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' })
+  })
+
+  it('expandCategory_moves_focus_to_the_opened_accordion_header', async () => {
+    const ref = createRef<DataQualityWarningsPanelHandle>()
+    renderPanel(FULL_REPORT, ref)
+
+    act(() => ref.current?.expandCategory('missingPrice'))
+
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /Missing price/ })).toHaveFocus(),
+    )
+  })
+
+  it('accordion_headers_are_marked_up_as_headings', () => {
+    renderPanel(FULL_REPORT)
+
+    expect(screen.getByRole('heading', { name: /Missing price/, level: 4 })).toBeInTheDocument()
   })
 
   it('shows_the_loading_state_while_the_report_is_pending', () => {

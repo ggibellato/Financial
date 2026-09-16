@@ -365,7 +365,11 @@ export default function InvestmentTree() {
 
   useEffect(() => {
     if (scrollToken === 0) return
-    containerRef.current?.querySelector('.investment-tree__node--selected')?.scrollIntoView({ block: 'nearest' })
+    const selected = containerRef.current?.querySelector('.investment-tree__node--selected')
+    selected?.scrollIntoView({ block: 'nearest' })
+    // Move focus too, not just scroll - a keyboard/screen-reader user gets no other signal that a
+    // click-through from another page landed on this node.
+    selected?.closest<HTMLElement>('[role="treeitem"]')?.focus()
   }, [scrollToken])
 
   const handleRetry = useCallback(() => {
