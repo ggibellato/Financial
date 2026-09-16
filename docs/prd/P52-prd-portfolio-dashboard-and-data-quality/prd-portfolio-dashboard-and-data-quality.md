@@ -404,14 +404,14 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Dashboard Aggregate
-- [ ] **P52-F01-dashboard-aggregate-01** Dashboard market value, invested, unrealised and realised
+- [x] **P52-F01-dashboard-aggregate-01** Dashboard market value, invested, unrealised and realised
       gain, income YTD/lifetime and both XIRR figures reconcile exactly with the sum of the
       equivalent per-broker figures
 - [ ] **P52-F01-dashboard-aggregate-02** `IsPartial` is true and an inline notice appears whenever at
       least one Active holding has no market value
-- [ ] **P52-F01-dashboard-aggregate-03** Realised gain/loss excludes every `Superseded`
+- [x] **P52-F01-dashboard-aggregate-03** Realised gain/loss excludes every `Superseded`
       `DisposalRecord`
-- [ ] **P52-F01-dashboard-aggregate-04** Income YTD resets to 0 on a new calendar year and lifetime
+- [x] **P52-F01-dashboard-aggregate-04** Income YTD resets to 0 on a new calendar year and lifetime
       income never does
 
 ### F02. Allocation Breakdown
