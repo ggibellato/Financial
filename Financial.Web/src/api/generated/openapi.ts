@@ -2203,6 +2203,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PortfolioDashboardDTO"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/dividends/{ticker}/history": {
         parameters: {
             query?: never;
@@ -7035,6 +7070,47 @@ export interface components {
             brokerName: string;
             brokerStatus: string;
             name: string;
+        };
+        PortfolioDashboardDTO: {
+            /** Format: double */
+            convertedGrossXirr: null | number;
+            /** Format: double */
+            convertedIncomeLifetime: null | number;
+            /** Format: double */
+            convertedIncomeYtd: null | number;
+            /** Format: double */
+            convertedInvested: null | number;
+            /** Format: double */
+            convertedMarketValue: null | number;
+            /** Format: double */
+            convertedNetXirr: null | number;
+            /** Format: double */
+            convertedRealisedGainLoss: null | number;
+            /** Format: double */
+            convertedUnrealisedGainLoss: null | number;
+            /** Format: double */
+            grossXirr: null | number;
+            /** Format: double */
+            incomeLifetime: number;
+            /** Format: double */
+            incomeYtd: number;
+            /** Format: double */
+            invested: number;
+            isPartial: boolean;
+            isReportingCurrencyEnabled: boolean;
+            isReportingCurrencyPartial: boolean;
+            isReportingCurrencyUnavailable: boolean;
+            /** Format: double */
+            marketValue: number;
+            /** Format: double */
+            netXirr: null | number;
+            /** Format: double */
+            realisedGainLoss: number;
+            reportingCurrency: string;
+            /** Format: double */
+            unrealisedGainLoss: number;
+            /** Format: int32 */
+            unvaluedHoldingCount: number;
         };
         PortfolioNodeDTO: {
             /** Format: int32 */

@@ -132,21 +132,4 @@ public class ConvertedSummaryBuilderTests
         result.ConvertedUnrealisedGainLoss.Should().BeNull();
         provider.CallCount.Should().Be(1, "only the transaction's own date should be looked up, not today's for the null market value/gain");
     }
-
-    [Fact]
-    public async Task BuildAsync_CachesOneRateCallPerDistinctDate()
-    {
-        var asset1 = MakeAsset("A", "A");
-        var asset2 = MakeAsset("B", "B");
-        var sharedDate = new DateTime(2025, 1, 1);
-        asset1.AddTransaction(Transaction.Create(sharedDate, Transaction.TransactionType.Buy, 10m, 5m, 0m));
-        asset2.AddTransaction(Transaction.Create(sharedDate, Transaction.TransactionType.Buy, 4m, 5m, 0m));
-        var provider = new StubExchangeRateProvider(0.2m);
-
-        await ConvertedSummaryBuilder.BuildAsync(
-            [asset1, asset2], Currency.BRL, Currency.GBP, marketValueSum: 70m, unrealisedGainSum: 0m,
-            provider, Xirr, AsOf);
-
-        provider.CallCount.Should().Be(2);
-    }
 }

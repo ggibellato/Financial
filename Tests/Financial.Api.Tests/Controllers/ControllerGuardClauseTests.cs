@@ -186,6 +186,13 @@ public class ControllerGuardClauseTests
     }
 
     [Fact]
+    public void DashboardController_NullPortfolioDashboardService_Throws()
+    {
+        Action act = () => new DashboardController(null!);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("portfolioDashboardService");
+    }
+
+    [Fact]
     public void CreditsController_NullCreditQueryService_Throws()
     {
         Action act = () => new CreditsController(null!, new StubCreditService());

@@ -43,6 +43,7 @@ public sealed class StubInvestmentRepository : IInvestmentRepository
     public Exception? ThrowOnGetAssetsByBrokerPortfolio { get; set; }
     public Exception? ThrowOnGetBrokerList { get; set; }
     public Exception? ThrowOnGetAsset { get; set; }
+    public Exception? ThrowOnGetInvestments { get; set; }
 
     public StubInvestmentRepository()
     {
@@ -129,7 +130,15 @@ public sealed class StubInvestmentRepository : IInvestmentRepository
     /// silently flipping <see cref="GetAsset"/>/<see cref="GetAssetsByBroker"/> into graph-resolution
     /// mode for a test that never opted into it.
     /// </summary>
-    public Investments GetInvestments() => Investments ?? Financial.Investment.Domain.Entities.Investments.Create();
+    public Investments GetInvestments()
+    {
+        if (ThrowOnGetInvestments is not null)
+        {
+            throw ThrowOnGetInvestments;
+        }
+
+        return Investments ?? Financial.Investment.Domain.Entities.Investments.Create();
+    }
 
     /// <summary>Runs the mutation for real - the delegate is where the change now lives, so a
     /// stub that only counted would silently stop exercising it.</summary>

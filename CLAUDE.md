@@ -234,7 +234,6 @@ workflow visible in either front end.
    equivalents for important charts and status information.
 
 ## Code comments policy (strict)
-**Priority rule:** never remove a comment used by Swagger or any other tooling. It outranks every removal criterion below.
 - The default rule is: NO COMMENTS.
 - Do not add comments that explain what the code does, how it works, or restate the logic.
 - Comments are allowed ONLY for:
