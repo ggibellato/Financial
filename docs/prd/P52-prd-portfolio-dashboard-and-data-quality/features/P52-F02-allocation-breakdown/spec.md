@@ -84,15 +84,19 @@ Recorded here because the PRD does not spell these out and no user was available
    with a zero contribution, never appearing as a zero-value slice, satisfying the PRD's explicit
    "excluded from both the numerator and the denominator... never shown as a zero-value slice" rule
    for every dimension at once, because exclusion happens once, upstream of the four groupings.
-6. **Percentage formula matches `PortfolioAssetSummaryBuilder.CalculateWeight` exactly.**
-   `entryPercentage = groupMarketValueTotal / dimensionMarketValueTotal * 100m`, left as full
-   unrounded `decimal` precision (matching every other percentage this codebase computes; rounding
-   for display is a frontend/formatter concern, e.g. `formatPercent1`). No defensive
-   divide-by-zero branch is needed: a dimension only ever contains an entry when at least one priced
-   Active holding contributed to it, so `dimensionMarketValueTotal` is provably nonzero whenever
-   the corresponding list is non-empty; when zero priced Active holdings exist portfolio-wide, all
-   four lists are simply empty (vacuously satisfying "percentages sum to exactly 100%" with 0
-   entries and 0 total).
+6. **Percentage formula matches `PortfolioAssetSummaryBuilder.CalculateWeight` exactly**, including
+   its divide-by-zero guard: `entryPercentage = dimensionMarketValueTotal == 0m ? 0m :
+   groupMarketValueTotal / dimensionMarketValueTotal * 100m`, left as full unrounded `decimal`
+   precision (matching every other percentage this codebase computes; rounding for display is a
+   frontend/formatter concern, e.g. `formatPercent1`). The guard is required, not merely defensive:
+   `WeightBasis` is `null` only for an *unpriced* holding (excluded upstream, per Decision 5); a
+   zero-quantity, closed-but-still-Active holding instead gets `MarketValue = 0m` from
+   `HoldingValuationCalculator` (a real, non-null value), so its `WeightBasis` is `0m`, not `null` —
+   it survives the exclusion and lands in a group. A dimension whose every surviving holding is like
+   this has a non-empty entry list with a `dimensionMarketValueTotal` of exactly `0`, which the
+   formula above must not divide by. This is a distinct case from the "unpriced holding, never a
+   zero-value slice" rule (Decision 5): a flat/closed holding is priced (at `0`), so showing it as a
+   `MarketValue: 0, Percentage: 0` entry is correct, not a violation of that rule.
 7. **Entries within each dimension are sorted descending by `MarketValue`, tie-broken ascending by
    label (ordinal, case-insensitive).** This is this feature's own choice — `PortfolioAssetSummaryBuilder`
    sorts a potentially long per-broker asset list alphabetically, a different use case (finding a
@@ -308,18 +312,21 @@ owning `Broker`).
      value).
    - Broker dimension groups by the owning broker's `Name`.
 3. **Per-group `MarketValue`** — the sum of `weightBasis` (rule 1) over every asset in that group.
-4. **Per-entry `Percentage`** — `groupMarketValue / dimensionTotalMarketValue * 100m`, where
-   `dimensionTotalMarketValue` is the sum of every group's `MarketValue` within that same dimension
-   (equivalently, the sum of `weightBasis` over every asset that survived rule 1, since every
-   surviving asset belongs to exactly one group per dimension). Unrounded `decimal`. Each
-   dimension's entries' percentages therefore always sum to exactly 100% of that dimension's own
-   total by construction — not asserted after the fact, guaranteed by every surviving asset landing
-   in exactly one group.
+4. **Per-entry `Percentage`** — `dimensionTotalMarketValue == 0m ? 0m : groupMarketValue /
+   dimensionTotalMarketValue * 100m`, where `dimensionTotalMarketValue` is the sum of every group's
+   `MarketValue` within that same dimension (equivalently, the sum of `weightBasis` over every asset
+   that survived rule 1, since every surviving asset belongs to exactly one group per dimension).
+   Unrounded `decimal`. When `dimensionTotalMarketValue` is nonzero, each dimension's entries'
+   percentages sum to exactly 100% of that dimension's own total by construction — guaranteed by
+   every surviving asset landing in exactly one group.
 5. **Sort order** — within each dimension's list, entries are ordered descending by `MarketValue`,
    ties broken ascending by the entry's label (`Class`/`Currency`/`Country`/`BrokerName`, ordinal,
    case-insensitive) — §1 Decision 7.
-6. **Zero-priced-holdings edge case** — when no Active holding has a price at all, every one of the
-   four lists is simply empty; no divide-by-zero, no error, no synthetic zero-value entry.
+6. **Zero-total edge case** — a dimension's `dimensionTotalMarketValue` can be exactly `0` even with
+   a non-empty entry list: `weightBasis` is `0m` (not excluded) for a zero-quantity, closed-but-
+   still-Active holding, so a group made entirely of such holdings has `MarketValue = 0`. Rule 4's
+   guard returns `Percentage = 0` for every entry in that case rather than dividing by zero. When no
+   Active holding has a price at all (rule 1 excludes every asset), the list itself is empty instead.
 7. **No cross-dimension coupling** — the four dimensions are computed independently from the same
    underlying `(asset, weightBasis)` pairs; a change to one dimension's grouping (e.g. a broker
    rename) never affects another dimension's totals or percentages.
