@@ -200,6 +200,13 @@ public class ControllerGuardClauseTests
     }
 
     [Fact]
+    public void AllocationBreakdownController_NullAllocationBreakdownService_Throws()
+    {
+        Action act = () => new AllocationBreakdownController(null!);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("allocationBreakdownService");
+    }
+
+    [Fact]
     public void CreditsController_NullCreditQueryService_Throws()
     {
         Action act = () => new CreditsController(null!, new StubCreditService());

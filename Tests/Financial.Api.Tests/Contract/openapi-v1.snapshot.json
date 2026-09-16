@@ -105,6 +105,35 @@
         },
         "type": "object"
       },
+      "AllocationBreakdownDTO": {
+        "properties": {
+          "byBroker": {
+            "items": {
+              "$ref": "#/components/schemas/BrokerAllocationEntryDTO"
+            },
+            "type": "array"
+          },
+          "byClass": {
+            "items": {
+              "$ref": "#/components/schemas/AssetClassAllocationEntryDTO"
+            },
+            "type": "array"
+          },
+          "byCountry": {
+            "items": {
+              "$ref": "#/components/schemas/CountryAllocationEntryDTO"
+            },
+            "type": "array"
+          },
+          "byCurrency": {
+            "items": {
+              "$ref": "#/components/schemas/CurrencyAllocationEntryDTO"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
       "ArchiveAssetRequestDTO": {
         "properties": {
           "assetName": {
@@ -322,6 +351,27 @@
             "type": "string"
           }
         },
+        "type": "object"
+      },
+      "AssetClassAllocationEntryDTO": {
+        "properties": {
+          "class": {
+            "$ref": "#/components/schemas/GlobalAssetClass"
+          },
+          "marketValue": {
+            "format": "double",
+            "type": "number"
+          },
+          "percentage": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "class",
+          "marketValue",
+          "percentage"
+        ],
         "type": "object"
       },
       "AssetDetailsDTO": {
@@ -803,6 +853,27 @@
         ],
         "type": "object"
       },
+      "BrokerAllocationEntryDTO": {
+        "properties": {
+          "brokerName": {
+            "type": "string"
+          },
+          "marketValue": {
+            "format": "double",
+            "type": "number"
+          },
+          "percentage": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "brokerName",
+          "marketValue",
+          "percentage"
+        ],
+        "type": "object"
+      },
       "BrokerCreateDTO": {
         "properties": {
           "costBasisMethod": {
@@ -1265,6 +1336,27 @@
           "SpecificId"
         ]
       },
+      "CountryAllocationEntryDTO": {
+        "properties": {
+          "country": {
+            "$ref": "#/components/schemas/CountryCode"
+          },
+          "marketValue": {
+            "format": "double",
+            "type": "number"
+          },
+          "percentage": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "country",
+          "marketValue",
+          "percentage"
+        ],
+        "type": "object"
+      },
       "CountryCode": {
         "enum": [
           "Unknown",
@@ -1515,6 +1607,27 @@
           "portfolioName",
           "assetName",
           "type"
+        ],
+        "type": "object"
+      },
+      "CurrencyAllocationEntryDTO": {
+        "properties": {
+          "currency": {
+            "type": "string"
+          },
+          "marketValue": {
+            "format": "double",
+            "type": "number"
+          },
+          "percentage": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "currency",
+          "marketValue",
+          "percentage"
         ],
         "type": "object"
       },
@@ -4776,6 +4889,26 @@
   },
   "openapi": "3.1.1",
   "paths": {
+    "/allocation-breakdown": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AllocationBreakdownDTO"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "AllocationBreakdown"
+        ]
+      }
+    },
     "/annual-summary/{year}/category-totals": {
       "get": {
         "parameters": [
@@ -12155,6 +12288,9 @@
     }
   ],
   "tags": [
+    {
+      "name": "AllocationBreakdown"
+    },
     {
       "name": "AnnualSummary"
     },
