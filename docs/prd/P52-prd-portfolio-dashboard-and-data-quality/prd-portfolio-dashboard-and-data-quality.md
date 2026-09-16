@@ -426,7 +426,7 @@ graph TD
 - [ ] **P52-F03-data-quality-warnings-02** A category with 0 findings does not render on the panel
 - [ ] **P52-F03-data-quality-warnings-03** Clicking a listed holding navigates to that holding's node
       in the existing tree
-- [ ] **P52-F03-data-quality-warnings-04** The stale-valuation count matches the number of Active
+- [x] **P52-F03-data-quality-warnings-04** The stale-valuation count matches the number of Active
       holdings whose `MarketStatus` is `Stale`
 
 ### F04. Upcoming Income
