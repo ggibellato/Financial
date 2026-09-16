@@ -2,6 +2,7 @@ import { ApiError } from './apiError'
 import { API_BASE_URL } from './config'
 import type {
   AggregatedSummaryDto,
+  AllocationBreakdownDto,
   AssetAdminCreateDto,
   AssetAdminDto,
   AssetAdminUpdateDto,
@@ -165,6 +166,7 @@ export interface FinancialApiClient {
   getPortfolioAssetsSummary: (brokerName: string, portfolioName: string, scope?: InvestmentScope) => Promise<PortfolioAssetSummaryItemDto[]>
   calculateXirr: (cashFlows: AssetCashFlowDto[], terminalValue: number) => Promise<XirrResultDto>
   getDashboard: () => Promise<PortfolioDashboardDto>
+  getAllocationBreakdown: () => Promise<AllocationBreakdownDto>
   getReserveBalances: () => Promise<ReserveBucketBalanceDto[]>
   getReserveMovements: () => Promise<ReserveMovementDto[]>
   getReserveBuckets: () => Promise<ReserveBucketDto[]>
@@ -481,6 +483,7 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
         body: JSON.stringify({ cashFlows, terminalValue } satisfies CalculateXirrRequestDto),
       }),
     getDashboard: () => request<PortfolioDashboardDto>('/dashboard'),
+    getAllocationBreakdown: () => request<AllocationBreakdownDto>('/allocation-breakdown'),
     getReserveBalances: () => request<ReserveBucketBalanceDto[]>('/reserve/balances'),
     getReserveMovements: () => request<ReserveMovementDto[]>('/reserve/movements'),
     getReserveBuckets: () => request<ReserveBucketDto[]>('/reserve-buckets'),
