@@ -415,11 +415,11 @@ graph TD
       income never does
 
 ### F02. Allocation Breakdown
-- [ ] **P52-F02-allocation-breakdown-01** Each of the 4 dimensions' percentages sum to exactly 100% of
+- [x] **P52-F02-allocation-breakdown-01** Each of the 4 dimensions' percentages sum to exactly 100% of
       the priced Active market-value total
-- [ ] **P52-F02-allocation-breakdown-02** A holding with no price is excluded from every dimension's
+- [x] **P52-F02-allocation-breakdown-02** A holding with no price is excluded from every dimension's
       numerator and denominator, never shown as a zero-value slice
-- [ ] **P52-F02-allocation-breakdown-03** An `Unknown` slice appears for Class and Country whenever an
+- [x] **P52-F02-allocation-breakdown-03** An `Unknown` slice appears for Class and Country whenever an
       unclassified holding exists
 
 ### F03. Data-Quality Warnings
