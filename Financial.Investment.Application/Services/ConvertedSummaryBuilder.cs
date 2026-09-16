@@ -35,7 +35,7 @@ internal static class ConvertedSummaryBuilder
         IXirrCalculationService xirrCalculationService,
         DateTime asOf)
     {
-        var context = new ConversionContext(brokerCurrency, reportingCurrency, exchangeRateProvider);
+        var context = new CurrencyConversionContext(brokerCurrency, reportingCurrency, exchangeRateProvider);
         var today = DateOnly.FromDateTime(asOf);
 
         var convertedMarketValue = await ConvertPointInTimeAsync(marketValueSum, today, context).ConfigureAwait(false);
@@ -49,11 +49,11 @@ internal static class ConvertedSummaryBuilder
             convertedTotalReturn, convertedTotalReturnNetOfTax, context);
     }
 
-    private static Task<decimal?> ConvertPointInTimeAsync(decimal? nativeAmount, DateOnly date, ConversionContext context) =>
+    private static Task<decimal?> ConvertPointInTimeAsync(decimal? nativeAmount, DateOnly date, CurrencyConversionContext context) =>
         nativeAmount is decimal amount ? context.ConvertAsync(amount, date) : Task.FromResult((decimal?)null);
 
     private static async Task<(decimal ConvertedInvested, List<AssetCashFlowDTO> GrossFlows, List<AssetCashFlowDTO> NetOfTaxFlows)> ConvertAssetFlowsAsync(
-        IReadOnlyList<Asset> assets, ConversionContext context)
+        IReadOnlyList<Asset> assets, CurrencyConversionContext context)
     {
         var grossFlows = new List<AssetCashFlowDTO>();
         var netOfTaxFlows = new List<AssetCashFlowDTO>();
@@ -71,7 +71,7 @@ internal static class ConvertedSummaryBuilder
         return (convertedTotalBought - convertedTotalSold, grossFlows, netOfTaxFlows);
     }
 
-    private static async Task<AssetConversionResult> ConvertAssetAsync(Asset asset, ConversionContext context)
+    private static async Task<AssetConversionResult> ConvertAssetAsync(Asset asset, CurrencyConversionContext context)
     {
         var grossFlows = new List<AssetCashFlowDTO>();
         var netOfTaxFlows = new List<AssetCashFlowDTO>();
@@ -143,7 +143,7 @@ internal static class ConvertedSummaryBuilder
         decimal? convertedUnrealisedGainLoss,
         decimal? convertedTotalReturn,
         decimal? convertedTotalReturnNetOfTax,
-        ConversionContext context)
+        CurrencyConversionContext context)
     {
         if (context.IsUnavailable)
         {
@@ -168,37 +168,4 @@ internal static class ConvertedSummaryBuilder
         List<AssetCashFlowDTO> NetOfTaxFlows,
         decimal Bought,
         decimal Sold);
-
-    /// <summary>Caches one rate lookup per distinct date and tracks attempt/failure counts across
-    /// the whole build, since every conversion within one call shares the same currency pair.</summary>
-    private sealed class ConversionContext(Currency from, Currency to, IExchangeRateProvider exchangeRateProvider)
-    {
-        private readonly Dictionary<DateOnly, decimal?> _rateCache = [];
-
-        public int AttemptCount { get; private set; }
-        public int FailureCount { get; private set; }
-        public bool IsUnavailable => AttemptCount > 0 && FailureCount == AttemptCount;
-        public bool IsPartial => FailureCount > 0;
-
-        public async Task<decimal?> ConvertAsync(decimal amount, DateOnly date)
-        {
-            if (from == to)
-            {
-                return amount;
-            }
-
-            if (!_rateCache.TryGetValue(date, out var rate))
-            {
-                AttemptCount++;
-                rate = await exchangeRateProvider.GetHistoricalRateAsync(date, from, to).ConfigureAwait(false);
-                _rateCache[date] = rate;
-                if (rate is null)
-                {
-                    FailureCount++;
-                }
-            }
-
-            return rate.HasValue ? amount * rate.Value : null;
-        }
-    }
 }
