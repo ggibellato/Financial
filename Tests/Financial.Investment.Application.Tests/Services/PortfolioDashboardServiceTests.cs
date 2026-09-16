@@ -275,6 +275,42 @@ public class PortfolioDashboardServiceTests
     }
 
     [Fact]
+    public async Task GetDashboardAsync_WhenReportingCurrencyEnabled_ConvertsEveryMoneyFigure()
+    {
+        var asset = PricedAsset("AAAA", 10m, 5m, 8m);
+        asset.AddCredit(Credit.Create(new DateTime(2026, 3, 1), Credit.CreditType.Dividend, 50m, withheld: 10m));
+        SeedInvestments(active: [MakeBroker("XPI", "BRL", asset)]);
+
+        var result = await CreateService(exchangeRateProvider: new StubExchangeRateProvider(0.2m)).GetDashboardAsync();
+
+        using var _ = new AssertionScope();
+        result.IsReportingCurrencyEnabled.Should().BeTrue();
+        result.ReportingCurrency.Should().Be("GBP");
+        result.ConvertedMarketValue.Should().Be(80m * 0.2m);
+        result.ConvertedInvested.Should().Be(50m * 0.2m);
+        result.ConvertedUnrealisedGainLoss.Should().Be(30m * 0.2m);
+        result.ConvertedIncomeYtd.Should().Be(40m * 0.2m);
+        result.ConvertedIncomeLifetime.Should().Be(40m * 0.2m);
+        result.IsReportingCurrencyPartial.Should().BeFalse();
+        result.IsReportingCurrencyUnavailable.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task GetDashboardAsync_WhenNoExchangeRateIsAvailable_FlagsUnavailableAndKeepsNativeFigures()
+    {
+        SeedInvestments(active: [MakeBroker("XPI", "BRL", PricedAsset("AAAA", 10m, 5m, 8m))]);
+
+        var result = await CreateService(exchangeRateProvider: new StubExchangeRateProvider(null)).GetDashboardAsync();
+
+        using var _ = new AssertionScope();
+        result.IsReportingCurrencyEnabled.Should().BeTrue();
+        result.IsReportingCurrencyUnavailable.Should().BeTrue();
+        result.IsReportingCurrencyPartial.Should().BeFalse();
+        result.ConvertedMarketValue.Should().BeNull();
+        result.MarketValue.Should().Be(80m, "the native figures stand on their own");
+    }
+
+    [Fact]
     public async Task GetDashboardAsync_EmptyPortfolio_ReturnsZerosAndNoRate()
     {
         SeedInvestments(active: []);

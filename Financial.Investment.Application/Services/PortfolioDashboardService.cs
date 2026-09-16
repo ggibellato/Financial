@@ -113,27 +113,48 @@ public sealed class PortfolioDashboardService : IPortfolioDashboardService
         return currency;
     }
 
-    private Task<PortfolioDashboardDTO> BuildDashboardAsync(IReadOnlyList<PortfolioHolding> holdings, DateOnly asOf)
+    private async Task<PortfolioDashboardDTO> BuildDashboardAsync(IReadOnlyList<PortfolioHolding> holdings, DateOnly asOf)
     {
         var active = SumActiveScope(holdings);
         var (incomeYtd, incomeLifetime) = SumIncome(holdings, asOf);
+        var realisedGainLoss = SumRealisedGainLoss(holdings);
         var xirr = PortfolioXirrBuilder.Calculate(holdings, asOf.ToDateTime(TimeOnly.MinValue));
+        var reportingCurrency = _reportingCurrencyProvider.GetReportingCurrency();
 
-        return Task.FromResult(new PortfolioDashboardDTO
+        PortfolioDashboardDTO BuildResult(PortfolioDashboardConversion? converted) => new()
         {
             MarketValue = active.MarketValue,
             Invested = active.Invested,
             UnrealisedGainLoss = active.UnrealisedGainLoss,
-            RealisedGainLoss = SumRealisedGainLoss(holdings),
+            RealisedGainLoss = realisedGainLoss,
             IncomeYtd = incomeYtd,
             IncomeLifetime = incomeLifetime,
             GrossXirr = xirr.GrossXirr,
             NetXirr = xirr.NetXirr,
             UnvaluedHoldingCount = active.UnvaluedHoldingCount,
             IsPartial = active.UnvaluedHoldingCount > 0,
-            ReportingCurrency = _reportingCurrencyProvider.GetReportingCurrency().ToString(),
-            IsReportingCurrencyEnabled = false,
-        });
+            ReportingCurrency = reportingCurrency.ToString(),
+            IsReportingCurrencyEnabled = converted is not null,
+            ConvertedMarketValue = converted?.MarketValue,
+            ConvertedInvested = converted?.Invested,
+            ConvertedUnrealisedGainLoss = converted?.UnrealisedGainLoss,
+            ConvertedRealisedGainLoss = converted?.RealisedGainLoss,
+            ConvertedIncomeYtd = converted?.IncomeYtd,
+            ConvertedIncomeLifetime = converted?.IncomeLifetime,
+            ConvertedGrossXirr = converted?.GrossXirr,
+            ConvertedNetXirr = converted?.NetXirr,
+            IsReportingCurrencyPartial = converted?.IsPartial ?? false,
+            IsReportingCurrencyUnavailable = converted?.IsUnavailable ?? false,
+        };
+
+        if (!_reportingCurrencyProvider.IsReportingCurrencyEnabled())
+        {
+            return BuildResult(converted: null);
+        }
+
+        return BuildResult(await PortfolioDashboardConvertedBuilder
+            .BuildAsync(holdings, reportingCurrency, _exchangeRateProvider, asOf)
+            .ConfigureAwait(false));
     }
 
     private static ActiveScopeTotals SumActiveScope(IReadOnlyList<PortfolioHolding> holdings)
