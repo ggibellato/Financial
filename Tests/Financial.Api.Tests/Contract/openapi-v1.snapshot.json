@@ -4814,6 +4814,36 @@
         ],
         "type": "object"
       },
+      "UpcomingIncomeDTO": {
+        "properties": {
+          "assetName": {
+            "type": "string"
+          },
+          "brokerName": {
+            "type": "string"
+          },
+          "lastCreditDate": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "projectedAmount": {
+            "format": "double",
+            "type": "number"
+          },
+          "projectedNextDate": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "assetName",
+          "brokerName",
+          "lastCreditDate",
+          "projectedNextDate",
+          "projectedAmount"
+        ],
+        "type": "object"
+      },
       "ValuationMethod": {
         "enum": [
           "Unspecified",
@@ -12188,6 +12218,29 @@
         ]
       }
     },
+    "/upcoming-income": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/UpcomingIncomeDTO"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "UpcomingIncome"
+        ]
+      }
+    },
     "/watchlist": {
       "get": {
         "responses": {
@@ -12395,6 +12448,9 @@
     },
     {
       "name": "Transfers"
+    },
+    {
+      "name": "UpcomingIncome"
     },
     {
       "name": "Watchlist"
