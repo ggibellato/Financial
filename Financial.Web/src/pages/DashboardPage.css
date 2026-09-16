@@ -14,11 +14,7 @@
 
 .dashboard-page__panels {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-areas:
-    'kpis kpis'
-    'allocation warnings'
-    'income income';
+  grid-template-columns: 1fr;
   gap: 24px;
 }
 
@@ -34,34 +30,12 @@
   color: var(--text-h);
 }
 
-.dashboard-page__panel--kpis {
-  grid-area: kpis;
-}
-
-.dashboard-page__panel--allocation {
-  grid-area: allocation;
-}
-
-.dashboard-page__panel--warnings {
-  grid-area: warnings;
-}
-
-.dashboard-page__panel--income {
-  grid-area: income;
-}
-
 @media (max-width: 1024px) {
   .dashboard-page {
     padding: 16px;
   }
 
   .dashboard-page__panels {
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      'kpis'
-      'allocation'
-      'warnings'
-      'income';
     gap: 16px;
   }
 }

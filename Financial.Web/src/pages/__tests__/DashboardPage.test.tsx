@@ -62,14 +62,11 @@ describe('DashboardPage', () => {
     localStorage.clear()
   })
 
-  it('renders_the_dashboard_route_with_its_four_panels', () => {
+  it('renders_the_dashboard_route_with_the_kpi_panel', () => {
     renderDashboardRoute()
 
     expect(screen.getByRole('heading', { name: 'Dashboard', level: 2 })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Portfolio Summary' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Allocation Breakdown' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Data-Quality Warnings' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Upcoming Income' })).toBeInTheDocument()
   })
 
   it('is_reachable_from_the_sidebar_as_the_first_investments_entry', () => {

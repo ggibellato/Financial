@@ -122,7 +122,7 @@ function ConvertedKpiTiles({ summary, retry }: { summary: PortfolioDashboardDto;
     <div className="dashboard-kpi-tiles__converted">
       <h4 className="dashboard-kpi-tiles__converted-heading">Converted to {summary.reportingCurrency}</h4>
       {summary.isReportingCurrencyPartial && (
-        <p className="dashboard-kpi-tiles__notice" role="status">
+        <p className="dashboard-kpi-tiles__notice dashboard-kpi-tiles__notice--partial" role="status">
           Some figures could not be converted to {summary.reportingCurrency} — showing partial totals.
         </p>
       )}
@@ -179,7 +179,7 @@ export default function DashboardKpiTiles({
         ))}
       </div>
       {unvaluedMessage && (
-        <p className="dashboard-kpi-tiles__notice" role="status">
+        <p className="dashboard-kpi-tiles__notice dashboard-kpi-tiles__notice--incomplete" role="status">
           {unvaluedMessage}
           {onViewMissingPriceHoldings && (
             <>

@@ -49,6 +49,13 @@
   margin: 0;
   font-size: 12px;
   font-style: italic;
+}
+
+.dashboard-kpi-tiles__notice--incomplete {
+  color: var(--danger);
+}
+
+.dashboard-kpi-tiles__notice--partial {
   color: var(--warning-text);
 }
 
