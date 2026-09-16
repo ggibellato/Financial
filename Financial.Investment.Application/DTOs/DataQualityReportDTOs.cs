@@ -1,4 +1,5 @@
 using Financial.Investment.Application.Enums;
+using Financial.Investment.Domain.Entities;
 
 namespace Financial.Investment.Application.DTOs;
 
@@ -7,6 +8,11 @@ public sealed record SalesExceedPurchasesFinding(
     DateTime OffendingSaleDate, decimal QuantityHeld, decimal Shortfall);
 
 public sealed record UnpricedOpenHoldingFinding(string BrokerName, string PortfolioName, string AssetName);
+
+public sealed record OpenHoldingMissingCostBasisFinding(string BrokerName, string PortfolioName, string AssetName);
+
+public sealed record UnresolvedTaxClassificationFinding(
+    string BrokerName, string PortfolioName, string AssetName, string TaxYear, EventCategory EventCategory);
 
 public sealed record UnclassifiedHoldingFinding(string BrokerName, string PortfolioName, string AssetName, InvestmentScope Scope);
 
@@ -17,6 +23,9 @@ public sealed class DataQualityReportDTO
 {
     public IReadOnlyList<SalesExceedPurchasesFinding> SalesExceedPurchases { get; init; } = [];
     public IReadOnlyList<UnpricedOpenHoldingFinding> UnpricedOpenHoldings { get; init; } = [];
+    public IReadOnlyList<OpenHoldingMissingCostBasisFinding> OpenHoldingsMissingCostBasis { get; init; } = [];
+    public int StaleValuationCount { get; init; }
+    public IReadOnlyList<UnresolvedTaxClassificationFinding> UnresolvedTaxClassifications { get; init; } = [];
     public IReadOnlyList<UnclassifiedHoldingFinding> UnclassifiedHoldings { get; init; } = [];
     public IReadOnlyList<HistoricHoldingStillOpenFinding> HistoricHoldingsStillOpen { get; init; } = [];
     public IReadOnlyList<UnclassifiedHoldingFinding> UnclassifiedAndUnpricedOpenHoldings { get; init; } = [];
