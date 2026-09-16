@@ -7374,10 +7374,10 @@
                 }
               }
             },
-            "description": "200 OK with the portfolio dashboard aggregate."
+            "description": "OK"
           }
         },
-        "summary": "Returns the portfolio-wide aggregate across every Active and Historic broker.",
+        "summary": "",
         "tags": [
           "Dashboard"
         ]

@@ -16,11 +16,6 @@ internal readonly record struct PortfolioDashboardConversion(
     bool IsPartial,
     bool IsUnavailable);
 
-/// <summary>
-/// A whole-portfolio aggregate spans brokers holding different native currencies, so it needs one
-/// <see cref="CurrencyConversionContext"/> per distinct source currency rather than the single pair
-/// <see cref="ConvertedSummaryBuilder"/> can assume for one broker.
-/// </summary>
 internal static class PortfolioDashboardConvertedBuilder
 {
     public static async Task<PortfolioDashboardConversion> BuildAsync(
@@ -157,10 +152,6 @@ internal static class PortfolioDashboardConvertedBuilder
         }
     }
 
-    /// <summary>
-    /// A currency whose source equals the reporting currency attempts nothing yet still produces
-    /// every figure, so it keeps the whole portfolio out of the unavailable state.
-    /// </summary>
     private static PortfolioDashboardConversion BuildResult(ConvertedTotals totals, IReadOnlyList<CurrencyConversionContext> contexts)
     {
         if (contexts.Any(context => context.AttemptCount > 0) && contexts.All(context => context.IsUnavailable))

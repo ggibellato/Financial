@@ -2,8 +2,6 @@ using Financial.Shared.Abstractions.Currencies;
 
 namespace Financial.Investment.Application.Services;
 
-/// <summary>Caches one rate lookup per distinct date for a single currency pair. The cache is keyed
-/// on date alone, so converting from a second source currency needs a second instance.</summary>
 internal sealed class CurrencyConversionContext(Currency from, Currency to, IExchangeRateProvider exchangeRateProvider)
 {
     private readonly Dictionary<DateOnly, decimal?> _rateCache = [];

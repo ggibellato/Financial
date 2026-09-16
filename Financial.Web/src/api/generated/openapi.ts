@@ -2210,7 +2210,6 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Returns the portfolio-wide aggregate across every Active and Historic broker. */
         get: {
             parameters: {
                 query?: never;
@@ -2220,7 +2219,7 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description 200 OK with the portfolio dashboard aggregate. */
+                /** @description OK */
                 200: {
                     headers: {
                         [name: string]: unknown;
