@@ -10,6 +10,7 @@ import {
   ControleMaePage,
   CreditCardsPage,
   CurrentValuesPage,
+  DashboardPage,
   DividendCheckPage,
   HistoricInvestmentsPage,
   IncomeSourcesPage,
@@ -43,6 +44,7 @@ export interface PageRoute {
  * rather than sidebar destinations, so they have no NAV_TREE entry to agree with.
  */
 export const PAGE_ROUTES: PageRoute[] = [
+  { path: 'investments/dashboard', element: <DashboardPage /> },
   { path: 'investments/active-investments', element: <ActiveInvestmentsPage /> },
   { path: 'investments/historic-investments', element: <HistoricInvestmentsPage /> },
   { path: 'investments/dividend-check', element: <DividendCheckPage /> },

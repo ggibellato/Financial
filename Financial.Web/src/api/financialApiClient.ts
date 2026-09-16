@@ -2,6 +2,7 @@ import { ApiError } from './apiError'
 import { API_BASE_URL } from './config'
 import type {
   AggregatedSummaryDto,
+  AllocationBreakdownDto,
   AssetAdminCreateDto,
   AssetAdminDto,
   AssetAdminUpdateDto,
@@ -38,6 +39,7 @@ import type {
   CreditDto,
   CreditUpdateDto,
   IncomeCreateDto,
+  DataQualityReportDto,
   DeleteAssetPriceDto,
   DividendHistoryItemDto,
   DividendSummaryDto,
@@ -64,6 +66,7 @@ import type {
   PortfolioAssetSummaryItemDto,
   PortfolioBreakdownItemDto,
   PortfolioCreateDto,
+  PortfolioDashboardDto,
   PortfolioDto,
   PortfolioReferenceDto,
   PortfolioUpdateDto,
@@ -98,6 +101,7 @@ import type {
   BalanceAdjustmentCreateDto,
   BalanceAdjustmentUpdateDto,
   TreeNodeDto,
+  UpcomingIncomeDto,
   ExpenseUpdateDto,
   IncomeUpdateDto,
   InvestmentSnapshotValueUpdateDto,
@@ -163,6 +167,10 @@ export interface FinancialApiClient {
   getAssetPriceFetchScope: () => Promise<PortfolioReferenceDto[]>
   getPortfolioAssetsSummary: (brokerName: string, portfolioName: string, scope?: InvestmentScope) => Promise<PortfolioAssetSummaryItemDto[]>
   calculateXirr: (cashFlows: AssetCashFlowDto[], terminalValue: number) => Promise<XirrResultDto>
+  getDashboard: () => Promise<PortfolioDashboardDto>
+  getAllocationBreakdown: () => Promise<AllocationBreakdownDto>
+  getDataQualityReport: () => Promise<DataQualityReportDto>
+  getUpcomingIncome: () => Promise<UpcomingIncomeDto[]>
   getReserveBalances: () => Promise<ReserveBucketBalanceDto[]>
   getReserveMovements: () => Promise<ReserveMovementDto[]>
   getReserveBuckets: () => Promise<ReserveBucketDto[]>
@@ -478,6 +486,10 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
         method: 'POST',
         body: JSON.stringify({ cashFlows, terminalValue } satisfies CalculateXirrRequestDto),
       }),
+    getDashboard: () => request<PortfolioDashboardDto>('/dashboard'),
+    getAllocationBreakdown: () => request<AllocationBreakdownDto>('/allocation-breakdown'),
+    getDataQualityReport: () => request<DataQualityReportDto>('/data-quality-report'),
+    getUpcomingIncome: () => request<UpcomingIncomeDto[]>('/upcoming-income'),
     getReserveBalances: () => request<ReserveBucketBalanceDto[]>('/reserve/balances'),
     getReserveMovements: () => request<ReserveMovementDto[]>('/reserve/movements'),
     getReserveBuckets: () => request<ReserveBucketDto[]>('/reserve-buckets'),

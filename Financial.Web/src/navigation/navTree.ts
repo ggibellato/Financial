@@ -24,6 +24,7 @@ export const NAV_TREE: NavCategory[] = [
     id: 'investments',
     label: 'Investments',
     children: [
+      { id: 'dashboard', label: 'Dashboard', route: '/investments/dashboard' },
       { id: 'active-investments', label: 'Active Investments', route: '/investments/active-investments' },
       { id: 'historic-investments', label: 'Historic Investments', route: '/investments/historic-investments' },
       { id: 'dividend-check', label: 'Shares Dividend Check', route: '/investments/dividend-check' },
