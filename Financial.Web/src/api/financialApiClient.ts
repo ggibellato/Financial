@@ -64,6 +64,7 @@ import type {
   PortfolioAssetSummaryItemDto,
   PortfolioBreakdownItemDto,
   PortfolioCreateDto,
+  PortfolioDashboardDto,
   PortfolioDto,
   PortfolioReferenceDto,
   PortfolioUpdateDto,
@@ -163,6 +164,7 @@ export interface FinancialApiClient {
   getAssetPriceFetchScope: () => Promise<PortfolioReferenceDto[]>
   getPortfolioAssetsSummary: (brokerName: string, portfolioName: string, scope?: InvestmentScope) => Promise<PortfolioAssetSummaryItemDto[]>
   calculateXirr: (cashFlows: AssetCashFlowDto[], terminalValue: number) => Promise<XirrResultDto>
+  getDashboard: () => Promise<PortfolioDashboardDto>
   getReserveBalances: () => Promise<ReserveBucketBalanceDto[]>
   getReserveMovements: () => Promise<ReserveMovementDto[]>
   getReserveBuckets: () => Promise<ReserveBucketDto[]>
@@ -478,6 +480,7 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
         method: 'POST',
         body: JSON.stringify({ cashFlows, terminalValue } satisfies CalculateXirrRequestDto),
       }),
+    getDashboard: () => request<PortfolioDashboardDto>('/dashboard'),
     getReserveBalances: () => request<ReserveBucketBalanceDto[]>('/reserve/balances'),
     getReserveMovements: () => request<ReserveMovementDto[]>('/reserve/movements'),
     getReserveBuckets: () => request<ReserveBucketDto[]>('/reserve-buckets'),

@@ -17,6 +17,7 @@ export const InvestmentAccountsPage = lazy(() => import('../pages/InvestmentAcco
 export const PortfoliosPage = lazy(() => import('../pages/PortfoliosPage'))
 export const AnnualSummaryPage = lazy(() => import('../pages/AnnualSummaryPage'))
 export const ControleMaePage = lazy(() => import('../pages/ControleMaePage'))
+export const DashboardPage = lazy(() => import('../pages/DashboardPage'))
 export const CurrentValuesPage = lazy(() => import('../pages/CurrentValuesPage'))
 export const DividendCheckPage = lazy(() => import('../pages/DividendCheckPage'))
 export const HistoricInvestmentsPage = lazy(() => import('../pages/HistoricInvestmentsPage'))
