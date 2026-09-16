@@ -1,12 +1,18 @@
+import { useRef } from 'react'
 import AllocationBreakdownPanel from '../components/dashboard/AllocationBreakdownPanel'
 import DashboardKpiTiles from '../components/dashboard/DashboardKpiTiles'
+import DataQualityWarningsPanel from '../components/dashboard/DataQualityWarningsPanel'
+import type { DataQualityWarningsPanelHandle } from '../components/dashboard/DataQualityWarningsPanel'
 import { useAllocationBreakdown } from '../hooks/useAllocationBreakdown'
 import { useDashboardSummary } from '../hooks/useDashboardSummary'
+import { useDataQualityReport } from '../hooks/useDataQualityReport'
 import './DashboardPage.css'
 
 export default function DashboardPage() {
   const dashboard = useDashboardSummary()
   const allocation = useAllocationBreakdown()
+  const dataQuality = useDataQualityReport()
+  const warningsPanelRef = useRef<DataQualityWarningsPanelHandle>(null)
 
   return (
     <div className="dashboard-page">
@@ -22,6 +28,7 @@ export default function DashboardPage() {
             isLoading={dashboard.isLoading}
             error={dashboard.error}
             retry={dashboard.retry}
+            onViewMissingPriceHoldings={() => warningsPanelRef.current?.expandCategory('missingPrice')}
           />
         </section>
 
@@ -35,6 +42,20 @@ export default function DashboardPage() {
             isLoading={allocation.isLoading}
             error={allocation.error}
             retry={allocation.retry}
+          />
+        </section>
+
+        <section
+          className="dashboard-page__panel dashboard-page__panel--warnings"
+          aria-labelledby="dashboard-warnings-heading"
+        >
+          <h3 id="dashboard-warnings-heading">Data Quality Warnings</h3>
+          <DataQualityWarningsPanel
+            ref={warningsPanelRef}
+            report={dataQuality.report}
+            isLoading={dataQuality.isLoading}
+            error={dataQuality.error}
+            retry={dataQuality.retry}
           />
         </section>
       </div>
