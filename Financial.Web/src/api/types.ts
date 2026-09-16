@@ -104,6 +104,7 @@ export type CalculateXirrRequestDto = Schema<'CalculateXirrRequestDTO'>
 export type XirrResultDto = Schema<'XirrResultDTO'>
 export type PortfolioAssetSummaryItemDto = Schema<'PortfolioAssetSummaryItemDTO'>
 export type PortfolioDashboardDto = Schema<'PortfolioDashboardDTO'>
+export type AllocationBreakdownDto = Schema<'AllocationBreakdownDTO'>
 export type ReserveBucketBalanceDto = Schema<'ReserveBucketBalanceDTO'>
 export type ReserveBucketDto = Schema<'ReserveBucketDTO'>
 export type ReserveBucketCreateDto = Schema<'ReserveBucketCreateDTO'>

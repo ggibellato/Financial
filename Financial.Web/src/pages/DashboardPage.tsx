@@ -1,9 +1,12 @@
+import AllocationBreakdownPanel from '../components/dashboard/AllocationBreakdownPanel'
 import DashboardKpiTiles from '../components/dashboard/DashboardKpiTiles'
+import { useAllocationBreakdown } from '../hooks/useAllocationBreakdown'
 import { useDashboardSummary } from '../hooks/useDashboardSummary'
 import './DashboardPage.css'
 
 export default function DashboardPage() {
   const dashboard = useDashboardSummary()
+  const allocation = useAllocationBreakdown()
 
   return (
     <div className="dashboard-page">
@@ -19,6 +22,19 @@ export default function DashboardPage() {
             isLoading={dashboard.isLoading}
             error={dashboard.error}
             retry={dashboard.retry}
+          />
+        </section>
+
+        <section
+          className="dashboard-page__panel dashboard-page__panel--allocation"
+          aria-labelledby="dashboard-allocation-heading"
+        >
+          <h3 id="dashboard-allocation-heading">Allocation Breakdown</h3>
+          <AllocationBreakdownPanel
+            breakdown={allocation.breakdown}
+            isLoading={allocation.isLoading}
+            error={allocation.error}
+            retry={allocation.retry}
           />
         </section>
       </div>
