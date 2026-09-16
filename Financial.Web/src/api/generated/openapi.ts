@@ -4,6 +4,41 @@
  */
 
 export interface paths {
+    "/allocation-breakdown": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AllocationBreakdownDTO"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/annual-summary/{year}/category-totals": {
         parameters: {
             query?: never;
@@ -6169,6 +6204,12 @@ export interface components {
             /** Format: int32 */
             unvaluedHoldingCount: number;
         };
+        AllocationBreakdownDTO: {
+            byBroker: components["schemas"]["BrokerAllocationEntryDTO"][];
+            byClass: components["schemas"]["AssetClassAllocationEntryDTO"][];
+            byCountry: components["schemas"]["CountryAllocationEntryDTO"][];
+            byCurrency: components["schemas"]["CurrencyAllocationEntryDTO"][];
+        };
         ArchiveAssetRequestDTO: {
             assetName: string;
             brokerName: string;
@@ -6225,6 +6266,13 @@ export interface components {
             amount: number;
             /** Format: date-time */
             date: string;
+        };
+        AssetClassAllocationEntryDTO: {
+            class: components["schemas"]["GlobalAssetClass"];
+            /** Format: double */
+            marketValue: number;
+            /** Format: double */
+            percentage: number;
         };
         AssetDetailsDTO: {
             /** Format: double */
@@ -6378,6 +6426,13 @@ export interface components {
             name: string;
             roundUpEnabled: boolean;
         };
+        BrokerAllocationEntryDTO: {
+            brokerName: string;
+            /** Format: double */
+            marketValue: number;
+            /** Format: double */
+            percentage: number;
+        };
         BrokerCreateDTO: {
             costBasisMethod?: null | components["schemas"]["CostBasisMethod"];
             currency: string;
@@ -6507,6 +6562,13 @@ export interface components {
         };
         /** @enum {unknown} */
         CostBasisMethod: "AverageCost" | "FIFO" | "SpecificId";
+        CountryAllocationEntryDTO: {
+            country: components["schemas"]["CountryCode"];
+            /** Format: double */
+            marketValue: number;
+            /** Format: double */
+            percentage: number;
+        };
         /** @enum {unknown} */
         CountryCode: "Unknown" | "BR" | "US" | "UK";
         CreditCardCalendarSyncStatusDTO: {
@@ -6585,6 +6647,13 @@ export interface components {
             value?: number;
             /** Format: double */
             withheld?: number;
+        };
+        CurrencyAllocationEntryDTO: {
+            currency: string;
+            /** Format: double */
+            marketValue: number;
+            /** Format: double */
+            percentage: number;
         };
         DataQualityReportDTO: {
             historicHoldingsStillOpen: components["schemas"]["HistoricHoldingStillOpenFinding"][];
