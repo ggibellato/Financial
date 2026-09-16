@@ -2238,6 +2238,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/data-quality-report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DataQualityReportDTO"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/dividends/{ticker}/history": {
         parameters: {
             query?: never;
@@ -6551,6 +6586,17 @@ export interface components {
             /** Format: double */
             withheld?: number;
         };
+        DataQualityReportDTO: {
+            historicHoldingsStillOpen: components["schemas"]["HistoricHoldingStillOpenFinding"][];
+            openHoldingsMissingCostBasis: components["schemas"]["OpenHoldingMissingCostBasisFinding"][];
+            salesExceedPurchases: components["schemas"]["SalesExceedPurchasesFinding"][];
+            /** Format: int32 */
+            staleValuationCount: number;
+            unclassifiedAndUnpricedOpenHoldings: components["schemas"]["UnclassifiedHoldingFinding"][];
+            unclassifiedHoldings: components["schemas"]["UnclassifiedHoldingFinding"][];
+            unpricedOpenHoldings: components["schemas"]["UnpricedOpenHoldingFinding"][];
+            unresolvedTaxClassifications: components["schemas"]["UnresolvedTaxClassificationFinding"][];
+        };
         DeleteAssetPriceDTO: {
             assetName: string;
             brokerName: string;
@@ -6742,6 +6788,15 @@ export interface components {
             /** @description Always "ok" when the API is reachable and responding. Read the contexts for storage. */
             status: string;
         };
+        HistoricHoldingStillOpenFinding: {
+            assetName: string;
+            brokerName: string;
+            /** Format: double */
+            costOfUnitsHeld: number;
+            portfolioName: string;
+            /** Format: double */
+            quantity: number;
+        };
         IncomeAnnualSummaryDTO: {
             /** Format: double */
             dividendoJurosAnnualTotal: number;
@@ -6882,6 +6937,8 @@ export interface components {
             accounts: components["schemas"]["InvestmentAccountAnnualDiffDTO"][];
             netPosition: components["schemas"]["NetPositionAnnualDiffDTO"];
         };
+        /** @enum {unknown} */
+        InvestmentScope: "Active" | "Historic";
         InvestmentSnapshotDTO: {
             /** Format: uuid */
             accountId: string;
@@ -6980,6 +7037,11 @@ export interface components {
             monthlyValues: number[];
             /** Format: double */
             sumOfMonthResults: number;
+        };
+        OpenHoldingMissingCostBasisFinding: {
+            assetName: string;
+            brokerName: string;
+            portfolioName: string;
         };
         OpenLotDTO: {
             /** Format: date-time */
@@ -7231,6 +7293,17 @@ export interface components {
             /** Format: date */
             date: string;
             description: string;
+        };
+        SalesExceedPurchasesFinding: {
+            assetName: string;
+            brokerName: string;
+            /** Format: date-time */
+            offendingSaleDate: string;
+            portfolioName: string;
+            /** Format: double */
+            quantityHeld: number;
+            /** Format: double */
+            shortfall: number;
         };
         SetAssetPriceDTO: {
             assetName: string;
@@ -7489,6 +7562,24 @@ export interface components {
         };
         /** @enum {unknown} */
         TreeNodeType: "Investments" | "Broker" | "Portfolio" | "Asset";
+        UnclassifiedHoldingFinding: {
+            assetName: string;
+            brokerName: string;
+            portfolioName: string;
+            scope: components["schemas"]["InvestmentScope"];
+        };
+        UnpricedOpenHoldingFinding: {
+            assetName: string;
+            brokerName: string;
+            portfolioName: string;
+        };
+        UnresolvedTaxClassificationFinding: {
+            assetName: string;
+            brokerName: string;
+            eventCategory: components["schemas"]["EventCategory"];
+            portfolioName: string;
+            taxYear: string;
+        };
         /** @enum {unknown} */
         ValuationMethod: "Unspecified" | "MarketPrice" | "NAV" | "ProviderValue" | "Manual" | "BondQuote";
         WatchlistItemDTO: {

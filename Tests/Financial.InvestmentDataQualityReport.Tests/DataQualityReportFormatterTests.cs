@@ -1,6 +1,7 @@
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Enums;
 using Financial.Investment.DataQualityReport;
+using Financial.Investment.Domain.Entities;
 using FluentAssertions;
 
 namespace Financial.InvestmentDataQualityReport.Tests;
@@ -16,6 +17,9 @@ public class DataQualityReportFormatterTests
 
         output.Should().Contain("Holdings selling more than they hold (0)");
         output.Should().Contain("Open holdings with no recorded price (0)");
+        output.Should().Contain("Open holdings with no derivable cost basis (0)");
+        output.Should().Contain("Open holdings with a stale valuation (0)");
+        output.Should().Contain("Unresolved tax classifications (0)");
         output.Should().Contain("Unclassified holdings (0: 0 active, 0 historic)");
         output.Should().Contain("Unclassified holdings that are also unpriced (0)");
         output.Should().Contain("Historic holdings still carrying a quantity (0)");
@@ -53,6 +57,47 @@ public class DataQualityReportFormatterTests
 
         output.Should().Contain("Open holdings with no recorded price (1)");
         output.Should().Contain("XPI / Default / UNPRICED");
+    }
+
+    [Fact]
+    public void Format_OpenHoldingsMissingCostBasis_NamesEachHolding()
+    {
+        var report = new DataQualityReportDTO
+        {
+            OpenHoldingsMissingCostBasis = [new OpenHoldingMissingCostBasisFinding("Avenue", "Default", "PROVIDERVALUED")],
+        };
+
+        var output = DataQualityReportFormatter.Format(report);
+
+        output.Should().Contain("Open holdings with no derivable cost basis (1)");
+        output.Should().Contain("Avenue / Default / PROVIDERVALUED");
+    }
+
+    [Fact]
+    public void Format_StaleValuationCount_IsPrinted()
+    {
+        var report = new DataQualityReportDTO { StaleValuationCount = 4 };
+
+        var output = DataQualityReportFormatter.Format(report);
+
+        output.Should().Contain("Open holdings with a stale valuation (4)");
+    }
+
+    [Fact]
+    public void Format_UnresolvedTaxClassifications_NamesTaxYearAndEventCategory()
+    {
+        var report = new DataQualityReportDTO
+        {
+            UnresolvedTaxClassifications =
+            [
+                new UnresolvedTaxClassificationFinding("XPI", "Default", "OVERSOLD", "2024", EventCategory.CapitalGain),
+            ],
+        };
+
+        var output = DataQualityReportFormatter.Format(report);
+
+        output.Should().Contain("Unresolved tax classifications (1)");
+        output.Should().Contain("XPI / Default / OVERSOLD: 2024 CapitalGain");
     }
 
     [Fact]

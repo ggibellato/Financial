@@ -14,6 +14,12 @@ public static class DataQualityReportFormatter
         sb.AppendLine();
         AppendUnpricedOpenHoldings(sb, report.UnpricedOpenHoldings);
         sb.AppendLine();
+        AppendOpenHoldingsMissingCostBasis(sb, report.OpenHoldingsMissingCostBasis);
+        sb.AppendLine();
+        sb.AppendLine($"Open holdings with a stale valuation ({report.StaleValuationCount}).");
+        sb.AppendLine();
+        AppendUnresolvedTaxClassifications(sb, report.UnresolvedTaxClassifications);
+        sb.AppendLine();
         AppendUnclassifiedHoldings(sb, report.UnclassifiedHoldings);
         sb.AppendLine();
         AppendUnclassifiedAndUnpricedLink(sb, report.UnclassifiedAndUnpricedOpenHoldings);
@@ -52,6 +58,36 @@ public static class DataQualityReportFormatter
         foreach (var f in findings)
         {
             sb.AppendLine($"  {f.BrokerName} / {f.PortfolioName} / {f.AssetName}");
+        }
+    }
+
+    private static void AppendOpenHoldingsMissingCostBasis(StringBuilder sb, IReadOnlyList<OpenHoldingMissingCostBasisFinding> findings)
+    {
+        sb.AppendLine($"Open holdings with no derivable cost basis ({findings.Count}):");
+        if (findings.Count == 0)
+        {
+            sb.AppendLine("  (none)");
+            return;
+        }
+
+        foreach (var f in findings)
+        {
+            sb.AppendLine($"  {f.BrokerName} / {f.PortfolioName} / {f.AssetName}");
+        }
+    }
+
+    private static void AppendUnresolvedTaxClassifications(StringBuilder sb, IReadOnlyList<UnresolvedTaxClassificationFinding> findings)
+    {
+        sb.AppendLine($"Unresolved tax classifications ({findings.Count}):");
+        if (findings.Count == 0)
+        {
+            sb.AppendLine("  (none)");
+            return;
+        }
+
+        foreach (var f in findings)
+        {
+            sb.AppendLine($"  {f.BrokerName} / {f.PortfolioName} / {f.AssetName}: {f.TaxYear} {f.EventCategory}");
         }
     }
 

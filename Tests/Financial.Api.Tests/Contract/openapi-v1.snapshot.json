@@ -1518,6 +1518,57 @@
         ],
         "type": "object"
       },
+      "DataQualityReportDTO": {
+        "properties": {
+          "historicHoldingsStillOpen": {
+            "items": {
+              "$ref": "#/components/schemas/HistoricHoldingStillOpenFinding"
+            },
+            "type": "array"
+          },
+          "openHoldingsMissingCostBasis": {
+            "items": {
+              "$ref": "#/components/schemas/OpenHoldingMissingCostBasisFinding"
+            },
+            "type": "array"
+          },
+          "salesExceedPurchases": {
+            "items": {
+              "$ref": "#/components/schemas/SalesExceedPurchasesFinding"
+            },
+            "type": "array"
+          },
+          "staleValuationCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "unclassifiedAndUnpricedOpenHoldings": {
+            "items": {
+              "$ref": "#/components/schemas/UnclassifiedHoldingFinding"
+            },
+            "type": "array"
+          },
+          "unclassifiedHoldings": {
+            "items": {
+              "$ref": "#/components/schemas/UnclassifiedHoldingFinding"
+            },
+            "type": "array"
+          },
+          "unpricedOpenHoldings": {
+            "items": {
+              "$ref": "#/components/schemas/UnpricedOpenHoldingFinding"
+            },
+            "type": "array"
+          },
+          "unresolvedTaxClassifications": {
+            "items": {
+              "$ref": "#/components/schemas/UnresolvedTaxClassificationFinding"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
       "DeleteAssetPriceDTO": {
         "properties": {
           "assetName": {
@@ -2044,6 +2095,35 @@
         ],
         "type": "object"
       },
+      "HistoricHoldingStillOpenFinding": {
+        "properties": {
+          "assetName": {
+            "type": "string"
+          },
+          "brokerName": {
+            "type": "string"
+          },
+          "costOfUnitsHeld": {
+            "format": "double",
+            "type": "number"
+          },
+          "portfolioName": {
+            "type": "string"
+          },
+          "quantity": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "brokerName",
+          "portfolioName",
+          "assetName",
+          "quantity",
+          "costOfUnitsHeld"
+        ],
+        "type": "object"
+      },
       "IncomeAnnualSummaryDTO": {
         "properties": {
           "dividendoJurosAnnualTotal": {
@@ -2547,6 +2627,12 @@
         ],
         "type": "object"
       },
+      "InvestmentScope": {
+        "enum": [
+          "Active",
+          "Historic"
+        ]
+      },
       "InvestmentSnapshotDTO": {
         "properties": {
           "accountId": {
@@ -2872,6 +2958,25 @@
           "fullYearNetChange",
           "averageMonthResult",
           "sumOfMonthResults"
+        ],
+        "type": "object"
+      },
+      "OpenHoldingMissingCostBasisFinding": {
+        "properties": {
+          "assetName": {
+            "type": "string"
+          },
+          "brokerName": {
+            "type": "string"
+          },
+          "portfolioName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "brokerName",
+          "portfolioName",
+          "assetName"
         ],
         "type": "object"
       },
@@ -3667,6 +3772,40 @@
           "amount",
           "date",
           "description"
+        ],
+        "type": "object"
+      },
+      "SalesExceedPurchasesFinding": {
+        "properties": {
+          "assetName": {
+            "type": "string"
+          },
+          "brokerName": {
+            "type": "string"
+          },
+          "offendingSaleDate": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "portfolioName": {
+            "type": "string"
+          },
+          "quantityHeld": {
+            "format": "double",
+            "type": "number"
+          },
+          "shortfall": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "brokerName",
+          "portfolioName",
+          "assetName",
+          "offendingSaleDate",
+          "quantityHeld",
+          "shortfall"
         ],
         "type": "object"
       },
@@ -4492,6 +4631,75 @@
           "Portfolio",
           "Asset"
         ]
+      },
+      "UnclassifiedHoldingFinding": {
+        "properties": {
+          "assetName": {
+            "type": "string"
+          },
+          "brokerName": {
+            "type": "string"
+          },
+          "portfolioName": {
+            "type": "string"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/InvestmentScope"
+          }
+        },
+        "required": [
+          "brokerName",
+          "portfolioName",
+          "assetName",
+          "scope"
+        ],
+        "type": "object"
+      },
+      "UnpricedOpenHoldingFinding": {
+        "properties": {
+          "assetName": {
+            "type": "string"
+          },
+          "brokerName": {
+            "type": "string"
+          },
+          "portfolioName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "brokerName",
+          "portfolioName",
+          "assetName"
+        ],
+        "type": "object"
+      },
+      "UnresolvedTaxClassificationFinding": {
+        "properties": {
+          "assetName": {
+            "type": "string"
+          },
+          "brokerName": {
+            "type": "string"
+          },
+          "eventCategory": {
+            "$ref": "#/components/schemas/EventCategory"
+          },
+          "portfolioName": {
+            "type": "string"
+          },
+          "taxYear": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "brokerName",
+          "portfolioName",
+          "assetName",
+          "taxYear",
+          "eventCategory"
+        ],
+        "type": "object"
       },
       "ValuationMethod": {
         "enum": [
@@ -7380,6 +7588,26 @@
         "summary": "",
         "tags": [
           "Dashboard"
+        ]
+      }
+    },
+    "/data-quality-report": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataQualityReportDTO"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "DataQualityReport"
         ]
       }
     },
@@ -11965,6 +12193,9 @@
     },
     {
       "name": "Dashboard"
+    },
+    {
+      "name": "DataQualityReport"
     },
     {
       "name": "Diagnostics"

@@ -193,6 +193,13 @@ public class ControllerGuardClauseTests
     }
 
     [Fact]
+    public void DataQualityReportController_NullDataQualityReportService_Throws()
+    {
+        Action act = () => new DataQualityReportController(null!);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("dataQualityReportService");
+    }
+
+    [Fact]
     public void CreditsController_NullCreditQueryService_Throws()
     {
         Action act = () => new CreditsController(null!, new StubCreditService());

@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Domain.Entities;
 
@@ -12,9 +13,12 @@ public sealed record UnpricedOpenHoldingFinding(string BrokerName, string Portfo
 public sealed record OpenHoldingMissingCostBasisFinding(string BrokerName, string PortfolioName, string AssetName);
 
 public sealed record UnresolvedTaxClassificationFinding(
-    string BrokerName, string PortfolioName, string AssetName, string TaxYear, EventCategory EventCategory);
+    string BrokerName, string PortfolioName, string AssetName, string TaxYear,
+    [property: JsonConverter(typeof(JsonStringEnumConverter))] EventCategory EventCategory);
 
-public sealed record UnclassifiedHoldingFinding(string BrokerName, string PortfolioName, string AssetName, InvestmentScope Scope);
+public sealed record UnclassifiedHoldingFinding(
+    string BrokerName, string PortfolioName, string AssetName,
+    [property: JsonConverter(typeof(JsonStringEnumConverter))] InvestmentScope Scope);
 
 public sealed record HistoricHoldingStillOpenFinding(
     string BrokerName, string PortfolioName, string AssetName, decimal Quantity, decimal CostOfUnitsHeld);
