@@ -3140,6 +3140,124 @@
         ],
         "type": "object"
       },
+      "PortfolioDashboardDTO": {
+        "properties": {
+          "convertedGrossXirr": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "convertedIncomeLifetime": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "convertedIncomeYtd": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "convertedInvested": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "convertedMarketValue": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "convertedNetXirr": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "convertedRealisedGainLoss": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "convertedUnrealisedGainLoss": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "grossXirr": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "incomeLifetime": {
+            "format": "double",
+            "type": "number"
+          },
+          "incomeYtd": {
+            "format": "double",
+            "type": "number"
+          },
+          "invested": {
+            "format": "double",
+            "type": "number"
+          },
+          "isPartial": {
+            "type": "boolean"
+          },
+          "isReportingCurrencyEnabled": {
+            "type": "boolean"
+          },
+          "isReportingCurrencyPartial": {
+            "type": "boolean"
+          },
+          "isReportingCurrencyUnavailable": {
+            "type": "boolean"
+          },
+          "marketValue": {
+            "format": "double",
+            "type": "number"
+          },
+          "netXirr": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "realisedGainLoss": {
+            "format": "double",
+            "type": "number"
+          },
+          "reportingCurrency": {
+            "type": "string"
+          },
+          "unrealisedGainLoss": {
+            "format": "double",
+            "type": "number"
+          },
+          "unvaluedHoldingCount": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
       "PortfolioNodeDTO": {
         "properties": {
           "assetCount": {
@@ -7242,6 +7360,26 @@
         "summary": "Lists credits for a specific portfolio.",
         "tags": [
           "Credits"
+        ]
+      }
+    },
+    "/dashboard": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortfolioDashboardDTO"
+                }
+              }
+            },
+            "description": "200 OK with the portfolio dashboard aggregate."
+          }
+        },
+        "summary": "Returns the portfolio-wide aggregate across every Active and Historic broker.",
+        "tags": [
+          "Dashboard"
         ]
       }
     },
@@ -11824,6 +11962,9 @@
     },
     {
       "name": "Credits"
+    },
+    {
+      "name": "Dashboard"
     },
     {
       "name": "Diagnostics"
