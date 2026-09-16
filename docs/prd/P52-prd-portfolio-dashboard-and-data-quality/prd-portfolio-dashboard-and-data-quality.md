@@ -421,11 +421,13 @@ graph TD
 - [ ] An `Unknown` slice appears for Class and Country whenever an unclassified holding exists
 
 ### F03. Data-Quality Warnings
-- [ ] Each of the 5 categories shows a count matching the number of findings the backend report
-      returns for that category
-- [ ] A category with 0 findings does not render on the panel
-- [ ] Clicking a listed holding navigates to that holding's node in the existing tree
-- [ ] The stale-valuation count matches the number of Active holdings whose `MarketStatus` is `Stale`
+- [ ] **P52-F03-data-quality-warnings-01** Each of the 5 categories shows a count matching the number
+      of findings the backend report returns for that category
+- [ ] **P52-F03-data-quality-warnings-02** A category with 0 findings does not render on the panel
+- [ ] **P52-F03-data-quality-warnings-03** Clicking a listed holding navigates to that holding's node
+      in the existing tree
+- [x] **P52-F03-data-quality-warnings-04** The stale-valuation count matches the number of Active
+      holdings whose `MarketStatus` is `Stale`
 
 ### F04. Upcoming Income
 - [ ] A holding with a detected monthly/quarterly/four-monthly frequency shows a projected entry dated

@@ -22,8 +22,11 @@ var storage = new LocalJsonStorage(dataFilePath);
 var investments = InvestmentLoader.LoadSync(storage, serializer);
 var repository = new InvestmentJsonRepository(investments, storage, serializer);
 
+var holdingValuationService = new HoldingValuationService(
+    new XirrCalculationService(), NoOpTelemetryTracer.Instance, NullLogger<HoldingValuationService>.Instance);
+
 IDataQualityReportService service = new DataQualityReportService(
-    repository, NoOpTelemetryTracer.Instance, NullLogger<DataQualityReportService>.Instance);
+    repository, NoOpTelemetryTracer.Instance, NullLogger<DataQualityReportService>.Instance, holdingValuationService);
 
 var report = service.GenerateReport();
 

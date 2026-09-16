@@ -15,12 +15,18 @@ public sealed class DataQualityReportService : IDataQualityReportService
     private readonly IInvestmentRepository _repository;
     private readonly ITelemetryTracer _tracer;
     private readonly ILogger<DataQualityReportService> _logger;
+    private readonly IHoldingValuationService _holdingValuationService;
 
-    public DataQualityReportService(IInvestmentRepository repository, ITelemetryTracer tracer, ILogger<DataQualityReportService> logger)
+    public DataQualityReportService(
+        IInvestmentRepository repository,
+        ITelemetryTracer tracer,
+        ILogger<DataQualityReportService> logger,
+        IHoldingValuationService holdingValuationService)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _holdingValuationService = holdingValuationService ?? throw new ArgumentNullException(nameof(holdingValuationService));
     }
 
     public DataQualityReportDTO GenerateReport()
@@ -48,6 +54,29 @@ public sealed class DataQualityReportService : IDataQualityReportService
                 .OrderBy(f => f.BrokerName).ThenBy(f => f.PortfolioName).ThenBy(f => f.AssetName)
                 .ToList();
 
+            var activeValuations = activeHoldings
+                .Select(h => (h.BrokerName, h.PortfolioName, h.Asset, Valuation: _holdingValuationService.GetValuation(h.Asset, InvestmentScope.Active)))
+                .ToList();
+
+            var openHoldingsMissingCostBasis = activeValuations
+                .Where(x => AssetAmountBases.For(InvestmentScope.Active, AssetTotals.For(x.Asset)).InvestedAmount == 0m
+                    && x.Valuation.MarketValue is decimal marketValue && marketValue != 0m)
+                .Select(x => new OpenHoldingMissingCostBasisFinding(x.BrokerName, x.PortfolioName, x.Asset.Name))
+                .OrderBy(f => f.BrokerName).ThenBy(f => f.PortfolioName).ThenBy(f => f.AssetName)
+                .ToList();
+
+            var staleValuationCount = activeValuations.Count(x => x.Valuation.MarketStatus == MarketStatus.Stale);
+
+            var unresolvedTaxClassifications = allHoldings
+                .SelectMany(h => h.Asset.TaxClassifications
+                    .Where(c => c.Status == TaxClassificationStatus.Active
+                        && c.CalculationStatus is CalculationStatus.Incomplete or CalculationStatus.RequiresReview)
+                    .Select(c => new UnresolvedTaxClassificationFinding(
+                        h.BrokerName, h.PortfolioName, h.Asset.Name, c.TaxYear, c.EventCategory)))
+                .OrderBy(f => f.BrokerName).ThenBy(f => f.PortfolioName).ThenBy(f => f.AssetName)
+                .ThenBy(f => f.TaxYear, StringComparer.Ordinal)
+                .ToList();
+
             var unclassifiedHoldings = allHoldings
                 .Where(h => h.Asset.Class == GlobalAssetClass.Unknown)
                 .Select(h => new UnclassifiedHoldingFinding(h.BrokerName, h.PortfolioName, h.Asset.Name, h.Scope))
@@ -70,6 +99,9 @@ public sealed class DataQualityReportService : IDataQualityReportService
             {
                 SalesExceedPurchases = salesExceedPurchases,
                 UnpricedOpenHoldings = unpricedOpenHoldings,
+                OpenHoldingsMissingCostBasis = openHoldingsMissingCostBasis,
+                StaleValuationCount = staleValuationCount,
+                UnresolvedTaxClassifications = unresolvedTaxClassifications,
                 UnclassifiedHoldings = unclassifiedHoldings,
                 HistoricHoldingsStillOpen = historicHoldingsStillOpen,
                 UnclassifiedAndUnpricedOpenHoldings = unclassifiedAndUnpricedOpenHoldings,
