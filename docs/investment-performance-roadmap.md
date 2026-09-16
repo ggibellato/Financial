@@ -31,11 +31,16 @@ rate cache + a reporting-currency on/off toggle, prompted by live use surfacing 
 brokers whose currency differs from the reporting currency) and a gap-closing cross-feature test (#823).
 G2 is closed; D3 is resolved. Wave 4 (P50 · Disposals and cost basis) is next.
 
-**Revised 2026-09-15.** Wave 4 has since shipped in full —
+**Revised 2026-09-15 (Wave 4).** Wave 4 has since shipped in full —
 `docs/prd/P50-prd-disposals-and-cost-basis/` (P50, 15 PRs across F01–F05, merged 2026-09-14/15). G3's
 remaining FIFO/specific-identification limitation and G4 (no disposal record) are both closed; D2 is
 confirmed. D7 (custody vs. domicile, previously deferred to P51) was also resolved during this
 revision — see §7 — closing G13. Wave 5 (P51 · Tax reporting support) is next.
+
+**Revised 2026-09-15 (Wave 5).** Wave 5 has since shipped in full —
+`docs/prd/P51-prd-tax-reporting-support/` (P51, 12 PRs across F01–F05, merged 2026-09-15). G5 (no tax
+domain at all) is closed; D1 (reporting support, never tax-due calculation) is confirmed as
+implemented. Wave 6 (P52 · Portfolio dashboard and data quality) is next.
 
 ---
 
@@ -172,10 +177,18 @@ sell/redemption — date, units, method, basis, proceeds, fees, gain/loss, tax y
 defined the recalculation policy the brief required: a later method change or backdated correction
 supersedes an existing record rather than rewriting it, so a full audit chain survives.
 
-### G5 — No tax domain at all
+### G5 — No tax domain at all **[closed 2026-09-15]**
 
 Zero fields anywhere: no jurisdiction, tax year, event classification, withheld amount, exempt
 amount, evidence reference, or calculation status. No net-of-tax return of any kind.
+
+**[closed 2026-09-15]** P51-F01/F02 added a dated, admin-configurable `TaxRule` and a `TaxClassification`
+created automatically for every `DisposalRecord` (P50) and every qualifying income credit (Dividend,
+Coupon, JCP, Securities Lending Income — P47), each carrying jurisdiction, tax year, event category and
+a four-value calculation status (final / estimated / incomplete / requires review). P51-F03 assembled
+the per-jurisdiction, per-tax-year workbook with evidence references back to the source record. Net-of-tax
+return was already closed separately by P47 (G1, `TotalReturnNetOfTax`). Tax due itself is still never
+computed, per D1/§5.
 
 ### G6 — Valuation maths lives in the front ends **[fixed 2026-09-11]**
 
@@ -581,7 +594,7 @@ path, #833 the React disposals tab, #834 the admin broker cost-basis-method fiel
 lot allocation on sell/redemption entry), and F05 in 4 (#837–#839 WPF parity for the same four
 capabilities, #840 a docs-only PR marking Section 9 acceptance criteria complete).
 
-### Wave 5 — P51 · Tax reporting support
+### Wave 5 — P51 · Tax reporting support **[delivered 2026-09-15]**
 
 *Scoped per §5: classification and reporting, never computation of tax due.*
 
@@ -592,6 +605,20 @@ capabilities, #840 a docs-only PR marking Section 9 acceptance criteria complete
 | F03 | Per-jurisdiction, per-tax-year workbook with evidence references and status |
 | F04 | CSV export + React tax page |
 | F05 | WPF parity |
+
+**Deliverable:** every disposal and qualifying income event carries an auditable, jurisdiction-tagged
+`TaxClassification` with an honest calculation status; a per-tax-year workbook assembles them with
+evidence references back to source records; tax rules are dated admin data, not code — and tax due
+itself is never computed, per D1.
+
+Like Waves 3–4, P51 used the `docs/prd/` spec-writer + implement-feature workflow — shipped as
+`docs/prd/P51-prd-tax-reporting-support/` across **12 PRs** for F01–F05 (#841–852): F01 in 2 (#841 the
+`TaxRule` domain entity, #842 its service and API), F02 in 3 (#843 the `TaxClassification` domain
+entity, #844 backfill plus an F01 delete-guard, #845 live disposal/credit classification), F03 in 1
+(#846, the tax-year workbook), F04 in 3 (#847 the tax profile on the asset detail view, #848 the tax
+page and CSV export, #849 the admin tax-rules screen), and F05 in 3 (#850–#852, the same three WPF
+parity increments). Running total across the six delivered waves so far: **64 PRs** (12 + 2 + 5 + 18 +
+15 + 12).
 
 ### Wave 6 — P52 · Portfolio dashboard and data quality
 
@@ -614,7 +641,7 @@ own position-effect rule validated against real history.
 ```
 P46 ──> P47 ──┬──> P48 ──┬──> P52 ──> P53
               │          │
-              └──> P50 ──> P51
+              └──> P50 ──> P51 [delivered 2026-09-15]
 
 P49 [delivered 2026-09-13] (independent; required only for all-brokers consolidated totals)
 ```
@@ -654,8 +681,18 @@ waves so far: **52 PRs** (12 + 2 + 5 + 18 + 15).
 P46 through P50 have now all shipped (§6 above); P50 added persisted, immutable disposal records with
 a per-broker choice of cost-basis method (AverageCost / FIFO / SpecificId) and a supersede-never-rewrite
 recalculation policy (`docs/prd/P50-prd-disposals-and-cost-basis/`). D7 (custody vs. domicile) was also
-resolved during this revision, ahead of Wave 5's implementation — see §7 — closing G13. Wave 5 (P51 ·
-Tax reporting support) is next per the sequencing above.
+resolved during this revision, ahead of Wave 5's implementation — see §7 — closing G13.
+
+**[revised 2026-09-15]** P51 landed in **12** PRs against its five-feature table — close to P46's
+density, each feature in 1–3 stacked PRs to stay within the 8-non-test-file limit. Running total across
+the six delivered waves so far: **64 PRs** (12 + 2 + 5 + 18 + 15 + 12).
+
+P46 through P51 have now all shipped (§6 above); P51 closed G5 by classifying every disposal (P50) and
+qualifying income event (P47) into a dated, jurisdiction-tagged `TaxClassification` matched against
+admin-configured, dated `TaxRule`s, assembled into a per-jurisdiction, per-tax-year workbook with an
+honest calculation status (`docs/prd/P51-prd-tax-reporting-support/`) — scoped throughout to reporting
+support, never tax-due computation, per D1. Wave 6 (P52 · Portfolio dashboard and data quality) is next
+per the sequencing above.
 
 ---
 
@@ -663,7 +700,7 @@ Tax reporting support) is next per the sequencing above.
 
 | # | Decision | Recommendation |
 |---|---|---|
-| D1 | Tax scope | Reporting support only (§5). Records and classifies; never computes tax due. |
+| D1 | Tax scope | Reporting support only (§5). Records and classifies; never computes tax due. **[delivered 2026-09-15]** P51 shipped exactly this — `TaxClassification`/`TaxRule`/workbook classify and report; no UK Section 104 pooling, no BR swing-trade rules, no filing is generated. |
 | D2 | Cost-basis default | Weighted average — it matches both BR and UK (Section 104) practice. FIFO and specific-ID ship in P50 as options, not defaults. **[delivered 2026-09-15]** P50 shipped exactly this — AverageCost remains the default; FIFO and SpecificId are selectable per broker (P50-F01). |
 | D3 | Reporting currency | Defer P49 until P48 ships. Per-broker views are correct without it; only the all-brokers total needs it. **[2026-09-13]** P48 shipped 2026-09-12 — P49 is now unblocked, though the sequencing diagram in §6 already treats it as independent of the P47→P48 chain. **[delivered 2026-09-13]** P49 shipped — see G2 and §6 Wave 3. |
 | D4 | `Credit` migration | Rewrite in place with a tool + temp-copy verification, keeping `Value` as derived net, rather than dual-writing a parallel collection. |
