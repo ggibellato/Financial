@@ -458,7 +458,7 @@ graph TD
 
 ### Cross-Feature Integration
 - [x] Dashboard aggregate figures from F01 render identically in F05 (React) and F06 (WPF)
-- [ ] Allocation breakdown from F02 renders identically, with matching percentages, in F05 and F06
+- [x] Allocation breakdown from F02 renders identically, with matching percentages, in F05 and F06
 - [x] Data-quality warnings from F03 render identically, including matching click-through navigation
       to the affected holding, in F05 and F06
 - [x] Upcoming-income projections from F04, including the window selector, render identically in F05

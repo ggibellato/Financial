@@ -42,6 +42,14 @@ revision — see §7 — closing G13. Wave 5 (P51 · Tax reporting support) is n
 domain at all) is closed; D1 (reporting support, never tax-due calculation) is confirmed as
 implemented. Wave 6 (P52 · Portfolio dashboard and data quality) is next.
 
+**Revised 2026-09-17 (Wave 6).** Wave 6 has since shipped in full —
+`docs/prd/P52-prd-portfolio-dashboard-and-data-quality/` (P52, 12 PRs across F01–F06, merged
+2026-09-15/17). G7 is closed — income YTD, allocation by class/currency/country/broker, gross-vs-net
+portfolio return and data-quality warnings are all now on the dashboard, in both front ends. G11 is
+further narrowed: the report-only unclassified-holding tool P46-F07 shipped now has a visible home,
+surfaced as dashboard data-quality warnings with click-through to the affected holding. Wave 7 (P53 ·
+Corporate actions) is next.
+
 ---
 
 ## 1. Verdict
@@ -211,7 +219,7 @@ returns percentages.
 — the WPF app resolves the Application service in-process via DI, not over HTTP, per the correction
 under Wave 0 below.
 
-### G7 — No portfolio-level return, no dashboard **[partially fixed 2026-09-11]**
+### G7 — No portfolio-level return, no dashboard **[fixed 2026-09-17]**
 
 XIRR is per-asset only. `AggregatedSummaryDTO` is four numbers (bought / sold / credits /
 invested): no market value, no unrealised total, no income YTD, no allocation by currency, country
@@ -219,9 +227,13 @@ or provider, no gross-vs-net portfolio return, no data-quality warnings.
 
 P46-F06 (#787/#788, User Story 5) added `MarketValue`, `HoldingCount`, `UnvaluedHoldingCount`,
 `PriceOnlyReturn` and `TotalReturn` to `AggregatedSummaryDTO` at both portfolio and broker level, in
-both front ends — the first aggregate return figures the brief asked for. Income YTD, allocation by
-currency/country/provider, gross-vs-net portfolio return and data-quality warnings on the dashboard
-itself remain open — Wave 6 (P52).
+both front ends — the first aggregate return figures the brief asked for.
+
+P52 (`docs/prd/P52-prd-portfolio-dashboard-and-data-quality/`, #853–#864) closed the rest: a single
+dashboard aggregate (market value, invested, unrealised, realised, income YTD and lifetime, gross and
+net XIRR — F01), allocation by class/currency/country/broker (F02), data-quality warnings with
+click-through to the affected holding (F03) and upcoming income/coupon/maturity projections (F04), in
+both React (F05) and WPF (F06). See Wave 6 under §6 for the full breakdown.
 
 ### G8 — Valuation method is implicit **[fixed 2026-09-12]**
 
@@ -297,6 +309,13 @@ causes an absent price.
 **[delivered 2026-09-11]** P46-F07 (#790/#791, User Story 7) shipped the report-only tool this section
 anticipated: it names every `Unknown`/unclassified holding, G12's three impossible sales, and G14's
 four mis-filed Historic holdings, and writes nothing back to the data file.
+
+**[delivered 2026-09-17]** P52-F03 (#854, #859, #863) gave that report-only tool a visible home: the
+same findings — unclassified holdings, missing price, missing basis, stale valuation, unknown tax
+treatment, impossible cash-flow sequence — now surface as dashboard data-quality warnings, with
+click-through navigation to the affected holding, in both React and WPF. Still nothing is written back
+to the data file; this closes the "no visible home" half of the gap, not the underlying classification
+work itself.
 
 ### G12 — Smaller correctness and labelling issues
 
@@ -620,7 +639,7 @@ page and CSV export, #849 the admin tax-rules screen), and F05 in 3 (#850–#852
 parity increments). Running total across the six delivered waves so far: **64 PRs** (12 + 2 + 5 + 18 +
 15 + 12).
 
-### Wave 6 — P52 · Portfolio dashboard and data quality
+### Wave 6 — P52 · Portfolio dashboard and data quality **[delivered 2026-09-17]**
 
 | # | Feature |
 |---|---|
@@ -631,6 +650,25 @@ parity increments). Running total across the six delivered waves so far: **64 PR
 | F05 | React |
 | F06 | WPF parity |
 
+**Deliverable:** a single dashboard, in both front ends, giving the aggregate portfolio figures G7
+asked for (market value, invested, unrealised, realised, income YTD and lifetime, gross and net XIRR),
+allocation broken down by class/currency/country/broker, data-quality warnings with click-through
+navigation to the affected holding, and upcoming income/coupon/maturity projections — verified live,
+side by side against the same backend and data, to render identically (allocation percentages
+byte-for-byte matching) between React and WPF.
+
+Like Waves 3–5, P52 used the `docs/prd/` spec-writer + implement-feature workflow — shipped as
+`docs/prd/P52-prd-portfolio-dashboard-and-data-quality/` across **12 PRs** for F01–F06 (#853–#864):
+F01 in 1 (#853, the dashboard aggregate DTO and endpoint), F03 in 1 (#854, the data-quality-report
+endpoint — shipped ahead of F02 since both backend features were independent), F02 in 1 (#855, the
+allocation-breakdown endpoint), F04 in 1 (#856, the upcoming-income endpoint), F05 in 4 (#857 the
+dashboard page and KPI tiles, #858 the allocation panel, #859 the data-quality warnings panel, #860
+the upcoming-income panel — each a genuine working vertical slice, never a scaffolded placeholder, to
+stay within the 8-non-test-file limit without shipping an empty panel), and F06 in 4 (#861–#864, the
+same four WPF parity increments, including the DI-composition fix for the dashboard's click-through
+navigation — see the feature's own `spec.md` Decision 13). Running total across the seven delivered
+waves so far: **76 PRs** (12 + 2 + 5 + 18 + 15 + 12 + 12).
+
 ### Wave 7 — P53 · Corporate actions
 
 Split, reverse split, rights issue, merger, spin-off. Deliberately last: rare, and each needs its
@@ -639,7 +677,7 @@ own position-effect rule validated against real history.
 ### Sequencing
 
 ```
-P46 ──> P47 ──┬──> P48 ──┬──> P52 ──> P53
+P46 ──> P47 ──┬──> P48 ──┬──> P52 [delivered 2026-09-17] ──> P53
               │          │
               └──> P50 ──> P51 [delivered 2026-09-15]
 
@@ -693,6 +731,20 @@ admin-configured, dated `TaxRule`s, assembled into a per-jurisdiction, per-tax-y
 honest calculation status (`docs/prd/P51-prd-tax-reporting-support/`) — scoped throughout to reporting
 support, never tax-due computation, per D1. Wave 6 (P52 · Portfolio dashboard and data quality) is next
 per the sequencing above.
+
+**[revised 2026-09-17]** P52 landed in **12** PRs against its six-feature table — F01/F02/F03/F04 one
+PR each (independent backend endpoints), F05 and F06 four PRs each (one genuine, working vertical
+slice per dashboard panel, to stay within the 8-non-test-file limit without ever shipping an empty
+placeholder panel). Running total across the seven delivered waves so far: **76 PRs**
+(12 + 2 + 5 + 18 + 15 + 12 + 12).
+
+P46 through P52 have now all shipped (§6 above); P52 closed G7 by giving the dashboard the aggregate
+figures, allocation breakdown, data-quality warnings and upcoming-income projections it was missing,
+in both React and WPF (`docs/prd/P52-prd-portfolio-dashboard-and-data-quality/`) — verified live,
+side by side against the same backend and data, to render identically between the two front ends. It
+also gave G11's report-only unclassified-holding tool (P46-F07) a visible home as dashboard
+warnings with click-through navigation. Wave 7 (P53 · Corporate actions) is next per the sequencing
+above.
 
 ---
 
