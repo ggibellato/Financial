@@ -28,6 +28,7 @@ public static class NavTree
             "Investments",
             "M3,17 L9,11 L13,15 L21,7 M14,7 L21,7 L21,14",
             [
+                new NavChild("dashboard", "Dashboard", "dashboard"),
                 new NavChild("active-investments", "Active Investments", "active-investments"),
                 new NavChild("historic-investments", "Historic Investments", "historic-investments"),
                 new NavChild("dividend-check", "Shares Dividend check", "dividend-check"),

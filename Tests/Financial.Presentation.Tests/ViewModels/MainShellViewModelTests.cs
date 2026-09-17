@@ -9,6 +9,7 @@ public class MainShellViewModelTests
 {
     private static Dictionary<string, object> BuildViewMap() => new()
     {
+        ["dashboard"] = new object(),
         ["active-investments"] = new object(),
         ["historic-investments"] = new object(),
         ["dividend-check"] = new object(),
@@ -53,8 +54,8 @@ public class MainShellViewModelTests
         var vm = CreateShell(initialCollapsed: false, persistCollapsed: _ => { }, viewsByKey: views);
 
         vm.IsCollapsed.Should().BeFalse();
-        vm.SelectedChildId.Should().Be("active-investments");
-        vm.SelectedContent.Should().BeSameAs(views["active-investments"]);
+        vm.SelectedChildId.Should().Be("dashboard");
+        vm.SelectedContent.Should().BeSameAs(views["dashboard"]);
     }
 
     [Fact]
@@ -130,7 +131,7 @@ public class MainShellViewModelTests
     {
         var vm = CreateShell(initialCollapsed: false, persistCollapsed: _ => { }, viewsByKey: BuildViewMap());
 
-        vm.BreadcrumbText.Should().Be("Investments › Active Investments");
+        vm.BreadcrumbText.Should().Be("Investments › Dashboard");
     }
 
     [Fact]

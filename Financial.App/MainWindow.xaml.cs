@@ -15,6 +15,8 @@ namespace Financial.Presentation.App
         private readonly MainNavigationViewModelHistoric _navigationViewModelHistoric;
 
         public MainWindow(
+            Financial.Presentation.App.Views.Investment.Dashboard.DashboardView dashboardView,
+            Financial.Presentation.App.ViewModels.Investment.Dashboard.DashboardKpiTilesViewModel dashboardKpiTilesViewModel,
             DividendCheckView dividendCheckView,
             AssetPriceView assetPriceView,
             MonthlyView monthlyView,
@@ -44,6 +46,8 @@ namespace Financial.Presentation.App
             Financial.Presentation.App.Views.Settings.ReportingCurrencyView reportingCurrencyView,
             Financial.Presentation.App.Views.Settings.SettingsIntegrationsView settingsIntegrationsView)
         {
+            ArgumentNullException.ThrowIfNull(dashboardView);
+            ArgumentNullException.ThrowIfNull(dashboardKpiTilesViewModel);
             ArgumentNullException.ThrowIfNull(dividendCheckView);
             ArgumentNullException.ThrowIfNull(assetPriceView);
             ArgumentNullException.ThrowIfNull(monthlyView);
@@ -81,8 +85,11 @@ namespace Financial.Presentation.App
 
             InitializeComponent();
 
+            dashboardView.DataContext = new Financial.Presentation.App.ViewModels.Investment.Dashboard.DashboardViewModel(dashboardKpiTilesViewModel);
+
             var viewsByKey = new Dictionary<string, object>
             {
+                ["dashboard"] = dashboardView,
                 ["active-investments"] = new NavigationView { DataContext = _navigationViewModel },
                 ["historic-investments"] = new NavigationView { DataContext = _navigationViewModelHistoric },
                 ["dividend-check"] = dividendCheckView,
