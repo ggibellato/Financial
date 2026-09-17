@@ -29,12 +29,13 @@ public class NavTreeTests
     }
 
     [Fact]
-    public void InvestmentsCategory_HasFiveChildrenInExistingTabOrder()
+    public void InvestmentsCategory_HasSixChildrenWithDashboardFirst()
     {
         var investments = NavTree.Categories.Single(c => c.Id == "investments");
 
         investments.Label.Should().Be("Investments");
         investments.Children.Select(c => (c.Id, c.Label, c.ViewKey)).Should().Equal(
+            ("dashboard", "Dashboard", "dashboard"),
             ("active-investments", "Active Investments", "active-investments"),
             ("historic-investments", "Historic Investments", "historic-investments"),
             ("dividend-check", "Shares Dividend check", "dividend-check"),
@@ -98,6 +99,6 @@ public class NavTreeTests
         var viewKeys = directViewKeys.Concat(groupedViewKeys).ToList();
 
         viewKeys.Should().OnlyHaveUniqueItems();
-        viewKeys.Should().HaveCount(25);
+        viewKeys.Should().HaveCount(26);
     }
 }

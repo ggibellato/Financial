@@ -1,0 +1,232 @@
+<UserControl x:Class="Financial.Presentation.App.Views.Investment.Dashboard.DashboardKpiTilesView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <Style x:Key="KpiTileBorderStyle" TargetType="Border">
+                <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorSecondaryBrush}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource ControlStrokeColorDefaultBrush}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="CornerRadius" Value="8"/>
+                <Setter Property="Padding" Value="12"/>
+                <Setter Property="Margin" Value="0,0,12,12"/>
+            </Style>
+
+            <Style x:Key="KpiTileLabelStyle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="11"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/>
+                <Setter Property="TextWrapping" Value="Wrap"/>
+                <Setter Property="Margin" Value="0,0,0,4"/>
+            </Style>
+
+            <Style x:Key="KpiTileValueStyle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="20"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="FontFamily" Value="Consolas"/>
+                <Setter Property="TextWrapping" Value="Wrap"/>
+            </Style>
+
+            <Style x:Key="KpiNoticeStyle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="FontStyle" Value="Italic"/>
+                <Setter Property="TextWrapping" Value="Wrap"/>
+                <Setter Property="VerticalAlignment" Value="Center"/>
+                <Setter Property="AutomationProperties.LiveSetting" Value="Polite"/>
+            </Style>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid>
+        <TextBlock Text="Loading…" FontSize="14"
+                   Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+        <StackPanel Visibility="{Binding ShowContent, Converter={StaticResource BoolToVisibilityConverter}}">
+            <UniformGrid Columns="4">
+                <Border Style="{StaticResource KpiTileBorderStyle}">
+                    <StackPanel>
+                        <TextBlock Text="MARKET VALUE" Style="{StaticResource KpiTileLabelStyle}"/>
+                        <TextBlock Style="{StaticResource KpiTileValueStyle}"
+                                   AutomationProperties.Name="Market Value"
+                                   Text="{Binding MarketValue, Mode=OneWay, StringFormat=N2, TargetNullValue='—'}"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource KpiTileBorderStyle}">
+                    <StackPanel>
+                        <TextBlock Text="INVESTED" Style="{StaticResource KpiTileLabelStyle}"/>
+                        <TextBlock Style="{StaticResource KpiTileValueStyle}"
+                                   AutomationProperties.Name="Invested"
+                                   Text="{Binding Invested, Mode=OneWay, StringFormat=N2, TargetNullValue='—'}"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource KpiTileBorderStyle}">
+                    <StackPanel>
+                        <TextBlock Text="UNREALISED GAIN/LOSS" Style="{StaticResource KpiTileLabelStyle}"/>
+                        <TextBlock Style="{StaticResource KpiTileValueStyle}"
+                                   AutomationProperties.Name="Unrealised Gain/Loss"
+                                   Text="{Binding UnrealisedGainLoss, Mode=OneWay, StringFormat=N2, TargetNullValue='—'}"
+                                   Foreground="{Binding UnrealisedGainLoss, Converter={StaticResource SignedValueToBrushConverter}}"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource KpiTileBorderStyle}">
+                    <StackPanel>
+                        <TextBlock Text="REALISED GAIN/LOSS (LIFETIME)" Style="{StaticResource KpiTileLabelStyle}"/>
+                        <TextBlock Style="{StaticResource KpiTileValueStyle}"
+                                   AutomationProperties.Name="Realised Gain/Loss (Lifetime)"
+                                   Text="{Binding RealisedGainLoss, Mode=OneWay, StringFormat=N2, TargetNullValue='—'}"
+                                   Foreground="{Binding RealisedGainLoss, Converter={StaticResource SignedValueToBrushConverter}}"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource KpiTileBorderStyle}">
+                    <StackPanel>
+                        <TextBlock Text="INCOME YTD" Style="{StaticResource KpiTileLabelStyle}"/>
+                        <TextBlock Style="{StaticResource KpiTileValueStyle}"
+                                   AutomationProperties.Name="Income YTD"
+                                   Text="{Binding IncomeYtd, Mode=OneWay, StringFormat=N2, TargetNullValue='—'}"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource KpiTileBorderStyle}">
+                    <StackPanel>
+                        <TextBlock Text="INCOME LIFETIME" Style="{StaticResource KpiTileLabelStyle}"/>
+                        <TextBlock Style="{StaticResource KpiTileValueStyle}"
+                                   AutomationProperties.Name="Income Lifetime"
+                                   Text="{Binding IncomeLifetime, Mode=OneWay, StringFormat=N2, TargetNullValue='—'}"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource KpiTileBorderStyle}">
+                    <StackPanel>
+                        <TextBlock Text="GROSS XIRR" Style="{StaticResource KpiTileLabelStyle}"/>
+                        <TextBlock Style="{StaticResource KpiTileValueStyle}"
+                                   AutomationProperties.Name="Gross XIRR"
+                                   Text="{Binding GrossXirr, Mode=OneWay, StringFormat=P2, TargetNullValue='—'}"
+                                   Foreground="{Binding GrossXirr, Converter={StaticResource SignedValueToBrushConverter}}"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource KpiTileBorderStyle}">
+                    <StackPanel>
+                        <TextBlock Text="NET XIRR (OF TAX)" Style="{StaticResource KpiTileLabelStyle}"/>
+                        <TextBlock Style="{StaticResource KpiTileValueStyle}"
+                                   AutomationProperties.Name="Net XIRR (of Tax)"
+                                   Text="{Binding NetXirr, Mode=OneWay, StringFormat=P2, TargetNullValue='—'}"
+                                   Foreground="{Binding NetXirr, Converter={StaticResource SignedValueToBrushConverter}}"/>
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
+
+            <StackPanel Orientation="Horizontal" Margin="0,4,0,0"
+                        Visibility="{Binding ShowPartialNotice, Converter={StaticResource BoolToVisibilityConverter}}">
+                <TextBlock Text="{Binding PartialNoticeText}"
+                           Style="{StaticResource KpiNoticeStyle}"
+                           Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
+                <ui:Button Content="View affected holdings"
+                           Margin="12,0,0,0"
+                           Command="{Binding ViewMissingPriceHoldingsCommand}"/>
+            </StackPanel>
+
+            <StackPanel Margin="0,16,0,0"
+                        Visibility="{Binding ShowConvertedTotals, Converter={StaticResource BoolToVisibilityConverter}}">
+                <Border BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" BorderThickness="0,1,0,0" Margin="0,0,0,10"/>
+                <TextBlock Text="{Binding ReportingCurrency, StringFormat='Converted to {0}'}"
+                           FontWeight="Bold" FontSize="13" Margin="0,0,0,8"/>
+                <TextBlock Style="{StaticResource KpiNoticeStyle}"
+                           Margin="0,0,0,8"
+                           Foreground="{DynamicResource SystemFillColorCautionBrush}"
+                           Text="{Binding ReportingCurrency, StringFormat='Some figures could not be converted to {0} — showing partial totals.'}"
+                           Visibility="{Binding IsReportingCurrencyPartial, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                <UniformGrid Columns="4">
+                    <Border Style="{StaticResource KpiTileBorderStyle}">
+                        <StackPanel>
+                            <TextBlock Text="MARKET VALUE" Style="{StaticResource KpiTileLabelStyle}"/>
+                            <TextBlock Style="{StaticResource KpiTileValueStyle}"
+                                       AutomationProperties.Name="Market Value, converted"
+                                       Text="{Binding ConvertedMarketValue, Mode=OneWay, StringFormat=N2, TargetNullValue='—'}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource KpiTileBorderStyle}">
+                        <StackPanel>
+                            <TextBlock Text="INVESTED" Style="{StaticResource KpiTileLabelStyle}"/>
+                            <TextBlock Style="{StaticResource KpiTileValueStyle}"
+                                       AutomationProperties.Name="Invested, converted"
+                                       Text="{Binding ConvertedInvested, Mode=OneWay, StringFormat=N2, TargetNullValue='—'}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource KpiTileBorderStyle}">
+                        <StackPanel>
+                            <TextBlock Text="UNREALISED GAIN/LOSS" Style="{StaticResource KpiTileLabelStyle}"/>
+                            <TextBlock Style="{StaticResource KpiTileValueStyle}"
+                                       AutomationProperties.Name="Unrealised Gain/Loss, converted"
+                                       Text="{Binding ConvertedUnrealisedGainLoss, Mode=OneWay, StringFormat=N2, TargetNullValue='—'}"
+                                       Foreground="{Binding ConvertedUnrealisedGainLoss, Converter={StaticResource SignedValueToBrushConverter}}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource KpiTileBorderStyle}">
+                        <StackPanel>
+                            <TextBlock Text="REALISED GAIN/LOSS (LIFETIME)" Style="{StaticResource KpiTileLabelStyle}"/>
+                            <TextBlock Style="{StaticResource KpiTileValueStyle}"
+                                       AutomationProperties.Name="Realised Gain/Loss (Lifetime), converted"
+                                       Text="{Binding ConvertedRealisedGainLoss, Mode=OneWay, StringFormat=N2, TargetNullValue='—'}"
+                                       Foreground="{Binding ConvertedRealisedGainLoss, Converter={StaticResource SignedValueToBrushConverter}}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource KpiTileBorderStyle}">
+                        <StackPanel>
+                            <TextBlock Text="INCOME YTD" Style="{StaticResource KpiTileLabelStyle}"/>
+                            <TextBlock Style="{StaticResource KpiTileValueStyle}"
+                                       AutomationProperties.Name="Income YTD, converted"
+                                       Text="{Binding ConvertedIncomeYtd, Mode=OneWay, StringFormat=N2, TargetNullValue='—'}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource KpiTileBorderStyle}">
+                        <StackPanel>
+                            <TextBlock Text="INCOME LIFETIME" Style="{StaticResource KpiTileLabelStyle}"/>
+                            <TextBlock Style="{StaticResource KpiTileValueStyle}"
+                                       AutomationProperties.Name="Income Lifetime, converted"
+                                       Text="{Binding ConvertedIncomeLifetime, Mode=OneWay, StringFormat=N2, TargetNullValue='—'}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource KpiTileBorderStyle}">
+                        <StackPanel>
+                            <TextBlock Text="GROSS XIRR" Style="{StaticResource KpiTileLabelStyle}"/>
+                            <TextBlock Style="{StaticResource KpiTileValueStyle}"
+                                       AutomationProperties.Name="Gross XIRR, converted"
+                                       Text="{Binding ConvertedGrossXirr, Mode=OneWay, StringFormat=P2, TargetNullValue='—'}"
+                                       Foreground="{Binding ConvertedGrossXirr, Converter={StaticResource SignedValueToBrushConverter}}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource KpiTileBorderStyle}">
+                        <StackPanel>
+                            <TextBlock Text="NET XIRR (OF TAX)" Style="{StaticResource KpiTileLabelStyle}"/>
+                            <TextBlock Style="{StaticResource KpiTileValueStyle}"
+                                       AutomationProperties.Name="Net XIRR (of Tax), converted"
+                                       Text="{Binding ConvertedNetXirr, Mode=OneWay, StringFormat=P2, TargetNullValue='—'}"
+                                       Foreground="{Binding ConvertedNetXirr, Converter={StaticResource SignedValueToBrushConverter}}"/>
+                        </StackPanel>
+                    </Border>
+                </UniformGrid>
+            </StackPanel>
+
+            <StackPanel Margin="0,16,0,0"
+                        Visibility="{Binding IsReportingCurrencyUnavailable, Converter={StaticResource BoolToVisibilityConverter}}">
+                <TextBlock Text="Converted totals unavailable — showing native-currency figures only."
+                           Style="{StaticResource KpiNoticeStyle}"
+                           Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
+                <Button Content="Try again" Command="{Binding RefreshCommand}" HorizontalAlignment="Left" Margin="0,8,0,0"/>
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</UserControl>
