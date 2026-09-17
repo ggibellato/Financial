@@ -1,0 +1,74 @@
+<UserControl x:Class="Financial.Presentation.App.Views.Investment.Dashboard.AllocationBreakdownView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:oxy="http://oxyplot.org/wpf"
+             xmlns:behaviors="clr-namespace:Financial.Presentation.App.Behaviors"
+             xmlns:dashboard="clr-namespace:Financial.Presentation.App.ViewModels.Investment.Dashboard">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <DataTemplate x:Key="AllocationDimensionContentTemplate">
+                <StackPanel Margin="0,12,0,0">
+                    <TextBlock Text="{Binding ChartTitle}" FontWeight="Bold" Margin="0,0,0,8"/>
+
+                    <TextBlock Text="No priced holdings to display for this view."
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                               TextWrapping="Wrap"
+                               Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                    <Grid Visibility="{Binding ShowChart, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" MinWidth="240"/>
+                            <ColumnDefinition Width="*" MinWidth="280"/>
+                        </Grid.ColumnDefinitions>
+
+                        <oxy:PlotView Grid.Column="0" Model="{Binding PlotModel}" Height="260" Background="Transparent"
+                                      AutomationProperties.Name="{Binding ChartTitle}"/>
+
+                        <DataGrid Grid.Column="1" Margin="12,0,0,0"
+                                  ItemsSource="{Binding Entries}"
+                                  AutoGenerateColumns="False" IsReadOnly="True"
+                                  CanUserSortColumns="False"
+                                  behaviors:SortableColumnsBehavior.IsEnabled="False"
+                                  AutomationProperties.Name="{Binding ChartTitle}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Binding="{Binding Label}" Header="Label" Width="*"
+                                                    ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                                <DataGridTextColumn Binding="{Binding MarketValue, StringFormat=N2}" Header="Market Value" Width="140"
+                                                    ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                                <DataGridTextColumn Binding="{Binding Percentage, StringFormat={}{0:N1}%}" Header="Percentage" Width="110"
+                                                    ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </StackPanel>
+            </DataTemplate>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid>
+        <TextBlock Text="Loading…" FontSize="14"
+                   Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+        <StackPanel Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}">
+            <TextBlock Text="{Binding ErrorMessage}"
+                       Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                       TextWrapping="Wrap"
+                       AutomationProperties.LiveSetting="Assertive"/>
+            <ui:Button Content="Try again" Appearance="Primary" Command="{Binding RefreshCommand}"
+                       HorizontalAlignment="Left" Margin="0,8,0,0"/>
+        </StackPanel>
+
+        <TabControl SelectedValuePath="Tag"
+                    SelectedValue="{Binding SelectedDimension, Mode=TwoWay}"
+                    Background="Transparent" BorderThickness="0"
+                    AutomationProperties.Name="Allocation dimension"
+                    Visibility="{Binding ShowContent, Converter={StaticResource BoolToVisibilityConverter}}"
+                    ContentTemplate="{StaticResource AllocationDimensionContentTemplate}">
+            <TabItem Header="Class" Content="{Binding}" Tag="{x:Static dashboard:AllocationDimension.Class}"/>
+            <TabItem Header="Currency" Content="{Binding}" Tag="{x:Static dashboard:AllocationDimension.Currency}"/>
+            <TabItem Header="Country" Content="{Binding}" Tag="{x:Static dashboard:AllocationDimension.Country}"/>
+            <TabItem Header="Broker" Content="{Binding}" Tag="{x:Static dashboard:AllocationDimension.Broker}"/>
+        </TabControl>
+    </Grid>
+</UserControl>
