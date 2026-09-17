@@ -140,6 +140,19 @@ Ordered by where they surface in the rest of this spec.
    section explicitly allows ("code-behind only for narrowly scoped view concerns that cannot
    reasonably be expressed elsewhere"), since `BringIntoView()` has no data-bindable XAML
    equivalent.
+   **Implemented shape (Part 3).** The scroll-into-view signal lives on
+   `DataQualityWarningsViewModel` rather than `DashboardViewModel`, as a plain `CategoryExpanded`
+   event raised by `ExpandCategory` and observed by `DataQualityWarningsView.xaml.cs` — one
+   code-behind handler instead of two (`DashboardViewModel.ScrollToWarningsRequested` +
+   `DashboardView.xaml.cs`), because the handler also has to *find the newly expanded `Expander`*
+   in order to move focus onto it, and only the warnings view's own `ItemContainerGenerator` can do
+   that. The focus move is not an extra: F05's `expandCategory` already performs the equivalent
+   (`#warning-category-header-…`.`focus()`), because scrolling alone gives a sighted mouse user the
+   "you're here now" signal but leaves a keyboard/screen-reader user's focus stranded on the KPI
+   panel's button. Same user outcome as specified, one narrower code-behind concern instead of two.
+   The KPI panel's "View affected holdings" `ui:Button` (deliberately omitted in Part 1, which had
+   no subscriber for it and would have shipped an inert control) is added back in Part 3, now that
+   this forwarding gives it real behaviour.
 9. **Upcoming-income window filter reuses the existing `SelectableOptionViewModel<T>` +
    `ItemsControl`/`Button` "chip" pattern verbatim, with a new option value type.** Exactly like F05
    Decision 9's finding for `PeriodFilterOption`, `PriceHistoryTabViewModel`'s existing
@@ -243,6 +256,24 @@ Ordered by where they surface in the rest of this spec.
       switching the visible pane to the tree that now has the correct node selected and expanded.
       A resolution that matches neither tree sets `Warnings.NavigationError` (Decision 14) instead of
       raising the event.
+    - **Implemented shape (Part 3), two refinements, neither weakening the instance-identity
+      guarantee above.** (a) `DashboardViewModel`'s two tree parameters are typed
+      `IMainNavigationViewModel`, not the concrete `MainNavigationViewModel`/
+      `MainNavigationViewModelHistoric` — `SelectHolding` is declared on that existing interface
+      alongside `ReloadSelectedNodeDetails`/`CanAcceptDrop`/`DropAssetAsync` and implemented once on
+      `MainNavigationViewModelBase`. `MainWindow.xaml.cs` still passes its own two captured fields,
+      so the composition root and its reasoning are unchanged; the interface only spares
+      `DashboardViewModelTests` from standing up two real `MainNavigationViewModel`s (15 stub
+      services each) to assert a two-line fallthrough. (b) The warning row's `Button` binds to
+      `DataQualityWarningsViewModel.SelectFindingCommand`, which raises `NavigateToHoldingRequested`
+      for `DashboardViewModel` to run through `NavigateToHoldingCommand` — the same
+      panel-raises-event, shell-handles-it shape Part 1 already established for
+      `ViewMissingPriceHoldingsCommand`/`ExpandMissingPriceRequested`, and it keeps the row's
+      `Command` binding resolvable against the panel's own `DataContext` instead of reaching two
+      `UserControl` ancestors up the visual tree for `DashboardViewModel`.
+    - `MainNavigationViewModelBase`'s existing private `SelectAsset` (post-move reselection) now
+      delegates to `SelectHolding`: they were the same walk-expand-select already, and keeping two
+      copies is how the two would drift.
     - Because both trees are already in memory, this is synchronous and instantaneous — there is no
       WPF equivalent of F05's "holding not found because the report is stale" network race being any
       more or less likely; the same rare edge case (holding moved/archived between report generation
@@ -372,7 +403,8 @@ Ordered by where they surface in the rest of this spec.
 
 | File | Change |
 |---|---|
-| `Financial.App/ViewModels/Investment/MainNavigationViewModelBase.cs` | **Changed.** New public `bool SelectHolding(string brokerName, string portfolioName, string assetName)` method (Decision 13) — walks `RootNodes`, sets ancestor `IsExpanded`/matched-node `IsSelected`, returns whether a match was found. No other member changes. |
+| `Financial.App/ViewModels/Investment/MainNavigationViewModelBase.cs` | **Changed.** New public `bool SelectHolding(string brokerName, string portfolioName, string assetName)` method (Decision 13) — walks `RootNodes`, sets ancestor `IsExpanded`/matched-node `IsSelected`, returns whether a match was found; the existing private `SelectAsset` now delegates to it. No other member changes. |
+| `Financial.App/ViewModels/Investment/IMainNavigationViewModel.cs` | **Changed.** Declares the same `SelectHolding` member, so `DashboardViewModel` depends on the abstraction both trees already implement (Decision 13, implemented shape). |
 
 No `Financial.Api`/backend file changes in this feature (F01–F04 are already merged, already
 consumed in-process per Decision 13's own composition root reasoning). No `Financial.Web` file

@@ -118,6 +118,7 @@ namespace Financial.Presentation.App
                     services.AddTransient<TaxView>();
                     services.AddTransient<Financial.Presentation.App.ViewModels.Investment.Dashboard.DashboardKpiTilesViewModel>();
                     services.AddTransient<Financial.Presentation.App.ViewModels.Investment.Dashboard.AllocationBreakdownViewModel>();
+                    services.AddTransient<Financial.Presentation.App.ViewModels.Investment.Dashboard.DataQualityWarningsViewModel>();
                     services.AddTransient<Financial.Presentation.App.Views.Investment.Dashboard.DashboardView>();
                     services.AddTransient<Financial.Presentation.App.ViewModels.Admin.BrokersViewModel>();
                     services.AddTransient<Financial.Presentation.App.Views.Admin.BrokersView>();

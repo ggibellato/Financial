@@ -134,6 +134,9 @@
                 <TextBlock Text="{Binding PartialNoticeText}"
                            Style="{StaticResource KpiNoticeStyle}"
                            Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
+                <ui:Button Content="View affected holdings" Appearance="Transparent"
+                           Command="{Binding ViewMissingPriceHoldingsCommand}"
+                           Margin="8,0,0,0" VerticalAlignment="Center"/>
             </StackPanel>
 
             <StackPanel Margin="0,16,0,0"
