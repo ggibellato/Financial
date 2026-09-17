@@ -3,25 +3,37 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen, waitFor } from '../../test/renderWithFluent'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { AllocationBreakdownDto, DataQualityReportDto, PortfolioDashboardDto, TreeNodeDto } from '../../api/types'
+import type {
+  AllocationBreakdownDto,
+  DataQualityReportDto,
+  PortfolioDashboardDto,
+  TreeNodeDto,
+  UpcomingIncomeDto,
+} from '../../api/types'
 import DashboardPage from '../DashboardPage'
 import Sidebar from '../../components/Sidebar'
 import { NAV_TREE } from '../../navigation/navTree'
 
-const { getDashboardMock, getAllocationBreakdownMock, getDataQualityReportMock, getNavigationTreeMock } = vi.hoisted(
-  () => ({
-    getDashboardMock: vi.fn<FinancialApiClient['getDashboard']>(),
-    getAllocationBreakdownMock: vi.fn<FinancialApiClient['getAllocationBreakdown']>(),
-    getDataQualityReportMock: vi.fn<FinancialApiClient['getDataQualityReport']>(),
-    getNavigationTreeMock: vi.fn<FinancialApiClient['getNavigationTree']>(),
-  }),
-)
+const {
+  getDashboardMock,
+  getAllocationBreakdownMock,
+  getDataQualityReportMock,
+  getUpcomingIncomeMock,
+  getNavigationTreeMock,
+} = vi.hoisted(() => ({
+  getDashboardMock: vi.fn<FinancialApiClient['getDashboard']>(),
+  getAllocationBreakdownMock: vi.fn<FinancialApiClient['getAllocationBreakdown']>(),
+  getDataQualityReportMock: vi.fn<FinancialApiClient['getDataQualityReport']>(),
+  getUpcomingIncomeMock: vi.fn<FinancialApiClient['getUpcomingIncome']>(),
+  getNavigationTreeMock: vi.fn<FinancialApiClient['getNavigationTree']>(),
+}))
 
 vi.mock('../../api/financialApiClient', () => ({
   apiClient: {
     getDashboard: getDashboardMock,
     getAllocationBreakdown: getAllocationBreakdownMock,
     getDataQualityReport: getDataQualityReportMock,
+    getUpcomingIncome: getUpcomingIncomeMock,
     getNavigationTree: getNavigationTreeMock,
   } as Partial<FinancialApiClient>,
 }))
@@ -108,7 +120,30 @@ function makeTree(brokerName: string, portfolioName: string, assetName: string):
   }
 }
 
-const EMPTY_TREE: TreeNodeDto = { nodeType: 'Investments', displayName: 'Investments', metadata: {}, children: [] }
+function inDays(days: number): string {
+  const date = new Date()
+  date.setDate(date.getDate() + days)
+  return date.toISOString()
+}
+
+const UPCOMING_INCOME: UpcomingIncomeDto[] = [
+  {
+    assetName: 'VHYL',
+    brokerName: 'Freetrade',
+    lastCreditDate: inDays(-80),
+    projectedAmount: 42.5,
+    projectedNextDate: inDays(10),
+  },
+  {
+    assetName: 'ITSA4',
+    brokerName: 'Clear',
+    lastCreditDate: inDays(30),
+    projectedAmount: 96,
+    projectedNextDate: inDays(150),
+  },
+]
+
+const EMPTY_TREE: TreeNodeDto ={ nodeType: 'Investments', displayName: 'Investments', metadata: {}, children: [] }
 
 function LocationProbe() {
   const location = useLocation()
@@ -140,6 +175,8 @@ describe('DashboardPage', () => {
     getAllocationBreakdownMock.mockResolvedValue(BREAKDOWN)
     getDataQualityReportMock.mockReset()
     getDataQualityReportMock.mockResolvedValue(REPORT)
+    getUpcomingIncomeMock.mockReset()
+    getUpcomingIncomeMock.mockResolvedValue(UPCOMING_INCOME)
     getNavigationTreeMock.mockReset()
     getNavigationTreeMock.mockResolvedValue(EMPTY_TREE)
     Element.prototype.scrollIntoView = vi.fn()
@@ -156,7 +193,7 @@ describe('DashboardPage', () => {
     expect(screen.getByRole('heading', { name: 'Portfolio Summary' })).toBeInTheDocument()
   })
 
-  it('is_reachable_from_the_sidebar_as_the_first_investments_entry', () => {
+  it('P52-F05-react-portfolio-dashboard-01: a Dashboard nav entry appears first under Investments and opens the new page', () => {
     renderDashboardRoute()
 
     const investments = NAV_TREE.find((category) => category.id === 'investments')!
@@ -166,6 +203,7 @@ describe('DashboardPage', () => {
       route: '/investments/dashboard',
     })
     expect(screen.getByRole('link', { name: 'Dashboard' })).toHaveAttribute('href', '/investments/dashboard')
+    expect(screen.getByRole('heading', { name: 'Dashboard', level: 2 })).toBeInTheDocument()
   })
 
   it('renders_the_kpi_tiles_from_the_dashboard_endpoint', async () => {
@@ -185,7 +223,7 @@ describe('DashboardPage', () => {
     expect(getAllocationBreakdownMock).toHaveBeenCalledTimes(1)
 
     const headings = screen.getAllByRole('heading', { level: 3 }).map((heading) => heading.textContent)
-    expect(headings).toEqual(['Portfolio Summary', 'Allocation Breakdown', 'Data Quality Warnings'])
+    expect(headings).toEqual(['Portfolio Summary', 'Allocation Breakdown', 'Data Quality Warnings', 'Upcoming Income'])
   })
 
   it('keeps_the_kpi_panel_intact_when_only_the_allocation_request_fails', async () => {
@@ -274,5 +312,93 @@ describe('DashboardPage', () => {
 
     await waitFor(() => expect(screen.getByText('VUSA')).toBeInTheDocument())
     expect(Element.prototype.scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' })
+  })
+
+  it('renders_the_upcoming_income_panel_from_the_upcoming_income_endpoint', async () => {
+    renderDashboardRoute()
+
+    expect(await screen.findByRole('heading', { name: 'Upcoming Income' })).toBeInTheDocument()
+    expect(await screen.findByRole('tab', { name: '90 days' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('table', { name: 'Upcoming income' })).toBeInTheDocument()
+    expect(getUpcomingIncomeMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('P52-F04-upcoming-income-03: switching the income window re-filters the held list without re-fetching it', async () => {
+    renderDashboardRoute()
+
+    expect(await screen.findByText('VHYL')).toBeInTheDocument()
+    expect(screen.queryByText('ITSA4')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('tab', { name: '180 days' }))
+
+    expect(screen.getByText('ITSA4')).toBeInTheDocument()
+    expect(getUpcomingIncomeMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('P52-F05-react-portfolio-dashboard-02: all four panels render with their own independent states', async () => {
+    getUpcomingIncomeMock.mockRejectedValue(new Error('Income service unavailable'))
+
+    renderDashboardRoute()
+
+    expect(await screen.findByText('Income service unavailable')).toBeInTheDocument()
+    expect(screen.getByText('Net XIRR (of Tax)')).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Class' })).toBeInTheDocument()
+    expect(screen.getByText('Missing price (1)')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument()
+  })
+
+  it('P52-F05-react-portfolio-dashboard-03: a page-level error state with a single Retry action shows only when every panel request fails', async () => {
+    getDashboardMock.mockRejectedValue(new Error('Dashboard unavailable'))
+    getAllocationBreakdownMock.mockRejectedValue(new Error('Allocation unavailable'))
+    getDataQualityReportMock.mockRejectedValue(new Error('Data quality unavailable'))
+    getUpcomingIncomeMock.mockRejectedValue(new Error('Income unavailable'))
+
+    renderDashboardRoute()
+
+    expect(
+      await screen.findByText('Unable to load the dashboard — none of its data could be retrieved.'),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Portfolio Summary' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Upcoming Income' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument()
+  })
+
+  it('P52-F05-react-portfolio-dashboard-03: the page-level Retry re-issues all four requests and restores the panels', async () => {
+    getDashboardMock.mockRejectedValueOnce(new Error('Dashboard unavailable')).mockResolvedValue(SUMMARY)
+    getAllocationBreakdownMock.mockRejectedValueOnce(new Error('Allocation unavailable')).mockResolvedValue(BREAKDOWN)
+    getDataQualityReportMock.mockRejectedValueOnce(new Error('Data quality unavailable')).mockResolvedValue(REPORT)
+    getUpcomingIncomeMock.mockRejectedValueOnce(new Error('Income unavailable')).mockResolvedValue(UPCOMING_INCOME)
+
+    renderDashboardRoute()
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Retry' }))
+
+    expect(await screen.findByRole('heading', { name: 'Upcoming Income' })).toBeInTheDocument()
+    expect(getDashboardMock).toHaveBeenCalledTimes(2)
+    expect(getAllocationBreakdownMock).toHaveBeenCalledTimes(2)
+    expect(getDataQualityReportMock).toHaveBeenCalledTimes(2)
+    expect(getUpcomingIncomeMock).toHaveBeenCalledTimes(2)
+    // Focus only moves once every panel has finished loading (not merely stopped failing), so wait
+    // for the last one to settle rather than asserting the instant the first panel's content lands.
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Dashboard', level: 2 })).toHaveFocus())
+  })
+
+  it('P52-F05-react-portfolio-dashboard-03: focus stays on Retry, not the page heading, when the retry does not recover any panel', async () => {
+    getDashboardMock.mockRejectedValue(new Error('Dashboard unavailable'))
+    getAllocationBreakdownMock.mockRejectedValue(new Error('Allocation unavailable'))
+    getDataQualityReportMock.mockRejectedValue(new Error('Data quality unavailable'))
+    getUpcomingIncomeMock.mockRejectedValue(new Error('Income unavailable'))
+
+    renderDashboardRoute()
+
+    const retryButton = await screen.findByRole('button', { name: 'Retry' })
+    fireEvent.click(retryButton)
+
+    await waitFor(() => expect(getDashboardMock).toHaveBeenCalledTimes(2))
+    expect(
+      await screen.findByText('Unable to load the dashboard — none of its data could be retrieved.'),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Dashboard', level: 2 })).not.toHaveFocus()
   })
 })

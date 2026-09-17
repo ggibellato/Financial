@@ -18,8 +18,20 @@
   gap: 24px;
 }
 
-.dashboard-page__panel--kpis {
+.dashboard-page__panel--kpis,
+.dashboard-page__panel--upcoming-income {
   grid-column: 1 / -1;
+}
+
+.dashboard-page__error {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.dashboard-page__error p {
+  margin: 0;
 }
 
 .dashboard-page__panel {

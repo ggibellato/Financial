@@ -108,6 +108,7 @@ import type {
   RecurringBillUpdateDto,
   RecurringBillStatusUpdateDto,
   ReserveMovementUpdateDto,
+  UpcomingIncomeDto,
   WatchlistItemDto,
   WithdrawalRequestDto,
   XirrResultDto,
@@ -169,6 +170,7 @@ export interface FinancialApiClient {
   getDashboard: () => Promise<PortfolioDashboardDto>
   getAllocationBreakdown: () => Promise<AllocationBreakdownDto>
   getDataQualityReport: () => Promise<DataQualityReportDto>
+  getUpcomingIncome: () => Promise<UpcomingIncomeDto[]>
   getReserveBalances: () => Promise<ReserveBucketBalanceDto[]>
   getReserveMovements: () => Promise<ReserveMovementDto[]>
   getReserveBuckets: () => Promise<ReserveBucketDto[]>
@@ -487,6 +489,7 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
     getDashboard: () => request<PortfolioDashboardDto>('/dashboard'),
     getAllocationBreakdown: () => request<AllocationBreakdownDto>('/allocation-breakdown'),
     getDataQualityReport: () => request<DataQualityReportDto>('/data-quality-report'),
+    getUpcomingIncome: () => request<UpcomingIncomeDto[]>('/upcoming-income'),
     getReserveBalances: () => request<ReserveBucketBalanceDto[]>('/reserve/balances'),
     getReserveMovements: () => request<ReserveMovementDto[]>('/reserve/movements'),
     getReserveBuckets: () => request<ReserveBucketDto[]>('/reserve-buckets'),

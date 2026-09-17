@@ -1,0 +1,16 @@
+.upcoming-income {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.upcoming-income__table-wrapper {
+  overflow-x: auto;
+}
+
+.upcoming-income__empty {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}

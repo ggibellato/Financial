@@ -2,19 +2,19 @@ import { Tab, TabList } from '@fluentui/react-components'
 import type { SelectTabData, SelectTabEvent } from '@fluentui/react-components'
 import './FilterTabList.css'
 
-export interface FilterTabListOption<T extends string> {
+export interface FilterTabListOption<T extends string | number> {
   value: T
   label: string
 }
 
-interface FilterTabListProps<T extends string> {
+interface FilterTabListProps<T extends string | number> {
   label?: string
   options: readonly FilterTabListOption<T>[]
   selected: T
   onSelect: (value: T) => void
 }
 
-export default function FilterTabList<T extends string>({
+export default function FilterTabList<T extends string | number>({
   label,
   options,
   selected,
