@@ -23,7 +23,8 @@
                 <Grid Margin="0,0,0,4">
                     <Expander IsExpanded="{Binding IsExpanded, Mode=TwoWay}"
                               Visibility="{Binding HasFindings, Converter={StaticResource BoolToVisibilityConverter}}"
-                              AutomationProperties.Name="{Binding HeaderText}">
+                              AutomationProperties.Name="{Binding HeaderText}"
+                              AutomationProperties.HeadingLevel="Level4">
                         <Expander.Header>
                             <TextBlock Text="{Binding HeaderText}" FontWeight="SemiBold" TextWrapping="Wrap"/>
                         </Expander.Header>
