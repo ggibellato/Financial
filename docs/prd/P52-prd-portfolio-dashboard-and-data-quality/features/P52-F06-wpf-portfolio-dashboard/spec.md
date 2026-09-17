@@ -277,6 +277,13 @@ Ordered by where they surface in the rest of this spec.
     of 4, or `Columns="2"` under a narrow-window trigger is out of scope for the same
     no-existing-precedent reason) above it, full width; the upcoming-income table renders full
     width below it — same top-to-bottom order as F05 (F05 Decision 2's layout, applied here).
+    **Extension (added during Part 2's review):** the identical reasoning applies one level down,
+    inside `AllocationBreakdownView` itself — its own chart+legend split is a fluid two-column
+    `Grid` (`MinWidth="240"`/`"280"`) with no stacked-below-N-pixels fallback, for the same
+    "no existing WPF breakpoint-reflow precedent to extend, and the window's own horizontal
+    scrollbar is the app-wide fallback everywhere else" reasoning as the page-level Allocation +
+    Warnings split above — not a separate, unreviewed gap, the same accepted platform difference
+    applied consistently within one panel as across the whole page.
 17. **Page-level retry is a single `ui:Button Appearance="Primary"` labelled "Retry"** — same label
     and rationale as F05 Decision 17, using `Wpf.Ui.Controls.Button`'s `Primary` appearance per
     ADR-004.

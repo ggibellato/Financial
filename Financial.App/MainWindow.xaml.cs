@@ -17,6 +17,7 @@ namespace Financial.Presentation.App
         public MainWindow(
             Financial.Presentation.App.Views.Investment.Dashboard.DashboardView dashboardView,
             Financial.Presentation.App.ViewModels.Investment.Dashboard.DashboardKpiTilesViewModel dashboardKpiTilesViewModel,
+            Financial.Presentation.App.ViewModels.Investment.Dashboard.AllocationBreakdownViewModel allocationBreakdownViewModel,
             DividendCheckView dividendCheckView,
             AssetPriceView assetPriceView,
             MonthlyView monthlyView,
@@ -85,7 +86,7 @@ namespace Financial.Presentation.App
 
             InitializeComponent();
 
-            dashboardView.DataContext = new Financial.Presentation.App.ViewModels.Investment.Dashboard.DashboardViewModel(dashboardKpiTilesViewModel);
+            dashboardView.DataContext = new Financial.Presentation.App.ViewModels.Investment.Dashboard.DashboardViewModel(dashboardKpiTilesViewModel, allocationBreakdownViewModel);
 
             var viewsByKey = new Dictionary<string, object>
             {
