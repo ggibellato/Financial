@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Interfaces;
+using Financial.Presentation.App.ViewModels.Investment;
 using Microsoft.Extensions.Logging;
 using OxyPlot;
 
@@ -122,7 +123,7 @@ public class AllocationBreakdownViewModel : ViewModelBase
             Entries.Add(entry);
         }
 
-        PlotModel = AllocationPieChartBuilder.Build(
+        PlotModel = BrokerBreakdownChartBuilder.Build(
             Entries.Select(entry => (entry.Label, entry.MarketValue)).ToList());
 
         OnPropertyChanged(nameof(IsEmpty));

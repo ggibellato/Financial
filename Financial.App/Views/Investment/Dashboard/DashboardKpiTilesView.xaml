@@ -41,6 +41,15 @@
         <TextBlock Text="Loading…" FontSize="14"
                    Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
+        <StackPanel Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}">
+            <TextBlock Text="{Binding ErrorMessage}"
+                       Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                       TextWrapping="Wrap"
+                       AutomationProperties.LiveSetting="Assertive"/>
+            <ui:Button Content="Try again" Appearance="Primary" Command="{Binding RefreshCommand}"
+                       HorizontalAlignment="Left" Margin="0,8,0,0"/>
+        </StackPanel>
+
         <StackPanel Visibility="{Binding ShowContent, Converter={StaticResource BoolToVisibilityConverter}}">
             <UniformGrid Columns="4">
                 <Border Style="{StaticResource KpiTileBorderStyle}">
