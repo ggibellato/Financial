@@ -1,4 +1,6 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import type { ReactElement } from 'react'
+import { fireEvent, render as rtlRender, screen, waitFor } from '@testing-library/react'
+import { MemoryRouter, useLocation } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import InvestmentTree from '../InvestmentTree'
 import { SelectedNodeProvider, useSelectedNode } from '../../context/SelectedNodeContext'
@@ -72,6 +74,17 @@ const stubTree: TreeNodeDto = {
   ],
 }
 
+// The tree reads router state to apply a pending click-through selection, so every render needs a
+// router around it.
+function render(ui: ReactElement) {
+  return rtlRender(<MemoryRouter>{ui}</MemoryRouter>)
+}
+
+function RouterStateDisplay() {
+  const { state } = useLocation()
+  return <div data-testid="router-state">{state === null || state === undefined ? 'none' : JSON.stringify(state)}</div>
+}
+
 function SelectedNodeDisplay() {
   const { selectedNode } = useSelectedNode()
   if (!selectedNode) return <div data-testid="selected">none</div>
@@ -96,9 +109,22 @@ function renderTree(tree: TreeNodeDto = stubTree) {
   )
 }
 
+function renderWithPendingSelection(pendingSelection: { brokerName: string; portfolioName: string; assetName: string }) {
+  return rtlRender(
+    <MemoryRouter initialEntries={[{ pathname: '/investments/active-investments', state: { pendingSelection } }]}>
+      <SelectedNodeProvider>
+        <InvestmentTree />
+        <SelectedNodeDisplay />
+        <RouterStateDisplay />
+      </SelectedNodeProvider>
+    </MemoryRouter>,
+  )
+}
+
 describe('InvestmentTree', () => {
   beforeEach(() => {
     getNavigationTreeMock.mockReset()
+    Element.prototype.scrollIntoView = vi.fn()
   })
 
   it('shows loading state on mount', () => {
@@ -529,6 +555,40 @@ describe('InvestmentTree', () => {
     )
     expect(await screen.findByRole('alert')).toHaveTextContent('Network error')
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument()
+  })
+
+  it('a pendingSelection in router state selects the matching node once the tree loads', async () => {
+    getNavigationTreeMock.mockResolvedValue(stubTree)
+    renderWithPendingSelection({ brokerName: 'XPI', portfolioName: 'Acoes', assetName: 'KLBN4' })
+
+    await waitFor(() => expect(screen.getByTestId('selected')).toHaveTextContent('Asset:XPI:Acoes:KLBN4'))
+    const portfolioItem = screen.getByText('Acoes (2 assets)').closest('[role="treeitem"]') as HTMLElement
+    expect(portfolioItem).toHaveAttribute('aria-expanded', 'true')
+  })
+
+  it('moves focus to the selected treeitem, not just scrolling it into view', async () => {
+    getNavigationTreeMock.mockResolvedValue(stubTree)
+    renderWithPendingSelection({ brokerName: 'XPI', portfolioName: 'Acoes', assetName: 'KLBN4' })
+
+    await waitFor(() => expect(screen.getByTestId('selected')).toHaveTextContent('Asset:XPI:Acoes:KLBN4'))
+    const assetItem = screen.getByText('KLBN4').closest('[role="treeitem"]')
+    expect(assetItem).toHaveFocus()
+  })
+
+  it('a pendingSelection for a node not present in the loaded tree is a no-op', async () => {
+    getNavigationTreeMock.mockResolvedValue(stubTree)
+    renderWithPendingSelection({ brokerName: 'XPI', portfolioName: 'Acoes', assetName: 'MISSING' })
+
+    await screen.findByText('XPI (BRL)')
+    expect(screen.getByTestId('selected')).toHaveTextContent('none')
+  })
+
+  it('router state is cleared after the pending selection is applied', async () => {
+    getNavigationTreeMock.mockResolvedValue(stubTree)
+    renderWithPendingSelection({ brokerName: 'XPI', portfolioName: 'Acoes', assetName: 'KLBN4' })
+
+    await waitFor(() => expect(screen.getByTestId('selected')).toHaveTextContent('Asset:XPI:Acoes:KLBN4'))
+    await waitFor(() => expect(screen.getByTestId('router-state')).toHaveTextContent('none'))
   })
 
   it('retry button re-fetches tree', async () => {

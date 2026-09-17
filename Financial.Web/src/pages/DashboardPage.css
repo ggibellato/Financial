@@ -14,8 +14,12 @@
 
 .dashboard-page__panels {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 24px;
+}
+
+.dashboard-page__panel--kpis {
+  grid-column: 1 / -1;
 }
 
 .dashboard-page__panel {
@@ -36,6 +40,7 @@
   }
 
   .dashboard-page__panels {
+    grid-template-columns: minmax(0, 1fr);
     gap: 16px;
   }
 }

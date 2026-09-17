@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Tree, TreeItem, TreeItemLayout } from '@fluentui/react-components'
 import type { TreeItemValue, TreeOpenChangeData, TreeOpenChangeEvent } from '@fluentui/react-components'
 import { apiClient } from '../api/financialApiClient'
 import type { PositionType, SelectedNode, TreeNodeDto } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
 import { getErrorMessage } from '../utils/formatters'
+import { findAssetInTree, readPendingSelection } from '../utils/holdingNavigation'
 import { POSITION_TYPE_STATUS_CLASS } from '../utils/positionType'
 import { getMetaNumber, getMetaString } from '../utils/treeNodeMetadata'
 import ErrorState from './ErrorState'
@@ -41,6 +43,22 @@ const DRAG_MIME = 'application/x-financial-asset'
 function getMetaPositionType(metadata: Record<string, unknown>): PositionType {
   const v = metadata['PositionType']
   return v === 'Long' || v === 'Short' ? v : 'Flat'
+}
+
+function buildAssetSelection(node: TreeNodeDto, brokerName: string, portfolioName: string): SelectedNode {
+  const assetClass = getMetaNumber(node.metadata, 'GlobalAssetClass')
+  return {
+    nodeType: 'Asset',
+    brokerName,
+    portfolioName,
+    assetName: getMetaString(node.metadata, 'AssetName'),
+    ticker: getMetaString(node.metadata, 'Ticker'),
+    exchange: getMetaString(node.metadata, 'Exchange'),
+    positionType: getMetaPositionType(node.metadata),
+    // getMetaNumber yields -1 when absent, so a missing quantity never reads as a closed position.
+    quantity: getMetaNumber(node.metadata, 'Quantity'),
+    assetClass: ASSET_CLASS_OPTIONS.find((o) => o.value === assetClass)?.label,
+  }
 }
 
 interface NodeMatch {
@@ -86,12 +104,8 @@ interface AssetNodeProps {
 function AssetNode({ node, brokerName, portfolioName, filterClass, drag }: AssetNodeProps) {
   const { selectedNode, setSelectedNode } = useSelectedNode()
   const assetName = getMetaString(node.metadata, 'AssetName')
-  const ticker = getMetaString(node.metadata, 'Ticker')
-  const exchange = getMetaString(node.metadata, 'Exchange')
   const positionType = getMetaPositionType(node.metadata)
   const assetClass = getMetaNumber(node.metadata, 'GlobalAssetClass')
-  // getMetaNumber yields -1 when absent, so a missing quantity never reads as a closed position.
-  const quantity = getMetaNumber(node.metadata, 'Quantity')
 
   if (filterClass !== ALL_CLASSES && String(assetClass) !== filterClass) return null
 
@@ -99,17 +113,7 @@ function AssetNode({ node, brokerName, portfolioName, filterClass, drag }: Asset
   const statusClass = POSITION_TYPE_STATUS_CLASS[positionType]
 
   const handleClick = () => {
-    setSelectedNode({
-      nodeType: 'Asset',
-      brokerName,
-      portfolioName,
-      assetName,
-      ticker,
-      exchange,
-      positionType,
-      quantity,
-      assetClass: ASSET_CLASS_OPTIONS.find((o) => o.value === assetClass)?.label,
-    })
+    setSelectedNode(buildAssetSelection(node, brokerName, portfolioName))
   }
 
   return (
@@ -312,6 +316,17 @@ export default function InvestmentTree() {
   // useState(true)/useState(false) defaults. Only the root Tree can be controlled; nested Tree
   // elements automatically participate via Fluent's own context.
   const [openItems, setOpenItems] = useState<Set<TreeItemValue>>(new Set())
+  const [scrollToken, setScrollToken] = useState(0)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const { pathname, state: routerState } = useLocation()
+  const navigate = useNavigate()
+  // The pending selection is read where the tree resolves, so it is held in a ref rather than a
+  // dependency: adding router state to the fetch effect would re-fetch the tree when it is cleared.
+  const routerStateRef = useRef<unknown>(routerState)
+
+  useEffect(() => {
+    routerStateRef.current = routerState
+  }, [routerState])
 
   useEffect(() => {
     apiClient
@@ -322,13 +337,40 @@ export default function InvestmentTree() {
         const brokerKeys = data.children
           .filter((child) => child.nodeType === 'Broker')
           .map((child) => `broker:${getMetaString(child.metadata, 'BrokerName')}`)
-        setOpenItems(new Set(brokerKeys))
+
+        const pending = readPendingSelection(routerStateRef.current)
+        const asset = pending ? findAssetInTree(data, pending) : null
+        if (pending && asset) {
+          setSelectedNode(buildAssetSelection(asset, pending.brokerName, pending.portfolioName))
+          setOpenItems(
+            new Set([
+              ...brokerKeys,
+              `broker:${pending.brokerName}`,
+              `portfolio:${pending.brokerName}:${pending.portfolioName}`,
+            ]),
+          )
+          setScrollToken((token) => token + 1)
+        } else {
+          setOpenItems(new Set(brokerKeys))
+        }
+
+        // Consumed state has to go, or browser back/forward would re-apply the same selection.
+        if (pending) navigate(pathname, { replace: true, state: null })
       })
       .catch((err: unknown) => {
         setError(getErrorMessage(err, 'Unable to load investments.'))
       })
       .finally(() => setIsLoading(false))
-  }, [scope, retryCount, reloadToken])
+  }, [scope, retryCount, reloadToken, pathname, navigate, setSelectedNode])
+
+  useEffect(() => {
+    if (scrollToken === 0) return
+    const selected = containerRef.current?.querySelector('.investment-tree__node--selected')
+    selected?.scrollIntoView({ block: 'nearest' })
+    // Move focus too, not just scroll - a keyboard/screen-reader user gets no other signal that a
+    // click-through from another page landed on this node.
+    selected?.closest<HTMLElement>('[role="treeitem"]')?.focus()
+  }, [scrollToken])
 
   const handleRetry = useCallback(() => {
     setIsLoading(true)
@@ -341,7 +383,7 @@ export default function InvestmentTree() {
   }
 
   return (
-    <div className="investment-tree">
+    <div className="investment-tree" ref={containerRef}>
       <h2 className="investment-tree__heading">Investments</h2>
       <div className="investment-tree__filter">
         <label htmlFor="asset-class-filter" className="investment-tree__filter-label">

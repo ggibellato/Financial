@@ -3,6 +3,7 @@ import { API_BASE_URL } from './config'
 import type {
   AggregatedSummaryDto,
   AllocationBreakdownDto,
+  DataQualityReportDto,
   AssetAdminCreateDto,
   AssetAdminDto,
   AssetAdminUpdateDto,
@@ -167,6 +168,7 @@ export interface FinancialApiClient {
   calculateXirr: (cashFlows: AssetCashFlowDto[], terminalValue: number) => Promise<XirrResultDto>
   getDashboard: () => Promise<PortfolioDashboardDto>
   getAllocationBreakdown: () => Promise<AllocationBreakdownDto>
+  getDataQualityReport: () => Promise<DataQualityReportDto>
   getReserveBalances: () => Promise<ReserveBucketBalanceDto[]>
   getReserveMovements: () => Promise<ReserveMovementDto[]>
   getReserveBuckets: () => Promise<ReserveBucketDto[]>
@@ -484,6 +486,7 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       }),
     getDashboard: () => request<PortfolioDashboardDto>('/dashboard'),
     getAllocationBreakdown: () => request<AllocationBreakdownDto>('/allocation-breakdown'),
+    getDataQualityReport: () => request<DataQualityReportDto>('/data-quality-report'),
     getReserveBalances: () => request<ReserveBucketBalanceDto[]>('/reserve/balances'),
     getReserveMovements: () => request<ReserveMovementDto[]>('/reserve/movements'),
     getReserveBuckets: () => request<ReserveBucketDto[]>('/reserve-buckets'),
