@@ -1,4 +1,6 @@
 using Financial.Investment.Application.DTOs;
+using Financial.Investment.Application.Enums;
+using Financial.Presentation.App.ViewModels.Investment;
 using Financial.Presentation.App.ViewModels.Investment.Dashboard;
 using Financial.TestUtilities;
 using FluentAssertions;
@@ -12,15 +14,27 @@ public class DashboardViewModelTests
         ByClass = [new AssetClassAllocationEntryDTO(Financial.Investment.Domain.Entities.GlobalAssetClass.Equity, 500m, 100m)],
     };
 
+    private static DataQualityReportDTO Report() => new()
+    {
+        UnpricedOpenHoldings = [new UnpricedOpenHoldingFinding("Chase", "Income", "VUSA")],
+    };
+
     private static (DashboardViewModel ViewModel, StubPortfolioDashboardService Dashboard, StubAllocationBreakdownService Allocation) CreateViewModel(
         StubPortfolioDashboardService? dashboardService = null,
-        StubAllocationBreakdownService? allocationService = null)
+        StubAllocationBreakdownService? allocationService = null,
+        StubDataQualityReportService? reportService = null,
+        FakeNavigationTree? activeTree = null,
+        FakeNavigationTree? historicTree = null)
     {
         dashboardService ??= new StubPortfolioDashboardService { Dashboard = new PortfolioDashboardDTO { MarketValue = 1000m } };
         allocationService ??= new StubAllocationBreakdownService { Breakdown = Allocation() };
+        reportService ??= new StubDataQualityReportService { Report = Report() };
         var kpiTiles = new DashboardKpiTilesViewModel(dashboardService, new RecordingLogger<DashboardKpiTilesViewModel>());
         var allocation = new AllocationBreakdownViewModel(allocationService, new RecordingLogger<AllocationBreakdownViewModel>());
-        return (new DashboardViewModel(kpiTiles, allocation), dashboardService, allocationService);
+        var warnings = new DataQualityWarningsViewModel(reportService, new RecordingLogger<DataQualityWarningsViewModel>());
+        var viewModel = new DashboardViewModel(
+            kpiTiles, allocation, warnings, activeTree ?? new FakeNavigationTree(), historicTree ?? new FakeNavigationTree());
+        return (viewModel, dashboardService, allocationService);
     }
 
     [Fact]
@@ -32,6 +46,7 @@ public class DashboardViewModelTests
         allocationService.GetAllocationBreakdownCallCount.Should().Be(1);
         vm.KpiTiles.MarketValue.Should().Be(1000m);
         vm.Allocation.Entries.Should().ContainSingle();
+        vm.Warnings.Categories.Should().ContainSingle();
         vm.ShowPanels.Should().BeTrue();
         vm.ShowPageLevelError.Should().BeFalse();
     }
@@ -41,10 +56,24 @@ public class DashboardViewModelTests
     {
         var (vm, _, _) = CreateViewModel(
             new StubPortfolioDashboardService { ThrowOnGetDashboard = new InvalidOperationException("boom") },
-            new StubAllocationBreakdownService { ThrowOnGetAllocationBreakdown = new InvalidOperationException("bang") });
+            new StubAllocationBreakdownService { ThrowOnGetAllocationBreakdown = new InvalidOperationException("bang") },
+            new StubDataQualityReportService { ThrowOnGenerateReport = new InvalidOperationException("crash") });
 
         vm.ShowPageLevelError.Should().BeTrue();
         vm.ShowPanels.Should().BeFalse();
+    }
+
+    [Fact]
+    public void OnlyTheWarningsPanelFailing_KeepsEveryPanelVisibleAndTheOtherPanelsContentIntact()
+    {
+        var (vm, _, _) = CreateViewModel(
+            reportService: new StubDataQualityReportService { ThrowOnGenerateReport = new InvalidOperationException("crash") });
+
+        vm.ShowPageLevelError.Should().BeFalse();
+        vm.ShowPanels.Should().BeTrue();
+        vm.Warnings.HasError.Should().BeTrue();
+        vm.KpiTiles.ShowContent.Should().BeTrue();
+        vm.Allocation.ShowContent.Should().BeTrue();
     }
 
     [Fact]
@@ -95,7 +124,8 @@ public class DashboardViewModelTests
     {
         var (vm, _, _) = CreateViewModel(
             new StubPortfolioDashboardService { ThrowOnGetDashboard = new InvalidOperationException("boom") },
-            new StubAllocationBreakdownService { ThrowOnGetAllocationBreakdown = new InvalidOperationException("bang") });
+            new StubAllocationBreakdownService { ThrowOnGetAllocationBreakdown = new InvalidOperationException("bang") },
+            new StubDataQualityReportService { ThrowOnGenerateReport = new InvalidOperationException("crash") });
         var changed = new List<string?>();
         vm.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
 
@@ -110,21 +140,26 @@ public class DashboardViewModelTests
     {
         var dashboardService = new StubPortfolioDashboardService { ThrowOnGetDashboard = new InvalidOperationException("boom") };
         var allocationService = new StubAllocationBreakdownService { ThrowOnGetAllocationBreakdown = new InvalidOperationException("bang") };
-        var (vm, _, _) = CreateViewModel(dashboardService, allocationService);
+        var reportService = new StubDataQualityReportService { ThrowOnGenerateReport = new InvalidOperationException("crash") };
+        var (vm, _, _) = CreateViewModel(dashboardService, allocationService, reportService);
         vm.ShowPageLevelError.Should().BeTrue();
 
         dashboardService.ThrowOnGetDashboard = null;
         dashboardService.Dashboard = new PortfolioDashboardDTO { MarketValue = 250m };
         allocationService.ThrowOnGetAllocationBreakdown = null;
         allocationService.Breakdown = Allocation();
+        reportService.ThrowOnGenerateReport = null;
+        reportService.Report = Report();
         await vm.LoadAllAsync();
 
         dashboardService.GetDashboardCallCount.Should().Be(2);
         allocationService.GetAllocationBreakdownCallCount.Should().Be(2);
+        reportService.GenerateReportCallCount.Should().Be(2);
         vm.ShowPageLevelError.Should().BeFalse();
         vm.ShowPanels.Should().BeTrue();
         vm.KpiTiles.MarketValue.Should().Be(250m);
         vm.Allocation.Entries.Should().ContainSingle();
+        vm.Warnings.Categories.Should().ContainSingle();
     }
 
     [Fact]
@@ -132,7 +167,8 @@ public class DashboardViewModelTests
     {
         var dashboardService = new StubPortfolioDashboardService { ThrowOnGetDashboard = new InvalidOperationException("boom") };
         var allocationService = new StubAllocationBreakdownService { ThrowOnGetAllocationBreakdown = new InvalidOperationException("bang") };
-        var (vm, _, _) = CreateViewModel(dashboardService, allocationService);
+        var reportService = new StubDataQualityReportService { ThrowOnGenerateReport = new InvalidOperationException("crash") };
+        var (vm, _, _) = CreateViewModel(dashboardService, allocationService, reportService);
         var recovered = 0;
         vm.RecoveredFromError += (_, _) => recovered++;
 
@@ -140,6 +176,8 @@ public class DashboardViewModelTests
         dashboardService.Dashboard = new PortfolioDashboardDTO { MarketValue = 250m };
         allocationService.ThrowOnGetAllocationBreakdown = null;
         allocationService.Breakdown = Allocation();
+        reportService.ThrowOnGenerateReport = null;
+        reportService.Report = Report();
         vm.RetryAllCommand.Execute(null);
 
         recovered.Should().Be(1);
@@ -151,7 +189,8 @@ public class DashboardViewModelTests
     {
         var (vm, _, _) = CreateViewModel(
             new StubPortfolioDashboardService { ThrowOnGetDashboard = new InvalidOperationException("boom") },
-            new StubAllocationBreakdownService { ThrowOnGetAllocationBreakdown = new InvalidOperationException("bang") });
+            new StubAllocationBreakdownService { ThrowOnGetAllocationBreakdown = new InvalidOperationException("bang") },
+            new StubDataQualityReportService { ThrowOnGenerateReport = new InvalidOperationException("crash") });
         var recovered = 0;
         vm.RecoveredFromError += (_, _) => recovered++;
 
@@ -162,17 +201,132 @@ public class DashboardViewModelTests
     }
 
     [Fact]
+    public void NavigateToHoldingCommand_SelectsInTheActiveTreeFirstAndAsksTheShellToShowIt()
+    {
+        var activeTree = new FakeNavigationTree { HoldsEverything = true };
+        var historicTree = new FakeNavigationTree();
+        var (vm, _, _) = CreateViewModel(activeTree: activeTree, historicTree: historicTree);
+        var scopes = new List<InvestmentScope>();
+        vm.NavigateToTreeRequested += (_, scope) => scopes.Add(scope);
+
+        vm.NavigateToHoldingCommand.Execute(new WarningHoldingRef("Chase", "Income", "VUSA"));
+
+        activeTree.Requested.Should().Equal(("Chase", "Income", "VUSA"));
+        historicTree.Requested.Should().BeEmpty();
+        scopes.Should().Equal(InvestmentScope.Active);
+        vm.Warnings.NavigationError.Should().BeNull();
+    }
+
+    [Fact]
+    public void NavigateToHoldingCommand_FallsThroughToTheHistoricTreeWhenTheActiveTreeMisses()
+    {
+        var activeTree = new FakeNavigationTree();
+        var historicTree = new FakeNavigationTree { HoldsEverything = true };
+        var (vm, _, _) = CreateViewModel(activeTree: activeTree, historicTree: historicTree);
+        var scopes = new List<InvestmentScope>();
+        vm.NavigateToTreeRequested += (_, scope) => scopes.Add(scope);
+
+        vm.NavigateToHoldingCommand.Execute(new WarningHoldingRef("XPI", "FII", "BBAS3"));
+
+        activeTree.Requested.Should().Equal(("XPI", "FII", "BBAS3"));
+        historicTree.Requested.Should().Equal(("XPI", "FII", "BBAS3"));
+        scopes.Should().Equal(InvestmentScope.Historic);
+        vm.Warnings.NavigationError.Should().BeNull();
+    }
+
+    [Fact]
+    public void NavigateToHoldingCommand_WhenNeitherTreeHoldsIt_ReportsItInlineAndStaysPut()
+    {
+        var (vm, _, _) = CreateViewModel();
+        var scopes = new List<InvestmentScope>();
+        vm.NavigateToTreeRequested += (_, scope) => scopes.Add(scope);
+
+        vm.NavigateToHoldingCommand.Execute(new WarningHoldingRef("Chase", "Income", "VUSA"));
+
+        scopes.Should().BeEmpty();
+        vm.Warnings.NavigationError.Should().Be(
+            "Unable to locate VUSA — it may have moved or been archived since this report was generated.");
+    }
+
+    [Fact]
+    public void NavigateToHoldingCommand_ClearsAnEarlierFailureOnceANavigationSucceeds()
+    {
+        var activeTree = new FakeNavigationTree();
+        var (vm, _, _) = CreateViewModel(activeTree: activeTree);
+        vm.NavigateToHoldingCommand.Execute(new WarningHoldingRef("Chase", "Income", "VUSA"));
+        vm.Warnings.NavigationError.Should().NotBeNull();
+
+        activeTree.HoldsEverything = true;
+        vm.NavigateToHoldingCommand.Execute(new WarningHoldingRef("Chase", "Income", "VUSA"));
+
+        vm.Warnings.NavigationError.Should().BeNull();
+    }
+
+    [Fact]
+    public void AWarningRowSelection_RunsTheSameNavigationTheCommandDoes()
+    {
+        var activeTree = new FakeNavigationTree { HoldsEverything = true };
+        var (vm, _, _) = CreateViewModel(activeTree: activeTree);
+        var scopes = new List<InvestmentScope>();
+        vm.NavigateToTreeRequested += (_, scope) => scopes.Add(scope);
+
+        vm.Warnings.SelectFindingCommand.Execute(new WarningHoldingRef("Chase", "Income", "VUSA"));
+
+        activeTree.Requested.Should().Equal(("Chase", "Income", "VUSA"));
+        scopes.Should().Equal(InvestmentScope.Active);
+    }
+
+    [Fact]
+    public void ViewMissingPriceHoldings_ExpandsTheMissingPriceCategoryInTheWarningsPanel()
+    {
+        var (vm, _, _) = CreateViewModel();
+
+        vm.KpiTiles.ViewMissingPriceHoldingsCommand.Execute(null);
+
+        vm.Warnings.Categories.Single(category => category.Category == DataQualityCategory.UnpricedOpenHoldings)
+            .IsExpanded.Should().BeTrue();
+    }
+
+    [Fact]
     public void Constructor_RejectsAMissingPanelViewModel()
     {
         var kpiTiles = new DashboardKpiTilesViewModel(
             new StubPortfolioDashboardService(), new RecordingLogger<DashboardKpiTilesViewModel>());
         var allocation = new AllocationBreakdownViewModel(
             new StubAllocationBreakdownService(), new RecordingLogger<AllocationBreakdownViewModel>());
+        var warnings = new DataQualityWarningsViewModel(
+            new StubDataQualityReportService(), new RecordingLogger<DataQualityWarningsViewModel>());
+        var tree = new FakeNavigationTree();
 
-        var missingKpiTiles = () => new DashboardViewModel(null!, allocation);
-        var missingAllocation = () => new DashboardViewModel(kpiTiles, null!);
+        var missingKpiTiles = () => new DashboardViewModel(null!, allocation, warnings, tree, tree);
+        var missingAllocation = () => new DashboardViewModel(kpiTiles, null!, warnings, tree, tree);
+        var missingWarnings = () => new DashboardViewModel(kpiTiles, allocation, null!, tree, tree);
+        var missingActiveTree = () => new DashboardViewModel(kpiTiles, allocation, warnings, null!, tree);
+        var missingHistoricTree = () => new DashboardViewModel(kpiTiles, allocation, warnings, tree, null!);
 
         missingKpiTiles.Should().Throw<ArgumentNullException>();
         missingAllocation.Should().Throw<ArgumentNullException>();
+        missingWarnings.Should().Throw<ArgumentNullException>();
+        missingActiveTree.Should().Throw<ArgumentNullException>();
+        missingHistoricTree.Should().Throw<ArgumentNullException>();
     }
+}
+
+internal sealed class FakeNavigationTree : IMainNavigationViewModel
+{
+    public bool HoldsEverything { get; set; }
+
+    public List<(string BrokerName, string PortfolioName, string AssetName)> Requested { get; } = [];
+
+    public bool SelectHolding(string brokerName, string portfolioName, string assetName)
+    {
+        Requested.Add((brokerName, portfolioName, assetName));
+        return HoldsEverything;
+    }
+
+    public IAssetDetailsViewModel AssetDetails => throw new NotSupportedException();
+    public void ReloadSelectedNodeDetails() => throw new NotSupportedException();
+    public bool CanAcceptDrop(TreeNodeViewModel? dragged, TreeNodeViewModel? target) => throw new NotSupportedException();
+    public void HighlightDropTarget(TreeNodeViewModel? target) => throw new NotSupportedException();
+    public Task DropAssetAsync(TreeNodeViewModel? dragged, TreeNodeViewModel? target) => throw new NotSupportedException();
 }

@@ -32,14 +32,28 @@
                        HorizontalAlignment="Left" Margin="0,8,0,0"/>
         </StackPanel>
 
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
                       Visibility="{Binding ShowPanels, Converter={StaticResource BoolToVisibilityConverter}}">
             <StackPanel>
                 <TextBlock Text="Portfolio Summary" FontSize="14" FontWeight="Bold" Margin="0,0,0,8"/>
                 <dashboard:DashboardKpiTilesView DataContext="{Binding KpiTiles}"/>
 
-                <TextBlock Text="Allocation Breakdown" FontSize="14" FontWeight="Bold" Margin="0,16,0,8"/>
-                <dashboard:AllocationBreakdownView DataContext="{Binding Allocation}"/>
+                <Grid Margin="0,16,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" MinWidth="320"/>
+                        <ColumnDefinition Width="*" MinWidth="320"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                        <TextBlock Text="Allocation Breakdown" FontSize="14" FontWeight="Bold" Margin="0,0,0,8"/>
+                        <dashboard:AllocationBreakdownView DataContext="{Binding Allocation}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1">
+                        <TextBlock Text="Data Quality Warnings" FontSize="14" FontWeight="Bold" Margin="0,0,0,8"/>
+                        <dashboard:DataQualityWarningsView DataContext="{Binding Warnings}"/>
+                    </StackPanel>
+                </Grid>
             </StackPanel>
         </ScrollViewer>
     </Grid>

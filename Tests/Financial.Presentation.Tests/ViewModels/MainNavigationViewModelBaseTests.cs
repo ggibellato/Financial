@@ -1,4 +1,4 @@
-using Financial.Investment.Application.DTOs;
+﻿using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.Entities;
@@ -401,6 +401,57 @@ public class MainNavigationViewModelBaseTests
         _sut.SelectedAssetClassFilter = _sut.AssetClassFilters.Single(f => f.Filter == GlobalAssetClass.RealEstate);
 
         _sut.RootNodes.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task SelectHolding_SelectsTheMatchingAssetAndExpandsItsAncestors()
+    {
+        _navigationService.Tree = BuildFilterableTree();
+        await _sut.LoadNavigationTreeAsync();
+
+        var matched = _sut.SelectHolding("CryptoBroker", "CryptoPortfolio", "Bitcoin");
+
+        matched.Should().BeTrue();
+        var broker = _sut.RootNodes.Single(node => node.DisplayName == "CryptoBroker");
+        var portfolio = broker.Children.Single();
+        broker.IsExpanded.Should().BeTrue();
+        portfolio.IsExpanded.Should().BeTrue();
+        portfolio.Children.Single().IsSelected.Should().BeTrue();
+        _sut.SelectedNode.Should().BeSameAs(portfolio.Children.Single());
+    }
+
+    [Fact]
+    public async Task SelectHolding_WithNoMatchingNode_ReturnsFalseAndChangesNothing()
+    {
+        _navigationService.Tree = BuildFilterableTree();
+        await _sut.LoadNavigationTreeAsync();
+
+        var matched = _sut.SelectHolding("CryptoBroker", "CryptoPortfolio", "Ethereum");
+
+        matched.Should().BeFalse();
+        _sut.SelectedNode.Should().BeNull();
+        _sut.RootNodes.Should().OnlyContain(broker => !broker.IsExpanded);
+        _sut.RootNodes.SelectMany(broker => broker.Children).Should().OnlyContain(portfolio => !portfolio.IsExpanded);
+        _sut.RootNodes.SelectMany(broker => broker.Children).SelectMany(portfolio => portfolio.Children)
+            .Should().OnlyContain(asset => !asset.IsSelected);
+    }
+
+    [Fact]
+    public async Task SelectHolding_ForTheAlreadySelectedHolding_DoesNotReselectIt()
+    {
+        _navigationService.Tree = BuildFilterableTree();
+        await _sut.LoadNavigationTreeAsync();
+        _sut.SelectHolding("CryptoBroker", "CryptoPortfolio", "Bitcoin");
+        var asset = _sut.RootNodes.Single(node => node.DisplayName == "CryptoBroker").Children.Single().Children.Single();
+        var reselections = 0;
+        asset.NodeSelected += (_, _) => reselections++;
+
+        var matched = _sut.SelectHolding("CryptoBroker", "CryptoPortfolio", "Bitcoin");
+
+        matched.Should().BeTrue();
+        reselections.Should().Be(0);
+        asset.IsSelected.Should().BeTrue();
+        _sut.SelectedNode.Should().BeSameAs(asset);
     }
 
     private static TreeNodeDTO BuildFilterableTree()

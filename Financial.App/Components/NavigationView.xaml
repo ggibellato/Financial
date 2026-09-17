@@ -68,6 +68,9 @@
                             <Trigger Property="IsSelected" Value="True">
                                 <Setter Property="Background" Value="{DynamicResource ListBoxItemSelectedBackgroundThemeBrush}"/>
                                 <Setter Property="Foreground" Value="{DynamicResource ListBoxItemSelectedForegroundThemeBrush}"/>
+                                <!-- A dashboard click-through sets IsSelected from code, not from a click on this
+                                     item, so nothing would otherwise move keyboard focus here. -->
+                                <Setter Property="FocusManager.FocusedElement" Value="{Binding RelativeSource={RelativeSource Self}}"/>
                             </Trigger>
                             <!-- Bound to the node, not the container: the tree recycles its
                                  containers, so a recycled one would carry a stale highlight. -->

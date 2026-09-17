@@ -392,7 +392,14 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
     /// Reselects an asset after the tree has been rebuilt. The rebuild replaces every node, so the
     /// node the user had selected no longer exists and has to be found again by name.
     /// </summary>
-    private void SelectAsset(string brokerName, string portfolioName, string assetName)
+    private void SelectAsset(string brokerName, string portfolioName, string assetName) =>
+        SelectHolding(brokerName, portfolioName, assetName);
+
+    /// <summary>
+    /// Expands and selects the named holding, reporting whether this tree holds it at all so a
+    /// caller searching more than one scope can fall through to the next.
+    /// </summary>
+    public bool SelectHolding(string brokerName, string portfolioName, string assetName)
     {
         var broker = RootNodes.FirstOrDefault(node => node.GetMetadata<string>(NavigationMetadataKeys.BrokerName) == brokerName);
         var portfolio = broker?.Children.FirstOrDefault(node => node.GetMetadata<string>(NavigationMetadataKeys.PortfolioName) == portfolioName);
@@ -400,7 +407,7 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
 
         if (asset is null)
         {
-            return;
+            return false;
         }
 
         broker!.IsExpanded = true;
@@ -411,6 +418,7 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
         // on the way through - assigning SelectedNode alone would leave the moved asset current in
         // the view model but unhighlighted in the tree the user is looking at.
         asset.IsSelected = true;
+        return true;
     }
 
     public async Task LoadNavigationTreeAsync()

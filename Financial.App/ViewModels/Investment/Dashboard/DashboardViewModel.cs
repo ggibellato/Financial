@@ -1,17 +1,34 @@
 using System.ComponentModel;
+using Financial.Investment.Application.Enums;
 
 namespace Financial.Presentation.App.ViewModels.Investment.Dashboard;
 
 public class DashboardViewModel : ViewModelBase
 {
+    private readonly IMainNavigationViewModel _activeTree;
+    private readonly IMainNavigationViewModel _historicTree;
     private bool _retryInFlight;
 
-    public DashboardViewModel(DashboardKpiTilesViewModel kpiTiles, AllocationBreakdownViewModel allocation)
+    public DashboardViewModel(
+        DashboardKpiTilesViewModel kpiTiles,
+        AllocationBreakdownViewModel allocation,
+        DataQualityWarningsViewModel warnings,
+        IMainNavigationViewModel activeTree,
+        IMainNavigationViewModel historicTree)
     {
         KpiTiles = kpiTiles ?? throw new ArgumentNullException(nameof(kpiTiles));
         Allocation = allocation ?? throw new ArgumentNullException(nameof(allocation));
+        Warnings = warnings ?? throw new ArgumentNullException(nameof(warnings));
+        _activeTree = activeTree ?? throw new ArgumentNullException(nameof(activeTree));
+        _historicTree = historicTree ?? throw new ArgumentNullException(nameof(historicTree));
         KpiTiles.PropertyChanged += OnPanelStateChanged;
         Allocation.PropertyChanged += OnPanelStateChanged;
+        Warnings.PropertyChanged += OnPanelStateChanged;
+
+        NavigateToHoldingCommand = new RelayCommand<WarningHoldingRef>(NavigateToHolding);
+
+        KpiTiles.ExpandMissingPriceRequested += (_, _) => Warnings.ExpandCategory(DataQualityCategory.UnpricedOpenHoldings);
+        Warnings.NavigateToHoldingRequested += (_, holding) => NavigateToHolding(holding);
 
         RetryAllCommand = new RelayCommand(async () =>
         {
@@ -24,19 +41,53 @@ public class DashboardViewModel : ViewModelBase
 
     public event EventHandler? RecoveredFromError;
 
+    public event EventHandler<InvestmentScope>? NavigateToTreeRequested;
+
     public DashboardKpiTilesViewModel KpiTiles { get; }
 
     public AllocationBreakdownViewModel Allocation { get; }
 
+    public DataQualityWarningsViewModel Warnings { get; }
+
     public RelayCommand RetryAllCommand { get; }
 
-    public bool ShowPageLevelError => KpiTiles.HasError && Allocation.HasError && !AnyPanelLoading;
+    public RelayCommand<WarningHoldingRef> NavigateToHoldingCommand { get; }
+
+    public bool ShowPageLevelError => KpiTiles.HasError && Allocation.HasError && Warnings.HasError && !AnyPanelLoading;
 
     public bool ShowPanels => !ShowPageLevelError;
 
-    internal Task LoadAllAsync() => Task.WhenAll(KpiTiles.LoadAsync(), Allocation.LoadAsync());
+    internal Task LoadAllAsync() => Task.WhenAll(KpiTiles.LoadAsync(), Allocation.LoadAsync(), Warnings.LoadAsync());
 
-    private bool AnyPanelLoading => KpiTiles.IsLoading || Allocation.IsLoading;
+    private bool AnyPanelLoading => KpiTiles.IsLoading || Allocation.IsLoading || Warnings.IsLoading;
+
+    private void NavigateToHolding(WarningHoldingRef? holding)
+    {
+        if (holding is null)
+        {
+            return;
+        }
+
+        if (TrySelect(_activeTree, holding, InvestmentScope.Active) || TrySelect(_historicTree, holding, InvestmentScope.Historic))
+        {
+            return;
+        }
+
+        Warnings.NavigationError =
+            $"Unable to locate {holding.AssetName} — it may have moved or been archived since this report was generated.";
+    }
+
+    private bool TrySelect(IMainNavigationViewModel tree, WarningHoldingRef holding, InvestmentScope scope)
+    {
+        if (!tree.SelectHolding(holding.BrokerName, holding.PortfolioName, holding.AssetName))
+        {
+            return false;
+        }
+
+        Warnings.NavigationError = null;
+        NavigateToTreeRequested?.Invoke(this, scope);
+        return true;
+    }
 
     private void OnPanelStateChanged(object? sender, PropertyChangedEventArgs e)
     {

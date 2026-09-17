@@ -1,0 +1,76 @@
+<UserControl x:Class="Financial.Presentation.App.Views.Investment.Dashboard.DataQualityWarningsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <DataTemplate x:Key="WarningFindingRowTemplate">
+                <ui:Button Appearance="Transparent"
+                           HorizontalAlignment="Stretch"
+                           HorizontalContentAlignment="Left"
+                           Margin="0,2,0,2"
+                           Command="{Binding DataContext.SelectFindingCommand, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}"
+                           CommandParameter="{Binding Holding}">
+                    <StackPanel>
+                        <TextBlock Text="{Binding AssetName}" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                        <TextBlock Text="{Binding SecondaryText}" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="11"/>
+                    </StackPanel>
+                </ui:Button>
+            </DataTemplate>
+
+            <DataTemplate x:Key="WarningCategoryTemplate">
+                <Grid Margin="0,0,0,4">
+                    <Expander IsExpanded="{Binding IsExpanded, Mode=TwoWay}"
+                              Visibility="{Binding HasFindings, Converter={StaticResource BoolToVisibilityConverter}}"
+                              AutomationProperties.Name="{Binding HeaderText}"
+                              AutomationProperties.HeadingLevel="Level4">
+                        <Expander.Header>
+                            <TextBlock Text="{Binding HeaderText}" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                        </Expander.Header>
+                        <ItemsControl ItemsSource="{Binding Findings}" Margin="16,4,0,4"
+                                      ItemTemplate="{StaticResource WarningFindingRowTemplate}"/>
+                    </Expander>
+
+                    <TextBlock Text="{Binding HeaderText}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,6,0,6"
+                               Visibility="{Binding IsCountOnly, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                </Grid>
+            </DataTemplate>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid>
+        <TextBlock Text="Loading…" FontSize="14"
+                   Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+        <StackPanel Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}">
+            <TextBlock Text="{Binding ErrorMessage}"
+                       Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                       TextWrapping="Wrap"
+                       AutomationProperties.LiveSetting="Assertive"/>
+            <ui:Button Content="Try again" Appearance="Primary" Command="{Binding RefreshCommand}"
+                       HorizontalAlignment="Left" Margin="0,8,0,0"/>
+        </StackPanel>
+
+        <StackPanel Visibility="{Binding ShowContent, Converter={StaticResource BoolToVisibilityConverter}}">
+            <ui:InfoBar Severity="Warning"
+                        IsClosable="True"
+                        IsOpen="{Binding HasNavigationError, Mode=TwoWay}"
+                        Message="{Binding NavigationError}"
+                        Margin="0,0,0,8"
+                        AutomationProperties.LiveSetting="Assertive"/>
+
+            <ui:InfoBar Severity="Success"
+                        IsClosable="False"
+                        IsOpen="True"
+                        Message="No data-quality issues detected"
+                        Visibility="{Binding ShowAllClear, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+            <ItemsControl x:Name="CategoryList"
+                          ItemsSource="{Binding Categories}"
+                          ItemTemplate="{StaticResource WarningCategoryTemplate}"
+                          AutomationProperties.Name="Data-quality warnings"
+                          Visibility="{Binding ShowCategories, Converter={StaticResource BoolToVisibilityConverter}}"/>
+        </StackPanel>
+    </Grid>
+</UserControl>

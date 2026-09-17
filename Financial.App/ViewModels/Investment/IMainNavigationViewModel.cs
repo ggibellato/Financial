@@ -15,4 +15,10 @@ public interface IMainNavigationViewModel
 
     /// <summary>Completes a drop. A target that cannot take the asset is a silent cancel.</summary>
     Task DropAssetAsync(TreeNodeViewModel? dragged, TreeNodeViewModel? target);
+
+    /// <summary>
+    /// Expands and selects the named holding, reporting whether this tree holds it at all so a
+    /// caller searching more than one scope can fall through to the next.
+    /// </summary>
+    bool SelectHolding(string brokerName, string portfolioName, string assetName);
 }

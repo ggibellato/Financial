@@ -18,6 +18,7 @@ namespace Financial.Presentation.App
             Financial.Presentation.App.Views.Investment.Dashboard.DashboardView dashboardView,
             Financial.Presentation.App.ViewModels.Investment.Dashboard.DashboardKpiTilesViewModel dashboardKpiTilesViewModel,
             Financial.Presentation.App.ViewModels.Investment.Dashboard.AllocationBreakdownViewModel allocationBreakdownViewModel,
+            Financial.Presentation.App.ViewModels.Investment.Dashboard.DataQualityWarningsViewModel dataQualityWarningsViewModel,
             DividendCheckView dividendCheckView,
             AssetPriceView assetPriceView,
             MonthlyView monthlyView,
@@ -86,7 +87,17 @@ namespace Financial.Presentation.App
 
             InitializeComponent();
 
-            dashboardView.DataContext = new Financial.Presentation.App.ViewModels.Investment.Dashboard.DashboardViewModel(dashboardKpiTilesViewModel, allocationBreakdownViewModel);
+            // Composed by hand, not resolved from the container: both navigation view models are
+            // registered Transient, so asking DI for them a second time would hand the dashboard a
+            // pair of fresh trees instead of the two the visible panes below are actually bound to,
+            // and every click-through would select a node nobody can see.
+            var dashboardViewModel = new Financial.Presentation.App.ViewModels.Investment.Dashboard.DashboardViewModel(
+                dashboardKpiTilesViewModel,
+                allocationBreakdownViewModel,
+                dataQualityWarningsViewModel,
+                _navigationViewModel,
+                _navigationViewModelHistoric);
+            dashboardView.DataContext = dashboardViewModel;
 
             var viewsByKey = new Dictionary<string, object>
             {
@@ -118,7 +129,7 @@ namespace Financial.Presentation.App
                 ["settings-integrations"] = settingsIntegrationsView,
             };
 
-            DataContext = new MainShellViewModel(
+            var shellViewModel = new MainShellViewModel(
                 initialCollapsed: Settings.Default.IsNavigationSidebarCollapsed,
                 persistCollapsed: collapsed =>
                 {
@@ -129,6 +140,13 @@ namespace Financial.Presentation.App
                 syncStatusViewModel: syncStatusViewModel,
                 paymentDueBannerViewModel: paymentDueBannerViewModel,
                 colourModeViewModel: colourModeViewModel);
+
+            DataContext = shellViewModel;
+
+            dashboardViewModel.NavigateToTreeRequested += (_, scope) => shellViewModel.SelectItemCommand.Execute(
+                scope == Financial.Investment.Application.Enums.InvestmentScope.Historic
+                    ? "historic-investments"
+                    : "active-investments");
 
             Loaded += async (s, e) =>
             {
