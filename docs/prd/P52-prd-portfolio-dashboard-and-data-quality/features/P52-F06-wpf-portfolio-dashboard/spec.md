@@ -109,6 +109,13 @@ Ordered by where they surface in the rest of this spec.
    counterparts). `MarketValue`, `Invested`, `IncomeYtd`, `IncomeLifetime` bind with no
    `Foreground` override (default text brush), matching F05 Decision 6's identical unsigned-field
    treatment and `PortfolioSummaryView`'s own existing convention for its unsigned fields.
+   **Known, accepted debt** (flagged by `ui-reviewer`, not introduced by this feature):
+   `SignedValueToBrushConverter` returns hardcoded `Brushes.Green`/`Red`/`Black`, not
+   `DynamicResource`-bound theme tokens, so it doesn't respect dark theme or high-contrast mode —
+   the same gap `PortfolioSummaryView` already ships with today. This feature reuses the converter
+   as-is rather than widening scope to make it theme-aware (a cross-cutting fix that would also
+   change `PortfolioSummaryView`'s existing, unrelated screen); a dedicated follow-up should make
+   `SignedValueToBrushConverter` itself theme-aware, benefiting every consumer at once.
 7. **Reporting-currency secondary block reuses `PortfolioSummaryView`'s actual existing XAML
    structure verbatim**: a primary grid of native-currency tiles, followed — when
    `IsReportingCurrencyEnabled` — by a second bordered section headed `TextBlock Text="{Binding
