@@ -407,7 +407,7 @@ graph TD
 - [x] **P52-F01-dashboard-aggregate-01** Dashboard market value, invested, unrealised and realised
       gain, income YTD/lifetime and both XIRR figures reconcile exactly with the sum of the
       equivalent per-broker figures
-- [ ] **P52-F01-dashboard-aggregate-02** `IsPartial` is true and an inline notice appears whenever at
+- [x] **P52-F01-dashboard-aggregate-02** `IsPartial` is true and an inline notice appears whenever at
       least one Active holding has no market value
 - [x] **P52-F01-dashboard-aggregate-03** Realised gain/loss excludes every `Superseded`
       `DisposalRecord`
@@ -423,10 +423,10 @@ graph TD
       unclassified holding exists
 
 ### F03. Data-Quality Warnings
-- [ ] **P52-F03-data-quality-warnings-01** Each of the 5 categories shows a count matching the number
+- [x] **P52-F03-data-quality-warnings-01** Each of the 5 categories shows a count matching the number
       of findings the backend report returns for that category
-- [ ] **P52-F03-data-quality-warnings-02** A category with 0 findings does not render on the panel
-- [ ] **P52-F03-data-quality-warnings-03** Clicking a listed holding navigates to that holding's node
+- [x] **P52-F03-data-quality-warnings-02** A category with 0 findings does not render on the panel
+- [x] **P52-F03-data-quality-warnings-03** Clicking a listed holding navigates to that holding's node
       in the existing tree
 - [x] **P52-F03-data-quality-warnings-04** The stale-valuation count matches the number of Active
       holdings whose `MarketStatus` is `Stale`
@@ -435,17 +435,17 @@ graph TD
 - [x] **P52-F04-upcoming-income-01** A holding with a detected monthly/quarterly/four-monthly
       frequency shows a projected entry dated exactly one interval after its last credit
 - [x] **P52-F04-upcoming-income-02** A holding with no detectable frequency is omitted from the list
-- [ ] **P52-F04-upcoming-income-03** Changing the window filter (30/90/180 days) changes exactly which
+- [x] **P52-F04-upcoming-income-03** Changing the window filter (30/90/180 days) changes exactly which
       projected entries are shown, with no change to the projected dates themselves
-- [ ] **P52-F04-upcoming-income-04** The empty state shows when no holding has a projection inside the
+- [x] **P52-F04-upcoming-income-04** The empty state shows when no holding has a projection inside the
       selected window
 
 ### F05. React — Portfolio Dashboard
-- [ ] **P52-F05-react-portfolio-dashboard-01** A "Dashboard" nav entry appears first under Investments
+- [x] **P52-F05-react-portfolio-dashboard-01** A "Dashboard" nav entry appears first under Investments
       and opens the new page
-- [ ] **P52-F05-react-portfolio-dashboard-02** All 4 panels (KPIs, allocation, warnings, upcoming
+- [x] **P52-F05-react-portfolio-dashboard-02** All 4 panels (KPIs, allocation, warnings, upcoming
       income) render on the page with their independent loading/empty/partial states
-- [ ] **P52-F05-react-portfolio-dashboard-03** A page-level error state with a single retry action
+- [x] **P52-F05-react-portfolio-dashboard-03** A page-level error state with a single retry action
       shows when every panel's request fails
 
 ### F06. WPF — Portfolio Dashboard
