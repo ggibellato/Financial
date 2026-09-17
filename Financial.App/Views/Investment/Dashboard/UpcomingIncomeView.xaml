@@ -1,0 +1,68 @@
+<UserControl x:Class="Financial.Presentation.App.Views.Investment.Dashboard.UpcomingIncomeView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:behaviors="clr-namespace:Financial.Presentation.App.Behaviors">
+    <Grid>
+        <TextBlock Text="Loading…" FontSize="14"
+                   Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+        <StackPanel Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}">
+            <TextBlock Text="{Binding ErrorMessage}"
+                       Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                       TextWrapping="Wrap"
+                       AutomationProperties.LiveSetting="Assertive"/>
+            <ui:Button Content="Try again" Appearance="Primary" Command="{Binding RefreshCommand}"
+                       HorizontalAlignment="Left" Margin="0,8,0,0"/>
+        </StackPanel>
+
+        <StackPanel Visibility="{Binding ShowContent, Converter={StaticResource BoolToVisibilityConverter}}">
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                <TextBlock Text="Window:" Style="{StaticResource FilterToggleLabelStyle}"/>
+                <ItemsControl ItemsSource="{Binding WindowOptions}"
+                              AutomationProperties.Name="Window">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Command="{Binding DataContext.SelectWindowCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                    CommandParameter="{Binding}"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    Padding="4,0"
+                                    Margin="0,0,12,0">
+                                <TextBlock Text="{Binding Label}" Style="{StaticResource FilterToggleTextStyle}"/>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+
+            <TextBlock Text="{Binding EmptyStateText}"
+                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                       TextWrapping="Wrap"
+                       Visibility="{Binding ShowEmptyState, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+            <DataGrid ItemsSource="{Binding Entries}"
+                      AutoGenerateColumns="False" IsReadOnly="True"
+                      CanUserSortColumns="False"
+                      behaviors:SortableColumnsBehavior.IsEnabled="False"
+                      AutomationProperties.Name="Upcoming Income"
+                      Visibility="{Binding ShowEntries, Converter={StaticResource BoolToVisibilityConverter}}">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Binding="{Binding AssetName}" Header="Asset" Width="*"
+                                        ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                    <DataGridTextColumn Binding="{Binding BrokerName}" Header="Broker" Width="140"
+                                        ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                    <DataGridTextColumn Binding="{Binding ProjectedNextDate, StringFormat=dd/MM/yyyy}" Header="Projected Date" Width="130"
+                                        ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                    <DataGridTextColumn Binding="{Binding ProjectedAmount, StringFormat=N2}" Header="Projected Amount" Width="150"
+                                        ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </StackPanel>
+    </Grid>
+</UserControl>

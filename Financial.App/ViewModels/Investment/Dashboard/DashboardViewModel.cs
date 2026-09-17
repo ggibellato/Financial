@@ -13,17 +13,20 @@ public class DashboardViewModel : ViewModelBase
         DashboardKpiTilesViewModel kpiTiles,
         AllocationBreakdownViewModel allocation,
         DataQualityWarningsViewModel warnings,
+        UpcomingIncomeViewModel income,
         IMainNavigationViewModel activeTree,
         IMainNavigationViewModel historicTree)
     {
         KpiTiles = kpiTiles ?? throw new ArgumentNullException(nameof(kpiTiles));
         Allocation = allocation ?? throw new ArgumentNullException(nameof(allocation));
         Warnings = warnings ?? throw new ArgumentNullException(nameof(warnings));
+        Income = income ?? throw new ArgumentNullException(nameof(income));
         _activeTree = activeTree ?? throw new ArgumentNullException(nameof(activeTree));
         _historicTree = historicTree ?? throw new ArgumentNullException(nameof(historicTree));
         KpiTiles.PropertyChanged += OnPanelStateChanged;
         Allocation.PropertyChanged += OnPanelStateChanged;
         Warnings.PropertyChanged += OnPanelStateChanged;
+        Income.PropertyChanged += OnPanelStateChanged;
 
         NavigateToHoldingCommand = new RelayCommand<WarningHoldingRef>(NavigateToHolding);
 
@@ -49,17 +52,21 @@ public class DashboardViewModel : ViewModelBase
 
     public DataQualityWarningsViewModel Warnings { get; }
 
+    public UpcomingIncomeViewModel Income { get; }
+
     public RelayCommand RetryAllCommand { get; }
 
     public RelayCommand<WarningHoldingRef> NavigateToHoldingCommand { get; }
 
-    public bool ShowPageLevelError => KpiTiles.HasError && Allocation.HasError && Warnings.HasError && !AnyPanelLoading;
+    public bool ShowPageLevelError =>
+        KpiTiles.HasError && Allocation.HasError && Warnings.HasError && Income.HasError && !AnyPanelLoading;
 
     public bool ShowPanels => !ShowPageLevelError;
 
-    internal Task LoadAllAsync() => Task.WhenAll(KpiTiles.LoadAsync(), Allocation.LoadAsync(), Warnings.LoadAsync());
+    internal Task LoadAllAsync() =>
+        Task.WhenAll(KpiTiles.LoadAsync(), Allocation.LoadAsync(), Warnings.LoadAsync(), Income.LoadAsync());
 
-    private bool AnyPanelLoading => KpiTiles.IsLoading || Allocation.IsLoading || Warnings.IsLoading;
+    private bool AnyPanelLoading => KpiTiles.IsLoading || Allocation.IsLoading || Warnings.IsLoading || Income.IsLoading;
 
     private void NavigateToHolding(WarningHoldingRef? holding)
     {
