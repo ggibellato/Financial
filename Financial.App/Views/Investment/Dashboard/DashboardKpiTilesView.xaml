@@ -45,7 +45,7 @@
             <UniformGrid Columns="4">
                 <Border Style="{StaticResource KpiTileBorderStyle}">
                     <StackPanel>
-                        <TextBlock Text="MARKET VALUE" Style="{StaticResource KpiTileLabelStyle}"/>
+                        <TextBlock Text="Market Value" Style="{StaticResource KpiTileLabelStyle}"/>
                         <TextBlock Style="{StaticResource KpiTileValueStyle}"
                                    AutomationProperties.Name="Market Value"
                                    Text="{Binding MarketValue, Mode=OneWay, StringFormat=N2, TargetNullValue='—'}"/>
@@ -54,7 +54,7 @@
 
                 <Border Style="{StaticResource KpiTileBorderStyle}">
                     <StackPanel>
-                        <TextBlock Text="INVESTED" Style="{StaticResource KpiTileLabelStyle}"/>
+                        <TextBlock Text="Invested" Style="{StaticResource KpiTileLabelStyle}"/>
                         <TextBlock Style="{StaticResource KpiTileValueStyle}"
                                    AutomationProperties.Name="Invested"
                                    Text="{Binding Invested, Mode=OneWay, StringFormat=N2, TargetNullValue='—'}"/>
@@ -63,7 +63,7 @@
 
                 <Border Style="{StaticResource KpiTileBorderStyle}">
                     <StackPanel>
-                        <TextBlock Text="UNREALISED GAIN/LOSS" Style="{StaticResource KpiTileLabelStyle}"/>
+                        <TextBlock Text="Unrealised Gain/Loss" Style="{StaticResource KpiTileLabelStyle}"/>
                         <TextBlock Style="{StaticResource KpiTileValueStyle}"
                                    AutomationProperties.Name="Unrealised Gain/Loss"
                                    Text="{Binding UnrealisedGainLoss, Mode=OneWay, StringFormat=N2, TargetNullValue='—'}"
@@ -73,7 +73,7 @@
 
                 <Border Style="{StaticResource KpiTileBorderStyle}">
                     <StackPanel>
-                        <TextBlock Text="REALISED GAIN/LOSS (LIFETIME)" Style="{StaticResource KpiTileLabelStyle}"/>
+                        <TextBlock Text="Realised Gain/Loss (Lifetime)" Style="{StaticResource KpiTileLabelStyle}"/>
                         <TextBlock Style="{StaticResource KpiTileValueStyle}"
                                    AutomationProperties.Name="Realised Gain/Loss (Lifetime)"
                                    Text="{Binding RealisedGainLoss, Mode=OneWay, StringFormat=N2, TargetNullValue='—'}"
@@ -83,7 +83,7 @@
 
                 <Border Style="{StaticResource KpiTileBorderStyle}">
                     <StackPanel>
-                        <TextBlock Text="INCOME YTD" Style="{StaticResource KpiTileLabelStyle}"/>
+                        <TextBlock Text="Income YTD" Style="{StaticResource KpiTileLabelStyle}"/>
                         <TextBlock Style="{StaticResource KpiTileValueStyle}"
                                    AutomationProperties.Name="Income YTD"
                                    Text="{Binding IncomeYtd, Mode=OneWay, StringFormat=N2, TargetNullValue='—'}"/>
@@ -92,7 +92,7 @@
 
                 <Border Style="{StaticResource KpiTileBorderStyle}">
                     <StackPanel>
-                        <TextBlock Text="INCOME LIFETIME" Style="{StaticResource KpiTileLabelStyle}"/>
+                        <TextBlock Text="Income Lifetime" Style="{StaticResource KpiTileLabelStyle}"/>
                         <TextBlock Style="{StaticResource KpiTileValueStyle}"
                                    AutomationProperties.Name="Income Lifetime"
                                    Text="{Binding IncomeLifetime, Mode=OneWay, StringFormat=N2, TargetNullValue='—'}"/>
@@ -101,7 +101,7 @@
 
                 <Border Style="{StaticResource KpiTileBorderStyle}">
                     <StackPanel>
-                        <TextBlock Text="GROSS XIRR" Style="{StaticResource KpiTileLabelStyle}"/>
+                        <TextBlock Text="Gross XIRR" Style="{StaticResource KpiTileLabelStyle}"/>
                         <TextBlock Style="{StaticResource KpiTileValueStyle}"
                                    AutomationProperties.Name="Gross XIRR"
                                    Text="{Binding GrossXirr, Mode=OneWay, StringFormat=P2, TargetNullValue='—'}"
@@ -111,7 +111,7 @@
 
                 <Border Style="{StaticResource KpiTileBorderStyle}">
                     <StackPanel>
-                        <TextBlock Text="NET XIRR (OF TAX)" Style="{StaticResource KpiTileLabelStyle}"/>
+                        <TextBlock Text="Net XIRR (of Tax)" Style="{StaticResource KpiTileLabelStyle}"/>
                         <TextBlock Style="{StaticResource KpiTileValueStyle}"
                                    AutomationProperties.Name="Net XIRR (of Tax)"
                                    Text="{Binding NetXirr, Mode=OneWay, StringFormat=P2, TargetNullValue='—'}"
@@ -125,9 +125,6 @@
                 <TextBlock Text="{Binding PartialNoticeText}"
                            Style="{StaticResource KpiNoticeStyle}"
                            Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
-                <ui:Button Content="View affected holdings"
-                           Margin="12,0,0,0"
-                           Command="{Binding ViewMissingPriceHoldingsCommand}"/>
             </StackPanel>
 
             <StackPanel Margin="0,16,0,0"
@@ -144,7 +141,7 @@
                 <UniformGrid Columns="4">
                     <Border Style="{StaticResource KpiTileBorderStyle}">
                         <StackPanel>
-                            <TextBlock Text="MARKET VALUE" Style="{StaticResource KpiTileLabelStyle}"/>
+                            <TextBlock Text="Market Value" Style="{StaticResource KpiTileLabelStyle}"/>
                             <TextBlock Style="{StaticResource KpiTileValueStyle}"
                                        AutomationProperties.Name="Market Value, converted"
                                        Text="{Binding ConvertedMarketValue, Mode=OneWay, StringFormat=N2, TargetNullValue='—'}"/>
@@ -153,7 +150,7 @@
 
                     <Border Style="{StaticResource KpiTileBorderStyle}">
                         <StackPanel>
-                            <TextBlock Text="INVESTED" Style="{StaticResource KpiTileLabelStyle}"/>
+                            <TextBlock Text="Invested" Style="{StaticResource KpiTileLabelStyle}"/>
                             <TextBlock Style="{StaticResource KpiTileValueStyle}"
                                        AutomationProperties.Name="Invested, converted"
                                        Text="{Binding ConvertedInvested, Mode=OneWay, StringFormat=N2, TargetNullValue='—'}"/>
@@ -162,7 +159,7 @@
 
                     <Border Style="{StaticResource KpiTileBorderStyle}">
                         <StackPanel>
-                            <TextBlock Text="UNREALISED GAIN/LOSS" Style="{StaticResource KpiTileLabelStyle}"/>
+                            <TextBlock Text="Unrealised Gain/Loss" Style="{StaticResource KpiTileLabelStyle}"/>
                             <TextBlock Style="{StaticResource KpiTileValueStyle}"
                                        AutomationProperties.Name="Unrealised Gain/Loss, converted"
                                        Text="{Binding ConvertedUnrealisedGainLoss, Mode=OneWay, StringFormat=N2, TargetNullValue='—'}"
@@ -172,7 +169,7 @@
 
                     <Border Style="{StaticResource KpiTileBorderStyle}">
                         <StackPanel>
-                            <TextBlock Text="REALISED GAIN/LOSS (LIFETIME)" Style="{StaticResource KpiTileLabelStyle}"/>
+                            <TextBlock Text="Realised Gain/Loss (Lifetime)" Style="{StaticResource KpiTileLabelStyle}"/>
                             <TextBlock Style="{StaticResource KpiTileValueStyle}"
                                        AutomationProperties.Name="Realised Gain/Loss (Lifetime), converted"
                                        Text="{Binding ConvertedRealisedGainLoss, Mode=OneWay, StringFormat=N2, TargetNullValue='—'}"
@@ -182,7 +179,7 @@
 
                     <Border Style="{StaticResource KpiTileBorderStyle}">
                         <StackPanel>
-                            <TextBlock Text="INCOME YTD" Style="{StaticResource KpiTileLabelStyle}"/>
+                            <TextBlock Text="Income YTD" Style="{StaticResource KpiTileLabelStyle}"/>
                             <TextBlock Style="{StaticResource KpiTileValueStyle}"
                                        AutomationProperties.Name="Income YTD, converted"
                                        Text="{Binding ConvertedIncomeYtd, Mode=OneWay, StringFormat=N2, TargetNullValue='—'}"/>
@@ -191,7 +188,7 @@
 
                     <Border Style="{StaticResource KpiTileBorderStyle}">
                         <StackPanel>
-                            <TextBlock Text="INCOME LIFETIME" Style="{StaticResource KpiTileLabelStyle}"/>
+                            <TextBlock Text="Income Lifetime" Style="{StaticResource KpiTileLabelStyle}"/>
                             <TextBlock Style="{StaticResource KpiTileValueStyle}"
                                        AutomationProperties.Name="Income Lifetime, converted"
                                        Text="{Binding ConvertedIncomeLifetime, Mode=OneWay, StringFormat=N2, TargetNullValue='—'}"/>
@@ -200,7 +197,7 @@
 
                     <Border Style="{StaticResource KpiTileBorderStyle}">
                         <StackPanel>
-                            <TextBlock Text="GROSS XIRR" Style="{StaticResource KpiTileLabelStyle}"/>
+                            <TextBlock Text="Gross XIRR" Style="{StaticResource KpiTileLabelStyle}"/>
                             <TextBlock Style="{StaticResource KpiTileValueStyle}"
                                        AutomationProperties.Name="Gross XIRR, converted"
                                        Text="{Binding ConvertedGrossXirr, Mode=OneWay, StringFormat=P2, TargetNullValue='—'}"
@@ -210,7 +207,7 @@
 
                     <Border Style="{StaticResource KpiTileBorderStyle}">
                         <StackPanel>
-                            <TextBlock Text="NET XIRR (OF TAX)" Style="{StaticResource KpiTileLabelStyle}"/>
+                            <TextBlock Text="Net XIRR (of Tax)" Style="{StaticResource KpiTileLabelStyle}"/>
                             <TextBlock Style="{StaticResource KpiTileValueStyle}"
                                        AutomationProperties.Name="Net XIRR (of Tax), converted"
                                        Text="{Binding ConvertedNetXirr, Mode=OneWay, StringFormat=P2, TargetNullValue='—'}"
@@ -225,7 +222,7 @@
                 <TextBlock Text="Converted totals unavailable — showing native-currency figures only."
                            Style="{StaticResource KpiNoticeStyle}"
                            Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
-                <Button Content="Try again" Command="{Binding RefreshCommand}" HorizontalAlignment="Left" Margin="0,8,0,0"/>
+                <ui:Button Content="Try again" Appearance="Primary" Command="{Binding RefreshCommand}" HorizontalAlignment="Left" Margin="0,8,0,0"/>
             </StackPanel>
         </StackPanel>
     </Grid>

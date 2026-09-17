@@ -18,7 +18,8 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Text="Dashboard" FontSize="20" FontWeight="Bold" Margin="0,0,0,12"/>
+        <TextBlock x:Name="DashboardHeading" Grid.Row="0" Text="Dashboard" FontSize="20" FontWeight="Bold"
+                   Margin="0,0,0,12" Focusable="True" KeyboardNavigation.IsTabStop="False"/>
 
         <StackPanel Grid.Row="1" VerticalAlignment="Top"
                     Visibility="{Binding ShowPageLevelError, Converter={StaticResource BoolToVisibilityConverter}}">

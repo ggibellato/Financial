@@ -85,6 +85,36 @@ public class DashboardViewModelTests
     }
 
     [Fact]
+    public void RetryAllCommand_RaisesRecoveredFromErrorOnceTheRetrySettlesWithSuccess()
+    {
+        var service = new StubPortfolioDashboardService { ThrowOnGetDashboard = new InvalidOperationException("boom") };
+        var (vm, _) = CreateViewModel(service);
+        var recovered = 0;
+        vm.RecoveredFromError += (_, _) => recovered++;
+
+        service.ThrowOnGetDashboard = null;
+        service.Dashboard = new PortfolioDashboardDTO { MarketValue = 250m };
+        vm.RetryAllCommand.Execute(null);
+
+        recovered.Should().Be(1);
+        vm.ShowPageLevelError.Should().BeFalse();
+    }
+
+    [Fact]
+    public void RetryAllCommand_DoesNotRaiseRecoveredFromErrorWhenTheRetryStillFails()
+    {
+        var service = new StubPortfolioDashboardService { ThrowOnGetDashboard = new InvalidOperationException("boom") };
+        var (vm, _) = CreateViewModel(service);
+        var recovered = 0;
+        vm.RecoveredFromError += (_, _) => recovered++;
+
+        vm.RetryAllCommand.Execute(null);
+
+        recovered.Should().Be(0);
+        vm.ShowPageLevelError.Should().BeTrue();
+    }
+
+    [Fact]
     public void Constructor_RejectsAMissingPanelViewModel()
     {
         var act = () => new DashboardViewModel(null!);
