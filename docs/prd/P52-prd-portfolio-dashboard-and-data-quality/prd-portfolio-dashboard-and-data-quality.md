@@ -441,10 +441,12 @@ graph TD
       selected window
 
 ### F05. React — Portfolio Dashboard
-- [ ] A "Dashboard" nav entry appears first under Investments and opens the new page
-- [ ] All 4 panels (KPIs, allocation, warnings, upcoming income) render on the page with their
-      independent loading/empty/partial states
-- [ ] A page-level error state with a single retry action shows when every panel's request fails
+- [ ] **P52-F05-react-portfolio-dashboard-01** A "Dashboard" nav entry appears first under Investments
+      and opens the new page
+- [ ] **P52-F05-react-portfolio-dashboard-02** All 4 panels (KPIs, allocation, warnings, upcoming
+      income) render on the page with their independent loading/empty/partial states
+- [ ] **P52-F05-react-portfolio-dashboard-03** A page-level error state with a single retry action
+      shows when every panel's request fails
 
 ### F06. WPF — Portfolio Dashboard
 - [ ] A "Dashboard" nav entry appears first under Investments, in the same position as the web app, and
