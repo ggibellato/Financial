@@ -19,6 +19,7 @@ namespace Financial.Presentation.App
             Financial.Presentation.App.ViewModels.Investment.Dashboard.DashboardKpiTilesViewModel dashboardKpiTilesViewModel,
             Financial.Presentation.App.ViewModels.Investment.Dashboard.AllocationBreakdownViewModel allocationBreakdownViewModel,
             Financial.Presentation.App.ViewModels.Investment.Dashboard.DataQualityWarningsViewModel dataQualityWarningsViewModel,
+            Financial.Presentation.App.ViewModels.Investment.Dashboard.UpcomingIncomeViewModel upcomingIncomeViewModel,
             DividendCheckView dividendCheckView,
             AssetPriceView assetPriceView,
             MonthlyView monthlyView,
@@ -95,6 +96,7 @@ namespace Financial.Presentation.App
                 dashboardKpiTilesViewModel,
                 allocationBreakdownViewModel,
                 dataQualityWarningsViewModel,
+                upcomingIncomeViewModel,
                 _navigationViewModel,
                 _navigationViewModelHistoric);
             dashboardView.DataContext = dashboardViewModel;

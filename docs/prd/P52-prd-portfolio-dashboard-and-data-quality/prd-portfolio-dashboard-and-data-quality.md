@@ -449,10 +449,12 @@ graph TD
       shows when every panel's request fails
 
 ### F06. WPF — Portfolio Dashboard
-- [ ] A "Dashboard" nav entry appears first under Investments, in the same position as the web app, and
-      opens the new view
-- [ ] All 4 panels render with the same figures as F05 for the same data
-- [ ] Clicking a warning navigates to the affected holding in the WPF tree
+- [ ] **P52-F06-wpf-portfolio-dashboard-01** A "Dashboard" nav entry appears first under Investments,
+      in the same position as the web app, and opens the new view
+- [ ] **P52-F06-wpf-portfolio-dashboard-02** All 4 panels render with the same figures as F05 for the
+      same data
+- [ ] **P52-F06-wpf-portfolio-dashboard-03** Clicking a warning navigates to the affected holding in
+      the WPF tree
 
 ### Cross-Feature Integration
 - [ ] Dashboard aggregate figures from F01 render identically in F05 (React) and F06 (WPF)

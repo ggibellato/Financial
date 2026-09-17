@@ -19,21 +19,29 @@ public class DashboardViewModelTests
         UnpricedOpenHoldings = [new UnpricedOpenHoldingFinding("Chase", "Income", "VUSA")],
     };
 
+    private static UpcomingIncomeDTO[] Income() =>
+    [
+        new("VUSA", "Chase", DateTime.Today.AddDays(-20), DateTime.Today.AddDays(10), 12m),
+    ];
+
     private static (DashboardViewModel ViewModel, StubPortfolioDashboardService Dashboard, StubAllocationBreakdownService Allocation) CreateViewModel(
         StubPortfolioDashboardService? dashboardService = null,
         StubAllocationBreakdownService? allocationService = null,
         StubDataQualityReportService? reportService = null,
+        StubUpcomingIncomeService? incomeService = null,
         FakeNavigationTree? activeTree = null,
         FakeNavigationTree? historicTree = null)
     {
         dashboardService ??= new StubPortfolioDashboardService { Dashboard = new PortfolioDashboardDTO { MarketValue = 1000m } };
         allocationService ??= new StubAllocationBreakdownService { Breakdown = Allocation() };
         reportService ??= new StubDataQualityReportService { Report = Report() };
+        incomeService ??= new StubUpcomingIncomeService { Entries = Income() };
         var kpiTiles = new DashboardKpiTilesViewModel(dashboardService, new RecordingLogger<DashboardKpiTilesViewModel>());
         var allocation = new AllocationBreakdownViewModel(allocationService, new RecordingLogger<AllocationBreakdownViewModel>());
         var warnings = new DataQualityWarningsViewModel(reportService, new RecordingLogger<DataQualityWarningsViewModel>());
+        var income = new UpcomingIncomeViewModel(incomeService, new RecordingLogger<UpcomingIncomeViewModel>());
         var viewModel = new DashboardViewModel(
-            kpiTiles, allocation, warnings, activeTree ?? new FakeNavigationTree(), historicTree ?? new FakeNavigationTree());
+            kpiTiles, allocation, warnings, income, activeTree ?? new FakeNavigationTree(), historicTree ?? new FakeNavigationTree());
         return (viewModel, dashboardService, allocationService);
     }
 
@@ -47,6 +55,7 @@ public class DashboardViewModelTests
         vm.KpiTiles.MarketValue.Should().Be(1000m);
         vm.Allocation.Entries.Should().ContainSingle();
         vm.Warnings.Categories.Should().ContainSingle();
+        vm.Income.Entries.Should().ContainSingle();
         vm.ShowPanels.Should().BeTrue();
         vm.ShowPageLevelError.Should().BeFalse();
     }
@@ -57,10 +66,25 @@ public class DashboardViewModelTests
         var (vm, _, _) = CreateViewModel(
             new StubPortfolioDashboardService { ThrowOnGetDashboard = new InvalidOperationException("boom") },
             new StubAllocationBreakdownService { ThrowOnGetAllocationBreakdown = new InvalidOperationException("bang") },
-            new StubDataQualityReportService { ThrowOnGenerateReport = new InvalidOperationException("crash") });
+            new StubDataQualityReportService { ThrowOnGenerateReport = new InvalidOperationException("crash") },
+            new StubUpcomingIncomeService { ThrowOnGetUpcomingIncome = new InvalidOperationException("thud") });
 
         vm.ShowPageLevelError.Should().BeTrue();
         vm.ShowPanels.Should().BeFalse();
+    }
+
+    [Fact]
+    public void ThreeOfFourPanelsFailing_StillRendersEveryPanelInPlace()
+    {
+        var (vm, _, _) = CreateViewModel(
+            new StubPortfolioDashboardService { ThrowOnGetDashboard = new InvalidOperationException("boom") },
+            new StubAllocationBreakdownService { ThrowOnGetAllocationBreakdown = new InvalidOperationException("bang") },
+            new StubDataQualityReportService { ThrowOnGenerateReport = new InvalidOperationException("crash") });
+
+        vm.ShowPageLevelError.Should().BeFalse();
+        vm.ShowPanels.Should().BeTrue();
+        vm.Income.ShowContent.Should().BeTrue();
+        vm.Income.Entries.Should().ContainSingle();
     }
 
     [Fact]
@@ -74,6 +98,7 @@ public class DashboardViewModelTests
         vm.Warnings.HasError.Should().BeTrue();
         vm.KpiTiles.ShowContent.Should().BeTrue();
         vm.Allocation.ShowContent.Should().BeTrue();
+        vm.Income.ShowContent.Should().BeTrue();
     }
 
     [Fact]
@@ -87,6 +112,7 @@ public class DashboardViewModelTests
         vm.KpiTiles.HasError.Should().BeTrue();
         vm.Allocation.ShowContent.Should().BeTrue();
         vm.Allocation.Entries.Should().ContainSingle();
+        vm.Income.Entries.Should().ContainSingle();
     }
 
     [Fact]
@@ -100,6 +126,21 @@ public class DashboardViewModelTests
         vm.Allocation.HasError.Should().BeTrue();
         vm.KpiTiles.ShowContent.Should().BeTrue();
         vm.KpiTiles.MarketValue.Should().Be(1000m);
+        vm.Income.ShowContent.Should().BeTrue();
+    }
+
+    [Fact]
+    public void OnlyTheUpcomingIncomePanelFailing_KeepsEveryPanelVisibleAndTheOtherPanelsContentIntact()
+    {
+        var (vm, _, _) = CreateViewModel(
+            incomeService: new StubUpcomingIncomeService { ThrowOnGetUpcomingIncome = new InvalidOperationException("thud") });
+
+        vm.ShowPageLevelError.Should().BeFalse();
+        vm.ShowPanels.Should().BeTrue();
+        vm.Income.HasError.Should().BeTrue();
+        vm.KpiTiles.MarketValue.Should().Be(1000m);
+        vm.Allocation.Entries.Should().ContainSingle();
+        vm.Warnings.Categories.Should().ContainSingle();
     }
 
     [Fact]
@@ -125,7 +166,8 @@ public class DashboardViewModelTests
         var (vm, _, _) = CreateViewModel(
             new StubPortfolioDashboardService { ThrowOnGetDashboard = new InvalidOperationException("boom") },
             new StubAllocationBreakdownService { ThrowOnGetAllocationBreakdown = new InvalidOperationException("bang") },
-            new StubDataQualityReportService { ThrowOnGenerateReport = new InvalidOperationException("crash") });
+            new StubDataQualityReportService { ThrowOnGenerateReport = new InvalidOperationException("crash") },
+            new StubUpcomingIncomeService { ThrowOnGetUpcomingIncome = new InvalidOperationException("thud") });
         var changed = new List<string?>();
         vm.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
 
@@ -141,7 +183,8 @@ public class DashboardViewModelTests
         var dashboardService = new StubPortfolioDashboardService { ThrowOnGetDashboard = new InvalidOperationException("boom") };
         var allocationService = new StubAllocationBreakdownService { ThrowOnGetAllocationBreakdown = new InvalidOperationException("bang") };
         var reportService = new StubDataQualityReportService { ThrowOnGenerateReport = new InvalidOperationException("crash") };
-        var (vm, _, _) = CreateViewModel(dashboardService, allocationService, reportService);
+        var incomeService = new StubUpcomingIncomeService { ThrowOnGetUpcomingIncome = new InvalidOperationException("thud") };
+        var (vm, _, _) = CreateViewModel(dashboardService, allocationService, reportService, incomeService);
         vm.ShowPageLevelError.Should().BeTrue();
 
         dashboardService.ThrowOnGetDashboard = null;
@@ -150,16 +193,20 @@ public class DashboardViewModelTests
         allocationService.Breakdown = Allocation();
         reportService.ThrowOnGenerateReport = null;
         reportService.Report = Report();
+        incomeService.ThrowOnGetUpcomingIncome = null;
+        incomeService.Entries = Income();
         await vm.LoadAllAsync();
 
         dashboardService.GetDashboardCallCount.Should().Be(2);
         allocationService.GetAllocationBreakdownCallCount.Should().Be(2);
         reportService.GenerateReportCallCount.Should().Be(2);
+        incomeService.GetUpcomingIncomeCallCount.Should().Be(2);
         vm.ShowPageLevelError.Should().BeFalse();
         vm.ShowPanels.Should().BeTrue();
         vm.KpiTiles.MarketValue.Should().Be(250m);
         vm.Allocation.Entries.Should().ContainSingle();
         vm.Warnings.Categories.Should().ContainSingle();
+        vm.Income.Entries.Should().ContainSingle();
     }
 
     [Fact]
@@ -168,7 +215,8 @@ public class DashboardViewModelTests
         var dashboardService = new StubPortfolioDashboardService { ThrowOnGetDashboard = new InvalidOperationException("boom") };
         var allocationService = new StubAllocationBreakdownService { ThrowOnGetAllocationBreakdown = new InvalidOperationException("bang") };
         var reportService = new StubDataQualityReportService { ThrowOnGenerateReport = new InvalidOperationException("crash") };
-        var (vm, _, _) = CreateViewModel(dashboardService, allocationService, reportService);
+        var incomeService = new StubUpcomingIncomeService { ThrowOnGetUpcomingIncome = new InvalidOperationException("thud") };
+        var (vm, _, _) = CreateViewModel(dashboardService, allocationService, reportService, incomeService);
         var recovered = 0;
         vm.RecoveredFromError += (_, _) => recovered++;
 
@@ -178,6 +226,8 @@ public class DashboardViewModelTests
         allocationService.Breakdown = Allocation();
         reportService.ThrowOnGenerateReport = null;
         reportService.Report = Report();
+        incomeService.ThrowOnGetUpcomingIncome = null;
+        incomeService.Entries = Income();
         vm.RetryAllCommand.Execute(null);
 
         recovered.Should().Be(1);
@@ -190,7 +240,8 @@ public class DashboardViewModelTests
         var (vm, _, _) = CreateViewModel(
             new StubPortfolioDashboardService { ThrowOnGetDashboard = new InvalidOperationException("boom") },
             new StubAllocationBreakdownService { ThrowOnGetAllocationBreakdown = new InvalidOperationException("bang") },
-            new StubDataQualityReportService { ThrowOnGenerateReport = new InvalidOperationException("crash") });
+            new StubDataQualityReportService { ThrowOnGenerateReport = new InvalidOperationException("crash") },
+            new StubUpcomingIncomeService { ThrowOnGetUpcomingIncome = new InvalidOperationException("thud") });
         var recovered = 0;
         vm.RecoveredFromError += (_, _) => recovered++;
 
@@ -296,17 +347,21 @@ public class DashboardViewModelTests
             new StubAllocationBreakdownService(), new RecordingLogger<AllocationBreakdownViewModel>());
         var warnings = new DataQualityWarningsViewModel(
             new StubDataQualityReportService(), new RecordingLogger<DataQualityWarningsViewModel>());
+        var income = new UpcomingIncomeViewModel(
+            new StubUpcomingIncomeService(), new RecordingLogger<UpcomingIncomeViewModel>());
         var tree = new FakeNavigationTree();
 
-        var missingKpiTiles = () => new DashboardViewModel(null!, allocation, warnings, tree, tree);
-        var missingAllocation = () => new DashboardViewModel(kpiTiles, null!, warnings, tree, tree);
-        var missingWarnings = () => new DashboardViewModel(kpiTiles, allocation, null!, tree, tree);
-        var missingActiveTree = () => new DashboardViewModel(kpiTiles, allocation, warnings, null!, tree);
-        var missingHistoricTree = () => new DashboardViewModel(kpiTiles, allocation, warnings, tree, null!);
+        var missingKpiTiles = () => new DashboardViewModel(null!, allocation, warnings, income, tree, tree);
+        var missingAllocation = () => new DashboardViewModel(kpiTiles, null!, warnings, income, tree, tree);
+        var missingWarnings = () => new DashboardViewModel(kpiTiles, allocation, null!, income, tree, tree);
+        var missingIncome = () => new DashboardViewModel(kpiTiles, allocation, warnings, null!, tree, tree);
+        var missingActiveTree = () => new DashboardViewModel(kpiTiles, allocation, warnings, income, null!, tree);
+        var missingHistoricTree = () => new DashboardViewModel(kpiTiles, allocation, warnings, income, tree, null!);
 
         missingKpiTiles.Should().Throw<ArgumentNullException>();
         missingAllocation.Should().Throw<ArgumentNullException>();
         missingWarnings.Should().Throw<ArgumentNullException>();
+        missingIncome.Should().Throw<ArgumentNullException>();
         missingActiveTree.Should().Throw<ArgumentNullException>();
         missingHistoricTree.Should().Throw<ArgumentNullException>();
     }

@@ -87,6 +87,12 @@ Ordered by where they surface in the rest of this spec.
    `RelayCommand` on `DashboardViewModel` calling all four panels' `RefreshCommand`s) — matching
    F05's single-retry, all-four-refetch behaviour exactly (`P52-F06-03` reads "renders with the same
    figures as F05 for the same data", which includes this state).
+   **Implemented shape (Part 4).** Now fully real with all four panels present. `RecoveredFromError`
+   → `DashboardHeading.Focus()` (Part 1's page-level focus-on-recovery) extends unchanged: it fires
+   once every one of the four panels has settled and at least one recovered. Panel-level
+   error→retry→content transitions deliberately do *not* move focus, matching F05, where
+   `ErrorState`'s own retry button likewise has no focus handoff — only the page-level state replaces
+   the whole page's content out from under the focused control.
 5. **Loading state renders as a plain "Loading…" text block per panel**, not a skeleton. F01's
    Experience text asks specifically for "a loading skeleton" — but `docs/ui/wpf.md`'s "React is the
    UX source of truth... adapt controls and mechanics only where WPF conventions... require it"
@@ -165,6 +171,16 @@ Ordered by where they surface in the rest of this spec.
    Experience and F05 Decision 9's identical default). The `ItemsControl`/`Button` XAML template is
    copied from `PriceHistoryView.xaml`'s existing filter row with no structural change beyond the
    bound collection's generic type argument.
+   **Implemented shape (Part 4), three notes.** (a) The chip row carries a `"Window:"` lead-in
+   label (`FilterToggleLabelStyle`, the same one `CreditsFilterBar.xaml` already uses) to match
+   F05's `FilterTabList label="Window"` — without it the three bare chips have no group name.
+   (b) The filter's lower bound is deliberately open: an entry whose `ProjectedNextDate` is already
+   in the past stays visible in *every* window, exactly as F05's own `isWithinUpcomingIncomeWindow`
+   does, because the backend never drops an overdue projection and hiding it would silently lose a
+   payment. (c) The `DataGrid` binds `UpcomingIncomeDTO` directly (no row ViewModel): all four
+   columns are a straight field read with no derived or category-dependent value, so a mapping type
+   would carry nothing — which is why §3 lists no such type for this panel, unlike the warnings and
+   allocation panels.
 10. **Allocation dimension tabs (Class/Currency/Country/Broker) use the native `TabControl`, not
     the chip pattern**, mirroring F05 Decision 10's content-switching-vs-filter-chip distinction:
     these four tabs swap the *entire chart + legend table* being displayed (a content-switching
