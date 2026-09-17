@@ -379,6 +379,26 @@ describe('DashboardPage', () => {
     expect(getAllocationBreakdownMock).toHaveBeenCalledTimes(2)
     expect(getDataQualityReportMock).toHaveBeenCalledTimes(2)
     expect(getUpcomingIncomeMock).toHaveBeenCalledTimes(2)
-    expect(screen.getByRole('heading', { name: 'Dashboard', level: 2 })).toHaveFocus()
+    // Focus only moves once every panel has finished loading (not merely stopped failing), so wait
+    // for the last one to settle rather than asserting the instant the first panel's content lands.
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Dashboard', level: 2 })).toHaveFocus())
+  })
+
+  it('P52-F05-react-portfolio-dashboard-03: focus stays on Retry, not the page heading, when the retry does not recover any panel', async () => {
+    getDashboardMock.mockRejectedValue(new Error('Dashboard unavailable'))
+    getAllocationBreakdownMock.mockRejectedValue(new Error('Allocation unavailable'))
+    getDataQualityReportMock.mockRejectedValue(new Error('Data quality unavailable'))
+    getUpcomingIncomeMock.mockRejectedValue(new Error('Income unavailable'))
+
+    renderDashboardRoute()
+
+    const retryButton = await screen.findByRole('button', { name: 'Retry' })
+    fireEvent.click(retryButton)
+
+    await waitFor(() => expect(getDashboardMock).toHaveBeenCalledTimes(2))
+    expect(
+      await screen.findByText('Unable to load the dashboard — none of its data could be retrieved.'),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Dashboard', level: 2 })).not.toHaveFocus()
   })
 })

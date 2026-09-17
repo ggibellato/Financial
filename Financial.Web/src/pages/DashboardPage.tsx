@@ -21,15 +21,18 @@ export default function DashboardPage() {
   const [retryAllToken, setRetryAllToken] = useState(0)
 
   const panels = [dashboard, allocation, dataQuality, upcomingIncome]
+  const anyPanelLoading = panels.some((panel) => panel.isLoading)
   const everyPanelFailed = panels.every((panel) => panel.error !== null && !panel.isLoading)
 
-  // Retrying swaps the whole page's content back to the four loading panels, so the button the
-  // user just pressed is gone: without this, focus falls back to <body> and keyboard users lose
-  // their place on the page they just asked to reload.
+  // Retrying swaps the whole page's content back to the four panels, so the button the user just
+  // pressed is gone: once every request has settled (not merely started) and at least one
+  // recovered, move focus to the page heading so keyboard users don't lose their place. If every
+  // panel is still failing after the retry, the same Retry button is still on screen in the same
+  // spot, so focus already has somewhere sensible to stay - nothing to fix in that case.
   useEffect(() => {
-    if (retryAllToken === 0 || everyPanelFailed) return
+    if (retryAllToken === 0 || anyPanelLoading || everyPanelFailed) return
     pageHeadingRef.current?.focus()
-  }, [retryAllToken, everyPanelFailed])
+  }, [retryAllToken, anyPanelLoading, everyPanelFailed])
 
   const handleRetryAll = () => {
     panels.forEach((panel) => panel.retry())
