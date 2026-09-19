@@ -131,7 +131,9 @@ describe('AssetsPage', () => {
     fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'BCIA11B' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
-    await waitFor(() => expect(updateAssetMock).toHaveBeenCalledWith('XPI', 'Default', 'BCIA11', expect.objectContaining({ name: 'BCIA11B' })))
+    await waitFor(() =>
+      expect(updateAssetMock).toHaveBeenCalledWith('XPI', 'Default', 'BCIA11', expect.objectContaining({ name: 'BCIA11B' }), 'active'),
+    )
   })
 
   it('sends a null class when editing with the class picker left at Unknown, so the backend re-derives it', async () => {
@@ -146,7 +148,7 @@ describe('AssetsPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
     await waitFor(() =>
-      expect(updateAssetMock).toHaveBeenCalledWith('XPI', 'Uncategorized', 'CLOSEDASSET', expect.objectContaining({ class: null })),
+      expect(updateAssetMock).toHaveBeenCalledWith('XPI', 'Uncategorized', 'CLOSEDASSET', expect.objectContaining({ class: null }), 'historic'),
     )
   })
 

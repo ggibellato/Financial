@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
-import type { AssetAdminCreateDto, AssetAdminDto, AssetAdminUpdateDto } from '../api/types'
+import type { AssetAdminCreateDto, AssetAdminDto, AssetAdminUpdateDto, InvestmentScope } from '../api/types'
 import { getErrorMessage } from '../utils/formatters'
 
 interface AssetsState {
@@ -67,6 +67,7 @@ export interface AssetsData {
     portfolioName: string,
     currentName: string,
     request: AssetAdminUpdateDto,
+    brokerScope?: InvestmentScope,
   ) => Promise<AssetAdminDto>
   deletingKey: string | null
   deleteError: string | null
@@ -96,8 +97,14 @@ export function useAssets(): AssetsData {
   }, [])
 
   const updateAsset = useCallback(
-    async (brokerName: string, portfolioName: string, currentName: string, request: AssetAdminUpdateDto) => {
-      const updated = await apiClient.updateAsset(brokerName, portfolioName, currentName, request)
+    async (
+      brokerName: string,
+      portfolioName: string,
+      currentName: string,
+      request: AssetAdminUpdateDto,
+      brokerScope?: InvestmentScope,
+    ) => {
+      const updated = await apiClient.updateAsset(brokerName, portfolioName, currentName, request, brokerScope)
       dispatch({ type: 'RETRY' })
       return updated
     },

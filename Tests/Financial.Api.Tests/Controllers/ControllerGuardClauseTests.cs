@@ -690,7 +690,7 @@ public class ControllerGuardClauseTests
     {
         public IReadOnlyList<AssetAdminDTO> GetAssets() => throw new NotImplementedException();
         public Task<AssetAdminDTO> CreateAssetAsync(AssetAdminCreateDTO request) => throw new NotImplementedException();
-        public Task<AssetAdminDTO> UpdateAssetAsync(string brokerName, string portfolioName, string currentName, AssetAdminUpdateDTO request) => throw new NotImplementedException();
+        public Task<AssetAdminDTO> UpdateAssetAsync(string brokerName, string portfolioName, string currentName, AssetAdminUpdateDTO request, InvestmentScope scope = InvestmentScope.Active) => throw new NotImplementedException();
     }
 
     private sealed class StubNavigationService : INavigationService

@@ -26,10 +26,16 @@ public interface IPortfolioService
     /// <summary>
     /// Renames an existing portfolio. The parent broker is fixed and not part of this operation.
     /// </summary>
+    /// <param name="scope">
+    /// Which broker record to resolve <paramref name="brokerName"/> against first — the same
+    /// real-world broker can have both an Active and a Historic record, so without it, renaming a
+    /// Historic portfolio under a broker that is also Active would resolve to the wrong record and
+    /// fail with "not found".
+    /// </param>
     /// <exception cref="ArgumentException">A required field is missing.</exception>
     /// <exception cref="KeyNotFoundException">No broker or portfolio by that name exists.</exception>
     /// <exception cref="Domain.Exceptions.InvestmentRuleViolationException">The new name is already in use under that broker.</exception>
-    Task<PortfolioDTO> UpdatePortfolioAsync(string brokerName, string currentName, PortfolioUpdateDTO request);
+    Task<PortfolioDTO> UpdatePortfolioAsync(string brokerName, string currentName, PortfolioUpdateDTO request, InvestmentScope scope = InvestmentScope.Active);
 
     /// <summary>
     /// Deletes a portfolio that holds no assets.

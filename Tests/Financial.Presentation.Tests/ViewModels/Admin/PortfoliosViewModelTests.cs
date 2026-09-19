@@ -96,6 +96,22 @@ public class PortfoliosViewModelTests
         portfolioService.LastUpdateRequest!.Value.BrokerName.Should().Be("XPI");
         portfolioService.LastUpdateRequest.Value.CurrentName.Should().Be("Default");
         portfolioService.LastUpdateRequest.Value.Request.Name.Should().Be("Growth");
+        portfolioService.LastUpdateRequest.Value.Scope.Should().Be(InvestmentScope.Active);
+    }
+
+    [Fact]
+    public async Task EditPortfolioAsync_HistoricPortfolio_ForwardsHistoricScope()
+    {
+        // Regression: without forwarding the portfolio's own broker status as the scope, resolving
+        // the broker for a Historic portfolio under a broker that is also Active would pick the
+        // wrong (Active) record and fail with "not found".
+        var (viewModel, portfolioService, _, dialog) = CreateViewModel();
+        var portfolio = new PortfolioDTO { Name = "Old", BrokerName = "XPI", BrokerStatus = "Historic", AssetCount = 0 };
+        dialog.OnShowPortfolioFormDialog = vm => vm.Name = "Archived";
+
+        await viewModel.EditPortfolioAsync(portfolio);
+
+        portfolioService.LastUpdateRequest!.Value.Scope.Should().Be(InvestmentScope.Historic);
     }
 
     [Fact]

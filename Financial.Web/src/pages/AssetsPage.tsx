@@ -60,22 +60,28 @@ export default function AssetsPage() {
     assetClass: string
   }) => {
     const result = editingAsset
-      ? await updateAsset(editingAsset.brokerName, editingAsset.portfolioName, editingAsset.name, {
-          name: values.name,
-          isin: values.isin,
-          exchange: values.exchange,
-          ticker: values.ticker,
-          country: values.country as AssetAdminDto['country'],
-          localTypeCode: values.localTypeCode,
-          // Left at its default ('Unknown') means the user never touched the Class picker, so the
-          // backend re-derives it from the (possibly just-corrected) Country/LocalTypeCode; any
-          // other selection is an explicit override.
-          class: values.assetClass === 'Unknown' ? null : (values.assetClass as AssetAdminDto['class']),
-          // No form field yet for either of these - left null so the backend preserves whatever the
-          // asset already has (valuation method / income policy pickers are a later increment).
-          valuationMethod: null,
-          incomePolicy: null,
-        })
+      ? await updateAsset(
+          editingAsset.brokerName,
+          editingAsset.portfolioName,
+          editingAsset.name,
+          {
+            name: values.name,
+            isin: values.isin,
+            exchange: values.exchange,
+            ticker: values.ticker,
+            country: values.country as AssetAdminDto['country'],
+            localTypeCode: values.localTypeCode,
+            // Left at its default ('Unknown') means the user never touched the Class picker, so the
+            // backend re-derives it from the (possibly just-corrected) Country/LocalTypeCode; any
+            // other selection is an explicit override.
+            class: values.assetClass === 'Unknown' ? null : (values.assetClass as AssetAdminDto['class']),
+            // No form field yet for either of these - left null so the backend preserves whatever the
+            // asset already has (valuation method / income policy pickers are a later increment).
+            valuationMethod: null,
+            incomePolicy: null,
+          },
+          editingAsset.brokerStatus === 'Active' ? 'active' : 'historic',
+        )
       : await createAsset({
           brokerName: values.brokerName,
           portfolioName: values.portfolioName,

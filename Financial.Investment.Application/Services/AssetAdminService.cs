@@ -89,7 +89,7 @@ public sealed class AssetAdminService : IAssetAdminService
         }
     }
 
-    public async Task<AssetAdminDTO> UpdateAssetAsync(string brokerName, string portfolioName, string currentName, AssetAdminUpdateDTO request)
+    public async Task<AssetAdminDTO> UpdateAssetAsync(string brokerName, string portfolioName, string currentName, AssetAdminUpdateDTO request, InvestmentScope scope = InvestmentScope.Active)
     {
         using var span = StartSpan("UpdateAsset");
         try
@@ -108,7 +108,12 @@ public sealed class AssetAdminService : IAssetAdminService
             await _repository.ApplyAndSaveAsync(() =>
             {
                 var investments = _repository.GetInvestments();
-                broker = investments.FindActiveBroker(requiredBrokerName) ?? investments.FindHistoricBroker(requiredBrokerName)
+                // The same broker name can have both an Active and a Historic record; resolving the
+                // requested scope first is what lets editing a Historic asset under a broker that is
+                // also Active find the record that actually holds this asset.
+                broker = (scope == InvestmentScope.Historic
+                    ? investments.FindHistoricBroker(requiredBrokerName) ?? investments.FindActiveBroker(requiredBrokerName)
+                    : investments.FindActiveBroker(requiredBrokerName) ?? investments.FindHistoricBroker(requiredBrokerName))
                     ?? throw new KeyNotFoundException($"Broker \"{requiredBrokerName}\" was not found.");
                 portfolio = broker.FindPortfolio(requiredPortfolioName)
                     ?? throw new KeyNotFoundException($"Portfolio \"{requiredPortfolioName}\" was not found under broker \"{requiredBrokerName}\".");
@@ -121,7 +126,9 @@ public sealed class AssetAdminService : IAssetAdminService
                 return true;
             }).ConfigureAwait(false);
 
-            var status = _repository.GetBrokerList(InvestmentScope.Active).Any(b => b.Name == broker!.Name) ? "Active" : "Historic";
+            // Reference equality, not name: the same broker name can have both an Active and a
+            // Historic record, so matching by name alone would always report "Active".
+            var status = _repository.GetBrokerList(InvestmentScope.Active).Any(b => ReferenceEquals(b, broker)) ? "Active" : "Historic";
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UpdateAsset");

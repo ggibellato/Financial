@@ -661,7 +661,7 @@ internal sealed class StubPortfolioService : IPortfolioService
 {
     public List<PortfolioDTO> Portfolios { get; set; } = [];
     public PortfolioCreateDTO? LastCreateRequest { get; private set; }
-    public (string BrokerName, string CurrentName, PortfolioUpdateDTO Request)? LastUpdateRequest { get; private set; }
+    public (string BrokerName, string CurrentName, PortfolioUpdateDTO Request, InvestmentScope Scope)? LastUpdateRequest { get; private set; }
     public (string BrokerName, string PortfolioName, InvestmentScope Scope)? LastDeleteRequest { get; private set; }
     public Exception? ThrowOnCreate { get; set; }
     public Exception? ThrowOnUpdate { get; set; }
@@ -682,9 +682,9 @@ internal sealed class StubPortfolioService : IPortfolioService
         return Task.FromResult(created);
     }
 
-    public Task<PortfolioDTO> UpdatePortfolioAsync(string brokerName, string currentName, PortfolioUpdateDTO request)
+    public Task<PortfolioDTO> UpdatePortfolioAsync(string brokerName, string currentName, PortfolioUpdateDTO request, InvestmentScope scope = InvestmentScope.Active)
     {
-        LastUpdateRequest = (brokerName, currentName, request);
+        LastUpdateRequest = (brokerName, currentName, request, scope);
         if (ThrowOnUpdate is not null)
         {
             throw ThrowOnUpdate;
@@ -711,7 +711,7 @@ internal sealed class StubAssetAdminService : IAssetAdminService
 {
     public List<AssetAdminDTO> Assets { get; set; } = [];
     public AssetAdminCreateDTO? LastCreateRequest { get; private set; }
-    public (string BrokerName, string PortfolioName, string CurrentName, AssetAdminUpdateDTO Request)? LastUpdateRequest { get; private set; }
+    public (string BrokerName, string PortfolioName, string CurrentName, AssetAdminUpdateDTO Request, InvestmentScope Scope)? LastUpdateRequest { get; private set; }
     public Exception? ThrowOnCreate { get; set; }
     public Exception? ThrowOnUpdate { get; set; }
 
@@ -743,9 +743,9 @@ internal sealed class StubAssetAdminService : IAssetAdminService
         return Task.FromResult(created);
     }
 
-    public Task<AssetAdminDTO> UpdateAssetAsync(string brokerName, string portfolioName, string currentName, AssetAdminUpdateDTO request)
+    public Task<AssetAdminDTO> UpdateAssetAsync(string brokerName, string portfolioName, string currentName, AssetAdminUpdateDTO request, InvestmentScope scope = InvestmentScope.Active)
     {
-        LastUpdateRequest = (brokerName, portfolioName, currentName, request);
+        LastUpdateRequest = (brokerName, portfolioName, currentName, request, scope);
         if (ThrowOnUpdate is not null)
         {
             throw ThrowOnUpdate;

@@ -74,7 +74,7 @@ public sealed class PortfolioService : IPortfolioService
         }
     }
 
-    public async Task<PortfolioDTO> UpdatePortfolioAsync(string brokerName, string currentName, PortfolioUpdateDTO request)
+    public async Task<PortfolioDTO> UpdatePortfolioAsync(string brokerName, string currentName, PortfolioUpdateDTO request, InvestmentScope scope = InvestmentScope.Active)
     {
         using var span = StartSpan("UpdatePortfolio");
         try
@@ -89,13 +89,20 @@ public sealed class PortfolioService : IPortfolioService
             await _repository.ApplyAndSaveAsync(() =>
             {
                 var investments = _repository.GetInvestments();
-                broker = investments.FindActiveBroker(requiredBrokerName) ?? investments.FindHistoricBroker(requiredBrokerName)
+                // The same broker name can have both an Active and a Historic record; resolving the
+                // requested scope first is what lets renaming a Historic portfolio under a broker that
+                // is also Active find the record that actually holds this portfolio.
+                broker = (scope == InvestmentScope.Historic
+                    ? investments.FindHistoricBroker(requiredBrokerName) ?? investments.FindActiveBroker(requiredBrokerName)
+                    : investments.FindActiveBroker(requiredBrokerName) ?? investments.FindHistoricBroker(requiredBrokerName))
                     ?? throw new KeyNotFoundException($"Broker \"{requiredBrokerName}\" was not found.");
                 updated = broker.RenamePortfolio(currentName, newName);
                 return true;
             }).ConfigureAwait(false);
 
-            var status = _repository.GetBrokerList(InvestmentScope.Active).Any(b => b.Name == broker!.Name) ? "Active" : "Historic";
+            // Reference equality, not name: the same broker name can have both an Active and a
+            // Historic record, so matching by name alone would always report "Active".
+            var status = _repository.GetBrokerList(InvestmentScope.Active).Any(b => ReferenceEquals(b, broker)) ? "Active" : "Historic";
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UpdatePortfolio");

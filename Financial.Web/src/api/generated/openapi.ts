@@ -473,7 +473,10 @@ export interface paths {
         /** Updates an existing asset's identity fields, regardless of its transaction history. */
         put: {
             parameters: {
-                query?: never;
+                query?: {
+                    /** @description Which broker record (Active or Historic) to resolve `brokerName` against; defaults to Active. */
+                    scope?: string;
+                };
                 header?: never;
                 path: {
                     /** @description The asset's parent broker name. */
@@ -4185,7 +4188,10 @@ export interface paths {
         /** Renames an existing portfolio. The parent broker is fixed and not part of this operation. */
         put: {
             parameters: {
-                query?: never;
+                query?: {
+                    /** @description Which broker record (Active or Historic) to resolve `brokerName` against; defaults to Active. */
+                    scope?: string;
+                };
                 header?: never;
                 path: {
                     /** @description The portfolio's parent broker name. */
