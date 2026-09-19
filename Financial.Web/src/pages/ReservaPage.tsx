@@ -1,5 +1,5 @@
 import { Fragment } from 'react'
-import { Button } from '@fluentui/react-components'
+import { Button, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
 import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import EditMovementForm from '../components/EditMovementForm'
 import ErrorState from '../components/ErrorState'
@@ -180,10 +180,10 @@ export default function ReservaPage() {
         <div className="reserva-page__grids-row">
           <section className="reserva-page__section reserva-page__section--grid reserva-page__section--balances">
             <div className="reserva-page__table-scroll">
-              <table className="reserva-page__table data-table">
+              <Table className="reserva-page__table data-table">
                 <BalanceColumns />
-                <thead>
-                  <tr>
+                <TableHeader>
+                  <TableRow>
                     <SortableColumnHeader
                       label="Bucket"
                       columnKey="bucket"
@@ -197,48 +197,48 @@ export default function ReservaPage() {
                       sortDirection={balanceSortState?.columnKey === 'balance' ? balanceSortState.direction : undefined}
                       onSort={requestBalanceSort}
                     />
-                  </tr>
-                </thead>
-                <tbody>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {sortedBalances.map((b) => (
-                    <tr key={b.bucketId}>
-                      <td>{b.bucketName}</td>
-                      <td className="data-table__col--numeric">{formatN2(b.balance)}</td>
-                    </tr>
+                    <TableRow key={b.bucketId}>
+                      <TableCell>{b.bucketName}</TableCell>
+                      <TableCell className="data-table__col--numeric">{formatN2(b.balance)}</TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
-            <table className="reserva-page__table reserva-page__totals-table data-table">
+            <Table className="reserva-page__table reserva-page__totals-table data-table">
               <BalanceColumns />
-              <tbody>
-                <tr className="reserva-page__totals-row">
-                  <td>Total</td>
-                  <td className="data-table__col--numeric">{formatN2(totalBalance)}</td>
-                </tr>
-              </tbody>
-            </table>
+              <TableBody>
+                <TableRow className="reserva-page__totals-row">
+                  <TableCell>Total</TableCell>
+                  <TableCell className="data-table__col--numeric">{formatN2(totalBalance)}</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
           </section>
 
           <section className="reserva-page__section reserva-page__section--grid reserva-page__section--movements">
             <div className="reserva-page__table-scroll">
-              <table className="reserva-page__table data-table">
+              <Table className="reserva-page__table data-table">
                 <MovementColumns />
-                <thead>
-                  <tr>
-                    <th />
-                    <th>Date</th>
-                    <th>Bucket</th>
-                    <th>Description</th>
-                    <th className="data-table__col--numeric">Amount</th>
-                    <th />
-                  </tr>
-                </thead>
-                <tbody>
+                <TableHeader>
+                  <TableRow>
+                    <TableHeaderCell />
+                    <TableHeaderCell>Date</TableHeaderCell>
+                    <TableHeaderCell>Bucket</TableHeaderCell>
+                    <TableHeaderCell>Description</TableHeaderCell>
+                    <TableHeaderCell className="data-table__col--numeric">Amount</TableHeaderCell>
+                    <TableHeaderCell />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {movementRows.map((m) => (
                     <Fragment key={m.id}>
-                      <tr>
-                        <td>
+                      <TableRow>
+                        <TableCell>
                           {m.isLocked && (
                             <span
                               className="reserva-page__lock-icon"
@@ -249,14 +249,14 @@ export default function ReservaPage() {
                               🔒
                             </span>
                           )}
-                        </td>
-                        <td>{formatShortDate(m.date)}</td>
-                        <td>{m.bucketName}</td>
-                        <td>
+                        </TableCell>
+                        <TableCell>{formatShortDate(m.date)}</TableCell>
+                        <TableCell>{m.bucketName}</TableCell>
+                        <TableCell>
                           <TruncatedText text={m.description} />
-                        </td>
-                        <td className="data-table__col--numeric">{formatN2(m.amount)}</td>
-                        <td>
+                        </TableCell>
+                        <TableCell className="data-table__col--numeric">{formatN2(m.amount)}</TableCell>
+                        <TableCell>
                           <div className="data-table__actions-cell">
                             <button
                               className="data-table__action-btn"
@@ -284,20 +284,20 @@ export default function ReservaPage() {
                               <DeleteRegular />
                             </button>
                           </div>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                       {m.groupTotal !== null && (
-                        <tr className="reserva-page__totals-row">
-                          <td />
-                          <td colSpan={3}>Total split for {m.description}</td>
-                          <td className="data-table__col--numeric">{formatN2(m.groupTotal)}</td>
-                          <td />
-                        </tr>
+                        <TableRow className="reserva-page__totals-row">
+                          <TableCell />
+                          <TableCell colSpan={3}>Total split for {m.description}</TableCell>
+                          <TableCell className="data-table__col--numeric">{formatN2(m.groupTotal)}</TableCell>
+                          <TableCell />
+                        </TableRow>
                       )}
                     </Fragment>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           </section>
         </div>

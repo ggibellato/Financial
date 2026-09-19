@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Button } from '@fluentui/react-components'
+import { Button, Table, TableBody, TableCell, TableHeader, TableRow } from '@fluentui/react-components'
 import { SearchRegular } from '@fluentui/react-icons'
 import { apiClient } from '../api/financialApiClient'
 import type { BrokerNodeDto, PortfolioReferenceDto } from '../api/types'
@@ -171,9 +171,9 @@ export default function CurrentValuesPage() {
 
       {results.length > 0 && (
         <section className="current-values__results">
-          <table className="data-table">
-            <thead>
-              <tr>
+          <Table className="data-table">
+            <TableHeader>
+              <TableRow>
                 <SortableColumnHeader
                   label="Ticker"
                   columnKey="ticker"
@@ -193,20 +193,20 @@ export default function CurrentValuesPage() {
                   sortDirection={sortState?.columnKey === 'price' ? sortState.direction : undefined}
                   onSort={requestSort}
                 />
-              </tr>
-            </thead>
-            <tbody>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {sortedRows.map((result) => (
-                <tr key={`${result.exchange}-${result.ticker}-${result.assetName}`}>
-                  <td>{result.ticker}</td>
-                  <td>{result.name}</td>
-                  <td className="current-values__col--price data-table__col--numeric">
+                <TableRow key={`${result.exchange}-${result.ticker}-${result.assetName}`}>
+                  <TableCell>{result.ticker}</TableCell>
+                  <TableCell>{result.name}</TableCell>
+                  <TableCell className="current-values__col--price data-table__col--numeric">
                     {result.price === null ? '—' : formatN2(result.price)}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </section>
       )}
     </section>

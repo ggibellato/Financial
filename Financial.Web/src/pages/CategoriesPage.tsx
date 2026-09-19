@@ -97,7 +97,7 @@ export default function CategoriesPage() {
           {categories.length === 0 ? 'No categories yet — create one to get started.' : 'No active categories.'}
         </p>
       ) : (
-        <Table aria-label="Categories">
+        <Table aria-label="Categories" className="data-table">
           <TableHeader>
             <TableRow>
               <TableHeaderCell>Name</TableHeaderCell>

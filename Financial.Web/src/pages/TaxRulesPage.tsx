@@ -94,7 +94,7 @@ export default function TaxRulesPage() {
       ) : taxRules.length === 0 ? (
         <p className="tax-rules-page__empty">No tax rules configured yet — create one to get started.</p>
       ) : (
-        <Table aria-label="Tax Rules">
+        <Table aria-label="Tax Rules" className="data-table">
           <TableHeader>
             <TableRow>
               <TableHeaderCell>Jurisdiction</TableHeaderCell>

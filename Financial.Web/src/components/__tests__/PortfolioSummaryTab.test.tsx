@@ -745,7 +745,7 @@ describe('PortfolioSummaryTab', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [ITEM_1], rowPrices: [LOADING_ROW_PRICE] })
     renderComponent()
-    const header = screen.getByText('Last Month')
+    const header = screen.getByRole('columnheader', { name: 'Last Month' })
     expect(header).toHaveClass('portfolio-summary__credits-separator')
   })
 

@@ -135,6 +135,18 @@ unthemed classic Windows chrome — a known, open gap. Closing it needs a custom
 
 ## Data, trees, and charts
 
+- **Row height**: every `DataGridTextColumn` on every `DataGrid` sets an
+  `ElementStyle` — `PlainColumnTextStyle`, `NumericColumnTextStyle`, or
+  `TruncatedColumnTextStyle` (`App.xaml`), never left unstyled. No `DataGrid`
+  sets `RowHeight`/`MinRowHeight`, and no view scopes its own `DataGridCell`/
+  `DataGridRow` padding: the ~32px row height every grid in the app shares
+  comes entirely from these three shared column styles (in practice, from
+  `NumericColumnTextStyle`'s `Padding="8"`, since the tallest cell in a row
+  governs that row's height) plus the base `DataGrid`/`DataGridCell` styles
+  in `App.xaml`, matching Web's `.data-table` baseline (`docs/ui/react.md`
+  "Grid row height"). Confirmed and fixed across every Admin grid in 2026-09
+  (several had columns with no `ElementStyle` at all, which lost both the
+  shared row height and `VerticalAlignment="Center"`).
 - A page combining one grid with one chart (Investment Transactions/Credits/
   Price History) follows `docs/ui/forms-data-and-visualisations.md`'s
   "Grid-and-chart pages" rule: filters at the top always, then side-by-side

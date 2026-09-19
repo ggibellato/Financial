@@ -47,9 +47,12 @@
             <DataGrid Grid.Row="3" ItemsSource="{Binding ReserveBuckets}" AutoGenerateColumns="False" IsReadOnly="True"
                       AutomationProperties.Name="Reserve Buckets">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Binding="{Binding Name}" Header="Name" Width="*"/>
-                    <DataGridTextColumn Binding="{Binding SplitPercentage}" Header="Split Percentage" Width="130"/>
-                    <DataGridTextColumn Binding="{Binding IsActive}" Header="Active" Width="80"/>
+                    <DataGridTextColumn Binding="{Binding Name}" Header="Name" Width="*"
+                                         ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                    <DataGridTextColumn Binding="{Binding SplitPercentage}" Header="Split Percentage" Width="130"
+                                         ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                    <DataGridTextColumn Binding="{Binding IsActive}" Header="Active" Width="80"
+                                         ElementStyle="{StaticResource PlainColumnTextStyle}"/>
                     <DataGridTemplateColumn Header="" Width="Auto">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>

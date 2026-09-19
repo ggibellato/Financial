@@ -37,6 +37,30 @@ is the reference.
   filter/mode "chip" pattern documented in `forms-data-and-visualisations.md`
   (same underlying component, different content role).
 
+## Grid row height
+
+Every grid — Fluent's `<Table>`/`<TableHeader>`/`<TableBody>`/`<TableRow>`/
+`<TableCell>` components, used consistently across the whole app since 2026-09
+(the handful of grids that still used a plain `<table>` — `TotalsGrid`,
+`CardsGrid`, `ControleMaePage`, `ReservaPage`, `MensaisPage`,
+`CurrentValuesPage`, `DividendCheckPage`, `RecurringBillsPage`,
+`AnnualSummaryPage`, `PortfolioSummaryTab`, `UpcomingIncomePanel` — were
+migrated to Fluent's `Table` for consistency) — carries the shared
+`.data-table` class (`Financial.Web/src/styles/data-table.css`) on the
+`<Table>`/`<table>` root. That class is what gives every grid a uniform
+~32px row height (13px font, 8px/10px cell padding). **Never omit
+`.data-table`** from a grid's `<Table>`, and never pass a `size` prop to
+override it: Fluent's `TableCell` hardcodes `height: 44px` for its default
+`"medium"` size (34px for `"small"`, 24px for `"extra-small"`) — none of
+which match the app's row height — and `.data-table td`'s
+`height: auto` rule is what neutralizes that and restores natural,
+content-driven sizing (see that rule's own comment for why it reliably wins
+regardless of style-injection order). The two exceptions that intentionally
+do **not** use this grid pattern are documented where they live:
+`IncomeSplitForm`'s post-submit result table (see
+`forms-data-and-visualisations.md`) and a chart's own accessible-data-table
+legend (e.g. `AllocationPieChart`) — neither is a sortable/interactive grid.
+
 ## Long/variable-length text in grid cells
 
 Never let a table/grid cell wrap (`white-space: normal`, or CSS missing

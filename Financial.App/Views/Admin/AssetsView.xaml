@@ -60,11 +60,16 @@
             <DataGrid Grid.Row="3" ItemsSource="{Binding Assets}" AutoGenerateColumns="False" IsReadOnly="True"
                       AutomationProperties.Name="Assets">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Binding="{Binding Name}" Header="Name" Width="*"/>
-                    <DataGridTextColumn Binding="{Binding Ticker}" Header="Ticker" Width="100"/>
-                    <DataGridTextColumn Binding="{Binding BrokerName}" Header="Broker" Width="120"/>
-                    <DataGridTextColumn Binding="{Binding PortfolioName}" Header="Portfolio" Width="120"/>
-                    <DataGridTextColumn Binding="{Binding Class}" Header="Class" Width="100"/>
+                    <DataGridTextColumn Binding="{Binding Name}" Header="Name" Width="*"
+                                         ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                    <DataGridTextColumn Binding="{Binding Ticker}" Header="Ticker" Width="100"
+                                         ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                    <DataGridTextColumn Binding="{Binding BrokerName}" Header="Broker" Width="120"
+                                         ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                    <DataGridTextColumn Binding="{Binding PortfolioName}" Header="Portfolio" Width="120"
+                                         ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                    <DataGridTextColumn Binding="{Binding Class}" Header="Class" Width="100"
+                                         ElementStyle="{StaticResource PlainColumnTextStyle}"/>
                     <DataGridTextColumn Binding="{Binding Quantity, StringFormat=N8}" Header="Quantity" Width="100">
                         <DataGridTextColumn.ElementStyle>
                             <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>

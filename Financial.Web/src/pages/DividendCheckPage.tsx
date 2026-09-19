@@ -1,5 +1,5 @@
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
-import { Button } from '@fluentui/react-components'
+import { Button, Table, TableBody, TableCell, TableHeader, TableRow } from '@fluentui/react-components'
 import { SearchRegular } from '@fluentui/react-icons'
 import { apiClient } from '../api/financialApiClient'
 import type { DividendHistoryItemDto, DividendSummaryDto, DividendYearTotalDto, WatchlistItemDto } from '../api/types'
@@ -138,9 +138,9 @@ export default function DividendCheckPage() {
               {displayedHistory.length === 0 ? (
                 <p>No dividend history found.</p>
               ) : (
-                <table className="data-table">
-                  <thead>
-                    <tr>
+                <Table className="data-table">
+                  <TableHeader>
+                    <TableRow>
                       <SortableColumnHeader
                         label="Type"
                         columnKey="type"
@@ -160,18 +160,18 @@ export default function DividendCheckPage() {
                         sortDirection={historySortState?.columnKey === 'value' ? historySortState.direction : undefined}
                         onSort={requestHistorySort}
                       />
-                    </tr>
-                  </thead>
-                  <tbody>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {displayedHistory.map((item) => (
-                      <tr key={`${item.date}-${item.type}-${item.value}`}>
-                        <td>{item.type}</td>
-                        <td>{formatShortDateUtc(item.date)}</td>
-                        <td className="data-table__col--numeric">{formatN2(item.value)}</td>
-                      </tr>
+                      <TableRow key={`${item.date}-${item.type}-${item.value}`}>
+                        <TableCell>{item.type}</TableCell>
+                        <TableCell>{formatShortDateUtc(item.date)}</TableCell>
+                        <TableCell className="data-table__col--numeric">{formatN2(item.value)}</TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               )}
             </div>
             <div className="dividend-check__table-column">
@@ -179,9 +179,9 @@ export default function DividendCheckPage() {
               {displayedYearTotals.length === 0 ? (
                 <p>No annual totals available.</p>
               ) : (
-                <table className="data-table">
-                  <thead>
-                    <tr>
+                <Table className="data-table">
+                  <TableHeader>
+                    <TableRow>
                       <SortableColumnHeader
                         label="Year"
                         columnKey="year"
@@ -195,17 +195,17 @@ export default function DividendCheckPage() {
                         sortDirection={yearSortState?.columnKey === 'total' ? yearSortState.direction : undefined}
                         onSort={requestYearSort}
                       />
-                    </tr>
-                  </thead>
-                  <tbody>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {displayedYearTotals.map((total) => (
-                      <tr key={total.year}>
-                        <td>{total.year}</td>
-                        <td className="data-table__col--numeric">{formatN2(total.total)}</td>
-                      </tr>
+                      <TableRow key={total.year}>
+                        <TableCell>{total.year}</TableCell>
+                        <TableCell className="data-table__col--numeric">{formatN2(total.total)}</TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               )}
             </div>
           </section>

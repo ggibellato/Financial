@@ -166,7 +166,7 @@ export default function AssetsPage() {
       ) : filteredAssets.length === 0 ? (
         <p className="assets-page__empty">No assets yet — create one to get started.</p>
       ) : (
-        <Table aria-label="Assets">
+        <Table aria-label="Assets" className="data-table">
           <TableHeader>
             <TableRow>
               <TableHeaderCell>Name</TableHeaderCell>

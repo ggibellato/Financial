@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
 import ErrorState from '../ErrorState'
 import FilterTabList from '../FilterTabList'
 import LoadingState from '../LoadingState'
@@ -49,28 +50,26 @@ export default function UpcomingIncomePanel({ entries, isLoading, error, retry }
         <p className="upcoming-income__empty">No upcoming payments detected in the next {windowDays} days</p>
       ) : (
         <div className="upcoming-income__table-wrapper">
-          <table className="data-table" aria-label="Upcoming income">
-            <thead>
-              <tr>
-                <th scope="col">Asset</th>
-                <th scope="col">Broker</th>
-                <th scope="col">Projected Date</th>
-                <th scope="col" className="data-table__col--numeric">
-                  Projected Amount
-                </th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table className="data-table" aria-label="Upcoming income">
+            <TableHeader>
+              <TableRow>
+                <TableHeaderCell>Asset</TableHeaderCell>
+                <TableHeaderCell>Broker</TableHeaderCell>
+                <TableHeaderCell>Projected Date</TableHeaderCell>
+                <TableHeaderCell className="data-table__col--numeric">Projected Amount</TableHeaderCell>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {visibleEntries.map((entry) => (
-                <tr key={`${entry.brokerName}-${entry.assetName}-${entry.projectedNextDate}`}>
-                  <td>{entry.assetName}</td>
-                  <td>{entry.brokerName}</td>
-                  <td>{formatShortDate(entry.projectedNextDate)}</td>
-                  <td className="data-table__col--numeric">{formatN2(entry.projectedAmount)}</td>
-                </tr>
+                <TableRow key={`${entry.brokerName}-${entry.assetName}-${entry.projectedNextDate}`}>
+                  <TableCell>{entry.assetName}</TableCell>
+                  <TableCell>{entry.brokerName}</TableCell>
+                  <TableCell>{formatShortDate(entry.projectedNextDate)}</TableCell>
+                  <TableCell className="data-table__col--numeric">{formatN2(entry.projectedAmount)}</TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
     </div>

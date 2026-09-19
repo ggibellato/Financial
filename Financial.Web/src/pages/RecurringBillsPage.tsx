@@ -8,6 +8,12 @@ import {
   DialogTitle,
   MessageBar,
   MessageBarBody,
+  Table,
+  TableBody,
+  TableCell,
+  TableHeader,
+  TableHeaderCell,
+  TableRow,
 } from '@fluentui/react-components'
 import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import RecurringBillFormDialog, { type RecurringBillFormValues } from '../components/RecurringBillFormDialog'
@@ -106,9 +112,9 @@ export default function RecurringBillsPage() {
       ) : recurringBills.length === 0 ? (
         <p className="recurring-bills-page__empty">No recurring bills yet — create one to get started.</p>
       ) : (
-        <table className="data-table" aria-label="Recurring Bills">
-          <thead>
-            <tr>
+        <Table className="data-table" aria-label="Recurring Bills">
+          <TableHeader>
+            <TableRow>
               <SortableColumnHeader
                 label="Due Day"
                 columnKey="dueDay"
@@ -140,18 +146,18 @@ export default function RecurringBillsPage() {
                 sortDirection={sortState?.columnKey === 'status' ? sortState.direction : undefined}
                 onSort={requestSort}
               />
-              <th className="data-table__col--action" />
-            </tr>
-          </thead>
-          <tbody>
+              <TableHeaderCell className="data-table__col--action" />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {sortedBills.map((bill) => (
-              <tr key={bill.id}>
-                <td>{bill.dueDay}</td>
-                <td>{bill.description}</td>
-                <td className="data-table__col--numeric">{formatN2(bill.value)}</td>
-                <td>{bill.area}</td>
-                <td>{bill.status}</td>
-                <td className="data-table__col--action">
+              <TableRow key={bill.id}>
+                <TableCell>{bill.dueDay}</TableCell>
+                <TableCell>{bill.description}</TableCell>
+                <TableCell className="data-table__col--numeric">{formatN2(bill.value)}</TableCell>
+                <TableCell>{bill.area}</TableCell>
+                <TableCell>{bill.status}</TableCell>
+                <TableCell className="data-table__col--action">
                   <div className="data-table__actions-cell">
                     <Button
                       appearance="subtle"
@@ -169,11 +175,11 @@ export default function RecurringBillsPage() {
                       onClick={() => setConfirmingDelete(bill)}
                     />
                   </div>
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       )}
 
       {(isCreating || editingBill) && (

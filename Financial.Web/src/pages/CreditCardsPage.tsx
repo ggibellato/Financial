@@ -73,7 +73,7 @@ export default function CreditCardsPage() {
       ) : creditCards.length === 0 ? (
         <p className="credit-cards-page__empty">No credit cards yet — create one to get started.</p>
       ) : (
-        <Table aria-label="Credit Cards">
+        <Table aria-label="Credit Cards" className="data-table">
           <TableHeader>
             <TableRow>
               <TableHeaderCell>Name</TableHeaderCell>

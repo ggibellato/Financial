@@ -85,7 +85,7 @@ export default function IncomeSourcesPage() {
       ) : incomeSources.length === 0 ? (
         <p className="income-sources-page__empty">No income sources yet — create one to get started.</p>
       ) : (
-        <Table aria-label="Income Sources">
+        <Table aria-label="Income Sources" className="data-table">
           <TableHeader>
             <TableRow>
               <TableHeaderCell>Name</TableHeaderCell>

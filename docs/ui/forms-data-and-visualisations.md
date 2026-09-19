@@ -154,12 +154,16 @@ reference on both platforms.
 **Post-submit itemized result view:** a one-time confirmation shown after a
 form submits, itemizing what was recorded (e.g. `IncomeSplitForm`'s "posted"
 summary of amounts per bucket), uses a `MessageBar intent="success"` for the
-confirmation line, and the same raw `<table>` + shared `.data-table` CSS
-class every other grid in this app uses for its itemized rows — not Fluent's
-`Table` component, which is built for interactive/sortable grids the result
-view isn't. Give the result its own small component-local CSS file for any
-table variant it needs (e.g. a narrower value column) rather than reaching
-into another page's stylesheet for classes it doesn't own.
+confirmation line, and a raw `<table>` with the shared `.data-table` CSS
+class for its itemized rows — deliberately **not** Fluent's `Table`
+component, which every sortable/interactive grid in this app uses instead
+(`docs/ui/react.md` "Grid row height"). This one stays a plain `<table>`
+because it is a static, one-time confirmation snippet, not a grid a user
+sorts or filters — the distinction that matters, not the row-height CSS
+(`.data-table` gives both forms the same ~32px row height either way). Give
+the result its own small component-local CSS file for any table variant it
+needs (e.g. a narrower value column) rather than reaching into another
+page's stylesheet for classes it doesn't own.
 `IncomeSplitForm.tsx`/`IncomeSplitForm.css` is the reference.
 
 ### Form actions and saving
