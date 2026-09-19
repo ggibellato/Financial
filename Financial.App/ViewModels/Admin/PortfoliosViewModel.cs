@@ -145,7 +145,11 @@ public class PortfoliosViewModel : ViewModelBase
         ActionError = null;
         try
         {
-            await _portfolioService.UpdatePortfolioAsync(portfolio.BrokerName, portfolio.Name, new PortfolioUpdateDTO { Name = dialog.Name });
+            await _portfolioService.UpdatePortfolioAsync(
+                portfolio.BrokerName,
+                portfolio.Name,
+                new PortfolioUpdateDTO { Name = dialog.Name },
+                portfolio.BrokerStatus == "Active" ? InvestmentScope.Active : InvestmentScope.Historic);
             await RefreshAsync();
         }
         catch (Exception ex)

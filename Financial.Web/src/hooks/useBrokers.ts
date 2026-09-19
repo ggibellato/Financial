@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
-import type { BrokerCreateDto, BrokerDto, BrokerUpdateDto, CostBasisMethod } from '../api/types'
+import type { BrokerCreateDto, BrokerDto, BrokerUpdateDto, CostBasisMethod, InvestmentScope } from '../api/types'
 import { getErrorMessage } from '../utils/formatters'
 
 interface BrokersState {
@@ -57,8 +57,8 @@ export interface BrokersData {
   error: string | null
   retry: () => void
   createBroker: (request: BrokerCreateDto) => Promise<BrokerDto>
-  updateBroker: (currentName: string, request: BrokerUpdateDto) => Promise<BrokerDto>
-  setCostBasisMethod: (name: string, method: CostBasisMethod) => Promise<BrokerDto>
+  updateBroker: (currentName: string, request: BrokerUpdateDto, scope?: InvestmentScope) => Promise<BrokerDto>
+  setCostBasisMethod: (name: string, method: CostBasisMethod, scope?: InvestmentScope) => Promise<BrokerDto>
   deletingName: string | null
   deleteError: string | null
   deleteBroker: (name: string) => void
@@ -85,14 +85,14 @@ export function useBrokers(): BrokersData {
     return created
   }, [])
 
-  const updateBroker = useCallback(async (currentName: string, request: BrokerUpdateDto) => {
-    const updated = await apiClient.updateBroker(currentName, request)
+  const updateBroker = useCallback(async (currentName: string, request: BrokerUpdateDto, scope?: InvestmentScope) => {
+    const updated = await apiClient.updateBroker(currentName, request, scope)
     dispatch({ type: 'RETRY' })
     return updated
   }, [])
 
-  const setCostBasisMethod = useCallback(async (name: string, method: CostBasisMethod) => {
-    const updated = await apiClient.setCostBasisMethod(name, { method })
+  const setCostBasisMethod = useCallback(async (name: string, method: CostBasisMethod, scope?: InvestmentScope) => {
+    const updated = await apiClient.setCostBasisMethod(name, { method }, scope)
     dispatch({ type: 'RETRY' })
     return updated
   }, [])

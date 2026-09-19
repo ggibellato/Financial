@@ -1,4 +1,5 @@
 using Financial.Investment.Application.DTOs;
+using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Services;
 using Financial.Investment.Domain.Entities;
 using Financial.Investment.Domain.Exceptions;
@@ -311,6 +312,36 @@ public class AssetAdminServiceTests
 
         await act.Should().ThrowAsync<KeyNotFoundException>();
         _repository.WriteCallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task UpdateAssetAsync_HistoricAssetUnderBrokerThatIsAlsoActive_ScopeHistoric_UpdatesTheHistoricAsset()
+    {
+        // Regression: the same broker name can have both an Active and a Historic record (an
+        // archived asset creates the Historic one alongside the still-trading Active one). Without
+        // an explicit scope, resolving the broker defaulted to Active-first and threw "not found"
+        // for an asset that only exists under the Historic record.
+        _repository.Investments = Investments.Create();
+        var activeBroker = Broker.Create("XPI", "BRL");
+        activeBroker.CreatePortfolio("Default").RegisterAsset(Asset.Create("STILL-TRADING", "ISIN123", "NYSE", "AAA"));
+        _repository.Investments.AddActiveBroker(activeBroker);
+
+        var historicBroker = Broker.Create("XPI", "BRL");
+        historicBroker.CreatePortfolio("Default").RegisterAsset(Asset.Create("AAAA", "ISIN456", "NYSE", "BBB"));
+        _repository.Investments.AddHistoricBroker(historicBroker);
+
+        var result = await CreateService().UpdateAssetAsync("XPI", "Default", "AAAA", new AssetAdminUpdateDTO
+        {
+            Name = "AAAB",
+        }, InvestmentScope.Historic);
+
+        using (new AssertionScope())
+        {
+            result.Name.Should().Be("AAAB");
+            result.BrokerStatus.Should().Be("Historic");
+            historicBroker.FindPortfolio("Default")!.FindAsset("AAAB").Should().NotBeNull();
+            activeBroker.FindPortfolio("Default")!.FindAsset("STILL-TRADING").Should().NotBeNull();
+        }
     }
 
     private AssetAdminService CreateService() => new(_repository, _tracer, _logger);

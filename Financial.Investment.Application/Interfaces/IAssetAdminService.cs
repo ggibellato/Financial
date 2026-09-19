@@ -1,4 +1,5 @@
 using Financial.Investment.Application.DTOs;
+using Financial.Investment.Application.Enums;
 
 namespace Financial.Investment.Application.Interfaces;
 
@@ -26,8 +27,14 @@ public interface IAssetAdminService
     /// <summary>
     /// Updates an existing asset's identity fields, regardless of its transaction history.
     /// </summary>
+    /// <param name="scope">
+    /// Which broker record to resolve <paramref name="brokerName"/> against first — needed because
+    /// the same real-world broker can have both an Active and a Historic record; without it, editing
+    /// a Historic asset under a broker that is also Active would resolve to the wrong (Active) record
+    /// and fail with "not found", even though the broker name matches.
+    /// </param>
     /// <exception cref="ArgumentException">A required field is missing, or the ISIN is not blank and not validly formatted.</exception>
     /// <exception cref="KeyNotFoundException">No broker, portfolio, or asset by that name exists.</exception>
     /// <exception cref="Domain.Exceptions.InvestmentRuleViolationException">The new name is already in use under that portfolio.</exception>
-    Task<AssetAdminDTO> UpdateAssetAsync(string brokerName, string portfolioName, string currentName, AssetAdminUpdateDTO request);
+    Task<AssetAdminDTO> UpdateAssetAsync(string brokerName, string portfolioName, string currentName, AssetAdminUpdateDTO request, InvestmentScope scope = InvestmentScope.Active);
 }

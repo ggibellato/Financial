@@ -110,7 +110,7 @@ describe('useBrokers', () => {
       await result.current.updateBroker('XPI', { name: 'XPI Renamed', currency: 'USD' })
     })
 
-    expect(updateBrokerMock).toHaveBeenCalledWith('XPI', { name: 'XPI Renamed', currency: 'USD' })
+    expect(updateBrokerMock).toHaveBeenCalledWith('XPI', { name: 'XPI Renamed', currency: 'USD' }, undefined)
     await waitFor(() => expect(getAdminBrokersMock).toHaveBeenCalledTimes(2))
   })
 
@@ -129,7 +129,7 @@ describe('useBrokers', () => {
       await result.current.setCostBasisMethod('XPI', 'FIFO')
     })
 
-    expect(setCostBasisMethodMock).toHaveBeenCalledWith('XPI', { method: 'FIFO' })
+    expect(setCostBasisMethodMock).toHaveBeenCalledWith('XPI', { method: 'FIFO' }, undefined)
     await waitFor(() => expect(getAdminBrokersMock).toHaveBeenCalledTimes(2))
   })
 

@@ -55,20 +55,21 @@ public sealed class AssetsController : ControllerBase
     /// <param name="portfolioName">The asset's parent portfolio name.</param>
     /// <param name="assetName">The asset's current name.</param>
     /// <param name="request">The asset's new identity fields.</param>
+    /// <param name="scope">Which broker record (Active or Historic) to resolve <paramref name="brokerName"/> against; defaults to Active.</param>
     /// <returns>200 OK with the updated asset, 400 Bad Request if invalid, 404 Not Found if the broker, portfolio or asset doesn't exist, or 409 Conflict if the new name is already in use under that portfolio.</returns>
     [HttpPut("{brokerName}/{portfolioName}/{assetName}")]
     [ProducesResponseType(typeof(AssetAdminDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<AssetAdminDTO>> UpdateAsset(string brokerName, string portfolioName, string assetName, [FromBody] AssetAdminUpdateDTO? request)
+    public async Task<ActionResult<AssetAdminDTO>> UpdateAsset(string brokerName, string portfolioName, string assetName, [FromBody] AssetAdminUpdateDTO? request, [FromQuery] string? scope = null)
     {
         if (request is null)
         {
             return BadRequest();
         }
 
-        return Ok(await _assetAdminService.UpdateAssetAsync(brokerName, portfolioName, assetName, request));
+        return Ok(await _assetAdminService.UpdateAssetAsync(brokerName, portfolioName, assetName, request, InvestmentScopeParser.ParseOrDefault(scope)));
     }
 
     /// <summary>Returns the full details for a single asset.</summary>

@@ -1,4 +1,5 @@
 using Financial.Investment.Application.DTOs;
+using Financial.Investment.Application.Enums;
 using Financial.Investment.Domain.Entities;
 using Financial.Presentation.App.ViewModels.Admin;
 using Financial.TestUtilities;
@@ -84,6 +85,26 @@ public class BrokersViewModelTests
         dialog.LastBrokerFormDialog.CostBasisMethod.Should().Be("AverageCost");
         service.LastUpdateRequest!.Value.CurrentName.Should().Be("XPI");
         service.LastUpdateRequest.Value.Request.Currency.Should().Be("USD");
+        service.LastUpdateRequest.Value.Scope.Should().Be(InvestmentScope.Active);
+    }
+
+    [Fact]
+    public async Task EditBrokerAsync_HistoricBroker_ForwardsHistoricScopeToBothUpdateCalls()
+    {
+        // Regression: without forwarding the broker's own status as the scope, resolving a broker
+        // for a Historic record that also has an Active one under the same name would pick the
+        // wrong (Active) record and either fail with "not found" or edit the wrong broker.
+        var (viewModel, service, dialog) = CreateViewModel();
+        var broker = new BrokerDTO { Name = "XPI", Currency = "BRL", Status = "Historic", PortfolioCount = 0, CostBasisMethod = CostBasisMethod.AverageCost };
+        dialog.OnShowBrokerFormDialog = vm => vm.CostBasisMethod = "FIFO";
+
+        await viewModel.EditBrokerAsync(broker);
+
+        using (new FluentAssertions.Execution.AssertionScope())
+        {
+            service.LastUpdateRequest!.Value.Scope.Should().Be(InvestmentScope.Historic);
+            service.LastSetCostBasisMethodRequest!.Value.Scope.Should().Be(InvestmentScope.Historic);
+        }
     }
 
     [Fact]
@@ -121,7 +142,7 @@ public class BrokersViewModelTests
 
         await viewModel.EditBrokerAsync(broker);
 
-        service.LastSetCostBasisMethodRequest.Should().Be(("XPI", CostBasisMethod.FIFO));
+        service.LastSetCostBasisMethodRequest.Should().Be(("XPI", CostBasisMethod.FIFO, InvestmentScope.Active));
         viewModel.ActionError.Should().BeNull();
     }
 

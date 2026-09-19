@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using Financial.Investment.Application.DTOs;
+using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.Entities;
 using Financial.Presentation.App.Services;
@@ -242,7 +243,7 @@ public class AssetsViewModel : ViewModelBase
                 Country = dialog.Country,
                 LocalTypeCode = dialog.LocalTypeCode,
                 Class = dialog.Class == GlobalAssetClass.Unknown ? null : dialog.Class,
-            });
+            }, asset.BrokerStatus == "Active" ? InvestmentScope.Active : InvestmentScope.Historic);
             await RefreshAsync();
         }
         catch (Exception ex)

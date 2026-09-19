@@ -20,6 +20,7 @@ import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import AssetFormDialog from '../components/AssetFormDialog'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
+import TruncatedText from '../components/TruncatedText'
 import { useFormPanelStyles } from '../components/formPanelStyles'
 import { useBrokers } from '../hooks/useBrokers'
 import { usePortfolios } from '../hooks/usePortfolios'
@@ -60,22 +61,28 @@ export default function AssetsPage() {
     assetClass: string
   }) => {
     const result = editingAsset
-      ? await updateAsset(editingAsset.brokerName, editingAsset.portfolioName, editingAsset.name, {
-          name: values.name,
-          isin: values.isin,
-          exchange: values.exchange,
-          ticker: values.ticker,
-          country: values.country as AssetAdminDto['country'],
-          localTypeCode: values.localTypeCode,
-          // Left at its default ('Unknown') means the user never touched the Class picker, so the
-          // backend re-derives it from the (possibly just-corrected) Country/LocalTypeCode; any
-          // other selection is an explicit override.
-          class: values.assetClass === 'Unknown' ? null : (values.assetClass as AssetAdminDto['class']),
-          // No form field yet for either of these - left null so the backend preserves whatever the
-          // asset already has (valuation method / income policy pickers are a later increment).
-          valuationMethod: null,
-          incomePolicy: null,
-        })
+      ? await updateAsset(
+          editingAsset.brokerName,
+          editingAsset.portfolioName,
+          editingAsset.name,
+          {
+            name: values.name,
+            isin: values.isin,
+            exchange: values.exchange,
+            ticker: values.ticker,
+            country: values.country as AssetAdminDto['country'],
+            localTypeCode: values.localTypeCode,
+            // Left at its default ('Unknown') means the user never touched the Class picker, so the
+            // backend re-derives it from the (possibly just-corrected) Country/LocalTypeCode; any
+            // other selection is an explicit override.
+            class: values.assetClass === 'Unknown' ? null : (values.assetClass as AssetAdminDto['class']),
+            // No form field yet for either of these - left null so the backend preserves whatever the
+            // asset already has (valuation method / income policy pickers are a later increment).
+            valuationMethod: null,
+            incomePolicy: null,
+          },
+          editingAsset.brokerStatus === 'Active' ? 'active' : 'historic',
+        )
       : await createAsset({
           brokerName: values.brokerName,
           portfolioName: values.portfolioName,
@@ -183,7 +190,9 @@ export default function AssetsPage() {
               const key = assetKey(asset.brokerName, asset.portfolioName, asset.name)
               return (
                 <TableRow key={key}>
-                  <TableCell>{asset.name}</TableCell>
+                  <TableCell>
+                    <TruncatedText text={asset.name} />
+                  </TableCell>
                   <TableCell>{asset.ticker}</TableCell>
                   <TableCell>{asset.brokerName}</TableCell>
                   <TableCell>{asset.portfolioName}</TableCell>

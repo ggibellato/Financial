@@ -62,7 +62,12 @@ export interface PortfoliosData {
   error: string | null
   retry: () => void
   createPortfolio: (request: PortfolioCreateDto) => Promise<PortfolioDto>
-  updatePortfolio: (brokerName: string, currentName: string, request: PortfolioUpdateDto) => Promise<PortfolioDto>
+  updatePortfolio: (
+    brokerName: string,
+    currentName: string,
+    request: PortfolioUpdateDto,
+    brokerScope?: InvestmentScope,
+  ) => Promise<PortfolioDto>
   deletingKey: string | null
   deleteError: string | null
   deletePortfolio: (brokerName: string, portfolioName: string, brokerScope: InvestmentScope) => void
@@ -89,11 +94,14 @@ export function usePortfolios(): PortfoliosData {
     return created
   }, [])
 
-  const updatePortfolio = useCallback(async (brokerName: string, currentName: string, request: PortfolioUpdateDto) => {
-    const updated = await apiClient.updatePortfolio(brokerName, currentName, request)
-    dispatch({ type: 'RETRY' })
-    return updated
-  }, [])
+  const updatePortfolio = useCallback(
+    async (brokerName: string, currentName: string, request: PortfolioUpdateDto, brokerScope?: InvestmentScope) => {
+      const updated = await apiClient.updatePortfolio(brokerName, currentName, request, brokerScope)
+      dispatch({ type: 'RETRY' })
+      return updated
+    },
+    [],
+  )
 
   const deletePortfolio = useCallback((brokerName: string, portfolioName: string, brokerScope: InvestmentScope) => {
     dispatch({ type: 'DELETE_START', payload: portfolioKey(brokerName, portfolioName) })

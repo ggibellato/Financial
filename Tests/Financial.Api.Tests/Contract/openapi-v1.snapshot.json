@@ -5448,6 +5448,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "description": "Which broker record (Active or Historic) to resolve \u0060brokerName\u0060 against; defaults to Active.",
+            "in": "query",
+            "name": "scope",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -6397,6 +6405,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "description": "Which record (Active or Historic) to resolve \u0060name\u0060 against; defaults to Active.",
+            "in": "query",
+            "name": "scope",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -6495,6 +6511,14 @@
             "in": "path",
             "name": "name",
             "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Which record (Active or Historic) to resolve \u0060name\u0060 against; defaults to Active.",
+            "in": "query",
+            "name": "scope",
             "schema": {
               "type": "string"
             }
@@ -9913,6 +9937,14 @@
             "in": "path",
             "name": "portfolioName",
             "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Which broker record (Active or Historic) to resolve \u0060brokerName\u0060 against; defaults to Active.",
+            "in": "query",
+            "name": "scope",
             "schema": {
               "type": "string"
             }

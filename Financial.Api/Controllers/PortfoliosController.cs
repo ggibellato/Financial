@@ -51,20 +51,21 @@ public sealed class PortfoliosController : ControllerBase
     /// <param name="brokerName">The portfolio's parent broker name.</param>
     /// <param name="portfolioName">The portfolio's current name.</param>
     /// <param name="request">The portfolio's new name.</param>
+    /// <param name="scope">Which broker record (Active or Historic) to resolve <paramref name="brokerName"/> against; defaults to Active.</param>
     /// <returns>200 OK with the updated portfolio, 400 Bad Request if invalid, 404 Not Found if the broker or portfolio doesn't exist, or 409 Conflict if the new name is already in use under that broker.</returns>
     [HttpPut("{brokerName}/{portfolioName}")]
     [ProducesResponseType(typeof(PortfolioDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<PortfolioDTO>> UpdatePortfolio(string brokerName, string portfolioName, [FromBody] PortfolioUpdateDTO? request)
+    public async Task<ActionResult<PortfolioDTO>> UpdatePortfolio(string brokerName, string portfolioName, [FromBody] PortfolioUpdateDTO? request, [FromQuery] string? scope = null)
     {
         if (request is null)
         {
             return BadRequest();
         }
 
-        var portfolio = await _portfolioService.UpdatePortfolioAsync(brokerName, portfolioName, request);
+        var portfolio = await _portfolioService.UpdatePortfolioAsync(brokerName, portfolioName, request, InvestmentScopeParser.ParseOrDefault(scope));
         return Ok(portfolio);
     }
 

@@ -52,7 +52,12 @@ export default function PortfoliosPage() {
 
   const handleFormSubmit = async (brokerName: string, name: string) => {
     const result = editingPortfolio
-      ? await updatePortfolio(editingPortfolio.brokerName, editingPortfolio.name, { name })
+      ? await updatePortfolio(
+          editingPortfolio.brokerName,
+          editingPortfolio.name,
+          { name },
+          editingPortfolio.brokerStatus === 'Active' ? 'active' : 'historic',
+        )
       : await createPortfolio({ brokerName, name })
     closeFormDialog()
     return result

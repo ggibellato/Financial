@@ -1,4 +1,5 @@
 using Financial.Investment.Application.DTOs;
+using Financial.Investment.Application.Enums;
 using Financial.Investment.Domain.Entities;
 using Financial.Presentation.App.ViewModels.Admin;
 using Financial.TestUtilities;
@@ -18,12 +19,12 @@ public class AssetsViewModelTests
         return (viewModel, assetAdminService, assetMoveService, portfolioService, dialog);
     }
 
-    private static AssetAdminDTO MakeAsset(string name, string broker, string portfolio, decimal quantity) => new()
+    private static AssetAdminDTO MakeAsset(string name, string broker, string portfolio, decimal quantity, string brokerStatus = "Active") => new()
     {
         Name = name,
         BrokerName = broker,
         PortfolioName = portfolio,
-        BrokerStatus = "Active",
+        BrokerStatus = brokerStatus,
         ISIN = string.Empty,
         Exchange = string.Empty,
         Ticker = name,
@@ -149,6 +150,22 @@ public class AssetsViewModelTests
         assetAdminService.LastUpdateRequest.Value.PortfolioName.Should().Be("Default");
         assetAdminService.LastUpdateRequest.Value.CurrentName.Should().Be("BCIA11");
         assetAdminService.LastUpdateRequest.Value.Request.Name.Should().Be("BCIA11B");
+        assetAdminService.LastUpdateRequest.Value.Scope.Should().Be(InvestmentScope.Active);
+    }
+
+    [Fact]
+    public async Task EditAssetAsync_HistoricAsset_ForwardsHistoricScope()
+    {
+        // Regression: without forwarding the asset's own broker status as the scope, resolving the
+        // broker for a Historic asset under a broker that is also Active would pick the wrong
+        // (Active) record and fail with "not found".
+        var (viewModel, assetAdminService, _, _, dialog) = CreateViewModel();
+        var asset = MakeAsset("CLOSEDASSET", "XPI", "Uncategorized", 0, brokerStatus: "Historic");
+        dialog.OnShowAssetFormDialog = vm => vm.Name = "CLOSEDASSET";
+
+        await viewModel.EditAssetAsync(asset);
+
+        assetAdminService.LastUpdateRequest!.Value.Scope.Should().Be(InvestmentScope.Historic);
     }
 
     [Fact]

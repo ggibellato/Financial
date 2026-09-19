@@ -124,6 +124,33 @@ public class PortfolioServiceTests
     }
 
     [Fact]
+    public async Task UpdatePortfolioAsync_HistoricPortfolioUnderBrokerThatIsAlsoActive_ScopeHistoric_RenamesTheHistoricPortfolio()
+    {
+        // Regression: the same broker name can have both an Active and a Historic record (an
+        // archived asset creates the Historic one alongside the still-trading Active one). Without
+        // an explicit scope, resolving the broker defaulted to Active-first and threw "not found"
+        // for a portfolio that only exists under the Historic record.
+        _repository.Investments = Investments.Create();
+        var activeBroker = Broker.Create("XPI", "BRL");
+        activeBroker.CreatePortfolio("Default");
+        _repository.Investments.AddActiveBroker(activeBroker);
+
+        var historicBroker = Broker.Create("XPI", "BRL");
+        historicBroker.CreatePortfolio("Old");
+        _repository.Investments.AddHistoricBroker(historicBroker);
+
+        var result = await CreateService().UpdatePortfolioAsync("XPI", "Old", new PortfolioUpdateDTO { Name = "Archived" }, InvestmentScope.Historic);
+
+        using (new AssertionScope())
+        {
+            result.Name.Should().Be("Archived");
+            result.BrokerStatus.Should().Be("Historic");
+            historicBroker.FindPortfolio("Archived").Should().NotBeNull();
+            activeBroker.FindPortfolio("Default").Should().NotBeNull();
+        }
+    }
+
+    [Fact]
     public async Task UpdatePortfolioAsync_UnknownBroker_ThrowsNotFoundAndWritesNothing()
     {
         _repository.Investments = Investments.Create();

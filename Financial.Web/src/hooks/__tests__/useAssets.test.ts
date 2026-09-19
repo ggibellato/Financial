@@ -148,7 +148,7 @@ describe('useAssets', () => {
       await result.current.updateAsset('XPI', 'Default', 'BCIA11', UPDATE_REQUEST)
     })
 
-    expect(updateAssetMock).toHaveBeenCalledWith('XPI', 'Default', 'BCIA11', UPDATE_REQUEST)
+    expect(updateAssetMock).toHaveBeenCalledWith('XPI', 'Default', 'BCIA11', UPDATE_REQUEST, undefined)
     await waitFor(() => expect(getAdminAssetsMock).toHaveBeenCalledTimes(2))
   })
 

@@ -720,7 +720,7 @@ describe('financialApiClient', () => {
     expect(JSON.parse(init?.body as string)).toEqual(requestBody)
   })
 
-  it('puts a broker update', async () => {
+  it('puts a broker update, defaulting to scope=active', async () => {
     const requestBody: BrokerUpdateDto = { name: 'XP Investimentos', currency: 'USD' }
     const responseBody: BrokerDto = { ...requestBody, status: 'Active', portfolioCount: 0, costBasisMethod: 'AverageCost' }
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
@@ -730,12 +730,24 @@ describe('financialApiClient', () => {
 
     expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
-    expect(url).toBe(`${API_BASE_URL}/brokers/XPI`)
+    expect(url).toBe(`${API_BASE_URL}/brokers/XPI?scope=active`)
     expect(init?.method).toBe('PUT')
     expect(JSON.parse(init?.body as string)).toEqual(requestBody)
   })
 
-  it('puts a broker cost basis method change', async () => {
+  it('puts a broker update, scoped to historic', async () => {
+    const requestBody: BrokerUpdateDto = { name: 'XP Investimentos (old)', currency: 'USD' }
+    const responseBody: BrokerDto = { ...requestBody, status: 'Historic', portfolioCount: 0, costBasisMethod: 'AverageCost' }
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await client.updateBroker('XPI', requestBody, 'historic')
+
+    const [url] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/brokers/XPI?scope=historic`)
+  })
+
+  it('puts a broker cost basis method change, defaulting to scope=active', async () => {
     const requestBody: SetCostBasisMethodRequestDto = { method: 'FIFO' }
     const responseBody: BrokerDto = { name: 'XPI', currency: 'BRL', status: 'Active', portfolioCount: 0, costBasisMethod: 'FIFO' }
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
@@ -745,9 +757,21 @@ describe('financialApiClient', () => {
 
     expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
-    expect(url).toBe(`${API_BASE_URL}/brokers/XPI/cost-basis-method`)
+    expect(url).toBe(`${API_BASE_URL}/brokers/XPI/cost-basis-method?scope=active`)
     expect(init?.method).toBe('PUT')
     expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('puts a broker cost basis method change, scoped to historic', async () => {
+    const requestBody: SetCostBasisMethodRequestDto = { method: 'FIFO' }
+    const responseBody: BrokerDto = { name: 'XPI', currency: 'BRL', status: 'Historic', portfolioCount: 0, costBasisMethod: 'FIFO' }
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await client.setCostBasisMethod('XPI', requestBody, 'historic')
+
+    const [url] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/brokers/XPI/cost-basis-method?scope=historic`)
   })
 
   it('deletes a broker', async () => {
@@ -1468,7 +1492,7 @@ describe('financialApiClient', () => {
     expect(JSON.parse(init?.body as string)).toEqual(requestBody)
   })
 
-  it('puts a portfolio update', async () => {
+  it('puts a portfolio update, defaulting to scope=active', async () => {
     const requestBody: PortfolioUpdateDto = { name: 'ISA Renamed' }
     const responseBody: PortfolioDto = { name: 'ISA Renamed', brokerName: 'XPI', brokerStatus: 'Active', assetCount: 0 }
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
@@ -1478,9 +1502,21 @@ describe('financialApiClient', () => {
 
     expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
-    expect(url).toBe(`${API_BASE_URL}/portfolios/XPI/ISA`)
+    expect(url).toBe(`${API_BASE_URL}/portfolios/XPI/ISA?scope=active`)
     expect(init?.method).toBe('PUT')
     expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('puts a portfolio update, scoped to historic', async () => {
+    const requestBody: PortfolioUpdateDto = { name: 'Archived' }
+    const responseBody: PortfolioDto = { name: 'Archived', brokerName: 'XPI', brokerStatus: 'Historic', assetCount: 0 }
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await client.updatePortfolio('XPI', 'Old', requestBody, 'historic')
+
+    const [url] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/portfolios/XPI/Old?scope=historic`)
   })
 
   it('gets the admin assets list', async () => {
@@ -1509,7 +1545,7 @@ describe('financialApiClient', () => {
     expect(JSON.parse(init?.body as string)).toEqual(requestBody)
   })
 
-  it('puts an asset update', async () => {
+  it('puts an asset update, defaulting to scope=active', async () => {
     const requestBody = { name: 'BCIA11 Renamed' } as AssetAdminUpdateDto
     const responseBody = { name: 'BCIA11 Renamed', brokerName: 'XPI', portfolioName: 'Default', brokerStatus: 'Active' } as AssetAdminDto
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
@@ -1519,9 +1555,21 @@ describe('financialApiClient', () => {
 
     expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
-    expect(url).toBe(`${API_BASE_URL}/assets/XPI/Default/BCIA11`)
+    expect(url).toBe(`${API_BASE_URL}/assets/XPI/Default/BCIA11?scope=active`)
     expect(init?.method).toBe('PUT')
     expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('puts an asset update, scoped to historic', async () => {
+    const requestBody = { name: 'CLOSEDASSET Renamed' } as AssetAdminUpdateDto
+    const responseBody = { name: 'CLOSEDASSET Renamed', brokerName: 'XPI', portfolioName: 'Uncategorized', brokerStatus: 'Historic' } as AssetAdminDto
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await client.updateAsset('XPI', 'Uncategorized', 'CLOSEDASSET', requestBody, 'historic')
+
+    const [url] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/assets/XPI/Uncategorized/CLOSEDASSET?scope=historic`)
   })
 
   it('puts a transaction update', async () => {

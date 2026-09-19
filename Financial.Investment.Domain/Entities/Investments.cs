@@ -73,13 +73,21 @@ public class Investments
     /// <summary>
     /// Renames and/or re-currencies a broker, Active or Historic.
     /// </summary>
+    /// <param name="preferHistoric">
+    /// Resolve the Historic record first when <paramref name="currentName"/> belongs to both - a
+    /// real-world broker can have both an Active and a Historic record under the same name (e.g.
+    /// once one closed position has been archived while others are still trading), and the caller
+    /// is the only one who knows which of the two the request actually meant.
+    /// </param>
     /// <exception cref="KeyNotFoundException">No broker by <paramref name="currentName"/> exists.</exception>
     /// <exception cref="InvestmentRuleViolationException">
     /// <paramref name="newName"/> already belongs to a different broker.
     /// </exception>
-    public Broker RenameBroker(string currentName, string newName, string newCurrency)
+    public Broker RenameBroker(string currentName, string newName, string newCurrency, bool preferHistoric = false)
     {
-        var broker = FindActiveBroker(currentName) ?? FindHistoricBroker(currentName)
+        var broker = (preferHistoric
+            ? FindHistoricBroker(currentName) ?? FindActiveBroker(currentName)
+            : FindActiveBroker(currentName) ?? FindHistoricBroker(currentName))
             ?? throw new KeyNotFoundException($"Broker \"{currentName}\" was not found.");
 
         if (newName != currentName)

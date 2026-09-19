@@ -94,7 +94,7 @@ describe('usePortfolios', () => {
       await result.current.updatePortfolio('XPI', 'Default', { name: 'Default Renamed' })
     })
 
-    expect(updatePortfolioMock).toHaveBeenCalledWith('XPI', 'Default', { name: 'Default Renamed' })
+    expect(updatePortfolioMock).toHaveBeenCalledWith('XPI', 'Default', { name: 'Default Renamed' }, undefined)
     await waitFor(() => expect(getAdminPortfoliosMock).toHaveBeenCalledTimes(2))
   })
 

@@ -95,7 +95,7 @@ describe('PortfoliosPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
     await waitFor(() =>
-      expect(updatePortfolioMock).toHaveBeenCalledWith('XPI', 'Default', { name: 'Default Renamed' }),
+      expect(updatePortfolioMock).toHaveBeenCalledWith('XPI', 'Default', { name: 'Default Renamed' }, 'active'),
     )
   })
 

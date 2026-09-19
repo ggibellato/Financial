@@ -119,8 +119,8 @@ export interface FinancialApiClient {
   getBrokers: () => Promise<BrokerNodeDto[]>
   getAdminBrokers: () => Promise<BrokerDto[]>
   createBroker: (request: BrokerCreateDto) => Promise<BrokerDto>
-  updateBroker: (currentName: string, request: BrokerUpdateDto) => Promise<BrokerDto>
-  setCostBasisMethod: (name: string, request: SetCostBasisMethodRequestDto) => Promise<BrokerDto>
+  updateBroker: (currentName: string, request: BrokerUpdateDto, scope?: InvestmentScope) => Promise<BrokerDto>
+  setCostBasisMethod: (name: string, request: SetCostBasisMethodRequestDto, scope?: InvestmentScope) => Promise<BrokerDto>
   deleteBroker: (name: string) => Promise<void>
   getAssetDetails: (brokerName: string, portfolioName: string, assetName: string, scope?: InvestmentScope) => Promise<AssetDetailsDto>
   getOpenLots: (brokerName: string, portfolioName: string, assetName: string, scope?: InvestmentScope) => Promise<OpenLotDto[]>
@@ -139,11 +139,17 @@ export interface FinancialApiClient {
   archiveAsset: (request: ArchiveAssetRequestDto) => Promise<AssetDetailsDto>
   getAdminPortfolios: () => Promise<PortfolioDto[]>
   createPortfolio: (request: PortfolioCreateDto) => Promise<PortfolioDto>
-  updatePortfolio: (brokerName: string, currentName: string, request: PortfolioUpdateDto) => Promise<PortfolioDto>
+  updatePortfolio: (brokerName: string, currentName: string, request: PortfolioUpdateDto, scope?: InvestmentScope) => Promise<PortfolioDto>
   deleteEmptyPortfolio: (brokerName: string, portfolioName: string, scope?: InvestmentScope) => Promise<void>
   getAdminAssets: () => Promise<AssetAdminDto[]>
   createAsset: (request: AssetAdminCreateDto) => Promise<AssetAdminDto>
-  updateAsset: (brokerName: string, portfolioName: string, currentName: string, request: AssetAdminUpdateDto) => Promise<AssetAdminDto>
+  updateAsset: (
+    brokerName: string,
+    portfolioName: string,
+    currentName: string,
+    request: AssetAdminUpdateDto,
+    scope?: InvestmentScope,
+  ) => Promise<AssetAdminDto>
   addTransaction: (request: TransactionCreateDto) => Promise<AssetDetailsDto>
   updateTransaction: (request: TransactionUpdateDto) => Promise<AssetDetailsDto>
   deleteTransaction: (request: TransactionDeleteDto) => Promise<AssetDetailsDto>
@@ -341,13 +347,13 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
     getAdminBrokers: () => request<BrokerDto[]>('/brokers'),
     createBroker: (requestBody) =>
       request<BrokerDto>('/brokers', { method: 'POST', body: JSON.stringify(requestBody) }),
-    updateBroker: (currentName, requestBody) =>
-      request<BrokerDto>(`/brokers/${encodeURIComponent(currentName)}`, {
+    updateBroker: (currentName, requestBody, scope = 'active') =>
+      request<BrokerDto>(`/brokers/${encodeURIComponent(currentName)}${buildScopeQuery(scope)}`, {
         method: 'PUT',
         body: JSON.stringify(requestBody),
       }),
-    setCostBasisMethod: (name, requestBody) =>
-      request<BrokerDto>(`/brokers/${encodeURIComponent(name)}/cost-basis-method`, {
+    setCostBasisMethod: (name, requestBody, scope = 'active') =>
+      request<BrokerDto>(`/brokers/${encodeURIComponent(name)}/cost-basis-method${buildScopeQuery(scope)}`, {
         method: 'PUT',
         body: JSON.stringify(requestBody),
       }),
@@ -399,11 +405,11 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
     getAdminPortfolios: () => request<PortfolioDto[]>('/portfolios'),
     createPortfolio: (requestBody) =>
       request<PortfolioDto>('/portfolios', { method: 'POST', body: JSON.stringify(requestBody) }),
-    updatePortfolio: (brokerName, currentName, requestBody) =>
-      request<PortfolioDto>(`/portfolios/${encodeURIComponent(brokerName)}/${encodeURIComponent(currentName)}`, {
-        method: 'PUT',
-        body: JSON.stringify(requestBody),
-      }),
+    updatePortfolio: (brokerName, currentName, requestBody, scope = 'active') =>
+      request<PortfolioDto>(
+        `/portfolios/${encodeURIComponent(brokerName)}/${encodeURIComponent(currentName)}${buildScopeQuery(scope)}`,
+        { method: 'PUT', body: JSON.stringify(requestBody) },
+      ),
     deleteEmptyPortfolio: (brokerName, portfolioName, scope = 'active') =>
       requestVoid(
         `/portfolios/${encodeURIComponent(brokerName)}/${encodeURIComponent(portfolioName)}${buildScopeQuery(scope)}`,
@@ -412,9 +418,9 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
     getAdminAssets: () => request<AssetAdminDto[]>('/assets'),
     createAsset: (requestBody) =>
       request<AssetAdminDto>('/assets', { method: 'POST', body: JSON.stringify(requestBody) }),
-    updateAsset: (brokerName, portfolioName, currentName, requestBody) =>
+    updateAsset: (brokerName, portfolioName, currentName, requestBody, scope = 'active') =>
       request<AssetAdminDto>(
-        `/assets/${encodeURIComponent(brokerName)}/${encodeURIComponent(portfolioName)}/${encodeURIComponent(currentName)}`,
+        `/assets/${encodeURIComponent(brokerName)}/${encodeURIComponent(portfolioName)}/${encodeURIComponent(currentName)}${buildScopeQuery(scope)}`,
         { method: 'PUT', body: JSON.stringify(requestBody) },
       ),
     addTransaction: (requestBody) =>
