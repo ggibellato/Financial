@@ -19,6 +19,7 @@ import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import TaxRuleFormDialog from '../components/TaxRuleFormDialog'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
+import TruncatedText from '../components/TruncatedText'
 import { useFormPanelStyles } from '../components/formPanelStyles'
 import { useTaxRules } from '../hooks/useTaxRules'
 import type { TaxRuleDto } from '../api/types'
@@ -109,7 +110,9 @@ export default function TaxRulesPage() {
               <TableRow key={rule.id}>
                 <TableCell>{rule.jurisdiction}</TableCell>
                 <TableCell>{rule.eventCategory}</TableCell>
-                <TableCell>{rule.label}</TableCell>
+                <TableCell>
+                  <TruncatedText text={rule.label} />
+                </TableCell>
                 <TableCell>{rule.effectiveFrom}</TableCell>
                 <TableCell>{rule.effectiveTo ?? '—'}</TableCell>
                 <TableCell className="data-table__col--action">

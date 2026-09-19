@@ -4,6 +4,7 @@ import type { MaeLedgerEntryDto } from '../api/types'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
 import SortableColumnHeader from '../components/grid/SortableColumnHeader'
+import TruncatedText from '../components/TruncatedText'
 import { useFormPanelStyles } from '../components/formPanelStyles'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { useFieldError } from '../hooks/useFieldError'
@@ -36,8 +37,12 @@ function EntryRow({ entry, isDeleting, onEdit, onDelete }: EntryRowProps) {
   return (
     <tr>
       <td>{formatShortDate(entry.date)}</td>
-      <td>{entry.description}</td>
-      <td>{entry.note}</td>
+      <td>
+        <TruncatedText text={entry.description} />
+      </td>
+      <td>
+        <TruncatedText text={entry.note} />
+      </td>
       <td className="data-table__col--numeric">{entry.brlValue !== null ? formatN2(entry.brlValue) : '—'}</td>
       <td className="data-table__col--numeric">{entry.gbpValue !== null ? formatN2(entry.gbpValue) : '—'}</td>
       <td>

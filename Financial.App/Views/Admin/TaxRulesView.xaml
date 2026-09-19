@@ -48,7 +48,8 @@
                 <DataGrid.Columns>
                     <DataGridTextColumn Binding="{Binding Jurisdiction}" Header="Jurisdiction" Width="100"/>
                     <DataGridTextColumn Binding="{Binding EventCategory}" Header="Event Category" Width="160"/>
-                    <DataGridTextColumn Binding="{Binding Label}" Header="Label" Width="*"/>
+                    <DataGridTextColumn Binding="{Binding Label}" Header="Label" Width="*"
+                                         ElementStyle="{StaticResource TruncatedColumnTextStyle}"/>
                     <DataGridTextColumn Binding="{Binding EffectiveFrom}" Header="Effective From" Width="110"/>
                     <DataGridTextColumn Binding="{Binding EffectiveTo, TargetNullValue='—'}" Header="Effective To" Width="110"/>
                     <DataGridTemplateColumn Header="" Width="Auto">

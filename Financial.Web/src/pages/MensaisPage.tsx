@@ -4,6 +4,7 @@ import type { RecurringBillDto } from '../api/types'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
 import StatusMenuButton from '../components/StatusMenuButton'
+import TruncatedText from '../components/TruncatedText'
 import UkExpensePromptDialog from '../components/UkExpensePromptDialog'
 import SortableColumnHeader from '../components/grid/SortableColumnHeader'
 import { useFormPanelStyles } from '../components/formPanelStyles'
@@ -39,8 +40,12 @@ function BillRow({
   return (
     <tr>
       <td>{bill.dueDay}</td>
-      <td>{bill.description}</td>
-      <td>{bill.note}</td>
+      <td>
+        <TruncatedText text={bill.description} />
+      </td>
+      <td>
+        <TruncatedText text={bill.note} />
+      </td>
       {showBrasilFields && <td>{bill.nitNumber ?? ''}</td>}
       {showBrasilFields && <td className="data-table__col--numeric">{bill.minimumWageValue !== null ? formatN2(bill.minimumWageValue) : ''}</td>}
       <td className="data-table__col--numeric">{formatN2(bill.value)}</td>

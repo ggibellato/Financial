@@ -50,6 +50,9 @@
 - [ ] Trees communicate hierarchy and support keyboard navigation.
 - [ ] Charts have titles, labels, units, correct state handling, and accessible equivalents.
 - [ ] Dense views remain readable.
+- [ ] Free-text grid columns (description/note/label) truncate to one line
+      with the shared truncate+tooltip pattern instead of wrapping — row
+      heights stay uniform across the whole grid.
 
 ## Responsive and adaptive behavior
 

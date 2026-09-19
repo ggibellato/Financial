@@ -5,6 +5,7 @@ import EditMovementForm from '../components/EditMovementForm'
 import ErrorState from '../components/ErrorState'
 import IncomeSplitForm from '../components/IncomeSplitForm'
 import LoadingState from '../components/LoadingState'
+import TruncatedText from '../components/TruncatedText'
 import WithdrawalForm from '../components/WithdrawalForm'
 import SortableColumnHeader from '../components/grid/SortableColumnHeader'
 import { useSortableRows } from '../hooks/useSortableRows'
@@ -251,7 +252,9 @@ export default function ReservaPage() {
                         </td>
                         <td>{formatShortDate(m.date)}</td>
                         <td>{m.bucketName}</td>
-                        <td>{m.description}</td>
+                        <td>
+                          <TruncatedText text={m.description} />
+                        </td>
                         <td className="data-table__col--numeric">{formatN2(m.amount)}</td>
                         <td>
                           <div className="data-table__actions-cell">

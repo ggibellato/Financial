@@ -37,6 +37,26 @@ is the reference.
   filter/mode "chip" pattern documented in `forms-data-and-visualisations.md`
   (same underlying component, different content role).
 
+## Long/variable-length text in grid cells
+
+Never let a table/grid cell wrap (`white-space: normal`, or CSS missing
+`white-space: nowrap` while relying on `text-overflow: ellipsis`, which is a
+no-op without it) — an occasional long value then silently grows just that
+row to double height while every other row stays single-line, an
+inconsistent, jarring result rather than a deliberate design (fixed across
+`ExpensesSection`, `ControleMaePage`, `ReservaPage`, `MensaisPage`, and
+`TaxRulesPage` in 2026-09). Instead, use `TruncatedText`
+(`Financial.Web/src/components/TruncatedText.tsx`) for any free-text
+description/note/label cell: it truncates to one line with an ellipsis via
+the shared `.truncated-text` class (`Financial.Web/src/styles/data-table.css`)
+and reveals the full value through a Fluent `Tooltip` on hover or keyboard
+focus (`relationship="inaccessible"` — the trigger's own text content already
+carries the full string for screen readers, so no `aria-describedby`
+duplication is needed; Fluent otherwise force-renders that content into the
+DOM permanently for `"label"`/`"description"`, which breaks `getByText` in
+tests). Grid rows must stay a uniform single-line height across the whole
+grid; do not opt one column into wrapping to "fit more."
+
 ## Layout
 
 - Use CSS Grid for page and form structure.

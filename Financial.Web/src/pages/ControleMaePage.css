@@ -66,11 +66,6 @@
   width: 72px;
 }
 
-.controle-mae-page__table td {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 .controle-mae-page__totals-table {
   flex-shrink: 0;
   margin-bottom: 24px;

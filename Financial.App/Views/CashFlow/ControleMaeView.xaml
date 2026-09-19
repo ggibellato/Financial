@@ -50,9 +50,9 @@
                     <DataGridTextColumn Binding="{Binding Date, Converter={StaticResource DateFormatConverter}}" Header="Date" Width="100"
                                          ElementStyle="{StaticResource PlainColumnTextStyle}"/>
                     <DataGridTextColumn Binding="{Binding Description}" Header="Description" Width="*"
-                                         ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                                         ElementStyle="{StaticResource TruncatedColumnTextStyle}"/>
                     <DataGridTextColumn Binding="{Binding Note}" Header="Note" Width="140"
-                                         ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                                         ElementStyle="{StaticResource TruncatedColumnTextStyle}"/>
                     <DataGridTextColumn Header="BRL" Width="100" ElementStyle="{StaticResource NumericColumnTextStyle}">
                         <DataGridTextColumn.Binding>
                             <Binding Path="BrlValue" TargetNullValue="—" StringFormat="N2"/>

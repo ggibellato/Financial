@@ -180,6 +180,15 @@ unthemed classic Windows chrome — a known, open gap. Closing it needs a custom
   sort behavior at all). When sorting is actually speced, implement
   equivalent explicit sort behavior on both platforms in that feature's own
   slice, rather than leaving WPF with an accidental head start.
+- A free-text column (description/note/label) whose values are occasionally
+  long uses `TruncatedColumnTextStyle` (`App.xaml`, based on
+  `PlainColumnTextStyle`) as its `ElementStyle` — never `TextWrapping="Wrap"`
+  (grows that row's height inconsistently with every other row, the same bug
+  fixed on the React side in 2026-09) and never left unstyled (silently
+  clips with no way to see the full value). It sets
+  `TextTrimming="CharacterEllipsis"` plus a `ToolTip` bound to the cell's own
+  `Text`, matching React's `TruncatedText` truncate-and-reveal-on-hover/focus
+  pattern (`docs/ui/react.md`).
 
 ## Dialogs and contextual UI
 

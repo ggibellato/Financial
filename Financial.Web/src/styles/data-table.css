@@ -38,10 +38,13 @@
   text-align: right;
 }
 
-.data-table .data-table__col--wrap,
-.data-table__col--wrap {
-  white-space: normal;
-  word-break: break-word;
+.truncated-text {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
 }
 
 /* A percentage width ("shrink-to-fit") doesn't reliably size a flex
