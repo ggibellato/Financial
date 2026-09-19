@@ -65,7 +65,11 @@ public class PriceHistoryTabViewModel : ViewModelBase
     public ObservableCollection<AssetPriceSnapshotDTO> PriceHistory { get; } = new();
     public ObservableCollection<SelectableOptionViewModel<PeriodFilter>> PriceHistoryFilters { get; } = new();
 
-    public PlotModel? PriceHistoryPlotModel { get => _priceHistoryPlotModel; private set => SetProperty(ref _priceHistoryPlotModel, value); }
+    public PlotModel? PriceHistoryPlotModel
+    {
+        get => _priceHistoryPlotModel;
+        private set => SetProperty(ref _priceHistoryPlotModel, value);
+    }
 
     public AssetPriceSnapshotDTO? SelectedPriceEntry
     {

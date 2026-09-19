@@ -46,7 +46,11 @@ public class Asset
     };
 
     private List<DisposalRecord> _disposalRecords = new List<DisposalRecord>();
-    public IReadOnlyCollection<DisposalRecord> DisposalRecords { get => _disposalRecords.AsReadOnly(); private set => EntityGuard.ReplaceAll(_disposalRecords, value); }
+    public IReadOnlyCollection<DisposalRecord> DisposalRecords
+    {
+        get => _disposalRecords.AsReadOnly();
+        private set => EntityGuard.ReplaceAll(_disposalRecords, value);
+    }
 
     private List<Credit> _credits = new List<Credit>();
     public IReadOnlyCollection<Credit> Credits { get => _credits.AsReadOnly(); private set => SetCredits(value); }
@@ -60,10 +64,18 @@ public class Asset
     }
 
     private List<TaxClassification> _taxClassifications = new List<TaxClassification>();
-    public IReadOnlyCollection<TaxClassification> TaxClassifications { get => _taxClassifications.AsReadOnly(); private set => EntityGuard.ReplaceAll(_taxClassifications, value); }
+    public IReadOnlyCollection<TaxClassification> TaxClassifications
+    {
+        get => _taxClassifications.AsReadOnly();
+        private set => EntityGuard.ReplaceAll(_taxClassifications, value);
+    }
 
     private List<AssetPriceSnapshot> _priceSnapshots = new List<AssetPriceSnapshot>();
-    public IReadOnlyCollection<AssetPriceSnapshot> PriceSnapshots { get => _priceSnapshots.AsReadOnly(); private set => SetPriceSnapshots(value); }
+    public IReadOnlyCollection<AssetPriceSnapshot> PriceSnapshots
+    {
+        get => _priceSnapshots.AsReadOnly();
+        private set => SetPriceSnapshots(value);
+    }
     private void SetPriceSnapshots(IReadOnlyCollection<AssetPriceSnapshot> data)
     {
         var replacement = new List<AssetPriceSnapshot>(data.Count);

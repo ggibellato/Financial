@@ -92,7 +92,11 @@ public class TransactionsTabViewModel : ViewModelBase
 
     public ObservableCollection<TransactionDTO> Transactions { get; } = new();
 
-    public PlotModel? TransactionsPlotModel { get => _transactionsPlotModel; private set => SetProperty(ref _transactionsPlotModel, value); }
+    public PlotModel? TransactionsPlotModel
+    {
+        get => _transactionsPlotModel;
+        private set => SetProperty(ref _transactionsPlotModel, value);
+    }
 
     public bool IsTransactionsAggregateView
     {

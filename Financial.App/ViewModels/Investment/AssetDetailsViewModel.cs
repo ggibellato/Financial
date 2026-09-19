@@ -98,7 +98,11 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     public string ISIN { get => _isin; private set => SetProperty(ref _isin, value); }
     public string Exchange { get => _exchange; private set => SetProperty(ref _exchange, value); }
     public CountryCode Country { get => _country; private set => SetProperty(ref _country, value); }
-    public string TaxJurisdictionsDisplay { get => _taxJurisdictionsDisplay; private set => SetProperty(ref _taxJurisdictionsDisplay, value); }
+    public string TaxJurisdictionsDisplay
+    {
+        get => _taxJurisdictionsDisplay;
+        private set => SetProperty(ref _taxJurisdictionsDisplay, value);
+    }
     public string LocalTypeCode { get => _localTypeCode; private set => SetProperty(ref _localTypeCode, value); }
     public GlobalAssetClass Class { get => _class; private set => SetProperty(ref _class, value); }
 
@@ -163,7 +167,11 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
 
     public string TodayCurrentValueAsOf { get => _todayCurrentValueAsOf; private set => SetProperty(ref _todayCurrentValueAsOf, value); }
     public string TodayInfoMessage { get => _todayInfoMessage; private set => SetProperty(ref _todayInfoMessage, value); }
-    public bool TodayCurrentValueIsManual { get => _todayCurrentValueIsManual; private set => SetProperty(ref _todayCurrentValueIsManual, value); }
+    public bool TodayCurrentValueIsManual
+    {
+        get => _todayCurrentValueIsManual;
+        private set => SetProperty(ref _todayCurrentValueIsManual, value);
+    }
     public bool IsPriceStale => _isPriceStale;
     public bool IsPriceUnavailable => _isPriceUnavailable;
 
@@ -241,10 +249,18 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
 
     public decimal? MarketValue { get => _summaryMarketValue; private set => SetProperty(ref _summaryMarketValue, value); }
     public int HoldingCount { get => _summaryHoldingCount; private set => SetProperty(ref _summaryHoldingCount, value); }
-    public int UnvaluedHoldingCount { get => _summaryUnvaluedHoldingCount; private set => SetProperty(ref _summaryUnvaluedHoldingCount, value); }
+    public int UnvaluedHoldingCount
+    {
+        get => _summaryUnvaluedHoldingCount;
+        private set => SetProperty(ref _summaryUnvaluedHoldingCount, value);
+    }
     public decimal? PriceOnlyReturn { get => _summaryPriceOnlyReturn; private set => SetProperty(ref _summaryPriceOnlyReturn, value); }
     public decimal? TotalReturn { get => _summaryTotalReturn; private set => SetProperty(ref _summaryTotalReturn, value); }
-    public decimal? TotalReturnNetOfTax { get => _summaryTotalReturnNetOfTax; private set => SetProperty(ref _summaryTotalReturnNetOfTax, value); }
+    public decimal? TotalReturnNetOfTax
+    {
+        get => _summaryTotalReturnNetOfTax;
+        private set => SetProperty(ref _summaryTotalReturnNetOfTax, value);
+    }
 
     public string ReportingCurrency { get => _reportingCurrency; private set => SetProperty(ref _reportingCurrency, value); }
 
@@ -261,9 +277,21 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     }
     public decimal? ConvertedMarketValue { get => _convertedMarketValue; private set => SetProperty(ref _convertedMarketValue, value); }
     public decimal? ConvertedInvested { get => _convertedInvested; private set => SetProperty(ref _convertedInvested, value); }
-    public decimal? ConvertedUnrealisedGainLoss { get => _convertedUnrealisedGainLoss; private set => SetProperty(ref _convertedUnrealisedGainLoss, value); }
-    public decimal? ConvertedTotalReturn { get => _convertedTotalReturn; private set => SetProperty(ref _convertedTotalReturn, value); }
-    public decimal? ConvertedTotalReturnNetOfTax { get => _convertedTotalReturnNetOfTax; private set => SetProperty(ref _convertedTotalReturnNetOfTax, value); }
+    public decimal? ConvertedUnrealisedGainLoss
+    {
+        get => _convertedUnrealisedGainLoss;
+        private set => SetProperty(ref _convertedUnrealisedGainLoss, value);
+    }
+    public decimal? ConvertedTotalReturn
+    {
+        get => _convertedTotalReturn;
+        private set => SetProperty(ref _convertedTotalReturn, value);
+    }
+    public decimal? ConvertedTotalReturnNetOfTax
+    {
+        get => _convertedTotalReturnNetOfTax;
+        private set => SetProperty(ref _convertedTotalReturnNetOfTax, value);
+    }
     public bool IsPartial { get => _isPartial; private set => SetProperty(ref _isPartial, value); }
 
     public bool IsReportingCurrencyUnavailable
@@ -339,12 +367,32 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
 
     public ObservableCollection<PortfolioAssetSummaryRowViewModel> PortfolioAssetSummaryRows { get; } = new();
 
-    public decimal FooterTotalInvested { get => _footerTotalInvested; private set => SetProperty(ref _footerTotalInvested, value); }
-    public decimal FooterRealizedGainLoss { get => _footerRealizedGainLoss; private set => SetProperty(ref _footerRealizedGainLoss, value); }
+    public decimal FooterTotalInvested
+    {
+        get => _footerTotalInvested;
+        private set => SetProperty(ref _footerTotalInvested, value);
+    }
+    public decimal FooterRealizedGainLoss
+    {
+        get => _footerRealizedGainLoss;
+        private set => SetProperty(ref _footerRealizedGainLoss, value);
+    }
     public decimal FooterTotalCredits { get => _footerTotalCredits; private set => SetProperty(ref _footerTotalCredits, value); }
-    public decimal FooterCurrentMonthCredits { get => _footerCurrentMonthCredits; private set => SetProperty(ref _footerCurrentMonthCredits, value); }
-    public string FooterCurrentMonthLabel { get => _footerCurrentMonthLabel; private set => SetProperty(ref _footerCurrentMonthLabel, value); }
-    public string FooterEstimatedAnnualCreditsDisplay { get => _footerEstimatedAnnualCreditsDisplay; private set => SetProperty(ref _footerEstimatedAnnualCreditsDisplay, value); }
+    public decimal FooterCurrentMonthCredits
+    {
+        get => _footerCurrentMonthCredits;
+        private set => SetProperty(ref _footerCurrentMonthCredits, value);
+    }
+    public string FooterCurrentMonthLabel
+    {
+        get => _footerCurrentMonthLabel;
+        private set => SetProperty(ref _footerCurrentMonthLabel, value);
+    }
+    public string FooterEstimatedAnnualCreditsDisplay
+    {
+        get => _footerEstimatedAnnualCreditsDisplay;
+        private set => SetProperty(ref _footerEstimatedAnnualCreditsDisplay, value);
+    }
 
     public string FooterCurrentValueDisplay
     {
