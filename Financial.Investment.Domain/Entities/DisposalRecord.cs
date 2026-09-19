@@ -13,7 +13,11 @@ public sealed class DisposalRecord
     public CostBasisMethod Method { get; private set; }
 
     private List<DisposalLotConsumption> _lotsConsumed = new();
-    public IReadOnlyList<DisposalLotConsumption> LotsConsumed { get => _lotsConsumed.AsReadOnly(); private set => _lotsConsumed = new List<DisposalLotConsumption>(value); }
+    public IReadOnlyList<DisposalLotConsumption> LotsConsumed
+    {
+        get => _lotsConsumed.AsReadOnly();
+        private set => _lotsConsumed = new List<DisposalLotConsumption>(value);
+    }
 
     public decimal QuantityDisposed { get; private set; }
     public decimal Proceeds { get; private set; }

@@ -12,6 +12,25 @@ Mandatory, not advisory.
 - No magic strings or numbers. Name the constant, and put it where the rule lives (see §Domain rules).
 - No duplication — but read §Domain rules before extracting anything. Premature extraction is its own defect.
 
+## Property formatting
+
+- A simple auto-property stays on one line: `public string Name { get; private set; } = string.Empty;`
+- A property with an expression-bodied getter and/or setter — whatever the body (backing-field access, `EntityGuard`/`AsReadOnly` calls, `SetProperty(ref _field, value)`, guard clauses, etc.) — is broken across lines once the full declaration line exceeds **140 characters**. This applies uniformly, including to the common WPF MVVM `{ get => _field; private set => SetProperty(ref _field, value); }` shape — length decides, not the property's role. Under 140 characters, keep it on one line even with expression bodies.
+
+  ```csharp
+  public IReadOnlyCollection<DisposalRecord> DisposalRecords
+  {
+      get => _disposalRecords.AsReadOnly();
+      private set => EntityGuard.ReplaceAll(_disposalRecords, value);
+  }
+  ```
+
+  not
+
+  ```csharp
+  public IReadOnlyCollection<DisposalRecord> DisposalRecords { get => _disposalRecords.AsReadOnly(); private set => EntityGuard.ReplaceAll(_disposalRecords, value); }
+  ```
+
 ## SOLID
 
 - **Single Responsibility** — one reason to change. A service that both computes and persists has two.
