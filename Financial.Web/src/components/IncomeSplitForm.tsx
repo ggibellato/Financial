@@ -1,4 +1,15 @@
-import { Button, Field, Input, MessageBar, MessageBarBody, Text } from '@fluentui/react-components'
+import {
+  Button,
+  Field,
+  Input,
+  MessageBar,
+  MessageBarBody,
+  Table,
+  TableBody,
+  TableCell,
+  TableRow,
+  Text,
+} from '@fluentui/react-components'
 import type { IncomeSplitResultDto } from '../api/types'
 import type { SplitFormField } from '../hooks/useReserva'
 import { useFieldError } from '../hooks/useFieldError'
@@ -43,24 +54,24 @@ export default function IncomeSplitForm({
         <MessageBar intent="success">
           <MessageBarBody>Income Split Posted</MessageBarBody>
         </MessageBar>
-        <table className="income-split-form__result-table data-table">
+        <Table className="income-split-form__result-table data-table">
           <colgroup>
             <col />
             <col className="income-split-form__col-value" />
           </colgroup>
-          <tbody>
+          <TableBody>
             {lastResult.buckets.map((entry) => (
-              <tr key={entry.bucketId}>
-                <td>{entry.bucketName}</td>
-                <td className="data-table__col--numeric">{formatN2(entry.amount)}</td>
-              </tr>
+              <TableRow key={entry.bucketId}>
+                <TableCell>{entry.bucketName}</TableCell>
+                <TableCell className="data-table__col--numeric">{formatN2(entry.amount)}</TableCell>
+              </TableRow>
             ))}
-            <tr className="income-split-form__totals-row">
-              <td>Total</td>
-              <td className="data-table__col--numeric">{formatN2(lastResult.total)}</td>
-            </tr>
-          </tbody>
-        </table>
+            <TableRow className="income-split-form__totals-row">
+              <TableCell>Total</TableCell>
+              <TableCell className="data-table__col--numeric">{formatN2(lastResult.total)}</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
         <div className={styles.actions}>
           <Button appearance="secondary" onClick={onDismissResult}>
             Dismiss

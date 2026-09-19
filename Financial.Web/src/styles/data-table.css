@@ -23,11 +23,8 @@
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
   white-space: nowrap;
-  /* Fluent's TableCell hardcodes height: 44px for its default "medium" size, taller than this
-     padding+font-size need — .data-table td's class+type selector outranks that single-class
-     atomic rule regardless of style-injection order, so this reliably wins and restores natural,
-     content-driven row height (matching a plain <td>'s behavior) for every Fluent <Table> that
-     carries this class. */
+  /* Neutralizes Fluent TableCell's hardcoded height: 44px default; this selector's higher
+     specificity beats it regardless of style-injection order. */
   height: auto;
 }
 
