@@ -17,8 +17,8 @@ public sealed class TaxWorkbookEntryRowViewModel
 {
     private static readonly SolidColorBrush FinalBackground = Freeze(0x10, 0x7C, 0x10);
     private static readonly SolidColorBrush FinalForeground = Freeze(0xFF, 0xFF, 0xFF);
-    private static readonly SolidColorBrush EstimatedBackground = Freeze(0xEB, 0xEB, 0xEB);
-    private static readonly SolidColorBrush EstimatedForeground = Freeze(0x61, 0x61, 0x61);
+    private static readonly SolidColorBrush DefaultBackground = Freeze(0xEB, 0xEB, 0xEB);
+    private static readonly SolidColorBrush DefaultForeground = Freeze(0x61, 0x61, 0x61);
     private static readonly SolidColorBrush IncompleteBackground = Freeze(0xFD, 0xE3, 0x00);
     private static readonly SolidColorBrush IncompleteForeground = Freeze(0x24, 0x24, 0x24);
     private static readonly SolidColorBrush RequiresReviewBackground = Freeze(0xD1, 0x34, 0x38);
@@ -67,10 +67,9 @@ public sealed class TaxWorkbookEntryRowViewModel
         CalculationStatus status) => status switch
         {
             CalculationStatus.Final => (FinalBackground, FinalForeground, SymbolRegular.CheckmarkCircle20, false, "Final"),
-            CalculationStatus.Estimated => (EstimatedBackground, EstimatedForeground, SymbolRegular.Info20, false, "Estimated"),
             CalculationStatus.Incomplete => (IncompleteBackground, IncompleteForeground, SymbolRegular.Clock20, false, "Incomplete"),
             CalculationStatus.RequiresReview => (RequiresReviewBackground, RequiresReviewForeground, SymbolRegular.AlertUrgent20, true, "Requires review"),
-            _ => (EstimatedBackground, EstimatedForeground, SymbolRegular.Info20, false, status.ToString()),
+            _ => (DefaultBackground, DefaultForeground, SymbolRegular.Info20, false, status.ToString()),
         };
 
     private static SolidColorBrush Freeze(byte r, byte g, byte b)

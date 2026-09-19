@@ -16,7 +16,6 @@ import {
   CheckmarkCircleRegular,
   ClockRegular,
   DocumentArrowDownRegular,
-  InfoRegular,
 } from '@fluentui/react-icons'
 import type { ReactElement } from 'react'
 import ErrorState from '../components/ErrorState'
@@ -28,7 +27,6 @@ import './TaxPage.css'
 
 const STATUS_PRESENTATION: Record<string, { color: BadgeProps['color']; icon: ReactElement; label: string }> = {
   Final: { color: 'success', icon: <CheckmarkCircleRegular />, label: 'Final' },
-  Estimated: { color: 'informative', icon: <InfoRegular />, label: 'Estimated' },
   Incomplete: { color: 'warning', icon: <ClockRegular />, label: 'Incomplete' },
   RequiresReview: { color: 'danger', icon: <AlertFilled />, label: 'Requires review' },
 }

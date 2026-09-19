@@ -4,7 +4,6 @@ public enum ValuationMethod
 {
     Unspecified = 0,
     MarketPrice,
-    NAV,
     ProviderValue,
     Manual,
     BondQuote

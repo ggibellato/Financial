@@ -16,8 +16,7 @@ public sealed class TaxWorkbookService : ITaxWorkbookService
     {
         [CalculationStatus.RequiresReview] = 0,
         [CalculationStatus.Incomplete] = 1,
-        [CalculationStatus.Estimated] = 2,
-        [CalculationStatus.Final] = 3
+        [CalculationStatus.Final] = 2
     };
 
     private readonly IInvestmentRepository _repository;

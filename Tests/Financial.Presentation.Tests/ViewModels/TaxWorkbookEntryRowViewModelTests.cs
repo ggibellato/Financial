@@ -41,13 +41,13 @@ public class TaxWorkbookEntryRowViewModelTests
     }
 
     [Fact]
-    public void Estimated_MapsToInformativeColorsAndInfoIcon()
+    public void UnknownStatus_MapsToDefaultColorsAndInfoIcon()
     {
-        var row = new TaxWorkbookEntryRowViewModel(Entry(CalculationStatus.Estimated));
+        var row = new TaxWorkbookEntryRowViewModel(Entry((CalculationStatus)99));
 
         row.StatusSymbol.Should().Be(SymbolRegular.Info20);
         row.StatusSymbolFilled.Should().BeFalse();
-        row.StatusLabel.Should().Be("Estimated");
+        row.StatusLabel.Should().Be("99");
         row.StatusBrush.Color.Should().Be(System.Windows.Media.Color.FromRgb(0xEB, 0xEB, 0xEB));
         row.StatusForeground.Color.Should().Be(System.Windows.Media.Color.FromRgb(0x61, 0x61, 0x61));
     }

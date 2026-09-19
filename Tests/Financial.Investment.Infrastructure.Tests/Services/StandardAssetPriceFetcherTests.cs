@@ -57,12 +57,10 @@ public class StandardAssetPriceFetcherTests
         result.Should().BeFalse();
     }
 
-    [Theory]
-    [InlineData(ValuationMethod.MarketPrice)]
-    [InlineData(ValuationMethod.NAV)]
-    public void Supports_ExplicitMarketPriceOrNav_ReturnsTrueRegardlessOfAssetClass(ValuationMethod valuationMethod)
+    [Fact]
+    public void Supports_ExplicitMarketPrice_ReturnsTrueRegardlessOfAssetClass()
     {
-        var result = _sut.Supports(GlobalAssetClass.PrivateCredit, valuationMethod);
+        var result = _sut.Supports(GlobalAssetClass.PrivateCredit, ValuationMethod.MarketPrice);
 
         result.Should().BeTrue("an explicit method overrides class-based routing");
     }

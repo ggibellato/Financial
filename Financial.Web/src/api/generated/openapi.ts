@@ -6507,7 +6507,7 @@ export interface components {
             terminalValue: number;
         };
         /** @enum {unknown} */
-        CalculationStatus: "RequiresReview" | "Incomplete" | "Estimated" | "Final";
+        CalculationStatus: "RequiresReview" | "Incomplete" | "Final";
         CalendarConnectionStatusDTO: {
             accountEmail?: null | string;
             calendarId?: null | string;
@@ -7695,7 +7695,7 @@ export interface components {
             projectedNextDate: string;
         };
         /** @enum {unknown} */
-        ValuationMethod: "Unspecified" | "MarketPrice" | "NAV" | "ProviderValue" | "Manual" | "BondQuote";
+        ValuationMethod: "Unspecified" | "MarketPrice" | "ProviderValue" | "Manual" | "BondQuote";
         WatchlistItemDTO: {
             group: string;
             name: string;

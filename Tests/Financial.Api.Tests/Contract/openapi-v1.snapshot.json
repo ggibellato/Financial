@@ -1009,7 +1009,6 @@
         "enum": [
           "RequiresReview",
           "Incomplete",
-          "Estimated",
           "Final"
         ]
       },
@@ -4848,7 +4847,6 @@
         "enum": [
           "Unspecified",
           "MarketPrice",
-          "NAV",
           "ProviderValue",
           "Manual",
           "BondQuote"

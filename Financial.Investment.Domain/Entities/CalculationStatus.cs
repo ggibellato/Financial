@@ -4,6 +4,5 @@ public enum CalculationStatus
 {
     RequiresReview,
     Incomplete,
-    Estimated,
     Final
 }
