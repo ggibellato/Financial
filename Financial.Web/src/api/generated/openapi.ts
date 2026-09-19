@@ -1147,7 +1147,10 @@ export interface paths {
         /** Renames and/or re-currencies an existing broker. */
         put: {
             parameters: {
-                query?: never;
+                query?: {
+                    /** @description Which record (Active or Historic) to resolve `name` against; defaults to Active. */
+                    scope?: string;
+                };
                 header?: never;
                 path: {
                     /** @description The broker's current name. */
@@ -1258,7 +1261,10 @@ export interface paths {
         /** Changes a broker's cost-basis method, regenerating every disposal record under it. */
         put: {
             parameters: {
-                query?: never;
+                query?: {
+                    /** @description Which record (Active or Historic) to resolve `name` against; defaults to Active. */
+                    scope?: string;
+                };
                 header?: never;
                 path: {
                     /** @description The broker's name. */

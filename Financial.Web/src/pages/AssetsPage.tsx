@@ -20,6 +20,7 @@ import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import AssetFormDialog from '../components/AssetFormDialog'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
+import TruncatedText from '../components/TruncatedText'
 import { useFormPanelStyles } from '../components/formPanelStyles'
 import { useBrokers } from '../hooks/useBrokers'
 import { usePortfolios } from '../hooks/usePortfolios'
@@ -189,7 +190,9 @@ export default function AssetsPage() {
               const key = assetKey(asset.brokerName, asset.portfolioName, asset.name)
               return (
                 <TableRow key={key}>
-                  <TableCell>{asset.name}</TableCell>
+                  <TableCell>
+                    <TruncatedText text={asset.name} />
+                  </TableCell>
                   <TableCell>{asset.ticker}</TableCell>
                   <TableCell>{asset.brokerName}</TableCell>
                   <TableCell>{asset.portfolioName}</TableCell>

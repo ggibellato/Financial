@@ -1,4 +1,5 @@
 using Financial.Investment.Application.DTOs;
+using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Services;
 using Financial.Investment.Domain.Entities;
 using Financial.Investment.Domain.Exceptions;
@@ -107,6 +108,28 @@ public class BrokerServiceTests
     }
 
     [Fact]
+    public async Task UpdateBrokerAsync_HistoricBrokerAlsoActiveUnderSameName_ScopeHistoric_RenamesTheHistoricRecord()
+    {
+        // Regression: a real-world broker can have both an Active record (still trading) and a
+        // Historic record (an archived closed position) under the same name. Without an explicit
+        // scope, resolving the broker defaulted to Active-first and renamed the wrong record.
+        var activeBroker = Broker.Create("XPI", "BRL");
+        _repository.Investments!.AddActiveBroker(activeBroker);
+        var historicBroker = Broker.Create("XPI", "BRL");
+        _repository.Investments!.AddHistoricBroker(historicBroker);
+
+        var result = await CreateService().UpdateBrokerAsync("XPI", new BrokerUpdateDTO { Name = "XP Investimentos (old)", Currency = "USD" }, InvestmentScope.Historic);
+
+        using (new AssertionScope())
+        {
+            result.Name.Should().Be("XP Investimentos (old)");
+            result.Status.Should().Be("Historic");
+            historicBroker.Name.Should().Be("XP Investimentos (old)");
+            activeBroker.Name.Should().Be("XPI");
+        }
+    }
+
+    [Fact]
     public async Task DeleteBrokerAsync_ActiveAndEmpty_MovesToHistoricAndPersistsOnce()
     {
         _repository.Investments!.AddActiveBroker(Broker.Create("XPI", "BRL"));
@@ -185,6 +208,26 @@ public class BrokerServiceTests
 
         await act.Should().ThrowAsync<KeyNotFoundException>();
         _repository.WriteCallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task SetCostBasisMethodAsync_HistoricBrokerAlsoActiveUnderSameName_ScopeHistoric_ChangesTheHistoricRecord()
+    {
+        // Regression: same root cause as UpdateBrokerAsync's - without an explicit scope, resolving
+        // a same-named broker defaulted to Active-first and changed the wrong record's method.
+        var activeBroker = Broker.Create("XPI", "BRL");
+        _repository.Investments!.AddActiveBroker(activeBroker);
+        var historicBroker = Broker.Create("XPI", "BRL");
+        _repository.Investments!.AddHistoricBroker(historicBroker);
+
+        var result = await CreateService().SetCostBasisMethodAsync("XPI", CostBasisMethod.FIFO, InvestmentScope.Historic);
+
+        using (new AssertionScope())
+        {
+            result.Status.Should().Be("Historic");
+            historicBroker.CostBasisMethod.Should().Be(CostBasisMethod.FIFO);
+            activeBroker.CostBasisMethod.Should().Be(CostBasisMethod.AverageCost);
+        }
     }
 
     [Fact]

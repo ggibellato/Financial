@@ -6405,6 +6405,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "description": "Which record (Active or Historic) to resolve \u0060name\u0060 against; defaults to Active.",
+            "in": "query",
+            "name": "scope",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -6503,6 +6511,14 @@
             "in": "path",
             "name": "name",
             "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Which record (Active or Historic) to resolve \u0060name\u0060 against; defaults to Active.",
+            "in": "query",
+            "name": "scope",
             "schema": {
               "type": "string"
             }

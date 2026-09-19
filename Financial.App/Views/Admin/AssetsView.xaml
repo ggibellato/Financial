@@ -61,7 +61,7 @@
                       AutomationProperties.Name="Assets">
                 <DataGrid.Columns>
                     <DataGridTextColumn Binding="{Binding Name}" Header="Name" Width="*"
-                                         ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                                         ElementStyle="{StaticResource TruncatedColumnTextStyle}"/>
                     <DataGridTextColumn Binding="{Binding Ticker}" Header="Ticker" Width="100"
                                          ElementStyle="{StaticResource PlainColumnTextStyle}"/>
                     <DataGridTextColumn Binding="{Binding BrokerName}" Header="Broker" Width="120"

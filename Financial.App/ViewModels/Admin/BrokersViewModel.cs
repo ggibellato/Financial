@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using Financial.Investment.Application.DTOs;
+using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.Entities;
 using Financial.Presentation.App.Services;
@@ -137,10 +138,11 @@ public class BrokersViewModel : ViewModelBase
         }
 
         ActionError = null;
+        var scope = broker.Status == "Active" ? InvestmentScope.Active : InvestmentScope.Historic;
         BrokerDTO renamed;
         try
         {
-            renamed = await _brokerService.UpdateBrokerAsync(broker.Name, new BrokerUpdateDTO { Name = dialog.Name, Currency = dialog.Currency });
+            renamed = await _brokerService.UpdateBrokerAsync(broker.Name, new BrokerUpdateDTO { Name = dialog.Name, Currency = dialog.Currency }, scope);
         }
         catch (Exception ex)
         {
@@ -154,7 +156,7 @@ public class BrokersViewModel : ViewModelBase
         {
             try
             {
-                await _brokerService.SetCostBasisMethodAsync(renamed.Name, selectedMethod);
+                await _brokerService.SetCostBasisMethodAsync(renamed.Name, selectedMethod, scope);
             }
             catch (Exception ex)
             {

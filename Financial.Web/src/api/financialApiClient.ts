@@ -119,8 +119,8 @@ export interface FinancialApiClient {
   getBrokers: () => Promise<BrokerNodeDto[]>
   getAdminBrokers: () => Promise<BrokerDto[]>
   createBroker: (request: BrokerCreateDto) => Promise<BrokerDto>
-  updateBroker: (currentName: string, request: BrokerUpdateDto) => Promise<BrokerDto>
-  setCostBasisMethod: (name: string, request: SetCostBasisMethodRequestDto) => Promise<BrokerDto>
+  updateBroker: (currentName: string, request: BrokerUpdateDto, scope?: InvestmentScope) => Promise<BrokerDto>
+  setCostBasisMethod: (name: string, request: SetCostBasisMethodRequestDto, scope?: InvestmentScope) => Promise<BrokerDto>
   deleteBroker: (name: string) => Promise<void>
   getAssetDetails: (brokerName: string, portfolioName: string, assetName: string, scope?: InvestmentScope) => Promise<AssetDetailsDto>
   getOpenLots: (brokerName: string, portfolioName: string, assetName: string, scope?: InvestmentScope) => Promise<OpenLotDto[]>
@@ -347,13 +347,13 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
     getAdminBrokers: () => request<BrokerDto[]>('/brokers'),
     createBroker: (requestBody) =>
       request<BrokerDto>('/brokers', { method: 'POST', body: JSON.stringify(requestBody) }),
-    updateBroker: (currentName, requestBody) =>
-      request<BrokerDto>(`/brokers/${encodeURIComponent(currentName)}`, {
+    updateBroker: (currentName, requestBody, scope = 'active') =>
+      request<BrokerDto>(`/brokers/${encodeURIComponent(currentName)}${buildScopeQuery(scope)}`, {
         method: 'PUT',
         body: JSON.stringify(requestBody),
       }),
-    setCostBasisMethod: (name, requestBody) =>
-      request<BrokerDto>(`/brokers/${encodeURIComponent(name)}/cost-basis-method`, {
+    setCostBasisMethod: (name, requestBody, scope = 'active') =>
+      request<BrokerDto>(`/brokers/${encodeURIComponent(name)}/cost-basis-method${buildScopeQuery(scope)}`, {
         method: 'PUT',
         body: JSON.stringify(requestBody),
       }),

@@ -706,9 +706,9 @@ public class ControllerGuardClauseTests
     {
         public IReadOnlyList<BrokerDTO> GetBrokers() => throw new NotImplementedException();
         public Task<BrokerDTO> CreateBrokerAsync(BrokerCreateDTO request) => throw new NotImplementedException();
-        public Task<BrokerDTO> UpdateBrokerAsync(string currentName, BrokerUpdateDTO request) => throw new NotImplementedException();
+        public Task<BrokerDTO> UpdateBrokerAsync(string currentName, BrokerUpdateDTO request, InvestmentScope scope = InvestmentScope.Active) => throw new NotImplementedException();
         public Task DeleteBrokerAsync(string name) => throw new NotImplementedException();
-        public Task<BrokerDTO> SetCostBasisMethodAsync(string brokerName, CostBasisMethod method) => throw new NotImplementedException();
+        public Task<BrokerDTO> SetCostBasisMethodAsync(string brokerName, CostBasisMethod method, InvestmentScope scope = InvestmentScope.Active) => throw new NotImplementedException();
     }
 
     private sealed class StubAssetPriceHistoryService : IAssetPriceHistoryService

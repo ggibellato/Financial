@@ -581,8 +581,8 @@ internal sealed class StubBrokerService : IBrokerService
 {
     public List<BrokerDTO> Brokers { get; set; } = [];
     public BrokerCreateDTO? LastCreateRequest { get; private set; }
-    public (string CurrentName, BrokerUpdateDTO Request)? LastUpdateRequest { get; private set; }
-    public (string BrokerName, CostBasisMethod Method)? LastSetCostBasisMethodRequest { get; private set; }
+    public (string CurrentName, BrokerUpdateDTO Request, InvestmentScope Scope)? LastUpdateRequest { get; private set; }
+    public (string BrokerName, CostBasisMethod Method, InvestmentScope Scope)? LastSetCostBasisMethodRequest { get; private set; }
     public string? LastDeletedName { get; private set; }
     public Exception? ThrowOnCreate { get; set; }
     public Exception? ThrowOnUpdate { get; set; }
@@ -612,9 +612,9 @@ internal sealed class StubBrokerService : IBrokerService
         return Task.FromResult(created);
     }
 
-    public Task<BrokerDTO> UpdateBrokerAsync(string currentName, BrokerUpdateDTO request)
+    public Task<BrokerDTO> UpdateBrokerAsync(string currentName, BrokerUpdateDTO request, InvestmentScope scope = InvestmentScope.Active)
     {
-        LastUpdateRequest = (currentName, request);
+        LastUpdateRequest = (currentName, request, scope);
         if (ThrowOnUpdate is not null)
         {
             throw ThrowOnUpdate;
@@ -644,9 +644,9 @@ internal sealed class StubBrokerService : IBrokerService
         return Task.CompletedTask;
     }
 
-    public Task<BrokerDTO> SetCostBasisMethodAsync(string brokerName, CostBasisMethod method)
+    public Task<BrokerDTO> SetCostBasisMethodAsync(string brokerName, CostBasisMethod method, InvestmentScope scope = InvestmentScope.Active)
     {
-        LastSetCostBasisMethodRequest = (brokerName, method);
+        LastSetCostBasisMethodRequest = (brokerName, method, scope);
         if (ThrowOnSetCostBasisMethod is not null)
         {
             throw ThrowOnSetCostBasisMethod;

@@ -55,7 +55,8 @@ export default function BrokersPage() {
       return created
     }
 
-    const renamed = await updateBroker(editingBroker.name, { name, currency })
+    const editingScope = editingBroker.status === 'Active' ? 'active' : 'historic'
+    const renamed = await updateBroker(editingBroker.name, { name, currency }, editingScope)
     // The rename already committed server-side by this point, so a thrown error from here on
     // must not be reported as if nothing was saved - and a resubmit must target the new name,
     // not the one that no longer exists.
@@ -66,7 +67,7 @@ export default function BrokersPage() {
     }
 
     try {
-      const updated = await setCostBasisMethod(renamed.name, costBasisMethod)
+      const updated = await setCostBasisMethod(renamed.name, costBasisMethod, editingScope)
       closeFormDialog()
       return updated
     } catch (err: unknown) {

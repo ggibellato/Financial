@@ -1,5 +1,6 @@
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Interfaces;
+using Financial.Investment.Application.Validation;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Financial.Api.Controllers;
@@ -49,39 +50,41 @@ public sealed class BrokersController : ControllerBase
     /// <summary>Renames and/or re-currencies an existing broker.</summary>
     /// <param name="name">The broker's current name.</param>
     /// <param name="request">The broker's new name and currency.</param>
+    /// <param name="scope">Which record (Active or Historic) to resolve <paramref name="name"/> against; defaults to Active.</param>
     /// <returns>200 OK with the updated broker, 400 Bad Request if invalid, 404 Not Found if the broker doesn't exist, or 409 Conflict if the new name is already in use.</returns>
     [HttpPut("{name}")]
     [ProducesResponseType(typeof(BrokerDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<BrokerDTO>> UpdateBroker(string name, [FromBody] BrokerUpdateDTO? request)
+    public async Task<ActionResult<BrokerDTO>> UpdateBroker(string name, [FromBody] BrokerUpdateDTO? request, [FromQuery] string? scope = null)
     {
         if (request is null)
         {
             return BadRequest();
         }
 
-        var broker = await _brokerService.UpdateBrokerAsync(name, request);
+        var broker = await _brokerService.UpdateBrokerAsync(name, request, InvestmentScopeParser.ParseOrDefault(scope));
         return Ok(broker);
     }
 
     /// <summary>Changes a broker's cost-basis method, regenerating every disposal record under it.</summary>
     /// <param name="name">The broker's name.</param>
     /// <param name="request">The broker's new cost-basis method.</param>
+    /// <param name="scope">Which record (Active or Historic) to resolve <paramref name="name"/> against; defaults to Active.</param>
     /// <returns>200 OK with the updated broker, 400 Bad Request if invalid, or 404 Not Found if the broker doesn't exist.</returns>
     [HttpPut("{name}/cost-basis-method")]
     [ProducesResponseType(typeof(BrokerDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<BrokerDTO>> SetCostBasisMethod(string name, [FromBody] SetCostBasisMethodRequestDTO? request)
+    public async Task<ActionResult<BrokerDTO>> SetCostBasisMethod(string name, [FromBody] SetCostBasisMethodRequestDTO? request, [FromQuery] string? scope = null)
     {
         if (request is null)
         {
             return BadRequest();
         }
 
-        var broker = await _brokerService.SetCostBasisMethodAsync(name, request.Method);
+        var broker = await _brokerService.SetCostBasisMethodAsync(name, request.Method, InvestmentScopeParser.ParseOrDefault(scope));
         return Ok(broker);
     }
 

@@ -1,4 +1,5 @@
 using Financial.Investment.Application.DTOs;
+using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.Entities;
 using Financial.Investment.Domain.Rules;
@@ -72,7 +73,7 @@ public sealed class BrokerService : IBrokerService
         }
     }
 
-    public async Task<BrokerDTO> UpdateBrokerAsync(string currentName, BrokerUpdateDTO request)
+    public async Task<BrokerDTO> UpdateBrokerAsync(string currentName, BrokerUpdateDTO request, InvestmentScope scope = InvestmentScope.Active)
     {
         using var span = StartSpan("UpdateBroker");
         try
@@ -87,8 +88,10 @@ public sealed class BrokerService : IBrokerService
             await _repository.ApplyAndSaveAsync(() =>
             {
                 var investments = _repository.GetInvestments();
-                updated = investments.RenameBroker(currentName, newName, newCurrency);
-                status = investments.FindActiveBroker(updated.Name) is not null ? "Active" : "Historic";
+                updated = investments.RenameBroker(currentName, newName, newCurrency, preferHistoric: scope == InvestmentScope.Historic);
+                // Reference equality, not name: the same broker name can have both an Active and a
+                // Historic record, so matching by name alone would always report "Active".
+                status = investments.ActiveBrokers.Any(b => ReferenceEquals(b, updated)) ? "Active" : "Historic";
                 return true;
             }).ConfigureAwait(false);
 
@@ -126,7 +129,7 @@ public sealed class BrokerService : IBrokerService
         }
     }
 
-    public async Task<BrokerDTO> SetCostBasisMethodAsync(string brokerName, CostBasisMethod method)
+    public async Task<BrokerDTO> SetCostBasisMethodAsync(string brokerName, CostBasisMethod method, InvestmentScope scope = InvestmentScope.Active)
     {
         using var span = StartSpan("SetCostBasisMethod");
         try
@@ -138,7 +141,12 @@ public sealed class BrokerService : IBrokerService
             await _repository.ApplyAndSaveAsync(() =>
             {
                 var investments = _repository.GetInvestments();
-                updated = investments.FindActiveBroker(required) ?? investments.FindHistoricBroker(required)
+                // The same broker name can have both an Active and a Historic record; resolving the
+                // requested scope first is what lets targeting the Historic record find it instead
+                // of the Active one.
+                updated = (scope == InvestmentScope.Historic
+                    ? investments.FindHistoricBroker(required) ?? investments.FindActiveBroker(required)
+                    : investments.FindActiveBroker(required) ?? investments.FindHistoricBroker(required))
                     ?? throw new KeyNotFoundException($"Broker \"{required}\" was not found.");
                 var previousMethod = updated.CostBasisMethod;
                 updated.SetCostBasisMethod(method);
@@ -151,7 +159,9 @@ public sealed class BrokerService : IBrokerService
                     updated.SetCostBasisMethod(previousMethod);
                     throw;
                 }
-                status = investments.FindActiveBroker(updated.Name) is not null ? "Active" : "Historic";
+                // Reference equality, not name: the same broker name can have both an Active and a
+                // Historic record, so matching by name alone would always report "Active".
+                status = investments.ActiveBrokers.Any(b => ReferenceEquals(b, updated)) ? "Active" : "Historic";
                 return true;
             }).ConfigureAwait(false);
 

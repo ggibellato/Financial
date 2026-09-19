@@ -101,9 +101,39 @@ describe('BrokersPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
     await waitFor(() =>
-      expect(updateBrokerMock).toHaveBeenCalledWith('XPI', { name: 'XPI Renamed', currency: 'BRL' }),
+      expect(updateBrokerMock).toHaveBeenCalledWith('XPI', { name: 'XPI Renamed', currency: 'BRL' }, 'active'),
     )
     expect(setCostBasisMethodMock).not.toHaveBeenCalled()
+  })
+
+  it('edits a historic broker through its row action, forwarding scope=historic', async () => {
+    // Regression: the same broker name can have both an Active and a Historic record; without
+    // forwarding the row's own status as the scope, this would resolve to the wrong (Active) one.
+    getAdminBrokersMock.mockResolvedValue([
+      ...BROKERS,
+      { name: 'Closed Broker', currency: 'GBP', status: 'Historic', portfolioCount: 0, costBasisMethod: 'AverageCost' },
+    ])
+    updateBrokerMock.mockResolvedValue({
+      name: 'Closed Broker Renamed',
+      currency: 'GBP',
+      status: 'Historic',
+      portfolioCount: 0,
+      costBasisMethod: 'AverageCost',
+    })
+    render(<BrokersPage />)
+    await waitFor(() => expect(screen.getByText('Closed Broker')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Closed Broker' }))
+    fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'Closed Broker Renamed' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    await waitFor(() =>
+      expect(updateBrokerMock).toHaveBeenCalledWith(
+        'Closed Broker',
+        { name: 'Closed Broker Renamed', currency: 'GBP' },
+        'historic',
+      ),
+    )
   })
 
   it('also calls setCostBasisMethod when editing changes the cost basis method', async () => {
@@ -128,7 +158,7 @@ describe('BrokersPage', () => {
     fireEvent.change(screen.getByRole('combobox', { name: /^Cost Basis Method/ }), { target: { value: 'FIFO' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
-    await waitFor(() => expect(setCostBasisMethodMock).toHaveBeenCalledWith('XPI', { method: 'FIFO' }))
+    await waitFor(() => expect(setCostBasisMethodMock).toHaveBeenCalledWith('XPI', { method: 'FIFO' }, 'active'))
   })
 
   it('reports a partial-success error (not a full-failure one) when the rename commits but the method change fails', async () => {

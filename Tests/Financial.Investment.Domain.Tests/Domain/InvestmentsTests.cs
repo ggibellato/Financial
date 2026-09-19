@@ -344,6 +344,44 @@ public class InvestmentsTests
     }
 
     [Fact]
+    public void RenameBroker_SameNameActiveAndHistoric_DefaultsToRenamingTheActiveOne()
+    {
+        var investments = Investments.Create();
+        var activeBroker = Broker.Create("XPI", "BRL");
+        investments.AddActiveBroker(activeBroker);
+        var historicBroker = Broker.Create("XPI", "BRL");
+        investments.AddHistoricBroker(historicBroker);
+
+        var renamed = investments.RenameBroker("XPI", "XP Investimentos", "USD");
+
+        using (new AssertionScope())
+        {
+            renamed.Should().BeSameAs(activeBroker);
+            activeBroker.Name.Should().Be("XP Investimentos");
+            historicBroker.Name.Should().Be("XPI");
+        }
+    }
+
+    [Fact]
+    public void RenameBroker_SameNameActiveAndHistoric_PreferHistoricRenamesTheHistoricOne()
+    {
+        var investments = Investments.Create();
+        var activeBroker = Broker.Create("XPI", "BRL");
+        investments.AddActiveBroker(activeBroker);
+        var historicBroker = Broker.Create("XPI", "BRL");
+        investments.AddHistoricBroker(historicBroker);
+
+        var renamed = investments.RenameBroker("XPI", "XP Investimentos (old)", "USD", preferHistoric: true);
+
+        using (new AssertionScope())
+        {
+            renamed.Should().BeSameAs(historicBroker);
+            historicBroker.Name.Should().Be("XP Investimentos (old)");
+            activeBroker.Name.Should().Be("XPI");
+        }
+    }
+
+    [Fact]
     public void DeleteBroker_ActiveAndEmpty_MovesItToHistoric()
     {
         var investments = Investments.Create();
