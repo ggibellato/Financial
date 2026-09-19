@@ -42,10 +42,13 @@
             <DataGrid Grid.Row="2" ItemsSource="{Binding InvestmentAccounts}" AutoGenerateColumns="False" IsReadOnly="True"
                       AutomationProperties.Name="Investment Accounts">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Binding="{Binding Name}" Header="Name" Width="*"/>
-                    <DataGridTextColumn Binding="{Binding IsActive}" Header="Active" Width="70"/>
-                    <DataGridTextColumn Binding="{Binding IsLiability}" Header="Liability" Width="80"/>
-                    <DataGridTextColumn Header="Source" Width="140">
+                    <DataGridTextColumn Binding="{Binding Name}" Header="Name" Width="*"
+                                         ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                    <DataGridTextColumn Binding="{Binding IsActive}" Header="Active" Width="70"
+                                         ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                    <DataGridTextColumn Binding="{Binding IsLiability}" Header="Liability" Width="80"
+                                         ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                    <DataGridTextColumn Header="Source" Width="140" ElementStyle="{StaticResource PlainColumnTextStyle}">
                         <DataGridTextColumn.Binding>
                             <MultiBinding Converter="{StaticResource InvestmentAccountSourceDisplayConverter}">
                                 <Binding Path="Source"/>

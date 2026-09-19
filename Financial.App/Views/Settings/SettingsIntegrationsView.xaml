@@ -94,8 +94,10 @@
                         <DataGrid ItemsSource="{Binding SyncRows}" AutoGenerateColumns="False" IsReadOnly="True"
                                   AutomationProperties.Name="Credit Card Calendar Sync Status">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Binding="{Binding Name}" Header="Card" Width="*"/>
-                                <DataGridTextColumn Binding="{Binding DueDate, Converter={StaticResource DateFormatConverter}}" Header="Due Date" Width="140"/>
+                                <DataGridTextColumn Binding="{Binding Name}" Header="Card" Width="*"
+                                                     ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                                <DataGridTextColumn Binding="{Binding DueDate, Converter={StaticResource DateFormatConverter}}" Header="Due Date" Width="140"
+                                                     ElementStyle="{StaticResource PlainColumnTextStyle}"/>
                                 <DataGridTemplateColumn Header="Sync Status" Width="220">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>

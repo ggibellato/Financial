@@ -1,4 +1,5 @@
 import { Fragment, type ReactNode } from 'react'
+import { Table, TableBody, TableCell, TableHeader, TableRow } from '@fluentui/react-components'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 
@@ -32,9 +33,9 @@ export default function TotalsGrid<T>({ columns, rows, rowKey, footerItems, isFi
   return (
     <section className="monthly-page__section monthly-page__section--grid">
       <div className="monthly-page__table-scroll">
-        <table className="monthly-page__table data-table">
-          <thead>
-            <tr>
+        <Table className="monthly-page__table data-table">
+          <TableHeader>
+            <TableRow>
               {columns.map((col) => (
                 <SortableColumnHeader
                   key={col.key}
@@ -47,26 +48,26 @@ export default function TotalsGrid<T>({ columns, rows, rowKey, footerItems, isFi
                   {col.filterSlot}
                 </SortableColumnHeader>
               ))}
-            </tr>
-          </thead>
-          <tbody>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {rows.length === 0 && isFiltered ? (
-              <tr>
-                <td colSpan={columns.length}>No rows match the current filters</td>
-              </tr>
+              <TableRow>
+                <TableCell colSpan={columns.length}>No rows match the current filters</TableCell>
+              </TableRow>
             ) : (
               sortedRows.map((row) => (
-                <tr key={rowKey(row)}>
+                <TableRow key={rowKey(row)}>
                   {columns.map((col) => (
-                    <td key={col.key} className={col.numeric ? 'data-table__col--numeric' : undefined}>
+                    <TableCell key={col.key} className={col.numeric ? 'data-table__col--numeric' : undefined}>
                       {col.render(row)}
-                    </td>
+                    </TableCell>
                   ))}
-                </tr>
+                </TableRow>
               ))
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
       <p className="monthly-page__section-total">
         {footerItems.map((item, index) => (

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
 import SortableColumnHeader from './grid/SortableColumnHeader'
@@ -97,19 +98,19 @@ function AssetRow({ item, rowPrice, isHistoric }: AssetRowProps) {
   const cellUnavailable = !isHistoric && rowPrice.fetchFailed
 
   return (
-    <tr>
-      <td>{item.assetName}</td>
-      <td>{formatShortDate(item.firstInvestmentDate)}</td>
-      <td>{formatN8(item.currentQuantity)}</td>
-      <td>{item.portfolioWeight === null ? '—' : `${formatN2(item.portfolioWeight)}%`}</td>
-      <td>{formatN2(item.totalInvested)}</td>
+    <TableRow>
+      <TableCell>{item.assetName}</TableCell>
+      <TableCell>{formatShortDate(item.firstInvestmentDate)}</TableCell>
+      <TableCell>{formatN8(item.currentQuantity)}</TableCell>
+      <TableCell>{item.portfolioWeight === null ? '—' : `${formatN2(item.portfolioWeight)}%`}</TableCell>
+      <TableCell>{formatN2(item.totalInvested)}</TableCell>
       {isHistoric && (
-        <td>
+        <TableCell>
           <span className={getProfitClass(item.realizedGainLoss)}>{formatN2(item.realizedGainLoss)}</span>
-        </td>
+        </TableCell>
       )}
       {!isHistoric && (
-        <td>
+        <TableCell>
           {renderGatedCell(rowPrice.isLoading, rowPrice.fetchFailed, currentValue, v => formatN2(v))}
           {!rowPrice.isLoading && !rowPrice.fetchFailed && rowPrice.isManual && (
             <span
@@ -120,11 +121,11 @@ function AssetRow({ item, rowPrice, isHistoric }: AssetRowProps) {
               (M)
             </span>
           )}
-        </td>
+        </TableCell>
       )}
-      <td>{formatN2(item.totalCredits)}</td>
-      <td>{formatN2(item.averagePrice)}</td>
-      <td>
+      <TableCell>{formatN2(item.totalCredits)}</TableCell>
+      <TableCell>{formatN2(item.averagePrice)}</TableCell>
+      <TableCell>
         {renderGatedCell(cellLoading, cellUnavailable, priceValue, v => formatN2(v))}
         {!isHistoric && !cellLoading && !cellUnavailable && item.marketStatus === 'Stale' && (
           <span className="portfolio-summary__stale-badge" title="This price is older than the most recent weekday.">
@@ -138,30 +139,30 @@ function AssetRow({ item, rowPrice, isHistoric }: AssetRowProps) {
             (U)
           </span>
         )}
-      </td>
-      <td>
+      </TableCell>
+      <TableCell>
         {renderGatedCell(cellLoading, cellUnavailable, profitPercent, v => (
           <span className={getProfitClass(v)}>{formatN2(v)}%</span>
         ))}
-      </td>
-      <td>
+      </TableCell>
+      <TableCell>
         {renderGatedCell(cellLoading, cellUnavailable, profitWithCreditsPercent, v => (
           <span className={getProfitClass(v)}>{formatN2(v)}%</span>
         ))}
-      </td>
-      <td>
+      </TableCell>
+      <TableCell>
         {renderGatedCell(cellLoading, false, xirrValue, v => (
           <span className={getProfitClass(v)}>{formatN2(v * 100)}%</span>
         ))}
-      </td>
-      <td className="portfolio-summary__credits-separator">
+      </TableCell>
+      <TableCell className="portfolio-summary__credits-separator">
         {item.lastCreditMonth === null ? '—' : formatN2(item.lastMonthCredits)}
-      </td>
-      <td>{item.lastCreditMonth === null ? '—' : formatCreditMonth(item.lastCreditMonth)}</td>
-      <td>{item.lastMonthCreditsPercent === null ? '—' : `${formatN2(item.lastMonthCreditsPercent)}%`}</td>
-      <td>{item.estimatedAnnualCredits === null ? '—' : formatN2(item.estimatedAnnualCredits)}</td>
-      <td>{item.estimatedAnnualPercent === null ? '—' : `${formatN2(item.estimatedAnnualPercent)}%`}</td>
-    </tr>
+      </TableCell>
+      <TableCell>{item.lastCreditMonth === null ? '—' : formatCreditMonth(item.lastCreditMonth)}</TableCell>
+      <TableCell>{item.lastMonthCreditsPercent === null ? '—' : `${formatN2(item.lastMonthCreditsPercent)}%`}</TableCell>
+      <TableCell>{item.estimatedAnnualCredits === null ? '—' : formatN2(item.estimatedAnnualCredits)}</TableCell>
+      <TableCell>{item.estimatedAnnualPercent === null ? '—' : `${formatN2(item.estimatedAnnualPercent)}%`}</TableCell>
+    </TableRow>
   )
 }
 
@@ -258,9 +259,9 @@ export default function PortfolioSummaryTab() {
         {isLoading && <LoadingState />}
         {error && <ErrorState message={error} onRetry={retry} />}
         {!isLoading && !error && items && (
-          <table className="portfolio-summary__table data-table">
-            <thead>
-              <tr>
+          <Table className="portfolio-summary__table data-table">
+            <TableHeader>
+              <TableRow>
                 <SortableColumnHeader rowSpan={2} label="Asset Name" columnKey="assetName" sortDirection={sortDirectionFor('assetName')} onSort={requestSort} />
                 <SortableColumnHeader rowSpan={2} label="First Investment" columnKey="firstInvestment" sortDirection={sortDirectionFor('firstInvestment')} onSort={requestSort} />
                 <SortableColumnHeader rowSpan={2} numeric label="Quantity" columnKey="quantity" sortDirection={sortDirectionFor('quantity')} onSort={requestSort} />
@@ -275,12 +276,12 @@ export default function PortfolioSummaryTab() {
                 <SortableColumnHeader rowSpan={2} numeric label="Total Credits" columnKey="totalCredits" sortDirection={sortDirectionFor('totalCredits')} onSort={requestSort} />
                 <SortableColumnHeader rowSpan={2} numeric label="Average Price" columnKey="averagePrice" sortDirection={sortDirectionFor('averagePrice')} onSort={requestSort} />
                 <SortableColumnHeader rowSpan={2} numeric label={isHistoric ? 'Sold Price' : 'Current Price'} columnKey="price" sortDirection={sortDirectionFor('price')} onSort={requestSort} />
-                <th colSpan={2} className="portfolio-summary__group-header">Profit</th>
+                <TableHeaderCell colSpan={2} className="portfolio-summary__group-header">Profit</TableHeaderCell>
                 <SortableColumnHeader rowSpan={2} numeric label="XIRR" columnKey="xirr" sortDirection={sortDirectionFor('xirr')} onSort={requestSort} />
-                <th colSpan={3} className="portfolio-summary__group-header portfolio-summary__credits-separator">Last Month</th>
-                <th colSpan={2} className="portfolio-summary__group-header">Est. Annual</th>
-              </tr>
-              <tr>
+                <TableHeaderCell colSpan={3} className="portfolio-summary__group-header portfolio-summary__credits-separator">Last Month</TableHeaderCell>
+                <TableHeaderCell colSpan={2} className="portfolio-summary__group-header">Est. Annual</TableHeaderCell>
+              </TableRow>
+              <TableRow>
                 <SortableColumnHeader numeric label="%" columnKey="profitPercent" sortDirection={sortDirectionFor('profitPercent')} onSort={requestSort} />
                 <SortableColumnHeader numeric label="w/ Credits" columnKey="profitWithCreditsPercent" sortDirection={sortDirectionFor('profitWithCreditsPercent')} onSort={requestSort} />
                 <SortableColumnHeader numeric label="Credits" columnKey="lastMonthCredits" sortDirection={sortDirectionFor('lastMonthCredits')} onSort={requestSort} className="portfolio-summary__credits-separator" />
@@ -288,14 +289,14 @@ export default function PortfolioSummaryTab() {
                 <SortableColumnHeader numeric label="%" columnKey="lastMonthCreditsPercent" sortDirection={sortDirectionFor('lastMonthCreditsPercent')} onSort={requestSort} />
                 <SortableColumnHeader numeric label="Credits" columnKey="estimatedAnnualCredits" sortDirection={sortDirectionFor('estimatedAnnualCredits')} onSort={requestSort} />
                 <SortableColumnHeader numeric label="%" columnKey="estimatedAnnualPercent" sortDirection={sortDirectionFor('estimatedAnnualPercent')} onSort={requestSort} />
-              </tr>
-            </thead>
-            <tbody>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {sortedRows.map((row) => (
                 <AssetRow key={row.item.assetName} item={row.item} rowPrice={row.rowPrice} isHistoric={isHistoric} />
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         )}
       </div>
 

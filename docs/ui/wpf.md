@@ -135,6 +135,18 @@ unthemed classic Windows chrome — a known, open gap. Closing it needs a custom
 
 ## Data, trees, and charts
 
+- **Row height**: every `DataGridTextColumn` on every `DataGrid` sets an
+  `ElementStyle` — `PlainColumnTextStyle`, `NumericColumnTextStyle`, or
+  `TruncatedColumnTextStyle` (`App.xaml`), never left unstyled. No `DataGrid`
+  sets `RowHeight`/`MinRowHeight`, and no view scopes its own `DataGridCell`/
+  `DataGridRow` padding: the ~32px row height every grid in the app shares
+  comes entirely from these three shared column styles (in practice, from
+  `NumericColumnTextStyle`'s `Padding="8"`, since the tallest cell in a row
+  governs that row's height) plus the base `DataGrid`/`DataGridCell` styles
+  in `App.xaml`, matching Web's `.data-table` baseline (`docs/ui/react.md`
+  "Grid row height"). Confirmed and fixed across every Admin grid in 2026-09
+  (several had columns with no `ElementStyle` at all, which lost both the
+  shared row height and `VerticalAlignment="Center"`).
 - A page combining one grid with one chart (Investment Transactions/Credits/
   Price History) follows `docs/ui/forms-data-and-visualisations.md`'s
   "Grid-and-chart pages" rule: filters at the top always, then side-by-side
@@ -180,6 +192,15 @@ unthemed classic Windows chrome — a known, open gap. Closing it needs a custom
   sort behavior at all). When sorting is actually speced, implement
   equivalent explicit sort behavior on both platforms in that feature's own
   slice, rather than leaving WPF with an accidental head start.
+- A free-text column (description/note/label) whose values are occasionally
+  long uses `TruncatedColumnTextStyle` (`App.xaml`, based on
+  `PlainColumnTextStyle`) as its `ElementStyle` — never `TextWrapping="Wrap"`
+  (grows that row's height inconsistently with every other row, the same bug
+  fixed on the React side in 2026-09) and never left unstyled (silently
+  clips with no way to see the full value). It sets
+  `TextTrimming="CharacterEllipsis"` plus a `ToolTip` bound to the cell's own
+  `Text`, matching React's `TruncatedText` truncate-and-reveal-on-hover/focus
+  pattern (`docs/ui/react.md`).
 
 ## Dialogs and contextual UI
 

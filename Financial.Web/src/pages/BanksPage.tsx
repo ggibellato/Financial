@@ -75,7 +75,7 @@ export default function BanksPage() {
       ) : banks.length === 0 ? (
         <p className="banks-page__empty">No banks yet — create one to get started.</p>
       ) : (
-        <Table aria-label="Banks">
+        <Table aria-label="Banks" className="data-table">
           <TableHeader>
             <TableRow>
               <TableHeaderCell>Name</TableHeaderCell>

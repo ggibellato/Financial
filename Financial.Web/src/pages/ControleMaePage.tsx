@@ -1,9 +1,24 @@
-import { Button, Field, Input, MessageBar, MessageBarBody, Select, Text } from '@fluentui/react-components'
+import {
+  Button,
+  Field,
+  Input,
+  MessageBar,
+  MessageBarBody,
+  Select,
+  Table,
+  TableBody,
+  TableCell,
+  TableHeader,
+  TableHeaderCell,
+  TableRow,
+  Text,
+} from '@fluentui/react-components'
 import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import type { MaeLedgerEntryDto } from '../api/types'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
 import SortableColumnHeader from '../components/grid/SortableColumnHeader'
+import TruncatedText from '../components/TruncatedText'
 import { useFormPanelStyles } from '../components/formPanelStyles'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { useFieldError } from '../hooks/useFieldError'
@@ -34,13 +49,21 @@ interface EntryRowProps {
 
 function EntryRow({ entry, isDeleting, onEdit, onDelete }: EntryRowProps) {
   return (
-    <tr>
-      <td>{formatShortDate(entry.date)}</td>
-      <td>{entry.description}</td>
-      <td>{entry.note}</td>
-      <td className="data-table__col--numeric">{entry.brlValue !== null ? formatN2(entry.brlValue) : '—'}</td>
-      <td className="data-table__col--numeric">{entry.gbpValue !== null ? formatN2(entry.gbpValue) : '—'}</td>
-      <td>
+    <TableRow>
+      <TableCell>{formatShortDate(entry.date)}</TableCell>
+      <TableCell>
+        <TruncatedText text={entry.description} />
+      </TableCell>
+      <TableCell>
+        <TruncatedText text={entry.note} />
+      </TableCell>
+      <TableCell className="data-table__col--numeric">
+        {entry.brlValue !== null ? formatN2(entry.brlValue) : '—'}
+      </TableCell>
+      <TableCell className="data-table__col--numeric">
+        {entry.gbpValue !== null ? formatN2(entry.gbpValue) : '—'}
+      </TableCell>
+      <TableCell>
         <div className="data-table__actions-cell">
           <Button
             appearance="subtle"
@@ -60,8 +83,8 @@ function EntryRow({ entry, isDeleting, onEdit, onDelete }: EntryRowProps) {
             }
           />
         </div>
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   )
 }
 
@@ -251,10 +274,10 @@ export default function ControleMaePage() {
       ) : (
         <div className="controle-mae-page__content">
           <section className="controle-mae-page__section">
-            <table className="controle-mae-page__table data-table">
+            <Table className="controle-mae-page__table data-table">
               <LedgerColumns />
-              <thead>
-                <tr>
+              <TableHeader>
+                <TableRow>
                   <SortableColumnHeader
                     label="Date"
                     columnKey="date"
@@ -287,10 +310,10 @@ export default function ControleMaePage() {
                     sortDirection={sortState?.columnKey === 'gbp' ? sortState.direction : undefined}
                     onSort={requestSort}
                   />
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
+                  <TableHeaderCell />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {sortedEntries.map((entry) => (
                   <EntryRow
                     key={entry.id}
@@ -300,24 +323,24 @@ export default function ControleMaePage() {
                     onDelete={deleteEntry}
                   />
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </section>
         </div>
       )}
 
       {!isLoading && !error && (
-        <table className="controle-mae-page__table controle-mae-page__totals-table data-table">
+        <Table className="controle-mae-page__table controle-mae-page__totals-table data-table">
           <LedgerColumns />
-          <tbody>
-            <tr className="controle-mae-page__totals-row">
-              <td colSpan={3}>Total (all entries)</td>
-              <td className="data-table__col--numeric">{totals ? formatN2(totals.totalBrlValue) : '—'}</td>
-              <td className="data-table__col--numeric">{totals ? formatN2(totals.totalGbpValue) : '—'}</td>
-              <td />
-            </tr>
-          </tbody>
-        </table>
+          <TableBody>
+            <TableRow className="controle-mae-page__totals-row">
+              <TableCell colSpan={3}>Total (all entries)</TableCell>
+              <TableCell className="data-table__col--numeric">{totals ? formatN2(totals.totalBrlValue) : '—'}</TableCell>
+              <TableCell className="data-table__col--numeric">{totals ? formatN2(totals.totalGbpValue) : '—'}</TableCell>
+              <TableCell />
+            </TableRow>
+          </TableBody>
+        </Table>
       )}
     </div>
   )

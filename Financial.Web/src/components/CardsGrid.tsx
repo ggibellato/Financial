@@ -1,3 +1,4 @@
+import { Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
 import type { BankDto, CardStatementDto, CreditCardDto, CreditCardUpdateDto } from '../api/types'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import ColumnFilterMenu from './grid/ColumnFilterMenu'
@@ -102,9 +103,9 @@ export default function CardsGrid({
         </p>
       )}
       <div className="monthly-page__table-scroll">
-        <table className="monthly-page__table data-table">
-          <thead>
-            <tr>
+        <Table className="monthly-page__table data-table">
+          <TableHeader>
+            <TableRow>
               <SortableColumnHeader
                 label="Card"
                 columnKey="card"
@@ -157,28 +158,28 @@ export default function CardsGrid({
                   />
                 </>
               )}
-              <th className="data-table__col--action-wide" />
-            </tr>
-          </thead>
-          <tbody>
+              <TableHeaderCell className="data-table__col--action-wide" />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {sortedRows.length === 0 && isColumnFiltered('card') && (
-              <tr>
-                <td colSpan={showCardManagementColumns ? 7 : 5}>No rows match the current filters</td>
-              </tr>
+              <TableRow>
+                <TableCell colSpan={showCardManagementColumns ? 7 : 5}>No rows match the current filters</TableCell>
+              </TableRow>
             )}
             {sortedRows.map((row) => (
-              <tr key={row.key}>
-                <td>{row.creditCardName}</td>
-                <td className="data-table__col--numeric">
+              <TableRow key={row.key}>
+                <TableCell>{row.creditCardName}</TableCell>
+                <TableCell className="data-table__col--numeric">
                   {row.statement ? formatN2(row.statement.outstandingTotal) : '—'}
-                </td>
-                <td className="data-table__col--numeric">
+                </TableCell>
+                <TableCell className="data-table__col--numeric">
                   {row.statement ? formatN2(row.statement.accumulatedOutstandingTotal) : '—'}
-                </td>
-                <td>{row.statement ? (row.statement.isPaid ? 'Paid' : 'Unpaid') : '—'}</td>
+                </TableCell>
+                <TableCell>{row.statement ? (row.statement.isPaid ? 'Paid' : 'Unpaid') : '—'}</TableCell>
                 {showCardManagementColumns && (
                   <>
-                    <td>
+                    <TableCell>
                       <input
                         aria-label={`Next invoice due date for ${row.creditCardName}`}
                         type="date"
@@ -194,8 +195,8 @@ export default function CardsGrid({
                             .catch(() => {})
                         }
                       />
-                    </td>
-                    <td>
+                    </TableCell>
+                    <TableCell>
                       <input
                         aria-label={`Active for ${row.creditCardName}`}
                         type="checkbox"
@@ -211,10 +212,10 @@ export default function CardsGrid({
                             .catch(() => {})
                         }
                       />
-                    </td>
+                    </TableCell>
                   </>
                 )}
-                <td className="data-table__col--action-wide">
+                <TableCell className="data-table__col--action-wide">
                   {row.statement &&
                     (row.statement.isPaid ? (
                       <button type="button" onClick={() => unmarkStatementPaid(row.statement!.id)}>
@@ -243,11 +244,11 @@ export default function CardsGrid({
                         </button>
                       </>
                     ))}
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
       <p className="monthly-page__section-total">
         Combined adjustment figure: <strong>{formatN2(adjustmentTotal)}</strong>

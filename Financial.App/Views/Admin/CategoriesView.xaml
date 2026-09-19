@@ -42,10 +42,14 @@
             <DataGrid Grid.Row="2" ItemsSource="{Binding Categories}" AutoGenerateColumns="False" IsReadOnly="True"
                       AutomationProperties.Name="Categories">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Binding="{Binding Name}" Header="Name" Width="*"/>
-                    <DataGridTextColumn Binding="{Binding Active}" Header="Active" Width="80"/>
-                    <DataGridTextColumn Binding="{Binding IsInvestment}" Header="Investment" Width="90"/>
-                    <DataGridTextColumn Binding="{Binding IsTithe}" Header="Tithe" Width="80"/>
+                    <DataGridTextColumn Binding="{Binding Name}" Header="Name" Width="*"
+                                         ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                    <DataGridTextColumn Binding="{Binding Active}" Header="Active" Width="80"
+                                         ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                    <DataGridTextColumn Binding="{Binding IsInvestment}" Header="Investment" Width="90"
+                                         ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                    <DataGridTextColumn Binding="{Binding IsTithe}" Header="Tithe" Width="80"
+                                         ElementStyle="{StaticResource PlainColumnTextStyle}"/>
                     <DataGridTemplateColumn Header="" Width="Auto">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>

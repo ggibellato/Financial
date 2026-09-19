@@ -105,7 +105,7 @@ export default function BrokersPage() {
       ) : brokers.length === 0 ? (
         <p className="brokers-page__empty">No brokers yet — create one to get started.</p>
       ) : (
-        <Table aria-label="Brokers">
+        <Table aria-label="Brokers" className="data-table">
           <TableHeader>
             <TableRow>
               <TableHeaderCell>Name</TableHeaderCell>

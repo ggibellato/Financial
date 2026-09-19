@@ -86,7 +86,7 @@
                     <DataGridTextColumn Binding="{Binding BucketName}" Header="Bucket" Width="140"
                                          ElementStyle="{StaticResource PlainColumnTextStyle}"/>
                     <DataGridTextColumn Binding="{Binding Description}" Header="Description" Width="*"
-                                         ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                                         ElementStyle="{StaticResource TruncatedColumnTextStyle}"/>
                     <DataGridTextColumn Binding="{Binding Amount, StringFormat=N2}" Header="Amount" Width="110"
                                          ElementStyle="{StaticResource NumericColumnTextStyle}"/>
                     <DataGridTemplateColumn Header="" Width="Auto">

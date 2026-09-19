@@ -1,4 +1,5 @@
 import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts'
+import { Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
 import { formatN2, formatPercent1 } from '../../utils/formatters'
 import './AllocationPieChart.css'
 
@@ -87,24 +88,24 @@ export default function AllocationPieChart({ title, entries }: AllocationPieChar
             </PieChart>
           </ResponsiveContainer>
         </div>
-        <table className="allocation-chart__legend data-table" aria-labelledby={titleId}>
-          <thead>
-            <tr>
-              <th scope="col">Label</th>
-              <th scope="col" className="data-table__col--numeric">Market Value</th>
-              <th scope="col" className="data-table__col--numeric">Percentage</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table className="allocation-chart__legend data-table" aria-labelledby={titleId}>
+          <TableHeader>
+            <TableRow>
+              <TableHeaderCell>Label</TableHeaderCell>
+              <TableHeaderCell className="data-table__col--numeric">Market Value</TableHeaderCell>
+              <TableHeaderCell className="data-table__col--numeric">Percentage</TableHeaderCell>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {entries.map((entry) => (
-              <tr key={entry.label}>
-                <td>{entry.label}</td>
-                <td className="data-table__col--numeric">{formatN2(entry.marketValue)}</td>
-                <td className="data-table__col--numeric">{formatPercent1(entry.percentage)}</td>
-              </tr>
+              <TableRow key={entry.label}>
+                <TableCell>{entry.label}</TableCell>
+                <TableCell className="data-table__col--numeric">{formatN2(entry.marketValue)}</TableCell>
+                <TableCell className="data-table__col--numeric">{formatPercent1(entry.percentage)}</TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </div>
   )

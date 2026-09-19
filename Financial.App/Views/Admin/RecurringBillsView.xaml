@@ -42,11 +42,16 @@
             <DataGrid Grid.Row="2" ItemsSource="{Binding RecurringBills}" AutoGenerateColumns="False" IsReadOnly="True"
                       AutomationProperties.Name="Recurring Bills">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Binding="{Binding DueDay}" Header="Due Day" Width="80"/>
-                    <DataGridTextColumn Binding="{Binding Description}" Header="Description" Width="*"/>
-                    <DataGridTextColumn Binding="{Binding Value}" Header="Value" Width="100"/>
-                    <DataGridTextColumn Binding="{Binding Area}" Header="Area" Width="80"/>
-                    <DataGridTextColumn Binding="{Binding Status}" Header="Status" Width="100"/>
+                    <DataGridTextColumn Binding="{Binding DueDay}" Header="Due Day" Width="80"
+                                         ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                    <DataGridTextColumn Binding="{Binding Description}" Header="Description" Width="*"
+                                         ElementStyle="{StaticResource TruncatedColumnTextStyle}"/>
+                    <DataGridTextColumn Binding="{Binding Value}" Header="Value" Width="100"
+                                         ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                    <DataGridTextColumn Binding="{Binding Area}" Header="Area" Width="80"
+                                         ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                    <DataGridTextColumn Binding="{Binding Status}" Header="Status" Width="100"
+                                         ElementStyle="{StaticResource PlainColumnTextStyle}"/>
                     <DataGridTemplateColumn Header="" Width="Auto">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>

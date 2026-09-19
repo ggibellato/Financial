@@ -46,11 +46,16 @@
                       AutomationProperties.Name="Tax Rules"
                       Visibility="{Binding ShowTaxRules, Converter={StaticResource BoolToVisibilityConverter}}">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Binding="{Binding Jurisdiction}" Header="Jurisdiction" Width="100"/>
-                    <DataGridTextColumn Binding="{Binding EventCategory}" Header="Event Category" Width="160"/>
-                    <DataGridTextColumn Binding="{Binding Label}" Header="Label" Width="*"/>
-                    <DataGridTextColumn Binding="{Binding EffectiveFrom}" Header="Effective From" Width="110"/>
-                    <DataGridTextColumn Binding="{Binding EffectiveTo, TargetNullValue='—'}" Header="Effective To" Width="110"/>
+                    <DataGridTextColumn Binding="{Binding Jurisdiction}" Header="Jurisdiction" Width="100"
+                                         ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                    <DataGridTextColumn Binding="{Binding EventCategory}" Header="Event Category" Width="160"
+                                         ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                    <DataGridTextColumn Binding="{Binding Label}" Header="Label" Width="*"
+                                         ElementStyle="{StaticResource TruncatedColumnTextStyle}"/>
+                    <DataGridTextColumn Binding="{Binding EffectiveFrom}" Header="Effective From" Width="110"
+                                         ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                    <DataGridTextColumn Binding="{Binding EffectiveTo, TargetNullValue='—'}" Header="Effective To" Width="110"
+                                         ElementStyle="{StaticResource PlainColumnTextStyle}"/>
                     <DataGridTemplateColumn Header="" Width="Auto">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>

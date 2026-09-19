@@ -232,6 +232,11 @@
             <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
 
+        <Style x:Key="TruncatedColumnTextStyle" TargetType="TextBlock" BasedOn="{StaticResource PlainColumnTextStyle}">
+            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+            <Setter Property="ToolTip" Value="{Binding RelativeSource={RelativeSource Self}, Path=Text}"/>
+        </Style>
+
         <!-- Group-header overlay bar shown above a DataGrid's own column headers,
              used to visually merge related columns under one spanning title. -->
         <Style x:Key="GroupHeaderBarStyle" TargetType="Border">

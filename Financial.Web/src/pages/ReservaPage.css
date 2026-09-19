@@ -80,11 +80,6 @@
   border-spacing: 0;
 }
 
-.reserva-page__section--grid .reserva-page__table td {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 .reserva-page__col-value {
   width: 120px;
 }

@@ -1,9 +1,24 @@
-import { Button, Field, Input, MessageBar, MessageBarBody, Select, Text } from '@fluentui/react-components'
+import {
+  Button,
+  Field,
+  Input,
+  MessageBar,
+  MessageBarBody,
+  Select,
+  Table,
+  TableBody,
+  TableCell,
+  TableHeader,
+  TableHeaderCell,
+  TableRow,
+  Text,
+} from '@fluentui/react-components'
 import { AddRegular, ArrowResetRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import type { RecurringBillDto } from '../api/types'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
 import StatusMenuButton from '../components/StatusMenuButton'
+import TruncatedText from '../components/TruncatedText'
 import UkExpensePromptDialog from '../components/UkExpensePromptDialog'
 import SortableColumnHeader from '../components/grid/SortableColumnHeader'
 import { useFormPanelStyles } from '../components/formPanelStyles'
@@ -37,22 +52,30 @@ function BillRow({
   onStatusChange,
 }: BillRowProps) {
   return (
-    <tr>
-      <td>{bill.dueDay}</td>
-      <td>{bill.description}</td>
-      <td>{bill.note}</td>
-      {showBrasilFields && <td>{bill.nitNumber ?? ''}</td>}
-      {showBrasilFields && <td className="data-table__col--numeric">{bill.minimumWageValue !== null ? formatN2(bill.minimumWageValue) : ''}</td>}
-      <td className="data-table__col--numeric">{formatN2(bill.value)}</td>
-      <td>
+    <TableRow>
+      <TableCell>{bill.dueDay}</TableCell>
+      <TableCell>
+        <TruncatedText text={bill.description} />
+      </TableCell>
+      <TableCell>
+        <TruncatedText text={bill.note} />
+      </TableCell>
+      {showBrasilFields && <TableCell>{bill.nitNumber ?? ''}</TableCell>}
+      {showBrasilFields && (
+        <TableCell className="data-table__col--numeric">
+          {bill.minimumWageValue !== null ? formatN2(bill.minimumWageValue) : ''}
+        </TableCell>
+      )}
+      <TableCell className="data-table__col--numeric">{formatN2(bill.value)}</TableCell>
+      <TableCell>
         <StatusMenuButton
           statuses={STATUSES}
           status={bill.status}
           isUpdating={isUpdatingStatus}
           onChange={(status) => onStatusChange(bill.id, status)}
         />
-      </td>
-      <td className="data-table__col--action">
+      </TableCell>
+      <TableCell className="data-table__col--action">
         <div className="data-table__actions-cell">
           <Button
             appearance="subtle"
@@ -72,8 +95,8 @@ function BillRow({
             }
           />
         </div>
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   )
 }
 
@@ -110,9 +133,9 @@ function BillTable({
   return (
     <section className="mensais-page__section">
       <div className="mensais-page__table-scroll">
-        <table className="mensais-page__table data-table">
-          <thead>
-            <tr>
+        <Table className="mensais-page__table data-table">
+          <TableHeader>
+            <TableRow>
               <SortableColumnHeader
                 label="Due Day"
                 columnKey="dueDay"
@@ -161,10 +184,10 @@ function BillTable({
                 sortDirection={sortState?.columnKey === 'status' ? sortState.direction : undefined}
                 onSort={requestSort}
               />
-              <th className="data-table__col--action" />
-            </tr>
-          </thead>
-          <tbody>
+              <TableHeaderCell className="data-table__col--action" />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {sortedBills.map((bill) => (
               <BillRow
                 key={bill.id}
@@ -177,8 +200,8 @@ function BillTable({
                 onStatusChange={onStatusChange}
               />
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </section>
   )

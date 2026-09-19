@@ -42,10 +42,14 @@
             <DataGrid Grid.Row="2" ItemsSource="{Binding Brokers}" AutoGenerateColumns="False" IsReadOnly="True"
                       AutomationProperties.Name="Brokers">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Binding="{Binding Name}" Header="Name" Width="*"/>
-                    <DataGridTextColumn Binding="{Binding Currency}" Header="Currency" Width="100"/>
-                    <DataGridTextColumn Binding="{Binding Status}" Header="Status" Width="100"/>
-                    <DataGridTextColumn Binding="{Binding PortfolioCount}" Header="Portfolios" Width="90"/>
+                    <DataGridTextColumn Binding="{Binding Name}" Header="Name" Width="*"
+                                         ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                    <DataGridTextColumn Binding="{Binding Currency}" Header="Currency" Width="100"
+                                         ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                    <DataGridTextColumn Binding="{Binding Status}" Header="Status" Width="100"
+                                         ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                    <DataGridTextColumn Binding="{Binding PortfolioCount}" Header="Portfolios" Width="90"
+                                         ElementStyle="{StaticResource NumericColumnTextStyle}"/>
                     <DataGridTemplateColumn Header="" Width="Auto">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>

@@ -50,6 +50,14 @@
 - [ ] Trees communicate hierarchy and support keyboard navigation.
 - [ ] Charts have titles, labels, units, correct state handling, and accessible equivalents.
 - [ ] Dense views remain readable.
+- [ ] Free-text grid columns (description/note/label) truncate to one line
+      with the shared truncate+tooltip pattern instead of wrapping — row
+      heights stay uniform across the whole grid.
+- [ ] Every grid uses Fluent's `Table`/`TableHeader`/`TableBody`/`TableRow`/
+      `TableCell` (Web) with the `.data-table` class present, or every
+      `DataGridTextColumn` has an `ElementStyle` (WPF) — matching the app's
+      ~32px baseline row height, not a taller Fluent default or an unstyled
+      WPF column.
 
 ## Responsive and adaptive behavior
 

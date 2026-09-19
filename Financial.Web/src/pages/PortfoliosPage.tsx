@@ -87,7 +87,7 @@ export default function PortfoliosPage() {
       ) : portfolios.length === 0 ? (
         <p className="portfolios-page__empty">No portfolios yet — create one to get started.</p>
       ) : (
-        <Table aria-label="Portfolios">
+        <Table aria-label="Portfolios" className="data-table">
           <TableHeader>
             <TableRow>
               <TableHeaderCell>Name</TableHeaderCell>

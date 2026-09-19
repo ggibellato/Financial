@@ -23,6 +23,9 @@
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
   white-space: nowrap;
+  /* Neutralizes Fluent TableCell's hardcoded height: 44px default; this selector's higher
+     specificity beats it regardless of style-injection order. */
+  height: auto;
 }
 
 .data-table tbody tr:nth-child(even) {
@@ -38,10 +41,13 @@
   text-align: right;
 }
 
-.data-table .data-table__col--wrap,
-.data-table__col--wrap {
-  white-space: normal;
-  word-break: break-word;
+.truncated-text {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
 }
 
 /* A percentage width ("shrink-to-fit") doesn't reliably size a flex

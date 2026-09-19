@@ -87,7 +87,7 @@ export default function ReserveBucketsPage() {
       ) : reserveBuckets.length === 0 ? (
         <p className="reserve-buckets-page__empty">No reserve buckets yet — create one to get started.</p>
       ) : (
-        <Table aria-label="Reserve Buckets">
+        <Table aria-label="Reserve Buckets" className="data-table">
           <TableHeader>
             <TableRow>
               <TableHeaderCell>Name</TableHeaderCell>

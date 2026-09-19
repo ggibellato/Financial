@@ -37,6 +37,51 @@ is the reference.
   filter/mode "chip" pattern documented in `forms-data-and-visualisations.md`
   (same underlying component, different content role).
 
+## Grid row height
+
+Every table in the app — every sortable/interactive grid, and every static
+table (a post-submit result summary, a chart's accessible-data-table legend)
+alike — uses Fluent's `<Table>`/`<TableHeader>`/`<TableBody>`/`<TableRow>`/
+`<TableCell>` components, consistently across the whole app since 2026-09
+(the handful of grids that still used a plain `<table>` — `TotalsGrid`,
+`CardsGrid`, `ControleMaePage`, `ReservaPage`, `MensaisPage`,
+`CurrentValuesPage`, `DividendCheckPage`, `RecurringBillsPage`,
+`AnnualSummaryPage`, `PortfolioSummaryTab`, `UpcomingIncomePanel`,
+`IncomeSplitForm`, `AllocationPieChart` — were migrated to Fluent's `Table`
+for consistency). No exceptions: a raw `<table>` is never correct here,
+even for a static, one-time or non-interactive table — always reach for
+Fluent's `Table` components instead. Every `<Table>` carries the shared
+`.data-table` class (`Financial.Web/src/styles/data-table.css`) on its
+root. That class is what gives every table a uniform ~32px row height
+(13px font, 8px/10px cell padding). **Never omit `.data-table`** from a
+`<Table>`, and never pass a `size` prop to override it: Fluent's
+`TableCell` hardcodes `height: 44px` for its default `"medium"` size (34px
+for `"small"`, 24px for `"extra-small"`) — none of which match the app's
+row height — and `.data-table td`'s `height: auto` rule is what
+neutralizes that and restores natural, content-driven sizing (see that
+rule's own comment for why it reliably wins regardless of style-injection
+order).
+
+## Long/variable-length text in grid cells
+
+Never let a table/grid cell wrap (`white-space: normal`, or CSS missing
+`white-space: nowrap` while relying on `text-overflow: ellipsis`, which is a
+no-op without it) — an occasional long value then silently grows just that
+row to double height while every other row stays single-line, an
+inconsistent, jarring result rather than a deliberate design (fixed across
+`ExpensesSection`, `ControleMaePage`, `ReservaPage`, `MensaisPage`, and
+`TaxRulesPage` in 2026-09). Instead, use `TruncatedText`
+(`Financial.Web/src/components/TruncatedText.tsx`) for any free-text
+description/note/label cell: it truncates to one line with an ellipsis via
+the shared `.truncated-text` class (`Financial.Web/src/styles/data-table.css`)
+and reveals the full value through a Fluent `Tooltip` on hover or keyboard
+focus (`relationship="inaccessible"` — the trigger's own text content already
+carries the full string for screen readers, so no `aria-describedby`
+duplication is needed; Fluent otherwise force-renders that content into the
+DOM permanently for `"label"`/`"description"`, which breaks `getByText` in
+tests). Grid rows must stay a uniform single-line height across the whole
+grid; do not opt one column into wrapping to "fit more."
+
 ## Layout
 
 - Use CSS Grid for page and form structure.
