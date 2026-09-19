@@ -32,7 +32,7 @@ public sealed class StandardAssetPriceFetcher : IAssetPriceFetcher
     ];
 
     public bool Supports(GlobalAssetClass assetClass, ValuationMethod valuationMethod) =>
-        valuationMethod is ValuationMethod.MarketPrice or ValuationMethod.NAV
+        valuationMethod == ValuationMethod.MarketPrice
         || (valuationMethod == ValuationMethod.Unspecified && ExchangeListedClasses.Contains(assetClass));
 
     public AssetValueSnapshot GetSnapshot(AssetPriceRequestDTO request)

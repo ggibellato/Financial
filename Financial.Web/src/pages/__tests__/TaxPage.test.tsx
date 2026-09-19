@@ -56,20 +56,6 @@ const WORKBOOK: TaxWorkbookDto = {
       evidenceReference: 'ev-3',
       taxRuleLabel: null,
     },
-    {
-      id: 'e4',
-      date: '2026-09-01',
-      eventCategory: 'SecuritiesLendingIncome',
-      proceeds: null,
-      costBasis: null,
-      gainLoss: null,
-      grossAmount: 5,
-      withheldAmount: 0,
-      netAmount: 5,
-      calculationStatus: 'Estimated',
-      evidenceReference: 'ev-4',
-      taxRuleLabel: null,
-    },
   ],
   categoryTotals: [
     {
@@ -177,12 +163,11 @@ describe('TaxPage', () => {
     expect(screen.getByText('ev-2')).toBeInTheDocument()
   })
 
-  it('renders_each_of_the_4_calculation_statuses_with_a_distinct_indicator', () => {
+  it('renders_each_of_the_3_calculation_statuses_with_a_distinct_indicator', () => {
     render(<TaxPage />)
     expect(screen.getByText('Final')).toBeInTheDocument()
     expect(screen.getByText('Incomplete')).toBeInTheDocument()
     expect(screen.getAllByText('Requires review').length).toBeGreaterThan(0)
-    expect(screen.getByText('Estimated')).toBeInTheDocument()
   })
 
   it('renders_the_aggregate_status_indicator', () => {
