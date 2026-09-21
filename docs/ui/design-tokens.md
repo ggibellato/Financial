@@ -41,6 +41,21 @@ Use a 4px rhythm.
 | `layout.formColumns.medium` | 2 |
 | `layout.formColumns.narrow` | 1 |
 
+## Breakpoints
+
+Three tiers, matching `layout.formColumns` above. `narrow` is the phone tier:
+below it, the React app shell switches primary navigation to an overlay
+drawer and data grids switch from tabular layout to stacked cards (see
+`Financial.Web/src/styles/data-table.css`).
+
+| Semantic token | Value | Notes |
+|---|---:|---|
+| `layout.breakpoints.wide` | ≥1024px | Desktop |
+| `layout.breakpoints.medium` | 600–1023px | Tablet |
+| `layout.breakpoints.narrow` | ≤599px | Phone. Literal value lives in `Financial.Web/src/styles/breakpoints.ts` (`MOBILE_MEDIA_QUERY`) for JS/React use and is duplicated as `@media (max-width: 599px)` in CSS — keep both in sync if this changes. |
+
+`Financial.App` (WPF) has no phone form factor to match, so this breakpoint and its behavior are React-only by design — not a parity gap under the UI invariants' "equivalent outcomes" rule.
+
 ## Typography
 
 | Semantic token | Use |

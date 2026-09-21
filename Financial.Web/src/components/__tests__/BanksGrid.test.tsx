@@ -13,11 +13,11 @@ describe('BanksGrid', () => {
     render(<BanksGrid bankTotals={BANK_TOTALS} bankTotalsSum={51.3} roundUpTotalsSum={0.6} />)
 
     const barclaysRow = screen.getByRole('row', { name: /Barclays/ })
-    expect(within(barclaysRow).getByRole('cell', { name: '42.50' })).toBeInTheDocument()
+    expect(within(barclaysRow).getByText('42.50')).toBeInTheDocument()
 
     const trading212Row = screen.getByRole('row', { name: /Trading212/ })
-    expect(within(trading212Row).getByRole('cell', { name: '8.80' })).toBeInTheDocument()
-    expect(within(trading212Row).getByRole('cell', { name: '0.60' })).toBeInTheDocument()
+    expect(within(trading212Row).getByText('8.80')).toBeInTheDocument()
+    expect(within(trading212Row).getByText('0.60')).toBeInTheDocument()
 
     expect(screen.getByText('51.30')).toBeInTheDocument()
   })
@@ -35,8 +35,11 @@ describe('BanksGrid', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Filter by Bank' }))
     fireEvent.click(screen.getByRole('checkbox', { name: 'Trading212' }))
 
-    expect(screen.queryByRole('cell', { name: 'Trading212' })).not.toBeInTheDocument()
-    expect(screen.getByRole('cell', { name: 'Barclays' })).toBeInTheDocument()
+    // The header's own filter checklist keeps every bank name in the DOM (as checkbox labels)
+    // regardless of which rows are filtered out, so assertions must be scoped to tbody.
+    const tbody = within(document.querySelector('tbody')!)
+    expect(tbody.queryByText('Trading212')).not.toBeInTheDocument()
+    expect(tbody.getByText('Barclays')).toBeInTheDocument()
   })
 
   it('shows the "no rows match" message when every value is unchecked', () => {

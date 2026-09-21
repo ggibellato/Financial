@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import CardsGrid from '../CardsGrid'
 import type { BankDto, CardStatementDto, CreditCardDto } from '../../api/types'
@@ -33,7 +33,7 @@ describe('CardsGrid (statement-only, no creditCards prop — Summary tab)', () =
       />,
     )
 
-    expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument()
+    expect(screen.getByText('BaAmex')).toBeInTheDocument()
     expect(screen.getByText('Unpaid')).toBeInTheDocument()
     expect(screen.getByText('Paid')).toBeInTheDocument()
     expect(screen.getByText(/Combined adjustment figure/)).toBeInTheDocument()
@@ -55,7 +55,7 @@ describe('CardsGrid (statement-only, no creditCards prop — Summary tab)', () =
     expect(screen.getByRole('button', { name: 'Outstanding (period)' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Accumulated outstanding' })).toBeInTheDocument()
 
-    const baAmexRow = screen.getByRole('cell', { name: 'BaAmex' }).closest('tr')!
+    const baAmexRow = screen.getByText('BaAmex').closest('tr')!
     expect(baAmexRow).toHaveTextContent('100.00')
     expect(baAmexRow).toHaveTextContent('325.50')
   })
@@ -188,15 +188,15 @@ describe('CardsGrid (merged with creditCards — Credit Card tab)', () => {
   it('renders one row per credit card, including one with no statement this month', () => {
     render(<CardsGrid {...baseProps} />)
 
-    expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument()
-    expect(screen.getByRole('cell', { name: 'ChaseMaster4023' })).toBeInTheDocument()
-    expect(screen.getByRole('cell', { name: 'PaypalCredit' })).toBeInTheDocument()
+    expect(screen.getByText('BaAmex')).toBeInTheDocument()
+    expect(screen.getByText('ChaseMaster4023')).toBeInTheDocument()
+    expect(screen.getByText('PaypalCredit')).toBeInTheDocument()
   })
 
   it('shows a dash for outstanding/status on a card with no statement this month, and no mark-paid action', () => {
     render(<CardsGrid {...baseProps} />)
 
-    const paypalRow = screen.getByRole('cell', { name: 'PaypalCredit' }).closest('tr')!
+    const paypalRow = screen.getByText('PaypalCredit').closest('tr')!
     expect(paypalRow).toHaveTextContent('—')
     expect(screen.queryByLabelText('Paying bank for PaypalCredit')).not.toBeInTheDocument()
   })
@@ -296,7 +296,11 @@ describe('CardsGrid (merged with creditCards — Credit Card tab)', () => {
 
   it('sorts rows by outstanding, accumulated outstanding, status, due date and active columns', () => {
     render(<CardsGrid {...baseProps} />)
-    const namesOf = () => screen.getAllByRole('row').slice(1).map((r) => r.querySelector('td')!.textContent)
+    const namesOf = () =>
+      screen
+        .getAllByRole('row')
+        .slice(1)
+        .map((r) => r.querySelector('td')!.textContent!.replace('Card:', ''))
 
     // Rows with no statement (null/undefined accessor value) always sort last.
     fireEvent.click(screen.getByRole('button', { name: 'Outstanding (period)' }))
@@ -322,8 +326,11 @@ describe('CardsGrid (merged with creditCards — Credit Card tab)', () => {
     fireEvent.click(screen.getByRole('checkbox', { name: 'ChaseMaster4023' }))
     fireEvent.click(screen.getByRole('checkbox', { name: 'PaypalCredit' }))
 
-    expect(screen.queryByRole('cell', { name: 'ChaseMaster4023' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('cell', { name: 'PaypalCredit' })).not.toBeInTheDocument()
-    expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument()
+    // The header's own filter checklist keeps every card name in the DOM (as checkbox labels)
+    // regardless of which rows are filtered out, so assertions must be scoped to tbody.
+    const tbody = within(document.querySelector('tbody')!)
+    expect(tbody.queryByText('ChaseMaster4023')).not.toBeInTheDocument()
+    expect(tbody.queryByText('PaypalCredit')).not.toBeInTheDocument()
+    expect(tbody.getByText('BaAmex')).toBeInTheDocument()
   })
 })

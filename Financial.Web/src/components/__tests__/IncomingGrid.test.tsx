@@ -25,9 +25,9 @@ describe('IncomingGrid', () => {
   it('renders a row per income source, using an em dash when gross value is absent', () => {
     renderGrid()
 
-    expect(screen.getByRole('cell', { name: 'Gleison' })).toBeInTheDocument()
+    expect(screen.getByText('Gleison')).toBeInTheDocument()
     expect(screen.getByText('3,200.00')).toBeInTheDocument()
-    expect(screen.getByRole('cell', { name: 'Lottery' })).toBeInTheDocument()
+    expect(screen.getByText('Lottery')).toBeInTheDocument()
     expect(screen.getByText('—')).toBeInTheDocument()
     expect(screen.getByText(/Total Incoming:/)).toBeInTheDocument()
     expect(screen.queryByText(/Calculated Tithe:/)).not.toBeInTheDocument()

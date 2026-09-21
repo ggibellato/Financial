@@ -7,6 +7,7 @@ import IncomeSplitForm from '../components/IncomeSplitForm'
 import LoadingState from '../components/LoadingState'
 import TruncatedText from '../components/TruncatedText'
 import WithdrawalForm from '../components/WithdrawalForm'
+import DataTableCell from '../components/grid/DataTableCell'
 import SortableColumnHeader from '../components/grid/SortableColumnHeader'
 import { useSortableRows } from '../hooks/useSortableRows'
 import type { ReserveBucketBalanceDto } from '../api/types'
@@ -202,8 +203,10 @@ export default function ReservaPage() {
                 <TableBody>
                   {sortedBalances.map((b) => (
                     <TableRow key={b.bucketId}>
-                      <TableCell>{b.bucketName}</TableCell>
-                      <TableCell className="data-table__col--numeric">{formatN2(b.balance)}</TableCell>
+                      <DataTableCell label="Bucket">{b.bucketName}</DataTableCell>
+                      <DataTableCell label="Balance" className="data-table__col--numeric">
+                        {formatN2(b.balance)}
+                      </DataTableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -213,8 +216,10 @@ export default function ReservaPage() {
               <BalanceColumns />
               <TableBody>
                 <TableRow className="reserva-page__totals-row">
-                  <TableCell>Total</TableCell>
-                  <TableCell className="data-table__col--numeric">{formatN2(totalBalance)}</TableCell>
+                  <DataTableCell label="Bucket">Total</DataTableCell>
+                  <DataTableCell label="Balance" className="data-table__col--numeric">
+                    {formatN2(totalBalance)}
+                  </DataTableCell>
                 </TableRow>
               </TableBody>
             </Table>
@@ -250,13 +255,15 @@ export default function ReservaPage() {
                             </span>
                           )}
                         </TableCell>
-                        <TableCell>{formatShortDate(m.date)}</TableCell>
-                        <TableCell>{m.bucketName}</TableCell>
-                        <TableCell>
+                        <DataTableCell label="Date">{formatShortDate(m.date)}</DataTableCell>
+                        <DataTableCell label="Bucket">{m.bucketName}</DataTableCell>
+                        <DataTableCell label="Description">
                           <TruncatedText text={m.description} />
-                        </TableCell>
-                        <TableCell className="data-table__col--numeric">{formatN2(m.amount)}</TableCell>
-                        <TableCell>
+                        </DataTableCell>
+                        <DataTableCell label="Amount" className="data-table__col--numeric">
+                          {formatN2(m.amount)}
+                        </DataTableCell>
+                        <DataTableCell label="Actions">
                           <div className="data-table__actions-cell">
                             <button
                               className="data-table__action-btn"
@@ -284,13 +291,17 @@ export default function ReservaPage() {
                               <DeleteRegular />
                             </button>
                           </div>
-                        </TableCell>
+                        </DataTableCell>
                       </TableRow>
                       {m.groupTotal !== null && (
                         <TableRow className="reserva-page__totals-row">
                           <TableCell />
-                          <TableCell colSpan={3}>Total split for {m.description}</TableCell>
-                          <TableCell className="data-table__col--numeric">{formatN2(m.groupTotal)}</TableCell>
+                          <TableCell className="data-table__cell--message" colSpan={3}>
+                            Total split for {m.description}
+                          </TableCell>
+                          <DataTableCell label="Amount" className="data-table__col--numeric">
+                            {formatN2(m.groupTotal)}
+                          </DataTableCell>
                           <TableCell />
                         </TableRow>
                       )}

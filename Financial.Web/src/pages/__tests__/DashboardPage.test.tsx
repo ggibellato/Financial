@@ -157,7 +157,7 @@ function LocationProbe() {
 const renderDashboardRoute = () =>
   render(
     <MemoryRouter initialEntries={['/investments/dashboard']}>
-      <Sidebar />
+      <Sidebar mobileOpen={false} onMobileOpenChange={() => {}} />
       <LocationProbe />
       <Routes>
         <Route path="/investments/dashboard" element={<DashboardPage />} />

@@ -1,5 +1,6 @@
 import { Fragment, type ReactNode } from 'react'
 import { Table, TableBody, TableCell, TableHeader, TableRow } from '@fluentui/react-components'
+import DataTableCell from './grid/DataTableCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 
@@ -53,15 +54,21 @@ export default function TotalsGrid<T>({ columns, rows, rowKey, footerItems, isFi
           <TableBody>
             {rows.length === 0 && isFiltered ? (
               <TableRow>
-                <TableCell colSpan={columns.length}>No rows match the current filters</TableCell>
+                <TableCell className="data-table__cell--message" colSpan={columns.length}>
+                  No rows match the current filters
+                </TableCell>
               </TableRow>
             ) : (
               sortedRows.map((row) => (
                 <TableRow key={rowKey(row)}>
                   {columns.map((col) => (
-                    <TableCell key={col.key} className={col.numeric ? 'data-table__col--numeric' : undefined}>
+                    <DataTableCell
+                      key={col.key}
+                      label={col.header}
+                      className={col.numeric ? 'data-table__col--numeric' : undefined}
+                    >
                       {col.render(row)}
-                    </TableCell>
+                    </DataTableCell>
                   ))}
                 </TableRow>
               ))

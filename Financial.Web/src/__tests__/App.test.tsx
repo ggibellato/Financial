@@ -1,8 +1,9 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter, Navigate, Route, Routes } from 'react-router-dom'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import App from '../App'
 import { financialLightTheme } from '../theme/fluentTheme'
+import { mockMatchMedia } from '../test/mockMatchMedia'
 
 const AppWithRoutes = ({ initialEntry = '/investments/active-investments' }: { initialEntry?: string }) => (
   <MemoryRouter initialEntries={[initialEntry]}>
@@ -90,5 +91,39 @@ describe('App', () => {
     render(<AppWithRoutes />)
 
     expect(screen.getByRole('button', { name: /switch to dark mode/i })).toBeInTheDocument()
+  })
+
+  describe('mobile navigation (below the phone breakpoint)', () => {
+    const originalMatchMedia = window.matchMedia
+
+    beforeEach(() => {
+      mockMatchMedia(true)
+    })
+
+    afterEach(() => {
+      window.matchMedia = originalMatchMedia
+    })
+
+    it('nav links are not in the DOM until the hamburger toggle opens the drawer', () => {
+      render(<AppWithRoutes />)
+
+      expect(screen.queryByRole('link', { name: 'Monthly' })).not.toBeInTheDocument()
+
+      fireEvent.click(screen.getByRole('button', { name: 'Open navigation' }))
+
+      expect(screen.getByRole('link', { name: 'Monthly' })).toBeInTheDocument()
+    })
+
+    it('clicking a nav link navigates and closes the drawer, returning focus to the toggle', () => {
+      render(<AppWithRoutes />)
+
+      const toggle = screen.getByRole('button', { name: 'Open navigation' })
+      fireEvent.click(toggle)
+      fireEvent.click(screen.getByRole('link', { name: 'Monthly' }))
+
+      expect(screen.getByText('CashFlow domain content')).toBeInTheDocument()
+      expect(screen.queryByRole('link', { name: 'Monthly' })).not.toBeInTheDocument()
+      expect(document.activeElement).toBe(toggle)
+    })
   })
 })
