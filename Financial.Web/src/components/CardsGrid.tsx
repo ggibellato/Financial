@@ -1,5 +1,6 @@
 import { Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
 import type { BankDto, CardStatementDto, CreditCardDto, CreditCardUpdateDto } from '../api/types'
+import DataTableCell from './grid/DataTableCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import ColumnFilterMenu from './grid/ColumnFilterMenu'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
@@ -164,22 +165,26 @@ export default function CardsGrid({
           <TableBody>
             {sortedRows.length === 0 && isColumnFiltered('card') && (
               <TableRow>
-                <TableCell colSpan={showCardManagementColumns ? 7 : 5}>No rows match the current filters</TableCell>
+                <TableCell className="data-table__cell--message" colSpan={showCardManagementColumns ? 7 : 5}>
+                  No rows match the current filters
+                </TableCell>
               </TableRow>
             )}
             {sortedRows.map((row) => (
               <TableRow key={row.key}>
-                <TableCell>{row.creditCardName}</TableCell>
-                <TableCell className="data-table__col--numeric">
+                <DataTableCell label="Card">{row.creditCardName}</DataTableCell>
+                <DataTableCell label="Outstanding (period)" className="data-table__col--numeric">
                   {row.statement ? formatN2(row.statement.outstandingTotal) : '—'}
-                </TableCell>
-                <TableCell className="data-table__col--numeric">
+                </DataTableCell>
+                <DataTableCell label="Accumulated outstanding" className="data-table__col--numeric">
                   {row.statement ? formatN2(row.statement.accumulatedOutstandingTotal) : '—'}
-                </TableCell>
-                <TableCell>{row.statement ? (row.statement.isPaid ? 'Paid' : 'Unpaid') : '—'}</TableCell>
+                </DataTableCell>
+                <DataTableCell label="Status">
+                  {row.statement ? (row.statement.isPaid ? 'Paid' : 'Unpaid') : '—'}
+                </DataTableCell>
                 {showCardManagementColumns && (
                   <>
-                    <TableCell>
+                    <DataTableCell label="Next Invoice Due Date">
                       <input
                         aria-label={`Next invoice due date for ${row.creditCardName}`}
                         type="date"
@@ -195,8 +200,8 @@ export default function CardsGrid({
                             .catch(() => {})
                         }
                       />
-                    </TableCell>
-                    <TableCell>
+                    </DataTableCell>
+                    <DataTableCell label="Active">
                       <input
                         aria-label={`Active for ${row.creditCardName}`}
                         type="checkbox"
@@ -212,10 +217,10 @@ export default function CardsGrid({
                             .catch(() => {})
                         }
                       />
-                    </TableCell>
+                    </DataTableCell>
                   </>
                 )}
-                <TableCell className="data-table__col--action-wide">
+                <DataTableCell label="Actions" className="data-table__col--action-wide">
                   {row.statement &&
                     (row.statement.isPaid ? (
                       <button type="button" onClick={() => unmarkStatementPaid(row.statement!.id)}>
@@ -244,7 +249,7 @@ export default function CardsGrid({
                         </button>
                       </>
                     ))}
-                </TableCell>
+                </DataTableCell>
               </TableRow>
             ))}
           </TableBody>

@@ -324,10 +324,10 @@ describe('MonthlyPage', () => {
   it('defaults to the Summary tab on load, showing only the total grids', async () => {
     render(<MonthlyPage />)
 
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
-    expect(screen.getByText(/^Total:/)).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText('BaAmex')).toBeInTheDocument())
+    expect(screen.getByText(/^Total:/, { selector: 'p' })).toBeInTheDocument()
     expect(screen.getByText(/Combined adjustment figure/)).toBeInTheDocument()
-    expect(screen.getByText(/Bank Balance:/)).toBeInTheDocument()
+    expect(screen.getByText(/Bank Balance:/, { selector: 'p' })).toBeInTheDocument()
     expect(screen.getByText(/Total Incoming:/)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'New Expense' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'New Income' })).not.toBeInTheDocument()
@@ -336,7 +336,7 @@ describe('MonthlyPage', () => {
   it('marks Summary as the active tab button by default', async () => {
     render(<MonthlyPage />)
 
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('BaAmex')).toBeInTheDocument())
     expect(screen.getByRole('tab', { name: 'Summary' })).toHaveAttribute('aria-selected', 'true')
     expect(screen.getByRole('tab', { name: 'Bank expenses' })).toHaveAttribute('aria-selected', 'false')
     expect(screen.getByRole('tab', { name: 'Income' })).toHaveAttribute('aria-selected', 'false')
@@ -345,7 +345,7 @@ describe('MonthlyPage', () => {
   it('lists Summary, Bank expenses, Credit Card expenses, Income, Bank balance adjustment in order in the tab strip', async () => {
     render(<MonthlyPage />)
 
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('BaAmex')).toBeInTheDocument())
     const tabs = screen.getAllByRole('tab')
     const expectedOrder = ['Summary', 'Bank expenses', 'Credit Card expenses', 'Income', 'Bank balance adjustment']
     const actualOrder = expectedOrder.map((label) => tabs.indexOf(screen.getByRole('tab', { name: label })))
@@ -355,7 +355,7 @@ describe('MonthlyPage', () => {
   it('re-scopes all 4 Summary grids when the month/year value changes', async () => {
     render(<MonthlyPage />)
 
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('BaAmex')).toBeInTheDocument())
     expect(screen.getAllByText('Mercado').length).toBeGreaterThan(0)
 
     getCategoryTotalsByMonthMock.mockResolvedValue([{ category: 'Viagem', totalValue: 300 }])
@@ -382,17 +382,17 @@ describe('MonthlyPage', () => {
 
     await waitFor(() => expect(screen.getByText('Viagem')).toBeInTheDocument())
     expect(screen.queryByText('Mercado')).not.toBeInTheDocument()
-    expect(screen.getByRole('cell', { name: 'PaypalCredit' })).toBeInTheDocument()
-    expect(screen.getByRole('cell', { name: 'Lottery' })).toBeInTheDocument()
+    expect(screen.getByText('PaypalCredit')).toBeInTheDocument()
+    expect(screen.getByText('Lottery')).toBeInTheDocument()
   })
 
   it('shows only the Expense tabs content after clicking Expense', async () => {
     render(<MonthlyPage />)
 
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('BaAmex')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('tab', { name: 'Bank expenses' }))
 
-    expect(screen.queryByText(/^Total:/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/^Total:/, { selector: 'p' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'New Income' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument()
     expect(screen.getByText('Lidl UK')).toBeInTheDocument()
@@ -402,11 +402,11 @@ describe('MonthlyPage', () => {
   it('shows the same card statements on the Credit Card tab as on Summary', async () => {
     render(<MonthlyPage />)
 
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('BaAmex')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('tab', { name: 'Credit Card expenses' }))
 
-    expect(screen.getAllByRole('cell', { name: 'BaAmex' }).length).toBeGreaterThan(0)
-    expect(screen.getAllByRole('cell', { name: 'ChaseMaster4023' }).length).toBeGreaterThan(0)
+    expect(screen.getAllByText('BaAmex').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('ChaseMaster4023').length).toBeGreaterThan(0)
     expect(screen.getByText(/Combined adjustment figure/)).toBeInTheDocument()
     expect(screen.getByRole('tab', { name: 'Credit Card expenses' })).toHaveAttribute('aria-selected', 'true')
   })
@@ -414,7 +414,7 @@ describe('MonthlyPage', () => {
   it('shows the unpaid card charge list on the Credit Card tab below the totals grid', async () => {
     render(<MonthlyPage />)
 
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('BaAmex')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('tab', { name: 'Credit Card expenses' }))
 
     expect(screen.getByText('Uber')).toBeInTheDocument()
@@ -530,19 +530,19 @@ describe('MonthlyPage', () => {
   it('still renders the card statements on the Summary tab unchanged', async () => {
     render(<MonthlyPage />)
 
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('BaAmex')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('tab', { name: 'Credit Card expenses' }))
     fireEvent.click(screen.getByRole('tab', { name: 'Summary' }))
 
-    expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument()
+    expect(screen.getByText('BaAmex')).toBeInTheDocument()
     expect(screen.getByText(/Combined adjustment figure/)).toBeInTheDocument()
-    expect(screen.getByText(/^Total:/)).toBeInTheDocument()
+    expect(screen.getByText(/^Total:/, { selector: 'p' })).toBeInTheDocument()
   })
 
   it('does not refetch card statements when switching to the Credit Card tab', async () => {
     render(<MonthlyPage />)
 
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('BaAmex')).toBeInTheDocument())
     const callCountBefore = getCardStatementsByMonthMock.mock.calls.length
 
     fireEvent.click(screen.getByRole('tab', { name: 'Credit Card expenses' }))
@@ -554,7 +554,7 @@ describe('MonthlyPage', () => {
     markCardStatementPaidMock.mockResolvedValue({ ...CARD_STATEMENTS[0], isPaid: true, outstandingTotal: 0 })
     render(<MonthlyPage />)
 
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('BaAmex')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('tab', { name: 'Credit Card expenses' }))
     fireEvent.change(screen.getByLabelText('Paying bank for BaAmex'), { target: { value: 'bank-trading212' } })
     fireEvent.click(screen.getByRole('button', { name: 'Mark Paid' }))
@@ -591,10 +591,10 @@ describe('MonthlyPage', () => {
   it('shows only the Incoming tabs content after clicking Incoming', async () => {
     render(<MonthlyPage />)
 
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('BaAmex')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('tab', { name: 'Income' }))
 
-    expect(screen.queryByText(/^Total:/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/^Total:/, { selector: 'p' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'New Expense' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'New Income' })).toBeInTheDocument()
     const incomeSection = within(screen.getByRole('button', { name: 'New Income' }).closest('section')!)
@@ -615,7 +615,7 @@ describe('MonthlyPage', () => {
     })
     render(<MonthlyPage />)
 
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('BaAmex')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('tab', { name: 'Income' }))
 
     const checkbox = await screen.findByRole('checkbox')
@@ -632,7 +632,7 @@ describe('MonthlyPage', () => {
   it('does not change the month/year picker value when switching tabs', async () => {
     render(<MonthlyPage />)
 
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('BaAmex')).toBeInTheDocument())
     const monthInput = screen.getByLabelText('Month') as HTMLInputElement
     const valueBefore = monthInput.value
 
@@ -644,7 +644,7 @@ describe('MonthlyPage', () => {
   it('does not refetch data when switching tabs', async () => {
     render(<MonthlyPage />)
 
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('BaAmex')).toBeInTheDocument())
     const callCountBefore = getExpensesByMonthMock.mock.calls.length
 
     fireEvent.click(screen.getByRole('tab', { name: 'Bank expenses' }))
@@ -658,7 +658,7 @@ describe('MonthlyPage', () => {
   it('keeps the active tab unchanged when the month/year value changes', async () => {
     render(<MonthlyPage />)
 
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('BaAmex')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('tab', { name: 'Bank expenses' }))
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument())
 
@@ -700,8 +700,8 @@ describe('MonthlyPage', () => {
   it('renders category totals and card statements with the combined adjustment on Summary, and the expense list on the Expense tab', async () => {
     render(<MonthlyPage />)
 
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
-    expect(screen.getByText(/^Total:/)).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText('BaAmex')).toBeInTheDocument())
+    expect(screen.getByText(/^Total:/, { selector: 'p' })).toBeInTheDocument()
     expect(screen.getAllByText('Mercado').length).toBeGreaterThan(0)
     expect(screen.getByText(/Combined adjustment figure/)).toBeInTheDocument()
     expect(screen.getAllByText('100.00').length).toBeGreaterThan(0)
@@ -713,12 +713,12 @@ describe('MonthlyPage', () => {
   it('renders a Banks grid with a row per payment source and its own total, alongside the other grids, with no expand or row-action controls', async () => {
     render(<MonthlyPage />)
 
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('BaAmex')).toBeInTheDocument())
 
-    const banksSection = within(screen.getByText(/Bank Balance:/).closest('section')!)
-    expect(banksSection.getByRole('cell', { name: 'Barclays' })).toBeInTheDocument()
-    expect(banksSection.getByRole('cell', { name: 'Trading212' })).toBeInTheDocument()
-    expect(banksSection.getByRole('cell', { name: 'Chase' })).toBeInTheDocument()
+    const banksSection = within(screen.getByText(/Bank Balance:/, { selector: 'p' }).closest('section')!)
+    expect(banksSection.getByText('Barclays')).toBeInTheDocument()
+    expect(banksSection.getByText('Trading212')).toBeInTheDocument()
+    expect(banksSection.getByText('Chase')).toBeInTheDocument()
     // The 3 column-sort header buttons (Bank, Bank Balance, Round-Up) plus the Bank column's
     // filter button — no expand/edit/delete controls.
     expect(banksSection.getAllByRole('button')).toHaveLength(4)
@@ -728,28 +728,28 @@ describe('MonthlyPage', () => {
     expect(banksSection.getAllByText('42.50').length).toBe(2)
     expect(banksSection.getAllByText('0.00').length).toBe(6)
 
-    expect(screen.getByText(/^Total:/).closest('section')).toHaveClass('monthly-page__section--grid')
+    expect(screen.getByText(/^Total:/, { selector: 'p' }).closest('section')).toHaveClass('monthly-page__section--grid')
     expect(screen.getByText(/Combined adjustment figure/).closest('section')).toHaveClass('monthly-page__section--grid')
-    expect(screen.getByText(/Bank Balance:/).closest('section')).toHaveClass('monthly-page__section--grid')
+    expect(screen.getByText(/Bank Balance:/, { selector: 'p' }).closest('section')).toHaveClass('monthly-page__section--grid')
   })
 
   it('shows the Banks grid on the Expense tab too, above the expense form and list', async () => {
     render(<MonthlyPage />)
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('BaAmex')).toBeInTheDocument())
 
     fireEvent.click(screen.getByRole('tab', { name: 'Bank expenses' }))
 
     await waitFor(() => expect(screen.getByText('Lidl UK')).toBeInTheDocument())
-    const banksSection = within(screen.getByText(/Bank Balance:/).closest('section')!)
-    expect(banksSection.getByRole('cell', { name: 'Barclays' })).toBeInTheDocument()
-    expect(banksSection.getByRole('cell', { name: 'Trading212' })).toBeInTheDocument()
-    expect(banksSection.getByRole('cell', { name: 'Chase' })).toBeInTheDocument()
+    const banksSection = within(screen.getByText(/Bank Balance:/, { selector: 'p' }).closest('section')!)
+    expect(banksSection.getByText('Barclays')).toBeInTheDocument()
+    expect(banksSection.getByText('Trading212')).toBeInTheDocument()
+    expect(banksSection.getByText('Chase')).toBeInTheDocument()
   })
 
   it('shows Mark Paid with a bank picker for unpaid cards and Unmark Paid for paid ones', async () => {
     render(<MonthlyPage />)
 
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('BaAmex')).toBeInTheDocument())
     expect(screen.getAllByRole('button', { name: 'Mark Paid' })).toHaveLength(1)
     expect(screen.getByLabelText('Paying bank for BaAmex')).toBeInTheDocument()
     expect(screen.getAllByRole('button', { name: 'Unmark Paid' })).toHaveLength(1)
@@ -759,7 +759,7 @@ describe('MonthlyPage', () => {
     markCardStatementPaidMock.mockResolvedValue({ ...CARD_STATEMENTS[0], isPaid: true, outstandingTotal: 0 })
     render(<MonthlyPage />)
 
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('BaAmex')).toBeInTheDocument())
     const markPaidButton = screen.getByRole('button', { name: 'Mark Paid' })
     expect(markPaidButton).toBeDisabled()
 
@@ -775,7 +775,7 @@ describe('MonthlyPage', () => {
   it('renders Category Totals and Cards in the first Summary row, Banks and Incoming in the second', async () => {
     render(<MonthlyPage />)
 
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('BaAmex')).toBeInTheDocument())
 
     const groups = document.querySelector('.monthly-page__summary-groups')
     expect(groups).not.toBeNull()
@@ -783,11 +783,11 @@ describe('MonthlyPage', () => {
     expect(rows).toHaveLength(2)
 
     const firstRow = within(rows[0] as HTMLElement)
-    expect(firstRow.getByText(/^Total:/)).toBeInTheDocument()
+    expect(firstRow.getByText(/^Total:/, { selector: 'p' })).toBeInTheDocument()
     expect(firstRow.getByText(/Combined adjustment figure/)).toBeInTheDocument()
 
     const secondRow = within(rows[1] as HTMLElement)
-    expect(secondRow.getByText(/Bank Balance:/)).toBeInTheDocument()
+    expect(secondRow.getByText(/Bank Balance:/, { selector: 'p' })).toBeInTheDocument()
     expect(secondRow.getByText(/Total Incoming:/)).toBeInTheDocument()
 
     expect(groups!.querySelectorAll(':scope > :not(.monthly-page__grids-row)')).toHaveLength(0)
@@ -797,7 +797,7 @@ describe('MonthlyPage', () => {
     unmarkCardStatementPaidMock.mockResolvedValue({ ...CARD_STATEMENTS[1], isPaid: false, outstandingTotal: 0 })
     render(<MonthlyPage />)
 
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'ChaseMaster4023' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('ChaseMaster4023')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Unmark Paid' }))
 
     await waitFor(() => expect(unmarkCardStatementPaidMock).toHaveBeenCalledWith('c2'))
@@ -807,7 +807,7 @@ describe('MonthlyPage', () => {
     vi.spyOn(window, 'confirm').mockReturnValue(false)
     render(<MonthlyPage />)
 
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'ChaseMaster4023' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('ChaseMaster4023')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Unmark Paid' }))
 
     expect(unmarkCardStatementPaidMock).not.toHaveBeenCalled()
@@ -1166,7 +1166,7 @@ describe('MonthlyPage', () => {
 
     await waitFor(() => expect(screen.getByText(/Total Incoming:/)).toBeInTheDocument())
     const incomingSection = within(screen.getByText(/Total Incoming:/).closest('section')!)
-    expect(incomingSection.getByRole('cell', { name: 'Gleison' })).toBeInTheDocument()
+    expect(incomingSection.getByText('Gleison')).toBeInTheDocument()
     expect(incomingSection.getByText('3,200.00')).toBeInTheDocument()
     expect(incomingSection.getAllByText('2,450.00').length).toBeGreaterThanOrEqual(1)
     expect(incomingSection.getByText(/Total Incoming:/)).toBeInTheDocument()
@@ -1216,7 +1216,7 @@ describe('MonthlyPage', () => {
 
     fireEvent.click(screen.getByRole('tab', { name: 'Summary' }))
     const incomingSection = within(screen.getByText(/Total Incoming:/).closest('section')!)
-    await waitFor(() => expect(incomingSection.getByRole('cell', { name: 'Lottery' })).toBeInTheDocument())
+    await waitFor(() => expect(incomingSection.getByText('Lottery')).toBeInTheDocument())
   })
 
   it('bank picker lists banks fetched from the API in the expense form', async () => {
@@ -1235,7 +1235,7 @@ describe('MonthlyPage', () => {
   it('mark-paid picker on the Cards grid lists banks fetched from the API', async () => {
     render(<MonthlyPage />)
 
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('BaAmex')).toBeInTheDocument())
     const markPaidPicker = screen.getByLabelText('Paying bank for BaAmex')
     expect(within(markPaidPicker).getByRole('option', { name: 'Trading212' })).toBeInTheDocument()
   })
@@ -1316,15 +1316,15 @@ describe('MonthlyPage', () => {
     ])
     render(<MonthlyPage />)
 
-    await waitFor(() => expect(screen.getByText(/Bank Balance:/)).toBeInTheDocument())
-    const banksSection = within(screen.getByText(/Bank Balance:/).closest('section')!)
+    await waitFor(() => expect(screen.getByText(/Bank Balance:/, { selector: 'p' })).toBeInTheDocument())
+    const banksSection = within(screen.getByText(/Bank Balance:/, { selector: 'p' }).closest('section')!)
 
     const trading212Row = await banksSection.findByRole('row', { name: /Trading212/ })
-    expect(within(trading212Row).getByRole('cell', { name: '8.80' })).toBeInTheDocument()
-    expect(within(trading212Row).getByRole('cell', { name: '0.60' })).toBeInTheDocument()
+    expect(within(trading212Row).getByText('8.80')).toBeInTheDocument()
+    expect(within(trading212Row).getByText('0.60')).toBeInTheDocument()
 
     const barclaysRow = banksSection.getByRole('row', { name: /Barclays/ })
-    expect(within(barclaysRow).getAllByRole('cell', { name: '0.00' })).toHaveLength(2)
+    expect(within(barclaysRow).getAllByText('0.00')).toHaveLength(2)
   })
 
   it('pre-fills the edit round-up field with the saved amount', async () => {
@@ -1359,8 +1359,8 @@ describe('MonthlyPage', () => {
     render(<MonthlyPage />)
     fireEvent.click(screen.getByRole('tab', { name: 'Bank balance adjustment' }))
 
-    await waitFor(() => expect(screen.getByText(/Bank Balance:/)).toBeInTheDocument())
-    const banksSection = within(screen.getByText(/Bank Balance:/).closest('section')!)
+    await waitFor(() => expect(screen.getByText(/Bank Balance:/, { selector: 'p' })).toBeInTheDocument())
+    const banksSection = within(screen.getByText(/Bank Balance:/, { selector: 'p' }).closest('section')!)
     expect(banksSection.getByRole('columnheader', { name: 'Bank Balance' })).toBeInTheDocument()
     expect(banksSection.getByRole('columnheader', { name: 'Round-Up' })).toBeInTheDocument()
   })

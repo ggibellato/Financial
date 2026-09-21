@@ -16,6 +16,12 @@
   width: 56px;
 }
 
+.sidebar--mobile {
+  width: 100%;
+  border-right: none;
+  padding: 8px 4px;
+}
+
 .sidebar__toggle {
   display: flex;
   align-items: center;

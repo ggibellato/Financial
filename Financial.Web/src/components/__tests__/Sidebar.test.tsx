@@ -1,15 +1,20 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, screen, within } from '@testing-library/react'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import Sidebar from '../Sidebar'
 import { NAV_TREE } from '../../navigation/navTree'
+import { render } from '../../test/renderWithFluent'
+import { mockMatchMedia } from '../../test/mockMatchMedia'
 
 function LocationDisplay() {
   const location = useLocation()
   return <div data-testid="location">{location.pathname}</div>
 }
 
-const renderSidebar = (initialEntry = '/investments/active-investments') =>
+const renderSidebar = (
+  initialEntry = '/investments/active-investments',
+  sidebarProps: { mobileOpen?: boolean; onMobileOpenChange?: (open: boolean) => void } = {},
+) =>
   render(
     <MemoryRouter initialEntries={[initialEntry]}>
       <Routes>
@@ -17,7 +22,10 @@ const renderSidebar = (initialEntry = '/investments/active-investments') =>
           path="*"
           element={
             <>
-              <Sidebar />
+              <Sidebar
+                mobileOpen={sidebarProps.mobileOpen ?? false}
+                onMobileOpenChange={sidebarProps.onMobileOpenChange ?? (() => {})}
+              />
               <LocationDisplay />
             </>
           }
@@ -267,6 +275,42 @@ describe('Sidebar', () => {
 
       expect(toggle).toHaveAttribute('title', 'Expand sidebar')
       expect(document.querySelector('.sidebar-flyout')).not.toBeInTheDocument()
+    })
+  })
+
+  describe('mobile mode (below the phone breakpoint)', () => {
+    const originalMatchMedia = window.matchMedia
+
+    beforeEach(() => {
+      mockMatchMedia(true)
+    })
+
+    afterEach(() => {
+      window.matchMedia = originalMatchMedia
+    })
+
+    it('renders nothing when closed (OverlayDrawer unmounts its content)', () => {
+      renderSidebar(undefined, { mobileOpen: false })
+
+      expect(screen.queryByRole('link', { name: 'Active Investments' })).not.toBeInTheDocument()
+    })
+
+    it('renders the full, uncollapsed nav tree inside an accessible dialog when open', () => {
+      renderSidebar(undefined, { mobileOpen: true })
+
+      const dialog = screen.getByRole('dialog')
+      expect(within(dialog).getByRole('link', { name: 'Active Investments' })).toBeInTheDocument()
+      expect(within(dialog).getByText('Investments')).toBeInTheDocument()
+      expect(within(dialog).getByText('Admin')).toBeInTheDocument()
+    })
+
+    it('clicking the close button calls onMobileOpenChange(false)', () => {
+      const onMobileOpenChange = vi.fn()
+      renderSidebar(undefined, { mobileOpen: true, onMobileOpenChange })
+
+      fireEvent.click(screen.getByRole('button', { name: 'Close navigation' }))
+
+      expect(onMobileOpenChange).toHaveBeenCalledWith(false)
     })
   })
 })

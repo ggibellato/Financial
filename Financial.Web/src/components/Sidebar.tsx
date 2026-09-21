@@ -1,7 +1,11 @@
 import { useRef, useState, type FocusEvent, type KeyboardEvent, type ReactNode } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
+import { Button, OverlayDrawer, DrawerBody, DrawerHeader, DrawerHeaderTitle } from '@fluentui/react-components'
+import { DismissRegular } from '@fluentui/react-icons'
 import { NAV_TREE } from '../navigation/navTree'
 import { getStoredSidebarCollapsed, setStoredSidebarCollapsed } from '../utils/sidebarStorage'
+import { useMediaQuery } from '../hooks/useMediaQuery'
+import { MOBILE_MEDIA_QUERY } from '../styles/breakpoints'
 import SidebarFlyout from './SidebarFlyout'
 import './Sidebar.css'
 
@@ -118,8 +122,17 @@ interface FlyoutAnchor {
   rect: DOMRect
 }
 
-function Sidebar() {
+interface SidebarProps {
+  mobileOpen: boolean
+  onMobileOpenChange: (open: boolean) => void
+}
+
+function Sidebar({ mobileOpen, onMobileOpenChange }: SidebarProps) {
+  const isMobile = useMediaQuery(MOBILE_MEDIA_QUERY)
   const [collapsed, setCollapsed] = useState(() => getStoredSidebarCollapsed())
+  // Mobile always shows the full (uncollapsed) drawer content - the desktop
+  // icon-only collapse mode has no equivalent once the sidebar is an overlay.
+  const effectiveCollapsed = collapsed && !isMobile
   const [flyoutAnchor, setFlyoutAnchor] = useState<FlyoutAnchor | null>(null)
   const [expandedGroupId, setExpandedGroupId] = useState<string | null>(null)
   const location = useLocation()
@@ -186,116 +199,149 @@ function Sidebar() {
     }
   }
 
+  const navCategories = NAV_TREE.map((category) => {
+    const CategoryIcon = CATEGORY_ICONS[category.id]
+    const hasActiveChild =
+      category.children.some((child) => child.route === location.pathname) ||
+      (category.groups ?? []).some((group) => group.children.some((child) => child.route === location.pathname))
+    const isOpen = effectiveCollapsed && flyoutAnchor?.categoryId === category.id
+
+    return (
+      <div className="sidebar__category" key={category.id}>
+        {category.id === 'admin' && <hr className="sidebar__divider" />}
+        <div
+          ref={(el) => {
+            triggerRefs.current[category.id] = el
+          }}
+          className={`sidebar__category-header${hasActiveChild ? ' sidebar__category-header--active' : ''}`}
+          tabIndex={effectiveCollapsed ? 0 : -1}
+          role={effectiveCollapsed ? 'button' : undefined}
+          aria-label={effectiveCollapsed ? category.label : undefined}
+          aria-haspopup={effectiveCollapsed ? 'true' : undefined}
+          aria-expanded={effectiveCollapsed ? isOpen : undefined}
+          onMouseEnter={(event) => openFlyout(category.id, event.currentTarget)}
+          onMouseLeave={scheduleClose}
+          onFocus={(event) => openFlyout(category.id, event.currentTarget)}
+          onBlur={(event) => handleTriggerBlur(event, category.id)}
+        >
+          <CategoryIcon />
+          {!effectiveCollapsed && <span className="sidebar__category-label">{category.label}</span>}
+        </div>
+        {!effectiveCollapsed && category.groups && (
+          <ul className="sidebar__groups" aria-label={category.label}>
+            {category.groups.map((group) => {
+              const groupHasActiveChild = group.children.some((child) => child.route === location.pathname)
+              const groupExpanded = expandedGroupId === group.id
+              const toggleGroup = () =>
+                setExpandedGroupId((current) => (current === group.id ? null : group.id))
+              const handleGroupKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault()
+                  toggleGroup()
+                }
+              }
+
+              return (
+                <li key={group.id} className="sidebar__group">
+                  <div
+                    className={`sidebar__group-header${groupHasActiveChild ? ' sidebar__group-header--active' : ''}`}
+                    role="button"
+                    tabIndex={0}
+                    aria-expanded={groupExpanded}
+                    onClick={toggleGroup}
+                    onKeyDown={handleGroupKeyDown}
+                  >
+                    <span className="sidebar__group-disclosure" aria-hidden="true">
+                      {groupExpanded ? '▾' : '▸'}
+                    </span>
+                    <span>{group.label}</span>
+                  </div>
+                  {groupExpanded && (
+                    <ul className="sidebar__children" aria-label={group.label}>
+                      {group.children.map((child) => (
+                        <li key={child.id}>
+                          <NavLink to={child.route} className="sidebar__link">
+                            {child.label}
+                          </NavLink>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
+        )}
+        {!effectiveCollapsed && !category.groups && (
+          <ul className="sidebar__children" aria-label={category.label}>
+            {category.children.map((child) => (
+              <li key={child.id}>
+                <NavLink to={child.route} className="sidebar__link">
+                  {child.label}
+                </NavLink>
+              </li>
+            ))}
+          </ul>
+        )}
+        {isOpen && flyoutAnchor && (
+          <SidebarFlyout
+            ref={flyoutRef}
+            category={category}
+            anchorRect={flyoutAnchor.rect}
+            onClose={(refocus) => closeFlyoutNow(category.id, refocus)}
+            onMouseEnter={cancelClose}
+            onMouseLeave={scheduleClose}
+            onBlur={(event) => handleFlyoutBlur(event, category.id)}
+          />
+        )}
+      </div>
+    )
+  })
+
+  if (isMobile) {
+    return (
+      <OverlayDrawer
+        open={mobileOpen}
+        onOpenChange={(_, data) => onMobileOpenChange(data.open)}
+        position="start"
+        size="small"
+      >
+        <DrawerHeader>
+          <DrawerHeaderTitle
+            action={
+              <Button
+                appearance="subtle"
+                aria-label="Close navigation"
+                icon={<DismissRegular />}
+                onClick={() => onMobileOpenChange(false)}
+              />
+            }
+          >
+            Menu
+          </DrawerHeaderTitle>
+        </DrawerHeader>
+        <DrawerBody>
+          <nav className="sidebar sidebar--mobile" aria-label="Main">
+            {navCategories}
+          </nav>
+        </DrawerBody>
+      </OverlayDrawer>
+    )
+  }
+
   return (
-    <nav className={`sidebar${collapsed ? ' sidebar--collapsed' : ''}`} aria-label="Main">
+    <nav className={`sidebar${effectiveCollapsed ? ' sidebar--collapsed' : ''}`} aria-label="Main">
       <button
         type="button"
         className="sidebar__toggle"
         onClick={toggleCollapsed}
-        aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        aria-label={effectiveCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        title={effectiveCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       >
         <ToggleIcon />
       </button>
 
-      {NAV_TREE.map((category) => {
-        const CategoryIcon = CATEGORY_ICONS[category.id]
-        const hasActiveChild =
-          category.children.some((child) => child.route === location.pathname) ||
-          (category.groups ?? []).some((group) => group.children.some((child) => child.route === location.pathname))
-        const isOpen = collapsed && flyoutAnchor?.categoryId === category.id
-
-        return (
-          <div className="sidebar__category" key={category.id}>
-            {category.id === 'admin' && <hr className="sidebar__divider" />}
-            <div
-              ref={(el) => {
-                triggerRefs.current[category.id] = el
-              }}
-              className={`sidebar__category-header${hasActiveChild ? ' sidebar__category-header--active' : ''}`}
-              tabIndex={collapsed ? 0 : -1}
-              role={collapsed ? 'button' : undefined}
-              aria-label={collapsed ? category.label : undefined}
-              aria-haspopup={collapsed ? 'true' : undefined}
-              aria-expanded={collapsed ? isOpen : undefined}
-              onMouseEnter={(event) => openFlyout(category.id, event.currentTarget)}
-              onMouseLeave={scheduleClose}
-              onFocus={(event) => openFlyout(category.id, event.currentTarget)}
-              onBlur={(event) => handleTriggerBlur(event, category.id)}
-            >
-              <CategoryIcon />
-              {!collapsed && <span className="sidebar__category-label">{category.label}</span>}
-            </div>
-            {!collapsed && category.groups && (
-              <ul className="sidebar__groups" aria-label={category.label}>
-                {category.groups.map((group) => {
-                  const groupHasActiveChild = group.children.some((child) => child.route === location.pathname)
-                  const groupExpanded = expandedGroupId === group.id
-                  const toggleGroup = () =>
-                    setExpandedGroupId((current) => (current === group.id ? null : group.id))
-                  const handleGroupKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      event.preventDefault()
-                      toggleGroup()
-                    }
-                  }
-
-                  return (
-                    <li key={group.id} className="sidebar__group">
-                      <div
-                        className={`sidebar__group-header${groupHasActiveChild ? ' sidebar__group-header--active' : ''}`}
-                        role="button"
-                        tabIndex={0}
-                        aria-expanded={groupExpanded}
-                        onClick={toggleGroup}
-                        onKeyDown={handleGroupKeyDown}
-                      >
-                        <span className="sidebar__group-disclosure" aria-hidden="true">
-                          {groupExpanded ? '▾' : '▸'}
-                        </span>
-                        <span>{group.label}</span>
-                      </div>
-                      {groupExpanded && (
-                        <ul className="sidebar__children" aria-label={group.label}>
-                          {group.children.map((child) => (
-                            <li key={child.id}>
-                              <NavLink to={child.route} className="sidebar__link">
-                                {child.label}
-                              </NavLink>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </li>
-                  )
-                })}
-              </ul>
-            )}
-            {!collapsed && !category.groups && (
-              <ul className="sidebar__children" aria-label={category.label}>
-                {category.children.map((child) => (
-                  <li key={child.id}>
-                    <NavLink to={child.route} className="sidebar__link">
-                      {child.label}
-                    </NavLink>
-                  </li>
-                ))}
-              </ul>
-            )}
-            {isOpen && flyoutAnchor && (
-              <SidebarFlyout
-                ref={flyoutRef}
-                category={category}
-                anchorRect={flyoutAnchor.rect}
-                onClose={(refocus) => closeFlyoutNow(category.id, refocus)}
-                onMouseEnter={cancelClose}
-                onMouseLeave={scheduleClose}
-                onBlur={(event) => handleFlyoutBlur(event, category.id)}
-              />
-            )}
-          </div>
-        )
-      })}
+      {navCategories}
     </nav>
   )
 }

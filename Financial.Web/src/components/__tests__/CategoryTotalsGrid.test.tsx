@@ -35,8 +35,11 @@ describe('CategoryTotalsGrid', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Filter by Category' }))
     fireEvent.click(screen.getByRole('checkbox', { name: 'Mercado' }))
 
-    expect(screen.queryByRole('cell', { name: 'Mercado' })).not.toBeInTheDocument()
-    expect(screen.getByRole('cell', { name: 'Casa' })).toBeInTheDocument()
+    // The header's own filter checklist keeps every category name in the DOM (as checkbox
+    // labels) regardless of which rows are filtered out, so assertions must be scoped to tbody.
+    const tbody = within(document.querySelector('tbody')!)
+    expect(tbody.queryByText('Mercado')).not.toBeInTheDocument()
+    expect(tbody.getByText('Casa')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('checkbox', { name: 'Casa' }))
 
