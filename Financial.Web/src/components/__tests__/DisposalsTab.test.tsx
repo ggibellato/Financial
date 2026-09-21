@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { DisposalsData } from '../../hooks/useDisposals'
 import type { DisposalRecordDto } from '../../api/types'
@@ -92,7 +92,7 @@ describe('DisposalsTab', () => {
     expect(screen.getByText('600.00')).toBeInTheDocument()
     expect(screen.getByText('500.00')).toBeInTheDocument()
     expect(screen.getByText('100.00')).toBeInTheDocument()
-    expect(screen.getByRole('cell', { name: '2025/26' })).toBeInTheDocument()
+    expect(within(document.querySelector('tbody')!).getByText('2025/26')).toBeInTheDocument()
   })
 
   it('shows the tax-year filter and calls setTaxYear on selection', () => {

@@ -5,7 +5,6 @@ import {
   ProgressBar,
   Table,
   TableBody,
-  TableCell,
   TableHeader,
   TableHeaderCell,
   TableRow,
@@ -13,6 +12,7 @@ import {
   makeStyles,
   tokens,
 } from '@fluentui/react-components'
+import DataTableCell from './grid/DataTableCell'
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
 import { useFormPanelStyles } from './formPanelStyles'
@@ -57,7 +57,7 @@ function NotUpdatedList({ notUpdated }: { notUpdated: InvestmentSnapshotSuggesti
   return (
     <div>
       <Text weight="semibold">Not updated</Text>
-      <Table size="small">
+      <Table className="data-table" size="small">
         <TableHeader>
           <TableRow>
             <TableHeaderCell>Account</TableHeaderCell>
@@ -67,8 +67,8 @@ function NotUpdatedList({ notUpdated }: { notUpdated: InvestmentSnapshotSuggesti
         <TableBody>
           {notUpdated.map((item) => (
             <TableRow key={item.accountId}>
-              <TableCell>{item.accountName}</TableCell>
-              <TableCell>{item.reason}</TableCell>
+              <DataTableCell label="Account">{item.accountName}</DataTableCell>
+              <DataTableCell label="Reason">{item.reason}</DataTableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -113,7 +113,7 @@ export default function SuggestedValuesPanel({
           {rows.length === 0 ? (
             <p>No suggestions available for this month.</p>
           ) : (
-            <Table aria-label="Suggested Values">
+            <Table className="data-table" aria-label="Suggested Values">
               <TableHeader>
                 <TableRow>
                   <TableHeaderCell>Account</TableHeaderCell>
@@ -126,15 +126,15 @@ export default function SuggestedValuesPanel({
               <TableBody>
                 {rows.map((row) => (
                   <TableRow key={row.accountId}>
-                    <TableCell>{row.accountName}</TableCell>
-                    <TableCell className="data-table__col--numeric">
+                    <DataTableCell label="Account">{row.accountName}</DataTableCell>
+                    <DataTableCell label="Current Value" className="data-table__col--numeric">
                       {row.included && row.currentValue !== 0 ? (
                         <span className={styles.mutedValue}>{formatN2(row.currentValue)}</span>
                       ) : (
                         formatN2(row.currentValue)
                       )}
-                    </TableCell>
-                    <TableCell className="data-table__col--numeric">
+                    </DataTableCell>
+                    <DataTableCell label="Suggested Value" className="data-table__col--numeric">
                       <Input
                         type="number"
                         step="0.01"
@@ -144,16 +144,16 @@ export default function SuggestedValuesPanel({
                         disabled={isApplying}
                         onChange={(e) => onSetValue(row.accountId, e.target.value)}
                       />
-                    </TableCell>
-                    <TableCell>{row.sourceDescription}</TableCell>
-                    <TableCell>
+                    </DataTableCell>
+                    <DataTableCell label="Source">{row.sourceDescription}</DataTableCell>
+                    <DataTableCell label="Include">
                       <Checkbox
                         aria-label={`Include ${row.accountName}`}
                         checked={row.included}
                         disabled={isApplying}
                         onChange={() => onToggleIncluded(row.accountId)}
                       />
-                    </TableCell>
+                    </DataTableCell>
                   </TableRow>
                 ))}
               </TableBody>

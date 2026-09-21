@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react'
-import { Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
+import { Table, TableBody, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
+import DataTableCell from './grid/DataTableCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import { useSortableRows, type SortAccessor, type SortDirection } from '../hooks/useSortableRows'
 import { usePortfolioAssetSummary } from '../hooks/usePortfolioAssetSummary'
@@ -99,18 +100,20 @@ function AssetRow({ item, rowPrice, isHistoric }: AssetRowProps) {
 
   return (
     <TableRow>
-      <TableCell>{item.assetName}</TableCell>
-      <TableCell>{formatShortDate(item.firstInvestmentDate)}</TableCell>
-      <TableCell>{formatN8(item.currentQuantity)}</TableCell>
-      <TableCell>{item.portfolioWeight === null ? '—' : `${formatN2(item.portfolioWeight)}%`}</TableCell>
-      <TableCell>{formatN2(item.totalInvested)}</TableCell>
+      <DataTableCell label="Asset Name">{item.assetName}</DataTableCell>
+      <DataTableCell label="First Investment">{formatShortDate(item.firstInvestmentDate)}</DataTableCell>
+      <DataTableCell label="Quantity">{formatN8(item.currentQuantity)}</DataTableCell>
+      <DataTableCell label="% Portfolio">
+        {item.portfolioWeight === null ? '—' : `${formatN2(item.portfolioWeight)}%`}
+      </DataTableCell>
+      <DataTableCell label="Total Invested">{formatN2(item.totalInvested)}</DataTableCell>
       {isHistoric && (
-        <TableCell>
+        <DataTableCell label="Realized Gain/Loss">
           <span className={getProfitClass(item.realizedGainLoss)}>{formatN2(item.realizedGainLoss)}</span>
-        </TableCell>
+        </DataTableCell>
       )}
       {!isHistoric && (
-        <TableCell>
+        <DataTableCell label="Current Value">
           {renderGatedCell(rowPrice.isLoading, rowPrice.fetchFailed, currentValue, v => formatN2(v))}
           {!rowPrice.isLoading && !rowPrice.fetchFailed && rowPrice.isManual && (
             <span
@@ -121,11 +124,11 @@ function AssetRow({ item, rowPrice, isHistoric }: AssetRowProps) {
               (M)
             </span>
           )}
-        </TableCell>
+        </DataTableCell>
       )}
-      <TableCell>{formatN2(item.totalCredits)}</TableCell>
-      <TableCell>{formatN2(item.averagePrice)}</TableCell>
-      <TableCell>
+      <DataTableCell label="Total Credits">{formatN2(item.totalCredits)}</DataTableCell>
+      <DataTableCell label="Average Price">{formatN2(item.averagePrice)}</DataTableCell>
+      <DataTableCell label={isHistoric ? 'Sold Price' : 'Current Price'}>
         {renderGatedCell(cellLoading, cellUnavailable, priceValue, v => formatN2(v))}
         {!isHistoric && !cellLoading && !cellUnavailable && item.marketStatus === 'Stale' && (
           <span className="portfolio-summary__stale-badge" title="This price is older than the most recent weekday.">
@@ -139,29 +142,37 @@ function AssetRow({ item, rowPrice, isHistoric }: AssetRowProps) {
             (U)
           </span>
         )}
-      </TableCell>
-      <TableCell>
+      </DataTableCell>
+      <DataTableCell label="Profit %">
         {renderGatedCell(cellLoading, cellUnavailable, profitPercent, v => (
           <span className={getProfitClass(v)}>{formatN2(v)}%</span>
         ))}
-      </TableCell>
-      <TableCell>
+      </DataTableCell>
+      <DataTableCell label="Profit % w/ Credits">
         {renderGatedCell(cellLoading, cellUnavailable, profitWithCreditsPercent, v => (
           <span className={getProfitClass(v)}>{formatN2(v)}%</span>
         ))}
-      </TableCell>
-      <TableCell>
+      </DataTableCell>
+      <DataTableCell label="XIRR">
         {renderGatedCell(cellLoading, false, xirrValue, v => (
           <span className={getProfitClass(v)}>{formatN2(v * 100)}%</span>
         ))}
-      </TableCell>
-      <TableCell className="portfolio-summary__credits-separator">
+      </DataTableCell>
+      <DataTableCell label="Last Month Credits" className="portfolio-summary__credits-separator">
         {item.lastCreditMonth === null ? '—' : formatN2(item.lastMonthCredits)}
-      </TableCell>
-      <TableCell>{item.lastCreditMonth === null ? '—' : formatCreditMonth(item.lastCreditMonth)}</TableCell>
-      <TableCell>{item.lastMonthCreditsPercent === null ? '—' : `${formatN2(item.lastMonthCreditsPercent)}%`}</TableCell>
-      <TableCell>{item.estimatedAnnualCredits === null ? '—' : formatN2(item.estimatedAnnualCredits)}</TableCell>
-      <TableCell>{item.estimatedAnnualPercent === null ? '—' : `${formatN2(item.estimatedAnnualPercent)}%`}</TableCell>
+      </DataTableCell>
+      <DataTableCell label="Last Credit Month">
+        {item.lastCreditMonth === null ? '—' : formatCreditMonth(item.lastCreditMonth)}
+      </DataTableCell>
+      <DataTableCell label="Last Month Credits %">
+        {item.lastMonthCreditsPercent === null ? '—' : `${formatN2(item.lastMonthCreditsPercent)}%`}
+      </DataTableCell>
+      <DataTableCell label="Est. Annual Credits">
+        {item.estimatedAnnualCredits === null ? '—' : formatN2(item.estimatedAnnualCredits)}
+      </DataTableCell>
+      <DataTableCell label="Est. Annual %">
+        {item.estimatedAnnualPercent === null ? '—' : `${formatN2(item.estimatedAnnualPercent)}%`}
+      </DataTableCell>
     </TableRow>
   )
 }

@@ -20,6 +20,7 @@ import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import CategoryFormDialog from '../components/CategoryFormDialog'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
+import DataTableCell from '../components/grid/DataTableCell'
 import { useFormPanelStyles } from '../components/formPanelStyles'
 import { useCategories } from '../hooks/useCategories'
 import type { CategoryDto } from '../api/types'
@@ -110,10 +111,10 @@ export default function CategoriesPage() {
           <TableBody>
             {visibleCategories.map((category) => (
               <TableRow key={category.id}>
-                <TableCell>{category.name}</TableCell>
-                <TableCell>{category.active ? 'Yes' : 'No'}</TableCell>
-                <TableCell>{category.isInvestment ? 'Yes' : 'No'}</TableCell>
-                <TableCell>{category.isTithe ? 'Yes' : 'No'}</TableCell>
+                <DataTableCell label="Name">{category.name}</DataTableCell>
+                <DataTableCell label="Active">{category.active ? 'Yes' : 'No'}</DataTableCell>
+                <DataTableCell label="Investment">{category.isInvestment ? 'Yes' : 'No'}</DataTableCell>
+                <DataTableCell label="Tithe">{category.isTithe ? 'Yes' : 'No'}</DataTableCell>
                 <TableCell className="data-table__col--action">
                   <div className="data-table__actions-cell">
                     <Button

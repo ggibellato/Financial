@@ -1,5 +1,6 @@
 import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts'
-import { Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
+import { Table, TableBody, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
+import DataTableCell from '../grid/DataTableCell'
 import { formatN2, formatPercent1 } from '../../utils/formatters'
 import './AllocationPieChart.css'
 
@@ -99,9 +100,13 @@ export default function AllocationPieChart({ title, entries }: AllocationPieChar
           <TableBody>
             {entries.map((entry) => (
               <TableRow key={entry.label}>
-                <TableCell>{entry.label}</TableCell>
-                <TableCell className="data-table__col--numeric">{formatN2(entry.marketValue)}</TableCell>
-                <TableCell className="data-table__col--numeric">{formatPercent1(entry.percentage)}</TableCell>
+                <DataTableCell label="Label">{entry.label}</DataTableCell>
+                <DataTableCell label="Market Value" className="data-table__col--numeric">
+                  {formatN2(entry.marketValue)}
+                </DataTableCell>
+                <DataTableCell label="Percentage" className="data-table__col--numeric">
+                  {formatPercent1(entry.percentage)}
+                </DataTableCell>
               </TableRow>
             ))}
           </TableBody>

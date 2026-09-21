@@ -21,6 +21,7 @@ import AssetFormDialog from '../components/AssetFormDialog'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
 import TruncatedText from '../components/TruncatedText'
+import DataTableCell from '../components/grid/DataTableCell'
 import { useFormPanelStyles } from '../components/formPanelStyles'
 import { useBrokers } from '../hooks/useBrokers'
 import { usePortfolios } from '../hooks/usePortfolios'
@@ -190,14 +191,14 @@ export default function AssetsPage() {
               const key = assetKey(asset.brokerName, asset.portfolioName, asset.name)
               return (
                 <TableRow key={key}>
-                  <TableCell>
+                  <DataTableCell label="Name">
                     <TruncatedText text={asset.name} />
-                  </TableCell>
-                  <TableCell>{asset.ticker}</TableCell>
-                  <TableCell>{asset.brokerName}</TableCell>
-                  <TableCell>{asset.portfolioName}</TableCell>
-                  <TableCell>{asset.class}</TableCell>
-                  <TableCell>{asset.quantity}</TableCell>
+                  </DataTableCell>
+                  <DataTableCell label="Ticker">{asset.ticker}</DataTableCell>
+                  <DataTableCell label="Broker">{asset.brokerName}</DataTableCell>
+                  <DataTableCell label="Portfolio">{asset.portfolioName}</DataTableCell>
+                  <DataTableCell label="Class">{asset.class}</DataTableCell>
+                  <DataTableCell label="Quantity">{asset.quantity}</DataTableCell>
                   <TableCell className="data-table__col--action">
                     <div className="data-table__actions-cell">
                       <Button

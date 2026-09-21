@@ -11,7 +11,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { Button, Field, Input, MessageBar, MessageBarBody, Select, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text } from '@fluentui/react-components'
+import { Button, Field, Input, MessageBar, MessageBarBody, Select, Table, TableBody, TableHeader, TableHeaderCell, TableRow, Text } from '@fluentui/react-components'
 import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import type { CreditDto } from '../api/types'
 import ErrorState from './ErrorState'
@@ -19,6 +19,7 @@ import FilterTabList from './FilterTabList'
 import FxProvenanceTooltip from './FxProvenanceTooltip'
 import LoadingState from './LoadingState'
 import SplitPanel from './SplitPanel'
+import DataTableCell from './grid/DataTableCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import { useFormPanelStyles } from './formPanelStyles'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
@@ -103,15 +104,19 @@ function CreditRow({ credit, onEdit, onDelete }: CreditRowProps) {
 
   return (
     <TableRow>
-      <TableCell>{formatShortDate(credit.date)}</TableCell>
-      <TableCell className={typeClass}>{typeLabel(credit.type)}</TableCell>
-      <TableCell className="data-table__col--numeric credits-tab__value">{formatN2(credit.value)}</TableCell>
-      <TableCell className="data-table__col--numeric">{formatN2(credit.withheld)}</TableCell>
-      <TableCell className="data-table__col--numeric credits-tab__value">{formatN2(credit.netAmount)}</TableCell>
-      <TableCell>
+      <DataTableCell label="Date">{formatShortDate(credit.date)}</DataTableCell>
+      <DataTableCell label="Type" className={typeClass}>{typeLabel(credit.type)}</DataTableCell>
+      <DataTableCell label="Value" className="data-table__col--numeric credits-tab__value">
+        {formatN2(credit.value)}
+      </DataTableCell>
+      <DataTableCell label="Withheld" className="data-table__col--numeric">{formatN2(credit.withheld)}</DataTableCell>
+      <DataTableCell label="Net" className="data-table__col--numeric credits-tab__value">
+        {formatN2(credit.netAmount)}
+      </DataTableCell>
+      <DataTableCell label="FX">
         <FxProvenanceTooltip currency={credit.currency} fxRateSnapshot={credit.fxRateSnapshot} />
-      </TableCell>
-      <TableCell className="data-table__col--action">
+      </DataTableCell>
+      <DataTableCell label="Actions" className="data-table__col--action">
         <div className="data-table__actions-cell">
           <Button
             appearance="subtle"
@@ -128,7 +133,7 @@ function CreditRow({ credit, onEdit, onDelete }: CreditRowProps) {
             onClick={() => onDelete(credit.id)}
           />
         </div>
-      </TableCell>
+      </DataTableCell>
     </TableRow>
   )
 }

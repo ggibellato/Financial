@@ -13,6 +13,7 @@ import {
 } from '@fluentui/react-components'
 import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import type { IncomeDto } from '../api/types'
+import DataTableCell from './grid/DataTableCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import ColumnFilterMenu from './grid/ColumnFilterMenu'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
@@ -40,14 +41,16 @@ interface IncomeRowProps {
 function IncomeRow({ income, onEdit, onDelete }: IncomeRowProps) {
   return (
     <TableRow>
-      <TableCell>{formatShortDate(income.date)}</TableCell>
-      <TableCell>{income.incomeSourceName}</TableCell>
-      <TableCell className="data-table__col--numeric">
+      <DataTableCell label="Date">{formatShortDate(income.date)}</DataTableCell>
+      <DataTableCell label="Source">{income.incomeSourceName}</DataTableCell>
+      <DataTableCell label="Gross" className="data-table__col--numeric">
         {income.grossValue != null ? formatN2(income.grossValue) : '—'}
-      </TableCell>
-      <TableCell className="data-table__col--numeric">{formatN2(income.netValue)}</TableCell>
-      <TableCell>{income.bankName ?? '—'}</TableCell>
-      <TableCell>{income.description ?? ''}</TableCell>
+      </DataTableCell>
+      <DataTableCell label="Net" className="data-table__col--numeric">
+        {formatN2(income.netValue)}
+      </DataTableCell>
+      <DataTableCell label="Bank">{income.bankName ?? '—'}</DataTableCell>
+      <DataTableCell label="Description">{income.description ?? ''}</DataTableCell>
       <TableCell className="data-table__col--action">
         <div className="data-table__actions-cell">
           <Button
@@ -173,7 +176,9 @@ export default function IncomeSection({
           <TableBody>
             {sortedRows.length === 0 && isColumnFiltered('bank') ? (
               <TableRow>
-                <TableCell colSpan={7}>No rows match the current filters</TableCell>
+                <TableCell className="data-table__cell--message" colSpan={7}>
+                  No rows match the current filters
+                </TableCell>
               </TableRow>
             ) : (
               sortedRows.map((income) => (

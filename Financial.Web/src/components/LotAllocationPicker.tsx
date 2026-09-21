@@ -1,5 +1,6 @@
-import { Input, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
+import { Input, Table, TableBody, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
 import type { OpenLotDto } from '../api/types'
+import DataTableCell from './grid/DataTableCell'
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
 import { formatN2, formatN8, formatShortDate } from '../utils/formatters'
@@ -61,10 +62,14 @@ export default function LotAllocationPicker({
             const rowErrorId = `lot-allocation-error-${lot.sourceTransactionId}`
             return (
               <TableRow key={lot.sourceTransactionId}>
-                <TableCell>{dateLabel}</TableCell>
-                <TableCell className="data-table__col--numeric">{formatN8(lot.remainingQuantity)}</TableCell>
-                <TableCell className="data-table__col--numeric">{formatN2(lot.unitCost)}</TableCell>
-                <TableCell className="data-table__col--numeric">
+                <DataTableCell label="Purchase Date">{dateLabel}</DataTableCell>
+                <DataTableCell label="Remaining" className="data-table__col--numeric">
+                  {formatN8(lot.remainingQuantity)}
+                </DataTableCell>
+                <DataTableCell label="Unit Cost" className="data-table__col--numeric">
+                  {formatN2(lot.unitCost)}
+                </DataTableCell>
+                <DataTableCell label="Allocate" className="data-table__col--numeric">
                   <Input
                     type="number"
                     step="0.0001"
@@ -82,7 +87,7 @@ export default function LotAllocationPicker({
                       Exceeds the {formatN8(lot.remainingQuantity)} remaining on this lot.
                     </p>
                   )}
-                </TableCell>
+                </DataTableCell>
               </TableRow>
             )
           })}

@@ -19,6 +19,7 @@ import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import RecurringBillFormDialog, { type RecurringBillFormValues } from '../components/RecurringBillFormDialog'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
+import DataTableCell from '../components/grid/DataTableCell'
 import SortableColumnHeader from '../components/grid/SortableColumnHeader'
 import { useFormPanelStyles } from '../components/formPanelStyles'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
@@ -152,11 +153,13 @@ export default function RecurringBillsPage() {
           <TableBody>
             {sortedBills.map((bill) => (
               <TableRow key={bill.id}>
-                <TableCell>{bill.dueDay}</TableCell>
-                <TableCell>{bill.description}</TableCell>
-                <TableCell className="data-table__col--numeric">{formatN2(bill.value)}</TableCell>
-                <TableCell>{bill.area}</TableCell>
-                <TableCell>{bill.status}</TableCell>
+                <DataTableCell label="Due Day">{bill.dueDay}</DataTableCell>
+                <DataTableCell label="Description">{bill.description}</DataTableCell>
+                <DataTableCell label="Value" className="data-table__col--numeric">
+                  {formatN2(bill.value)}
+                </DataTableCell>
+                <DataTableCell label="Area">{bill.area}</DataTableCell>
+                <DataTableCell label="Status">{bill.status}</DataTableCell>
                 <TableCell className="data-table__col--action">
                   <div className="data-table__actions-cell">
                     <Button

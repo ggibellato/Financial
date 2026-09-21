@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
+import { Table, TableBody, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
+import DataTableCell from '../grid/DataTableCell'
 import ErrorState from '../ErrorState'
 import FilterTabList from '../FilterTabList'
 import LoadingState from '../LoadingState'
@@ -62,10 +63,12 @@ export default function UpcomingIncomePanel({ entries, isLoading, error, retry }
             <TableBody>
               {visibleEntries.map((entry) => (
                 <TableRow key={`${entry.brokerName}-${entry.assetName}-${entry.projectedNextDate}`}>
-                  <TableCell>{entry.assetName}</TableCell>
-                  <TableCell>{entry.brokerName}</TableCell>
-                  <TableCell>{formatShortDate(entry.projectedNextDate)}</TableCell>
-                  <TableCell className="data-table__col--numeric">{formatN2(entry.projectedAmount)}</TableCell>
+                  <DataTableCell label="Asset">{entry.assetName}</DataTableCell>
+                  <DataTableCell label="Broker">{entry.brokerName}</DataTableCell>
+                  <DataTableCell label="Projected Date">{formatShortDate(entry.projectedNextDate)}</DataTableCell>
+                  <DataTableCell label="Projected Amount" className="data-table__col--numeric">
+                    {formatN2(entry.projectedAmount)}
+                  </DataTableCell>
                 </TableRow>
               ))}
             </TableBody>

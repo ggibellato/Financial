@@ -79,7 +79,10 @@ describe('AllocationPieChart', () => {
     ])
 
     const rows = screen.getAllByRole('row').slice(1)
-    expect(rows.map((row) => within(row).getAllByRole('cell')[0].textContent)).toEqual(['Cash', 'Equity'])
+    expect(rows.map((row) => within(row).getAllByRole('cell')[0].textContent!.replace('Label:', ''))).toEqual([
+      'Cash',
+      'Equity',
+    ])
   })
 
   it('right_aligns_the_numeric_legend_columns', () => {
@@ -102,7 +105,7 @@ describe('AllocationPieChart', () => {
     const rows = screen.getAllByRole('row').slice(1)
     const cells = within(rows[0]).getAllByRole('cell')
     expect(cells[1].textContent).toMatch(/12[.,]000[.,]00/)
-    expect(cells[2].textContent).toBe('60.0%')
+    expect(cells[2].textContent).toBe('Percentage:60.0%')
   })
 
   it('renders_one_pie_slice_per_entry_in_the_same_order', () => {

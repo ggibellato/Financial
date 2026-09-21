@@ -4,6 +4,7 @@ import type { DisposalRecordDto } from '../api/types'
 import ErrorState from './ErrorState'
 import FilterTabList from './FilterTabList'
 import LoadingState from './LoadingState'
+import DataTableCell from './grid/DataTableCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { ALL_TAX_YEARS, useDisposals, type DisposalChain } from '../hooks/useDisposals'
@@ -28,13 +29,16 @@ interface HistoryRowProps {
 function HistoryRow({ record }: HistoryRowProps) {
   return (
     <TableRow>
-      <TableCell>{formatDateTime(record.createdAt)}</TableCell>
-      <TableCell>{COST_BASIS_METHOD_LABELS[record.method]}</TableCell>
-      <TableCell className="data-table__col--numeric">{formatN2(record.proceeds)}</TableCell>
-      <TableCell className="data-table__col--numeric">{formatN2(record.costBasis)}</TableCell>
-      <TableCell className={`data-table__col--numeric ${signClass(record.gainLoss, 'disposals-tab__value')}`}>
+      <DataTableCell label="Computed On">{formatDateTime(record.createdAt)}</DataTableCell>
+      <DataTableCell label="Method">{COST_BASIS_METHOD_LABELS[record.method]}</DataTableCell>
+      <DataTableCell label="Proceeds" className="data-table__col--numeric">{formatN2(record.proceeds)}</DataTableCell>
+      <DataTableCell label="Cost Basis" className="data-table__col--numeric">{formatN2(record.costBasis)}</DataTableCell>
+      <DataTableCell
+        label="Gain/Loss"
+        className={`data-table__col--numeric ${signClass(record.gainLoss, 'disposals-tab__value')}`}
+      >
         {formatN2(record.gainLoss)}
-      </TableCell>
+      </DataTableCell>
     </TableRow>
   )
 }
@@ -67,19 +71,22 @@ function DisposalRow({ chain, isExpanded, onToggleExpand }: DisposalRowProps) {
             />
           )}
         </TableCell>
-        <TableCell>{dateLabel}</TableCell>
-        <TableCell className="data-table__col--numeric">{formatN8(active.quantityDisposed)}</TableCell>
-        <TableCell>{COST_BASIS_METHOD_LABELS[active.method]}</TableCell>
-        <TableCell className="data-table__col--numeric">{formatN2(active.proceeds)}</TableCell>
-        <TableCell className="data-table__col--numeric">{formatN2(active.costBasis)}</TableCell>
-        <TableCell className={`data-table__col--numeric ${signClass(active.gainLoss, 'disposals-tab__value')}`}>
+        <DataTableCell label="Date">{dateLabel}</DataTableCell>
+        <DataTableCell label="Quantity" className="data-table__col--numeric">{formatN8(active.quantityDisposed)}</DataTableCell>
+        <DataTableCell label="Method">{COST_BASIS_METHOD_LABELS[active.method]}</DataTableCell>
+        <DataTableCell label="Proceeds" className="data-table__col--numeric">{formatN2(active.proceeds)}</DataTableCell>
+        <DataTableCell label="Cost Basis" className="data-table__col--numeric">{formatN2(active.costBasis)}</DataTableCell>
+        <DataTableCell
+          label="Gain/Loss"
+          className={`data-table__col--numeric ${signClass(active.gainLoss, 'disposals-tab__value')}`}
+        >
           {formatN2(active.gainLoss)}
-        </TableCell>
-        <TableCell>{active.taxYear}</TableCell>
+        </DataTableCell>
+        <DataTableCell label="Tax Year">{active.taxYear}</DataTableCell>
       </TableRow>
       {hasHistory && isExpanded && (
         <TableRow className="disposals-tab__history-row">
-          <TableCell colSpan={8}>
+          <TableCell className="data-table__cell--message" colSpan={8}>
             <div id={historyPanelId}>
               <p className="disposals-tab__history-title">Audit trail for the {dateLabel} disposal</p>
               <Table className="disposals-tab__history-table data-table">

@@ -17,6 +17,7 @@ import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import type { MaeLedgerEntryDto } from '../api/types'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
+import DataTableCell from '../components/grid/DataTableCell'
 import SortableColumnHeader from '../components/grid/SortableColumnHeader'
 import TruncatedText from '../components/TruncatedText'
 import { useFormPanelStyles } from '../components/formPanelStyles'
@@ -50,19 +51,19 @@ interface EntryRowProps {
 function EntryRow({ entry, isDeleting, onEdit, onDelete }: EntryRowProps) {
   return (
     <TableRow>
-      <TableCell>{formatShortDate(entry.date)}</TableCell>
-      <TableCell>
+      <DataTableCell label="Date">{formatShortDate(entry.date)}</DataTableCell>
+      <DataTableCell label="Description">
         <TruncatedText text={entry.description} />
-      </TableCell>
-      <TableCell>
+      </DataTableCell>
+      <DataTableCell label="Note">
         <TruncatedText text={entry.note} />
-      </TableCell>
-      <TableCell className="data-table__col--numeric">
+      </DataTableCell>
+      <DataTableCell label="BRL" className="data-table__col--numeric">
         {entry.brlValue !== null ? formatN2(entry.brlValue) : '—'}
-      </TableCell>
-      <TableCell className="data-table__col--numeric">
+      </DataTableCell>
+      <DataTableCell label="GBP" className="data-table__col--numeric">
         {entry.gbpValue !== null ? formatN2(entry.gbpValue) : '—'}
-      </TableCell>
+      </DataTableCell>
       <TableCell>
         <div className="data-table__actions-cell">
           <Button
@@ -334,9 +335,15 @@ export default function ControleMaePage() {
           <LedgerColumns />
           <TableBody>
             <TableRow className="controle-mae-page__totals-row">
-              <TableCell colSpan={3}>Total (all entries)</TableCell>
-              <TableCell className="data-table__col--numeric">{totals ? formatN2(totals.totalBrlValue) : '—'}</TableCell>
-              <TableCell className="data-table__col--numeric">{totals ? formatN2(totals.totalGbpValue) : '—'}</TableCell>
+              <TableCell className="data-table__cell--message" colSpan={3}>
+                Total (all entries)
+              </TableCell>
+              <DataTableCell label="BRL" className="data-table__col--numeric">
+                {totals ? formatN2(totals.totalBrlValue) : '—'}
+              </DataTableCell>
+              <DataTableCell label="GBP" className="data-table__col--numeric">
+                {totals ? formatN2(totals.totalGbpValue) : '—'}
+              </DataTableCell>
               <TableCell />
             </TableRow>
           </TableBody>

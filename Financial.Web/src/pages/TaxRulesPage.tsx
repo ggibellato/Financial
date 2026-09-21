@@ -20,6 +20,7 @@ import TaxRuleFormDialog from '../components/TaxRuleFormDialog'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
 import TruncatedText from '../components/TruncatedText'
+import DataTableCell from '../components/grid/DataTableCell'
 import { useFormPanelStyles } from '../components/formPanelStyles'
 import { useTaxRules } from '../hooks/useTaxRules'
 import type { TaxRuleDto } from '../api/types'
@@ -108,13 +109,13 @@ export default function TaxRulesPage() {
           <TableBody>
             {taxRules.map((rule) => (
               <TableRow key={rule.id}>
-                <TableCell>{rule.jurisdiction}</TableCell>
-                <TableCell>{rule.eventCategory}</TableCell>
-                <TableCell>
+                <DataTableCell label="Jurisdiction">{rule.jurisdiction}</DataTableCell>
+                <DataTableCell label="Event Category">{rule.eventCategory}</DataTableCell>
+                <DataTableCell label="Label">
                   <TruncatedText text={rule.label} />
-                </TableCell>
-                <TableCell>{rule.effectiveFrom}</TableCell>
-                <TableCell>{rule.effectiveTo ?? '—'}</TableCell>
+                </DataTableCell>
+                <DataTableCell label="Effective From">{rule.effectiveFrom}</DataTableCell>
+                <DataTableCell label="Effective To">{rule.effectiveTo ?? '—'}</DataTableCell>
                 <TableCell className="data-table__col--action">
                   <div className="data-table__actions-cell">
                     <Button

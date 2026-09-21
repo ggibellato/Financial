@@ -56,7 +56,7 @@ function legendLabels(): string[] {
   return screen
     .getAllByRole('row')
     .slice(1)
-    .map((row) => within(row).getAllByRole('cell')[0].textContent ?? '')
+    .map((row) => within(row).getAllByRole('cell')[0].textContent?.replace('Label:', '') ?? '')
 }
 
 describe('AllocationBreakdownPanel', () => {

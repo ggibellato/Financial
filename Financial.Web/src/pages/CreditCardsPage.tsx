@@ -19,6 +19,7 @@ import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import CreditCardFormDialog from '../components/CreditCardFormDialog'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
+import DataTableCell from '../components/grid/DataTableCell'
 import { useFormPanelStyles } from '../components/formPanelStyles'
 import { useCreditCards } from '../hooks/useCreditCards'
 import type { CreditCardDto } from '../api/types'
@@ -85,9 +86,9 @@ export default function CreditCardsPage() {
           <TableBody>
             {creditCards.map((creditCard) => (
               <TableRow key={creditCard.id}>
-                <TableCell>{creditCard.name}</TableCell>
-                <TableCell>{creditCard.isActive ? 'Active' : 'Inactive'}</TableCell>
-                <TableCell>{creditCard.nextInvoiceDueDate ?? '—'}</TableCell>
+                <DataTableCell label="Name">{creditCard.name}</DataTableCell>
+                <DataTableCell label="Active">{creditCard.isActive ? 'Active' : 'Inactive'}</DataTableCell>
+                <DataTableCell label="Next Invoice Due Date">{creditCard.nextInvoiceDueDate ?? '—'}</DataTableCell>
                 <TableCell className="data-table__col--action">
                   <div className="data-table__actions-cell">
                     <Button

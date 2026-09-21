@@ -19,6 +19,7 @@ import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import ReserveBucketFormDialog from '../components/ReserveBucketFormDialog'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
+import DataTableCell from '../components/grid/DataTableCell'
 import { useFormPanelStyles } from '../components/formPanelStyles'
 import { useReserveBuckets } from '../hooks/useReserveBuckets'
 import type { ReserveBucketDto } from '../api/types'
@@ -99,9 +100,11 @@ export default function ReserveBucketsPage() {
           <TableBody>
             {reserveBuckets.map((bucket) => (
               <TableRow key={bucket.id}>
-                <TableCell>{bucket.name}</TableCell>
-                <TableCell className="data-table__col--numeric">{formatN2(bucket.splitPercentage)}</TableCell>
-                <TableCell>{bucket.isActive ? 'Yes' : 'No'}</TableCell>
+                <DataTableCell label="Name">{bucket.name}</DataTableCell>
+                <DataTableCell label="Split Percentage" className="data-table__col--numeric">
+                  {formatN2(bucket.splitPercentage)}
+                </DataTableCell>
+                <DataTableCell label="Active">{bucket.isActive ? 'Yes' : 'No'}</DataTableCell>
                 <TableCell className="data-table__col--action">
                   <div className="data-table__actions-cell">
                     <Button

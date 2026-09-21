@@ -3,6 +3,7 @@ import { Tab, TabList, Table, TableBody, TableCell, TableHeader, TableRow } from
 import type { SelectTabData, SelectTabEvent } from '@fluentui/react-components'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
+import DataTableCell from '../components/grid/DataTableCell'
 import SortableColumnHeader from '../components/grid/SortableColumnHeader'
 import ColumnFilterMenu from '../components/grid/ColumnFilterMenu'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
@@ -47,18 +48,18 @@ function AnnualSummaryRow({
 }) {
   return (
     <TableRow className={emphasized ? 'annual-summary-page__emphasized-row' : undefined}>
-      <TableCell>{optionalEmphasize(label, emphasized)}</TableCell>
+      <DataTableCell label="Category">{optionalEmphasize(label, emphasized)}</DataTableCell>
       {monthlyValues.map((v, i) => (
-        <TableCell key={i} className="data-table__col--numeric">
+        <DataTableCell key={i} label={MONTH_LABELS[i]} className="data-table__col--numeric">
           {optionalEmphasize(formatN2(v), emphasized)}
-        </TableCell>
+        </DataTableCell>
       ))}
-      <TableCell className="data-table__col--numeric">
+      <DataTableCell label="Average" className="data-table__col--numeric">
         <strong>{formatN2(average)}</strong>
-      </TableCell>
-      <TableCell className="data-table__col--numeric">
+      </DataTableCell>
+      <DataTableCell label="Annual Total" className="data-table__col--numeric">
         <strong>{formatN2(annualTotal)}</strong>
-      </TableCell>
+      </DataTableCell>
     </TableRow>
   )
 }
@@ -74,11 +75,11 @@ function InvestmentRow({
 }) {
   return (
     <TableRow className={emphasized ? 'annual-summary-page__emphasized-row' : undefined}>
-      <TableCell>{optionalEmphasize(label, emphasized)}</TableCell>
+      <DataTableCell label="Account">{optionalEmphasize(label, emphasized)}</DataTableCell>
       {monthlyValues.map((v, i) => (
-        <TableCell key={i} className="data-table__col--numeric">
+        <DataTableCell key={i} label={MONTH_LABELS[i]} className="data-table__col--numeric">
           {v === null ? null : optionalEmphasize(formatN2(v), emphasized)}
-        </TableCell>
+        </DataTableCell>
       ))}
     </TableRow>
   )
@@ -282,7 +283,9 @@ export default function AnnualSummaryPage() {
 
                   {sortedCategoryTotals.length === 0 && isCategoryTotalsColumnFiltered('category') ? (
                     <TableRow>
-                      <TableCell colSpan={SPACER_COL_SPAN}>No rows match the current filters</TableCell>
+                      <TableCell className="data-table__cell--message" colSpan={SPACER_COL_SPAN}>
+                        No rows match the current filters
+                      </TableCell>
                     </TableRow>
                   ) : (
                     sortedCategoryTotals.map((c) => (
@@ -420,7 +423,9 @@ export default function AnnualSummaryPage() {
                 <TableBody>
                   {historicSummaryAverage && sortedHistoricCategoryRows.length === 0 && isHistoricColumnFiltered('category') ? (
                     <TableRow>
-                      <TableCell colSpan={historicSummaryAverage.length + 1}>No rows match the current filters</TableCell>
+                      <TableCell className="data-table__cell--message" colSpan={historicSummaryAverage.length + 1}>
+                        No rows match the current filters
+                      </TableCell>
                     </TableRow>
                   ) : (
                     historicSummaryAverage &&
@@ -429,12 +434,12 @@ export default function AnnualSummaryPage() {
                       return (
                         <Fragment key={a.category}>
                           <TableRow className={isEmphasized ? 'annual-summary-page__emphasized-row' : undefined}>
-                            <TableCell>{optionalEmphasize(a.category, isEmphasized)}</TableCell>
+                            <DataTableCell label="Category">{optionalEmphasize(a.category, isEmphasized)}</DataTableCell>
                             {historicSummaryAverage.map((y) => (
-                              <TableCell key={y.year} className="data-table__col--numeric">
+                              <DataTableCell key={y.year} label={String(y.year)} className="data-table__col--numeric">
                                 {optionalEmphasize(formatN2(y.annualAverages.find((d) => d.category === a.category)?.value ?? 0),
                                   isEmphasized)}
-                              </TableCell>
+                              </DataTableCell>
                             ))}
                           </TableRow>
                           {HISTORIC_SUMMARY_AVERAGE_SPACER_AFTER.has(a.category) && (

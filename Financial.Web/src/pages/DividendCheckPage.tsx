@@ -1,10 +1,11 @@
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
-import { Button, Table, TableBody, TableCell, TableHeader, TableRow } from '@fluentui/react-components'
+import { Button, Table, TableBody, TableHeader, TableRow } from '@fluentui/react-components'
 import { SearchRegular } from '@fluentui/react-icons'
 import { apiClient } from '../api/financialApiClient'
 import type { DividendHistoryItemDto, DividendSummaryDto, DividendYearTotalDto, WatchlistItemDto } from '../api/types'
 import ErrorState from '../components/ErrorState'
 import TickerCombobox, { type TickerGroup } from '../components/TickerCombobox'
+import DataTableCell from '../components/grid/DataTableCell'
 import SortableColumnHeader from '../components/grid/SortableColumnHeader'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { formatN2, formatShortDateUtc, getErrorMessage } from '../utils/formatters'
@@ -165,9 +166,11 @@ export default function DividendCheckPage() {
                   <TableBody>
                     {displayedHistory.map((item) => (
                       <TableRow key={`${item.date}-${item.type}-${item.value}`}>
-                        <TableCell>{item.type}</TableCell>
-                        <TableCell>{formatShortDateUtc(item.date)}</TableCell>
-                        <TableCell className="data-table__col--numeric">{formatN2(item.value)}</TableCell>
+                        <DataTableCell label="Type">{item.type}</DataTableCell>
+                        <DataTableCell label="Date">{formatShortDateUtc(item.date)}</DataTableCell>
+                        <DataTableCell label="Value" className="data-table__col--numeric">
+                          {formatN2(item.value)}
+                        </DataTableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -200,8 +203,10 @@ export default function DividendCheckPage() {
                   <TableBody>
                     {displayedYearTotals.map((total) => (
                       <TableRow key={total.year}>
-                        <TableCell>{total.year}</TableCell>
-                        <TableCell className="data-table__col--numeric">{formatN2(total.total)}</TableCell>
+                        <DataTableCell label="Year">{total.year}</DataTableCell>
+                        <DataTableCell label="Total" className="data-table__col--numeric">
+                          {formatN2(total.total)}
+                        </DataTableCell>
                       </TableRow>
                     ))}
                   </TableBody>

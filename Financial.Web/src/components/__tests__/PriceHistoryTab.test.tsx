@@ -185,14 +185,14 @@ describe('PriceHistoryTab', () => {
   it('renders_manual_source_label', () => {
     setMock({ entries: [MANUAL_ENTRY] })
     render(<PriceHistoryTab />)
-    const sourceCell = screen.getByText('Manual', { selector: 'td' })
+    const sourceCell = within(document.querySelector('tbody')!).getByText('Manual').closest('td')
     expect(sourceCell).toHaveClass('price-history-tab__source--manual')
   })
 
   it('renders_named_provider_source_label', () => {
     setMock({ entries: [AUTOMATIC_ENTRY] })
     render(<PriceHistoryTab />)
-    const sourceCell = screen.getByText('Google', { selector: 'td' })
+    const sourceCell = within(document.querySelector('tbody')!).getByText('Google').closest('td')
     expect(sourceCell).toHaveClass('price-history-tab__source--automatic')
   })
 
