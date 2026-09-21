@@ -107,3 +107,16 @@
 .price-history-tab__tooltip p:first-child {
   font-weight: bold;
 }
+
+@media (max-width: 599px) {
+  .price-history-tab {
+    height: auto;
+    overflow-y: auto;
+  }
+
+  /* ResponsiveContainer's height="100%" needs a definite ancestor height -
+     without this the auto-height chain above renders the chart at 0 height. */
+  .price-history-tab__right {
+    height: 320px;
+  }
+}

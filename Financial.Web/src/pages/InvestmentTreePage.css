@@ -4,3 +4,10 @@
   height: 100%;
   overflow: hidden;
 }
+
+@media (max-width: 599px) {
+  .investment-tree-page {
+    height: auto;
+    overflow-y: auto;
+  }
+}

@@ -37,3 +37,21 @@
   overflow: auto;
   min-width: 0;
 }
+
+.split-panel--mobile {
+  flex-direction: column;
+  height: auto;
+  overflow: visible;
+}
+
+.split-panel--mobile .split-panel__left {
+  flex-shrink: 1;
+  max-height: 40vh;
+  overflow: auto;
+  border-right: none;
+  border-bottom: 1px solid var(--border, #e0e0e0);
+}
+
+.split-panel--mobile .split-panel__right {
+  overflow: visible;
+}

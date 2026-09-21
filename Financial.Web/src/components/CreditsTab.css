@@ -114,3 +114,16 @@
   flex: 1;
   min-height: 0;
 }
+
+@media (max-width: 599px) {
+  .credits-tab {
+    height: auto;
+    overflow-y: auto;
+  }
+
+  /* ResponsiveContainer's height="100%" needs a definite ancestor height -
+     without this the auto-height chain above renders the chart at 0 height. */
+  .credits-tab__right {
+    height: 320px;
+  }
+}

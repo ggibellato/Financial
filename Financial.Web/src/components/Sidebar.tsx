@@ -130,8 +130,6 @@ interface SidebarProps {
 function Sidebar({ mobileOpen, onMobileOpenChange }: SidebarProps) {
   const isMobile = useMediaQuery(MOBILE_MEDIA_QUERY)
   const [collapsed, setCollapsed] = useState(() => getStoredSidebarCollapsed())
-  // Mobile always shows the full (uncollapsed) drawer content - the desktop
-  // icon-only collapse mode has no equivalent once the sidebar is an overlay.
   const effectiveCollapsed = collapsed && !isMobile
   const [flyoutAnchor, setFlyoutAnchor] = useState<FlyoutAnchor | null>(null)
   const [expandedGroupId, setExpandedGroupId] = useState<string | null>(null)

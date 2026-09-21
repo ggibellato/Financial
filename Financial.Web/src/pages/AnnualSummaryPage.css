@@ -43,6 +43,15 @@
   min-width: 900px;
 }
 
+@media (max-width: 599px) {
+  /* The 900px min-width protects the desktop month-by-month columns, which
+     no longer exist once .data-table's mobile CSS stacks cells into cards -
+     left unset it forces the card layout wider than the viewport. */
+  .annual-summary-page__table {
+    min-width: 0;
+  }
+}
+
 .annual-summary-page__emphasized-row {
   border-top: 2px solid var(--border, #ccc);
 }
