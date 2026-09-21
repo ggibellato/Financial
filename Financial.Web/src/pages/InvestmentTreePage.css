@@ -6,9 +6,6 @@
 }
 
 @media (max-width: 599px) {
-  /* SplitPanel stacks tree above detail instead of a fixed-height side-by-side
-     split at this width, so the page needs to scroll as a whole rather than
-     clip at the viewport height. */
   .investment-tree-page {
     height: auto;
     overflow-y: auto;

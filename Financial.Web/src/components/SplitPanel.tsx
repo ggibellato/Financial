@@ -81,9 +81,6 @@ export default function SplitPanel({
   )
 
   if (isMobile) {
-    // A mouse-drag/arrow-key resizable divider has no touch equivalent, and a fixed-px left
-    // pane width leaves no room for the right pane on a phone - stack instead, full width,
-    // with no resize affordance.
     return (
       <div className="split-panel split-panel--mobile">
         <div className="split-panel__left">{left}</div>

@@ -1,15 +1,8 @@
-/* Mobile card layout (≤599px, see src/styles/breakpoints.ts) requires every
-   TableCell rendered with this class to render a leading
-   `<span className="data-table__cell-label">` with the column header text -
-   a stacked card has no header row to align against, so each cell carries
-   its own label. Use src/components/grid/DataTableCell.tsx rather than
-   hand-writing the span: it must be real text content, not CSS `content:
-   attr(data-label)` generated content, since whether generated content is
-   exposed to the accessibility tree is inconsistent across browser/AT
-   combinations, so a screen-reader user could otherwise hear an unlabelled
-   list of values. A cell that spans the row as a plain message (e.g. an
-   empty-state row) instead gets `data-table__cell--message` to opt out of
-   the label layout. */
+/* .data-table__cell-label (below) must be real text content, not CSS
+   `content: attr(data-label)` - generated content's exposure to the
+   accessibility tree is inconsistent across browser/AT combinations, so a
+   screen-reader user could otherwise hear an unlabelled list of values. Build
+   cells with src/components/grid/DataTableCell.tsx. */
 .data-table {
   width: 100%;
   /* border-collapse: collapse breaks position: sticky on th in Chromium/WebKit */

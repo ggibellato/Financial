@@ -58,17 +58,14 @@ function AppShell() {
     }
   }, [location.pathname])
 
-  // Close the mobile nav drawer on navigation. Adjusted during render (not an
-  // effect) per https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes.
+  // https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
   const [previousPathname, setPreviousPathname] = useState(location.pathname)
   if (previousPathname !== location.pathname) {
     setPreviousPathname(location.pathname)
     if (mobileNavOpen) setMobileNavOpen(false)
   }
 
-  // Closing via navigation unmounts the just-clicked NavLink in the same pass, dropping focus to
-  // <body> - move it back to the toggle that opened the drawer, the same target Fluent's own
-  // focus-restore-on-close would pick for an Escape/backdrop close.
+  // Navigating unmounts the just-clicked NavLink in the same pass, dropping focus to <body>.
   useEffect(() => {
     if (wasMobileNavOpenRef.current && !mobileNavOpen) {
       mobileNavToggleRef.current?.focus()
