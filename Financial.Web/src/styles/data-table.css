@@ -127,12 +127,25 @@
     white-space: nowrap;
   }
 
+  /* A <colgroup>'s fixed per-column widths (e.g. ReservaPage's movements
+     table) keep sizing the table by their sum even once it's display:block -
+     Chromium still uses <col> widths for intrinsic sizing regardless of the
+     table's own display value. Those columns no longer exist once cells
+     stack into cards, so drop the colgroup entirely. */
+  .data-table colgroup {
+    display: none;
+  }
+
   .data-table,
   .data-table tbody,
   .data-table tr,
   .data-table td {
     display: block;
     width: 100%;
+    /* td's own 8px/10px padding (set above, unchanged here) would otherwise
+       add to this 100% under the default content-box sizing, overflowing
+       the row by exactly that padding on every converted grid. */
+    box-sizing: border-box;
   }
 
   .data-table tbody tr {

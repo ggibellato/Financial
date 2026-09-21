@@ -107,3 +107,21 @@
 .price-history-tab__tooltip p:first-child {
   font-weight: bold;
 }
+
+@media (max-width: 599px) {
+  /* SplitPanel stacks the table above the chart instead of a fixed-height
+     side-by-side split at this width, so the tab needs to scroll as a whole
+     rather than clip at its container's height. */
+  .price-history-tab {
+    height: auto;
+    overflow-y: auto;
+  }
+
+  /* The chart's ResponsiveContainer measures height="100%" against this
+     element - an auto-sizing ancestor chain (needed for stacking above) would
+     otherwise leave it with no definite height to resolve against, and the
+     chart would render at 0 height. */
+  .price-history-tab__right {
+    height: 320px;
+  }
+}

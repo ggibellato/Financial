@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import SplitPanel from '../SplitPanel'
+import { mockMatchMedia } from '../../test/mockMatchMedia'
 
 function renderSplitPanel() {
   return render(<SplitPanel left={<div>Left content</div>} right={<div>Right content</div>} />)
@@ -95,5 +96,24 @@ describe('SplitPanel', () => {
     fireEvent.keyDown(handle, { key: 'End' })
 
     expect(getLeftPanel()).toHaveStyle({ width: `${window.innerWidth / 2}px` })
+  })
+
+  describe('mobile mode (below the phone breakpoint)', () => {
+    const originalMatchMedia = window.matchMedia
+
+    afterEach(() => {
+      window.matchMedia = originalMatchMedia
+    })
+
+    it('stacks left and right with no resize handle or inline width', () => {
+      mockMatchMedia(true)
+      renderSplitPanel()
+
+      expect(document.querySelector('.split-panel')).toHaveClass('split-panel--mobile')
+      expect(screen.queryByRole('separator', { name: 'Resize panel' })).not.toBeInTheDocument()
+      expect(getLeftPanel()).not.toHaveAttribute('style')
+      expect(screen.getByText('Left content')).toBeInTheDocument()
+      expect(screen.getByText('Right content')).toBeInTheDocument()
+    })
   })
 })

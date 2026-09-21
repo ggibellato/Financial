@@ -1,5 +1,7 @@
 import { useCallback, useRef, useState } from 'react'
 import type { KeyboardEvent, ReactNode } from 'react'
+import { useMediaQuery } from '../hooks/useMediaQuery'
+import { MOBILE_MEDIA_QUERY } from '../styles/breakpoints'
 import './SplitPanel.css'
 
 const DEFAULT_LEFT_WIDTH = 300
@@ -19,6 +21,7 @@ export default function SplitPanel({
   defaultWidth = DEFAULT_LEFT_WIDTH,
   minWidth = MIN_LEFT_WIDTH,
 }: SplitPanelProps) {
+  const isMobile = useMediaQuery(MOBILE_MEDIA_QUERY)
   const [leftWidth, setLeftWidth] = useState(defaultWidth)
   const startX = useRef(0)
   const startWidth = useRef(0)
@@ -76,6 +79,18 @@ export default function SplitPanel({
     },
     [minWidth, maxWidth],
   )
+
+  if (isMobile) {
+    // A mouse-drag/arrow-key resizable divider has no touch equivalent, and a fixed-px left
+    // pane width leaves no room for the right pane on a phone - stack instead, full width,
+    // with no resize affordance.
+    return (
+      <div className="split-panel split-panel--mobile">
+        <div className="split-panel__left">{left}</div>
+        <div className="split-panel__right">{right}</div>
+      </div>
+    )
+  }
 
   return (
     <div className="split-panel">
