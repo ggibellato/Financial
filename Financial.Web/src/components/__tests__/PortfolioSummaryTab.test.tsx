@@ -253,7 +253,7 @@ describe('PortfolioSummaryTab', () => {
     // rows[0]/[1] are the two header rows; rows[2] is the single data row.
     const dataRow = screen.getAllByRole('row')[2]
     const cell = within(dataRow).getAllByRole('cell')[8] // "Sold Price" column
-    expect(cell.textContent).toBe('—')
+    expect(cell.textContent?.replace('Sold Price:', '')).toBe('—')
   })
 
   it('computes_historic_profit_percent_from_realized_gain_loss_excluding_credits', () => {
@@ -292,8 +292,8 @@ describe('PortfolioSummaryTab', () => {
     renderComponent('historic')
     // rows[0]/[1] are the two header rows; rows[2] is the single data row.
     const cells = within(screen.getAllByRole('row')[2]).getAllByRole('cell')
-    expect(cells[9].textContent).toBe('—') // "Profit %" column
-    expect(cells[10].textContent).toBe('—') // "Profit % w/ Credits" column
+    expect(cells[9].textContent?.replace('Profit %:', '')).toBe('—') // "Profit %" column
+    expect(cells[10].textContent?.replace('Profit % w/ Credits:', '')).toBe('—') // "Profit % w/ Credits" column
   })
 
   it('renders_historic_xirr_from_the_resolved_row_rate', () => {
@@ -477,7 +477,7 @@ describe('PortfolioSummaryTab', () => {
     setPortfolioMock({ items: [ITEM_1], rowPrices: [rowPrice] })
     renderComponent()
     const cells = within(screen.getAllByRole('row')[2]).getAllByRole('cell')
-    expect(cells[11].textContent).toBe('...')
+    expect(cells[11].textContent?.replace('XIRR:', '')).toBe('...')
   })
 
   it('renders_dash_in_current_value_and_price_dependent_columns_on_price_failure', () => {
@@ -511,7 +511,7 @@ describe('PortfolioSummaryTab', () => {
     setPortfolioMock({ items: [ITEM_1], rowPrices: [rowPrice] })
     renderComponent()
     const cells = within(screen.getAllByRole('row')[2]).getAllByRole('cell')
-    expect(cells[11].textContent).toBe('—')
+    expect(cells[11].textContent?.replace('XIRR:', '')).toBe('—')
   })
 
   const PROFIT_CLASS_CASES: {
@@ -870,8 +870,8 @@ describe('PortfolioSummaryTab', () => {
 
     // rows[0]/[1] are the two header rows; rows[2]/[3] are the data rows.
     const rows = screen.getAllByRole('row')
-    expect(within(rows[2]).getAllByRole('cell')[0].textContent).toBe('BBB11')
-    expect(within(rows[3]).getAllByRole('cell')[0].textContent).toBe('AAA11')
+    expect(within(rows[2]).getAllByRole('cell')[0].textContent?.replace('Asset Name:', '')).toBe('BBB11')
+    expect(within(rows[3]).getAllByRole('cell')[0].textContent?.replace('Asset Name:', '')).toBe('AAA11')
   })
 
   it('sorts_rows_by_quantity_descending_on_a_second_click_of_the_same_header', () => {
@@ -886,8 +886,8 @@ describe('PortfolioSummaryTab', () => {
     fireEvent.click(quantityHeaderButton)
 
     const rows = screen.getAllByRole('row')
-    expect(within(rows[2]).getAllByRole('cell')[0].textContent).toBe('AAA11')
-    expect(within(rows[3]).getAllByRole('cell')[0].textContent).toBe('BBB11')
+    expect(within(rows[2]).getAllByRole('cell')[0].textContent?.replace('Asset Name:', '')).toBe('AAA11')
+    expect(within(rows[3]).getAllByRole('cell')[0].textContent?.replace('Asset Name:', '')).toBe('BBB11')
   })
 
   it('sorts_rows_by_a_derived_column_using_the_underlying_current_value_not_display_text', () => {
@@ -905,8 +905,8 @@ describe('PortfolioSummaryTab', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Current Value' }))
 
     const rows = screen.getAllByRole('row')
-    expect(within(rows[2]).getAllByRole('cell')[0].textContent).toBe('AAA11')
-    expect(within(rows[3]).getAllByRole('cell')[0].textContent).toBe('BBB11')
+    expect(within(rows[2]).getAllByRole('cell')[0].textContent?.replace('Asset Name:', '')).toBe('AAA11')
+    expect(within(rows[3]).getAllByRole('cell')[0].textContent?.replace('Asset Name:', '')).toBe('BBB11')
   })
 
   it('clicking_the_realized_gain_loss_header_engages_that_columns_sort_in_historic_scope', () => {

@@ -3,6 +3,7 @@ import { EditRegular } from '@fluentui/react-icons'
 import type { InvestmentSnapshotDto } from '../api/types'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
+import DataTableCell from '../components/grid/DataTableCell'
 import SortableColumnHeader from '../components/grid/SortableColumnHeader'
 import SuggestedValuesPanel from '../components/SuggestedValuesPanel'
 import { useFormPanelStyles } from '../components/formPanelStyles'
@@ -33,8 +34,10 @@ function SnapshotRow({ snapshot, onEdit }: SnapshotRowProps) {
 
   return (
     <TableRow>
-      <TableCell>{label}</TableCell>
-      <TableCell className="data-table__col--numeric">{formatN2(snapshot.value)}</TableCell>
+      <DataTableCell label="Account">{label}</DataTableCell>
+      <DataTableCell label="Value" className="data-table__col--numeric">
+        {formatN2(snapshot.value)}
+      </DataTableCell>
       <TableCell>
         <Button
           appearance="subtle"
@@ -202,8 +205,10 @@ export default function InvestmentSnapshotsPage() {
           <SnapshotColumns />
           <TableBody>
             <TableRow className="investment-snapshots-page__totals-row">
-              <TableCell>Total (net of liabilities)</TableCell>
-              <TableCell className="data-table__col--numeric">{formatN2(totalValue)}</TableCell>
+              <DataTableCell label="Account">Total (net of liabilities)</DataTableCell>
+              <DataTableCell label="Value" className="data-table__col--numeric">
+                {formatN2(totalValue)}
+              </DataTableCell>
               <TableCell />
             </TableRow>
           </TableBody>

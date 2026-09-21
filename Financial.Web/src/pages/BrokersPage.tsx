@@ -19,6 +19,7 @@ import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import BrokerFormDialog from '../components/BrokerFormDialog'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
+import DataTableCell from '../components/grid/DataTableCell'
 import { useFormPanelStyles } from '../components/formPanelStyles'
 import { useBrokers } from '../hooks/useBrokers'
 import type { BrokerDto, CostBasisMethod } from '../api/types'
@@ -119,10 +120,10 @@ export default function BrokersPage() {
           <TableBody>
             {brokers.map((broker) => (
               <TableRow key={broker.name}>
-                <TableCell>{broker.name}</TableCell>
-                <TableCell>{broker.currency}</TableCell>
-                <TableCell>{broker.status}</TableCell>
-                <TableCell>{broker.portfolioCount}</TableCell>
+                <DataTableCell label="Name">{broker.name}</DataTableCell>
+                <DataTableCell label="Currency">{broker.currency}</DataTableCell>
+                <DataTableCell label="Status">{broker.status}</DataTableCell>
+                <DataTableCell label="Portfolios">{broker.portfolioCount}</DataTableCell>
                 <TableCell className="data-table__col--action">
                   <div className="data-table__actions-cell">
                     <Button

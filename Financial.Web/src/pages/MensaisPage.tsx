@@ -20,6 +20,7 @@ import LoadingState from '../components/LoadingState'
 import StatusMenuButton from '../components/StatusMenuButton'
 import TruncatedText from '../components/TruncatedText'
 import UkExpensePromptDialog from '../components/UkExpensePromptDialog'
+import DataTableCell from '../components/grid/DataTableCell'
 import SortableColumnHeader from '../components/grid/SortableColumnHeader'
 import { useFormPanelStyles } from '../components/formPanelStyles'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
@@ -53,28 +54,30 @@ function BillRow({
 }: BillRowProps) {
   return (
     <TableRow>
-      <TableCell>{bill.dueDay}</TableCell>
-      <TableCell>
+      <DataTableCell label="Due Day">{bill.dueDay}</DataTableCell>
+      <DataTableCell label="Description">
         <TruncatedText text={bill.description} />
-      </TableCell>
-      <TableCell>
+      </DataTableCell>
+      <DataTableCell label="Note">
         <TruncatedText text={bill.note} />
-      </TableCell>
-      {showBrasilFields && <TableCell>{bill.nitNumber ?? ''}</TableCell>}
+      </DataTableCell>
+      {showBrasilFields && <DataTableCell label="NIT">{bill.nitNumber ?? ''}</DataTableCell>}
       {showBrasilFields && (
-        <TableCell className="data-table__col--numeric">
+        <DataTableCell label="Min. Wage" className="data-table__col--numeric">
           {bill.minimumWageValue !== null ? formatN2(bill.minimumWageValue) : ''}
-        </TableCell>
+        </DataTableCell>
       )}
-      <TableCell className="data-table__col--numeric">{formatN2(bill.value)}</TableCell>
-      <TableCell>
+      <DataTableCell label="Value" className="data-table__col--numeric">
+        {formatN2(bill.value)}
+      </DataTableCell>
+      <DataTableCell label="Status">
         <StatusMenuButton
           statuses={STATUSES}
           status={bill.status}
           isUpdating={isUpdatingStatus}
           onChange={(status) => onStatusChange(bill.id, status)}
         />
-      </TableCell>
+      </DataTableCell>
       <TableCell className="data-table__col--action">
         <div className="data-table__actions-cell">
           <Button

@@ -148,7 +148,7 @@ describe('BankOperationsSection', () => {
     const typeCells = screen
       .getAllByRole('row')
       .slice(1)
-      .map((row) => row.querySelectorAll('td')[1].textContent)
+      .map((row) => row.querySelectorAll('td')[1].textContent!.replace('Type:', ''))
     expect(typeCells).toEqual(['Adjustment', 'Transfer'])
 
     fireEvent.click(screen.getByRole('button', { name: 'Amount/Delta' }))
@@ -156,7 +156,7 @@ describe('BankOperationsSection', () => {
     const typeCellsDescending = screen
       .getAllByRole('row')
       .slice(1)
-      .map((row) => row.querySelectorAll('td')[1].textContent)
+      .map((row) => row.querySelectorAll('td')[1].textContent!.replace('Type:', ''))
     expect(typeCellsDescending).toEqual(['Transfer', 'Adjustment'])
   })
 

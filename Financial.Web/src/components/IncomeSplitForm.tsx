@@ -6,7 +6,6 @@ import {
   MessageBarBody,
   Table,
   TableBody,
-  TableCell,
   TableRow,
   Text,
 } from '@fluentui/react-components'
@@ -15,6 +14,7 @@ import type { SplitFormField } from '../hooks/useReserva'
 import { useFieldError } from '../hooks/useFieldError'
 import { formatN2 } from '../utils/formatters'
 import { useFormPanelStyles } from './formPanelStyles'
+import DataTableCell from './grid/DataTableCell'
 import './IncomeSplitForm.css'
 
 interface IncomeSplitFormProps {
@@ -62,13 +62,17 @@ export default function IncomeSplitForm({
           <TableBody>
             {lastResult.buckets.map((entry) => (
               <TableRow key={entry.bucketId}>
-                <TableCell>{entry.bucketName}</TableCell>
-                <TableCell className="data-table__col--numeric">{formatN2(entry.amount)}</TableCell>
+                <DataTableCell label="Bucket">{entry.bucketName}</DataTableCell>
+                <DataTableCell label="Amount" className="data-table__col--numeric">
+                  {formatN2(entry.amount)}
+                </DataTableCell>
               </TableRow>
             ))}
             <TableRow className="income-split-form__totals-row">
-              <TableCell>Total</TableCell>
-              <TableCell className="data-table__col--numeric">{formatN2(lastResult.total)}</TableCell>
+              <DataTableCell label="Bucket">Total</DataTableCell>
+              <DataTableCell label="Amount" className="data-table__col--numeric">
+                {formatN2(lastResult.total)}
+              </DataTableCell>
             </TableRow>
           </TableBody>
         </Table>

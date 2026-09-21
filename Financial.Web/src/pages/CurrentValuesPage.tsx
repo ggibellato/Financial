@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Button, Table, TableBody, TableCell, TableHeader, TableRow } from '@fluentui/react-components'
+import { Button, Table, TableBody, TableHeader, TableRow } from '@fluentui/react-components'
 import { SearchRegular } from '@fluentui/react-icons'
 import { apiClient } from '../api/financialApiClient'
 import type { BrokerNodeDto, PortfolioReferenceDto } from '../api/types'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
+import DataTableCell from '../components/grid/DataTableCell'
 import SortableColumnHeader from '../components/grid/SortableColumnHeader'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { formatN2, getErrorMessage } from '../utils/formatters'
@@ -198,11 +199,11 @@ export default function CurrentValuesPage() {
             <TableBody>
               {sortedRows.map((result) => (
                 <TableRow key={`${result.exchange}-${result.ticker}-${result.assetName}`}>
-                  <TableCell>{result.ticker}</TableCell>
-                  <TableCell>{result.name}</TableCell>
-                  <TableCell className="current-values__col--price data-table__col--numeric">
+                  <DataTableCell label="Ticker">{result.ticker}</DataTableCell>
+                  <DataTableCell label="Name">{result.name}</DataTableCell>
+                  <DataTableCell label="Price" className="current-values__col--price data-table__col--numeric">
                     {result.price === null ? '—' : formatN2(result.price)}
-                  </TableCell>
+                  </DataTableCell>
                 </TableRow>
               ))}
             </TableBody>

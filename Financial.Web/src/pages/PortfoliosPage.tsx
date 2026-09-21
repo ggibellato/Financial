@@ -19,6 +19,7 @@ import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import PortfolioFormDialog from '../components/PortfolioFormDialog'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
+import DataTableCell from '../components/grid/DataTableCell'
 import { useFormPanelStyles } from '../components/formPanelStyles'
 import { useBrokers } from '../hooks/useBrokers'
 import { portfolioKey, usePortfolios } from '../hooks/usePortfolios'
@@ -107,10 +108,10 @@ export default function PortfoliosPage() {
               const key = portfolioKey(portfolio.brokerName, portfolio.name)
               return (
                 <TableRow key={key}>
-                  <TableCell>{portfolio.name}</TableCell>
-                  <TableCell>{portfolio.brokerName}</TableCell>
-                  <TableCell>{portfolio.brokerStatus}</TableCell>
-                  <TableCell>{portfolio.assetCount}</TableCell>
+                  <DataTableCell label="Name">{portfolio.name}</DataTableCell>
+                  <DataTableCell label="Broker">{portfolio.brokerName}</DataTableCell>
+                  <DataTableCell label="Broker Status">{portfolio.brokerStatus}</DataTableCell>
+                  <DataTableCell label="Assets">{portfolio.assetCount}</DataTableCell>
                   <TableCell className="data-table__col--action">
                     <div className="data-table__actions-cell">
                       <Button

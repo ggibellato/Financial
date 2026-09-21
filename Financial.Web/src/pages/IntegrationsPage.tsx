@@ -19,6 +19,7 @@ import {
 import CalendarSyncStatusBadge from '../components/CalendarSyncStatusBadge'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
+import DataTableCell from '../components/grid/DataTableCell'
 import { useFormPanelStyles } from '../components/formPanelStyles'
 import { useCalendarConnection } from '../hooks/useCalendarConnection'
 import { useCalendarSyncStatuses } from '../hooks/useCalendarSyncStatuses'
@@ -110,7 +111,7 @@ export default function IntegrationsPage() {
             ) : syncStatuses.rows.length === 0 ? (
               <p className="integrations-page__empty">No active credit cards with a due date yet.</p>
             ) : (
-              <Table aria-label="Credit card calendar sync status">
+              <Table aria-label="Credit card calendar sync status" className="data-table">
                 <TableHeader>
                   <TableRow>
                     <TableHeaderCell>Card</TableHeaderCell>
@@ -122,11 +123,11 @@ export default function IntegrationsPage() {
                 <TableBody>
                   {syncStatuses.rows.map((row) => (
                     <TableRow key={row.creditCardId}>
-                      <TableCell>{row.name}</TableCell>
-                      <TableCell>{formatShortDateUtc(row.dueDate)}</TableCell>
-                      <TableCell>
+                      <DataTableCell label="Card">{row.name}</DataTableCell>
+                      <DataTableCell label="Due Date">{formatShortDateUtc(row.dueDate)}</DataTableCell>
+                      <DataTableCell label="Sync Status">
                         <CalendarSyncStatusBadge state={row.state} lastError={row.lastError} />
-                      </TableCell>
+                      </DataTableCell>
                       <TableCell className="data-table__col--action">
                         {row.state === 'Error' && (
                           <Button

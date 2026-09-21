@@ -19,6 +19,7 @@ import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import BankFormDialog from '../components/BankFormDialog'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
+import DataTableCell from '../components/grid/DataTableCell'
 import { useFormPanelStyles } from '../components/formPanelStyles'
 import { useBanks } from '../hooks/useBanks'
 import type { BankDto } from '../api/types'
@@ -87,9 +88,9 @@ export default function BanksPage() {
           <TableBody>
             {banks.map((bank) => (
               <TableRow key={bank.id}>
-                <TableCell>{bank.name}</TableCell>
-                <TableCell>{bank.roundUpEnabled ? 'Enabled' : 'Disabled'}</TableCell>
-                <TableCell>{bank.openingBalance}</TableCell>
+                <DataTableCell label="Name">{bank.name}</DataTableCell>
+                <DataTableCell label="Round-up">{bank.roundUpEnabled ? 'Enabled' : 'Disabled'}</DataTableCell>
+                <DataTableCell label="Opening Balance">{bank.openingBalance}</DataTableCell>
                 <TableCell className="data-table__col--action">
                   <div className="data-table__actions-cell">
                     <Button

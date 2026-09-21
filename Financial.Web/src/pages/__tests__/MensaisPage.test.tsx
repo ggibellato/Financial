@@ -486,7 +486,7 @@ describe('MensaisPage', () => {
       within(brasilTable)
         .getAllByRole('row')
         .slice(1)
-        .map((r) => r.querySelectorAll('td')[1].textContent)
+        .map((r) => r.querySelectorAll('td')[1].textContent!.replace('Description:', ''))
 
     fireEvent.click(within(brasilTable).getByRole('button', { name: 'Due Day' }))
     expect(descriptionsOf()).toEqual(['Aluguel', 'INSS'])

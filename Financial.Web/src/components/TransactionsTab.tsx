@@ -10,7 +10,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { Button, Field, Input, MessageBar, MessageBarBody, Select, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text } from '@fluentui/react-components'
+import { Button, Field, Input, MessageBar, MessageBarBody, Select, Table, TableBody, TableHeader, TableHeaderCell, TableRow, Text } from '@fluentui/react-components'
 import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import type { TransactionDto } from '../api/types'
 import ErrorState from './ErrorState'
@@ -18,6 +18,7 @@ import FilterTabList from './FilterTabList'
 import FxProvenanceTooltip from './FxProvenanceTooltip'
 import LoadingState from './LoadingState'
 import LotAllocationPicker from './LotAllocationPicker'
+import DataTableCell from './grid/DataTableCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import { useFormPanelStyles } from './formPanelStyles'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
@@ -88,19 +89,21 @@ interface TransactionRowProps {
 function TransactionRow({ transaction, onEdit, onDelete }: TransactionRowProps) {
   return (
     <TableRow>
-      <TableCell>{formatShortDate(transaction.date)}</TableCell>
-      <TableCell className={typeDisplayClass(transaction.type)}>{typeDisplayLabel(transaction.type)}</TableCell>
-      <TableCell className="data-table__col--numeric">{formatN8(transaction.quantity)}</TableCell>
-      <TableCell className="data-table__col--numeric">{formatN2(transaction.unitPrice)}</TableCell>
-      <TableCell className="data-table__col--numeric">{formatN2(transaction.fees)}</TableCell>
-      <TableCell className="data-table__col--numeric">{formatN2(transaction.withheld)}</TableCell>
-      <TableCell className="data-table__col--numeric transactions-tab__total">
+      <DataTableCell label="Date">{formatShortDate(transaction.date)}</DataTableCell>
+      <DataTableCell label="Type" className={typeDisplayClass(transaction.type)}>
+        {typeDisplayLabel(transaction.type)}
+      </DataTableCell>
+      <DataTableCell label="Quantity" className="data-table__col--numeric">{formatN8(transaction.quantity)}</DataTableCell>
+      <DataTableCell label="Unit Price" className="data-table__col--numeric">{formatN2(transaction.unitPrice)}</DataTableCell>
+      <DataTableCell label="Fees" className="data-table__col--numeric">{formatN2(transaction.fees)}</DataTableCell>
+      <DataTableCell label="Withheld" className="data-table__col--numeric">{formatN2(transaction.withheld)}</DataTableCell>
+      <DataTableCell label="Net" className="data-table__col--numeric transactions-tab__total">
         {formatN2(transaction.netCash)}
-      </TableCell>
-      <TableCell>
+      </DataTableCell>
+      <DataTableCell label="FX">
         <FxProvenanceTooltip currency={transaction.currency} fxRateSnapshot={transaction.fxRateSnapshot} />
-      </TableCell>
-      <TableCell className="data-table__col--action">
+      </DataTableCell>
+      <DataTableCell label="Actions" className="data-table__col--action">
         <div className="data-table__actions-cell">
           <Button
             appearance="subtle"
@@ -117,7 +120,7 @@ function TransactionRow({ transaction, onEdit, onDelete }: TransactionRowProps) 
             onClick={() => onDelete(transaction.id)}
           />
         </div>
-      </TableCell>
+      </DataTableCell>
     </TableRow>
   )
 }

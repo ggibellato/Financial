@@ -2,6 +2,7 @@ import { Button, Table, TableBody, TableCell, TableHeader, TableHeaderCell, Tabl
 import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import type { BalanceAdjustmentDto, TransferDto } from '../api/types'
 import type { BankOperationEntry } from '../hooks/useBankOperations'
+import DataTableCell from './grid/DataTableCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import ColumnFilterMenu from './grid/ColumnFilterMenu'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
@@ -22,11 +23,15 @@ function OperationRow({ entry, onEditTransfer, onEditAdjustment, onDeleteTransfe
 
   return (
     <TableRow>
-      <TableCell>{formatShortDate(entry.date)}</TableCell>
-      <TableCell>{isTransfer ? 'Transfer' : 'Adjustment'}</TableCell>
-      <TableCell>{isTransfer ? `${entry.sourceBank} → ${entry.destinationBank}` : entry.bank}</TableCell>
-      <TableCell className="data-table__col--numeric">{formatN2(isTransfer ? entry.amount : entry.delta)}</TableCell>
-      <TableCell>{entry.note ?? ''}</TableCell>
+      <DataTableCell label="Date">{formatShortDate(entry.date)}</DataTableCell>
+      <DataTableCell label="Type">{isTransfer ? 'Transfer' : 'Adjustment'}</DataTableCell>
+      <DataTableCell label="Bank(s)">
+        {isTransfer ? `${entry.sourceBank} → ${entry.destinationBank}` : entry.bank}
+      </DataTableCell>
+      <DataTableCell label="Amount/Delta" className="data-table__col--numeric">
+        {formatN2(isTransfer ? entry.amount : entry.delta)}
+      </DataTableCell>
+      <DataTableCell label="Note">{entry.note ?? ''}</DataTableCell>
       <TableCell className="data-table__col--action">
         <div className="data-table__actions-cell">
           <Button
@@ -152,7 +157,9 @@ export default function BankOperationsSection({
             <TableBody>
               {sortedRows.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6}>No rows match the current filters</TableCell>
+                  <TableCell className="data-table__cell--message" colSpan={6}>
+                    No rows match the current filters
+                  </TableCell>
                 </TableRow>
               ) : (
                 sortedRows.map((entry) => (

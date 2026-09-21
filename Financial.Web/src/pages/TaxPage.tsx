@@ -5,7 +5,6 @@ import {
   Select,
   Table,
   TableBody,
-  TableCell,
   TableHeader,
   TableHeaderCell,
   TableRow,
@@ -20,6 +19,7 @@ import {
 import type { ReactElement } from 'react'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
+import DataTableCell from '../components/grid/DataTableCell'
 import { useTaxWorkbook } from '../hooks/useTaxWorkbook'
 import type { TaxCategoryTotalDto, TaxWorkbookEntryDto } from '../api/types'
 import { formatN2, formatShortDateUtc } from '../utils/formatters'
@@ -41,25 +41,31 @@ function StatusBadge({ status }: { status: string }) {
   )
 }
 
-function amountCell(value: number | null | undefined) {
-  return <TableCell className="data-table__col--numeric">{value === null || value === undefined ? '—' : formatN2(value)}</TableCell>
+function amountCell(label: string, value: number | null | undefined) {
+  return (
+    <DataTableCell label={label} className="data-table__col--numeric">
+      {value === null || value === undefined ? '—' : formatN2(value)}
+    </DataTableCell>
+  )
 }
 
 function EntryRow({ entry }: { entry: TaxWorkbookEntryDto }) {
   return (
     <TableRow>
-      <TableCell>{formatShortDateUtc(entry.date)}</TableCell>
-      <TableCell>{entry.eventCategory}</TableCell>
-      {amountCell(entry.proceeds)}
-      {amountCell(entry.costBasis)}
-      {amountCell(entry.gainLoss)}
-      {amountCell(entry.grossAmount)}
-      {amountCell(entry.withheldAmount)}
-      {amountCell(entry.netAmount)}
-      <TableCell>
+      <DataTableCell label="Date">{formatShortDateUtc(entry.date)}</DataTableCell>
+      <DataTableCell label="Category">{entry.eventCategory}</DataTableCell>
+      {amountCell('Proceeds', entry.proceeds)}
+      {amountCell('Cost Basis', entry.costBasis)}
+      {amountCell('Gain/Loss', entry.gainLoss)}
+      {amountCell('Gross', entry.grossAmount)}
+      {amountCell('Withheld', entry.withheldAmount)}
+      {amountCell('Net', entry.netAmount)}
+      <DataTableCell label="Status">
         <StatusBadge status={entry.calculationStatus} />
-      </TableCell>
-      <TableCell className="tax-page__evidence-cell">{entry.evidenceReference}</TableCell>
+      </DataTableCell>
+      <DataTableCell label="Evidence" className="tax-page__evidence-cell">
+        {entry.evidenceReference}
+      </DataTableCell>
     </TableRow>
   )
 }
@@ -67,13 +73,13 @@ function EntryRow({ entry }: { entry: TaxWorkbookEntryDto }) {
 function CategoryTotalRow({ total }: { total: TaxCategoryTotalDto }) {
   return (
     <TableRow>
-      <TableCell>{total.eventCategory}</TableCell>
-      {amountCell(total.totalProceeds)}
-      {amountCell(total.totalCostBasis)}
-      {amountCell(total.totalGainLoss)}
-      {amountCell(total.totalGrossAmount)}
-      {amountCell(total.totalWithheldAmount)}
-      {amountCell(total.totalNetAmount)}
+      <DataTableCell label="Category">{total.eventCategory}</DataTableCell>
+      {amountCell('Proceeds', total.totalProceeds)}
+      {amountCell('Cost Basis', total.totalCostBasis)}
+      {amountCell('Gain/Loss', total.totalGainLoss)}
+      {amountCell('Gross', total.totalGrossAmount)}
+      {amountCell('Withheld', total.totalWithheldAmount)}
+      {amountCell('Net', total.totalNetAmount)}
     </TableRow>
   )
 }

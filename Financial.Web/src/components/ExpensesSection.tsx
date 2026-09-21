@@ -11,6 +11,7 @@ import {
 } from '@fluentui/react-components'
 import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import type { ExpenseDto } from '../api/types'
+import DataTableCell from './grid/DataTableCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import ColumnFilterMenu from './grid/ColumnFilterMenu'
 import TruncatedText from './TruncatedText'
@@ -37,14 +38,16 @@ interface ExpenseRowProps {
 function ExpenseRow({ expense, onEdit, onDelete }: ExpenseRowProps) {
   return (
     <TableRow>
-      <TableCell>{formatShortDate(expense.date)}</TableCell>
-      <TableCell>
+      <DataTableCell label="Date">{formatShortDate(expense.date)}</DataTableCell>
+      <DataTableCell label="Description">
         <TruncatedText text={expense.description} />
-      </TableCell>
-      <TableCell>{expense.categoryName}</TableCell>
-      <TableCell className="data-table__col--numeric">{formatN2(expense.value)}</TableCell>
-      <TableCell>{expense.paymentSourceBankName}</TableCell>
-      <TableCell>{expense.creditCardName ?? '—'}</TableCell>
+      </DataTableCell>
+      <DataTableCell label="Category">{expense.categoryName}</DataTableCell>
+      <DataTableCell label="Value" className="data-table__col--numeric">
+        {formatN2(expense.value)}
+      </DataTableCell>
+      <DataTableCell label="Bank">{expense.paymentSourceBankName}</DataTableCell>
+      <DataTableCell label="Card">{expense.creditCardName ?? '—'}</DataTableCell>
       <TableCell className="data-table__col--action">
         <div className="data-table__actions-cell">
           <Button
@@ -180,7 +183,9 @@ export default function ExpensesSection({ expenses, onEdit, onDelete, onNewExpen
           <TableBody>
             {sortedRows.length === 0 && hasActiveFilter ? (
               <TableRow>
-                <TableCell colSpan={7}>No rows match the current filters</TableCell>
+                <TableCell className="data-table__cell--message" colSpan={7}>
+                  No rows match the current filters
+                </TableCell>
               </TableRow>
             ) : (
               sortedRows.map((expense) => (

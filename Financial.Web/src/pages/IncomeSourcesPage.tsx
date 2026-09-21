@@ -19,6 +19,7 @@ import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import IncomeSourceFormDialog from '../components/IncomeSourceFormDialog'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
+import DataTableCell from '../components/grid/DataTableCell'
 import { useFormPanelStyles } from '../components/formPanelStyles'
 import { useIncomeSources } from '../hooks/useIncomeSources'
 import type { IncomeSourceDto } from '../api/types'
@@ -98,10 +99,12 @@ export default function IncomeSourcesPage() {
           <TableBody>
             {incomeSources.map((incomeSource) => (
               <TableRow key={incomeSource.id}>
-                <TableCell>{incomeSource.name}</TableCell>
-                <TableCell>{incomeSource.group}</TableCell>
-                <TableCell>{incomeSource.isActive ? 'Yes' : 'No'}</TableCell>
-                <TableCell>{incomeSource.autoSplitToReserve ? 'Yes' : 'No'}</TableCell>
+                <DataTableCell label="Name">{incomeSource.name}</DataTableCell>
+                <DataTableCell label="Group">{incomeSource.group}</DataTableCell>
+                <DataTableCell label="Active">{incomeSource.isActive ? 'Yes' : 'No'}</DataTableCell>
+                <DataTableCell label="Auto-split to reserve">
+                  {incomeSource.autoSplitToReserve ? 'Yes' : 'No'}
+                </DataTableCell>
                 <TableCell className="data-table__col--action">
                   <div className="data-table__actions-cell">
                     <Button

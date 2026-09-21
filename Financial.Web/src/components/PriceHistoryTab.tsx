@@ -18,6 +18,7 @@ import ErrorState from './ErrorState'
 import FilterTabList from './FilterTabList'
 import LoadingState from './LoadingState'
 import SplitPanel from './SplitPanel'
+import DataTableCell from './grid/DataTableCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import { useFormPanelStyles } from './formPanelStyles'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
@@ -66,14 +67,16 @@ interface PriceRowProps {
 function PriceRow({ entry, onEdit, onDelete }: PriceRowProps) {
   return (
     <TableRow>
-      <TableCell>{formatShortDate(entry.date)}</TableCell>
-      <TableCell className="data-table__col--numeric price-history-tab__price">{formatN2(entry.price)}</TableCell>
-      <TableCell
+      <DataTableCell label="Date">{formatShortDate(entry.date)}</DataTableCell>
+      <DataTableCell label="Price" className="data-table__col--numeric price-history-tab__price">
+        {formatN2(entry.price)}
+      </DataTableCell>
+      <DataTableCell
+        label="Source"
         className={entry.isManual ? 'price-history-tab__source--manual' : 'price-history-tab__source--automatic'}
-        title={entry.sourceReference ?? undefined}
       >
-        {SOURCE_LABELS[entry.source]}
-      </TableCell>
+        <span title={entry.sourceReference ?? undefined}>{SOURCE_LABELS[entry.source]}</span>
+      </DataTableCell>
       <TableCell className="data-table__col--action">
         {entry.isManual && (
           <div className="data-table__actions-cell">

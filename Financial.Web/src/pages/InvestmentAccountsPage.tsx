@@ -19,6 +19,7 @@ import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import InvestmentAccountFormDialog, { type InvestmentAccountSourceOption } from '../components/InvestmentAccountFormDialog'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
+import DataTableCell from '../components/grid/DataTableCell'
 import { useFormPanelStyles } from '../components/formPanelStyles'
 import { useInvestmentAccounts } from '../hooks/useInvestmentAccounts'
 import { useCreditCards } from '../hooks/useCreditCards'
@@ -121,7 +122,7 @@ export default function InvestmentAccountsPage() {
       ) : investmentAccounts.length === 0 ? (
         <p className="investment-accounts-page__empty">No investment accounts yet — create one to get started.</p>
       ) : (
-        <Table aria-label="Investment Accounts">
+        <Table aria-label="Investment Accounts" className="data-table">
           <TableHeader>
             <TableRow>
               <TableHeaderCell>Name</TableHeaderCell>
@@ -134,10 +135,10 @@ export default function InvestmentAccountsPage() {
           <TableBody>
             {investmentAccounts.map((account) => (
               <TableRow key={account.id}>
-                <TableCell>{account.name}</TableCell>
-                <TableCell>{account.isActive ? 'Yes' : 'No'}</TableCell>
-                <TableCell>{account.isLiability ? 'Yes' : 'No'}</TableCell>
-                <TableCell>{sourceDisplay(account, creditCards)}</TableCell>
+                <DataTableCell label="Name">{account.name}</DataTableCell>
+                <DataTableCell label="Active">{account.isActive ? 'Yes' : 'No'}</DataTableCell>
+                <DataTableCell label="Liability">{account.isLiability ? 'Yes' : 'No'}</DataTableCell>
+                <DataTableCell label="Source">{sourceDisplay(account, creditCards)}</DataTableCell>
                 <TableCell className="data-table__col--action">
                   <div className="data-table__actions-cell">
                     <Button

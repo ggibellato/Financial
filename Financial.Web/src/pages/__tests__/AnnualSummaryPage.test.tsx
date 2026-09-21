@@ -145,8 +145,8 @@ describe('AnnualSummaryPage', () => {
     render(<AnnualSummaryPage />)
 
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
-    expect(screen.getByRole('cell', { name: 'Mercado' })).toBeInTheDocument()
-    expect(screen.getByRole('cell', { name: 'Salary' })).toBeInTheDocument()
+    expect(screen.getByText('Mercado')).toBeInTheDocument()
+    expect(screen.getByText('Salary')).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Investments' })).not.toBeInTheDocument()
   })
 
@@ -164,7 +164,7 @@ describe('AnnualSummaryPage', () => {
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
     const rowLabels = screen
       .getAllByRole('row')
-      .map((row) => row.querySelector('td')?.textContent ?? '')
+      .map((row) => row.querySelector('td')?.textContent?.replace('Category:', '') ?? '')
       .filter((label) => label !== '')
 
     expect(rowLabels).toEqual([
@@ -184,11 +184,11 @@ describe('AnnualSummaryPage', () => {
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
     expect(screen.queryByText('Income Summary')).not.toBeInTheDocument()
 
-    const salaryCell = screen.getByRole('cell', { name: 'Salary' })
-    const mercadoCell = screen.getByRole('cell', { name: 'Mercado' })
+    const salaryCell = screen.getByText('Salary')
+    const mercadoCell = screen.getByText('Mercado')
     expect(salaryCell.closest('table')).toBe(mercadoCell.closest('table'))
     expect(within(salaryCell.closest('tr')!).getByText('38,800.00')).toBeInTheDocument()
-    const taxDifferenceRow = screen.getByRole('cell', { name: 'Tax difference' }).closest('tr')!
+    const taxDifferenceRow = screen.getByText('Tax difference').closest('tr')!
     expect(within(taxDifferenceRow).getByText('9,450.00')).toBeInTheDocument()
   })
 
@@ -206,7 +206,7 @@ describe('AnnualSummaryPage', () => {
     // Mercado's average (155.00) comes straight from the mocked API response, not a client
     // recomputation from monthlyTotals - proven by the fact this must match CATEGORY_TOTALS_ANNUAL's
     // explicit `average` field, not sum(monthlyTotals) / 12.
-    const mercadoRow = screen.getByRole('cell', { name: 'Mercado' }).closest('tr')!
+    const mercadoRow = screen.getByText('Mercado').closest('tr')!
     expect(within(mercadoRow).getByText('155.00')).toBeInTheDocument()
   })
 
@@ -215,13 +215,13 @@ describe('AnnualSummaryPage', () => {
 
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
     // Total despesas annual total comes straight from the mocked API response, not a client recomputation.
-    const totalDespesasRow = screen.getByRole('cell', { name: 'Total despesas' }).closest('tr')!
+    const totalDespesasRow = screen.getByText('Total despesas').closest('tr')!
     expect(totalDespesasRow).toHaveClass('annual-summary-page__emphasized-row')
     expect(within(totalDespesasRow).getByText('1,860.00')).toBeInTheDocument()
 
     // Resultado annual total also comes straight from the mocked API response (corrected formula,
     // excludes Dividendo/Juros) - proves no client-side recomputation occurs.
-    const resultadoRow = screen.getByRole('cell', { name: 'Resultado (R-D-Inv)' }).closest('tr')!
+    const resultadoRow = screen.getByText('Resultado (R-D-Inv)').closest('tr')!
     expect(resultadoRow).toHaveClass('annual-summary-page__emphasized-row')
     expect(within(resultadoRow).getByText('27,740.00')).toBeInTheDocument()
   })
@@ -232,9 +232,9 @@ describe('AnnualSummaryPage', () => {
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('tab', { name: 'Investments' }))
 
-    expect(screen.queryByRole('cell', { name: 'Salary' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('cell', { name: 'Mercado' })).not.toBeInTheDocument()
-    expect(screen.getByRole('cell', { name: 'ChaseSave' })).toBeInTheDocument()
+    expect(screen.queryByText('Salary')).not.toBeInTheDocument()
+    expect(screen.queryByText('Mercado')).not.toBeInTheDocument()
+    expect(screen.getByText('ChaseSave')).toBeInTheDocument()
     expect(screen.getByRole('tab', { name: 'Investments' })).toHaveAttribute('aria-selected', 'true')
   })
 
@@ -242,9 +242,9 @@ describe('AnnualSummaryPage', () => {
     render(<AnnualSummaryPage />)
 
     fireEvent.click(screen.getByRole('tab', { name: 'Investments' }))
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'ChaseSave' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('ChaseSave')).toBeInTheDocument())
 
-    const chaseSaveRow = screen.getByRole('cell', { name: 'ChaseSave' }).closest('tr')!
+    const chaseSaveRow = screen.getByText('ChaseSave').closest('tr')!
     for (const value of INVESTMENT_ANNUAL_RESULT.accounts[0].monthlyValues) {
       expect(within(chaseSaveRow).getByText(value.toLocaleString(undefined, { minimumFractionDigits: 2 }))).toBeInTheDocument()
     }
@@ -255,16 +255,16 @@ describe('AnnualSummaryPage', () => {
 
     fireEvent.click(screen.getByRole('tab', { name: 'Investments' }))
     await waitFor(() => expect(screen.getByText('PlatinumVisa8003 (-)')).toBeInTheDocument())
-    expect(screen.getByRole('cell', { name: 'ChaseSave' })).toBeInTheDocument()
+    expect(screen.getByText('ChaseSave')).toBeInTheDocument()
   })
 
   it('renders a Total row matching the net position monthly values', async () => {
     render(<AnnualSummaryPage />)
 
     fireEvent.click(screen.getByRole('tab', { name: 'Investments' }))
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'Total' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('Total')).toBeInTheDocument())
 
-    const totalRow = screen.getByRole('cell', { name: 'Total' }).closest('tr')!
+    const totalRow = screen.getByText('Total').closest('tr')!
     expect(totalRow).toHaveClass('annual-summary-page__emphasized-row')
     expect(within(totalRow).getByText('800.00')).toBeInTheDocument()
     expect(within(totalRow).getByText('1,350.00')).toBeInTheDocument()
@@ -274,13 +274,13 @@ describe('AnnualSummaryPage', () => {
     render(<AnnualSummaryPage />)
 
     fireEvent.click(screen.getByRole('tab', { name: 'Investments' }))
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'Month Result' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('Month Result')).toBeInTheDocument())
 
-    const monthResultRow = screen.getByRole('cell', { name: 'Month Result' }).closest('tr')!
+    const monthResultRow = screen.getByText('Month Result').closest('tr')!
     expect(monthResultRow).toHaveClass('annual-summary-page__emphasized-row')
     const cells = within(monthResultRow).getAllByRole('cell')
     // cells[0] is the label; cells[1] is January
-    expect(cells[1].textContent).toBe('75.00')
+    expect(cells[1].textContent?.replace('Jan:', '')).toBe('75.00')
     expect(within(monthResultRow).getAllByText('50.00').length).toBe(11)
   })
 
@@ -292,11 +292,11 @@ describe('AnnualSummaryPage', () => {
     render(<AnnualSummaryPage />)
 
     fireEvent.click(screen.getByRole('tab', { name: 'Investments' }))
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'Month Result' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('Month Result')).toBeInTheDocument())
 
-    const monthResultRow = screen.getByRole('cell', { name: 'Month Result' }).closest('tr')!
+    const monthResultRow = screen.getByText('Month Result').closest('tr')!
     const cells = within(monthResultRow).getAllByRole('cell')
-    expect(cells[1].textContent).toBe('')
+    expect(cells[1].textContent?.replace('Jan:', '')).toBe('')
     expect(within(monthResultRow).getAllByText('50.00').length).toBe(11)
   })
 
@@ -319,20 +319,20 @@ describe('AnnualSummaryPage', () => {
   it('does not affect the Category Totals tab content when viewing Investments', async () => {
     render(<AnnualSummaryPage />)
 
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'Mercado' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('Mercado')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('tab', { name: 'Investments' }))
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'ChaseSave' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('ChaseSave')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('tab', { name: 'Category Totals' }))
 
-    expect(screen.getByRole('cell', { name: 'Mercado' })).toBeInTheDocument()
-    expect(screen.getByRole('cell', { name: 'Salary' })).toBeInTheDocument()
+    expect(screen.getByText('Mercado')).toBeInTheDocument()
+    expect(screen.getByText('Salary')).toBeInTheDocument()
   })
 
   it('re-scopes the account table, Total row, Month Result row, and summary figures when the year changes on the Investments tab', async () => {
     render(<AnnualSummaryPage />)
 
     fireEvent.click(screen.getByRole('tab', { name: 'Investments' }))
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'ChaseSave' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('ChaseSave')).toBeInTheDocument())
 
     const nextYearInvestmentAnnualResult: InvestmentAnnualResultDto = {
       accounts: [
@@ -355,10 +355,10 @@ describe('AnnualSummaryPage', () => {
 
     fireEvent.change(screen.getByLabelText('Year'), { target: { value: '2027' } })
 
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'ChipCashIsaGleison' })).toBeInTheDocument())
-    expect(screen.queryByRole('cell', { name: 'ChaseSave' })).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText('ChipCashIsaGleison')).toBeInTheDocument())
+    expect(screen.queryByText('ChaseSave')).not.toBeInTheDocument()
 
-    const totalRow = screen.getByRole('cell', { name: 'Total' }).closest('tr')!
+    const totalRow = screen.getByText('Total').closest('tr')!
     expect(within(totalRow).getAllByText('2,000.00').length).toBeGreaterThan(0)
     const yearProgress = screen.getByText('Year Progress').closest('div')!
     expect(within(yearProgress).getByText('0.00')).toBeInTheDocument()
@@ -368,7 +368,7 @@ describe('AnnualSummaryPage', () => {
     render(<AnnualSummaryPage />)
 
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
-    expect(screen.getByRole('cell', { name: 'Mercado' })).toBeInTheDocument()
+    expect(screen.getByText('Mercado')).toBeInTheDocument()
 
     const nextYearCategoryTotalsAnnual: CategoryTotalsAnnualDto = {
       ...CATEGORY_TOTALS_ANNUAL,
@@ -380,11 +380,11 @@ describe('AnnualSummaryPage', () => {
 
     fireEvent.change(screen.getByLabelText('Year'), { target: { value: '2027' } })
 
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'Carro' })).toBeInTheDocument())
-    expect(screen.queryByRole('cell', { name: 'Mercado' })).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText('Carro')).toBeInTheDocument())
+    expect(screen.queryByText('Mercado')).not.toBeInTheDocument()
 
     // Total despesas annual total now reflects the new mocked response = 600.00
-    const totalDespesasRow = screen.getByRole('cell', { name: 'Total despesas' }).closest('tr')!
+    const totalDespesasRow = screen.getByText('Total despesas').closest('tr')!
     expect(within(totalDespesasRow).getByText('600.00')).toBeInTheDocument()
   })
 
@@ -417,11 +417,11 @@ describe('AnnualSummaryPage', () => {
 
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('tab', { name: 'Investments' }))
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'ChaseSave' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('ChaseSave')).toBeInTheDocument())
 
     fireEvent.change(screen.getByLabelText('Year'), { target: { value: '2027' } })
 
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'ChaseSave' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('ChaseSave')).toBeInTheDocument())
     expect(screen.getByRole('tab', { name: 'Investments' })).toHaveAttribute('aria-selected', 'true')
   })
 
@@ -451,7 +451,7 @@ describe('AnnualSummaryPage', () => {
     const rowLabels = screen
       .getAllByRole('row')
       .slice(1) // drop the header row
-      .map((row) => row.querySelector('td')?.textContent ?? '')
+      .map((row) => row.querySelector('td')?.textContent?.replace('Category:', '') ?? '')
 
     expect(rowLabels).toEqual([
       'Salary',
@@ -492,7 +492,7 @@ describe('AnnualSummaryPage', () => {
     await waitFor(() => expect(screen.getByRole('columnheader', { name: '2025' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('tab', { name: 'Category Totals' }))
 
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'Salary' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('Salary')).toBeInTheDocument())
   })
 
   it('sorts the Category Totals data rows by Annual Total, without moving the fixed Salary/Resultado/Total despesas rows', async () => {
@@ -505,12 +505,12 @@ describe('AnnualSummaryPage', () => {
     })
     render(<AnnualSummaryPage />)
 
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'Mercado' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('Mercado')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Annual Total' }))
 
     const rowLabels = screen
       .getAllByRole('row')
-      .map((row) => row.querySelector('td')?.textContent ?? '')
+      .map((row) => row.querySelector('td')?.textContent?.replace('Category:', '') ?? '')
       .filter((label) => label !== '')
 
     expect(rowLabels).toEqual([
@@ -529,7 +529,7 @@ describe('AnnualSummaryPage', () => {
     render(<AnnualSummaryPage />)
 
     fireEvent.click(screen.getByRole('tab', { name: 'Investments' }))
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'ChaseSave' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('ChaseSave')).toBeInTheDocument())
 
     fireEvent.click(screen.getByRole('button', { name: 'Jan' }))
 
@@ -539,8 +539,8 @@ describe('AnnualSummaryPage', () => {
     expect(within(dataRows[1]).getByText('ChaseSave')).toBeInTheDocument()
 
     const lastTwoRows = rows.slice(-2)
-    expect(within(lastTwoRows[0]).getByRole('cell', { name: 'Total' })).toBeInTheDocument()
-    expect(within(lastTwoRows[1]).getByRole('cell', { name: 'Month Result' })).toBeInTheDocument()
+    expect(within(lastTwoRows[0]).getByText('Total')).toBeInTheDocument()
+    expect(within(lastTwoRows[1]).getByText('Month Result')).toBeInTheDocument()
   })
 
   it('sorts every row of the Historic Summary Average table alphabetically by Category when its header is clicked', async () => {
@@ -555,7 +555,7 @@ describe('AnnualSummaryPage', () => {
     const rowLabels = screen
       .getAllByRole('row')
       .slice(1)
-      .map((row) => row.querySelector('td')?.textContent ?? '')
+      .map((row) => row.querySelector('td')?.textContent?.replace('Category:', '') ?? '')
       .filter((label) => label !== '')
 
     expect(rowLabels).toEqual([...rowLabels].sort((a, b) => a.localeCompare(b)))
@@ -571,15 +571,18 @@ describe('AnnualSummaryPage', () => {
     })
     render(<AnnualSummaryPage />)
 
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'Mercado' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('Mercado')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Filter by Category' }))
     fireEvent.click(screen.getByRole('checkbox', { name: 'Casa' }))
 
-    expect(screen.queryByRole('cell', { name: 'Casa' })).not.toBeInTheDocument()
-    expect(screen.getByRole('cell', { name: 'Mercado' })).toBeInTheDocument()
-    expect(screen.getByRole('cell', { name: 'Salary' })).toBeInTheDocument()
-    expect(screen.getByRole('cell', { name: 'Resultado (R-D-Inv)' })).toBeInTheDocument()
-    expect(screen.getByRole('cell', { name: 'Total despesas' })).toBeInTheDocument()
+    // The header's own filter checklist keeps every category name in the DOM (as checkbox
+    // labels) regardless of which rows are filtered out, so assertions must be scoped to tbody.
+    const tbody = within(document.querySelector('tbody')!)
+    expect(tbody.queryByText('Casa')).not.toBeInTheDocument()
+    expect(tbody.getByText('Mercado')).toBeInTheDocument()
+    expect(tbody.getByText('Salary')).toBeInTheDocument()
+    expect(tbody.getByText('Resultado (R-D-Inv)')).toBeInTheDocument()
+    expect(tbody.getByText('Total despesas')).toBeInTheDocument()
   })
 
   it('filters the Historic Summary Average table by Category', async () => {
@@ -592,7 +595,8 @@ describe('AnnualSummaryPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Filter by Category' }))
     fireEvent.click(screen.getByRole('checkbox', { name: 'Mercado' }))
 
-    expect(screen.queryByRole('cell', { name: 'Mercado' })).not.toBeInTheDocument()
-    expect(screen.getByRole('cell', { name: 'Salary' })).toBeInTheDocument()
+    const tbody = within(document.querySelector('tbody')!)
+    expect(tbody.queryByText('Mercado')).not.toBeInTheDocument()
+    expect(tbody.getByText('Salary')).toBeInTheDocument()
   })
 })
