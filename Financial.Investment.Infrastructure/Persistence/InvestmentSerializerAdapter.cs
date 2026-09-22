@@ -1,4 +1,6 @@
 using Financial.Investment.Domain.Entities;
+using Financial.Investment.Domain.Rules;
+using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
@@ -28,6 +30,16 @@ public sealed class InvestmentSerializerAdapter : IInvestmentSerializer
         var root = JsonNode.Parse(json)!.AsObject();
         var storedVersion = (int?)root[VersionProperty] ?? 1;
         InvestmentDataMigrations.Apply(root, storedVersion);
-        return root.Deserialize<Investments>(Options)!;
+        var investments = root.Deserialize<Investments>(Options)!;
+
+        if (storedVersion < 5)
+        {
+            foreach (var failure in SharesForDividendBackfill.Apply(investments))
+            {
+                Trace.TraceWarning($"SharesForDividend backfill skipped credit {failure.CreditId}: {failure.Message}");
+            }
+        }
+
+        return investments;
     }
 }

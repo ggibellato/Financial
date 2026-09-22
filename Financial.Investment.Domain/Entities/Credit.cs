@@ -64,6 +64,14 @@ public class Credit
         }
     }
 
+    // Mutates in place, unlike a user edit through CreditService.UpdateCreditAsync, so it skips
+    // that path's tax-classification churn.
+    internal void BackfillSharesForDividend(decimal sharesForDividend)
+    {
+        ValidateSharesForDividend(sharesForDividend);
+        SharesForDividend = sharesForDividend;
+    }
+
     /// <summary>
     /// Withheld must share Value's sign (or be zero) and never exceed it in magnitude, so
     /// <see cref="NetAmount"/> can never land on the far side of zero from Value - a correction
