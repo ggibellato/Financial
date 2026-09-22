@@ -135,6 +135,7 @@ internal static class NavigationMapper
             Currency = credit.Currency.ToString(),
             FxRateSnapshot = MapFxRateSnapshot(credit.FxRateSnapshot),
             SharesForDividend = credit.SharesForDividend,
+            AttributedShares = attribution?.SharesForDividend,
             AverageCostPerShare = attribution?.AverageCostPerShare,
             InvestedAmount = attribution?.InvestedAmount,
             PriceOnDate = attribution?.PriceOnDate,

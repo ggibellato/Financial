@@ -90,6 +90,7 @@ public class NavigationMapperTests
         var dto = NavigationMapper.MapCredit(credit, asset);
 
         dto.SharesForDividend.Should().BeNull();
+        dto.AttributedShares.Should().BeNull();
         dto.InvestedAmount.Should().BeNull();
         dto.YieldOnInvested.Should().BeNull();
         dto.YieldOnMarket.Should().BeNull();
@@ -105,8 +106,24 @@ public class NavigationMapperTests
         var dto = NavigationMapper.MapCredit(credit, asset);
 
         dto.SharesForDividend.Should().Be(800m);
+        dto.AttributedShares.Should().Be(800m);
         dto.AverageCostPerShare.Should().Be(9m);
         dto.InvestedAmount.Should().Be(7200m);
         dto.YieldOnInvested.Should().BeApproximately(5.5556m, 0.0001m);
+    }
+
+    [Fact]
+    public void MapCredit_WithoutSharesForDividendButWithAnOpenPosition_AttributesToTheEntirePosition()
+    {
+        var asset = Asset.Create("PETR4", "ISIN1", "B3", "PETR4");
+        asset.AddTransaction(Transaction.Create(new DateTime(2026, 1, 1), Transaction.TransactionType.Buy, 1000m, 9m, 0m));
+        var credit = Credit.Create(new DateTime(2026, 6, 1), Credit.CreditType.Dividend, 400m);
+
+        var dto = NavigationMapper.MapCredit(credit, asset);
+
+        dto.SharesForDividend.Should().BeNull("the user left it blank, so the raw entered value must stay null");
+        dto.AttributedShares.Should().Be(1000m);
+        dto.InvestedAmount.Should().Be(9000m);
+        dto.YieldOnInvested.Should().BeApproximately(4.4444m, 0.0001m);
     }
 }

@@ -115,15 +115,16 @@
                                 <DataTemplate>
                                     <ui:SymbolIcon Symbol="Info16"
                                                    AutomationProperties.Name="Dividend yield details"
-                                                   Visibility="{Binding SharesForDividend, Converter={StaticResource SharesForDividendToVisibilityConverter}}">
+                                                   Visibility="{Binding AttributedShares, Converter={StaticResource DividendAttributionToVisibilityConverter}}">
                                         <ui:SymbolIcon.ToolTip>
                                             <MultiBinding Converter="{StaticResource DividendAttributionToTooltipConverter}">
-                                                <Binding Path="SharesForDividend"/>
+                                                <Binding Path="AttributedShares"/>
                                                 <Binding Path="AverageCostPerShare"/>
                                                 <Binding Path="InvestedAmount"/>
                                                 <Binding Path="PriceOnDate"/>
                                                 <Binding Path="MarketValueOnDate"/>
                                                 <Binding Path="Date"/>
+                                                <Binding Path="SharesForDividend"/>
                                             </MultiBinding>
                                         </ui:SymbolIcon.ToolTip>
                                     </ui:SymbolIcon>

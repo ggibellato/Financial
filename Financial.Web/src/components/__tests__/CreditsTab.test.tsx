@@ -38,6 +38,7 @@ vi.mock('recharts', () => ({
 
 const NO_DIVIDEND_ATTRIBUTION = {
   sharesForDividend: null,
+  attributedShares: null,
   averageCostPerShare: null,
   investedAmount: null,
   priceOnDate: null,
@@ -475,7 +476,7 @@ describe('CreditsTab', () => {
 
   it('shows_the_yield_affordance_for_a_credit_with_shares_attributed', () => {
     setMock({
-      credits: [{ ...CREDIT_DIVIDEND, sharesForDividend: 800, investedAmount: 7200, yieldOnInvested: 5.5556 }],
+      credits: [{ ...CREDIT_DIVIDEND, sharesForDividend: 800, attributedShares: 800, investedAmount: 7200, yieldOnInvested: 5.5556 }],
     })
     render(<CreditsTab />)
 
@@ -487,6 +488,15 @@ describe('CreditsTab', () => {
     render(<CreditsTab />)
 
     expect(screen.queryByRole('button', { name: 'Dividend yield details' })).not.toBeInTheDocument()
+  })
+
+  it('shows_the_yield_affordance_for_a_credit_with_no_shares_entered_but_attributed_to_the_entire_position', () => {
+    setMock({
+      credits: [{ ...CREDIT_DIVIDEND, sharesForDividend: null, attributedShares: 1000, investedAmount: 9000, yieldOnInvested: 4.4444 }],
+    })
+    render(<CreditsTab />)
+
+    expect(screen.getByRole('button', { name: 'Dividend yield details' })).toBeInTheDocument()
   })
 
   it('shows_yield_bought_and_yield_current_columns_when_computed', () => {

@@ -12,12 +12,18 @@ public class DividendAttributionToTooltipConverter : IMultiValueConverter
 {
     public object Convert(object?[] values, Type targetType, object? parameter, CultureInfo culture)
     {
-        if (values is not [decimal sharesForDividend, _, _, _, _, DateTime date])
+        if (values is not [decimal attributedShares, _, _, _, _, DateTime date, ..])
         {
             return string.Empty;
         }
 
-        var lines = new List<string> { $"{sharesForDividend} shares attributed" };
+        var isExplicit = values is [_, _, _, _, _, _, decimal];
+        var lines = new List<string>
+        {
+            isExplicit
+                ? $"{attributedShares} shares attributed"
+                : $"{attributedShares} shares attributed (entire position - none specified)"
+        };
 
         if (values[1] is decimal averageCostPerShare)
         {

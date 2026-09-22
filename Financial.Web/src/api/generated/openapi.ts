@@ -6665,6 +6665,8 @@ export interface components {
         };
         CreditDTO: {
             /** Format: double */
+            attributedShares?: null | number;
+            /** Format: double */
             averageCostPerShare?: null | number;
             currency?: string;
             /** Format: date-time */

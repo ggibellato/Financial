@@ -66,6 +66,7 @@ const ASSET_NODE_B: SelectedNode = {
 
 const NO_DIVIDEND_ATTRIBUTION = {
   sharesForDividend: null,
+  attributedShares: null,
   averageCostPerShare: null,
   investedAmount: null,
   priceOnDate: null,

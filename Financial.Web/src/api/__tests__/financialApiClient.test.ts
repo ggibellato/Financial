@@ -1404,7 +1404,7 @@ describe('financialApiClient', () => {
     const responseBody: CreditDto[] = [
       {
         id: 'c1', type: 'Dividend', value: 10, withheld: 0, intermediationFee: 0, netAmount: 10, date: '2026-07-01T00:00:00Z', currency: 'GBP', fxRateSnapshot: null,
-        sharesForDividend: null, averageCostPerShare: null, investedAmount: null, priceOnDate: null, marketValueOnDate: null, yieldOnInvested: null, yieldOnMarket: null,
+        sharesForDividend: null, attributedShares: null, averageCostPerShare: null, investedAmount: null, priceOnDate: null, marketValueOnDate: null, yieldOnInvested: null, yieldOnMarket: null,
       },
     ]
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))

@@ -22,6 +22,14 @@ public class CreditDTO
 
     public decimal? SharesForDividend { get; set; }
 
+    /// <summary>
+    /// The shares actually used to compute the attribution fields below: SharesForDividend when
+    /// set, or the entire position held on the credit's date when SharesForDividend was left
+    /// blank. Kept separate from SharesForDividend so the UI can still show that field blank
+    /// (what the user entered) while explaining what the yield figures were computed against.
+    /// </summary>
+    public decimal? AttributedShares { get; set; }
+
     public decimal? AverageCostPerShare { get; set; }
 
     public decimal? InvestedAmount { get; set; }

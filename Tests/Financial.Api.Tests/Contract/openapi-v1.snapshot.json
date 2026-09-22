@@ -1516,6 +1516,13 @@
       },
       "CreditDTO": {
         "properties": {
+          "attributedShares": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
           "averageCostPerShare": {
             "format": "double",
             "type": [
