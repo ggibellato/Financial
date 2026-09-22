@@ -9,21 +9,23 @@ Personal financial management tool for consolidating investment transactions acr
 
 ## Data file
 
-The Investment and CashFlow domains each load their data from their own JSON file. Both example files are tracked under `data/` — copy them locally before first run (the real data files themselves are git-ignored):
+The Investment and CashFlow domains each load their data from their own JSON file, and a third file permanently caches resolved FX rates so they never need re-fetching from Frankfurter after the first lookup. All three example files are tracked under `data/` — copy them locally before first run (the real data files themselves are git-ignored):
 
 - Investment: copy `data/data-investment.example.json` to `data/data-investment.json`.
 - CashFlow: copy `data/data-cashflow.example.json` to `data/data-cashflow.json`.
+- FX rates: copy `data/data-fx-rates.example.json` to `data/data-fx-rates.json`. This one is optional — a missing file just starts with an empty rate cache.
 
-Configure the paths via environment variable or `appsettings.json`. Each domain's storage settings live under their own JSON element — `Investment` and `CashFlow` — never at the config root:
+Configure the paths via environment variable or `appsettings.json`. Each domain's storage settings live under their own JSON element — `Investment`, `CashFlow`, and `FxRates` — never at the config root:
 
 - Investment: `Investment:DataJsonFile` (env: `Investment__DataJsonFile`). Defaults to `data-investment.json` in the application directory if unset.
 - CashFlow: `CashFlow:DataJsonFile` (env: `CashFlow__DataJsonFile`). Defaults to `data-cashflow.json` in the application directory if unset.
+- FX rates: `FxRates:DataJsonFile` (env: `FxRates__DataJsonFile`). Defaults to `data-fx-rates.json` in the application directory if unset.
 
 Each domain has its own distinct default filename, so leaving either one unset no longer risks the two domains sharing a file.
 
 ### Storage providers
 
-The Investment and CashFlow domains each select their storage backend independently, under their own config element.
+The Investment, CashFlow, and FxRates domains each select their storage backend independently, under their own config element.
 
 **Investment** — via `Investment:Repository:Provider` (env: `Investment__Repository__Provider`):
 
@@ -34,6 +36,11 @@ The Investment and CashFlow domains each select their storage backend independen
 
 - **`LocalJson`** (default) — reads/writes the file set by `CashFlow:DataJsonFile`.
 - **`GoogleDrive`** — requires `CashFlow:GoogleDrive:CredentialsPath` and `CashFlow:GoogleDrive:FilePath`.
+
+**FX rates** — via `FxRates:Repository:Provider` (env: `FxRates__Repository__Provider`):
+
+- **`LocalJson`** (default) — reads/writes the file set by `FxRates:DataJsonFile`.
+- **`GoogleDrive`** — requires `FxRates:GoogleDrive:CredentialsPath` and `FxRates:GoogleDrive:FilePath`.
 
 ### Calendar integration (optional)
 
@@ -130,6 +137,8 @@ docker run -p 8080:8080 \
   -e Investment__Repository__Provider=LocalJson \
   -e CashFlow__DataJsonFile=/app/data/data-cashflow.json \
   -e CashFlow__Repository__Provider=LocalJson \
+  -e FxRates__DataJsonFile=/app/data/data-fx-rates.json \
+  -e FxRates__Repository__Provider=LocalJson \
   financial
 ```
 
