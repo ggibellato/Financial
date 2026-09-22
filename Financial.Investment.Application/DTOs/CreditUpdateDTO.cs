@@ -10,5 +10,6 @@ public class CreditUpdateDTO
     public required string Type { get; set; }
     public decimal Value { get; set; }
     public decimal Withheld { get; set; }
+    public decimal IntermediationFee { get; set; }
     public decimal? SharesForDividend { get; set; }
 }

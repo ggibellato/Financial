@@ -145,6 +145,36 @@ public class CreditDialogViewModelTests
     }
 
     [Fact]
+    public void NetAmount_ComputesFromValueWithheldAndIntermediationFee()
+    {
+        var viewModel = CreditDialogViewModel.CreateForAdd("XPI", "Default", "PETR4");
+
+        viewModel.Value = 0.16m;
+        viewModel.Withheld = 0.03m;
+        viewModel.IntermediationFee = 0.04m;
+
+        viewModel.NetAmount.Should().Be(0.09m);
+    }
+
+    [Fact]
+    public void CreateForAdd_DefaultsIntermediationFeeToZero()
+    {
+        var viewModel = CreditDialogViewModel.CreateForAdd("XPI", "Default", "PETR4");
+
+        viewModel.IntermediationFee.Should().Be(0m);
+    }
+
+    [Fact]
+    public void CreateForUpdate_WithIntermediationFee_AssignsIt()
+    {
+        var viewModel = CreditDialogViewModel.CreateForUpdate(
+            "XPI", "Default", "PETR4", Guid.NewGuid(), new DateTime(2026, 7, 1), "SecuritiesLendingIncome", 0.16m, 0.03m,
+            sharesForDividend: null, intermediationFee: 0.04m);
+
+        viewModel.IntermediationFee.Should().Be(0.04m);
+    }
+
+    [Fact]
     public void CreateForAdd_DefaultsSharesForDividendToNull()
     {
         var viewModel = CreditDialogViewModel.CreateForAdd("XPI", "Default", "PETR4");

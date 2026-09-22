@@ -1480,6 +1480,10 @@
             "format": "date-time",
             "type": "string"
           },
+          "intermediationFee": {
+            "format": "double",
+            "type": "number"
+          },
           "portfolioName": {
             "type": "string"
           },
@@ -1539,6 +1543,10 @@
           "id": {
             "format": "uuid",
             "type": "string"
+          },
+          "intermediationFee": {
+            "format": "double",
+            "type": "number"
           },
           "investedAmount": {
             "format": "double",
@@ -1641,6 +1649,10 @@
           "id": {
             "format": "uuid",
             "type": "string"
+          },
+          "intermediationFee": {
+            "format": "double",
+            "type": "number"
           },
           "portfolioName": {
             "type": "string"

@@ -80,6 +80,7 @@ const CREDIT_A: CreditDto = {
   type: 'Dividend',
   value: 120.5,
   withheld: 0,
+  intermediationFee: 0,
   netAmount: 120.5,
   currency: 'GBP',
   fxRateSnapshot: null,
@@ -92,6 +93,7 @@ const CREDIT_B: CreditDto = {
   type: 'SecuritiesLendingIncome',
   value: 350.0,
   withheld: 0,
+  intermediationFee: 0,
   netAmount: 350.0,
   currency: 'GBP',
   fxRateSnapshot: null,
@@ -382,6 +384,7 @@ describe('useCredits', () => {
         type: 'Dividend',
         value: 120.5,
         withheld: 0,
+        intermediationFee: 0,
         sharesForDividend: null,
       }),
     )
@@ -553,10 +556,10 @@ describe('useCredits', () => {
 
   it('aggregateByMonth_computesByTypeDynamically', async () => {
     const creditA: CreditDto = {
-      id: 'sm1', date: '2024-03-05T00:00:00', type: 'Dividend', value: 100, withheld: 0, netAmount: 100, currency: 'GBP', fxRateSnapshot: null, ...NO_DIVIDEND_ATTRIBUTION,
+      id: 'sm1', date: '2024-03-05T00:00:00', type: 'Dividend', value: 100, withheld: 0, intermediationFee: 0, netAmount: 100, currency: 'GBP', fxRateSnapshot: null, ...NO_DIVIDEND_ATTRIBUTION,
     }
     const creditB: CreditDto = {
-      id: 'sm2', date: '2024-03-20T00:00:00', type: 'SecuritiesLendingIncome', value: 50, withheld: 0, netAmount: 50, currency: 'GBP', fxRateSnapshot: null, ...NO_DIVIDEND_ATTRIBUTION,
+      id: 'sm2', date: '2024-03-20T00:00:00', type: 'SecuritiesLendingIncome', value: 50, withheld: 0, intermediationFee: 0, netAmount: 50, currency: 'GBP', fxRateSnapshot: null, ...NO_DIVIDEND_ATTRIBUTION,
     }
     getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, credits: [creditA, creditB] })
     const { wrapper, setNode } = createSelectedNodeWrapper()
@@ -572,10 +575,10 @@ describe('useCredits', () => {
 
   it('aggregateByMonth_computesTotalAsSumOfByType', async () => {
     const creditA: CreditDto = {
-      id: 'sm1', date: '2024-03-05T00:00:00', type: 'Dividend', value: 100, withheld: 0, netAmount: 100, currency: 'GBP', fxRateSnapshot: null, ...NO_DIVIDEND_ATTRIBUTION,
+      id: 'sm1', date: '2024-03-05T00:00:00', type: 'Dividend', value: 100, withheld: 0, intermediationFee: 0, netAmount: 100, currency: 'GBP', fxRateSnapshot: null, ...NO_DIVIDEND_ATTRIBUTION,
     }
     const creditB: CreditDto = {
-      id: 'sm2', date: '2024-03-20T00:00:00', type: 'SecuritiesLendingIncome', value: 50, withheld: 0, netAmount: 50, currency: 'GBP', fxRateSnapshot: null, ...NO_DIVIDEND_ATTRIBUTION,
+      id: 'sm2', date: '2024-03-20T00:00:00', type: 'SecuritiesLendingIncome', value: 50, withheld: 0, intermediationFee: 0, netAmount: 50, currency: 'GBP', fxRateSnapshot: null, ...NO_DIVIDEND_ATTRIBUTION,
     }
     getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, credits: [creditA, creditB] })
     const { wrapper, setNode } = createSelectedNodeWrapper()
@@ -590,13 +593,13 @@ describe('useCredits', () => {
 
   it('aggregateByMonth_supportsAThirdCreditType', async () => {
     const creditA: CreditDto = {
-      id: 'sm1', date: '2024-03-05T00:00:00', type: 'Dividend', value: 100, withheld: 0, netAmount: 100, currency: 'GBP', fxRateSnapshot: null, ...NO_DIVIDEND_ATTRIBUTION,
+      id: 'sm1', date: '2024-03-05T00:00:00', type: 'Dividend', value: 100, withheld: 0, intermediationFee: 0, netAmount: 100, currency: 'GBP', fxRateSnapshot: null, ...NO_DIVIDEND_ATTRIBUTION,
     }
     const creditB: CreditDto = {
-      id: 'sm2', date: '2024-03-20T00:00:00', type: 'SecuritiesLendingIncome', value: 50, withheld: 0, netAmount: 50, currency: 'GBP', fxRateSnapshot: null, ...NO_DIVIDEND_ATTRIBUTION,
+      id: 'sm2', date: '2024-03-20T00:00:00', type: 'SecuritiesLendingIncome', value: 50, withheld: 0, intermediationFee: 0, netAmount: 50, currency: 'GBP', fxRateSnapshot: null, ...NO_DIVIDEND_ATTRIBUTION,
     }
     const creditC: CreditDto = {
-      id: 'sm3', date: '2024-03-10T00:00:00', type: 'Interest', value: 30, withheld: 0, netAmount: 30, currency: 'GBP', fxRateSnapshot: null, ...NO_DIVIDEND_ATTRIBUTION,
+      id: 'sm3', date: '2024-03-10T00:00:00', type: 'Interest', value: 30, withheld: 0, intermediationFee: 0, netAmount: 30, currency: 'GBP', fxRateSnapshot: null, ...NO_DIVIDEND_ATTRIBUTION,
     }
     getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, credits: [creditA, creditB, creditC] })
     const { wrapper, setNode } = createSelectedNodeWrapper()

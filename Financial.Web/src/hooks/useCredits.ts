@@ -9,7 +9,7 @@ import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
 
 export type ViewMode = 'Stacked' | 'Grouped'
 export type ChartType = 'Bar' | 'Line'
-export type CreditFormField = 'formDate' | 'formType' | 'formValue' | 'formWithheld' | 'formSharesForDividend'
+export type CreditFormField = 'formDate' | 'formType' | 'formValue' | 'formWithheld' | 'formIntermediationFee' | 'formSharesForDividend'
 
 const DATE_KEY = 'investmentCredit.date'
 const TYPE_KEY = 'investmentCredit.type'
@@ -45,6 +45,7 @@ interface CreditsState {
   formType: string
   formValue: string
   formWithheld: string
+  formIntermediationFee: string
   formSharesForDividend: string
   isSaving: boolean
   saveError: string | null
@@ -78,6 +79,7 @@ const BLANK_FORM = {
   formType: 'Dividend',
   formValue: '',
   formWithheld: '',
+  formIntermediationFee: '',
   formSharesForDividend: '',
   isSaving: false,
   saveError: null,
@@ -155,6 +157,7 @@ function reducer(state: CreditsState, action: CreditsAction): CreditsState {
         formType: action.payload.type,
         formValue: '',
         formWithheld: '',
+        formIntermediationFee: '',
         formSharesForDividend: '',
         saveError: null,
         saveErrorFields: {},
@@ -170,6 +173,7 @@ function reducer(state: CreditsState, action: CreditsAction): CreditsState {
         formType: c.type,
         formValue: String(c.value),
         formWithheld: String(c.withheld),
+        formIntermediationFee: String(c.intermediationFee),
         formSharesForDividend: c.sharesForDividend == null ? '' : String(c.sharesForDividend),
         saveError: null,
         saveErrorFields: {},
@@ -249,6 +253,7 @@ export interface CreditsData {
   formType: string
   formValue: string
   formWithheld: string
+  formIntermediationFee: string
   formSharesForDividend: string
   isSaving: boolean
   saveError: string | null
@@ -379,7 +384,7 @@ export function useCredits(): CreditsData {
   const saveForm = useCallback(() => {
     if (!selectedNode?.portfolioName || !selectedNode.assetName) return
 
-    const { formDate, formType, formValue, formWithheld, formSharesForDividend, editingId } = state
+    const { formDate, formType, formValue, formWithheld, formIntermediationFee, formSharesForDividend, editingId } = state
     const errors: Partial<Record<CreditFormField, string>> = {}
 
     if (!formDate.trim()) {
@@ -407,6 +412,7 @@ export function useCredits(): CreditsData {
     }
 
     const withheld = formWithheld.trim() === '' ? 0 : parseFloat(formWithheld)
+    const intermediationFee = formIntermediationFee.trim() === '' ? 0 : parseFloat(formIntermediationFee)
 
     dispatch({ type: 'SAVE_START' })
 
@@ -418,6 +424,7 @@ export function useCredits(): CreditsData {
       type: formType,
       value: value as number,
       withheld,
+      intermediationFee,
       sharesForDividend,
     }
 
@@ -480,6 +487,7 @@ export function useCredits(): CreditsData {
     formType: state.formType,
     formValue: state.formValue,
     formWithheld: state.formWithheld,
+    formIntermediationFee: state.formIntermediationFee,
     formSharesForDividend: state.formSharesForDividend,
     isSaving: state.isSaving,
     saveError: state.saveError,

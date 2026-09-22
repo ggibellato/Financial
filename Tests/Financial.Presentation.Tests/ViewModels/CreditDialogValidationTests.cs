@@ -121,6 +121,33 @@ public class CreditDialogValidationTests
         result.Should().Contain("Shares for this dividend must be greater than zero when provided.");
     }
 
+    [Fact]
+    public void BuildValidationMessage_IntermediationFeeOppositeSignToValue_IncludesIntermediationFeeError()
+    {
+        var result = CreditDialogValidation.BuildValidationMessage(
+            isDeleteMode: false, date: ValidDate, type: "Dividend", value: 10, withheld: 0, intermediationFee: -1);
+
+        result.Should().Contain("Intermediation fee must share Value's sign and must not exceed it in magnitude.");
+    }
+
+    [Fact]
+    public void BuildValidationMessage_WithheldAndIntermediationFeeCombinedExceedValueMagnitude_IncludesCombinedError()
+    {
+        var result = CreditDialogValidation.BuildValidationMessage(
+            isDeleteMode: false, date: ValidDate, type: "Dividend", value: 10, withheld: 6, intermediationFee: 6);
+
+        result.Should().Contain("Withheld and intermediation fee combined must not exceed Value's magnitude.");
+    }
+
+    [Fact]
+    public void BuildValidationMessage_WithIntermediationFeeWithinMagnitude_ReturnsEmpty()
+    {
+        var result = CreditDialogValidation.BuildValidationMessage(
+            isDeleteMode: false, date: ValidDate, type: "SecuritiesLendingIncome", value: 0.16m, withheld: 0.03m, intermediationFee: 0.04m);
+
+        result.Should().BeEmpty();
+    }
+
     [Theory]
     [InlineData("Dividend", true)]
     [InlineData("securitieslendingincome", true)]

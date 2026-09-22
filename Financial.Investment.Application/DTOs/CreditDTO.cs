@@ -12,6 +12,8 @@ public class CreditDTO
 
     public decimal Withheld { get; set; }
 
+    public decimal IntermediationFee { get; set; }
+
     public decimal NetAmount { get; set; }
 
     public string Currency { get; set; } = string.Empty;

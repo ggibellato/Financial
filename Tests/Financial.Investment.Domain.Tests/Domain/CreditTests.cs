@@ -180,4 +180,54 @@ public class CreditTests
 
         credit.SharesForDividend.Should().Be(800m);
     }
+
+    [Fact]
+    public void Create_WithoutIntermediationFee_DefaultsToZero()
+    {
+        var credit = Credit.Create(new DateTime(2024, 1, 1), Credit.CreditType.Dividend, 10m);
+
+        credit.IntermediationFee.Should().Be(0m);
+    }
+
+    [Fact]
+    public void Create_WithIntermediationFee_AssignsIt()
+    {
+        var credit = Credit.Create(new DateTime(2024, 1, 1), Credit.CreditType.SecuritiesLendingIncome, 0.16m, withheld: 0.03m, intermediationFee: 0.04m);
+
+        credit.IntermediationFee.Should().Be(0.04m);
+    }
+
+    [Fact]
+    public void NetAmount_WithWithheldAndIntermediationFee_SubtractsBoth()
+    {
+        var credit = Credit.Create(new DateTime(2024, 1, 1), Credit.CreditType.SecuritiesLendingIncome, 0.16m, withheld: 0.03m, intermediationFee: 0.04m);
+
+        credit.NetAmount.Should().Be(0.09m);
+    }
+
+    [Theory]
+    [InlineData(100, -1)]
+    [InlineData(100, 101)]
+    public void Create_PositiveValueWithOutOfRangeIntermediationFee_Throws(decimal value, decimal intermediationFee)
+    {
+        var act = () => Credit.Create(new DateTime(2024, 1, 1), Credit.CreditType.Dividend, value, intermediationFee: intermediationFee);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void Create_WithheldAndIntermediationFeeCombinedExceedValueMagnitude_Throws()
+    {
+        var act = () => Credit.Create(new DateTime(2024, 1, 1), Credit.CreditType.Dividend, 10m, withheld: 6m, intermediationFee: 6m);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void CreateWithId_WithIntermediationFee_AssignsIt()
+    {
+        var credit = Credit.CreateWithId(Guid.NewGuid(), new DateTime(2024, 1, 1), Credit.CreditType.SecuritiesLendingIncome, 0.16m, withheld: 0.03m, intermediationFee: 0.04m);
+
+        credit.IntermediationFee.Should().Be(0.04m);
+    }
 }

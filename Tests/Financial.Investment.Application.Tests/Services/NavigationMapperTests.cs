@@ -70,6 +70,18 @@ public class NavigationMapperTests
     }
 
     [Fact]
+    public void MapCredit_WithIntermediationFee_MapsItAndNetAmountSubtractsIt()
+    {
+        var credit = Credit.Create(new DateTime(2026, 7, 1), Credit.CreditType.SecuritiesLendingIncome, 0.16m, withheld: 0.03m, intermediationFee: 0.04m);
+        var asset = Asset.Create("PETR4", "ISIN1", "B3", "PETR4");
+
+        var dto = NavigationMapper.MapCredit(credit, asset);
+
+        dto.IntermediationFee.Should().Be(0.04m);
+        dto.NetAmount.Should().Be(0.09m);
+    }
+
+    [Fact]
     public void MapCredit_WithoutSharesForDividend_LeavesAttributionFieldsNull()
     {
         var credit = Credit.Create(new DateTime(2026, 7, 1), Credit.CreditType.Dividend, 100m);

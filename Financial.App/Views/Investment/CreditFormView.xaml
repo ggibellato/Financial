@@ -34,6 +34,7 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
@@ -80,11 +81,20 @@
             </StackPanel>
 
             <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,0,8,8">
+                <TextBlock Text="Intermediation fee" Style="{StaticResource FieldLabelStyle}"/>
+                <TextBox AutomationProperties.Name="Intermediation fee"
+                         ToolTip="Optional. A brokerage/intermediation fee deducted separately from any withheld tax."
+                         Text="{Binding IntermediationFee, UpdateSourceTrigger=LostFocus}"
+                         IsReadOnly="{Binding IsReadOnly}"
+                         behaviors:DecimalInputBehavior.IsEnabled="True"/>
+            </StackPanel>
+
+            <StackPanel Grid.Row="2" Grid.Column="2" Margin="0,0,0,8">
                 <TextBlock Text="Net" Style="{StaticResource FieldLabelStyle}"/>
                 <TextBlock Text="{Binding NetAmount, StringFormat=N2}" VerticalAlignment="Center" FontWeight="Bold"/>
             </StackPanel>
 
-            <StackPanel Grid.Row="2" Grid.Column="2" Margin="0,0,0,8">
+            <StackPanel Grid.Row="3" Grid.Column="0" Margin="0,0,8,8">
                 <TextBlock Text="Shares for this dividend" Style="{StaticResource FieldLabelStyle}"/>
                 <TextBox AutomationProperties.Name="Shares for this dividend"
                          ToolTip="Number of shares that earned this dividend. Leave blank if it applies to your entire position on this date."
@@ -93,11 +103,11 @@
                          behaviors:DecimalInputBehavior.IsEnabled="True"/>
             </StackPanel>
 
-            <TextBlock Grid.Row="3" Grid.ColumnSpan="3" TextWrapping="Wrap" Margin="0,0,0,8"
+            <TextBlock Grid.Row="4" Grid.ColumnSpan="3" TextWrapping="Wrap" Margin="0,0,0,8"
                        Foreground="{DynamicResource SystemFillColorCriticalBrush}"
                        Text="{Binding ValidationMessage}"/>
 
-            <StackPanel Grid.Row="4" Grid.ColumnSpan="3" Orientation="Horizontal">
+            <StackPanel Grid.Row="5" Grid.ColumnSpan="3" Orientation="Horizontal">
                 <ui:Button Content="{Binding ConfirmLabel}" MinWidth="90" Appearance="Primary"
                            Command="{Binding ConfirmCommand}"/>
                 <ui:Button Content="Cancel" MinWidth="90" Margin="8,0,0,0" Appearance="Secondary"

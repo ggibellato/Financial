@@ -69,6 +69,7 @@ const SORT_ACCESSORS: Record<string, SortAccessor<CreditDto>> = {
   type: (c) => c.type,
   value: (c) => c.value,
   withheld: (c) => c.withheld,
+  intermediationFee: (c) => c.intermediationFee,
   netAmount: (c) => c.netAmount,
   yieldOnInvested: (c) => c.yieldOnInvested ?? -Infinity,
   yieldOnMarket: (c) => c.yieldOnMarket ?? -Infinity,
@@ -113,6 +114,7 @@ function CreditRow({ credit, onEdit, onDelete }: CreditRowProps) {
         {formatN2(credit.value)}
       </DataTableCell>
       <DataTableCell label="Withheld" className="data-table__col--numeric">{formatN2(credit.withheld)}</DataTableCell>
+      <DataTableCell label="Intermediation fee" className="data-table__col--numeric">{formatN2(credit.intermediationFee)}</DataTableCell>
       <DataTableCell label="Net" className="data-table__col--numeric credits-tab__value">
         {formatN2(credit.netAmount)}
       </DataTableCell>
@@ -156,6 +158,7 @@ interface InlineFormProps {
   formType: string
   formValue: string
   formWithheld: string
+  formIntermediationFee: string
   formSharesForDividend: string
   isSaving: boolean
   saveError: string | null
@@ -171,6 +174,7 @@ function InlineForm({
   formType,
   formValue,
   formWithheld,
+  formIntermediationFee,
   formSharesForDividend,
   isSaving,
   saveError,
@@ -229,6 +233,16 @@ function InlineForm({
             min="0"
             value={formWithheld}
             onChange={(e) => onFieldChange('formWithheld', e.target.value)}
+          />
+        </Field>
+
+        <Field label="Intermediation fee" hint="Optional. Kept separate from Withheld so brokerage fees and withheld tax stay distinguishable.">
+          <Input
+            type="number"
+            step="0.01"
+            min="0"
+            value={formIntermediationFee}
+            onChange={(e) => onFieldChange('formIntermediationFee', e.target.value)}
           />
         </Field>
 
@@ -369,6 +383,7 @@ export default function CreditsTab() {
     formType,
     formValue,
     formWithheld,
+    formIntermediationFee,
     formSharesForDividend,
     isSaving,
     saveError,
@@ -444,6 +459,7 @@ export default function CreditsTab() {
           formType={formType}
           formValue={formValue}
           formWithheld={formWithheld}
+          formIntermediationFee={formIntermediationFee}
           formSharesForDividend={formSharesForDividend}
           isSaving={isSaving}
           saveError={saveError}
@@ -482,6 +498,13 @@ export default function CreditsTab() {
                 columnKey="withheld"
                 numeric
                 sortDirection={sortState?.columnKey === 'withheld' ? sortState.direction : undefined}
+                onSort={requestSort}
+              />
+              <SortableColumnHeader
+                label="Intermediation fee"
+                columnKey="intermediationFee"
+                numeric
+                sortDirection={sortState?.columnKey === 'intermediationFee' ? sortState.direction : undefined}
                 onSort={requestSort}
               />
               <SortableColumnHeader

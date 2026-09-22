@@ -202,6 +202,7 @@ public class CreditsTabViewModel : ViewModelBase
             Type = normalizedType,
             Value = dialogData.Value.Value,
             Withheld = dialogData.Value.Withheld,
+            IntermediationFee = dialogData.Value.IntermediationFee,
             SharesForDividend = dialogData.Value.SharesForDividend
         });
 
@@ -252,6 +253,7 @@ public class CreditsTabViewModel : ViewModelBase
             Type = normalizedType,
             Value = dialogData.Value.Value,
             Withheld = dialogData.Value.Withheld,
+            IntermediationFee = dialogData.Value.IntermediationFee,
             SharesForDividend = dialogData.Value.SharesForDividend
         });
 
@@ -334,7 +336,7 @@ public class CreditsTabViewModel : ViewModelBase
             IsCreditFormOpen = false;
             CreditFormViewModel = null;
             tcs.SetResult(result == true
-                ? new CreditDialogData(vm.CreditId, vm.Date, vm.Type, vm.Value, vm.Withheld, vm.SharesForDividend)
+                ? new CreditDialogData(vm.CreditId, vm.Date, vm.Type, vm.Value, vm.Withheld, vm.SharesForDividend, vm.IntermediationFee)
                 : null);
         }
 
@@ -356,7 +358,7 @@ public class CreditsTabViewModel : ViewModelBase
         var vm = CreditDialogViewModel.CreateForUpdate(
             _brokerName(), _portfolioName(), _assetName(),
             SelectedCredit.Id, SelectedCredit.Date, SelectedCredit.Type, SelectedCredit.Value, SelectedCredit.Withheld,
-            SelectedCredit.SharesForDividend);
+            SelectedCredit.SharesForDividend, SelectedCredit.IntermediationFee);
         return ShowCreditFormAsync(vm);
     }
 
@@ -365,7 +367,8 @@ public class CreditsTabViewModel : ViewModelBase
         if (SelectedCredit == null) return false;
         var vm = CreditDialogViewModel.CreateForDelete(
             _brokerName(), _portfolioName(), _assetName(),
-            SelectedCredit.Id, SelectedCredit.Date, SelectedCredit.Type, SelectedCredit.Value, SelectedCredit.Withheld);
+            SelectedCredit.Id, SelectedCredit.Date, SelectedCredit.Type, SelectedCredit.Value, SelectedCredit.Withheld,
+            SelectedCredit.IntermediationFee);
         var dialog = new CreditDialog(vm) { Owner = System.Windows.Application.Current?.MainWindow };
         return dialog.ShowDialog() == true;
     }
@@ -489,4 +492,5 @@ public readonly record struct CreditDialogData(
     string Type,
     decimal Value,
     decimal Withheld,
-    decimal? SharesForDividend = null);
+    decimal? SharesForDividend = null,
+    decimal IntermediationFee = 0m);

@@ -13,6 +13,7 @@ public sealed class CreditDialogViewModel : ViewModelBase
     private string _type = string.Empty;
     private decimal _value;
     private decimal _withheld;
+    private decimal _intermediationFee;
     private decimal? _sharesForDividend;
     private string _validationMessage = string.Empty;
 
@@ -91,9 +92,22 @@ public sealed class CreditDialogViewModel : ViewModelBase
         }
     }
 
+    public decimal IntermediationFee
+    {
+        get => _intermediationFee;
+        set
+        {
+            if (SetProperty(ref _intermediationFee, value))
+            {
+                Validate();
+                OnPropertyChanged(nameof(NetAmount));
+            }
+        }
+    }
+
     /// <summary>Live preview mirroring <see cref="Financial.Investment.Domain.Entities.Credit.NetAmount"/>'s
     /// formula exactly so the number shown here never drifts from what the server computes and persists.</summary>
-    public decimal NetAmount => Value - Withheld;
+    public decimal NetAmount => Value - Withheld - IntermediationFee;
 
     public decimal? SharesForDividend
     {
@@ -128,7 +142,8 @@ public sealed class CreditDialogViewModel : ViewModelBase
         string type,
         decimal value,
         decimal withheld,
-        decimal? sharesForDividend = null)
+        decimal? sharesForDividend = null,
+        decimal intermediationFee = 0m)
     {
         Mode = mode;
         BrokerName = brokerName;
@@ -141,6 +156,7 @@ public sealed class CreditDialogViewModel : ViewModelBase
         _value = value;
         _withheld = withheld;
         _sharesForDividend = sharesForDividend;
+        _intermediationFee = intermediationFee;
 
         ConfirmCommand = new RelayCommand(Confirm, CanConfirm);
         CancelCommand = new RelayCommand(Cancel);
@@ -165,7 +181,7 @@ public sealed class CreditDialogViewModel : ViewModelBase
             0);
     }
 
-    public static CreditDialogViewModel CreateForUpdate(string brokerName, string portfolioName, string assetName, Guid id, DateTime date, string type, decimal value, decimal withheld, decimal? sharesForDividend = null)
+    public static CreditDialogViewModel CreateForUpdate(string brokerName, string portfolioName, string assetName, Guid id, DateTime date, string type, decimal value, decimal withheld, decimal? sharesForDividend = null, decimal intermediationFee = 0m)
     {
         return new CreditDialogViewModel(
             CreditDialogMode.Update,
@@ -177,10 +193,11 @@ public sealed class CreditDialogViewModel : ViewModelBase
             type,
             value,
             withheld,
-            sharesForDividend);
+            sharesForDividend,
+            intermediationFee);
     }
 
-    public static CreditDialogViewModel CreateForDelete(string brokerName, string portfolioName, string assetName, Guid id, DateTime date, string type, decimal value, decimal withheld)
+    public static CreditDialogViewModel CreateForDelete(string brokerName, string portfolioName, string assetName, Guid id, DateTime date, string type, decimal value, decimal withheld, decimal intermediationFee = 0m)
     {
         return new CreditDialogViewModel(
             CreditDialogMode.Delete,
@@ -191,7 +208,9 @@ public sealed class CreditDialogViewModel : ViewModelBase
             date,
             type,
             value,
-            withheld);
+            withheld,
+            sharesForDividend: null,
+            intermediationFee: intermediationFee);
     }
 
     private void Confirm()
@@ -228,7 +247,8 @@ public sealed class CreditDialogViewModel : ViewModelBase
             Type,
             Value,
             Withheld,
-            SharesForDividend);
+            SharesForDividend,
+            IntermediationFee);
         ConfirmCommand.RaiseCanExecuteChanged();
     }
 }

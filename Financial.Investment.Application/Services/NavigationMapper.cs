@@ -130,6 +130,7 @@ internal static class NavigationMapper
             Type = credit.Type.ToString(),
             Value = credit.Value,
             Withheld = credit.Withheld,
+            IntermediationFee = credit.IntermediationFee,
             NetAmount = credit.NetAmount,
             Currency = credit.Currency.ToString(),
             FxRateSnapshot = MapFxRateSnapshot(credit.FxRateSnapshot),
