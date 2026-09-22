@@ -485,6 +485,24 @@ describe('CreditsTab', () => {
     expect(screen.queryByRole('button', { name: 'Dividend yield details' })).not.toBeInTheDocument()
   })
 
+  it('shows_yield_bought_and_yield_current_columns_when_computed', () => {
+    setMock({
+      credits: [{ ...CREDIT_DIVIDEND, sharesForDividend: 800, yieldOnInvested: 5.5556, yieldOnMarket: 5 }],
+    })
+    render(<CreditsTab />)
+
+    expect(screen.getByText('5.6%')).toBeInTheDocument()
+    expect(screen.getByText('5.0%')).toBeInTheDocument()
+  })
+
+  it('shows_a_dash_for_yield_columns_when_not_computed', () => {
+    setMock({ credits: [CREDIT_DIVIDEND] })
+    render(<CreditsTab />)
+
+    const dataRow = within(screen.getByRole('table')).getAllByRole('row')[1]
+    expect(within(dataRow).getAllByText('—')).not.toHaveLength(0)
+  })
+
   it('shows_the_fx_provenance_affordance_for_a_credit_with_a_captured_snapshot', () => {
     setMock({
       credits: [

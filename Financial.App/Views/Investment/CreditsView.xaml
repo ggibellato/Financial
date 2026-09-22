@@ -96,6 +96,20 @@
                                 </Style>
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
+                        <DataGridTextColumn Header="Yield (Bought)"
+                                            Binding="{Binding YieldOnInvested, StringFormat={}{0:N1}%, TargetNullValue='—'}"
+                                            Width="Auto">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Yield (Current)"
+                                            Binding="{Binding YieldOnMarket, StringFormat={}{0:N1}%, TargetNullValue='—'}"
+                                            Width="Auto">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
                         <DataGridTemplateColumn Header="FX" Width="Auto">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
@@ -112,7 +126,7 @@
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="Yield" Width="Auto">
+                        <DataGridTemplateColumn Header="" Width="Auto">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <ui:SymbolIcon Symbol="Info16"
@@ -121,10 +135,11 @@
                                         <ui:SymbolIcon.ToolTip>
                                             <MultiBinding Converter="{StaticResource DividendAttributionToTooltipConverter}">
                                                 <Binding Path="SharesForDividend"/>
+                                                <Binding Path="AverageCostPerShare"/>
                                                 <Binding Path="InvestedAmount"/>
+                                                <Binding Path="PriceOnDate"/>
                                                 <Binding Path="MarketValueOnDate"/>
-                                                <Binding Path="YieldOnInvested"/>
-                                                <Binding Path="YieldOnMarket"/>
+                                                <Binding Path="Date"/>
                                             </MultiBinding>
                                         </ui:SymbolIcon.ToolTip>
                                     </ui:SymbolIcon>

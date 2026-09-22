@@ -28,7 +28,7 @@ import type { ChartType, CreditFormField, MonthBucket, ViewMode } from '../hooks
 import { useCredits } from '../hooks/useCredits'
 import { confirmThenRun } from '../utils/confirmThenRun'
 import { PERIOD_FILTER_OPTIONS } from '../utils/periodFilter'
-import { formatN2, formatShortDate } from '../utils/formatters'
+import { formatN2, formatPercent1, formatShortDate } from '../utils/formatters'
 import './CreditsTab.css'
 
 const CHART_TYPE_OPTIONS: { value: ChartType; label: string }[] = [
@@ -70,6 +70,12 @@ const SORT_ACCESSORS: Record<string, SortAccessor<CreditDto>> = {
   value: (c) => c.value,
   withheld: (c) => c.withheld,
   netAmount: (c) => c.netAmount,
+  yieldOnInvested: (c) => c.yieldOnInvested ?? -Infinity,
+  yieldOnMarket: (c) => c.yieldOnMarket ?? -Infinity,
+}
+
+function formatYield(value: number | null | undefined): string {
+  return value == null ? '—' : formatPercent1(value)
 }
 
 interface CreditRowProps {
@@ -110,10 +116,16 @@ function CreditRow({ credit, onEdit, onDelete }: CreditRowProps) {
       <DataTableCell label="Net" className="data-table__col--numeric credits-tab__value">
         {formatN2(credit.netAmount)}
       </DataTableCell>
+      <DataTableCell label="Yield (Bought)" className="data-table__col--numeric">
+        {formatYield(credit.yieldOnInvested)}
+      </DataTableCell>
+      <DataTableCell label="Yield (Current)" className="data-table__col--numeric">
+        {formatYield(credit.yieldOnMarket)}
+      </DataTableCell>
       <DataTableCell label="FX">
         <FxProvenanceTooltip currency={credit.currency} fxRateSnapshot={credit.fxRateSnapshot} />
       </DataTableCell>
-      <DataTableCell label="Yield">
+      <DataTableCell label="Yield details">
         <DividendYieldTooltip credit={credit} />
       </DataTableCell>
       <DataTableCell label="Actions" className="data-table__col--action">
@@ -479,8 +491,22 @@ export default function CreditsTab() {
                 sortDirection={sortState?.columnKey === 'netAmount' ? sortState.direction : undefined}
                 onSort={requestSort}
               />
+              <SortableColumnHeader
+                label="Yield (Bought)"
+                columnKey="yieldOnInvested"
+                numeric
+                sortDirection={sortState?.columnKey === 'yieldOnInvested' ? sortState.direction : undefined}
+                onSort={requestSort}
+              />
+              <SortableColumnHeader
+                label="Yield (Current)"
+                columnKey="yieldOnMarket"
+                numeric
+                sortDirection={sortState?.columnKey === 'yieldOnMarket' ? sortState.direction : undefined}
+                onSort={requestSort}
+              />
               <TableHeaderCell>FX</TableHeaderCell>
-              <TableHeaderCell>Yield</TableHeaderCell>
+              <TableHeaderCell />
               <TableHeaderCell className="data-table__col--action" />
             </TableRow>
           </TableHeader>

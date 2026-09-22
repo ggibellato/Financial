@@ -4,38 +4,39 @@ using System.Windows.Data;
 namespace Financial.Presentation.App.Converters;
 
 /// <summary>
-/// Builds the shares/invested/market-value/yield tooltip text from a credit's attribution
-/// fields, matching DividendYieldTooltip's content on the React side exactly.
+/// Builds the shares/cost/price detail tooltip text from a credit's attribution fields, matching
+/// DividendYieldTooltip's content on the React side exactly. The yield percentages themselves are
+/// shown as their own grid columns, not repeated here.
 /// </summary>
 public class DividendAttributionToTooltipConverter : IMultiValueConverter
 {
     public object Convert(object?[] values, Type targetType, object? parameter, CultureInfo culture)
     {
-        if (values is not [decimal sharesForDividend, _, _, _, _])
+        if (values is not [decimal sharesForDividend, _, _, _, _, DateTime date])
         {
             return string.Empty;
         }
 
         var lines = new List<string> { $"{sharesForDividend} shares attributed" };
 
-        if (values[1] is decimal invested)
+        if (values[1] is decimal averageCostPerShare)
         {
-            lines.Add($"Invested: {invested:N2}");
+            lines.Add($"Average cost/share: {averageCostPerShare:N2}");
         }
 
-        if (values[2] is decimal marketValue)
+        if (values[2] is decimal invested)
         {
-            lines.Add($"Market value on date: {marketValue:N2}");
+            lines.Add($"Total bought: {invested:N2}");
         }
 
-        if (values[3] is decimal onInvested)
+        if (values[3] is decimal priceOnDate)
         {
-            lines.Add($"Yield on invested: {onInvested:N1}%");
+            lines.Add($"Share price on {date:d}: {priceOnDate:N2}");
         }
 
-        if (values[4] is decimal onMarket)
+        if (values[4] is decimal marketValue)
         {
-            lines.Add($"Yield on market: {onMarket:N1}%");
+            lines.Add($"Total current value: {marketValue:N2}");
         }
 
         return string.Join("\n", lines);
