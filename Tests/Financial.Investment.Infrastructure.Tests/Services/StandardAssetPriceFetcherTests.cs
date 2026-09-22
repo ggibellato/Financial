@@ -9,7 +9,6 @@ namespace Financial.Investment.Infrastructure.Tests.Services;
 
 public class StandardAssetPriceFetcherTests
 {
-    /// <summary>Every test drives the same StandardAssetPriceFetcher, so it is wired once here.</summary>
     private readonly StandardAssetPriceFetcher _sut;
 
     public StandardAssetPriceFetcherTests()

@@ -1,8 +1,5 @@
 namespace Financial.CashFlow.Application.DTOs;
 
-/// <summary>
-/// Read model for a bank's running balance through the end of a given month.
-/// </summary>
 public sealed class BankBalanceDTO
 {
     public required string Bank { get; init; }

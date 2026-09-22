@@ -94,7 +94,7 @@ public class PriceDialogViewModelTests
     public void ConfirmCommand_WhenInvalid_DoesNotRaiseCloseRequested()
     {
         var viewModel = PriceDialogViewModel.CreateForAdd("XPI", "Default", "BCIA11");
-        viewModel.Price = 0m; // Invalid.
+        viewModel.Price = 0m;
         var raised = false;
         viewModel.CloseRequested += (_, _) => raised = true;
 

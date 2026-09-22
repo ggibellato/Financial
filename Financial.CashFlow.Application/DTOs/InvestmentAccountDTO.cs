@@ -6,10 +6,8 @@ public sealed class InvestmentAccountDTO
 
     public required string Name { get; init; }
 
-    /// <summary>Whether this account should appear in an entry-form picklist.</summary>
     public required bool IsActive { get; init; }
 
-    /// <summary>Whether this account is a liability (e.g. a credit card) rather than an asset.</summary>
     public required bool IsLiability { get; init; }
 
     /// <summary>Whether any InvestmentSnapshot recorded for this account has a non-zero value.

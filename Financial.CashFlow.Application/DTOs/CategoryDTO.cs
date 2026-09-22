@@ -6,7 +6,6 @@ public sealed class CategoryDTO
 
     public required string Name { get; init; }
 
-    /// <summary>Whether this category currently accepts new expenses.</summary>
     public required bool Active { get; init; }
 
     public required bool IsInvestment { get; init; }

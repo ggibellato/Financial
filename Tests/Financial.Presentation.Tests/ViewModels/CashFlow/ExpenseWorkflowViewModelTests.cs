@@ -136,9 +136,9 @@ public class ExpenseWorkflowViewModelTests
         viewModel.ShowCreateExpenseFormCommand.Execute("bank");
         viewModel.ExpenseFormDate = DateTime.Today;
         viewModel.ExpenseFormDescription = "Groceries";
-        viewModel.ExpenseFormCategoryId = DefaultCategories[0].Id; // Mercado
+        viewModel.ExpenseFormCategoryId = DefaultCategories[0].Id;
         viewModel.ExpenseFormValue = "25.50";
-        viewModel.ExpenseFormPaymentSource = banks[1].Id; // Chase, no round-up
+        viewModel.ExpenseFormPaymentSource = banks[1].Id;
 
         await viewModel.SaveExpenseAsync();
 
@@ -155,7 +155,7 @@ public class ExpenseWorkflowViewModelTests
         viewModel.ShowCreateExpenseFormCommand.Execute("card");
         viewModel.ExpenseFormDate = DateTime.Today;
         viewModel.ExpenseFormDescription = "Flight";
-        viewModel.ExpenseFormCategoryId = DefaultCategories[2].Id; // Viagem
+        viewModel.ExpenseFormCategoryId = DefaultCategories[2].Id;
         viewModel.ExpenseFormValue = "300";
         viewModel.ExpenseFormCreditCardId = DefaultCreditCards[0].Id;
 
@@ -182,7 +182,7 @@ public class ExpenseWorkflowViewModelTests
         var (viewModel, _, _) = CreateViewModel();
         viewModel.ShowCreateExpenseFormCommand.Execute("bank");
 
-        viewModel.ExpenseFormCategoryId = DefaultCategories[3].Id; // Dizimo
+        viewModel.ExpenseFormCategoryId = DefaultCategories[3].Id;
 
         viewModel.ShowCountsAsTitheField.Should().BeTrue();
     }
@@ -193,7 +193,7 @@ public class ExpenseWorkflowViewModelTests
         var (viewModel, _, _) = CreateViewModel();
         viewModel.ShowCreateExpenseFormCommand.Execute("bank");
 
-        viewModel.ExpenseFormCategoryId = DefaultCategories[0].Id; // Mercado
+        viewModel.ExpenseFormCategoryId = DefaultCategories[0].Id;
 
         viewModel.ShowCountsAsTitheField.Should().BeFalse();
     }
@@ -205,7 +205,7 @@ public class ExpenseWorkflowViewModelTests
         viewModel.ShowCreateExpenseFormCommand.Execute("bank");
         viewModel.ExpenseFormDate = DateTime.Today;
         viewModel.ExpenseFormDescription = "Charitable offer";
-        viewModel.ExpenseFormCategoryId = DefaultCategories[3].Id; // Dizimo
+        viewModel.ExpenseFormCategoryId = DefaultCategories[3].Id;
         viewModel.ExpenseFormValue = "50";
         viewModel.ExpenseFormPaymentSource = banks[1].Id;
         viewModel.ExpenseFormCountsAsTithe = false;
@@ -295,7 +295,7 @@ public class ExpenseWorkflowViewModelTests
         var (viewModel, _, banks) = CreateViewModel();
         viewModel.ShowCreateExpenseFormCommand.Execute("bank");
 
-        viewModel.ExpenseFormPaymentSource = banks[0].Id; // Barclays, round-up enabled
+        viewModel.ExpenseFormPaymentSource = banks[0].Id;
 
         viewModel.ShowRoundUpField.Should().BeTrue();
     }
@@ -306,7 +306,7 @@ public class ExpenseWorkflowViewModelTests
         var (viewModel, _, banks) = CreateViewModel();
         viewModel.ShowCreateExpenseFormCommand.Execute("bank");
 
-        viewModel.ExpenseFormPaymentSource = banks[1].Id; // Chase, round-up disabled
+        viewModel.ExpenseFormPaymentSource = banks[1].Id;
 
         viewModel.ShowRoundUpField.Should().BeFalse();
     }
@@ -315,7 +315,7 @@ public class ExpenseWorkflowViewModelTests
     public void CreatingExpense_DefaultBankIsRoundUpEnabled_ShowsFieldAndSuggestsOnValueEntry()
     {
         var (viewModel, _, _) = CreateViewModel();
-        viewModel.ShowCreateExpenseFormCommand.Execute("bank"); // defaults to Barclays, round-up enabled
+        viewModel.ShowCreateExpenseFormCommand.Execute("bank");
 
         viewModel.ShowRoundUpField.Should().BeTrue();
 
@@ -328,7 +328,7 @@ public class ExpenseWorkflowViewModelTests
     public void TypingValueDigitByDigit_KeepsRecalculatingTheRoundUpSuggestion()
     {
         var (viewModel, _, _) = CreateViewModel();
-        viewModel.ShowCreateExpenseFormCommand.Execute("bank"); // defaults to Barclays, round-up enabled
+        viewModel.ShowCreateExpenseFormCommand.Execute("bank");
 
         viewModel.ExpenseFormValue = "1";
         viewModel.ExpenseFormRoundUpAmount.Should().Be("0");
@@ -347,7 +347,7 @@ public class ExpenseWorkflowViewModelTests
     public void EditingRoundUpFieldManually_StopsRecalculatingAsValueKeepsChanging()
     {
         var (viewModel, _, _) = CreateViewModel();
-        viewModel.ShowCreateExpenseFormCommand.Execute("bank"); // defaults to Barclays, round-up enabled
+        viewModel.ShowCreateExpenseFormCommand.Execute("bank");
 
         viewModel.ExpenseFormValue = "15.20";
         viewModel.ExpenseFormRoundUpAmount.Should().Be("0.8");
@@ -365,7 +365,7 @@ public class ExpenseWorkflowViewModelTests
         viewModel.ShowCreateExpenseFormCommand.Execute("bank");
 
         viewModel.ExpenseFormValue = "-9.40";
-        viewModel.ExpenseFormPaymentSource = banks[0].Id; // Barclays, round-up enabled
+        viewModel.ExpenseFormPaymentSource = banks[0].Id;
 
         viewModel.ExpenseFormRoundUpAmount.Should().BeEmpty();
     }
@@ -440,7 +440,7 @@ public class ExpenseWorkflowViewModelTests
         viewModel.ShowCreateExpenseFormCommand.Execute("bank");
         viewModel.ExpenseFormDate = DateTime.Today;
         viewModel.ExpenseFormDescription = "";
-        viewModel.ExpenseFormCategoryId = DefaultCategories[0].Id; // Mercado
+        viewModel.ExpenseFormCategoryId = DefaultCategories[0].Id;
         viewModel.ExpenseFormValue = "10";
         viewModel.ExpenseFormPaymentSource = banks[0].Id;
 
@@ -560,7 +560,7 @@ public class ExpenseWorkflowViewModelTests
         viewModel.ExpenseFormDate = DateTime.Today;
         viewModel.ExpenseFormDescription = "Groceries";
         viewModel.ExpenseFormValue = "10";
-        viewModel.ExpenseFormPaymentSource = banks[0].Id; // Barclays, round-up enabled
+        viewModel.ExpenseFormPaymentSource = banks[0].Id;
         viewModel.ExpenseFormRoundUpAmount = "5.00"; // outside Expense.MinRoundUpAmount..MaxRoundUpAmount
 
         await viewModel.SaveExpenseAsync();
@@ -735,7 +735,7 @@ public class ExpenseWorkflowViewModelTests
         viewModel.ShowCreateExpenseFormCommand.Execute("card");
         viewModel.ExpenseFormDate = new DateTime(2026, 3, 15);
         viewModel.ExpenseFormDescription = "Flight";
-        viewModel.ExpenseFormCategoryId = DefaultCategories[2].Id; // Viagem
+        viewModel.ExpenseFormCategoryId = DefaultCategories[2].Id;
         viewModel.ExpenseFormValue = "300";
         viewModel.ExpenseFormCreditCardId = DefaultCreditCards[0].Id;
 
@@ -752,7 +752,7 @@ public class ExpenseWorkflowViewModelTests
         viewModel.ShowCreateExpenseFormCommand.Execute("bank");
         viewModel.ExpenseFormDate = DateTime.Today;
         viewModel.ExpenseFormDescription = "Groceries";
-        viewModel.ExpenseFormCategoryId = DefaultCategories[0].Id; // Mercado
+        viewModel.ExpenseFormCategoryId = DefaultCategories[0].Id;
         viewModel.ExpenseFormValue = "25.50";
         viewModel.ExpenseFormPaymentSource = banks[1].Id;
 
@@ -883,9 +883,9 @@ public class ExpenseWorkflowViewModelTests
         viewModel.ShowCreateExpenseFormCommand.Execute("bank");
         viewModel.ExpenseFormDate = new DateTime(2026, 3, 15);
         viewModel.ExpenseFormDescription = "Groceries";
-        viewModel.ExpenseFormCategoryId = DefaultCategories[1].Id; // Extras
+        viewModel.ExpenseFormCategoryId = DefaultCategories[1].Id;
         viewModel.ExpenseFormValue = "25";
-        viewModel.ExpenseFormPaymentSource = banks[1].Id; // Chase
+        viewModel.ExpenseFormPaymentSource = banks[1].Id;
 
         await viewModel.SaveExpenseAsync();
         viewModel.ShowCreateExpenseFormCommand.Execute("bank");

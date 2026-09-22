@@ -208,7 +208,7 @@ public class IncomeWorkflowViewModelTests
 
         viewModel.ShowCreateIncomeFormCommand.Execute(null);
 
-        viewModel.IncomeFormSource.Should().Be(GleisonSourceId); // not eligible
+        viewModel.IncomeFormSource.Should().Be(GleisonSourceId);
         viewModel.IncomeFormSplitToReserve.Should().BeFalse();
     }
 

@@ -74,7 +74,7 @@ public static class GoogleFinance
 
     private static HtmlNode? TraverseUpToFindContainer(HtmlNode priceNode)
     {
-        // Traverse up to find a suitable container (typically 5-6 levels up)
+        // Typically 5-6 levels up; the loop bound below gives headroom beyond that.
         var container = priceNode.ParentNode;
         for (int i = 0; i < 8 && container != null; i++)
         {
