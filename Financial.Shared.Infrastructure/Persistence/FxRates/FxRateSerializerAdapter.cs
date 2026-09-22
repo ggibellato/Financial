@@ -19,7 +19,7 @@ public sealed class FxRateSerializerAdapter : IFxRateSerializer
         {
             ratesByDateNode[date.ToString(DateFormat, CultureInfo.InvariantCulture)] = new JsonObject
             {
-                ["base"] = record.Base,
+                ["base"] = "USD",
                 ["rates"] = new JsonObject
                 {
                     ["BRL"] = record.BrlRate,
@@ -62,7 +62,6 @@ public sealed class FxRateSerializerAdapter : IFxRateSerializer
             var rates = entry["rates"]!.AsObject();
 
             result[date] = new FxRateRecord(
-                Base: (string)entry["base"]!,
                 BrlRate: (decimal)rates["BRL"]!,
                 GbpRate: (decimal)rates["GBP"]!,
                 Source: (string)entry["source"]!,

@@ -24,7 +24,7 @@ public class FxRateProviderCompositionAcceptanceTests : ApiEndpointTests
     public async Task ControleMaeCreateEntry_UsesRateFromTheLayeredFxRateProviderChain()
     {
         var store = Services.GetRequiredService<IFxRateStore>();
-        await store.SetRateAsync(HistoricalDate, new FxRateRecord("USD", 5.0m, 0.8m, "frankfurter", DateTimeOffset.UtcNow));
+        await store.SetRateAsync(HistoricalDate, new FxRateRecord(5.0m, 0.8m, "frankfurter", DateTimeOffset.UtcNow));
 
         var response = await Client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new MaeLedgerEntryCreateDTO
         {

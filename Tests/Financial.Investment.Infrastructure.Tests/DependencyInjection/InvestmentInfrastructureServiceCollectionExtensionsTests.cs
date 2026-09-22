@@ -1,4 +1,3 @@
-using System.Reflection;
 using System.IO;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Infrastructure.DependencyInjection;
@@ -70,7 +69,7 @@ public class InvestmentInfrastructureServiceCollectionExtensionsTests
         });
 
         var exchangeRateProvider = provider.GetRequiredService<IExchangeRateProvider>();
-        var inner = InvokeInnerFactory(exchangeRateProvider);
+        var inner = InMemoryCachedExchangeRateProviderInspector.InvokeInnerFactory(exchangeRateProvider);
 
         inner.Should().BeOfType<UsdBasedExchangeRateProvider>();
     }
@@ -100,14 +99,6 @@ public class InvestmentInfrastructureServiceCollectionExtensionsTests
         {
             File.Delete(fxRatesPath);
         }
-    }
-
-    private static IExchangeRateProvider InvokeInnerFactory(IExchangeRateProvider cachedProvider)
-    {
-        var field = typeof(InMemoryCachedExchangeRateProvider).GetField(
-            "_innerFactory", BindingFlags.NonPublic | BindingFlags.Instance)!;
-        var factory = (Func<IExchangeRateProvider>)field.GetValue(cachedProvider)!;
-        return factory();
     }
 
     private static IServiceProvider BuildServiceProvider(Dictionary<string, string?> settings)

@@ -12,7 +12,7 @@ public class FxRateJsonStoreTests
     [Fact]
     public void TryGetRate_Existing_Date_Returns_Stored_Record()
     {
-        var record = new FxRateRecord("USD", 5.45m, 0.77m, "frankfurter", DateTimeOffset.UtcNow);
+        var record = new FxRateRecord(5.45m, 0.77m, "frankfurter", DateTimeOffset.UtcNow);
         var store = CreateStore(new Dictionary<DateOnly, FxRateRecord> { [new DateOnly(2026, 9, 18)] = record });
 
         var result = store.TryGetRate(new DateOnly(2026, 9, 18));
@@ -35,7 +35,7 @@ public class FxRateJsonStoreTests
     {
         var storage = new ControllableJsonStorage();
         var store = new FxRateJsonStore(new Dictionary<DateOnly, FxRateRecord>(), storage, Serializer);
-        var record = new FxRateRecord("USD", 5.45m, 0.77m, "frankfurter", DateTimeOffset.UtcNow);
+        var record = new FxRateRecord(5.45m, 0.77m, "frankfurter", DateTimeOffset.UtcNow);
         var historicalDate = new DateOnly(2026, 1, 1);
 
         await store.SetRateAsync(historicalDate, record);
@@ -50,7 +50,7 @@ public class FxRateJsonStoreTests
         var storage = new ControllableJsonStorage();
         var store = new FxRateJsonStore(new Dictionary<DateOnly, FxRateRecord>(), storage, Serializer);
         var today = DateOnly.FromDateTime(DateTime.Now);
-        var record = new FxRateRecord("USD", 5.45m, 0.77m, "frankfurter", DateTimeOffset.UtcNow);
+        var record = new FxRateRecord(5.45m, 0.77m, "frankfurter", DateTimeOffset.UtcNow);
 
         await store.SetRateAsync(today, record);
 
@@ -63,7 +63,7 @@ public class FxRateJsonStoreTests
     {
         var storage = new ControllableJsonStorage();
         var store = new FxRateJsonStore(new Dictionary<DateOnly, FxRateRecord>(), storage, Serializer);
-        var record = new FxRateRecord("USD", 5.45m, 0.77m, "frankfurter", DateTimeOffset.UtcNow);
+        var record = new FxRateRecord(5.45m, 0.77m, "frankfurter", DateTimeOffset.UtcNow);
 
         await Task.WhenAll(
             store.SetRateAsync(new DateOnly(2026, 1, 1), record),
@@ -80,7 +80,7 @@ public class FxRateJsonStoreTests
         var storage = new ControllableJsonStorage();
         storage.FailNextWrites(1);
         var store = new FxRateJsonStore(new Dictionary<DateOnly, FxRateRecord>(), storage, Serializer);
-        var record = new FxRateRecord("USD", 5.45m, 0.77m, "frankfurter", DateTimeOffset.UtcNow);
+        var record = new FxRateRecord(5.45m, 0.77m, "frankfurter", DateTimeOffset.UtcNow);
         var historicalDate = new DateOnly(2026, 1, 1);
 
         var act = () => store.SetRateAsync(historicalDate, record);
