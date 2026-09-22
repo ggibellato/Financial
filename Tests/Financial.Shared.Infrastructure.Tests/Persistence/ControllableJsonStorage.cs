@@ -23,7 +23,10 @@ internal sealed class ControllableJsonStorage : IJsonStorage
 
     internal string ReadResult { get; set; } = "{}";
 
-    public Task<string> ReadAsync() => Task.FromResult(ReadResult);
+    internal Exception? ReadException { get; set; }
+
+    public Task<string> ReadAsync() =>
+        ReadException is not null ? Task.FromException<string>(ReadException) : Task.FromResult(ReadResult);
 
     public async Task WriteAsync(string json)
     {
