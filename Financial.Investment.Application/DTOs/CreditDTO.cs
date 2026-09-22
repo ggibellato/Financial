@@ -17,5 +17,19 @@ public class CreditDTO
     public string Currency { get; set; } = string.Empty;
 
     public FxRateSnapshotDTO? FxRateSnapshot { get; set; }
+
+    public decimal? SharesForDividend { get; set; }
+
+    public decimal? AverageCostPerShare { get; set; }
+
+    public decimal? InvestedAmount { get; set; }
+
+    public decimal? PriceOnDate { get; set; }
+
+    public decimal? MarketValueOnDate { get; set; }
+
+    public decimal? YieldOnInvested { get; set; }
+
+    public decimal? YieldOnMarket { get; set; }
 }
 

@@ -15,14 +15,22 @@ public class Credit
     public Currency Currency { get; private set; }
     public FxRateSnapshot? FxRateSnapshot { get; private set; }
 
+    /// <summary>
+    /// Shares this credit was earned on, when known. Left null rather than defaulted to the
+    /// current position, since a later buy can grow the position past what actually earned the
+    /// dividend - attribution must be explicit, never inferred.
+    /// </summary>
+    public decimal? SharesForDividend { get; private set; }
+
     public decimal NetAmount => Value - Withheld;
 
     private Credit() { }
 
-    private Credit(Guid id, DateTime date, CreditType type, decimal value, decimal withheld, Currency currency, FxRateSnapshot? fxRateSnapshot)
+    private Credit(Guid id, DateTime date, CreditType type, decimal value, decimal withheld, Currency currency, FxRateSnapshot? fxRateSnapshot, decimal? sharesForDividend)
     {
         ValidateValue(value);
         ValidateWithheld(value, withheld);
+        ValidateSharesForDividend(sharesForDividend);
 
         Id = id;
         Date = date;
@@ -31,19 +39,28 @@ public class Credit
         Withheld = withheld;
         Currency = currency;
         FxRateSnapshot = fxRateSnapshot;
+        SharesForDividend = sharesForDividend;
     }
 
-    public static Credit Create(DateTime date, CreditType type, decimal value, decimal withheld = 0m, Currency currency = default, FxRateSnapshot? fxRateSnapshot = null) =>
-        new(Guid.NewGuid(), date, type, value, withheld, currency, fxRateSnapshot);
+    public static Credit Create(DateTime date, CreditType type, decimal value, decimal withheld = 0m, Currency currency = default, FxRateSnapshot? fxRateSnapshot = null, decimal? sharesForDividend = null) =>
+        new(Guid.NewGuid(), date, type, value, withheld, currency, fxRateSnapshot, sharesForDividend);
 
-    public static Credit CreateWithId(Guid id, DateTime date, CreditType type, decimal value, decimal withheld = 0m, Currency currency = default, FxRateSnapshot? fxRateSnapshot = null) =>
-        new(id, date, type, value, withheld, currency, fxRateSnapshot);
+    public static Credit CreateWithId(Guid id, DateTime date, CreditType type, decimal value, decimal withheld = 0m, Currency currency = default, FxRateSnapshot? fxRateSnapshot = null, decimal? sharesForDividend = null) =>
+        new(id, date, type, value, withheld, currency, fxRateSnapshot, sharesForDividend);
 
     private static void ValidateValue(decimal value)
     {
         if (value == 0)
         {
             throw new ArgumentException("Value must not be zero.");
+        }
+    }
+
+    private static void ValidateSharesForDividend(decimal? sharesForDividend)
+    {
+        if (sharesForDividend is <= 0)
+        {
+            throw new ArgumentException("SharesForDividend must be greater than zero when provided.");
         }
     }
 

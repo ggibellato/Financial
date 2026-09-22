@@ -505,6 +505,49 @@ public class CreditServiceTests
     }
 
     [Fact]
+    public async Task AddCreditAsync_WithSharesForDividend_AddsCreditWithAttribution()
+    {
+        var asset = MakeAsset();
+        _repository.Asset = asset;
+
+        await CreateService().AddCreditAsync(new CreditCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "AAAA",
+            Date = new DateTime(2024, 1, 1),
+            Type = "Dividend",
+            Value = 400m,
+            SharesForDividend = 800m
+        });
+
+        asset.Credits.Should().ContainSingle(c => c.SharesForDividend == 800m);
+    }
+
+    [Fact]
+    public async Task UpdateCreditAsync_WithSharesForDividend_UpdatesAttribution()
+    {
+        var asset = MakeAsset();
+        var creditId = Guid.NewGuid();
+        asset.AddCredit(Credit.CreateWithId(creditId, new DateTime(2024, 1, 1), Credit.CreditType.Dividend, 5m));
+        _repository.Asset = asset;
+
+        await CreateService().UpdateCreditAsync(new CreditUpdateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "AAAA",
+            Id = creditId,
+            Date = new DateTime(2024, 1, 1),
+            Type = "Dividend",
+            Value = 25m,
+            SharesForDividend = 500m
+        });
+
+        asset.Credits.Should().ContainSingle().Which.SharesForDividend.Should().Be(500m);
+    }
+
+    [Fact]
     public async Task AddCreditAsync_NegativeValue_AddsAsACorrection()
     {
         var asset = MakeAsset();

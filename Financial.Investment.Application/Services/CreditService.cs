@@ -65,7 +65,7 @@ public sealed class CreditService : ICreditService, ICreditQueryService
                 CreditTypeParser.TryParse,
                 (asset, creditType) =>
                 {
-                    var credit = Credit.Create(request.Date, creditType, request.Value, request.Withheld, currency, fxRateSnapshot);
+                    var credit = Credit.Create(request.Date, creditType, request.Value, request.Withheld, currency, fxRateSnapshot, request.SharesForDividend);
                     asset.AddCredit(credit, _repository.GetInvestments());
                     return true;
                 }).ConfigureAwait(false);
@@ -107,7 +107,7 @@ public sealed class CreditService : ICreditService, ICreditQueryService
                     var existing = asset.Credits.FirstOrDefault(c => c.Id == request.Id);
                     var updatedCredit = Credit.CreateWithId(
                         request.Id, request.Date, creditType, request.Value, request.Withheld,
-                        existing?.Currency ?? default, existing?.FxRateSnapshot);
+                        existing?.Currency ?? default, existing?.FxRateSnapshot, request.SharesForDividend);
                     return asset.UpdateCredit(updatedCredit, _repository.GetInvestments());
                 }).ConfigureAwait(false);
 
@@ -167,8 +167,7 @@ public sealed class CreditService : ICreditService, ICreditQueryService
             }
 
             var result = _repository.GetAssetsByBroker(brokerName, scope)
-                .SelectMany(asset => asset.Credits)
-                .Select(NavigationMapper.MapCredit)
+                .SelectMany(asset => asset.Credits.Select(credit => NavigationMapper.MapCredit(credit, asset)))
                 .OrderByDescending(credit => credit.Date)
                 .ToList();
 
@@ -196,8 +195,7 @@ public sealed class CreditService : ICreditService, ICreditQueryService
             }
 
             var result = _repository.GetAssetsByBrokerPortfolio(brokerName, portfolioName, scope)
-                .SelectMany(asset => asset.Credits)
-                .Select(NavigationMapper.MapCredit)
+                .SelectMany(asset => asset.Credits.Select(credit => NavigationMapper.MapCredit(credit, asset)))
                 .OrderByDescending(credit => credit.Date)
                 .ToList();
 
