@@ -77,9 +77,21 @@ public class DividendAttributionCalculatorTests
     }
 
     [Fact]
-    public void Calculate_ProviderValueMethod_MarketValueIsRecordedFigureNotMultiplied()
+    public void Calculate_ProviderValueMethod_MarketValueIsProRatedToSharesForDividend()
     {
         var credit = Credit.Create(new DateTime(2024, 6, 1), Credit.CreditType.Dividend, 400m, sharesForDividend: 800m);
+        var transactions = new[] { Buy(new DateTime(2024, 1, 1), 1000m, 9m) };
+        var price = AssetPriceSnapshot.Create(new DateOnly(2024, 6, 1), 5000m, ValuationMethod.ProviderValue, PriceSource.Unknown, string.Empty, null, DateTimeOffset.UtcNow);
+
+        var result = DividendAttributionCalculator.Calculate(credit, transactions, price);
+
+        result!.MarketValueOnDate.Should().Be(4000m, "5000 is the whole 1000-unit position's worth, so 800 attributed shares are 80% of it");
+    }
+
+    [Fact]
+    public void Calculate_ProviderValueMethod_FullPositionAttributed_MarketValueEqualsRecordedFigure()
+    {
+        var credit = Credit.Create(new DateTime(2024, 6, 1), Credit.CreditType.Dividend, 400m, sharesForDividend: 1000m);
         var transactions = new[] { Buy(new DateTime(2024, 1, 1), 1000m, 9m) };
         var price = AssetPriceSnapshot.Create(new DateOnly(2024, 6, 1), 5000m, ValuationMethod.ProviderValue, PriceSource.Unknown, string.Empty, null, DateTimeOffset.UtcNow);
 
