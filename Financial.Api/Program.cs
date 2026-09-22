@@ -10,7 +10,9 @@ using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Infrastructure.DependencyInjection;
 using Financial.Integrations.GoogleCalendar;
 using Financial.Integrations.GoogleDrive;
+using Financial.Shared.Abstractions.Currencies.FxRates;
 using Financial.Shared.Abstractions.Persistence;
+using Financial.Shared.Infrastructure.DependencyInjection;
 using Financial.Shared.Infrastructure.Hosting;
 using Financial.Shared.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc;
@@ -107,8 +109,10 @@ builder.Services.AddSingleton<IJsonStorageFactory, JsonStorageFactory>();
 builder.Services.AddFinancialInfrastructure(configuration);
 builder.Services.AddFinancialCashFlowApplication();
 builder.Services.AddFinancialCashFlowInfrastructure(configuration);
+builder.Services.AddFinancialFxRateInfrastructure(configuration);
 builder.Services.AddHostedService<ShutdownFlushHostedService<ICashFlowRepository>>();
 builder.Services.AddHostedService<ShutdownFlushHostedService<IInvestmentRepository>>();
+builder.Services.AddHostedService<ShutdownFlushHostedService<IFxRateStore>>();
 
 var app = builder.Build();
 
