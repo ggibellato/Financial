@@ -110,22 +110,6 @@
                                 <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
-                        <DataGridTemplateColumn Header="FX" Width="Auto">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <ui:SymbolIcon Symbol="Info16"
-                                                   AutomationProperties.Name="FX conversion details"
-                                                   Visibility="{Binding FxRateSnapshot, Converter={StaticResource FxRateSnapshotToVisibilityConverter}}">
-                                        <ui:SymbolIcon.ToolTip>
-                                            <MultiBinding Converter="{StaticResource FxRateSnapshotToTooltipConverter}">
-                                                <Binding Path="Currency"/>
-                                                <Binding Path="FxRateSnapshot"/>
-                                            </MultiBinding>
-                                        </ui:SymbolIcon.ToolTip>
-                                    </ui:SymbolIcon>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
                         <DataGridTemplateColumn Header="" Width="Auto">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
@@ -140,6 +124,22 @@
                                                 <Binding Path="PriceOnDate"/>
                                                 <Binding Path="MarketValueOnDate"/>
                                                 <Binding Path="Date"/>
+                                            </MultiBinding>
+                                        </ui:SymbolIcon.ToolTip>
+                                    </ui:SymbolIcon>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="FX" Width="Auto">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <ui:SymbolIcon Symbol="Info16"
+                                                   AutomationProperties.Name="FX conversion details"
+                                                   Visibility="{Binding FxRateSnapshot, Converter={StaticResource FxRateSnapshotToVisibilityConverter}}">
+                                        <ui:SymbolIcon.ToolTip>
+                                            <MultiBinding Converter="{StaticResource FxRateSnapshotToTooltipConverter}">
+                                                <Binding Path="Currency"/>
+                                                <Binding Path="FxRateSnapshot"/>
                                             </MultiBinding>
                                         </ui:SymbolIcon.ToolTip>
                                     </ui:SymbolIcon>

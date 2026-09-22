@@ -122,11 +122,11 @@ function CreditRow({ credit, onEdit, onDelete }: CreditRowProps) {
       <DataTableCell label="Yield (Current)" className="data-table__col--numeric">
         {formatYield(credit.yieldOnMarket)}
       </DataTableCell>
-      <DataTableCell label="FX">
-        <FxProvenanceTooltip currency={credit.currency} fxRateSnapshot={credit.fxRateSnapshot} />
-      </DataTableCell>
       <DataTableCell label="Yield details">
         <DividendYieldTooltip credit={credit} />
+      </DataTableCell>
+      <DataTableCell label="FX">
+        <FxProvenanceTooltip currency={credit.currency} fxRateSnapshot={credit.fxRateSnapshot} />
       </DataTableCell>
       <DataTableCell label="Actions" className="data-table__col--action">
         <div className="data-table__actions-cell">
@@ -505,8 +505,8 @@ export default function CreditsTab() {
                 sortDirection={sortState?.columnKey === 'yieldOnMarket' ? sortState.direction : undefined}
                 onSort={requestSort}
               />
-              <TableHeaderCell>FX</TableHeaderCell>
               <TableHeaderCell />
+              <TableHeaderCell>FX</TableHeaderCell>
               <TableHeaderCell className="data-table__col--action" />
             </TableRow>
           </TableHeader>
