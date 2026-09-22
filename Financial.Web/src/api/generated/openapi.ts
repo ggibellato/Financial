@@ -6653,6 +6653,8 @@ export interface components {
             /** Format: date-time */
             date?: string;
             portfolioName: string;
+            /** Format: double */
+            sharesForDividend?: null | number;
             type: string;
             /** Format: double */
             value?: number;
@@ -6660,6 +6662,8 @@ export interface components {
             withheld?: number;
         };
         CreditDTO: {
+            /** Format: double */
+            averageCostPerShare?: null | number;
             currency?: string;
             /** Format: date-time */
             date?: string;
@@ -6667,12 +6671,24 @@ export interface components {
             /** Format: uuid */
             id?: string;
             /** Format: double */
+            investedAmount?: null | number;
+            /** Format: double */
+            marketValueOnDate?: null | number;
+            /** Format: double */
             netAmount?: number;
+            /** Format: double */
+            priceOnDate?: null | number;
+            /** Format: double */
+            sharesForDividend?: null | number;
             type: string;
             /** Format: double */
             value?: number;
             /** Format: double */
             withheld?: number;
+            /** Format: double */
+            yieldOnInvested?: null | number;
+            /** Format: double */
+            yieldOnMarket?: null | number;
         };
         CreditDeleteDTO: {
             assetName: string;
@@ -6689,6 +6705,8 @@ export interface components {
             /** Format: uuid */
             id?: string;
             portfolioName: string;
+            /** Format: double */
+            sharesForDividend?: null | number;
             type: string;
             /** Format: double */
             value?: number;
