@@ -84,6 +84,15 @@
                 <TextBlock Text="{Binding NetAmount, StringFormat=N2}" VerticalAlignment="Center" FontWeight="Bold"/>
             </StackPanel>
 
+            <StackPanel Grid.Row="2" Grid.Column="2" Margin="0,0,0,8">
+                <TextBlock Text="Shares for this dividend" Style="{StaticResource FieldLabelStyle}"/>
+                <TextBox AutomationProperties.Name="Shares for this dividend"
+                         ToolTip="Number of shares that earned this dividend. Leave blank if it applies to your entire position on this date."
+                         Text="{Binding SharesForDividend, UpdateSourceTrigger=LostFocus}"
+                         IsReadOnly="{Binding IsReadOnly}"
+                         behaviors:DecimalInputBehavior.IsEnabled="True"/>
+            </StackPanel>
+
             <TextBlock Grid.Row="3" Grid.ColumnSpan="3" TextWrapping="Wrap" Margin="0,0,0,8"
                        Foreground="{DynamicResource SystemFillColorCriticalBrush}"
                        Text="{Binding ValidationMessage}"/>

@@ -112,6 +112,25 @@
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="Yield" Width="Auto">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <ui:SymbolIcon Symbol="Info16"
+                                                   AutomationProperties.Name="Dividend yield details"
+                                                   Visibility="{Binding SharesForDividend, Converter={StaticResource SharesForDividendToVisibilityConverter}}">
+                                        <ui:SymbolIcon.ToolTip>
+                                            <MultiBinding Converter="{StaticResource DividendAttributionToTooltipConverter}">
+                                                <Binding Path="SharesForDividend"/>
+                                                <Binding Path="InvestedAmount"/>
+                                                <Binding Path="MarketValueOnDate"/>
+                                                <Binding Path="YieldOnInvested"/>
+                                                <Binding Path="YieldOnMarket"/>
+                                            </MultiBinding>
+                                        </ui:SymbolIcon.ToolTip>
+                                    </ui:SymbolIcon>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
                         <DataGridTemplateColumn Header="" Width="Auto">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>

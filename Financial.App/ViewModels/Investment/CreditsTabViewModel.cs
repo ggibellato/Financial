@@ -201,7 +201,8 @@ public class CreditsTabViewModel : ViewModelBase
             Date = dialogData.Value.Date,
             Type = normalizedType,
             Value = dialogData.Value.Value,
-            Withheld = dialogData.Value.Withheld
+            Withheld = dialogData.Value.Withheld,
+            SharesForDividend = dialogData.Value.SharesForDividend
         });
 
         if (updatedDetails == null)
@@ -250,7 +251,8 @@ public class CreditsTabViewModel : ViewModelBase
             Date = dialogData.Value.Date,
             Type = normalizedType,
             Value = dialogData.Value.Value,
-            Withheld = dialogData.Value.Withheld
+            Withheld = dialogData.Value.Withheld,
+            SharesForDividend = dialogData.Value.SharesForDividend
         });
 
         if (updatedDetails == null)
@@ -332,7 +334,7 @@ public class CreditsTabViewModel : ViewModelBase
             IsCreditFormOpen = false;
             CreditFormViewModel = null;
             tcs.SetResult(result == true
-                ? new CreditDialogData(vm.CreditId, vm.Date, vm.Type, vm.Value, vm.Withheld)
+                ? new CreditDialogData(vm.CreditId, vm.Date, vm.Type, vm.Value, vm.Withheld, vm.SharesForDividend)
                 : null);
         }
 
@@ -353,7 +355,8 @@ public class CreditsTabViewModel : ViewModelBase
         if (SelectedCredit == null) return Task.FromResult<CreditDialogData?>(null);
         var vm = CreditDialogViewModel.CreateForUpdate(
             _brokerName(), _portfolioName(), _assetName(),
-            SelectedCredit.Id, SelectedCredit.Date, SelectedCredit.Type, SelectedCredit.Value, SelectedCredit.Withheld);
+            SelectedCredit.Id, SelectedCredit.Date, SelectedCredit.Type, SelectedCredit.Value, SelectedCredit.Withheld,
+            SelectedCredit.SharesForDividend);
         return ShowCreditFormAsync(vm);
     }
 
@@ -485,4 +488,5 @@ public readonly record struct CreditDialogData(
     DateTime Date,
     string Type,
     decimal Value,
-    decimal Withheld);
+    decimal Withheld,
+    decimal? SharesForDividend = null);

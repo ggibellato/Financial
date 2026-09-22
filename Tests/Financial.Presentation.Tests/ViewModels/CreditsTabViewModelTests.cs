@@ -104,6 +104,18 @@ public class CreditsTabViewModelTests
     }
 
     [Fact]
+    public async Task Add_WithSharesForDividend_PassesItThrough()
+    {
+        var expectedDetails = new AssetDetailsDTO { Name = AssetName, BrokerName = BrokerName, PortfolioName = PortfolioName, Ticker = "T" };
+        var service = new StubCreditService { AddResult = expectedDetails };
+        var (viewModel, _, _) = Build(service: service);
+
+        await viewModel.Add(() => AsForm(ValidDialogData() with { SharesForDividend = 800m }));
+
+        service.LastAddRequest!.SharesForDividend.Should().Be(800m);
+    }
+
+    [Fact]
     public async Task AddCreditCommand_AfterSuccessfulAdd_PersistsDateAndTypeForNextOpen()
     {
         var expectedDetails = new AssetDetailsDTO { Name = AssetName, BrokerName = BrokerName, PortfolioName = PortfolioName, Ticker = "T" };
@@ -180,6 +192,20 @@ public class CreditsTabViewModelTests
         service.LastUpdateRequest.Type.Should().Be("SecuritiesLendingIncome");
         service.LastUpdateRequest.Value.Should().Be(99m);
         spy.AppliedDetails.Should().Be(expectedDetails);
+    }
+
+    [Fact]
+    public async Task Update_WithSharesForDividend_PassesItThrough()
+    {
+        var expectedDetails = new AssetDetailsDTO { Name = AssetName, BrokerName = BrokerName, PortfolioName = PortfolioName, Ticker = "T" };
+        var service = new StubCreditService { UpdateResult = expectedDetails };
+        var (viewModel, _, _) = Build(service: service);
+        var id = Guid.NewGuid();
+        var selected = new CreditDTO { Id = id, Date = DateTime.Today, Type = "Dividend", Value = 1m };
+
+        await viewModel.Update(selected, () => AsForm(ValidDialogData(id) with { SharesForDividend = 800m }));
+
+        service.LastUpdateRequest!.SharesForDividend.Should().Be(800m);
     }
 
     [Fact]
