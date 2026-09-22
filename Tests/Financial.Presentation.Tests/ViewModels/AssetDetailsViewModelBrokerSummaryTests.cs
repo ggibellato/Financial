@@ -269,9 +269,26 @@ public class AssetDetailsViewModelBrokerSummaryTests
         vm.PropertyChanged += (_, args) => raised |= args.PropertyName == nameof(AssetDetailsViewModel.SelectedDetailTabIndex);
         vm.LoadBrokerSummary("XPI", new AggregatedSummaryDTO(), []);
 
-        // The Price History tab (index 3) only exists in asset view; leaving it selected while it
+        // The Price History tab (index 4) only exists in asset view; leaving it selected while it
         // silently disappears behind a broker/portfolio node would leave its stale content on
         // screen with no visible tab header pointing at it - so the switch must force a reset.
+        raised.Should().BeTrue();
+        vm.SelectedDetailTabIndex.Should().Be(0);
+    }
+
+    [Fact]
+    public void LoadBrokerSummary_AfterPortfolioSummary_ResetsSelectedDetailTabIndex()
+    {
+        var vm = BuildViewModel();
+        vm.LoadPortfolioSummary("XPI", "Portfolio", new AggregatedSummaryDTO(), [], []);
+
+        var raised = false;
+        vm.PropertyChanged += (_, args) => raised |= args.PropertyName == nameof(AssetDetailsViewModel.SelectedDetailTabIndex);
+        vm.LoadBrokerSummary("XPI", new AggregatedSummaryDTO(), []);
+
+        // The Holdings tab (index 1) only exists in portfolio view; leaving it selected while it
+        // silently disappears behind a broker node would leave its stale content on screen with
+        // no visible tab header pointing at it - so the switch must force a reset.
         raised.Should().BeTrue();
         vm.SelectedDetailTabIndex.Should().Be(0);
     }

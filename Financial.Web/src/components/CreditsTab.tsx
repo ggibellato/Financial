@@ -18,7 +18,6 @@ import ErrorState from './ErrorState'
 import FilterTabList from './FilterTabList'
 import FxProvenanceTooltip from './FxProvenanceTooltip'
 import LoadingState from './LoadingState'
-import SplitPanel from './SplitPanel'
 import DataTableCell from './grid/DataTableCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import { useFormPanelStyles } from './formPanelStyles'
@@ -40,9 +39,6 @@ const VIEW_MODE_OPTIONS: { value: ViewMode; label: string }[] = [
   { value: 'Stacked', label: 'Stacked' },
   { value: 'Grouped', label: 'Grouped' },
 ]
-
-const DEFAULT_LEFT_WIDTH = 400
-const MIN_LEFT_WIDTH = 200
 
 const SINGLE_TYPE_COLOR = '#4682b4'
 const PALETTE_START = { r: 173, g: 216, b: 230 }
@@ -246,14 +242,15 @@ interface ChartPanelProps {
   creditTypes: string[]
   selectedMode: ViewMode
   selectedChartType: ChartType
+  compact?: boolean
 }
 
-function ChartPanel({ chartData, creditTypes, selectedMode, selectedChartType }: ChartPanelProps) {
+function ChartPanel({ chartData, creditTypes, selectedMode, selectedChartType, compact }: ChartPanelProps) {
   const isStacked = selectedMode === 'Stacked'
   const palette = buildPalette(creditTypes.length)
 
   return (
-    <div className="credits-tab__chart-panel">
+    <div className={`credits-tab__chart-panel${compact ? ' credits-tab__chart-panel--compact' : ''}`}>
       <p className="credits-tab__chart-title">Credits by Month</p>
       <div className="credits-tab__chart-container">
         <ResponsiveContainer width="100%" height="100%">
@@ -388,8 +385,18 @@ export default function CreditsTab() {
     )
   }
 
-  const leftPanel = (
-    <div className="credits-tab__left">
+  return (
+    <div className="credits-tab">
+      {toolbar}
+
+      <ChartPanel
+        chartData={chartData}
+        creditTypes={creditTypes}
+        selectedMode={selectedMode}
+        selectedChartType={selectedChartType}
+        compact
+      />
+
       <div className="credits-tab__table-toolbar">
         <Button appearance="primary" icon={<AddRegular />} onClick={showNewForm}>
           New credit
@@ -462,31 +469,6 @@ export default function CreditsTab() {
       </div>
 
       {deleteError && <p className="credits-tab__delete-error">{deleteError}</p>}
-    </div>
-  )
-
-  const rightPanel = (
-    <div className="credits-tab__right">
-      <ChartPanel
-        chartData={chartData}
-        creditTypes={creditTypes}
-        selectedMode={selectedMode}
-        selectedChartType={selectedChartType}
-      />
-    </div>
-  )
-
-  return (
-    <div className="credits-tab">
-      {toolbar}
-      <div className="credits-tab__split">
-        <SplitPanel
-          left={leftPanel}
-          right={rightPanel}
-          defaultWidth={DEFAULT_LEFT_WIDTH}
-          minWidth={MIN_LEFT_WIDTH}
-        />
-      </div>
     </div>
   )
 }

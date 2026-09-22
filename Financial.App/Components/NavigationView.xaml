@@ -183,6 +183,10 @@
                 <TabItem Header="Summary">
                     <views:PortfolioSummaryView/>
                 </TabItem>
+                <TabItem Header="Holdings"
+                         Visibility="{Binding AssetDetails.IsPortfolioView, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <views:PortfolioHoldingsView/>
+                </TabItem>
                 <TabItem Header="Transactions">
                     <views:TransactionsView/>
                 </TabItem>
