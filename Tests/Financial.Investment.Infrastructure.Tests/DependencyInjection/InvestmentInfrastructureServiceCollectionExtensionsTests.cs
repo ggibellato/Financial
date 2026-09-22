@@ -1,7 +1,11 @@
+using System.Reflection;
+using System.IO;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Infrastructure.DependencyInjection;
 using Financial.Shared.Abstractions.Currencies;
+using Financial.Shared.Abstractions.Currencies.FxRates;
 using Financial.Shared.Abstractions.Persistence;
+using Financial.Shared.Infrastructure.DependencyInjection;
 using Financial.Shared.Infrastructure.Persistence;
 using Financial.TestUtilities;
 using FluentAssertions;
@@ -55,6 +59,57 @@ public class InvestmentInfrastructureServiceCollectionExtensionsTests
         exchangeRateProvider.Should().BeOfType<InMemoryCachedExchangeRateProvider>();
     }
 
+    [Fact]
+    public void AddFinancialInfrastructure_ExchangeRateProvider_IsBackedByUsdBasedResolver()
+    {
+        var missingFxRatesPath = Path.Combine(Path.GetTempPath(), $"fxrates-di-{Guid.NewGuid()}.json");
+        var provider = BuildServiceProvider(new Dictionary<string, string?>
+        {
+            ["Investment:DataJsonFile"] = TestDataPaths.DataJsonFile,
+            ["FxRates:DataJsonFile"] = missingFxRatesPath
+        });
+
+        var exchangeRateProvider = provider.GetRequiredService<IExchangeRateProvider>();
+        var inner = InvokeInnerFactory(exchangeRateProvider);
+
+        inner.Should().BeOfType<UsdBasedExchangeRateProvider>();
+    }
+
+    [Fact]
+    public async Task AddFinancialInfrastructure_RateResolvedThroughFullChain_ReachesExistingCallerUnmodified()
+    {
+        var fxRatesPath = Path.Combine(Path.GetTempPath(), $"fxrates-di-{Guid.NewGuid()}.json");
+        File.WriteAllText(fxRatesPath, """
+            {"Version":1,"ratesByDate":{"2026-01-15":{"base":"USD","rates":{"BRL":5.0,"GBP":0.8},"source":"frankfurter","storedAt":"2026-01-15T23:59:59Z"}}}
+            """);
+        try
+        {
+            var provider = BuildServiceProvider(new Dictionary<string, string?>
+            {
+                ["Investment:DataJsonFile"] = TestDataPaths.DataJsonFile,
+                ["FxRates:DataJsonFile"] = fxRatesPath
+            });
+            var exchangeRateProvider = provider.GetRequiredService<IExchangeRateProvider>();
+
+            var rate = await exchangeRateProvider.GetHistoricalRateAsync(
+                new DateOnly(2026, 1, 15), Currency.USD, Currency.BRL);
+
+            rate.Should().Be(5.0m);
+        }
+        finally
+        {
+            File.Delete(fxRatesPath);
+        }
+    }
+
+    private static IExchangeRateProvider InvokeInnerFactory(IExchangeRateProvider cachedProvider)
+    {
+        var field = typeof(InMemoryCachedExchangeRateProvider).GetField(
+            "_innerFactory", BindingFlags.NonPublic | BindingFlags.Instance)!;
+        var factory = (Func<IExchangeRateProvider>)field.GetValue(cachedProvider)!;
+        return factory();
+    }
+
     private static IServiceProvider BuildServiceProvider(Dictionary<string, string?> settings)
     {
         var configuration = new ConfigurationBuilder()
@@ -71,6 +126,7 @@ public class InvestmentInfrastructureServiceCollectionExtensionsTests
         // that invariant, matching how ShutdownFlushHostedService's own registration moved out to
         // the composition root too (F06/F07/F08 of the shared-domain-structure refactor).
         services.AddSingleton<IJsonStorageFactory, JsonStorageFactory>();
+        services.AddFinancialFxRateInfrastructure(configuration);
         services.AddFinancialInfrastructure(configuration);
         return services.BuildServiceProvider();
     }
