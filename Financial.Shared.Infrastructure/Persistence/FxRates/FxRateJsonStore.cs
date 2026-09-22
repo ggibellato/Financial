@@ -12,8 +12,7 @@ public sealed class FxRateJsonStore : IFxRateStore
     private readonly IJsonStorage _storage;
     private readonly IFxRateSerializer _serializer;
 
-    /// <summary>Serializing the document walks every stored date, so one writer at a time. A
-    /// semaphore rather than a lock because the critical section awaits the storage.</summary>
+    // SemaphoreSlim, not lock: the critical section awaits storage I/O.
     private readonly SemaphoreSlim _writeGate = new(1, 1);
 
     public FxRateJsonStore(
@@ -51,8 +50,7 @@ public sealed class FxRateJsonStore : IFxRateStore
             }
             catch (Exception ex)
             {
-                // The rate is already resolved and usable in-memory for the rest of this process's
-                // life; a failed physical write must never fail the caller's lookup.
+                // A failed physical write must never fail the caller's rate lookup.
                 Trace.TraceWarning(
                     $"FxRateJsonStore: failed to persist rate for {date:yyyy-MM-dd} with {ex.GetType().Name}.");
             }

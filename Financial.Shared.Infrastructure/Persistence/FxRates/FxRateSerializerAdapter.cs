@@ -4,12 +4,6 @@ using Financial.Shared.Abstractions.Currencies.FxRates;
 
 namespace Financial.Shared.Infrastructure.Persistence.FxRates;
 
-/// <summary>
-/// <see cref="CurrentVersion"/> has no predecessor to migrate from yet - it exists so the first
-/// future schema change has a stored <c>Version</c> to branch on instead of needing to add one
-/// retroactively. A document with no <c>Version</c> property (every file written before this) is
-/// treated as version 1, matching <see cref="CurrentVersion"/>, so nothing is rewritten on load.
-/// </summary>
 public sealed class FxRateSerializerAdapter : IFxRateSerializer
 {
     private const string VersionProperty = "Version";
