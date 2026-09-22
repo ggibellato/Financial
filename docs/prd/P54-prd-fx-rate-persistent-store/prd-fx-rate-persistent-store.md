@@ -253,12 +253,12 @@ graph TD
 - [x] Given Frankfurter's response includes BRL but omits GBP (or vice versa), the fetch returns the one available rate rather than failing entirely.
 
 ### F04. Layered Exchange Rate Provider Composition
-- [ ] Given both Investment and CashFlow infrastructure are composed in the same process, exactly one `IExchangeRateProvider` singleton is resolved by both, backed by the new layered chain.
-- [ ] Given a rate for a (date, from, to) key was already resolved once in this process, a second request for the same key returns from the in-memory cache with no store read and no Frankfurter call.
-- [ ] Given the existing test suites for `CurrencyConversionContext`, `CreditService`, `TransactionService`, `ControleMaeService`, `PortfolioDashboardService`, and `SummaryService`, all pass unmodified against the new provider composition.
-- [ ] `FrankfurterIsolationRuleTests` continues to pass, confirming no bounded context calls Frankfurter directly.
+- [x] Given both Investment and CashFlow infrastructure are composed in the same process, exactly one `IExchangeRateProvider` singleton is resolved by both, backed by the new layered chain.
+- [x] Given a rate for a (date, from, to) key was already resolved once in this process, a second request for the same key returns from the in-memory cache with no store read and no Frankfurter call.
+- [x] Given the existing test suites for `CurrencyConversionContext`, `CreditService`, `TransactionService`, `ControleMaeService`, `PortfolioDashboardService`, and `SummaryService`, all pass unmodified against the new provider composition.
+- [x] `FrankfurterIsolationRuleTests` continues to pass, confirming no bounded context calls Frankfurter directly.
 
 ### Cross-Feature Integration
 - [x] A rate persisted by F01 for a historical date is correctly read back and used by F02's resolution logic to compute a requested currency pair, with no redundant Frankfurter call.
 - [x] Rates fetched by F03 for a historical date are correctly handed to F02, which persists them to F01 only when both BRL and GBP are present.
-- [ ] A rate resolved by F02 — whether served from F01 or freshly fetched via F03 — is correctly returned through F04's provider chain to an existing caller (e.g., `ControleMaeService.CreateEntryAsync`) with no change to that caller's code.
+- [x] A rate resolved by F02 — whether served from F01 or freshly fetched via F03 — is correctly returned through F04's provider chain to an existing caller (e.g., `ControleMaeService.CreateEntryAsync`) with no change to that caller's code.

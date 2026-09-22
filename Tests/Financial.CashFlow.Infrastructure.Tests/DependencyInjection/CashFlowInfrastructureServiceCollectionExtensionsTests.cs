@@ -1,8 +1,11 @@
+using System.Reflection;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Infrastructure.DependencyInjection;
 using Financial.Integrations.GoogleCalendar;
 using Financial.Shared.Abstractions.Currencies;
+using Financial.Shared.Abstractions.Currencies.FxRates;
 using Financial.Shared.Abstractions.Persistence;
+using Financial.Shared.Infrastructure.DependencyInjection;
 using Financial.Shared.Infrastructure.Persistence;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
@@ -69,6 +72,31 @@ public class CashFlowInfrastructureServiceCollectionExtensionsTests
         exchangeRateProvider.Should().BeOfType<InMemoryCachedExchangeRateProvider>();
     }
 
+    [Fact]
+    public void AddFinancialCashFlowInfrastructure_ExchangeRateProvider_IsBackedByUsdBasedResolver()
+    {
+        var missingPath = Path.Combine(Path.GetTempPath(), $"cashflow-di-{Guid.NewGuid()}.json");
+        var missingFxRatesPath = Path.Combine(Path.GetTempPath(), $"fxrates-di-{Guid.NewGuid()}.json");
+        var provider = BuildServiceProvider(new Dictionary<string, string?>
+        {
+            ["CashFlow:DataJsonFile"] = missingPath,
+            ["FxRates:DataJsonFile"] = missingFxRatesPath
+        });
+
+        var exchangeRateProvider = provider.GetRequiredService<IExchangeRateProvider>();
+        var inner = InvokeInnerFactory(exchangeRateProvider);
+
+        inner.Should().BeOfType<UsdBasedExchangeRateProvider>();
+    }
+
+    private static IExchangeRateProvider InvokeInnerFactory(IExchangeRateProvider cachedProvider)
+    {
+        var field = typeof(InMemoryCachedExchangeRateProvider).GetField(
+            "_innerFactory", BindingFlags.NonPublic | BindingFlags.Instance)!;
+        var factory = (Func<IExchangeRateProvider>)field.GetValue(cachedProvider)!;
+        return factory();
+    }
+
     private static IServiceProvider BuildServiceProvider(Dictionary<string, string?> settings)
     {
         var configuration = new ConfigurationBuilder()
@@ -89,6 +117,7 @@ public class CashFlowInfrastructureServiceCollectionExtensionsTests
         // AddFinancialCashFlowInfrastructure (see Program.cs) - GoogleCalendarProviderAdapter
         // depends on it.
         services.AddGoogleCalendarOAuthClient();
+        services.AddFinancialFxRateInfrastructure(configuration);
         services.AddFinancialCashFlowInfrastructure(configuration);
         return services.BuildServiceProvider();
     }

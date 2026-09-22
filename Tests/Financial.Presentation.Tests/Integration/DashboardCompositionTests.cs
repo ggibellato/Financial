@@ -9,6 +9,7 @@ using Financial.Presentation.App.ViewModels.Investment;
 using Financial.Presentation.App.ViewModels.Investment.Dashboard;
 using Financial.Shared.Abstractions.Observability;
 using Financial.Shared.Abstractions.Persistence;
+using Financial.Shared.Infrastructure.DependencyInjection;
 using Financial.Shared.Infrastructure.Persistence;
 using Financial.TestUtilities;
 using FluentAssertions;
@@ -21,18 +22,22 @@ namespace Financial.Presentation.Tests.Integration;
 public class DashboardCompositionTests : IDisposable
 {
     private readonly string _dataFile;
+    private readonly string _fxRatesDataFile;
     private readonly ServiceProvider _provider;
 
     public DashboardCompositionTests()
     {
         _dataFile = Path.Combine(Path.GetTempPath(), $"dashboard-composition-{Guid.NewGuid()}.json");
         File.Copy(TestDataPaths.DataJsonFile, _dataFile);
+        _fxRatesDataFile = Path.Combine(Path.GetTempPath(), $"dashboard-composition-fxrates-{Guid.NewGuid()}.json");
 
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["Investment:Repository:Provider"] = "LocalJson",
                 ["Investment:DataJsonFile"] = _dataFile,
+                ["FxRates:Repository:Provider"] = "LocalJson",
+                ["FxRates:DataJsonFile"] = _fxRatesDataFile,
             })
             .Build();
 
@@ -41,6 +46,7 @@ public class DashboardCompositionTests : IDisposable
         services.AddSingleton<ITelemetryTracer>(new RecordingTelemetryTracer());
         services.AddSingleton<IJsonStorageFactory, JsonStorageFactory>();
         services.AddFinancialApplication();
+        services.AddFinancialFxRateInfrastructure(configuration);
         services.AddFinancialInfrastructure(configuration);
         services.AddSingleton<IDialogService, DialogService>();
         services.AddTransient<DashboardKpiTilesViewModel>();
@@ -134,6 +140,11 @@ public class DashboardCompositionTests : IDisposable
         if (File.Exists(_dataFile))
         {
             File.Delete(_dataFile);
+        }
+
+        if (File.Exists(_fxRatesDataFile))
+        {
+            File.Delete(_fxRatesDataFile);
         }
 
         GC.SuppressFinalize(this);
