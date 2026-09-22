@@ -14,6 +14,7 @@ import {
 import { Button, Field, Input, MessageBar, MessageBarBody, Select, Table, TableBody, TableHeader, TableHeaderCell, TableRow, Text } from '@fluentui/react-components'
 import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import type { CreditDto } from '../api/types'
+import DividendYieldTooltip from './DividendYieldTooltip'
 import ErrorState from './ErrorState'
 import FilterTabList from './FilterTabList'
 import FxProvenanceTooltip from './FxProvenanceTooltip'
@@ -112,6 +113,9 @@ function CreditRow({ credit, onEdit, onDelete }: CreditRowProps) {
       <DataTableCell label="FX">
         <FxProvenanceTooltip currency={credit.currency} fxRateSnapshot={credit.fxRateSnapshot} />
       </DataTableCell>
+      <DataTableCell label="Yield">
+        <DividendYieldTooltip credit={credit} />
+      </DataTableCell>
       <DataTableCell label="Actions" className="data-table__col--action">
         <div className="data-table__actions-cell">
           <Button
@@ -140,6 +144,7 @@ interface InlineFormProps {
   formType: string
   formValue: string
   formWithheld: string
+  formSharesForDividend: string
   isSaving: boolean
   saveError: string | null
   saveErrorFields: Partial<Record<CreditFormField, string>>
@@ -154,6 +159,7 @@ function InlineForm({
   formType,
   formValue,
   formWithheld,
+  formSharesForDividend,
   isSaving,
   saveError,
   saveErrorFields,
@@ -211,6 +217,21 @@ function InlineForm({
             min="0"
             value={formWithheld}
             onChange={(e) => onFieldChange('formWithheld', e.target.value)}
+          />
+        </Field>
+
+        <Field
+          label="Shares for this dividend"
+          hint="Number of shares that earned this dividend. Leave blank if it applies to your entire position on this date."
+          validationState={fieldError('formSharesForDividend') ? 'error' : 'none'}
+          validationMessage={fieldError('formSharesForDividend')}
+        >
+          <Input
+            type="number"
+            step="1"
+            min="0"
+            value={formSharesForDividend}
+            onChange={(e) => onFieldChange('formSharesForDividend', e.target.value)}
           />
         </Field>
       </div>
@@ -336,6 +357,7 @@ export default function CreditsTab() {
     formType,
     formValue,
     formWithheld,
+    formSharesForDividend,
     isSaving,
     saveError,
     saveErrorFields,
@@ -410,6 +432,7 @@ export default function CreditsTab() {
           formType={formType}
           formValue={formValue}
           formWithheld={formWithheld}
+          formSharesForDividend={formSharesForDividend}
           isSaving={isSaving}
           saveError={saveError}
           saveErrorFields={saveErrorFields}
@@ -457,6 +480,7 @@ export default function CreditsTab() {
                 onSort={requestSort}
               />
               <TableHeaderCell>FX</TableHeaderCell>
+              <TableHeaderCell>Yield</TableHeaderCell>
               <TableHeaderCell className="data-table__col--action" />
             </TableRow>
           </TableHeader>
