@@ -9,14 +9,14 @@ internal static class BrokerBreakdownChartBuilder
     // for cross-platform visual consistency.
     private static readonly OxyColor[] Palette =
     [
-        OxyColor.Parse("#2a78d6"),
-        OxyColor.Parse("#1baf7a"),
-        OxyColor.Parse("#eda100"),
-        OxyColor.Parse("#008300"),
-        OxyColor.Parse("#4a3aa7"),
-        OxyColor.Parse("#e34948"),
-        OxyColor.Parse("#e87ba4"),
-        OxyColor.Parse("#eb6834"),
+        OxyColor.Parse("#2a78d6"), // blue
+        OxyColor.Parse("#1baf7a"), // aqua
+        OxyColor.Parse("#eda100"), // yellow
+        OxyColor.Parse("#008300"), // green
+        OxyColor.Parse("#4a3aa7"), // violet
+        OxyColor.Parse("#e34948"), // red
+        OxyColor.Parse("#e87ba4"), // magenta
+        OxyColor.Parse("#eb6834"), // orange
     ];
 
     public static PlotModel Build(IReadOnlyList<(string Name, decimal Value)> slices)
