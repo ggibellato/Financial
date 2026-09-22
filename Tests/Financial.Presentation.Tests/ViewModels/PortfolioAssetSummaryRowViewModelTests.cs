@@ -236,7 +236,6 @@ public class PortfolioAssetSummaryRowViewModelTests
     [Fact]
     public void DisplayProfitPercent_AfterApplyPrice_ReturnsFormattedPercent()
     {
-        // CurrentValue = 262.50, costBasis = 25 x 10 = 250, Profit = (262.50 - 250) / 250 * 100 = 5.00
         var row = BuildRow(currentQuantity: 25m, averagePrice: 10m, totalInvested: 250m, marketValue: 262.50m, unrealisedGain: 12.50m);
         row.ApplyPrice(10.50m);
         row.DisplayProfitPercent.Should().Be("5.00%");
@@ -269,7 +268,6 @@ public class PortfolioAssetSummaryRowViewModelTests
     [Fact]
     public void DisplayProfitWithCreditsPercent_AfterApplyPrice_ReturnsFormattedPercent()
     {
-        // CurrentValue = 262.50, costBasis = 25 x 10 = 250, ProfitWithCredits = (262.50 + 12.5 - 250) / 250 * 100 = 10.00
         var row = BuildRow(currentQuantity: 25m, averagePrice: 10m, totalInvested: 250m, totalCredits: 12.5m, marketValue: 262.50m, unrealisedGain: 12.50m);
         row.ApplyPrice(10.50m);
         row.DisplayProfitWithCreditsPercent.Should().Be("10.00%");
@@ -281,7 +279,6 @@ public class PortfolioAssetSummaryRowViewModelTests
         // Partial sell scenario: totalInvested (2000, gross bought) no longer reflects the current
         // position's cost basis once some quantity has been sold — quantity x averagePrice (60 x 20 = 1200)
         // does, and CostOfUnitsHeld is exactly that server-computed field.
-        // CurrentValue = 1500, costBasis = 1200, Profit = (1500 - 1200) / 1200 * 100 = 25.00
         var row = BuildRow(currentQuantity: 60m, averagePrice: 20m, totalInvested: 2000m, marketValue: 1500m, unrealisedGain: 300m);
         row.ApplyPrice(25m);
         row.DisplayProfitPercent.Should().Be("25.00%");
@@ -324,7 +321,6 @@ public class PortfolioAssetSummaryRowViewModelTests
     [Fact]
     public void ProfitIsPositive_WhenCurrentValueExceedsTotalInvested_IsTrue()
     {
-        // CurrentValue = 262.50 > costBasis (250)
         var row = BuildRow(currentQuantity: 25m, averagePrice: 10m, totalInvested: 250m, marketValue: 262.50m, unrealisedGain: 12.50m);
         row.ApplyPrice(10.50m);
         row.ProfitIsPositive.Should().BeTrue();
@@ -334,7 +330,6 @@ public class PortfolioAssetSummaryRowViewModelTests
     [Fact]
     public void ProfitIsNegative_WhenCurrentValueBelowTotalInvested_IsTrue()
     {
-        // CurrentValue = 250 < costBasis (300)
         var row = BuildRow(currentQuantity: 25m, averagePrice: 12m, totalInvested: 300m, marketValue: 250m, unrealisedGain: -50m);
         row.ApplyPrice(10.00m);
         row.ProfitIsNegative.Should().BeTrue();
@@ -353,7 +348,6 @@ public class PortfolioAssetSummaryRowViewModelTests
     [Fact]
     public void ProfitWithCreditsIsPositive_WhenProfitWithCreditsExceedsZero_IsTrue()
     {
-        // CurrentValue = 250, 250 + 100 (credits) = 350 > costBasis (300)
         var row = BuildRow(currentQuantity: 25m, averagePrice: 12m, totalInvested: 300m, totalCredits: 100m, marketValue: 250m, unrealisedGain: -50m);
         row.ApplyPrice(10.00m);
         row.ProfitWithCreditsIsPositive.Should().BeTrue();
@@ -363,7 +357,6 @@ public class PortfolioAssetSummaryRowViewModelTests
     [Fact]
     public void ProfitWithCreditsIsNegative_WhenProfitWithCreditsBelowZero_IsTrue()
     {
-        // CurrentValue = 250 < costBasis (300), no credits
         var row = BuildRow(currentQuantity: 25m, averagePrice: 12m, totalInvested: 300m, totalCredits: 0m, marketValue: 250m, unrealisedGain: -50m);
         row.ApplyPrice(10.00m);
         row.ProfitWithCreditsIsNegative.Should().BeTrue();
@@ -703,7 +696,6 @@ public class PortfolioAssetSummaryRowViewModelTests
     [Fact]
     public void DisplayHistoricProfitPercent_ExcludesCreditsFromRealizedGainLoss()
     {
-        // Profit % reflects the realized capital gain alone: (200 - 50) / 1000 * 100 = 15.00
         var row = BuildRow(totalBought: 1000m, totalCredits: 50m, realizedGainLoss: 200m);
         row.HistoricProfitPercent.Should().Be(15.00m);
         row.DisplayHistoricProfitPercent.Should().Be("15.00%");
@@ -712,7 +704,6 @@ public class PortfolioAssetSummaryRowViewModelTests
     [Fact]
     public void DisplayHistoricProfitWithCreditsPercent_UsesFullRealizedGainLoss()
     {
-        // Profit % w/ Credits uses the full realized gain/loss: 200 / 1000 * 100 = 20.00
         var row = BuildRow(totalBought: 1000m, totalCredits: 50m, realizedGainLoss: 200m);
         row.HistoricProfitWithCreditsPercent.Should().Be(20.00m);
         row.DisplayHistoricProfitWithCreditsPercent.Should().Be("20.00%");

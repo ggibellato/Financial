@@ -11,7 +11,6 @@ namespace Financial.Investment.Infrastructure.Tests.Services;
 
 public class CryptocurrencyAssetPriceFetcherTests
 {
-    /// <summary>Every test drives the same CryptocurrencyAssetPriceFetcher, so it is wired once here.</summary>
     private readonly CryptocurrencyAssetPriceFetcher _sut;
 
     public CryptocurrencyAssetPriceFetcherTests()

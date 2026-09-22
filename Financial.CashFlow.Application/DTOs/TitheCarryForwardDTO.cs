@@ -8,9 +8,7 @@ public sealed class TitheCarryForwardDTO
     /// <summary>Whether this amount currently counts toward the month's Tithe Balance.</summary>
     public required bool Included { get; init; }
 
-    /// <summary>Year of the month this amount was carried from.</summary>
     public required int FromYear { get; init; }
 
-    /// <summary>Month (1-12) this amount was carried from.</summary>
     public required int FromMonth { get; init; }
 }

@@ -6,7 +6,6 @@ public sealed class IncomeSourceDTO
 
     public required string Name { get; init; }
 
-    /// <summary>Whether this source should appear in an entry-form picklist.</summary>
     public required bool IsActive { get; init; }
 
     /// <summary>Reporting group: "Salary", "DividendoJuros", or "NonReportable".</summary>

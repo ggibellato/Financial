@@ -24,7 +24,6 @@ public class OxyPlotChartBuilderHelpersTests
     [Fact]
     public void ComputeLabelStep_NarrowPlotManyLabels_ThinsProportionally()
     {
-        // 300px / 52 MinLabelWidth => 5 max visible labels; 24 labels / 5 => ceil(4.8) = 5.
         OxyPlotChartBuilderHelpers.ComputeLabelStep(plotWidth: 300, labelCount: 24).Should().Be(5);
     }
 

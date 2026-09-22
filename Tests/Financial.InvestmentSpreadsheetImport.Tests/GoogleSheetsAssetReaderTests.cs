@@ -8,7 +8,6 @@ namespace Financial.InvestmentSpreadsheetImport.Tests;
 
 public class GoogleSheetsAssetReaderTests
 {
-    /// <summary>Every test reads through the same stub data source; each one just seeds different rows.</summary>
     private readonly StubDataSource _dataSource;
     private readonly GoogleSheetsAssetReader _sut;
 

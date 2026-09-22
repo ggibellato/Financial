@@ -450,7 +450,7 @@ describe('AnnualSummaryPage', () => {
 
     const rowLabels = screen
       .getAllByRole('row')
-      .slice(1) // drop the header row
+      .slice(1)
       .map((row) => row.querySelector('td')?.textContent?.replace('Category:', '') ?? '')
 
     expect(rowLabels).toEqual([

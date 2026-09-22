@@ -30,7 +30,6 @@ public class DomainExceptionLoggingTests
         entry.Message.Should().Contain("409");
         entry.Message.Should().Contain("/api/v1/financial/reserve/withdrawals");
 
-        // The bucket name and its balance must not leak into the log stream.
         entry.Message.Should().NotContain("Ariana");
         entry.Message.Should().NotContain("654.27");
     }
@@ -94,7 +93,6 @@ public class DomainExceptionLoggingTests
         entry.Message.Should().Contain("409");
         entry.Message.Should().Contain("/api/v1/financial/assets/move");
 
-        // Holdings the user owns must not leak into the log stream.
         entry.Message.Should().NotContain("VUSA");
         entry.Message.Should().NotContain("ETF ISA");
     }

@@ -87,11 +87,10 @@ public class ColumnFilterViewModelTests
         var transferLikeRow = new Row("r1", "Barclays", "Trading212");
         filter.Refresh([transferLikeRow, new Row("r2", "Barclays", null)]);
 
-        // Uncheck Barclays, leaving only Trading212 checked.
         filter.ToggleValueCommand.Execute(filter.Options.Single(o => o.Value == "Barclays"));
 
-        filter.Matches(transferLikeRow).Should().BeTrue(); // still matches via Trading212
-        filter.Matches(new Row("r2", "Barclays", null)).Should().BeFalse(); // only had Barclays
+        filter.Matches(transferLikeRow).Should().BeTrue();
+        filter.Matches(new Row("r2", "Barclays", null)).Should().BeFalse();
     }
 
     [Fact]

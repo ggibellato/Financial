@@ -237,8 +237,6 @@
             <Setter Property="ToolTip" Value="{Binding RelativeSource={RelativeSource Self}, Path=Text}"/>
         </Style>
 
-        <!-- Group-header overlay bar shown above a DataGrid's own column headers,
-             used to visually merge related columns under one spanning title. -->
         <Style x:Key="GroupHeaderBarStyle" TargetType="Border">
             <Setter Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource ControlStrokeColorDefaultBrush}"/>

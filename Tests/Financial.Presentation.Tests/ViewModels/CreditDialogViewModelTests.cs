@@ -97,7 +97,7 @@ public class CreditDialogViewModelTests
     public void ConfirmCommand_WhenInvalid_DoesNotRaiseCloseRequested()
     {
         var viewModel = CreditDialogViewModel.CreateForAdd("XPI", "Default", "PETR4");
-        viewModel.Value = 0m; // Invalid.
+        viewModel.Value = 0m;
         var raised = false;
         viewModel.CloseRequested += (_, _) => raised = true;
 
