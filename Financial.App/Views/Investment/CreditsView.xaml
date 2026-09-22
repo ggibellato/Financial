@@ -6,9 +6,10 @@
              xmlns:local="clr-namespace:Financial.Presentation.App.Views.Investment">
     <!--
         Layout follows docs/ui/forms-data-and-visualisations.md's "Grid-and-chart
-        pages" rule: filters/mode controls at the top, then side by side (grid has
-        few enough columns to fit a fixed left panel) — mirrors Financial.Web's
-        CreditsTab.tsx (toolbar, then SplitPanel left=grid/right=chart).
+        pages" rule: filters/mode controls at the top, then stacked (chart above,
+        grid below) — mirrors Financial.Web's CreditsTab.tsx's current stacked
+        layout (toolbar, chart, "New credit" button, grid), the same pattern
+        TransactionsView.xaml's TransactionsAssetTemplate already uses.
     -->
     <UserControl.Resources>
         <ResourceDictionary>
@@ -20,132 +21,120 @@
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="2*"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
                 <local:CreditsFilterBar Grid.Row="0" Margin="0,0,0,8"/>
 
-                <Grid Grid.Row="1">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="400"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
+                <oxy:PlotView Grid.Row="1"
+                              Background="Transparent"
+                              Model="{Binding AssetDetails.Credits.CreditsPlotModel}"
+                              SizeChanged="OnCreditsPlotSizeChanged" />
 
-                    <Grid Grid.Column="0">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                        </Grid.RowDefinitions>
+                <GridSplitter Grid.Row="2"
+                              Height="6"
+                              HorizontalAlignment="Stretch"
+                              Background="{DynamicResource ControlStrokeColorDefaultBrush}"
+                              ResizeDirection="Rows"
+                              ResizeBehavior="PreviousAndNext"/>
 
-                        <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,8">
-                            <ui:Button Content="New credit" Appearance="Primary" Icon="{ui:SymbolIcon Symbol=Add20}"
-                                       ToolTip="New credit"
-                                       Command="{Binding AssetDetails.Credits.AddCreditCommand}"/>
-                        </StackPanel>
+                <StackPanel Orientation="Horizontal" Grid.Row="3" Margin="0,8,0,8">
+                    <ui:Button Content="New credit" Appearance="Primary" Icon="{ui:SymbolIcon Symbol=Add20}"
+                               ToolTip="New credit"
+                               Command="{Binding AssetDetails.Credits.AddCreditCommand}"/>
+                </StackPanel>
 
-                        <!--
-                            Visibility must bind at THIS Grid's own (inherited) DataContext,
-                            not CreditFormView's — a Binding and a DataContext override on
-                            the SAME element resolve the Binding against the new local
-                            DataContext, not the inherited one, so Visibility would silently
-                            fail to resolve and the form would never collapse. See
-                            docs/ui/wpf.md.
-                        -->
-                        <Grid Grid.Row="1"
-                              Visibility="{Binding AssetDetails.Credits.IsCreditFormOpen, Converter={StaticResource BoolToVisibilityConverter}}">
-                            <local:CreditFormView DataContext="{Binding AssetDetails.Credits.CreditFormViewModel}"/>
-                        </Grid>
-
-                        <DataGrid Grid.Row="2"
-                                  ItemsSource="{Binding AssetDetails.Credits.Credits}"
-                                  SelectedItem="{Binding AssetDetails.Credits.SelectedCredit, Mode=TwoWay}"
-                                  AutoGenerateColumns="False"
-                                  CanUserAddRows="False"
-                                  IsReadOnly="True">
-                            <DataGrid.InputBindings>
-                                <MouseBinding MouseAction="LeftDoubleClick"
-                                              Command="{Binding AssetDetails.Credits.UpdateCreditCommand}"/>
-                            </DataGrid.InputBindings>
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="Date"
-                                                    Binding="{Binding Date, Converter={StaticResource DateFormatConverter}, ConverterParameter='d'}"
-                                                    Width="Auto">
-                                    <DataGridTextColumn.ElementStyle>
-                                        <Style TargetType="TextBlock" BasedOn="{StaticResource PlainColumnTextStyle}"/>
-                                    </DataGridTextColumn.ElementStyle>
-                                </DataGridTextColumn>
-                                <DataGridTextColumn Header="Type"
-                                                    Binding="{Binding Type}"
-                                                    Width="Auto">
-                                    <DataGridTextColumn.ElementStyle>
-                                        <Style TargetType="TextBlock" BasedOn="{StaticResource PlainColumnTextStyle}"/>
-                                    </DataGridTextColumn.ElementStyle>
-                                </DataGridTextColumn>
-                                <DataGridTextColumn Header="Value"
-                                                    Binding="{Binding Value, StringFormat=N2}"
-                                                    Width="*">
-                                    <DataGridTextColumn.ElementStyle>
-                                        <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}">
-                                            <Setter Property="FontWeight" Value="Bold"/>
-                                            <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
-                                        </Style>
-                                    </DataGridTextColumn.ElementStyle>
-                                </DataGridTextColumn>
-                                <DataGridTemplateColumn Header="FX" Width="Auto">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <ui:SymbolIcon Symbol="Info16"
-                                                           AutomationProperties.Name="FX conversion details"
-                                                           Visibility="{Binding FxRateSnapshot, Converter={StaticResource FxRateSnapshotToVisibilityConverter}}">
-                                                <ui:SymbolIcon.ToolTip>
-                                                    <MultiBinding Converter="{StaticResource FxRateSnapshotToTooltipConverter}">
-                                                        <Binding Path="Currency"/>
-                                                        <Binding Path="FxRateSnapshot"/>
-                                                    </MultiBinding>
-                                                </ui:SymbolIcon.ToolTip>
-                                            </ui:SymbolIcon>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                                <DataGridTemplateColumn Header="" Width="Auto">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <StackPanel Orientation="Horizontal">
-                                                <ui:Button Appearance="Transparent"
-                                                           Icon="{ui:SymbolIcon Symbol=Edit16}"
-                                                           Command="{Binding DataContext.AssetDetails.Credits.UpdateCreditCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                           CommandParameter="{Binding}"
-                                                           ToolTip="Update" AutomationProperties.Name="Update"
-                                                           Padding="2"
-                                                           Margin="0,0,4,0"/>
-                                                <ui:Button Appearance="Transparent"
-                                                           Icon="{ui:SymbolIcon Symbol=Delete16}"
-                                                           Command="{Binding DataContext.AssetDetails.Credits.DeleteCreditCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                           CommandParameter="{Binding}"
-                                                           ToolTip="Delete" AutomationProperties.Name="Delete"
-                                                           Padding="2"/>
-                                            </StackPanel>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                            </DataGrid.Columns>
-                        </DataGrid>
-                    </Grid>
-
-                    <GridSplitter Grid.Column="1"
-                                  Width="6"
-                                  VerticalAlignment="Stretch"
-                                  Background="{DynamicResource ControlStrokeColorDefaultBrush}"
-                                  ResizeDirection="Columns"
-                                  ResizeBehavior="PreviousAndNext"/>
-
-                    <oxy:PlotView Grid.Column="2"
-                                  Background="Transparent"
-                                  Model="{Binding AssetDetails.Credits.CreditsPlotModel}"
-                                  SizeChanged="OnCreditsPlotSizeChanged" />
+                <!--
+                    Visibility must bind at THIS Grid's own (inherited) DataContext,
+                    not CreditFormView's — a Binding and a DataContext override on
+                    the SAME element resolve the Binding against the new local
+                    DataContext, not the inherited one, so Visibility would silently
+                    fail to resolve and the form would never collapse. See
+                    docs/ui/wpf.md.
+                -->
+                <Grid Grid.Row="4"
+                      Visibility="{Binding AssetDetails.Credits.IsCreditFormOpen, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <local:CreditFormView DataContext="{Binding AssetDetails.Credits.CreditFormViewModel}"/>
                 </Grid>
+
+                <DataGrid Grid.Row="5"
+                          ItemsSource="{Binding AssetDetails.Credits.Credits}"
+                          SelectedItem="{Binding AssetDetails.Credits.SelectedCredit, Mode=TwoWay}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          IsReadOnly="True">
+                    <DataGrid.InputBindings>
+                        <MouseBinding MouseAction="LeftDoubleClick"
+                                      Command="{Binding AssetDetails.Credits.UpdateCreditCommand}"/>
+                    </DataGrid.InputBindings>
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Date"
+                                            Binding="{Binding Date, Converter={StaticResource DateFormatConverter}, ConverterParameter='d'}"
+                                            Width="Auto">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource PlainColumnTextStyle}"/>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Type"
+                                            Binding="{Binding Type}"
+                                            Width="Auto">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource PlainColumnTextStyle}"/>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Value"
+                                            Binding="{Binding Value, StringFormat=N2}"
+                                            Width="*">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}">
+                                    <Setter Property="FontWeight" Value="Bold"/>
+                                    <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTemplateColumn Header="FX" Width="Auto">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <ui:SymbolIcon Symbol="Info16"
+                                                   AutomationProperties.Name="FX conversion details"
+                                                   Visibility="{Binding FxRateSnapshot, Converter={StaticResource FxRateSnapshotToVisibilityConverter}}">
+                                        <ui:SymbolIcon.ToolTip>
+                                            <MultiBinding Converter="{StaticResource FxRateSnapshotToTooltipConverter}">
+                                                <Binding Path="Currency"/>
+                                                <Binding Path="FxRateSnapshot"/>
+                                            </MultiBinding>
+                                        </ui:SymbolIcon.ToolTip>
+                                    </ui:SymbolIcon>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="" Width="Auto">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal">
+                                        <ui:Button Appearance="Transparent"
+                                                   Icon="{ui:SymbolIcon Symbol=Edit16}"
+                                                   Command="{Binding DataContext.AssetDetails.Credits.UpdateCreditCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                   CommandParameter="{Binding}"
+                                                   ToolTip="Update" AutomationProperties.Name="Update"
+                                                   Padding="2"
+                                                   Margin="0,0,4,0"/>
+                                        <ui:Button Appearance="Transparent"
+                                                   Icon="{ui:SymbolIcon Symbol=Delete16}"
+                                                   Command="{Binding DataContext.AssetDetails.Credits.DeleteCreditCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                   CommandParameter="{Binding}"
+                                                   ToolTip="Delete" AutomationProperties.Name="Delete"
+                                                   Padding="2"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
             </Grid>
         </DataTemplate>
         <DataTemplate x:Key="CreditsAggregateTemplate">

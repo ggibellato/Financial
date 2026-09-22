@@ -1,0 +1,329 @@
+import type { ReactNode } from 'react'
+import { Table, TableBody, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
+import ErrorState from './ErrorState'
+import LoadingState from './LoadingState'
+import DataTableCell from './grid/DataTableCell'
+import SortableColumnHeader from './grid/SortableColumnHeader'
+import { useSortableRows, type SortAccessor, type SortDirection } from '../hooks/useSortableRows'
+import { usePortfolioAssetSummary } from '../hooks/usePortfolioAssetSummary'
+import type { RowPriceState } from '../hooks/usePortfolioAssetSummary'
+import { useAggregatedSummary } from '../hooks/useAggregatedSummary'
+import type { PortfolioAssetSummaryItemDto } from '../api/types'
+import { useSelectedNode } from '../context/SelectedNodeContext'
+import { formatMonthYear, formatN2, formatN8, formatShortDate, signClass } from '../utils/formatters'
+import './PortfolioHoldingsTab.css'
+
+function parseCreditMonth(yearMonth: string): Date {
+  const [year, month] = yearMonth.split('-').map(Number)
+  return new Date(year, month - 1, 1)
+}
+
+function formatCreditMonth(yearMonth: string): string {
+  return formatMonthYear(parseCreditMonth(yearMonth))
+}
+
+function getProfitClass(value: number): string {
+  return signClass(value, 'portfolio-holdings__profit')
+}
+
+function computeCurrentValue(item: PortfolioAssetSummaryItemDto, isHistoric: boolean): number | null {
+  return isHistoric ? null : item.marketValue
+}
+
+// Historic positions are closed: "Profit %" reflects the realized capital gain alone
+// (credits excluded, matching the active-scope semantic where credits are a separate
+// "w/ Credits" column), while "Profit % w/ Credits" uses the full realized gain/loss.
+function computeProfitPercent(item: PortfolioAssetSummaryItemDto, isHistoric: boolean): number | null {
+  if (isHistoric) {
+    return item.totalBought !== 0 ? ((item.realizedGainLoss - item.totalCredits) / item.totalBought) * 100 : null
+  }
+  return item.unrealisedGain !== null && item.costOfUnitsHeld !== 0
+    ? (item.unrealisedGain / item.costOfUnitsHeld) * 100
+    : null
+}
+
+function computeProfitWithCreditsPercent(item: PortfolioAssetSummaryItemDto, isHistoric: boolean): number | null {
+  if (isHistoric) {
+    return item.totalBought !== 0 ? (item.realizedGainLoss / item.totalBought) * 100 : null
+  }
+  return item.unrealisedGain !== null && item.costOfUnitsHeld !== 0
+    ? ((item.unrealisedGain + item.totalCredits) / item.costOfUnitsHeld) * 100
+    : null
+}
+
+interface AssetTableRow {
+  item: PortfolioAssetSummaryItemDto
+  rowPrice: RowPriceState
+}
+
+const DEFAULT_ROW_PRICE: RowPriceState = {
+  isLoading: false,
+  currentPrice: null,
+  fetchFailed: false,
+  isManual: false,
+}
+
+function renderGatedCell(
+  loading: boolean,
+  unavailable: boolean,
+  value: number | null,
+  render: (v: number) => ReactNode,
+) {
+  if (loading) return <span className="portfolio-holdings__loading-cell">...</span>
+  if (unavailable || value === null) return '—'
+  return render(value)
+}
+
+interface AssetRowProps {
+  item: PortfolioAssetSummaryItemDto
+  rowPrice: RowPriceState
+  isHistoric: boolean
+}
+
+function AssetRow({ item, rowPrice, isHistoric }: AssetRowProps) {
+  const currentValue = computeCurrentValue(item, isHistoric)
+  const profitPercent = computeProfitPercent(item, isHistoric)
+  const profitWithCreditsPercent = computeProfitWithCreditsPercent(item, isHistoric)
+  const xirrValue = item.priceOnlyReturn
+
+  const priceValue = isHistoric ? item.averageSellPrice : rowPrice.currentPrice
+  const cellLoading = !isHistoric && rowPrice.isLoading
+  const cellUnavailable = !isHistoric && rowPrice.fetchFailed
+
+  return (
+    <TableRow>
+      <DataTableCell label="Asset Name">{item.assetName}</DataTableCell>
+      <DataTableCell label="First Investment">{formatShortDate(item.firstInvestmentDate)}</DataTableCell>
+      <DataTableCell label="Quantity">{formatN8(item.currentQuantity)}</DataTableCell>
+      <DataTableCell label="% Portfolio">
+        {item.portfolioWeight === null ? '—' : `${formatN2(item.portfolioWeight)}%`}
+      </DataTableCell>
+      <DataTableCell label="Total Invested">{formatN2(item.totalInvested)}</DataTableCell>
+      {isHistoric && (
+        <DataTableCell label="Realized Gain/Loss">
+          <span className={getProfitClass(item.realizedGainLoss)}>{formatN2(item.realizedGainLoss)}</span>
+        </DataTableCell>
+      )}
+      {!isHistoric && (
+        <DataTableCell label="Current Value">
+          {renderGatedCell(rowPrice.isLoading, rowPrice.fetchFailed, currentValue, v => formatN2(v))}
+          {!rowPrice.isLoading && !rowPrice.fetchFailed && rowPrice.isManual && (
+            <span
+              className="portfolio-holdings__manual-badge"
+              title="This value came from a manually-entered price, not a live fetch."
+            >
+              {' '}
+              (M)
+            </span>
+          )}
+        </DataTableCell>
+      )}
+      <DataTableCell label="Total Credits">{formatN2(item.totalCredits)}</DataTableCell>
+      <DataTableCell label="Average Price">{formatN2(item.averagePrice)}</DataTableCell>
+      <DataTableCell label={isHistoric ? 'Sold Price' : 'Current Price'}>
+        {renderGatedCell(cellLoading, cellUnavailable, priceValue, v => formatN2(v))}
+        {!isHistoric && !cellLoading && !cellUnavailable && item.marketStatus === 'Stale' && (
+          <span className="portfolio-holdings__stale-badge" title="This price is older than the most recent weekday.">
+            {' '}
+            (S)
+          </span>
+        )}
+        {!isHistoric && !cellLoading && !cellUnavailable && item.marketStatus === 'Unavailable' && (
+          <span className="portfolio-holdings__stale-badge" title="No price or value has been recorded for this holding yet.">
+            {' '}
+            (U)
+          </span>
+        )}
+      </DataTableCell>
+      <DataTableCell label="Profit %">
+        {renderGatedCell(cellLoading, cellUnavailable, profitPercent, v => (
+          <span className={getProfitClass(v)}>{formatN2(v)}%</span>
+        ))}
+      </DataTableCell>
+      <DataTableCell label="Profit % w/ Credits">
+        {renderGatedCell(cellLoading, cellUnavailable, profitWithCreditsPercent, v => (
+          <span className={getProfitClass(v)}>{formatN2(v)}%</span>
+        ))}
+      </DataTableCell>
+      <DataTableCell label="XIRR">
+        {renderGatedCell(cellLoading, false, xirrValue, v => (
+          <span className={getProfitClass(v)}>{formatN2(v * 100)}%</span>
+        ))}
+      </DataTableCell>
+      <DataTableCell label="Last Month Credits" className="portfolio-holdings__credits-separator">
+        {item.lastCreditMonth === null ? '—' : formatN2(item.lastMonthCredits)}
+      </DataTableCell>
+      <DataTableCell label="Last Credit Month">
+        {item.lastCreditMonth === null ? '—' : formatCreditMonth(item.lastCreditMonth)}
+      </DataTableCell>
+      <DataTableCell label="Last Month Credits %">
+        {item.lastMonthCreditsPercent === null ? '—' : `${formatN2(item.lastMonthCreditsPercent)}%`}
+      </DataTableCell>
+      <DataTableCell label="Est. Annual Credits">
+        {item.estimatedAnnualCredits === null ? '—' : formatN2(item.estimatedAnnualCredits)}
+      </DataTableCell>
+      <DataTableCell label="Est. Annual %">
+        {item.estimatedAnnualPercent === null ? '—' : `${formatN2(item.estimatedAnnualPercent)}%`}
+      </DataTableCell>
+    </TableRow>
+  )
+}
+
+function computeCurrentValueFooter(
+  items: PortfolioAssetSummaryItemDto[],
+  rowPrices: RowPriceState[],
+): { display: string; partial: boolean } {
+  const anyLoading = rowPrices.some(r => r.isLoading)
+  const resolved = items
+    .map((item, i) => {
+      const rp = rowPrices[i]
+      return rp && !rp.isLoading ? item.marketValue : null
+    })
+    .filter((v): v is number => v !== null)
+
+  if (anyLoading && resolved.length === 0) return { display: 'Calculating…', partial: false }
+  if (!anyLoading && resolved.length === 0) return { display: '—', partial: false }
+  const sum = resolved.reduce((acc, v) => acc + v, 0)
+  if (anyLoading) return { display: `${formatN2(sum)} *`, partial: true }
+  return { display: formatN2(sum), partial: false }
+}
+
+export default function PortfolioHoldingsTab() {
+  const { scope } = useSelectedNode()
+  const isHistoric = scope === 'historic'
+  const { items, rowPrices, isLoading, error, retry } = usePortfolioAssetSummary()
+  const { summary } = useAggregatedSummary()
+
+  const tableRows: AssetTableRow[] = (items ?? []).map((item, index) => ({
+    item,
+    rowPrice: rowPrices[index] ?? DEFAULT_ROW_PRICE,
+  }))
+
+  const sortAccessors: Record<string, SortAccessor<AssetTableRow>> = {
+    assetName: (r) => r.item.assetName,
+    firstInvestment: (r) => (r.item.firstInvestmentDate === null ? null : new Date(r.item.firstInvestmentDate)),
+    quantity: (r) => r.item.currentQuantity,
+    portfolioWeight: (r) => r.item.portfolioWeight,
+    totalInvested: (r) => r.item.totalInvested,
+    realizedGainLoss: (r) => r.item.realizedGainLoss,
+    currentValue: (r) => computeCurrentValue(r.item, isHistoric),
+    totalCredits: (r) => r.item.totalCredits,
+    averagePrice: (r) => r.item.averagePrice,
+    price: (r) => (isHistoric ? r.item.averageSellPrice : r.rowPrice.currentPrice),
+    profitPercent: (r) => computeProfitPercent(r.item, isHistoric),
+    profitWithCreditsPercent: (r) => computeProfitWithCreditsPercent(r.item, isHistoric),
+    xirr: (r) => r.item.priceOnlyReturn,
+    lastMonthCredits: (r) => (r.item.lastCreditMonth === null ? null : r.item.lastMonthCredits),
+    lastCreditMonth: (r) => (r.item.lastCreditMonth === null ? null : parseCreditMonth(r.item.lastCreditMonth)),
+    lastMonthCreditsPercent: (r) => r.item.lastMonthCreditsPercent,
+    estimatedAnnualCredits: (r) => r.item.estimatedAnnualCredits,
+    estimatedAnnualPercent: (r) => r.item.estimatedAnnualPercent,
+  }
+
+  const { sortedRows, sortState, requestSort } = useSortableRows(tableRows, sortAccessors)
+  const sortDirectionFor = (columnKey: string): SortDirection | undefined =>
+    sortState?.columnKey === columnKey ? sortState.direction : undefined
+
+  const creditsLabel = `Credits ${formatMonthYear(new Date())}`
+
+  const footer =
+    items && items.length > 0 && summary
+      ? (() => {
+          const totalInvested = summary.totalInvested
+          const totalCredits = summary.totalCredits
+          const currentMonthCredits = items.reduce((acc, it) => acc + it.currentMonthCredits, 0)
+          const hasAnyAnnual = items.some(it => it.estimatedAnnualCredits !== null)
+          const estAnnualCredits = hasAnyAnnual
+            ? items.reduce((acc, it) => acc + (it.estimatedAnnualCredits ?? 0), 0)
+            : null
+          const realizedGainLoss = items.reduce((acc, it) => acc + it.realizedGainLoss, 0)
+          const cv = computeCurrentValueFooter(items, rowPrices)
+          return { totalInvested, totalCredits, currentMonthCredits, estAnnualCredits, realizedGainLoss, cv }
+        })()
+      : null
+
+  return (
+    <div className="portfolio-holdings">
+      <div className="portfolio-holdings__table-section">
+        {isLoading && <LoadingState />}
+        {error && <ErrorState message={error} onRetry={retry} />}
+        {!isLoading && !error && items && (
+          <Table className="portfolio-holdings__table data-table">
+            <TableHeader>
+              <TableRow>
+                <SortableColumnHeader rowSpan={2} label="Asset Name" columnKey="assetName" sortDirection={sortDirectionFor('assetName')} onSort={requestSort} />
+                <SortableColumnHeader rowSpan={2} label="First Investment" columnKey="firstInvestment" sortDirection={sortDirectionFor('firstInvestment')} onSort={requestSort} />
+                <SortableColumnHeader rowSpan={2} numeric label="Quantity" columnKey="quantity" sortDirection={sortDirectionFor('quantity')} onSort={requestSort} />
+                <SortableColumnHeader rowSpan={2} numeric label="% Portfolio" columnKey="portfolioWeight" sortDirection={sortDirectionFor('portfolioWeight')} onSort={requestSort} />
+                <SortableColumnHeader rowSpan={2} numeric label="Total Invested" columnKey="totalInvested" sortDirection={sortDirectionFor('totalInvested')} onSort={requestSort} />
+                {isHistoric && (
+                  <SortableColumnHeader rowSpan={2} numeric label="Realized Gain/Loss" columnKey="realizedGainLoss" sortDirection={sortDirectionFor('realizedGainLoss')} onSort={requestSort} />
+                )}
+                {!isHistoric && (
+                  <SortableColumnHeader rowSpan={2} numeric label="Current Value" columnKey="currentValue" sortDirection={sortDirectionFor('currentValue')} onSort={requestSort} />
+                )}
+                <SortableColumnHeader rowSpan={2} numeric label="Total Credits" columnKey="totalCredits" sortDirection={sortDirectionFor('totalCredits')} onSort={requestSort} />
+                <SortableColumnHeader rowSpan={2} numeric label="Average Price" columnKey="averagePrice" sortDirection={sortDirectionFor('averagePrice')} onSort={requestSort} />
+                <SortableColumnHeader rowSpan={2} numeric label={isHistoric ? 'Sold Price' : 'Current Price'} columnKey="price" sortDirection={sortDirectionFor('price')} onSort={requestSort} />
+                <TableHeaderCell colSpan={2} className="portfolio-holdings__group-header">Profit</TableHeaderCell>
+                <SortableColumnHeader rowSpan={2} numeric label="XIRR" columnKey="xirr" sortDirection={sortDirectionFor('xirr')} onSort={requestSort} />
+                <TableHeaderCell colSpan={3} className="portfolio-holdings__group-header portfolio-holdings__credits-separator">Last Month</TableHeaderCell>
+                <TableHeaderCell colSpan={2} className="portfolio-holdings__group-header">Est. Annual</TableHeaderCell>
+              </TableRow>
+              <TableRow>
+                <SortableColumnHeader numeric label="%" columnKey="profitPercent" sortDirection={sortDirectionFor('profitPercent')} onSort={requestSort} />
+                <SortableColumnHeader numeric label="w/ Credits" columnKey="profitWithCreditsPercent" sortDirection={sortDirectionFor('profitWithCreditsPercent')} onSort={requestSort} />
+                <SortableColumnHeader numeric label="Credits" columnKey="lastMonthCredits" sortDirection={sortDirectionFor('lastMonthCredits')} onSort={requestSort} className="portfolio-holdings__credits-separator" />
+                <SortableColumnHeader numeric label="Month" columnKey="lastCreditMonth" sortDirection={sortDirectionFor('lastCreditMonth')} onSort={requestSort} />
+                <SortableColumnHeader numeric label="%" columnKey="lastMonthCreditsPercent" sortDirection={sortDirectionFor('lastMonthCreditsPercent')} onSort={requestSort} />
+                <SortableColumnHeader numeric label="Credits" columnKey="estimatedAnnualCredits" sortDirection={sortDirectionFor('estimatedAnnualCredits')} onSort={requestSort} />
+                <SortableColumnHeader numeric label="%" columnKey="estimatedAnnualPercent" sortDirection={sortDirectionFor('estimatedAnnualPercent')} onSort={requestSort} />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sortedRows.map((row) => (
+                <AssetRow key={row.item.assetName} item={row.item} rowPrice={row.rowPrice} isHistoric={isHistoric} />
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </div>
+
+      {footer && (
+        <div className="portfolio-holdings__footer">
+          <div className="portfolio-holdings__footer-item">
+            <span className="portfolio-holdings__footer-label" data-label="Total Invested" />
+            <input type="text" readOnly className="portfolio-holdings__footer-value" value={formatN2(footer.totalInvested)} tabIndex={-1} />
+          </div>
+          <div className="portfolio-holdings__footer-item">
+            <span className="portfolio-holdings__footer-label" data-label="Total Credits" />
+            <input type="text" readOnly className="portfolio-holdings__footer-value" value={formatN2(footer.totalCredits)} tabIndex={-1} />
+          </div>
+          {isHistoric && (
+            <div className="portfolio-holdings__footer-item">
+              <span className="portfolio-holdings__footer-label" data-label="Realized Gain/Loss" />
+              <input type="text" readOnly className="portfolio-holdings__footer-value" value={formatN2(footer.realizedGainLoss)} tabIndex={-1} />
+            </div>
+          )}
+          {!isHistoric && (
+            <div className="portfolio-holdings__footer-item">
+              <span className="portfolio-holdings__footer-label" data-label="Current Value" />
+              <input type="text" readOnly className="portfolio-holdings__footer-value" value={footer.cv.display} tabIndex={-1} />
+              {footer.cv.partial && (
+                <span className="portfolio-holdings__footer-footnote">excludes assets with pending prices</span>
+              )}
+            </div>
+          )}
+          <div className="portfolio-holdings__footer-item">
+            <span className="portfolio-holdings__footer-label">{creditsLabel}</span>
+            <input type="text" readOnly className="portfolio-holdings__footer-value" value={formatN2(footer.currentMonthCredits)} tabIndex={-1} />
+          </div>
+          <div className="portfolio-holdings__footer-item">
+            <span className="portfolio-holdings__footer-label" data-label="Est. Annual Credits" />
+            <input type="text" readOnly className="portfolio-holdings__footer-value" value={footer.estAnnualCredits === null ? '—' : formatN2(footer.estAnnualCredits)} tabIndex={-1} />
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

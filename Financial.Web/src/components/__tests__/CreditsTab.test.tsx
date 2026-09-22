@@ -161,6 +161,16 @@ describe('CreditsTab', () => {
     expect(screen.getByTestId('responsive-container')).toBeInTheDocument()
   })
 
+  it('renders_chart_above_the_grid_for_asset_node_matching_transactions_tab_layout', () => {
+    setMock({ nodeType: 'Asset', credits: [CREDIT_DIVIDEND] })
+    const { container } = render(<CreditsTab />)
+    const chartPanel = container.querySelector('.credits-tab__chart-panel')
+    const table = screen.getByRole('table')
+    expect(chartPanel).toBeInTheDocument()
+    expect(chartPanel?.compareDocumentPosition(table) ?? 0).toBeGreaterThanOrEqual(Node.DOCUMENT_POSITION_FOLLOWING)
+    expect(chartPanel).toHaveClass('credits-tab__chart-panel--compact')
+  })
+
   it('renders_table_columns_date_type_value', () => {
     setMock({ credits: [CREDIT_DIVIDEND] })
     render(<CreditsTab />)

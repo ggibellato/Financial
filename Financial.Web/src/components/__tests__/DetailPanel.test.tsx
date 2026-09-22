@@ -227,6 +227,38 @@ describe('DetailPanel', () => {
     expect(screen.queryByRole('tab', { name: 'Price History' })).not.toBeInTheDocument()
   })
 
+  it('shows Holdings tab for a portfolio node right after Summary', () => {
+    renderPanel(portfolioNode)
+    act(() => screen.getByTestId('setter').click())
+    const tabs = screen.getAllByRole('tab')
+    const order = ['Summary', 'Holdings', 'Transactions', 'Credits']
+    expect(tabs).toHaveLength(order.length)
+    order.forEach((label, index) => {
+      expect(tabs[index]).toHaveAccessibleName(label)
+    })
+  })
+
+  it('does not show Holdings tab for a broker node', () => {
+    renderPanel(brokerNode)
+    act(() => screen.getByTestId('setter').click())
+    expect(screen.queryByRole('tab', { name: 'Holdings' })).not.toBeInTheDocument()
+  })
+
+  it('does not show Holdings tab for an asset node', () => {
+    renderPanel(activeAssetNode)
+    act(() => screen.getByTestId('setter').click())
+    expect(screen.queryByRole('tab', { name: 'Holdings' })).not.toBeInTheDocument()
+  })
+
+  it('clicking Holdings tab activates it and renders the assets grid', async () => {
+    getPortfolioAssetsSummaryMock.mockResolvedValue([])
+    renderPanel(portfolioNode)
+    act(() => screen.getByTestId('setter').click())
+    fireEvent.click(screen.getByRole('tab', { name: 'Holdings' }))
+    expect(screen.getByRole('tab', { name: 'Holdings' })).toHaveAttribute('aria-selected', 'true')
+    await waitFor(() => expect(screen.getByRole('table')).toBeInTheDocument(), { timeout: 5000 })
+  })
+
   it('shows Price History tab for an asset node', () => {
     renderPanel(activeAssetNode)
     act(() => screen.getByTestId('setter').click())

@@ -550,36 +550,45 @@ ended up different from Credits.
 ## Grid-and-chart pages
 
 A page pairing one grid with one chart over the same data (e.g. Investment
-Transactions/Credits/Price History) follows one layout rule, decided by how
-much width the grid's columns actually need — not by platform convention or
-habit:
+Transactions/Credits/Price History) defaults to one layout rule, decided by
+how much width the grid's columns actually need — not by platform convention
+or habit — unless a specific page has a documented exception (see below):
 
 - **Filters/period controls (e.g. "This Month", "Last 3 Months") always go at
   the top of the page**, above both the grid and the chart — never below
   either.
 - **If the grid's columns fit comfortably in a fixed side panel** (roughly
   260–450px — few columns, or values that don't need much horizontal room,
-  as in Credits and Price History), lay the page out **side by side**: grid
-  in a resizable left panel, chart filling the remaining width on the right.
+  as in Price History), lay the page out **side by side**: grid in a
+  resizable left panel, chart filling the remaining width on the right.
   Both stay visible without scrolling.
 - **If the grid has enough columns/values that a side panel would cramp it**
   (as in Transactions — action icons, date, type, quantity, unit price, fees,
   and total), **stack instead**: chart full-width on top, grid full-width
   below. Do not force a wide grid into a narrow side panel just to keep a
   side-by-side layout consistent across pages — the grid's actual column
-  count decides the layout, the page doesn't get to override it.
+  count decides the default, the page doesn't get to override it without a
+  documented reason.
 - Whichever layout applies, the New/action toolbar for the grid sits directly
   above that grid (inside its panel when side by side), not detached from it.
 
 This is drawn directly from `Financial.Web`'s existing Transactions/Credits/
 Price History tabs (React is the UX source of truth — see
 `docs/ui/decisions/ADR-001-ui-standards-stack.md`): `TransactionsTab.tsx`
-stacks (its grid has 8 columns including actions); `CreditsTab.tsx` and
-`PriceHistoryTab.tsx` split side by side (5 columns each, via the shared
-`SplitPanel` component). WPF must reach the same layout outcome using a
-`GridSplitter`-based row split (stacked) or column split (side by side) —
-identical controls are not required, the resulting reading order and use of
-width are.
+stacks (its grid has 8 columns including actions); `PriceHistoryTab.tsx`
+splits side by side (5 columns, via the shared `SplitPanel` component). WPF
+must reach the same layout outcome using a `GridSplitter`-based row split
+(stacked) or column split (side by side) — identical controls are not
+required, the resulting reading order and use of width are.
+
+**Documented exception — Credits stacks despite fitting a side panel.**
+`CreditsTab.tsx`'s grid (Date, Type, Value, Withheld, Net, FX, Actions) still
+fits a fixed side panel by the column-count test above, but Credits is
+deliberately stacked (chart on top, grid below) to match Transactions'
+reading order instead, rather than split side by side — both platforms
+(`Financial.Web/src/components/CreditsTab.tsx`,
+`Financial.App/Views/Investment/CreditsView.xaml`'s `CreditsAssetTemplate`)
+changed together. Price History remains the only side-by-side reference.
 
 ### Resizable split panels are keyboard-operable
 
@@ -602,7 +611,13 @@ it must be reachable and usable without a mouse:
 `SplitPanel` implements this directly (`Financial.Web/src/components/
 SplitPanel.tsx`). WPF's `GridSplitter` already supports this out of the box —
 it is keyboard-focusable and resizes its row/column with the arrow keys with
-no extra code — so WPF needs no change here, only the Web side did.
+no extra code — so WPF needs no change here, only the Web side did. Price
+History is now the only side-by-side page, so it's the only one still using
+`SplitPanel` on Web. Stacked pages (Transactions, and now Credits) don't use
+a resizable divider on Web — the chart panel is a fixed compact height above
+the grid — but on WPF both still use a row-oriented `GridSplitter` between
+chart and grid, which needs no extra work to stay keyboard-operable per this
+section.
 
 ## Inline form, dialog, drawer, or page
 

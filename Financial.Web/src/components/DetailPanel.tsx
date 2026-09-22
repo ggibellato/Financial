@@ -12,12 +12,13 @@ import './DetailPanel.css'
 
 const AggregatedSummaryTab = lazy(() => import('./AggregatedSummaryTab'))
 const PortfolioSummaryTab = lazy(() => import('./PortfolioSummaryTab'))
+const PortfolioHoldingsTab = lazy(() => import('./PortfolioHoldingsTab'))
 const CreditsTab = lazy(() => import('./CreditsTab'))
 const TransactionsTab = lazy(() => import('./TransactionsTab'))
 const PriceHistoryTab = lazy(() => import('./PriceHistoryTab'))
 const DisposalsTab = lazy(() => import('./DisposalsTab'))
 
-type TabId = 'summary' | 'transactions' | 'credits' | 'priceHistory' | 'disposals'
+type TabId = 'summary' | 'holdings' | 'transactions' | 'credits' | 'priceHistory' | 'disposals'
 
 const BASE_TABS: { id: TabId; label: string }[] = [
   { id: 'summary', label: 'Summary' },
@@ -25,6 +26,7 @@ const BASE_TABS: { id: TabId; label: string }[] = [
   { id: 'credits', label: 'Credits' },
 ]
 
+const HOLDINGS_TAB: { id: TabId; label: string } = { id: 'holdings', label: 'Holdings' }
 const PRICE_HISTORY_TAB: { id: TabId; label: string } = { id: 'priceHistory', label: 'Price History' }
 const DISPOSALS_TAB: { id: TabId; label: string } = { id: 'disposals', label: 'Disposals' }
 
@@ -154,7 +156,12 @@ export default function DetailPanel() {
         selectedValue={activeTab}
         onTabSelect={(_event: SelectTabEvent, data: SelectTabData) => setActiveTab(data.value as TabId)}
       >
-        {(isAsset ? [...BASE_TABS, PRICE_HISTORY_TAB, DISPOSALS_TAB] : BASE_TABS).map((tab) => (
+        {(isAsset
+          ? [...BASE_TABS, PRICE_HISTORY_TAB, DISPOSALS_TAB]
+          : isPortfolio
+            ? [BASE_TABS[0], HOLDINGS_TAB, ...BASE_TABS.slice(1)]
+            : BASE_TABS
+        ).map((tab) => (
           <Tab key={tab.id} value={tab.id}>
             {tab.label}
           </Tab>
@@ -166,6 +173,7 @@ export default function DetailPanel() {
           {activeTab === 'summary' && isAsset && <AssetSummaryTab />}
           {activeTab === 'summary' && isPortfolio && <PortfolioSummaryTab />}
           {activeTab === 'summary' && !isAsset && !isPortfolio && <AggregatedSummaryTab />}
+          {activeTab === 'holdings' && isPortfolio && <PortfolioHoldingsTab />}
           {activeTab === 'transactions' && <TransactionsTab />}
           {activeTab === 'credits' && <CreditsTab />}
           {activeTab === 'priceHistory' && isAsset && <PriceHistoryTab />}

@@ -213,7 +213,18 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     public bool IsPortfolioView
     {
         get => _isPortfolioView;
-        private set => SetProperty(ref _isPortfolioView, value);
+        private set
+        {
+            var wasPortfolioView = _isPortfolioView;
+            if (SetProperty(ref _isPortfolioView, value) && wasPortfolioView && !value)
+            {
+                // The Holdings tab is only offered for a portfolio (index 1, see NavigationView.xaml);
+                // leaving it selected while it silently hides behind a broker/asset node would leave
+                // its stale content on screen with no visible tab header pointing at it.
+                _selectedDetailTabIndex = 0;
+                OnPropertyChanged(nameof(SelectedDetailTabIndex));
+            }
+        }
     }
 
     public bool IsBrokerView
@@ -230,7 +241,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
             var wasAssetView = _isAssetView;
             if (SetProperty(ref _isAssetView, value) && wasAssetView && !value)
             {
-                // The Price History tab is only offered for an asset (index 3, see NavigationView.xaml);
+                // The Price History tab is only offered for an asset (index 4, see NavigationView.xaml);
                 // leaving it selected while it silently hides behind a broker/portfolio node would leave
                 // its stale content on screen with no visible tab header pointing at it.
                 _selectedDetailTabIndex = 0;

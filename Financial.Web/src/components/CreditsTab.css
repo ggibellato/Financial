@@ -30,29 +30,6 @@
   flex-wrap: wrap;
 }
 
-.credits-tab__split {
-  display: flex;
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.credits-tab__left {
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-  height: 100%;
-  overflow: hidden;
-  min-width: 200px;
-}
-
-.credits-tab__right {
-  flex: 1;
-  height: 100%;
-  min-width: 0;
-  overflow: hidden;
-}
-
 .credits-tab__table-toolbar {
   display: flex;
   align-items: center;
@@ -98,8 +75,14 @@
 .credits-tab__chart-panel {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
   padding: 8px 0;
+}
+
+.credits-tab__chart-panel--compact {
+  flex: none;
+  height: 260px;
 }
 
 .credits-tab__chart-title {
@@ -113,17 +96,4 @@
 .credits-tab__chart-container {
   flex: 1;
   min-height: 0;
-}
-
-@media (max-width: 599px) {
-  .credits-tab {
-    height: auto;
-    overflow-y: auto;
-  }
-
-  /* ResponsiveContainer's height="100%" needs a definite ancestor height -
-     without this the auto-height chain above renders the chart at 0 height. */
-  .credits-tab__right {
-    height: 320px;
-  }
 }
