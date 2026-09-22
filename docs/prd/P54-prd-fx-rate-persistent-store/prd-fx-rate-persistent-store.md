@@ -230,12 +230,12 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Persistent FX Rate Store
-- [ ] Given no `data-fx-rates.json` file exists, the application starts successfully with the FX store initialized to an empty `ratesByDate` map.
-- [ ] Given a resolved historical rate is persisted, the file on disk contains an entry keyed by the requested date's exact `yyyy-MM-dd` string, with `base` = `"USD"`, `rates.BRL` and `rates.GBP` each carrying at least 6 decimal places, `source` = `"frankfurter"`, and a `storedAt` timestamp.
-- [ ] Given `FxRates:Repository:Provider` is set to `GoogleDrive`, the store reads and writes through the same Google Drive client/credentials mechanism already used by Investment/CashFlow.
-- [ ] Given `FxRates:Repository:Provider` is unset or `LocalJson`, the store defaults to `LocalJson`, matching Investment/CashFlow's own default.
-- [ ] Given `data-fx-rates.json` exists but contains invalid JSON, the application logs a warning and starts with an empty in-memory FX store instead of failing to start.
-- [ ] Given two different dates are resolved within the same debounce window, both entries are present in the file after the debounced write completes.
+- [x] Given no `data-fx-rates.json` file exists, the application starts successfully with the FX store initialized to an empty `ratesByDate` map.
+- [x] Given a resolved historical rate is persisted, the file on disk contains an entry keyed by the requested date's exact `yyyy-MM-dd` string, with `base` = `"USD"`, `rates.BRL` and `rates.GBP` each carrying at least 6 decimal places, `source` = `"frankfurter"`, and a `storedAt` timestamp.
+- [x] Given `FxRates:Repository:Provider` is set to `GoogleDrive`, the store reads and writes through the same Google Drive client/credentials mechanism already used by Investment/CashFlow.
+- [x] Given `FxRates:Repository:Provider` is unset or `LocalJson`, the store defaults to `LocalJson`, matching Investment/CashFlow's own default.
+- [x] Given `data-fx-rates.json` exists but contains invalid JSON, the application logs a warning and starts with an empty in-memory FX store instead of failing to start.
+- [x] Given two different dates are resolved within the same debounce window, both entries are present in the file after the debounced write completes.
 
 ### F02. USD-Based Rate Resolution and Yesterday-or-Earlier Rule
 - [ ] Given `from` and `to` are the same currency, `GetHistoricalRateAsync` returns `1` with no store read and no Frankfurter call.
