@@ -14,6 +14,7 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
 {
     private readonly string _dataFilePath;
     private readonly string _cashFlowDataFilePath;
+    private readonly string _fxRatesDataFilePath;
     private readonly string _calendarCredentialsPath;
     private readonly IExchangeRateProvider? _exchangeRateProviderOverride;
     private readonly TimeProvider? _timeProviderOverride;
@@ -27,6 +28,7 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
     {
         _dataFilePath = CreateTempDataFile();
         _cashFlowDataFilePath = CreateTempCashFlowDataFilePath();
+        _fxRatesDataFilePath = Path.Combine(Path.GetTempPath(), $"financial-api-fxrates-{Guid.NewGuid():N}.json");
         _calendarCredentialsPath = Path.Combine(Path.GetTempPath(), $"financial-api-calendar-{Guid.NewGuid():N}.json");
         _exchangeRateProviderOverride = exchangeRateProviderOverride;
         _timeProviderOverride = timeProviderOverride;
@@ -43,7 +45,9 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
                 ["Investment:DataJsonFile"] = _dataFilePath,
                 ["CashFlow:Repository:Provider"] = "LocalJson",
                 ["CashFlow:DataJsonFile"] = _cashFlowDataFilePath,
-                ["CashFlow:GoogleCalendar:CredentialsPath"] = _calendarCredentialsPath
+                ["CashFlow:GoogleCalendar:CredentialsPath"] = _calendarCredentialsPath,
+                ["FxRates:Repository:Provider"] = "LocalJson",
+                ["FxRates:DataJsonFile"] = _fxRatesDataFilePath
             };
             config.AddInMemoryCollection(settings);
         });
@@ -85,6 +89,7 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
             _disposed = true;
             TryDeleteTempFile(_dataFilePath);
             TryDeleteTempFile(_cashFlowDataFilePath);
+            TryDeleteTempFile(_fxRatesDataFilePath);
             TryDeleteTempFile(_calendarCredentialsPath);
         }
     }
