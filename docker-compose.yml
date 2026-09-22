@@ -11,5 +11,7 @@ services:
       Investment__Repository__Provider: LocalJson
       CashFlow__DataJsonFile: /app/data/data-cashflow.json
       CashFlow__Repository__Provider: LocalJson
+      FxRates__DataJsonFile: /app/data/data-fx-rates.json
+      FxRates__Repository__Provider: LocalJson
     volumes:
       - ./data:/app/data

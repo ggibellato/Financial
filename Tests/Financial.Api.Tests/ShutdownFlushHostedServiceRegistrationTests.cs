@@ -1,5 +1,6 @@
 using Financial.CashFlow.Application.Interfaces;
 using Financial.Investment.Application.Interfaces;
+using Financial.Shared.Abstractions.Currencies.FxRates;
 using Financial.Shared.Infrastructure.Hosting;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,5 +24,13 @@ public class ShutdownFlushHostedServiceRegistrationTests : ApiEndpointTests
         var hostedServices = Services.GetServices<IHostedService>();
 
         hostedServices.Should().Contain(service => service is ShutdownFlushHostedService<IInvestmentRepository>);
+    }
+
+    [Fact]
+    public void ShutdownFlushHostedService_ForFxRateStore_IsRegistered()
+    {
+        var hostedServices = Services.GetServices<IHostedService>();
+
+        hostedServices.Should().Contain(service => service is ShutdownFlushHostedService<IFxRateStore>);
     }
 }
