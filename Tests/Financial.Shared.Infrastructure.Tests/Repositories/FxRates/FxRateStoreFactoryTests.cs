@@ -1,17 +1,21 @@
 using Financial.Shared.Abstractions.Currencies.FxRates;
 using Financial.Shared.Abstractions.Observability;
-using Financial.Shared.Abstractions.Persistence;
 using Financial.Shared.Infrastructure.Persistence;
 using Financial.Shared.Infrastructure.Persistence.FxRates;
 using Financial.Shared.Infrastructure.Repositories.FxRates;
+using Financial.TestUtilities;
 using FluentAssertions;
 
 namespace Financial.Shared.Infrastructure.Tests.Repositories.FxRates;
 
 public class FxRateStoreFactoryTests
 {
-    private static readonly FxRateStoreFactory Factory =
-        new(new FxRateSerializerAdapter(), new JsonStorageFactory(new StubRemoteFileClientFactory(), NoOpTelemetryTracer.Instance));
+    private static readonly FxRateStoreFactory Factory = new(
+        new FxRateSerializerAdapter(),
+        new JsonStorageFactory(
+            new StubRemoteFileClientFactory(
+                new StubRemoteFileClient(() => new FxRateSerializerAdapter().Serialize(new Dictionary<DateOnly, FxRateRecord>()))),
+            NoOpTelemetryTracer.Instance));
 
     [Fact]
     public void Constructor_WithNullSerializer_Throws()
@@ -87,14 +91,4 @@ public class FxRateStoreFactoryTests
         }
     }
 
-    private sealed class StubRemoteFileClientFactory : IRemoteFileClientFactory
-    {
-        public IRemoteFileClient Create(string credentialsPath) => new StubRemoteFileClient();
-    }
-
-    private sealed class StubRemoteFileClient : IRemoteFileClient
-    {
-        public string DownloadFileContent(string path) => new FxRateSerializerAdapter().Serialize(new Dictionary<DateOnly, FxRateRecord>());
-        public void UploadFileContent(string path, string content) => throw new NotSupportedException();
-    }
 }

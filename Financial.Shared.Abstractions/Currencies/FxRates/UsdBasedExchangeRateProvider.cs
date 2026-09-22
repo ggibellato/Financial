@@ -40,7 +40,7 @@ public sealed class UsdBasedExchangeRateProvider : IExchangeRateProvider
         var fetched = await _fetcher.FetchAsync(date).ConfigureAwait(false);
         if (fetched.BrlRate is not null && fetched.GbpRate is not null)
         {
-            var record = new FxRateRecord("USD", fetched.BrlRate.Value, fetched.GbpRate.Value, "frankfurter", DateTimeOffset.UtcNow);
+            var record = new FxRateRecord(fetched.BrlRate.Value, fetched.GbpRate.Value, "frankfurter", DateTimeOffset.UtcNow);
             await _store.SetRateAsync(date, record).ConfigureAwait(false);
         }
 

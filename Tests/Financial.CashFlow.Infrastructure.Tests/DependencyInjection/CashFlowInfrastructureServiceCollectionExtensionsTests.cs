@@ -1,4 +1,3 @@
-using System.Reflection;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Infrastructure.DependencyInjection;
 using Financial.Integrations.GoogleCalendar;
@@ -7,6 +6,7 @@ using Financial.Shared.Abstractions.Currencies.FxRates;
 using Financial.Shared.Abstractions.Persistence;
 using Financial.Shared.Infrastructure.DependencyInjection;
 using Financial.Shared.Infrastructure.Persistence;
+using Financial.TestUtilities;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -84,17 +84,9 @@ public class CashFlowInfrastructureServiceCollectionExtensionsTests
         });
 
         var exchangeRateProvider = provider.GetRequiredService<IExchangeRateProvider>();
-        var inner = InvokeInnerFactory(exchangeRateProvider);
+        var inner = InMemoryCachedExchangeRateProviderInspector.InvokeInnerFactory(exchangeRateProvider);
 
         inner.Should().BeOfType<UsdBasedExchangeRateProvider>();
-    }
-
-    private static IExchangeRateProvider InvokeInnerFactory(IExchangeRateProvider cachedProvider)
-    {
-        var field = typeof(InMemoryCachedExchangeRateProvider).GetField(
-            "_innerFactory", BindingFlags.NonPublic | BindingFlags.Instance)!;
-        var factory = (Func<IExchangeRateProvider>)field.GetValue(cachedProvider)!;
-        return factory();
     }
 
     private static IServiceProvider BuildServiceProvider(Dictionary<string, string?> settings)
