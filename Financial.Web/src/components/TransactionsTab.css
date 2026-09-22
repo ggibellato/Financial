@@ -81,3 +81,14 @@
   color: var(--error);
   flex-shrink: 0;
 }
+
+@media (max-width: 599px) {
+  .transactions-tab {
+    height: auto;
+    overflow: visible;
+  }
+
+  .transactions-tab__table-wrapper {
+    overflow-y: visible;
+  }
+}

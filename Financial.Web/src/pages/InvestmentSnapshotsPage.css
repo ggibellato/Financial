@@ -53,3 +53,14 @@
   border-top: 2px solid var(--border, #e5e4e7);
 }
 
+@media (max-width: 599px) {
+  .investment-snapshots-page {
+    height: auto;
+    overflow: visible;
+  }
+
+  .investment-snapshots-page__content {
+    overflow-y: visible;
+  }
+}
+

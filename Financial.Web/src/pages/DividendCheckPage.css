@@ -77,3 +77,19 @@
 .dividend-check__placeholder {
   color: var(--text);
 }
+
+@media (max-width: 599px) {
+  .dividend-check {
+    height: auto;
+    overflow: visible;
+  }
+
+  .dividend-check__tables {
+    grid-template-columns: 1fr;
+    overflow: visible;
+  }
+
+  .dividend-check__table-column {
+    overflow-y: visible;
+  }
+}

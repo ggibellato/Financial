@@ -110,3 +110,25 @@
   border: 1px solid var(--warning-border, #f0d878);
   border-radius: 4px;
 }
+
+@media (max-width: 599px) {
+  .monthly-page {
+    height: auto;
+    overflow: visible;
+  }
+
+  .monthly-page__content {
+    overflow: visible;
+  }
+
+  /* The side-by-side stretch and its 320px cap only make sense once the
+     grids sit in a row; stacked single-column on mobile they should size to
+     their own content instead of clipping it. */
+  .monthly-page__grids-row .monthly-page__section--grid {
+    max-height: none;
+  }
+
+  .monthly-page__table-scroll {
+    overflow: visible;
+  }
+}

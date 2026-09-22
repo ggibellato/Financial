@@ -81,3 +81,14 @@
   font-weight: bold;
   border-top: 2px solid var(--border, #e5e4e7);
 }
+
+@media (max-width: 599px) {
+  .controle-mae-page {
+    height: auto;
+    overflow: visible;
+  }
+
+  .controle-mae-page__content {
+    overflow-y: visible;
+  }
+}

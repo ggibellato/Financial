@@ -97,3 +97,14 @@
   flex: 1;
   min-height: 0;
 }
+
+@media (max-width: 599px) {
+  .credits-tab {
+    height: auto;
+    overflow: visible;
+  }
+
+  .credits-tab__table-wrapper {
+    overflow-y: visible;
+  }
+}

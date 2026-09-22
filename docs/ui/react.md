@@ -101,6 +101,27 @@ grid; do not opt one column into wrapping to "fit more."
   exactly what happened to `BanksGrid` when reused on the CashFlow Monthly
   page's Expense tab outside the Summary tab's grids-row (fixed 2026-08-22).
 
+### Mobile scrolling
+
+`Financial.Web` pages are designed against the WPF desktop experience first,
+so on a small screen — including landscape phone widths — not everything
+fits without scrolling. That is expected, not a bug to design away:
+
+- Do not constrain page height to the viewport on mobile (no `height: 100vh`
+  / `100%` chain forcing the page itself to fit one screen). Let the page
+  grow to its natural content height and scroll.
+- Do not use `overflow: hidden` on a mobile breakpoint in a way that clips
+  content instead of scrolling it — reserve `overflow: hidden` for cases with
+  no informational loss (e.g. a clipped decorative background).
+- Media queries should reflow/stack content and adjust spacing/type for small
+  screens, not attempt to cram the desktop layout into one unscrolled
+  viewport.
+- Wide tables/grids that can't reasonably reflow may scroll horizontally in
+  their own `overflow-x: auto` container; the page itself still scrolls
+  vertically around them.
+- No content or functionality available on desktop is dropped on mobile —
+  users reach it by scrolling instead.
+
 ## Forms
 
 - Migrating one form to the Fluent `Field`/`Input`/`Select`/`Button`

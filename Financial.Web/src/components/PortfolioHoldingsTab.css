@@ -111,3 +111,9 @@
   color: var(--text-muted, #888);
   font-style: italic;
 }
+
+@media (max-width: 599px) {
+  .portfolio-holdings {
+    height: auto;
+  }
+}
