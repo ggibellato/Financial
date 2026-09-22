@@ -247,10 +247,10 @@ graph TD
 - [ ] Given Frankfurter resolves only one of BRL/GBP for a historical date, that date is not persisted to the store.
 
 ### F03. Batched Frankfurter Historical Fetch
-- [ ] Given a historical date with published rates, exactly one outbound HTTP call retrieves both USD→BRL and USD→GBP.
-- [ ] Given a date with no published rate (e.g., a weekend), the fetch walks back up to 10 earlier days and returns the first date with a published rate, associated with the originally requested date.
-- [ ] Given the Frankfurter endpoint is unreachable, the fetch returns no rates for either currency without throwing, and the failure is logged with exception type, currencies, and date only.
-- [ ] Given Frankfurter's response includes BRL but omits GBP (or vice versa), the fetch returns the one available rate rather than failing entirely.
+- [x] Given a historical date with published rates, exactly one outbound HTTP call retrieves both USD→BRL and USD→GBP.
+- [x] Given a date with no published rate (e.g., a weekend), the fetch walks back up to 10 earlier days and returns the first date with a published rate, associated with the originally requested date.
+- [x] Given the Frankfurter endpoint is unreachable, the fetch returns no rates for either currency without throwing, and the failure is logged with exception type, currencies, and date only.
+- [x] Given Frankfurter's response includes BRL but omits GBP (or vice versa), the fetch returns the one available rate rather than failing entirely.
 
 ### F04. Layered Exchange Rate Provider Composition
 - [ ] Given both Investment and CashFlow infrastructure are composed in the same process, exactly one `IExchangeRateProvider` singleton is resolved by both, backed by the new layered chain.
