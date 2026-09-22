@@ -71,6 +71,25 @@ public class InvestmentSerializerAdapterTests
     }
 
     [Fact]
+    public void SerializeDeserialize_RoundTripPreservesIntermediationFee()
+    {
+        var investments = Investments.Create();
+        var broker = Broker.Create("XPI", "BRL");
+        var portfolio = broker.AddPortfolio("Default");
+        var asset = Asset.Create("Asset A", "ISIN123", "BVMF", "AAA");
+        asset.AddCredit(Credit.Create(new DateTime(2026, 7, 1), Credit.CreditType.SecuritiesLendingIncome, 0.16m, withheld: 0.03m, intermediationFee: 0.04m));
+        portfolio.AddAsset(asset);
+        investments.AddActiveBroker(broker);
+
+        var json = Serializer.Serialize(investments);
+        var result = Serializer.Deserialize(json);
+
+        var credit = result.ActiveBrokers.Single().Portfolios.Single().Assets.Single().Credits.Should().ContainSingle().Subject;
+        credit.IntermediationFee.Should().Be(0.04m);
+        credit.NetAmount.Should().Be(0.09m);
+    }
+
+    [Fact]
     public void SerializeDeserialize_RoundTripPreservesTaxRules()
     {
         var investments = Investments.Create();
@@ -316,6 +335,17 @@ public class InvestmentSerializerAdapterTests
         var asset = result.ActiveBrokers.Single().Portfolios.Single().Assets.Single();
         asset.Transactions.Single().Currency.Should().Be(Currency.USD);
         asset.Credits.Single().Currency.Should().Be(Currency.GBP);
+    }
+
+    [Fact]
+    public void Deserialize_DocumentWithoutIntermediationFeeProperty_DefaultsToZero()
+    {
+        var json = BuildDocumentWithDividendCredit("Dividend", sharesForDividend: null, version: null);
+
+        var result = Serializer.Deserialize(json);
+
+        var credit = result.ActiveBrokers.Single().Portfolios.Single().Assets.Single().Credits.Single();
+        credit.IntermediationFee.Should().Be(0m, "a credit written before this field existed has no fee recorded, and no migration backfills it");
     }
 
     [Fact]

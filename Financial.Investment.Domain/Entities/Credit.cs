@@ -12,6 +12,7 @@ public class Credit
     public CreditType Type { get; private set; }
     public decimal Value { get; private set; }
     public decimal Withheld { get; private set; }
+    public decimal IntermediationFee { get; private set; }
     public Currency Currency { get; private set; }
     public FxRateSnapshot? FxRateSnapshot { get; private set; }
 
@@ -22,14 +23,14 @@ public class Credit
     /// </summary>
     public decimal? SharesForDividend { get; private set; }
 
-    public decimal NetAmount => Value - Withheld;
+    public decimal NetAmount => Value - Withheld - IntermediationFee;
 
     private Credit() { }
 
-    private Credit(Guid id, DateTime date, CreditType type, decimal value, decimal withheld, Currency currency, FxRateSnapshot? fxRateSnapshot, decimal? sharesForDividend)
+    private Credit(Guid id, DateTime date, CreditType type, decimal value, decimal withheld, Currency currency, FxRateSnapshot? fxRateSnapshot, decimal? sharesForDividend, decimal intermediationFee)
     {
         ValidateValue(value);
-        ValidateWithheld(value, withheld);
+        ValidateDeductions(value, withheld, intermediationFee);
         ValidateSharesForDividend(sharesForDividend);
 
         Id = id;
@@ -37,16 +38,17 @@ public class Credit
         Type = type;
         Value = value;
         Withheld = withheld;
+        IntermediationFee = intermediationFee;
         Currency = currency;
         FxRateSnapshot = fxRateSnapshot;
         SharesForDividend = sharesForDividend;
     }
 
-    public static Credit Create(DateTime date, CreditType type, decimal value, decimal withheld = 0m, Currency currency = default, FxRateSnapshot? fxRateSnapshot = null, decimal? sharesForDividend = null) =>
-        new(Guid.NewGuid(), date, type, value, withheld, currency, fxRateSnapshot, sharesForDividend);
+    public static Credit Create(DateTime date, CreditType type, decimal value, decimal withheld = 0m, Currency currency = default, FxRateSnapshot? fxRateSnapshot = null, decimal? sharesForDividend = null, decimal intermediationFee = 0m) =>
+        new(Guid.NewGuid(), date, type, value, withheld, currency, fxRateSnapshot, sharesForDividend, intermediationFee);
 
-    public static Credit CreateWithId(Guid id, DateTime date, CreditType type, decimal value, decimal withheld = 0m, Currency currency = default, FxRateSnapshot? fxRateSnapshot = null, decimal? sharesForDividend = null) =>
-        new(id, date, type, value, withheld, currency, fxRateSnapshot, sharesForDividend);
+    public static Credit CreateWithId(Guid id, DateTime date, CreditType type, decimal value, decimal withheld = 0m, Currency currency = default, FxRateSnapshot? fxRateSnapshot = null, decimal? sharesForDividend = null, decimal intermediationFee = 0m) =>
+        new(id, date, type, value, withheld, currency, fxRateSnapshot, sharesForDividend, intermediationFee);
 
     private static void ValidateValue(decimal value)
     {
@@ -73,17 +75,25 @@ public class Credit
     }
 
     /// <summary>
-    /// Withheld must share Value's sign (or be zero) and never exceed it in magnitude, so
-    /// <see cref="NetAmount"/> can never land on the far side of zero from Value - a correction
+    /// Withheld and IntermediationFee must each share Value's sign (or be zero) and never exceed
+    /// it in magnitude on their own, and their combined magnitude must not exceed Value's either,
+    /// so <see cref="NetAmount"/> can never land on the far side of zero from Value - a correction
     /// (negative Value) and an ordinary payment (positive Value) each keep their own sign all the
     /// way through to what the investor actually received.
     /// </summary>
-    private static void ValidateWithheld(decimal value, decimal withheld)
+    private static void ValidateDeductions(decimal value, decimal withheld, decimal intermediationFee)
     {
-        var withinMagnitude = value > 0 ? withheld >= 0 && withheld <= value : withheld <= 0 && withheld >= value;
+        ValidateDeductionMagnitude(value, withheld, nameof(Withheld));
+        ValidateDeductionMagnitude(value, intermediationFee, nameof(IntermediationFee));
+        ValidateDeductionMagnitude(value, withheld + intermediationFee, "Withheld and IntermediationFee combined");
+    }
+
+    private static void ValidateDeductionMagnitude(decimal value, decimal deduction, string name)
+    {
+        var withinMagnitude = value > 0 ? deduction >= 0 && deduction <= value : deduction <= 0 && deduction >= value;
         if (!withinMagnitude)
         {
-            throw new ArgumentException("Withheld must share Value's sign and must not exceed it in magnitude.");
+            throw new ArgumentException($"{name} must share Value's sign and must not exceed it in magnitude.");
         }
     }
 }

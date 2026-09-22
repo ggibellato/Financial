@@ -16,8 +16,9 @@ public sealed record DividendAttribution(
 
 /// <summary>
 /// Attributes a dividend to the shares it was actually earned on (as declared via
-/// <see cref="Credit.SharesForDividend"/>), rather than the asset's current position, which may
-/// include shares bought after the dividend's reference date.
+/// <see cref="Credit.SharesForDividend"/>), or to the entire position held on the credit's date
+/// when left unset - never to the asset's current position, which may include shares bought
+/// after the dividend's reference date.
 /// </summary>
 public static class DividendAttributionCalculator
 {
@@ -26,17 +27,14 @@ public static class DividendAttributionCalculator
         IEnumerable<Transaction> transactions,
         AssetPriceSnapshot? priceOnDate)
     {
-        if (credit.SharesForDividend is not decimal sharesForDividend)
-        {
-            return null;
-        }
-
         var openLots = OpenLotTracker.GetOpenLots(transactions.Where(t => t.Date <= credit.Date));
         var quantityHeld = openLots.Sum(lot => lot.RemainingQuantity);
         if (quantityHeld <= 0)
         {
             return null;
         }
+
+        var sharesForDividend = credit.SharesForDividend ?? quantityHeld;
 
         var averageCostPerShare = openLots.Sum(lot => lot.RemainingQuantity * lot.UnitCost) / quantityHeld;
         var investedAmount = sharesForDividend * averageCostPerShare;

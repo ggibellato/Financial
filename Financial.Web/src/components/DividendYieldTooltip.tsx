@@ -8,11 +8,16 @@ interface DividendYieldTooltipProps {
 }
 
 export default function DividendYieldTooltip({ credit }: DividendYieldTooltipProps) {
-  if (credit.sharesForDividend == null) return null
+  if (credit.attributedShares == null) return null
+
+  const label =
+    credit.sharesForDividend == null
+      ? `${credit.attributedShares} shares attributed (entire position - none specified)`
+      : `${credit.attributedShares} shares attributed`
 
   const content = (
     <div>
-      <div>{credit.sharesForDividend} shares attributed</div>
+      <div>{label}</div>
       {credit.averageCostPerShare != null && <div>Average cost/share: {formatN2(credit.averageCostPerShare)}</div>}
       {credit.investedAmount != null && <div>Total bought: {formatN2(credit.investedAmount)}</div>}
       {credit.priceOnDate != null && <div>Share price on {formatShortDate(credit.date)}: {formatN2(credit.priceOnDate)}</div>}

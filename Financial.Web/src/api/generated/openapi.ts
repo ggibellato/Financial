@@ -6652,6 +6652,8 @@ export interface components {
             brokerName: string;
             /** Format: date-time */
             date?: string;
+            /** Format: double */
+            intermediationFee?: number;
             portfolioName: string;
             /** Format: double */
             sharesForDividend?: null | number;
@@ -6663,6 +6665,8 @@ export interface components {
         };
         CreditDTO: {
             /** Format: double */
+            attributedShares?: null | number;
+            /** Format: double */
             averageCostPerShare?: null | number;
             currency?: string;
             /** Format: date-time */
@@ -6670,6 +6674,8 @@ export interface components {
             fxRateSnapshot?: null | components["schemas"]["FxRateSnapshotDTO"];
             /** Format: uuid */
             id?: string;
+            /** Format: double */
+            intermediationFee?: number;
             /** Format: double */
             investedAmount?: null | number;
             /** Format: double */
@@ -6704,6 +6710,8 @@ export interface components {
             date?: string;
             /** Format: uuid */
             id?: string;
+            /** Format: double */
+            intermediationFee?: number;
             portfolioName: string;
             /** Format: double */
             sharesForDividend?: null | number;

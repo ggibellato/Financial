@@ -1480,6 +1480,10 @@
             "format": "date-time",
             "type": "string"
           },
+          "intermediationFee": {
+            "format": "double",
+            "type": "number"
+          },
           "portfolioName": {
             "type": "string"
           },
@@ -1512,6 +1516,13 @@
       },
       "CreditDTO": {
         "properties": {
+          "attributedShares": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
           "averageCostPerShare": {
             "format": "double",
             "type": [
@@ -1539,6 +1550,10 @@
           "id": {
             "format": "uuid",
             "type": "string"
+          },
+          "intermediationFee": {
+            "format": "double",
+            "type": "number"
           },
           "investedAmount": {
             "format": "double",
@@ -1641,6 +1656,10 @@
           "id": {
             "format": "uuid",
             "type": "string"
+          },
+          "intermediationFee": {
+            "format": "double",
+            "type": "number"
           },
           "portfolioName": {
             "type": "string"

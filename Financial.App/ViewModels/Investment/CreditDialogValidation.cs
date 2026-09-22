@@ -4,7 +4,7 @@ namespace Financial.Presentation.App.ViewModels.Investment;
 
 public static class CreditDialogValidation
 {
-    public static string BuildValidationMessage(bool isDeleteMode, DateTime date, string? type, decimal value, decimal withheld, decimal? sharesForDividend = null)
+    public static string BuildValidationMessage(bool isDeleteMode, DateTime date, string? type, decimal value, decimal withheld, decimal? sharesForDividend = null, decimal intermediationFee = 0m)
     {
         if (isDeleteMode)
         {
@@ -28,10 +28,19 @@ public static class CreditDialogValidation
             errors.Add("Value must not be zero.");
         }
 
-        var withinMagnitude = value > 0 ? withheld >= 0 && withheld <= value : withheld <= 0 && withheld >= value;
-        if (!withinMagnitude)
+        if (!IsWithinMagnitude(value, withheld))
         {
             errors.Add("Withheld must share Value's sign and must not exceed it in magnitude.");
+        }
+
+        if (!IsWithinMagnitude(value, intermediationFee))
+        {
+            errors.Add("Intermediation fee must share Value's sign and must not exceed it in magnitude.");
+        }
+
+        if (!IsWithinMagnitude(value, withheld + intermediationFee))
+        {
+            errors.Add("Withheld and intermediation fee combined must not exceed Value's magnitude.");
         }
 
         if (sharesForDividend is <= 0)
@@ -41,6 +50,9 @@ public static class CreditDialogValidation
 
         return string.Join(Environment.NewLine, errors);
     }
+
+    private static bool IsWithinMagnitude(decimal value, decimal deduction) =>
+        value > 0 ? deduction >= 0 && deduction <= value : deduction <= 0 && deduction >= value;
 
     public static bool IsValidCreditType(string? value) =>
         CreditTypeParser.TryNormalize(value, out _);

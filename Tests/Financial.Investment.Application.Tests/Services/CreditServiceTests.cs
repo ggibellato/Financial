@@ -180,6 +180,30 @@ public class CreditServiceTests
     }
 
     [Fact]
+    public async Task UpdateCreditAsync_WithIntermediationFee_UpdatesIt()
+    {
+        var asset = MakeAsset();
+        var creditId = Guid.NewGuid();
+        asset.AddCredit(Credit.CreateWithId(creditId, new DateTime(2024, 1, 1), Credit.CreditType.SecuritiesLendingIncome, 0.16m, withheld: 0.03m));
+        _repository.Asset = asset;
+
+        await CreateService().UpdateCreditAsync(new CreditUpdateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "AAAA",
+            Id = creditId,
+            Date = new DateTime(2024, 1, 1),
+            Type = "SecuritiesLendingIncome",
+            Value = 0.16m,
+            Withheld = 0.03m,
+            IntermediationFee = 0.04m
+        });
+
+        asset.Credits.Should().ContainSingle(c => c.IntermediationFee == 0.04m && c.NetAmount == 0.09m);
+    }
+
+    [Fact]
     public async Task UpdateCreditAsync_PreservesTheOriginalCurrencyAndFxRateSnapshot_WithoutCallingTheProvider()
     {
         var asset = MakeAsset();
@@ -502,6 +526,27 @@ public class CreditServiceTests
         });
 
         asset.Credits.Should().ContainSingle(c => c.Withheld == 15m && c.NetAmount == 85m);
+    }
+
+    [Fact]
+    public async Task AddCreditAsync_WithIntermediationFee_AddsCreditWithNetAmountSubtractingBoth()
+    {
+        var asset = MakeAsset();
+        _repository.Asset = asset;
+
+        await CreateService().AddCreditAsync(new CreditCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "AAAA",
+            Date = new DateTime(2024, 1, 1),
+            Type = "SecuritiesLendingIncome",
+            Value = 0.16m,
+            Withheld = 0.03m,
+            IntermediationFee = 0.04m
+        });
+
+        asset.Credits.Should().ContainSingle(c => c.IntermediationFee == 0.04m && c.NetAmount == 0.09m);
     }
 
     [Fact]

@@ -4,7 +4,7 @@ using System.Windows.Data;
 
 namespace Financial.Presentation.App.Converters;
 
-public class SharesForDividendToVisibilityConverter : IValueConverter
+public class DividendAttributionToVisibilityConverter : IValueConverter
 {
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {

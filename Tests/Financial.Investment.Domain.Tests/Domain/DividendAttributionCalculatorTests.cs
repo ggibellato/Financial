@@ -9,14 +9,41 @@ namespace Financial.Investment.Domain.Tests;
 public class DividendAttributionCalculatorTests
 {
     [Fact]
-    public void Calculate_NoSharesForDividend_ReturnsNull()
+    public void Calculate_NoSharesForDividend_DefaultsToEntirePositionHeld()
     {
         var credit = Credit.Create(new DateTime(2024, 6, 1), Credit.CreditType.Dividend, 400m);
         var transactions = new[] { Buy(new DateTime(2024, 1, 1), 1000m, 9m) };
 
         var result = DividendAttributionCalculator.Calculate(credit, transactions, priceOnDate: null);
 
+        result.Should().NotBeNull();
+        result!.SharesForDividend.Should().Be(1000m);
+        result.AverageCostPerShare.Should().Be(9m);
+        result.InvestedAmount.Should().Be(9000m);
+        result.YieldOnInvested.Should().BeApproximately(4.4444m, 0.0001m);
+    }
+
+    [Fact]
+    public void Calculate_NoSharesForDividendAndNoOpenLotsAsOfDate_ReturnsNull()
+    {
+        var credit = Credit.Create(new DateTime(2024, 6, 1), Credit.CreditType.Dividend, 400m);
+        var transactions = new[] { Buy(new DateTime(2024, 7, 1), 1000m, 9m) };
+
+        var result = DividendAttributionCalculator.Calculate(credit, transactions, priceOnDate: null);
+
         result.Should().BeNull();
+    }
+
+    [Fact]
+    public void Calculate_NoSharesForDividendWithProviderValuePrice_MarketValueEqualsRecordedFigure()
+    {
+        var credit = Credit.Create(new DateTime(2024, 6, 1), Credit.CreditType.SecuritiesLendingIncome, 0.09m);
+        var transactions = new[] { Buy(new DateTime(2024, 1, 1), 1000m, 9m) };
+        var price = AssetPriceSnapshot.Create(new DateOnly(2024, 6, 1), 5000m, ValuationMethod.ProviderValue, PriceSource.Unknown, string.Empty, null, DateTimeOffset.UtcNow);
+
+        var result = DividendAttributionCalculator.Calculate(credit, transactions, price);
+
+        result!.MarketValueOnDate.Should().Be(5000m, "leaving Shares for this dividend blank attributes the whole position, so the pro-rated share is 100%");
     }
 
     [Fact]

@@ -37,7 +37,7 @@
         <converters:PriceSourceToLabelConverter x:Key="PriceSourceToLabelConverter"/>
         <converters:FxRateSnapshotToVisibilityConverter x:Key="FxRateSnapshotToVisibilityConverter"/>
         <converters:FxRateSnapshotToTooltipConverter x:Key="FxRateSnapshotToTooltipConverter"/>
-        <converters:SharesForDividendToVisibilityConverter x:Key="SharesForDividendToVisibilityConverter"/>
+        <converters:DividendAttributionToVisibilityConverter x:Key="DividendAttributionToVisibilityConverter"/>
         <converters:DividendAttributionToTooltipConverter x:Key="DividendAttributionToTooltipConverter"/>
 
         <!-- Assigning a DataGridColumn.Header to a ColumnFilterViewModelBase instance (in a
