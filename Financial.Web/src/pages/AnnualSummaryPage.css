@@ -50,6 +50,15 @@
   .annual-summary-page__table {
     min-width: 0;
   }
+
+  .annual-summary-page {
+    height: auto;
+    overflow: visible;
+  }
+
+  .annual-summary-page__content {
+    overflow-y: visible;
+  }
 }
 
 .annual-summary-page__emphasized-row {

@@ -114,6 +114,15 @@
     overflow-y: auto;
   }
 
+  .price-history-tab__split {
+    overflow: visible;
+  }
+
+  .price-history-tab__left {
+    height: auto;
+    overflow: visible;
+  }
+
   /* ResponsiveContainer's height="100%" needs a definite ancestor height -
      without this the auto-height chain above renders the chart at 0 height. */
   .price-history-tab__right {

@@ -14,6 +14,19 @@
   flex-direction: column;
 }
 
+@media (max-width: 599px) {
+  .app {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+
+  .app__content {
+    min-height: 0;
+    overflow: visible;
+  }
+}
+
 .app__topbar {
   display: flex;
   align-items: center;

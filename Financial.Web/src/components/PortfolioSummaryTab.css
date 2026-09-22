@@ -18,3 +18,9 @@
   font-style: italic;
   color: var(--danger);
 }
+
+@media (max-width: 599px) {
+  .portfolio-summary {
+    height: auto;
+  }
+}

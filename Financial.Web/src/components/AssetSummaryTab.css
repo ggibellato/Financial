@@ -4,6 +4,12 @@
   height: 100%;
 }
 
+@media (max-width: 599px) {
+  .asset-summary {
+    height: auto;
+  }
+}
+
 .asset-summary__grid {
   display: grid;
   grid-template-columns: 1fr 1fr;

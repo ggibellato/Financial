@@ -103,6 +103,23 @@ body {
   height: 100%;
 }
 
+/* Below MOBILE_MAX_WIDTH_PX (src/styles/breakpoints.ts): let the document grow
+   to its natural content height and scroll, instead of clipping content to
+   one viewport-sized screen. Per docs/ui/react.md "Mobile scrolling". */
+@media (max-width: 599px) {
+  html,
+  body {
+    height: auto;
+    min-height: 100%;
+    overflow: visible;
+  }
+
+  #root {
+    height: auto;
+    min-height: 100%;
+  }
+}
+
 h1,
 h2 {
   font-family: var(--heading);

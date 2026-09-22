@@ -66,6 +66,11 @@
 - [ ] Web remains usable at required zoom/text scale.
 - [ ] WPF works at narrow window sizes, high DPI, and increased text scale.
 - [ ] Essential information/actions are not removed without an alternative.
+- [ ] On mobile, the page is allowed to grow taller than the viewport and
+      scroll vertically — no `height: 100vh`/`100%` chain or `overflow: hidden`
+      clips content instead of letting the user scroll to it.
+- [ ] Wide tables/grids that can't reflow scroll horizontally in their own
+      `overflow-x: auto` container, not clipped or forced to shrink illegibly.
 
 ## Accessibility
 
