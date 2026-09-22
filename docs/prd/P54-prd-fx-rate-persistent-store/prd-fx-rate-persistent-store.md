@@ -238,13 +238,13 @@ graph TD
 - [x] Given two different dates are resolved within the same debounce window, both entries are present in the file after the debounced write completes.
 
 ### F02. USD-Based Rate Resolution and Yesterday-or-Earlier Rule
-- [ ] Given `from` and `to` are the same currency, `GetHistoricalRateAsync` returns `1` with no store read and no Frankfurter call.
-- [ ] Given a date strictly before today already present in the store, `GetHistoricalRateAsync` returns the computed pair using only the stored USD-based rates, with no Frankfurter call.
-- [ ] Given a date strictly before today with no entry in the store, `GetHistoricalRateAsync` fetches from Frankfurter, computes the requested pair, and results in that date being persisted with both BRL and GBP present.
-- [ ] Given today's date, `GetHistoricalRateAsync` returns a live rate, and no entry keyed by today's date exists in the store after the call.
-- [ ] Given requests for USD→BRL, USD→GBP, BRL→USD, GBP→USD, BRL→GBP, and GBP→BRL for the same historical date, all six results are mathematically consistent via the two stored USD-based rates.
-- [ ] Given Frankfurter fails to resolve either currency for a historical date, `GetHistoricalRateAsync` returns `null` and nothing is persisted for that date.
-- [ ] Given Frankfurter resolves only one of BRL/GBP for a historical date, that date is not persisted to the store.
+- [x] Given `from` and `to` are the same currency, `GetHistoricalRateAsync` returns `1` with no store read and no Frankfurter call.
+- [x] Given a date strictly before today already present in the store, `GetHistoricalRateAsync` returns the computed pair using only the stored USD-based rates, with no Frankfurter call.
+- [x] Given a date strictly before today with no entry in the store, `GetHistoricalRateAsync` fetches from Frankfurter, computes the requested pair, and results in that date being persisted with both BRL and GBP present.
+- [x] Given today's date, `GetHistoricalRateAsync` returns a live rate, and no entry keyed by today's date exists in the store after the call.
+- [x] Given requests for USD→BRL, USD→GBP, BRL→USD, GBP→USD, BRL→GBP, and GBP→BRL for the same historical date, all six results are mathematically consistent via the two stored USD-based rates.
+- [x] Given Frankfurter fails to resolve either currency for a historical date, `GetHistoricalRateAsync` returns `null` and nothing is persisted for that date.
+- [x] Given Frankfurter resolves only one of BRL/GBP for a historical date, that date is not persisted to the store.
 
 ### F03. Batched Frankfurter Historical Fetch
 - [x] Given a historical date with published rates, exactly one outbound HTTP call retrieves both USD→BRL and USD→GBP.
@@ -259,6 +259,6 @@ graph TD
 - [ ] `FrankfurterIsolationRuleTests` continues to pass, confirming no bounded context calls Frankfurter directly.
 
 ### Cross-Feature Integration
-- [ ] A rate persisted by F01 for a historical date is correctly read back and used by F02's resolution logic to compute a requested currency pair, with no redundant Frankfurter call.
-- [ ] Rates fetched by F03 for a historical date are correctly handed to F02, which persists them to F01 only when both BRL and GBP are present.
+- [x] A rate persisted by F01 for a historical date is correctly read back and used by F02's resolution logic to compute a requested currency pair, with no redundant Frankfurter call.
+- [x] Rates fetched by F03 for a historical date are correctly handed to F02, which persists them to F01 only when both BRL and GBP are present.
 - [ ] A rate resolved by F02 — whether served from F01 or freshly fetched via F03 — is correctly returned through F04's provider chain to an existing caller (e.g., `ControleMaeService.CreateEntryAsync`) with no change to that caller's code.
