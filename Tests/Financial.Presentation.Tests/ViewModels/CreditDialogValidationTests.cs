@@ -92,6 +92,35 @@ public class CreditDialogValidationTests
         result.Should().Contain("Withheld must share Value's sign and must not exceed it in magnitude.");
     }
 
+    [Fact]
+    public void BuildValidationMessage_NullSharesForDividend_ReturnsEmpty()
+    {
+        var result = CreditDialogValidation.BuildValidationMessage(
+            isDeleteMode: false, date: ValidDate, type: "Dividend", value: 10, withheld: 0, sharesForDividend: null);
+
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void BuildValidationMessage_PositiveSharesForDividend_ReturnsEmpty()
+    {
+        var result = CreditDialogValidation.BuildValidationMessage(
+            isDeleteMode: false, date: ValidDate, type: "Dividend", value: 10, withheld: 0, sharesForDividend: 800m);
+
+        result.Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void BuildValidationMessage_NonPositiveSharesForDividend_IncludesSharesError(decimal sharesForDividend)
+    {
+        var result = CreditDialogValidation.BuildValidationMessage(
+            isDeleteMode: false, date: ValidDate, type: "Dividend", value: 10, withheld: 0, sharesForDividend: sharesForDividend);
+
+        result.Should().Contain("Shares for this dividend must be greater than zero when provided.");
+    }
+
     [Theory]
     [InlineData("Dividend", true)]
     [InlineData("securitieslendingincome", true)]

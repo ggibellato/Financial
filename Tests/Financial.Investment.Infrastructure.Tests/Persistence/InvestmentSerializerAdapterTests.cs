@@ -180,7 +180,7 @@ public class InvestmentSerializerAdapterTests
     {
         var json = Serializer.Serialize(Investments.Create());
 
-        json.Should().Contain("\"Version\": 4");
+        json.Should().Contain("\"Version\": 5");
     }
 
     [Fact]
@@ -316,6 +316,86 @@ public class InvestmentSerializerAdapterTests
         var asset = result.ActiveBrokers.Single().Portfolios.Single().Assets.Single();
         asset.Transactions.Single().Currency.Should().Be(Currency.USD);
         asset.Credits.Single().Currency.Should().Be(Currency.GBP);
+    }
+
+    [Fact]
+    public void Deserialize_Version4_BackfillsSharesForDividendFromPositionHeldBeforeTheCreditDate()
+    {
+        var json = BuildDocumentWithDividendCredit("Dividend", sharesForDividend: null, version: 4);
+
+        var result = Serializer.Deserialize(json);
+
+        var credit = result.ActiveBrokers.Single().Portfolios.Single().Assets.Single().Credits.Single();
+        credit.SharesForDividend.Should().Be(10m);
+    }
+
+    [Fact]
+    public void Deserialize_Version4_BackfillsSharesForDividendForJcpCredit()
+    {
+        var json = BuildDocumentWithDividendCredit("JCP", sharesForDividend: null, version: 4);
+
+        var result = Serializer.Deserialize(json);
+
+        var credit = result.ActiveBrokers.Single().Portfolios.Single().Assets.Single().Credits.Single();
+        credit.SharesForDividend.Should().Be(10m);
+    }
+
+    [Fact]
+    public void Deserialize_Version4_CreditAlreadyHavingSharesForDividend_IsNotOverwritten()
+    {
+        var json = BuildDocumentWithDividendCredit("Dividend", sharesForDividend: 3m, version: 4);
+
+        var result = Serializer.Deserialize(json);
+
+        var credit = result.ActiveBrokers.Single().Portfolios.Single().Assets.Single().Credits.Single();
+        credit.SharesForDividend.Should().Be(3m);
+    }
+
+    [Fact]
+    public void Deserialize_CurrentVersion_DoesNotBackfillSharesForDividend()
+    {
+        var json = BuildDocumentWithDividendCredit("Dividend", sharesForDividend: null, version: 5);
+
+        var result = Serializer.Deserialize(json);
+
+        var credit = result.ActiveBrokers.Single().Portfolios.Single().Assets.Single().Credits.Single();
+        credit.SharesForDividend.Should().BeNull("a credit created after the feature shipped with shares left blank means the user chose not to attribute it, not that it predates the field");
+    }
+
+    private static string BuildDocumentWithDividendCredit(string creditType, decimal? sharesForDividend, int? version)
+    {
+        var versionProperty = version is null ? string.Empty : $"""
+            "Version": {version},
+            """;
+        var sharesProperty = sharesForDividend is null ? string.Empty : $""", "SharesForDividend": {sharesForDividend} """;
+
+        return $$"""
+            {
+              {{versionProperty}}
+              "ActiveBrokers": [
+                {
+                  "Name": "Broker A",
+                  "Currency": "USD",
+                  "Portfolios": [
+                    {
+                      "Name": "Default",
+                      "Assets": [
+                        {
+                          "Name": "Asset A",
+                          "Transactions": [
+                            { "Id": "11111111-1111-1111-1111-111111111111", "Date": "2026-01-01", "Type": "Buy", "Quantity": 10, "UnitPrice": 10, "Fees": 0 }
+                          ],
+                          "Credits": [
+                            { "Id": "22222222-2222-2222-2222-222222222222", "Date": "2026-02-01", "Type": "{{creditType}}", "Value": 10, "Withheld": 0{{sharesProperty}} }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+            """;
     }
 
     private static string BuildDocumentWithCurrency(string? transactionCurrency, string? creditCurrency, string brokerCurrency, int? version)

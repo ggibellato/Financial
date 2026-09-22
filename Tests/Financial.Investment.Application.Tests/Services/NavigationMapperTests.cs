@@ -45,8 +45,9 @@ public class NavigationMapperTests
         var credit = Credit.Create(
             new DateTime(2026, 7, 1), Credit.CreditType.Dividend, 100m,
             currency: Currency.BRL, fxRateSnapshot: snapshot);
+        var asset = Asset.Create("PETR4", "ISIN1", "B3", "PETR4");
 
-        var dto = NavigationMapper.MapCredit(credit);
+        var dto = NavigationMapper.MapCredit(credit, asset);
 
         dto.Currency.Should().Be("BRL");
         dto.FxRateSnapshot.Should().NotBeNull();
@@ -60,10 +61,40 @@ public class NavigationMapperTests
     public void MapCredit_WithoutFxRateSnapshot_MapsNullSnapshot()
     {
         var credit = Credit.Create(new DateTime(2026, 7, 1), Credit.CreditType.Dividend, 100m, currency: Currency.GBP);
+        var asset = Asset.Create("PETR4", "ISIN1", "B3", "PETR4");
 
-        var dto = NavigationMapper.MapCredit(credit);
+        var dto = NavigationMapper.MapCredit(credit, asset);
 
         dto.Currency.Should().Be("GBP");
         dto.FxRateSnapshot.Should().BeNull();
+    }
+
+    [Fact]
+    public void MapCredit_WithoutSharesForDividend_LeavesAttributionFieldsNull()
+    {
+        var credit = Credit.Create(new DateTime(2026, 7, 1), Credit.CreditType.Dividend, 100m);
+        var asset = Asset.Create("PETR4", "ISIN1", "B3", "PETR4");
+
+        var dto = NavigationMapper.MapCredit(credit, asset);
+
+        dto.SharesForDividend.Should().BeNull();
+        dto.InvestedAmount.Should().BeNull();
+        dto.YieldOnInvested.Should().BeNull();
+        dto.YieldOnMarket.Should().BeNull();
+    }
+
+    [Fact]
+    public void MapCredit_WithSharesForDividend_ComputesInvestedAmountAndYield()
+    {
+        var asset = Asset.Create("PETR4", "ISIN1", "B3", "PETR4");
+        asset.AddTransaction(Transaction.Create(new DateTime(2026, 1, 1), Transaction.TransactionType.Buy, 1000m, 9m, 0m));
+        var credit = Credit.Create(new DateTime(2026, 6, 1), Credit.CreditType.Dividend, 400m, sharesForDividend: 800m);
+
+        var dto = NavigationMapper.MapCredit(credit, asset);
+
+        dto.SharesForDividend.Should().Be(800m);
+        dto.AverageCostPerShare.Should().Be(9m);
+        dto.InvestedAmount.Should().Be(7200m);
+        dto.YieldOnInvested.Should().BeApproximately(5.5556m, 0.0001m);
     }
 }

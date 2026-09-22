@@ -116,8 +116,13 @@ internal static class NavigationMapper
         };
     }
 
-    internal static CreditDTO MapCredit(Credit credit)
+    internal static CreditDTO MapCredit(Credit credit, Asset asset)
     {
+        var attribution = DividendAttributionCalculator.Calculate(
+            credit,
+            asset.Transactions,
+            asset.GetPriceAsOf(DateOnly.FromDateTime(credit.Date)));
+
         return new CreditDTO
         {
             Id = credit.Id,
@@ -127,7 +132,14 @@ internal static class NavigationMapper
             Withheld = credit.Withheld,
             NetAmount = credit.NetAmount,
             Currency = credit.Currency.ToString(),
-            FxRateSnapshot = MapFxRateSnapshot(credit.FxRateSnapshot)
+            FxRateSnapshot = MapFxRateSnapshot(credit.FxRateSnapshot),
+            SharesForDividend = credit.SharesForDividend,
+            AverageCostPerShare = attribution?.AverageCostPerShare,
+            InvestedAmount = attribution?.InvestedAmount,
+            PriceOnDate = attribution?.PriceOnDate,
+            MarketValueOnDate = attribution?.MarketValueOnDate,
+            YieldOnInvested = attribution?.YieldOnInvested,
+            YieldOnMarket = attribution?.YieldOnMarket
         };
     }
 

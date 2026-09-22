@@ -1483,6 +1483,13 @@
           "portfolioName": {
             "type": "string"
           },
+          "sharesForDividend": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
           "type": {
             "type": "string"
           },
@@ -1505,6 +1512,13 @@
       },
       "CreditDTO": {
         "properties": {
+          "averageCostPerShare": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
           "currency": {
             "type": "string"
           },
@@ -1526,9 +1540,37 @@
             "format": "uuid",
             "type": "string"
           },
+          "investedAmount": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "marketValueOnDate": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
           "netAmount": {
             "format": "double",
             "type": "number"
+          },
+          "priceOnDate": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "sharesForDividend": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
           },
           "type": {
             "type": "string"
@@ -1540,6 +1582,20 @@
           "withheld": {
             "format": "double",
             "type": "number"
+          },
+          "yieldOnInvested": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "yieldOnMarket": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
           }
         },
         "required": [
@@ -1588,6 +1644,13 @@
           },
           "portfolioName": {
             "type": "string"
+          },
+          "sharesForDividend": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
           },
           "type": {
             "type": "string"

@@ -146,4 +146,38 @@ public class CreditTests
 
         act.Should().Throw<ArgumentException>();
     }
+
+    [Fact]
+    public void Create_WithoutSharesForDividend_IsNull()
+    {
+        var credit = Credit.Create(new DateTime(2024, 1, 1), Credit.CreditType.Dividend, 10m);
+
+        credit.SharesForDividend.Should().BeNull();
+    }
+
+    [Fact]
+    public void Create_WithSharesForDividend_AssignsIt()
+    {
+        var credit = Credit.Create(new DateTime(2024, 1, 1), Credit.CreditType.Dividend, 10m, sharesForDividend: 800m);
+
+        credit.SharesForDividend.Should().Be(800m);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void Create_WithNonPositiveSharesForDividend_Throws(decimal sharesForDividend)
+    {
+        var act = () => Credit.Create(new DateTime(2024, 1, 1), Credit.CreditType.Dividend, 10m, sharesForDividend: sharesForDividend);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void CreateWithId_WithSharesForDividend_AssignsIt()
+    {
+        var credit = Credit.CreateWithId(Guid.NewGuid(), new DateTime(2024, 1, 1), Credit.CreditType.Dividend, 10m, sharesForDividend: 800m);
+
+        credit.SharesForDividend.Should().Be(800m);
+    }
 }

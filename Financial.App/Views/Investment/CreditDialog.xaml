@@ -3,12 +3,13 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:behaviors="clr-namespace:Financial.Presentation.App.Behaviors"
         Title="{Binding Title}"
-        Height="340"
+        Height="370"
         Width="420"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize">
     <Grid Margin="16">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -66,13 +67,19 @@
         <TextBlock Grid.Row="5" Grid.Column="1"
                    Text="{Binding NetAmount, StringFormat=N2}"/>
 
-        <TextBlock Grid.Row="6" Grid.ColumnSpan="2"
+        <TextBlock Grid.Row="6" Grid.Column="0" Text="Shares:" VerticalAlignment="Center"/>
+        <TextBox Grid.Row="6" Grid.Column="1"
+                 Text="{Binding SharesForDividend, UpdateSourceTrigger=LostFocus}"
+                 IsReadOnly="{Binding IsReadOnly}"
+                 behaviors:DecimalInputBehavior.IsEnabled="True"/>
+
+        <TextBlock Grid.Row="7" Grid.ColumnSpan="2"
                    Foreground="{DynamicResource SystemFillColorCriticalBrush}"
                    TextWrapping="Wrap"
                    Text="{Binding ValidationMessage}"
                    Margin="0,8,0,0"/>
 
-        <StackPanel Grid.Row="7" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,12,0,0">
+        <StackPanel Grid.Row="8" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,12,0,0">
             <Button Content="{Binding ConfirmLabel}" Width="90" Command="{Binding ConfirmCommand}"/>
             <Button Content="Cancel" Width="90" Margin="8,0,0,0" Command="{Binding CancelCommand}"/>
         </StackPanel>

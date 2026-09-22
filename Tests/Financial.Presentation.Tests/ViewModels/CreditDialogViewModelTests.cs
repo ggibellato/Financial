@@ -143,4 +143,46 @@ public class CreditDialogViewModelTests
 
         viewModel.NetAmount.Should().Be(7m);
     }
+
+    [Fact]
+    public void CreateForAdd_DefaultsSharesForDividendToNull()
+    {
+        var viewModel = CreditDialogViewModel.CreateForAdd("XPI", "Default", "PETR4");
+
+        viewModel.SharesForDividend.Should().BeNull();
+    }
+
+    [Fact]
+    public void CreateForUpdate_PreservesSharesForDividend()
+    {
+        var viewModel = CreditDialogViewModel.CreateForUpdate("XPI", "Default", "PETR4", Guid.NewGuid(), DateTime.Today, "Dividend", 25m, 5m, 800m);
+
+        viewModel.SharesForDividend.Should().Be(800m);
+    }
+
+    [Fact]
+    public void ConfirmCommand_CanExecute_FalseWhenSharesForDividendIsZero()
+    {
+        var viewModel = CreditDialogViewModel.CreateForAdd("XPI", "Default", "PETR4");
+        viewModel.Date = DateTime.Today;
+        viewModel.Type = "Dividend";
+        viewModel.Value = 10m;
+
+        viewModel.SharesForDividend = 0m;
+
+        viewModel.ConfirmCommand.CanExecute(null).Should().BeFalse();
+    }
+
+    [Fact]
+    public void ConfirmCommand_CanExecute_TrueWithAPositiveSharesForDividend()
+    {
+        var viewModel = CreditDialogViewModel.CreateForAdd("XPI", "Default", "PETR4");
+        viewModel.Date = DateTime.Today;
+        viewModel.Type = "Dividend";
+        viewModel.Value = 10m;
+
+        viewModel.SharesForDividend = 800m;
+
+        viewModel.ConfirmCommand.CanExecute(null).Should().BeTrue();
+    }
 }

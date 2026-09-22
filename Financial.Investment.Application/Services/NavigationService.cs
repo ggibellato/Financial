@@ -86,7 +86,7 @@ public sealed class NavigationService : INavigationService
                 .ToList();
 
             var credits = asset.Credits
-                .Select(NavigationMapper.MapCredit)
+                .Select(c => NavigationMapper.MapCredit(c, asset))
                 .OrderByDescending(c => c.Date)
                 .ToList();
 

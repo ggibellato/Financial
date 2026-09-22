@@ -10,7 +10,9 @@ namespace Financial.Investment.Infrastructure.Persistence;
 /// </summary>
 internal static class InvestmentDataMigrations
 {
-    public const int CurrentVersion = 4;
+    // Version 5's step (SharesForDividend backfill) needs domain-level lot tracking, not raw JSON,
+    // so InvestmentSerializerAdapter applies it after deserialization instead of adding a step here.
+    public const int CurrentVersion = 5;
 
     private static readonly string[] BrokerGroupNames = ["ActiveBrokers", "HistoricBrokers"];
 

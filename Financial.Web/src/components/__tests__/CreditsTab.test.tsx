@@ -36,6 +36,16 @@ vi.mock('recharts', () => ({
   LabelList: () => null,
 }))
 
+const NO_DIVIDEND_ATTRIBUTION = {
+  sharesForDividend: null,
+  averageCostPerShare: null,
+  investedAmount: null,
+  priceOnDate: null,
+  marketValueOnDate: null,
+  yieldOnInvested: null,
+  yieldOnMarket: null,
+}
+
 const CREDIT_DIVIDEND: CreditDto = {
   id: 'aaa',
   date: '2024-03-15T00:00:00',
@@ -45,6 +55,7 @@ const CREDIT_DIVIDEND: CreditDto = {
   netAmount: 120.5,
   currency: 'GBP',
   fxRateSnapshot: null,
+  ...NO_DIVIDEND_ATTRIBUTION,
 }
 
 const CREDIT_SECURITIES_LENDING_INCOME: CreditDto = {
@@ -56,6 +67,7 @@ const CREDIT_SECURITIES_LENDING_INCOME: CreditDto = {
   netAmount: 350.0,
   currency: 'GBP',
   fxRateSnapshot: null,
+  ...NO_DIVIDEND_ATTRIBUTION,
 }
 
 const CREDIT_JCP: CreditDto = {
@@ -67,6 +79,7 @@ const CREDIT_JCP: CreditDto = {
   netAmount: 75.0,
   currency: 'GBP',
   fxRateSnapshot: null,
+  ...NO_DIVIDEND_ATTRIBUTION,
 }
 
 const DEFAULT_HOOK: CreditsData = {
@@ -88,6 +101,7 @@ const DEFAULT_HOOK: CreditsData = {
   formType: 'Dividend',
   formValue: '',
   formWithheld: '',
+  formSharesForDividend: '',
   isSaving: false,
   saveError: null,
   saveErrorFields: {},
@@ -238,6 +252,7 @@ describe('CreditsTab', () => {
     expect(screen.getByLabelText(/^Date/)).toBeInTheDocument()
     expect(screen.getByLabelText('Type')).toBeInTheDocument()
     expect(screen.getByLabelText(/^Value/)).toBeInTheDocument()
+    expect(screen.getByLabelText('Shares for this dividend')).toBeInTheDocument()
   })
 
   it('type_select_includes_jcp_option', () => {
@@ -449,6 +464,43 @@ describe('CreditsTab', () => {
 
     fireEvent.change(screen.getByLabelText(/^Value/), { target: { value: '99.5' } })
     expect(mockSetFormField).toHaveBeenCalledWith('formValue', '99.5')
+
+    fireEvent.change(screen.getByLabelText('Shares for this dividend'), { target: { value: '800' } })
+    expect(mockSetFormField).toHaveBeenCalledWith('formSharesForDividend', '800')
+  })
+
+  it('shows_the_yield_affordance_for_a_credit_with_shares_attributed', () => {
+    setMock({
+      credits: [{ ...CREDIT_DIVIDEND, sharesForDividend: 800, investedAmount: 7200, yieldOnInvested: 5.5556 }],
+    })
+    render(<CreditsTab />)
+
+    expect(screen.getByRole('button', { name: 'Dividend yield details' })).toBeInTheDocument()
+  })
+
+  it('does_not_show_the_yield_affordance_for_a_credit_without_shares_attributed', () => {
+    setMock({ credits: [CREDIT_DIVIDEND] })
+    render(<CreditsTab />)
+
+    expect(screen.queryByRole('button', { name: 'Dividend yield details' })).not.toBeInTheDocument()
+  })
+
+  it('shows_yield_bought_and_yield_current_columns_when_computed', () => {
+    setMock({
+      credits: [{ ...CREDIT_DIVIDEND, sharesForDividend: 800, yieldOnInvested: 5.5556, yieldOnMarket: 5 }],
+    })
+    render(<CreditsTab />)
+
+    expect(screen.getByText('5.6%')).toBeInTheDocument()
+    expect(screen.getByText('5.0%')).toBeInTheDocument()
+  })
+
+  it('shows_a_dash_for_yield_columns_when_not_computed', () => {
+    setMock({ credits: [CREDIT_DIVIDEND] })
+    render(<CreditsTab />)
+
+    const dataRow = within(screen.getByRole('table')).getAllByRole('row')[1]
+    expect(within(dataRow).getAllByText('—')).not.toHaveLength(0)
   })
 
   it('shows_the_fx_provenance_affordance_for_a_credit_with_a_captured_snapshot', () => {

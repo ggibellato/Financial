@@ -4,7 +4,7 @@ namespace Financial.Presentation.App.ViewModels.Investment;
 
 public static class CreditDialogValidation
 {
-    public static string BuildValidationMessage(bool isDeleteMode, DateTime date, string? type, decimal value, decimal withheld)
+    public static string BuildValidationMessage(bool isDeleteMode, DateTime date, string? type, decimal value, decimal withheld, decimal? sharesForDividend = null)
     {
         if (isDeleteMode)
         {
@@ -32,6 +32,11 @@ public static class CreditDialogValidation
         if (!withinMagnitude)
         {
             errors.Add("Withheld must share Value's sign and must not exceed it in magnitude.");
+        }
+
+        if (sharesForDividend is <= 0)
+        {
+            errors.Add("Shares for this dividend must be greater than zero when provided.");
         }
 
         return string.Join(Environment.NewLine, errors);

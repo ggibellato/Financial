@@ -9,7 +9,7 @@ import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
 
 export type ViewMode = 'Stacked' | 'Grouped'
 export type ChartType = 'Bar' | 'Line'
-export type CreditFormField = 'formDate' | 'formType' | 'formValue' | 'formWithheld'
+export type CreditFormField = 'formDate' | 'formType' | 'formValue' | 'formWithheld' | 'formSharesForDividend'
 
 const DATE_KEY = 'investmentCredit.date'
 const TYPE_KEY = 'investmentCredit.type'
@@ -45,6 +45,7 @@ interface CreditsState {
   formType: string
   formValue: string
   formWithheld: string
+  formSharesForDividend: string
   isSaving: boolean
   saveError: string | null
   saveErrorFields: Partial<Record<CreditFormField, string>>
@@ -77,6 +78,7 @@ const BLANK_FORM = {
   formType: 'Dividend',
   formValue: '',
   formWithheld: '',
+  formSharesForDividend: '',
   isSaving: false,
   saveError: null,
   saveErrorFields: {},
@@ -153,6 +155,7 @@ function reducer(state: CreditsState, action: CreditsAction): CreditsState {
         formType: action.payload.type,
         formValue: '',
         formWithheld: '',
+        formSharesForDividend: '',
         saveError: null,
         saveErrorFields: {},
         isSaving: false,
@@ -167,6 +170,7 @@ function reducer(state: CreditsState, action: CreditsAction): CreditsState {
         formType: c.type,
         formValue: String(c.value),
         formWithheld: String(c.withheld),
+        formSharesForDividend: c.sharesForDividend == null ? '' : String(c.sharesForDividend),
         saveError: null,
         saveErrorFields: {},
         isSaving: false,
@@ -245,6 +249,7 @@ export interface CreditsData {
   formType: string
   formValue: string
   formWithheld: string
+  formSharesForDividend: string
   isSaving: boolean
   saveError: string | null
   saveErrorFields: Partial<Record<CreditFormField, string>>
@@ -374,7 +379,7 @@ export function useCredits(): CreditsData {
   const saveForm = useCallback(() => {
     if (!selectedNode?.portfolioName || !selectedNode.assetName) return
 
-    const { formDate, formType, formValue, formWithheld, editingId } = state
+    const { formDate, formType, formValue, formWithheld, formSharesForDividend, editingId } = state
     const errors: Partial<Record<CreditFormField, string>> = {}
 
     if (!formDate.trim()) {
@@ -384,6 +389,16 @@ export function useCredits(): CreditsData {
     const value = parseValidatedNumber(formValue)
     if (value === null || value === 0) {
       errors.formValue = 'Value must not be zero (negative is a correction)'
+    }
+
+    let sharesForDividend: number | null = null
+    if (formSharesForDividend.trim() !== '') {
+      const parsedShares = parseValidatedNumber(formSharesForDividend)
+      if (parsedShares === null || parsedShares <= 0) {
+        errors.formSharesForDividend = 'Shares must be greater than zero'
+      } else {
+        sharesForDividend = parsedShares
+      }
     }
 
     if (Object.keys(errors).length > 0) {
@@ -403,6 +418,7 @@ export function useCredits(): CreditsData {
       type: formType,
       value: value as number,
       withheld,
+      sharesForDividend,
     }
 
     const call = editingId
@@ -464,6 +480,7 @@ export function useCredits(): CreditsData {
     formType: state.formType,
     formValue: state.formValue,
     formWithheld: state.formWithheld,
+    formSharesForDividend: state.formSharesForDividend,
     isSaving: state.isSaving,
     saveError: state.saveError,
     saveErrorFields: state.saveErrorFields,
