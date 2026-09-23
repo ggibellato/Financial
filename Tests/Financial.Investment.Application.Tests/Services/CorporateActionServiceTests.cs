@@ -356,8 +356,8 @@ public class CorporateActionServiceTests
         classification.CalculationStatus.Should().Be(CalculationStatus.RequiresReview, "no TaxRule is configured in this fixture");
         classification.SourceType.Should().Be(SourceType.CorporateAction);
 
-        source.CorporateActions.Should().ContainSingle().Which.Role.Should().Be(CorporateAction.MergerRole.Source);
-        targetAsset.CorporateActions.Should().ContainSingle().Which.Role.Should().Be(CorporateAction.MergerRole.Target);
+        source.CorporateActions.Should().ContainSingle().Which.Role.Should().Be(CorporateAction.CorporateActionRole.Source);
+        targetAsset.CorporateActions.Should().ContainSingle().Which.Role.Should().Be(CorporateAction.CorporateActionRole.Target);
         _repository.WriteCallCount.Should().Be(1);
     }
 

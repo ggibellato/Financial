@@ -37,22 +37,23 @@ public static class TaxClassificationCalculator
             credit.Value, credit.Withheld, credit.NetAmount, status, rule?.Id);
     }
 
-    public static TaxClassification CalculateForCorporateAction(CorporateAction targetRecord, Currency currency, Investments investments)
+    public static TaxClassification CalculateForCorporateAction(CorporateAction record, Currency currency, Investments investments)
     {
-        if (targetRecord.Type != CorporateAction.CorporateActionType.Merger || targetRecord.Role != CorporateAction.MergerRole.Target)
+        if (!record.IsReceivingRole)
         {
             throw new InvalidOperationException(
-                $"CalculateForCorporateAction requires a {CorporateAction.CorporateActionType.Merger}/{CorporateAction.MergerRole.Target} record; " +
-                $"corporate action {targetRecord.Id} is {targetRecord.Type}/{targetRecord.Role?.ToString() ?? "none"}.");
+                $"CalculateForCorporateAction requires a {CorporateAction.CorporateActionType.Merger}/{CorporateAction.CorporateActionRole.Target} " +
+                $"or {CorporateAction.CorporateActionType.SpinOff}/{CorporateAction.CorporateActionRole.New} record; " +
+                $"corporate action {record.Id} is {record.Type}/{record.Role?.ToString() ?? "none"}.");
         }
 
         var jurisdiction = ForCurrency(currency);
-        var taxYear = TaxYearCalculator.Calculate(targetRecord.EffectiveDate, currency.ToString());
-        var rule = investments.FindApplicableTaxRule(jurisdiction, EventCategory.CorporateAction, DateOnly.FromDateTime(targetRecord.EffectiveDate));
+        var taxYear = TaxYearCalculator.Calculate(record.EffectiveDate, currency.ToString());
+        var rule = investments.FindApplicableTaxRule(jurisdiction, EventCategory.CorporateAction, DateOnly.FromDateTime(record.EffectiveDate));
         var status = rule is not null ? CalculationStatus.Final : CalculationStatus.RequiresReview;
 
         return TaxClassification.CreateForCorporateAction(
-            targetRecord.Id, jurisdiction, taxYear, targetRecord.CarriedCostBasis!.Value, status, rule?.Id);
+            record.Id, jurisdiction, taxYear, record.CarriedCostBasis!.Value, status, rule?.Id);
     }
 
     private static Jurisdiction ForCurrency(Currency currency) =>

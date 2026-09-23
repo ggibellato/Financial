@@ -4,9 +4,9 @@ namespace Financial.Investment.Domain.Entities;
 
 public class CorporateAction
 {
-    public enum CorporateActionType { Split, Merger }
+    public enum CorporateActionType { Split, Merger, SpinOff }
 
-    public enum MergerRole { Source, Target }
+    public enum CorporateActionRole { Source, Target, Parent, New }
 
     public const int MaxNoteLength = 500;
 
@@ -15,13 +15,18 @@ public class CorporateAction
     public DateTime EffectiveDate { get; private set; }
     public decimal? RatioFactor { get; private set; }
     public string? Note { get; private set; }
-    public MergerRole? Role { get; private set; }
+    public CorporateActionRole? Role { get; private set; }
     public Guid? CorrelationId { get; private set; }
     public string? LinkedAssetName { get; private set; }
     public decimal? ExchangeRatio { get; private set; }
     public decimal? CashInLieu { get; private set; }
     public decimal? ConvertedQuantity { get; private set; }
     public decimal? CarriedCostBasis { get; private set; }
+    public decimal? AllocationPercentage { get; private set; }
+
+    public bool IsReceivingRole =>
+        (Type == CorporateActionType.Merger && Role == CorporateActionRole.Target)
+        || (Type == CorporateActionType.SpinOff && Role == CorporateActionRole.New);
 
     private CorporateAction() { }
 
@@ -31,13 +36,14 @@ public class CorporateAction
         DateTime effectiveDate,
         decimal? ratioFactor,
         string? note,
-        MergerRole? role,
+        CorporateActionRole? role,
         Guid? correlationId,
         string? linkedAssetName,
         decimal? exchangeRatio,
         decimal? cashInLieu,
         decimal? convertedQuantity,
-        decimal? carriedCostBasis)
+        decimal? carriedCostBasis,
+        decimal? allocationPercentage)
     {
         ValidateNote(note);
 
@@ -53,6 +59,7 @@ public class CorporateAction
         CashInLieu = cashInLieu;
         ConvertedQuantity = convertedQuantity;
         CarriedCostBasis = carriedCostBasis;
+        AllocationPercentage = allocationPercentage;
     }
 
     public static CorporateAction CreateSplit(DateTime effectiveDate, decimal ratioFactor, string? note = null) =>
@@ -65,7 +72,7 @@ public class CorporateAction
         return new(
             id, CorporateActionType.Split, effectiveDate, ratioFactor: ratioFactor, note: note,
             role: null, correlationId: null, linkedAssetName: null, exchangeRatio: null, cashInLieu: null,
-            convertedQuantity: null, carriedCostBasis: null);
+            convertedQuantity: null, carriedCostBasis: null, allocationPercentage: null);
     }
 
     public static CorporateAction CreateMergerSource(
@@ -95,8 +102,9 @@ public class CorporateAction
 
         return new(
             id, CorporateActionType.Merger, effectiveDate, ratioFactor: null, note: note,
-            role: MergerRole.Source, correlationId: correlationId, linkedAssetName: linkedAssetName,
-            exchangeRatio: exchangeRatio, cashInLieu: cashInLieu, convertedQuantity: convertedQuantity, carriedCostBasis: carriedCostBasis);
+            role: CorporateActionRole.Source, correlationId: correlationId, linkedAssetName: linkedAssetName,
+            exchangeRatio: exchangeRatio, cashInLieu: cashInLieu, convertedQuantity: convertedQuantity, carriedCostBasis: carriedCostBasis,
+            allocationPercentage: null);
     }
 
     public static CorporateAction CreateMergerTarget(
@@ -118,8 +126,62 @@ public class CorporateAction
         decimal carriedCostBasis) =>
         new(
             id, CorporateActionType.Merger, effectiveDate, ratioFactor: null, note: note,
-            role: MergerRole.Target, correlationId: correlationId, linkedAssetName: linkedAssetName,
-            exchangeRatio: null, cashInLieu: null, convertedQuantity: convertedQuantity, carriedCostBasis: carriedCostBasis);
+            role: CorporateActionRole.Target, correlationId: correlationId, linkedAssetName: linkedAssetName,
+            exchangeRatio: null, cashInLieu: null, convertedQuantity: convertedQuantity, carriedCostBasis: carriedCostBasis,
+            allocationPercentage: null);
+
+    public static CorporateAction CreateSpinOffParent(
+        DateTime effectiveDate,
+        decimal allocationPercentage,
+        string? note,
+        Guid correlationId,
+        string linkedAssetName,
+        decimal quantityReceived,
+        decimal carriedCostBasis) =>
+        CreateSpinOffParentWithId(Guid.NewGuid(), effectiveDate, allocationPercentage, note, correlationId, linkedAssetName, quantityReceived, carriedCostBasis);
+
+    public static CorporateAction CreateSpinOffParentWithId(
+        Guid id,
+        DateTime effectiveDate,
+        decimal allocationPercentage,
+        string? note,
+        Guid correlationId,
+        string linkedAssetName,
+        decimal quantityReceived,
+        decimal carriedCostBasis)
+    {
+        ValidateAllocationPercentage(allocationPercentage);
+        ValidateQuantityReceived(quantityReceived);
+
+        return new(
+            id, CorporateActionType.SpinOff, effectiveDate, ratioFactor: null, note: note,
+            role: CorporateActionRole.Parent, correlationId: correlationId, linkedAssetName: linkedAssetName,
+            exchangeRatio: null, cashInLieu: null, convertedQuantity: quantityReceived, carriedCostBasis: carriedCostBasis,
+            allocationPercentage: allocationPercentage);
+    }
+
+    public static CorporateAction CreateSpinOffNew(
+        DateTime effectiveDate,
+        string? note,
+        Guid correlationId,
+        string linkedAssetName,
+        decimal quantityReceived,
+        decimal carriedCostBasis) =>
+        CreateSpinOffNewWithId(Guid.NewGuid(), effectiveDate, note, correlationId, linkedAssetName, quantityReceived, carriedCostBasis);
+
+    public static CorporateAction CreateSpinOffNewWithId(
+        Guid id,
+        DateTime effectiveDate,
+        string? note,
+        Guid correlationId,
+        string linkedAssetName,
+        decimal quantityReceived,
+        decimal carriedCostBasis) =>
+        new(
+            id, CorporateActionType.SpinOff, effectiveDate, ratioFactor: null, note: note,
+            role: CorporateActionRole.New, correlationId: correlationId, linkedAssetName: linkedAssetName,
+            exchangeRatio: null, cashInLieu: null, convertedQuantity: quantityReceived, carriedCostBasis: carriedCostBasis,
+            allocationPercentage: null);
 
     private static void ValidateRatioFactor(decimal ratioFactor)
     {
@@ -142,6 +204,22 @@ public class CorporateAction
         if (cashInLieu is < 0)
         {
             throw new ArgumentException("Cash in lieu must be zero or greater.");
+        }
+    }
+
+    private static void ValidateAllocationPercentage(decimal allocationPercentage)
+    {
+        if (allocationPercentage is < 0 or > 100)
+        {
+            throw new ArgumentException("Allocation percentage must be between 0 and 100 inclusive.");
+        }
+    }
+
+    private static void ValidateQuantityReceived(decimal quantityReceived)
+    {
+        if (quantityReceived <= 0)
+        {
+            throw new ArgumentException("Quantity received must be greater than zero.");
         }
     }
 

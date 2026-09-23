@@ -274,4 +274,61 @@ public class TaxClassificationCalculatorTests
 
         classification.TaxYear.Should().Be("2025/26");
     }
+
+    private static CorporateAction CreateSpinOffNewRecord(DateTime? effectiveDate = null) =>
+        CorporateAction.CreateSpinOffNew(
+            effectiveDate ?? new DateTime(2026, 6, 1), null, Guid.NewGuid(), "SPINCO", 5m, 150m);
+
+    [Fact]
+    public void CalculateForCorporateAction_SpinOffNew_IsAccepted()
+    {
+        var spinOffNew = CreateSpinOffNewRecord();
+        var investments = Investments.Create();
+
+        var classification = TaxClassificationCalculator.CalculateForCorporateAction(spinOffNew, Currency.BRL, investments);
+
+        using (new AssertionScope())
+        {
+            classification.SourceType.Should().Be(SourceType.CorporateAction);
+            classification.SourceId.Should().Be(spinOffNew.Id);
+            classification.EventCategory.Should().Be(EventCategory.CorporateAction);
+            classification.CostBasis.Should().Be(spinOffNew.CarriedCostBasis);
+            classification.CalculationStatus.Should().Be(CalculationStatus.RequiresReview);
+        }
+    }
+
+    [Fact]
+    public void CalculateForCorporateAction_SpinOffParent_ThrowsInvalidOperationException()
+    {
+        var spinOffParent = CorporateAction.CreateSpinOffParent(
+            new DateTime(2026, 6, 1), 15m, null, Guid.NewGuid(), "SPINCO", 5m, 150m);
+        var investments = Investments.Create();
+
+        Action act = () => TaxClassificationCalculator.CalculateForCorporateAction(spinOffParent, Currency.BRL, investments);
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void CalculateForCorporateAction_Split_ThrowsInvalidOperationException()
+    {
+        var split = CorporateAction.CreateSplit(new DateTime(2026, 6, 1), 2.0m);
+        var investments = Investments.Create();
+
+        Action act = () => TaxClassificationCalculator.CalculateForCorporateAction(split, Currency.BRL, investments);
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void CalculateForCorporateAction_MergerSource_ThrowsInvalidOperationException()
+    {
+        var mergerSource = CorporateAction.CreateMergerSource(
+            new DateTime(2026, 6, 1), 0.5m, null, null, Guid.NewGuid(), "XCORP", 40m, 1000m);
+        var investments = Investments.Create();
+
+        Action act = () => TaxClassificationCalculator.CalculateForCorporateAction(mergerSource, Currency.BRL, investments);
+
+        act.Should().Throw<InvalidOperationException>();
+    }
 }

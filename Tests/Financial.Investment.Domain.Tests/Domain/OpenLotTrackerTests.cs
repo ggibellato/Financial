@@ -190,4 +190,65 @@ public class OpenLotTrackerTests
 
         lots.Should().BeEquivalentTo(OpenLotTracker.GetOpenLots(new[] { buy }));
     }
+
+    [Fact]
+    public void GetOpenLots_SpinOffParent_ReducesUnitCostOfEveryOpenLotKeepingQuantityUnchanged()
+    {
+        var firstBuy = Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 5m, 10m, 0m);
+        var secondBuy = Transaction.Create(new DateTime(2024, 2, 1), Transaction.TransactionType.Buy, 3m, 20m, 0m);
+        var spinOffParent = CorporateAction.CreateSpinOffParent(
+            new DateTime(2024, 3, 1), 20m, null, Guid.NewGuid(), "SPINCO", 1m, 26m);
+
+        var lots = OpenLotTracker.GetOpenLots(new[] { firstBuy, secondBuy }, new[] { spinOffParent });
+
+        lots.Should().HaveCount(2);
+        lots[0].RemainingQuantity.Should().Be(5m);
+        lots[0].UnitCost.Should().Be(8m);
+        lots[1].RemainingQuantity.Should().Be(3m);
+        lots[1].UnitCost.Should().Be(16m);
+    }
+
+    [Fact]
+    public void GetOpenLots_SpinOffParentZeroAllocation_LeavesUnitCostUnchanged()
+    {
+        var buy = Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 5m, 10m, 0m);
+        var spinOffParent = CorporateAction.CreateSpinOffParent(
+            new DateTime(2024, 2, 1), 0m, null, Guid.NewGuid(), "SPINCO", 1m, 0m);
+
+        var lots = OpenLotTracker.GetOpenLots(new[] { buy }, new[] { spinOffParent });
+
+        lots.Should().ContainSingle();
+        lots[0].RemainingQuantity.Should().Be(5m);
+        lots[0].UnitCost.Should().Be(10m);
+    }
+
+    [Fact]
+    public void GetOpenLots_SpinOffNew_AppendsOneNewLotAtTheCarriedUnitCost()
+    {
+        var spinOffNew = CorporateAction.CreateSpinOffNew(
+            new DateTime(2024, 3, 1), null, Guid.NewGuid(), "GEHC", 5m, 150m);
+
+        var lots = OpenLotTracker.GetOpenLots(Array.Empty<Transaction>(), new[] { spinOffNew });
+
+        lots.Should().ContainSingle();
+        lots[0].SourceTransactionId.Should().Be(spinOffNew.Id);
+        lots[0].RemainingQuantity.Should().Be(5m);
+        lots[0].UnitCost.Should().Be(30m);
+    }
+
+    [Fact]
+    public void GetOpenLots_SpinOffNewOnTopOfExistingLots_KeepsPriorLotsAndAppendsTheNewOne()
+    {
+        var buy = Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m);
+        var spinOffNew = CorporateAction.CreateSpinOffNew(
+            new DateTime(2024, 2, 1), null, Guid.NewGuid(), "GEHC", 5m, 150m);
+
+        var lots = OpenLotTracker.GetOpenLots(new[] { buy }, new[] { spinOffNew });
+
+        lots.Should().HaveCount(2);
+        lots[0].SourceTransactionId.Should().Be(buy.Id);
+        lots[1].SourceTransactionId.Should().Be(spinOffNew.Id);
+        lots[1].RemainingQuantity.Should().Be(5m);
+        lots[1].UnitCost.Should().Be(30m);
+    }
 }

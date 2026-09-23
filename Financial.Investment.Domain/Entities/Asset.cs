@@ -351,7 +351,7 @@ public class Asset
         try
         {
             DisposalRecordRegenerator.RegenerateAsset(this, method, corporateAction.EffectiveDate, investments: investments);
-            AppendMergerTargetTaxClassification(corporateAction, investments, brokerCurrency);
+            AppendCorporateActionTaxClassification(corporateAction, investments, brokerCurrency);
         }
         catch
         {
@@ -390,7 +390,7 @@ public class Asset
         try
         {
             DisposalRecordRegenerator.RegenerateAsset(this, method, anchor, investments: investments);
-            ReviseMergerTargetTaxClassification(updatedCorporateAction, investments, brokerCurrency);
+            ReviseCorporateActionTaxClassification(updatedCorporateAction, investments, brokerCurrency);
         }
         catch
         {
@@ -417,7 +417,7 @@ public class Asset
         try
         {
             DisposalRecordRegenerator.RegenerateAsset(this, method, removed.EffectiveDate, investments: investments);
-            SupersedeMergerTargetTaxClassification(removed);
+            SupersedeCorporateActionTaxClassification(removed);
         }
         catch (Exception ex)
         {
@@ -426,9 +426,13 @@ public class Asset
 
             if (ex is InvestmentRuleViolationException)
             {
-                var message = removed.Type == CorporateAction.CorporateActionType.Merger
-                    ? "Cannot delete: a later disposal depends on lots created by this merger."
-                    : "Cannot delete: a later disposal depends on lots created by this split.";
+                var message = removed.Type switch
+                {
+                    CorporateAction.CorporateActionType.Split => "Cannot delete: a later disposal depends on lots created by this split.",
+                    CorporateAction.CorporateActionType.Merger => "Cannot delete: a later disposal depends on lots created by this merger.",
+                    CorporateAction.CorporateActionType.SpinOff => "Cannot delete: a later disposal depends on lots created by this spin-off.",
+                    _ => throw new ArgumentOutOfRangeException(nameof(removed), removed.Type, "Unsupported corporate action type."),
+                };
                 throw new InvestmentRuleViolationException(message);
             }
 
@@ -439,17 +443,14 @@ public class Asset
     }
 
     private static bool IsMergerSource(CorporateAction corporateAction) =>
-        corporateAction.Type == CorporateAction.CorporateActionType.Merger && corporateAction.Role == CorporateAction.MergerRole.Source;
+        corporateAction.Type == CorporateAction.CorporateActionType.Merger && corporateAction.Role == CorporateAction.CorporateActionRole.Source;
 
-    private static bool IsMergerTarget(CorporateAction corporateAction) =>
-        corporateAction.Type == CorporateAction.CorporateActionType.Merger && corporateAction.Role == CorporateAction.MergerRole.Target;
+    private static bool CanClassifyCorporateAction(CorporateAction corporateAction, Investments? investments, Currency? brokerCurrency) =>
+        investments is not null && brokerCurrency is not null && corporateAction.IsReceivingRole;
 
-    private static bool CanClassifyMergerTarget(CorporateAction corporateAction, Investments? investments, Currency? brokerCurrency) =>
-        investments is not null && brokerCurrency is not null && IsMergerTarget(corporateAction);
-
-    private void AppendMergerTargetTaxClassification(CorporateAction corporateAction, Investments? investments, Currency? brokerCurrency)
+    private void AppendCorporateActionTaxClassification(CorporateAction corporateAction, Investments? investments, Currency? brokerCurrency)
     {
-        if (!CanClassifyMergerTarget(corporateAction, investments, brokerCurrency))
+        if (!CanClassifyCorporateAction(corporateAction, investments, brokerCurrency))
         {
             return;
         }
@@ -457,9 +458,9 @@ public class Asset
         AppendTaxClassification(TaxClassificationCalculator.CalculateForCorporateAction(corporateAction, brokerCurrency!.Value, investments!));
     }
 
-    private void ReviseMergerTargetTaxClassification(CorporateAction updatedCorporateAction, Investments? investments, Currency? brokerCurrency)
+    private void ReviseCorporateActionTaxClassification(CorporateAction updatedCorporateAction, Investments? investments, Currency? brokerCurrency)
     {
-        if (!CanClassifyMergerTarget(updatedCorporateAction, investments, brokerCurrency))
+        if (!CanClassifyCorporateAction(updatedCorporateAction, investments, brokerCurrency))
         {
             return;
         }
@@ -469,9 +470,9 @@ public class Asset
         AppendTaxClassification(newClassification);
     }
 
-    private void SupersedeMergerTargetTaxClassification(CorporateAction removed)
+    private void SupersedeCorporateActionTaxClassification(CorporateAction removed)
     {
-        if (IsMergerTarget(removed))
+        if (removed.IsReceivingRole)
         {
             SupersedeTaxClassificationBySource(SourceType.CorporateAction, removed.Id, null);
         }
