@@ -30,6 +30,9 @@ import type {
   CategoryTotalDto,
   CategoryTotalsAnnualDto,
   CategoryUpdateDto,
+  CorporateActionDeleteDto,
+  CorporateActionSplitCreateDto,
+  CorporateActionSplitUpdateDto,
   ExpenseCreateDto,
   MaeLedgerEntryCreateDto,
   RecurringBillCreateDto,
@@ -153,6 +156,9 @@ export interface FinancialApiClient {
   addTransaction: (request: TransactionCreateDto) => Promise<AssetDetailsDto>
   updateTransaction: (request: TransactionUpdateDto) => Promise<AssetDetailsDto>
   deleteTransaction: (request: TransactionDeleteDto) => Promise<AssetDetailsDto>
+  addSplit: (request: CorporateActionSplitCreateDto) => Promise<AssetDetailsDto>
+  updateSplit: (request: CorporateActionSplitUpdateDto) => Promise<AssetDetailsDto>
+  deleteCorporateAction: (request: CorporateActionDeleteDto) => Promise<AssetDetailsDto>
   addCredit: (request: CreditCreateDto) => Promise<AssetDetailsDto>
   updateCredit: (request: CreditUpdateDto) => Promise<AssetDetailsDto>
   deleteCredit: (request: CreditDeleteDto) => Promise<AssetDetailsDto>
@@ -435,6 +441,21 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       }),
     deleteTransaction: (requestBody) =>
       request<AssetDetailsDto>('/transactions', {
+        method: 'DELETE',
+        body: JSON.stringify(requestBody),
+      }),
+    addSplit: (requestBody) =>
+      request<AssetDetailsDto>('/corporate-actions/split', {
+        method: 'POST',
+        body: JSON.stringify(requestBody),
+      }),
+    updateSplit: (requestBody) =>
+      request<AssetDetailsDto>('/corporate-actions/split', {
+        method: 'PUT',
+        body: JSON.stringify(requestBody),
+      }),
+    deleteCorporateAction: (requestBody) =>
+      request<AssetDetailsDto>('/corporate-actions', {
         method: 'DELETE',
         body: JSON.stringify(requestBody),
       }),

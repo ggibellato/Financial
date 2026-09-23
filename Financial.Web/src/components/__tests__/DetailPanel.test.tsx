@@ -265,6 +265,32 @@ describe('DetailPanel', () => {
     expect(screen.getByRole('tab', { name: 'Price History' })).toBeInTheDocument()
   })
 
+  it('shows Corporate Actions tab for an asset node, after Disposals', () => {
+    renderPanel(activeAssetNode)
+    act(() => screen.getByTestId('setter').click())
+    const tabs = screen.getAllByRole('tab')
+    expect(tabs[tabs.length - 1]).toHaveAccessibleName('Corporate Actions')
+  })
+
+  it('does not show Corporate Actions tab for a broker node', () => {
+    renderPanel(brokerNode)
+    act(() => screen.getByTestId('setter').click())
+    expect(screen.queryByRole('tab', { name: 'Corporate Actions' })).not.toBeInTheDocument()
+  })
+
+  it('does not show Corporate Actions tab for a portfolio node', () => {
+    renderPanel(portfolioNode)
+    act(() => screen.getByTestId('setter').click())
+    expect(screen.queryByRole('tab', { name: 'Corporate Actions' })).not.toBeInTheDocument()
+  })
+
+  it('clicking Corporate Actions tab activates it', () => {
+    renderPanel(activeAssetNode)
+    act(() => screen.getByTestId('setter').click())
+    fireEvent.click(screen.getByRole('tab', { name: 'Corporate Actions' }))
+    expect(screen.getByRole('tab', { name: 'Corporate Actions' })).toHaveAttribute('aria-selected', 'true')
+  })
+
   it('Summary tab is active by default', () => {
     renderPanel(brokerNode)
     act(() => screen.getByTestId('setter').click())
