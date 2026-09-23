@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Financial.Investment.Domain.Entities;
 
@@ -7,31 +8,30 @@ public sealed record SaleCoverageViolation(Transaction OffendingSale, decimal Qu
 
 public static class SaleCoverageRule
 {
-    public static SaleCoverageViolation? FindFirstUncoveredSale(IEnumerable<Transaction> transactions)
+    public static SaleCoverageViolation? FindFirstUncoveredSale(IEnumerable<Transaction> transactions) =>
+        FindFirstUncoveredSale(transactions, Array.Empty<CorporateAction>());
+
+    public static SaleCoverageViolation? FindFirstUncoveredSale(IEnumerable<Transaction> transactions, IEnumerable<CorporateAction> corporateActions)
     {
         var quantity = 0m;
 
-        foreach (var transaction in TransactionReplayOrder.Sort(transactions))
+        foreach (var step in CorporateActionReplay.Merge(transactions, corporateActions))
         {
-            var quantityEffect = TransactionTypeEffects.For(transaction.Type).Quantity;
-
-            if (quantityEffect == QuantityEffect.None)
+            switch (step)
             {
-                continue;
-            }
+                case CorporateActionReplayStep(var corporateAction):
+                    quantity = CorporateActionReplay.RescalePosition(quantity, 0m, corporateAction.RatioFactor).Quantity;
+                    break;
 
-            if (quantityEffect == QuantityEffect.Increase)
-            {
-                quantity += transaction.Quantity;
-                continue;
-            }
+                case TransactionReplayStep(var transaction):
+                    if (TransactionTypeEffects.For(transaction.Type).Quantity == QuantityEffect.Decrease && transaction.Quantity > quantity)
+                    {
+                        return new SaleCoverageViolation(transaction, quantity, transaction.Quantity - quantity);
+                    }
 
-            if (transaction.Quantity > quantity)
-            {
-                return new SaleCoverageViolation(transaction, quantity, transaction.Quantity - quantity);
+                    quantity = CorporateActionReplay.ApplyTransactionToQuantity(quantity, transaction);
+                    break;
             }
-
-            quantity -= transaction.Quantity;
         }
 
         return null;

@@ -371,6 +371,69 @@ public class TransactionsTests
         _sut.RealizedCapitalGain.Should().Be(0m);
     }
 
+    [Fact]
+    public void SetCorporateActions_TwoForOneSplit_DoublesQuantityAndHalvesAveragePrice()
+    {
+        _sut.Add(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        var split = CorporateAction.CreateSplit(new DateTime(2024, 2, 1), 2.0m);
+
+        _sut.SetCorporateActions(new[] { split });
+
+        _sut.Quantity.Should().Be(20m);
+        _sut.AveragePrice.Should().Be(50m);
+    }
+
+    [Fact]
+    public void SetCorporateActions_OneForTenReverseSplit_ReducesQuantityAndMultipliesAveragePrice()
+    {
+        _sut.Add(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        var reverseSplit = CorporateAction.CreateSplit(new DateTime(2024, 2, 1), 0.1m);
+
+        _sut.SetCorporateActions(new[] { reverseSplit });
+
+        _sut.Quantity.Should().Be(1m);
+        _sut.AveragePrice.Should().Be(1000m);
+    }
+
+    [Fact]
+    public void SetCorporateActions_SplitSameDateAsBuyAndSell_AppliesBeforeEitherTransaction()
+    {
+        var date = new DateTime(2024, 2, 1);
+        _sut.Add(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        var split = CorporateAction.CreateSplit(date, 2.0m);
+        _sut.SetCorporateActions(new[] { split });
+
+        _sut.Add(Transaction.Create(date, Transaction.TransactionType.Sell, 5m, 60m, 0m));
+
+        _sut.Quantity.Should().Be(15m, "20 post-split units less the same-date sale of 5");
+        _sut.RealizedCapitalGain.Should().Be(50m, "sold at 60 against the post-split average cost of 50");
+    }
+
+    [Fact]
+    public void SetCorporateActions_SplitPrecedesFirstTransaction_YieldsZeroPositionThroughoutTheSplit()
+    {
+        var split = CorporateAction.CreateSplit(new DateTime(2023, 1, 1), 2.0m);
+
+        _sut.SetCorporateActions(new[] { split });
+        _sut.Add(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+
+        _sut.Quantity.Should().Be(10m, "the split had nothing to rescale before the first buy");
+        _sut.AveragePrice.Should().Be(100m);
+    }
+
+    [Fact]
+    public void Add_WithCorporateActionsPresent_AlwaysFullyRecomputesEvenWhenInOrder()
+    {
+        var split = CorporateAction.CreateSplit(new DateTime(2024, 1, 15), 2.0m);
+        _sut.Add(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        _sut.SetCorporateActions(new[] { split });
+
+        _sut.Add(Transaction.Create(new DateTime(2024, 2, 1), Transaction.TransactionType.Buy, 5m, 60m, 0m));
+
+        _sut.Quantity.Should().Be(25m, "20 post-split units plus a further 5 bought afterwards");
+        _sut.AveragePrice.Should().Be((20m * 50m + 5m * 60m) / 25m);
+    }
+
     private static IEnumerable<Transaction> BitcoinStoredOrderTransactions() =>
     [
         Transaction.Create(new DateTime(2025, 3, 7), Transaction.TransactionType.Buy, 0.00141516m, 67949.91m, 3.84m),

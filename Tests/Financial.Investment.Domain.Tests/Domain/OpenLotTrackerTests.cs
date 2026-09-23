@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Financial.Investment.Domain.Entities;
 using Financial.Investment.Domain.Rules;
 using FluentAssertions;
@@ -91,5 +92,59 @@ public class OpenLotTrackerTests
 
         lots.Should().ContainSingle();
         lots[0].RemainingQuantity.Should().Be(10m);
+    }
+
+    [Fact]
+    public void GetOpenLots_SplitAfterTwoOpenLots_RescalesBothProportionallyKeepingTotalCostUnchanged()
+    {
+        var firstBuy = Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 5m, 10m, 0m);
+        var secondBuy = Transaction.Create(new DateTime(2024, 2, 1), Transaction.TransactionType.Buy, 3m, 20m, 0m);
+        var split = CorporateAction.CreateSplit(new DateTime(2024, 3, 1), 2.0m);
+
+        var lots = OpenLotTracker.GetOpenLots(new[] { firstBuy, secondBuy }, new[] { split });
+
+        lots.Should().HaveCount(2);
+        lots[0].RemainingQuantity.Should().Be(10m);
+        lots[0].UnitCost.Should().Be(5m);
+        lots[1].RemainingQuantity.Should().Be(6m);
+        lots[1].UnitCost.Should().Be(10m);
+        lots.Sum(lot => lot.RemainingQuantity * lot.UnitCost).Should().Be(5m * 10m + 3m * 20m);
+    }
+
+    [Fact]
+    public void GetOpenLots_ReverseSplitAfterOpenLot_RescalesDownProportionally()
+    {
+        var buy = Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 10m, 0m);
+        var reverseSplit = CorporateAction.CreateSplit(new DateTime(2024, 2, 1), 0.1m);
+
+        var lots = OpenLotTracker.GetOpenLots(new[] { buy }, new[] { reverseSplit });
+
+        lots.Should().ContainSingle();
+        lots[0].RemainingQuantity.Should().Be(1m);
+        lots[0].UnitCost.Should().Be(100m);
+    }
+
+    [Fact]
+    public void GetOpenLots_SplitSameDateAsSale_AppliesBeforeTheSaleDepletesRescaledLots()
+    {
+        var date = new DateTime(2024, 2, 1);
+        var buy = Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 5m, 10m, 0m);
+        var split = CorporateAction.CreateSplit(date, 2.0m);
+        var sell = Transaction.Create(date, Transaction.TransactionType.Sell, 8m, 6m, 0m);
+
+        var lots = OpenLotTracker.GetOpenLots(new[] { buy, sell }, new[] { split });
+
+        lots.Should().ContainSingle();
+        lots[0].RemainingQuantity.Should().Be(2m, "10 post-split units less the same-date sale of 8");
+    }
+
+    [Fact]
+    public void GetOpenLots_NoCorporateActions_SameAsSingleArgumentOverload()
+    {
+        var buy = Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m);
+
+        var lots = OpenLotTracker.GetOpenLots(new[] { buy }, Array.Empty<CorporateAction>());
+
+        lots.Should().BeEquivalentTo(OpenLotTracker.GetOpenLots(new[] { buy }));
     }
 }

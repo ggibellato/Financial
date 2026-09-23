@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Financial.Investment.Domain.Rules;
 
 namespace Financial.Investment.Domain.Entities;
@@ -8,8 +9,15 @@ namespace Financial.Investment.Domain.Entities;
 public class Transactions : ICollection<Transaction>
 {
     private readonly List<Transaction> _items = new();
+    private IReadOnlyList<CorporateAction> _corporateActions = Array.Empty<CorporateAction>();
     private decimal _totalSoldQuantity;
     private decimal _totalSoldValue;
+
+    internal void SetCorporateActions(IReadOnlyList<CorporateAction> corporateActions)
+    {
+        _corporateActions = corporateActions ?? Array.Empty<CorporateAction>();
+        Recompute();
+    }
 
     public decimal Quantity { get; private set; }
     public decimal AveragePrice { get; private set; }
@@ -30,7 +38,10 @@ public class Transactions : ICollection<Transaction>
             throw new ArgumentNullException(nameof(transaction));
         }
 
-        if (_items.Count == 0 || TransactionReplayOrder.IsInOrder(_items[^1], transaction))
+        var canAppend = (_items.Count == 0 || TransactionReplayOrder.IsInOrder(_items[^1], transaction))
+            && _corporateActions.All(ca => ca.EffectiveDate <= transaction.Date);
+
+        if (canAppend)
         {
             _items.Add(transaction);
             Apply(transaction);
@@ -87,7 +98,7 @@ public class Transactions : ICollection<Transaction>
 
     private void Recompute()
     {
-        var ordered = new List<Transaction>(TransactionReplayOrder.Sort(_items));
+        var ordered = CorporateActionReplay.Merge(_items, _corporateActions).ToList();
 
         _items.Clear();
         Quantity = 0;
@@ -96,10 +107,19 @@ public class Transactions : ICollection<Transaction>
         _totalSoldQuantity = 0;
         _totalSoldValue = 0;
 
-        foreach (var transaction in ordered)
+        foreach (var step in ordered)
         {
-            _items.Add(transaction);
-            Apply(transaction);
+            switch (step)
+            {
+                case TransactionReplayStep(var transaction):
+                    _items.Add(transaction);
+                    Apply(transaction);
+                    break;
+
+                case CorporateActionReplayStep(var corporateAction):
+                    (Quantity, AveragePrice) = CorporateActionReplay.RescalePosition(Quantity, AveragePrice, corporateAction.RatioFactor);
+                    break;
+            }
         }
     }
 

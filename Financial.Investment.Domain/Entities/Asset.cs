@@ -52,6 +52,13 @@ public class Asset
         private set => EntityGuard.ReplaceAll(_disposalRecords, value);
     }
 
+    private List<CorporateAction> _corporateActions = new List<CorporateAction>();
+    public IReadOnlyCollection<CorporateAction> CorporateActions
+    {
+        get => _corporateActions.AsReadOnly();
+        private set => EntityGuard.ReplaceAll(_corporateActions, value);
+    }
+
     private List<Credit> _credits = new List<Credit>();
     public IReadOnlyCollection<Credit> Credits { get => _credits.AsReadOnly(); private set => SetCredits(value); }
     private void SetCredits(IReadOnlyCollection<Credit> data)
@@ -161,7 +168,7 @@ public class Asset
         IReadOnlyList<SpecificLotAllocation>? allocation = null,
         Investments? investments = null)
     {
-        EnsureNoUncoveredSale([.. Transactions, transaction], transaction.Id);
+        EnsureNoUncoveredSale([.. Transactions, transaction], transaction.Id, _corporateActions);
 
         if (transaction.Date <= LatestActiveDisposalDate())
         {
@@ -182,7 +189,9 @@ public class Asset
         var isDisposing = effect.Quantity == QuantityEffect.Decrease && effect.Cash != CashEffect.None;
         if (isDisposing)
         {
-            var disposalRecord = DisposalRecordCalculator.Calculate(transaction, Transactions, method, transaction.Currency.ToString(), allocation);
+            var precedingCorporateActions = _corporateActions.Where(ca => ca.EffectiveDate <= transaction.Date);
+            var disposalRecord = DisposalRecordCalculator.Calculate(
+                transaction, Transactions, method, transaction.Currency.ToString(), allocation, precedingCorporateActions);
             _disposalRecords.Add(disposalRecord);
             if (investments is not null)
             {
@@ -241,7 +250,7 @@ public class Asset
         }
 
         var candidate = Transactions.Select(t => t.Id == updatedTransaction.Id ? updatedTransaction : t);
-        EnsureNoUncoveredSale(candidate, updatedTransaction.Id);
+        EnsureNoUncoveredSale(candidate, updatedTransaction.Id, _corporateActions);
 
         if (!UpdateTransaction(updatedTransaction))
         {
@@ -274,7 +283,7 @@ public class Asset
         }
 
         var candidate = Transactions.Where(t => t.Id != transactionId);
-        EnsureNoUncoveredSale(candidate, subjectTransactionId: null);
+        EnsureNoUncoveredSale(candidate, subjectTransactionId: null, _corporateActions);
 
         if (!RemoveTransaction(transactionId))
         {
@@ -297,9 +306,9 @@ public class Asset
         return true;
     }
 
-    private static void EnsureNoUncoveredSale(IEnumerable<Transaction> candidate, Guid? subjectTransactionId)
+    private static void EnsureNoUncoveredSale(IEnumerable<Transaction> candidate, Guid? subjectTransactionId, IEnumerable<CorporateAction> corporateActions)
     {
-        var violation = SaleCoverageRule.FindFirstUncoveredSale(candidate);
+        var violation = SaleCoverageRule.FindFirstUncoveredSale(candidate, corporateActions);
         if (violation is null)
         {
             return;
@@ -311,6 +320,126 @@ public class Asset
             : $"This change would leave the sale of {violation.OffendingSale.Quantity.ToString(CultureInfo.InvariantCulture)} units on {violation.OffendingSale.Date:yyyy-MM-dd} short by {violation.Shortfall.ToString(CultureInfo.InvariantCulture)} units — only {heldQuantity} would be held on that date.";
 
         throw new InvestmentRuleViolationException(message);
+    }
+
+    public void RecordCorporateAction(CorporateAction corporateAction, CostBasisMethod method = CostBasisMethod.AverageCost, Investments? investments = null)
+    {
+        if (corporateAction == null)
+        {
+            throw new ArgumentNullException(nameof(corporateAction));
+        }
+
+        EnsureNonZeroPositionAt(corporateAction, _corporateActions);
+
+        _corporateActions.Add(corporateAction);
+        Transactions.SetCorporateActions(_corporateActions.ToList());
+
+        try
+        {
+            DisposalRecordRegenerator.RegenerateAsset(this, method, corporateAction.EffectiveDate, investments: investments);
+        }
+        catch
+        {
+            _corporateActions.Remove(corporateAction);
+            Transactions.SetCorporateActions(_corporateActions.ToList());
+            throw;
+        }
+    }
+
+    public bool ReviseCorporateAction(CorporateAction updatedCorporateAction, CostBasisMethod method = CostBasisMethod.AverageCost, Investments? investments = null)
+    {
+        if (updatedCorporateAction == null)
+        {
+            throw new ArgumentNullException(nameof(updatedCorporateAction));
+        }
+
+        var index = _corporateActions.FindIndex(ca => ca.Id == updatedCorporateAction.Id);
+        if (index < 0)
+        {
+            return false;
+        }
+
+        var previous = _corporateActions[index];
+        var otherCorporateActions = _corporateActions.Where(ca => ca.Id != updatedCorporateAction.Id);
+        EnsureNonZeroPositionAt(updatedCorporateAction, otherCorporateActions);
+
+        _corporateActions[index] = updatedCorporateAction;
+        Transactions.SetCorporateActions(_corporateActions.ToList());
+
+        var anchor = previous.EffectiveDate <= updatedCorporateAction.EffectiveDate ? previous.EffectiveDate : updatedCorporateAction.EffectiveDate;
+
+        try
+        {
+            DisposalRecordRegenerator.RegenerateAsset(this, method, anchor, investments: investments);
+        }
+        catch
+        {
+            _corporateActions[index] = previous;
+            Transactions.SetCorporateActions(_corporateActions.ToList());
+            throw;
+        }
+
+        return true;
+    }
+
+    public bool RetractCorporateAction(Guid corporateActionId, CostBasisMethod method = CostBasisMethod.AverageCost, Investments? investments = null)
+    {
+        var index = _corporateActions.FindIndex(ca => ca.Id == corporateActionId);
+        if (index < 0)
+        {
+            return false;
+        }
+
+        var removed = _corporateActions[index];
+        _corporateActions.RemoveAt(index);
+        Transactions.SetCorporateActions(_corporateActions.ToList());
+
+        try
+        {
+            DisposalRecordRegenerator.RegenerateAsset(this, method, removed.EffectiveDate, investments: investments);
+        }
+        catch (InvestmentRuleViolationException)
+        {
+            _corporateActions.Insert(index, removed);
+            Transactions.SetCorporateActions(_corporateActions.ToList());
+            throw new InvestmentRuleViolationException("Cannot delete: a later disposal depends on lots created by this split.");
+        }
+        catch
+        {
+            _corporateActions.Insert(index, removed);
+            Transactions.SetCorporateActions(_corporateActions.ToList());
+            throw;
+        }
+
+        return true;
+    }
+
+    private void EnsureNonZeroPositionAt(CorporateAction corporateAction, IEnumerable<CorporateAction> otherCorporateActions)
+    {
+        var quantity = 0m;
+        var candidateActions = otherCorporateActions.Append(corporateAction);
+
+        foreach (var step in CorporateActionReplay.Merge(Transactions, candidateActions))
+        {
+            if (step is CorporateActionReplayStep(var stepAction) && ReferenceEquals(stepAction, corporateAction))
+            {
+                break;
+            }
+
+            quantity = step switch
+            {
+                TransactionReplayStep(var transaction) => CorporateActionReplay.ApplyTransactionToQuantity(quantity, transaction),
+                CorporateActionReplayStep(var priorAction) => CorporateActionReplay.RescalePosition(quantity, 0m, priorAction.RatioFactor).Quantity,
+                _ => quantity
+            };
+        }
+
+        // Also covers a split dated before the holding's first transaction - replaying up to
+        // that date yields the same zero quantity.
+        if (quantity == 0)
+        {
+            throw new InvestmentRuleViolationException("This holding has no open position to split.");
+        }
     }
 
     public void AddCredit(Credit credit, Investments? investments = null)

@@ -230,4 +230,51 @@ public class DisposalRecordRegeneratorTests
 
         asset.TaxClassifications.Should().BeEmpty();
     }
+
+    [Fact]
+    public void RegenerateAsset_ViaRecordCorporateAction_SplitBeforeExistingDisposal_SupersedesAndRescalesCostBasis()
+    {
+        var asset = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        asset.RecordTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 60m, 0m));
+        var original = asset.DisposalRecords.Single();
+        original.CostBasis.Should().Be(500m);
+
+        asset.RecordCorporateAction(CorporateAction.CreateSplit(new DateTime(2021, 6, 1), 2.0m));
+
+        original.Status.Should().Be(DisposalRecordStatus.Superseded);
+        var replacement = asset.DisposalRecords.Single(r => r.Status == DisposalRecordStatus.Active);
+        original.SupersededByRecordId.Should().Be(replacement.Id);
+        replacement.CostBasis.Should().Be(250m, "10 units at 100 become 20 units at 50 after the split, so the 5-unit sale now costs 250");
+    }
+
+    [Fact]
+    public void RegenerateAsset_RecordingASplitWithNoLaterDisposal_CreatesNoDisposalRecord()
+    {
+        var asset = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+
+        asset.RecordCorporateAction(CorporateAction.CreateSplit(new DateTime(2021, 6, 1), 2.0m));
+
+        asset.DisposalRecords.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void RegenerateAsset_RetractCorporateAction_SpecificIdDisposalDependsOnSplitLots_RejectsWithSpecificMessageAndRollsBack()
+    {
+        var asset = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");
+        var buy = Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 5m, 100m, 0m);
+        asset.AddTransaction(buy);
+        var split = CorporateAction.CreateSplit(new DateTime(2021, 6, 1), 2.0m);
+        asset.RecordCorporateAction(split, CostBasisMethod.SpecificId);
+
+        var sell = Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 10m, 60m, 0m);
+        asset.RecordTransaction(sell, CostBasisMethod.SpecificId, new[] { new SpecificLotAllocation(buy.Id, 10m) });
+
+        Action act = () => asset.RetractCorporateAction(split.Id, CostBasisMethod.SpecificId);
+
+        act.Should().Throw<InvestmentRuleViolationException>()
+            .WithMessage("Cannot delete: a later disposal depends on lots created by this split.");
+        asset.CorporateActions.Should().ContainSingle(ca => ca.Id == split.Id, "the failed delete rolled the corporate action back");
+    }
 }

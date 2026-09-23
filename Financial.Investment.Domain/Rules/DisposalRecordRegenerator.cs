@@ -54,31 +54,41 @@ public static class DisposalRecordRegenerator
         var replacements = new List<(DisposalRecord Existing, DisposalRecord New)>();
         var newOnly = new List<DisposalRecord>();
         var preceding = new List<Transaction>();
+        var precedingCorporateActions = new List<CorporateAction>();
 
-        foreach (var transaction in TransactionReplayOrder.Sort(asset.Transactions))
+        foreach (var step in CorporateActionReplay.Merge(asset.Transactions, asset.CorporateActions))
         {
-            var effect = TransactionTypeEffects.For(transaction.Type);
-            var isDisposing = effect.Quantity == QuantityEffect.Decrease && effect.Cash != CashEffect.None;
-
-            if (isDisposing && transaction.Date >= anchor)
+            switch (step)
             {
-                var existing = existingByTransactionId.GetValueOrDefault(transaction.Id);
-                var allocation = transaction.Id == seedTransactionId ? seedAllocation : ReconstructAllocation(existing);
+                case CorporateActionReplayStep(var corporateAction):
+                    precedingCorporateActions.Add(corporateAction);
+                    break;
 
-                var newRecord = DisposalRecordCalculator.Calculate(
-                    transaction, preceding, method, transaction.Currency.ToString(), allocation);
+                case TransactionReplayStep(var transaction):
+                    var effect = TransactionTypeEffects.For(transaction.Type);
+                    var isDisposing = effect.Quantity == QuantityEffect.Decrease && effect.Cash != CashEffect.None;
 
-                if (existing is not null)
-                {
-                    replacements.Add((existing, newRecord));
-                }
-                else
-                {
-                    newOnly.Add(newRecord);
-                }
+                    if (isDisposing && transaction.Date >= anchor)
+                    {
+                        var existing = existingByTransactionId.GetValueOrDefault(transaction.Id);
+                        var allocation = transaction.Id == seedTransactionId ? seedAllocation : ReconstructAllocation(existing);
+
+                        var newRecord = DisposalRecordCalculator.Calculate(
+                            transaction, preceding, method, transaction.Currency.ToString(), allocation, precedingCorporateActions);
+
+                        if (existing is not null)
+                        {
+                            replacements.Add((existing, newRecord));
+                        }
+                        else
+                        {
+                            newOnly.Add(newRecord);
+                        }
+                    }
+
+                    preceding.Add(transaction);
+                    break;
             }
-
-            preceding.Add(transaction);
         }
 
         return new RegenerationPlan(asset, toRetire, replacements, newOnly);
