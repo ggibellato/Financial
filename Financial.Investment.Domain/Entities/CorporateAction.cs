@@ -6,6 +6,8 @@ public class CorporateAction
 {
     public enum CorporateActionType { Split }
 
+    public const int MaxNoteLength = 500;
+
     public Guid Id { get; private set; }
     public CorporateActionType Type { get; private set; }
     public DateTime EffectiveDate { get; private set; }
@@ -42,9 +44,9 @@ public class CorporateAction
 
     private static void ValidateNote(string? note)
     {
-        if (note is { Length: > 500 })
+        if (note is { Length: > MaxNoteLength })
         {
-            throw new ArgumentException("Note must be 500 characters or fewer.");
+            throw new ArgumentException($"Note must be {MaxNoteLength} characters or fewer.");
         }
     }
 }

@@ -50,7 +50,7 @@ public class CorporateActionTests
     [Fact]
     public void CreateSplit_NoteExceeds500Characters_ThrowsArgumentException()
     {
-        var note = new string('a', 501);
+        var note = new string('a', CorporateAction.MaxNoteLength + 1);
 
         Action act = () => CorporateAction.CreateSplit(new DateTime(2026, 3, 1), 2.0m, note);
 
@@ -60,7 +60,7 @@ public class CorporateActionTests
     [Fact]
     public void CreateSplit_NoteExactly500Characters_IsValid()
     {
-        var note = new string('a', 500);
+        var note = new string('a', CorporateAction.MaxNoteLength);
 
         var action = CorporateAction.CreateSplit(new DateTime(2026, 3, 1), 2.0m, note);
 

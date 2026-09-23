@@ -332,7 +332,7 @@ public class Asset
         EnsureNonZeroPositionAt(corporateAction, _corporateActions);
 
         _corporateActions.Add(corporateAction);
-        Transactions.SetCorporateActions(_corporateActions);
+        Transactions.SetCorporateActions(_corporateActions.ToList());
 
         try
         {
@@ -341,7 +341,7 @@ public class Asset
         catch
         {
             _corporateActions.Remove(corporateAction);
-            Transactions.SetCorporateActions(_corporateActions);
+            Transactions.SetCorporateActions(_corporateActions.ToList());
             throw;
         }
     }
@@ -364,7 +364,7 @@ public class Asset
         EnsureNonZeroPositionAt(updatedCorporateAction, otherCorporateActions);
 
         _corporateActions[index] = updatedCorporateAction;
-        Transactions.SetCorporateActions(_corporateActions);
+        Transactions.SetCorporateActions(_corporateActions.ToList());
 
         var anchor = previous.EffectiveDate <= updatedCorporateAction.EffectiveDate ? previous.EffectiveDate : updatedCorporateAction.EffectiveDate;
 
@@ -375,7 +375,7 @@ public class Asset
         catch
         {
             _corporateActions[index] = previous;
-            Transactions.SetCorporateActions(_corporateActions);
+            Transactions.SetCorporateActions(_corporateActions.ToList());
             throw;
         }
 
@@ -392,7 +392,7 @@ public class Asset
 
         var removed = _corporateActions[index];
         _corporateActions.RemoveAt(index);
-        Transactions.SetCorporateActions(_corporateActions);
+        Transactions.SetCorporateActions(_corporateActions.ToList());
 
         try
         {
@@ -401,25 +401,19 @@ public class Asset
         catch (InvestmentRuleViolationException)
         {
             _corporateActions.Insert(index, removed);
-            Transactions.SetCorporateActions(_corporateActions);
+            Transactions.SetCorporateActions(_corporateActions.ToList());
             throw new InvestmentRuleViolationException("Cannot delete: a later disposal depends on lots created by this split.");
         }
         catch
         {
             _corporateActions.Insert(index, removed);
-            Transactions.SetCorporateActions(_corporateActions);
+            Transactions.SetCorporateActions(_corporateActions.ToList());
             throw;
         }
 
         return true;
     }
 
-    /// <summary>
-    /// Replays quantity up to, but not including, <paramref name="corporateAction"/>'s own step in
-    /// the merged order - the same point at which it would rescale the position - so a split on a
-    /// flat (or not-yet-open) holding is rejected before any state changes, exactly like the
-    /// effective-date-before-first-transaction case (both are a zero quantity at that point).
-    /// </summary>
     private void EnsureNonZeroPositionAt(CorporateAction corporateAction, IEnumerable<CorporateAction> otherCorporateActions)
     {
         var quantity = 0m;
@@ -440,6 +434,8 @@ public class Asset
             };
         }
 
+        // Also covers a split dated before the holding's first transaction - replaying up to
+        // that date yields the same zero quantity.
         if (quantity == 0)
         {
             throw new InvestmentRuleViolationException("This holding has no open position to split.");

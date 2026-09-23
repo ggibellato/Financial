@@ -20,9 +20,7 @@ public sealed record CorporateActionReplayStep(CorporateAction CorporateAction) 
     public override DateTime Date => CorporateAction.EffectiveDate;
 }
 
-// Corporate-action steps always rank ahead of same-date transactions, and same-date transactions
-// keep TransactionReplayOrder's purchases-before-sales tie-break - this is the single ordering rule
-// every replay consumer (position, lots, disposal calc) shares instead of re-deriving it.
+// Every replay consumer (position, lots, disposal calc) shares this ordering instead of re-deriving it.
 public static class CorporateActionReplay
 {
     public static IEnumerable<ReplayStep> Merge(IEnumerable<Transaction> transactions, IEnumerable<CorporateAction> corporateActions)
