@@ -34,6 +34,27 @@ public static class CorporateActionReplay
     public static (decimal Quantity, decimal AveragePrice) RescalePosition(decimal quantity, decimal averagePrice, decimal factor) =>
         (quantity * factor, averagePrice / factor);
 
+    public static (decimal Quantity, decimal AveragePrice) ApplyToPosition(decimal quantity, decimal averagePrice, CorporateAction action) =>
+        action switch
+        {
+            { Type: CorporateAction.CorporateActionType.Split } =>
+                RescalePosition(quantity, averagePrice, action.RatioFactor!.Value),
+            { Type: CorporateAction.CorporateActionType.Merger, Role: CorporateAction.MergerRole.Source } => (0m, 0m),
+            { Type: CorporateAction.CorporateActionType.Merger, Role: CorporateAction.MergerRole.Target } =>
+                ReceiveMerger(quantity, averagePrice, action.ConvertedQuantity!.Value, action.CarriedCostBasis!.Value),
+            _ => throw new ArgumentOutOfRangeException(nameof(action), action.Type, "Unsupported corporate action type/role combination.")
+        };
+
+    public static (decimal Quantity, decimal AveragePrice) ReceiveMerger(decimal quantity, decimal averagePrice, decimal receivedQuantity, decimal carriedCostBasis)
+    {
+        var resultingQuantity = quantity + receivedQuantity;
+        var resultingAveragePrice = resultingQuantity == 0
+            ? 0m
+            : (averagePrice * quantity + carriedCostBasis) / resultingQuantity;
+
+        return (resultingQuantity, resultingAveragePrice);
+    }
+
     public static IReadOnlyList<OpenLot> RescaleLots(IReadOnlyList<OpenLot> lots, decimal factor) =>
         lots.Select(lot => lot with { RemainingQuantity = lot.RemainingQuantity * factor, UnitCost = lot.UnitCost / factor }).ToList();
 

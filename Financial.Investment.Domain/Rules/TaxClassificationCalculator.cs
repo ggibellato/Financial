@@ -37,6 +37,17 @@ public static class TaxClassificationCalculator
             credit.Value, credit.Withheld, credit.NetAmount, status, rule?.Id);
     }
 
+    public static TaxClassification CalculateForCorporateAction(CorporateAction targetRecord, Currency currency, Investments investments)
+    {
+        var jurisdiction = ForCurrency(currency);
+        var taxYear = TaxYearCalculator.Calculate(targetRecord.EffectiveDate, currency.ToString());
+        var rule = investments.FindApplicableTaxRule(jurisdiction, EventCategory.CorporateAction, DateOnly.FromDateTime(targetRecord.EffectiveDate));
+        var status = rule is not null ? CalculationStatus.Final : CalculationStatus.RequiresReview;
+
+        return TaxClassification.CreateForCorporateAction(
+            targetRecord.Id, jurisdiction, taxYear, targetRecord.CarriedCostBasis!.Value, status, rule?.Id);
+    }
+
     private static Jurisdiction ForCurrency(Currency currency) =>
         currency == Currency.BRL ? Jurisdiction.BR : Jurisdiction.UK;
 

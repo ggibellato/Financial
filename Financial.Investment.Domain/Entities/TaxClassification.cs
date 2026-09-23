@@ -86,6 +86,17 @@ public sealed class TaxClassification
             Guid.NewGuid(), SourceType.Credit, creditId, jurisdiction, taxYear, eventCategory,
             null, null, null, grossAmount, withheldAmount, netAmount, calculationStatus, taxRuleId, DateTimeOffset.UtcNow);
 
+    public static TaxClassification CreateForCorporateAction(
+        Guid corporateActionId,
+        Jurisdiction jurisdiction,
+        string taxYear,
+        decimal costBasis,
+        CalculationStatus calculationStatus,
+        Guid? taxRuleId) =>
+        new(
+            Guid.NewGuid(), SourceType.CorporateAction, corporateActionId, jurisdiction, taxYear, EventCategory.CorporateAction,
+            null, costBasis, null, null, null, null, calculationStatus, taxRuleId, DateTimeOffset.UtcNow);
+
     public void Supersede(Guid? supersededByClassificationId)
     {
         if (Status == TaxClassificationStatus.Superseded)

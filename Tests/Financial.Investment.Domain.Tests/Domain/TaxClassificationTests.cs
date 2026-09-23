@@ -61,6 +61,45 @@ public class TaxClassificationTests
     }
 
     [Fact]
+    public void CreateForCorporateAction_SetsProperties()
+    {
+        var corporateActionId = Guid.NewGuid();
+        var ruleId = Guid.NewGuid();
+
+        var classification = TaxClassification.CreateForCorporateAction(
+            corporateActionId, Jurisdiction.UK, "2025/26", 1000m, CalculationStatus.Final, ruleId);
+
+        using (new AssertionScope())
+        {
+            classification.Id.Should().NotBeEmpty();
+            classification.SourceType.Should().Be(SourceType.CorporateAction);
+            classification.SourceId.Should().Be(corporateActionId);
+            classification.Jurisdiction.Should().Be(Jurisdiction.UK);
+            classification.TaxYear.Should().Be("2025/26");
+            classification.EventCategory.Should().Be(EventCategory.CorporateAction);
+            classification.CostBasis.Should().Be(1000m);
+            classification.Proceeds.Should().BeNull();
+            classification.GainLoss.Should().BeNull();
+            classification.GrossAmount.Should().BeNull();
+            classification.WithheldAmount.Should().BeNull();
+            classification.NetAmount.Should().BeNull();
+            classification.CalculationStatus.Should().Be(CalculationStatus.Final);
+            classification.TaxRuleId.Should().Be(ruleId);
+            classification.Status.Should().Be(TaxClassificationStatus.Active);
+            classification.SupersededByClassificationId.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public void CreateForCorporateAction_NoMatchingRule_LeavesTaxRuleIdNull()
+    {
+        var classification = TaxClassification.CreateForCorporateAction(
+            Guid.NewGuid(), Jurisdiction.BR, "2026", 1000m, CalculationStatus.RequiresReview, null);
+
+        classification.TaxRuleId.Should().BeNull();
+    }
+
+    [Fact]
     public void Supersede_SetsStatusAndReplacementId()
     {
         var classification = TaxClassification.CreateForCredit(

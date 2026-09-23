@@ -117,7 +117,7 @@ public class Transactions : ICollection<Transaction>
                     break;
 
                 case CorporateActionReplayStep(var corporateAction):
-                    (Quantity, AveragePrice) = CorporateActionReplay.RescalePosition(Quantity, AveragePrice, corporateAction.RatioFactor);
+                    (Quantity, AveragePrice) = CorporateActionReplay.RescalePosition(Quantity, AveragePrice, corporateAction.RatioFactor!.Value);
                     break;
             }
         }
