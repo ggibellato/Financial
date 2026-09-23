@@ -43,27 +43,7 @@ public static class DisposalRecordCalculator
     private static IReadOnlyList<DisposalLotConsumption> BuildAverageCostLot(
         Transaction disposingTransaction, IReadOnlyList<Transaction> preceding, IReadOnlyList<CorporateAction> precedingCorporateActions)
     {
-        var quantity = 0m;
-        var averagePrice = 0m;
-
-        foreach (var step in CorporateActionReplay.Merge(preceding, precedingCorporateActions))
-        {
-            switch (step)
-            {
-                case CorporateActionReplayStep(var corporateAction):
-                    (quantity, averagePrice) = CorporateActionReplay.ApplyToPosition(quantity, averagePrice, corporateAction);
-                    break;
-
-                case TransactionReplayStep(var transaction):
-                    if (TransactionTypeEffects.For(transaction.Type).Quantity == QuantityEffect.Increase)
-                    {
-                        averagePrice = AverageCostReplay.Apply(quantity, averagePrice, transaction);
-                    }
-
-                    quantity = CorporateActionReplay.ApplyTransactionToQuantity(quantity, transaction);
-                    break;
-            }
-        }
+        var (_, averagePrice) = CorporateActionReplay.ReplayAveragePosition(preceding, precedingCorporateActions);
 
         return new[] { new DisposalLotConsumption(null, disposingTransaction.Quantity, averagePrice) };
     }

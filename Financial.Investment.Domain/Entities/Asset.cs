@@ -444,24 +444,27 @@ public class Asset
     private static bool IsMergerTarget(CorporateAction corporateAction) =>
         corporateAction.Type == CorporateAction.CorporateActionType.Merger && corporateAction.Role == CorporateAction.MergerRole.Target;
 
+    private static bool CanClassifyMergerTarget(CorporateAction corporateAction, Investments? investments, Currency? brokerCurrency) =>
+        investments is not null && brokerCurrency is not null && IsMergerTarget(corporateAction);
+
     private void AppendMergerTargetTaxClassification(CorporateAction corporateAction, Investments? investments, Currency? brokerCurrency)
     {
-        if (investments is null || brokerCurrency is null || !IsMergerTarget(corporateAction))
+        if (!CanClassifyMergerTarget(corporateAction, investments, brokerCurrency))
         {
             return;
         }
 
-        AppendTaxClassification(TaxClassificationCalculator.CalculateForCorporateAction(corporateAction, brokerCurrency.Value, investments));
+        AppendTaxClassification(TaxClassificationCalculator.CalculateForCorporateAction(corporateAction, brokerCurrency!.Value, investments!));
     }
 
     private void ReviseMergerTargetTaxClassification(CorporateAction updatedCorporateAction, Investments? investments, Currency? brokerCurrency)
     {
-        if (investments is null || brokerCurrency is null || !IsMergerTarget(updatedCorporateAction))
+        if (!CanClassifyMergerTarget(updatedCorporateAction, investments, brokerCurrency))
         {
             return;
         }
 
-        var newClassification = TaxClassificationCalculator.CalculateForCorporateAction(updatedCorporateAction, brokerCurrency.Value, investments);
+        var newClassification = TaxClassificationCalculator.CalculateForCorporateAction(updatedCorporateAction, brokerCurrency!.Value, investments!);
         SupersedeTaxClassificationBySource(SourceType.CorporateAction, updatedCorporateAction.Id, newClassification.Id);
         AppendTaxClassification(newClassification);
     }
@@ -477,37 +480,10 @@ public class Asset
     public (decimal Quantity, decimal AveragePrice) PositionAsOf(DateTime effectiveDate) =>
         PositionAsOf(effectiveDate, _corporateActions);
 
-    private (decimal Quantity, decimal AveragePrice) PositionAsOf(DateTime effectiveDate, IEnumerable<CorporateAction> corporateActions)
-    {
-        var quantity = 0m;
-        var averagePrice = 0m;
-
-        foreach (var step in CorporateActionReplay.Merge(Transactions, corporateActions))
-        {
-            if (step.Date > effectiveDate || (step.Date == effectiveDate && step is TransactionReplayStep))
-            {
-                break;
-            }
-
-            switch (step)
-            {
-                case CorporateActionReplayStep(var corporateAction):
-                    (quantity, averagePrice) = CorporateActionReplay.ApplyToPosition(quantity, averagePrice, corporateAction);
-                    break;
-
-                case TransactionReplayStep(var transaction):
-                    if (TransactionTypeEffects.For(transaction.Type).Quantity == QuantityEffect.Increase)
-                    {
-                        averagePrice = AverageCostReplay.Apply(quantity, averagePrice, transaction);
-                    }
-
-                    quantity = CorporateActionReplay.ApplyTransactionToQuantity(quantity, transaction);
-                    break;
-            }
-        }
-
-        return (quantity, averagePrice);
-    }
+    private (decimal Quantity, decimal AveragePrice) PositionAsOf(DateTime effectiveDate, IEnumerable<CorporateAction> corporateActions) =>
+        CorporateActionReplay.ReplayAveragePosition(
+            Transactions, corporateActions,
+            stopBefore: step => step.Date > effectiveDate || (step.Date == effectiveDate && step is TransactionReplayStep));
 
     private void EnsureNonZeroPositionAt(CorporateAction corporateAction, IEnumerable<CorporateAction> otherCorporateActions)
     {
