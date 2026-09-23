@@ -11,7 +11,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Financial.Investment.Application.Services;
 
-public sealed class CorporateActionService : ICorporateActionService
+public sealed class CorporateActionService : ICorporateActionService, ICorporateActionQueryService
 {
     private const string EntityType = "CorporateAction";
 
@@ -496,6 +496,53 @@ public sealed class CorporateActionService : ICorporateActionService
             span.MarkFailed(ex);
             throw;
         }
+    }
+
+    public IReadOnlyList<CorporateActionSummaryItemDTO> GetCorporateActionsByPortfolio(string brokerName, string portfolioName, InvestmentScope scope = InvestmentScope.Active)
+    {
+        using var span = StartSpan("GetCorporateActionsByPortfolio");
+        try
+        {
+            if (string.IsNullOrWhiteSpace(brokerName) || string.IsNullOrWhiteSpace(portfolioName))
+            {
+                span.MarkSuccess();
+                _logger.LogInformation("{Operation} completed", "GetCorporateActionsByPortfolio");
+                return Array.Empty<CorporateActionSummaryItemDTO>();
+            }
+
+            var result = MapAndSort(_repository.GetAssetsByBrokerPortfolio(brokerName, portfolioName, scope));
+            span.MarkSuccess();
+            _logger.LogInformation("{Operation} completed", "GetCorporateActionsByPortfolio");
+            return result;
+        }
+        catch (Exception ex)
+        {
+            span.MarkFailed(ex);
+            throw;
+        }
+    }
+
+    private static IReadOnlyList<CorporateActionSummaryItemDTO> MapAndSort(IEnumerable<Asset> assets)
+    {
+        return assets
+            .SelectMany(asset => asset.CorporateActions.Select(action => MapSummaryItem(asset, action)))
+            .OrderBy(item => item.EffectiveDate)
+            .ToList();
+    }
+
+    private static CorporateActionSummaryItemDTO MapSummaryItem(Asset asset, CorporateAction action)
+    {
+        var full = NavigationMapper.MapCorporateAction(action, asset);
+
+        return new CorporateActionSummaryItemDTO
+        {
+            AssetName = asset.Name,
+            Type = full.Type,
+            Role = full.Role,
+            EffectiveDate = full.EffectiveDate,
+            LinkedAssetName = full.LinkedAssetName,
+            CalculationStatus = full.CalculationStatus
+        };
     }
 
     private bool DeleteCorporateActionFromAsset(Asset asset, CorporateActionDeleteDTO request)
