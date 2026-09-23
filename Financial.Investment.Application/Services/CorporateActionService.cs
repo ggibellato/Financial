@@ -123,12 +123,8 @@ public sealed class CorporateActionService : ICorporateActionService
                     ?? throw new KeyNotFoundException($"Asset \"{request.SourceAssetName}\" was not found in portfolio \"{request.PortfolioName}\".");
 
                 var brokerCurrency = ParseBrokerCurrency(broker);
-                var method = AssetMutationHelper.ResolveCostBasisMethod(_repository, request.BrokerName);
+                var method = broker.CostBasisMethod;
                 var investments = _repository.GetInvestments();
-
-                // Validated before any mutation: a target-name collision or a missing existing target
-                // must leave the document untouched.
-                EnsureTargetIsAvailable(portfolio, request);
 
                 var correlationId = Guid.NewGuid();
                 var (sourceQuantity, sourceAveragePrice) = sourceAsset.PositionAsOf(request.EffectiveDate);
@@ -220,7 +216,7 @@ public sealed class CorporateActionService : ICorporateActionService
                     ?? throw new InvalidOperationException($"Corporate action {previousSourceRecord.Id} has no linked target record.");
 
                 var brokerCurrency = ParseBrokerCurrency(broker);
-                var method = AssetMutationHelper.ResolveCostBasisMethod(_repository, request.BrokerName);
+                var method = broker.CostBasisMethod;
                 var investments = _repository.GetInvestments();
                 var correlationId = previousSourceRecord.CorrelationId!.Value;
 
@@ -360,33 +356,24 @@ public sealed class CorporateActionService : ICorporateActionService
         broker.FindPortfolio(portfolioName)
             ?? throw new KeyNotFoundException($"Portfolio \"{portfolioName}\" was not found under broker \"{broker.Name}\".");
 
-    private static void EnsureTargetIsAvailable(Portfolio portfolio, CorporateActionMergerCreateDTO request)
+    private static Asset ResolveOrCreateTargetAsset(Portfolio portfolio, CorporateActionMergerCreateDTO request, out bool isNewTarget)
     {
         var existing = portfolio.FindAsset(request.TargetAssetName);
 
-        if (request.CreateTargetAssetInline && existing is not null)
-        {
-            throw new InvestmentRuleViolationException(
-                $"Portfolio \"{portfolio.Name}\" already has an asset named \"{request.TargetAssetName}\".");
-        }
-
-        if (!request.CreateTargetAssetInline && existing is null)
-        {
-            throw new KeyNotFoundException($"Asset \"{request.TargetAssetName}\" was not found in portfolio \"{portfolio.Name}\".");
-        }
-    }
-
-    private static Asset ResolveOrCreateTargetAsset(Portfolio portfolio, CorporateActionMergerCreateDTO request, out bool isNewTarget)
-    {
         if (!request.CreateTargetAssetInline)
         {
             isNewTarget = false;
-            return portfolio.FindAsset(request.TargetAssetName)
-                ?? throw new KeyNotFoundException($"Asset \"{request.TargetAssetName}\" was not found in portfolio \"{portfolio.Name}\".");
+            return existing ?? throw new KeyNotFoundException($"Asset \"{request.TargetAssetName}\" was not found in portfolio \"{portfolio.Name}\".");
         }
 
-        var assetClass = request.TargetClass
-            ?? GlobalAssetClassMapping.Resolve(request.TargetCountry ?? CountryCode.Unknown, request.TargetLocalTypeCode ?? string.Empty);
+        if (existing is not null)
+        {
+            throw new InvestmentRuleViolationException(
+                $"An asset named \"{request.TargetAssetName}\" already exists in portfolio \"{portfolio.Name}\".");
+        }
+
+        var country = request.TargetCountry ?? CountryCode.Unknown;
+        var assetClass = request.TargetClass ?? GlobalAssetClassMapping.Resolve(country, request.TargetLocalTypeCode ?? string.Empty);
 
         isNewTarget = true;
         return Asset.Create(
@@ -394,7 +381,7 @@ public sealed class CorporateActionService : ICorporateActionService
             request.TargetISIN ?? string.Empty,
             request.TargetExchange ?? string.Empty,
             request.TargetTicker ?? string.Empty,
-            request.TargetCountry ?? CountryCode.Unknown,
+            country,
             request.TargetLocalTypeCode ?? string.Empty,
             assetClass);
     }
