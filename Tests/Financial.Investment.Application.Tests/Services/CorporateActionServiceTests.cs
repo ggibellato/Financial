@@ -224,11 +224,11 @@ public class CorporateActionServiceTests
     }
 
     [Fact]
-    public async Task DeleteSplitAsync_EmptyId_ReturnsNull()
+    public async Task DeleteCorporateActionAsync_EmptyId_ReturnsNull()
     {
         _repository.Asset = MakeAssetWithPosition();
 
-        var result = await CreateService().DeleteSplitAsync(new CorporateActionDeleteDTO
+        var result = await CreateService().DeleteCorporateActionAsync(new CorporateActionDeleteDTO
         {
             BrokerName = "XPI",
             PortfolioName = "Default",
@@ -240,14 +240,14 @@ public class CorporateActionServiceTests
     }
 
     [Fact]
-    public async Task DeleteSplitAsync_ExistingId_RemovesAndReturnsAssetDetails()
+    public async Task DeleteCorporateActionAsync_ExistingSplitId_RemovesAndReturnsAssetDetails()
     {
         var asset = MakeAssetWithPosition();
         var actionId = Guid.NewGuid();
         asset.RecordCorporateAction(CorporateAction.CreateSplitWithId(actionId, new DateTime(2024, 6, 1), 2.0m));
         _repository.Asset = asset;
 
-        var result = await CreateService().DeleteSplitAsync(new CorporateActionDeleteDTO
+        var result = await CreateService().DeleteCorporateActionAsync(new CorporateActionDeleteDTO
         {
             BrokerName = "XPI",
             PortfolioName = "Default",
@@ -261,11 +261,11 @@ public class CorporateActionServiceTests
     }
 
     [Fact]
-    public async Task DeleteSplitAsync_UnknownId_ReturnsNull()
+    public async Task DeleteCorporateActionAsync_UnknownId_ReturnsNull()
     {
         _repository.Asset = MakeAssetWithPosition();
 
-        var result = await CreateService().DeleteSplitAsync(new CorporateActionDeleteDTO
+        var result = await CreateService().DeleteCorporateActionAsync(new CorporateActionDeleteDTO
         {
             BrokerName = "XPI",
             PortfolioName = "Default",
@@ -278,7 +278,7 @@ public class CorporateActionServiceTests
     }
 
     [Fact]
-    public async Task DeleteSplitAsync_WhenALaterSpecificIdDisposalDependsOnTheSplitLots_ThrowsWithSpecificMessageAndWritesNothing()
+    public async Task DeleteCorporateActionAsync_WhenALaterSpecificIdDisposalDependsOnTheSplitLots_ThrowsWithSpecificMessageAndWritesNothing()
     {
         var specificIdBroker = Broker.Create("XPI", "BRL");
         specificIdBroker.SetCostBasisMethod(CostBasisMethod.SpecificId);
@@ -295,7 +295,7 @@ public class CorporateActionServiceTests
             [new SpecificLotAllocation(lot1.Id, 10m)]);
         _repository.Asset = asset;
 
-        var act = async () => await CreateService().DeleteSplitAsync(new CorporateActionDeleteDTO
+        var act = async () => await CreateService().DeleteCorporateActionAsync(new CorporateActionDeleteDTO
         {
             BrokerName = "XPI",
             PortfolioName = "Default",
@@ -327,6 +327,276 @@ public class CorporateActionServiceTests
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
+    [Fact]
+    public async Task AddMergerAsync_CreateTargetAssetInline_ClosesSourceAndCarriesConvertedPositionToNewTarget()
+    {
+        var (broker, portfolio, source) = MakeMergerFixture();
+        _repository.Broker = broker;
+        _repository.Brokers = [broker];
+
+        var result = await CreateService().AddMergerAsync(new CorporateActionMergerCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            SourceAssetName = "SRC",
+            EffectiveDate = new DateTime(2024, 6, 1),
+            ExchangeRatio = 2.0m,
+            TargetAssetName = "TGT",
+            CreateTargetAssetInline = true
+        });
+
+        result.Should().NotBeNull();
+        result!.Source!.Quantity.Should().Be(0m, "the source position must fully close");
+        result.Target!.Quantity.Should().Be(20m, "10 source units x 2.0 exchange ratio");
+        result.Target.AveragePrice.Should().Be(2.5m, "the source's 50 total cost basis carried over 20 received units");
+
+        var targetAsset = portfolio.FindAsset("TGT");
+        targetAsset.Should().NotBeNull();
+        var classification = targetAsset!.TaxClassifications.Should().ContainSingle().Subject;
+        classification.CalculationStatus.Should().Be(CalculationStatus.RequiresReview, "no TaxRule is configured in this fixture");
+        classification.SourceType.Should().Be(SourceType.CorporateAction);
+
+        source.CorporateActions.Should().ContainSingle().Which.Role.Should().Be(CorporateAction.MergerRole.Source);
+        targetAsset.CorporateActions.Should().ContainSingle().Which.Role.Should().Be(CorporateAction.MergerRole.Target);
+        _repository.WriteCallCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task AddMergerAsync_ExistingTargetAsset_IncreasesTargetPositionAndCarriesCostBasis()
+    {
+        var (broker, portfolio, _) = MakeMergerFixture();
+        var target = Asset.Create("TGT", "ISIN2", "BVMF", "TGT");
+        target.AddTransaction(Transaction.Create(new DateTime(2023, 1, 1), Transaction.TransactionType.Buy, 10m, 2m, 0m));
+        portfolio.RegisterAsset(target);
+        _repository.Broker = broker;
+        _repository.Brokers = [broker];
+
+        var result = await CreateService().AddMergerAsync(new CorporateActionMergerCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            SourceAssetName = "SRC",
+            EffectiveDate = new DateTime(2024, 6, 1),
+            ExchangeRatio = 1.0m,
+            TargetAssetName = "TGT",
+            CreateTargetAssetInline = false
+        });
+
+        result.Should().NotBeNull();
+        result!.Target!.Quantity.Should().Be(20m, "the existing 10 units plus the 10 converted units");
+        result.Target.AveragePrice.Should().Be(3.5m, "(10 x 2 + 50) / 20");
+    }
+
+    [Fact]
+    public async Task AddMergerAsync_TargetNameCollidesWithExistingDistinctAsset_ThrowsAndWritesNothing()
+    {
+        var (broker, portfolio, source) = MakeMergerFixture();
+        portfolio.RegisterAsset(Asset.Create("TGT", "ISIN2", "BVMF", "TGT"));
+        _repository.Broker = broker;
+        _repository.Brokers = [broker];
+
+        var act = async () => await CreateService().AddMergerAsync(new CorporateActionMergerCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            SourceAssetName = "SRC",
+            EffectiveDate = new DateTime(2024, 6, 1),
+            ExchangeRatio = 2.0m,
+            TargetAssetName = "TGT",
+            CreateTargetAssetInline = true
+        });
+
+        await act.Should().ThrowAsync<InvestmentRuleViolationException>();
+        source.CorporateActions.Should().BeEmpty();
+        _repository.WriteCallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task AddMergerAsync_ZeroQuantitySourceHolding_ThrowsAndWritesNothing()
+    {
+        var broker = Broker.Create("XPI", "BRL");
+        var portfolio = broker.AddPortfolio("Default");
+        portfolio.RegisterAsset(Asset.Create("SRC", "ISIN1", "BVMF", "SRC"));
+        _repository.Broker = broker;
+        _repository.Brokers = [broker];
+
+        var act = async () => await CreateService().AddMergerAsync(new CorporateActionMergerCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            SourceAssetName = "SRC",
+            EffectiveDate = new DateTime(2024, 6, 1),
+            ExchangeRatio = 2.0m,
+            TargetAssetName = "TGT",
+            CreateTargetAssetInline = true
+        });
+
+        await act.Should().ThrowAsync<InvestmentRuleViolationException>();
+        _repository.WriteCallCount.Should().Be(0);
+        portfolio.FindAsset("TGT").Should().BeNull("no target must be created when the source step fails");
+    }
+
+    [Fact]
+    public async Task AddMergerAsync_SourceAssetNotFound_ThrowsKeyNotFound()
+    {
+        var broker = Broker.Create("XPI", "BRL");
+        broker.AddPortfolio("Default");
+        _repository.Broker = broker;
+        _repository.Brokers = [broker];
+
+        var act = async () => await CreateService().AddMergerAsync(new CorporateActionMergerCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            SourceAssetName = "UNKNOWN",
+            EffectiveDate = new DateTime(2024, 6, 1),
+            ExchangeRatio = 2.0m,
+            TargetAssetName = "TGT",
+            CreateTargetAssetInline = true
+        });
+
+        await act.Should().ThrowAsync<KeyNotFoundException>();
+        _repository.WriteCallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task AddMergerAsync_ValidRequest_RecordsSuccessfulSpan()
+    {
+        var (broker, _, _) = MakeMergerFixture();
+        var tracer = new RecordingTelemetryTracer();
+        var service = new CorporateActionService(
+            new StubInvestmentRepository { Broker = broker, Brokers = [broker] }, CreateNavigationService(), tracer, NullLogger<CorporateActionService>.Instance);
+
+        await service.AddMergerAsync(new CorporateActionMergerCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            SourceAssetName = "SRC",
+            EffectiveDate = new DateTime(2024, 6, 1),
+            ExchangeRatio = 2.0m,
+            TargetAssetName = "TGT",
+            CreateTargetAssetInline = true
+        });
+
+        var span = tracer.Spans.Should().ContainSingle().Which;
+        span.Name.Should().Be("Investment.CorporateActionService.AddMerger");
+        span.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Success);
+    }
+
+    [Fact]
+    public async Task UpdateMergerAsync_UnknownId_ReturnsNull()
+    {
+        var (broker, _, _) = MakeMergerFixture();
+        _repository.Broker = broker;
+        _repository.Brokers = [broker];
+
+        var result = await CreateService().UpdateMergerAsync(new CorporateActionMergerUpdateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            SourceAssetName = "SRC",
+            Id = Guid.NewGuid(),
+            EffectiveDate = new DateTime(2024, 6, 1),
+            ExchangeRatio = 2.0m
+        });
+
+        result.Should().BeNull();
+        _repository.WriteCallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task UpdateMergerAsync_EmptyId_ReturnsNull()
+    {
+        var (broker, _, _) = MakeMergerFixture();
+        _repository.Broker = broker;
+        _repository.Brokers = [broker];
+
+        var result = await CreateService().UpdateMergerAsync(new CorporateActionMergerUpdateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            SourceAssetName = "SRC",
+            Id = Guid.Empty,
+            EffectiveDate = new DateTime(2024, 6, 1),
+            ExchangeRatio = 2.0m
+        });
+
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task UpdateMergerAsync_ExistingId_UpdatesBothLinkedRecordsWithNewRatio()
+    {
+        var (broker, portfolio, source) = MakeMergerFixture();
+        _repository.Broker = broker;
+        _repository.Brokers = [broker];
+
+        var added = await CreateService().AddMergerAsync(new CorporateActionMergerCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            SourceAssetName = "SRC",
+            EffectiveDate = new DateTime(2024, 6, 1),
+            ExchangeRatio = 2.0m,
+            TargetAssetName = "TGT",
+            CreateTargetAssetInline = true
+        });
+        added.Should().NotBeNull();
+        var sourceActionId = source.CorporateActions.Single().Id;
+        var targetActionId = portfolio.FindAsset("TGT")!.CorporateActions.Single().Id;
+
+        var result = await CreateService().UpdateMergerAsync(new CorporateActionMergerUpdateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            SourceAssetName = "SRC",
+            Id = sourceActionId,
+            EffectiveDate = new DateTime(2024, 6, 1),
+            ExchangeRatio = 3.0m
+        });
+
+        result.Should().NotBeNull();
+        result!.Target!.Quantity.Should().Be(30m, "10 source units x the revised 3.0 exchange ratio");
+        var targetAsset = portfolio.FindAsset("TGT")!;
+        targetAsset.CorporateActions.Should().ContainSingle().Which.Id.Should().Be(
+            targetActionId, "the target record's own id must be preserved across the update");
+        source.CorporateActions.Should().ContainSingle().Which.Id.Should().Be(sourceActionId, "the source record's id must be preserved across the update");
+    }
+
+    [Fact]
+    public async Task DeleteCorporateActionAsync_ExistingMergerId_RemovesBothLinkedRecordsAndRestoresSourcePosition()
+    {
+        var (broker, portfolio, source) = MakeMergerFixture();
+        _repository.Broker = broker;
+        _repository.Brokers = [broker];
+
+        var added = await CreateService().AddMergerAsync(new CorporateActionMergerCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            SourceAssetName = "SRC",
+            EffectiveDate = new DateTime(2024, 6, 1),
+            ExchangeRatio = 2.0m,
+            TargetAssetName = "TGT",
+            CreateTargetAssetInline = true
+        });
+        added.Should().NotBeNull();
+        var sourceActionId = source.CorporateActions.Single().Id;
+
+        var result = await CreateService().DeleteCorporateActionAsync(new CorporateActionDeleteDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "SRC",
+            Id = sourceActionId
+        });
+
+        result.Should().NotBeNull();
+        result!.Quantity.Should().Be(10m, "deleting the merger must restore the source's original position");
+        source.CorporateActions.Should().BeEmpty();
+        portfolio.FindAsset("TGT")!.CorporateActions.Should().BeEmpty("the linked target record must be removed alongside the source one");
+    }
+
     private CorporateActionService CreateService() =>
         new(_repository, CreateNavigationService(), Tracer, NullLogger<CorporateActionService>.Instance);
 
@@ -338,5 +608,15 @@ public class CorporateActionServiceTests
         var asset = Asset.Create(name, "ISIN", "BVMF", name);
         asset.AddTransaction(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
         return asset;
+    }
+
+    private static (Broker Broker, Portfolio Portfolio, Asset Source) MakeMergerFixture(decimal sourceQuantity = 10m, decimal sourceUnitPrice = 5m)
+    {
+        var broker = Broker.Create("XPI", "BRL");
+        var portfolio = broker.AddPortfolio("Default");
+        var source = Asset.Create("SRC", "ISIN1", "BVMF", "SRC");
+        source.AddTransaction(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, sourceQuantity, sourceUnitPrice, 0m));
+        portfolio.RegisterAsset(source);
+        return (broker, portfolio, source);
     }
 }
