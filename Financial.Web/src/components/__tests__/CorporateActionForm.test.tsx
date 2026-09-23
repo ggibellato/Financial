@@ -66,10 +66,12 @@ describe('CorporateActionForm', () => {
     expect(screen.getByLabelText('Note')).not.toBeRequired()
   })
 
-  it('shows the ratio validation error under the Old units field', () => {
+  it('shows the ratio validation error as an accessible description on both New units and Old units fields', () => {
     render(<CorporateActionForm {...baseProps} saveErrorFields={{ formRatio: 'Enter a valid split ratio other than 1-for-1' }} />)
 
-    expect(screen.getByText('Enter a valid split ratio other than 1-for-1')).toBeInTheDocument()
+    expect(screen.getAllByText('Enter a valid split ratio other than 1-for-1')).toHaveLength(2)
+    expect(screen.getByLabelText(/^New units/)).toHaveAccessibleDescription('Enter a valid split ratio other than 1-for-1')
+    expect(screen.getByLabelText(/^Old units/)).toHaveAccessibleDescription('Enter a valid split ratio other than 1-for-1')
   })
 
   it('shows the general server error banner when no field claims it', () => {
@@ -87,7 +89,7 @@ describe('CorporateActionForm', () => {
       />,
     )
 
-    expect(screen.getAllByText('Enter a valid split ratio other than 1-for-1')).toHaveLength(1)
+    expect(screen.getAllByText('Enter a valid split ratio other than 1-for-1')).toHaveLength(2)
   })
 
   it('shows Saving... and disables the confirm button while isSaving', () => {

@@ -72,7 +72,12 @@ export default function CorporateActionForm({
 
         {formType === 'Split' && (
           <>
-            <Field label="New units" required validationState={fieldError('formRatio') ? 'error' : 'none'}>
+            <Field
+              label="New units"
+              required
+              validationState={fieldError('formRatio') ? 'error' : 'none'}
+              validationMessage={fieldError('formRatio')}
+            >
               <Input
                 type="number"
                 step="0.0001"
