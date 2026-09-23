@@ -6639,6 +6639,7 @@ export interface components {
             cashFlowsWithCredits?: components["schemas"]["AssetCashFlowDTO"][];
             cashFlowsWithoutCredits?: components["schemas"]["AssetCashFlowDTO"][];
             class?: components["schemas"]["GlobalAssetClass"];
+            corporateActions?: components["schemas"]["CorporateActionDTO"][];
             costBasisMethod?: components["schemas"]["CostBasisMethod"];
             /** Format: double */
             costOfUnitsHeld?: number;
@@ -6828,7 +6829,7 @@ export interface components {
             terminalValue: number;
         };
         /** @enum {unknown} */
-        CalculationStatus: "RequiresReview" | "Incomplete" | "Final";
+        CalculationStatus: "RequiresReview" | "Incomplete" | "Final" | null;
         CalendarConnectionStatusDTO: {
             accountEmail?: null | string;
             calendarId?: null | string;
@@ -6916,6 +6917,42 @@ export interface components {
             isTithe: boolean;
             name: string;
         };
+        CorporateActionAwaitingTaxReviewFinding: {
+            assetName: string;
+            brokerName: string;
+            /** Format: uuid */
+            corporateActionId: string;
+            /** Format: date-time */
+            effectiveDate: string;
+            portfolioName: string;
+            taxYear: string;
+            type: components["schemas"]["CorporateActionType"];
+        };
+        CorporateActionDTO: {
+            /** Format: double */
+            allocationPercentage: null | number;
+            calculationStatus: null | components["schemas"]["CalculationStatus"];
+            /** Format: double */
+            carriedCostBasis: null | number;
+            /** Format: double */
+            cashInLieu: null | number;
+            /** Format: double */
+            convertedQuantity: null | number;
+            /** Format: uuid */
+            correlationId: null | string;
+            /** Format: date-time */
+            effectiveDate: string;
+            /** Format: double */
+            exchangeRatio: null | number;
+            /** Format: uuid */
+            id: string;
+            linkedAssetName: null | string;
+            note: null | string;
+            /** Format: double */
+            ratioFactor: null | number;
+            role: null | components["schemas"]["CorporateActionRole"];
+            type: components["schemas"]["CorporateActionType"];
+        };
         CorporateActionDeleteDTO: {
             assetName: string;
             brokerName: string;
@@ -6961,6 +6998,8 @@ export interface components {
             portfolioName: string;
             sourceAssetName: string;
         };
+        /** @enum {unknown} */
+        CorporateActionRole: "Source" | "Target" | "Parent" | "New" | null;
         CorporateActionSpinOffCreateDTO: {
             /** Format: double */
             allocationPercentage?: number;
@@ -7021,6 +7060,8 @@ export interface components {
             /** Format: double */
             ratioFactor?: number;
         };
+        /** @enum {unknown} */
+        CorporateActionType: "Split" | "Merger" | "SpinOff";
         /** @enum {unknown} */
         CostBasisMethod: "AverageCost" | "FIFO" | "SpecificId";
         CountryAllocationEntryDTO: {
@@ -7143,6 +7184,7 @@ export interface components {
             percentage: number;
         };
         DataQualityReportDTO: {
+            corporateActionsAwaitingTaxReview: components["schemas"]["CorporateActionAwaitingTaxReviewFinding"][];
             historicHoldingsStillOpen: components["schemas"]["HistoricHoldingStillOpenFinding"][];
             openHoldingsMissingCostBasis: components["schemas"]["OpenHoldingMissingCostBasisFinding"][];
             salesExceedPurchases: components["schemas"]["SalesExceedPurchasesFinding"][];

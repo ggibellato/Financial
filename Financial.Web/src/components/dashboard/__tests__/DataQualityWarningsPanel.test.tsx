@@ -23,6 +23,7 @@ const EMPTY_REPORT: DataQualityReportDto = {
   historicHoldingsStillOpen: [],
   unclassifiedHoldings: [],
   unclassifiedAndUnpricedOpenHoldings: [],
+  corporateActionsAwaitingTaxReview: [],
 }
 
 const FULL_REPORT: DataQualityReportDto = {
