@@ -231,7 +231,7 @@ public class Asset
 
     internal void AppendTaxClassification(TaxClassification classification) => _taxClassifications.Add(classification);
 
-    internal TaxClassification? FindTaxClassificationBySource(SourceType sourceType, Guid sourceId) =>
+    public TaxClassification? FindTaxClassificationBySource(SourceType sourceType, Guid sourceId) =>
         _taxClassifications.FirstOrDefault(c => c.SourceType == sourceType && c.SourceId == sourceId && c.Status == TaxClassificationStatus.Active);
 
     internal void SupersedeTaxClassificationBySource(SourceType sourceType, Guid sourceId, Guid? supersededByClassificationId) =>

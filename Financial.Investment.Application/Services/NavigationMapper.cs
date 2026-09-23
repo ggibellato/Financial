@@ -168,7 +168,7 @@ internal static class NavigationMapper
 
     internal static CorporateActionDTO MapCorporateAction(CorporateAction action, Asset asset)
     {
-        var classification = CorporateActionTaxClassificationResolver.FindActive(asset, action.Id);
+        var classification = asset.FindTaxClassificationBySource(SourceType.CorporateAction, action.Id);
 
         return new CorporateActionDTO
         {
