@@ -17,8 +17,9 @@ const CreditsTab = lazy(() => import('./CreditsTab'))
 const TransactionsTab = lazy(() => import('./TransactionsTab'))
 const PriceHistoryTab = lazy(() => import('./PriceHistoryTab'))
 const DisposalsTab = lazy(() => import('./DisposalsTab'))
+const CorporateActionsTab = lazy(() => import('./CorporateActionsTab'))
 
-type TabId = 'summary' | 'holdings' | 'transactions' | 'credits' | 'priceHistory' | 'disposals'
+type TabId = 'summary' | 'holdings' | 'transactions' | 'credits' | 'priceHistory' | 'disposals' | 'corporateActions'
 
 const BASE_TABS: { id: TabId; label: string }[] = [
   { id: 'summary', label: 'Summary' },
@@ -29,6 +30,7 @@ const BASE_TABS: { id: TabId; label: string }[] = [
 const HOLDINGS_TAB: { id: TabId; label: string } = { id: 'holdings', label: 'Holdings' }
 const PRICE_HISTORY_TAB: { id: TabId; label: string } = { id: 'priceHistory', label: 'Price History' }
 const DISPOSALS_TAB: { id: TabId; label: string } = { id: 'disposals', label: 'Disposals' }
+const CORPORATE_ACTIONS_TAB: { id: TabId; label: string } = { id: 'corporateActions', label: 'Corporate Actions' }
 
 function nodeKey(n: ReturnType<typeof useSelectedNode>['selectedNode']): string {
   if (!n) return ''
@@ -157,7 +159,7 @@ export default function DetailPanel() {
         onTabSelect={(_event: SelectTabEvent, data: SelectTabData) => setActiveTab(data.value as TabId)}
       >
         {(isAsset
-          ? [...BASE_TABS, PRICE_HISTORY_TAB, DISPOSALS_TAB]
+          ? [...BASE_TABS, PRICE_HISTORY_TAB, DISPOSALS_TAB, CORPORATE_ACTIONS_TAB]
           : isPortfolio
             ? [BASE_TABS[0], HOLDINGS_TAB, ...BASE_TABS.slice(1)]
             : BASE_TABS
@@ -178,6 +180,7 @@ export default function DetailPanel() {
           {activeTab === 'credits' && <CreditsTab />}
           {activeTab === 'priceHistory' && isAsset && <PriceHistoryTab />}
           {activeTab === 'disposals' && isAsset && <DisposalsTab />}
+          {activeTab === 'corporateActions' && isAsset && <CorporateActionsTab />}
         </Suspense>
       </div>
     </div>

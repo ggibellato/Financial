@@ -28,6 +28,9 @@ import type {
   CategoryTotalDto,
   CategoryTotalsAnnualDto,
   CategoryUpdateDto,
+  CorporateActionDeleteDto,
+  CorporateActionSplitCreateDto,
+  CorporateActionSplitUpdateDto,
   CreditCardCalendarSyncStatusDto,
   BalanceAdjustmentCreateDto,
   CreditCardCreateDto,
@@ -1612,6 +1615,66 @@ describe('financialApiClient', () => {
     expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/transactions`)
+    expect(init?.method).toBe('DELETE')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('posts a split create request', async () => {
+    const requestBody: CorporateActionSplitCreateDto = {
+      brokerName: 'XPI',
+      portfolioName: 'Default',
+      assetName: 'BCIA11',
+      effectiveDate: '2026-07-01T00:00:00Z',
+      ratioFactor: 2,
+      note: null,
+    }
+    const responseBody = { name: 'BCIA11' } as AssetDetailsDto
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.addSplit(requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/corporate-actions/split`)
+    expect(init?.method).toBe('POST')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('puts a split update request', async () => {
+    const requestBody: CorporateActionSplitUpdateDto = {
+      id: 'ca1',
+      brokerName: 'XPI',
+      portfolioName: 'Default',
+      assetName: 'BCIA11',
+      effectiveDate: '2026-07-01T00:00:00Z',
+      ratioFactor: 0.1,
+      note: 'Reverse split',
+    }
+    const responseBody = { name: 'BCIA11' } as AssetDetailsDto
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.updateSplit(requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/corporate-actions/split`)
+    expect(init?.method).toBe('PUT')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('deletes a corporate action', async () => {
+    const requestBody: CorporateActionDeleteDto = { id: 'ca1', brokerName: 'XPI', portfolioName: 'Default', assetName: 'BCIA11' }
+    const responseBody = { name: 'BCIA11' } as AssetDetailsDto
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.deleteCorporateAction(requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/corporate-actions`)
     expect(init?.method).toBe('DELETE')
     expect(JSON.parse(init?.body as string)).toEqual(requestBody)
   })
