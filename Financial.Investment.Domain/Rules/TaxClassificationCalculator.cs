@@ -39,10 +39,7 @@ public static class TaxClassificationCalculator
 
     public static TaxClassification CalculateForCorporateAction(CorporateAction record, Currency currency, Investments investments)
     {
-        var isMergerTarget = record.Type == CorporateAction.CorporateActionType.Merger && record.Role == CorporateAction.CorporateActionRole.Target;
-        var isSpinOffNew = record.Type == CorporateAction.CorporateActionType.SpinOff && record.Role == CorporateAction.CorporateActionRole.New;
-
-        if (!isMergerTarget && !isSpinOffNew)
+        if (!record.IsReceivingRole)
         {
             throw new InvalidOperationException(
                 $"CalculateForCorporateAction requires a {CorporateAction.CorporateActionType.Merger}/{CorporateAction.CorporateActionRole.Target} " +

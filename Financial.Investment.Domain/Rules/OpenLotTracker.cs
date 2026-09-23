@@ -79,7 +79,7 @@ public static class OpenLotTracker
                 break;
 
             case { Type: CorporateAction.CorporateActionType.SpinOff, Role: CorporateAction.CorporateActionRole.Parent }:
-                ReduceLotCostBasis(lots, corporateAction.AllocationPercentage!.Value);
+                ReduceLotCostBasis(lots, CorporateActionReplay.RequireRetainedFraction(corporateAction));
                 break;
 
             case { Type: CorporateAction.CorporateActionType.SpinOff, Role: CorporateAction.CorporateActionRole.New }:
@@ -100,11 +100,11 @@ public static class OpenLotTracker
             UnitCost = corporateAction.CarriedCostBasis!.Value / corporateAction.ConvertedQuantity!.Value
         });
 
-    private static void ReduceLotCostBasis(List<MutableLot> lots, decimal allocationPercentage)
+    private static void ReduceLotCostBasis(List<MutableLot> lots, decimal retainedFraction)
     {
         foreach (var lot in lots)
         {
-            lot.UnitCost *= 1 - allocationPercentage / 100;
+            lot.UnitCost *= retainedFraction;
         }
     }
 

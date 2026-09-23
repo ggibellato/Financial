@@ -428,9 +428,10 @@ public class Asset
             {
                 var message = removed.Type switch
                 {
+                    CorporateAction.CorporateActionType.Split => "Cannot delete: a later disposal depends on lots created by this split.",
                     CorporateAction.CorporateActionType.Merger => "Cannot delete: a later disposal depends on lots created by this merger.",
                     CorporateAction.CorporateActionType.SpinOff => "Cannot delete: a later disposal depends on lots created by this spin-off.",
-                    _ => "Cannot delete: a later disposal depends on lots created by this split.",
+                    _ => throw new ArgumentOutOfRangeException(nameof(removed), removed.Type, "Unsupported corporate action type."),
                 };
                 throw new InvestmentRuleViolationException(message);
             }
@@ -444,12 +445,8 @@ public class Asset
     private static bool IsMergerSource(CorporateAction corporateAction) =>
         corporateAction.Type == CorporateAction.CorporateActionType.Merger && corporateAction.Role == CorporateAction.CorporateActionRole.Source;
 
-    private static bool IsTaxClassifiableReceivingRole(CorporateAction corporateAction) =>
-        (corporateAction.Type == CorporateAction.CorporateActionType.Merger && corporateAction.Role == CorporateAction.CorporateActionRole.Target)
-        || (corporateAction.Type == CorporateAction.CorporateActionType.SpinOff && corporateAction.Role == CorporateAction.CorporateActionRole.New);
-
     private static bool CanClassifyCorporateAction(CorporateAction corporateAction, Investments? investments, Currency? brokerCurrency) =>
-        investments is not null && brokerCurrency is not null && IsTaxClassifiableReceivingRole(corporateAction);
+        investments is not null && brokerCurrency is not null && corporateAction.IsReceivingRole;
 
     private void AppendCorporateActionTaxClassification(CorporateAction corporateAction, Investments? investments, Currency? brokerCurrency)
     {
@@ -475,7 +472,7 @@ public class Asset
 
     private void SupersedeCorporateActionTaxClassification(CorporateAction removed)
     {
-        if (IsTaxClassifiableReceivingRole(removed))
+        if (removed.IsReceivingRole)
         {
             SupersedeTaxClassificationBySource(SourceType.CorporateAction, removed.Id, null);
         }

@@ -24,6 +24,10 @@ public class CorporateAction
     public decimal? CarriedCostBasis { get; private set; }
     public decimal? AllocationPercentage { get; private set; }
 
+    public bool IsReceivingRole =>
+        (Type == CorporateActionType.Merger && Role == CorporateActionRole.Target)
+        || (Type == CorporateActionType.SpinOff && Role == CorporateActionRole.New);
+
     private CorporateAction() { }
 
     private CorporateAction(
