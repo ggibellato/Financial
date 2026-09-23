@@ -15,31 +15,43 @@ public static class OpenLotTracker
         public required Guid SourceTransactionId { get; init; }
         public required DateTime Date { get; init; }
         public required decimal RemainingQuantity { get; set; }
-        public required decimal UnitCost { get; init; }
+        public required decimal UnitCost { get; set; }
     }
 
-    public static IReadOnlyList<OpenLot> GetOpenLots(IEnumerable<Transaction> transactions)
+    public static IReadOnlyList<OpenLot> GetOpenLots(IEnumerable<Transaction> transactions) =>
+        GetOpenLots(transactions, Array.Empty<CorporateAction>());
+
+    public static IReadOnlyList<OpenLot> GetOpenLots(IEnumerable<Transaction> transactions, IEnumerable<CorporateAction> corporateActions)
     {
         var lots = new List<MutableLot>();
 
-        foreach (var transaction in TransactionReplayOrder.Sort(transactions))
+        foreach (var step in CorporateActionReplay.Merge(transactions, corporateActions))
         {
-            var effect = TransactionTypeEffects.For(transaction.Type);
-
-            switch (effect.Quantity)
+            switch (step)
             {
-                case QuantityEffect.Increase:
-                    lots.Add(new MutableLot
-                    {
-                        SourceTransactionId = transaction.Id,
-                        Date = transaction.Date,
-                        RemainingQuantity = transaction.Quantity,
-                        UnitCost = (transaction.UnitPrice * transaction.Quantity + transaction.Fees) / transaction.Quantity
-                    });
+                case CorporateActionReplayStep(var corporateAction):
+                    Rescale(lots, corporateAction.RatioFactor);
                     break;
 
-                case QuantityEffect.Decrease:
-                    Deplete(lots, transaction.Quantity);
+                case TransactionReplayStep(var transaction):
+                    var effect = TransactionTypeEffects.For(transaction.Type);
+
+                    switch (effect.Quantity)
+                    {
+                        case QuantityEffect.Increase:
+                            lots.Add(new MutableLot
+                            {
+                                SourceTransactionId = transaction.Id,
+                                Date = transaction.Date,
+                                RemainingQuantity = transaction.Quantity,
+                                UnitCost = (transaction.UnitPrice * transaction.Quantity + transaction.Fees) / transaction.Quantity
+                            });
+                            break;
+
+                        case QuantityEffect.Decrease:
+                            Deplete(lots, transaction.Quantity);
+                            break;
+                    }
                     break;
             }
         }
@@ -48,6 +60,19 @@ public static class OpenLotTracker
             .Where(lot => lot.RemainingQuantity > 0)
             .Select(lot => new OpenLot(lot.SourceTransactionId, lot.Date, lot.RemainingQuantity, lot.UnitCost))
             .ToList();
+    }
+
+    private static void Rescale(List<MutableLot> lots, decimal factor)
+    {
+        var rescaled = CorporateActionReplay.RescaleLots(
+            lots.Select(lot => new OpenLot(lot.SourceTransactionId, lot.Date, lot.RemainingQuantity, lot.UnitCost)).ToList(),
+            factor);
+
+        for (var i = 0; i < lots.Count; i++)
+        {
+            lots[i].RemainingQuantity = rescaled[i].RemainingQuantity;
+            lots[i].UnitCost = rescaled[i].UnitCost;
+        }
     }
 
     private static void Deplete(List<MutableLot> lots, decimal quantity)

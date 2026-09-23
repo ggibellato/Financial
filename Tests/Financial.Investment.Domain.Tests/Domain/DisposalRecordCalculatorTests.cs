@@ -149,4 +149,62 @@ public class DisposalRecordCalculatorTests
         record.QuantityDisposed.Should().Be(10m);
         record.Proceeds.Should().Be(redemption.NetCash);
     }
+
+    [Fact]
+    public void Calculate_AverageCost_SplitPrecedesDisposal_TotalsAgainstRescaledCost()
+    {
+        var buy = Transaction.Create(new DateTime(2026, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m);
+        var split = CorporateAction.CreateSplit(new DateTime(2026, 1, 15), 2.0m);
+        var sell = Transaction.Create(new DateTime(2026, 2, 1), Transaction.TransactionType.Sell, 8m, 60m, 0m);
+
+        var record = DisposalRecordCalculator.Calculate(
+            sell, new[] { buy }, CostBasisMethod.AverageCost, "GBP", precedingCorporateActions: new[] { split });
+
+        record.LotsConsumed.Should().ContainSingle();
+        record.LotsConsumed[0].UnitCost.Should().Be(50m, "10 units at 100 become 20 units at 50 after a 2-for-1 split");
+        record.CostBasis.Should().Be(400m);
+    }
+
+    [Fact]
+    public void Calculate_Fifo_SplitPrecedesDisposal_ConsumesRescaledLots()
+    {
+        var buy = Transaction.Create(new DateTime(2026, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m);
+        var split = CorporateAction.CreateSplit(new DateTime(2026, 1, 15), 2.0m);
+        var sell = Transaction.Create(new DateTime(2026, 2, 1), Transaction.TransactionType.Sell, 8m, 60m, 0m);
+
+        var record = DisposalRecordCalculator.Calculate(
+            sell, new[] { buy }, CostBasisMethod.FIFO, "GBP", precedingCorporateActions: new[] { split });
+
+        record.LotsConsumed.Should().ContainSingle();
+        record.LotsConsumed[0].SourceTransactionId.Should().Be(buy.Id);
+        record.LotsConsumed[0].UnitCost.Should().Be(50m);
+        record.LotsConsumed[0].Quantity.Should().Be(8m);
+    }
+
+    [Fact]
+    public void Calculate_SpecificId_SplitPrecedesDisposal_AllocatesAgainstRescaledLot()
+    {
+        var buy = Transaction.Create(new DateTime(2026, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m);
+        var split = CorporateAction.CreateSplit(new DateTime(2026, 1, 15), 2.0m);
+        var sell = Transaction.Create(new DateTime(2026, 2, 1), Transaction.TransactionType.Sell, 8m, 60m, 0m);
+        var allocation = new[] { new SpecificLotAllocation(buy.Id, 8m) };
+
+        var record = DisposalRecordCalculator.Calculate(
+            sell, new[] { buy }, CostBasisMethod.SpecificId, "GBP", allocation, new[] { split });
+
+        record.LotsConsumed.Should().ContainSingle();
+        record.LotsConsumed[0].UnitCost.Should().Be(50m);
+    }
+
+    [Fact]
+    public void Calculate_NoPrecedingCorporateActions_BehavesExactlyAsBeforeTheFeature()
+    {
+        var buy = Transaction.Create(new DateTime(2026, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m);
+        var sell = Transaction.Create(new DateTime(2026, 2, 1), Transaction.TransactionType.Sell, 4m, 8m, 0m);
+
+        var record = DisposalRecordCalculator.Calculate(
+            sell, new[] { buy }, CostBasisMethod.AverageCost, "GBP", precedingCorporateActions: null);
+
+        record.LotsConsumed[0].UnitCost.Should().Be(5m);
+    }
 }

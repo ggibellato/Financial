@@ -128,4 +128,49 @@ public class SaleCoverageRuleTests
 
         SaleCoverageRule.FindFirstUncoveredSale(transactions).Should().BeNull();
     }
+
+    [Fact]
+    public void FindFirstUncoveredSale_SplitBeforeSale_CoversASaleLargerThanTheRecordedBuyQuantity()
+    {
+        var transactions = new[]
+        {
+            Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 5m, 100m, 0m),
+            Transaction.Create(new DateTime(2024, 3, 1), Transaction.TransactionType.Sell, 10m, 60m, 0m),
+        };
+        var split = CorporateAction.CreateSplit(new DateTime(2024, 2, 1), 2.0m);
+
+        SaleCoverageRule.FindFirstUncoveredSale(transactions, new[] { split }).Should().BeNull();
+    }
+
+    [Fact]
+    public void FindFirstUncoveredSale_ReverseSplitBeforeSale_ShrinksCoverageAndCanUncoverASale()
+    {
+        var sale = Transaction.Create(new DateTime(2024, 3, 1), Transaction.TransactionType.Sell, 5m, 60m, 0m);
+        var transactions = new[]
+        {
+            Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m),
+            sale,
+        };
+        var reverseSplit = CorporateAction.CreateSplit(new DateTime(2024, 2, 1), 0.1m);
+
+        var violation = SaleCoverageRule.FindFirstUncoveredSale(transactions, new[] { reverseSplit });
+
+        violation.Should().NotBeNull();
+        violation!.OffendingSale.Should().BeSameAs(sale);
+        violation.QuantityHeld.Should().Be(1m);
+        violation.Shortfall.Should().Be(4m);
+    }
+
+    [Fact]
+    public void FindFirstUncoveredSale_NoCorporateActions_SameAsSingleArgumentOverload()
+    {
+        var transactions = new[]
+        {
+            Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m),
+            Transaction.Create(new DateTime(2024, 2, 1), Transaction.TransactionType.Sell, 5m, 110m, 0m),
+        };
+
+        SaleCoverageRule.FindFirstUncoveredSale(transactions, Array.Empty<CorporateAction>())
+            .Should().Be(SaleCoverageRule.FindFirstUncoveredSale(transactions));
+    }
 }

@@ -13,15 +13,19 @@ public static class DisposalRecordCalculator
         IEnumerable<Transaction> precedingTransactions,
         CostBasisMethod method,
         string brokerCurrency,
-        IReadOnlyList<SpecificLotAllocation>? allocation = null)
+        IReadOnlyList<SpecificLotAllocation>? allocation = null,
+        IEnumerable<CorporateAction>? precedingCorporateActions = null)
     {
         var preceding = precedingTransactions as IReadOnlyList<Transaction> ?? precedingTransactions.ToList();
+        var precedingActions = precedingCorporateActions as IReadOnlyList<CorporateAction>
+            ?? precedingCorporateActions?.ToList()
+            ?? (IReadOnlyList<CorporateAction>)Array.Empty<CorporateAction>();
 
         var lotsConsumed = method switch
         {
-            CostBasisMethod.AverageCost => BuildAverageCostLot(disposingTransaction, preceding),
-            CostBasisMethod.FIFO => BuildAutoConsumedLots(disposingTransaction, preceding),
-            CostBasisMethod.SpecificId => BuildSpecificIdLots(disposingTransaction, preceding, allocation),
+            CostBasisMethod.AverageCost => BuildAverageCostLot(disposingTransaction, preceding, precedingActions),
+            CostBasisMethod.FIFO => BuildAutoConsumedLots(disposingTransaction, preceding, precedingActions),
+            CostBasisMethod.SpecificId => BuildSpecificIdLots(disposingTransaction, preceding, allocation, precedingActions),
             _ => throw new ArgumentOutOfRangeException(nameof(method), method, "Unknown cost basis method.")
         };
 
@@ -39,22 +43,31 @@ public static class DisposalRecordCalculator
     }
 
     private static IReadOnlyList<DisposalLotConsumption> BuildAverageCostLot(
-        Transaction disposingTransaction, IReadOnlyList<Transaction> preceding)
+        Transaction disposingTransaction, IReadOnlyList<Transaction> preceding, IReadOnlyList<CorporateAction> precedingCorporateActions)
     {
         var quantity = 0m;
         var averagePrice = 0m;
 
-        foreach (var transaction in TransactionReplayOrder.Sort(preceding))
+        foreach (var step in CorporateActionReplay.Merge(preceding, precedingCorporateActions))
         {
-            var effect = TransactionTypeEffects.For(transaction.Type);
-            switch (effect.Quantity)
+            switch (step)
             {
-                case QuantityEffect.Increase:
-                    averagePrice = AverageCostReplay.Apply(quantity, averagePrice, transaction);
-                    quantity += transaction.Quantity;
+                case CorporateActionReplayStep(var corporateAction):
+                    (quantity, averagePrice) = CorporateActionReplay.RescalePosition(quantity, averagePrice, corporateAction.RatioFactor);
                     break;
-                case QuantityEffect.Decrease:
-                    quantity -= transaction.Quantity;
+
+                case TransactionReplayStep(var transaction):
+                    var effect = TransactionTypeEffects.For(transaction.Type);
+                    switch (effect.Quantity)
+                    {
+                        case QuantityEffect.Increase:
+                            averagePrice = AverageCostReplay.Apply(quantity, averagePrice, transaction);
+                            quantity += transaction.Quantity;
+                            break;
+                        case QuantityEffect.Decrease:
+                            quantity -= transaction.Quantity;
+                            break;
+                    }
                     break;
             }
         }
@@ -63,9 +76,9 @@ public static class DisposalRecordCalculator
     }
 
     private static IReadOnlyList<DisposalLotConsumption> BuildAutoConsumedLots(
-        Transaction disposingTransaction, IReadOnlyList<Transaction> preceding)
+        Transaction disposingTransaction, IReadOnlyList<Transaction> preceding, IReadOnlyList<CorporateAction> precedingCorporateActions)
     {
-        var openLots = OpenLotTracker.GetOpenLots(preceding);
+        var openLots = OpenLotTracker.GetOpenLots(preceding, precedingCorporateActions);
         var remaining = disposingTransaction.Quantity;
         var consumed = new List<DisposalLotConsumption>();
 
@@ -87,7 +100,8 @@ public static class DisposalRecordCalculator
     private static IReadOnlyList<DisposalLotConsumption> BuildSpecificIdLots(
         Transaction disposingTransaction,
         IReadOnlyList<Transaction> preceding,
-        IReadOnlyList<SpecificLotAllocation>? allocation)
+        IReadOnlyList<SpecificLotAllocation>? allocation,
+        IReadOnlyList<CorporateAction> precedingCorporateActions)
     {
         if (allocation is null || allocation.Count == 0)
         {
@@ -101,7 +115,7 @@ public static class DisposalRecordCalculator
                 $"Allocated lot quantity ({allocatedQuantity}) does not match the sale quantity ({disposingTransaction.Quantity}).");
         }
 
-        var openLots = OpenLotTracker.GetOpenLots(preceding).ToDictionary(lot => lot.SourceTransactionId);
+        var openLots = OpenLotTracker.GetOpenLots(preceding, precedingCorporateActions).ToDictionary(lot => lot.SourceTransactionId);
         var consumed = new List<DisposalLotConsumption>();
 
         foreach (var entry in allocation)
