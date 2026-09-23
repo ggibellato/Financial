@@ -2062,7 +2062,8 @@
           "Dividend",
           "Interest",
           "SecuritiesLendingIncome",
-          "Unrecognized"
+          "Unrecognized",
+          "CorporateAction"
         ]
       },
       "ExpenseCreateDTO": {

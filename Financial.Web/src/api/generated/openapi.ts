@@ -6980,7 +6980,7 @@ export interface components {
             year: number;
         };
         /** @enum {unknown} */
-        EventCategory: "CapitalGain" | "Dividend" | "Interest" | "SecuritiesLendingIncome" | "Unrecognized";
+        EventCategory: "CapitalGain" | "Dividend" | "Interest" | "SecuritiesLendingIncome" | "Unrecognized" | "CorporateAction";
         ExpenseCreateDTO: {
             /** Format: uuid */
             categoryId: string;
