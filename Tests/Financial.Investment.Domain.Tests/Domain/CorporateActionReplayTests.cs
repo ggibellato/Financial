@@ -132,4 +132,79 @@ public class CorporateActionReplayTests
         rescaled[0].SourceTransactionId.Should().Be(sourceId);
         rescaled[0].Date.Should().Be(date);
     }
+
+    [Fact]
+    public void ApplyToPosition_Split_MatchesRescalePosition()
+    {
+        var split = CorporateAction.CreateSplit(new DateTime(2026, 3, 1), 2.0m);
+
+        var result = CorporateActionReplay.ApplyToPosition(10m, 100m, split);
+
+        result.Should().Be(CorporateActionReplay.RescalePosition(10m, 100m, 2.0m));
+    }
+
+    [Fact]
+    public void ApplyToPosition_MergerSource_ClosesPositionRegardlessOfIncomingValues()
+    {
+        var source = CorporateAction.CreateMergerSource(
+            new DateTime(2026, 4, 1), 0.5m, null, null, Guid.NewGuid(), "XCORP", 40m, 1000m);
+
+        var (quantity, averagePrice) = CorporateActionReplay.ApplyToPosition(80m, 25m, source);
+
+        quantity.Should().Be(0m);
+        averagePrice.Should().Be(0m);
+    }
+
+    [Fact]
+    public void ApplyToPosition_MergerSource_ZeroIncomingPosition_StillCloses()
+    {
+        var source = CorporateAction.CreateMergerSource(
+            new DateTime(2026, 4, 1), 0.5m, null, null, Guid.NewGuid(), "XCORP", 40m, 1000m);
+
+        var (quantity, averagePrice) = CorporateActionReplay.ApplyToPosition(0m, 0m, source);
+
+        quantity.Should().Be(0m);
+        averagePrice.Should().Be(0m);
+    }
+
+    [Fact]
+    public void ApplyToPosition_MergerTarget_AddsReceivedQuantityAndBlendsAveragePrice()
+    {
+        var target = CorporateAction.CreateMergerTarget(
+            new DateTime(2026, 4, 1), null, Guid.NewGuid(), "TWTR", 40m, 1000m);
+
+        var (quantity, averagePrice) = CorporateActionReplay.ApplyToPosition(10m, 50m, target);
+
+        quantity.Should().Be(50m);
+        averagePrice.Should().Be((10m * 50m + 1000m) / 50m);
+    }
+
+    [Fact]
+    public void ApplyToPosition_MergerTarget_NoExistingPosition_MatchesCarriedUnitCost()
+    {
+        var target = CorporateAction.CreateMergerTarget(
+            new DateTime(2026, 4, 1), null, Guid.NewGuid(), "XCORP", 40m, 1000m);
+
+        var (quantity, averagePrice) = CorporateActionReplay.ApplyToPosition(0m, 0m, target);
+
+        quantity.Should().Be(40m);
+        averagePrice.Should().Be(25m);
+    }
+
+    [Fact]
+    public void ReceiveMerger_MatchesAverageCostReplayBlendedFormula()
+    {
+        var (quantity, averagePrice) = CorporateActionReplay.ReceiveMerger(10m, 50m, 40m, 1000m);
+
+        quantity.Should().Be(50m);
+        averagePrice.Should().Be((10m * 50m + 1000m) / 50m);
+    }
+
+    [Fact]
+    public void ReceiveMerger_TotalCostBasisIsPreserved()
+    {
+        var (quantity, averagePrice) = CorporateActionReplay.ReceiveMerger(10m, 50m, 40m, 1000m);
+
+        (quantity * averagePrice).Should().Be(10m * 50m + 1000m);
+    }
 }

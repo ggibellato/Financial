@@ -30,7 +30,7 @@ public static class OpenLotTracker
             switch (step)
             {
                 case CorporateActionReplayStep(var corporateAction):
-                    Rescale(lots, corporateAction.RatioFactor);
+                    Rescale(lots, CorporateActionReplay.RequireRatioFactor(corporateAction));
                     break;
 
                 case TransactionReplayStep(var transaction):

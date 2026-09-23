@@ -175,4 +175,103 @@ public class TaxClassificationCalculatorTests
 
         classification.TaxYear.Should().Be("2025/26");
     }
+
+    private static CorporateAction CreateMergerTargetRecord(DateTime? effectiveDate = null) =>
+        CorporateAction.CreateMergerTarget(
+            effectiveDate ?? new DateTime(2026, 6, 1), null, Guid.NewGuid(), "XCORP", 40m, 1000m);
+
+    [Fact]
+    public void CalculateForCorporateAction_DerivesJurisdictionFromCurrency_Brl()
+    {
+        var target = CreateMergerTargetRecord();
+        var investments = Investments.Create();
+
+        var classification = TaxClassificationCalculator.CalculateForCorporateAction(target, Currency.BRL, investments);
+
+        classification.Jurisdiction.Should().Be(Jurisdiction.BR);
+    }
+
+    [Theory]
+    [InlineData(Currency.GBP)]
+    [InlineData(Currency.USD)]
+    public void CalculateForCorporateAction_DerivesJurisdictionFromCurrency_NonBrlIsUk(Currency currency)
+    {
+        var target = CreateMergerTargetRecord();
+        var investments = Investments.Create();
+
+        var classification = TaxClassificationCalculator.CalculateForCorporateAction(target, currency, investments);
+
+        classification.Jurisdiction.Should().Be(Jurisdiction.UK);
+    }
+
+    [Fact]
+    public void CalculateForCorporateAction_NoApplicableRule_RequiresReview()
+    {
+        var target = CreateMergerTargetRecord();
+        var investments = Investments.Create();
+
+        var classification = TaxClassificationCalculator.CalculateForCorporateAction(target, Currency.BRL, investments);
+
+        using (new AssertionScope())
+        {
+            classification.CalculationStatus.Should().Be(CalculationStatus.RequiresReview);
+            classification.TaxRuleId.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public void CalculateForCorporateAction_ApplicableRule_IsFinalAndReferencesTheRule()
+    {
+        var target = CreateMergerTargetRecord(new DateTime(2026, 6, 1));
+        var investments = Investments.Create();
+        var rule = investments.CreateTaxRule(
+            Jurisdiction.BR, EventCategory.CorporateAction, "BR corporate actions", "desc", new DateOnly(2026, 1, 1), null);
+
+        var classification = TaxClassificationCalculator.CalculateForCorporateAction(target, Currency.BRL, investments);
+
+        using (new AssertionScope())
+        {
+            classification.CalculationStatus.Should().Be(CalculationStatus.Final);
+            classification.TaxRuleId.Should().Be(rule.Id);
+        }
+    }
+
+    [Fact]
+    public void CalculateForCorporateAction_CopiesFieldsFromTheTargetRecord()
+    {
+        var target = CreateMergerTargetRecord();
+        var investments = Investments.Create();
+
+        var classification = TaxClassificationCalculator.CalculateForCorporateAction(target, Currency.BRL, investments);
+
+        using (new AssertionScope())
+        {
+            classification.SourceType.Should().Be(SourceType.CorporateAction);
+            classification.SourceId.Should().Be(target.Id);
+            classification.EventCategory.Should().Be(EventCategory.CorporateAction);
+            classification.CostBasis.Should().Be(target.CarriedCostBasis);
+        }
+    }
+
+    [Fact]
+    public void CalculateForCorporateAction_TaxYear_BrlUsesPlainCalendarYear()
+    {
+        var target = CreateMergerTargetRecord(new DateTime(2026, 3, 1));
+        var investments = Investments.Create();
+
+        var classification = TaxClassificationCalculator.CalculateForCorporateAction(target, Currency.BRL, investments);
+
+        classification.TaxYear.Should().Be("2026");
+    }
+
+    [Fact]
+    public void CalculateForCorporateAction_NonBrlUsesUkTaxYear()
+    {
+        var target = CreateMergerTargetRecord(new DateTime(2026, 3, 1));
+        var investments = Investments.Create();
+
+        var classification = TaxClassificationCalculator.CalculateForCorporateAction(target, Currency.GBP, investments);
+
+        classification.TaxYear.Should().Be("2025/26");
+    }
 }

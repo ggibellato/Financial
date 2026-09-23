@@ -51,7 +51,7 @@ public static class DisposalRecordCalculator
             switch (step)
             {
                 case CorporateActionReplayStep(var corporateAction):
-                    (quantity, averagePrice) = CorporateActionReplay.RescalePosition(quantity, averagePrice, corporateAction.RatioFactor);
+                    (quantity, averagePrice) = CorporateActionReplay.RescalePosition(quantity, averagePrice, corporateAction);
                     break;
 
                 case TransactionReplayStep(var transaction):
