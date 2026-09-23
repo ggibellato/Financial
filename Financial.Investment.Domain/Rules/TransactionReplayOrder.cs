@@ -20,6 +20,6 @@ public static class TransactionReplayOrder
         return IsDecrease(earlier).CompareTo(IsDecrease(incoming)) <= 0;
     }
 
-    private static bool IsDecrease(Transaction transaction) =>
+    internal static bool IsDecrease(Transaction transaction) =>
         TransactionTypeEffects.For(transaction.Type).Quantity == QuantityEffect.Decrease;
 }

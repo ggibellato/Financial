@@ -37,10 +37,18 @@ public static class CorporateActionReplay
     public static IReadOnlyList<OpenLot> RescaleLots(IReadOnlyList<OpenLot> lots, decimal factor) =>
         lots.Select(lot => lot with { RemainingQuantity = lot.RemainingQuantity * factor, UnitCost = lot.UnitCost / factor }).ToList();
 
+    public static decimal ApplyTransactionToQuantity(decimal quantity, Transaction transaction) =>
+        TransactionTypeEffects.For(transaction.Type).Quantity switch
+        {
+            QuantityEffect.Increase => quantity + transaction.Quantity,
+            QuantityEffect.Decrease => quantity - transaction.Quantity,
+            _ => quantity
+        };
+
     private static int RankWithinDate(ReplayStep step) => step switch
     {
         CorporateActionReplayStep => 0,
-        TransactionReplayStep(var transaction) => TransactionTypeEffects.For(transaction.Type).Quantity == QuantityEffect.Decrease ? 2 : 1,
+        TransactionReplayStep(var transaction) => TransactionReplayOrder.IsDecrease(transaction) ? 2 : 1,
         _ => 3
     };
 }

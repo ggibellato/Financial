@@ -428,7 +428,7 @@ public class Asset
 
             quantity = step switch
             {
-                TransactionReplayStep(var transaction) => ApplyQuantityEffect(quantity, transaction),
+                TransactionReplayStep(var transaction) => CorporateActionReplay.ApplyTransactionToQuantity(quantity, transaction),
                 CorporateActionReplayStep(var priorAction) => CorporateActionReplay.RescalePosition(quantity, 0m, priorAction.RatioFactor).Quantity,
                 _ => quantity
             };
@@ -440,17 +440,6 @@ public class Asset
         {
             throw new InvestmentRuleViolationException("This holding has no open position to split.");
         }
-    }
-
-    private static decimal ApplyQuantityEffect(decimal quantity, Transaction transaction)
-    {
-        var effect = TransactionTypeEffects.For(transaction.Type);
-        return effect.Quantity switch
-        {
-            QuantityEffect.Increase => quantity + transaction.Quantity,
-            QuantityEffect.Decrease => quantity - transaction.Quantity,
-            _ => quantity
-        };
     }
 
     public void AddCredit(Credit credit, Investments? investments = null)

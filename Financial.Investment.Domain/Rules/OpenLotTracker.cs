@@ -64,14 +64,10 @@ public static class OpenLotTracker
 
     private static void Rescale(List<MutableLot> lots, decimal factor)
     {
-        var rescaled = CorporateActionReplay.RescaleLots(
-            lots.Select(lot => new OpenLot(lot.SourceTransactionId, lot.Date, lot.RemainingQuantity, lot.UnitCost)).ToList(),
-            factor);
-
-        for (var i = 0; i < lots.Count; i++)
+        foreach (var lot in lots)
         {
-            lots[i].RemainingQuantity = rescaled[i].RemainingQuantity;
-            lots[i].UnitCost = rescaled[i].UnitCost;
+            lot.RemainingQuantity *= factor;
+            lot.UnitCost /= factor;
         }
     }
 

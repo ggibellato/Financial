@@ -38,7 +38,10 @@ public class Transactions : ICollection<Transaction>
             throw new ArgumentNullException(nameof(transaction));
         }
 
-        if (_corporateActions.Count == 0 && (_items.Count == 0 || TransactionReplayOrder.IsInOrder(_items[^1], transaction)))
+        var canAppend = (_items.Count == 0 || TransactionReplayOrder.IsInOrder(_items[^1], transaction))
+            && _corporateActions.All(ca => ca.EffectiveDate <= transaction.Date);
+
+        if (canAppend)
         {
             _items.Add(transaction);
             Apply(transaction);

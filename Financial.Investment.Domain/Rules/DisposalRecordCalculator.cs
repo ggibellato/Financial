@@ -17,9 +17,7 @@ public static class DisposalRecordCalculator
         IEnumerable<CorporateAction>? precedingCorporateActions = null)
     {
         var preceding = precedingTransactions as IReadOnlyList<Transaction> ?? precedingTransactions.ToList();
-        var precedingActions = precedingCorporateActions as IReadOnlyList<CorporateAction>
-            ?? precedingCorporateActions?.ToList()
-            ?? (IReadOnlyList<CorporateAction>)Array.Empty<CorporateAction>();
+        var precedingActions = precedingCorporateActions?.ToList() ?? new List<CorporateAction>();
 
         var lotsConsumed = method switch
         {
@@ -57,17 +55,12 @@ public static class DisposalRecordCalculator
                     break;
 
                 case TransactionReplayStep(var transaction):
-                    var effect = TransactionTypeEffects.For(transaction.Type);
-                    switch (effect.Quantity)
+                    if (TransactionTypeEffects.For(transaction.Type).Quantity == QuantityEffect.Increase)
                     {
-                        case QuantityEffect.Increase:
-                            averagePrice = AverageCostReplay.Apply(quantity, averagePrice, transaction);
-                            quantity += transaction.Quantity;
-                            break;
-                        case QuantityEffect.Decrease:
-                            quantity -= transaction.Quantity;
-                            break;
+                        averagePrice = AverageCostReplay.Apply(quantity, averagePrice, transaction);
                     }
+
+                    quantity = CorporateActionReplay.ApplyTransactionToQuantity(quantity, transaction);
                     break;
             }
         }

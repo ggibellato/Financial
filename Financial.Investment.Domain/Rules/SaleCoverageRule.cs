@@ -24,21 +24,12 @@ public static class SaleCoverageRule
                     break;
 
                 case TransactionReplayStep(var transaction):
-                    var quantityEffect = TransactionTypeEffects.For(transaction.Type).Quantity;
-
-                    if (quantityEffect == QuantityEffect.Increase)
+                    if (TransactionTypeEffects.For(transaction.Type).Quantity == QuantityEffect.Decrease && transaction.Quantity > quantity)
                     {
-                        quantity += transaction.Quantity;
+                        return new SaleCoverageViolation(transaction, quantity, transaction.Quantity - quantity);
                     }
-                    else if (quantityEffect == QuantityEffect.Decrease)
-                    {
-                        if (transaction.Quantity > quantity)
-                        {
-                            return new SaleCoverageViolation(transaction, quantity, transaction.Quantity - quantity);
-                        }
 
-                        quantity -= transaction.Quantity;
-                    }
+                    quantity = CorporateActionReplay.ApplyTransactionToQuantity(quantity, transaction);
                     break;
             }
         }
