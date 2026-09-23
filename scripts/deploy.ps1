@@ -83,6 +83,7 @@ foreach ($pair in @(
     )) {
     $settings = Get-Content $pair.Source -Raw | ConvertFrom-Json
     $settings.Investment.GoogleDrive.CredentialsPath = $localSettings.GoogleDriveCredentialsPath
+    $settings.FxRates.GoogleDrive.CredentialsPath = $localSettings.GoogleDriveCredentialsPath
     $settings.CashFlow.GoogleDrive.CredentialsPath = $localSettings.GoogleDriveCredentialsPath
     $settings.CashFlow.GoogleCalendar.ClientId = $localSettings.GoogleCalendarClientId
     $settings.CashFlow.GoogleCalendar.ClientSecret = $localSettings.GoogleCalendarClientSecret
