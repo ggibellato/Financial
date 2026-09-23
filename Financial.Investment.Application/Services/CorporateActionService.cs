@@ -141,7 +141,11 @@ public sealed class CorporateActionService : ICorporateActionService
                     // Resolves (or builds, unregistered) the target so nothing needs a compensating
                     // "un-register" if RecordCorporateAction below throws - Portfolio.RegisterAsset only
                     // runs once the target's own record has been recorded successfully.
-                    targetAsset = ResolveOrCreateTargetAsset(portfolio, request, out var isNewTarget);
+                    targetAsset = ResolveOrCreateLinkedAsset(
+                        portfolio, request.TargetAssetName, request.CreateTargetAssetInline,
+                        request.TargetISIN, request.TargetExchange, request.TargetTicker,
+                        request.TargetCountry, request.TargetLocalTypeCode, request.TargetClass,
+                        out var isNewTarget);
                     var targetRecord = CorporateAction.CreateMergerTarget(
                         request.EffectiveDate, request.Note, correlationId, sourceAsset.Name, convertedQuantity, carriedCostBasis);
                     targetAsset.RecordCorporateAction(targetRecord, method, investments, brokerCurrency);
@@ -281,6 +285,187 @@ public sealed class CorporateActionService : ICorporateActionService
         }
     }
 
+    public async Task<CorporateActionSpinOffResultDTO?> AddSpinOffAsync(CorporateActionSpinOffCreateDTO request)
+    {
+        using var span = StartSpan("AddSpinOff");
+        try
+        {
+            if (AssetContextValidator.IsInvalid(request.BrokerName, request.PortfolioName, request.ParentAssetName) ||
+                string.IsNullOrWhiteSpace(request.NewAssetName))
+            {
+                span.MarkSuccess();
+                _logger.LogInformation("{Operation} completed", "AddSpinOff");
+                return null;
+            }
+
+            Asset? parentAsset = null;
+            Asset? newAsset = null;
+
+            await _repository.ApplyAndSaveAsync(() =>
+            {
+                var broker = ResolveActiveBroker(request.BrokerName);
+                var portfolio = ResolvePortfolio(broker, request.PortfolioName);
+                parentAsset = portfolio.FindAsset(request.ParentAssetName)
+                    ?? throw new KeyNotFoundException($"Asset \"{request.ParentAssetName}\" was not found in portfolio \"{request.PortfolioName}\".");
+
+                var brokerCurrency = ParseBrokerCurrency(broker);
+                var method = broker.CostBasisMethod;
+                var investments = _repository.GetInvestments();
+
+                var correlationId = Guid.NewGuid();
+                var (quantity, averagePrice) = parentAsset.PositionAsOf(request.EffectiveDate);
+                var carriedCostBasis = CalculateCarriedCostBasis(request.AllocationPercentage, quantity, averagePrice);
+
+                var parentRecord = CorporateAction.CreateSpinOffParent(
+                    request.EffectiveDate, request.AllocationPercentage, request.Note,
+                    correlationId, request.NewAssetName, request.QuantityReceived, carriedCostBasis);
+                parentAsset.RecordCorporateAction(parentRecord, method, investments);
+
+                try
+                {
+                    newAsset = ResolveOrCreateLinkedAsset(
+                        portfolio, request.NewAssetName, request.CreateNewAssetInline,
+                        request.NewISIN, request.NewExchange, request.NewTicker,
+                        request.NewCountry, request.NewLocalTypeCode, request.NewClass,
+                        out var isNewAsset);
+                    var newRecord = CorporateAction.CreateSpinOffNew(
+                        request.EffectiveDate, request.Note, correlationId, parentAsset.Name, request.QuantityReceived, carriedCostBasis);
+                    newAsset.RecordCorporateAction(newRecord, method, investments, brokerCurrency);
+
+                    if (isNewAsset)
+                    {
+                        portfolio.RegisterAsset(newAsset);
+                    }
+                }
+                catch
+                {
+                    parentAsset.RetractCorporateAction(parentRecord.Id, method, investments);
+                    throw;
+                }
+
+                return true;
+            }).ConfigureAwait(false);
+
+            var result = new CorporateActionSpinOffResultDTO
+            {
+                Parent = _navigationService.GetAssetDetails(request.BrokerName, request.PortfolioName, parentAsset!.Name),
+                New = _navigationService.GetAssetDetails(request.BrokerName, request.PortfolioName, newAsset!.Name)
+            };
+
+            span.MarkSuccess();
+            _logger.LogInformation("{Operation} completed", "AddSpinOff");
+            return result;
+        }
+        catch (Exception ex)
+        {
+            span.MarkFailed(ex);
+            throw;
+        }
+    }
+
+    public async Task<CorporateActionSpinOffResultDTO?> UpdateSpinOffAsync(CorporateActionSpinOffUpdateDTO request)
+    {
+        using var span = StartSpan("UpdateSpinOff");
+        span.SetAttribute(TelemetryAttributeKeys.EntityId, request.Id.ToString());
+        try
+        {
+            if (request.Id == Guid.Empty || AssetContextValidator.IsInvalid(request.BrokerName, request.PortfolioName, request.ParentAssetName))
+            {
+                span.MarkSuccess();
+                _logger.LogInformation("{Operation} completed", "UpdateSpinOff");
+                return null;
+            }
+
+            Asset? parentAsset = null;
+            Asset? newAsset = null;
+            var found = false;
+
+            await _repository.ApplyAndSaveAsync(() =>
+            {
+                var broker = ResolveActiveBroker(request.BrokerName);
+                var portfolio = ResolvePortfolio(broker, request.PortfolioName);
+                parentAsset = portfolio.FindAsset(request.ParentAssetName)
+                    ?? throw new KeyNotFoundException($"Asset \"{request.ParentAssetName}\" was not found in portfolio \"{request.PortfolioName}\".");
+
+                var previousParentRecord = parentAsset.CorporateActions.FirstOrDefault(ca => ca.Id == request.Id);
+                if (previousParentRecord is null)
+                {
+                    return false;
+                }
+
+                found = true;
+
+                newAsset = portfolio.FindAsset(previousParentRecord.LinkedAssetName!)
+                    ?? throw new KeyNotFoundException($"Asset \"{previousParentRecord.LinkedAssetName}\" was not found in portfolio \"{request.PortfolioName}\".");
+                var previousNewRecord = newAsset.CorporateActions.FirstOrDefault(
+                    ca => ca.CorrelationId == previousParentRecord.CorrelationId && ca.Role == CorporateAction.CorporateActionRole.New)
+                    ?? throw new InvalidOperationException($"Corporate action {previousParentRecord.Id} has no linked new-asset record.");
+
+                var brokerCurrency = ParseBrokerCurrency(broker);
+                var method = broker.CostBasisMethod;
+                var investments = _repository.GetInvestments();
+                var correlationId = previousParentRecord.CorrelationId!.Value;
+
+                var compensations = new Stack<Action>();
+                try
+                {
+                    parentAsset.RetractCorporateAction(previousParentRecord.Id, method, investments);
+                    compensations.Push(() => parentAsset.RecordCorporateAction(previousParentRecord, method, investments));
+
+                    newAsset.RetractCorporateAction(previousNewRecord.Id, method, investments);
+                    compensations.Push(() => newAsset.RecordCorporateAction(previousNewRecord, method, investments, brokerCurrency));
+
+                    var (quantity, averagePrice) = parentAsset.PositionAsOf(request.EffectiveDate);
+                    var carriedCostBasis = CalculateCarriedCostBasis(request.AllocationPercentage, quantity, averagePrice);
+
+                    var newParentRecord = CorporateAction.CreateSpinOffParentWithId(
+                        request.Id, request.EffectiveDate, request.AllocationPercentage, request.Note,
+                        correlationId, newAsset.Name, request.QuantityReceived, carriedCostBasis);
+                    parentAsset.RecordCorporateAction(newParentRecord, method, investments);
+                    compensations.Push(() => parentAsset.RetractCorporateAction(newParentRecord.Id, method, investments));
+
+                    var newNewRecord = CorporateAction.CreateSpinOffNewWithId(
+                        previousNewRecord.Id, request.EffectiveDate, request.Note,
+                        correlationId, parentAsset.Name, request.QuantityReceived, carriedCostBasis);
+                    newAsset.RecordCorporateAction(newNewRecord, method, investments, brokerCurrency);
+                }
+                catch
+                {
+                    while (compensations.Count > 0)
+                    {
+                        compensations.Pop().Invoke();
+                    }
+
+                    throw;
+                }
+
+                return true;
+            }).ConfigureAwait(false);
+
+            if (!found)
+            {
+                span.MarkSuccess();
+                _logger.LogInformation("{Operation} completed", "UpdateSpinOff");
+                return null;
+            }
+
+            var result = new CorporateActionSpinOffResultDTO
+            {
+                Parent = _navigationService.GetAssetDetails(request.BrokerName, request.PortfolioName, parentAsset!.Name),
+                New = _navigationService.GetAssetDetails(request.BrokerName, request.PortfolioName, newAsset!.Name)
+            };
+
+            span.MarkSuccess();
+            _logger.LogInformation("{Operation} completed", "UpdateSpinOff");
+            return result;
+        }
+        catch (Exception ex)
+        {
+            span.MarkFailed(ex);
+            throw;
+        }
+    }
+
     public async Task<AssetDetailsDTO?> DeleteCorporateActionAsync(CorporateActionDeleteDTO request)
     {
         using var span = StartSpan("DeleteCorporateAction");
@@ -356,35 +541,48 @@ public sealed class CorporateActionService : ICorporateActionService
         broker.FindPortfolio(portfolioName)
             ?? throw new KeyNotFoundException($"Portfolio \"{portfolioName}\" was not found under broker \"{broker.Name}\".");
 
-    private static Asset ResolveOrCreateTargetAsset(Portfolio portfolio, CorporateActionMergerCreateDTO request, out bool isNewTarget)
+    private static Asset ResolveOrCreateLinkedAsset(
+        Portfolio portfolio,
+        string assetName,
+        bool createInline,
+        string? isin,
+        string? exchange,
+        string? ticker,
+        CountryCode? country,
+        string? localTypeCode,
+        GlobalAssetClass? assetClass,
+        out bool isNew)
     {
-        var existing = portfolio.FindAsset(request.TargetAssetName);
+        var existing = portfolio.FindAsset(assetName);
 
-        if (!request.CreateTargetAssetInline)
+        if (!createInline)
         {
-            isNewTarget = false;
-            return existing ?? throw new KeyNotFoundException($"Asset \"{request.TargetAssetName}\" was not found in portfolio \"{portfolio.Name}\".");
+            isNew = false;
+            return existing ?? throw new KeyNotFoundException($"Asset \"{assetName}\" was not found in portfolio \"{portfolio.Name}\".");
         }
 
         if (existing is not null)
         {
             throw new InvestmentRuleViolationException(
-                $"An asset named \"{request.TargetAssetName}\" already exists in portfolio \"{portfolio.Name}\".");
+                $"An asset named \"{assetName}\" already exists in portfolio \"{portfolio.Name}\".");
         }
 
-        var country = request.TargetCountry ?? CountryCode.Unknown;
-        var assetClass = request.TargetClass ?? GlobalAssetClassMapping.Resolve(country, request.TargetLocalTypeCode ?? string.Empty);
+        var resolvedCountry = country ?? CountryCode.Unknown;
+        var resolvedAssetClass = assetClass ?? GlobalAssetClassMapping.Resolve(resolvedCountry, localTypeCode ?? string.Empty);
 
-        isNewTarget = true;
+        isNew = true;
         return Asset.Create(
-            request.TargetAssetName,
-            request.TargetISIN ?? string.Empty,
-            request.TargetExchange ?? string.Empty,
-            request.TargetTicker ?? string.Empty,
-            country,
-            request.TargetLocalTypeCode ?? string.Empty,
-            assetClass);
+            assetName,
+            isin ?? string.Empty,
+            exchange ?? string.Empty,
+            ticker ?? string.Empty,
+            resolvedCountry,
+            localTypeCode ?? string.Empty,
+            resolvedAssetClass);
     }
+
+    private static decimal CalculateCarriedCostBasis(decimal allocationPercentage, decimal quantity, decimal averagePrice) =>
+        allocationPercentage / 100m * (quantity * averagePrice);
 
     private static Currency ParseBrokerCurrency(Broker broker)
     {

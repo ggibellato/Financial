@@ -349,6 +349,26 @@ public class ControllerGuardClauseTests
     }
 
     [Fact]
+    public async Task CorporateActionsController_AddSpinOff_NullRequest_ReturnsBadRequest()
+    {
+        var controller = new CorporateActionsController(new StubCorporateActionService());
+
+        var result = await controller.AddSpinOff(null!);
+
+        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
+    }
+
+    [Fact]
+    public async Task CorporateActionsController_UpdateSpinOff_NullRequest_ReturnsBadRequest()
+    {
+        var controller = new CorporateActionsController(new StubCorporateActionService());
+
+        var result = await controller.UpdateSpinOff(null!);
+
+        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
+    }
+
+    [Fact]
     public async Task CorporateActionsController_DeleteCorporateAction_NullRequest_ReturnsBadRequest()
     {
         var controller = new CorporateActionsController(new StubCorporateActionService());
@@ -792,6 +812,8 @@ public class ControllerGuardClauseTests
         public Task<AssetDetailsDTO?> UpdateSplitAsync(CorporateActionSplitUpdateDTO request) => throw new NotImplementedException();
         public Task<CorporateActionMergerResultDTO?> AddMergerAsync(CorporateActionMergerCreateDTO request) => throw new NotImplementedException();
         public Task<CorporateActionMergerResultDTO?> UpdateMergerAsync(CorporateActionMergerUpdateDTO request) => throw new NotImplementedException();
+        public Task<CorporateActionSpinOffResultDTO?> AddSpinOffAsync(CorporateActionSpinOffCreateDTO request) => throw new NotImplementedException();
+        public Task<CorporateActionSpinOffResultDTO?> UpdateSpinOffAsync(CorporateActionSpinOffUpdateDTO request) => throw new NotImplementedException();
         public Task<AssetDetailsDTO?> DeleteCorporateActionAsync(CorporateActionDeleteDTO request) => throw new NotImplementedException();
     }
 

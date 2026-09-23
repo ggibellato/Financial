@@ -296,13 +296,13 @@ graph TD
 - [x] Cash-in-lieu amount, when entered, is stored on the merger record and does not create any `DisposalRecord`
 
 ### F03. Spin-off
-- [ ] Recording a spin-off leaves the parent's quantity unchanged and reduces its cost basis by exactly `allocation% × prior cost basis`
-- [ ] The new asset's quantity equals the entered received quantity, with unit cost equal to `(allocation% × parent's prior cost basis) ÷ quantity received`
-- [ ] Every open lot on a `FIFO`/`SpecificId`-costed parent is proportionally reduced by the allocation percentage
-- [ ] An allocation percentage outside 0–100 is rejected with an inline error
-- [ ] A quantity received ≤ 0 is rejected with an inline error
-- [ ] A `TaxClassification` is created for the new asset with status `RequiresReview` when no matching `TaxRule` exists
-- [ ] No `DisposalRecord` is created on the parent asset
+- [x] Recording a spin-off leaves the parent's quantity unchanged and reduces its cost basis by exactly `allocation% × prior cost basis`
+- [x] The new asset's quantity equals the entered received quantity, with unit cost equal to `(allocation% × parent's prior cost basis) ÷ quantity received`
+- [x] Every open lot on a `FIFO`/`SpecificId`-costed parent is proportionally reduced by the allocation percentage
+- [x] An allocation percentage outside 0–100 is rejected with an inline error
+- [x] A quantity received ≤ 0 is rejected with an inline error
+- [x] A `TaxClassification` is created for the new asset with status `RequiresReview` when no matching `TaxRule` exists
+- [x] No `DisposalRecord` is created on the parent asset
 
 ### F04. Corporate Action History and Data-Quality Integration
 - [ ] The history endpoint for an asset returns every split, merger, and spin-off recorded against it, ordered by effective date
