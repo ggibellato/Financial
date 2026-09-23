@@ -276,14 +276,14 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Split and Reverse Split
-- [ ] Recording a 2-for-1 split doubles quantity and halves average price, with total cost basis unchanged
-- [ ] Recording a 1-for-10 reverse split reduces quantity to one-tenth and multiplies average price by ten, with total cost basis unchanged
-- [ ] A split applied on the same date as a buy or sell is applied before that transaction in replay order
-- [ ] Every open lot on a `FIFO`/`SpecificId`-costed holding is rescaled proportionally, with total lot cost unchanged
-- [ ] Recording a split on a zero-quantity holding is rejected with an inline error and no state change
-- [ ] Recording a ratio of exactly 1.0 or ≤ 0 is rejected with an inline error
-- [ ] Deleting a split re-triggers replay and updates the holding's quantity/average cost correctly
-- [ ] No `DisposalRecord` is created or modified by recording, editing, or deleting a split
+- [x] Recording a 2-for-1 split doubles quantity and halves average price, with total cost basis unchanged
+- [x] Recording a 1-for-10 reverse split reduces quantity to one-tenth and multiplies average price by ten, with total cost basis unchanged
+- [x] A split applied on the same date as a buy or sell is applied before that transaction in replay order
+- [x] Every open lot on a `FIFO`/`SpecificId`-costed holding is rescaled proportionally, with total lot cost unchanged
+- [x] Recording a split on a zero-quantity holding is rejected with an inline error and no state change
+- [x] Recording a ratio of exactly 1.0 or ≤ 0 is rejected with an inline error
+- [x] Deleting a split re-triggers replay and updates the holding's quantity/average cost correctly
+- [x] No `DisposalRecord` is created or modified by recording, editing, or deleting a split
 
 ### F02. Merger
 - [ ] Recording a merger reduces the source holding's quantity to zero and closes all its open lots

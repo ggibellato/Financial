@@ -56,8 +56,17 @@ public class Asset
     public IReadOnlyCollection<CorporateAction> CorporateActions
     {
         get => _corporateActions.AsReadOnly();
-        private set => EntityGuard.ReplaceAll(_corporateActions, value);
+        // Relinks Transactions' own corporate-action awareness on every set, not just the mutation
+        // methods below - otherwise a JSON reload (Transactions deserializes as a sibling property,
+        // never told about them) would replay position/quantity as if no split had ever happened.
+        private set
+        {
+            EntityGuard.ReplaceAll(_corporateActions, value);
+            SyncCorporateActionsWithTransactions();
+        }
     }
+
+    private void SyncCorporateActionsWithTransactions() => Transactions.SetCorporateActions(_corporateActions.ToList());
 
     private List<Credit> _credits = new List<Credit>();
     public IReadOnlyCollection<Credit> Credits { get => _credits.AsReadOnly(); private set => SetCredits(value); }
@@ -332,7 +341,7 @@ public class Asset
         EnsureNonZeroPositionAt(corporateAction, _corporateActions);
 
         _corporateActions.Add(corporateAction);
-        Transactions.SetCorporateActions(_corporateActions.ToList());
+        SyncCorporateActionsWithTransactions();
 
         try
         {
@@ -341,7 +350,7 @@ public class Asset
         catch
         {
             _corporateActions.Remove(corporateAction);
-            Transactions.SetCorporateActions(_corporateActions.ToList());
+            SyncCorporateActionsWithTransactions();
             throw;
         }
     }
@@ -364,7 +373,7 @@ public class Asset
         EnsureNonZeroPositionAt(updatedCorporateAction, otherCorporateActions);
 
         _corporateActions[index] = updatedCorporateAction;
-        Transactions.SetCorporateActions(_corporateActions.ToList());
+        SyncCorporateActionsWithTransactions();
 
         var anchor = previous.EffectiveDate <= updatedCorporateAction.EffectiveDate ? previous.EffectiveDate : updatedCorporateAction.EffectiveDate;
 
@@ -375,7 +384,7 @@ public class Asset
         catch
         {
             _corporateActions[index] = previous;
-            Transactions.SetCorporateActions(_corporateActions.ToList());
+            SyncCorporateActionsWithTransactions();
             throw;
         }
 
@@ -392,22 +401,22 @@ public class Asset
 
         var removed = _corporateActions[index];
         _corporateActions.RemoveAt(index);
-        Transactions.SetCorporateActions(_corporateActions.ToList());
+        SyncCorporateActionsWithTransactions();
 
         try
         {
             DisposalRecordRegenerator.RegenerateAsset(this, method, removed.EffectiveDate, investments: investments);
         }
-        catch (InvestmentRuleViolationException)
+        catch (Exception ex)
         {
             _corporateActions.Insert(index, removed);
-            Transactions.SetCorporateActions(_corporateActions.ToList());
-            throw new InvestmentRuleViolationException("Cannot delete: a later disposal depends on lots created by this split.");
-        }
-        catch
-        {
-            _corporateActions.Insert(index, removed);
-            Transactions.SetCorporateActions(_corporateActions.ToList());
+            SyncCorporateActionsWithTransactions();
+
+            if (ex is InvestmentRuleViolationException)
+            {
+                throw new InvestmentRuleViolationException("Cannot delete: a later disposal depends on lots created by this split.");
+            }
+
             throw;
         }
 

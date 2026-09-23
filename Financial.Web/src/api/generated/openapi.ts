@@ -1867,6 +1867,143 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/corporate-actions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Deletes a corporate action. */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/*+json": null | components["schemas"]["CorporateActionDeleteDTO"];
+                    "application/json": null | components["schemas"]["CorporateActionDeleteDTO"];
+                    "text/json": null | components["schemas"]["CorporateActionDeleteDTO"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AssetDetailsDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/corporate-actions/split": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Updates an existing split or reverse split. */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/*+json": null | components["schemas"]["CorporateActionSplitUpdateDTO"];
+                    "application/json": null | components["schemas"]["CorporateActionSplitUpdateDTO"];
+                    "text/json": null | components["schemas"]["CorporateActionSplitUpdateDTO"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AssetDetailsDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        /** Records a new split or reverse split. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/*+json": null | components["schemas"]["CorporateActionSplitCreateDTO"];
+                    "application/json": null | components["schemas"]["CorporateActionSplitCreateDTO"];
+                    "text/json": null | components["schemas"]["CorporateActionSplitCreateDTO"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AssetDetailsDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/credit-cards": {
         parameters: {
             query?: never;
@@ -6606,6 +6743,35 @@ export interface components {
             isInvestment: boolean;
             isTithe: boolean;
             name: string;
+        };
+        CorporateActionDeleteDTO: {
+            assetName: string;
+            brokerName: string;
+            /** Format: uuid */
+            id?: string;
+            portfolioName: string;
+        };
+        CorporateActionSplitCreateDTO: {
+            assetName: string;
+            brokerName: string;
+            /** Format: date-time */
+            effectiveDate?: string;
+            note?: null | string;
+            portfolioName: string;
+            /** Format: double */
+            ratioFactor?: number;
+        };
+        CorporateActionSplitUpdateDTO: {
+            assetName: string;
+            brokerName: string;
+            /** Format: date-time */
+            effectiveDate?: string;
+            /** Format: uuid */
+            id?: string;
+            note?: null | string;
+            portfolioName: string;
+            /** Format: double */
+            ratioFactor?: number;
         };
         /** @enum {unknown} */
         CostBasisMethod: "AverageCost" | "FIFO" | "SpecificId";

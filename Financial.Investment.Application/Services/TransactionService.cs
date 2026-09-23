@@ -223,8 +223,7 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
             .ToList();
 
     private CostBasisMethod ResolveCostBasisMethod(string brokerName) =>
-        _repository.GetBrokerList(InvestmentScope.Active).FirstOrDefault(b => string.Equals(b.Name, brokerName, StringComparison.Ordinal))?.CostBasisMethod
-        ?? CostBasisMethod.AverageCost;
+        AssetMutationHelper.ResolveCostBasisMethod(_repository, brokerName);
 
     private ITelemetrySpan StartSpan(string operationName)
     {
