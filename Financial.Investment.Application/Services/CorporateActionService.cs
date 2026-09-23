@@ -532,16 +532,16 @@ public sealed class CorporateActionService : ICorporateActionService, ICorporate
 
     private static CorporateActionSummaryItemDTO MapSummaryItem(Asset asset, CorporateAction action)
     {
-        var classification = asset.FindTaxClassificationBySource(SourceType.CorporateAction, action.Id);
+        var full = NavigationMapper.MapCorporateAction(action, asset);
 
         return new CorporateActionSummaryItemDTO
         {
             AssetName = asset.Name,
-            Type = action.Type,
-            Role = action.Role,
-            EffectiveDate = action.EffectiveDate,
-            LinkedAssetName = action.LinkedAssetName,
-            CalculationStatus = classification?.CalculationStatus
+            Type = full.Type,
+            Role = full.Role,
+            EffectiveDate = full.EffectiveDate,
+            LinkedAssetName = full.LinkedAssetName,
+            CalculationStatus = full.CalculationStatus
         };
     }
 
