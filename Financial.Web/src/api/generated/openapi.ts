@@ -2004,6 +2004,59 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/corporate-actions/portfolio/{brokerName}/{portfolioName}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lists corporate actions for a specific portfolio. */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Optional investment scope filter (e.g. "all", "active-only"). */
+                    scope?: string;
+                };
+                header?: never;
+                path: {
+                    /** @description The broker's name. */
+                    brokerName: string;
+                    /** @description The portfolio's name. */
+                    portfolioName: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CorporateActionSummaryItemDTO"][];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/corporate-actions/spin-off": {
         parameters: {
             query?: never;
@@ -7059,6 +7112,15 @@ export interface components {
             portfolioName: string;
             /** Format: double */
             ratioFactor?: number;
+        };
+        CorporateActionSummaryItemDTO: {
+            assetName: string;
+            calculationStatus?: null | components["schemas"]["CalculationStatus"];
+            /** Format: date-time */
+            effectiveDate?: string;
+            linkedAssetName?: null | string;
+            role?: null | components["schemas"]["CorporateActionRole"];
+            type?: components["schemas"]["CorporateActionType"];
         };
         /** @enum {unknown} */
         CorporateActionType: "Split" | "Merger" | "SpinOff";

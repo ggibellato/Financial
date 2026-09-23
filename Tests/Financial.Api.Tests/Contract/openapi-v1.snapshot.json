@@ -1885,6 +1885,50 @@
         ],
         "type": "object"
       },
+      "CorporateActionSummaryItemDTO": {
+        "properties": {
+          "assetName": {
+            "type": "string"
+          },
+          "calculationStatus": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CalculationStatus"
+              }
+            ]
+          },
+          "effectiveDate": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "linkedAssetName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "role": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CorporateActionRole"
+              }
+            ]
+          },
+          "type": {
+            "$ref": "#/components/schemas/CorporateActionType"
+          }
+        },
+        "required": [
+          "assetName"
+        ],
+        "type": "object"
+      },
       "CorporateActionType": {
         "enum": [
           "Split",
@@ -8087,6 +8131,67 @@
           }
         },
         "summary": "Updates an existing merger.",
+        "tags": [
+          "CorporateActions"
+        ]
+      }
+    },
+    "/corporate-actions/portfolio/{brokerName}/{portfolioName}": {
+      "get": {
+        "parameters": [
+          {
+            "description": "The broker\u0027s name.",
+            "in": "path",
+            "name": "brokerName",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The portfolio\u0027s name.",
+            "in": "path",
+            "name": "portfolioName",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Optional investment scope filter (e.g. \u0022all\u0022, \u0022active-only\u0022).",
+            "in": "query",
+            "name": "scope",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CorporateActionSummaryItemDTO"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          }
+        },
+        "summary": "Lists corporate actions for a specific portfolio.",
         "tags": [
           "CorporateActions"
         ]
