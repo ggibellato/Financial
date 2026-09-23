@@ -1,5 +1,6 @@
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Interfaces;
+using Financial.Investment.Domain.Entities;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net;
@@ -624,5 +625,68 @@ public class CorporateActionsEndpointsTests : ApiEndpointTests
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
         var problem = await response.Content.ReadFromJsonAsync<Microsoft.AspNetCore.Mvc.ProblemDetails>();
         problem!.Detail.Should().Be("Cannot delete: a later disposal depends on lots created by this split.");
+    }
+
+    [Fact]
+    public async Task GetCorporateActionsByPortfolio_ReturnsEveryRecordedActionAcrossThePortfoliosAssets()
+    {
+        var split = await Client.PostAsJsonAsync("/api/v1/financial/corporate-actions/split", new CorporateActionSplitCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "BCIA11",
+            EffectiveDate = new DateTime(2024, 7, 1),
+            RatioFactor = 2.0m
+        });
+        split.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var spinOff = await Client.PostAsJsonAsync("/api/v1/financial/corporate-actions/spin-off", new CorporateActionSpinOffCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            ParentAssetName = "BCIA11",
+            EffectiveDate = new DateTime(2024, 8, 1),
+            QuantityReceived = 5m,
+            AllocationPercentage = 15m,
+            NewAssetName = "PORTSPIN",
+            CreateNewAssetInline = true
+        });
+        spinOff.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var response = await Client.GetAsync("/api/v1/financial/corporate-actions/portfolio/XPI/Default");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var items = await response.Content.ReadFromJsonAsync<List<CorporateActionSummaryItemDTO>>();
+        items.Should().NotBeNull();
+        items!.Select(i => i.EffectiveDate).Should().BeInAscendingOrder();
+        items.Should().Contain(i => i.AssetName == "BCIA11" && i.Type == CorporateAction.CorporateActionType.Split);
+        items.Should().Contain(i => i.AssetName == "BCIA11" && i.Type == CorporateAction.CorporateActionType.SpinOff && i.LinkedAssetName == "PORTSPIN");
+    }
+
+    [Fact]
+    public async Task GetCorporateActionsByPortfolio_ReturnsEmptyForPortfolioWithNoCorporateActions()
+    {
+        var response = await Client.GetAsync("/api/v1/financial/corporate-actions/portfolio/XPI/Default");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var items = await response.Content.ReadFromJsonAsync<List<CorporateActionSummaryItemDTO>>();
+        items.Should().NotBeNull();
+        items.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetCorporateActionsByPortfolio_Returns400ForWhitespacePortfolioName()
+    {
+        var response = await Client.GetAsync("/api/v1/financial/corporate-actions/portfolio/XPI/%20");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task GetCorporateActionsByPortfolio_Returns400ForWhitespaceBrokerName()
+    {
+        var response = await Client.GetAsync("/api/v1/financial/corporate-actions/portfolio/%20/Default");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 }

@@ -304,14 +304,21 @@ public class ControllerGuardClauseTests
     [Fact]
     public void CorporateActionsController_NullCorporateActionService_Throws()
     {
-        Action act = () => new CorporateActionsController(null!);
+        Action act = () => new CorporateActionsController(null!, new StubCorporateActionQueryService());
         act.Should().Throw<ArgumentNullException>().WithParameterName("corporateActionService");
+    }
+
+    [Fact]
+    public void CorporateActionsController_NullCorporateActionQueryService_Throws()
+    {
+        Action act = () => new CorporateActionsController(new StubCorporateActionService(), null!);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("corporateActionQueryService");
     }
 
     [Fact]
     public async Task CorporateActionsController_AddSplit_NullRequest_ReturnsBadRequest()
     {
-        var controller = new CorporateActionsController(new StubCorporateActionService());
+        var controller = new CorporateActionsController(new StubCorporateActionService(), new StubCorporateActionQueryService());
 
         var result = await controller.AddSplit(null!);
 
@@ -321,7 +328,7 @@ public class ControllerGuardClauseTests
     [Fact]
     public async Task CorporateActionsController_UpdateSplit_NullRequest_ReturnsBadRequest()
     {
-        var controller = new CorporateActionsController(new StubCorporateActionService());
+        var controller = new CorporateActionsController(new StubCorporateActionService(), new StubCorporateActionQueryService());
 
         var result = await controller.UpdateSplit(null!);
 
@@ -331,7 +338,7 @@ public class ControllerGuardClauseTests
     [Fact]
     public async Task CorporateActionsController_AddMerger_NullRequest_ReturnsBadRequest()
     {
-        var controller = new CorporateActionsController(new StubCorporateActionService());
+        var controller = new CorporateActionsController(new StubCorporateActionService(), new StubCorporateActionQueryService());
 
         var result = await controller.AddMerger(null!);
 
@@ -341,7 +348,7 @@ public class ControllerGuardClauseTests
     [Fact]
     public async Task CorporateActionsController_UpdateMerger_NullRequest_ReturnsBadRequest()
     {
-        var controller = new CorporateActionsController(new StubCorporateActionService());
+        var controller = new CorporateActionsController(new StubCorporateActionService(), new StubCorporateActionQueryService());
 
         var result = await controller.UpdateMerger(null!);
 
@@ -351,7 +358,7 @@ public class ControllerGuardClauseTests
     [Fact]
     public async Task CorporateActionsController_AddSpinOff_NullRequest_ReturnsBadRequest()
     {
-        var controller = new CorporateActionsController(new StubCorporateActionService());
+        var controller = new CorporateActionsController(new StubCorporateActionService(), new StubCorporateActionQueryService());
 
         var result = await controller.AddSpinOff(null!);
 
@@ -361,7 +368,7 @@ public class ControllerGuardClauseTests
     [Fact]
     public async Task CorporateActionsController_UpdateSpinOff_NullRequest_ReturnsBadRequest()
     {
-        var controller = new CorporateActionsController(new StubCorporateActionService());
+        var controller = new CorporateActionsController(new StubCorporateActionService(), new StubCorporateActionQueryService());
 
         var result = await controller.UpdateSpinOff(null!);
 
@@ -371,7 +378,7 @@ public class ControllerGuardClauseTests
     [Fact]
     public async Task CorporateActionsController_DeleteCorporateAction_NullRequest_ReturnsBadRequest()
     {
-        var controller = new CorporateActionsController(new StubCorporateActionService());
+        var controller = new CorporateActionsController(new StubCorporateActionService(), new StubCorporateActionQueryService());
 
         var result = await controller.DeleteCorporateAction(null!);
 
@@ -815,6 +822,11 @@ public class ControllerGuardClauseTests
         public Task<CorporateActionSpinOffResultDTO?> AddSpinOffAsync(CorporateActionSpinOffCreateDTO request) => throw new NotImplementedException();
         public Task<CorporateActionSpinOffResultDTO?> UpdateSpinOffAsync(CorporateActionSpinOffUpdateDTO request) => throw new NotImplementedException();
         public Task<AssetDetailsDTO?> DeleteCorporateActionAsync(CorporateActionDeleteDTO request) => throw new NotImplementedException();
+    }
+
+    private sealed class StubCorporateActionQueryService : ICorporateActionQueryService
+    {
+        public IReadOnlyList<CorporateActionSummaryItemDTO> GetCorporateActionsByPortfolio(string brokerName, string portfolioName, InvestmentScope scope = InvestmentScope.Active) => throw new NotImplementedException();
     }
 
     private sealed class StubTransactionQueryService : ITransactionQueryService

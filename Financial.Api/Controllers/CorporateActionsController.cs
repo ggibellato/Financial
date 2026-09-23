@@ -1,5 +1,6 @@
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Interfaces;
+using Financial.Investment.Application.Validation;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Financial.Api.Controllers;
@@ -12,10 +13,12 @@ namespace Financial.Api.Controllers;
 public sealed class CorporateActionsController : ApiControllerBase
 {
     private readonly ICorporateActionService _corporateActionService;
+    private readonly ICorporateActionQueryService _corporateActionQueryService;
 
-    public CorporateActionsController(ICorporateActionService corporateActionService)
+    public CorporateActionsController(ICorporateActionService corporateActionService, ICorporateActionQueryService corporateActionQueryService)
     {
         _corporateActionService = corporateActionService ?? throw new ArgumentNullException(nameof(corporateActionService));
+        _corporateActionQueryService = corporateActionQueryService ?? throw new ArgumentNullException(nameof(corporateActionQueryService));
     }
 
     /// <summary>Records a new split or reverse split.</summary>
@@ -135,5 +138,25 @@ public sealed class CorporateActionsController : ApiControllerBase
 
         var asset = await _corporateActionService.DeleteCorporateActionAsync(request);
         return OkOrBadRequest(asset);
+    }
+
+    /// <summary>Lists corporate actions for a specific portfolio.</summary>
+    /// <param name="brokerName">The broker's name.</param>
+    /// <param name="portfolioName">The portfolio's name.</param>
+    /// <param name="scope">Optional investment scope filter (e.g. "all", "active-only").</param>
+    /// <returns>200 OK with the matching corporate actions, or 400 Bad Request if the broker or portfolio name is missing.</returns>
+    [HttpGet("portfolio/{brokerName}/{portfolioName}")]
+    [ProducesResponseType(typeof(IReadOnlyList<CorporateActionSummaryItemDTO>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public ActionResult<IReadOnlyList<CorporateActionSummaryItemDTO>> GetCorporateActionsByPortfolio(
+        string brokerName,
+        string portfolioName,
+        [FromQuery] string? scope)
+    {
+        if (string.IsNullOrWhiteSpace(brokerName) || string.IsNullOrWhiteSpace(portfolioName))
+            return BadRequest();
+
+        var result = _corporateActionQueryService.GetCorporateActionsByPortfolio(brokerName, portfolioName, InvestmentScopeParser.ParseOrDefault(scope));
+        return Ok(result);
     }
 }
