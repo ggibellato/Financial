@@ -422,6 +422,32 @@ public class TransactionsTests
     }
 
     [Fact]
+    public void SetCorporateActions_MergerSource_ClosesPositionToZero()
+    {
+        _sut.Add(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        var source = CorporateAction.CreateMergerSource(
+            new DateTime(2024, 2, 1), 0.5m, null, null, Guid.NewGuid(), "XCORP", 10m, 1000m);
+
+        _sut.SetCorporateActions(new[] { source });
+
+        _sut.Quantity.Should().Be(0m);
+        _sut.AveragePrice.Should().Be(0m);
+    }
+
+    [Fact]
+    public void SetCorporateActions_MergerTarget_AddsReceivedQuantityAndBlendsAveragePrice()
+    {
+        _sut.Add(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 50m, 0m));
+        var target = CorporateAction.CreateMergerTarget(
+            new DateTime(2024, 2, 1), null, Guid.NewGuid(), "TWTR", 40m, 1000m);
+
+        _sut.SetCorporateActions(new[] { target });
+
+        _sut.Quantity.Should().Be(50m);
+        _sut.AveragePrice.Should().Be((10m * 50m + 1000m) / 50m);
+    }
+
+    [Fact]
     public void Add_WithCorporateActionsPresent_AlwaysFullyRecomputesEvenWhenInOrder()
     {
         var split = CorporateAction.CreateSplit(new DateTime(2024, 1, 15), 2.0m);

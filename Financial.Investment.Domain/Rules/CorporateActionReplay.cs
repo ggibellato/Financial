@@ -66,6 +66,42 @@ public static class CorporateActionReplay
             _ => quantity
         };
 
+    // Shared by every average-cost position replay (a running "as of" preview and disposal cost-basis
+    // calculation both need the same quantity/average-price fold); stopBefore lets a caller cut the
+    // replay short instead of always walking the whole sequence.
+    public static (decimal Quantity, decimal AveragePrice) ReplayAveragePosition(
+        IEnumerable<Transaction> transactions, IEnumerable<CorporateAction> corporateActions, Func<ReplayStep, bool>? stopBefore = null)
+    {
+        var quantity = 0m;
+        var averagePrice = 0m;
+
+        foreach (var step in Merge(transactions, corporateActions))
+        {
+            if (stopBefore is not null && stopBefore(step))
+            {
+                break;
+            }
+
+            switch (step)
+            {
+                case CorporateActionReplayStep(var corporateAction):
+                    (quantity, averagePrice) = ApplyToPosition(quantity, averagePrice, corporateAction);
+                    break;
+
+                case TransactionReplayStep(var transaction):
+                    if (TransactionTypeEffects.For(transaction.Type).Quantity == QuantityEffect.Increase)
+                    {
+                        averagePrice = AverageCostReplay.Apply(quantity, averagePrice, transaction);
+                    }
+
+                    quantity = ApplyTransactionToQuantity(quantity, transaction);
+                    break;
+            }
+        }
+
+        return (quantity, averagePrice);
+    }
+
     private static int RankWithinDate(ReplayStep step) => step switch
     {
         CorporateActionReplayStep => 0,

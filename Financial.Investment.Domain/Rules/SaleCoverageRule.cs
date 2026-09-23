@@ -20,7 +20,7 @@ public static class SaleCoverageRule
             switch (step)
             {
                 case CorporateActionReplayStep(var corporateAction):
-                    quantity = CorporateActionReplay.RescalePosition(quantity, 0m, corporateAction).Quantity;
+                    quantity = CorporateActionReplay.ApplyToPosition(quantity, 0m, corporateAction).Quantity;
                     break;
 
                 case TransactionReplayStep(var transaction):

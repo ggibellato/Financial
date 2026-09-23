@@ -277,4 +277,22 @@ public class DisposalRecordRegeneratorTests
             .WithMessage("Cannot delete: a later disposal depends on lots created by this split.");
         asset.CorporateActions.Should().ContainSingle(ca => ca.Id == split.Id, "the failed delete rolled the corporate action back");
     }
+
+    [Fact]
+    public void RegenerateAsset_RetractCorporateAction_SpecificIdDisposalDependsOnMergerLot_RejectsWithMergerSpecificMessageAndRollsBack()
+    {
+        var target = Asset.Create("Asset B", "ISIN-B", "LSE", "BBB");
+        var mergerTarget = CorporateAction.CreateMergerTarget(
+            new DateTime(2021, 6, 1), null, Guid.NewGuid(), "Asset A", 20m, 1000m);
+        target.RecordCorporateAction(mergerTarget, CostBasisMethod.SpecificId);
+
+        var sell = Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 15m, 60m, 0m);
+        target.RecordTransaction(sell, CostBasisMethod.SpecificId, new[] { new SpecificLotAllocation(mergerTarget.Id, 15m) });
+
+        Action act = () => target.RetractCorporateAction(mergerTarget.Id, CostBasisMethod.SpecificId);
+
+        act.Should().Throw<InvestmentRuleViolationException>()
+            .WithMessage("Cannot delete: a later disposal depends on lots created by this merger.");
+        target.CorporateActions.Should().ContainSingle(ca => ca.Id == mergerTarget.Id, "the failed delete rolled the corporate action back");
+    }
 }

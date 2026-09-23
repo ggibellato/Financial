@@ -139,6 +139,49 @@ public class OpenLotTrackerTests
     }
 
     [Fact]
+    public void GetOpenLots_MergerSource_ClearsAllOpenLots()
+    {
+        var firstBuy = Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 5m, 10m, 0m);
+        var secondBuy = Transaction.Create(new DateTime(2024, 2, 1), Transaction.TransactionType.Buy, 3m, 20m, 0m);
+        var mergerSource = CorporateAction.CreateMergerSource(
+            new DateTime(2024, 3, 1), 0.5m, null, null, Guid.NewGuid(), "XCORP", 8m, 260m);
+
+        var lots = OpenLotTracker.GetOpenLots(new[] { firstBuy, secondBuy }, new[] { mergerSource });
+
+        lots.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void GetOpenLots_MergerTarget_AppendsOneNewLotAtTheCarriedUnitCost()
+    {
+        var mergerTarget = CorporateAction.CreateMergerTarget(
+            new DateTime(2024, 3, 1), null, Guid.NewGuid(), "TWTR", 40m, 1000m);
+
+        var lots = OpenLotTracker.GetOpenLots(Array.Empty<Transaction>(), new[] { mergerTarget });
+
+        lots.Should().ContainSingle();
+        lots[0].SourceTransactionId.Should().Be(mergerTarget.Id);
+        lots[0].RemainingQuantity.Should().Be(40m);
+        lots[0].UnitCost.Should().Be(25m);
+    }
+
+    [Fact]
+    public void GetOpenLots_MergerTargetOnTopOfExistingLots_KeepsPriorLotsAndAppendsTheNewOne()
+    {
+        var buy = Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m);
+        var mergerTarget = CorporateAction.CreateMergerTarget(
+            new DateTime(2024, 2, 1), null, Guid.NewGuid(), "TWTR", 40m, 1000m);
+
+        var lots = OpenLotTracker.GetOpenLots(new[] { buy }, new[] { mergerTarget });
+
+        lots.Should().HaveCount(2);
+        lots[0].SourceTransactionId.Should().Be(buy.Id);
+        lots[1].SourceTransactionId.Should().Be(mergerTarget.Id);
+        lots[1].RemainingQuantity.Should().Be(40m);
+        lots[1].UnitCost.Should().Be(25m);
+    }
+
+    [Fact]
     public void GetOpenLots_NoCorporateActions_SameAsSingleArgumentOverload()
     {
         var buy = Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m);

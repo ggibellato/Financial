@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using Financial.Investment.Domain.Exceptions;
 using Financial.Investment.Domain.Rules;
+using Financial.Shared.Abstractions.Currencies;
 
 namespace Financial.Investment.Domain.Entities;
 
@@ -331,7 +332,11 @@ public class Asset
         throw new InvestmentRuleViolationException(message);
     }
 
-    public void RecordCorporateAction(CorporateAction corporateAction, CostBasisMethod method = CostBasisMethod.AverageCost, Investments? investments = null)
+    public void RecordCorporateAction(
+        CorporateAction corporateAction,
+        CostBasisMethod method = CostBasisMethod.AverageCost,
+        Investments? investments = null,
+        Currency? brokerCurrency = null)
     {
         if (corporateAction == null)
         {
@@ -346,6 +351,7 @@ public class Asset
         try
         {
             DisposalRecordRegenerator.RegenerateAsset(this, method, corporateAction.EffectiveDate, investments: investments);
+            AppendMergerTargetTaxClassification(corporateAction, investments, brokerCurrency);
         }
         catch
         {
@@ -355,7 +361,11 @@ public class Asset
         }
     }
 
-    public bool ReviseCorporateAction(CorporateAction updatedCorporateAction, CostBasisMethod method = CostBasisMethod.AverageCost, Investments? investments = null)
+    public bool ReviseCorporateAction(
+        CorporateAction updatedCorporateAction,
+        CostBasisMethod method = CostBasisMethod.AverageCost,
+        Investments? investments = null,
+        Currency? brokerCurrency = null)
     {
         if (updatedCorporateAction == null)
         {
@@ -380,6 +390,7 @@ public class Asset
         try
         {
             DisposalRecordRegenerator.RegenerateAsset(this, method, anchor, investments: investments);
+            ReviseMergerTargetTaxClassification(updatedCorporateAction, investments, brokerCurrency);
         }
         catch
         {
@@ -406,6 +417,7 @@ public class Asset
         try
         {
             DisposalRecordRegenerator.RegenerateAsset(this, method, removed.EffectiveDate, investments: investments);
+            SupersedeMergerTargetTaxClassification(removed);
         }
         catch (Exception ex)
         {
@@ -414,7 +426,10 @@ public class Asset
 
             if (ex is InvestmentRuleViolationException)
             {
-                throw new InvestmentRuleViolationException("Cannot delete: a later disposal depends on lots created by this split.");
+                var message = removed.Type == CorporateAction.CorporateActionType.Merger
+                    ? "Cannot delete: a later disposal depends on lots created by this merger."
+                    : "Cannot delete: a later disposal depends on lots created by this split.";
+                throw new InvestmentRuleViolationException(message);
             }
 
             throw;
@@ -423,31 +438,67 @@ public class Asset
         return true;
     }
 
-    private void EnsureNonZeroPositionAt(CorporateAction corporateAction, IEnumerable<CorporateAction> otherCorporateActions)
+    private static bool IsMergerSource(CorporateAction corporateAction) =>
+        corporateAction.Type == CorporateAction.CorporateActionType.Merger && corporateAction.Role == CorporateAction.MergerRole.Source;
+
+    private static bool IsMergerTarget(CorporateAction corporateAction) =>
+        corporateAction.Type == CorporateAction.CorporateActionType.Merger && corporateAction.Role == CorporateAction.MergerRole.Target;
+
+    private static bool CanClassifyMergerTarget(CorporateAction corporateAction, Investments? investments, Currency? brokerCurrency) =>
+        investments is not null && brokerCurrency is not null && IsMergerTarget(corporateAction);
+
+    private void AppendMergerTargetTaxClassification(CorporateAction corporateAction, Investments? investments, Currency? brokerCurrency)
     {
-        var quantity = 0m;
-        var candidateActions = otherCorporateActions.Append(corporateAction);
-
-        foreach (var step in CorporateActionReplay.Merge(Transactions, candidateActions))
+        if (!CanClassifyMergerTarget(corporateAction, investments, brokerCurrency))
         {
-            if (step is CorporateActionReplayStep(var stepAction) && ReferenceEquals(stepAction, corporateAction))
-            {
-                break;
-            }
-
-            quantity = step switch
-            {
-                TransactionReplayStep(var transaction) => CorporateActionReplay.ApplyTransactionToQuantity(quantity, transaction),
-                CorporateActionReplayStep(var priorAction) => CorporateActionReplay.RescalePosition(quantity, 0m, priorAction).Quantity,
-                _ => quantity
-            };
+            return;
         }
 
-        // Also covers a split dated before the holding's first transaction - replaying up to
-        // that date yields the same zero quantity.
+        AppendTaxClassification(TaxClassificationCalculator.CalculateForCorporateAction(corporateAction, brokerCurrency!.Value, investments!));
+    }
+
+    private void ReviseMergerTargetTaxClassification(CorporateAction updatedCorporateAction, Investments? investments, Currency? brokerCurrency)
+    {
+        if (!CanClassifyMergerTarget(updatedCorporateAction, investments, brokerCurrency))
+        {
+            return;
+        }
+
+        var newClassification = TaxClassificationCalculator.CalculateForCorporateAction(updatedCorporateAction, brokerCurrency!.Value, investments!);
+        SupersedeTaxClassificationBySource(SourceType.CorporateAction, updatedCorporateAction.Id, newClassification.Id);
+        AppendTaxClassification(newClassification);
+    }
+
+    private void SupersedeMergerTargetTaxClassification(CorporateAction removed)
+    {
+        if (IsMergerTarget(removed))
+        {
+            SupersedeTaxClassificationBySource(SourceType.CorporateAction, removed.Id, null);
+        }
+    }
+
+    public (decimal Quantity, decimal AveragePrice) PositionAsOf(DateTime effectiveDate) =>
+        PositionAsOf(effectiveDate, _corporateActions);
+
+    private (decimal Quantity, decimal AveragePrice) PositionAsOf(DateTime effectiveDate, IEnumerable<CorporateAction> corporateActions) =>
+        CorporateActionReplay.ReplayAveragePosition(
+            Transactions, corporateActions,
+            stopBefore: step => step.Date > effectiveDate || (step.Date == effectiveDate && step is TransactionReplayStep));
+
+    private void EnsureNonZeroPositionAt(CorporateAction corporateAction, IEnumerable<CorporateAction> otherCorporateActions)
+    {
+        if (corporateAction.Type != CorporateAction.CorporateActionType.Split && !IsMergerSource(corporateAction))
+        {
+            return;
+        }
+
+        var (quantity, _) = PositionAsOf(corporateAction.EffectiveDate, otherCorporateActions);
         if (quantity == 0)
         {
-            throw new InvestmentRuleViolationException("This holding has no open position to split.");
+            var message = corporateAction.Type == CorporateAction.CorporateActionType.Merger
+                ? "This holding has no open position to convert."
+                : "This holding has no open position to split.";
+            throw new InvestmentRuleViolationException(message);
         }
     }
 
