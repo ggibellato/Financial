@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Financial.Api.Controllers;
 
 /// <summary>
-/// Manages corporate actions (splits, and future merger/spin-off types) recorded against an asset.
+/// Manages corporate actions (splits, mergers, and future spin-off types) recorded against an asset.
 /// </summary>
 [ApiController]
 [Route("corporate-actions")]
@@ -52,6 +52,40 @@ public sealed class CorporateActionsController : ApiControllerBase
         return OkOrBadRequest(asset);
     }
 
+    /// <summary>Records a new merger, closing the source holding and growing the target holding.</summary>
+    /// <param name="request">The merger to create.</param>
+    /// <returns>200 OK with the updated source and target asset details, or 400 Bad Request if the request is invalid.</returns>
+    [HttpPost("merger")]
+    [ProducesResponseType(typeof(CorporateActionMergerResultDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<CorporateActionMergerResultDTO>> AddMerger([FromBody] CorporateActionMergerCreateDTO? request)
+    {
+        if (request is null)
+        {
+            return BadRequest();
+        }
+
+        var result = await _corporateActionService.AddMergerAsync(request);
+        return OkOrBadRequest(result);
+    }
+
+    /// <summary>Updates an existing merger.</summary>
+    /// <param name="request">The merger fields to update.</param>
+    /// <returns>200 OK with the updated source and target asset details, or 400 Bad Request if the request is invalid.</returns>
+    [HttpPut("merger")]
+    [ProducesResponseType(typeof(CorporateActionMergerResultDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<CorporateActionMergerResultDTO>> UpdateMerger([FromBody] CorporateActionMergerUpdateDTO? request)
+    {
+        if (request is null)
+        {
+            return BadRequest();
+        }
+
+        var result = await _corporateActionService.UpdateMergerAsync(request);
+        return OkOrBadRequest(result);
+    }
+
     /// <summary>Deletes a corporate action.</summary>
     /// <param name="request">Identifies the corporate action to delete.</param>
     /// <returns>200 OK with the updated asset details, or 400 Bad Request if the request is invalid.</returns>
@@ -65,7 +99,7 @@ public sealed class CorporateActionsController : ApiControllerBase
             return BadRequest();
         }
 
-        var asset = await _corporateActionService.DeleteSplitAsync(request);
+        var asset = await _corporateActionService.DeleteCorporateActionAsync(request);
         return OkOrBadRequest(asset);
     }
 }

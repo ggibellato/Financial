@@ -6,5 +6,7 @@ public interface ICorporateActionService
 {
     Task<AssetDetailsDTO?> AddSplitAsync(CorporateActionSplitCreateDTO request);
     Task<AssetDetailsDTO?> UpdateSplitAsync(CorporateActionSplitUpdateDTO request);
-    Task<AssetDetailsDTO?> DeleteSplitAsync(CorporateActionDeleteDTO request);
+    Task<CorporateActionMergerResultDTO?> AddMergerAsync(CorporateActionMergerCreateDTO request);
+    Task<CorporateActionMergerResultDTO?> UpdateMergerAsync(CorporateActionMergerUpdateDTO request);
+    Task<AssetDetailsDTO?> DeleteCorporateActionAsync(CorporateActionDeleteDTO request);
 }

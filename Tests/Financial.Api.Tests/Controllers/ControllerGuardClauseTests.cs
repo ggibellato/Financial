@@ -329,6 +329,26 @@ public class ControllerGuardClauseTests
     }
 
     [Fact]
+    public async Task CorporateActionsController_AddMerger_NullRequest_ReturnsBadRequest()
+    {
+        var controller = new CorporateActionsController(new StubCorporateActionService());
+
+        var result = await controller.AddMerger(null!);
+
+        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
+    }
+
+    [Fact]
+    public async Task CorporateActionsController_UpdateMerger_NullRequest_ReturnsBadRequest()
+    {
+        var controller = new CorporateActionsController(new StubCorporateActionService());
+
+        var result = await controller.UpdateMerger(null!);
+
+        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
+    }
+
+    [Fact]
     public async Task CorporateActionsController_DeleteCorporateAction_NullRequest_ReturnsBadRequest()
     {
         var controller = new CorporateActionsController(new StubCorporateActionService());
@@ -770,7 +790,9 @@ public class ControllerGuardClauseTests
     {
         public Task<AssetDetailsDTO?> AddSplitAsync(CorporateActionSplitCreateDTO request) => throw new NotImplementedException();
         public Task<AssetDetailsDTO?> UpdateSplitAsync(CorporateActionSplitUpdateDTO request) => throw new NotImplementedException();
-        public Task<AssetDetailsDTO?> DeleteSplitAsync(CorporateActionDeleteDTO request) => throw new NotImplementedException();
+        public Task<CorporateActionMergerResultDTO?> AddMergerAsync(CorporateActionMergerCreateDTO request) => throw new NotImplementedException();
+        public Task<CorporateActionMergerResultDTO?> UpdateMergerAsync(CorporateActionMergerUpdateDTO request) => throw new NotImplementedException();
+        public Task<AssetDetailsDTO?> DeleteCorporateActionAsync(CorporateActionDeleteDTO request) => throw new NotImplementedException();
     }
 
     private sealed class StubTransactionQueryService : ITransactionQueryService

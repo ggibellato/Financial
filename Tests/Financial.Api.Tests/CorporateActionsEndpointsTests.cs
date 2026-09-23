@@ -176,6 +176,183 @@ public class CorporateActionsEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
+    public async Task AddMerger_ValidRequest_ReturnsOk()
+    {
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/corporate-actions/merger", new CorporateActionMergerCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            SourceAssetName = "BCIA11",
+            EffectiveDate = new DateTime(2024, 7, 1),
+            ExchangeRatio = 2.0m,
+            TargetAssetName = "XCORP",
+            CreateTargetAssetInline = true
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var result = await response.Content.ReadFromJsonAsync<CorporateActionMergerResultDTO>();
+        result.Should().NotBeNull();
+        result!.Source!.Quantity.Should().Be(0m);
+        result.Target!.Quantity.Should().Be(16m);
+    }
+
+    [Fact]
+    public async Task AddMerger_InvalidExchangeRatio_ReturnsBadRequest()
+    {
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/corporate-actions/merger", new CorporateActionMergerCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            SourceAssetName = "BCIA11",
+            EffectiveDate = new DateTime(2024, 7, 1),
+            ExchangeRatio = 0m,
+            TargetAssetName = "XCORP",
+            CreateTargetAssetInline = true
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task AddMerger_ZeroQuantitySourceHolding_ReturnsConflict()
+    {
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/corporate-actions/merger", new CorporateActionMergerCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            SourceAssetName = "BCIA11",
+            EffectiveDate = new DateTime(2023, 1, 1),
+            ExchangeRatio = 2.0m,
+            TargetAssetName = "XCORP",
+            CreateTargetAssetInline = true
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict, "there is no open position to convert before the holding's first transaction");
+    }
+
+    [Fact]
+    public async Task AddMerger_UnknownSourceAsset_ReturnsNotFound()
+    {
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/corporate-actions/merger", new CorporateActionMergerCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            SourceAssetName = "UNKNOWN",
+            EffectiveDate = new DateTime(2024, 7, 1),
+            ExchangeRatio = 2.0m,
+            TargetAssetName = "XCORP",
+            CreateTargetAssetInline = true
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task AddMerger_TargetAssetNotFound_ReturnsNotFound()
+    {
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/corporate-actions/merger", new CorporateActionMergerCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            SourceAssetName = "BCIA11",
+            EffectiveDate = new DateTime(2024, 7, 1),
+            ExchangeRatio = 2.0m,
+            TargetAssetName = "UNKNOWN",
+            CreateTargetAssetInline = false
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task UpdateMerger_ReturnsOk()
+    {
+        var added = await Client.PostAsJsonAsync("/api/v1/financial/corporate-actions/merger", new CorporateActionMergerCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            SourceAssetName = "BCIA11",
+            EffectiveDate = new DateTime(2024, 7, 1),
+            ExchangeRatio = 2.0m,
+            TargetAssetName = "XCORP",
+            CreateTargetAssetInline = true
+        });
+        added.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var repository = Services.GetRequiredService<IInvestmentRepository>();
+        var actionId = repository.GetAsset("XPI", "Default", "BCIA11")!.CorporateActions.Single().Id;
+
+        var response = await Client.PutAsJsonAsync("/api/v1/financial/corporate-actions/merger", new CorporateActionMergerUpdateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            SourceAssetName = "BCIA11",
+            Id = actionId,
+            EffectiveDate = new DateTime(2024, 7, 1),
+            ExchangeRatio = 4.0m
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var result = await response.Content.ReadFromJsonAsync<CorporateActionMergerResultDTO>();
+        result.Should().NotBeNull();
+        result!.Target!.Quantity.Should().Be(32m);
+    }
+
+    [Fact]
+    public async Task UpdateMerger_UnknownId_ReturnsBadRequest()
+    {
+        var response = await Client.PutAsJsonAsync("/api/v1/financial/corporate-actions/merger", new CorporateActionMergerUpdateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            SourceAssetName = "BCIA11",
+            Id = Guid.NewGuid(),
+            EffectiveDate = new DateTime(2024, 7, 1),
+            ExchangeRatio = 2.0m
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task DeleteCorporateAction_MergerId_RemovesBothLinkedRecords()
+    {
+        var added = await Client.PostAsJsonAsync("/api/v1/financial/corporate-actions/merger", new CorporateActionMergerCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            SourceAssetName = "BCIA11",
+            EffectiveDate = new DateTime(2024, 7, 1),
+            ExchangeRatio = 2.0m,
+            TargetAssetName = "XCORP",
+            CreateTargetAssetInline = true
+        });
+        added.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var repository = Services.GetRequiredService<IInvestmentRepository>();
+        var actionId = repository.GetAsset("XPI", "Default", "BCIA11")!.CorporateActions.Single().Id;
+
+        using var request = new HttpRequestMessage(HttpMethod.Delete, "/api/v1/financial/corporate-actions")
+        {
+            Content = JsonContent.Create(new CorporateActionDeleteDTO
+            {
+                BrokerName = "XPI",
+                PortfolioName = "Default",
+                AssetName = "BCIA11",
+                Id = actionId
+            })
+        };
+
+        var response = await Client.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var asset = await response.Content.ReadFromJsonAsync<AssetDetailsDTO>();
+        asset!.Quantity.Should().Be(8m, "deleting the merger must restore the source's original position");
+        repository.GetAsset("XPI", "Default", "BCIA11")!.CorporateActions.Should().BeEmpty();
+        repository.GetAsset("XPI", "Default", "XCORP")!.CorporateActions.Should().BeEmpty("the linked target record must be removed alongside the source one");
+    }
+
+    [Fact]
     public async Task DeleteCorporateAction_WhenALaterSpecificIdDisposalDependsOnTheSplitLots_ReturnsConflict()
     {
         // A dedicated broker/portfolio/asset, rather than the seeded XPI/Default/BCIA11: BCIA11's
