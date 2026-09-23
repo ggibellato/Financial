@@ -1511,6 +1511,160 @@
         ],
         "type": "object"
       },
+      "CorporateActionSpinOffCreateDTO": {
+        "properties": {
+          "allocationPercentage": {
+            "format": "double",
+            "type": "number"
+          },
+          "brokerName": {
+            "type": "string"
+          },
+          "createNewAssetInline": {
+            "type": "boolean"
+          },
+          "effectiveDate": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "newAssetName": {
+            "type": "string"
+          },
+          "newClass": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/GlobalAssetClass"
+              }
+            ]
+          },
+          "newCountry": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CountryCode"
+              }
+            ]
+          },
+          "newExchange": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "newISIN": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "newLocalTypeCode": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "newTicker": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "parentAssetName": {
+            "type": "string"
+          },
+          "portfolioName": {
+            "type": "string"
+          },
+          "quantityReceived": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "brokerName",
+          "portfolioName",
+          "parentAssetName",
+          "newAssetName"
+        ],
+        "type": "object"
+      },
+      "CorporateActionSpinOffResultDTO": {
+        "properties": {
+          "new": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AssetDetailsDTO"
+              }
+            ]
+          },
+          "parent": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AssetDetailsDTO"
+              }
+            ]
+          }
+        },
+        "type": "object"
+      },
+      "CorporateActionSpinOffUpdateDTO": {
+        "properties": {
+          "allocationPercentage": {
+            "format": "double",
+            "type": "number"
+          },
+          "brokerName": {
+            "type": "string"
+          },
+          "effectiveDate": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "parentAssetName": {
+            "type": "string"
+          },
+          "portfolioName": {
+            "type": "string"
+          },
+          "quantityReceived": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "brokerName",
+          "portfolioName",
+          "parentAssetName"
+        ],
+        "type": "object"
+      },
       "CorporateActionSplitCreateDTO": {
         "properties": {
           "assetName": {
@@ -7770,6 +7924,144 @@
           }
         },
         "summary": "Updates an existing merger.",
+        "tags": [
+          "CorporateActions"
+        ]
+      }
+    },
+    "/corporate-actions/spin-off": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/*\u002Bjson": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CorporateActionSpinOffCreateDTO"
+                  }
+                ]
+              }
+            },
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CorporateActionSpinOffCreateDTO"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CorporateActionSpinOffCreateDTO"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CorporateActionSpinOffResultDTO"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          }
+        },
+        "summary": "Records a new spin-off, keeping the parent holding open and creating/growing the new holding.",
+        "tags": [
+          "CorporateActions"
+        ]
+      },
+      "put": {
+        "requestBody": {
+          "content": {
+            "application/*\u002Bjson": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CorporateActionSpinOffUpdateDTO"
+                  }
+                ]
+              }
+            },
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CorporateActionSpinOffUpdateDTO"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CorporateActionSpinOffUpdateDTO"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CorporateActionSpinOffResultDTO"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          }
+        },
+        "summary": "Updates an existing spin-off.",
         "tags": [
           "CorporateActions"
         ]

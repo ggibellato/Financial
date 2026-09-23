@@ -2004,6 +2004,92 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/corporate-actions/spin-off": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Updates an existing spin-off. */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/*+json": null | components["schemas"]["CorporateActionSpinOffUpdateDTO"];
+                    "application/json": null | components["schemas"]["CorporateActionSpinOffUpdateDTO"];
+                    "text/json": null | components["schemas"]["CorporateActionSpinOffUpdateDTO"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CorporateActionSpinOffResultDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        /** Records a new spin-off, keeping the parent holding open and creating/growing the new holding. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/*+json": null | components["schemas"]["CorporateActionSpinOffCreateDTO"];
+                    "application/json": null | components["schemas"]["CorporateActionSpinOffCreateDTO"];
+                    "text/json": null | components["schemas"]["CorporateActionSpinOffCreateDTO"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CorporateActionSpinOffResultDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/corporate-actions/split": {
         parameters: {
             query?: never;
@@ -6874,6 +6960,44 @@ export interface components {
             note?: null | string;
             portfolioName: string;
             sourceAssetName: string;
+        };
+        CorporateActionSpinOffCreateDTO: {
+            /** Format: double */
+            allocationPercentage?: number;
+            brokerName: string;
+            createNewAssetInline?: boolean;
+            /** Format: date-time */
+            effectiveDate?: string;
+            newAssetName: string;
+            newClass?: null | components["schemas"]["GlobalAssetClass"];
+            newCountry?: null | components["schemas"]["CountryCode"];
+            newExchange?: null | string;
+            newISIN?: null | string;
+            newLocalTypeCode?: null | string;
+            newTicker?: null | string;
+            note?: null | string;
+            parentAssetName: string;
+            portfolioName: string;
+            /** Format: double */
+            quantityReceived?: number;
+        };
+        CorporateActionSpinOffResultDTO: {
+            new: null | components["schemas"]["AssetDetailsDTO"];
+            parent: null | components["schemas"]["AssetDetailsDTO"];
+        };
+        CorporateActionSpinOffUpdateDTO: {
+            /** Format: double */
+            allocationPercentage?: number;
+            brokerName: string;
+            /** Format: date-time */
+            effectiveDate?: string;
+            /** Format: uuid */
+            id?: string;
+            note?: null | string;
+            parentAssetName: string;
+            portfolioName: string;
+            /** Format: double */
+            quantityReceived?: number;
         };
         CorporateActionSplitCreateDTO: {
             assetName: string;
