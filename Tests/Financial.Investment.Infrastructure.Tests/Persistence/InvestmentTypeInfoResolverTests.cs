@@ -241,4 +241,60 @@ public class InvestmentTypeInfoResolverTests
         deserialized.Should().NotBeNull();
         deserialized!.CostBasisMethod.Should().Be(CostBasisMethod.FIFO);
     }
+
+    [Fact]
+    public void GetTypeInfo_ForCorporateAction_EnablesPrivateConstructor()
+    {
+        var options = CreateOptions();
+
+        var typeInfo = options.TypeInfoResolver!.GetTypeInfo(typeof(CorporateAction), options);
+
+        typeInfo!.CreateObject.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void GetTypeInfo_RoundTripsAssetWithCorporateAction_PreservesFields()
+    {
+        var options = CreateOptions();
+        var asset = Asset.Create("Test", "ISIN", "BVMF", "TST");
+        asset.AddTransaction(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        asset.RecordCorporateAction(CorporateAction.CreateSplit(new DateTime(2024, 6, 1), 2.0m, "2-for-1 split"));
+
+        var json = JsonSerializer.Serialize(asset, options);
+        var deserialized = JsonSerializer.Deserialize<Asset>(json, options);
+
+        deserialized.Should().NotBeNull();
+        var corporateAction = deserialized!.CorporateActions.Should().ContainSingle().Subject;
+        corporateAction.Type.Should().Be(CorporateAction.CorporateActionType.Split);
+        corporateAction.EffectiveDate.Should().Be(new DateTime(2024, 6, 1));
+        corporateAction.RatioFactor.Should().Be(2.0m);
+        corporateAction.Note.Should().Be("2-for-1 split");
+        deserialized.Quantity.Should().Be(20m, "the round-tripped asset must still reflect the split applied during replay");
+    }
+
+    [Fact]
+    public void GetTypeInfo_DeserializesAssetJsonWithoutCorporateActionsProperty_LoadsAsEmptyCollection()
+    {
+        // Simulates a data file written before this feature existed: no "CorporateActions"
+        // property at all, not even an empty array.
+        var options = CreateOptions();
+        const string legacyJson = """
+            {
+                "Name": "Test",
+                "ISIN": "ISIN",
+                "Exchange": "BVMF",
+                "Ticker": "TST",
+                "Country": 0,
+                "LocalTypeCode": "",
+                "Class": 0,
+                "Transactions": [],
+                "Credits": []
+            }
+            """;
+
+        var deserialized = JsonSerializer.Deserialize<Asset>(legacyJson, options);
+
+        deserialized.Should().NotBeNull();
+        deserialized!.CorporateActions.Should().BeEmpty();
+    }
 }

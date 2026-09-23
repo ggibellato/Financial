@@ -56,7 +56,14 @@ public class Asset
     public IReadOnlyCollection<CorporateAction> CorporateActions
     {
         get => _corporateActions.AsReadOnly();
-        private set => EntityGuard.ReplaceAll(_corporateActions, value);
+        // Relinks Transactions' own corporate-action awareness on every set, not just the mutation
+        // methods below - otherwise a JSON reload (Transactions deserializes as a sibling property,
+        // never told about them) would replay position/quantity as if no split had ever happened.
+        private set
+        {
+            EntityGuard.ReplaceAll(_corporateActions, value);
+            Transactions.SetCorporateActions(_corporateActions.ToList());
+        }
     }
 
     private List<Credit> _credits = new List<Credit>();

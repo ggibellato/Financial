@@ -302,6 +302,43 @@ public class ControllerGuardClauseTests
     }
 
     [Fact]
+    public void CorporateActionsController_NullCorporateActionService_Throws()
+    {
+        Action act = () => new CorporateActionsController(null!);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("corporateActionService");
+    }
+
+    [Fact]
+    public async Task CorporateActionsController_AddSplit_NullRequest_ReturnsBadRequest()
+    {
+        var controller = new CorporateActionsController(new StubCorporateActionService());
+
+        var result = await controller.AddSplit(null!);
+
+        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
+    }
+
+    [Fact]
+    public async Task CorporateActionsController_UpdateSplit_NullRequest_ReturnsBadRequest()
+    {
+        var controller = new CorporateActionsController(new StubCorporateActionService());
+
+        var result = await controller.UpdateSplit(null!);
+
+        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
+    }
+
+    [Fact]
+    public async Task CorporateActionsController_DeleteCorporateAction_NullRequest_ReturnsBadRequest()
+    {
+        var controller = new CorporateActionsController(new StubCorporateActionService());
+
+        var result = await controller.DeleteCorporateAction(null!);
+
+        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
+    }
+
+    [Fact]
     public void DividendsController_NullDividendService_Throws()
     {
         Action act = () => new DividendsController(null!, Options.Create(new DividendOptions()), NullLogger<DividendsController>.Instance);
@@ -727,6 +764,13 @@ public class ControllerGuardClauseTests
         public Task<AssetDetailsDTO?> AddTransactionAsync(TransactionCreateDTO request) => throw new NotImplementedException();
         public Task<AssetDetailsDTO?> UpdateTransactionAsync(TransactionUpdateDTO request) => throw new NotImplementedException();
         public Task<AssetDetailsDTO?> DeleteTransactionAsync(TransactionDeleteDTO request) => throw new NotImplementedException();
+    }
+
+    private sealed class StubCorporateActionService : ICorporateActionService
+    {
+        public Task<AssetDetailsDTO?> AddSplitAsync(CorporateActionSplitCreateDTO request) => throw new NotImplementedException();
+        public Task<AssetDetailsDTO?> UpdateSplitAsync(CorporateActionSplitUpdateDTO request) => throw new NotImplementedException();
+        public Task<AssetDetailsDTO?> DeleteSplitAsync(CorporateActionDeleteDTO request) => throw new NotImplementedException();
     }
 
     private sealed class StubTransactionQueryService : ITransactionQueryService

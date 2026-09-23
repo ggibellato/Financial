@@ -1328,6 +1328,99 @@
         ],
         "type": "object"
       },
+      "CorporateActionDeleteDTO": {
+        "properties": {
+          "assetName": {
+            "type": "string"
+          },
+          "brokerName": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "portfolioName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "brokerName",
+          "portfolioName",
+          "assetName"
+        ],
+        "type": "object"
+      },
+      "CorporateActionSplitCreateDTO": {
+        "properties": {
+          "assetName": {
+            "type": "string"
+          },
+          "brokerName": {
+            "type": "string"
+          },
+          "effectiveDate": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "portfolioName": {
+            "type": "string"
+          },
+          "ratioFactor": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "brokerName",
+          "portfolioName",
+          "assetName"
+        ],
+        "type": "object"
+      },
+      "CorporateActionSplitUpdateDTO": {
+        "properties": {
+          "assetName": {
+            "type": "string"
+          },
+          "brokerName": {
+            "type": "string"
+          },
+          "effectiveDate": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "portfolioName": {
+            "type": "string"
+          },
+          "ratioFactor": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "brokerName",
+          "portfolioName",
+          "assetName"
+        ],
+        "type": "object"
+      },
       "CostBasisMethod": {
         "enum": [
           "AverageCost",
@@ -7313,6 +7406,214 @@
         ]
       }
     },
+    "/corporate-actions": {
+      "delete": {
+        "requestBody": {
+          "content": {
+            "application/*\u002Bjson": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CorporateActionDeleteDTO"
+                  }
+                ]
+              }
+            },
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CorporateActionDeleteDTO"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CorporateActionDeleteDTO"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetDetailsDTO"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          }
+        },
+        "summary": "Deletes a corporate action.",
+        "tags": [
+          "CorporateActions"
+        ]
+      }
+    },
+    "/corporate-actions/split": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/*\u002Bjson": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CorporateActionSplitCreateDTO"
+                  }
+                ]
+              }
+            },
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CorporateActionSplitCreateDTO"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CorporateActionSplitCreateDTO"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetDetailsDTO"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          }
+        },
+        "summary": "Records a new split or reverse split.",
+        "tags": [
+          "CorporateActions"
+        ]
+      },
+      "put": {
+        "requestBody": {
+          "content": {
+            "application/*\u002Bjson": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CorporateActionSplitUpdateDTO"
+                  }
+                ]
+              }
+            },
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CorporateActionSplitUpdateDTO"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CorporateActionSplitUpdateDTO"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetDetailsDTO"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          }
+        },
+        "summary": "Updates an existing split or reverse split.",
+        "tags": [
+          "CorporateActions"
+        ]
+      }
+    },
     "/credit-cards": {
       "get": {
         "responses": {
@@ -12485,6 +12786,9 @@
     },
     {
       "name": "ControleMae"
+    },
+    {
+      "name": "CorporateActions"
     },
     {
       "name": "CreditCards"
