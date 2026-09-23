@@ -39,6 +39,13 @@ public static class TaxClassificationCalculator
 
     public static TaxClassification CalculateForCorporateAction(CorporateAction targetRecord, Currency currency, Investments investments)
     {
+        if (targetRecord.Type != CorporateAction.CorporateActionType.Merger || targetRecord.Role != CorporateAction.MergerRole.Target)
+        {
+            throw new InvalidOperationException(
+                $"CalculateForCorporateAction requires a {CorporateAction.CorporateActionType.Merger}/{CorporateAction.MergerRole.Target} record; " +
+                $"corporate action {targetRecord.Id} is {targetRecord.Type}/{targetRecord.Role?.ToString() ?? "none"}.");
+        }
+
         var jurisdiction = ForCurrency(currency);
         var taxYear = TaxYearCalculator.Calculate(targetRecord.EffectiveDate, currency.ToString());
         var rule = investments.FindApplicableTaxRule(jurisdiction, EventCategory.CorporateAction, DateOnly.FromDateTime(targetRecord.EffectiveDate));

@@ -62,7 +62,10 @@ public class CorporateAction
     {
         ValidateRatioFactor(ratioFactor);
 
-        return new(id, CorporateActionType.Split, effectiveDate, ratioFactor, note, null, null, null, null, null, null, null);
+        return new(
+            id, CorporateActionType.Split, effectiveDate, ratioFactor: ratioFactor, note: note,
+            role: null, correlationId: null, linkedAssetName: null, exchangeRatio: null, cashInLieu: null,
+            convertedQuantity: null, carriedCostBasis: null);
     }
 
     public static CorporateAction CreateMergerSource(
@@ -91,8 +94,9 @@ public class CorporateAction
         ValidateCashInLieu(cashInLieu);
 
         return new(
-            id, CorporateActionType.Merger, effectiveDate, null, note, MergerRole.Source, correlationId, linkedAssetName,
-            exchangeRatio, cashInLieu, convertedQuantity, carriedCostBasis);
+            id, CorporateActionType.Merger, effectiveDate, ratioFactor: null, note: note,
+            role: MergerRole.Source, correlationId: correlationId, linkedAssetName: linkedAssetName,
+            exchangeRatio: exchangeRatio, cashInLieu: cashInLieu, convertedQuantity: convertedQuantity, carriedCostBasis: carriedCostBasis);
     }
 
     public static CorporateAction CreateMergerTarget(
@@ -113,8 +117,9 @@ public class CorporateAction
         decimal convertedQuantity,
         decimal carriedCostBasis) =>
         new(
-            id, CorporateActionType.Merger, effectiveDate, null, note, MergerRole.Target, correlationId, linkedAssetName,
-            null, null, convertedQuantity, carriedCostBasis);
+            id, CorporateActionType.Merger, effectiveDate, ratioFactor: null, note: note,
+            role: MergerRole.Target, correlationId: correlationId, linkedAssetName: linkedAssetName,
+            exchangeRatio: null, cashInLieu: null, convertedQuantity: convertedQuantity, carriedCostBasis: carriedCostBasis);
 
     private static void ValidateRatioFactor(decimal ratioFactor)
     {

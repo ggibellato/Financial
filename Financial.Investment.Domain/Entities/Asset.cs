@@ -438,7 +438,7 @@ public class Asset
             quantity = step switch
             {
                 TransactionReplayStep(var transaction) => CorporateActionReplay.ApplyTransactionToQuantity(quantity, transaction),
-                CorporateActionReplayStep(var priorAction) => CorporateActionReplay.RescalePosition(quantity, 0m, priorAction.RatioFactor!.Value).Quantity,
+                CorporateActionReplayStep(var priorAction) => CorporateActionReplay.RescalePosition(quantity, 0m, priorAction).Quantity,
                 _ => quantity
             };
         }
