@@ -426,7 +426,10 @@ public class Asset
 
             if (ex is InvestmentRuleViolationException)
             {
-                throw new InvestmentRuleViolationException("Cannot delete: a later disposal depends on lots created by this split.");
+                var message = removed.Type == CorporateAction.CorporateActionType.Merger
+                    ? "Cannot delete: a later disposal depends on lots created by this merger."
+                    : "Cannot delete: a later disposal depends on lots created by this split.";
+                throw new InvestmentRuleViolationException(message);
             }
 
             throw;
