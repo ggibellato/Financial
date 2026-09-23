@@ -20,17 +20,17 @@ const baseProps = {
 }
 
 describe('CorporateActionForm', () => {
-  it('renders the create form title and confirm label, matching the New Corporate Action trigger', () => {
+  it('renders the create form title and confirm label, matching the New corporate action trigger', () => {
     render(<CorporateActionForm {...baseProps} />)
 
-    expect(screen.getByRole('heading', { name: 'New Corporate Action' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Add Corporate Action' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'New corporate action' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Add corporate action' })).toBeInTheDocument()
   })
 
   it('renders the edit form title and Save confirm label', () => {
     render(<CorporateActionForm {...baseProps} editingId="ca1" />)
 
-    expect(screen.getByRole('heading', { name: 'Edit Corporate Action' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Edit corporate action' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument()
   })
 
@@ -123,7 +123,7 @@ describe('CorporateActionForm', () => {
     const user = userEvent.setup()
     render(<CorporateActionForm {...baseProps} onSave={onSave} onCancel={onCancel} />)
 
-    await user.click(screen.getByRole('button', { name: 'Add Corporate Action' }))
+    await user.click(screen.getByRole('button', { name: 'Add corporate action' }))
     await user.click(screen.getByRole('button', { name: 'Cancel' }))
 
     expect(onSave).toHaveBeenCalledTimes(1)

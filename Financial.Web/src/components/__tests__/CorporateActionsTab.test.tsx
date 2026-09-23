@@ -107,9 +107,9 @@ describe('CorporateActionsTab', () => {
     ).toBeInTheDocument()
   })
 
-  it('renders the New Corporate Action trigger, left-positioned, primary', () => {
+  it('renders the New corporate action trigger, left-positioned, primary', () => {
     render(<CorporateActionsTab />)
-    const trigger = screen.getByRole('button', { name: 'New Corporate Action' })
+    const trigger = screen.getByRole('button', { name: 'New corporate action' })
     expect(trigger).toBeInTheDocument()
     fireEvent.click(trigger)
     expect(mockShowNewForm).toHaveBeenCalledTimes(1)
@@ -129,7 +129,7 @@ describe('CorporateActionsTab', () => {
   it('shows the inline form when isFormVisible is true', () => {
     setMock({ isFormVisible: true })
     render(<CorporateActionsTab />)
-    expect(screen.getByRole('heading', { name: 'New Corporate Action' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'New corporate action' })).toBeInTheDocument()
   })
 
   it('calls showEditForm with the record when Edit is clicked', () => {

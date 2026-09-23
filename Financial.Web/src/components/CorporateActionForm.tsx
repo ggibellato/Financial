@@ -37,8 +37,8 @@ export default function CorporateActionForm({
 }: CorporateActionFormProps) {
   const styles = useFormPanelStyles()
   const fieldError = useFieldError(saveErrorFields)
-  const title = editingId ? 'Edit Corporate Action' : 'New Corporate Action'
-  const confirmLabel = isSaving ? 'Saving...' : editingId ? 'Save' : 'Add Corporate Action'
+  const title = editingId ? 'Edit corporate action' : 'New corporate action'
+  const confirmLabel = isSaving ? 'Saving...' : editingId ? 'Save' : 'Add corporate action'
 
   return (
     <div className={styles.panel}>
@@ -72,7 +72,7 @@ export default function CorporateActionForm({
 
         {formType === 'Split' && (
           <>
-            <Field label="New units" required>
+            <Field label="New units" required validationState={fieldError('formRatio') ? 'error' : 'none'}>
               <Input
                 type="number"
                 step="0.0001"

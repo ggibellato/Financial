@@ -119,7 +119,7 @@ export default function CorporateActionsTab() {
     <div className="corporate-actions-tab">
       <div className="corporate-actions-tab__toolbar">
         <Button appearance="primary" icon={<AddRegular />} onClick={showNewForm}>
-          New Corporate Action
+          New corporate action
         </Button>
       </div>
 
