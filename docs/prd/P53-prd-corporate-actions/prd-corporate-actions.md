@@ -286,14 +286,14 @@ graph TD
 - [x] No `DisposalRecord` is created or modified by recording, editing, or deleting a split
 
 ### F02. Merger
-- [ ] Recording a merger reduces the source holding's quantity to zero and closes all its open lots
-- [ ] The target holding's quantity increases by `source quantity × exchange ratio`, and its cost basis increases by the source's full cost basis at the effective date
-- [ ] Selecting "create inline" for a non-existent target asset creates it with the entered identity fields and links the merger to it
-- [ ] Selecting a target asset name that collides with an existing distinct asset is rejected with an inline error
-- [ ] No `DisposalRecord` is created for the converted portion
-- [ ] A `TaxClassification` is created for the merger with status `RequiresReview` when no matching `TaxRule` exists
-- [ ] An existing `DisposalRecord` on the source asset predating the merger is left byte-identical after the merger is recorded
-- [ ] Cash-in-lieu amount, when entered, is stored on the merger record and does not create any `DisposalRecord`
+- [x] Recording a merger reduces the source holding's quantity to zero and closes all its open lots
+- [x] The target holding's quantity increases by `source quantity × exchange ratio`, and its cost basis increases by the source's full cost basis at the effective date
+- [x] Selecting "create inline" for a non-existent target asset creates it with the entered identity fields and links the merger to it
+- [x] Selecting a target asset name that collides with an existing distinct asset is rejected with an inline error
+- [x] No `DisposalRecord` is created for the converted portion
+- [x] A `TaxClassification` is created for the merger with status `RequiresReview` when no matching `TaxRule` exists
+- [x] An existing `DisposalRecord` on the source asset predating the merger is left byte-identical after the merger is recorded
+- [x] Cash-in-lieu amount, when entered, is stored on the merger record and does not create any `DisposalRecord`
 
 ### F03. Spin-off
 - [ ] Recording a spin-off leaves the parent's quantity unchanged and reduces its cost basis by exactly `allocation% × prior cost basis`
