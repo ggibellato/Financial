@@ -70,22 +70,41 @@ public static class OpenLotTracker
                 Rescale(lots, CorporateActionReplay.RequireRatioFactor(corporateAction));
                 break;
 
-            case { Type: CorporateAction.CorporateActionType.Merger, Role: CorporateAction.MergerRole.Source }:
+            case { Type: CorporateAction.CorporateActionType.Merger, Role: CorporateAction.CorporateActionRole.Source }:
                 lots.Clear();
                 break;
 
-            case { Type: CorporateAction.CorporateActionType.Merger, Role: CorporateAction.MergerRole.Target }:
-                lots.Add(new MutableLot
-                {
-                    SourceTransactionId = corporateAction.Id,
-                    Date = corporateAction.EffectiveDate,
-                    RemainingQuantity = corporateAction.ConvertedQuantity!.Value,
-                    UnitCost = corporateAction.CarriedCostBasis!.Value / corporateAction.ConvertedQuantity!.Value
-                });
+            case { Type: CorporateAction.CorporateActionType.Merger, Role: CorporateAction.CorporateActionRole.Target }:
+                AppendCarriedLot(lots, corporateAction);
+                break;
+
+            case { Type: CorporateAction.CorporateActionType.SpinOff, Role: CorporateAction.CorporateActionRole.Parent }:
+                ReduceLotCostBasis(lots, corporateAction.AllocationPercentage!.Value);
+                break;
+
+            case { Type: CorporateAction.CorporateActionType.SpinOff, Role: CorporateAction.CorporateActionRole.New }:
+                AppendCarriedLot(lots, corporateAction);
                 break;
 
             default:
                 throw new ArgumentOutOfRangeException(nameof(corporateAction), corporateAction.Type, "Unsupported corporate action type/role combination.");
+        }
+    }
+
+    private static void AppendCarriedLot(List<MutableLot> lots, CorporateAction corporateAction) =>
+        lots.Add(new MutableLot
+        {
+            SourceTransactionId = corporateAction.Id,
+            Date = corporateAction.EffectiveDate,
+            RemainingQuantity = corporateAction.ConvertedQuantity!.Value,
+            UnitCost = corporateAction.CarriedCostBasis!.Value / corporateAction.ConvertedQuantity!.Value
+        });
+
+    private static void ReduceLotCostBasis(List<MutableLot> lots, decimal allocationPercentage)
+    {
+        foreach (var lot in lots)
+        {
+            lot.UnitCost *= 1 - allocationPercentage / 100;
         }
     }
 

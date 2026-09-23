@@ -364,4 +364,143 @@ public class AssetCorporateActionTests
         current.CostBasis.Should().Be(1200m);
         target.Quantity.Should().Be(25m);
     }
+
+    [Fact]
+    public void RecordCorporateAction_SpinOffParent_QuantityUnchangedCostBasisReducedByAllocation()
+    {
+        var parent = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");
+        parent.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+
+        var spinOffParent = CorporateAction.CreateSpinOffParent(
+            new DateTime(2021, 6, 1), 15m, null, Guid.NewGuid(), "SPINCO", 1m, 150m);
+        parent.RecordCorporateAction(spinOffParent);
+
+        parent.Quantity.Should().Be(10m, "a spin-off never changes the parent's quantity");
+        parent.AveragePrice.Should().Be(85m, "15% of the prior 100 average cost is moved to the new asset");
+    }
+
+    [Fact]
+    public void RecordCorporateAction_SpinOffParentZeroQuantityHolding_IsAllowed()
+    {
+        var parent = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");
+
+        Action act = () => parent.RecordCorporateAction(CorporateAction.CreateSpinOffParent(
+            new DateTime(2021, 6, 1), 15m, null, Guid.NewGuid(), "SPINCO", 1m, 0m));
+
+        act.Should().NotThrow("unlike Split/Merger, a spin-off allocates a percentage of whatever cost basis exists, including zero");
+    }
+
+    [Fact]
+    public void RecordCorporateAction_SpinOffParent_Fifo_ReducesEveryOpenLotUnitCostKeepingQuantityUnchanged()
+    {
+        var parent = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");
+        parent.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 5m, 10m, 0m));
+        parent.AddTransaction(Transaction.Create(new DateTime(2021, 3, 1), Transaction.TransactionType.Buy, 3m, 20m, 0m));
+
+        parent.RecordCorporateAction(CorporateAction.CreateSpinOffParent(
+            new DateTime(2021, 6, 1), 20m, null, Guid.NewGuid(), "SPINCO", 1m, 26m));
+
+        var lots = OpenLotTracker.GetOpenLots(parent.Transactions, parent.CorporateActions);
+        lots.Should().HaveCount(2);
+        lots[0].RemainingQuantity.Should().Be(5m);
+        lots[0].UnitCost.Should().Be(8m);
+        lots[1].RemainingQuantity.Should().Be(3m);
+        lots[1].UnitCost.Should().Be(16m);
+    }
+
+    [Fact]
+    public void RecordCorporateAction_SpinOffNewZeroQuantityHolding_IsAllowed()
+    {
+        var newAsset = Asset.Create("Asset B", "ISIN-B", "NASDAQ", "BBB");
+
+        newAsset.RecordCorporateAction(CorporateAction.CreateSpinOffNew(
+            new DateTime(2021, 6, 1), null, Guid.NewGuid(), "Asset A", 5m, 150m));
+
+        newAsset.Quantity.Should().Be(5m);
+        newAsset.AveragePrice.Should().Be(30m);
+    }
+
+    [Fact]
+    public void RecordCorporateAction_LinkedSpinOffParentAndNew_CarriesAllocatedCostBasisAcrossAssets()
+    {
+        var parent = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");
+        parent.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        var newAsset = Asset.Create("Asset B", "ISIN-B", "NASDAQ", "BBB");
+
+        var correlationId = Guid.NewGuid();
+        var effectiveDate = new DateTime(2021, 6, 1);
+        var (parentQuantity, parentAveragePrice) = parent.PositionAsOf(effectiveDate);
+        var carriedCostBasis = 0.15m * parentQuantity * parentAveragePrice;
+
+        parent.RecordCorporateAction(CorporateAction.CreateSpinOffParent(
+            effectiveDate, 15m, null, correlationId, "Asset B", 5m, carriedCostBasis));
+        newAsset.RecordCorporateAction(CorporateAction.CreateSpinOffNew(
+            effectiveDate, null, correlationId, "Asset A", 5m, carriedCostBasis));
+
+        parent.Quantity.Should().Be(10m);
+        parent.AveragePrice.Should().Be(85m);
+        newAsset.Quantity.Should().Be(5m);
+        newAsset.AveragePrice.Should().Be(30m);
+    }
+
+    [Fact]
+    public void RecordCorporateAction_SpinOffNewWithInvestments_CreatesTaxClassificationRequiringReview()
+    {
+        var newAsset = Asset.Create("Asset B", "ISIN-B", "NASDAQ", "BBB");
+        var investments = Investments.Create();
+        var spinOffNew = CorporateAction.CreateSpinOffNew(
+            new DateTime(2021, 6, 1), null, Guid.NewGuid(), "Asset A", 5m, 150m);
+
+        newAsset.RecordCorporateAction(spinOffNew, investments: investments, brokerCurrency: Currency.GBP);
+
+        var classification = newAsset.TaxClassifications.Should().ContainSingle().Subject;
+        classification.SourceType.Should().Be(SourceType.CorporateAction);
+        classification.SourceId.Should().Be(spinOffNew.Id);
+        classification.EventCategory.Should().Be(EventCategory.CorporateAction);
+        classification.CalculationStatus.Should().Be(CalculationStatus.RequiresReview);
+    }
+
+    [Fact]
+    public void RecordCorporateAction_SpinOffParentWithInvestments_CreatesNoTaxClassification()
+    {
+        var parent = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");
+        parent.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        var investments = Investments.Create();
+
+        parent.RecordCorporateAction(
+            CorporateAction.CreateSpinOffParent(new DateTime(2021, 6, 1), 15m, null, Guid.NewGuid(), "Asset B", 5m, 150m),
+            investments: investments,
+            brokerCurrency: Currency.GBP);
+
+        parent.TaxClassifications.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void RecordCorporateAction_SpinOffParent_NoLaterDisposal_CreatesNoDisposalRecord()
+    {
+        var parent = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");
+        parent.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+
+        parent.RecordCorporateAction(CorporateAction.CreateSpinOffParent(
+            new DateTime(2021, 6, 1), 15m, null, Guid.NewGuid(), "Asset B", 5m, 150m));
+
+        parent.DisposalRecords.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void RetractCorporateAction_SpinOffNewWithTaxClassification_SupersedesTheLinkedClassification()
+    {
+        var newAsset = Asset.Create("Asset B", "ISIN-B", "NASDAQ", "BBB");
+        var investments = Investments.Create();
+        var spinOffNew = CorporateAction.CreateSpinOffNew(
+            new DateTime(2021, 6, 1), null, Guid.NewGuid(), "Asset A", 5m, 150m);
+        newAsset.RecordCorporateAction(spinOffNew, investments: investments, brokerCurrency: Currency.GBP);
+
+        newAsset.RetractCorporateAction(spinOffNew.Id, investments: investments);
+
+        var classification = newAsset.TaxClassifications.Should().ContainSingle().Subject;
+        classification.Status.Should().Be(TaxClassificationStatus.Superseded);
+        newAsset.Quantity.Should().Be(0m);
+    }
+
 }

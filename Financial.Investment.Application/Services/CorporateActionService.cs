@@ -212,7 +212,7 @@ public sealed class CorporateActionService : ICorporateActionService
                 targetAsset = portfolio.FindAsset(previousSourceRecord.LinkedAssetName!)
                     ?? throw new KeyNotFoundException($"Asset \"{previousSourceRecord.LinkedAssetName}\" was not found in portfolio \"{request.PortfolioName}\".");
                 var previousTargetRecord = targetAsset.CorporateActions.FirstOrDefault(
-                    ca => ca.CorrelationId == previousSourceRecord.CorrelationId && ca.Role == CorporateAction.MergerRole.Target)
+                    ca => ca.CorrelationId == previousSourceRecord.CorrelationId && ca.Role == CorporateAction.CorporateActionRole.Target)
                     ?? throw new InvalidOperationException($"Corporate action {previousSourceRecord.Id} has no linked target record.");
 
                 var brokerCurrency = ParseBrokerCurrency(broker);

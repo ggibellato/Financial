@@ -84,7 +84,7 @@ public class CorporateActionMergerAcceptanceTests : ApiEndpointTests
         var repository = Services.GetRequiredService<IInvestmentRepository>();
         var target = repository.GetAsset("XPI", "Default", "XCORP");
         target.Should().NotBeNull();
-        target!.CorporateActions.Should().ContainSingle().Which.Role.Should().Be(CorporateAction.MergerRole.Target);
+        target!.CorporateActions.Should().ContainSingle().Which.Role.Should().Be(CorporateAction.CorporateActionRole.Target);
     }
 
     [Fact]

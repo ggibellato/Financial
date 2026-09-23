@@ -43,13 +43,17 @@ public static class CorporateActionReplay
         action switch
         {
             { Type: CorporateAction.CorporateActionType.Split } => RescalePosition(quantity, averagePrice, action),
-            { Type: CorporateAction.CorporateActionType.Merger, Role: CorporateAction.MergerRole.Source } => ClosedPosition,
-            { Type: CorporateAction.CorporateActionType.Merger, Role: CorporateAction.MergerRole.Target } =>
-                ReceiveMerger(quantity, averagePrice, action.ConvertedQuantity!.Value, action.CarriedCostBasis!.Value),
+            { Type: CorporateAction.CorporateActionType.Merger, Role: CorporateAction.CorporateActionRole.Source } => ClosedPosition,
+            { Type: CorporateAction.CorporateActionType.Merger, Role: CorporateAction.CorporateActionRole.Target } =>
+                ReceiveIntoPosition(quantity, averagePrice, action.ConvertedQuantity!.Value, action.CarriedCostBasis!.Value),
+            { Type: CorporateAction.CorporateActionType.SpinOff, Role: CorporateAction.CorporateActionRole.Parent } =>
+                (quantity, averagePrice * (1 - action.AllocationPercentage!.Value / 100)),
+            { Type: CorporateAction.CorporateActionType.SpinOff, Role: CorporateAction.CorporateActionRole.New } =>
+                ReceiveIntoPosition(quantity, averagePrice, action.ConvertedQuantity!.Value, action.CarriedCostBasis!.Value),
             _ => throw new ArgumentOutOfRangeException(nameof(action), action.Type, "Unsupported corporate action type/role combination.")
         };
 
-    public static (decimal Quantity, decimal AveragePrice) ReceiveMerger(decimal quantity, decimal averagePrice, decimal receivedQuantity, decimal carriedCostBasis) =>
+    public static (decimal Quantity, decimal AveragePrice) ReceiveIntoPosition(decimal quantity, decimal averagePrice, decimal receivedQuantity, decimal carriedCostBasis) =>
         (quantity + receivedQuantity, AverageCostReplay.Blend(quantity, averagePrice, receivedQuantity, carriedCostBasis));
 
     public static decimal RequireRatioFactor(CorporateAction action) =>

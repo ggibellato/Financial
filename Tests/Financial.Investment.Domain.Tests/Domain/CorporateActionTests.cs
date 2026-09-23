@@ -117,7 +117,7 @@ public class CorporateActionTests
 
         action.Id.Should().NotBeEmpty();
         action.Type.Should().Be(CorporateAction.CorporateActionType.Merger);
-        action.Role.Should().Be(CorporateAction.MergerRole.Source);
+        action.Role.Should().Be(CorporateAction.CorporateActionRole.Source);
         action.EffectiveDate.Should().Be(date);
         action.ExchangeRatio.Should().Be(0.5m);
         action.CashInLieu.Should().Be(3.25m);
@@ -199,7 +199,7 @@ public class CorporateActionTests
 
         action.Id.Should().NotBeEmpty();
         action.Type.Should().Be(CorporateAction.CorporateActionType.Merger);
-        action.Role.Should().Be(CorporateAction.MergerRole.Target);
+        action.Role.Should().Be(CorporateAction.CorporateActionRole.Target);
         action.EffectiveDate.Should().Be(date);
         action.Note.Should().Be("Acquisition");
         action.CorrelationId.Should().Be(correlationId);
@@ -244,5 +244,151 @@ public class CorporateActionTests
             new DateTime(2026, 4, 1), null, correlationId, "TWTR", 40m, 1000m);
 
         source.CorrelationId.Should().Be(target.CorrelationId);
+    }
+
+    [Fact]
+    public void CreateSpinOffParent_ValidFields_SetsFields()
+    {
+        var date = new DateTime(2026, 4, 1);
+        var correlationId = Guid.NewGuid();
+
+        var action = CorporateAction.CreateSpinOffParent(date, 15m, "Spin-off completed", correlationId, "SPINCO", 5m, 150m);
+
+        action.Id.Should().NotBeEmpty();
+        action.Type.Should().Be(CorporateAction.CorporateActionType.SpinOff);
+        action.Role.Should().Be(CorporateAction.CorporateActionRole.Parent);
+        action.EffectiveDate.Should().Be(date);
+        action.AllocationPercentage.Should().Be(15m);
+        action.Note.Should().Be("Spin-off completed");
+        action.CorrelationId.Should().Be(correlationId);
+        action.LinkedAssetName.Should().Be("SPINCO");
+        action.ConvertedQuantity.Should().Be(5m);
+        action.CarriedCostBasis.Should().Be(150m);
+        action.RatioFactor.Should().BeNull();
+        action.ExchangeRatio.Should().BeNull();
+        action.CashInLieu.Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(100)]
+    public void CreateSpinOffParent_BoundaryAllocationPercentage_IsValid(decimal allocationPercentage)
+    {
+        var action = CorporateAction.CreateSpinOffParent(
+            new DateTime(2026, 4, 1), allocationPercentage, null, Guid.NewGuid(), "SPINCO", 5m, 150m);
+
+        action.AllocationPercentage.Should().Be(allocationPercentage);
+    }
+
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(100.01)]
+    public void CreateSpinOffParent_AllocationPercentageOutsideRange_ThrowsArgumentException(decimal allocationPercentage)
+    {
+        Action act = () => CorporateAction.CreateSpinOffParent(
+            new DateTime(2026, 4, 1), allocationPercentage, null, Guid.NewGuid(), "SPINCO", 5m, 150m);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void CreateSpinOffParent_QuantityReceivedNotPositive_ThrowsArgumentException(decimal quantityReceived)
+    {
+        Action act = () => CorporateAction.CreateSpinOffParent(
+            new DateTime(2026, 4, 1), 15m, null, Guid.NewGuid(), "SPINCO", quantityReceived, 150m);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void CreateSpinOffParent_NoteExceeds500Characters_ThrowsArgumentException()
+    {
+        var note = new string('a', CorporateAction.MaxNoteLength + 1);
+
+        Action act = () => CorporateAction.CreateSpinOffParent(
+            new DateTime(2026, 4, 1), 15m, note, Guid.NewGuid(), "SPINCO", 5m, 150m);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void CreateSpinOffParentWithId_PreservesGivenId()
+    {
+        var id = Guid.NewGuid();
+
+        var action = CorporateAction.CreateSpinOffParentWithId(
+            id, new DateTime(2026, 4, 1), 15m, null, Guid.NewGuid(), "SPINCO", 5m, 150m);
+
+        action.Id.Should().Be(id);
+    }
+
+    [Fact]
+    public void CreateSpinOffNew_ValidFields_SetsFields()
+    {
+        var date = new DateTime(2026, 4, 1);
+        var correlationId = Guid.NewGuid();
+
+        var action = CorporateAction.CreateSpinOffNew(date, "Spin-off completed", correlationId, "GEHC", 5m, 150m);
+
+        action.Id.Should().NotBeEmpty();
+        action.Type.Should().Be(CorporateAction.CorporateActionType.SpinOff);
+        action.Role.Should().Be(CorporateAction.CorporateActionRole.New);
+        action.EffectiveDate.Should().Be(date);
+        action.Note.Should().Be("Spin-off completed");
+        action.CorrelationId.Should().Be(correlationId);
+        action.LinkedAssetName.Should().Be("GEHC");
+        action.ConvertedQuantity.Should().Be(5m);
+        action.CarriedCostBasis.Should().Be(150m);
+        action.AllocationPercentage.Should().BeNull();
+        action.ExchangeRatio.Should().BeNull();
+        action.CashInLieu.Should().BeNull();
+        action.RatioFactor.Should().BeNull();
+    }
+
+    [Fact]
+    public void CreateSpinOffNew_PerformsNoValidation_AcceptsAnyQuantity()
+    {
+        var action = CorporateAction.CreateSpinOffNew(
+            new DateTime(2026, 4, 1), null, Guid.NewGuid(), "GEHC", -5m, -150m);
+
+        action.ConvertedQuantity.Should().Be(-5m);
+        action.CarriedCostBasis.Should().Be(-150m);
+    }
+
+    [Fact]
+    public void CreateSpinOffNew_NoteExceeds500Characters_ThrowsArgumentException()
+    {
+        var note = new string('a', CorporateAction.MaxNoteLength + 1);
+
+        Action act = () => CorporateAction.CreateSpinOffNew(
+            new DateTime(2026, 4, 1), note, Guid.NewGuid(), "GEHC", 5m, 150m);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void CreateSpinOffNewWithId_PreservesGivenId()
+    {
+        var id = Guid.NewGuid();
+
+        var action = CorporateAction.CreateSpinOffNewWithId(
+            id, new DateTime(2026, 4, 1), null, Guid.NewGuid(), "GEHC", 5m, 150m);
+
+        action.Id.Should().Be(id);
+    }
+
+    [Fact]
+    public void CreateSpinOffParentAndNew_ShareCorrelationId()
+    {
+        var correlationId = Guid.NewGuid();
+
+        var parent = CorporateAction.CreateSpinOffParent(
+            new DateTime(2026, 4, 1), 15m, null, correlationId, "SPINCO", 5m, 150m);
+        var newRecord = CorporateAction.CreateSpinOffNew(
+            new DateTime(2026, 4, 1), null, correlationId, "GEHC", 5m, 150m);
+
+        parent.CorrelationId.Should().Be(newRecord.CorrelationId);
     }
 }

@@ -192,19 +192,79 @@ public class CorporateActionReplayTests
     }
 
     [Fact]
-    public void ReceiveMerger_MatchesAverageCostReplayBlendedFormula()
+    public void ReceiveIntoPosition_MatchesAverageCostReplayBlendedFormula()
     {
-        var (quantity, averagePrice) = CorporateActionReplay.ReceiveMerger(10m, 50m, 40m, 1000m);
+        var (quantity, averagePrice) = CorporateActionReplay.ReceiveIntoPosition(10m, 50m, 40m, 1000m);
 
         quantity.Should().Be(50m);
         averagePrice.Should().Be((10m * 50m + 1000m) / 50m);
     }
 
     [Fact]
-    public void ReceiveMerger_TotalCostBasisIsPreserved()
+    public void ReceiveIntoPosition_TotalCostBasisIsPreserved()
     {
-        var (quantity, averagePrice) = CorporateActionReplay.ReceiveMerger(10m, 50m, 40m, 1000m);
+        var (quantity, averagePrice) = CorporateActionReplay.ReceiveIntoPosition(10m, 50m, 40m, 1000m);
 
         (quantity * averagePrice).Should().Be(10m * 50m + 1000m);
+    }
+
+    [Fact]
+    public void ApplyToPosition_SpinOffParent_QuantityUnchangedAveragePriceScaledByAllocation()
+    {
+        var spinOffParent = CorporateAction.CreateSpinOffParent(
+            new DateTime(2026, 4, 1), 15m, null, Guid.NewGuid(), "SPINCO", 5m, 150m);
+
+        var (quantity, averagePrice) = CorporateActionReplay.ApplyToPosition(80m, 100m, spinOffParent);
+
+        quantity.Should().Be(80m);
+        averagePrice.Should().Be(85m);
+    }
+
+    [Fact]
+    public void ApplyToPosition_SpinOffParent_ZeroAllocation_LeavesAveragePriceUnchanged()
+    {
+        var spinOffParent = CorporateAction.CreateSpinOffParent(
+            new DateTime(2026, 4, 1), 0m, null, Guid.NewGuid(), "SPINCO", 5m, 0m);
+
+        var (quantity, averagePrice) = CorporateActionReplay.ApplyToPosition(80m, 100m, spinOffParent);
+
+        quantity.Should().Be(80m);
+        averagePrice.Should().Be(100m);
+    }
+
+    [Fact]
+    public void ApplyToPosition_SpinOffParent_HundredPercentAllocation_ZeroesAveragePrice()
+    {
+        var spinOffParent = CorporateAction.CreateSpinOffParent(
+            new DateTime(2026, 4, 1), 100m, null, Guid.NewGuid(), "SPINCO", 5m, 800m);
+
+        var (quantity, averagePrice) = CorporateActionReplay.ApplyToPosition(80m, 100m, spinOffParent);
+
+        quantity.Should().Be(80m);
+        averagePrice.Should().Be(0m);
+    }
+
+    [Fact]
+    public void ApplyToPosition_SpinOffNew_AddsReceivedQuantityAndBlendsAveragePrice()
+    {
+        var spinOffNew = CorporateAction.CreateSpinOffNew(
+            new DateTime(2026, 4, 1), null, Guid.NewGuid(), "GEHC", 5m, 150m);
+
+        var (quantity, averagePrice) = CorporateActionReplay.ApplyToPosition(10m, 50m, spinOffNew);
+
+        quantity.Should().Be(15m);
+        averagePrice.Should().Be((10m * 50m + 150m) / 15m);
+    }
+
+    [Fact]
+    public void ApplyToPosition_SpinOffNew_NoExistingPosition_MatchesCarriedUnitCost()
+    {
+        var spinOffNew = CorporateAction.CreateSpinOffNew(
+            new DateTime(2026, 4, 1), null, Guid.NewGuid(), "SPINCO", 5m, 150m);
+
+        var (quantity, averagePrice) = CorporateActionReplay.ApplyToPosition(0m, 0m, spinOffNew);
+
+        quantity.Should().Be(5m);
+        averagePrice.Should().Be(30m);
     }
 }

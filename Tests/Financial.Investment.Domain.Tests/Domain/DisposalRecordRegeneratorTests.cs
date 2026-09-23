@@ -295,4 +295,40 @@ public class DisposalRecordRegeneratorTests
             .WithMessage("Cannot delete: a later disposal depends on lots created by this merger.");
         target.CorporateActions.Should().ContainSingle(ca => ca.Id == mergerTarget.Id, "the failed delete rolled the corporate action back");
     }
+
+    [Fact]
+    public void RegenerateAsset_RetractCorporateAction_SpecificIdDisposalDependsOnSpinOffNewLot_RejectsWithSpinOffSpecificMessageAndRollsBack()
+    {
+        var newAsset = Asset.Create("Asset B", "ISIN-B", "LSE", "BBB");
+        var spinOffNew = CorporateAction.CreateSpinOffNew(
+            new DateTime(2021, 6, 1), null, Guid.NewGuid(), "Asset A", 5m, 150m);
+        newAsset.RecordCorporateAction(spinOffNew, CostBasisMethod.SpecificId);
+
+        var sell = Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 60m, 0m);
+        newAsset.RecordTransaction(sell, CostBasisMethod.SpecificId, new[] { new SpecificLotAllocation(spinOffNew.Id, 5m) });
+
+        Action act = () => newAsset.RetractCorporateAction(spinOffNew.Id, CostBasisMethod.SpecificId);
+
+        act.Should().Throw<InvestmentRuleViolationException>()
+            .WithMessage("Cannot delete: a later disposal depends on lots created by this spin-off.");
+        newAsset.CorporateActions.Should().ContainSingle(ca => ca.Id == spinOffNew.Id, "the failed delete rolled the corporate action back");
+    }
+
+    [Fact]
+    public void RegenerateAsset_DisposalOnParentAfterSpinOff_RecomputesAtTheReducedAverageCost()
+    {
+        var parent = Asset.Create("Asset A", "ISIN-A", "BVMF", "AAA");
+        parent.AddTransaction(Transaction.Create(new DateTime(2021, 3, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        parent.RecordTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 110m, 0m));
+        var original = parent.DisposalRecords.Single();
+        original.CostBasis.Should().Be(500m);
+
+        parent.RecordCorporateAction(CorporateAction.CreateSpinOffParent(
+            new DateTime(2021, 6, 1), 15m, null, Guid.NewGuid(), "Asset B", 1m, 150m));
+
+        original.Status.Should().Be(DisposalRecordStatus.Superseded);
+        var replacement = parent.DisposalRecords.Single(r => r.Status == DisposalRecordStatus.Active);
+        original.SupersededByRecordId.Should().Be(replacement.Id);
+        replacement.CostBasis.Should().Be(425m, "10 units at 100 become 10 units at 85 after the 15% spin-off allocation, so the 5-unit sale now costs 425");
+    }
 }
