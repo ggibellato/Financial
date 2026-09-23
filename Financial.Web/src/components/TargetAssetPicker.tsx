@@ -5,7 +5,12 @@ import ErrorState from './ErrorState'
 import { useAssetSearchOptions } from '../hooks/useAssetSearchOptions'
 import { useFormPanelStyles } from './formPanelStyles'
 import { isValidIsin } from '../utils/validators'
-import { BLANK_TARGET_ASSET_IDENTITY, type TargetAssetIdentity, type TargetAssetPickerValue } from './targetAssetPickerValue'
+import {
+  BLANK_TARGET_ASSET_IDENTITY,
+  findAssetByName,
+  type TargetAssetIdentity,
+  type TargetAssetPickerValue,
+} from './targetAssetPickerValue'
 import './TargetAssetPicker.css'
 
 const COUNTRY_OPTIONS = ['Unknown', 'BR', 'US', 'UK'] as const
@@ -37,10 +42,7 @@ export default function TargetAssetPicker({ label, value, onChange, disabled, na
 
   const trimmedName = value.assetName.trim()
 
-  const matchedAsset = useMemo(
-    () => options.find((asset) => asset.name.toLowerCase() === trimmedName.toLowerCase()) ?? null,
-    [options, trimmedName],
-  )
+  const matchedAsset = useMemo(() => findAssetByName(options, trimmedName) ?? null, [options, trimmedName])
 
   const filteredOptions = useMemo(() => {
     if (!trimmedName) return options
@@ -48,13 +50,12 @@ export default function TargetAssetPicker({ label, value, onChange, disabled, na
     return options.filter((asset) => asset.name.toLowerCase().includes(query))
   }, [options, trimmedName])
 
-  const showCreateFields = value.createInline && trimmedName.length > 0 && !matchedAsset
+  const showCreateFields = trimmedName.length > 0 && !matchedAsset
 
   const applyTypedName = (name: string) => {
-    const matched = options.find((asset) => asset.name.toLowerCase() === name.trim().toLowerCase())
+    const matched = findAssetByName(options, name)
     onChange({
       assetName: name,
-      createInline: name.trim().length > 0 && !matched,
       identity: matched ? BLANK_TARGET_ASSET_IDENTITY : value.identity,
     })
   }
@@ -62,7 +63,6 @@ export default function TargetAssetPicker({ label, value, onChange, disabled, na
   const handleOptionSelect: NonNullable<ComboboxProps['onOptionSelect']> = (_event, data) => {
     onChange({
       assetName: data.optionText ?? '',
-      createInline: false,
       identity: BLANK_TARGET_ASSET_IDENTITY,
     })
   }
