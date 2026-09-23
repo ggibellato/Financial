@@ -214,6 +214,38 @@ public class DisposalRecordCalculatorTests
     }
 
     [Fact]
+    public void Calculate_Fifo_MergerTargetPrecedesDisposal_ConsumesTheMergerCreatedLot()
+    {
+        var mergerTarget = CorporateAction.CreateMergerTarget(
+            new DateTime(2026, 1, 1), null, Guid.NewGuid(), "TWTR", 40m, 1000m);
+        var sell = Transaction.Create(new DateTime(2026, 2, 1), Transaction.TransactionType.Sell, 15m, 40m, 0m);
+
+        var record = DisposalRecordCalculator.Calculate(
+            sell, Array.Empty<Transaction>(), CostBasisMethod.FIFO, "GBP", precedingCorporateActions: new[] { mergerTarget });
+
+        record.LotsConsumed.Should().ContainSingle();
+        record.LotsConsumed[0].SourceTransactionId.Should().Be(mergerTarget.Id);
+        record.LotsConsumed[0].UnitCost.Should().Be(25m);
+        record.LotsConsumed[0].Quantity.Should().Be(15m);
+    }
+
+    [Fact]
+    public void Calculate_SpecificId_MergerTargetPrecedesDisposal_AllocatesAgainstTheMergerCreatedLot()
+    {
+        var mergerTarget = CorporateAction.CreateMergerTarget(
+            new DateTime(2026, 1, 1), null, Guid.NewGuid(), "TWTR", 40m, 1000m);
+        var sell = Transaction.Create(new DateTime(2026, 2, 1), Transaction.TransactionType.Sell, 15m, 40m, 0m);
+        var allocation = new[] { new SpecificLotAllocation(mergerTarget.Id, 15m) };
+
+        var record = DisposalRecordCalculator.Calculate(
+            sell, Array.Empty<Transaction>(), CostBasisMethod.SpecificId, "GBP", allocation, new[] { mergerTarget });
+
+        record.LotsConsumed.Should().ContainSingle();
+        record.LotsConsumed[0].SourceTransactionId.Should().Be(mergerTarget.Id);
+        record.LotsConsumed[0].UnitCost.Should().Be(25m);
+    }
+
+    [Fact]
     public void Calculate_NoPrecedingCorporateActions_BehavesExactlyAsBeforeTheFeature()
     {
         var buy = Transaction.Create(new DateTime(2026, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m);
