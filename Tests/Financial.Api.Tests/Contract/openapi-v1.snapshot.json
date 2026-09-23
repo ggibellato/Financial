@@ -1351,6 +1351,166 @@
         ],
         "type": "object"
       },
+      "CorporateActionMergerCreateDTO": {
+        "properties": {
+          "brokerName": {
+            "type": "string"
+          },
+          "cashInLieuAmount": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "createTargetAssetInline": {
+            "type": "boolean"
+          },
+          "effectiveDate": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "exchangeRatio": {
+            "format": "double",
+            "type": "number"
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "portfolioName": {
+            "type": "string"
+          },
+          "sourceAssetName": {
+            "type": "string"
+          },
+          "targetAssetName": {
+            "type": "string"
+          },
+          "targetClass": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/GlobalAssetClass"
+              }
+            ]
+          },
+          "targetCountry": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CountryCode"
+              }
+            ]
+          },
+          "targetExchange": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "targetISIN": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "targetLocalTypeCode": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "targetTicker": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "required": [
+          "brokerName",
+          "portfolioName",
+          "sourceAssetName",
+          "targetAssetName"
+        ],
+        "type": "object"
+      },
+      "CorporateActionMergerResultDTO": {
+        "properties": {
+          "source": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AssetDetailsDTO"
+              }
+            ]
+          },
+          "target": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AssetDetailsDTO"
+              }
+            ]
+          }
+        },
+        "type": "object"
+      },
+      "CorporateActionMergerUpdateDTO": {
+        "properties": {
+          "brokerName": {
+            "type": "string"
+          },
+          "cashInLieuAmount": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "effectiveDate": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "exchangeRatio": {
+            "format": "double",
+            "type": "number"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "portfolioName": {
+            "type": "string"
+          },
+          "sourceAssetName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "brokerName",
+          "portfolioName",
+          "sourceAssetName"
+        ],
+        "type": "object"
+      },
       "CorporateActionSplitCreateDTO": {
         "properties": {
           "assetName": {
@@ -7472,6 +7632,144 @@
           }
         },
         "summary": "Deletes a corporate action.",
+        "tags": [
+          "CorporateActions"
+        ]
+      }
+    },
+    "/corporate-actions/merger": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/*\u002Bjson": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CorporateActionMergerCreateDTO"
+                  }
+                ]
+              }
+            },
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CorporateActionMergerCreateDTO"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CorporateActionMergerCreateDTO"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CorporateActionMergerResultDTO"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          }
+        },
+        "summary": "Records a new merger, closing the source holding and growing the target holding.",
+        "tags": [
+          "CorporateActions"
+        ]
+      },
+      "put": {
+        "requestBody": {
+          "content": {
+            "application/*\u002Bjson": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CorporateActionMergerUpdateDTO"
+                  }
+                ]
+              }
+            },
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CorporateActionMergerUpdateDTO"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CorporateActionMergerUpdateDTO"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CorporateActionMergerResultDTO"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          }
+        },
+        "summary": "Updates an existing merger.",
         "tags": [
           "CorporateActions"
         ]

@@ -1918,6 +1918,92 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/corporate-actions/merger": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Updates an existing merger. */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/*+json": null | components["schemas"]["CorporateActionMergerUpdateDTO"];
+                    "application/json": null | components["schemas"]["CorporateActionMergerUpdateDTO"];
+                    "text/json": null | components["schemas"]["CorporateActionMergerUpdateDTO"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CorporateActionMergerResultDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        /** Records a new merger, closing the source holding and growing the target holding. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/*+json": null | components["schemas"]["CorporateActionMergerCreateDTO"];
+                    "application/json": null | components["schemas"]["CorporateActionMergerCreateDTO"];
+                    "text/json": null | components["schemas"]["CorporateActionMergerCreateDTO"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CorporateActionMergerResultDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/corporate-actions/split": {
         parameters: {
             query?: never;
@@ -6750,6 +6836,44 @@ export interface components {
             /** Format: uuid */
             id?: string;
             portfolioName: string;
+        };
+        CorporateActionMergerCreateDTO: {
+            brokerName: string;
+            /** Format: double */
+            cashInLieuAmount?: null | number;
+            createTargetAssetInline?: boolean;
+            /** Format: date-time */
+            effectiveDate?: string;
+            /** Format: double */
+            exchangeRatio?: number;
+            note?: null | string;
+            portfolioName: string;
+            sourceAssetName: string;
+            targetAssetName: string;
+            targetClass?: null | components["schemas"]["GlobalAssetClass"];
+            targetCountry?: null | components["schemas"]["CountryCode"];
+            targetExchange?: null | string;
+            targetISIN?: null | string;
+            targetLocalTypeCode?: null | string;
+            targetTicker?: null | string;
+        };
+        CorporateActionMergerResultDTO: {
+            source: null | components["schemas"]["AssetDetailsDTO"];
+            target: null | components["schemas"]["AssetDetailsDTO"];
+        };
+        CorporateActionMergerUpdateDTO: {
+            brokerName: string;
+            /** Format: double */
+            cashInLieuAmount?: null | number;
+            /** Format: date-time */
+            effectiveDate?: string;
+            /** Format: double */
+            exchangeRatio?: number;
+            /** Format: uuid */
+            id?: string;
+            note?: null | string;
+            portfolioName: string;
+            sourceAssetName: string;
         };
         CorporateActionSplitCreateDTO: {
             assetName: string;
