@@ -1,5 +1,4 @@
 using Financial.Investment.Application.DTOs;
-using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.Entities;
 using Financial.Shared.Abstractions.Observability;
@@ -128,8 +127,7 @@ public sealed class CorporateActionService : ICorporateActionService
     }
 
     private CostBasisMethod ResolveCostBasisMethod(string brokerName) =>
-        _repository.GetBrokerList(InvestmentScope.Active).FirstOrDefault(b => string.Equals(b.Name, brokerName, StringComparison.Ordinal))?.CostBasisMethod
-        ?? CostBasisMethod.AverageCost;
+        AssetMutationHelper.ResolveCostBasisMethod(_repository, brokerName);
 
     private ITelemetrySpan StartSpan(string operationName)
     {

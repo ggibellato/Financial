@@ -62,9 +62,11 @@ public class Asset
         private set
         {
             EntityGuard.ReplaceAll(_corporateActions, value);
-            Transactions.SetCorporateActions(_corporateActions.ToList());
+            SyncCorporateActionsWithTransactions();
         }
     }
+
+    private void SyncCorporateActionsWithTransactions() => Transactions.SetCorporateActions(_corporateActions.ToList());
 
     private List<Credit> _credits = new List<Credit>();
     public IReadOnlyCollection<Credit> Credits { get => _credits.AsReadOnly(); private set => SetCredits(value); }
@@ -339,7 +341,7 @@ public class Asset
         EnsureNonZeroPositionAt(corporateAction, _corporateActions);
 
         _corporateActions.Add(corporateAction);
-        Transactions.SetCorporateActions(_corporateActions.ToList());
+        SyncCorporateActionsWithTransactions();
 
         try
         {
@@ -348,7 +350,7 @@ public class Asset
         catch
         {
             _corporateActions.Remove(corporateAction);
-            Transactions.SetCorporateActions(_corporateActions.ToList());
+            SyncCorporateActionsWithTransactions();
             throw;
         }
     }
@@ -371,7 +373,7 @@ public class Asset
         EnsureNonZeroPositionAt(updatedCorporateAction, otherCorporateActions);
 
         _corporateActions[index] = updatedCorporateAction;
-        Transactions.SetCorporateActions(_corporateActions.ToList());
+        SyncCorporateActionsWithTransactions();
 
         var anchor = previous.EffectiveDate <= updatedCorporateAction.EffectiveDate ? previous.EffectiveDate : updatedCorporateAction.EffectiveDate;
 
@@ -382,7 +384,7 @@ public class Asset
         catch
         {
             _corporateActions[index] = previous;
-            Transactions.SetCorporateActions(_corporateActions.ToList());
+            SyncCorporateActionsWithTransactions();
             throw;
         }
 
@@ -399,22 +401,22 @@ public class Asset
 
         var removed = _corporateActions[index];
         _corporateActions.RemoveAt(index);
-        Transactions.SetCorporateActions(_corporateActions.ToList());
+        SyncCorporateActionsWithTransactions();
 
         try
         {
             DisposalRecordRegenerator.RegenerateAsset(this, method, removed.EffectiveDate, investments: investments);
         }
-        catch (InvestmentRuleViolationException)
+        catch (Exception ex)
         {
             _corporateActions.Insert(index, removed);
-            Transactions.SetCorporateActions(_corporateActions.ToList());
-            throw new InvestmentRuleViolationException("Cannot delete: a later disposal depends on lots created by this split.");
-        }
-        catch
-        {
-            _corporateActions.Insert(index, removed);
-            Transactions.SetCorporateActions(_corporateActions.ToList());
+            SyncCorporateActionsWithTransactions();
+
+            if (ex is InvestmentRuleViolationException)
+            {
+                throw new InvestmentRuleViolationException("Cannot delete: a later disposal depends on lots created by this split.");
+            }
+
             throw;
         }
 

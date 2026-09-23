@@ -1,4 +1,5 @@
 using Financial.Investment.Application.DTOs;
+using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Application.Validation;
 using Financial.Investment.Domain.Entities;
@@ -8,6 +9,10 @@ namespace Financial.Investment.Application.Services;
 internal static class AssetMutationHelper
 {
     public delegate bool TryParseDelegate<TEnum>(string? value, out TEnum parsed);
+
+    public static CostBasisMethod ResolveCostBasisMethod(IInvestmentRepository repository, string brokerName) =>
+        repository.GetBrokerList(InvestmentScope.Active).FirstOrDefault(b => string.Equals(b.Name, brokerName, StringComparison.Ordinal))?.CostBasisMethod
+        ?? CostBasisMethod.AverageCost;
 
     public static async Task<AssetDetailsDTO?> ExecuteParsedMutationAsync<TEnum>(
         IInvestmentRepository repository,
