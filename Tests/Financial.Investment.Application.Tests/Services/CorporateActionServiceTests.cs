@@ -597,6 +597,289 @@ public class CorporateActionServiceTests
         portfolio.FindAsset("TGT")!.CorporateActions.Should().BeEmpty("the linked target record must be removed alongside the source one");
     }
 
+    [Fact]
+    public async Task AddSpinOffAsync_CreateNewAssetInline_ReducesParentCostBasisAndCreatesNewHoldingAtCarriedUnitCost()
+    {
+        var (broker, portfolio, parent) = MakeSpinOffFixture();
+        _repository.Broker = broker;
+        _repository.Brokers = [broker];
+
+        var result = await CreateService().AddSpinOffAsync(new CorporateActionSpinOffCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            ParentAssetName = "PARENT",
+            EffectiveDate = new DateTime(2024, 6, 1),
+            QuantityReceived = 5m,
+            AllocationPercentage = 15m,
+            NewAssetName = "NEWCO",
+            CreateNewAssetInline = true
+        });
+
+        result.Should().NotBeNull();
+        result!.Parent!.Quantity.Should().Be(10m, "a spin-off never changes the parent's quantity");
+        (result.Parent.Quantity * result.Parent.AveragePrice).Should().Be(85m, "15% of the 100 total cost basis (10 x 10) moves to the new asset");
+        result.New!.Quantity.Should().Be(5m, "the entered received quantity, not derived from a ratio");
+        result.New.AveragePrice.Should().Be(3m, "15 carried cost basis / 5 units received");
+
+        var newAsset = portfolio.FindAsset("NEWCO");
+        newAsset.Should().NotBeNull();
+        var classification = newAsset!.TaxClassifications.Should().ContainSingle().Subject;
+        classification.CalculationStatus.Should().Be(CalculationStatus.RequiresReview, "no TaxRule is configured in this fixture");
+        classification.SourceType.Should().Be(SourceType.CorporateAction);
+
+        parent.CorporateActions.Should().ContainSingle().Which.Role.Should().Be(CorporateAction.CorporateActionRole.Parent);
+        newAsset.CorporateActions.Should().ContainSingle().Which.Role.Should().Be(CorporateAction.CorporateActionRole.New);
+        _repository.WriteCallCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task AddSpinOffAsync_ExistingNewAsset_IncreasesNewAssetPositionAndCarriesCostBasis()
+    {
+        var (broker, portfolio, _) = MakeSpinOffFixture();
+        var newAsset = Asset.Create("NEWCO", "ISIN2", "BVMF", "NEWCO");
+        newAsset.AddTransaction(Transaction.Create(new DateTime(2023, 1, 1), Transaction.TransactionType.Buy, 10m, 2m, 0m));
+        portfolio.RegisterAsset(newAsset);
+        _repository.Broker = broker;
+        _repository.Brokers = [broker];
+
+        var result = await CreateService().AddSpinOffAsync(new CorporateActionSpinOffCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            ParentAssetName = "PARENT",
+            EffectiveDate = new DateTime(2024, 6, 1),
+            QuantityReceived = 10m,
+            AllocationPercentage = 20m,
+            NewAssetName = "NEWCO",
+            CreateNewAssetInline = false
+        });
+
+        result.Should().NotBeNull();
+        result!.New!.Quantity.Should().Be(20m, "the existing 10 units plus the 10 received units");
+        result.New.AveragePrice.Should().Be(2m, "(10 x 2 + 20 carried) / 20");
+    }
+
+    [Fact]
+    public async Task AddSpinOffAsync_ZeroQuantityParentHolding_Succeeds()
+    {
+        var broker = Broker.Create("XPI", "BRL");
+        var portfolio = broker.AddPortfolio("Default");
+        portfolio.RegisterAsset(Asset.Create("PARENT", "ISIN1", "BVMF", "PARENT"));
+        _repository.Broker = broker;
+        _repository.Brokers = [broker];
+
+        var result = await CreateService().AddSpinOffAsync(new CorporateActionSpinOffCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            ParentAssetName = "PARENT",
+            EffectiveDate = new DateTime(2024, 6, 1),
+            QuantityReceived = 5m,
+            AllocationPercentage = 0m,
+            NewAssetName = "NEWCO",
+            CreateNewAssetInline = true
+        });
+
+        result.Should().NotBeNull("unlike Split/Merger, a spin-off is allowed against a zero-quantity parent");
+        result!.Parent!.Quantity.Should().Be(0m);
+        result.New!.Quantity.Should().Be(5m);
+        result.New.AveragePrice.Should().Be(0m, "0% allocation carries zero cost basis to the new asset");
+    }
+
+    [Fact]
+    public async Task AddSpinOffAsync_NewAssetNameCollidesWithExistingDistinctAsset_ThrowsAndWritesNothing()
+    {
+        var (broker, portfolio, parent) = MakeSpinOffFixture();
+        portfolio.RegisterAsset(Asset.Create("NEWCO", "ISIN2", "BVMF", "NEWCO"));
+        _repository.Broker = broker;
+        _repository.Brokers = [broker];
+
+        var act = async () => await CreateService().AddSpinOffAsync(new CorporateActionSpinOffCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            ParentAssetName = "PARENT",
+            EffectiveDate = new DateTime(2024, 6, 1),
+            QuantityReceived = 5m,
+            AllocationPercentage = 15m,
+            NewAssetName = "NEWCO",
+            CreateNewAssetInline = true
+        });
+
+        await act.Should().ThrowAsync<InvestmentRuleViolationException>();
+        parent.CorporateActions.Should().BeEmpty("the parent record must roll back when the new-asset step fails");
+        _repository.WriteCallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task AddSpinOffAsync_ParentAssetNotFound_ThrowsKeyNotFound()
+    {
+        var broker = Broker.Create("XPI", "BRL");
+        broker.AddPortfolio("Default");
+        _repository.Broker = broker;
+        _repository.Brokers = [broker];
+
+        var act = async () => await CreateService().AddSpinOffAsync(new CorporateActionSpinOffCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            ParentAssetName = "UNKNOWN",
+            EffectiveDate = new DateTime(2024, 6, 1),
+            QuantityReceived = 5m,
+            AllocationPercentage = 15m,
+            NewAssetName = "NEWCO",
+            CreateNewAssetInline = true
+        });
+
+        await act.Should().ThrowAsync<KeyNotFoundException>();
+        _repository.WriteCallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task AddSpinOffAsync_ValidRequest_RecordsSuccessfulSpan()
+    {
+        var (broker, _, _) = MakeSpinOffFixture();
+        var tracer = new RecordingTelemetryTracer();
+        var service = new CorporateActionService(
+            new StubInvestmentRepository { Broker = broker, Brokers = [broker] }, CreateNavigationService(), tracer, NullLogger<CorporateActionService>.Instance);
+
+        await service.AddSpinOffAsync(new CorporateActionSpinOffCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            ParentAssetName = "PARENT",
+            EffectiveDate = new DateTime(2024, 6, 1),
+            QuantityReceived = 5m,
+            AllocationPercentage = 15m,
+            NewAssetName = "NEWCO",
+            CreateNewAssetInline = true
+        });
+
+        var span = tracer.Spans.Should().ContainSingle().Which;
+        span.Name.Should().Be("Investment.CorporateActionService.AddSpinOff");
+        span.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Success);
+    }
+
+    [Fact]
+    public async Task UpdateSpinOffAsync_UnknownId_ReturnsNull()
+    {
+        var (broker, _, _) = MakeSpinOffFixture();
+        _repository.Broker = broker;
+        _repository.Brokers = [broker];
+
+        var result = await CreateService().UpdateSpinOffAsync(new CorporateActionSpinOffUpdateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            ParentAssetName = "PARENT",
+            Id = Guid.NewGuid(),
+            EffectiveDate = new DateTime(2024, 6, 1),
+            QuantityReceived = 5m,
+            AllocationPercentage = 15m
+        });
+
+        result.Should().BeNull();
+        _repository.WriteCallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task UpdateSpinOffAsync_EmptyId_ReturnsNull()
+    {
+        var (broker, _, _) = MakeSpinOffFixture();
+        _repository.Broker = broker;
+        _repository.Brokers = [broker];
+
+        var result = await CreateService().UpdateSpinOffAsync(new CorporateActionSpinOffUpdateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            ParentAssetName = "PARENT",
+            Id = Guid.Empty,
+            EffectiveDate = new DateTime(2024, 6, 1),
+            QuantityReceived = 5m,
+            AllocationPercentage = 15m
+        });
+
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task UpdateSpinOffAsync_ExistingId_UpdatesBothLinkedRecordsWithNewAllocation()
+    {
+        var (broker, portfolio, parent) = MakeSpinOffFixture();
+        _repository.Broker = broker;
+        _repository.Brokers = [broker];
+
+        var added = await CreateService().AddSpinOffAsync(new CorporateActionSpinOffCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            ParentAssetName = "PARENT",
+            EffectiveDate = new DateTime(2024, 6, 1),
+            QuantityReceived = 5m,
+            AllocationPercentage = 15m,
+            NewAssetName = "NEWCO",
+            CreateNewAssetInline = true
+        });
+        added.Should().NotBeNull();
+        var parentActionId = parent.CorporateActions.Single().Id;
+        var newActionId = portfolio.FindAsset("NEWCO")!.CorporateActions.Single().Id;
+
+        var result = await CreateService().UpdateSpinOffAsync(new CorporateActionSpinOffUpdateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            ParentAssetName = "PARENT",
+            Id = parentActionId,
+            EffectiveDate = new DateTime(2024, 6, 1),
+            QuantityReceived = 8m,
+            AllocationPercentage = 25m
+        });
+
+        result.Should().NotBeNull();
+        (result!.Parent!.Quantity * result.Parent.AveragePrice).Should().Be(75m, "75% of the 100 total cost basis remains on the parent after the revised 25% allocation");
+        result.New!.Quantity.Should().Be(8m, "the revised entered received quantity");
+        var newAsset = portfolio.FindAsset("NEWCO")!;
+        newAsset.CorporateActions.Should().ContainSingle().Which.Id.Should().Be(newActionId, "the new-asset record's own id must be preserved across the update");
+        parent.CorporateActions.Should().ContainSingle().Which.Id.Should().Be(parentActionId, "the parent record's id must be preserved across the update");
+    }
+
+    [Fact]
+    public async Task DeleteCorporateActionAsync_ExistingSpinOffId_RemovesBothLinkedRecordsAndRestoresParentPosition()
+    {
+        var (broker, portfolio, parent) = MakeSpinOffFixture();
+        _repository.Broker = broker;
+        _repository.Brokers = [broker];
+
+        var added = await CreateService().AddSpinOffAsync(new CorporateActionSpinOffCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            ParentAssetName = "PARENT",
+            EffectiveDate = new DateTime(2024, 6, 1),
+            QuantityReceived = 5m,
+            AllocationPercentage = 15m,
+            NewAssetName = "NEWCO",
+            CreateNewAssetInline = true
+        });
+        added.Should().NotBeNull();
+        var parentActionId = parent.CorporateActions.Single().Id;
+
+        var result = await CreateService().DeleteCorporateActionAsync(new CorporateActionDeleteDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "PARENT",
+            Id = parentActionId
+        });
+
+        result.Should().NotBeNull();
+        (result!.Quantity * result.AveragePrice).Should().Be(100m, "deleting the spin-off must restore the parent's original cost basis");
+        parent.CorporateActions.Should().BeEmpty();
+        portfolio.FindAsset("NEWCO")!.CorporateActions.Should().BeEmpty("the linked new-asset record must be removed alongside the parent one");
+    }
+
     private CorporateActionService CreateService() =>
         new(_repository, CreateNavigationService(), Tracer, NullLogger<CorporateActionService>.Instance);
 
@@ -618,5 +901,15 @@ public class CorporateActionServiceTests
         source.AddTransaction(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, sourceQuantity, sourceUnitPrice, 0m));
         portfolio.RegisterAsset(source);
         return (broker, portfolio, source);
+    }
+
+    private static (Broker Broker, Portfolio Portfolio, Asset Parent) MakeSpinOffFixture(decimal parentQuantity = 10m, decimal parentUnitPrice = 10m)
+    {
+        var broker = Broker.Create("XPI", "BRL");
+        var portfolio = broker.AddPortfolio("Default");
+        var parent = Asset.Create("PARENT", "ISIN1", "BVMF", "PARENT");
+        parent.AddTransaction(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, parentQuantity, parentUnitPrice, 0m));
+        portfolio.RegisterAsset(parent);
+        return (broker, portfolio, parent);
     }
 }
