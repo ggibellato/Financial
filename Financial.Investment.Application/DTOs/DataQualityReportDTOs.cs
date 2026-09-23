@@ -23,6 +23,11 @@ public sealed record UnclassifiedHoldingFinding(
 public sealed record HistoricHoldingStillOpenFinding(
     string BrokerName, string PortfolioName, string AssetName, decimal Quantity, decimal CostOfUnitsHeld);
 
+public sealed record CorporateActionAwaitingTaxReviewFinding(
+    string BrokerName, string PortfolioName, string AssetName, Guid CorporateActionId,
+    [property: JsonConverter(typeof(JsonStringEnumConverter))] CorporateAction.CorporateActionType Type,
+    DateTime EffectiveDate, string TaxYear);
+
 public sealed class DataQualityReportDTO
 {
     public IReadOnlyList<SalesExceedPurchasesFinding> SalesExceedPurchases { get; init; } = [];
@@ -33,4 +38,5 @@ public sealed class DataQualityReportDTO
     public IReadOnlyList<UnclassifiedHoldingFinding> UnclassifiedHoldings { get; init; } = [];
     public IReadOnlyList<HistoricHoldingStillOpenFinding> HistoricHoldingsStillOpen { get; init; } = [];
     public IReadOnlyList<UnclassifiedHoldingFinding> UnclassifiedAndUnpricedOpenHoldings { get; init; } = [];
+    public IReadOnlyList<CorporateActionAwaitingTaxReviewFinding> CorporateActionsAwaitingTaxReview { get; init; } = [];
 }
