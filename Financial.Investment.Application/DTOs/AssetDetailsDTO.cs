@@ -57,6 +57,7 @@ public class AssetDetailsDTO
     public List<TransactionDTO> Transactions { get; set; } = new();
     public List<CreditDTO> Credits { get; set; } = new();
     public List<DisposalRecordDTO> DisposalRecords { get; set; } = new();
+    public List<CorporateActionDTO> CorporateActions { get; set; } = new();
 
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public CostBasisMethod CostBasisMethod { get; set; } = CostBasisMethod.AverageCost;

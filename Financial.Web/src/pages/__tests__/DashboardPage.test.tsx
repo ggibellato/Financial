@@ -93,6 +93,7 @@ const REPORT: DataQualityReportDto = {
   historicHoldingsStillOpen: [],
   unclassifiedHoldings: [],
   unclassifiedAndUnpricedOpenHoldings: [],
+  corporateActionsAwaitingTaxReview: [],
 }
 
 function makeTree(brokerName: string, portfolioName: string, assetName: string): TreeNodeDto {

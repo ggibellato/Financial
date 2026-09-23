@@ -99,6 +99,11 @@ public sealed class NavigationService : INavigationService
                 .Select(NavigationMapper.MapDisposalRecord)
                 .ToList();
 
+            var corporateActions = asset.CorporateActions
+                .OrderBy(ca => ca.EffectiveDate)
+                .Select(ca => NavigationMapper.MapCorporateAction(ca, asset))
+                .ToList();
+
             var taxJurisdictions = asset.TaxClassifications
                 .Where(c => c.Status == TaxClassificationStatus.Active)
                 .Select(c => c.Jurisdiction)
@@ -148,6 +153,7 @@ public sealed class NavigationService : INavigationService
                 Credits = credits,
                 PriceSnapshots = priceSnapshots,
                 DisposalRecords = disposalRecords,
+                CorporateActions = corporateActions,
                 CostBasisMethod = costBasisMethod,
                 CashFlowsWithCredits = AssetCashFlowBuilder.BuildWithCredits(asset),
                 CashFlowsWithoutCredits = AssetCashFlowBuilder.BuildWithoutCredits(asset),

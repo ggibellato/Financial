@@ -405,6 +405,12 @@
           "class": {
             "$ref": "#/components/schemas/GlobalAssetClass"
           },
+          "corporateActions": {
+            "items": {
+              "$ref": "#/components/schemas/CorporateActionDTO"
+            },
+            "type": "array"
+          },
           "costBasisMethod": {
             "$ref": "#/components/schemas/CostBasisMethod"
           },
@@ -1009,7 +1015,8 @@
         "enum": [
           "RequiresReview",
           "Incomplete",
-          "Final"
+          "Final",
+          null
         ]
       },
       "CalendarConnectionStatusDTO": {
@@ -1328,6 +1335,140 @@
         ],
         "type": "object"
       },
+      "CorporateActionAwaitingTaxReviewFinding": {
+        "properties": {
+          "assetName": {
+            "type": "string"
+          },
+          "brokerName": {
+            "type": "string"
+          },
+          "corporateActionId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "effectiveDate": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "portfolioName": {
+            "type": "string"
+          },
+          "taxYear": {
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/CorporateActionType"
+          }
+        },
+        "required": [
+          "brokerName",
+          "portfolioName",
+          "assetName",
+          "corporateActionId",
+          "type",
+          "effectiveDate",
+          "taxYear"
+        ],
+        "type": "object"
+      },
+      "CorporateActionDTO": {
+        "properties": {
+          "allocationPercentage": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "calculationStatus": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CalculationStatus"
+              }
+            ]
+          },
+          "carriedCostBasis": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "cashInLieu": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "convertedQuantity": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "correlationId": {
+            "format": "uuid",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "effectiveDate": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "exchangeRatio": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "linkedAssetName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "ratioFactor": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "role": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CorporateActionRole"
+              }
+            ]
+          },
+          "type": {
+            "$ref": "#/components/schemas/CorporateActionType"
+          }
+        },
+        "type": "object"
+      },
       "CorporateActionDeleteDTO": {
         "properties": {
           "assetName": {
@@ -1510,6 +1651,15 @@
           "sourceAssetName"
         ],
         "type": "object"
+      },
+      "CorporateActionRole": {
+        "enum": [
+          "Source",
+          "Target",
+          "Parent",
+          "New",
+          null
+        ]
       },
       "CorporateActionSpinOffCreateDTO": {
         "properties": {
@@ -1734,6 +1884,13 @@
           "assetName"
         ],
         "type": "object"
+      },
+      "CorporateActionType": {
+        "enum": [
+          "Split",
+          "Merger",
+          "SpinOff"
+        ]
       },
       "CostBasisMethod": {
         "enum": [
@@ -2121,6 +2278,12 @@
       },
       "DataQualityReportDTO": {
         "properties": {
+          "corporateActionsAwaitingTaxReview": {
+            "items": {
+              "$ref": "#/components/schemas/CorporateActionAwaitingTaxReviewFinding"
+            },
+            "type": "array"
+          },
           "historicHoldingsStillOpen": {
             "items": {
               "$ref": "#/components/schemas/HistoricHoldingStillOpenFinding"

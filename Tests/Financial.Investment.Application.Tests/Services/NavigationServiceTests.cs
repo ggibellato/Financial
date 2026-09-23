@@ -448,6 +448,44 @@ public class NavigationServiceTests
     }
 
     [Fact]
+    public void GetAssetDetails_WithCorporateActions_ReturnsThemOrderedByEffectiveDateAscending()
+    {
+        var broker = Broker.Create("Broker", "BRL");
+        var portfolio = broker.AddPortfolio("Portfolio");
+        var asset = Asset.Create("ASSET1", "ISIN", "BVMF", "ASSET1", CountryCode.BR, "FII", GlobalAssetClass.Equity);
+        var investments = Investments.Create();
+        asset.AddTransaction(Transaction.Create(new DateTime(2026, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        var merger = CorporateAction.CreateMergerSource(
+            new DateTime(2026, 4, 1), 2.0m, null, null, Guid.NewGuid(), "TARGET", 20m, 1000m);
+        var split = CorporateAction.CreateSplit(new DateTime(2026, 2, 1), 2.0m);
+        asset.RecordCorporateAction(split, CostBasisMethod.AverageCost, investments);
+        asset.RecordCorporateAction(merger, CostBasisMethod.AverageCost, investments, Currency.BRL);
+        portfolio.AddAsset(asset);
+        _repository.Broker = broker;
+
+        var details = CreateService().GetAssetDetails("Broker", "Portfolio", "ASSET1");
+
+        details.Should().NotBeNull();
+        details!.CorporateActions.Should().HaveCount(2);
+        details.CorporateActions[0].Id.Should().Be(split.Id);
+        details.CorporateActions[1].Id.Should().Be(merger.Id);
+    }
+
+    [Fact]
+    public void GetAssetDetails_WithNoCorporateActions_ReturnsEmptyCorporateActions()
+    {
+        var broker = Broker.Create("Broker", "BRL");
+        var portfolio = broker.AddPortfolio("Portfolio");
+        portfolio.AddAsset(BuildAssetWithQuantity("ASSET1", 0m));
+        _repository.Broker = broker;
+
+        var details = CreateService().GetAssetDetails("Broker", "Portfolio", "ASSET1");
+
+        details.Should().NotBeNull();
+        details!.CorporateActions.Should().BeEmpty();
+    }
+
+    [Fact]
     public void GetAssetDetails_WithNoDisposingTransactions_ReturnsEmptyDisposalRecords()
     {
         var broker = Broker.Create("Broker", "BRL");

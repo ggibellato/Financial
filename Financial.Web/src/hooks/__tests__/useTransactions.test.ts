@@ -131,6 +131,7 @@ const ASSET_DETAILS: AssetDetailsDto = {
   cashFlowsWithCredits: [],
   cashFlowsWithoutCredits: [],
   disposalRecords: [],
+  corporateActions: [],
   costBasisMethod: 'AverageCost',
   taxJurisdictions: [],
 }

@@ -88,6 +88,18 @@ public sealed class DataQualityReportService : IDataQualityReportService
                 .Where(f => f.Scope == InvestmentScope.Active && unpricedKeys.Contains((f.BrokerName, f.PortfolioName, f.AssetName)))
                 .ToList();
 
+            var corporateActionsAwaitingTaxReview = allHoldings
+                .SelectMany(h => h.Asset.CorporateActions
+                    .Where(ca => ca.IsReceivingRole)
+                    .Select(ca => (h.BrokerName, h.PortfolioName, h.Asset.Name,
+                        CorporateAction: ca, Classification: h.Asset.FindTaxClassificationBySource(SourceType.CorporateAction, ca.Id)))
+                    .Where(x => x.Classification is not null && x.Classification.CalculationStatus == CalculationStatus.RequiresReview)
+                    .Select(x => new CorporateActionAwaitingTaxReviewFinding(
+                        x.BrokerName, x.PortfolioName, x.Name, x.CorporateAction.Id, x.CorporateAction.Type,
+                        x.CorporateAction.EffectiveDate, x.Classification!.TaxYear)))
+                .OrderBy(f => f.BrokerName).ThenBy(f => f.PortfolioName).ThenBy(f => f.AssetName)
+                .ToList();
+
             var historicHoldingsStillOpen = historicHoldings
                 .Where(h => h.Asset.Quantity != 0)
                 .Select(h => new HistoricHoldingStillOpenFinding(
@@ -105,6 +117,7 @@ public sealed class DataQualityReportService : IDataQualityReportService
                 UnclassifiedHoldings = unclassifiedHoldings,
                 HistoricHoldingsStillOpen = historicHoldingsStillOpen,
                 UnclassifiedAndUnpricedOpenHoldings = unclassifiedAndUnpricedOpenHoldings,
+                CorporateActionsAwaitingTaxReview = corporateActionsAwaitingTaxReview,
             };
 
             span.MarkSuccess();

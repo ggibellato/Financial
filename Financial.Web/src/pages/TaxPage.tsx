@@ -31,9 +31,9 @@ const STATUS_PRESENTATION: Record<string, { color: BadgeProps['color']; icon: Re
   RequiresReview: { color: 'danger', icon: <AlertFilled />, label: 'Requires review' },
 }
 
-function StatusBadge({ status }: { status: string }) {
-  const presentation = STATUS_PRESENTATION[status]
-  if (!presentation) return <Badge appearance="filled">{status}</Badge>
+function StatusBadge({ status }: { status: string | null }) {
+  const presentation = status ? STATUS_PRESENTATION[status] : undefined
+  if (!presentation) return <Badge appearance="filled">{status ?? 'Unknown'}</Badge>
   return (
     <Badge appearance="filled" color={presentation.color} icon={presentation.icon}>
       {presentation.label}

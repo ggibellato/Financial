@@ -394,6 +394,87 @@ public class DataQualityReportServiceTests
     }
 
     [Fact]
+    public void GenerateReport_MergerTargetWithNoMatchingTaxRule_IsReportedAsAwaitingTaxReview()
+    {
+        var asset = Asset.Create("XCORP", "ISIN1", "BVMF", "XCORP");
+        SeedActive(asset);
+        var target = CorporateAction.CreateMergerTarget(
+            new DateTime(2026, 4, 1), null, Guid.NewGuid(), "BCIA11", 150m, 2000m);
+        asset.RecordCorporateAction(target, CostBasisMethod.AverageCost, _repository.Investments, Currency.BRL);
+
+        var report = CreateService().GenerateReport();
+
+        var finding = report.CorporateActionsAwaitingTaxReview.Should().ContainSingle().Subject;
+        using var _ = new AssertionScope();
+        finding.AssetName.Should().Be("XCORP");
+        finding.BrokerName.Should().Be("XPI");
+        finding.PortfolioName.Should().Be("Default");
+        finding.CorporateActionId.Should().Be(target.Id);
+        finding.Type.Should().Be(CorporateAction.CorporateActionType.Merger);
+        finding.EffectiveDate.Should().Be(new DateTime(2026, 4, 1));
+        finding.TaxYear.Should().Be("2026");
+    }
+
+    [Fact]
+    public void GenerateReport_SpinOffNewWithMatchingTaxRule_NotReported()
+    {
+        var asset = Asset.Create("SPINCO", "ISIN1", "BVMF", "SPINCO");
+        SeedActive(asset);
+        _repository.Investments!.CreateTaxRule(
+            Jurisdiction.BR, EventCategory.CorporateAction, "BR corporate action rule", "desc", new DateOnly(2026, 1, 1), null);
+        var newAssetRecord = CorporateAction.CreateSpinOffNew(
+            new DateTime(2026, 4, 1), null, Guid.NewGuid(), "PARENT", 5m, 120m);
+        asset.RecordCorporateAction(newAssetRecord, CostBasisMethod.AverageCost, _repository.Investments, Currency.BRL);
+
+        var report = CreateService().GenerateReport();
+
+        report.CorporateActionsAwaitingTaxReview.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void GenerateReport_Split_NeverReportedAsAwaitingTaxReview()
+    {
+        var asset = Asset.Create("PETR4", "ISIN1", "BVMF", "PETR4");
+        asset.AddTransaction(Transaction.Create(new DateTime(2026, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        SeedActive(asset);
+        var split = CorporateAction.CreateSplit(new DateTime(2026, 2, 1), 2.0m);
+        asset.RecordCorporateAction(split, CostBasisMethod.AverageCost, _repository.Investments);
+
+        var report = CreateService().GenerateReport();
+
+        report.CorporateActionsAwaitingTaxReview.Should().BeEmpty("a split never has a linked TaxClassification");
+    }
+
+    [Fact]
+    public void GenerateReport_CorporateActionRevisedAfterMatchingTaxRuleAdded_NoLongerReported()
+    {
+        var asset = Asset.Create("XCORP", "ISIN1", "BVMF", "XCORP");
+        SeedActive(asset);
+        var correlationId = Guid.NewGuid();
+        var target = CorporateAction.CreateMergerTarget(
+            new DateTime(2026, 4, 1), null, correlationId, "BCIA11", 150m, 2000m);
+        asset.RecordCorporateAction(target, CostBasisMethod.AverageCost, _repository.Investments, Currency.BRL);
+
+        var beforeRuleAndRevision = CreateService().GenerateReport();
+
+        _repository.Investments!.CreateTaxRule(
+            Jurisdiction.BR, EventCategory.CorporateAction, "BR corporate action rule", "desc", new DateOnly(2026, 1, 1), null);
+        var afterRuleAddedOnly = CreateService().GenerateReport();
+
+        var revisedTarget = CorporateAction.CreateMergerTargetWithId(
+            target.Id, new DateTime(2026, 4, 1), null, correlationId, "BCIA11", 150m, 2000m);
+        asset.ReviseCorporateAction(revisedTarget, CostBasisMethod.AverageCost, _repository.Investments, Currency.BRL);
+        var afterRevision = CreateService().GenerateReport();
+
+        using var _ = new AssertionScope();
+        beforeRuleAndRevision.CorporateActionsAwaitingTaxReview.Should().ContainSingle();
+        afterRuleAddedOnly.CorporateActionsAwaitingTaxReview.Should().ContainSingle(
+            "adding a TaxRule alone never retroactively recomputes an already-created TaxClassification's status");
+        afterRevision.CorporateActionsAwaitingTaxReview.Should().BeEmpty(
+            "revising the corporate action re-runs the calculator against the now-existing TaxRule");
+    }
+
+    [Fact]
     public void GenerateReport_ExistingFiveFields_UnaffectedByNewDependency()
     {
         var oversold = Asset.Create("OVERSOLD", "ISIN1", "BVMF", "OVS");

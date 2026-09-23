@@ -24,6 +24,7 @@ const REPORT: DataQualityReportDto = {
   historicHoldingsStillOpen: [],
   unclassifiedHoldings: [],
   unclassifiedAndUnpricedOpenHoldings: [],
+  corporateActionsAwaitingTaxReview: [],
 }
 
 describe('useDataQualityReport', () => {

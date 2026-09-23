@@ -166,6 +166,29 @@ internal static class NavigationMapper
         };
     }
 
+    internal static CorporateActionDTO MapCorporateAction(CorporateAction action, Asset asset)
+    {
+        var classification = asset.FindTaxClassificationBySource(SourceType.CorporateAction, action.Id);
+
+        return new CorporateActionDTO
+        {
+            Id = action.Id,
+            Type = action.Type,
+            EffectiveDate = action.EffectiveDate,
+            RatioFactor = action.RatioFactor,
+            Note = action.Note,
+            Role = action.Role,
+            CorrelationId = action.CorrelationId,
+            LinkedAssetName = action.LinkedAssetName,
+            ExchangeRatio = action.ExchangeRatio,
+            CashInLieu = action.CashInLieu,
+            ConvertedQuantity = action.ConvertedQuantity,
+            CarriedCostBasis = action.CarriedCostBasis,
+            AllocationPercentage = action.AllocationPercentage,
+            CalculationStatus = classification?.CalculationStatus
+        };
+    }
+
     private static DisposalLotConsumptionDTO MapDisposalLotConsumption(DisposalLotConsumption lot)
     {
         return new DisposalLotConsumptionDTO
