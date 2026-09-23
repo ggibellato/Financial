@@ -3,6 +3,7 @@ using System.Linq;
 using Financial.Investment.Domain.Entities;
 using Financial.Investment.Domain.Exceptions;
 using Financial.Investment.Domain.Rules;
+using Financial.Shared.Abstractions.Currencies;
 using FluentAssertions;
 
 namespace Financial.Investment.Domain.Tests;
@@ -200,5 +201,167 @@ public class AssetCorporateActionTests
         asset.RecordCorporateAction(CorporateAction.CreateSplit(new DateTime(2021, 6, 1), 2.0m));
 
         asset.DisposalRecords.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void PositionAsOf_BeforeAnySameDateTransaction_ExcludesTheSameDateBuy()
+    {
+        var asset = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");
+        var sameDate = new DateTime(2021, 6, 1);
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        asset.AddTransaction(Transaction.Create(sameDate, Transaction.TransactionType.Buy, 5m, 60m, 0m));
+
+        var (quantity, averagePrice) = asset.PositionAsOf(sameDate);
+
+        quantity.Should().Be(10m, "the same-date buy hasn't been applied yet");
+        averagePrice.Should().Be(100m);
+    }
+
+    [Fact]
+    public void PositionAsOf_AfterAnExistingSplit_ReflectsThePostSplitPosition()
+    {
+        var asset = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        asset.RecordCorporateAction(CorporateAction.CreateSplit(new DateTime(2021, 6, 1), 2.0m));
+
+        var (quantity, averagePrice) = asset.PositionAsOf(new DateTime(2021, 12, 1));
+
+        quantity.Should().Be(20m);
+        averagePrice.Should().Be(50m);
+    }
+
+    [Fact]
+    public void RecordCorporateAction_MergerSource_ClosesPositionAndClearsOpenLots()
+    {
+        var source = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");
+        source.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+
+        var mergerSource = CorporateAction.CreateMergerSource(
+            new DateTime(2021, 6, 1), 0.5m, null, null, Guid.NewGuid(), "Asset B", 10m, 1000m);
+        source.RecordCorporateAction(mergerSource);
+
+        source.Quantity.Should().Be(0m);
+        source.AveragePrice.Should().Be(0m);
+        OpenLotTracker.GetOpenLots(source.Transactions, source.CorporateActions).Should().BeEmpty();
+    }
+
+    [Fact]
+    public void RecordCorporateAction_MergerSourceZeroQuantityHolding_ThrowsAndLeavesNoStateChange()
+    {
+        var source = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");
+
+        Action act = () => source.RecordCorporateAction(CorporateAction.CreateMergerSource(
+            new DateTime(2021, 6, 1), 0.5m, null, null, Guid.NewGuid(), "Asset B", 10m, 1000m));
+
+        act.Should().Throw<InvestmentRuleViolationException>();
+        source.CorporateActions.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void RecordCorporateAction_MergerTargetZeroQuantityHolding_IsAllowed()
+    {
+        var target = Asset.Create("Asset B", "ISIN-B", "NASDAQ", "BBB");
+
+        target.RecordCorporateAction(CorporateAction.CreateMergerTarget(
+            new DateTime(2021, 6, 1), null, Guid.NewGuid(), "Asset A", 20m, 1000m));
+
+        target.Quantity.Should().Be(20m);
+        target.AveragePrice.Should().Be(50m);
+    }
+
+    [Fact]
+    public void RecordCorporateAction_LinkedSourceAndTarget_CarriesQuantityAndCostBasisAcrossAssets()
+    {
+        var source = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");
+        source.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        var target = Asset.Create("Asset B", "ISIN-B", "NASDAQ", "BBB");
+        target.AddTransaction(Transaction.Create(new DateTime(2020, 1, 1), Transaction.TransactionType.Buy, 5m, 20m, 0m));
+
+        var correlationId = Guid.NewGuid();
+        var effectiveDate = new DateTime(2021, 6, 1);
+        var (sourceQuantity, sourceAveragePrice) = source.PositionAsOf(effectiveDate);
+        var convertedQuantity = sourceQuantity * 2m;
+        var carriedCostBasis = sourceQuantity * sourceAveragePrice;
+
+        source.RecordCorporateAction(CorporateAction.CreateMergerSource(
+            effectiveDate, 2.0m, null, null, correlationId, "Asset B", convertedQuantity, carriedCostBasis));
+        target.RecordCorporateAction(CorporateAction.CreateMergerTarget(
+            effectiveDate, null, correlationId, "Asset A", convertedQuantity, carriedCostBasis));
+
+        source.Quantity.Should().Be(0m);
+        target.Quantity.Should().Be(25m, "5 existing units plus 20 received units");
+        target.AveragePrice.Should().Be((5m * 20m + 1000m) / 25m);
+    }
+
+    [Fact]
+    public void RecordCorporateAction_MergerTargetWithInvestments_CreatesTaxClassificationRequiringReview()
+    {
+        var target = Asset.Create("Asset B", "ISIN-B", "NASDAQ", "BBB");
+        var investments = Investments.Create();
+        var mergerTarget = CorporateAction.CreateMergerTarget(
+            new DateTime(2021, 6, 1), null, Guid.NewGuid(), "Asset A", 20m, 1000m);
+
+        target.RecordCorporateAction(mergerTarget, investments: investments, brokerCurrency: Currency.GBP);
+
+        var classification = target.TaxClassifications.Should().ContainSingle().Subject;
+        classification.SourceType.Should().Be(SourceType.CorporateAction);
+        classification.SourceId.Should().Be(mergerTarget.Id);
+        classification.EventCategory.Should().Be(EventCategory.CorporateAction);
+        classification.CalculationStatus.Should().Be(CalculationStatus.RequiresReview);
+    }
+
+    [Fact]
+    public void RecordCorporateAction_MergerSourceWithInvestments_CreatesNoTaxClassification()
+    {
+        var source = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");
+        source.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        var investments = Investments.Create();
+
+        source.RecordCorporateAction(
+            CorporateAction.CreateMergerSource(new DateTime(2021, 6, 1), 0.5m, null, null, Guid.NewGuid(), "Asset B", 10m, 1000m),
+            investments: investments,
+            brokerCurrency: Currency.GBP);
+
+        source.TaxClassifications.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void RetractCorporateAction_MergerTargetWithTaxClassification_SupersedesTheLinkedClassification()
+    {
+        var target = Asset.Create("Asset B", "ISIN-B", "NASDAQ", "BBB");
+        var investments = Investments.Create();
+        var mergerTarget = CorporateAction.CreateMergerTarget(
+            new DateTime(2021, 6, 1), null, Guid.NewGuid(), "Asset A", 20m, 1000m);
+        target.RecordCorporateAction(mergerTarget, investments: investments, brokerCurrency: Currency.GBP);
+
+        target.RetractCorporateAction(mergerTarget.Id, investments: investments);
+
+        var classification = target.TaxClassifications.Should().ContainSingle().Subject;
+        classification.Status.Should().Be(TaxClassificationStatus.Superseded);
+        target.Quantity.Should().Be(0m);
+    }
+
+    [Fact]
+    public void ReviseCorporateAction_MergerTarget_SupersedesOldClassificationAndAppendsANewOne()
+    {
+        var target = Asset.Create("Asset B", "ISIN-B", "NASDAQ", "BBB");
+        var investments = Investments.Create();
+        var correlationId = Guid.NewGuid();
+        var mergerTarget = CorporateAction.CreateMergerTarget(
+            new DateTime(2021, 6, 1), null, correlationId, "Asset A", 20m, 1000m);
+        target.RecordCorporateAction(mergerTarget, investments: investments, brokerCurrency: Currency.GBP);
+        var originalClassificationId = target.TaxClassifications.Single().Id;
+
+        var revised = CorporateAction.CreateMergerTargetWithId(
+            mergerTarget.Id, mergerTarget.EffectiveDate, null, correlationId, "Asset A", 25m, 1200m);
+        target.ReviseCorporateAction(revised, investments: investments, brokerCurrency: Currency.GBP);
+
+        target.TaxClassifications.Should().HaveCount(2);
+        var original = target.TaxClassifications.Single(c => c.Id == originalClassificationId);
+        original.Status.Should().Be(TaxClassificationStatus.Superseded);
+        var current = target.TaxClassifications.Single(c => c.Id != originalClassificationId);
+        current.Status.Should().Be(TaxClassificationStatus.Active);
+        current.CostBasis.Should().Be(1200m);
+        target.Quantity.Should().Be(25m);
     }
 }

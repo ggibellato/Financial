@@ -30,7 +30,7 @@ public static class OpenLotTracker
             switch (step)
             {
                 case CorporateActionReplayStep(var corporateAction):
-                    Rescale(lots, CorporateActionReplay.RequireRatioFactor(corporateAction));
+                    ApplyCorporateAction(lots, corporateAction);
                     break;
 
                 case TransactionReplayStep(var transaction):
@@ -60,6 +60,33 @@ public static class OpenLotTracker
             .Where(lot => lot.RemainingQuantity > 0)
             .Select(lot => new OpenLot(lot.SourceTransactionId, lot.Date, lot.RemainingQuantity, lot.UnitCost))
             .ToList();
+    }
+
+    private static void ApplyCorporateAction(List<MutableLot> lots, CorporateAction corporateAction)
+    {
+        switch (corporateAction)
+        {
+            case { Type: CorporateAction.CorporateActionType.Split }:
+                Rescale(lots, CorporateActionReplay.RequireRatioFactor(corporateAction));
+                break;
+
+            case { Type: CorporateAction.CorporateActionType.Merger, Role: CorporateAction.MergerRole.Source }:
+                lots.Clear();
+                break;
+
+            case { Type: CorporateAction.CorporateActionType.Merger, Role: CorporateAction.MergerRole.Target }:
+                lots.Add(new MutableLot
+                {
+                    SourceTransactionId = corporateAction.Id,
+                    Date = corporateAction.EffectiveDate,
+                    RemainingQuantity = corporateAction.ConvertedQuantity!.Value,
+                    UnitCost = corporateAction.CarriedCostBasis!.Value / corporateAction.ConvertedQuantity!.Value
+                });
+                break;
+
+            default:
+                throw new ArgumentOutOfRangeException(nameof(corporateAction), corporateAction.Type, "Unsupported corporate action type/role combination.");
+        }
     }
 
     private static void Rescale(List<MutableLot> lots, decimal factor)

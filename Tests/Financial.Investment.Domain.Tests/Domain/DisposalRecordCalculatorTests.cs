@@ -197,6 +197,23 @@ public class DisposalRecordCalculatorTests
     }
 
     [Fact]
+    public void Calculate_AverageCost_MergerTargetPrecedesDisposal_TotalsAgainstBlendedCost()
+    {
+        var buy = Transaction.Create(new DateTime(2026, 1, 1), Transaction.TransactionType.Buy, 10m, 50m, 0m);
+        var mergerTarget = CorporateAction.CreateMergerTarget(
+            new DateTime(2026, 1, 15), null, Guid.NewGuid(), "TWTR", 40m, 1000m);
+        var sell = Transaction.Create(new DateTime(2026, 2, 1), Transaction.TransactionType.Sell, 20m, 40m, 0m);
+
+        var record = DisposalRecordCalculator.Calculate(
+            sell, new[] { buy }, CostBasisMethod.AverageCost, "GBP", precedingCorporateActions: new[] { mergerTarget });
+
+        var expectedAveragePrice = (10m * 50m + 1000m) / 50m;
+        record.LotsConsumed.Should().ContainSingle();
+        record.LotsConsumed[0].UnitCost.Should().Be(expectedAveragePrice);
+        record.CostBasis.Should().Be(20m * expectedAveragePrice);
+    }
+
+    [Fact]
     public void Calculate_NoPrecedingCorporateActions_BehavesExactlyAsBeforeTheFeature()
     {
         var buy = Transaction.Create(new DateTime(2026, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m);

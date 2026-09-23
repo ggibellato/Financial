@@ -162,6 +162,39 @@ public class SaleCoverageRuleTests
     }
 
     [Fact]
+    public void FindFirstUncoveredSale_MergerSourceSameDateAsSale_RejectsTheSaleAsUncovered()
+    {
+        var sale = Transaction.Create(new DateTime(2024, 2, 1), Transaction.TransactionType.Sell, 5m, 60m, 0m);
+        var transactions = new[]
+        {
+            Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m),
+            sale,
+        };
+        var mergerSource = CorporateAction.CreateMergerSource(
+            new DateTime(2024, 2, 1), 0.5m, null, null, Guid.NewGuid(), "XCORP", 10m, 1000m);
+
+        var violation = SaleCoverageRule.FindFirstUncoveredSale(transactions, new[] { mergerSource });
+
+        violation.Should().NotBeNull();
+        violation!.OffendingSale.Should().BeSameAs(sale);
+        violation.QuantityHeld.Should().Be(0m);
+        violation.Shortfall.Should().Be(5m);
+    }
+
+    [Fact]
+    public void FindFirstUncoveredSale_MergerTargetBeforeSale_CoversASaleAgainstTheReceivedQuantity()
+    {
+        var transactions = new[]
+        {
+            Transaction.Create(new DateTime(2024, 3, 1), Transaction.TransactionType.Sell, 30m, 60m, 0m),
+        };
+        var mergerTarget = CorporateAction.CreateMergerTarget(
+            new DateTime(2024, 2, 1), null, Guid.NewGuid(), "TWTR", 40m, 1000m);
+
+        SaleCoverageRule.FindFirstUncoveredSale(transactions, new[] { mergerTarget }).Should().BeNull();
+    }
+
+    [Fact]
     public void FindFirstUncoveredSale_NoCorporateActions_SameAsSingleArgumentOverload()
     {
         var transactions = new[]
