@@ -127,9 +127,7 @@ public sealed class CorporateActionService : ICorporateActionService
                 var investments = _repository.GetInvestments();
 
                 // Validated before any mutation: a target-name collision or a missing existing target
-                // must leave the document untouched, and the source's own zero-quantity guard (inside
-                // RecordCorporateAction below) must not fire after a target asset has already been
-                // created - Asset.Create/Portfolio.RegisterAsset have no compensating "un-register".
+                // must leave the document untouched.
                 EnsureTargetIsAvailable(portfolio, request);
 
                 var correlationId = Guid.NewGuid();
@@ -144,10 +142,18 @@ public sealed class CorporateActionService : ICorporateActionService
 
                 try
                 {
-                    targetAsset = ResolveOrCreateTargetAsset(portfolio, request);
+                    // Resolves (or builds, unregistered) the target so nothing needs a compensating
+                    // "un-register" if RecordCorporateAction below throws - Portfolio.RegisterAsset only
+                    // runs once the target's own record has been recorded successfully.
+                    targetAsset = ResolveOrCreateTargetAsset(portfolio, request, out var isNewTarget);
                     var targetRecord = CorporateAction.CreateMergerTarget(
                         request.EffectiveDate, request.Note, correlationId, sourceAsset.Name, convertedQuantity, carriedCostBasis);
                     targetAsset.RecordCorporateAction(targetRecord, method, investments, brokerCurrency);
+
+                    if (isNewTarget)
+                    {
+                        portfolio.RegisterAsset(targetAsset);
+                    }
                 }
                 catch
                 {
@@ -370,10 +376,11 @@ public sealed class CorporateActionService : ICorporateActionService
         }
     }
 
-    private static Asset ResolveOrCreateTargetAsset(Portfolio portfolio, CorporateActionMergerCreateDTO request)
+    private static Asset ResolveOrCreateTargetAsset(Portfolio portfolio, CorporateActionMergerCreateDTO request, out bool isNewTarget)
     {
         if (!request.CreateTargetAssetInline)
         {
+            isNewTarget = false;
             return portfolio.FindAsset(request.TargetAssetName)
                 ?? throw new KeyNotFoundException($"Asset \"{request.TargetAssetName}\" was not found in portfolio \"{portfolio.Name}\".");
         }
@@ -381,7 +388,8 @@ public sealed class CorporateActionService : ICorporateActionService
         var assetClass = request.TargetClass
             ?? GlobalAssetClassMapping.Resolve(request.TargetCountry ?? CountryCode.Unknown, request.TargetLocalTypeCode ?? string.Empty);
 
-        var created = Asset.Create(
+        isNewTarget = true;
+        return Asset.Create(
             request.TargetAssetName,
             request.TargetISIN ?? string.Empty,
             request.TargetExchange ?? string.Empty,
@@ -389,9 +397,6 @@ public sealed class CorporateActionService : ICorporateActionService
             request.TargetCountry ?? CountryCode.Unknown,
             request.TargetLocalTypeCode ?? string.Empty,
             assetClass);
-
-        portfolio.RegisterAsset(created);
-        return created;
     }
 
     private static Currency ParseBrokerCurrency(Broker broker)
