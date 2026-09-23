@@ -46,6 +46,19 @@ type CorporateActionsAction =
   | { type: 'DELETE_SUCCESS'; payload: AssetDetailsDto }
   | { type: 'DELETE_ERROR'; payload: string }
 
+// The API only stores the converted decimal factor, not the N/M pair the user typed. A factor
+// below 1 (a reverse split) reopens as "1 for 1/factor" rather than "factor for 1" so a 1-for-10
+// reverse split shows the whole-number denominator the user actually typed, not "0.1 for 1".
+function ratioFactorToFraction(ratioFactor: number | null): [string, string] {
+  if (ratioFactor === null) {
+    return ['', '1']
+  }
+  if (ratioFactor >= 1) {
+    return [String(ratioFactor), '1']
+  }
+  return ['1', String(Math.round((1 / ratioFactor) * 10000) / 10000)]
+}
+
 const BLANK_FORM = {
   isFormVisible: false,
   editingId: null,
@@ -96,16 +109,15 @@ function reducer(state: CorporateActionsState, action: CorporateActionsAction): 
       }
     case 'SHOW_EDIT_FORM': {
       const a = action.payload
+      const [formRatioNumerator, formRatioDenominator] = ratioFactorToFraction(a.ratioFactor)
       return {
         ...state,
         isFormVisible: true,
         editingId: a.id,
         formEffectiveDate: toInputDate(a.effectiveDate),
         formType: a.type,
-        // The API only stores the converted decimal factor, not the N/M pair the user typed -
-        // factor/1 reproduces the same factor for editing without inventing a fake denominator.
-        formRatioNumerator: a.ratioFactor !== null ? String(a.ratioFactor) : '',
-        formRatioDenominator: '1',
+        formRatioNumerator,
+        formRatioDenominator,
         formNote: a.note ?? '',
         saveError: null,
         saveErrorFields: {},
@@ -119,7 +131,7 @@ function reducer(state: CorporateActionsState, action: CorporateActionsAction): 
     case 'SAVE_START':
       return { ...state, isSaving: true, saveError: null, saveErrorFields: {} }
     case 'SAVE_SUCCESS':
-      return { ...state, ...BLANK_FORM, asset: action.payload, deleteError: state.deleteError }
+      return { ...state, ...BLANK_FORM, asset: action.payload }
     case 'SAVE_ERROR':
       return { ...state, isSaving: false, saveError: action.payload.message, saveErrorFields: action.payload.fields }
     case 'DELETE_SUCCESS':

@@ -168,6 +168,18 @@ describe('useCorporateActions', () => {
     expect(result.current.formNote).toBe('Announced 2-for-1 split')
   })
 
+  it('reconstructs a reverse split as a whole-number fraction when editing', async () => {
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useCorporateActions(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showEditForm({ ...SPLIT_RECORD, ratioFactor: 0.1 }))
+
+    expect(result.current.formRatioNumerator).toBe('1')
+    expect(result.current.formRatioDenominator).toBe('10')
+  })
+
   it('rejects an invalid ratio without calling the API', async () => {
     const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useCorporateActions(), { wrapper })
