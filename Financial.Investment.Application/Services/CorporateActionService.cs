@@ -314,7 +314,7 @@ public sealed class CorporateActionService : ICorporateActionService
 
                 var correlationId = Guid.NewGuid();
                 var (quantity, averagePrice) = parentAsset.PositionAsOf(request.EffectiveDate);
-                var carriedCostBasis = request.AllocationPercentage / 100m * (quantity * averagePrice);
+                var carriedCostBasis = CalculateCarriedCostBasis(request.AllocationPercentage, quantity, averagePrice);
 
                 var parentRecord = CorporateAction.CreateSpinOffParent(
                     request.EffectiveDate, request.AllocationPercentage, request.Note,
@@ -416,7 +416,7 @@ public sealed class CorporateActionService : ICorporateActionService
                     compensations.Push(() => newAsset.RecordCorporateAction(previousNewRecord, method, investments, brokerCurrency));
 
                     var (quantity, averagePrice) = parentAsset.PositionAsOf(request.EffectiveDate);
-                    var carriedCostBasis = request.AllocationPercentage / 100m * (quantity * averagePrice);
+                    var carriedCostBasis = CalculateCarriedCostBasis(request.AllocationPercentage, quantity, averagePrice);
 
                     var newParentRecord = CorporateAction.CreateSpinOffParentWithId(
                         request.Id, request.EffectiveDate, request.AllocationPercentage, request.Note,
@@ -580,6 +580,9 @@ public sealed class CorporateActionService : ICorporateActionService
             localTypeCode ?? string.Empty,
             resolvedAssetClass);
     }
+
+    private static decimal CalculateCarriedCostBasis(decimal allocationPercentage, decimal quantity, decimal averagePrice) =>
+        allocationPercentage / 100m * (quantity * averagePrice);
 
     private static Currency ParseBrokerCurrency(Broker broker)
     {
