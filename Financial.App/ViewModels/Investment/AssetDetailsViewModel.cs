@@ -446,7 +446,8 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         InvestmentScope scope = InvestmentScope.Active,
         IAssetPriceLookupService? priceLookupService = null,
         IAssetPriceHistoryService? priceHistoryService = null,
-        ICorporateActionService? corporateActionService = null)
+        ICorporateActionService? corporateActionService = null,
+        IAssetAdminService? assetAdminService = null)
     {
         _creditService = creditService ?? throw new ArgumentNullException(nameof(creditService));
         _priceLookupService = priceLookupService;
@@ -494,7 +495,8 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
             () => PortfolioName,
             () => AssetName,
             details => LoadAssetDetails(details),
-            (message, caption, image) => MessageBox.Show(message, caption, MessageBoxButton.OK, image));
+            (message, caption, image) => MessageBox.Show(message, caption, MessageBoxButton.OK, image),
+            assetAdminService);
         _refreshTodayInfoCommand = new RelayCommand(RefreshTodayInfo, CanRefreshTodayInfo);
         _copyAssetNameCommand = new RelayCommand(CopyAssetName, CanCopyAssetName);
     }
@@ -575,7 +577,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         PriceHistory.Load(BuildCreditsAssetKey(details.BrokerName, details.PortfolioName, details.Name), details.PriceSnapshots, details.Transactions);
 
         Disposals.Load(BuildCreditsAssetKey(details.BrokerName, details.PortfolioName, details.Name), details.DisposalRecords);
-        CorporateActions.Load(BuildCreditsAssetKey(details.BrokerName, details.PortfolioName, details.Name), details.CorporateActions, details.Name);
+        CorporateActions.Load(BuildCreditsAssetKey(details.BrokerName, details.PortfolioName, details.Name), details.CorporateActions, details.Name, details.Quantity, details.CostOfUnitsHeld);
         CostBasisMethod = details.CostBasisMethod;
 
         UpdateCommandStates();

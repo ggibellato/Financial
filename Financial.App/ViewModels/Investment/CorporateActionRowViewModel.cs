@@ -1,13 +1,15 @@
 using System.Globalization;
+using System.Windows.Media;
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Domain.Entities;
+using Wpf.Ui.Controls;
 
 namespace Financial.Presentation.App.ViewModels.Investment;
 
 /// <summary>
 /// Display-ready wrapper around one <see cref="CorporateActionDTO"/> for the history grid -
 /// TypeLabel/ResultingChange port Financial.Web's CorporateActionsTab.tsx logic verbatim.
-/// Merger/SpinOff branches are placeholders ("—") until Stage 3/4 (P53-F06 PR3/PR4) add those types.
+/// SpinOff's Resulting Change branch is a placeholder ("—") until Stage 4 (P53-F06 PR4).
 /// </summary>
 public sealed class CorporateActionRowViewModel
 {
@@ -15,6 +17,18 @@ public sealed class CorporateActionRowViewModel
     {
         Record = record ?? throw new ArgumentNullException(nameof(record));
         AffectedAssetName = record.LinkedAssetName ?? affectedAssetName;
+
+        HasCalculationStatus = Record.CalculationStatus.HasValue;
+        if (HasCalculationStatus)
+        {
+            var (background, foreground, symbol, filled, label) = TaxWorkbookEntryRowViewModel.ResolveStatus(Record.CalculationStatus!.Value);
+            StatusBrush = background;
+            StatusForeground = foreground;
+            StatusSymbol = symbol;
+            StatusSymbolFilled = filled;
+            StatusLabel = label;
+            StatusAccessibleLabel = label;
+        }
     }
 
     public CorporateActionDTO Record { get; }
@@ -31,12 +45,29 @@ public sealed class CorporateActionRowViewModel
         _ => Record.Type.ToString()
     };
 
-    public string ResultingChange =>
-        Record.Type == CorporateAction.CorporateActionType.Split && Record.RatioFactor.HasValue
-            ? $"Quantity/average cost rescaled {FormatRatioFactor(Record.RatioFactor.Value)}"
-            : "—";
+    public string ResultingChange => Record.Type switch
+    {
+        CorporateAction.CorporateActionType.Split when Record.RatioFactor.HasValue =>
+            $"Quantity/average cost rescaled {FormatRatioFactor(Record.RatioFactor.Value)}",
+        CorporateAction.CorporateActionType.Merger when Record.Role == CorporateAction.CorporateActionRole.Source =>
+            "Position closed and converted",
+        CorporateAction.CorporateActionType.Merger when Record.Role == CorporateAction.CorporateActionRole.Target =>
+            Record.ConvertedQuantity.HasValue
+                ? $"+{Record.ConvertedQuantity.Value.ToString("N2", CultureInfo.InvariantCulture)} units received"
+                : "Units received from merger",
+        _ => "—"
+    };
 
-    public bool IsSplit => Record.Type == CorporateAction.CorporateActionType.Split;
+    public bool CanEditOrDelete => Record.Type is CorporateAction.CorporateActionType.Split or CorporateAction.CorporateActionType.Merger;
+
+    public bool HasCalculationStatus { get; }
+    public bool HasNoCalculationStatus => !HasCalculationStatus;
+    public SolidColorBrush? StatusBrush { get; }
+    public SolidColorBrush? StatusForeground { get; }
+    public SymbolRegular StatusSymbol { get; }
+    public bool StatusSymbolFilled { get; }
+    public string StatusLabel { get; } = string.Empty;
+    public string StatusAccessibleLabel { get; } = string.Empty;
 
     private static string FormatRatioFactor(decimal ratioFactor)
     {

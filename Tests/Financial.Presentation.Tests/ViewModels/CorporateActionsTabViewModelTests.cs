@@ -1,4 +1,5 @@
 using Financial.Investment.Application.DTOs;
+using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.Entities;
 using Financial.Investment.Domain.Exceptions;
@@ -16,7 +17,8 @@ public class CorporateActionsTabViewModelTests
 
     private static (CorporateActionsTabViewModel ViewModel, StubCorporateActionService Service, Spy Spy) Build(
         bool hasContext = true,
-        ICorporateActionService? service = null)
+        ICorporateActionService? service = null,
+        IAssetAdminService? assetAdminService = null)
     {
         var stubService = service as StubCorporateActionService ?? new StubCorporateActionService();
         var spy = new Spy();
@@ -27,7 +29,8 @@ public class CorporateActionsTabViewModelTests
             () => PortfolioName,
             () => AssetName,
             spy.ApplyDetails,
-            spy.ShowMessage);
+            spy.ShowMessage,
+            assetAdminService);
         return (viewModel, stubService, spy);
     }
 
@@ -38,6 +41,18 @@ public class CorporateActionsTabViewModelTests
         RatioNumerator: 3m,
         RatioDenominator: 1m,
         Note: "note");
+
+    private static CorporateActionFormData MergerFormData(Guid? id = null, string targetAssetName = "Company B", bool createTargetAssetInline = true) => new(
+        CorporateActionId: id ?? Guid.Empty,
+        EffectiveDate: new DateTime(2026, 1, 1),
+        Type: "Merger",
+        RatioNumerator: 0m,
+        RatioDenominator: 0m,
+        Note: "merger note",
+        TargetAssetName: targetAssetName,
+        CreateTargetAssetInline: createTargetAssetInline,
+        ExchangeRatio: 2m,
+        CashInLieuAmount: 5m);
 
     private static Task<CorporateActionFormData?> AsForm(CorporateActionFormData? data) => Task.FromResult(data);
 
@@ -346,19 +361,141 @@ public class CorporateActionsTabViewModelTests
         viewModel.DeleteCommand.CanExecute(row).Should().BeTrue();
     }
 
-    [Theory]
-    [InlineData(nameof(CorporateAction.CorporateActionType.Merger))]
-    [InlineData(nameof(CorporateAction.CorporateActionType.SpinOff))]
-    public void UpdateAndDeleteCommand_CanExecute_FalseForNonSplitRow(string typeName)
+    [Fact]
+    public void UpdateAndDeleteCommand_CanExecute_TrueForMergerRow()
     {
-        var type = Enum.Parse<CorporateAction.CorporateActionType>(typeName);
         var (viewModel, _, _) = Build();
         var row = new CorporateActionRowViewModel(
-            new CorporateActionDTO { Id = Guid.NewGuid(), Type = type, EffectiveDate = DateTime.Today },
+            new CorporateActionDTO { Id = Guid.NewGuid(), Type = CorporateAction.CorporateActionType.Merger, EffectiveDate = DateTime.Today },
+            AssetName);
+
+        viewModel.UpdateCommand.CanExecute(row).Should().BeTrue();
+        viewModel.DeleteCommand.CanExecute(row).Should().BeTrue();
+    }
+
+    [Fact]
+    public void UpdateAndDeleteCommand_CanExecute_FalseForSpinOffRow()
+    {
+        var (viewModel, _, _) = Build();
+        var row = new CorporateActionRowViewModel(
+            new CorporateActionDTO { Id = Guid.NewGuid(), Type = CorporateAction.CorporateActionType.SpinOff, EffectiveDate = DateTime.Today },
             AssetName);
 
         viewModel.UpdateCommand.CanExecute(row).Should().BeFalse();
         viewModel.DeleteCommand.CanExecute(row).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Add_Merger_Success_PassesCorrectRequestAndAppliesResolvedSourceAsset()
+    {
+        var sourceDetails = new AssetDetailsDTO { Name = AssetName, BrokerName = BrokerName, PortfolioName = PortfolioName, Ticker = "T" };
+        var targetDetails = new AssetDetailsDTO { Name = "Company B", BrokerName = BrokerName, PortfolioName = PortfolioName, Ticker = "T2" };
+        var service = new StubCorporateActionService { AddMergerResult = new CorporateActionMergerResultDTO { Source = sourceDetails, Target = targetDetails } };
+        var (viewModel, _, spy) = Build(service: service);
+
+        await viewModel.Add(() => AsForm(MergerFormData()));
+
+        service.LastAddMergerRequest.Should().NotBeNull();
+        service.LastAddMergerRequest!.BrokerName.Should().Be(BrokerName);
+        service.LastAddMergerRequest.PortfolioName.Should().Be(PortfolioName);
+        service.LastAddMergerRequest.SourceAssetName.Should().Be(AssetName);
+        service.LastAddMergerRequest.TargetAssetName.Should().Be("Company B");
+        service.LastAddMergerRequest.CreateTargetAssetInline.Should().BeTrue();
+        service.LastAddMergerRequest.ExchangeRatio.Should().Be(2m);
+        service.LastAddMergerRequest.CashInLieuAmount.Should().Be(5m);
+        service.LastAddMergerRequest.Note.Should().Be("merger note");
+        spy.AppliedDetails.Should().Be(sourceDetails);
+        viewModel.IsFormOpen.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Add_Merger_ExistingCandidateName_PassesCreateTargetAssetInlineFalse()
+    {
+        var service = new StubCorporateActionService
+        {
+            AddMergerResult = new CorporateActionMergerResultDTO
+            {
+                Source = new AssetDetailsDTO { Name = AssetName, BrokerName = BrokerName, PortfolioName = PortfolioName, Ticker = "T" }
+            }
+        };
+        var (viewModel, _, _) = Build(service: service);
+
+        await viewModel.Add(() => AsForm(MergerFormData(createTargetAssetInline: false)));
+
+        service.LastAddMergerRequest!.CreateTargetAssetInline.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Add_Merger_ResolvesTargetSide_WhenCurrentAssetNameMatchesTargetName()
+    {
+        var sourceDetails = new AssetDetailsDTO { Name = "Company B", BrokerName = BrokerName, PortfolioName = PortfolioName, Ticker = "T" };
+        var targetDetails = new AssetDetailsDTO { Name = AssetName, BrokerName = BrokerName, PortfolioName = PortfolioName, Ticker = "T2" };
+        var service = new StubCorporateActionService { AddMergerResult = new CorporateActionMergerResultDTO { Source = sourceDetails, Target = targetDetails } };
+        var (viewModel, _, spy) = Build(service: service);
+
+        await viewModel.Add(() => AsForm(MergerFormData()));
+
+        spy.AppliedDetails.Should().Be(targetDetails);
+    }
+
+    [Fact]
+    public async Task Update_Merger_PassesCorrectRequestAndAppliesResolvedAsset()
+    {
+        var id = Guid.NewGuid();
+        var sourceDetails = new AssetDetailsDTO { Name = AssetName, BrokerName = BrokerName, PortfolioName = PortfolioName, Ticker = "T" };
+        var service = new StubCorporateActionService { UpdateMergerResult = new CorporateActionMergerResultDTO { Source = sourceDetails, Target = null } };
+        var (viewModel, _, spy) = Build(service: service);
+        var record = new CorporateActionDTO
+        {
+            Id = id,
+            Type = CorporateAction.CorporateActionType.Merger,
+            EffectiveDate = new DateTime(2025, 1, 1),
+            Role = CorporateAction.CorporateActionRole.Source,
+            ExchangeRatio = 3m
+        };
+        viewModel.Load("ctx", [record], AssetName);
+        var selected = viewModel.CorporateActions.Single();
+
+        await viewModel.Update(selected, () => AsForm(MergerFormData(id)));
+
+        service.LastUpdateMergerRequest.Should().NotBeNull();
+        service.LastUpdateMergerRequest!.Id.Should().Be(id);
+        service.LastUpdateMergerRequest.SourceAssetName.Should().Be(AssetName);
+        service.LastUpdateMergerRequest.ExchangeRatio.Should().Be(2m);
+        service.LastUpdateMergerRequest.CashInLieuAmount.Should().Be(5m);
+        spy.AppliedDetails.Should().Be(sourceDetails);
+    }
+
+    [Fact]
+    public async Task AddCommand_ServerRejectsMerger_KeepsInlineFormOpenOnConfirmStepWithEnteredValuesAndInlineError()
+    {
+        var service = new StubCorporateActionService { ExceptionToThrow = new InvestmentRuleViolationException("An asset named 'Company B' already exists — select it or choose a different name.") };
+        var assetAdminService = new StubAssetAdminService();
+        var (viewModel, _, spy) = Build(service: service, assetAdminService: assetAdminService);
+
+        viewModel.AddCommand.Execute(null);
+        await WaitUntilAsync(() => viewModel.FormViewModel != null);
+        var formVm = viewModel.FormViewModel!;
+        formVm.Type = "Merger";
+        formVm.EffectiveDate = new DateTime(2026, 3, 1);
+        formVm.TargetAssetPicker!.AssetName = "Company B";
+        formVm.ExchangeRatio = 2m;
+        formVm.CashInLieuAmount = 5m;
+
+        formVm.ConfirmCommand.Execute(null);
+        await WaitUntilAsync(() => formVm.IsMergerConfirmStep);
+        formVm.ConfirmCommand.Execute(null);
+        await WaitUntilAsync(() => !string.IsNullOrEmpty(formVm.ValidationMessage));
+
+        viewModel.IsFormOpen.Should().BeTrue();
+        viewModel.FormViewModel.Should().BeSameAs(formVm);
+        formVm.IsMergerConfirmStep.Should().BeTrue();
+        formVm.ValidationMessage.Should().Be("An asset named 'Company B' already exists — select it or choose a different name.");
+        formVm.TargetAssetPicker!.AssetName.Should().Be("Company B");
+        formVm.ExchangeRatio.Should().Be(2m);
+        formVm.CashInLieuAmount.Should().Be(5m);
+        spy.AppliedDetails.Should().BeNull();
+        spy.Messages.Should().BeEmpty();
     }
 
     /// <summary>Polls rather than assumes synchronous continuation timing: the production code
@@ -391,13 +528,19 @@ public class CorporateActionsTabViewModelTests
         public AssetDetailsDTO? AddSplitResult { get; set; }
         public AssetDetailsDTO? UpdateSplitResult { get; set; }
         public AssetDetailsDTO? DeleteResult { get; set; }
+        public CorporateActionMergerResultDTO? AddMergerResult { get; set; }
+        public CorporateActionMergerResultDTO? UpdateMergerResult { get; set; }
         public Exception? ExceptionToThrow { get; set; }
         public int AddCallCount { get; private set; }
         public int UpdateCallCount { get; private set; }
         public int DeleteCallCount { get; private set; }
+        public int AddMergerCallCount { get; private set; }
+        public int UpdateMergerCallCount { get; private set; }
         public CorporateActionSplitCreateDTO? LastAddSplitRequest { get; private set; }
         public CorporateActionSplitUpdateDTO? LastUpdateSplitRequest { get; private set; }
         public CorporateActionDeleteDTO? LastDeleteRequest { get; private set; }
+        public CorporateActionMergerCreateDTO? LastAddMergerRequest { get; private set; }
+        public CorporateActionMergerUpdateDTO? LastUpdateMergerRequest { get; private set; }
 
         public Task<AssetDetailsDTO?> AddSplitAsync(CorporateActionSplitCreateDTO request)
         {
@@ -413,8 +556,20 @@ public class CorporateActionsTabViewModelTests
             return ExceptionToThrow is not null ? Task.FromException<AssetDetailsDTO?>(ExceptionToThrow) : Task.FromResult(UpdateSplitResult);
         }
 
-        public Task<CorporateActionMergerResultDTO?> AddMergerAsync(CorporateActionMergerCreateDTO request) => throw new NotSupportedException();
-        public Task<CorporateActionMergerResultDTO?> UpdateMergerAsync(CorporateActionMergerUpdateDTO request) => throw new NotSupportedException();
+        public Task<CorporateActionMergerResultDTO?> AddMergerAsync(CorporateActionMergerCreateDTO request)
+        {
+            AddMergerCallCount++;
+            LastAddMergerRequest = request;
+            return ExceptionToThrow is not null ? Task.FromException<CorporateActionMergerResultDTO?>(ExceptionToThrow) : Task.FromResult(AddMergerResult);
+        }
+
+        public Task<CorporateActionMergerResultDTO?> UpdateMergerAsync(CorporateActionMergerUpdateDTO request)
+        {
+            UpdateMergerCallCount++;
+            LastUpdateMergerRequest = request;
+            return ExceptionToThrow is not null ? Task.FromException<CorporateActionMergerResultDTO?>(ExceptionToThrow) : Task.FromResult(UpdateMergerResult);
+        }
+
         public Task<CorporateActionSpinOffResultDTO?> AddSpinOffAsync(CorporateActionSpinOffCreateDTO request) => throw new NotSupportedException();
         public Task<CorporateActionSpinOffResultDTO?> UpdateSpinOffAsync(CorporateActionSpinOffUpdateDTO request) => throw new NotSupportedException();
 
@@ -424,5 +579,17 @@ public class CorporateActionsTabViewModelTests
             LastDeleteRequest = request;
             return ExceptionToThrow is not null ? Task.FromException<AssetDetailsDTO?>(ExceptionToThrow) : Task.FromResult(DeleteResult);
         }
+    }
+
+    private sealed class StubAssetAdminService : IAssetAdminService
+    {
+        public IReadOnlyList<AssetAdminDTO> Assets { get; set; } = [];
+
+        public IReadOnlyList<AssetAdminDTO> GetAssets() => Assets;
+
+        public Task<AssetAdminDTO> CreateAssetAsync(AssetAdminCreateDTO request) => throw new NotSupportedException();
+
+        public Task<AssetAdminDTO> UpdateAssetAsync(string brokerName, string portfolioName, string currentName, AssetAdminUpdateDTO request, InvestmentScope scope = InvestmentScope.Active) =>
+            throw new NotSupportedException();
     }
 }

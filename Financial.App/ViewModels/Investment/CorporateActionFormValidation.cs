@@ -3,12 +3,17 @@ namespace Financial.Presentation.App.ViewModels.Investment;
 public static class CorporateActionFormValidation
 {
     public const string SplitTypeValue = "Split";
+    public const string MergerTypeValue = "Merger";
 
     public static string BuildValidationMessage(
         bool isDeleteMode,
+        string type,
+        bool isAddMode,
         DateTime effectiveDate,
         decimal ratioNumerator,
-        decimal ratioDenominator)
+        decimal ratioDenominator,
+        string targetAssetName,
+        decimal exchangeRatio)
     {
         if (isDeleteMode)
         {
@@ -22,9 +27,24 @@ public static class CorporateActionFormValidation
             errors.Add("Effective date is required");
         }
 
-        if (!TryComputeSplitRatioFactor(ratioNumerator, ratioDenominator, out _))
+        if (type == SplitTypeValue)
         {
-            errors.Add("Enter a valid split ratio other than 1-for-1");
+            if (!TryComputeSplitRatioFactor(ratioNumerator, ratioDenominator, out _))
+            {
+                errors.Add("Enter a valid split ratio other than 1-for-1");
+            }
+        }
+        else if (type == MergerTypeValue)
+        {
+            if (isAddMode && string.IsNullOrWhiteSpace(targetAssetName))
+            {
+                errors.Add("Target asset is required");
+            }
+
+            if (exchangeRatio <= 0)
+            {
+                errors.Add("Exchange ratio must be greater than zero");
+            }
         }
 
         return string.Join(Environment.NewLine, errors);
