@@ -12,6 +12,8 @@ const {
   updateSplitMock,
   addMergerMock,
   updateMergerMock,
+  addSpinOffMock,
+  updateSpinOffMock,
   deleteCorporateActionMock,
   getAdminAssetsMock,
 } = vi.hoisted(() => ({
@@ -20,6 +22,8 @@ const {
   updateSplitMock: vi.fn<FinancialApiClient['updateSplit']>(),
   addMergerMock: vi.fn<FinancialApiClient['addMerger']>(),
   updateMergerMock: vi.fn<FinancialApiClient['updateMerger']>(),
+  addSpinOffMock: vi.fn<FinancialApiClient['addSpinOff']>(),
+  updateSpinOffMock: vi.fn<FinancialApiClient['updateSpinOff']>(),
   deleteCorporateActionMock: vi.fn<FinancialApiClient['deleteCorporateAction']>(),
   getAdminAssetsMock: vi.fn<FinancialApiClient['getAdminAssets']>(),
 }))
@@ -31,6 +35,8 @@ vi.mock('../../api/financialApiClient', () => ({
     updateSplit: updateSplitMock,
     addMerger: addMergerMock,
     updateMerger: updateMergerMock,
+    addSpinOff: addSpinOffMock,
+    updateSpinOff: updateSpinOffMock,
     deleteCorporateAction: deleteCorporateActionMock,
     getAdminAssets: getAdminAssetsMock,
   } as Partial<FinancialApiClient>,
@@ -142,6 +148,23 @@ const MERGER_RECORD: CorporateActionDto = {
   role: 'Source',
 }
 
+const SPINOFF_RECORD: CorporateActionDto = {
+  id: 'ca3',
+  type: 'SpinOff',
+  effectiveDate: '2024-06-01T00:00:00',
+  ratioFactor: null,
+  allocationPercentage: 25,
+  calculationStatus: 'RequiresReview',
+  carriedCostBasis: 500,
+  cashInLieu: null,
+  convertedQuantity: 40,
+  correlationId: 'corr-2',
+  exchangeRatio: null,
+  linkedAssetName: 'Company D',
+  note: null,
+  role: 'Parent',
+}
+
 describe('useCorporateActions', () => {
   beforeEach(() => {
     getAssetDetailsMock.mockReset().mockResolvedValue(ASSET_DETAILS)
@@ -149,6 +172,8 @@ describe('useCorporateActions', () => {
     updateSplitMock.mockReset()
     addMergerMock.mockReset()
     updateMergerMock.mockReset()
+    addSpinOffMock.mockReset()
+    updateSpinOffMock.mockReset()
     deleteCorporateActionMock.mockReset()
     getAdminAssetsMock.mockReset().mockResolvedValue([])
   })
@@ -567,5 +592,186 @@ describe('useCorporateActions', () => {
     await waitFor(() => expect(result.current.isFormVisible).toBe(false))
 
     expect(result.current.asset).toEqual(savedResult.target)
+  })
+
+  it('saves a new spin-off with createNewAssetInline true when the typed name matches no existing asset', async () => {
+    getAdminAssetsMock.mockReset().mockResolvedValue([makeAdminAsset('Company C')])
+    const savedResult = {
+      parent: { ...ASSET_DETAILS, quantity: 200, costOfUnitsHeld: 1500 },
+      new: { ...ASSET_DETAILS, name: 'Company D', quantity: 40 },
+    }
+    addSpinOffMock.mockResolvedValueOnce(savedResult)
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useCorporateActions(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showNewForm())
+    act(() => result.current.setFormField('formType', 'SpinOff'))
+    await waitFor(() => expect(result.current.targetAssetOptions.isLoading).toBe(false))
+
+    act(() => result.current.setNewAsset({ assetName: 'Company D', identity: BLANK_TARGET_ASSET_IDENTITY }))
+    act(() => result.current.setFormField('formQuantityReceived', '40'))
+    act(() => result.current.setFormField('formAllocationPercentage', '25'))
+    act(() => result.current.setFormField('formEffectiveDate', '2024-06-01'))
+    act(() => result.current.saveForm())
+
+    await waitFor(() => expect(result.current.isFormVisible).toBe(false))
+
+    expect(addSpinOffMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        brokerName: 'XPI',
+        portfolioName: 'Acoes',
+        parentAssetName: 'KLBN4',
+        newAssetName: 'Company D',
+        createNewAssetInline: true,
+        quantityReceived: 40,
+        allocationPercentage: 25,
+      }),
+    )
+  })
+
+  it('saves a new spin-off with createNewAssetInline false when the typed name matches an existing asset', async () => {
+    getAdminAssetsMock.mockReset().mockResolvedValue([makeAdminAsset('Company D')])
+    const savedResult = {
+      parent: { ...ASSET_DETAILS, quantity: 200 },
+      new: { ...ASSET_DETAILS, name: 'Company D', quantity: 40 },
+    }
+    addSpinOffMock.mockResolvedValueOnce(savedResult)
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useCorporateActions(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showNewForm())
+    act(() => result.current.setFormField('formType', 'SpinOff'))
+    await waitFor(() => expect(result.current.targetAssetOptions.isLoading).toBe(false))
+
+    act(() => result.current.setNewAsset({ assetName: 'Company D', identity: BLANK_TARGET_ASSET_IDENTITY }))
+    act(() => result.current.setFormField('formQuantityReceived', '40'))
+    act(() => result.current.setFormField('formAllocationPercentage', '25'))
+    act(() => result.current.saveForm())
+
+    await waitFor(() => expect(result.current.isFormVisible).toBe(false))
+
+    expect(addSpinOffMock).toHaveBeenCalledWith(expect.objectContaining({ createNewAssetInline: false }))
+  })
+
+  it('blocks saveForm on spin-off validation errors without calling the API', async () => {
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useCorporateActions(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showNewForm())
+    act(() => result.current.setFormField('formType', 'SpinOff'))
+    act(() => result.current.setFormField('formQuantityReceived', '0'))
+    act(() => result.current.setFormField('formAllocationPercentage', '150'))
+    act(() => result.current.saveForm())
+
+    expect(result.current.saveErrorFields.formNewAsset).toBe('New asset is required')
+    expect(result.current.saveErrorFields.formQuantityReceived).toBe('Quantity received must be greater than zero')
+    expect(result.current.saveErrorFields.formAllocationPercentage).toBe(
+      'Allocation percentage must be between 0 and 100',
+    )
+    expect(addSpinOffMock).not.toHaveBeenCalled()
+  })
+
+  it('saves an edited spin-off via updateSpinOff with id/parentAssetName and no new-asset fields', async () => {
+    const savedResult = {
+      parent: { ...ASSET_DETAILS, quantity: 200 },
+      new: { ...ASSET_DETAILS, name: 'Company D', quantity: 40 },
+    }
+    updateSpinOffMock.mockResolvedValueOnce(savedResult)
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useCorporateActions(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showEditForm(SPINOFF_RECORD))
+    act(() => result.current.saveForm())
+
+    await waitFor(() => expect(result.current.isFormVisible).toBe(false))
+
+    expect(updateSpinOffMock).toHaveBeenCalledWith({
+      id: 'ca3',
+      brokerName: 'XPI',
+      portfolioName: 'Acoes',
+      parentAssetName: 'KLBN4',
+      effectiveDate: '2024-06-01',
+      quantityReceived: 40,
+      allocationPercentage: 25,
+      note: null,
+    })
+    expect(addSpinOffMock).not.toHaveBeenCalled()
+  })
+
+  it('routes a spin-off name-collision server error to saveErrorFields.formNewAsset', async () => {
+    addSpinOffMock.mockRejectedValueOnce(
+      new Error('An asset named "Company D" already exists — select it or choose a different name'),
+    )
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useCorporateActions(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showNewForm())
+    act(() => result.current.setFormField('formType', 'SpinOff'))
+    act(() => result.current.setNewAsset({ assetName: 'Company D', identity: BLANK_TARGET_ASSET_IDENTITY }))
+    act(() => result.current.setFormField('formQuantityReceived', '40'))
+    act(() => result.current.setFormField('formAllocationPercentage', '25'))
+    act(() => result.current.saveForm())
+
+    await waitFor(() => expect(result.current.isSaving).toBe(false))
+
+    expect(result.current.saveErrorFields.formNewAsset).toBe(
+      'An asset named "Company D" already exists — select it or choose a different name',
+    )
+  })
+
+  it('SAVE_SUCCESS picks the parent side of the spin-off result when the currently-selected asset is the parent', async () => {
+    const savedResult = {
+      parent: { ...ASSET_DETAILS, name: 'KLBN4', quantity: 200 },
+      new: { ...ASSET_DETAILS, name: 'Company D', quantity: 40 },
+    }
+    addSpinOffMock.mockResolvedValueOnce(savedResult)
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useCorporateActions(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showNewForm())
+    act(() => result.current.setFormField('formType', 'SpinOff'))
+    act(() => result.current.setNewAsset({ assetName: 'Company D', identity: BLANK_TARGET_ASSET_IDENTITY }))
+    act(() => result.current.setFormField('formQuantityReceived', '40'))
+    act(() => result.current.setFormField('formAllocationPercentage', '25'))
+    act(() => result.current.saveForm())
+
+    await waitFor(() => expect(result.current.isFormVisible).toBe(false))
+
+    expect(result.current.asset).toEqual(savedResult.parent)
+  })
+
+  it('SAVE_SUCCESS picks the new side of the spin-off result when the currently-selected asset is the new asset', async () => {
+    const savedResult = {
+      parent: { ...ASSET_DETAILS, name: 'Company E', quantity: 200 },
+      new: { ...ASSET_DETAILS, name: 'KLBN4', quantity: 40 },
+    }
+    addSpinOffMock.mockResolvedValueOnce(savedResult)
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useCorporateActions(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showNewForm())
+    act(() => result.current.setFormField('formType', 'SpinOff'))
+    act(() => result.current.setNewAsset({ assetName: 'KLBN4', identity: BLANK_TARGET_ASSET_IDENTITY }))
+    act(() => result.current.setFormField('formQuantityReceived', '40'))
+    act(() => result.current.setFormField('formAllocationPercentage', '25'))
+    act(() => result.current.saveForm())
+
+    await waitFor(() => expect(result.current.isFormVisible).toBe(false))
+
+    expect(result.current.asset).toEqual(savedResult.new)
   })
 })

@@ -42,6 +42,17 @@ function resultingChange(record: CorporateActionDto): string {
     }
     return '—'
   }
+  if (record.type === 'SpinOff') {
+    if (record.role === 'Parent') {
+      return 'Cost basis reduced by spin-off'
+    }
+    if (record.role === 'New') {
+      return record.convertedQuantity !== null
+        ? `+${formatN2(record.convertedQuantity)} units received`
+        : 'Units received from spin-off'
+    }
+    return '—'
+  }
   return '—'
 }
 
@@ -107,6 +118,9 @@ export default function CorporateActionsTab() {
     formTargetAsset,
     formExchangeRatio,
     formCashInLieu,
+    formNewAsset,
+    formQuantityReceived,
+    formAllocationPercentage,
     isSaving,
     saveError,
     saveErrorFields,
@@ -116,6 +130,7 @@ export default function CorporateActionsTab() {
     cancelForm,
     setFormField,
     setTargetAsset,
+    setNewAsset,
     advanceToConfirm,
     backToFields,
     saveForm,
@@ -157,6 +172,9 @@ export default function CorporateActionsTab() {
           formTargetAsset={formTargetAsset}
           formExchangeRatio={formExchangeRatio}
           formCashInLieu={formCashInLieu}
+          formNewAsset={formNewAsset}
+          formQuantityReceived={formQuantityReceived}
+          formAllocationPercentage={formAllocationPercentage}
           sourceAssetName={affectedAssetName}
           sourceQuantity={asset?.quantity ?? 0}
           sourceCostBasis={asset?.costOfUnitsHeld ?? 0}
@@ -165,6 +183,7 @@ export default function CorporateActionsTab() {
           saveErrorFields={saveErrorFields}
           onFieldChange={setFormField}
           onTargetAssetChange={setTargetAsset}
+          onNewAssetChange={setNewAsset}
           onAdvanceToConfirm={advanceToConfirm}
           onBackToFields={backToFields}
           onSave={saveForm}
