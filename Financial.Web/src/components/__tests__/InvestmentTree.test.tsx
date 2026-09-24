@@ -95,6 +95,7 @@ function SelectedNodeDisplay() {
       </div>
       <div data-testid="selected-quantity">{selectedNode.quantity ?? 'absent'}</div>
       <div data-testid="selected-asset-count">{selectedNode.assetCount ?? 'absent'}</div>
+      <div data-testid="selected-pending-corporate-action-id">{selectedNode.pendingCorporateActionId ?? 'absent'}</div>
     </>
   )
 }
@@ -109,9 +110,19 @@ function renderTree(tree: TreeNodeDto = stubTree) {
   )
 }
 
-function renderWithPendingSelection(pendingSelection: { brokerName: string; portfolioName: string; assetName: string }) {
+function renderWithPendingSelection(
+  pendingSelection: { brokerName: string; portfolioName: string; assetName: string },
+  pendingCorporateActionId?: string,
+) {
   return rtlRender(
-    <MemoryRouter initialEntries={[{ pathname: '/investments/active-investments', state: { pendingSelection } }]}>
+    <MemoryRouter
+      initialEntries={[
+        {
+          pathname: '/investments/active-investments',
+          state: { pendingSelection, ...(pendingCorporateActionId ? { pendingCorporateActionId } : {}) },
+        },
+      ]}
+    >
       <SelectedNodeProvider>
         <InvestmentTree />
         <SelectedNodeDisplay />
@@ -564,6 +575,15 @@ describe('InvestmentTree', () => {
     await waitFor(() => expect(screen.getByTestId('selected')).toHaveTextContent('Asset:XPI:Acoes:KLBN4'))
     const portfolioItem = screen.getByText('Acoes (2 assets)').closest('[role="treeitem"]') as HTMLElement
     expect(portfolioItem).toHaveAttribute('aria-expanded', 'true')
+  })
+
+  it('a pendingCorporateActionId alongside pendingSelection carries through to the resolved SelectedNode', async () => {
+    getNavigationTreeMock.mockResolvedValue(stubTree)
+    renderWithPendingSelection({ brokerName: 'XPI', portfolioName: 'Acoes', assetName: 'KLBN4' }, 'ca-123')
+
+    await waitFor(() =>
+      expect(screen.getByTestId('selected-pending-corporate-action-id')).toHaveTextContent('ca-123'),
+    )
   })
 
   it('moves focus to the selected treeitem, not just scrolling it into view', async () => {

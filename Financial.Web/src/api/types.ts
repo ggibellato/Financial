@@ -39,6 +39,8 @@ export interface SelectedNode {
   quantity?: number
   /** For a portfolio: how many assets it holds, so an empty one can be offered for deletion. */
   assetCount?: number
+  /** Set only when this selection came from a dashboard deep-link to a specific corporate action; read once by DetailPanel, then not needed again. */
+  pendingCorporateActionId?: string
 }
 
 export interface SelectedNodeContextValue {

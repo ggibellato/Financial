@@ -3,14 +3,19 @@ import { useNavigate } from 'react-router-dom'
 import { resolveHoldingLocation } from '../utils/holdingNavigation'
 
 export interface HoldingNavigation {
-  navigateToHolding: (brokerName: string, portfolioName: string, assetName: string) => Promise<boolean>
+  navigateToHolding: (
+    brokerName: string,
+    portfolioName: string,
+    assetName: string,
+    corporateActionId?: string,
+  ) => Promise<boolean>
 }
 
 export function useHoldingNavigation(): HoldingNavigation {
   const navigate = useNavigate()
 
   const navigateToHolding = useCallback(
-    async (brokerName: string, portfolioName: string, assetName: string) => {
+    async (brokerName: string, portfolioName: string, assetName: string, corporateActionId?: string) => {
       let location
       try {
         location = await resolveHoldingLocation(brokerName, portfolioName, assetName)
@@ -21,7 +26,12 @@ export function useHoldingNavigation(): HoldingNavigation {
 
       // Router state, not a store: the tree page's selection provider is created fresh on every
       // mount, so the target holding has to travel with the navigation itself.
-      navigate(location.route, { state: { pendingSelection: { brokerName, portfolioName, assetName } } })
+      navigate(location.route, {
+        state: {
+          pendingSelection: { brokerName, portfolioName, assetName },
+          ...(corporateActionId ? { pendingCorporateActionId: corporateActionId } : {}),
+        },
+      })
       return true
     },
     [navigate],

@@ -22,3 +22,8 @@
   font-size: 12px;
   color: var(--error);
 }
+
+.data-table tbody tr.corporate-actions-tab__row.corporate-actions-tab__row--highlighted {
+  background-color: var(--accent-bg);
+  transition: background-color 1s ease-out;
+}

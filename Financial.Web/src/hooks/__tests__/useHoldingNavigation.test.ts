@@ -34,6 +34,30 @@ describe('useHoldingNavigation', () => {
     })
   })
 
+  it('includes_pendingCorporateActionId_in_router_state_when_provided', async () => {
+    resolveHoldingLocationMock.mockResolvedValue({ scope: 'active', route: '/investments/active-investments' })
+
+    const { result } = renderHook(() => useHoldingNavigation())
+    await result.current.navigateToHolding('Trading212', 'ISA', 'VUSA', 'ca-123')
+
+    expect(navigateMock).toHaveBeenCalledWith('/investments/active-investments', {
+      state: {
+        pendingSelection: { brokerName: 'Trading212', portfolioName: 'ISA', assetName: 'VUSA' },
+        pendingCorporateActionId: 'ca-123',
+      },
+    })
+  })
+
+  it('omits_pendingCorporateActionId_entirely_when_not_provided', async () => {
+    resolveHoldingLocationMock.mockResolvedValue({ scope: 'active', route: '/investments/active-investments' })
+
+    const { result } = renderHook(() => useHoldingNavigation())
+    await result.current.navigateToHolding('Trading212', 'ISA', 'VUSA')
+
+    const stateArg = navigateMock.mock.calls[0][1].state
+    expect('pendingCorporateActionId' in stateArg).toBe(false)
+  })
+
   it('navigates_to_the_historic_route_when_that_is_what_resolved', async () => {
     resolveHoldingLocationMock.mockResolvedValue({ scope: 'historic', route: '/investments/historic-investments' })
 

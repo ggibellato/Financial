@@ -42,6 +42,12 @@ vi.mock('../../api/financialApiClient', () => ({
   } as Partial<FinancialApiClient>,
 }))
 
+vi.mock('../CorporateActionsTab', () => ({
+  default: ({ focusRecordId }: { focusRecordId?: string | null }) => (
+    <div data-testid="corporate-actions-tab-stub">focusRecordId:{focusRecordId ?? 'none'}</div>
+  ),
+}))
+
 vi.mock('../MoveAssetDialog', () => ({
   default: ({
     onCancel,
@@ -105,6 +111,7 @@ const activeAssetNode: SelectedNode = {
 }
 const flatAssetNode: SelectedNode = { ...activeAssetNode, positionType: 'Flat' }
 const shortAssetNode: SelectedNode = { ...activeAssetNode, positionType: 'Short' }
+const deepLinkedAssetNode: SelectedNode = { ...activeAssetNode, pendingCorporateActionId: 'ca-123' }
 
 describe('DetailPanel', () => {
   beforeEach(() => {
@@ -289,6 +296,23 @@ describe('DetailPanel', () => {
     act(() => screen.getByTestId('setter').click())
     fireEvent.click(screen.getByRole('tab', { name: 'Corporate Actions' }))
     expect(screen.getByRole('tab', { name: 'Corporate Actions' })).toHaveAttribute('aria-selected', 'true')
+  })
+
+  it('selects the Corporate Actions tab instead of Summary when selectedNode carries pendingCorporateActionId', async () => {
+    renderPanel(deepLinkedAssetNode)
+    act(() => screen.getByTestId('setter').click())
+
+    expect(screen.getByRole('tab', { name: 'Corporate Actions' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tab', { name: 'Summary' })).toHaveAttribute('aria-selected', 'false')
+  })
+
+  it('passes the pendingCorporateActionId down to CorporateActionsTab as focusRecordId', async () => {
+    renderPanel(deepLinkedAssetNode)
+    act(() => screen.getByTestId('setter').click())
+
+    await waitFor(() =>
+      expect(screen.getByTestId('corporate-actions-tab-stub')).toHaveTextContent('focusRecordId:ca-123'),
+    )
   })
 
   it('Summary tab is active by default', () => {

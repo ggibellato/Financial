@@ -50,6 +50,12 @@ export function readPendingSelection(state: unknown): PendingSelection | null {
   return { brokerName, portfolioName, assetName }
 }
 
+export function readPendingCorporateActionId(state: unknown): string | null {
+  if (typeof state !== 'object' || state === null) return null
+  const candidate = (state as { pendingCorporateActionId?: unknown }).pendingCorporateActionId
+  return typeof candidate === 'string' ? candidate : null
+}
+
 export async function resolveHoldingLocation(
   brokerName: string,
   portfolioName: string,

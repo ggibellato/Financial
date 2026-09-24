@@ -47,8 +47,9 @@ export default function DetailPanel() {
   const currentKey = nodeKey(selectedNode)
   if (currentKey !== prevKey) {
     setPrevKey(currentKey)
-    setActiveTab('summary')
+    setActiveTab(selectedNode?.pendingCorporateActionId ? 'corporateActions' : 'summary')
   }
+  const focusRecordId = selectedNode?.pendingCorporateActionId ?? null
 
   const handleCopy = useCallback(() => {
     if (selectedNode?.assetName) {
@@ -180,7 +181,7 @@ export default function DetailPanel() {
           {activeTab === 'credits' && <CreditsTab />}
           {activeTab === 'priceHistory' && isAsset && <PriceHistoryTab />}
           {activeTab === 'disposals' && isAsset && <DisposalsTab />}
-          {activeTab === 'corporateActions' && isAsset && <CorporateActionsTab />}
+          {activeTab === 'corporateActions' && isAsset && <CorporateActionsTab focusRecordId={focusRecordId} />}
         </Suspense>
       </div>
     </div>
