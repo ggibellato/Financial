@@ -307,16 +307,16 @@ graph TD
 ### F04. Corporate Action History and Data-Quality Integration
 - [x] The history endpoint for an asset returns every split, merger, and spin-off recorded against it, ordered by effective date
 - [x] A merger or spin-off with `TaxClassification` status `RequiresReview` appears in the P52 dashboard data-quality warnings list
-- [ ] Clicking the warning navigates to the affected holding
+- [x] Clicking the warning navigates to the affected holding
 - [x] The warning disappears once a matching admin `TaxRule` re-classifies the event to a resolved status
 - [x] Deleting a corporate action from the history list re-triggers replay and does not directly modify any `DisposalRecord` or `TaxClassification` outside the existing supersede policy
 
 ### F05. React Entry and Display
-- [ ] The Corporate Actions section shows only the fields relevant to the selected type
-- [ ] The target-asset control supports both searching existing assets and creating one inline
-- [ ] The history list renders every recorded corporate action for the asset
-- [ ] A server-side save rejection preserves the user's entered form data rather than discarding it
-- [ ] The merger confirmation step summarises the position-closing effect before the final save
+- [x] The Corporate Actions section shows only the fields relevant to the selected type
+- [x] The target-asset control supports both searching existing assets and creating one inline
+- [x] The history list renders every recorded corporate action for the asset
+- [x] A server-side save rejection preserves the user's entered form data rather than discarding it
+- [x] The merger confirmation step summarises the position-closing effect before the final save
 
 ### F06. WPF Parity
 - [ ] Every F01–F04 capability is available in `Financial.App` with equivalent terminology, field order, and validation
@@ -326,5 +326,5 @@ graph TD
 ### Cross-Feature Integration
 - [x] F04's history list correctly displays a split recorded via F01, a merger recorded via F02, and a spin-off recorded via F03 for the same asset, each showing its own type-specific fields
 - [x] F04's dashboard warning correctly reflects the `TaxClassification` status produced by F02 and F03
-- [ ] F05 correctly submits to and renders data from F01/F02/F03's validation rules and F04's history/warnings endpoints
+- [x] F05 correctly submits to and renders data from F01/F02/F03's validation rules and F04's history/warnings endpoints
 - [ ] F06 renders the same data F05 does for the same recorded corporate action, verified side by side against the same backend, matching the parity verification standard P52 already established
