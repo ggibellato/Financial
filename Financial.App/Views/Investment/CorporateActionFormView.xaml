@@ -135,11 +135,17 @@
                     Visibility="{Binding IsMergerConfirmStep, Converter={StaticResource BoolToVisibilityConverter}}">
                 <TextBlock TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite"
                            AutomationProperties.Name="{Binding ConfirmSummary}">
-                    <Run Text="{Binding ConfirmSummaryPrefix, Mode=OneWay}"/>
+                    <Run Text="Your position in "/>
+                    <Run Text="{Binding SourceAssetName, Mode=OneWay}"/>
+                    <Run Text=" ("/>
+                    <Run Text="{Binding SourceQuantity, Mode=OneWay, StringFormat={}{0:N2}}"/>
+                    <Run Text=" units) will close and convert into "/>
                     <Run Text="{Binding ConfirmSummaryTargetUnits, Mode=OneWay}" FontWeight="Bold"/>
-                    <Run Text="{Binding ConfirmSummaryMiddle, Mode=OneWay}"/>
+                    <Run Text=" of "/>
+                    <Run Text="{Binding ConfirmSummaryTargetAssetName, Mode=OneWay}"/>
+                    <Run Text=", carrying over "/>
                     <Run Text="{Binding ConfirmSummaryCostBasis, Mode=OneWay}" FontWeight="Bold"/>
-                    <Run Text="{Binding ConfirmSummarySuffix, Mode=OneWay}"/>
+                    <Run Text=" of cost basis."/>
                 </TextBlock>
             </Border>
 

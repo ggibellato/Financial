@@ -78,11 +78,9 @@ public sealed class CorporateActionFormViewModel : ViewModelBase
                 OnPropertyChanged(nameof(IsMergerConfirmStep));
                 OnPropertyChanged(nameof(ConfirmLabel));
                 OnPropertyChanged(nameof(ConfirmSummary));
-                OnPropertyChanged(nameof(ConfirmSummaryPrefix));
                 OnPropertyChanged(nameof(ConfirmSummaryTargetUnits));
-                OnPropertyChanged(nameof(ConfirmSummaryMiddle));
+                OnPropertyChanged(nameof(ConfirmSummaryTargetAssetName));
                 OnPropertyChanged(nameof(ConfirmSummaryCostBasis));
-                OnPropertyChanged(nameof(ConfirmSummarySuffix));
                 OnPropertyChanged(nameof(ShowNote));
                 OnPropertyChanged(nameof(ShowCancelButton));
                 OnPropertyChanged(nameof(CanChangeType));
@@ -97,22 +95,18 @@ public sealed class CorporateActionFormViewModel : ViewModelBase
     public bool CanChangeType => IsEditable && !IsMergerConfirmStep;
 
     public string ConfirmSummary =>
-        ConfirmSummaryPrefix + ConfirmSummaryTargetUnits + ConfirmSummaryMiddle + ConfirmSummaryCostBasis + ConfirmSummarySuffix;
-
-    public string ConfirmSummaryPrefix =>
-        $"Your position in {SourceAssetName} ({SourceQuantity:N2} units) will close and convert into ";
+        $"Your position in {SourceAssetName} ({SourceQuantity:N2} units) will close and convert into " +
+        $"{ConfirmSummaryTargetUnits} of {ConfirmSummaryTargetAssetName}, carrying over " +
+        $"{ConfirmSummaryCostBasis} of cost basis.";
 
     public string ConfirmSummaryTargetUnits =>
         $"{SourceQuantity * ExchangeRatio:N2} units";
 
-    public string ConfirmSummaryMiddle =>
-        $" of {(TargetAssetPicker?.AssetName ?? TargetAssetName)}, carrying over ";
+    public string ConfirmSummaryTargetAssetName =>
+        TargetAssetPicker?.AssetName ?? TargetAssetName;
 
     public string ConfirmSummaryCostBasis =>
         $"{SourceCostBasis:N2}";
-
-    public string ConfirmSummarySuffix =>
-        " of cost basis.";
 
     public DateTime EffectiveDate
     {
