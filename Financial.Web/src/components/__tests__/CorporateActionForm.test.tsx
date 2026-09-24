@@ -2,7 +2,21 @@ import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { render } from '../../test/renderWithFluent'
+import type { AssetSearchOptionsData } from '../../hooks/useAssetSearchOptions'
+import { formatN2 } from '../../utils/formatters'
+import { BLANK_TARGET_ASSET_IDENTITY, BLANK_TARGET_ASSET_PICKER_VALUE } from '../targetAssetPickerValue'
 import CorporateActionForm from '../CorporateActionForm'
+
+const mockAssetSearchOptions: AssetSearchOptionsData = {
+  options: [],
+  isLoading: false,
+  error: null,
+  retry: vi.fn(),
+}
+
+vi.mock('../../hooks/useAssetSearchOptions', () => ({
+  useAssetSearchOptions: () => mockAssetSearchOptions,
+}))
 
 const baseProps = {
   editingId: null,
@@ -11,10 +25,20 @@ const baseProps = {
   formRatioNumerator: '',
   formRatioDenominator: '',
   formNote: '',
+  formStep: 'fields' as const,
+  formTargetAsset: BLANK_TARGET_ASSET_PICKER_VALUE,
+  formExchangeRatio: '',
+  formCashInLieu: '',
+  sourceAssetName: 'KLBN4',
+  sourceQuantity: 200,
+  sourceCostBasis: 2000,
   isSaving: false,
   saveError: null,
   saveErrorFields: {},
   onFieldChange: vi.fn(),
+  onTargetAssetChange: vi.fn(),
+  onAdvanceToConfirm: vi.fn(),
+  onBackToFields: vi.fn(),
   onSave: vi.fn(),
   onCancel: vi.fn(),
 }
@@ -44,11 +68,11 @@ describe('CorporateActionForm', () => {
     expect(screen.getByLabelText('Note')).toBeInTheDocument()
   })
 
-  it('offers only Split / Reverse Split in the type selector', () => {
+  it('offers Split / Reverse Split and Merger in the type selector', () => {
     render(<CorporateActionForm {...baseProps} />)
 
     const options = screen.getByLabelText('Type').querySelectorAll('option')
-    expect(Array.from(options).map((o) => o.textContent)).toEqual(['Split / Reverse Split'])
+    expect(Array.from(options).map((o) => o.textContent)).toEqual(['Split / Reverse Split', 'Merger'])
   })
 
   it('shows the inline ratio example text', () => {
@@ -130,5 +154,82 @@ describe('CorporateActionForm', () => {
 
     expect(onSave).toHaveBeenCalledTimes(1)
     expect(onCancel).toHaveBeenCalledTimes(1)
+  })
+
+  it('shows only the Merger field group when Type is Merger, hiding the Split ratio fields', () => {
+    render(<CorporateActionForm {...baseProps} formType="Merger" />)
+
+    expect(screen.getByLabelText('Source Asset')).toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: 'Target Asset' })).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Exchange Ratio/)).toBeInTheDocument()
+    expect(screen.getByLabelText('Cash-in-Lieu Amount')).toBeInTheDocument()
+    expect(screen.getByLabelText('Note')).toBeInTheDocument()
+    expect(screen.queryByLabelText(/^New units/)).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/^Old units/)).not.toBeInTheDocument()
+  })
+
+  it('clicking the primary button on the Merger fields step calls onAdvanceToConfirm, not onSave', async () => {
+    const onAdvanceToConfirm = vi.fn()
+    const onSave = vi.fn()
+    const user = userEvent.setup()
+    render(
+      <CorporateActionForm
+        {...baseProps}
+        formType="Merger"
+        onAdvanceToConfirm={onAdvanceToConfirm}
+        onSave={onSave}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Continue' }))
+
+    expect(onAdvanceToConfirm).toHaveBeenCalledTimes(1)
+    expect(onSave).not.toHaveBeenCalled()
+  })
+
+  it('renders the confirm-step summary with computed units and cost basis, and wires Confirm & Save / Back', async () => {
+    const onSave = vi.fn()
+    const onBackToFields = vi.fn()
+    const user = userEvent.setup()
+    render(
+      <CorporateActionForm
+        {...baseProps}
+        formType="Merger"
+        formStep="confirm"
+        formTargetAsset={{ assetName: 'Company B', identity: BLANK_TARGET_ASSET_IDENTITY }}
+        formExchangeRatio="0.5"
+        sourceAssetName="KLBN4"
+        sourceQuantity={200}
+        sourceCostBasis={2000}
+        onSave={onSave}
+        onBackToFields={onBackToFields}
+      />,
+    )
+
+    expect(screen.getByText(new RegExp(`Your position in KLBN4 \\(${formatN2(200)} units\\)`))).toBeInTheDocument()
+    expect(screen.getByText(`${formatN2(100)} units`)).toBeInTheDocument()
+    expect(screen.getByText(formatN2(2000))).toBeInTheDocument()
+
+    const confirmButton = screen.getByRole('button', { name: 'Confirm & Save' })
+    await user.click(confirmButton)
+    expect(onSave).toHaveBeenCalledTimes(1)
+
+    await user.click(screen.getByRole('button', { name: 'Back' }))
+    expect(onBackToFields).toHaveBeenCalledTimes(1)
+  })
+
+  it('shows Target Asset as read-only text instead of the picker when editing an existing merger', () => {
+    render(
+      <CorporateActionForm
+        {...baseProps}
+        editingId="ca2"
+        formType="Merger"
+        formTargetAsset={{ assetName: 'Company B', identity: BLANK_TARGET_ASSET_IDENTITY }}
+      />,
+    )
+
+    expect(screen.getByLabelText('Target Asset')).toHaveValue('Company B')
+    expect(screen.getByLabelText('Target Asset')).toBeDisabled()
+    expect(screen.queryByRole('combobox', { name: 'Target Asset' })).not.toBeInTheDocument()
   })
 })

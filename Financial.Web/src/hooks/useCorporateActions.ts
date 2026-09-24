@@ -1,8 +1,21 @@
 import { useCallback, useEffect, useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
-import type { AssetDetailsDto, CorporateActionDto } from '../api/types'
+import type {
+  AssetDetailsDto,
+  CorporateActionDto,
+  CorporateActionMergerCreateDto,
+  CorporateActionMergerResultDto,
+} from '../api/types'
+import {
+  BLANK_TARGET_ASSET_IDENTITY,
+  BLANK_TARGET_ASSET_PICKER_VALUE,
+  findAssetByName,
+  type TargetAssetPickerValue,
+} from '../components/targetAssetPickerValue'
 import { useSelectedNode } from '../context/SelectedNodeContext'
 import { getErrorMessage, parseValidatedNumber, toInputDate, todayIsoDate } from '../utils/formatters'
+import { mapCorporateActionErrorToField } from './mapCorporateActionErrorToField'
+import { useAssetSearchOptions, type AssetSearchOptionsData } from './useAssetSearchOptions'
 
 export type CorporateActionFormField =
   | 'formEffectiveDate'
@@ -11,6 +24,9 @@ export type CorporateActionFormField =
   | 'formRatioDenominator'
   | 'formRatio'
   | 'formNote'
+  | 'formTargetAsset'
+  | 'formExchangeRatio'
+  | 'formCashInLieu'
 
 interface CorporateActionsState {
   asset: AssetDetailsDto | null
@@ -24,6 +40,10 @@ interface CorporateActionsState {
   formRatioNumerator: string
   formRatioDenominator: string
   formNote: string
+  formStep: 'fields' | 'confirm'
+  formTargetAsset: TargetAssetPickerValue
+  formExchangeRatio: string
+  formCashInLieu: string
   isSaving: boolean
   saveError: string | null
   saveErrorFields: Partial<Record<CorporateActionFormField, string>>
@@ -40,6 +60,8 @@ type CorporateActionsAction =
   | { type: 'SHOW_EDIT_FORM'; payload: CorporateActionDto }
   | { type: 'CANCEL_FORM' }
   | { type: 'SET_FORM_FIELD'; payload: { field: CorporateActionFormField; value: string } }
+  | { type: 'SET_STEP'; payload: 'fields' | 'confirm' }
+  | { type: 'SET_TARGET_ASSET'; payload: TargetAssetPickerValue }
   | { type: 'SAVE_START' }
   | { type: 'SAVE_SUCCESS'; payload: AssetDetailsDto }
   | { type: 'SAVE_ERROR'; payload: { message: string | null; fields: Partial<Record<CorporateActionFormField, string>> } }
@@ -67,6 +89,10 @@ const BLANK_FORM = {
   formRatioNumerator: '',
   formRatioDenominator: '',
   formNote: '',
+  formStep: 'fields',
+  formTargetAsset: BLANK_TARGET_ASSET_PICKER_VALUE,
+  formExchangeRatio: '',
+  formCashInLieu: '',
   isSaving: false,
   saveError: null,
   saveErrorFields: {},
@@ -103,6 +129,10 @@ function reducer(state: CorporateActionsState, action: CorporateActionsAction): 
         formRatioNumerator: '',
         formRatioDenominator: '',
         formNote: '',
+        formStep: 'fields',
+        formTargetAsset: BLANK_TARGET_ASSET_PICKER_VALUE,
+        formExchangeRatio: '',
+        formCashInLieu: '',
         saveError: null,
         saveErrorFields: {},
         isSaving: false,
@@ -119,6 +149,13 @@ function reducer(state: CorporateActionsState, action: CorporateActionsAction): 
         formRatioNumerator,
         formRatioDenominator,
         formNote: a.note ?? '',
+        formStep: 'fields',
+        formTargetAsset:
+          a.type === 'Merger'
+            ? { assetName: a.linkedAssetName ?? '', identity: BLANK_TARGET_ASSET_IDENTITY }
+            : BLANK_TARGET_ASSET_PICKER_VALUE,
+        formExchangeRatio: a.exchangeRatio !== null ? String(a.exchangeRatio) : '',
+        formCashInLieu: a.cashInLieu !== null ? String(a.cashInLieu) : '',
         saveError: null,
         saveErrorFields: {},
         isSaving: false,
@@ -128,6 +165,10 @@ function reducer(state: CorporateActionsState, action: CorporateActionsAction): 
       return { ...state, ...BLANK_FORM }
     case 'SET_FORM_FIELD':
       return { ...state, [action.payload.field]: action.payload.value }
+    case 'SET_STEP':
+      return { ...state, formStep: action.payload, saveError: null, saveErrorFields: {} }
+    case 'SET_TARGET_ASSET':
+      return { ...state, formTargetAsset: action.payload }
     case 'SAVE_START':
       return { ...state, isSaving: true, saveError: null, saveErrorFields: {} }
     case 'SAVE_SUCCESS':
@@ -156,14 +197,22 @@ export interface CorporateActionsData {
   formRatioNumerator: string
   formRatioDenominator: string
   formNote: string
+  formStep: 'fields' | 'confirm'
+  formTargetAsset: TargetAssetPickerValue
+  formExchangeRatio: string
+  formCashInLieu: string
   isSaving: boolean
   saveError: string | null
   saveErrorFields: Partial<Record<CorporateActionFormField, string>>
   deleteError: string | null
+  targetAssetOptions: AssetSearchOptionsData
   showNewForm: () => void
   showEditForm: (action: CorporateActionDto) => void
   cancelForm: () => void
   setFormField: (field: CorporateActionFormField, value: string) => void
+  setTargetAsset: (value: TargetAssetPickerValue) => void
+  advanceToConfirm: () => void
+  backToFields: () => void
   saveForm: () => void
   deleteCorporateAction: (id: string) => void
 }
@@ -172,6 +221,9 @@ export interface CorporateActionsData {
 export function useCorporateActions(): CorporateActionsData {
   const { selectedNode, scope } = useSelectedNode()
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
+  const targetAssetOptions = useAssetSearchOptions(
+    state.formType === 'Merger' && state.isFormVisible && !state.editingId,
+  )
 
   useEffect(() => {
     if (
@@ -208,8 +260,106 @@ export function useCorporateActions(): CorporateActionsData {
     dispatch({ type: 'SET_FORM_FIELD', payload: { field, value } })
   }, [])
 
+  const setTargetAsset = useCallback((value: TargetAssetPickerValue) => {
+    dispatch({ type: 'SET_TARGET_ASSET', payload: value })
+  }, [])
+
+  const advanceToConfirm = useCallback(() => {
+    const errors: Partial<Record<CorporateActionFormField, string>> = {}
+
+    if (!state.formEffectiveDate.trim()) {
+      errors.formEffectiveDate = 'Effective date is required'
+    }
+    if (!state.editingId && !state.formTargetAsset.assetName.trim()) {
+      errors.formTargetAsset = 'Target asset is required'
+    }
+    const exchangeRatio = parseValidatedNumber(state.formExchangeRatio)
+    if (exchangeRatio === null || exchangeRatio <= 0) {
+      errors.formExchangeRatio = 'Exchange ratio must be greater than zero'
+    }
+    if (state.formCashInLieu.trim() !== '') {
+      const cashInLieu = parseValidatedNumber(state.formCashInLieu)
+      if (cashInLieu === null || cashInLieu < 0) {
+        errors.formCashInLieu = 'Cash-in-lieu amount cannot be negative'
+      }
+    }
+
+    if (Object.keys(errors).length > 0) {
+      dispatch({ type: 'SAVE_ERROR', payload: { message: Object.values(errors)[0] ?? null, fields: errors } })
+      return
+    }
+
+    dispatch({ type: 'SET_STEP', payload: 'confirm' })
+  }, [state])
+
+  const backToFields = useCallback(() => dispatch({ type: 'SET_STEP', payload: 'fields' }), [])
+
   const saveForm = useCallback(() => {
     if (!selectedNode?.portfolioName || !selectedNode.assetName) return
+
+    if (state.formType === 'Merger') {
+      if (state.formStep !== 'confirm') return
+
+      const { formEffectiveDate, formExchangeRatio, formCashInLieu, formNote, formTargetAsset, editingId } = state
+      const exchangeRatio = parseValidatedNumber(formExchangeRatio) ?? 0
+      const cashInLieu = formCashInLieu.trim() === '' ? null : parseValidatedNumber(formCashInLieu)
+      const note = formNote.trim() === '' ? null : formNote
+
+      dispatch({ type: 'SAVE_START' })
+
+      const call = editingId
+        ? apiClient.updateMerger({
+            id: editingId,
+            brokerName: selectedNode.brokerName,
+            portfolioName: selectedNode.portfolioName,
+            sourceAssetName: selectedNode.assetName,
+            effectiveDate: formEffectiveDate,
+            exchangeRatio,
+            cashInLieuAmount: cashInLieu,
+            note,
+          })
+        : apiClient.addMerger({
+            brokerName: selectedNode.brokerName,
+            portfolioName: selectedNode.portfolioName,
+            sourceAssetName: selectedNode.assetName,
+            targetAssetName: formTargetAsset.assetName,
+            createTargetAssetInline: !findAssetByName(targetAssetOptions.options, formTargetAsset.assetName),
+            effectiveDate: formEffectiveDate,
+            exchangeRatio,
+            cashInLieuAmount: cashInLieu,
+            note,
+            targetISIN: formTargetAsset.identity.isin.trim() === '' ? null : formTargetAsset.identity.isin,
+            targetExchange: formTargetAsset.identity.exchange.trim() === '' ? null : formTargetAsset.identity.exchange,
+            targetTicker: formTargetAsset.identity.ticker.trim() === '' ? null : formTargetAsset.identity.ticker,
+            targetLocalTypeCode: null,
+            targetCountry: formTargetAsset.identity.country as CorporateActionMergerCreateDto['targetCountry'],
+            targetClass: formTargetAsset.identity.assetClass as CorporateActionMergerCreateDto['targetClass'],
+          })
+
+      void call
+        .then((result: CorporateActionMergerResultDto) => {
+          const resolved =
+            result.source?.name === selectedNode.assetName
+              ? result.source
+              : result.target?.name === selectedNode.assetName
+                ? result.target
+                : (result.source ?? result.target)
+          if (resolved) {
+            dispatch({ type: 'SAVE_SUCCESS', payload: resolved })
+          } else {
+            dispatch({
+              type: 'SAVE_ERROR',
+              payload: { message: 'Merger saved but the asset could not be refreshed — reload the page.', fields: {} },
+            })
+          }
+        })
+        .catch((err: unknown) => {
+          const message = getErrorMessage(err, 'Failed to save corporate action')
+          const field = mapCorporateActionErrorToField(message)
+          dispatch({ type: 'SAVE_ERROR', payload: { message, fields: field === null ? {} : { [field]: message } } })
+        })
+      return
+    }
 
     const { formEffectiveDate, formRatioNumerator, formRatioDenominator, formNote, editingId } = state
     const errors: Partial<Record<CorporateActionFormField, string>> = {}
@@ -256,7 +406,7 @@ export function useCorporateActions(): CorporateActionsData {
           payload: { message: getErrorMessage(err, 'Failed to save corporate action'), fields: {} },
         })
       })
-  }, [selectedNode, state])
+  }, [selectedNode, state, targetAssetOptions.options])
 
   const deleteCorporateAction = useCallback(
     (id: string) => {
@@ -293,14 +443,22 @@ export function useCorporateActions(): CorporateActionsData {
     formRatioNumerator: state.formRatioNumerator,
     formRatioDenominator: state.formRatioDenominator,
     formNote: state.formNote,
+    formStep: state.formStep,
+    formTargetAsset: state.formTargetAsset,
+    formExchangeRatio: state.formExchangeRatio,
+    formCashInLieu: state.formCashInLieu,
     isSaving: state.isSaving,
     saveError: state.saveError,
     saveErrorFields: state.saveErrorFields,
     deleteError: state.deleteError,
+    targetAssetOptions,
     showNewForm,
     showEditForm,
     cancelForm,
     setFormField,
+    setTargetAsset,
+    advanceToConfirm,
+    backToFields,
     saveForm,
     deleteCorporateAction,
   }

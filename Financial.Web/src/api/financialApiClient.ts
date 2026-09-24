@@ -31,6 +31,9 @@ import type {
   CategoryTotalsAnnualDto,
   CategoryUpdateDto,
   CorporateActionDeleteDto,
+  CorporateActionMergerCreateDto,
+  CorporateActionMergerResultDto,
+  CorporateActionMergerUpdateDto,
   CorporateActionSplitCreateDto,
   CorporateActionSplitUpdateDto,
   ExpenseCreateDto,
@@ -158,6 +161,8 @@ export interface FinancialApiClient {
   deleteTransaction: (request: TransactionDeleteDto) => Promise<AssetDetailsDto>
   addSplit: (request: CorporateActionSplitCreateDto) => Promise<AssetDetailsDto>
   updateSplit: (request: CorporateActionSplitUpdateDto) => Promise<AssetDetailsDto>
+  addMerger: (request: CorporateActionMergerCreateDto) => Promise<CorporateActionMergerResultDto>
+  updateMerger: (request: CorporateActionMergerUpdateDto) => Promise<CorporateActionMergerResultDto>
   deleteCorporateAction: (request: CorporateActionDeleteDto) => Promise<AssetDetailsDto>
   addCredit: (request: CreditCreateDto) => Promise<AssetDetailsDto>
   updateCredit: (request: CreditUpdateDto) => Promise<AssetDetailsDto>
@@ -451,6 +456,16 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       }),
     updateSplit: (requestBody) =>
       request<AssetDetailsDto>('/corporate-actions/split', {
+        method: 'PUT',
+        body: JSON.stringify(requestBody),
+      }),
+    addMerger: (requestBody) =>
+      request<CorporateActionMergerResultDto>('/corporate-actions/merger', {
+        method: 'POST',
+        body: JSON.stringify(requestBody),
+      }),
+    updateMerger: (requestBody) =>
+      request<CorporateActionMergerResultDto>('/corporate-actions/merger', {
         method: 'PUT',
         body: JSON.stringify(requestBody),
       }),

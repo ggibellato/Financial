@@ -11,13 +11,13 @@ export interface AssetSearchOptionsData {
   retry: () => void
 }
 
-export function useAssetSearchOptions(): AssetSearchOptionsData {
+export function useAssetSearchOptions(enabled = true): AssetSearchOptionsData {
   const { selectedNode } = useSelectedNode()
-  const hasHoldingScope = Boolean(selectedNode?.portfolioName && selectedNode.assetName)
+  const hasHoldingScope = enabled && Boolean(selectedNode?.portfolioName && selectedNode.assetName)
 
   const { data, isLoading, error, retry } = useAsyncResource<AssetAdminDto[]>(
     () => (hasHoldingScope ? apiClient.getAdminAssets() : null),
-    [selectedNode?.brokerName, selectedNode?.portfolioName, selectedNode?.assetName],
+    [enabled, selectedNode?.brokerName, selectedNode?.portfolioName, selectedNode?.assetName],
     'Unable to load assets',
   )
 

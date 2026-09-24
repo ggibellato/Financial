@@ -1,15 +1,27 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { AssetDetailsDto, CorporateActionDto, SelectedNode } from '../../api/types'
+import type { AssetAdminDto, AssetDetailsDto, CorporateActionDto, SelectedNode } from '../../api/types'
+import { BLANK_TARGET_ASSET_IDENTITY } from '../../components/targetAssetPickerValue'
 import { createSelectedNodeWrapper } from '../../test-utils/selectedNodeTestWrapper'
 import { useCorporateActions } from '../useCorporateActions'
 
-const { getAssetDetailsMock, addSplitMock, updateSplitMock, deleteCorporateActionMock } = vi.hoisted(() => ({
+const {
+  getAssetDetailsMock,
+  addSplitMock,
+  updateSplitMock,
+  addMergerMock,
+  updateMergerMock,
+  deleteCorporateActionMock,
+  getAdminAssetsMock,
+} = vi.hoisted(() => ({
   getAssetDetailsMock: vi.fn<FinancialApiClient['getAssetDetails']>(),
   addSplitMock: vi.fn<FinancialApiClient['addSplit']>(),
   updateSplitMock: vi.fn<FinancialApiClient['updateSplit']>(),
+  addMergerMock: vi.fn<FinancialApiClient['addMerger']>(),
+  updateMergerMock: vi.fn<FinancialApiClient['updateMerger']>(),
   deleteCorporateActionMock: vi.fn<FinancialApiClient['deleteCorporateAction']>(),
+  getAdminAssetsMock: vi.fn<FinancialApiClient['getAdminAssets']>(),
 }))
 
 vi.mock('../../api/financialApiClient', () => ({
@@ -17,9 +29,30 @@ vi.mock('../../api/financialApiClient', () => ({
     getAssetDetails: getAssetDetailsMock,
     addSplit: addSplitMock,
     updateSplit: updateSplitMock,
+    addMerger: addMergerMock,
+    updateMerger: updateMergerMock,
     deleteCorporateAction: deleteCorporateActionMock,
+    getAdminAssets: getAdminAssetsMock,
   } as Partial<FinancialApiClient>,
 }))
+
+function makeAdminAsset(name: string): AssetAdminDto {
+  return {
+    name,
+    brokerName: 'XPI',
+    portfolioName: 'Acoes',
+    brokerStatus: 'Active',
+    isin: '',
+    exchange: '',
+    ticker: '',
+    country: 'Unknown',
+    localTypeCode: '',
+    class: 'Unknown',
+    valuationMethod: 'Unspecified',
+    incomePolicy: 'Unknown',
+    quantity: 0,
+  }
+}
 
 const ASSET_NODE: SelectedNode = {
   nodeType: 'Asset',
@@ -92,12 +125,32 @@ const ASSET_DETAILS: AssetDetailsDto = {
   taxJurisdictions: [],
 }
 
+const MERGER_RECORD: CorporateActionDto = {
+  id: 'ca2',
+  type: 'Merger',
+  effectiveDate: '2024-05-01T00:00:00',
+  ratioFactor: null,
+  allocationPercentage: null,
+  calculationStatus: 'RequiresReview',
+  carriedCostBasis: 2000,
+  cashInLieu: null,
+  convertedQuantity: 100,
+  correlationId: 'corr-1',
+  exchangeRatio: 0.5,
+  linkedAssetName: 'Company B',
+  note: null,
+  role: 'Source',
+}
+
 describe('useCorporateActions', () => {
   beforeEach(() => {
     getAssetDetailsMock.mockReset().mockResolvedValue(ASSET_DETAILS)
     addSplitMock.mockReset()
     updateSplitMock.mockReset()
+    addMergerMock.mockReset()
+    updateMergerMock.mockReset()
     deleteCorporateActionMock.mockReset()
+    getAdminAssetsMock.mockReset().mockResolvedValue([])
   })
 
   it('fetches the asset and exposes its corporate actions once on selection', async () => {
@@ -292,5 +345,227 @@ describe('useCorporateActions', () => {
       expect(result.current.deleteError).toBe('Cannot delete: a later disposal depends on lots created by this split'),
     )
     expect(result.current.corporateActions).toEqual([SPLIT_RECORD])
+  })
+
+  it('still defaults a new form to Split even after Merger was last selected', async () => {
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useCorporateActions(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showNewForm())
+    act(() => result.current.setFormField('formType', 'Merger'))
+    act(() => result.current.cancelForm())
+    act(() => result.current.showNewForm())
+
+    expect(result.current.formType).toBe('Split')
+  })
+
+  it('blocks advanceToConfirm on a missing target asset and an invalid exchange ratio, leaving formStep on fields', async () => {
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useCorporateActions(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showNewForm())
+    act(() => result.current.setFormField('formType', 'Merger'))
+    act(() => result.current.setFormField('formExchangeRatio', '0'))
+    act(() => result.current.advanceToConfirm())
+
+    expect(result.current.formStep).toBe('fields')
+    expect(result.current.saveErrorFields.formTargetAsset).toBe('Target asset is required')
+    expect(result.current.saveErrorFields.formExchangeRatio).toBe('Exchange ratio must be greater than zero')
+  })
+
+  it('moves formStep to confirm once the Merger fields are valid', async () => {
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useCorporateActions(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showNewForm())
+    act(() => result.current.setFormField('formType', 'Merger'))
+    act(() => result.current.setTargetAsset({ assetName: 'Company B', identity: BLANK_TARGET_ASSET_IDENTITY }))
+    act(() => result.current.setFormField('formExchangeRatio', '0.5'))
+    act(() => result.current.advanceToConfirm())
+
+    expect(result.current.formStep).toBe('confirm')
+    expect(result.current.saveErrorFields).toEqual({})
+  })
+
+  it('does not call the API when saveForm is invoked on a Merger still at the fields step', async () => {
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useCorporateActions(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showNewForm())
+    act(() => result.current.setFormField('formType', 'Merger'))
+    act(() => result.current.setTargetAsset({ assetName: 'Company B', identity: BLANK_TARGET_ASSET_IDENTITY }))
+    act(() => result.current.setFormField('formExchangeRatio', '0.5'))
+    act(() => result.current.saveForm())
+
+    expect(result.current.formStep).toBe('fields')
+    expect(result.current.isFormVisible).toBe(true)
+    expect(addMergerMock).not.toHaveBeenCalled()
+  })
+
+  it('backToFields returns to the fields step and clears the save error', async () => {
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useCorporateActions(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showNewForm())
+    act(() => result.current.setFormField('formType', 'Merger'))
+    act(() => result.current.setFormField('formExchangeRatio', '0'))
+    act(() => result.current.advanceToConfirm())
+    expect(result.current.saveErrorFields.formExchangeRatio).toBeDefined()
+
+    act(() => result.current.backToFields())
+
+    expect(result.current.formStep).toBe('fields')
+    expect(result.current.saveError).toBeNull()
+    expect(result.current.saveErrorFields).toEqual({})
+  })
+
+  it('saves a new merger with createTargetAssetInline true when the typed name matches no existing asset', async () => {
+    getAdminAssetsMock.mockReset().mockResolvedValue([makeAdminAsset('Company C')])
+    const savedResult = {
+      source: { ...ASSET_DETAILS, quantity: 0 },
+      target: { ...ASSET_DETAILS, name: 'Company B', quantity: 100 },
+    }
+    addMergerMock.mockResolvedValueOnce(savedResult)
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useCorporateActions(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showNewForm())
+    act(() => result.current.setFormField('formType', 'Merger'))
+    await waitFor(() => expect(result.current.targetAssetOptions.isLoading).toBe(false))
+
+    act(() => result.current.setTargetAsset({ assetName: 'Company B', identity: BLANK_TARGET_ASSET_IDENTITY }))
+    act(() => result.current.setFormField('formExchangeRatio', '0.5'))
+    act(() => result.current.setFormField('formEffectiveDate', '2024-05-01'))
+    act(() => result.current.advanceToConfirm())
+    act(() => result.current.saveForm())
+
+    await waitFor(() => expect(result.current.isFormVisible).toBe(false))
+
+    expect(addMergerMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        brokerName: 'XPI',
+        portfolioName: 'Acoes',
+        sourceAssetName: 'KLBN4',
+        targetAssetName: 'Company B',
+        createTargetAssetInline: true,
+        exchangeRatio: 0.5,
+      }),
+    )
+  })
+
+  it('saves a new merger with createTargetAssetInline false when the typed name matches an existing asset', async () => {
+    getAdminAssetsMock.mockReset().mockResolvedValue([makeAdminAsset('Company B')])
+    const savedResult = {
+      source: { ...ASSET_DETAILS, quantity: 0 },
+      target: { ...ASSET_DETAILS, name: 'Company B', quantity: 100 },
+    }
+    addMergerMock.mockResolvedValueOnce(savedResult)
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useCorporateActions(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showNewForm())
+    act(() => result.current.setFormField('formType', 'Merger'))
+    await waitFor(() => expect(result.current.targetAssetOptions.isLoading).toBe(false))
+
+    act(() => result.current.setTargetAsset({ assetName: 'Company B', identity: BLANK_TARGET_ASSET_IDENTITY }))
+    act(() => result.current.setFormField('formExchangeRatio', '0.5'))
+    act(() => result.current.advanceToConfirm())
+    act(() => result.current.saveForm())
+
+    await waitFor(() => expect(result.current.isFormVisible).toBe(false))
+
+    expect(addMergerMock).toHaveBeenCalledWith(
+      expect.objectContaining({ createTargetAssetInline: false }),
+    )
+  })
+
+  it('saves an edited merger via updateMerger with id/sourceAssetName and no target fields', async () => {
+    const savedResult = {
+      source: { ...ASSET_DETAILS, quantity: 0 },
+      target: { ...ASSET_DETAILS, name: 'Company B', quantity: 100 },
+    }
+    updateMergerMock.mockResolvedValueOnce(savedResult)
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useCorporateActions(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showEditForm(MERGER_RECORD))
+    act(() => result.current.advanceToConfirm())
+    act(() => result.current.saveForm())
+
+    await waitFor(() => expect(result.current.isFormVisible).toBe(false))
+
+    expect(updateMergerMock).toHaveBeenCalledWith({
+      id: 'ca2',
+      brokerName: 'XPI',
+      portfolioName: 'Acoes',
+      sourceAssetName: 'KLBN4',
+      effectiveDate: '2024-05-01',
+      exchangeRatio: 0.5,
+      cashInLieuAmount: null,
+      note: null,
+    })
+    expect(addMergerMock).not.toHaveBeenCalled()
+  })
+
+  it('routes a merger name-collision server error to saveErrorFields.formTargetAsset', async () => {
+    addMergerMock.mockRejectedValueOnce(
+      new Error('An asset named "Company B" already exists — select it or choose a different name'),
+    )
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useCorporateActions(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showNewForm())
+    act(() => result.current.setFormField('formType', 'Merger'))
+    act(() => result.current.setTargetAsset({ assetName: 'Company B', identity: BLANK_TARGET_ASSET_IDENTITY }))
+    act(() => result.current.setFormField('formExchangeRatio', '0.5'))
+    act(() => result.current.advanceToConfirm())
+    act(() => result.current.saveForm())
+
+    await waitFor(() => expect(result.current.isSaving).toBe(false))
+
+    expect(result.current.saveErrorFields.formTargetAsset).toBe(
+      'An asset named "Company B" already exists — select it or choose a different name',
+    )
+  })
+
+  it('SAVE_SUCCESS picks the target side of the merger result when the currently-selected asset is the target', async () => {
+    const savedResult = {
+      source: { ...ASSET_DETAILS, name: 'Company A', quantity: 0 },
+      target: { ...ASSET_DETAILS, name: 'KLBN4', quantity: 100 },
+    }
+    addMergerMock.mockResolvedValueOnce(savedResult)
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useCorporateActions(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showNewForm())
+    act(() => result.current.setFormField('formType', 'Merger'))
+    act(() => result.current.setTargetAsset({ assetName: 'Company A', identity: BLANK_TARGET_ASSET_IDENTITY }))
+    act(() => result.current.setFormField('formExchangeRatio', '0.5'))
+    act(() => result.current.advanceToConfirm())
+    act(() => result.current.saveForm())
+
+    await waitFor(() => expect(result.current.isFormVisible).toBe(false))
+
+    expect(result.current.asset).toEqual(savedResult.target)
   })
 })
