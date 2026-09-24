@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import { Button, Table, TableBody, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
 import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import type { CorporateActionDto } from '../api/types'
@@ -10,18 +11,9 @@ import SortableColumnHeader from './grid/SortableColumnHeader'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { useCorporateActions } from '../hooks/useCorporateActions'
 import { confirmThenRun } from '../utils/confirmThenRun'
+import { corporateActionTypeLabel } from '../utils/corporateActionTypeLabel'
 import { formatN2, formatShortDate } from '../utils/formatters'
 import './CorporateActionsTab.css'
-
-const TYPE_LABELS: Record<string, string> = {
-  Split: 'Split',
-  Merger: 'Merger',
-  SpinOff: 'Spin-off',
-}
-
-function typeLabel(type: string): string {
-  return TYPE_LABELS[type] ?? type
-}
 
 function formatRatioFactor(factor: number): string {
   return `×${factor.toFixed(4).replace(/\.?0+$/, '')}`
@@ -58,21 +50,26 @@ function resultingChange(record: CorporateActionDto): string {
 
 const SORT_ACCESSORS: Record<string, SortAccessor<CorporateActionDto>> = {
   date: (record) => new Date(record.effectiveDate),
-  type: (record) => typeLabel(record.type),
+  type: (record) => corporateActionTypeLabel(record.type),
 }
 
 interface CorporateActionRowProps {
   record: CorporateActionDto
   affectedAssetName: string
+  isHighlighted: boolean
   onEdit: (record: CorporateActionDto) => void
   onDelete: (id: string) => void
 }
 
-function CorporateActionRow({ record, affectedAssetName, onEdit, onDelete }: CorporateActionRowProps) {
+function CorporateActionRow({ record, affectedAssetName, isHighlighted, onEdit, onDelete }: CorporateActionRowProps) {
   return (
-    <TableRow>
+    <TableRow
+      data-corporate-action-id={record.id}
+      tabIndex={-1}
+      className={isHighlighted ? 'corporate-actions-tab__row corporate-actions-tab__row--highlighted' : undefined}
+    >
       <DataTableCell label="Date">{formatShortDate(record.effectiveDate)}</DataTableCell>
-      <DataTableCell label="Type">{typeLabel(record.type)}</DataTableCell>
+      <DataTableCell label="Type">{corporateActionTypeLabel(record.type)}</DataTableCell>
       <DataTableCell label="Affected/Linked Asset">{record.linkedAssetName ?? affectedAssetName}</DataTableCell>
       <DataTableCell label="Resulting Change">{resultingChange(record)}</DataTableCell>
       <DataTableCell label="Tax Status">
@@ -100,7 +97,11 @@ function CorporateActionRow({ record, affectedAssetName, onEdit, onDelete }: Cor
   )
 }
 
-export default function CorporateActionsTab() {
+interface CorporateActionsTabProps {
+  focusRecordId?: string | null
+}
+
+export default function CorporateActionsTab({ focusRecordId }: CorporateActionsTabProps) {
   const {
     asset,
     corporateActions,
@@ -139,6 +140,23 @@ export default function CorporateActionsTab() {
 
   const { sortedRows, sortState, requestSort } = useSortableRows(corporateActions, SORT_ACCESSORS)
 
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [highlightedId, setHighlightedId] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!focusRecordId || isLoading) return
+    if (!corporateActions.some((record) => record.id === focusRecordId)) return
+    const row = containerRef.current?.querySelector<HTMLElement>(
+      `[data-corporate-action-id="${focusRecordId}"]`,
+    )
+    if (!row) return
+    row.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    ;(row.querySelector<HTMLElement>('button') ?? row).focus()
+    setHighlightedId(focusRecordId)
+    const timer = setTimeout(() => setHighlightedId(null), 2000)
+    return () => clearTimeout(timer)
+  }, [focusRecordId, isLoading, corporateActions])
+
   const confirmAndDelete = (id: string) =>
     confirmThenRun('Delete this corporate action?', () => deleteCorporateAction(id))
 
@@ -153,7 +171,7 @@ export default function CorporateActionsTab() {
   const affectedAssetName = asset?.name ?? ''
 
   return (
-    <div className="corporate-actions-tab">
+    <div className="corporate-actions-tab" ref={containerRef}>
       <div className="corporate-actions-tab__toolbar">
         <Button appearance="primary" icon={<AddRegular />} onClick={showNewForm}>
           New corporate action
@@ -224,6 +242,7 @@ export default function CorporateActionsTab() {
                   key={record.id}
                   record={record}
                   affectedAssetName={affectedAssetName}
+                  isHighlighted={record.id === highlightedId}
                   onEdit={showEditForm}
                   onDelete={confirmAndDelete}
                 />

@@ -14,6 +14,7 @@ import { DismissRegular } from '@fluentui/react-icons'
 import ErrorState from '../ErrorState'
 import LoadingState from '../LoadingState'
 import { useHoldingNavigation } from '../../hooks/useHoldingNavigation'
+import { corporateActionTypeLabel } from '../../utils/corporateActionTypeLabel'
 import { formatN2, formatShortDate } from '../../utils/formatters'
 import type { DataQualityReportDto } from '../../api/types'
 import './DataQualityWarningsPanel.css'
@@ -23,6 +24,7 @@ export type WarningCategoryId =
   | 'missingPrice'
   | 'missingCostBasis'
   | 'unresolvedTaxClassification'
+  | 'corporateActionAwaitingTaxReview'
 
 interface WarningRow {
   key: string
@@ -30,6 +32,7 @@ interface WarningRow {
   portfolioName: string
   assetName: string
   secondary: string
+  corporateActionId?: string
 }
 
 interface WarningCategory {
@@ -95,6 +98,20 @@ const TAX_CATEGORY: WarningCategory = {
       secondary: `${holdingLocationText(finding.brokerName, finding.portfolioName)} — ${finding.eventCategory}, tax year ${
         finding.taxYear
       }`,
+    })),
+}
+
+const CORPORATE_ACTION_CATEGORY: WarningCategory = {
+  id: 'corporateActionAwaitingTaxReview',
+  label: 'Corporate action awaiting tax review',
+  rows: (report) =>
+    report.corporateActionsAwaitingTaxReview.map((finding, index) => ({
+      key: `corporate-action-${index}-${finding.corporateActionId}`,
+      brokerName: finding.brokerName,
+      portfolioName: finding.portfolioName,
+      assetName: finding.assetName,
+      secondary: `${holdingLocationText(finding.brokerName, finding.portfolioName)} — ${corporateActionTypeLabel(finding.type)}, tax year ${finding.taxYear}`,
+      corporateActionId: finding.corporateActionId,
     })),
 }
 
@@ -194,7 +211,7 @@ const DataQualityWarningsPanel = forwardRef<DataQualityWarningsPanelHandle, Data
     }
 
     const handleSelectRow = (row: WarningRow) => {
-      void navigateToHolding(row.brokerName, row.portfolioName, row.assetName).then((navigated) => {
+      void navigateToHolding(row.brokerName, row.portfolioName, row.assetName, row.corporateActionId).then((navigated) => {
         setNavigationError(
           navigated
             ? null
@@ -220,7 +237,8 @@ const DataQualityWarningsPanel = forwardRef<DataQualityWarningsPanelHandle, Data
       report.salesExceedPurchases.length +
       report.unpricedOpenHoldings.length +
       report.openHoldingsMissingCostBasis.length +
-      report.unresolvedTaxClassifications.length
+      report.unresolvedTaxClassifications.length +
+      report.corporateActionsAwaitingTaxReview.length
 
     return (
       <div className="data-quality-warnings" ref={containerRef}>
@@ -257,7 +275,7 @@ const DataQualityWarningsPanel = forwardRef<DataQualityWarningsPanelHandle, Data
               <p className="data-quality-warnings__stale">Stale valuation ({staleValuationCount})</p>
             )}
             <CategoryGroup
-              categories={[TAX_CATEGORY]}
+              categories={[TAX_CATEGORY, CORPORATE_ACTION_CATEGORY]}
               report={report}
               openItems={openItems}
               onOpenChange={handleOpenChange}

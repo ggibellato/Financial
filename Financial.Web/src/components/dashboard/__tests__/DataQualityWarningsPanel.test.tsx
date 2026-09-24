@@ -46,6 +46,21 @@ const FULL_REPORT: DataQualityReportDto = {
   staleValuationCount: 3,
 }
 
+const REPORT_WITH_CORPORATE_ACTION: DataQualityReportDto = {
+  ...FULL_REPORT,
+  corporateActionsAwaitingTaxReview: [
+    {
+      brokerName: 'XPI',
+      portfolioName: 'Acoes',
+      assetName: 'PETR4',
+      taxYear: '2025/26',
+      type: 'SpinOff',
+      corporateActionId: 'ca-123',
+      effectiveDate: '2025-11-01T00:00:00Z',
+    },
+  ],
+}
+
 const noop = () => {}
 
 function renderPanel(report: DataQualityReportDto | null, ref?: React.RefObject<DataQualityWarningsPanelHandle | null>) {
@@ -108,7 +123,7 @@ describe('DataQualityWarningsPanel', () => {
     fireEvent.click(screen.getByText('Missing price (1)'))
     fireEvent.click(screen.getByText('VUSA'))
 
-    await waitFor(() => expect(navigateToHoldingMock).toHaveBeenCalledWith('Trading212', 'ISA', 'VUSA'))
+    await waitFor(() => expect(navigateToHoldingMock).toHaveBeenCalledWith('Trading212', 'ISA', 'VUSA', undefined))
   })
 
   it('shows_a_dismissible_warning_when_the_holding_cannot_be_located', async () => {
@@ -177,6 +192,31 @@ describe('DataQualityWarningsPanel', () => {
     renderPanel(FULL_REPORT)
 
     expect(screen.getByRole('heading', { name: /Missing price/, level: 4 })).toBeInTheDocument()
+  })
+
+  it('renders_the_corporate_action_awaiting_tax_review_category_with_the_correct_label_and_count', () => {
+    renderPanel(REPORT_WITH_CORPORATE_ACTION)
+
+    expect(screen.getByText('Corporate action awaiting tax review (1)')).toBeInTheDocument()
+  })
+
+  it('shows_the_humanized_type_and_tax_year_on_a_corporate_action_row', () => {
+    renderPanel(REPORT_WITH_CORPORATE_ACTION)
+
+    fireEvent.click(screen.getByText('Corporate action awaiting tax review (1)'))
+
+    expect(screen.getByText(/Spin-off, tax year 2025\/26/)).toBeInTheDocument()
+  })
+
+  it('clicking_a_corporate_action_row_navigates_with_the_corporateActionId_as_the_4th_argument', async () => {
+    renderPanel(REPORT_WITH_CORPORATE_ACTION)
+
+    fireEvent.click(screen.getByText('Corporate action awaiting tax review (1)'))
+    fireEvent.click(screen.getByText('PETR4'))
+
+    await waitFor(() =>
+      expect(navigateToHoldingMock).toHaveBeenCalledWith('XPI', 'Acoes', 'PETR4', 'ca-123'),
+    )
   })
 
   it('shows_the_loading_state_while_the_report_is_pending', () => {

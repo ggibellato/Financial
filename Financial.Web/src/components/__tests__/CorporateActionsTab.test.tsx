@@ -234,4 +234,29 @@ describe('CorporateActionsTab', () => {
 
     expect(screen.getByText(`+${formatN2(40)} units received`)).toBeInTheDocument()
   })
+
+  it('focuses and highlights the row matching focusRecordId once the history has loaded', () => {
+    const rowA = split({ id: 'ca1' })
+    const rowB = split({ id: 'ca2' })
+    setMock({ corporateActions: [rowA, rowB] })
+    Element.prototype.scrollIntoView = vi.fn()
+
+    render(<CorporateActionsTab focusRecordId="ca2" />)
+
+    const row = document.querySelector('[data-corporate-action-id="ca2"]')
+    expect(row?.querySelector('button')).toHaveFocus()
+    expect(row).toHaveClass('corporate-actions-tab__row--highlighted')
+  })
+
+  it('does not crash or change focus when focusRecordId matches no loaded record', () => {
+    const rowA = split({ id: 'ca1' })
+    setMock({ corporateActions: [rowA] })
+    Element.prototype.scrollIntoView = vi.fn()
+
+    render(<CorporateActionsTab focusRecordId="does-not-exist" />)
+
+    const row = document.querySelector('[data-corporate-action-id="ca1"]')
+    expect(row).not.toHaveFocus()
+    expect(document.body).toHaveFocus()
+  })
 })

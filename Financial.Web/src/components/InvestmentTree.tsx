@@ -6,7 +6,7 @@ import { apiClient } from '../api/financialApiClient'
 import type { PositionType, SelectedNode, TreeNodeDto } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
 import { getErrorMessage } from '../utils/formatters'
-import { findAssetInTree, readPendingSelection } from '../utils/holdingNavigation'
+import { findAssetInTree, readPendingCorporateActionId, readPendingSelection } from '../utils/holdingNavigation'
 import { POSITION_TYPE_STATUS_CLASS } from '../utils/positionType'
 import { getMetaNumber, getMetaString } from '../utils/treeNodeMetadata'
 import ErrorState from './ErrorState'
@@ -339,9 +339,11 @@ export default function InvestmentTree() {
           .map((child) => `broker:${getMetaString(child.metadata, 'BrokerName')}`)
 
         const pending = readPendingSelection(routerStateRef.current)
+        const pendingCorporateActionId = readPendingCorporateActionId(routerStateRef.current)
         const asset = pending ? findAssetInTree(data, pending) : null
         if (pending && asset) {
-          setSelectedNode(buildAssetSelection(asset, pending.brokerName, pending.portfolioName))
+          const selection = buildAssetSelection(asset, pending.brokerName, pending.portfolioName)
+          setSelectedNode(pendingCorporateActionId ? { ...selection, pendingCorporateActionId } : selection)
           setOpenItems(
             new Set([
               ...brokerKeys,

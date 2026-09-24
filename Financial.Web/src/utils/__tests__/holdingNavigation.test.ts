@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { TreeNodeDto } from '../../api/types'
-import { findAssetInTree, readPendingSelection, resolveHoldingLocation } from '../holdingNavigation'
+import { findAssetInTree, readPendingCorporateActionId, readPendingSelection, resolveHoldingLocation } from '../holdingNavigation'
 
 const { getNavigationTreeMock } = vi.hoisted(() => ({
   getNavigationTreeMock: vi.fn<FinancialApiClient['getNavigationTree']>(),
@@ -130,5 +130,21 @@ describe('readPendingSelection', () => {
     ['a non-string field', { pendingSelection: { brokerName: 1, portfolioName: 'Acoes', assetName: 'KLBN4' } }],
   ])('returns_null_for_%s', (_label, state) => {
     expect(readPendingSelection(state)).toBeNull()
+  })
+})
+
+describe('readPendingCorporateActionId', () => {
+  it('reads_a_valid_string_id_from_state', () => {
+    expect(readPendingCorporateActionId({ pendingCorporateActionId: 'ca-123' })).toBe('ca-123')
+  })
+
+  it.each([
+    ['null state', null],
+    ['a string state', 'pendingCorporateActionId'],
+    ['an unrelated state', { other: true }],
+    ['a missing field', {}],
+    ['a non-string field', { pendingCorporateActionId: 123 }],
+  ])('returns_null_for_%s', (_label, state) => {
+    expect(readPendingCorporateActionId(state)).toBeNull()
   })
 })
