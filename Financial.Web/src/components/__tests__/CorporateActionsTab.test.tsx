@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CorporateActionsData } from '../../hooks/useCorporateActions'
 import type { AssetDetailsDto, CorporateActionDto } from '../../api/types'
 import { BLANK_TARGET_ASSET_PICKER_VALUE } from '../targetAssetPickerValue'
+import { formatN2 } from '../../utils/formatters'
 import CorporateActionsTab from '../CorporateActionsTab'
 
 const mockRetry = vi.fn()
@@ -11,6 +12,7 @@ const mockShowEditForm = vi.fn()
 const mockCancelForm = vi.fn()
 const mockSetFormField = vi.fn()
 const mockSetTargetAsset = vi.fn()
+const mockSetNewAsset = vi.fn()
 const mockAdvanceToConfirm = vi.fn()
 const mockBackToFields = vi.fn()
 const mockSaveForm = vi.fn()
@@ -55,6 +57,9 @@ const DEFAULT_HOOK: CorporateActionsData = {
   formTargetAsset: BLANK_TARGET_ASSET_PICKER_VALUE,
   formExchangeRatio: '',
   formCashInLieu: '',
+  formNewAsset: BLANK_TARGET_ASSET_PICKER_VALUE,
+  formQuantityReceived: '',
+  formAllocationPercentage: '',
   isSaving: false,
   saveError: null,
   saveErrorFields: {},
@@ -65,6 +70,7 @@ const DEFAULT_HOOK: CorporateActionsData = {
   cancelForm: mockCancelForm,
   setFormField: mockSetFormField,
   setTargetAsset: mockSetTargetAsset,
+  setNewAsset: mockSetNewAsset,
   advanceToConfirm: mockAdvanceToConfirm,
   backToFields: mockBackToFields,
   saveForm: mockSaveForm,
@@ -93,6 +99,7 @@ describe('CorporateActionsTab', () => {
     mockCancelForm.mockReset()
     mockSetFormField.mockReset()
     mockSetTargetAsset.mockReset()
+    mockSetNewAsset.mockReset()
     mockAdvanceToConfirm.mockReset()
     mockBackToFields.mockReset()
     mockSaveForm.mockReset()
@@ -194,5 +201,37 @@ describe('CorporateActionsTab', () => {
 
     expect(screen.getByText('Requires review')).toBeInTheDocument()
     expect(screen.getAllByText('—').length).toBeGreaterThan(0)
+  })
+
+  it('shows the Resulting Change text for a SpinOff Parent-role record', () => {
+    const parentRow = split({
+      id: 'ca3',
+      type: 'SpinOff',
+      role: 'Parent',
+      calculationStatus: 'RequiresReview',
+      ratioFactor: null,
+      allocationPercentage: 25,
+    })
+    setMock({ corporateActions: [parentRow] })
+
+    render(<CorporateActionsTab />)
+
+    expect(screen.getByText('Cost basis reduced by spin-off')).toBeInTheDocument()
+  })
+
+  it('shows the Resulting Change text for a SpinOff New-role record', () => {
+    const newRow = split({
+      id: 'ca4',
+      type: 'SpinOff',
+      role: 'New',
+      calculationStatus: 'RequiresReview',
+      ratioFactor: null,
+      convertedQuantity: 40,
+    })
+    setMock({ corporateActions: [newRow] })
+
+    render(<CorporateActionsTab />)
+
+    expect(screen.getByText(`+${formatN2(40)} units received`)).toBeInTheDocument()
   })
 })

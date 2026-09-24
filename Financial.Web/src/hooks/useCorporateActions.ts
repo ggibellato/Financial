@@ -5,6 +5,8 @@ import type {
   CorporateActionDto,
   CorporateActionMergerCreateDto,
   CorporateActionMergerResultDto,
+  CorporateActionSpinOffCreateDto,
+  CorporateActionSpinOffResultDto,
 } from '../api/types'
 import {
   BLANK_TARGET_ASSET_IDENTITY,
@@ -14,8 +16,18 @@ import {
 } from '../components/targetAssetPickerValue'
 import { useSelectedNode } from '../context/SelectedNodeContext'
 import { getErrorMessage, parseValidatedNumber, toInputDate, todayIsoDate } from '../utils/formatters'
-import { mapCorporateActionErrorToField } from './mapCorporateActionErrorToField'
+import { isAssetNameCollisionError } from './isAssetNameCollisionError'
 import { useAssetSearchOptions, type AssetSearchOptionsData } from './useAssetSearchOptions'
+
+function pickAffectedAsset(
+  a: AssetDetailsDto | null,
+  b: AssetDetailsDto | null,
+  name: string | undefined,
+): AssetDetailsDto | null {
+  if (a?.name === name) return a
+  if (b?.name === name) return b
+  return a ?? b
+}
 
 export type CorporateActionFormField =
   | 'formEffectiveDate'
@@ -27,6 +39,9 @@ export type CorporateActionFormField =
   | 'formTargetAsset'
   | 'formExchangeRatio'
   | 'formCashInLieu'
+  | 'formNewAsset'
+  | 'formQuantityReceived'
+  | 'formAllocationPercentage'
 
 interface CorporateActionsState {
   asset: AssetDetailsDto | null
@@ -44,6 +59,9 @@ interface CorporateActionsState {
   formTargetAsset: TargetAssetPickerValue
   formExchangeRatio: string
   formCashInLieu: string
+  formNewAsset: TargetAssetPickerValue
+  formQuantityReceived: string
+  formAllocationPercentage: string
   isSaving: boolean
   saveError: string | null
   saveErrorFields: Partial<Record<CorporateActionFormField, string>>
@@ -62,6 +80,7 @@ type CorporateActionsAction =
   | { type: 'SET_FORM_FIELD'; payload: { field: CorporateActionFormField; value: string } }
   | { type: 'SET_STEP'; payload: 'fields' | 'confirm' }
   | { type: 'SET_TARGET_ASSET'; payload: TargetAssetPickerValue }
+  | { type: 'SET_NEW_ASSET'; payload: TargetAssetPickerValue }
   | { type: 'SAVE_START' }
   | { type: 'SAVE_SUCCESS'; payload: AssetDetailsDto }
   | { type: 'SAVE_ERROR'; payload: { message: string | null; fields: Partial<Record<CorporateActionFormField, string>> } }
@@ -93,6 +112,9 @@ const BLANK_FORM = {
   formTargetAsset: BLANK_TARGET_ASSET_PICKER_VALUE,
   formExchangeRatio: '',
   formCashInLieu: '',
+  formNewAsset: BLANK_TARGET_ASSET_PICKER_VALUE,
+  formQuantityReceived: '',
+  formAllocationPercentage: '',
   isSaving: false,
   saveError: null,
   saveErrorFields: {},
@@ -133,6 +155,9 @@ function reducer(state: CorporateActionsState, action: CorporateActionsAction): 
         formTargetAsset: BLANK_TARGET_ASSET_PICKER_VALUE,
         formExchangeRatio: '',
         formCashInLieu: '',
+        formNewAsset: BLANK_TARGET_ASSET_PICKER_VALUE,
+        formQuantityReceived: '',
+        formAllocationPercentage: '',
         saveError: null,
         saveErrorFields: {},
         isSaving: false,
@@ -156,6 +181,12 @@ function reducer(state: CorporateActionsState, action: CorporateActionsAction): 
             : BLANK_TARGET_ASSET_PICKER_VALUE,
         formExchangeRatio: a.exchangeRatio !== null ? String(a.exchangeRatio) : '',
         formCashInLieu: a.cashInLieu !== null ? String(a.cashInLieu) : '',
+        formNewAsset:
+          a.type === 'SpinOff'
+            ? { assetName: a.linkedAssetName ?? '', identity: BLANK_TARGET_ASSET_IDENTITY }
+            : BLANK_TARGET_ASSET_PICKER_VALUE,
+        formQuantityReceived: a.convertedQuantity !== null ? String(a.convertedQuantity) : '',
+        formAllocationPercentage: a.allocationPercentage !== null ? String(a.allocationPercentage) : '',
         saveError: null,
         saveErrorFields: {},
         isSaving: false,
@@ -169,6 +200,8 @@ function reducer(state: CorporateActionsState, action: CorporateActionsAction): 
       return { ...state, formStep: action.payload, saveError: null, saveErrorFields: {} }
     case 'SET_TARGET_ASSET':
       return { ...state, formTargetAsset: action.payload }
+    case 'SET_NEW_ASSET':
+      return { ...state, formNewAsset: action.payload }
     case 'SAVE_START':
       return { ...state, isSaving: true, saveError: null, saveErrorFields: {} }
     case 'SAVE_SUCCESS':
@@ -201,6 +234,9 @@ export interface CorporateActionsData {
   formTargetAsset: TargetAssetPickerValue
   formExchangeRatio: string
   formCashInLieu: string
+  formNewAsset: TargetAssetPickerValue
+  formQuantityReceived: string
+  formAllocationPercentage: string
   isSaving: boolean
   saveError: string | null
   saveErrorFields: Partial<Record<CorporateActionFormField, string>>
@@ -211,6 +247,7 @@ export interface CorporateActionsData {
   cancelForm: () => void
   setFormField: (field: CorporateActionFormField, value: string) => void
   setTargetAsset: (value: TargetAssetPickerValue) => void
+  setNewAsset: (value: TargetAssetPickerValue) => void
   advanceToConfirm: () => void
   backToFields: () => void
   saveForm: () => void
@@ -222,7 +259,7 @@ export function useCorporateActions(): CorporateActionsData {
   const { selectedNode, scope } = useSelectedNode()
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
   const targetAssetOptions = useAssetSearchOptions(
-    state.formType === 'Merger' && state.isFormVisible && !state.editingId,
+    (state.formType === 'Merger' || state.formType === 'SpinOff') && state.isFormVisible && !state.editingId,
   )
 
   useEffect(() => {
@@ -262,6 +299,10 @@ export function useCorporateActions(): CorporateActionsData {
 
   const setTargetAsset = useCallback((value: TargetAssetPickerValue) => {
     dispatch({ type: 'SET_TARGET_ASSET', payload: value })
+  }, [])
+
+  const setNewAsset = useCallback((value: TargetAssetPickerValue) => {
+    dispatch({ type: 'SET_NEW_ASSET', payload: value })
   }, [])
 
   const advanceToConfirm = useCallback(() => {
@@ -338,12 +379,7 @@ export function useCorporateActions(): CorporateActionsData {
 
       void call
         .then((result: CorporateActionMergerResultDto) => {
-          const resolved =
-            result.source?.name === selectedNode.assetName
-              ? result.source
-              : result.target?.name === selectedNode.assetName
-                ? result.target
-                : (result.source ?? result.target)
+          const resolved = pickAffectedAsset(result.source, result.target, selectedNode.assetName)
           if (resolved) {
             dispatch({ type: 'SAVE_SUCCESS', payload: resolved })
           } else {
@@ -355,8 +391,89 @@ export function useCorporateActions(): CorporateActionsData {
         })
         .catch((err: unknown) => {
           const message = getErrorMessage(err, 'Failed to save corporate action')
-          const field = mapCorporateActionErrorToField(message)
-          dispatch({ type: 'SAVE_ERROR', payload: { message, fields: field === null ? {} : { [field]: message } } })
+          const fields: Partial<Record<CorporateActionFormField, string>> = isAssetNameCollisionError(message)
+            ? { formTargetAsset: message }
+            : {}
+          dispatch({ type: 'SAVE_ERROR', payload: { message, fields } })
+        })
+      return
+    }
+
+    if (state.formType === 'SpinOff') {
+      const { formEffectiveDate, formQuantityReceived, formAllocationPercentage, formNote, formNewAsset, editingId } = state
+      const errors: Partial<Record<CorporateActionFormField, string>> = {}
+
+      if (!formEffectiveDate.trim()) {
+        errors.formEffectiveDate = 'Effective date is required'
+      }
+      if (!editingId && !formNewAsset.assetName.trim()) {
+        errors.formNewAsset = 'New asset is required'
+      }
+      const quantityReceived = parseValidatedNumber(formQuantityReceived)
+      if (quantityReceived === null || quantityReceived <= 0) {
+        errors.formQuantityReceived = 'Quantity received must be greater than zero'
+      }
+      const allocationPercentage = parseValidatedNumber(formAllocationPercentage)
+      if (allocationPercentage === null || allocationPercentage < 0 || allocationPercentage > 100) {
+        errors.formAllocationPercentage = 'Allocation percentage must be between 0 and 100'
+      }
+
+      if (Object.keys(errors).length > 0) {
+        dispatch({ type: 'SAVE_ERROR', payload: { message: Object.values(errors)[0] ?? null, fields: errors } })
+        return
+      }
+
+      dispatch({ type: 'SAVE_START' })
+
+      const note = formNote.trim() === '' ? null : formNote
+
+      const call = editingId
+        ? apiClient.updateSpinOff({
+            id: editingId,
+            brokerName: selectedNode.brokerName,
+            portfolioName: selectedNode.portfolioName,
+            parentAssetName: selectedNode.assetName,
+            effectiveDate: formEffectiveDate,
+            quantityReceived: quantityReceived as number,
+            allocationPercentage: allocationPercentage as number,
+            note,
+          })
+        : apiClient.addSpinOff({
+            brokerName: selectedNode.brokerName,
+            portfolioName: selectedNode.portfolioName,
+            parentAssetName: selectedNode.assetName,
+            newAssetName: formNewAsset.assetName,
+            createNewAssetInline: !findAssetByName(targetAssetOptions.options, formNewAsset.assetName),
+            effectiveDate: formEffectiveDate,
+            quantityReceived: quantityReceived as number,
+            allocationPercentage: allocationPercentage as number,
+            note,
+            newISIN: formNewAsset.identity.isin.trim() === '' ? null : formNewAsset.identity.isin,
+            newExchange: formNewAsset.identity.exchange.trim() === '' ? null : formNewAsset.identity.exchange,
+            newTicker: formNewAsset.identity.ticker.trim() === '' ? null : formNewAsset.identity.ticker,
+            newLocalTypeCode: null,
+            newCountry: formNewAsset.identity.country as CorporateActionSpinOffCreateDto['newCountry'],
+            newClass: formNewAsset.identity.assetClass as CorporateActionSpinOffCreateDto['newClass'],
+          })
+
+      void call
+        .then((result: CorporateActionSpinOffResultDto) => {
+          const resolved = pickAffectedAsset(result.parent, result.new, selectedNode.assetName)
+          if (resolved) {
+            dispatch({ type: 'SAVE_SUCCESS', payload: resolved })
+          } else {
+            dispatch({
+              type: 'SAVE_ERROR',
+              payload: { message: 'Spin-off saved but the asset could not be refreshed — reload the page.', fields: {} },
+            })
+          }
+        })
+        .catch((err: unknown) => {
+          const message = getErrorMessage(err, 'Failed to save corporate action')
+          const fields: Partial<Record<CorporateActionFormField, string>> = isAssetNameCollisionError(message)
+            ? { formNewAsset: message }
+            : {}
+          dispatch({ type: 'SAVE_ERROR', payload: { message, fields } })
         })
       return
     }
@@ -447,6 +564,9 @@ export function useCorporateActions(): CorporateActionsData {
     formTargetAsset: state.formTargetAsset,
     formExchangeRatio: state.formExchangeRatio,
     formCashInLieu: state.formCashInLieu,
+    formNewAsset: state.formNewAsset,
+    formQuantityReceived: state.formQuantityReceived,
+    formAllocationPercentage: state.formAllocationPercentage,
     isSaving: state.isSaving,
     saveError: state.saveError,
     saveErrorFields: state.saveErrorFields,
@@ -457,6 +577,7 @@ export function useCorporateActions(): CorporateActionsData {
     cancelForm,
     setFormField,
     setTargetAsset,
+    setNewAsset,
     advanceToConfirm,
     backToFields,
     saveForm,

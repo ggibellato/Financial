@@ -36,6 +36,9 @@ import type {
   CorporateActionMergerUpdateDto,
   CorporateActionSplitCreateDto,
   CorporateActionSplitUpdateDto,
+  CorporateActionSpinOffCreateDto,
+  CorporateActionSpinOffResultDto,
+  CorporateActionSpinOffUpdateDto,
   ExpenseCreateDto,
   MaeLedgerEntryCreateDto,
   RecurringBillCreateDto,
@@ -163,6 +166,8 @@ export interface FinancialApiClient {
   updateSplit: (request: CorporateActionSplitUpdateDto) => Promise<AssetDetailsDto>
   addMerger: (request: CorporateActionMergerCreateDto) => Promise<CorporateActionMergerResultDto>
   updateMerger: (request: CorporateActionMergerUpdateDto) => Promise<CorporateActionMergerResultDto>
+  addSpinOff: (request: CorporateActionSpinOffCreateDto) => Promise<CorporateActionSpinOffResultDto>
+  updateSpinOff: (request: CorporateActionSpinOffUpdateDto) => Promise<CorporateActionSpinOffResultDto>
   deleteCorporateAction: (request: CorporateActionDeleteDto) => Promise<AssetDetailsDto>
   addCredit: (request: CreditCreateDto) => Promise<AssetDetailsDto>
   updateCredit: (request: CreditUpdateDto) => Promise<AssetDetailsDto>
@@ -466,6 +471,16 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       }),
     updateMerger: (requestBody) =>
       request<CorporateActionMergerResultDto>('/corporate-actions/merger', {
+        method: 'PUT',
+        body: JSON.stringify(requestBody),
+      }),
+    addSpinOff: (requestBody) =>
+      request<CorporateActionSpinOffResultDto>('/corporate-actions/spin-off', {
+        method: 'POST',
+        body: JSON.stringify(requestBody),
+      }),
+    updateSpinOff: (requestBody) =>
+      request<CorporateActionSpinOffResultDto>('/corporate-actions/spin-off', {
         method: 'PUT',
         body: JSON.stringify(requestBody),
       }),

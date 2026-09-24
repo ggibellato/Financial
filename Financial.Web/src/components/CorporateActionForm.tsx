@@ -1,4 +1,15 @@
-import { Button, Field, Input, MessageBar, MessageBarBody, Select, Text, Textarea } from '@fluentui/react-components'
+import {
+  Button,
+  Field,
+  InfoLabel,
+  Input,
+  MessageBar,
+  MessageBarBody,
+  Select,
+  Text,
+  Textarea,
+} from '@fluentui/react-components'
+import type { LabelProps } from '@fluentui/react-components'
 import type { CorporateActionFormField } from '../hooks/useCorporateActions'
 import { useFieldError } from '../hooks/useFieldError'
 import { useFormPanelStyles } from './formPanelStyles'
@@ -10,6 +21,7 @@ import './CorporateActionForm.css'
 const CORPORATE_ACTION_TYPE_OPTIONS = [
   { value: 'Split', label: 'Split / Reverse Split' },
   { value: 'Merger', label: 'Merger' },
+  { value: 'SpinOff', label: 'Spin-off' },
 ]
 
 interface CorporateActionFormProps {
@@ -23,6 +35,9 @@ interface CorporateActionFormProps {
   formTargetAsset: TargetAssetPickerValue
   formExchangeRatio: string
   formCashInLieu: string
+  formNewAsset: TargetAssetPickerValue
+  formQuantityReceived: string
+  formAllocationPercentage: string
   sourceAssetName: string
   sourceQuantity: number
   sourceCostBasis: number
@@ -31,6 +46,7 @@ interface CorporateActionFormProps {
   saveErrorFields: Partial<Record<CorporateActionFormField, string>>
   onFieldChange: (field: CorporateActionFormField, value: string) => void
   onTargetAssetChange: (value: TargetAssetPickerValue) => void
+  onNewAssetChange: (value: TargetAssetPickerValue) => void
   onAdvanceToConfirm: () => void
   onBackToFields: () => void
   onSave: () => void
@@ -48,6 +64,9 @@ export default function CorporateActionForm({
   formTargetAsset,
   formExchangeRatio,
   formCashInLieu,
+  formNewAsset,
+  formQuantityReceived,
+  formAllocationPercentage,
   sourceAssetName,
   sourceQuantity,
   sourceCostBasis,
@@ -56,6 +75,7 @@ export default function CorporateActionForm({
   saveErrorFields,
   onFieldChange,
   onTargetAssetChange,
+  onNewAssetChange,
   onAdvanceToConfirm,
   onBackToFields,
   onSave,
@@ -77,6 +97,10 @@ export default function CorporateActionForm({
           : 'Add corporate action'
   const exchangeRatioNumber = parseValidatedNumber(formExchangeRatio, { min: 0 }) ?? 0
   const targetUnits = sourceQuantity * exchangeRatioNumber
+  const isSpinOff = formType === 'SpinOff'
+  const allocationPercentageNumber = parseValidatedNumber(formAllocationPercentage, { min: 0, max: 100 }) ?? 0
+  const staysWithParent = sourceCostBasis * (1 - allocationPercentageNumber / 100)
+  const movesToNew = sourceCostBasis * (allocationPercentageNumber / 100)
 
   return (
     <div className={styles.panel}>
@@ -200,6 +224,72 @@ export default function CorporateActionForm({
                 onChange={(e) => onFieldChange('formCashInLieu', e.target.value)}
               />
             </Field>
+          </>
+        )}
+
+        {isSpinOff && (
+          <>
+            <Field label="Parent Asset">
+              <Input value={sourceAssetName} disabled readOnly />
+            </Field>
+
+            {editingId ? (
+              <Field label="New Asset">
+                <Input value={formNewAsset.assetName} disabled readOnly />
+              </Field>
+            ) : (
+              <TargetAssetPicker
+                label="New Asset"
+                value={formNewAsset}
+                onChange={onNewAssetChange}
+                disabled={isSaving}
+                nameError={fieldError('formNewAsset')}
+              />
+            )}
+
+            <Field
+              label="Quantity Received"
+              required
+              validationState={fieldError('formQuantityReceived') ? 'error' : 'none'}
+              validationMessage={fieldError('formQuantityReceived')}
+            >
+              <Input
+                type="number"
+                step="0.0001"
+                min="0"
+                value={formQuantityReceived}
+                onChange={(e) => onFieldChange('formQuantityReceived', e.target.value)}
+              />
+            </Field>
+
+            <Field
+              label={{
+                children: (_: unknown, props: LabelProps) => (
+                  <InfoLabel {...props} info="Find this on your broker's cost-basis allocation letter for this spin-off.">
+                    Allocation %
+                  </InfoLabel>
+                ),
+              }}
+              required
+              validationState={fieldError('formAllocationPercentage') ? 'error' : 'none'}
+              validationMessage={fieldError('formAllocationPercentage')}
+            >
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                max="100"
+                value={formAllocationPercentage}
+                onChange={(e) => onFieldChange('formAllocationPercentage', e.target.value)}
+              />
+            </Field>
+
+            <div className={styles.spanTwo}>
+              <Text as="p">
+                <strong>{formatN2(staysWithParent)}</strong> stays with {sourceAssetName},{' '}
+                <strong>{formatN2(movesToNew)}</strong> moves to {formNewAsset.assetName || 'the new asset'}.
+              </Text>
+            </div>
           </>
         )}
 

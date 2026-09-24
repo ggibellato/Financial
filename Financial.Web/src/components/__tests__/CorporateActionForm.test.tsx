@@ -29,6 +29,9 @@ const baseProps = {
   formTargetAsset: BLANK_TARGET_ASSET_PICKER_VALUE,
   formExchangeRatio: '',
   formCashInLieu: '',
+  formNewAsset: BLANK_TARGET_ASSET_PICKER_VALUE,
+  formQuantityReceived: '',
+  formAllocationPercentage: '',
   sourceAssetName: 'KLBN4',
   sourceQuantity: 200,
   sourceCostBasis: 2000,
@@ -37,6 +40,7 @@ const baseProps = {
   saveErrorFields: {},
   onFieldChange: vi.fn(),
   onTargetAssetChange: vi.fn(),
+  onNewAssetChange: vi.fn(),
   onAdvanceToConfirm: vi.fn(),
   onBackToFields: vi.fn(),
   onSave: vi.fn(),
@@ -68,11 +72,15 @@ describe('CorporateActionForm', () => {
     expect(screen.getByLabelText('Note')).toBeInTheDocument()
   })
 
-  it('offers Split / Reverse Split and Merger in the type selector', () => {
+  it('offers Split / Reverse Split, Merger, and Spin-off in the type selector', () => {
     render(<CorporateActionForm {...baseProps} />)
 
     const options = screen.getByLabelText('Type').querySelectorAll('option')
-    expect(Array.from(options).map((o) => o.textContent)).toEqual(['Split / Reverse Split', 'Merger'])
+    expect(Array.from(options).map((o) => o.textContent)).toEqual([
+      'Split / Reverse Split',
+      'Merger',
+      'Spin-off',
+    ])
   })
 
   it('shows the inline ratio example text', () => {
@@ -231,5 +239,78 @@ describe('CorporateActionForm', () => {
     expect(screen.getByLabelText('Target Asset')).toHaveValue('Company B')
     expect(screen.getByLabelText('Target Asset')).toBeDisabled()
     expect(screen.queryByRole('combobox', { name: 'Target Asset' })).not.toBeInTheDocument()
+  })
+
+  it('shows only the Spin-off field group when Type is SpinOff, hiding Split and Merger fields', () => {
+    render(<CorporateActionForm {...baseProps} formType="SpinOff" />)
+
+    expect(screen.getByLabelText('Parent Asset')).toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: 'New Asset' })).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Quantity Received/)).toBeInTheDocument()
+    expect(screen.getByRole('spinbutton', { name: /^Allocation %/ })).toBeInTheDocument()
+    expect(screen.getByLabelText('Note')).toBeInTheDocument()
+    expect(screen.queryByLabelText(/^New units/)).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/^Old units/)).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Source Asset')).not.toBeInTheDocument()
+    expect(screen.queryByRole('combobox', { name: 'Target Asset' })).not.toBeInTheDocument()
+  })
+
+  it('shows the live spin-off preview text, updating with sourceCostBasis and the typed allocation percentage', () => {
+    render(
+      <CorporateActionForm
+        {...baseProps}
+        formType="SpinOff"
+        sourceAssetName="KLBN4"
+        sourceCostBasis={1000}
+        formAllocationPercentage="25"
+        formNewAsset={{ assetName: 'Company D', identity: BLANK_TARGET_ASSET_IDENTITY }}
+      />,
+    )
+
+    expect(screen.getByText(`${formatN2(750)}`, { exact: false })).toBeInTheDocument()
+    expect(screen.getByText(`${formatN2(250)}`, { exact: false })).toBeInTheDocument()
+    expect(screen.getByText(/stays with KLBN4/)).toBeInTheDocument()
+    expect(screen.getByText(/moves to Company D/)).toBeInTheDocument()
+  })
+
+  it('shows New Asset as read-only text instead of the picker when editing an existing spin-off', () => {
+    render(
+      <CorporateActionForm
+        {...baseProps}
+        editingId="ca3"
+        formType="SpinOff"
+        formNewAsset={{ assetName: 'Company D', identity: BLANK_TARGET_ASSET_IDENTITY }}
+      />,
+    )
+
+    expect(screen.getByLabelText('New Asset')).toHaveValue('Company D')
+    expect(screen.getByLabelText('New Asset')).toBeDisabled()
+    expect(screen.queryByRole('combobox', { name: 'New Asset' })).not.toBeInTheDocument()
+  })
+
+  it('the primary button for a new Spin-off reads Add corporate action and calls onSave directly', async () => {
+    const onSave = vi.fn()
+    const onAdvanceToConfirm = vi.fn()
+    const user = userEvent.setup()
+    render(
+      <CorporateActionForm
+        {...baseProps}
+        formType="SpinOff"
+        onSave={onSave}
+        onAdvanceToConfirm={onAdvanceToConfirm}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Add corporate action' }))
+
+    expect(onSave).toHaveBeenCalledTimes(1)
+    expect(onAdvanceToConfirm).not.toHaveBeenCalled()
+  })
+
+  it('the primary button for an edited Spin-off reads Save, not Continue', () => {
+    render(<CorporateActionForm {...baseProps} formType="SpinOff" editingId="ca3" />)
+
+    expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Continue' })).not.toBeInTheDocument()
   })
 })
