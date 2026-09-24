@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Domain.Entities;
 
@@ -10,7 +9,7 @@ namespace Financial.Presentation.App.ViewModels.Admin;
 /// domain's refusal (e.g. a duplicate name) surface as a save error on the owning list ViewModel
 /// rather than being re-decided here.
 /// </summary>
-public sealed partial class AssetFormDialogViewModel : ViewModelBase
+public sealed class AssetFormDialogViewModel : ViewModelBase
 {
     private string _name;
     private string _isin = string.Empty;
@@ -96,11 +95,11 @@ public sealed partial class AssetFormDialogViewModel : ViewModelBase
 
     public string LocalTypeCode { get; set; } = string.Empty;
 
-    public IReadOnlyList<CountryCode> CountryOptions { get; } = Enum.GetValues<CountryCode>();
+    public IReadOnlyList<CountryCode> CountryOptions => AssetIdentityOptions.CountryOptions;
 
     public CountryCode Country { get; set; } = CountryCode.Unknown;
 
-    public IReadOnlyList<GlobalAssetClass> ClassOptions { get; } = Enum.GetValues<GlobalAssetClass>();
+    public IReadOnlyList<GlobalAssetClass> ClassOptions => AssetIdentityOptions.ClassOptions;
 
     /// <summary>Left at Unknown means "auto-resolve from Country/LocalTypeCode", on create or edit;
     /// any other selection is an explicit value. Mirrors Financial.Web's AssetFormDialog.</summary>
@@ -182,12 +181,7 @@ public sealed partial class AssetFormDialogViewModel : ViewModelBase
                 ? "A broker is required."
                 : !IsEditing && string.IsNullOrWhiteSpace(PortfolioName)
                     ? "A portfolio is required."
-                    : !string.IsNullOrWhiteSpace(ISIN) && !IsinPattern().IsMatch(ISIN.Trim())
-                        ? "ISIN must be 2 letters, 9 alphanumeric characters, and a check digit (e.g. US0378331005)."
-                        : string.Empty;
+                    : AssetIdentityValidation.ValidateIsin(ISIN) ?? string.Empty;
         ConfirmCommand.RaiseCanExecuteChanged();
     }
-
-    [GeneratedRegex("^[A-Z]{2}[A-Z0-9]{9}[0-9]$")]
-    private static partial Regex IsinPattern();
 }

@@ -1,0 +1,83 @@
+<UserControl x:Class="Financial.Presentation.App.Controls.TargetAssetPickerControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!--
+        Embedded inside another form's field group (Merger's Target Asset, Spin-off's New Asset) -
+        this control's own DataContext is a TargetAssetPickerViewModel instance, so Label (this
+        control's own DependencyProperty) is bound via RelativeSource AncestorType=UserControl,
+        matching HelpFlyoutButton's established convention for binding to a DP on the control
+        itself rather than its DataContext.
+    -->
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <Style x:Key="FieldLabelStyle" TargetType="TextBlock">
+                <Setter Property="Margin" Value="0,0,0,4"/>
+                <Setter Property="FontSize" Value="12"/>
+            </Style>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <StackPanel>
+        <TextBlock Text="{Binding Label, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                   Style="{StaticResource FieldLabelStyle}"/>
+        <ComboBox IsEditable="True"
+                  ItemsSource="{Binding CandidateNames}"
+                  Text="{Binding AssetName, UpdateSourceTrigger=PropertyChanged}"
+                  AutomationProperties.Name="{Binding Label, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+
+        <TextBlock Margin="0,4,0,0" FontSize="12"
+                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                   Visibility="{Binding ShowCreateFields, Converter={StaticResource BoolToVisibilityConverter}}">
+            <TextBlock.Text>
+                <Binding Path="TrimmedAssetName" StringFormat="No existing asset named &quot;{0}&quot; — it will be created."/>
+            </TextBlock.Text>
+        </TextBlock>
+
+        <TextBlock Style="{StaticResource FieldErrorTextStyle}" Text="{Binding NameError}"/>
+
+        <Grid Margin="0,8,0,0" Visibility="{Binding ShowCreateFields, Converter={StaticResource BoolToVisibilityConverter}}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,8,8">
+                <TextBlock Text="ISIN" Style="{StaticResource FieldLabelStyle}"/>
+                <TextBox AutomationProperties.Name="ISIN"
+                         Text="{Binding ISIN, UpdateSourceTrigger=PropertyChanged}"/>
+                <TextBlock Style="{StaticResource FieldErrorTextStyle}" Text="{Binding IsinValidationMessage}"/>
+            </StackPanel>
+
+            <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,0,8,8">
+                <TextBlock Text="Exchange" Style="{StaticResource FieldLabelStyle}"/>
+                <TextBox AutomationProperties.Name="Exchange"
+                         Text="{Binding Exchange, UpdateSourceTrigger=LostFocus}"/>
+            </StackPanel>
+
+            <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,8,8">
+                <TextBlock Text="Ticker" Style="{StaticResource FieldLabelStyle}"/>
+                <TextBox AutomationProperties.Name="Ticker"
+                         Text="{Binding Ticker, UpdateSourceTrigger=LostFocus}"/>
+            </StackPanel>
+
+            <StackPanel Grid.Row="0" Grid.Column="3" Margin="0,0,0,8">
+                <TextBlock Text="Country" Style="{StaticResource FieldLabelStyle}"/>
+                <ComboBox AutomationProperties.Name="Country"
+                          ItemsSource="{Binding CountryOptions}"
+                          SelectedValue="{Binding Country, UpdateSourceTrigger=PropertyChanged}"/>
+            </StackPanel>
+
+            <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,8,0">
+                <TextBlock Text="Class" Style="{StaticResource FieldLabelStyle}"/>
+                <ComboBox AutomationProperties.Name="Class"
+                          ItemsSource="{Binding ClassOptions}"
+                          SelectedValue="{Binding Class, UpdateSourceTrigger=PropertyChanged}"/>
+            </StackPanel>
+        </Grid>
+    </StackPanel>
+</UserControl>
