@@ -4,12 +4,13 @@ import type { CorporateActionDto } from '../api/types'
 import CorporateActionForm from './CorporateActionForm'
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
+import StatusBadge from './StatusBadge'
 import DataTableCell from './grid/DataTableCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { useCorporateActions } from '../hooks/useCorporateActions'
 import { confirmThenRun } from '../utils/confirmThenRun'
-import { formatShortDate } from '../utils/formatters'
+import { formatN2, formatShortDate } from '../utils/formatters'
 import './CorporateActionsTab.css'
 
 const TYPE_LABELS: Record<string, string> = {
@@ -29,6 +30,17 @@ function formatRatioFactor(factor: number): string {
 function resultingChange(record: CorporateActionDto): string {
   if (record.type === 'Split' && record.ratioFactor !== null) {
     return `Quantity/average cost rescaled ${formatRatioFactor(record.ratioFactor)}`
+  }
+  if (record.type === 'Merger') {
+    if (record.role === 'Source') {
+      return 'Position closed and converted'
+    }
+    if (record.role === 'Target') {
+      return record.convertedQuantity !== null
+        ? `+${formatN2(record.convertedQuantity)} units received`
+        : 'Units received from merger'
+    }
+    return '—'
   }
   return '—'
 }
@@ -52,6 +64,9 @@ function CorporateActionRow({ record, affectedAssetName, onEdit, onDelete }: Cor
       <DataTableCell label="Type">{typeLabel(record.type)}</DataTableCell>
       <DataTableCell label="Affected/Linked Asset">{record.linkedAssetName ?? affectedAssetName}</DataTableCell>
       <DataTableCell label="Resulting Change">{resultingChange(record)}</DataTableCell>
+      <DataTableCell label="Tax Status">
+        {record.calculationStatus ? <StatusBadge status={record.calculationStatus} /> : '—'}
+      </DataTableCell>
       <DataTableCell label="Actions" className="data-table__col--action">
         <div className="data-table__actions-cell">
           <Button
@@ -88,6 +103,10 @@ export default function CorporateActionsTab() {
     formRatioNumerator,
     formRatioDenominator,
     formNote,
+    formStep,
+    formTargetAsset,
+    formExchangeRatio,
+    formCashInLieu,
     isSaving,
     saveError,
     saveErrorFields,
@@ -96,6 +115,9 @@ export default function CorporateActionsTab() {
     showEditForm,
     cancelForm,
     setFormField,
+    setTargetAsset,
+    advanceToConfirm,
+    backToFields,
     saveForm,
     deleteCorporateAction,
   } = useCorporateActions()
@@ -131,10 +153,20 @@ export default function CorporateActionsTab() {
           formRatioNumerator={formRatioNumerator}
           formRatioDenominator={formRatioDenominator}
           formNote={formNote}
+          formStep={formStep}
+          formTargetAsset={formTargetAsset}
+          formExchangeRatio={formExchangeRatio}
+          formCashInLieu={formCashInLieu}
+          sourceAssetName={affectedAssetName}
+          sourceQuantity={asset?.quantity ?? 0}
+          sourceCostBasis={asset?.costOfUnitsHeld ?? 0}
           isSaving={isSaving}
           saveError={saveError}
           saveErrorFields={saveErrorFields}
           onFieldChange={setFormField}
+          onTargetAssetChange={setTargetAsset}
+          onAdvanceToConfirm={advanceToConfirm}
+          onBackToFields={backToFields}
           onSave={saveForm}
           onCancel={cancelForm}
         />
@@ -163,6 +195,7 @@ export default function CorporateActionsTab() {
                 />
                 <TableHeaderCell>Affected/Linked Asset</TableHeaderCell>
                 <TableHeaderCell>Resulting Change</TableHeaderCell>
+                <TableHeaderCell>Tax Status</TableHeaderCell>
                 <TableHeaderCell className="data-table__col--action" />
               </TableRow>
             </TableHeader>

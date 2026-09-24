@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CorporateActionsData } from '../../hooks/useCorporateActions'
 import type { AssetDetailsDto, CorporateActionDto } from '../../api/types'
+import { BLANK_TARGET_ASSET_PICKER_VALUE } from '../targetAssetPickerValue'
 import CorporateActionsTab from '../CorporateActionsTab'
 
 const mockRetry = vi.fn()
@@ -9,6 +10,9 @@ const mockShowNewForm = vi.fn()
 const mockShowEditForm = vi.fn()
 const mockCancelForm = vi.fn()
 const mockSetFormField = vi.fn()
+const mockSetTargetAsset = vi.fn()
+const mockAdvanceToConfirm = vi.fn()
+const mockBackToFields = vi.fn()
 const mockSaveForm = vi.fn()
 const mockDeleteCorporateAction = vi.fn()
 
@@ -47,14 +51,22 @@ const DEFAULT_HOOK: CorporateActionsData = {
   formRatioNumerator: '',
   formRatioDenominator: '',
   formNote: '',
+  formStep: 'fields',
+  formTargetAsset: BLANK_TARGET_ASSET_PICKER_VALUE,
+  formExchangeRatio: '',
+  formCashInLieu: '',
   isSaving: false,
   saveError: null,
   saveErrorFields: {},
   deleteError: null,
+  targetAssetOptions: { options: [], isLoading: false, error: null, retry: vi.fn() },
   showNewForm: mockShowNewForm,
   showEditForm: mockShowEditForm,
   cancelForm: mockCancelForm,
   setFormField: mockSetFormField,
+  setTargetAsset: mockSetTargetAsset,
+  advanceToConfirm: mockAdvanceToConfirm,
+  backToFields: mockBackToFields,
   saveForm: mockSaveForm,
   deleteCorporateAction: mockDeleteCorporateAction,
 }
@@ -80,6 +92,9 @@ describe('CorporateActionsTab', () => {
     mockShowEditForm.mockReset()
     mockCancelForm.mockReset()
     mockSetFormField.mockReset()
+    mockSetTargetAsset.mockReset()
+    mockAdvanceToConfirm.mockReset()
+    mockBackToFields.mockReset()
     mockSaveForm.mockReset()
     mockDeleteCorporateAction.mockReset()
     mockHookValue = { ...DEFAULT_HOOK }
@@ -162,5 +177,22 @@ describe('CorporateActionsTab', () => {
       screen.getByText('Cannot delete: a later disposal depends on lots created by this split'),
     ).toBeInTheDocument()
     expect(screen.getAllByRole('row')).toHaveLength(2)
+  })
+
+  it('renders a StatusBadge in the Tax Status column for a Merger record with a calculation status, and "—" for a Split record', () => {
+    const mergerRow = split({
+      id: 'ca2',
+      type: 'Merger',
+      role: 'Source',
+      calculationStatus: 'RequiresReview',
+      ratioFactor: null,
+    })
+    const splitRow = split({ id: 'ca1', calculationStatus: null })
+    setMock({ corporateActions: [mergerRow, splitRow] })
+
+    render(<CorporateActionsTab />)
+
+    expect(screen.getByText('Requires review')).toBeInTheDocument()
+    expect(screen.getAllByText('—').length).toBeGreaterThan(0)
   })
 })
