@@ -4,6 +4,7 @@ public static class CorporateActionFormValidation
 {
     public const string SplitTypeValue = "Split";
     public const string MergerTypeValue = "Merger";
+    public const string SpinOffTypeValue = "SpinOff";
 
     public static string BuildValidationMessage(
         bool isDeleteMode,
@@ -13,7 +14,9 @@ public static class CorporateActionFormValidation
         decimal ratioNumerator,
         decimal ratioDenominator,
         string targetAssetName,
-        decimal exchangeRatio)
+        decimal exchangeRatio,
+        decimal quantityReceived,
+        decimal allocationPercentage)
     {
         if (isDeleteMode)
         {
@@ -44,6 +47,23 @@ public static class CorporateActionFormValidation
             if (exchangeRatio <= 0)
             {
                 errors.Add("Exchange ratio must be greater than zero");
+            }
+        }
+        else if (type == SpinOffTypeValue)
+        {
+            if (isAddMode && string.IsNullOrWhiteSpace(targetAssetName))
+            {
+                errors.Add("New asset is required");
+            }
+
+            if (quantityReceived <= 0)
+            {
+                errors.Add("Quantity received must be greater than zero");
+            }
+
+            if (allocationPercentage < 0 || allocationPercentage > 100)
+            {
+                errors.Add("Allocation percentage must be between 0 and 100");
             }
         }
 

@@ -54,6 +54,18 @@ public class CorporateActionsTabViewModelTests
         ExchangeRatio: 2m,
         CashInLieuAmount: 5m);
 
+    private static CorporateActionFormData SpinOffFormData(Guid? id = null, string targetAssetName = "New Co", bool createTargetAssetInline = true) => new(
+        CorporateActionId: id ?? Guid.Empty,
+        EffectiveDate: new DateTime(2026, 1, 1),
+        Type: "SpinOff",
+        RatioNumerator: 0m,
+        RatioDenominator: 0m,
+        Note: "spinoff note",
+        TargetAssetName: targetAssetName,
+        CreateTargetAssetInline: createTargetAssetInline,
+        QuantityReceived: 10m,
+        AllocationPercentage: 25m);
+
     private static Task<CorporateActionFormData?> AsForm(CorporateActionFormData? data) => Task.FromResult(data);
 
     [Fact]
@@ -374,15 +386,15 @@ public class CorporateActionsTabViewModelTests
     }
 
     [Fact]
-    public void UpdateAndDeleteCommand_CanExecute_FalseForSpinOffRow()
+    public void UpdateAndDeleteCommand_CanExecute_TrueForSpinOffRow()
     {
         var (viewModel, _, _) = Build();
         var row = new CorporateActionRowViewModel(
             new CorporateActionDTO { Id = Guid.NewGuid(), Type = CorporateAction.CorporateActionType.SpinOff, EffectiveDate = DateTime.Today },
             AssetName);
 
-        viewModel.UpdateCommand.CanExecute(row).Should().BeFalse();
-        viewModel.DeleteCommand.CanExecute(row).Should().BeFalse();
+        viewModel.UpdateCommand.CanExecute(row).Should().BeTrue();
+        viewModel.DeleteCommand.CanExecute(row).Should().BeTrue();
     }
 
     [Fact]
@@ -498,6 +510,99 @@ public class CorporateActionsTabViewModelTests
         spy.Messages.Should().BeEmpty();
     }
 
+    [Fact]
+    public async Task Add_SpinOff_Success_PassesCorrectRequestAndAppliesResolvedParentAsset()
+    {
+        var parentDetails = new AssetDetailsDTO { Name = AssetName, BrokerName = BrokerName, PortfolioName = PortfolioName, Ticker = "T" };
+        var newDetails = new AssetDetailsDTO { Name = "New Co", BrokerName = BrokerName, PortfolioName = PortfolioName, Ticker = "T2" };
+        var service = new StubCorporateActionService { AddSpinOffResult = new CorporateActionSpinOffResultDTO { Parent = parentDetails, New = newDetails } };
+        var (viewModel, _, spy) = Build(service: service);
+
+        await viewModel.Add(() => AsForm(SpinOffFormData()));
+
+        service.LastAddSpinOffRequest.Should().NotBeNull();
+        service.LastAddSpinOffRequest!.BrokerName.Should().Be(BrokerName);
+        service.LastAddSpinOffRequest.PortfolioName.Should().Be(PortfolioName);
+        service.LastAddSpinOffRequest.ParentAssetName.Should().Be(AssetName);
+        service.LastAddSpinOffRequest.NewAssetName.Should().Be("New Co");
+        service.LastAddSpinOffRequest.CreateNewAssetInline.Should().BeTrue();
+        service.LastAddSpinOffRequest.QuantityReceived.Should().Be(10m);
+        service.LastAddSpinOffRequest.AllocationPercentage.Should().Be(25m);
+        service.LastAddSpinOffRequest.Note.Should().Be("spinoff note");
+        spy.AppliedDetails.Should().Be(parentDetails);
+        viewModel.IsFormOpen.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Add_SpinOff_ResolvesNewSide_WhenCurrentAssetNameMatchesNewAssetName()
+    {
+        var parentDetails = new AssetDetailsDTO { Name = "Parent Co", BrokerName = BrokerName, PortfolioName = PortfolioName, Ticker = "T" };
+        var newDetails = new AssetDetailsDTO { Name = AssetName, BrokerName = BrokerName, PortfolioName = PortfolioName, Ticker = "T2" };
+        var service = new StubCorporateActionService { AddSpinOffResult = new CorporateActionSpinOffResultDTO { Parent = parentDetails, New = newDetails } };
+        var (viewModel, _, spy) = Build(service: service);
+
+        await viewModel.Add(() => AsForm(SpinOffFormData()));
+
+        spy.AppliedDetails.Should().Be(newDetails);
+    }
+
+    [Fact]
+    public async Task Update_SpinOff_PassesCorrectRequestAndAppliesResolvedAsset()
+    {
+        var id = Guid.NewGuid();
+        var parentDetails = new AssetDetailsDTO { Name = AssetName, BrokerName = BrokerName, PortfolioName = PortfolioName, Ticker = "T" };
+        var service = new StubCorporateActionService { UpdateSpinOffResult = new CorporateActionSpinOffResultDTO { Parent = parentDetails, New = null } };
+        var (viewModel, _, spy) = Build(service: service);
+        var record = new CorporateActionDTO
+        {
+            Id = id,
+            Type = CorporateAction.CorporateActionType.SpinOff,
+            EffectiveDate = new DateTime(2025, 1, 1),
+            Role = CorporateAction.CorporateActionRole.Parent,
+            AllocationPercentage = 25m
+        };
+        viewModel.Load("ctx", [record], AssetName);
+        var selected = viewModel.CorporateActions.Single();
+
+        await viewModel.Update(selected, () => AsForm(SpinOffFormData(id)));
+
+        service.LastUpdateSpinOffRequest.Should().NotBeNull();
+        service.LastUpdateSpinOffRequest!.Id.Should().Be(id);
+        service.LastUpdateSpinOffRequest.ParentAssetName.Should().Be(AssetName);
+        service.LastUpdateSpinOffRequest.QuantityReceived.Should().Be(10m);
+        service.LastUpdateSpinOffRequest.AllocationPercentage.Should().Be(25m);
+        spy.AppliedDetails.Should().Be(parentDetails);
+    }
+
+    [Fact]
+    public async Task AddCommand_ServerRejectsSpinOff_KeepsInlineFormOpenWithEnteredValuesAndInlineError()
+    {
+        var service = new StubCorporateActionService { ExceptionToThrow = new InvestmentRuleViolationException("An asset named 'New Co' already exists — select it or choose a different name.") };
+        var assetAdminService = new StubAssetAdminService();
+        var (viewModel, _, spy) = Build(service: service, assetAdminService: assetAdminService);
+
+        viewModel.AddCommand.Execute(null);
+        await WaitUntilAsync(() => viewModel.FormViewModel != null);
+        var formVm = viewModel.FormViewModel!;
+        formVm.Type = "SpinOff";
+        formVm.EffectiveDate = new DateTime(2026, 3, 1);
+        formVm.TargetAssetPicker!.AssetName = "New Co";
+        formVm.QuantityReceived = 10m;
+        formVm.AllocationPercentage = 25m;
+
+        formVm.ConfirmCommand.Execute(null);
+        await WaitUntilAsync(() => !string.IsNullOrEmpty(formVm.ValidationMessage));
+
+        viewModel.IsFormOpen.Should().BeTrue();
+        viewModel.FormViewModel.Should().BeSameAs(formVm);
+        formVm.ValidationMessage.Should().Be("An asset named 'New Co' already exists — select it or choose a different name.");
+        formVm.TargetAssetPicker!.AssetName.Should().Be("New Co");
+        formVm.QuantityReceived.Should().Be(10m);
+        formVm.AllocationPercentage.Should().Be(25m);
+        spy.AppliedDetails.Should().BeNull();
+        spy.Messages.Should().BeEmpty();
+    }
+
     /// <summary>Polls rather than assumes synchronous continuation timing: the production code
     /// path under test runs through an `async void` command handler, whose continuations xUnit's
     /// own tracked SynchronizationContext may post rather than run inline.</summary>
@@ -530,17 +635,23 @@ public class CorporateActionsTabViewModelTests
         public AssetDetailsDTO? DeleteResult { get; set; }
         public CorporateActionMergerResultDTO? AddMergerResult { get; set; }
         public CorporateActionMergerResultDTO? UpdateMergerResult { get; set; }
+        public CorporateActionSpinOffResultDTO? AddSpinOffResult { get; set; }
+        public CorporateActionSpinOffResultDTO? UpdateSpinOffResult { get; set; }
         public Exception? ExceptionToThrow { get; set; }
         public int AddCallCount { get; private set; }
         public int UpdateCallCount { get; private set; }
         public int DeleteCallCount { get; private set; }
         public int AddMergerCallCount { get; private set; }
         public int UpdateMergerCallCount { get; private set; }
+        public int AddSpinOffCallCount { get; private set; }
+        public int UpdateSpinOffCallCount { get; private set; }
         public CorporateActionSplitCreateDTO? LastAddSplitRequest { get; private set; }
         public CorporateActionSplitUpdateDTO? LastUpdateSplitRequest { get; private set; }
         public CorporateActionDeleteDTO? LastDeleteRequest { get; private set; }
         public CorporateActionMergerCreateDTO? LastAddMergerRequest { get; private set; }
         public CorporateActionMergerUpdateDTO? LastUpdateMergerRequest { get; private set; }
+        public CorporateActionSpinOffCreateDTO? LastAddSpinOffRequest { get; private set; }
+        public CorporateActionSpinOffUpdateDTO? LastUpdateSpinOffRequest { get; private set; }
 
         public Task<AssetDetailsDTO?> AddSplitAsync(CorporateActionSplitCreateDTO request)
         {
@@ -570,8 +681,19 @@ public class CorporateActionsTabViewModelTests
             return ExceptionToThrow is not null ? Task.FromException<CorporateActionMergerResultDTO?>(ExceptionToThrow) : Task.FromResult(UpdateMergerResult);
         }
 
-        public Task<CorporateActionSpinOffResultDTO?> AddSpinOffAsync(CorporateActionSpinOffCreateDTO request) => throw new NotSupportedException();
-        public Task<CorporateActionSpinOffResultDTO?> UpdateSpinOffAsync(CorporateActionSpinOffUpdateDTO request) => throw new NotSupportedException();
+        public Task<CorporateActionSpinOffResultDTO?> AddSpinOffAsync(CorporateActionSpinOffCreateDTO request)
+        {
+            AddSpinOffCallCount++;
+            LastAddSpinOffRequest = request;
+            return ExceptionToThrow is not null ? Task.FromException<CorporateActionSpinOffResultDTO?>(ExceptionToThrow) : Task.FromResult(AddSpinOffResult);
+        }
+
+        public Task<CorporateActionSpinOffResultDTO?> UpdateSpinOffAsync(CorporateActionSpinOffUpdateDTO request)
+        {
+            UpdateSpinOffCallCount++;
+            LastUpdateSpinOffRequest = request;
+            return ExceptionToThrow is not null ? Task.FromException<CorporateActionSpinOffResultDTO?>(ExceptionToThrow) : Task.FromResult(UpdateSpinOffResult);
+        }
 
         public Task<AssetDetailsDTO?> DeleteCorporateActionAsync(CorporateActionDeleteDTO request)
         {

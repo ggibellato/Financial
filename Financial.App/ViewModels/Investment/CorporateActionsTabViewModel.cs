@@ -138,8 +138,9 @@ public class CorporateActionsTabViewModel : ViewModelBase
             AssetDetailsDTO? updatedDetails;
             try
             {
-                updatedDetails = formData.Value.Type == CorporateActionFormValidation.MergerTypeValue
-                    ? ResolveAffectedAsset(await _corporateActionService.AddMergerAsync(new CorporateActionMergerCreateDTO
+                if (formData.Value.Type == CorporateActionFormValidation.MergerTypeValue)
+                {
+                    updatedDetails = ResolveAffectedAsset(await _corporateActionService.AddMergerAsync(new CorporateActionMergerCreateDTO
                     {
                         BrokerName = _brokerName(),
                         PortfolioName = _portfolioName(),
@@ -155,8 +156,31 @@ public class CorporateActionsTabViewModel : ViewModelBase
                         TargetTicker = formData.Value.TargetTicker,
                         TargetCountry = formData.Value.TargetCountry,
                         TargetClass = formData.Value.TargetClass,
-                    }))
-                    : await _corporateActionService.AddSplitAsync(new CorporateActionSplitCreateDTO
+                    }));
+                }
+                else if (formData.Value.Type == CorporateActionFormValidation.SpinOffTypeValue)
+                {
+                    updatedDetails = ResolveAffectedAsset(await _corporateActionService.AddSpinOffAsync(new CorporateActionSpinOffCreateDTO
+                    {
+                        BrokerName = _brokerName(),
+                        PortfolioName = _portfolioName(),
+                        ParentAssetName = _assetName(),
+                        EffectiveDate = formData.Value.EffectiveDate,
+                        QuantityReceived = formData.Value.QuantityReceived,
+                        AllocationPercentage = formData.Value.AllocationPercentage,
+                        Note = formData.Value.Note,
+                        NewAssetName = formData.Value.TargetAssetName,
+                        CreateNewAssetInline = formData.Value.CreateTargetAssetInline,
+                        NewISIN = formData.Value.TargetISIN,
+                        NewExchange = formData.Value.TargetExchange,
+                        NewTicker = formData.Value.TargetTicker,
+                        NewCountry = formData.Value.TargetCountry,
+                        NewClass = formData.Value.TargetClass,
+                    }));
+                }
+                else
+                {
+                    updatedDetails = await _corporateActionService.AddSplitAsync(new CorporateActionSplitCreateDTO
                     {
                         BrokerName = _brokerName(),
                         PortfolioName = _portfolioName(),
@@ -165,6 +189,7 @@ public class CorporateActionsTabViewModel : ViewModelBase
                         RatioFactor = ComputeRatioFactor(formData.Value),
                         Note = formData.Value.Note
                     });
+                }
             }
             catch (Exception ex)
             {
@@ -203,8 +228,9 @@ public class CorporateActionsTabViewModel : ViewModelBase
             AssetDetailsDTO? updatedDetails;
             try
             {
-                updatedDetails = formData.Value.Type == CorporateActionFormValidation.MergerTypeValue
-                    ? ResolveAffectedAsset(await _corporateActionService.UpdateMergerAsync(new CorporateActionMergerUpdateDTO
+                if (formData.Value.Type == CorporateActionFormValidation.MergerTypeValue)
+                {
+                    updatedDetails = ResolveAffectedAsset(await _corporateActionService.UpdateMergerAsync(new CorporateActionMergerUpdateDTO
                     {
                         BrokerName = _brokerName(),
                         PortfolioName = _portfolioName(),
@@ -214,8 +240,25 @@ public class CorporateActionsTabViewModel : ViewModelBase
                         ExchangeRatio = formData.Value.ExchangeRatio,
                         CashInLieuAmount = formData.Value.CashInLieuAmount,
                         Note = formData.Value.Note
-                    }))
-                    : await _corporateActionService.UpdateSplitAsync(new CorporateActionSplitUpdateDTO
+                    }));
+                }
+                else if (formData.Value.Type == CorporateActionFormValidation.SpinOffTypeValue)
+                {
+                    updatedDetails = ResolveAffectedAsset(await _corporateActionService.UpdateSpinOffAsync(new CorporateActionSpinOffUpdateDTO
+                    {
+                        BrokerName = _brokerName(),
+                        PortfolioName = _portfolioName(),
+                        ParentAssetName = _assetName(),
+                        Id = formData.Value.CorporateActionId,
+                        EffectiveDate = formData.Value.EffectiveDate,
+                        QuantityReceived = formData.Value.QuantityReceived,
+                        AllocationPercentage = formData.Value.AllocationPercentage,
+                        Note = formData.Value.Note
+                    }));
+                }
+                else
+                {
+                    updatedDetails = await _corporateActionService.UpdateSplitAsync(new CorporateActionSplitUpdateDTO
                     {
                         BrokerName = _brokerName(),
                         PortfolioName = _portfolioName(),
@@ -225,6 +268,7 @@ public class CorporateActionsTabViewModel : ViewModelBase
                         RatioFactor = ComputeRatioFactor(formData.Value),
                         Note = formData.Value.Note
                     });
+                }
             }
             catch (Exception ex)
             {
@@ -293,25 +337,26 @@ public class CorporateActionsTabViewModel : ViewModelBase
         _applyDetails(updatedDetails);
     }
 
-    private AssetDetailsDTO? ResolveAffectedAsset(CorporateActionMergerResultDTO? result)
+    private AssetDetailsDTO? ResolveAffectedAsset(CorporateActionMergerResultDTO? result) =>
+        result is null ? null : ResolveAffectedAsset(result.Source, result.Target);
+
+    private AssetDetailsDTO? ResolveAffectedAsset(CorporateActionSpinOffResultDTO? result) =>
+        result is null ? null : ResolveAffectedAsset(result.Parent, result.New);
+
+    private AssetDetailsDTO? ResolveAffectedAsset(AssetDetailsDTO? primary, AssetDetailsDTO? secondary)
     {
-        if (result is null)
-        {
-            return null;
-        }
-
         var currentName = _assetName();
-        if (string.Equals(result.Source?.Name, currentName, StringComparison.Ordinal))
+        if (string.Equals(primary?.Name, currentName, StringComparison.Ordinal))
         {
-            return result.Source;
+            return primary;
         }
 
-        if (string.Equals(result.Target?.Name, currentName, StringComparison.Ordinal))
+        if (string.Equals(secondary?.Name, currentName, StringComparison.Ordinal))
         {
-            return result.Target;
+            return secondary;
         }
 
-        return result.Source ?? result.Target;
+        return primary ?? secondary;
     }
 
     private static decimal ComputeRatioFactor(CorporateActionFormData formData) =>
@@ -322,13 +367,10 @@ public class CorporateActionsTabViewModel : ViewModelBase
 
     private bool CanEditCorporateActions() => _hasContext();
 
-    // SpinOff rows have no Update/Delete flow yet (Stage 4, P53-F06 PR4) - this form and
-    // CorporateActionDialog only know how to build Split/Merger requests, so a SpinOff row must not
-    // reach either action until its own type-specific form exists.
     private bool CanUpdateCorporateAction(object? parameter) =>
-        _hasContext() && ((parameter as CorporateActionRowViewModel) ?? SelectedCorporateAction) is { CanEditOrDelete: true };
+        _hasContext() && ((parameter as CorporateActionRowViewModel) ?? SelectedCorporateAction) != null;
     private bool CanDeleteCorporateAction(object? parameter) =>
-        _hasContext() && ((parameter as CorporateActionRowViewModel) ?? SelectedCorporateAction) is { CanEditOrDelete: true };
+        _hasContext() && ((parameter as CorporateActionRowViewModel) ?? SelectedCorporateAction) != null;
 
     private async void AddCorporateAction() => await Add(ShowAddCorporateActionFormAsync);
 
@@ -376,7 +418,9 @@ public class CorporateActionsTabViewModel : ViewModelBase
                 TargetCountry: vm.TargetAssetPicker?.Country,
                 TargetClass: vm.TargetAssetPicker?.Class,
                 ExchangeRatio: vm.ExchangeRatio,
-                CashInLieuAmount: vm.CashInLieuAmount));
+                CashInLieuAmount: vm.CashInLieuAmount,
+                QuantityReceived: vm.QuantityReceived,
+                AllocationPercentage: vm.AllocationPercentage));
         }
 
         vm.CloseRequested += OnClosed;
@@ -423,7 +467,7 @@ public class CorporateActionsTabViewModel : ViewModelBase
             _brokerName(), _portfolioName(), _assetName(),
             record.Id, record.EffectiveDate, record.Type.ToString(), numerator, denominator, record.Note,
             record.LinkedAssetName ?? string.Empty, _assetName(), record.ExchangeRatio ?? 0m, record.CashInLieu,
-            _assetQuantity, _assetCostBasis);
+            _assetQuantity, _assetCostBasis, record.ConvertedQuantity ?? 0m, record.AllocationPercentage ?? 0m);
         return ShowCorporateActionFormAsync(vm);
     }
 
@@ -436,7 +480,7 @@ public class CorporateActionsTabViewModel : ViewModelBase
             _brokerName(), _portfolioName(), _assetName(),
             record.Id, record.EffectiveDate, record.Type.ToString(), numerator, denominator, record.Note,
             record.LinkedAssetName ?? string.Empty, _assetName(), record.ExchangeRatio ?? 0m, record.CashInLieu,
-            _assetQuantity, _assetCostBasis);
+            _assetQuantity, _assetCostBasis, record.ConvertedQuantity ?? 0m, record.AllocationPercentage ?? 0m);
         var dialog = new CorporateActionDialog(vm) { Owner = System.Windows.Application.Current?.MainWindow };
         return dialog.ShowDialog() == true;
     }
@@ -468,4 +512,6 @@ public readonly record struct CorporateActionFormData(
     CountryCode? TargetCountry = null,
     GlobalAssetClass? TargetClass = null,
     decimal ExchangeRatio = 0m,
-    decimal? CashInLieuAmount = null);
+    decimal? CashInLieuAmount = null,
+    decimal QuantityReceived = 0m,
+    decimal AllocationPercentage = 0m);
