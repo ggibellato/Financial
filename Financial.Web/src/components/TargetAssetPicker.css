@@ -1,0 +1,4 @@
+.target-asset-picker__create-hint {
+  display: block;
+  color: var(--text-muted, #888);
+}
