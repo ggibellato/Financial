@@ -11,6 +11,7 @@ public interface IAssetDetailsViewModel
     TransactionsTabViewModel Transactions { get; }
     CreditsTabViewModel Credits { get; }
     PriceHistoryTabViewModel PriceHistory { get; }
+    CorporateActionsTabViewModel CorporateActions { get; }
     void LoadAssetDetails(AssetDetailsDTO details, decimal? realizedPortfolioWeight = null);
     void LoadBrokerSummary(string brokerName, AggregatedSummaryDTO summary, IReadOnlyList<CreditDTO> credits);
     Task LoadBrokerBreakdown(string brokerName);

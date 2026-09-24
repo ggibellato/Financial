@@ -423,6 +423,8 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
 
     public DisposalsTabViewModel Disposals { get; }
 
+    public CorporateActionsTabViewModel CorporateActions { get; }
+
     public CostBasisMethod CostBasisMethod
     {
         get => _costBasisMethod;
@@ -443,7 +445,8 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         IProfitCalculationService profitCalculationService,
         InvestmentScope scope = InvestmentScope.Active,
         IAssetPriceLookupService? priceLookupService = null,
-        IAssetPriceHistoryService? priceHistoryService = null)
+        IAssetPriceHistoryService? priceHistoryService = null,
+        ICorporateActionService? corporateActionService = null)
     {
         _creditService = creditService ?? throw new ArgumentNullException(nameof(creditService));
         _priceLookupService = priceLookupService;
@@ -484,6 +487,14 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
             details => LoadAssetDetails(details),
             (message, caption, image) => MessageBox.Show(message, caption, MessageBoxButton.OK, image));
         Disposals = new DisposalsTabViewModel();
+        CorporateActions = new CorporateActionsTabViewModel(
+            corporateActionService,
+            () => HasAssetContext,
+            () => BrokerName,
+            () => PortfolioName,
+            () => AssetName,
+            details => LoadAssetDetails(details),
+            (message, caption, image) => MessageBox.Show(message, caption, MessageBoxButton.OK, image));
         _refreshTodayInfoCommand = new RelayCommand(RefreshTodayInfo, CanRefreshTodayInfo);
         _copyAssetNameCommand = new RelayCommand(CopyAssetName, CanCopyAssetName);
     }
@@ -564,6 +575,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         PriceHistory.Load(BuildCreditsAssetKey(details.BrokerName, details.PortfolioName, details.Name), details.PriceSnapshots, details.Transactions);
 
         Disposals.Load(BuildCreditsAssetKey(details.BrokerName, details.PortfolioName, details.Name), details.DisposalRecords);
+        CorporateActions.Load(BuildCreditsAssetKey(details.BrokerName, details.PortfolioName, details.Name), details.CorporateActions, details.Name);
         CostBasisMethod = details.CostBasisMethod;
 
         UpdateCommandStates();
@@ -609,6 +621,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         Credits.Clear();
         PriceHistory.Clear();
         Disposals.Clear();
+        CorporateActions.Clear();
         CostBasisMethod = CostBasisMethod.AverageCost;
         HasCreditsContext = false;
         Transactions.Clear();
@@ -977,6 +990,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         Transactions.UpdateCommandStates();
         Credits.UpdateCommandStates();
         PriceHistory.UpdateCommandStates();
+        CorporateActions.UpdateCommandStates();
         _refreshTodayInfoCommand.RaiseCanExecuteChanged();
         _copyAssetNameCommand.RaiseCanExecuteChanged();
     }

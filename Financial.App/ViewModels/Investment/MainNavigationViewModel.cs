@@ -21,7 +21,8 @@ public class MainNavigationViewModel : MainNavigationViewModelBase<AssetDetailsV
         IAssetPriceHistoryService priceHistoryService,
         IAssetMoveService assetMoveService,
         IPortfolioService portfolioService,
-        IDialogService dialogService)
+        IDialogService dialogService,
+        ICorporateActionService? corporateActionService = null)
         : base(
             navigationService ?? throw new ArgumentNullException(nameof(navigationService)),
             creditQueryService ?? throw new ArgumentNullException(nameof(creditQueryService)),
@@ -37,7 +38,8 @@ public class MainNavigationViewModel : MainNavigationViewModelBase<AssetDetailsV
                 portfolioAssetSummaryService ?? throw new ArgumentNullException(nameof(portfolioAssetSummaryService)),
                 profitCalculationService ?? throw new ArgumentNullException(nameof(profitCalculationService)),
                 priceLookupService: priceLookupService ?? throw new ArgumentNullException(nameof(priceLookupService)),
-                priceHistoryService: priceHistoryService ?? throw new ArgumentNullException(nameof(priceHistoryService))),
+                priceHistoryService: priceHistoryService ?? throw new ArgumentNullException(nameof(priceHistoryService)),
+                corporateActionService: corporateActionService),
             InvestmentScope.Active,
             assetMoveService ?? throw new ArgumentNullException(nameof(assetMoveService)),
             portfolioService ?? throw new ArgumentNullException(nameof(portfolioService)),

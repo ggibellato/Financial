@@ -758,6 +758,9 @@ public class MainNavigationViewModelBaseTests
         public PriceHistoryTabViewModel PriceHistory { get; } = new(
             null, () => false, () => string.Empty, () => string.Empty, () => string.Empty,
             _ => { }, (_, _, _) => { });
+        public CorporateActionsTabViewModel CorporateActions { get; } = new(
+            null, () => false, () => string.Empty, () => string.Empty, () => string.Empty,
+            _ => { }, (_, _, _) => { });
         public AssetDetailsDTO? LastAssetDetails { get; private set; }
         public decimal? LastRealizedPortfolioWeight { get; private set; }
 
