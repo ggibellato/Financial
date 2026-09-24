@@ -148,4 +148,172 @@ public class CorporateActionFormViewModelTests
         vm.ValidationMessage.Should().BeEmpty();
         vm.ConfirmCommand.CanExecute(null).Should().BeTrue();
     }
+
+    [Fact]
+    public void SelectingMergerType_RevealsMergerFieldsStepAndHidesSplitFields()
+    {
+        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName);
+
+        vm.Type = CorporateActionFormValidation.MergerTypeValue;
+
+        vm.IsMerger.Should().BeTrue();
+        vm.IsSplit.Should().BeFalse();
+        vm.IsMergerFieldsStep.Should().BeTrue();
+        vm.IsMergerConfirmStep.Should().BeFalse();
+    }
+
+    [Fact]
+    public void SplitType_NeverEntersMergerSteps()
+    {
+        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName);
+
+        vm.IsMergerFieldsStep.Should().BeFalse();
+        vm.IsMergerConfirmStep.Should().BeFalse();
+    }
+
+    [Fact]
+    public void MergerConfirmCommand_OnFieldsStep_AdvancesToConfirmStepWithoutClosing()
+    {
+        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName);
+        vm.Type = CorporateActionFormValidation.MergerTypeValue;
+        vm.EffectiveDate = new DateTime(2026, 1, 1);
+        vm.TargetAssetPicker!.AssetName = "Company B";
+        vm.ExchangeRatio = 2m;
+
+        bool? closedWith = null;
+        vm.CloseRequested += (_, result) => closedWith = result;
+
+        vm.ConfirmCommand.Execute(null);
+
+        closedWith.Should().BeNull();
+        vm.IsMergerFieldsStep.Should().BeFalse();
+        vm.IsMergerConfirmStep.Should().BeTrue();
+        vm.ConfirmLabel.Should().Be("Confirm & Save");
+    }
+
+    [Fact]
+    public void MergerConfirmCommand_OnConfirmStep_RaisesCloseRequestedTrue()
+    {
+        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName);
+        vm.Type = CorporateActionFormValidation.MergerTypeValue;
+        vm.EffectiveDate = new DateTime(2026, 1, 1);
+        vm.TargetAssetPicker!.AssetName = "Company B";
+        vm.ExchangeRatio = 2m;
+        vm.ConfirmCommand.Execute(null);
+
+        bool? closedWith = null;
+        vm.CloseRequested += (_, result) => closedWith = result;
+        vm.ConfirmCommand.Execute(null);
+
+        closedWith.Should().BeTrue();
+    }
+
+    [Fact]
+    public void MergerBackCommand_ReturnsToFieldsStepPreservingEnteredValues()
+    {
+        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName);
+        vm.Type = CorporateActionFormValidation.MergerTypeValue;
+        vm.EffectiveDate = new DateTime(2026, 1, 1);
+        vm.TargetAssetPicker!.AssetName = "Company B";
+        vm.ExchangeRatio = 2m;
+        vm.CashInLieuAmount = 10m;
+        vm.ConfirmCommand.Execute(null);
+        vm.IsMergerConfirmStep.Should().BeTrue();
+
+        vm.BackCommand.Execute(null);
+
+        vm.IsMergerFieldsStep.Should().BeTrue();
+        vm.IsMergerConfirmStep.Should().BeFalse();
+        vm.ConfirmLabel.Should().Be("Continue");
+        vm.TargetAssetPicker.AssetName.Should().Be("Company B");
+        vm.ExchangeRatio.Should().Be(2m);
+        vm.CashInLieuAmount.Should().Be(10m);
+    }
+
+    [Fact]
+    public void MergerConfirmLabel_ReadsContinueThenConfirmAndSave()
+    {
+        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName);
+        vm.Type = CorporateActionFormValidation.MergerTypeValue;
+
+        vm.ConfirmLabel.Should().Be("Continue");
+
+        vm.EffectiveDate = new DateTime(2026, 1, 1);
+        vm.TargetAssetPicker!.AssetName = "Company B";
+        vm.ExchangeRatio = 2m;
+        vm.ConfirmCommand.Execute(null);
+
+        vm.ConfirmLabel.Should().Be("Confirm & Save");
+    }
+
+    [Fact]
+    public void MergerAddMode_MissingTargetAsset_BlocksAdvancingPastFieldsStep()
+    {
+        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName);
+        vm.Type = CorporateActionFormValidation.MergerTypeValue;
+        vm.EffectiveDate = new DateTime(2026, 1, 1);
+        vm.ExchangeRatio = 2m;
+
+        vm.ConfirmCommand.Execute(null);
+
+        vm.IsMergerFieldsStep.Should().BeTrue();
+        vm.ValidationMessage.Should().Be("Target asset is required");
+    }
+
+    [Fact]
+    public void MergerExchangeRatioNotPositive_BlocksAdvancingPastFieldsStep()
+    {
+        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName);
+        vm.Type = CorporateActionFormValidation.MergerTypeValue;
+        vm.EffectiveDate = new DateTime(2026, 1, 1);
+        vm.TargetAssetPicker!.AssetName = "Company B";
+        vm.ExchangeRatio = 0m;
+
+        vm.ConfirmCommand.Execute(null);
+
+        vm.IsMergerFieldsStep.Should().BeTrue();
+        vm.ValidationMessage.Should().Be("Exchange ratio must be greater than zero");
+    }
+
+    [Fact]
+    public void MergerUpdateMode_DoesNotRequireTargetAssetToAdvance()
+    {
+        var vm = CorporateActionFormViewModel.CreateForUpdate(
+            BrokerName, PortfolioName, AssetName, Guid.NewGuid(), new DateTime(2026, 1, 1), CorporateActionFormValidation.MergerTypeValue, 0m, 0m, null,
+            targetAssetName: "Company B", exchangeRatio: 2m);
+
+        vm.ConfirmCommand.Execute(null);
+
+        vm.IsMergerConfirmStep.Should().BeTrue();
+    }
+
+    [Fact]
+    public void ReportSubmitFailed_OnMergerConfirmStep_KeepsConfirmEnabledForRetry()
+    {
+        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName);
+        vm.Type = CorporateActionFormValidation.MergerTypeValue;
+        vm.EffectiveDate = new DateTime(2026, 1, 1);
+        vm.TargetAssetPicker!.AssetName = "Company B";
+        vm.ExchangeRatio = 2m;
+        vm.ConfirmCommand.Execute(null);
+        vm.IsMergerConfirmStep.Should().BeTrue();
+
+        vm.ReportSubmitFailed("Server rejected the merger.");
+
+        vm.ValidationMessage.Should().Be("Server rejected the merger.");
+        vm.ConfirmCommand.CanExecute(null).Should().BeTrue();
+    }
+
+    [Fact]
+    public void MergerConfirmSummary_MatchesExpectedWording()
+    {
+        var vm = CorporateActionFormViewModel.CreateForAdd(
+            BrokerName, PortfolioName, AssetName, sourceQuantity: 100m, sourceCostBasis: 5000m);
+        vm.Type = CorporateActionFormValidation.MergerTypeValue;
+        vm.TargetAssetPicker!.AssetName = "Company B";
+        vm.ExchangeRatio = 2m;
+
+        vm.ConfirmSummary.Should().Be(
+            "Your position in BBAS3 (100.00 units) will close and convert into 200.00 units of Company B, carrying over 5,000.00 of cost basis.");
+    }
 }

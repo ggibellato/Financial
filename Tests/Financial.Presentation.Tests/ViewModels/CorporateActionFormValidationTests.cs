@@ -6,21 +6,33 @@ namespace Financial.Presentation.Tests.ViewModels;
 public class CorporateActionFormValidationTests
 {
     private static readonly DateTime ValidDate = new(2026, 7, 15);
+    private const string SplitType = CorporateActionFormValidation.SplitTypeValue;
+    private const string MergerType = CorporateActionFormValidation.MergerTypeValue;
+
+    private static string Build(
+        bool isDeleteMode = false,
+        string type = SplitType,
+        bool isAddMode = true,
+        DateTime? effectiveDate = null,
+        decimal ratioNumerator = 3m,
+        decimal ratioDenominator = 1m,
+        string targetAssetName = "Company B",
+        decimal exchangeRatio = 2m) =>
+        CorporateActionFormValidation.BuildValidationMessage(
+            isDeleteMode, type, isAddMode, effectiveDate ?? ValidDate, ratioNumerator, ratioDenominator, targetAssetName, exchangeRatio);
 
     [Fact]
     public void BuildValidationMessage_DeleteMode_ReturnsEmpty()
     {
-        var result = CorporateActionFormValidation.BuildValidationMessage(
-            isDeleteMode: true, effectiveDate: DateTime.MinValue, ratioNumerator: -1, ratioDenominator: -1);
+        var result = Build(isDeleteMode: true, effectiveDate: DateTime.MinValue, ratioNumerator: -1, ratioDenominator: -1);
 
         result.Should().BeEmpty();
     }
 
     [Fact]
-    public void BuildValidationMessage_AllFieldsValid_ReturnsEmpty()
+    public void BuildValidationMessage_Split_AllFieldsValid_ReturnsEmpty()
     {
-        var result = CorporateActionFormValidation.BuildValidationMessage(
-            isDeleteMode: false, effectiveDate: ValidDate, ratioNumerator: 3, ratioDenominator: 1);
+        var result = Build(type: SplitType, ratioNumerator: 3, ratioDenominator: 1);
 
         result.Should().BeEmpty();
     }
@@ -28,17 +40,15 @@ public class CorporateActionFormValidationTests
     [Fact]
     public void BuildValidationMessage_EffectiveDateIsMinValue_IncludesDateError()
     {
-        var result = CorporateActionFormValidation.BuildValidationMessage(
-            isDeleteMode: false, effectiveDate: DateTime.MinValue, ratioNumerator: 3, ratioDenominator: 1);
+        var result = Build(effectiveDate: DateTime.MinValue);
 
         result.Should().Contain("Effective date is required");
     }
 
     [Fact]
-    public void BuildValidationMessage_RatioIsOneForOne_IncludesRatioError()
+    public void BuildValidationMessage_Split_RatioIsOneForOne_IncludesRatioError()
     {
-        var result = CorporateActionFormValidation.BuildValidationMessage(
-            isDeleteMode: false, effectiveDate: ValidDate, ratioNumerator: 1, ratioDenominator: 1);
+        var result = Build(type: SplitType, ratioNumerator: 1, ratioDenominator: 1);
 
         result.Should().Contain("Enter a valid split ratio other than 1-for-1");
     }
@@ -48,10 +58,9 @@ public class CorporateActionFormValidationTests
     [InlineData(-1, 1)]
     [InlineData(3, 0)]
     [InlineData(3, -1)]
-    public void BuildValidationMessage_NonPositiveRatioComponent_IncludesRatioError(decimal numerator, decimal denominator)
+    public void BuildValidationMessage_Split_NonPositiveRatioComponent_IncludesRatioError(decimal numerator, decimal denominator)
     {
-        var result = CorporateActionFormValidation.BuildValidationMessage(
-            isDeleteMode: false, effectiveDate: ValidDate, ratioNumerator: numerator, ratioDenominator: denominator);
+        var result = Build(type: SplitType, ratioNumerator: numerator, ratioDenominator: denominator);
 
         result.Should().Contain("Enter a valid split ratio other than 1-for-1");
     }
@@ -68,5 +77,47 @@ public class CorporateActionFormValidationTests
 
         result.Should().Be(expectedResult);
         factor.Should().Be(expectedFactor);
+    }
+
+    [Fact]
+    public void BuildValidationMessage_Merger_AllFieldsValid_ReturnsEmpty()
+    {
+        var result = Build(type: MergerType, isAddMode: true, targetAssetName: "Company B", exchangeRatio: 2m);
+
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void BuildValidationMessage_Merger_AddModeMissingTargetAsset_IncludesTargetAssetError()
+    {
+        var result = Build(type: MergerType, isAddMode: true, targetAssetName: "", exchangeRatio: 2m);
+
+        result.Should().Contain("Target asset is required");
+    }
+
+    [Fact]
+    public void BuildValidationMessage_Merger_UpdateModeMissingTargetAsset_DoesNotRequireTargetAsset()
+    {
+        var result = Build(type: MergerType, isAddMode: false, targetAssetName: "", exchangeRatio: 2m);
+
+        result.Should().NotContain("Target asset is required");
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void BuildValidationMessage_Merger_ExchangeRatioNotPositive_IncludesExchangeRatioError(decimal exchangeRatio)
+    {
+        var result = Build(type: MergerType, exchangeRatio: exchangeRatio);
+
+        result.Should().Contain("Exchange ratio must be greater than zero");
+    }
+
+    [Fact]
+    public void BuildValidationMessage_Merger_EffectiveDateStillRequired()
+    {
+        var result = Build(type: MergerType, effectiveDate: DateTime.MinValue, exchangeRatio: 2m);
+
+        result.Should().Contain("Effective date is required");
     }
 }

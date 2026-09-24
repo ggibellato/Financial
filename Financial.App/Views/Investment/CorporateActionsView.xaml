@@ -86,6 +86,32 @@
                         <Style TargetType="TextBlock" BasedOn="{StaticResource PlainColumnTextStyle}"/>
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
+                <DataGridTemplateColumn Header="Tax Status" Width="140">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Border Background="{Binding StatusBrush}"
+                                        CornerRadius="4"
+                                        Padding="6,2"
+                                        HorizontalAlignment="Left"
+                                        Visibility="{Binding HasCalculationStatus, Converter={StaticResource BoolToVisibilityConverter}}"
+                                        AutomationProperties.Name="{Binding StatusAccessibleLabel}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <ui:SymbolIcon Symbol="{Binding StatusSymbol}"
+                                                       Filled="{Binding StatusSymbolFilled}"
+                                                       Foreground="{Binding StatusForeground}"/>
+                                        <TextBlock Text="{Binding StatusLabel}"
+                                                   Foreground="{Binding StatusForeground}"
+                                                   Margin="4,0,0,0"/>
+                                    </StackPanel>
+                                </Border>
+                                <TextBlock Text="—"
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                           Visibility="{Binding HasNoCalculationStatus, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                            </Grid>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
                 <DataGridTemplateColumn Header="" Width="Auto">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
