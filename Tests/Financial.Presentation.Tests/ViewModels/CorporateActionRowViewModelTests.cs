@@ -74,24 +74,40 @@ public class CorporateActionRowViewModelTests
     }
 
     [Fact]
-    public void ResultingChange_SpinOff_IsPlaceholderUntilPR4()
+    public void ResultingChange_SpinOffParentRole_ShowsCostBasisReduced()
     {
         var row = new CorporateActionRowViewModel(
-            new CorporateActionDTO { Id = Guid.NewGuid(), Type = CorporateAction.CorporateActionType.SpinOff, EffectiveDate = DateTime.Today },
+            new CorporateActionDTO { Id = Guid.NewGuid(), Type = CorporateAction.CorporateActionType.SpinOff, EffectiveDate = DateTime.Today, Role = CorporateAction.CorporateActionRole.Parent },
             AffectedAssetName);
 
-        row.ResultingChange.Should().Be("—");
+        row.ResultingChange.Should().Be("Cost basis reduced by spin-off");
     }
 
-    [Theory]
-    [InlineData(CorporateAction.CorporateActionType.Split, true)]
-    [InlineData(CorporateAction.CorporateActionType.Merger, true)]
-    [InlineData(CorporateAction.CorporateActionType.SpinOff, false)]
-    public void CanEditOrDelete_TrueForSplitAndMerger_FalseForSpinOff(CorporateAction.CorporateActionType type, bool expected)
+    [Fact]
+    public void ResultingChange_SpinOffNewRoleWithConvertedQuantity_ShowsUnitsReceived()
     {
-        var row = new CorporateActionRowViewModel(new CorporateActionDTO { Id = Guid.NewGuid(), Type = type, EffectiveDate = DateTime.Today }, AffectedAssetName);
+        var row = new CorporateActionRowViewModel(
+            new CorporateActionDTO
+            {
+                Id = Guid.NewGuid(),
+                Type = CorporateAction.CorporateActionType.SpinOff,
+                EffectiveDate = DateTime.Today,
+                Role = CorporateAction.CorporateActionRole.New,
+                ConvertedQuantity = 40m
+            },
+            AffectedAssetName);
 
-        row.CanEditOrDelete.Should().Be(expected);
+        row.ResultingChange.Should().Be("+40.00 units received");
+    }
+
+    [Fact]
+    public void ResultingChange_SpinOffNewRoleWithoutConvertedQuantity_ShowsGenericMessage()
+    {
+        var row = new CorporateActionRowViewModel(
+            new CorporateActionDTO { Id = Guid.NewGuid(), Type = CorporateAction.CorporateActionType.SpinOff, EffectiveDate = DateTime.Today, Role = CorporateAction.CorporateActionRole.New },
+            AffectedAssetName);
+
+        row.ResultingChange.Should().Be("Units received from spin-off");
     }
 
     [Fact]

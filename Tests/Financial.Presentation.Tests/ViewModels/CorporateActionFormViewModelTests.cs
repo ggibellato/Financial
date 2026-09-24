@@ -316,4 +316,41 @@ public class CorporateActionFormViewModelTests
         vm.ConfirmSummary.Should().Be(
             "Your position in BBAS3 (100.00 units) will close and convert into 200.00 units of Company B, carrying over 5,000.00 of cost basis.");
     }
+
+    [Fact]
+    public void SpinOffLivePreview_ComputesStaysWithParentAndMovesToNewFromAllocationPercentage()
+    {
+        var vm = CorporateActionFormViewModel.CreateForAdd(
+            BrokerName, PortfolioName, AssetName, sourceCostBasis: 4000m);
+        vm.Type = CorporateActionFormValidation.SpinOffTypeValue;
+
+        vm.AllocationPercentage = 25m;
+
+        vm.SpinOffStaysWithParentAmount.Should().Be("3,000.00");
+        vm.SpinOffMovesToNewAmount.Should().Be("1,000.00");
+    }
+
+    [Fact]
+    public void SpinOffNewAssetDisplayName_Empty_FallsBackToPlaceholderText()
+    {
+        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName);
+        vm.Type = CorporateActionFormValidation.SpinOffTypeValue;
+
+        vm.SpinOffNewAssetDisplayName.Should().Be("the new asset");
+    }
+
+    [Fact]
+    public void TargetAssetPickerAssetNameChanged_RaisesLivePreviewPropertyChanged()
+    {
+        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName);
+        vm.Type = CorporateActionFormValidation.SpinOffTypeValue;
+        var raisedProperties = new List<string>();
+        vm.PropertyChanged += (_, e) => raisedProperties.Add(e.PropertyName!);
+
+        vm.TargetAssetPicker!.AssetName = "New Co";
+
+        raisedProperties.Should().Contain(nameof(CorporateActionFormViewModel.TargetAssetDisplayName));
+        raisedProperties.Should().Contain(nameof(CorporateActionFormViewModel.SpinOffNewAssetDisplayName));
+        vm.SpinOffNewAssetDisplayName.Should().Be("New Co");
+    }
 }

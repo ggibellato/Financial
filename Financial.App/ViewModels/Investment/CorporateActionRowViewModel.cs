@@ -9,7 +9,6 @@ namespace Financial.Presentation.App.ViewModels.Investment;
 /// <summary>
 /// Display-ready wrapper around one <see cref="CorporateActionDTO"/> for the history grid -
 /// TypeLabel/ResultingChange port Financial.Web's CorporateActionsTab.tsx logic verbatim.
-/// SpinOff's Resulting Change branch is a placeholder ("—") until Stage 4 (P53-F06 PR4).
 /// </summary>
 public sealed class CorporateActionRowViewModel
 {
@@ -55,10 +54,14 @@ public sealed class CorporateActionRowViewModel
             Record.ConvertedQuantity.HasValue
                 ? $"+{Record.ConvertedQuantity.Value.ToString("N2", CultureInfo.InvariantCulture)} units received"
                 : "Units received from merger",
+        CorporateAction.CorporateActionType.SpinOff when Record.Role == CorporateAction.CorporateActionRole.Parent =>
+            "Cost basis reduced by spin-off",
+        CorporateAction.CorporateActionType.SpinOff when Record.Role == CorporateAction.CorporateActionRole.New =>
+            Record.ConvertedQuantity.HasValue
+                ? $"+{Record.ConvertedQuantity.Value.ToString("N2", CultureInfo.InvariantCulture)} units received"
+                : "Units received from spin-off",
         _ => "—"
     };
-
-    public bool CanEditOrDelete => Record.Type is CorporateAction.CorporateActionType.Split or CorporateAction.CorporateActionType.Merger;
 
     public bool HasCalculationStatus { get; }
     public bool HasNoCalculationStatus => !HasCalculationStatus;

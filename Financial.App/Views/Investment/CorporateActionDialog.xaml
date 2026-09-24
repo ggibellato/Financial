@@ -37,11 +37,19 @@
         <TextBlock Grid.Row="2" Grid.Column="0" Text="Type:" VerticalAlignment="Center"/>
         <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Type}" VerticalAlignment="Center"/>
 
-        <TextBlock Grid.Row="3" Grid.Column="0" Text="New units:" VerticalAlignment="Center"/>
-        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding RatioNumerator, StringFormat=N4}" VerticalAlignment="Center"/>
+        <TextBlock Grid.Row="3" Grid.Column="0" Text="New units:" VerticalAlignment="Center"
+                   Visibility="{Binding IsSplit, Converter={StaticResource BoolToVisibilityConverter}}"/>
+        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding RatioNumerator, StringFormat=N4}" VerticalAlignment="Center"
+                   Visibility="{Binding IsSplit, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
-        <TextBlock Grid.Row="4" Grid.Column="0" Text="Old units:" VerticalAlignment="Center"/>
-        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding RatioDenominator, StringFormat=N4}" VerticalAlignment="Center"/>
+        <TextBlock Grid.Row="4" Grid.Column="0" Text="Old units:" VerticalAlignment="Center"
+                   Visibility="{Binding IsSplit, Converter={StaticResource BoolToVisibilityConverter}}"/>
+        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding RatioDenominator, StringFormat=N4}" VerticalAlignment="Center"
+                   Visibility="{Binding IsSplit, Converter={StaticResource BoolToVisibilityConverter}}"/>
+        <TextBlock Grid.Row="3" Grid.Column="0" Text="Linked Asset:" VerticalAlignment="Center"
+                   Visibility="{Binding IsMergerOrSpinOff, Converter={StaticResource BoolToVisibilityConverter}}"/>
+        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding TargetAssetDisplayName}" VerticalAlignment="Center"
+                   Visibility="{Binding IsMergerOrSpinOff, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
         <TextBlock Grid.Row="5" Grid.ColumnSpan="2"
                    Foreground="{DynamicResource SystemFillColorCriticalBrush}"

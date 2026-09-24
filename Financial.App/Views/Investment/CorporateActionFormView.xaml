@@ -63,6 +63,7 @@
                           IsEnabled="{Binding CanChangeType}">
                     <ComboBoxItem Content="Split / Reverse Split" Tag="Split"/>
                     <ComboBoxItem Content="Merger" Tag="Merger"/>
+                    <ComboBoxItem Content="Spin-off" Tag="SpinOff"/>
                 </ComboBox>
             </StackPanel>
 
@@ -128,25 +129,85 @@
                          behaviors:DecimalInputBehavior.IsEnabled="True"/>
             </StackPanel>
 
+            <StackPanel Grid.Row="3" Grid.Column="0" Margin="0,0,8,8"
+                        Visibility="{Binding IsSpinOff, Converter={StaticResource BoolToVisibilityConverter}}">
+                <TextBlock Text="Parent Asset" Style="{StaticResource FieldLabelStyle}"/>
+                <TextBox AutomationProperties.Name="Parent asset"
+                         Text="{Binding SourceAssetName, Mode=OneWay}"
+                         IsReadOnly="True"/>
+            </StackPanel>
+
+            <Grid Grid.Row="3" Grid.Column="1" Margin="0,0,8,8"
+                  Visibility="{Binding IsSpinOff, Converter={StaticResource BoolToVisibilityConverter}}">
+                <Grid Visibility="{Binding IsAddMode, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <controls:TargetAssetPickerControl DataContext="{Binding TargetAssetPicker}" Label="New Asset"/>
+                </Grid>
+                <Grid Visibility="{Binding IsUpdateMode, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <StackPanel>
+                        <TextBlock Text="New Asset" Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBox AutomationProperties.Name="New asset"
+                                 Text="{Binding TargetAssetName, Mode=OneWay}"
+                                 IsReadOnly="True"/>
+                    </StackPanel>
+                </Grid>
+            </Grid>
+
+            <StackPanel Grid.Row="3" Grid.Column="2" Margin="0,0,8,8"
+                        Visibility="{Binding IsSpinOff, Converter={StaticResource BoolToVisibilityConverter}}">
+                <TextBlock Text="Quantity Received" Style="{StaticResource FieldLabelStyle}"/>
+                <TextBox AutomationProperties.Name="Quantity received"
+                         Text="{Binding QuantityReceived, UpdateSourceTrigger=LostFocus}"
+                         IsReadOnly="{Binding IsReadOnly}"
+                         behaviors:DecimalInputBehavior.IsEnabled="True"/>
+            </StackPanel>
+
+            <StackPanel Grid.Row="3" Grid.Column="3" Margin="0,0,0,8"
+                        Visibility="{Binding IsSpinOff, Converter={StaticResource BoolToVisibilityConverter}}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Allocation %" Style="{StaticResource FieldLabelStyle}"/>
+                    <controls:HelpFlyoutButton Margin="4,-4,0,0"
+                        HelpText="Find this on your broker's cost-basis allocation letter for this spin-off."/>
+                </StackPanel>
+                <TextBox AutomationProperties.Name="Allocation percentage"
+                         Text="{Binding AllocationPercentage, UpdateSourceTrigger=LostFocus}"
+                         IsReadOnly="{Binding IsReadOnly}"
+                         behaviors:DecimalInputBehavior.IsEnabled="True"/>
+            </StackPanel>
+
+            <WrapPanel Grid.Row="4" Grid.ColumnSpan="4" Margin="0,0,0,8"
+                       Visibility="{Binding IsSpinOff, Converter={StaticResource BoolToVisibilityConverter}}">
+                <TextBlock Text="{Binding SpinOffStaysWithParentAmount, Mode=OneWay}" FontWeight="Bold"/>
+                <TextBlock Text=" stays with "/>
+                <TextBlock Text="{Binding SourceAssetName, Mode=OneWay}"/>
+                <TextBlock Text=", "/>
+                <TextBlock Text="{Binding SpinOffMovesToNewAmount, Mode=OneWay}" FontWeight="Bold"/>
+                <TextBlock Text=" moves to "/>
+                <TextBlock Text="{Binding SpinOffNewAssetDisplayName, Mode=OneWay}"/>
+                <TextBlock Text="."/>
+            </WrapPanel>
+
             <Border Grid.Row="4" Grid.ColumnSpan="4" Margin="0,0,0,8" Padding="12" CornerRadius="4"
                     BorderThickness="1"
                     BorderBrush="{DynamicResource SystemFillColorCautionBrush}"
                     Background="{DynamicResource ControlFillColorDefaultBrush}"
                     Visibility="{Binding IsMergerConfirmStep, Converter={StaticResource BoolToVisibilityConverter}}">
-                <TextBlock TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite"
+                <!-- WrapPanel of TextBlocks, not a single TextBlock's Run.Text bindings - docs/ui/wpf.md's
+                     "keep totals distinct" rule: Run.Text defaults to TwoWay and risks crashing on a
+                     read-only bound property, unlike TextBlock.Text, which defaults to OneWay. -->
+                <WrapPanel AutomationProperties.LiveSetting="Polite"
                            AutomationProperties.Name="{Binding ConfirmSummary}">
-                    <Run Text="Your position in "/>
-                    <Run Text="{Binding SourceAssetName, Mode=OneWay}"/>
-                    <Run Text=" ("/>
-                    <Run Text="{Binding SourceQuantity, Mode=OneWay, StringFormat={}{0:N2}}"/>
-                    <Run Text=" units) will close and convert into "/>
-                    <Run Text="{Binding ConfirmSummaryTargetUnits, Mode=OneWay}" FontWeight="Bold"/>
-                    <Run Text=" of "/>
-                    <Run Text="{Binding ConfirmSummaryTargetAssetName, Mode=OneWay}"/>
-                    <Run Text=", carrying over "/>
-                    <Run Text="{Binding ConfirmSummaryCostBasis, Mode=OneWay}" FontWeight="Bold"/>
-                    <Run Text=" of cost basis."/>
-                </TextBlock>
+                    <TextBlock Text="Your position in "/>
+                    <TextBlock Text="{Binding SourceAssetName, Mode=OneWay}"/>
+                    <TextBlock Text=" ("/>
+                    <TextBlock Text="{Binding SourceQuantity, Mode=OneWay, StringFormat={}{0:N2}}"/>
+                    <TextBlock Text=" units) will close and convert into "/>
+                    <TextBlock Text="{Binding ConfirmSummaryTargetUnits, Mode=OneWay}" FontWeight="Bold"/>
+                    <TextBlock Text=" of "/>
+                    <TextBlock Text="{Binding TargetAssetDisplayName, Mode=OneWay}"/>
+                    <TextBlock Text=", carrying over "/>
+                    <TextBlock Text="{Binding ConfirmSummaryCostBasis, Mode=OneWay}" FontWeight="Bold"/>
+                    <TextBlock Text=" of cost basis."/>
+                </WrapPanel>
             </Border>
 
             <StackPanel Grid.Row="5" Grid.ColumnSpan="4" Margin="0,0,0,8"

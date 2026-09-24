@@ -8,6 +8,7 @@ public class CorporateActionFormValidationTests
     private static readonly DateTime ValidDate = new(2026, 7, 15);
     private const string SplitType = CorporateActionFormValidation.SplitTypeValue;
     private const string MergerType = CorporateActionFormValidation.MergerTypeValue;
+    private const string SpinOffType = CorporateActionFormValidation.SpinOffTypeValue;
 
     private static string Build(
         bool isDeleteMode = false,
@@ -17,9 +18,12 @@ public class CorporateActionFormValidationTests
         decimal ratioNumerator = 3m,
         decimal ratioDenominator = 1m,
         string targetAssetName = "Company B",
-        decimal exchangeRatio = 2m) =>
+        decimal exchangeRatio = 2m,
+        decimal quantityReceived = 10m,
+        decimal allocationPercentage = 25m) =>
         CorporateActionFormValidation.BuildValidationMessage(
-            isDeleteMode, type, isAddMode, effectiveDate ?? ValidDate, ratioNumerator, ratioDenominator, targetAssetName, exchangeRatio);
+            isDeleteMode, type, isAddMode, effectiveDate ?? ValidDate, ratioNumerator, ratioDenominator, targetAssetName, exchangeRatio,
+            quantityReceived, allocationPercentage);
 
     [Fact]
     public void BuildValidationMessage_DeleteMode_ReturnsEmpty()
@@ -117,6 +121,58 @@ public class CorporateActionFormValidationTests
     public void BuildValidationMessage_Merger_EffectiveDateStillRequired()
     {
         var result = Build(type: MergerType, effectiveDate: DateTime.MinValue, exchangeRatio: 2m);
+
+        result.Should().Contain("Effective date is required");
+    }
+
+    [Fact]
+    public void BuildValidationMessage_SpinOff_AllFieldsValid_ReturnsEmpty()
+    {
+        var result = Build(type: SpinOffType, isAddMode: true, targetAssetName: "Company B", quantityReceived: 10m, allocationPercentage: 25m);
+
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void BuildValidationMessage_SpinOff_AddModeMissingNewAsset_IncludesNewAssetError()
+    {
+        var result = Build(type: SpinOffType, isAddMode: true, targetAssetName: "");
+
+        result.Should().Contain("New asset is required");
+    }
+
+    [Fact]
+    public void BuildValidationMessage_SpinOff_UpdateModeMissingNewAsset_DoesNotRequireNewAsset()
+    {
+        var result = Build(type: SpinOffType, isAddMode: false, targetAssetName: "");
+
+        result.Should().NotContain("New asset is required");
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void BuildValidationMessage_SpinOff_QuantityReceivedNotPositive_IncludesQuantityError(decimal quantityReceived)
+    {
+        var result = Build(type: SpinOffType, quantityReceived: quantityReceived);
+
+        result.Should().Contain("Quantity received must be greater than zero");
+    }
+
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(100.01)]
+    public void BuildValidationMessage_SpinOff_AllocationPercentageOutOfRange_IncludesAllocationError(decimal allocationPercentage)
+    {
+        var result = Build(type: SpinOffType, allocationPercentage: allocationPercentage);
+
+        result.Should().Contain("Allocation percentage must be between 0 and 100");
+    }
+
+    [Fact]
+    public void BuildValidationMessage_SpinOff_EffectiveDateStillRequired()
+    {
+        var result = Build(type: SpinOffType, effectiveDate: DateTime.MinValue);
 
         result.Should().Contain("Effective date is required");
     }

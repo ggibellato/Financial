@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Domain.Entities;
 
@@ -27,6 +28,8 @@ public sealed class CorporateActionFormViewModel : ViewModelBase
     private CorporateActionFormStep _step = CorporateActionFormStep.Fields;
     private decimal _exchangeRatio;
     private decimal? _cashInLieuAmount;
+    private decimal _quantityReceived;
+    private decimal _allocationPercentage;
 
     public CorporateActionFormMode Mode { get; }
     public Guid CorporateActionId { get; }
@@ -66,6 +69,8 @@ public sealed class CorporateActionFormViewModel : ViewModelBase
 
     public bool IsSplit => Type == CorporateActionFormValidation.SplitTypeValue;
     public bool IsMerger => Type == CorporateActionFormValidation.MergerTypeValue;
+    public bool IsSpinOff => Type == CorporateActionFormValidation.SpinOffTypeValue;
+    public bool IsMergerOrSpinOff => IsMerger || IsSpinOff;
 
     public CorporateActionFormStep Step
     {
@@ -79,7 +84,7 @@ public sealed class CorporateActionFormViewModel : ViewModelBase
                 OnPropertyChanged(nameof(ConfirmLabel));
                 OnPropertyChanged(nameof(ConfirmSummary));
                 OnPropertyChanged(nameof(ConfirmSummaryTargetUnits));
-                OnPropertyChanged(nameof(ConfirmSummaryTargetAssetName));
+                OnPropertyChanged(nameof(TargetAssetDisplayName));
                 OnPropertyChanged(nameof(ConfirmSummaryCostBasis));
                 OnPropertyChanged(nameof(ShowNote));
                 OnPropertyChanged(nameof(ShowCancelButton));
@@ -96,17 +101,28 @@ public sealed class CorporateActionFormViewModel : ViewModelBase
 
     public string ConfirmSummary =>
         $"Your position in {SourceAssetName} ({SourceQuantity:N2} units) will close and convert into " +
-        $"{ConfirmSummaryTargetUnits} of {ConfirmSummaryTargetAssetName}, carrying over " +
+        $"{ConfirmSummaryTargetUnits} of {TargetAssetDisplayName}, carrying over " +
         $"{ConfirmSummaryCostBasis} of cost basis.";
 
     public string ConfirmSummaryTargetUnits =>
-        $"{SourceQuantity * ExchangeRatio:N2} units";
-
-    public string ConfirmSummaryTargetAssetName =>
-        TargetAssetPicker?.AssetName ?? TargetAssetName;
+        $"{FormatMoney(SourceQuantity * ExchangeRatio)} units";
 
     public string ConfirmSummaryCostBasis =>
-        $"{SourceCostBasis:N2}";
+        FormatMoney(SourceCostBasis);
+
+    public string TargetAssetDisplayName =>
+        TargetAssetPicker?.AssetName ?? TargetAssetName;
+
+    public string SpinOffNewAssetDisplayName =>
+        string.IsNullOrWhiteSpace(TargetAssetDisplayName) ? "the new asset" : TargetAssetDisplayName;
+
+    public string SpinOffStaysWithParentAmount =>
+        FormatMoney(SourceCostBasis * (1 - AllocationPercentage / 100));
+
+    public string SpinOffMovesToNewAmount =>
+        FormatMoney(SourceCostBasis * (AllocationPercentage / 100));
+
+    private static string FormatMoney(decimal value) => value.ToString("N2", System.Globalization.CultureInfo.InvariantCulture);
 
     public DateTime EffectiveDate
     {
@@ -129,12 +145,18 @@ public sealed class CorporateActionFormViewModel : ViewModelBase
             {
                 OnPropertyChanged(nameof(IsSplit));
                 OnPropertyChanged(nameof(IsMerger));
+                OnPropertyChanged(nameof(IsSpinOff));
+                OnPropertyChanged(nameof(IsMergerOrSpinOff));
                 OnPropertyChanged(nameof(IsMergerFieldsStep));
                 OnPropertyChanged(nameof(IsMergerConfirmStep));
                 OnPropertyChanged(nameof(ConfirmLabel));
                 OnPropertyChanged(nameof(ShowNote));
                 OnPropertyChanged(nameof(ShowCancelButton));
                 OnPropertyChanged(nameof(CanChangeType));
+                OnPropertyChanged(nameof(TargetAssetDisplayName));
+                OnPropertyChanged(nameof(SpinOffNewAssetDisplayName));
+                OnPropertyChanged(nameof(SpinOffStaysWithParentAmount));
+                OnPropertyChanged(nameof(SpinOffMovesToNewAmount));
                 Validate();
             }
         }
@@ -184,6 +206,32 @@ public sealed class CorporateActionFormViewModel : ViewModelBase
         set => SetProperty(ref _cashInLieuAmount, value);
     }
 
+    public decimal QuantityReceived
+    {
+        get => _quantityReceived;
+        set
+        {
+            if (SetProperty(ref _quantityReceived, value))
+            {
+                Validate();
+            }
+        }
+    }
+
+    public decimal AllocationPercentage
+    {
+        get => _allocationPercentage;
+        set
+        {
+            if (SetProperty(ref _allocationPercentage, value))
+            {
+                OnPropertyChanged(nameof(SpinOffStaysWithParentAmount));
+                OnPropertyChanged(nameof(SpinOffMovesToNewAmount));
+                Validate();
+            }
+        }
+    }
+
     public string Note
     {
         get => _note;
@@ -219,7 +267,9 @@ public sealed class CorporateActionFormViewModel : ViewModelBase
         decimal sourceQuantity,
         decimal sourceCostBasis,
         decimal exchangeRatio,
-        decimal? cashInLieuAmount)
+        decimal? cashInLieuAmount,
+        decimal quantityReceived,
+        decimal allocationPercentage)
     {
         Mode = mode;
         BrokerName = brokerName;
@@ -234,6 +284,8 @@ public sealed class CorporateActionFormViewModel : ViewModelBase
         _note = note ?? string.Empty;
         _exchangeRatio = exchangeRatio;
         _cashInLieuAmount = cashInLieuAmount;
+        _quantityReceived = quantityReceived;
+        _allocationPercentage = allocationPercentage;
 
         TargetAssetPicker = targetAssetPicker;
         TargetAssetName = targetAssetName;
@@ -245,7 +297,24 @@ public sealed class CorporateActionFormViewModel : ViewModelBase
         CancelCommand = new RelayCommand(Cancel);
         BackCommand = new RelayCommand(Back);
 
+        if (TargetAssetPicker != null)
+        {
+            TargetAssetPicker.PropertyChanged += OnTargetAssetPickerPropertyChanged;
+        }
+
         Validate();
+    }
+
+    private void OnTargetAssetPickerPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(TargetAssetPickerViewModel.AssetName))
+        {
+            return;
+        }
+
+        OnPropertyChanged(nameof(ConfirmSummary));
+        OnPropertyChanged(nameof(TargetAssetDisplayName));
+        OnPropertyChanged(nameof(SpinOffNewAssetDisplayName));
     }
 
     public static CorporateActionFormViewModel CreateForAdd(
@@ -258,7 +327,7 @@ public sealed class CorporateActionFormViewModel : ViewModelBase
         new(CorporateActionFormMode.Add, brokerName, portfolioName, assetName, Guid.Empty, DateTime.Today,
             CorporateActionFormValidation.SplitTypeValue, 0m, 0m, null,
             targetAssetPicker ?? new TargetAssetPickerViewModel(Array.Empty<AssetAdminDTO>()),
-            string.Empty, assetName, sourceQuantity, sourceCostBasis, 0m, null);
+            string.Empty, assetName, sourceQuantity, sourceCostBasis, 0m, null, 0m, 0m);
 
     public static CorporateActionFormViewModel CreateForUpdate(
         string brokerName,
@@ -275,9 +344,12 @@ public sealed class CorporateActionFormViewModel : ViewModelBase
         decimal exchangeRatio = 0m,
         decimal? cashInLieuAmount = null,
         decimal sourceQuantity = 0m,
-        decimal sourceCostBasis = 0m) =>
+        decimal sourceCostBasis = 0m,
+        decimal quantityReceived = 0m,
+        decimal allocationPercentage = 0m) =>
         new(CorporateActionFormMode.Update, brokerName, portfolioName, assetName, id, effectiveDate, type, ratioNumerator, ratioDenominator, note,
-            null, targetAssetName, sourceAssetName ?? assetName, sourceQuantity, sourceCostBasis, exchangeRatio, cashInLieuAmount);
+            null, targetAssetName, sourceAssetName ?? assetName, sourceQuantity, sourceCostBasis, exchangeRatio, cashInLieuAmount,
+            quantityReceived, allocationPercentage);
 
     public static CorporateActionFormViewModel CreateForDelete(
         string brokerName,
@@ -294,9 +366,12 @@ public sealed class CorporateActionFormViewModel : ViewModelBase
         decimal exchangeRatio = 0m,
         decimal? cashInLieuAmount = null,
         decimal sourceQuantity = 0m,
-        decimal sourceCostBasis = 0m) =>
+        decimal sourceCostBasis = 0m,
+        decimal quantityReceived = 0m,
+        decimal allocationPercentage = 0m) =>
         new(CorporateActionFormMode.Delete, brokerName, portfolioName, assetName, id, effectiveDate, type, ratioNumerator, ratioDenominator, note,
-            null, targetAssetName, sourceAssetName ?? assetName, sourceQuantity, sourceCostBasis, exchangeRatio, cashInLieuAmount);
+            null, targetAssetName, sourceAssetName ?? assetName, sourceQuantity, sourceCostBasis, exchangeRatio, cashInLieuAmount,
+            quantityReceived, allocationPercentage);
 
     private void Confirm()
     {
@@ -362,8 +437,10 @@ public sealed class CorporateActionFormViewModel : ViewModelBase
             EffectiveDate,
             RatioNumerator,
             RatioDenominator,
-            IsMerger ? (TargetAssetPicker?.AssetName ?? TargetAssetName) : string.Empty,
-            ExchangeRatio);
+            IsMerger || IsSpinOff ? TargetAssetDisplayName : string.Empty,
+            ExchangeRatio,
+            QuantityReceived,
+            AllocationPercentage);
         ConfirmCommand.RaiseCanExecuteChanged();
     }
 }
