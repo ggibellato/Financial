@@ -7,4 +7,5 @@ public enum DataQualityCategory
     OpenHoldingsMissingCostBasis,
     StaleValuation,
     UnresolvedTaxClassifications,
+    CorporateActionAwaitingTaxReview,
 }

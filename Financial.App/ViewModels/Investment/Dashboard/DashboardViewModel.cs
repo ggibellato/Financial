@@ -91,6 +91,11 @@ public class DashboardViewModel : ViewModelBase
             return false;
         }
 
+        if (holding.CorporateActionId is Guid corporateActionId)
+        {
+            tree.AssetDetails.FocusCorporateAction(corporateActionId);
+        }
+
         Warnings.NavigationError = null;
         NavigateToTreeRequested?.Invoke(this, scope);
         return true;

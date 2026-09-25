@@ -36,12 +36,14 @@ public sealed class CorporateActionRowViewModel
     public string? Note => Record.Note;
     public string AffectedAssetName { get; }
 
-    public string TypeLabel => Record.Type switch
+    public string TypeLabel => FormatTypeLabel(Record.Type);
+
+    public static string FormatTypeLabel(CorporateAction.CorporateActionType type) => type switch
     {
         CorporateAction.CorporateActionType.Split => "Split",
         CorporateAction.CorporateActionType.Merger => "Merger",
         CorporateAction.CorporateActionType.SpinOff => "Spin-off",
-        _ => Record.Type.ToString()
+        _ => type.ToString()
     };
 
     public string ResultingChange => Record.Type switch

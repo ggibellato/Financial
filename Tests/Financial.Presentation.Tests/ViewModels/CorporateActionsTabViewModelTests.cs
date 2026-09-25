@@ -100,6 +100,42 @@ public class CorporateActionsTabViewModelTests
     }
 
     [Fact]
+    public void FocusCorporateAction_MatchingId_SelectsRowAndRaisesFocusRequested()
+    {
+        var (viewModel, _, _) = Build();
+        var targetId = Guid.NewGuid();
+        var records = new List<CorporateActionDTO>
+        {
+            new() { Id = Guid.NewGuid(), Type = CorporateAction.CorporateActionType.Split, EffectiveDate = new DateTime(2026, 1, 1), RatioFactor = 3m },
+            new() { Id = targetId, Type = CorporateAction.CorporateActionType.Merger, EffectiveDate = new DateTime(2026, 2, 1) }
+        };
+        viewModel.Load("ctx", records, AssetName);
+        CorporateActionRowViewModel? raised = null;
+        viewModel.FocusRequested += (_, row) => raised = row;
+
+        viewModel.FocusCorporateAction(targetId);
+
+        viewModel.SelectedCorporateAction!.Id.Should().Be(targetId);
+        raised.Should().NotBeNull();
+        raised!.Id.Should().Be(targetId);
+    }
+
+    [Fact]
+    public void FocusCorporateAction_UnknownId_DoesNotSelectOrRaiseFocusRequested()
+    {
+        var (viewModel, _, _) = Build();
+        var record = new CorporateActionDTO { Id = Guid.NewGuid(), Type = CorporateAction.CorporateActionType.Split, EffectiveDate = new DateTime(2026, 1, 1), RatioFactor = 3m };
+        viewModel.Load("ctx", [record], AssetName);
+        var raisedCount = 0;
+        viewModel.FocusRequested += (_, _) => raisedCount++;
+
+        viewModel.FocusCorporateAction(Guid.NewGuid());
+
+        viewModel.SelectedCorporateAction.Should().BeNull();
+        raisedCount.Should().Be(0);
+    }
+
+    [Fact]
     public void Clear_ResetsCollectionAndFlags()
     {
         var (viewModel, _, _) = Build();

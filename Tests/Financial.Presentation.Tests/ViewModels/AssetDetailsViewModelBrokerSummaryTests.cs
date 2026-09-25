@@ -264,6 +264,8 @@ public class AssetDetailsViewModelBrokerSummaryTests
             TotalBought = 0m, TotalSold = 0m, TotalCredits = 0m,
             Transactions = [], Credits = []
         });
+        vm.FocusCorporateAction(Guid.NewGuid());
+        vm.SelectedDetailTabIndex.Should().Be(6);
 
         var raised = false;
         vm.PropertyChanged += (_, args) => raised |= args.PropertyName == nameof(AssetDetailsViewModel.SelectedDetailTabIndex);
@@ -281,6 +283,8 @@ public class AssetDetailsViewModelBrokerSummaryTests
     {
         var vm = BuildViewModel();
         vm.LoadPortfolioSummary("XPI", "Portfolio", new AggregatedSummaryDTO(), [], []);
+        vm.FocusCorporateAction(Guid.NewGuid());
+        vm.SelectedDetailTabIndex.Should().Be(6);
 
         var raised = false;
         vm.PropertyChanged += (_, args) => raised |= args.PropertyName == nameof(AssetDetailsViewModel.SelectedDetailTabIndex);
