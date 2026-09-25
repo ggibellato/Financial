@@ -146,6 +146,7 @@ function CategoryGroup({ categories, report, openItems, onOpenChange, onSelectRo
   return (
     <Accordion
       multiple
+      collapsible
       openItems={openItems}
       onToggle={(_event: AccordionToggleEvent, data: AccordionToggleData<WarningCategoryId>) =>
         onOpenChange(groupIds, data.openItems)

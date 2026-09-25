@@ -126,6 +126,19 @@ describe('DataQualityWarningsPanel', () => {
     await waitFor(() => expect(navigateToHoldingMock).toHaveBeenCalledWith('Trading212', 'ISA', 'VUSA', undefined))
   })
 
+  it('closes the only open category when its header is clicked again', () => {
+    renderPanel(FULL_REPORT)
+
+    const header = screen.getByRole('button', { name: /Missing price/ })
+    fireEvent.click(header)
+    expect(header).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByText('VUSA')).toBeInTheDocument()
+
+    fireEvent.click(header)
+    expect(header).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.queryByText('VUSA')).not.toBeInTheDocument()
+  })
+
   it('shows_a_dismissible_warning_when_the_holding_cannot_be_located', async () => {
     navigateToHoldingMock.mockResolvedValue(false)
 
