@@ -221,8 +221,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
                 // The Holdings tab is only offered for a portfolio (index 1, see NavigationView.xaml);
                 // leaving it selected while it silently hides behind a broker/asset node would leave
                 // its stale content on screen with no visible tab header pointing at it.
-                _selectedDetailTabIndex = 0;
-                OnPropertyChanged(nameof(SelectedDetailTabIndex));
+                SelectedDetailTabIndex = 0;
             }
         }
     }
@@ -244,13 +243,26 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
                 // The Price History tab is only offered for an asset (index 4, see NavigationView.xaml);
                 // leaving it selected while it silently hides behind a broker/portfolio node would leave
                 // its stale content on screen with no visible tab header pointing at it.
-                _selectedDetailTabIndex = 0;
-                OnPropertyChanged(nameof(SelectedDetailTabIndex));
+                SelectedDetailTabIndex = 0;
             }
         }
     }
 
-    public int SelectedDetailTabIndex => _selectedDetailTabIndex;
+    public int SelectedDetailTabIndex
+    {
+        get => _selectedDetailTabIndex;
+        private set => SetProperty(ref _selectedDetailTabIndex, value);
+    }
+
+    // Must match the Corporate Actions TabItem's position in NavigationView.xaml's asset-detail
+    // TabControl (0-based) - pinned by NavigationViewTabOrderTests.
+    internal const int CorporateActionsTabIndex = 6;
+
+    public void FocusCorporateAction(Guid corporateActionId)
+    {
+        SelectedDetailTabIndex = CorporateActionsTabIndex;
+        CorporateActions.FocusCorporateAction(corporateActionId);
+    }
 
     public decimal TotalInvested
     {

@@ -300,6 +300,29 @@ public class DashboardViewModelTests
     }
 
     [Fact]
+    public void NavigateToHoldingCommand_WithCorporateActionId_FocusesItOnTheResolvedTree()
+    {
+        var activeTree = new FakeNavigationTree { HoldsEverything = true };
+        var (vm, _, _) = CreateViewModel(activeTree: activeTree);
+        var corporateActionId = Guid.NewGuid();
+
+        vm.NavigateToHoldingCommand.Execute(new WarningHoldingRef("XPI", "FII", "BBAS3", corporateActionId));
+
+        activeTree.AssetDetailsFake.FocusedCorporateActionId.Should().Be(corporateActionId);
+    }
+
+    [Fact]
+    public void NavigateToHoldingCommand_WithoutCorporateActionId_DoesNotCallFocusCorporateAction()
+    {
+        var activeTree = new FakeNavigationTree { HoldsEverything = true };
+        var (vm, _, _) = CreateViewModel(activeTree: activeTree);
+
+        vm.NavigateToHoldingCommand.Execute(new WarningHoldingRef("Chase", "Income", "VUSA"));
+
+        activeTree.AssetDetailsFake.FocusedCorporateActionId.Should().BeNull();
+    }
+
+    [Fact]
     public void NavigateToHoldingCommand_ClearsAnEarlierFailureOnceANavigationSucceeds()
     {
         var activeTree = new FakeNavigationTree();
@@ -379,7 +402,8 @@ internal sealed class FakeNavigationTree : IMainNavigationViewModel
         return HoldsEverything;
     }
 
-    public IAssetDetailsViewModel AssetDetails => throw new NotSupportedException();
+    public MainNavigationViewModelBaseTests.SpyAssetDetailsViewModel AssetDetailsFake { get; } = new();
+    public IAssetDetailsViewModel AssetDetails => AssetDetailsFake;
     public void ReloadSelectedNodeDetails() => throw new NotSupportedException();
     public bool CanAcceptDrop(TreeNodeViewModel? dragged, TreeNodeViewModel? target) => throw new NotSupportedException();
     public void HighlightDropTarget(TreeNodeViewModel? target) => throw new NotSupportedException();

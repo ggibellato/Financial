@@ -46,7 +46,7 @@
                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                    Visibility="{Binding AssetDetails.CorporateActions.HasNoCorporateActions, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
-        <DataGrid Grid.Row="2"
+        <DataGrid x:Name="HistoryGrid" Grid.Row="2"
                   ItemsSource="{Binding AssetDetails.CorporateActions.CorporateActions}"
                   SelectedItem="{Binding AssetDetails.CorporateActions.SelectedCorporateAction, Mode=TwoWay}"
                   AutoGenerateColumns="False"

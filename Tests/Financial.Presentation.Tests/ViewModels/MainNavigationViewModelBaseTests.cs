@@ -763,6 +763,9 @@ public class MainNavigationViewModelBaseTests
             _ => { }, (_, _, _) => { });
         public AssetDetailsDTO? LastAssetDetails { get; private set; }
         public decimal? LastRealizedPortfolioWeight { get; private set; }
+        public Guid? FocusedCorporateActionId { get; private set; }
+
+        public void FocusCorporateAction(Guid corporateActionId) => FocusedCorporateActionId = corporateActionId;
 
         public void LoadAssetDetails(AssetDetailsDTO details, decimal? realizedPortfolioWeight = null)
         {

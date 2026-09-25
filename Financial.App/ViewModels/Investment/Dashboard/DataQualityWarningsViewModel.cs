@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Interfaces;
+using Financial.Presentation.App.ViewModels.Investment;
 using Microsoft.Extensions.Logging;
 
 namespace Financial.Presentation.App.ViewModels.Investment.Dashboard;
@@ -210,6 +211,17 @@ public class DataQualityWarningsViewModel : ViewModelBase
                 [.. report.UnresolvedTaxClassifications.Select(finding => new WarningFindingRowViewModel(
                     new WarningHoldingRef(finding.BrokerName, finding.PortfolioName, finding.AssetName),
                     $"{Location(finding.BrokerName, finding.PortfolioName)} — {finding.EventCategory}, tax year {finding.TaxYear}"))]);
+        }
+
+        if (report.CorporateActionsAwaitingTaxReview.Count > 0)
+        {
+            yield return new WarningCategoryViewModel(
+                DataQualityCategory.CorporateActionAwaitingTaxReview,
+                "Corporate action awaiting tax review",
+                report.CorporateActionsAwaitingTaxReview.Count,
+                [.. report.CorporateActionsAwaitingTaxReview.Select(finding => new WarningFindingRowViewModel(
+                    new WarningHoldingRef(finding.BrokerName, finding.PortfolioName, finding.AssetName, finding.CorporateActionId),
+                    $"{Location(finding.BrokerName, finding.PortfolioName)} — {CorporateActionRowViewModel.FormatTypeLabel(finding.Type)}, tax year {finding.TaxYear}"))]);
         }
     }
 

@@ -56,6 +56,20 @@ public class CorporateActionsTabViewModel : ViewModelBase
 
     public ObservableCollection<CorporateActionRowViewModel> CorporateActions { get; } = new();
 
+    public event EventHandler<CorporateActionRowViewModel>? FocusRequested;
+
+    public void FocusCorporateAction(Guid corporateActionId)
+    {
+        var target = CorporateActions.FirstOrDefault(row => row.Id == corporateActionId);
+        if (target is null)
+        {
+            return;
+        }
+
+        SelectedCorporateAction = target;
+        FocusRequested?.Invoke(this, target);
+    }
+
     public bool HasVisibleCorporateActions => CorporateActions.Count > 0;
     public bool HasNoCorporateActions => CorporateActions.Count == 0;
 

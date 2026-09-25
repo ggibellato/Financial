@@ -28,7 +28,14 @@ public class DataQualityWarningsViewModelTests
         [
             new UnresolvedTaxClassificationFinding("XPI", "FII", "BBAS3", "2025/26", EventCategory.Dividend),
         ],
+        CorporateActionsAwaitingTaxReview =
+        [
+            new CorporateActionAwaitingTaxReviewFinding(
+                "XPI", "FII", "PETR4", CorporateActionId, CorporateAction.CorporateActionType.Merger, new DateTime(2026, 4, 1), "2025/26"),
+        ],
     };
+
+    private static readonly Guid CorporateActionId = Guid.NewGuid();
 
     private static (DataQualityWarningsViewModel ViewModel, StubDataQualityReportService Service) CreateViewModel(
         StubDataQualityReportService? service = null)
@@ -50,13 +57,15 @@ public class DataQualityWarningsViewModelTests
             DataQualityCategory.UnpricedOpenHoldings,
             DataQualityCategory.OpenHoldingsMissingCostBasis,
             DataQualityCategory.StaleValuation,
-            DataQualityCategory.UnresolvedTaxClassifications);
+            DataQualityCategory.UnresolvedTaxClassifications,
+            DataQualityCategory.CorporateActionAwaitingTaxReview);
         viewModel.Categories.Select(category => category.Label).Should().Equal(
             "Impossible cash-flow sequence",
             "Missing price",
             "Missing cost basis",
             "Stale valuation",
-            "Unresolved tax classification");
+            "Unresolved tax classification",
+            "Corporate action awaiting tax review");
         viewModel.ShowCategories.Should().BeTrue();
         viewModel.ShowAllClear.Should().BeFalse();
     }
@@ -125,6 +134,11 @@ public class DataQualityWarningsViewModelTests
 
         var tax = viewModel.Categories.Single(category => category.Category == DataQualityCategory.UnresolvedTaxClassifications);
         tax.Findings[0].SecondaryText.Should().Be("FII · XPI — Dividend, tax year 2025/26");
+
+        var corporateAction = viewModel.Categories.Single(category => category.Category == DataQualityCategory.CorporateActionAwaitingTaxReview);
+        corporateAction.Findings.Should().ContainSingle();
+        corporateAction.Findings[0].SecondaryText.Should().Be("FII · XPI — Merger, tax year 2025/26");
+        corporateAction.Findings[0].Holding.Should().Be(new WarningHoldingRef("XPI", "FII", "PETR4", CorporateActionId));
     }
 
     [Fact]
