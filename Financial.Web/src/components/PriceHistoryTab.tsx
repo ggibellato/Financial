@@ -21,7 +21,7 @@ import SplitPanel from './SplitPanel'
 import DataTableCell from './grid/DataTableCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import { useFormPanelStyles } from './formPanelStyles'
-import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
+import { useSortableRows, DATE_DESC_SORT, type SortAccessor } from '../hooks/useSortableRows'
 import { useFieldError } from '../hooks/useFieldError'
 import type { PriceHistoryFormField } from '../hooks/usePriceHistory'
 import { usePriceHistory } from '../hooks/usePriceHistory'
@@ -299,7 +299,7 @@ export default function PriceHistoryTab() {
     deleteEntry,
   } = usePriceHistory()
 
-  const { sortedRows, sortState, requestSort } = useSortableRows(entries, SORT_ACCESSORS)
+  const { sortedRows, sortState, requestSort } = useSortableRows(entries, SORT_ACCESSORS, DATE_DESC_SORT)
 
   const confirmAndDeleteEntry = (date: string) => confirmThenRun('Delete this price entry?', () => deleteEntry(date))
 

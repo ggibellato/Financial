@@ -64,21 +64,23 @@ describe('IncomeSection', () => {
   })
 
   it('calls onEdit with the clicked income entry', () => {
+    // Default sort is date descending, so row 0 is i2 (2026-07-06), the newer entry.
     const onEdit = vi.fn()
     render(<IncomeSection incomes={INCOMES} onEdit={onEdit} onDelete={vi.fn()} onNewIncome={vi.fn()} />)
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Edit income' })[0])
 
-    expect(onEdit).toHaveBeenCalledWith(INCOMES[0])
+    expect(onEdit).toHaveBeenCalledWith(INCOMES[1])
   })
 
   it('calls onDelete with the clicked income entry id', () => {
+    // Default sort is date descending, so row 1 is i1 (2026-07-05), the older entry.
     const onDelete = vi.fn()
     render(<IncomeSection incomes={INCOMES} onEdit={vi.fn()} onDelete={onDelete} onNewIncome={vi.fn()} />)
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Delete income' })[1])
 
-    expect(onDelete).toHaveBeenCalledWith('i2')
+    expect(onDelete).toHaveBeenCalledWith('i1')
   })
 
   it('calls onNewIncome when the New Income button is clicked', () => {

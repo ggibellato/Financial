@@ -21,7 +21,7 @@ import LotAllocationPicker from './LotAllocationPicker'
 import DataTableCell from './grid/DataTableCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import { useFormPanelStyles } from './formPanelStyles'
-import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
+import { useSortableRows, DATE_DESC_SORT, type SortAccessor } from '../hooks/useSortableRows'
 import { useFieldError } from '../hooks/useFieldError'
 import { useOpenLots } from '../hooks/useOpenLots'
 import type { ChartDisplayMode, TransactionFormField, TransactionMonthBucket } from '../hooks/useTransactions'
@@ -394,7 +394,7 @@ export default function TransactionsTab() {
     deleteTransaction,
   } = useTransactions()
 
-  const { sortedRows, sortState, requestSort } = useSortableRows(transactions, SORT_ACCESSORS)
+  const { sortedRows, sortState, requestSort } = useSortableRows(transactions, SORT_ACCESSORS, DATE_DESC_SORT)
 
   const confirmAndDeleteTransaction = (id: string) =>
     confirmThenRun('Delete this transaction?', () => deleteTransaction(id))

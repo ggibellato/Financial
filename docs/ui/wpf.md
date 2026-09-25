@@ -186,12 +186,18 @@ unthemed classic Windows chrome — a known, open gap. Closing it needs a custom
   fixed it (2026-08-22).
 - Keep sort/filter state visible.
 - Provide accessible alternatives for important chart data.
-- Column-header sorting is not a designed feature on either platform yet —
-  don't treat a native `DataGrid`'s default `CanUserSortColumns="True"`
-  click-to-sort as parity with React's plain `<th>` headers (which have no
-  sort behavior at all). When sorting is actually speced, implement
-  equivalent explicit sort behavior on both platforms in that feature's own
-  slice, rather than leaving WPF with an accidental head start.
+- Column-header sorting is a designed feature, via `SortableColumnsBehavior`
+  (`Financial.App/Behaviors/SortableColumnsBehavior.cs`), applied globally
+  through the `DataGrid` style in `App.xaml` — not the native
+  `CanUserSortColumns="True"` click-to-sort, which is 2-state and null-first.
+  It matches Web's `useSortableRows` hook: the same 3-state (unsorted ->
+  ascending -> descending -> unsorted), null-last cycle. Opt a specific grid
+  out with `SortableColumnsBehavior.IsEnabled="False"` (e.g. Reserva's
+  Movements grid). A record-list grid whose primary column is a literal date
+  sets `DefaultSortMemberPath`/`DefaultSortDirection="Descending"` on the
+  `DataGrid` to start already sorted, arrow shown, matching Web's
+  `defaultSort` — see `docs/ui/forms-data-and-visualisations.md`'s "Data
+  grids" section for which grids this applies to.
 - A free-text column (description/note/label) whose values are occasionally
   long uses `TruncatedColumnTextStyle` (`App.xaml`, based on
   `PlainColumnTextStyle`) as its `ElementStyle` — never `TextWrapping="Wrap"`

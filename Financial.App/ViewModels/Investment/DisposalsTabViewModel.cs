@@ -110,7 +110,6 @@ public class DisposalsTabViewModel : ViewModelBase
         var byTransactionId = _disposalRecords.ToLookup(record => record.TransactionId);
 
         var rows = activeRecords
-            .OrderByDescending(record => record.Date)
             .Select(record => new DisposalRecordRowViewModel(record, BuildSupersededHistory(record, byTransactionId)))
             .ToList();
 

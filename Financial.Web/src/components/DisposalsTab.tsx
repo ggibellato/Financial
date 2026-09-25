@@ -6,7 +6,7 @@ import FilterTabList from './FilterTabList'
 import LoadingState from './LoadingState'
 import DataTableCell from './grid/DataTableCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
-import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
+import { useSortableRows, DATE_DESC_SORT, type SortAccessor } from '../hooks/useSortableRows'
 import { ALL_TAX_YEARS, useDisposals, type DisposalChain } from '../hooks/useDisposals'
 import { COST_BASIS_METHOD_LABELS } from '../utils/costBasisMethod'
 import { formatDateTime, formatN2, formatN8, formatShortDate, signClass } from '../utils/formatters'
@@ -127,7 +127,7 @@ export default function DisposalsTab() {
     toggleExpanded,
   } = useDisposals()
 
-  const { sortedRows, sortState, requestSort } = useSortableRows(filteredChains, SORT_ACCESSORS)
+  const { sortedRows, sortState, requestSort } = useSortableRows(filteredChains, SORT_ACCESSORS, DATE_DESC_SORT)
 
   if (isLoading) {
     return <LoadingState />

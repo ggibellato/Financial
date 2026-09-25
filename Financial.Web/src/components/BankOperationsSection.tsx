@@ -5,7 +5,7 @@ import type { BankOperationEntry } from '../hooks/useBankOperations'
 import DataTableCell from './grid/DataTableCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import ColumnFilterMenu from './grid/ColumnFilterMenu'
-import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
+import { useSortableRows, DATE_DESC_SORT, type SortAccessor } from '../hooks/useSortableRows'
 import { useColumnFilters } from '../hooks/useColumnFilters'
 import { formatN2, formatShortDate } from '../utils/formatters'
 import './BankOperationsSection.css'
@@ -88,7 +88,7 @@ export default function BankOperationsSection({
 }: BankOperationsSectionProps) {
   const { filteredRows, availableValues, selectedValues, toggleValue, toggleAll, isColumnFiltered } =
     useColumnFilters(operations, FILTER_ACCESSORS)
-  const { sortedRows, sortState, requestSort } = useSortableRows(filteredRows, SORT_ACCESSORS)
+  const { sortedRows, sortState, requestSort } = useSortableRows(filteredRows, SORT_ACCESSORS, DATE_DESC_SORT)
 
   return (
     <section className="bank-operations-section">

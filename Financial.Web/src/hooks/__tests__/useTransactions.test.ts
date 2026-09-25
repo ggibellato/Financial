@@ -201,16 +201,6 @@ describe('useTransactions', () => {
     expect(getAssetDetailsMock).toHaveBeenCalledTimes(2)
   })
 
-  it('sorts_transactions_by_date_descending', async () => {
-    getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
-    const { wrapper, setNode } = createSelectedNodeWrapper()
-    const { result } = renderHook(() => useTransactions(), { wrapper })
-    setNode(ASSET_NODE)
-    await waitFor(() => expect(result.current.transactions.length).toBe(2))
-    expect(result.current.transactions[0].id).toBe('aaa')
-    expect(result.current.transactions[1].id).toBe('bbb')
-  })
-
   it('show_new_form_opens_blank_form_defaulting_date_to_today_and_type_to_buy', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
     const { wrapper, setNode } = createSelectedNodeWrapper()

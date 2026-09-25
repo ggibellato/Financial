@@ -316,13 +316,7 @@ export function useCredits(): CreditsData {
     }
   }, [selectedNode, scope, state.retryCount])
 
-  const credits = useMemo(
-    () =>
-      [...state.credits].sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-      ),
-    [state.credits],
-  )
+  const credits = state.credits
 
   const filteredCredits = useMemo(() => {
     const start = getPeriodFilterStartDate(state.selectedFilter, new Date())

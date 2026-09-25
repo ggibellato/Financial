@@ -36,8 +36,10 @@ public class DisposalsTabViewModelTests
     }
 
     [Fact]
-    public void Load_FiltersToActiveOnly_AndSortsNewestFirst()
+    public void Load_FiltersToActiveOnly()
     {
+        // Row order is the DataGrid's job now (SortableColumnsBehavior.DefaultSortMemberPath in
+        // DisposalsView.xaml), not this ViewModel's - it passes active records through unsorted.
         var viewModel = new DisposalsTabViewModel();
         var older = CreateRecord(new DateTime(2025, 1, 1), "2024/25");
         var newer = CreateRecord(new DateTime(2025, 6, 1), "2025/26");
@@ -46,8 +48,8 @@ public class DisposalsTabViewModelTests
         viewModel.Load("asset-1", [older, newer, superseded]);
 
         viewModel.Disposals.Should().HaveCount(2);
-        viewModel.Disposals[0].Record.Should().Be(newer);
-        viewModel.Disposals[1].Record.Should().Be(older);
+        viewModel.Disposals[0].Record.Should().Be(older);
+        viewModel.Disposals[1].Record.Should().Be(newer);
     }
 
     [Fact]

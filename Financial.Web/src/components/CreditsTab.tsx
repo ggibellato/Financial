@@ -22,7 +22,7 @@ import LoadingState from './LoadingState'
 import DataTableCell from './grid/DataTableCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import { useFormPanelStyles } from './formPanelStyles'
-import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
+import { useSortableRows, DATE_DESC_SORT, type SortAccessor } from '../hooks/useSortableRows'
 import { useFieldError } from '../hooks/useFieldError'
 import type { ChartType, CreditFormField, MonthBucket, ViewMode } from '../hooks/useCredits'
 import { useCredits } from '../hooks/useCredits'
@@ -398,7 +398,7 @@ export default function CreditsTab() {
     deleteCredit,
   } = useCredits()
 
-  const { sortedRows, sortState, requestSort } = useSortableRows(credits, SORT_ACCESSORS)
+  const { sortedRows, sortState, requestSort } = useSortableRows(credits, SORT_ACCESSORS, DATE_DESC_SORT)
 
   const confirmAndDeleteCredit = (id: string) => confirmThenRun('Delete this credit?', () => deleteCredit(id))
 

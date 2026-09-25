@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CorporateActionsData } from '../../hooks/useCorporateActions'
 import type { AssetDetailsDto, CorporateActionDto } from '../../api/types'
@@ -146,6 +146,34 @@ describe('CorporateActionsTab', () => {
 
     expect(screen.getAllByRole('row')).toHaveLength(3)
     expect(screen.getAllByText('KLBN4')).toHaveLength(2)
+  })
+
+  it('defaults to sorting by date descending, with the header showing the active sort', () => {
+    const older = split({ id: 'ca1', effectiveDate: '2026-06-01T00:00:00' })
+    const newer = split({ id: 'ca2', effectiveDate: '2026-07-01T00:00:00' })
+    setMock({ corporateActions: [older, newer] })
+
+    render(<CorporateActionsTab />)
+    const table = screen.getByRole('table')
+    const dateHeaderButton = within(table).getByRole('button', { name: 'Date' })
+    const dateHeader = dateHeaderButton.closest('th')
+
+    expect(dateHeader).toHaveAttribute('aria-sort', 'descending')
+    let dataRows = within(table).getAllByRole('row').slice(1)
+    expect(within(dataRows[0]).getByText('01/07/2026')).toBeInTheDocument()
+    expect(within(dataRows[1]).getByText('01/06/2026')).toBeInTheDocument()
+
+    fireEvent.click(dateHeaderButton)
+    expect(dateHeader).toHaveAttribute('aria-sort', 'none')
+
+    fireEvent.click(dateHeaderButton)
+    expect(dateHeader).toHaveAttribute('aria-sort', 'ascending')
+    dataRows = within(table).getAllByRole('row').slice(1)
+    expect(within(dataRows[0]).getByText('01/06/2026')).toBeInTheDocument()
+    expect(within(dataRows[1]).getByText('01/07/2026')).toBeInTheDocument()
+
+    fireEvent.click(dateHeaderButton)
+    expect(dateHeader).toHaveAttribute('aria-sort', 'descending')
   })
 
   it('shows the inline form when isFormVisible is true', () => {

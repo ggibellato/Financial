@@ -2,6 +2,7 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:behaviors="clr-namespace:Financial.Presentation.App.Behaviors"
              xmlns:local="clr-namespace:Financial.Presentation.App.Views.CashFlow">
     <UserControl.Resources>
         <ResourceDictionary>
@@ -45,7 +46,9 @@
 
             <TextBlock Grid.Row="2" Foreground="{DynamicResource SystemFillColorCriticalBrush}" TextWrapping="Wrap" Margin="0,0,0,4" Text="{Binding DeleteError}"/>
 
-            <DataGrid Grid.Row="3" ItemsSource="{Binding Entries}" AutoGenerateColumns="False" IsReadOnly="True">
+            <DataGrid Grid.Row="3" ItemsSource="{Binding Entries}" AutoGenerateColumns="False" IsReadOnly="True"
+                      behaviors:SortableColumnsBehavior.DefaultSortMemberPath="Date"
+                      behaviors:SortableColumnsBehavior.DefaultSortDirection="Descending">
                 <DataGrid.Columns>
                     <DataGridTextColumn Binding="{Binding Date, Converter={StaticResource DateFormatConverter}}" Header="Date" Width="100"
                                          ElementStyle="{StaticResource PlainColumnTextStyle}"/>

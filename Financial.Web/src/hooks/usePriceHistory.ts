@@ -214,10 +214,7 @@ export function usePriceHistory(): PriceHistoryData {
       })
   }, [selectedNode, scope, state.retryCount])
 
-  const entries = useMemo(
-    () => [...state.entries].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
-    [state.entries],
-  )
+  const entries = state.entries
 
   const filteredEntries = useMemo(() => {
     const start = getPeriodFilterStartDate(state.selectedFilter, new Date())

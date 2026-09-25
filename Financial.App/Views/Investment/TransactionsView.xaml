@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:oxy="http://oxyplot.org/wpf"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:behaviors="clr-namespace:Financial.Presentation.App.Behaviors"
              xmlns:local="clr-namespace:Financial.Presentation.App.Views.Investment">
     <!--
         Layout follows docs/ui/forms-data-and-visualisations.md's "Grid-and-chart
@@ -109,7 +110,9 @@
                           SelectedItem="{Binding AssetDetails.Transactions.SelectedTransaction, Mode=TwoWay}"
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"
-                          IsReadOnly="True">
+                          IsReadOnly="True"
+                          behaviors:SortableColumnsBehavior.DefaultSortMemberPath="Date"
+                          behaviors:SortableColumnsBehavior.DefaultSortDirection="Descending">
                     <DataGrid.InputBindings>
                         <MouseBinding MouseAction="LeftDoubleClick"
                                       Command="{Binding AssetDetails.Transactions.UpdateTransactionCommand}"/>

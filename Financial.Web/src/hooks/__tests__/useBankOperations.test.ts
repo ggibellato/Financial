@@ -86,12 +86,12 @@ describe('useBankOperations', () => {
     )
   })
 
-  it('combines transfers and adjustments into one flat list sorted newest-first', async () => {
+  it('combines transfers and adjustments into one flat list', async () => {
     const { result } = renderHook(() => useBankOperations(2026, 7, BANKS, vi.fn()))
 
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
-    expect(result.current.operations.map((e) => e.id)).toEqual(['t2', 'a1', 't1'])
+    expect(result.current.operations.map((e) => e.id)).toEqual(['t1', 't2', 'a1'])
   })
 
   it('filters adjustments to the selected month only, leaving transfers unaffected', async () => {

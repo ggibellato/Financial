@@ -7,7 +7,7 @@ import ErrorState from '../components/ErrorState'
 import TickerCombobox, { type TickerGroup } from '../components/TickerCombobox'
 import DataTableCell from '../components/grid/DataTableCell'
 import SortableColumnHeader from '../components/grid/SortableColumnHeader'
-import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
+import { useSortableRows, DATE_DESC_SORT, type SortAccessor } from '../hooks/useSortableRows'
 import { formatN2, formatShortDateUtc, getErrorMessage } from '../utils/formatters'
 import './DividendCheckPage.css'
 
@@ -72,11 +72,6 @@ export default function DividendCheckPage() {
     [runCheck],
   )
 
-  const sortedHistory = useMemo(
-    () => [...history].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
-    [history],
-  )
-
   const sortedYearTotals = useMemo(
     () => [...(summary?.yearTotals ?? [])].sort((a, b) => b.year - a.year),
     [summary],
@@ -88,7 +83,7 @@ export default function DividendCheckPage() {
     value: (item) => item.value,
   }
   const { sortedRows: displayedHistory, sortState: historySortState, requestSort: requestHistorySort } =
-    useSortableRows(sortedHistory, historyAccessors)
+    useSortableRows(history, historyAccessors, DATE_DESC_SORT)
 
   const yearTotalsAccessors: Record<string, SortAccessor<DividendYearTotalDto>> = {
     year: (item) => item.year,

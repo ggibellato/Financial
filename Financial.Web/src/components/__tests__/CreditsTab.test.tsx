@@ -457,6 +457,33 @@ describe('CreditsTab', () => {
     expect(dataRows).toHaveLength(2)
   })
 
+  it('defaults to sorting by date descending, with the header showing the active sort', () => {
+    setMock({ credits: [CREDIT_SECURITIES_LENDING_INCOME, CREDIT_DIVIDEND, CREDIT_JCP] })
+    render(<CreditsTab />)
+    const table = screen.getByRole('table')
+    const dateHeaderButton = within(table).getByRole('button', { name: 'Date' })
+    const dateHeader = dateHeaderButton.closest('th')
+
+    expect(dateHeader).toHaveAttribute('aria-sort', 'descending')
+    let dataRows = within(table).getAllByRole('row').slice(1)
+    expect(within(dataRows[0]).getByText('15/03/2024')).toBeInTheDocument()
+    expect(within(dataRows[1]).getByText('20/02/2024')).toBeInTheDocument()
+    expect(within(dataRows[2]).getByText('10/01/2024')).toBeInTheDocument()
+
+    fireEvent.click(dateHeaderButton)
+    expect(dateHeader).toHaveAttribute('aria-sort', 'none')
+
+    fireEvent.click(dateHeaderButton)
+    expect(dateHeader).toHaveAttribute('aria-sort', 'ascending')
+    dataRows = within(table).getAllByRole('row').slice(1)
+    expect(within(dataRows[0]).getByText('10/01/2024')).toBeInTheDocument()
+    expect(within(dataRows[1]).getByText('20/02/2024')).toBeInTheDocument()
+    expect(within(dataRows[2]).getByText('15/03/2024')).toBeInTheDocument()
+
+    fireEvent.click(dateHeaderButton)
+    expect(dateHeader).toHaveAttribute('aria-sort', 'descending')
+  })
+
   it('editing_each_form_field_calls_setFormField', () => {
     setMock({ isFormVisible: true })
     render(<CreditsTab />)

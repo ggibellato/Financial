@@ -335,6 +335,31 @@ describe('PriceHistoryTab', () => {
     expect(dataRows).toHaveLength(2)
   })
 
+  it('defaults to sorting by date descending, with the header showing the active sort', () => {
+    setMock({ entries: [AUTOMATIC_ENTRY, MANUAL_ENTRY] })
+    render(<PriceHistoryTab />)
+    const table = screen.getByRole('table')
+    const dateHeaderButton = within(table).getByRole('button', { name: 'Date' })
+    const dateHeader = dateHeaderButton.closest('th')
+
+    expect(dateHeader).toHaveAttribute('aria-sort', 'descending')
+    let dataRows = within(table).getAllByRole('row').slice(1)
+    expect(within(dataRows[0]).getByText('15/03/2024')).toBeInTheDocument()
+    expect(within(dataRows[1]).getByText('10/01/2024')).toBeInTheDocument()
+
+    fireEvent.click(dateHeaderButton)
+    expect(dateHeader).toHaveAttribute('aria-sort', 'none')
+
+    fireEvent.click(dateHeaderButton)
+    expect(dateHeader).toHaveAttribute('aria-sort', 'ascending')
+    dataRows = within(table).getAllByRole('row').slice(1)
+    expect(within(dataRows[0]).getByText('10/01/2024')).toBeInTheDocument()
+    expect(within(dataRows[1]).getByText('15/03/2024')).toBeInTheDocument()
+
+    fireEvent.click(dateHeaderButton)
+    expect(dateHeader).toHaveAttribute('aria-sort', 'descending')
+  })
+
   it('clicking_source_header_sorts_rows_by_source', () => {
     setMock({ entries: [MANUAL_ENTRY, AUTOMATIC_ENTRY], filteredEntries: [MANUAL_ENTRY, AUTOMATIC_ENTRY] })
     render(<PriceHistoryTab />)

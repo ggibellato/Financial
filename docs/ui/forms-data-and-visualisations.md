@@ -403,12 +403,25 @@ excluded from the "leftmost column takes the remaining width" rule above —
 that rule applies to the leftmost *data* column, not the trailing action
 column.
 
-Column-header click-to-sort is not a designed feature yet on either platform.
-A native WPF `DataGrid` may expose default sorting via
-`CanUserSortColumns="True"` while React's plain `<th>` headers have none —
-that is not feature parity, just an accident of the native control. When
-sorting is actually specified, implement equivalent, explicit sort behavior
-on both platforms as part of that feature's own slice.
+Column-header click-to-sort is a designed feature on both platforms, via
+Web's shared `useSortableRows` hook (`hooks/useSortableRows.ts`) +
+`SortableColumnHeader` component and WPF's `SortableColumnsBehavior`
+(applied globally through the `DataGrid` style in `App.xaml`; see
+`docs/ui/wpf.md`) — both implement the same 3-state cycle (unsorted ->
+ascending -> descending -> unsorted), null-last in both directions.
+
+A record-list grid whose primary column is a literal date (Transactions,
+Credits, Price History, Disposals, Corporate Actions, Expenses, Income,
+Bank operations, Controle Mãe, Dividend History — not an aggregate/summary
+grid like Dividend Check's by-year totals, and not a grid where a date is
+only a secondary column, like Portfolio Holdings' "first investment" or the
+Cards grid's "next invoice due") defaults to **descending by that date
+column**, with the header showing the same active-sort indicator it would
+after the user clicked it — `useSortableRows`' `defaultSort` parameter (seeded
+with the exported `DATE_DESC_SORT` constant) on Web,
+`SortableColumnsBehavior.DefaultSortMemberPath`/`DefaultSortDirection` on
+WPF. A grid intentionally excluded from sorting entirely (e.g. Reserva's
+Movements grid) does not get a default sort either.
 
 ### Chart filter/mode toggle ("chip") pattern
 

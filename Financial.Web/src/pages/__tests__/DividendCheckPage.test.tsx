@@ -150,10 +150,11 @@ describe('DividendCheckPage', () => {
     expect(yearRows[2]).toHaveTextContent('2022')
   })
 
-  it('sorts dividend history by date ascending when the Date header button is clicked', async () => {
+  it('cycles the Date header through unsorted -> ascending -> descending, starting from the default descending sort', async () => {
     getDividendSummaryMock.mockResolvedValue(baseSummary)
     getDividendHistoryMock.mockResolvedValue([
       { type: 'Dividend', date: '2023-12-10T00:00:00Z', value: 0.87 },
+      { type: 'Dividend', date: '2025-01-01T00:00:00Z', value: 2.5 },
       { type: 'Dividend', date: '2024-06-15T00:00:00Z', value: 1.23 },
     ])
 
@@ -163,11 +164,40 @@ describe('DividendCheckPage', () => {
     await screen.findByText('Dividend History')
 
     const tables = screen.getAllByRole('table')
-    fireEvent.click(within(tables[0]).getByRole('button', { name: 'Date' }))
+    const dateHeaderButton = within(tables[0]).getByRole('button', { name: 'Date' })
+    const dateHeader = dateHeaderButton.closest('th')
+    const readDates = () => within(tables[0]).getAllByRole('row').slice(1).map((row) => row.textContent)
 
-    const historyRows = within(tables[0]).getAllByRole('row')
-    expect(historyRows[1]).toHaveTextContent('10/12/2023')
-    expect(historyRows[2]).toHaveTextContent('15/06/2024')
+    expect(dateHeader).toHaveAttribute('aria-sort', 'descending')
+    expect(readDates()).toEqual([
+      expect.stringContaining('01/01/2025'),
+      expect.stringContaining('15/06/2024'),
+      expect.stringContaining('10/12/2023'),
+    ])
+
+    fireEvent.click(dateHeaderButton)
+    expect(dateHeader).toHaveAttribute('aria-sort', 'none')
+    expect(readDates()).toEqual([
+      expect.stringContaining('10/12/2023'),
+      expect.stringContaining('01/01/2025'),
+      expect.stringContaining('15/06/2024'),
+    ])
+
+    fireEvent.click(dateHeaderButton)
+    expect(dateHeader).toHaveAttribute('aria-sort', 'ascending')
+    expect(readDates()).toEqual([
+      expect.stringContaining('10/12/2023'),
+      expect.stringContaining('15/06/2024'),
+      expect.stringContaining('01/01/2025'),
+    ])
+
+    fireEvent.click(dateHeaderButton)
+    expect(dateHeader).toHaveAttribute('aria-sort', 'descending')
+    expect(readDates()).toEqual([
+      expect.stringContaining('01/01/2025'),
+      expect.stringContaining('15/06/2024'),
+      expect.stringContaining('10/12/2023'),
+    ])
   })
 
   it('sorts by-year totals by year ascending when the Year header button is clicked', async () => {

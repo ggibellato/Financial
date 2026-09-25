@@ -353,12 +353,7 @@ export function useTransactions(): TransactionsData {
     }
   }, [selectedNode, scope, state.retryCount])
 
-  const transactions = useMemo(() => {
-    if (!state.asset) return []
-    return [...state.asset.transactions].sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-    )
-  }, [state.asset])
+  const transactions = useMemo(() => state.asset?.transactions ?? [], [state.asset])
 
   const transactionsForChart = useMemo(() => {
     if (selectedNode?.nodeType === 'Asset') return state.asset?.transactions ?? []

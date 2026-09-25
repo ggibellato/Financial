@@ -122,6 +122,37 @@ describe('DisposalsTab', () => {
     expect(screen.queryByRole('button', { name: /audit trail/ })).not.toBeInTheDocument()
   })
 
+  it('defaults to sorting by date descending, with the header showing the active sort', () => {
+    const older = { active: disposal({ id: 'd1', transactionId: 't1', date: '2025-01-05T00:00:00' }), history: [] }
+    const newer = { active: disposal({ id: 'd2', transactionId: 't2', date: '2025-11-03T00:00:00' }), history: [] }
+    setMock({
+      chains: [older, newer],
+      filteredChains: [older, newer],
+      taxYearOptions: ['2025/26'],
+    })
+    render(<DisposalsTab />)
+    const table = screen.getByRole('table')
+    const dateHeaderButton = within(table).getByRole('button', { name: 'Date' })
+    const dateHeader = dateHeaderButton.closest('th')
+
+    expect(dateHeader).toHaveAttribute('aria-sort', 'descending')
+    let dataRows = within(table).getAllByRole('row').slice(1)
+    expect(within(dataRows[0]).getByText('03/11/2025')).toBeInTheDocument()
+    expect(within(dataRows[1]).getByText('05/01/2025')).toBeInTheDocument()
+
+    fireEvent.click(dateHeaderButton)
+    expect(dateHeader).toHaveAttribute('aria-sort', 'none')
+
+    fireEvent.click(dateHeaderButton)
+    expect(dateHeader).toHaveAttribute('aria-sort', 'ascending')
+    dataRows = within(table).getAllByRole('row').slice(1)
+    expect(within(dataRows[0]).getByText('05/01/2025')).toBeInTheDocument()
+    expect(within(dataRows[1]).getByText('03/11/2025')).toBeInTheDocument()
+
+    fireEvent.click(dateHeaderButton)
+    expect(dateHeader).toHaveAttribute('aria-sort', 'descending')
+  })
+
   it('expands and collapses the audit trail for a disposal with superseded history', () => {
     const predecessor = disposal({
       id: 'd0',

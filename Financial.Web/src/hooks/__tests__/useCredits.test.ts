@@ -461,9 +461,7 @@ describe('useCredits', () => {
         expect.objectContaining({ id: 'aaa', value: 200 }),
       ),
     )
-    expect(result.current.credits).toEqual(ASSET_DETAILS.credits.slice().sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-    ))
+    expect(result.current.credits).toEqual(ASSET_DETAILS.credits)
   })
 
   it('save_sets_error_on_api_failure', async () => {
@@ -544,16 +542,6 @@ describe('useCredits', () => {
     act(() => result.current.deleteCredit('aaa'))
     await waitFor(() => expect(result.current.deleteError).toBe('Delete failed'))
     expect(result.current.credits).toHaveLength(2)
-  })
-
-  it('sorts_credits_by_date_descending', async () => {
-    getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
-    const { wrapper, setNode } = createSelectedNodeWrapper()
-    const { result } = renderHook(() => useCredits(), { wrapper })
-    setNode(ASSET_NODE)
-    await waitFor(() => expect(result.current.credits).toHaveLength(2))
-    expect(result.current.credits[0].id).toBe('aaa')
-    expect(result.current.credits[1].id).toBe('bbb')
   })
 
   it('aggregateByMonth_computesByTypeDynamically', async () => {

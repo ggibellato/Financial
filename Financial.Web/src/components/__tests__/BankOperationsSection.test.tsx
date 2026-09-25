@@ -160,6 +160,32 @@ describe('BankOperationsSection', () => {
     expect(typeCellsDescending).toEqual(['Transfer', 'Adjustment'])
   })
 
+  it('defaults to sorting by date descending, with the header showing the active sort', () => {
+    render(<BankOperationsSection {...baseProps} operations={[TRANSFER_ENTRY, ADJUSTMENT_ENTRY]} />)
+    const dateHeaderButton = screen.getByRole('button', { name: 'Date' })
+    const dateHeader = dateHeaderButton.closest('th')
+    const readTypeCells = () =>
+      screen
+        .getAllByRole('row')
+        .slice(1)
+        .map((row) => row.querySelectorAll('td')[1].textContent!.replace('Type:', ''))
+
+    // ADJUSTMENT_ENTRY (2026-07-10) is newer than TRANSFER_ENTRY (2026-07-05).
+    expect(dateHeader).toHaveAttribute('aria-sort', 'descending')
+    expect(readTypeCells()).toEqual(['Adjustment', 'Transfer'])
+
+    fireEvent.click(dateHeaderButton)
+    expect(dateHeader).toHaveAttribute('aria-sort', 'none')
+
+    fireEvent.click(dateHeaderButton)
+    expect(dateHeader).toHaveAttribute('aria-sort', 'ascending')
+    expect(readTypeCells()).toEqual(['Transfer', 'Adjustment'])
+
+    fireEvent.click(dateHeaderButton)
+    expect(dateHeader).toHaveAttribute('aria-sort', 'descending')
+    expect(readTypeCells()).toEqual(['Adjustment', 'Transfer'])
+  })
+
   it('filters by Bank via the header checklist, matching a transfer by its other bank even when one is unchecked', () => {
     render(<BankOperationsSection {...baseProps} operations={[TRANSFER_ENTRY, ADJUSTMENT_ENTRY]} />)
 

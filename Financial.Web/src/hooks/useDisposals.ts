@@ -134,7 +134,7 @@ export function useDisposals(): DisposalsData {
       result.push({ active, history })
     }
 
-    return result.sort((a, b) => new Date(b.active.date).getTime() - new Date(a.active.date).getTime())
+    return result
   }, [state.records])
 
   const taxYearOptions = useMemo(() => {
