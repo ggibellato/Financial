@@ -319,9 +319,9 @@ graph TD
 - [x] The merger confirmation step summarises the position-closing effect before the final save
 
 ### F06. WPF Parity
-- [ ] Every F01–F04 capability is available in `Financial.App` with equivalent terminology, field order, and validation
-- [ ] The WPF Corporate Actions view composes the Investment Application layer in-process, with no HTTP call
-- [ ] A dashboard warning's click-through navigates to the correct holding in the WPF app
+- [x] Every F01–F04 capability is available in `Financial.App` with equivalent terminology, field order, and validation
+- [x] The WPF Corporate Actions view composes the Investment Application layer in-process, with no HTTP call
+- [x] A dashboard warning's click-through navigates to the correct holding in the WPF app
 
 ### Cross-Feature Integration
 - [x] F04's history list correctly displays a split recorded via F01, a merger recorded via F02, and a spin-off recorded via F03 for the same asset, each showing its own type-specific fields
