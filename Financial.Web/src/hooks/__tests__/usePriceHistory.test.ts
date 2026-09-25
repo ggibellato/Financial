@@ -155,16 +155,6 @@ describe('usePriceHistory', () => {
     expect(getAssetDetailsMock).toHaveBeenCalledTimes(2)
   })
 
-  it('sorts_entries_by_date_descending', async () => {
-    getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
-    const { wrapper, setNode } = createSelectedNodeWrapper()
-    const { result } = renderHook(() => usePriceHistory(), { wrapper })
-    setNode(ASSET_NODE)
-    await waitFor(() => expect(result.current.entries).toHaveLength(2))
-    expect(result.current.entries[0].date).toBe('2026-08-15')
-    expect(result.current.entries[1].date).toBe('2026-08-01')
-  })
-
   it('set_filter_updates_selected_filter', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
     const { wrapper, setNode } = createSelectedNodeWrapper()

@@ -1,7 +1,8 @@
 <UserControl x:Class="Financial.Presentation.App.Views.Investment.DividendCheckView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:behaviors="clr-namespace:Financial.Presentation.App.Behaviors">
     <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -118,7 +119,9 @@
                     <DataGrid Grid.Row="1" ItemsSource="{Binding History}"
                               AutoGenerateColumns="False"
                               BorderBrush="{DynamicResource ControlElevationBorderBrush}" BorderThickness="1"
-                              ScrollViewer.VerticalScrollBarVisibility="Auto">
+                              ScrollViewer.VerticalScrollBarVisibility="Auto"
+                              behaviors:SortableColumnsBehavior.DefaultSortMemberPath="Date"
+                              behaviors:SortableColumnsBehavior.DefaultSortDirection="Descending">
                         <DataGrid.Columns>
                             <DataGridTextColumn Binding="{Binding Type}" Header="Type"
                                                  ElementStyle="{StaticResource PlainColumnTextStyle}"/>

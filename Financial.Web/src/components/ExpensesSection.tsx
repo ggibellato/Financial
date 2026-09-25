@@ -15,7 +15,7 @@ import DataTableCell from './grid/DataTableCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import ColumnFilterMenu from './grid/ColumnFilterMenu'
 import TruncatedText from './TruncatedText'
-import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
+import { useSortableRows, DATE_DESC_SORT, type SortAccessor } from '../hooks/useSortableRows'
 import { useColumnFilters } from '../hooks/useColumnFilters'
 import { formatN2, formatShortDate } from '../utils/formatters'
 import './ExpensesSection.css'
@@ -96,7 +96,7 @@ export default function ExpensesSection({ expenses, onEdit, onDelete, onNewExpen
   const styles = useStyles()
   const { filteredRows, availableValues, selectedValues, toggleValue, toggleAll, isColumnFiltered } =
     useColumnFilters(expenses, FILTER_ACCESSORS)
-  const { sortedRows, sortState, requestSort } = useSortableRows(filteredRows, SORT_ACCESSORS)
+  const { sortedRows, sortState, requestSort } = useSortableRows(filteredRows, SORT_ACCESSORS, DATE_DESC_SORT)
   const hasActiveFilter = isColumnFiltered('category') || isColumnFiltered('bank') || isColumnFiltered('card')
 
   return (

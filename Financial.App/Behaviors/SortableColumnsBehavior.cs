@@ -1,5 +1,6 @@
 using System.Collections;
 using System.ComponentModel;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -11,6 +12,10 @@ namespace Financial.Presentation.App.Behaviors;
 /// (unsorted -> ascending -> descending -> unsorted), null-last sort, matching Financial.Web's
 /// useSortableRows behavior. Applied globally via the DataGrid style in App.xaml; opt a specific
 /// grid out with `SortableColumnsBehavior.IsEnabled="False"` (e.g. Reserva's Movements grid).
+///
+/// A grid can also set `DefaultSortMemberPath`/`DefaultSortDirection` to start already sorted -
+/// matching Financial.Web's useSortableRows `defaultSort` parameter - so the column header shows
+/// the same active-sort arrow it would after the user clicked it.
 /// </summary>
 public static class SortableColumnsBehavior
 {
@@ -19,6 +24,18 @@ public static class SortableColumnsBehavior
         typeof(bool),
         typeof(SortableColumnsBehavior),
         new PropertyMetadata(false, OnIsEnabledChanged));
+
+    public static readonly DependencyProperty DefaultSortMemberPathProperty = DependencyProperty.RegisterAttached(
+        "DefaultSortMemberPath",
+        typeof(string),
+        typeof(SortableColumnsBehavior),
+        new PropertyMetadata(null));
+
+    public static readonly DependencyProperty DefaultSortDirectionProperty = DependencyProperty.RegisterAttached(
+        "DefaultSortDirection",
+        typeof(ListSortDirection?),
+        typeof(SortableColumnsBehavior),
+        new PropertyMetadata(null));
 
     private static readonly DependencyProperty StateProperty = DependencyProperty.RegisterAttached(
         "State",
@@ -30,6 +47,18 @@ public static class SortableColumnsBehavior
 
     public static bool GetIsEnabled(DependencyObject element) => (bool)element.GetValue(IsEnabledProperty);
 
+    public static void SetDefaultSortMemberPath(DependencyObject element, string? value) =>
+        element.SetValue(DefaultSortMemberPathProperty, value);
+
+    public static string? GetDefaultSortMemberPath(DependencyObject element) =>
+        (string?)element.GetValue(DefaultSortMemberPathProperty);
+
+    public static void SetDefaultSortDirection(DependencyObject element, ListSortDirection? value) =>
+        element.SetValue(DefaultSortDirectionProperty, value);
+
+    public static ListSortDirection? GetDefaultSortDirection(DependencyObject element) =>
+        (ListSortDirection?)element.GetValue(DefaultSortDirectionProperty);
+
     private static void OnIsEnabledChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         if (d is not DataGrid grid)
@@ -40,10 +69,37 @@ public static class SortableColumnsBehavior
         if (e.NewValue is true)
         {
             grid.Sorting += OnSorting;
+            grid.Loaded += OnLoaded;
             return;
         }
 
         grid.Sorting -= OnSorting;
+        grid.Loaded -= OnLoaded;
+    }
+
+    private static void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        if (sender is not DataGrid grid)
+        {
+            return;
+        }
+
+        var defaultPath = GetDefaultSortMemberPath(grid);
+        if (string.IsNullOrEmpty(defaultPath) || grid.GetValue(StateProperty) is not null)
+        {
+            return;
+        }
+
+        var column = grid.Columns.FirstOrDefault(c => string.Equals(c.SortMemberPath, defaultPath, StringComparison.Ordinal));
+        if (column is null || CollectionViewSource.GetDefaultView(grid.ItemsSource) is not ListCollectionView view)
+        {
+            return;
+        }
+
+        var direction = GetDefaultSortDirection(grid) ?? ListSortDirection.Ascending;
+        view.CustomSort = new PropertyPathComparer(defaultPath, direction);
+        column.SortDirection = direction;
+        grid.SetValue(StateProperty, new SortState(defaultPath, direction));
     }
 
     private static void OnSorting(object sender, DataGridSortingEventArgs e)

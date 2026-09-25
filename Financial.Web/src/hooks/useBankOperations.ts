@@ -56,7 +56,7 @@ function buildOperations(
     adjustment,
   }))
 
-  return [...transferEntries, ...adjustmentEntries].sort((a, b) => b.date.localeCompare(a.date))
+  return [...transferEntries, ...adjustmentEntries]
 }
 
 interface BankOperationsState {

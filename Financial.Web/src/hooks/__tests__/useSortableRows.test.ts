@@ -85,4 +85,23 @@ describe('useSortableRows', () => {
     act(() => result.current.requestSort('value'))
     expect(result.current.sortedRows.at(-1)?.id).toBe('c')
   })
+
+  it('starts sorted by the given defaultSort, as if that column had been clicked', () => {
+    const { result } = renderHook(() =>
+      useSortableRows(ROWS, ACCESSORS, { columnKey: 'date', direction: 'descending' }),
+    )
+
+    expect(result.current.sortState).toEqual({ columnKey: 'date', direction: 'descending' })
+    expect(result.current.sortedRows.map((row) => row.id)).toEqual(['b', 'a', 'c'])
+  })
+
+  it('still cycles from the defaultSort when its own column is clicked again', () => {
+    const { result } = renderHook(() =>
+      useSortableRows(ROWS, ACCESSORS, { columnKey: 'date', direction: 'descending' }),
+    )
+
+    act(() => result.current.requestSort('date'))
+    expect(result.current.sortState).toBeNull()
+    expect(result.current.sortedRows.map((row) => row.id)).toEqual(['b', 'a', 'c'])
+  })
 })

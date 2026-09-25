@@ -21,7 +21,7 @@ import DataTableCell from '../components/grid/DataTableCell'
 import SortableColumnHeader from '../components/grid/SortableColumnHeader'
 import TruncatedText from '../components/TruncatedText'
 import { useFormPanelStyles } from '../components/formPanelStyles'
-import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
+import { useSortableRows, DATE_DESC_SORT, type SortAccessor } from '../hooks/useSortableRows'
 import { useFieldError } from '../hooks/useFieldError'
 import { useControleMae } from '../hooks/useControleMae'
 import { confirmThenRun } from '../utils/confirmThenRun'
@@ -139,7 +139,7 @@ export default function ControleMaePage() {
     brl: (entry) => entry.brlValue,
     gbp: (entry) => entry.gbpValue,
   }
-  const { sortedRows: sortedEntries, sortState, requestSort } = useSortableRows(entries, entryAccessors)
+  const { sortedRows: sortedEntries, sortState, requestSort } = useSortableRows(entries, entryAccessors, DATE_DESC_SORT)
 
   return (
     <div className="controle-mae-page">

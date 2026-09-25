@@ -9,6 +9,9 @@ export interface SortState {
 
 export type SortAccessor<T> = (row: T) => string | number | Date | null | undefined
 
+/** Default sort for record-list grids whose primary column is `date` — newest first. */
+export const DATE_DESC_SORT: SortState = { columnKey: 'date', direction: 'descending' }
+
 export interface UseSortableRowsResult<T> {
   sortedRows: T[]
   sortState: SortState | null
@@ -34,12 +37,17 @@ function compareValues(a: string | number | Date | null | undefined, b: string |
 /**
  * Generic single-column sort: unsorted -> ascending -> descending -> unsorted.
  * Rows with a null/undefined accessor value always sort last, in both directions.
+ *
+ * `defaultSort` seeds the initial state (e.g. newest-first grids default to
+ * `{ columnKey: 'date', direction: 'descending' }`) so the column header shows
+ * the same active-sort indicator it would after the user clicked it.
  */
 export function useSortableRows<T>(
   rows: T[],
   accessors: Record<string, SortAccessor<T>>,
+  defaultSort?: SortState,
 ): UseSortableRowsResult<T> {
-  const [sortState, setSortState] = useState<SortState | null>(null)
+  const [sortState, setSortState] = useState<SortState | null>(defaultSort ?? null)
 
   const requestSort = (columnKey: string) => {
     setSortState((current) => {

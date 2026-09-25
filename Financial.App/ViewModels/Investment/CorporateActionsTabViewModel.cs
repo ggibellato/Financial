@@ -107,7 +107,7 @@ public class CorporateActionsTabViewModel : ViewModelBase
         _assetCostBasis = assetCostBasis;
 
         CorporateActions.Clear();
-        foreach (var record in corporateActions.OrderByDescending(record => record.EffectiveDate))
+        foreach (var record in corporateActions)
             CorporateActions.Add(new CorporateActionRowViewModel(record, affectedAssetName));
 
         SelectedCorporateAction = null;

@@ -48,8 +48,10 @@ public class BankOperationsWorkflowViewModelTests
     }
 
     [Fact]
-    public void BuildBankOperations_CombinesTransfersAndAdjustments_SortedNewestFirst()
+    public void BuildBankOperations_CombinesTransfersAndAdjustments()
     {
+        // Row order is the DataGrid's job now (SortableColumnsBehavior.DefaultSortMemberPath in
+        // BankSectionView.xaml), not this ViewModel's - it passes transfers then adjustments through unsorted.
         var (viewModel, _, _, _) = CreateViewModel();
         List<TransferDTO> transfers = [new() { Id = Guid.NewGuid(), Date = Today.AddDays(-1), SourceBankId = BarclaysId, SourceBankName = "Barclays", DestinationBankId = ChaseId, DestinationBankName = "Chase", Amount = 50m }];
         List<IReadOnlyList<BalanceAdjustmentDTO>> adjustmentsByBank = [[new BalanceAdjustmentDTO { Id = Guid.NewGuid(), Date = Today, BankId = BarclaysId, BankName = "Barclays", TargetBalance = 100m, Delta = 5m }]];
@@ -57,8 +59,8 @@ public class BankOperationsWorkflowViewModelTests
         viewModel.ApplyRefresh(transfers, adjustmentsByBank, Today.Year, Today.Month, DefaultBanks);
 
         viewModel.BankOperations.Should().HaveCount(2);
-        viewModel.BankOperations[0].Kind.Should().Be(BankOperationKind.Adjustment);
-        viewModel.BankOperations[1].Kind.Should().Be(BankOperationKind.Transfer);
+        viewModel.BankOperations[0].Kind.Should().Be(BankOperationKind.Transfer);
+        viewModel.BankOperations[1].Kind.Should().Be(BankOperationKind.Adjustment);
     }
 
     [Fact]

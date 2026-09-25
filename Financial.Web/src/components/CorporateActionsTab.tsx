@@ -8,7 +8,7 @@ import LoadingState from './LoadingState'
 import StatusBadge from './StatusBadge'
 import DataTableCell from './grid/DataTableCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
-import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
+import { useSortableRows, DATE_DESC_SORT, type SortAccessor } from '../hooks/useSortableRows'
 import { useCorporateActions } from '../hooks/useCorporateActions'
 import { confirmThenRun } from '../utils/confirmThenRun'
 import { corporateActionTypeLabel } from '../utils/corporateActionTypeLabel'
@@ -138,7 +138,7 @@ export default function CorporateActionsTab({ focusRecordId }: CorporateActionsT
     deleteCorporateAction,
   } = useCorporateActions()
 
-  const { sortedRows, sortState, requestSort } = useSortableRows(corporateActions, SORT_ACCESSORS)
+  const { sortedRows, sortState, requestSort } = useSortableRows(corporateActions, SORT_ACCESSORS, DATE_DESC_SORT)
 
   const containerRef = useRef<HTMLDivElement>(null)
   const [highlightedId, setHighlightedId] = useState<string | null>(null)

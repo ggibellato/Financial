@@ -156,6 +156,38 @@ describe('ControleMaePage', () => {
     expect(deleteMaeLedgerEntryMock).not.toHaveBeenCalled()
   })
 
+  it('defaults to sorting by date descending, with the header showing the active sort', async () => {
+    const entries: MaeLedgerEntryDto[] = [
+      { id: 'e1', date: '2026-07-15', description: 'Zebra item', note: '', sourceCurrency: 'BRL', brlValue: 350, gbpValue: 51.1 },
+      { id: 'e2', date: '2026-07-20', description: 'Apple item', note: '', sourceCurrency: 'BRL', brlValue: 100, gbpValue: 20 },
+    ]
+    getMaeLedgerEntriesFromDateMock.mockResolvedValue(entries)
+
+    const { container } = render(<ControleMaePage />)
+    await waitFor(() => expect(screen.getByText('Zebra item')).toBeInTheDocument())
+
+    const dateHeaderButton = screen.getByRole('button', { name: 'Date' })
+    const dateHeader = dateHeaderButton.closest('th')
+    const readDescriptions = () =>
+      [...container.querySelectorAll('.controle-mae-page__section tbody tr')].map((row) => row.textContent)
+
+    // Apple item (2026-07-20) is newer than Zebra item (2026-07-15).
+    expect(dateHeader).toHaveAttribute('aria-sort', 'descending')
+    expect(readDescriptions()[0]).toContain('Apple item')
+    expect(readDescriptions()[1]).toContain('Zebra item')
+
+    fireEvent.click(dateHeaderButton)
+    expect(dateHeader).toHaveAttribute('aria-sort', 'none')
+
+    fireEvent.click(dateHeaderButton)
+    expect(dateHeader).toHaveAttribute('aria-sort', 'ascending')
+    expect(readDescriptions()[0]).toContain('Zebra item')
+    expect(readDescriptions()[1]).toContain('Apple item')
+
+    fireEvent.click(dateHeaderButton)
+    expect(dateHeader).toHaveAttribute('aria-sort', 'descending')
+  })
+
   it('sorts entries by clicking the Description column header, keeping the totals row fixed', async () => {
     const entries: MaeLedgerEntryDto[] = [
       { id: 'e1', date: '2026-07-15', description: 'Zebra item', note: '', sourceCurrency: 'BRL', brlValue: 350, gbpValue: 51.1 },

@@ -88,7 +88,7 @@ public class BankOperationsWorkflowViewModel : ViewModelBase
             .Where(a => a.Date.Year == year && a.Date.Month == month)
             .Select(BankOperationRow.FromAdjustment));
 
-        return rows.OrderByDescending(r => r.Date).ToList();
+        return rows;
     }
 
     private void ApplyBankFilter()
