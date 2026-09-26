@@ -18,6 +18,14 @@
   text-align: right;
 }
 
+/* Without a cap, a long fund name (e.g. "Guepardo Institucional FIC FIA")
+   forces the auto table layout to starve neighboring columns of width,
+   and the nowrap text then overflows visibly on top of them. */
+.portfolio-holdings__table th:first-child,
+.portfolio-holdings__table td.portfolio-holdings__name-cell {
+  max-width: 180px;
+}
+
 .portfolio-holdings__table th {
   vertical-align: middle;
 }

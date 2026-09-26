@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { Table, TableBody, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
+import TruncatedText from './TruncatedText'
 import DataTableCell from './grid/DataTableCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import { useSortableRows, type SortAccessor, type SortDirection } from '../hooks/useSortableRows'
@@ -92,7 +93,9 @@ function AssetRow({ item, rowPrice, isHistoric }: AssetRowProps) {
 
   return (
     <TableRow>
-      <DataTableCell label="Asset Name">{item.assetName}</DataTableCell>
+      <DataTableCell label="Asset Name" className="portfolio-holdings__name-cell">
+        <TruncatedText text={item.assetName} />
+      </DataTableCell>
       <DataTableCell label="First Investment">{formatShortDate(item.firstInvestmentDate)}</DataTableCell>
       <DataTableCell label="Quantity">{formatN8(item.currentQuantity)}</DataTableCell>
       <DataTableCell label="% Portfolio">
