@@ -130,6 +130,18 @@
               "$ref": "#/components/schemas/CurrencyAllocationEntryDTO"
             },
             "type": "array"
+          },
+          "displayCurrency": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "isPartial": {
+            "type": "boolean"
+          },
+          "isUnavailable": {
+            "type": "boolean"
           }
         },
         "type": "object"
@@ -5616,6 +5628,24 @@
   "paths": {
     "/allocation-breakdown": {
       "get": {
+        "parameters": [
+          {
+            "description": "",
+            "in": "query",
+            "name": "displayCurrency",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "",
+            "in": "query",
+            "name": "brokerCurrency",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -5626,6 +5656,16 @@
               }
             },
             "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         },
         "summary": "",

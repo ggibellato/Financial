@@ -100,17 +100,15 @@ public class AllocationBreakdownViewModel : ViewModelBase
         id => id == _requestId,
         loading => IsLoading = loading,
         error => ErrorMessage = error,
-        isCurrent =>
+        async isCurrent =>
         {
-            var breakdown = _allocationService.GetAllocationBreakdown();
+            var breakdown = await _allocationService.GetAllocationBreakdownAsync().ConfigureAwait(false);
 
             if (isCurrent())
             {
                 _breakdown = breakdown;
                 RebuildSelectedDimension();
             }
-
-            return Task.CompletedTask;
         },
         ex => _logger.LogError("Allocation breakdown refresh failed with {ErrorType}", ex.GetType().Name));
 

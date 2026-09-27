@@ -1,6 +1,8 @@
 using Financial.Investment.Application.DTOs;
+using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Application.Services;
 using Financial.Investment.Domain.Entities;
+using Financial.Shared.Abstractions.Currencies;
 using Financial.TestUtilities;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -22,39 +24,46 @@ public class AllocationBreakdownServiceTests
     [Fact]
     public void Constructor_WithNullRepository_Throws()
     {
-        Action act = () => new AllocationBreakdownService(null!, TestHoldingValuationService.Create(), _tracer, _logger);
+        Action act = () => new AllocationBreakdownService(null!, TestHoldingValuationService.Create(), _tracer, _logger, new StubExchangeRateProvider(null));
         act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
     }
 
     [Fact]
     public void Constructor_WithNullHoldingValuationService_Throws()
     {
-        Action act = () => new AllocationBreakdownService(_repository, null!, _tracer, _logger);
+        Action act = () => new AllocationBreakdownService(_repository, null!, _tracer, _logger, new StubExchangeRateProvider(null));
         act.Should().Throw<ArgumentNullException>().WithParameterName("holdingValuationService");
     }
 
     [Fact]
     public void Constructor_WithNullTracer_Throws()
     {
-        Action act = () => new AllocationBreakdownService(_repository, TestHoldingValuationService.Create(), null!, _logger);
+        Action act = () => new AllocationBreakdownService(_repository, TestHoldingValuationService.Create(), null!, _logger, new StubExchangeRateProvider(null));
         act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
     }
 
     [Fact]
     public void Constructor_WithNullLogger_Throws()
     {
-        Action act = () => new AllocationBreakdownService(_repository, TestHoldingValuationService.Create(), _tracer, null!);
+        Action act = () => new AllocationBreakdownService(_repository, TestHoldingValuationService.Create(), _tracer, null!, new StubExchangeRateProvider(null));
         act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
     }
 
     [Fact]
-    public void GetAllocationBreakdown_ByClass_GroupsAssetsByGlobalAssetClass()
+    public void Constructor_WithNullExchangeRateProvider_Throws()
+    {
+        Action act = () => new AllocationBreakdownService(_repository, TestHoldingValuationService.Create(), _tracer, _logger, null!);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("exchangeRateProvider");
+    }
+
+    [Fact]
+    public async Task GetAllocationBreakdown_ByClass_GroupsAssetsByGlobalAssetClass()
     {
         SeedActive(MakeBroker("Alpha", "GBP",
             PricedAsset("A1", GlobalAssetClass.Equity, CountryCode.UK, 10m, 4m, 40m),
             PricedAsset("A2", GlobalAssetClass.Bond, CountryCode.UK, 10m, 3m, 30m)));
 
-        var result = CreateService().GetAllocationBreakdown();
+        var result = await CreateService().GetAllocationBreakdownAsync();
 
         using var _ = new AssertionScope();
         result.ByClass.Should().HaveCount(2);
@@ -63,35 +72,35 @@ public class AllocationBreakdownServiceTests
     }
 
     [Fact]
-    public void GetAllocationBreakdown_ByClass_UnknownClassHolding_AppearsAsUnknownEntry()
+    public async Task GetAllocationBreakdown_ByClass_UnknownClassHolding_AppearsAsUnknownEntry()
     {
         SeedActive(MakeBroker("Alpha", "GBP",
             PricedAsset("A1", GlobalAssetClass.Equity, CountryCode.UK, 10m, 4m, 40m),
             PricedAsset("A2", GlobalAssetClass.Unknown, CountryCode.UK, 10m, 3m, 30m)));
 
-        var result = CreateService().GetAllocationBreakdown();
+        var result = await CreateService().GetAllocationBreakdownAsync();
 
         result.ByClass.Should().ContainSingle(entry => entry.Class == GlobalAssetClass.Unknown && entry.MarketValue == 300m);
     }
 
     [Fact]
-    public void GetAllocationBreakdown_ByCountry_UnknownCountryHolding_AppearsAsUnknownEntry()
+    public async Task GetAllocationBreakdown_ByCountry_UnknownCountryHolding_AppearsAsUnknownEntry()
     {
         SeedActive(MakeBroker("Alpha", "GBP",
             PricedAsset("A1", GlobalAssetClass.Equity, CountryCode.UK, 10m, 4m, 40m),
             PricedAsset("A2", GlobalAssetClass.Equity, CountryCode.Unknown, 10m, 3m, 30m)));
 
-        var result = CreateService().GetAllocationBreakdown();
+        var result = await CreateService().GetAllocationBreakdownAsync();
 
         result.ByCountry.Should().ContainSingle(entry => entry.Country == CountryCode.Unknown && entry.MarketValue == 300m);
     }
 
     [Fact]
-    public void GetAllocationBreakdown_ByCurrency_GroupsAssetsByOwningBrokerCurrency()
+    public async Task GetAllocationBreakdown_ByCurrency_GroupsAssetsByOwningBrokerCurrency()
     {
         SeedThreeDimensionPortfolio();
 
-        var result = CreateService().GetAllocationBreakdown();
+        var result = await CreateService().GetAllocationBreakdownAsync();
 
         using var _ = new AssertionScope();
         result.ByCurrency.Should().HaveCount(2);
@@ -100,11 +109,11 @@ public class AllocationBreakdownServiceTests
     }
 
     [Fact]
-    public void GetAllocationBreakdown_ByBroker_GroupsAssetsByOwningBrokerName()
+    public async Task GetAllocationBreakdown_ByBroker_GroupsAssetsByOwningBrokerName()
     {
         SeedThreeDimensionPortfolio();
 
-        var result = CreateService().GetAllocationBreakdown();
+        var result = await CreateService().GetAllocationBreakdownAsync();
 
         using var _ = new AssertionScope();
         result.ByBroker.Should().HaveCount(2);
@@ -113,7 +122,7 @@ public class AllocationBreakdownServiceTests
     }
 
     [Fact]
-    public void GetAllocationBreakdown_UnpricedActiveHolding_ExcludedFromEveryDimension()
+    public async Task GetAllocationBreakdown_UnpricedActiveHolding_ExcludedFromEveryDimension()
     {
         SeedActive(
             MakeBroker("Alpha", "GBP",
@@ -121,7 +130,7 @@ public class AllocationBreakdownServiceTests
                 PricedAsset("A2", GlobalAssetClass.Bond, CountryCode.US, 10m, 1m, 10m)),
             MakeBroker("Beta", "BRL", BoughtAsset("B1", GlobalAssetClass.RealEstate, CountryCode.BR, 10m, 3m)));
 
-        var result = CreateService().GetAllocationBreakdown();
+        var result = await CreateService().GetAllocationBreakdownAsync();
 
         using var _ = new AssertionScope();
         result.ByClass.Should().NotContain(entry => entry.Class == GlobalAssetClass.RealEstate);
@@ -133,14 +142,14 @@ public class AllocationBreakdownServiceTests
     }
 
     [Fact]
-    public void GetAllocationBreakdown_HistoricHolding_ExcludedFromEveryDimension()
+    public async Task GetAllocationBreakdown_HistoricHolding_ExcludedFromEveryDimension()
     {
         var investments = Investments.Create();
         investments.AddActiveBroker(MakeBroker("Alpha", "GBP", PricedAsset("A1", GlobalAssetClass.Equity, CountryCode.UK, 10m, 4m, 40m)));
         investments.AddHistoricBroker(MakeBroker("Beta", "BRL", ClosedAsset("B1", GlobalAssetClass.Bond, CountryCode.BR)));
         _repository.Investments = investments;
 
-        var result = CreateService().GetAllocationBreakdown();
+        var result = await CreateService().GetAllocationBreakdownAsync();
 
         using var _ = new AssertionScope();
         result.ByBroker.Should().ContainSingle(entry => entry.BrokerName == "Alpha");
@@ -150,11 +159,11 @@ public class AllocationBreakdownServiceTests
     }
 
     [Fact]
-    public void GetAllocationBreakdown_EachDimension_PercentagesSumToExactlyOneHundred()
+    public async Task GetAllocationBreakdown_EachDimension_PercentagesSumToExactlyOneHundred()
     {
         SeedThreeDimensionPortfolio();
 
-        var result = CreateService().GetAllocationBreakdown();
+        var result = await CreateService().GetAllocationBreakdownAsync();
 
         using var _ = new AssertionScope();
         result.ByClass.Should().HaveCount(3);
@@ -165,11 +174,11 @@ public class AllocationBreakdownServiceTests
     }
 
     [Fact]
-    public void GetAllocationBreakdown_EntriesSortedDescendingByMarketValue()
+    public async Task GetAllocationBreakdown_EntriesSortedDescendingByMarketValue()
     {
         SeedThreeDimensionPortfolio();
 
-        var result = CreateService().GetAllocationBreakdown();
+        var result = await CreateService().GetAllocationBreakdownAsync();
 
         using var _ = new AssertionScope();
         result.ByClass.Select(entry => entry.Class).Should().ContainInOrder(
@@ -180,11 +189,11 @@ public class AllocationBreakdownServiceTests
     }
 
     [Fact]
-    public void GetAllocationBreakdown_NoActiveHoldingsPriced_ReturnsEmptyListsForAllFourDimensions()
+    public async Task GetAllocationBreakdown_NoActiveHoldingsPriced_ReturnsEmptyListsForAllFourDimensions()
     {
         SeedActive(MakeBroker("Alpha", "GBP", BoughtAsset("A1", GlobalAssetClass.Equity, CountryCode.UK, 10m, 4m)));
 
-        var result = CreateService().GetAllocationBreakdown();
+        var result = await CreateService().GetAllocationBreakdownAsync();
 
         using var _ = new AssertionScope();
         result.ByClass.Should().BeEmpty();
@@ -194,11 +203,11 @@ public class AllocationBreakdownServiceTests
     }
 
     [Fact]
-    public void GetAllocationBreakdown_WhenEveryActiveHoldingIsFlat_ReportsZeroPercentagesInsteadOfDividingByZero()
+    public async Task GetAllocationBreakdown_WhenEveryActiveHoldingIsFlat_ReportsZeroPercentagesInsteadOfDividingByZero()
     {
         SeedActive(MakeBroker("Alpha", "GBP", ClosedAsset("A1", GlobalAssetClass.Equity, CountryCode.UK)));
 
-        var result = CreateService().GetAllocationBreakdown();
+        var result = await CreateService().GetAllocationBreakdownAsync();
 
         using var _ = new AssertionScope();
         result.ByClass.Should().ContainSingle(entry => entry.MarketValue == 0m && entry.Percentage == 0m);
@@ -206,27 +215,124 @@ public class AllocationBreakdownServiceTests
     }
 
     [Fact]
-    public void GetAllocationBreakdown_WhenABrokerCurrencyIsUnrecognized_RecordsFailedSpanAndRethrows()
+    public async Task GetAllocationBreakdown_WhenABrokerCurrencyIsUnrecognized_RecordsFailedSpanAndRethrows()
     {
         SeedActive(MakeBroker("Alpha", "XYZ", PricedAsset("A1", GlobalAssetClass.Equity, CountryCode.UK, 10m, 4m, 40m)));
 
-        Action act = () => CreateService().GetAllocationBreakdown();
+        Func<Task> act = () => CreateService().GetAllocationBreakdownAsync();
 
-        act.Should().Throw<ArgumentException>();
+        await act.Should().ThrowAsync<ArgumentException>();
         _tracer.Spans.Should().ContainSingle(span => span.RecordedException is ArgumentException);
     }
 
     [Fact]
-    public void GetAllocationBreakdown_WhenRepositoryThrows_RecordsFailedSpanAndRethrows()
+    public async Task GetAllocationBreakdown_WhenRepositoryThrows_RecordsFailedSpanAndRethrows()
     {
         _repository.ThrowOnGetInvestments = new InvalidOperationException("simulated failure");
 
-        Action act = () => CreateService().GetAllocationBreakdown();
+        Func<Task> act = () => CreateService().GetAllocationBreakdownAsync();
 
-        act.Should().Throw<InvalidOperationException>();
+        await act.Should().ThrowAsync<InvalidOperationException>();
         using var _ = new AssertionScope();
         _tracer.Spans.Should().ContainSingle(span => span.RecordedException is InvalidOperationException);
         _logger.Entries.Should().NotContain(entry => entry.Message.Contains("simulated failure"));
+    }
+
+    [Fact]
+    public async Task GetAllocationBreakdown_WithBrokerCurrencyFilter_ExcludesNonMatchingActiveBrokers()
+    {
+        SeedThreeDimensionPortfolio();
+
+        var result = await CreateService().GetAllocationBreakdownAsync(brokerCurrencyFilter: Currency.GBP);
+
+        using var _ = new AssertionScope();
+        result.ByBroker.Should().ContainSingle(entry => entry.BrokerName == "Alpha");
+        result.ByBroker.Should().NotContain(entry => entry.BrokerName == "Beta");
+        result.ByCurrency.Should().ContainSingle(entry => entry.Currency == "GBP");
+    }
+
+    [Fact]
+    public async Task GetAllocationBreakdown_WithBrokerCurrencyFilterMatchingNoBrokers_ReturnsEmptyListsNotError()
+    {
+        SeedThreeDimensionPortfolio();
+
+        var result = await CreateService().GetAllocationBreakdownAsync(brokerCurrencyFilter: Currency.USD);
+
+        using var _ = new AssertionScope();
+        result.ByClass.Should().BeEmpty();
+        result.ByBroker.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetAllocationBreakdown_WithDisplayCurrency_ProducesNumericallyConsistentConvertedTotals()
+    {
+        SeedThreeDimensionPortfolio();
+
+        var result = await CreateService(exchangeRateProvider: new StubExchangeRateProvider(0.2m))
+            .GetAllocationBreakdownAsync(displayCurrency: Currency.GBP);
+
+        using var _ = new AssertionScope();
+        result.DisplayCurrency.Should().Be("GBP");
+        result.ByBroker.Single(entry => entry.BrokerName == "Alpha").MarketValue.Should().Be(700m, "GBP holdings convert at identity (from == to)");
+        result.ByBroker.Single(entry => entry.BrokerName == "Beta").MarketValue.Should().Be(300m * 0.2m, "BRL holdings convert at the stubbed rate");
+        PercentageTotals(result).Should().AllSatisfy(total => total.Should().BeApproximately(100m, 0.0001m));
+    }
+
+    [Fact]
+    public async Task GetAllocationBreakdown_ByCurrency_LabelStaysNativeWhileValueIsConverted()
+    {
+        SeedThreeDimensionPortfolio();
+
+        var result = await CreateService(exchangeRateProvider: new StubExchangeRateProvider(0.2m))
+            .GetAllocationBreakdownAsync(displayCurrency: Currency.GBP);
+
+        using var _ = new AssertionScope();
+        result.ByCurrency.Should().Contain(entry => entry.Currency == "BRL" && entry.MarketValue == 300m * 0.2m);
+        result.ByCurrency.Should().Contain(entry => entry.Currency == "GBP" && entry.MarketValue == 700m);
+    }
+
+    [Fact]
+    public async Task GetAllocationBreakdown_WithoutDisplayCurrency_ReproducesTodaysExactNativeSums()
+    {
+        SeedThreeDimensionPortfolio();
+
+        var result = await CreateService(exchangeRateProvider: new StubExchangeRateProvider(0.2m)).GetAllocationBreakdownAsync();
+
+        using var _ = new AssertionScope();
+        result.DisplayCurrency.Should().BeNull();
+        result.IsPartial.Should().BeFalse();
+        result.IsUnavailable.Should().BeFalse();
+        result.ByBroker.Single(entry => entry.BrokerName == "Beta").MarketValue.Should().Be(300m, "no conversion runs without a requested displayCurrency");
+    }
+
+    [Fact]
+    public async Task GetAllocationBreakdown_WhenOneNativeCurrencyGroupFailsToConvert_ExcludesItAndFlagsPartial()
+    {
+        SeedThreeDimensionPortfolio();
+
+        var result = await CreateService(exchangeRateProvider: new StubExchangeRateProvider(null))
+            .GetAllocationBreakdownAsync(displayCurrency: Currency.GBP);
+
+        using var _ = new AssertionScope();
+        result.IsPartial.Should().BeTrue();
+        result.IsUnavailable.Should().BeFalse();
+        result.ByBroker.Should().ContainSingle(entry => entry.BrokerName == "Alpha", "GBP holdings need no conversion and still succeed");
+        result.ByBroker.Should().NotContain(entry => entry.BrokerName == "Beta", "the BRL group's conversion failed and is excluded");
+    }
+
+    [Fact]
+    public async Task GetAllocationBreakdown_WhenEveryNativeCurrencyGroupFailsToConvert_FlagsUnavailable()
+    {
+        SeedActive(MakeBroker("Beta", "BRL",
+            PricedAsset("B1", GlobalAssetClass.RealEstate, CountryCode.BR, 10m, 2m, 20m)));
+
+        var result = await CreateService(exchangeRateProvider: new StubExchangeRateProvider(null))
+            .GetAllocationBreakdownAsync(displayCurrency: Currency.GBP);
+
+        using var _ = new AssertionScope();
+        result.IsUnavailable.Should().BeTrue();
+        result.IsPartial.Should().BeFalse();
+        result.ByClass.Should().BeEmpty();
     }
 
     private static IEnumerable<decimal> PercentageTotals(AllocationBreakdownDTO result) =>
@@ -237,8 +343,9 @@ public class AllocationBreakdownServiceTests
         result.ByBroker.Sum(entry => entry.Percentage)
     ];
 
-    private AllocationBreakdownService CreateService() =>
-        new(_repository, TestHoldingValuationService.Create(new FakeTimeProvider(Today)), _tracer, _logger);
+    private AllocationBreakdownService CreateService(IExchangeRateProvider? exchangeRateProvider = null) =>
+        new(_repository, TestHoldingValuationService.Create(new FakeTimeProvider(Today)), _tracer, _logger,
+            exchangeRateProvider ?? new StubExchangeRateProvider(null), new FakeTimeProvider(Today));
 
     private void SeedActive(params Broker[] brokers)
     {

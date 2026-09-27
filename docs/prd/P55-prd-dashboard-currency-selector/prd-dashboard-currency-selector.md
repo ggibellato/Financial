@@ -385,20 +385,20 @@ graph TD
 - [x] KPI totals are marked unavailable when every currency group failed to convert
 
 ### F02. Allocation Breakdown Currency Conversion and Broker Filtering
-- [ ] Requesting the allocation breakdown with a display currency returns every
+- [x] Requesting the allocation breakdown with a display currency returns every
   dimension's market value and percentage computed in that currency
-- [ ] A portfolio with brokers in two different currencies produces allocation totals
+- [x] A portfolio with brokers in two different currencies produces allocation totals
   and percentages that are numerically consistent (sum to the expected converted total)
   once a display currency is requested
-- [ ] The "by currency" dimension's labels remain the native currency of each bucket,
+- [x] The "by currency" dimension's labels remain the native currency of each bucket,
   while its values are converted into the requested display currency
-- [ ] Requesting the allocation breakdown without a display currency preserves today's
+- [x] Requesting the allocation breakdown without a display currency preserves today's
   existing (unconverted) behaviour
-- [ ] Requesting the allocation breakdown with a broker-currency filter excludes
+- [x] Requesting the allocation breakdown with a broker-currency filter excludes
   non-matching active brokers from every dimension
-- [ ] Requesting the allocation breakdown with a broker-currency filter matching zero
+- [x] Requesting the allocation breakdown with a broker-currency filter matching zero
   brokers returns a valid, empty response, not an error
-- [ ] The breakdown is marked partial or unavailable using the same rules as F01
+- [x] The breakdown is marked partial or unavailable using the same rules as F01
 
 ### F03. React Dashboard Currency Selector and Broker Filter
 - [ ] Opening the Dashboard seeds the currency selector from the current global
