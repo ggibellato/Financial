@@ -11,10 +11,15 @@
                 <StackPanel Margin="0,12,0,0">
                     <TextBlock Text="{Binding ChartTitle}" FontWeight="Bold" Margin="0,0,0,8"/>
 
+                    <TextBlock Text="{Binding EmptyFilterMessage}"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                               TextWrapping="Wrap"
+                               Visibility="{Binding EmptyFilterMessage, Converter={StaticResource NullOrEmptyToVisibilityConverter}}"/>
+
                     <TextBlock Text="No priced holdings to display for this view."
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                TextWrapping="Wrap"
-                               Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                               Visibility="{Binding GenericEmptyMessage, Converter={StaticResource NullOrEmptyToVisibilityConverter}}"/>
 
                     <Grid Visibility="{Binding ShowChart, Converter={StaticResource BoolToVisibilityConverter}}">
                         <Grid.ColumnDefinitions>
@@ -59,16 +64,34 @@
                        HorizontalAlignment="Left" Margin="0,8,0,0"/>
         </StackPanel>
 
-        <TabControl SelectedValuePath="Tag"
-                    SelectedValue="{Binding SelectedDimension, Mode=TwoWay}"
-                    Background="Transparent" BorderThickness="0"
-                    AutomationProperties.Name="Allocation dimension"
-                    Visibility="{Binding ShowContent, Converter={StaticResource BoolToVisibilityConverter}}"
-                    ContentTemplate="{StaticResource AllocationDimensionContentTemplate}">
-            <TabItem Header="Class" Content="{Binding}" Tag="{x:Static dashboard:AllocationDimension.Class}"/>
-            <TabItem Header="Currency" Content="{Binding}" Tag="{x:Static dashboard:AllocationDimension.Currency}"/>
-            <TabItem Header="Country" Content="{Binding}" Tag="{x:Static dashboard:AllocationDimension.Country}"/>
-            <TabItem Header="Broker" Content="{Binding}" Tag="{x:Static dashboard:AllocationDimension.Broker}"/>
-        </TabControl>
+        <StackPanel Visibility="{Binding ShowDimensionTabs, Converter={StaticResource BoolToVisibilityConverter}}">
+            <TextBlock Text="{Binding DisplayCurrencyLabel, StringFormat='Values shown in {0}'}"
+                       FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,4"
+                       Visibility="{Binding DisplayCurrencyLabel, Converter={StaticResource NullOrEmptyToVisibilityConverter}}"/>
+            <TextBlock Text="{Binding DisplayCurrencyLabel, StringFormat='Some figures could not be converted to {0} — showing partial totals.'}"
+                       FontSize="12" FontStyle="Italic" TextWrapping="Wrap"
+                       Foreground="{DynamicResource SystemFillColorCautionBrush}" Margin="0,0,0,4"
+                       Visibility="{Binding IsPartial, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+            <TabControl SelectedValuePath="Tag"
+                        SelectedValue="{Binding SelectedDimension, Mode=TwoWay}"
+                        Background="Transparent" BorderThickness="0"
+                        AutomationProperties.Name="Allocation dimension"
+                        ContentTemplate="{StaticResource AllocationDimensionContentTemplate}">
+                <TabItem Header="Class" Content="{Binding}" Tag="{x:Static dashboard:AllocationDimension.Class}"/>
+                <TabItem Header="Currency" Content="{Binding}" Tag="{x:Static dashboard:AllocationDimension.Currency}"/>
+                <TabItem Header="Country" Content="{Binding}" Tag="{x:Static dashboard:AllocationDimension.Country}"/>
+                <TabItem Header="Broker" Content="{Binding}" Tag="{x:Static dashboard:AllocationDimension.Broker}"/>
+            </TabControl>
+        </StackPanel>
+
+        <StackPanel Visibility="{Binding IsUnavailable, Converter={StaticResource BoolToVisibilityConverter}}">
+            <TextBlock Text="{Binding DisplayCurrencyLabel, StringFormat='Converted totals unavailable — unable to convert figures into {0} right now.'}"
+                       Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                       TextWrapping="Wrap"
+                       AutomationProperties.LiveSetting="Assertive"/>
+            <ui:Button Content="Try again" Appearance="Primary" Command="{Binding RefreshCommand}"
+                       HorizontalAlignment="Left" Margin="0,8,0,0"/>
+        </StackPanel>
     </Grid>
 </UserControl>
