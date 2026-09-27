@@ -207,7 +207,7 @@ public class AllocationBreakdownViewModelTests
     }
 
     [Fact]
-    public async Task LoadAsync_WithBrokerCurrencyFilterMatchingNoBrokers_SetsEmptyFilterMessage()
+    public async Task LoadAsync_WithBrokerCurrencyFilterMatchingNoBrokers_SetsEmptyMessageToFilterVariant()
     {
         var service = new StubAllocationBreakdownService { Breakdown = new AllocationBreakdownDTO() };
         var (vm, _) = CreateViewModel(service);
@@ -215,18 +215,18 @@ public class AllocationBreakdownViewModelTests
         await vm.LoadAsync(Currency.GBP, Currency.USD);
 
         vm.IsEmpty.Should().BeTrue();
-        vm.EmptyFilterMessage.Should().Be("No brokers use the selected currency");
+        vm.EmptyMessage.Should().Be("No brokers use the selected currency");
     }
 
     [Fact]
-    public async Task LoadAsync_WithoutBrokerCurrencyFilter_EmptyDimension_KeepsTheGenericEmptyMessage()
+    public async Task LoadAsync_WithoutBrokerCurrencyFilter_EmptyDimension_SetsEmptyMessageToGenericVariant()
     {
         var (vm, _) = CreateViewModel(new StubAllocationBreakdownService { Breakdown = new AllocationBreakdownDTO() });
 
         await vm.LoadAsync();
 
         vm.IsEmpty.Should().BeTrue();
-        vm.EmptyFilterMessage.Should().BeNull();
+        vm.EmptyMessage.Should().Be("No priced holdings to display for this view.");
     }
 
     private static int SliceCount(AllocationBreakdownViewModel viewModel) =>

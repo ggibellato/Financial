@@ -97,26 +97,18 @@ public class AllocationBreakdownViewModel : ViewModelBase
 
     public bool ShowChart => ShowContent && !IsEmpty && !IsUnavailable;
 
-    /// <summary>Whether every dimension's totals failed to convert — mirrors the KPI tiles'
-    /// unavailable state, replacing the dimension tabs with a retryable error.</summary>
     public bool IsUnavailable => _breakdown?.IsUnavailable ?? false;
 
     public bool ShowDimensionTabs => ShowContent && !IsUnavailable;
 
-    /// <summary>Whether some, but not all, currency groups failed to convert.</summary>
     public bool IsPartial => _breakdown?.IsPartial ?? false;
 
-    /// <summary>The currency every market value in this panel is expressed in, or null when no
-    /// display currency was requested (native, unconverted response).</summary>
     public string? DisplayCurrencyLabel => _breakdown?.DisplayCurrency;
 
-    /// <summary>Distinguishes "the active broker-currency filter matches no brokers at all" from the
-    /// generic "this dimension has nothing priced" case the empty message otherwise reports.</summary>
-    public string? EmptyFilterMessage =>
-        _brokerCurrencyFilter is not null && IsEmpty ? "No brokers use the selected currency" : null;
-
-    public string? GenericEmptyMessage =>
-        IsEmpty && EmptyFilterMessage is null ? "No priced holdings to display for this view." : null;
+    public string? EmptyMessage =>
+        !IsEmpty ? null :
+        _brokerCurrencyFilter is not null ? "No brokers use the selected currency" :
+        "No priced holdings to display for this view.";
 
     public Task LoadAsync(Currency? displayCurrency = null, Currency? brokerCurrencyFilter = null) => ExecuteRefreshAsync(
         () => ++_requestId,
@@ -154,8 +146,7 @@ public class AllocationBreakdownViewModel : ViewModelBase
         OnPropertyChanged(nameof(IsPartial));
         OnPropertyChanged(nameof(IsUnavailable));
         OnPropertyChanged(nameof(DisplayCurrencyLabel));
-        OnPropertyChanged(nameof(EmptyFilterMessage));
-        OnPropertyChanged(nameof(GenericEmptyMessage));
+        OnPropertyChanged(nameof(EmptyMessage));
     }
 
     private IEnumerable<AllocationEntryRowViewModel> SelectedDimensionEntries()
