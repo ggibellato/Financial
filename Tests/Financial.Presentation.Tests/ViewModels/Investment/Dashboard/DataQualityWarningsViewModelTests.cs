@@ -159,6 +159,27 @@ public class DataQualityWarningsViewModelTests
     }
 
     [Fact]
+    public async Task IsExpanded_CanBeClearedWhenItIsTheOnlyExpandedCategory()
+    {
+        var (viewModel, _) = CreateViewModel(new StubDataQualityReportService
+        {
+            Report = new DataQualityReportDTO
+            {
+                UnpricedOpenHoldings = [new UnpricedOpenHoldingFinding("Chase", "Income", "VUSA")],
+            },
+        });
+        await viewModel.LoadAsync();
+        var category = viewModel.Categories.Single();
+
+        category.IsExpanded = true;
+        category.IsExpanded.Should().BeTrue();
+
+        category.IsExpanded = false;
+
+        category.IsExpanded.Should().BeFalse();
+    }
+
+    [Fact]
     public async Task ExpandCategory_ForACategoryWithNothingToExpand_DoesNothing()
     {
         var (viewModel, _) = CreateViewModel();
