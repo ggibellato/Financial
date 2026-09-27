@@ -90,11 +90,6 @@ public class DashboardKpiTilesViewModel : ViewModelBase
 
     public bool ShowContent => !IsLoading && !HasError;
 
-    /// <summary>Always false — the native (unconverted) tile row is permanently hidden now that a
-    /// display currency is always supplied; kept as a property, not deleted markup, per this class's
-    /// existing Show*-toggle convention.</summary>
-    public bool ShowNativeTotals => false;
-
     public decimal? MarketValue => _summary?.MarketValue;
 
     public decimal? Invested => _summary?.Invested;

@@ -103,7 +103,9 @@ export default function AllocationBreakdownPanel({
 
   const dimension = DIMENSIONS.find((candidate) => candidate.id === activeDimension) ?? DIMENSIONS[0]
   const entries = dimension.entries(breakdown)
-  const everyDimensionEmpty = DIMENSIONS.every((candidate) => candidate.entries(breakdown).length === 0)
+  const everyDimensionEmpty =
+    entries.length === 0 &&
+    DIMENSIONS.every((candidate) => candidate.id === dimension.id || candidate.entries(breakdown).length === 0)
 
   return (
     <div className="allocation-breakdown">
