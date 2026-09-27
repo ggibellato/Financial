@@ -27,22 +27,9 @@ const SUMMARY: PortfolioDashboardDto = {
   isPartial: false,
   unvaluedHoldingCount: 0,
   reportingCurrency: 'GBP',
-  isReportingCurrencyEnabled: false,
+  isReportingCurrencyEnabled: true,
   isReportingCurrencyPartial: false,
   isReportingCurrencyUnavailable: false,
-  convertedMarketValue: null,
-  convertedInvested: null,
-  convertedUnrealisedGainLoss: null,
-  convertedRealisedGainLoss: null,
-  convertedIncomeYtd: null,
-  convertedIncomeLifetime: null,
-  convertedGrossXirr: null,
-  convertedNetXirr: null,
-}
-
-const CONVERTED_SUMMARY: PortfolioDashboardDto = {
-  ...SUMMARY,
-  isReportingCurrencyEnabled: true,
   convertedMarketValue: 20880,
   convertedInvested: 14175.78,
   convertedUnrealisedGainLoss: 6704.22,
@@ -62,8 +49,8 @@ function renderTiles(props: Partial<ComponentProps<typeof DashboardKpiTiles>> = 
   )
 }
 
-function gridLabels(container: HTMLElement, gridIndex: number): (string | null)[] {
-  const grid = container.querySelectorAll('.dashboard-kpi-tiles__grid')[gridIndex]
+function gridLabels(container: HTMLElement): (string | null)[] {
+  const grid = container.querySelector('.dashboard-kpi-tiles__grid')!
   return Array.from(grid.querySelectorAll('.dashboard-kpi-tiles__label')).map((label) => label.textContent)
 }
 
@@ -77,16 +64,16 @@ describe('DashboardKpiTiles', () => {
     onViewMissingPriceHoldings.mockReset()
   })
 
-  it('renders_the_eight_tiles_in_the_prescribed_order', () => {
+  it('renders_the_eight_tiles_labelled_with_the_reporting_currency', () => {
     const { container } = renderTiles()
 
-    expect(gridLabels(container, 0)).toEqual(TILE_ORDER)
+    expect(gridLabels(container)).toEqual(TILE_ORDER.map((label) => `${label} (GBP)`))
   })
 
   it('renders_a_skeleton_in_every_tile_while_loading_keeping_the_grid_shape', () => {
     const { container } = renderTiles({ summary: null, isLoading: true })
 
-    expect(gridLabels(container, 0)).toEqual(TILE_ORDER)
+    expect(gridLabels(container)).toEqual(TILE_ORDER)
     expect(screen.getAllByRole('progressbar')).toHaveLength(8)
     expect(container.querySelectorAll('.dashboard-kpi-tiles__value')).toHaveLength(0)
   })
@@ -100,49 +87,61 @@ describe('DashboardKpiTiles', () => {
   it('formats_money_tiles_to_two_decimals_and_xirr_tiles_as_percentages', () => {
     renderTiles()
 
-    expect(valueOf('Market Value')?.textContent).toMatch(/18[.,]000[.,]00/)
-    expect(valueOf('Invested')?.textContent).toMatch(/12[.,]220[.,]50/)
-    expect(valueOf('Income YTD')?.textContent).toMatch(/340[.,]25/)
-    expect(valueOf('Gross XIRR')?.textContent).toBe('12.34%')
-    expect(valueOf('Net XIRR (of Tax)')?.textContent).toBe('9.87%')
+    expect(valueOf('Market Value (GBP)')?.textContent).toMatch(/20[.,]880[.,]00/)
+    expect(valueOf('Invested (GBP)')?.textContent).toMatch(/14[.,]175[.,]78/)
+    expect(valueOf('Income YTD (GBP)')?.textContent).toMatch(/394[.,]69/)
+    expect(valueOf('Gross XIRR (GBP)')?.textContent).toBe('11.02%')
+    expect(valueOf('Net XIRR (of Tax) (GBP)')?.textContent).toBe('8.91%')
   })
 
   it('leaves_unsigned_money_tiles_uncoloured', () => {
     renderTiles()
 
-    expect(valueOf('Market Value')?.className).toBe('dashboard-kpi-tiles__value')
-    expect(valueOf('Invested')?.className).toBe('dashboard-kpi-tiles__value')
-    expect(valueOf('Income YTD')?.className).toBe('dashboard-kpi-tiles__value')
-    expect(valueOf('Income Lifetime')?.className).toBe('dashboard-kpi-tiles__value')
+    expect(valueOf('Market Value (GBP)')?.className).toBe('dashboard-kpi-tiles__value')
+    expect(valueOf('Invested (GBP)')?.className).toBe('dashboard-kpi-tiles__value')
+    expect(valueOf('Income YTD (GBP)')?.className).toBe('dashboard-kpi-tiles__value')
+    expect(valueOf('Income Lifetime (GBP)')?.className).toBe('dashboard-kpi-tiles__value')
   })
 
   it('colours_gain_loss_and_xirr_tiles_green_when_not_negative', () => {
     renderTiles()
 
-    expect(valueOf('Unrealised Gain/Loss')).toHaveClass('dashboard-kpi-tiles__value--green')
-    expect(valueOf('Realised Gain/Loss (Lifetime)')).toHaveClass('dashboard-kpi-tiles__value--green')
-    expect(valueOf('Gross XIRR')).toHaveClass('dashboard-kpi-tiles__value--green')
-    expect(valueOf('Net XIRR (of Tax)')).toHaveClass('dashboard-kpi-tiles__value--green')
+    expect(valueOf('Unrealised Gain/Loss (GBP)')).toHaveClass('dashboard-kpi-tiles__value--green')
+    expect(valueOf('Realised Gain/Loss (Lifetime) (GBP)')).toHaveClass('dashboard-kpi-tiles__value--green')
+    expect(valueOf('Gross XIRR (GBP)')).toHaveClass('dashboard-kpi-tiles__value--green')
+    expect(valueOf('Net XIRR (of Tax) (GBP)')).toHaveClass('dashboard-kpi-tiles__value--green')
   })
 
   it('colours_gain_loss_and_xirr_tiles_red_when_negative', () => {
     renderTiles({
-      summary: { ...SUMMARY, unrealisedGainLoss: -420.5, realisedGainLoss: -50, grossXirr: -0.02, netXirr: -0.03 },
+      summary: {
+        ...SUMMARY,
+        convertedUnrealisedGainLoss: -420.5,
+        convertedRealisedGainLoss: -50,
+        convertedGrossXirr: -0.02,
+        convertedNetXirr: -0.03,
+      },
     })
 
-    expect(valueOf('Unrealised Gain/Loss')).toHaveClass('dashboard-kpi-tiles__value--red')
-    expect(valueOf('Realised Gain/Loss (Lifetime)')).toHaveClass('dashboard-kpi-tiles__value--red')
-    expect(valueOf('Gross XIRR')).toHaveClass('dashboard-kpi-tiles__value--red')
-    expect(valueOf('Net XIRR (of Tax)')).toHaveClass('dashboard-kpi-tiles__value--red')
+    expect(valueOf('Unrealised Gain/Loss (GBP)')).toHaveClass('dashboard-kpi-tiles__value--red')
+    expect(valueOf('Realised Gain/Loss (Lifetime) (GBP)')).toHaveClass('dashboard-kpi-tiles__value--red')
+    expect(valueOf('Gross XIRR (GBP)')).toHaveClass('dashboard-kpi-tiles__value--red')
+    expect(valueOf('Net XIRR (of Tax) (GBP)')).toHaveClass('dashboard-kpi-tiles__value--red')
   })
 
   it('renders_a_dash_without_colour_when_an_xirr_is_null', () => {
-    renderTiles({ summary: { ...SUMMARY, grossXirr: null, netXirr: null } })
+    renderTiles({ summary: { ...SUMMARY, convertedGrossXirr: null, convertedNetXirr: null } })
 
-    expect(valueOf('Gross XIRR')?.textContent).toBe('—')
-    expect(valueOf('Net XIRR (of Tax)')?.textContent).toBe('—')
-    expect(valueOf('Gross XIRR')?.className).toBe('dashboard-kpi-tiles__value')
-    expect(valueOf('Net XIRR (of Tax)')?.className).toBe('dashboard-kpi-tiles__value')
+    expect(valueOf('Gross XIRR (GBP)')?.textContent).toBe('—')
+    expect(valueOf('Net XIRR (of Tax) (GBP)')?.textContent).toBe('—')
+    expect(valueOf('Gross XIRR (GBP)')?.className).toBe('dashboard-kpi-tiles__value')
+    expect(valueOf('Net XIRR (of Tax) (GBP)')?.className).toBe('dashboard-kpi-tiles__value')
+  })
+
+  it('renders_a_dash_for_a_converted_figure_that_could_not_be_converted', () => {
+    renderTiles({ summary: { ...SUMMARY, convertedMarketValue: null } })
+
+    expect(valueOf('Market Value (GBP)')?.textContent).toBe('—')
   })
 
   it('does_not_render_the_partial_notice_when_every_holding_is_valued', () => {
@@ -183,47 +182,24 @@ describe('DashboardKpiTiles', () => {
     expect(screen.queryByRole('button', { name: 'View affected holdings' })).not.toBeInTheDocument()
   })
 
-  it('hides_the_converted_block_entirely_when_reporting_currency_is_disabled', () => {
-    const { container } = renderTiles()
-
-    expect(container.querySelectorAll('.dashboard-kpi-tiles__grid')).toHaveLength(1)
-    expect(screen.queryByRole('heading', { name: /Converted to/ })).not.toBeInTheDocument()
-  })
-
-  it('renders_the_converted_block_with_the_same_eight_tiles_when_reporting_currency_is_enabled', () => {
-    const { container } = renderTiles({ summary: CONVERTED_SUMMARY })
-
-    expect(screen.getByRole('heading', { name: 'Converted to GBP', level: 4 })).toBeInTheDocument()
-    expect(gridLabels(container, 1)).toEqual(TILE_ORDER.map((label) => `${label} (converted to GBP)`))
-    expect(valueOf('Market Value (converted to GBP)')?.textContent).toMatch(/20[.,]880[.,]00/)
-    expect(valueOf('Gross XIRR (converted to GBP)')?.textContent).toBe('11.02%')
-  })
-
-  it('renders_a_dash_for_a_converted_figure_that_could_not_be_converted', () => {
-    renderTiles({ summary: { ...CONVERTED_SUMMARY, convertedMarketValue: null } })
-
-    expect(valueOf('Market Value (converted to GBP)')?.textContent).toBe('—')
-  })
-
-  it('warns_above_the_converted_grid_when_the_conversion_is_partial', () => {
-    const { container } = renderTiles({ summary: { ...CONVERTED_SUMMARY, isReportingCurrencyPartial: true } })
+  it('warns_above_the_grid_when_the_conversion_is_partial', () => {
+    const { container } = renderTiles({ summary: { ...SUMMARY, isReportingCurrencyPartial: true } })
 
     expect(screen.getByRole('status')).toHaveTextContent(
       'Some figures could not be converted to GBP — showing partial totals.',
     )
-    expect(container.querySelectorAll('.dashboard-kpi-tiles__grid')).toHaveLength(2)
+    expect(container.querySelectorAll('.dashboard-kpi-tiles__grid')).toHaveLength(1)
   })
 
-  it('replaces_the_converted_block_with_a_retryable_error_when_conversion_is_unavailable', () => {
-    const { container } = renderTiles({ summary: { ...CONVERTED_SUMMARY, isReportingCurrencyUnavailable: true } })
+  it('replaces_the_grid_with_a_retryable_error_when_conversion_is_unavailable', () => {
+    const { container } = renderTiles({ summary: { ...SUMMARY, isReportingCurrencyUnavailable: true } })
 
     expect(screen.getByRole('alert')).toHaveTextContent('Converted totals unavailable')
-    expect(container.querySelectorAll('.dashboard-kpi-tiles__grid')).toHaveLength(1)
-    expect(valueOf('Market Value')?.textContent).toMatch(/18[.,]000[.,]00/)
+    expect(container.querySelectorAll('.dashboard-kpi-tiles__grid')).toHaveLength(0)
   })
 
   it('retrying_the_unavailable_conversion_refetches_the_dashboard', () => {
-    renderTiles({ summary: { ...CONVERTED_SUMMARY, isReportingCurrencyUnavailable: true } })
+    renderTiles({ summary: { ...SUMMARY, isReportingCurrencyUnavailable: true } })
 
     screen.getByRole('button', { name: 'Try again' }).click()
 

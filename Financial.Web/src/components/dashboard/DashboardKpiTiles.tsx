@@ -11,8 +11,7 @@ interface KpiTileDefinition {
   label: string
   isPercent: boolean
   isSigned: boolean
-  native: (summary: PortfolioDashboardDto) => number | null
-  converted: (summary: PortfolioDashboardDto) => number | null
+  value: (summary: PortfolioDashboardDto) => number | null
 }
 
 const KPI_TILES: KpiTileDefinition[] = [
@@ -20,57 +19,49 @@ const KPI_TILES: KpiTileDefinition[] = [
     label: 'Market Value',
     isPercent: false,
     isSigned: false,
-    native: (summary) => summary.marketValue,
-    converted: (summary) => summary.convertedMarketValue,
+    value: (summary) => summary.convertedMarketValue,
   },
   {
     label: 'Invested',
     isPercent: false,
     isSigned: false,
-    native: (summary) => summary.invested,
-    converted: (summary) => summary.convertedInvested,
+    value: (summary) => summary.convertedInvested,
   },
   {
     label: 'Unrealised Gain/Loss',
     isPercent: false,
     isSigned: true,
-    native: (summary) => summary.unrealisedGainLoss,
-    converted: (summary) => summary.convertedUnrealisedGainLoss,
+    value: (summary) => summary.convertedUnrealisedGainLoss,
   },
   {
     label: 'Realised Gain/Loss (Lifetime)',
     isPercent: false,
     isSigned: true,
-    native: (summary) => summary.realisedGainLoss,
-    converted: (summary) => summary.convertedRealisedGainLoss,
+    value: (summary) => summary.convertedRealisedGainLoss,
   },
   {
     label: 'Income YTD',
     isPercent: false,
     isSigned: false,
-    native: (summary) => summary.incomeYtd,
-    converted: (summary) => summary.convertedIncomeYtd,
+    value: (summary) => summary.convertedIncomeYtd,
   },
   {
     label: 'Income Lifetime',
     isPercent: false,
     isSigned: false,
-    native: (summary) => summary.incomeLifetime,
-    converted: (summary) => summary.convertedIncomeLifetime,
+    value: (summary) => summary.convertedIncomeLifetime,
   },
   {
     label: 'Gross XIRR',
     isPercent: true,
     isSigned: true,
-    native: (summary) => summary.grossXirr,
-    converted: (summary) => summary.convertedGrossXirr,
+    value: (summary) => summary.convertedGrossXirr,
   },
   {
     label: 'Net XIRR (of Tax)',
     isPercent: true,
     isSigned: true,
-    native: (summary) => summary.netXirr,
-    converted: (summary) => summary.convertedNetXirr,
+    value: (summary) => summary.convertedNetXirr,
   },
 ]
 
@@ -88,6 +79,10 @@ function unvaluedHoldingsMessage(summary: PortfolioDashboardDto): string | null 
   if (!summary.isPartial || summary.unvaluedHoldingCount === 0) return null
   const noun = summary.unvaluedHoldingCount === 1 ? 'holding' : 'holdings'
   return `${summary.unvaluedHoldingCount} ${noun} could not be valued; Market Value, Unrealised Gain/Loss and both XIRR figures are incomplete.`
+}
+
+function tileLabel(label: string, summary: PortfolioDashboardDto | null): string {
+  return summary ? `${label} (${summary.reportingCurrency})` : label
 }
 
 interface KpiTileProps {
@@ -111,37 +106,6 @@ function KpiTile({ label, value, isPercent, isSigned, isLoading }: KpiTileProps)
   )
 }
 
-function ConvertedKpiTiles({ summary, retry }: { summary: PortfolioDashboardDto; retry: () => void }) {
-  if (!summary.isReportingCurrencyEnabled) return null
-
-  if (summary.isReportingCurrencyUnavailable) {
-    return <ErrorState message="Converted totals unavailable — showing native-currency figures only." onRetry={retry} />
-  }
-
-  return (
-    <div className="dashboard-kpi-tiles__converted">
-      <h4 className="dashboard-kpi-tiles__converted-heading">Converted to {summary.reportingCurrency}</h4>
-      {summary.isReportingCurrencyPartial && (
-        <p className="dashboard-kpi-tiles__notice dashboard-kpi-tiles__notice--partial" role="status">
-          Some figures could not be converted to {summary.reportingCurrency} — showing partial totals.
-        </p>
-      )}
-      <div className="dashboard-kpi-tiles__grid">
-        {KPI_TILES.map((tile) => (
-          <KpiTile
-            key={tile.label}
-            label={`${tile.label} (converted to ${summary.reportingCurrency})`}
-            value={tile.converted(summary)}
-            isPercent={tile.isPercent}
-            isSigned={tile.isSigned}
-            isLoading={false}
-          />
-        ))}
-      </div>
-    </div>
-  )
-}
-
 interface DashboardKpiTilesProps {
   summary: PortfolioDashboardDto | null
   isLoading: boolean
@@ -161,17 +125,31 @@ export default function DashboardKpiTiles({
     return <ErrorState message={error} onRetry={retry} />
   }
 
+  if (summary?.isReportingCurrencyUnavailable) {
+    return (
+      <ErrorState
+        message={`Converted totals unavailable — unable to convert figures into ${summary.reportingCurrency} right now.`}
+        onRetry={retry}
+      />
+    )
+  }
+
   const isPending = isLoading || !summary
   const unvaluedMessage = summary ? unvaluedHoldingsMessage(summary) : null
 
   return (
     <div className="dashboard-kpi-tiles">
+      {summary?.isReportingCurrencyPartial && (
+        <p className="dashboard-kpi-tiles__notice dashboard-kpi-tiles__notice--partial" role="status">
+          Some figures could not be converted to {summary.reportingCurrency} — showing partial totals.
+        </p>
+      )}
       <div className="dashboard-kpi-tiles__grid">
         {KPI_TILES.map((tile) => (
           <KpiTile
             key={tile.label}
-            label={tile.label}
-            value={summary ? tile.native(summary) : null}
+            label={tileLabel(tile.label, summary)}
+            value={summary ? tile.value(summary) : null}
             isPercent={tile.isPercent}
             isSigned={tile.isSigned}
             isLoading={isPending}
@@ -191,7 +169,6 @@ export default function DashboardKpiTiles({
           )}
         </p>
       )}
-      {summary && <ConvertedKpiTiles summary={summary} retry={retry} />}
     </div>
   )
 }
