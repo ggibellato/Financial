@@ -1,5 +1,7 @@
 using System.ComponentModel;
 using Financial.Investment.Application.Enums;
+using Financial.Investment.Application.Interfaces;
+using Financial.Shared.Abstractions.Currencies;
 
 namespace Financial.Presentation.App.ViewModels.Investment.Dashboard;
 
@@ -7,7 +9,10 @@ public class DashboardViewModel : ViewModelBase
 {
     private readonly IMainNavigationViewModel _activeTree;
     private readonly IMainNavigationViewModel _historicTree;
+    private readonly IReportingCurrencyProvider _reportingCurrencyProvider;
     private bool _retryInFlight;
+    private Currency _displayCurrency;
+    private Currency? _brokerCurrencyFilter;
 
     public DashboardViewModel(
         DashboardKpiTilesViewModel kpiTiles,
@@ -15,7 +20,8 @@ public class DashboardViewModel : ViewModelBase
         DataQualityWarningsViewModel warnings,
         UpcomingIncomeViewModel income,
         IMainNavigationViewModel activeTree,
-        IMainNavigationViewModel historicTree)
+        IMainNavigationViewModel historicTree,
+        IReportingCurrencyProvider reportingCurrencyProvider)
     {
         KpiTiles = kpiTiles ?? throw new ArgumentNullException(nameof(kpiTiles));
         Allocation = allocation ?? throw new ArgumentNullException(nameof(allocation));
@@ -23,6 +29,7 @@ public class DashboardViewModel : ViewModelBase
         Income = income ?? throw new ArgumentNullException(nameof(income));
         _activeTree = activeTree ?? throw new ArgumentNullException(nameof(activeTree));
         _historicTree = historicTree ?? throw new ArgumentNullException(nameof(historicTree));
+        _reportingCurrencyProvider = reportingCurrencyProvider ?? throw new ArgumentNullException(nameof(reportingCurrencyProvider));
         KpiTiles.PropertyChanged += OnPanelStateChanged;
         Allocation.PropertyChanged += OnPanelStateChanged;
         Warnings.PropertyChanged += OnPanelStateChanged;
@@ -38,6 +45,9 @@ public class DashboardViewModel : ViewModelBase
             _retryInFlight = true;
             await LoadAllAsync();
         });
+
+        _displayCurrency = _reportingCurrencyProvider.GetReportingCurrency();
+        _brokerCurrencyFilter = null;
 
         _ = LoadAllAsync();
     }
@@ -58,13 +68,76 @@ public class DashboardViewModel : ViewModelBase
 
     public RelayCommand<WarningHoldingRef> NavigateToHoldingCommand { get; }
 
+    /// <summary>Page-local, never persisted — seeded once from the global Reporting Currency
+    /// setting's stored value on construction, ignoring that setting's own enabled flag, and never
+    /// re-synced afterward.</summary>
+    public Currency DisplayCurrency
+    {
+        get => _displayCurrency;
+        set
+        {
+            if (!SetProperty(ref _displayCurrency, value))
+            {
+                return;
+            }
+
+            OnPropertyChanged(nameof(IsGbpSelected));
+            OnPropertyChanged(nameof(IsBrlSelected));
+            OnPropertyChanged(nameof(IsUsdSelected));
+            _ = ReloadFilteredPanelsAsync();
+        }
+    }
+
+    public bool IsGbpSelected
+    {
+        get => DisplayCurrency == Currency.GBP;
+        set { if (value) DisplayCurrency = Currency.GBP; }
+    }
+
+    public bool IsBrlSelected
+    {
+        get => DisplayCurrency == Currency.BRL;
+        set { if (value) DisplayCurrency = Currency.BRL; }
+    }
+
+    public bool IsUsdSelected
+    {
+        get => DisplayCurrency == Currency.USD;
+        set { if (value) DisplayCurrency = Currency.USD; }
+    }
+
+    /// <summary>Page-local, never persisted — always resets to "All currencies" (<see langword="null"/>)
+    /// on construction, independent of <see cref="DisplayCurrency"/>.</summary>
+    public Currency? BrokerCurrencyFilter
+    {
+        get => _brokerCurrencyFilter;
+        set
+        {
+            if (SetProperty(ref _brokerCurrencyFilter, value))
+            {
+                _ = ReloadFilteredPanelsAsync();
+            }
+        }
+    }
+
     public bool ShowPageLevelError =>
         KpiTiles.HasError && Allocation.HasError && Warnings.HasError && Income.HasError && !AnyPanelLoading;
 
     public bool ShowPanels => !ShowPageLevelError;
 
     internal Task LoadAllAsync() =>
-        Task.WhenAll(KpiTiles.LoadAsync(), Allocation.LoadAsync(), Warnings.LoadAsync(), Income.LoadAsync());
+        Task.WhenAll(
+            KpiTiles.LoadAsync(DisplayCurrency, BrokerCurrencyFilter),
+            Allocation.LoadAsync(DisplayCurrency, BrokerCurrencyFilter),
+            Warnings.LoadAsync(),
+            Income.LoadAsync());
+
+    /// <summary>Only KpiTiles and Allocation react to a filter change — Warnings/Income are
+    /// unaffected by either control, per PRD scope.</summary>
+    private Task ReloadFilteredPanelsAsync() =>
+        Task.WhenAll(
+            KpiTiles.LoadAsync(DisplayCurrency, BrokerCurrencyFilter),
+            Allocation.LoadAsync(DisplayCurrency, BrokerCurrencyFilter));
 
     private bool AnyPanelLoading => KpiTiles.IsLoading || Allocation.IsLoading || Warnings.IsLoading || Income.IsLoading;
 

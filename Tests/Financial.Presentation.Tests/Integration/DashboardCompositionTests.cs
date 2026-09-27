@@ -158,5 +158,6 @@ public class DashboardCompositionTests : IDisposable
             _provider.GetRequiredService<DataQualityWarningsViewModel>(),
             _provider.GetRequiredService<UpcomingIncomeViewModel>(),
             activeTree ?? _provider.GetRequiredService<MainNavigationViewModel>(),
-            historicTree ?? _provider.GetRequiredService<MainNavigationViewModelHistoric>());
+            historicTree ?? _provider.GetRequiredService<MainNavigationViewModelHistoric>(),
+            _provider.GetRequiredService<Financial.Investment.Application.Interfaces.IReportingCurrencyProvider>());
 }
