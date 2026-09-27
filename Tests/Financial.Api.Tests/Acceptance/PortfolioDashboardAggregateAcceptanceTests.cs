@@ -8,6 +8,164 @@ using FluentAssertions.Execution;
 
 namespace Financial.Api.Tests.Acceptance;
 
+public class PortfolioDashboardCurrencyAndBrokerFilterAcceptanceTests : ApiEndpointTests
+{
+    private const string DashboardRoute = "/api/v1/financial/dashboard";
+    private const string SeededBroker = "XPI";
+    private const string SeededPortfolio = "Default";
+    private const string SeededAsset = "BCIA11";
+    private const string GbpBroker = "T212";
+    private const string GbpPortfolio = "Growth";
+    private const string GbpAsset = "ACME";
+
+    private static readonly DateTimeOffset Today = new(2026, 8, 14, 9, 0, 0, TimeSpan.Zero);
+    private static readonly DateOnly PriceDate = DateOnly.FromDateTime(Today.UtcDateTime);
+
+    public PortfolioDashboardCurrencyAndBrokerFilterAcceptanceTests()
+        : base(timeProvider: new FakeTimeProvider(Today), exchangeRateProvider: new StubExchangeRateProvider(0.2m))
+    {
+    }
+
+    [Fact]
+    [Trait("AC", "P55-F01-dashboard-currency-01")]
+    public async Task WithDisplayCurrency_ConvertsRegardlessOfGlobalSettingDisabled()
+    {
+        await SetPriceAsync(SeededBroker, SeededPortfolio, SeededAsset, 130m);
+        var native = await Client.GetFromJsonAsync<PortfolioDashboardDTO>(DashboardRoute);
+
+        var response = await Client.GetAsync($"{DashboardRoute}?displayCurrency=USD");
+        response.EnsureSuccessStatusCode();
+        var dto = await response.Content.ReadFromJsonAsync<PortfolioDashboardDTO>();
+
+        using var _ = new AssertionScope();
+        dto!.ReportingCurrency.Should().Be("USD");
+        dto.IsReportingCurrencyEnabled.Should().BeTrue("the global setting's own enabled flag is not disabled here, but is always ignored once displayCurrency is supplied");
+        dto.ConvertedMarketValue.Should().Be(native!.MarketValue * 0.2m);
+    }
+
+    [Fact]
+    [Trait("AC", "P55-F01-dashboard-currency-02")]
+    public async Task WithoutDisplayCurrency_PreservesTodaysExactBehaviour()
+    {
+        var withParams = await Client.GetFromJsonAsync<PortfolioDashboardDTO>($"{DashboardRoute}?displayCurrency=GBP");
+        var withoutParams = await Client.GetFromJsonAsync<PortfolioDashboardDTO>(DashboardRoute);
+
+        using var _ = new AssertionScope();
+        withoutParams!.MarketValue.Should().Be(withParams!.MarketValue, "native totals never change based on the query params");
+        withoutParams.ReportingCurrency.Should().Be("GBP", "the global reporting-currency setting default is unaffected");
+    }
+
+    [Fact]
+    [Trait("AC", "P55-F01-dashboard-currency-03")]
+    public async Task WithBrokerCurrencyFilter_ExcludesNonMatchingActiveAndHistoricBrokers()
+    {
+        await SeedGbpBrokerAsync();
+        await SetPriceAsync(SeededBroker, SeededPortfolio, SeededAsset, 130m);
+        var unfiltered = await Client.GetFromJsonAsync<PortfolioDashboardDTO>(DashboardRoute);
+
+        var filtered = await Client.GetFromJsonAsync<PortfolioDashboardDTO>($"{DashboardRoute}?brokerCurrency=GBP");
+
+        using var _ = new AssertionScope();
+        filtered!.MarketValue.Should().BeLessThan(unfiltered!.MarketValue, "the BRL broker's holdings are excluded once filtered to GBP");
+        filtered.MarketValue.Should().BeGreaterThan(0m, "the GBP broker's own priced holding still contributes");
+    }
+
+    [Fact]
+    [Trait("AC", "P55-F01-dashboard-currency-04")]
+    public async Task WithBrokerCurrencyFilterMatchingNoBrokers_ReturnsValidZeroResponseNotError()
+    {
+        var response = await Client.GetAsync($"{DashboardRoute}?brokerCurrency=USD");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var dto = await response.Content.ReadFromJsonAsync<PortfolioDashboardDTO>();
+        dto!.MarketValue.Should().Be(0m);
+    }
+
+    [Fact]
+    [Trait("AC", "P55-F01-dashboard-currency-05")]
+    public async Task WithInvalidCurrencyValue_ReturnsBadRequestBeforeAnyCalculation()
+    {
+        var invalidDisplay = await Client.GetAsync($"{DashboardRoute}?displayCurrency=EUR");
+        var invalidFilter = await Client.GetAsync($"{DashboardRoute}?brokerCurrency=notacurrency");
+
+        using var _ = new AssertionScope();
+        invalidDisplay.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        invalidFilter.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    [Trait("AC", "P55-F01-dashboard-currency-06")]
+    public async Task WhenExchangeRateUnavailableForEveryCurrencyGroup_FlagsUnavailable()
+    {
+        using var factory = new ApiTestFactory(new StubExchangeRateProvider(null), new FakeTimeProvider(Today));
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync($"{DashboardRoute}?displayCurrency=USD");
+        var dto = await response.Content.ReadFromJsonAsync<PortfolioDashboardDTO>();
+
+        using var _ = new AssertionScope();
+        dto!.IsReportingCurrencyUnavailable.Should().BeTrue();
+        dto.ConvertedMarketValue.Should().BeNull();
+    }
+
+    private async Task SeedGbpBrokerAsync()
+    {
+        var broker = await Client.PostAsJsonAsync("/api/v1/financial/brokers", new BrokerCreateDTO
+        {
+            Name = GbpBroker,
+            Currency = "GBP"
+        });
+        broker.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var portfolio = await Client.PostAsJsonAsync("/api/v1/financial/portfolios", new PortfolioCreateDTO
+        {
+            BrokerName = GbpBroker,
+            Name = GbpPortfolio
+        });
+        portfolio.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var asset = await Client.PostAsJsonAsync("/api/v1/financial/assets", new AssetAdminCreateDTO
+        {
+            BrokerName = GbpBroker,
+            PortfolioName = GbpPortfolio,
+            Name = GbpAsset,
+            ISIN = "US0378331005",
+            Exchange = "BVMF",
+            Ticker = GbpAsset
+        });
+        asset.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var transaction = await Client.PostAsJsonAsync("/api/v1/financial/transactions", new TransactionCreateDTO
+        {
+            BrokerName = GbpBroker,
+            PortfolioName = GbpPortfolio,
+            AssetName = GbpAsset,
+            Date = new DateTime(2025, 1, 1),
+            Type = "Buy",
+            Quantity = 10m,
+            UnitPrice = 10m,
+            Fees = 0m,
+            Withheld = 0m
+        });
+        transaction.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        await SetPriceAsync(GbpBroker, GbpPortfolio, GbpAsset, 18m);
+    }
+
+    private async Task SetPriceAsync(string brokerName, string portfolioName, string assetName, decimal price)
+    {
+        var response = await Client.PutAsJsonAsync("/api/v1/financial/prices", new SetAssetPriceDTO
+        {
+            BrokerName = brokerName,
+            PortfolioName = portfolioName,
+            AssetName = assetName,
+            Date = PriceDate,
+            Price = price
+        });
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+}
+
 public class PortfolioDashboardAggregateAcceptanceTests : ApiEndpointTests
 {
     private const string DashboardRoute = "/api/v1/financial/dashboard";
