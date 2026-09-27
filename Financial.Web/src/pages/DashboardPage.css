@@ -8,6 +8,14 @@
   gap: 16px;
 }
 
+.dashboard-page__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
 .dashboard-page__header h2 {
   margin: 0;
 }

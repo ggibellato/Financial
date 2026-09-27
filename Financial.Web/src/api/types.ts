@@ -22,6 +22,10 @@ export type PositionType = Schema<'PositionType'>
 
 export type InvestmentScope = 'active' | 'historic'
 
+export type Currency = 'BRL' | 'GBP' | 'USD'
+
+export type BrokerCurrencyFilter = 'ALL' | Currency
+
 export interface SelectedNode {
   nodeType: NodeType
   brokerName: string

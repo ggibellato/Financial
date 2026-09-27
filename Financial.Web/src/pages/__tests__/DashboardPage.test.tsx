@@ -20,12 +20,14 @@ const {
   getDataQualityReportMock,
   getUpcomingIncomeMock,
   getNavigationTreeMock,
+  getReportingCurrencyMock,
 } = vi.hoisted(() => ({
   getDashboardMock: vi.fn<FinancialApiClient['getDashboard']>(),
   getAllocationBreakdownMock: vi.fn<FinancialApiClient['getAllocationBreakdown']>(),
   getDataQualityReportMock: vi.fn<FinancialApiClient['getDataQualityReport']>(),
   getUpcomingIncomeMock: vi.fn<FinancialApiClient['getUpcomingIncome']>(),
   getNavigationTreeMock: vi.fn<FinancialApiClient['getNavigationTree']>(),
+  getReportingCurrencyMock: vi.fn<FinancialApiClient['getReportingCurrency']>(),
 }))
 
 vi.mock('../../api/financialApiClient', () => ({
@@ -35,6 +37,7 @@ vi.mock('../../api/financialApiClient', () => ({
     getDataQualityReport: getDataQualityReportMock,
     getUpcomingIncome: getUpcomingIncomeMock,
     getNavigationTree: getNavigationTreeMock,
+    getReportingCurrency: getReportingCurrencyMock,
   } as Partial<FinancialApiClient>,
 }))
 
@@ -59,17 +62,17 @@ const SUMMARY: PortfolioDashboardDto = {
   isPartial: false,
   unvaluedHoldingCount: 0,
   reportingCurrency: 'GBP',
-  isReportingCurrencyEnabled: false,
+  isReportingCurrencyEnabled: true,
   isReportingCurrencyPartial: false,
   isReportingCurrencyUnavailable: false,
-  convertedMarketValue: null,
-  convertedInvested: null,
-  convertedUnrealisedGainLoss: null,
-  convertedRealisedGainLoss: null,
-  convertedIncomeYtd: null,
-  convertedIncomeLifetime: null,
-  convertedGrossXirr: null,
-  convertedNetXirr: null,
+  convertedMarketValue: 18000,
+  convertedInvested: 12220.5,
+  convertedUnrealisedGainLoss: 5779.5,
+  convertedRealisedGainLoss: 1200,
+  convertedIncomeYtd: 340.25,
+  convertedIncomeLifetime: 2840.75,
+  convertedGrossXirr: 0.1234,
+  convertedNetXirr: 0.0987,
 }
 
 const BREAKDOWN: AllocationBreakdownDto = {
@@ -80,7 +83,7 @@ const BREAKDOWN: AllocationBreakdownDto = {
   byCurrency: [{ currency: 'GBP', marketValue: 20000, percentage: 100 }],
   byCountry: [{ country: 'UK', marketValue: 20000, percentage: 100 }],
   byBroker: [{ brokerName: 'Trading212', marketValue: 20000, percentage: 100 }],
-  displayCurrency: null,
+  displayCurrency: 'GBP',
   isPartial: false,
   isUnavailable: false,
 }
@@ -183,6 +186,8 @@ describe('DashboardPage', () => {
     getUpcomingIncomeMock.mockResolvedValue(UPCOMING_INCOME)
     getNavigationTreeMock.mockReset()
     getNavigationTreeMock.mockResolvedValue(EMPTY_TREE)
+    getReportingCurrencyMock.mockReset()
+    getReportingCurrencyMock.mockResolvedValue({ currency: 'GBP', enabled: true })
     Element.prototype.scrollIntoView = vi.fn()
   })
 
@@ -213,8 +218,8 @@ describe('DashboardPage', () => {
   it('renders_the_kpi_tiles_from_the_dashboard_endpoint', async () => {
     renderDashboardRoute()
 
-    expect(await screen.findByText('Market Value')).toBeInTheDocument()
-    expect(screen.getByText('Net XIRR (of Tax)')).toBeInTheDocument()
+    expect(await screen.findByText('Market Value (GBP)')).toBeInTheDocument()
+    expect(screen.getByText('Net XIRR (of Tax) (GBP)')).toBeInTheDocument()
     expect(getDashboardMock).toHaveBeenCalledTimes(1)
   })
 
@@ -236,7 +241,7 @@ describe('DashboardPage', () => {
     renderDashboardRoute()
 
     expect(await screen.findByText('Allocation service unavailable')).toBeInTheDocument()
-    expect(screen.getByText('Market Value')).toBeInTheDocument()
+    expect(screen.getByText('Market Value (GBP)')).toBeInTheDocument()
     expect(screen.queryByRole('tab', { name: 'Class' })).not.toBeInTheDocument()
   })
 
@@ -262,7 +267,7 @@ describe('DashboardPage', () => {
     renderDashboardRoute()
 
     expect(await screen.findByText('Data quality service unavailable')).toBeInTheDocument()
-    expect(screen.getByText('Net XIRR (of Tax)')).toBeInTheDocument()
+    expect(await screen.findByText('Net XIRR (of Tax) (GBP)')).toBeInTheDocument()
     expect(await screen.findByRole('tab', { name: 'Class' })).toBeInTheDocument()
   })
 
@@ -345,8 +350,8 @@ describe('DashboardPage', () => {
     renderDashboardRoute()
 
     expect(await screen.findByText('Income service unavailable')).toBeInTheDocument()
-    expect(screen.getByText('Net XIRR (of Tax)')).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: 'Class' })).toBeInTheDocument()
+    expect(await screen.findByText('Net XIRR (of Tax) (GBP)')).toBeInTheDocument()
+    expect(await screen.findByRole('tab', { name: 'Class' })).toBeInTheDocument()
     expect(screen.getByText('Missing price (1)')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument()
   })
@@ -404,5 +409,111 @@ describe('DashboardPage', () => {
       await screen.findByText('Unable to load the dashboard — none of its data could be retrieved.'),
     ).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Dashboard', level: 2 })).not.toHaveFocus()
+  })
+
+  it('P55-F03-react-dashboard-currency-selector-01: seeds the currency selector from the global reporting-currency setting, ignoring its enabled flag', async () => {
+    getReportingCurrencyMock.mockResolvedValue({ currency: 'BRL', enabled: false })
+
+    renderDashboardRoute()
+
+    expect(await screen.findByRole('radio', { name: 'BRL' })).toBeChecked()
+    await waitFor(() => expect(getDashboardMock).toHaveBeenCalledWith('BRL', undefined))
+  })
+
+  it('P55-F03-react-dashboard-currency-selector-02: the broker filter always starts at All currencies on mount', async () => {
+    renderDashboardRoute()
+
+    expect(await screen.findByRole('tab', { name: 'All currencies' })).toHaveAttribute('aria-selected', 'true')
+  })
+
+  it('P55-F03-react-dashboard-currency-selector-03: selecting a currency re-fetches both endpoints with the new value, leaving data quality/upcoming income uncalled again', async () => {
+    renderDashboardRoute()
+    await screen.findByText('Market Value (GBP)')
+    getDashboardMock.mockClear()
+    getAllocationBreakdownMock.mockClear()
+    getDataQualityReportMock.mockClear()
+    getUpcomingIncomeMock.mockClear()
+
+    fireEvent.click(screen.getByRole('radio', { name: 'BRL' }))
+
+    await waitFor(() => expect(getDashboardMock).toHaveBeenCalledWith('BRL', undefined))
+    expect(getAllocationBreakdownMock).toHaveBeenCalledWith('BRL', undefined)
+    expect(getDataQualityReportMock).not.toHaveBeenCalled()
+    expect(getUpcomingIncomeMock).not.toHaveBeenCalled()
+  })
+
+  it('P55-F03-react-dashboard-currency-selector-04: selecting a broker filter re-fetches both endpoints, leaving data quality/upcoming income uncalled again', async () => {
+    renderDashboardRoute()
+    await screen.findByText('Market Value (GBP)')
+    getDashboardMock.mockClear()
+    getAllocationBreakdownMock.mockClear()
+    getDataQualityReportMock.mockClear()
+    getUpcomingIncomeMock.mockClear()
+
+    fireEvent.click(screen.getByRole('tab', { name: 'BRL' }))
+
+    await waitFor(() => expect(getDashboardMock).toHaveBeenCalledWith('GBP', 'BRL'))
+    expect(getAllocationBreakdownMock).toHaveBeenCalledWith('GBP', 'BRL')
+    expect(getDataQualityReportMock).not.toHaveBeenCalled()
+    expect(getUpcomingIncomeMock).not.toHaveBeenCalled()
+  })
+
+  it('P55-F03-react-dashboard-currency-selector-05: the selected currency is visible in the header', async () => {
+    renderDashboardRoute()
+
+    expect(await screen.findByRole('radio', { name: 'GBP' })).toBeChecked()
+  })
+
+  it('P55-F03-react-dashboard-currency-selector-06: the native, non-currency-suffixed KPI row is absent', async () => {
+    renderDashboardRoute()
+
+    await screen.findByText('Market Value (GBP)')
+    expect(screen.queryByText('Market Value', { selector: '.dashboard-kpi-tiles__label' })).not.toBeInTheDocument()
+  })
+
+  it('P55-F03-react-dashboard-currency-selector-07: a filtered-to-zero-brokers response shows KPI zero values and the Allocation Breakdown empty state, not an error', async () => {
+    getDashboardMock.mockResolvedValue({
+      ...SUMMARY,
+      marketValue: 0,
+      convertedMarketValue: 0,
+      grossXirr: null,
+      convertedGrossXirr: null,
+    })
+    getAllocationBreakdownMock.mockResolvedValue({
+      byClass: [],
+      byCurrency: [],
+      byCountry: [],
+      byBroker: [],
+      displayCurrency: 'GBP',
+      isPartial: false,
+      isUnavailable: false,
+    })
+
+    renderDashboardRoute()
+    fireEvent.click(await screen.findByRole('tab', { name: 'USD' }))
+
+    expect(await screen.findByText('No brokers use the selected currency (USD).')).toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('P55-F03-react-dashboard-currency-selector-08: a partial/unavailable AllocationBreakdownDto drives the panel error state directly', async () => {
+    getAllocationBreakdownMock.mockResolvedValue({ ...BREAKDOWN, isUnavailable: true })
+
+    renderDashboardRoute()
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Converted totals unavailable')
+  })
+
+  it('P55-F03-react-dashboard-currency-selector-09: remounting the page re-seeds the selector and resets the filter', async () => {
+    const { unmount } = renderDashboardRoute()
+    fireEvent.click(await screen.findByRole('radio', { name: 'BRL' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'USD' }))
+    await waitFor(() => expect(screen.getByRole('radio', { name: 'BRL' })).toBeChecked())
+    unmount()
+
+    renderDashboardRoute()
+
+    expect(await screen.findByRole('radio', { name: 'GBP' })).toBeChecked()
+    expect(screen.getByRole('tab', { name: 'All currencies' })).toHaveAttribute('aria-selected', 'true')
   })
 })

@@ -1,19 +1,33 @@
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '@fluentui/react-components'
 import AllocationBreakdownPanel from '../components/dashboard/AllocationBreakdownPanel'
+import DashboardCurrencyControls from '../components/dashboard/DashboardCurrencyControls'
 import DashboardKpiTiles from '../components/dashboard/DashboardKpiTiles'
 import DataQualityWarningsPanel from '../components/dashboard/DataQualityWarningsPanel'
 import type { DataQualityWarningsPanelHandle } from '../components/dashboard/DataQualityWarningsPanel'
 import UpcomingIncomePanel from '../components/dashboard/UpcomingIncomePanel'
+import type { BrokerCurrencyFilter, Currency } from '../api/types'
 import { useAllocationBreakdown } from '../hooks/useAllocationBreakdown'
 import { useDashboardSummary } from '../hooks/useDashboardSummary'
 import { useDataQualityReport } from '../hooks/useDataQualityReport'
+import { useReportingCurrency } from '../hooks/useReportingCurrency'
 import { useUpcomingIncome } from '../hooks/useUpcomingIncome'
 import './DashboardPage.css'
 
+function isCurrency(value: string): value is Currency {
+  return value === 'BRL' || value === 'GBP' || value === 'USD'
+}
+
 export default function DashboardPage() {
-  const dashboard = useDashboardSummary()
-  const allocation = useAllocationBreakdown()
+  const reportingCurrency = useReportingCurrency()
+  const [manualDisplayCurrency, setManualDisplayCurrency] = useState<Currency | null>(null)
+  const [brokerCurrencyFilter, setBrokerCurrencyFilter] = useState<BrokerCurrencyFilter>('ALL')
+
+  const seededCurrency = reportingCurrency.currency && isCurrency(reportingCurrency.currency) ? reportingCurrency.currency : null
+  const displayCurrency = manualDisplayCurrency ?? seededCurrency
+
+  const dashboard = useDashboardSummary(displayCurrency, brokerCurrencyFilter)
+  const allocation = useAllocationBreakdown(displayCurrency, brokerCurrencyFilter)
   const dataQuality = useDataQualityReport()
   const upcomingIncome = useUpcomingIncome()
   const warningsPanelRef = useRef<DataQualityWarningsPanelHandle>(null)
@@ -45,6 +59,14 @@ export default function DashboardPage() {
         <h2 ref={pageHeadingRef} tabIndex={-1}>
           Dashboard
         </h2>
+        {displayCurrency && (
+          <DashboardCurrencyControls
+            displayCurrency={displayCurrency}
+            onDisplayCurrencyChange={setManualDisplayCurrency}
+            brokerCurrencyFilter={brokerCurrencyFilter}
+            onBrokerCurrencyFilterChange={setBrokerCurrencyFilter}
+          />
+        )}
       </header>
 
       {everyPanelFailed ? (
@@ -77,6 +99,7 @@ export default function DashboardPage() {
               isLoading={allocation.isLoading}
               error={allocation.error}
               retry={allocation.retry}
+              brokerCurrencyFilter={brokerCurrencyFilter}
             />
           </section>
 

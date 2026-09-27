@@ -1,5 +1,5 @@
 import { apiClient } from '../api/financialApiClient'
-import type { AllocationBreakdownDto } from '../api/types'
+import type { AllocationBreakdownDto, BrokerCurrencyFilter, Currency } from '../api/types'
 import { useAsyncResource } from './useAsyncResource'
 
 export interface AllocationBreakdownData {
@@ -9,10 +9,16 @@ export interface AllocationBreakdownData {
   retry: () => void
 }
 
-export function useAllocationBreakdown(): AllocationBreakdownData {
+export function useAllocationBreakdown(
+  displayCurrency: Currency | null,
+  brokerCurrencyFilter: BrokerCurrencyFilter,
+): AllocationBreakdownData {
   const { data, isLoading, error, retry } = useAsyncResource<AllocationBreakdownDto>(
-    () => apiClient.getAllocationBreakdown(),
-    [],
+    () =>
+      displayCurrency
+        ? apiClient.getAllocationBreakdown(displayCurrency, brokerCurrencyFilter === 'ALL' ? undefined : brokerCurrencyFilter)
+        : null,
+    [displayCurrency, brokerCurrencyFilter],
     'Unable to load allocation breakdown',
   )
 

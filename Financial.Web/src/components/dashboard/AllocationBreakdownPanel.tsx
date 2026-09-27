@@ -4,7 +4,7 @@ import type { SelectTabData, SelectTabEvent } from '@fluentui/react-components'
 import ErrorState from '../ErrorState'
 import LoadingState from '../LoadingState'
 import AllocationPieChart, { type AllocationChartEntry } from './AllocationPieChart'
-import type { AllocationBreakdownDto } from '../../api/types'
+import type { AllocationBreakdownDto, BrokerCurrencyFilter } from '../../api/types'
 import './AllocationBreakdownPanel.css'
 
 type AllocationDimension = 'class' | 'currency' | 'country' | 'broker'
@@ -68,6 +68,7 @@ interface AllocationBreakdownPanelProps {
   isLoading: boolean
   error: string | null
   retry: () => void
+  brokerCurrencyFilter: BrokerCurrencyFilter
 }
 
 export default function AllocationBreakdownPanel({
@@ -75,6 +76,7 @@ export default function AllocationBreakdownPanel({
   isLoading,
   error,
   retry,
+  brokerCurrencyFilter,
 }: AllocationBreakdownPanelProps) {
   const [activeDimension, setActiveDimension] = useState<AllocationDimension>('class')
 
@@ -90,11 +92,29 @@ export default function AllocationBreakdownPanel({
     return null
   }
 
+  if (breakdown.isUnavailable) {
+    return (
+      <ErrorState
+        message={`Converted totals unavailable — unable to convert figures into ${breakdown.displayCurrency} right now.`}
+        onRetry={retry}
+      />
+    )
+  }
+
   const dimension = DIMENSIONS.find((candidate) => candidate.id === activeDimension) ?? DIMENSIONS[0]
   const entries = dimension.entries(breakdown)
+  const everyDimensionEmpty = DIMENSIONS.every((candidate) => candidate.entries(breakdown).length === 0)
 
   return (
     <div className="allocation-breakdown">
+      {breakdown.displayCurrency && (
+        <p className="allocation-breakdown__currency-line">Values shown in {breakdown.displayCurrency}</p>
+      )}
+      {breakdown.isPartial && (
+        <p className="allocation-breakdown__notice allocation-breakdown__notice--partial" role="status">
+          Some figures could not be converted to {breakdown.displayCurrency} — showing partial totals.
+        </p>
+      )}
       <TabList
         selectedValue={activeDimension}
         onTabSelect={(_event: SelectTabEvent, data: SelectTabData) =>
@@ -109,7 +129,11 @@ export default function AllocationBreakdownPanel({
       </TabList>
 
       {entries.length === 0 ? (
-        <p className="allocation-breakdown__empty">No priced holdings to display for this view.</p>
+        <p className="allocation-breakdown__empty">
+          {everyDimensionEmpty && brokerCurrencyFilter !== 'ALL'
+            ? `No brokers use the selected currency (${brokerCurrencyFilter}).`
+            : 'No priced holdings to display for this view.'}
+        </p>
       ) : (
         <AllocationPieChart title={dimension.title} entries={entries} />
       )}

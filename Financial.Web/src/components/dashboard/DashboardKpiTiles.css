@@ -59,21 +59,6 @@
   color: var(--warning-text);
 }
 
-.dashboard-kpi-tiles__converted {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border);
-}
-
-.dashboard-kpi-tiles__converted-heading {
-  margin: 0;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-h);
-}
-
 @media (max-width: 1024px) {
   .dashboard-kpi-tiles__grid {
     grid-template-columns: repeat(2, 1fr);

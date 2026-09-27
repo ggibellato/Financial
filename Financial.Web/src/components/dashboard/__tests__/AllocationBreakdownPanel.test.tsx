@@ -38,7 +38,7 @@ const BREAKDOWN: AllocationBreakdownDto = {
   byCurrency: [{ currency: 'GBP', marketValue: 20000, percentage: 100 }],
   byCountry: [{ country: 'UK', marketValue: 20000, percentage: 100 }],
   byBroker: [{ brokerName: 'Trading212', marketValue: 20000, percentage: 100 }],
-  displayCurrency: null,
+  displayCurrency: 'GBP',
   isPartial: false,
   isUnavailable: false,
 }
@@ -50,6 +50,7 @@ function renderPanel(overrides: Partial<React.ComponentProps<typeof AllocationBr
       isLoading={false}
       error={null}
       retry={vi.fn()}
+      brokerCurrencyFilter="ALL"
       {...overrides}
     />,
   )
@@ -139,5 +140,53 @@ describe('AllocationBreakdownPanel', () => {
     const { container } = renderPanel({ breakdown: null })
 
     expect(container.querySelector('.allocation-breakdown')).toBeNull()
+  })
+
+  it('renders_the_values_shown_in_currency_line', () => {
+    renderPanel()
+
+    expect(screen.getByText('Values shown in GBP')).toBeInTheDocument()
+  })
+
+  it('shows_the_partial_notice_when_isPartial', () => {
+    renderPanel({ breakdown: { ...BREAKDOWN, isPartial: true } })
+
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Some figures could not be converted to GBP — showing partial totals.',
+    )
+  })
+
+  it('replaces_the_panel_with_a_retryable_error_when_isUnavailable', () => {
+    const retry = vi.fn()
+    renderPanel({ breakdown: { ...BREAKDOWN, isUnavailable: true }, retry })
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Converted totals unavailable')
+    expect(screen.queryByRole('tab')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
+    expect(retry).toHaveBeenCalledTimes(1)
+  })
+
+  it('shows_the_broker_filter_empty_state_when_every_dimension_is_empty_and_the_filter_is_not_ALL', () => {
+    const emptyBreakdown: AllocationBreakdownDto = {
+      byClass: [],
+      byCurrency: [],
+      byCountry: [],
+      byBroker: [],
+      displayCurrency: 'GBP',
+      isPartial: false,
+      isUnavailable: false,
+    }
+    renderPanel({ breakdown: emptyBreakdown, brokerCurrencyFilter: 'USD' })
+
+    expect(screen.getByText('No brokers use the selected currency (USD).')).toBeInTheDocument()
+  })
+
+  it('keeps_the_generic_empty_message_when_a_dimension_is_empty_but_the_filter_is_ALL', () => {
+    renderPanel({ breakdown: { ...BREAKDOWN, byCountry: [] }, brokerCurrencyFilter: 'ALL' })
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Country' }))
+
+    expect(screen.getByText('No priced holdings to display for this view.')).toBeInTheDocument()
   })
 })
