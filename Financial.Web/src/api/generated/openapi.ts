@@ -13,7 +13,10 @@ export interface paths {
         };
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    displayCurrency?: string;
+                    brokerCurrency?: string;
+                };
                 header?: never;
                 path?: never;
                 cookie?: never;
@@ -27,6 +30,15 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["AllocationBreakdownDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
                     };
                 };
             };
@@ -6630,6 +6642,9 @@ export interface components {
             byClass: components["schemas"]["AssetClassAllocationEntryDTO"][];
             byCountry: components["schemas"]["CountryAllocationEntryDTO"][];
             byCurrency: components["schemas"]["CurrencyAllocationEntryDTO"][];
+            displayCurrency: null | string;
+            isPartial: boolean;
+            isUnavailable: boolean;
         };
         ArchiveAssetRequestDTO: {
             assetName: string;

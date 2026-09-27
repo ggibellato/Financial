@@ -20,6 +20,9 @@ const BREAKDOWN: AllocationBreakdownDto = {
   byCurrency: [{ currency: 'GBP', marketValue: 18000, percentage: 100 }],
   byCountry: [{ country: 'UK', marketValue: 18000, percentage: 100 }],
   byBroker: [{ brokerName: 'Trading212', marketValue: 18000, percentage: 100 }],
+  displayCurrency: null,
+  isPartial: false,
+  isUnavailable: false,
 }
 
 describe('useAllocationBreakdown', () => {
