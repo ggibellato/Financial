@@ -1,6 +1,7 @@
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Interfaces;
 using Financial.Presentation.App.ViewModels.Investment.Dashboard;
+using Financial.Shared.Abstractions.Currencies;
 using Financial.TestUtilities;
 using FluentAssertions;
 
@@ -242,7 +243,7 @@ internal sealed class StubPortfolioDashboardService : IPortfolioDashboardService
 
     public int GetDashboardCallCount { get; private set; }
 
-    public async Task<PortfolioDashboardDTO> GetDashboardAsync()
+    public async Task<PortfolioDashboardDTO> GetDashboardAsync(Currency? displayCurrency = null, Currency? brokerCurrencyFilter = null)
     {
         GetDashboardCallCount++;
 
