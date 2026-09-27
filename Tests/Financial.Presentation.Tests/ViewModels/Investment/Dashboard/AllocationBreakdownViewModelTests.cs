@@ -2,6 +2,7 @@ using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.Entities;
 using Financial.Presentation.App.ViewModels.Investment.Dashboard;
+using Financial.Shared.Abstractions.Currencies;
 using Financial.TestUtilities;
 using FluentAssertions;
 using OxyPlot.Series;
@@ -174,7 +175,7 @@ internal sealed class StubAllocationBreakdownService : IAllocationBreakdownServi
 
     public int GetAllocationBreakdownCallCount { get; private set; }
 
-    public AllocationBreakdownDTO GetAllocationBreakdown()
+    public Task<AllocationBreakdownDTO> GetAllocationBreakdownAsync(Currency? displayCurrency = null, Currency? brokerCurrencyFilter = null)
     {
         GetAllocationBreakdownCallCount++;
 
@@ -183,6 +184,6 @@ internal sealed class StubAllocationBreakdownService : IAllocationBreakdownServi
             throw ThrowOnGetAllocationBreakdown;
         }
 
-        return Breakdown;
+        return Task.FromResult(Breakdown);
     }
 }

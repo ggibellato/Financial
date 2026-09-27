@@ -19,26 +19,35 @@ public sealed class AllocationBreakdownService : IAllocationBreakdownService
     private readonly IHoldingValuationService _holdingValuationService;
     private readonly ITelemetryTracer _tracer;
     private readonly ILogger<AllocationBreakdownService> _logger;
+    private readonly IExchangeRateProvider _exchangeRateProvider;
+    private readonly TimeProvider _timeProvider;
 
     public AllocationBreakdownService(
         IInvestmentRepository repository,
         IHoldingValuationService holdingValuationService,
         ITelemetryTracer tracer,
-        ILogger<AllocationBreakdownService> logger)
+        ILogger<AllocationBreakdownService> logger,
+        IExchangeRateProvider exchangeRateProvider,
+        TimeProvider? timeProvider = null)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _holdingValuationService = holdingValuationService ?? throw new ArgumentNullException(nameof(holdingValuationService));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _exchangeRateProvider = exchangeRateProvider ?? throw new ArgumentNullException(nameof(exchangeRateProvider));
+        _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
-    public AllocationBreakdownDTO GetAllocationBreakdown()
+    public async Task<AllocationBreakdownDTO> GetAllocationBreakdownAsync(Currency? displayCurrency = null, Currency? brokerCurrencyFilter = null)
     {
         using var span = StartSpan(OperationName);
         try
         {
-            var holdings = CollectActiveHoldings(_repository.GetInvestments());
-            var result = AllocationBreakdownBuilder.Build(holdings, _holdingValuationService);
+            var asOf = DateOnly.FromDateTime(_timeProvider.GetUtcNow().UtcDateTime);
+            var holdings = CollectActiveHoldings(_repository.GetInvestments(), brokerCurrencyFilter);
+            var result = await AllocationBreakdownBuilder
+                .BuildAsync(holdings, _holdingValuationService, displayCurrency, _exchangeRateProvider, asOf)
+                .ConfigureAwait(false);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", OperationName);
@@ -51,12 +60,17 @@ public sealed class AllocationBreakdownService : IAllocationBreakdownService
         }
     }
 
-    private static IReadOnlyList<AllocationHolding> CollectActiveHoldings(Investments investments)
+    private static IReadOnlyList<AllocationHolding> CollectActiveHoldings(Investments investments, Currency? brokerCurrencyFilter)
     {
         var holdings = new List<AllocationHolding>();
         foreach (var broker in investments.ActiveBrokers)
         {
             var currency = ParseCurrency(broker.Currency);
+            if (brokerCurrencyFilter is not null && currency != brokerCurrencyFilter.Value)
+            {
+                continue;
+            }
+
             foreach (var asset in broker.Portfolios.SelectMany(portfolio => portfolio.Assets))
             {
                 holdings.Add(new AllocationHolding(asset, broker.Name, currency));

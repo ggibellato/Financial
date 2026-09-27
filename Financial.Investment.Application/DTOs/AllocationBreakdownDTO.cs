@@ -21,4 +21,7 @@ public sealed class AllocationBreakdownDTO
     public IReadOnlyList<CurrencyAllocationEntryDTO> ByCurrency { get; init; } = [];
     public IReadOnlyList<CountryAllocationEntryDTO> ByCountry { get; init; } = [];
     public IReadOnlyList<BrokerAllocationEntryDTO> ByBroker { get; init; } = [];
+    public string? DisplayCurrency { get; init; }
+    public bool IsPartial { get; init; }
+    public bool IsUnavailable { get; init; }
 }
