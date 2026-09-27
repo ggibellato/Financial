@@ -1,4 +1,4 @@
-import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
+import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { Button, Table, TableBody, TableHeader, TableRow } from '@fluentui/react-components'
 import { SearchRegular } from '@fluentui/react-icons'
 import { apiClient } from '../api/financialApiClient'
@@ -72,11 +72,6 @@ export default function DividendCheckPage() {
     [runCheck],
   )
 
-  const sortedYearTotals = useMemo(
-    () => [...(summary?.yearTotals ?? [])].sort((a, b) => b.year - a.year),
-    [summary],
-  )
-
   const historyAccessors: Record<string, SortAccessor<DividendHistoryItemDto>> = {
     type: (item) => item.type,
     date: (item) => new Date(item.date),
@@ -90,7 +85,7 @@ export default function DividendCheckPage() {
     total: (item) => item.total,
   }
   const { sortedRows: displayedYearTotals, sortState: yearSortState, requestSort: requestYearSort } =
-    useSortableRows(sortedYearTotals, yearTotalsAccessors)
+    useSortableRows(summary?.yearTotals ?? [], yearTotalsAccessors, { columnKey: 'year', direction: 'descending' })
 
   const priceMaxBuyClass =
     summary && summary.priceMaxBuy > 0 && summary.currentPrice < summary.priceMaxBuy

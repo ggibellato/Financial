@@ -223,7 +223,10 @@ export default function PortfolioHoldingsTab() {
     estimatedAnnualPercent: (r) => r.item.estimatedAnnualPercent,
   }
 
-  const { sortedRows, sortState, requestSort } = useSortableRows(tableRows, sortAccessors)
+  const { sortedRows, sortState, requestSort } = useSortableRows(tableRows, sortAccessors, {
+    columnKey: 'firstInvestment',
+    direction: 'descending',
+  })
   const sortDirectionFor = (columnKey: string): SortDirection | undefined =>
     sortState?.columnKey === columnKey ? sortState.direction : undefined
 

@@ -263,6 +263,16 @@ describe('CardsGrid (merged with creditCards — Credit Card tab)', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Credit card was not found.')
   })
 
+  it('defaults to sorting by next invoice due date descending, with the header showing the active sort', () => {
+    render(<CardsGrid {...baseProps} />)
+
+    const header = screen.getByRole('button', { name: 'Next Invoice Due Date' })
+    expect(header.closest('th')).toHaveAttribute('aria-sort', 'descending')
+
+    const rows = screen.getAllByRole('row').slice(1)
+    expect(rows[0]).toHaveTextContent('BaAmex')
+  })
+
   it('sorts rows by clicking the Card column header, keeping the footer total fixed', () => {
     render(<CardsGrid {...baseProps} />)
 

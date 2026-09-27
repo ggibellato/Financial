@@ -179,6 +179,22 @@ describe('PortfolioHoldingsTab', () => {
     expect(screen.getByText(/75[.,]50/)).toBeInTheDocument()
   })
 
+  it('defaults to sorting by first investment date descending, with the header showing the active sort', () => {
+    const older: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'ALZR11', firstInvestmentDate: '2021-03-01T00:00:00' }
+    const newer: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'BTLG11', firstInvestmentDate: '2022-05-01T00:00:00' }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [older, newer], rowPrices: [IDLE_ROW_PRICE, IDLE_ROW_PRICE] })
+    renderComponent()
+
+    const table = screen.getByRole('table')
+    const header = within(table).getByRole('button', { name: 'First Investment' })
+    expect(header.closest('th')).toHaveAttribute('aria-sort', 'descending')
+
+    const rows = within(table.querySelector('tbody')!).getAllByRole('row')
+    expect(within(rows[0]).getByText('BTLG11')).toBeInTheDocument()
+    expect(within(rows[1]).getByText('ALZR11')).toBeInTheDocument()
+  })
+
   it('renders_dash_for_null_portfolio_weight', () => {
     const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, portfolioWeight: null }
     setAggregatedMock({ summary: SUMMARY })
