@@ -9000,6 +9000,24 @@
     },
     "/dashboard": {
       "get": {
+        "parameters": [
+          {
+            "description": "",
+            "in": "query",
+            "name": "displayCurrency",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "",
+            "in": "query",
+            "name": "brokerCurrency",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -9010,6 +9028,16 @@
               }
             },
             "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         },
         "summary": "",

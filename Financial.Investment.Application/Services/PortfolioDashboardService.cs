@@ -56,14 +56,14 @@ public sealed class PortfolioDashboardService : IPortfolioDashboardService
         _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
-    public async Task<PortfolioDashboardDTO> GetDashboardAsync()
+    public async Task<PortfolioDashboardDTO> GetDashboardAsync(Currency? displayCurrency = null, Currency? brokerCurrencyFilter = null)
     {
         using var span = StartSpan(OperationName);
         try
         {
             var asOf = DateOnly.FromDateTime(_timeProvider.GetUtcNow().UtcDateTime);
-            var holdings = CollectHoldings(_repository.GetInvestments());
-            var result = await BuildDashboardAsync(holdings, asOf).ConfigureAwait(false);
+            var holdings = CollectHoldings(_repository.GetInvestments(), brokerCurrencyFilter);
+            var result = await BuildDashboardAsync(holdings, asOf, displayCurrency).ConfigureAwait(false);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", OperationName);
@@ -82,19 +82,24 @@ public sealed class PortfolioDashboardService : IPortfolioDashboardService
         return _tracer.StartServiceSpan("Investment", nameof(PortfolioDashboardService), operationName, EntityType);
     }
 
-    private IReadOnlyList<PortfolioHolding> CollectHoldings(Investments investments)
+    private IReadOnlyList<PortfolioHolding> CollectHoldings(Investments investments, Currency? brokerCurrencyFilter)
     {
         var holdings = new List<PortfolioHolding>();
-        AddHoldings(holdings, investments.ActiveBrokers, isActive: true);
-        AddHoldings(holdings, investments.HistoricBrokers, isActive: false);
+        AddHoldings(holdings, investments.ActiveBrokers, isActive: true, brokerCurrencyFilter);
+        AddHoldings(holdings, investments.HistoricBrokers, isActive: false, brokerCurrencyFilter);
         return holdings;
     }
 
-    private void AddHoldings(List<PortfolioHolding> holdings, IEnumerable<Broker> brokers, bool isActive)
+    private void AddHoldings(List<PortfolioHolding> holdings, IEnumerable<Broker> brokers, bool isActive, Currency? brokerCurrencyFilter)
     {
         foreach (var broker in brokers)
         {
             var currency = ParseCurrency(broker.Currency);
+            if (brokerCurrencyFilter is not null && currency != brokerCurrencyFilter.Value)
+            {
+                continue;
+            }
+
             foreach (var asset in broker.Portfolios.SelectMany(portfolio => portfolio.Assets))
             {
                 var valuation = isActive ? _holdingValuationService.GetValuation(asset, InvestmentScope.Active) : null;
@@ -113,13 +118,14 @@ public sealed class PortfolioDashboardService : IPortfolioDashboardService
         return currency;
     }
 
-    private async Task<PortfolioDashboardDTO> BuildDashboardAsync(IReadOnlyList<PortfolioHolding> holdings, DateOnly asOf)
+    private async Task<PortfolioDashboardDTO> BuildDashboardAsync(IReadOnlyList<PortfolioHolding> holdings, DateOnly asOf, Currency? displayCurrency)
     {
         var active = SumActiveScope(holdings);
         var (incomeYtd, incomeLifetime) = SumIncome(holdings, asOf);
         var realisedGainLoss = SumRealisedGainLoss(holdings);
         var xirr = PortfolioXirrBuilder.Calculate(holdings, asOf.ToDateTime(TimeOnly.MinValue));
-        var reportingCurrency = _reportingCurrencyProvider.GetReportingCurrency();
+        var effectiveCurrency = displayCurrency ?? _reportingCurrencyProvider.GetReportingCurrency();
+        var shouldConvert = displayCurrency is not null || _reportingCurrencyProvider.IsReportingCurrencyEnabled();
 
         PortfolioDashboardDTO BuildResult(PortfolioDashboardConversion? converted) => new()
         {
@@ -133,7 +139,7 @@ public sealed class PortfolioDashboardService : IPortfolioDashboardService
             NetXirr = xirr.NetXirr,
             UnvaluedHoldingCount = active.UnvaluedHoldingCount,
             IsPartial = active.UnvaluedHoldingCount > 0,
-            ReportingCurrency = reportingCurrency.ToString(),
+            ReportingCurrency = effectiveCurrency.ToString(),
             IsReportingCurrencyEnabled = converted is not null,
             ConvertedMarketValue = converted?.MarketValue,
             ConvertedInvested = converted?.Invested,
@@ -147,13 +153,13 @@ public sealed class PortfolioDashboardService : IPortfolioDashboardService
             IsReportingCurrencyUnavailable = converted?.IsUnavailable ?? false,
         };
 
-        if (!_reportingCurrencyProvider.IsReportingCurrencyEnabled())
+        if (!shouldConvert)
         {
             return BuildResult(converted: null);
         }
 
         return BuildResult(await PortfolioDashboardConvertedBuilder
-            .BuildAsync(holdings, reportingCurrency, _exchangeRateProvider, asOf)
+            .BuildAsync(holdings, effectiveCurrency, _exchangeRateProvider, asOf)
             .ConfigureAwait(false));
     }
 

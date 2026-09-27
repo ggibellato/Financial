@@ -350,6 +350,71 @@ public class PortfolioDashboardServiceTests
         _tracer.Spans.Should().ContainSingle(span => span.RecordedException is ArgumentException);
     }
 
+    [Fact]
+    public async Task GetDashboardAsync_WithBrokerCurrencyFilter_ExcludesNonMatchingActiveAndHistoricBrokers()
+    {
+        SeedInvestments(
+            active: [MakeBroker("XPI", "BRL", PricedAsset("AAAA", 10m, 5m, 8m)), MakeBroker("T212", "GBP", PricedAsset("BBBB", 4m, 2m, 3m))],
+            historic: [MakeBroker("XPI", "BRL", ClosedAsset("CLOSED")), MakeBroker("T212", "GBP", ClosedAsset("CLOSED2"))]);
+
+        var result = await CreateService().GetDashboardAsync(brokerCurrencyFilter: Currency.GBP);
+
+        using var _ = new AssertionScope();
+        result.MarketValue.Should().Be(12m, "only the GBP broker's priced holding should contribute");
+    }
+
+    [Fact]
+    public async Task GetDashboardAsync_WithBrokerCurrencyFilterMatchingNoBrokers_ReturnsZeroTotalsNotError()
+    {
+        SeedInvestments(active: [MakeBroker("XPI", "BRL", PricedAsset("AAAA", 10m, 5m, 8m))]);
+
+        var result = await CreateService().GetDashboardAsync(brokerCurrencyFilter: Currency.USD);
+
+        using var _ = new AssertionScope();
+        result.MarketValue.Should().Be(0m);
+        result.Invested.Should().Be(0m);
+        result.GrossXirr.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetDashboardAsync_WithDisplayCurrency_ConvertsRegardlessOfGlobalSettingDisabled()
+    {
+        SeedInvestments(active: [MakeBroker("XPI", "BRL", PricedAsset("AAAA", 10m, 5m, 8m))]);
+        var exchangeRateProvider = new StubExchangeRateProvider(0.2m);
+
+        var result = await CreateService(
+            exchangeRateProvider: exchangeRateProvider,
+            reportingCurrencyProvider: new StubReportingCurrencyProvider(Currency.GBP, enabled: false))
+            .GetDashboardAsync(displayCurrency: Currency.GBP);
+
+        using var _ = new AssertionScope();
+        result.IsReportingCurrencyEnabled.Should().BeTrue("an explicit displayCurrency always converts");
+        result.ConvertedMarketValue.Should().Be(80m * 0.2m);
+        exchangeRateProvider.CallCount.Should().BeGreaterThan(0);
+    }
+
+    [Fact]
+    public async Task GetDashboardAsync_WithDisplayCurrency_ReportingCurrencyReflectsRequestedValue()
+    {
+        SeedInvestments(active: [MakeBroker("XPI", "BRL", PricedAsset("AAAA", 10m, 5m, 8m))]);
+
+        var result = await CreateService(reportingCurrencyProvider: new StubReportingCurrencyProvider(Currency.GBP))
+            .GetDashboardAsync(displayCurrency: Currency.USD);
+
+        result.ReportingCurrency.Should().Be("USD", "the requested display currency overrides the global setting's currency");
+    }
+
+    [Fact]
+    public async Task GetDashboardAsync_WithoutDisplayCurrencyOrFilter_PreservesExistingGatedBehavior()
+    {
+        SeedInvestments(active: [MakeBroker("XPI", "BRL", PricedAsset("AAAA", 10m, 5m, 8m))]);
+
+        var result = await CreateService(reportingCurrencyProvider: new StubReportingCurrencyProvider(Currency.GBP, enabled: false))
+            .GetDashboardAsync();
+
+        result.IsReportingCurrencyEnabled.Should().BeFalse("omitting both parameters preserves today's exact gated behavior");
+    }
+
     private PortfolioDashboardService CreateService(
         TimeProvider? timeProvider = null,
         IExchangeRateProvider? exchangeRateProvider = null,

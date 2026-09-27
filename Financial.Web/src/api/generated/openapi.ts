@@ -2618,7 +2618,10 @@ export interface paths {
         };
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    displayCurrency?: string;
+                    brokerCurrency?: string;
+                };
                 header?: never;
                 path?: never;
                 cookie?: never;
@@ -2632,6 +2635,15 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["PortfolioDashboardDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
                     };
                 };
             };
