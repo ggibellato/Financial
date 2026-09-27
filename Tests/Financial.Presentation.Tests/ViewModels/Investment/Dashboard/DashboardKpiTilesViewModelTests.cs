@@ -256,14 +256,6 @@ public class DashboardKpiTilesViewModelTests
         service.LastBrokerCurrencyFilter.Should().BeNull();
         vm.MarketValue.Should().Be(1000m);
     }
-
-    [Fact]
-    public void ShowNativeTotals_IsAlwaysFalse()
-    {
-        var (vm, _) = CreateViewModel();
-
-        vm.ShowNativeTotals.Should().BeFalse();
-    }
 }
 
 internal sealed class StubPortfolioDashboardService : IPortfolioDashboardService

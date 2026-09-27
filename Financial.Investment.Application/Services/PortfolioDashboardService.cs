@@ -4,7 +4,6 @@ using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.Entities;
 using Financial.Shared.Abstractions.Currencies;
 using Financial.Shared.Abstractions.Observability;
-using Financial.Shared.Abstractions.Validation;
 using Microsoft.Extensions.Logging;
 
 namespace Financial.Investment.Application.Services;
@@ -94,8 +93,8 @@ public sealed class PortfolioDashboardService : IPortfolioDashboardService
     {
         foreach (var broker in brokers)
         {
-            var currency = ParseCurrency(broker.Currency);
-            if (brokerCurrencyFilter is not null && currency != brokerCurrencyFilter.Value)
+            var currency = BrokerCurrencyParser.Parse(broker.Currency);
+            if (!BrokerCurrencyParser.Matches(currency, brokerCurrencyFilter))
             {
                 continue;
             }
@@ -106,16 +105,6 @@ public sealed class PortfolioDashboardService : IPortfolioDashboardService
                 holdings.Add(new PortfolioHolding(asset, currency, isActive, valuation?.MarketValue, valuation?.UnrealisedGain));
             }
         }
-    }
-
-    private static Currency ParseCurrency(string rawCurrency)
-    {
-        if (!EnumParser.TryParseEnum<Currency>(rawCurrency, out var currency))
-        {
-            throw new ArgumentException($"Broker currency \"{rawCurrency}\" is not recognized.", nameof(rawCurrency));
-        }
-
-        return currency;
     }
 
     private async Task<PortfolioDashboardDTO> BuildDashboardAsync(IReadOnlyList<PortfolioHolding> holdings, DateOnly asOf, Currency? displayCurrency)

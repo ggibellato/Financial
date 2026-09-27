@@ -1,14 +1,12 @@
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Interfaces;
-using Financial.Shared.Abstractions.Currencies;
-using Financial.Shared.Abstractions.Validation;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Financial.Api.Controllers;
 
 [ApiController]
 [Route("dashboard")]
-public sealed class DashboardController : ControllerBase
+public sealed class DashboardController : ApiControllerBase
 {
     private readonly IPortfolioDashboardService _portfolioDashboardService;
 
@@ -34,23 +32,5 @@ public sealed class DashboardController : ControllerBase
             .GetDashboardAsync(parsedDisplayCurrency, parsedBrokerCurrency)
             .ConfigureAwait(false);
         return Ok(dto);
-    }
-
-    private static bool TryParseOptionalCurrency(string? rawCurrency, out Currency? currency)
-    {
-        if (string.IsNullOrEmpty(rawCurrency))
-        {
-            currency = null;
-            return true;
-        }
-
-        if (!EnumParser.TryParseEnum<Currency>(rawCurrency, out var parsed))
-        {
-            currency = null;
-            return false;
-        }
-
-        currency = parsed;
-        return true;
     }
 }

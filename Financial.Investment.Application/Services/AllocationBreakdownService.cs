@@ -3,7 +3,6 @@ using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.Entities;
 using Financial.Shared.Abstractions.Currencies;
 using Financial.Shared.Abstractions.Observability;
-using Financial.Shared.Abstractions.Validation;
 using Microsoft.Extensions.Logging;
 
 namespace Financial.Investment.Application.Services;
@@ -65,8 +64,8 @@ public sealed class AllocationBreakdownService : IAllocationBreakdownService
         var holdings = new List<AllocationHolding>();
         foreach (var broker in investments.ActiveBrokers)
         {
-            var currency = ParseCurrency(broker.Currency);
-            if (brokerCurrencyFilter is not null && currency != brokerCurrencyFilter.Value)
+            var currency = BrokerCurrencyParser.Parse(broker.Currency);
+            if (!BrokerCurrencyParser.Matches(currency, brokerCurrencyFilter))
             {
                 continue;
             }
@@ -78,16 +77,6 @@ public sealed class AllocationBreakdownService : IAllocationBreakdownService
         }
 
         return holdings;
-    }
-
-    private static Currency ParseCurrency(string rawCurrency)
-    {
-        if (!EnumParser.TryParseEnum<Currency>(rawCurrency, out var currency))
-        {
-            throw new ArgumentException($"Broker currency \"{rawCurrency}\" is not recognized.", nameof(rawCurrency));
-        }
-
-        return currency;
     }
 
     private ITelemetrySpan StartSpan(string operationName)

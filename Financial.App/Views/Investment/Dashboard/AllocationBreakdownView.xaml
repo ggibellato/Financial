@@ -11,15 +11,10 @@
                 <StackPanel Margin="0,12,0,0">
                     <TextBlock Text="{Binding ChartTitle}" FontWeight="Bold" Margin="0,0,0,8"/>
 
-                    <TextBlock Text="{Binding EmptyFilterMessage}"
+                    <TextBlock Text="{Binding EmptyMessage}"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                TextWrapping="Wrap"
-                               Visibility="{Binding EmptyFilterMessage, Converter={StaticResource NullOrEmptyToVisibilityConverter}}"/>
-
-                    <TextBlock Text="No priced holdings to display for this view."
-                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                               TextWrapping="Wrap"
-                               Visibility="{Binding GenericEmptyMessage, Converter={StaticResource NullOrEmptyToVisibilityConverter}}"/>
+                               Visibility="{Binding EmptyMessage, Converter={StaticResource NullOrEmptyToVisibilityConverter}}"/>
 
                     <Grid Visibility="{Binding ShowChart, Converter={StaticResource BoolToVisibilityConverter}}">
                         <Grid.ColumnDefinitions>
