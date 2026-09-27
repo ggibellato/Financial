@@ -422,12 +422,31 @@ describe('ReservaPage', () => {
     expect(within(dataRows[0]).getByText('Ariana')).toBeInTheDocument()
   })
 
-  it('keeps the Movements grid headers non-interactive — sorting is excluded for this grid', async () => {
+  it('defaults the Movements grid to date descending, with the header showing the active sort, and supports clicking to re-sort', async () => {
+    getReserveMovementsMock.mockResolvedValue([
+      { id: 'm1', bucketId: 'b1', bucketName: 'Investimento', amount: 100, date: '2026-06-01', description: 'Older', incomeId: null },
+      { id: 'm2', bucketId: 'b2', bucketName: 'HouseTreats', amount: 200, date: '2026-07-17', description: 'Newer', incomeId: null },
+    ])
+
     render(<ReservaPage />)
 
-    await waitFor(() => expect(screen.getAllByText('Ramsay').length).toBe(4))
+    await waitFor(() => expect(screen.getByText('Newer')).toBeInTheDocument())
 
+    const dateHeaderButton = screen.getByRole('button', { name: 'Date' })
     const dateHeader = screen.getByRole('columnheader', { name: 'Date' })
-    expect(within(dateHeader).queryByRole('button')).not.toBeInTheDocument()
+    expect(dateHeader).toHaveAttribute('aria-sort', 'descending')
+
+    const movementsTable = dateHeader.closest('table') as HTMLElement
+    let dataRows = within(movementsTable).getAllByRole('row').slice(1)
+    expect(within(dataRows[0]).getByText('Newer')).toBeInTheDocument()
+    expect(within(dataRows[1]).getByText('Older')).toBeInTheDocument()
+
+    fireEvent.click(dateHeaderButton)
+    expect(dateHeader).toHaveAttribute('aria-sort', 'none')
+
+    fireEvent.click(within(movementsTable).getByRole('button', { name: 'Bucket' }))
+    dataRows = within(movementsTable).getAllByRole('row').slice(1)
+    expect(within(dataRows[0]).getByText('HouseTreats')).toBeInTheDocument()
+    expect(within(dataRows[1]).getByText('Investimento')).toBeInTheDocument()
   })
 })

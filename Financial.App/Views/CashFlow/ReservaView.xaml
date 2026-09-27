@@ -66,7 +66,8 @@
             <TextBlock Grid.Row="2" Foreground="{DynamicResource SystemFillColorCriticalBrush}" TextWrapping="Wrap" Margin="0,0,0,4" Text="{Binding DeleteMovementError}"/>
 
             <DataGrid Grid.Row="3" ItemsSource="{Binding Movements}" AutoGenerateColumns="False" IsReadOnly="True"
-                      behaviors:SortableColumnsBehavior.IsEnabled="False">
+                      behaviors:SortableColumnsBehavior.DefaultSortMemberPath="Date"
+                      behaviors:SortableColumnsBehavior.DefaultSortDirection="Descending">
                 <DataGrid.Resources>
                     <sys:String x:Key="LockedMovementMessage">This reserve movement is linked to an income and can only be changed by editing that income.</sys:String>
                 </DataGrid.Resources>

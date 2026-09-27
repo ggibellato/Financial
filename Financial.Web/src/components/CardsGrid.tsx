@@ -89,7 +89,10 @@ export default function CardsGrid({
     nextInvoiceDueDate: (row) => (row.nextInvoiceDueDate ? new Date(row.nextInvoiceDueDate) : undefined),
     active: (row) => (row.isActive ? 1 : 0),
   }
-  const { sortedRows, sortState, requestSort } = useSortableRows(filteredRows, accessors)
+  const { sortedRows, sortState, requestSort } = useSortableRows(filteredRows, accessors, {
+    columnKey: 'nextInvoiceDueDate',
+    direction: 'descending',
+  })
 
   return (
     <section className="monthly-page__section monthly-page__section--grid">

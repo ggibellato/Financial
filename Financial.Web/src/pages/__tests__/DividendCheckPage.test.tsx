@@ -148,6 +148,9 @@ describe('DividendCheckPage', () => {
     const yearRows = within(tables[1]).getAllByRole('row')
     expect(yearRows[1]).toHaveTextContent('2024')
     expect(yearRows[2]).toHaveTextContent('2022')
+
+    const yearHeader = within(tables[1]).getByRole('button', { name: 'Year' })
+    expect(yearHeader.closest('th')).toHaveAttribute('aria-sort', 'descending')
   })
 
   it('cycles the Date header through unsorted -> ascending -> descending, starting from the default descending sort', async () => {
