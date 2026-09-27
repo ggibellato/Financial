@@ -7,6 +7,7 @@ using Financial.Presentation.App.Navigation;
 using Financial.Presentation.App.Services;
 using Financial.Presentation.App.ViewModels.Investment;
 using Financial.Presentation.App.ViewModels.Investment.Dashboard;
+using Financial.Shared.Abstractions.Currencies;
 using Financial.Shared.Abstractions.Observability;
 using Financial.Shared.Abstractions.Persistence;
 using Financial.Shared.Infrastructure.DependencyInjection;
@@ -15,6 +16,7 @@ using Financial.TestUtilities;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Financial.Presentation.Tests.Integration;
 
@@ -48,6 +50,11 @@ public class DashboardCompositionTests : IDisposable
         services.AddFinancialApplication();
         services.AddFinancialFxRateInfrastructure(configuration);
         services.AddFinancialInfrastructure(configuration);
+        // Real currency conversion now runs on every load (F04 always supplies a display
+        // currency), so this composition test must not depend on a real Frankfurter HTTP call -
+        // it would be slow, flaky in CI, and unrelated to what this suite is verifying (DI wiring).
+        services.RemoveAll<IExchangeRateProvider>();
+        services.AddSingleton<IExchangeRateProvider>(new StubExchangeRateProvider(0.2m));
         services.AddSingleton<IDialogService, DialogService>();
         services.AddTransient<DashboardKpiTilesViewModel>();
         services.AddTransient<AllocationBreakdownViewModel>();
