@@ -401,25 +401,25 @@ graph TD
 - [x] The breakdown is marked partial or unavailable using the same rules as F01
 
 ### F03. React Dashboard Currency Selector and Broker Filter
-- [ ] Opening the Dashboard seeds the currency selector from the current global
+- [x] Opening the Dashboard seeds the currency selector from the current global
   Reporting Currency setting's currency value, ignoring its enabled/disabled flag
-- [ ] Opening the Dashboard always shows the broker-currency filter defaulted to "All
+- [x] Opening the Dashboard always shows the broker-currency filter defaulted to "All
   currencies," regardless of any prior session's selection
-- [ ] Selecting a different currency updates both the KPI tiles and the Allocation
+- [x] Selecting a different currency updates both the KPI tiles and the Allocation
   Breakdown panel to that currency, without affecting Data Quality Warnings or Upcoming
   Income
-- [ ] Selecting a broker-currency filter updates both the KPI tiles and the Allocation
+- [x] Selecting a broker-currency filter updates both the KPI tiles and the Allocation
   Breakdown panel to reflect only matching brokers, without affecting Data Quality
   Warnings or Upcoming Income
-- [ ] The selected display currency is visible in the Dashboard header and next to every
+- [x] The selected display currency is visible in the Dashboard header and next to every
   converted value shown
-- [ ] Only the converted KPI row is shown; the native/unconverted row is no longer
+- [x] Only the converted KPI row is shown; the native/unconverted row is no longer
   rendered
-- [ ] Filtering to a currency with no brokers shows a clear empty state on the
+- [x] Filtering to a currency with no brokers shows a clear empty state on the
   Allocation Breakdown panel and zero/blank KPI tiles, with no error
-- [ ] A partial conversion result shows a visible inline notice; an unavailable result
+- [x] A partial conversion result shows a visible inline notice; an unavailable result
   shows the existing error state with a retry action
-- [ ] Reloading the Dashboard page resets the broker-currency filter to "All currencies"
+- [x] Reloading the Dashboard page resets the broker-currency filter to "All currencies"
   and re-seeds the currency selector from the global default
 
 ### F04. WPF Dashboard Currency Selector and Broker Filter
