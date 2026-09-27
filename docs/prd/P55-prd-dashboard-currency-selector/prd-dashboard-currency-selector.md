@@ -423,28 +423,28 @@ graph TD
   and re-seeds the currency selector from the global default
 
 ### F04. WPF Dashboard Currency Selector and Broker Filter
-- [ ] Opening the WPF Dashboard seeds the currency selector from the same global
+- [x] Opening the WPF Dashboard seeds the currency selector from the same global
   Reporting Currency setting value used by the web app
-- [ ] Opening the WPF Dashboard always defaults the broker-currency filter to "All
+- [x] Opening the WPF Dashboard always defaults the broker-currency filter to "All
   currencies"
-- [ ] Changing either control re-loads only the KPI tiles and Allocation Breakdown
+- [x] Changing either control re-loads only the KPI tiles and Allocation Breakdown
   sub-views, leaving Data Quality Warnings and Upcoming Income unchanged
-- [ ] The selected display currency is visible in the WPF Dashboard's header area and
+- [x] The selected display currency is visible in the WPF Dashboard's header area and
   next to converted values, matching the web app's terminology
-- [ ] Only the converted KPI values are shown in WPF, matching the web app's
+- [x] Only the converted KPI values are shown in WPF, matching the web app's
   native-row removal
-- [ ] Filtering to a currency with no brokers shows the same empty-state messaging as
+- [x] Filtering to a currency with no brokers shows the same empty-state messaging as
   the web app, adapted to WPF presentation
-- [ ] Partial and unavailable conversion results are visually flagged using the existing
+- [x] Partial and unavailable conversion results are visually flagged using the existing
   fx-rate/date tooltip pattern, consistent with the web app's messaging
 
 ### Cross-Feature Integration
-- [ ] A display currency and broker-currency filter chosen in F03's UI are passed
+- [x] A display currency and broker-currency filter chosen in F03's UI are passed
   through to F01 and F02's backend calls, and the resulting converted, filtered totals
   and allocation dimensions are what's rendered on the page
-- [ ] A display currency and broker-currency filter chosen in F04's UI are passed
+- [x] A display currency and broker-currency filter chosen in F04's UI are passed
   through to the same in-process F01 and F02 services, and the resulting converted,
   filtered totals and allocation dimensions are what's rendered in the WPF view
-- [ ] The partial/unavailable indicators and resolved display currency provided by F01
+- [x] The partial/unavailable indicators and resolved display currency provided by F01
   and F02 are what drive F03's and F04's respective inline notices and error states —
   not independently re-derived on the client

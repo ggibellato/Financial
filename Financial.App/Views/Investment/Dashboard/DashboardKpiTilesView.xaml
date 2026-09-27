@@ -51,7 +51,7 @@
         </StackPanel>
 
         <StackPanel Visibility="{Binding ShowContent, Converter={StaticResource BoolToVisibilityConverter}}">
-            <UniformGrid Columns="4">
+            <UniformGrid Columns="4" Visibility="{Binding ShowNativeTotals, Converter={StaticResource BoolToVisibilityConverter}}">
                 <Border Style="{StaticResource KpiTileBorderStyle}">
                     <StackPanel>
                         <TextBlock Text="Market Value" Style="{StaticResource KpiTileLabelStyle}"/>

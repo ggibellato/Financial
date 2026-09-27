@@ -47,7 +47,8 @@ namespace Financial.Presentation.App
             ColourModeViewModel colourModeViewModel,
             Financial.Presentation.App.Views.Settings.AppearanceView appearanceView,
             Financial.Presentation.App.Views.Settings.ReportingCurrencyView reportingCurrencyView,
-            Financial.Presentation.App.Views.Settings.SettingsIntegrationsView settingsIntegrationsView)
+            Financial.Presentation.App.Views.Settings.SettingsIntegrationsView settingsIntegrationsView,
+            Financial.Investment.Application.Interfaces.IReportingCurrencyProvider reportingCurrencyProvider)
         {
             ArgumentNullException.ThrowIfNull(dashboardView);
             ArgumentNullException.ThrowIfNull(dashboardKpiTilesViewModel);
@@ -77,6 +78,7 @@ namespace Financial.Presentation.App
             ArgumentNullException.ThrowIfNull(appearanceView);
             ArgumentNullException.ThrowIfNull(reportingCurrencyView);
             ArgumentNullException.ThrowIfNull(settingsIntegrationsView);
+            ArgumentNullException.ThrowIfNull(reportingCurrencyProvider);
             _navigationViewModel = navigationViewModel ?? throw new ArgumentNullException(nameof(navigationViewModel));
             _navigationViewModelHistoric = navigationViewModelHistoric ?? throw new ArgumentNullException(nameof(navigationViewModelHistoric));
 
@@ -98,7 +100,8 @@ namespace Financial.Presentation.App
                 dataQualityWarningsViewModel,
                 upcomingIncomeViewModel,
                 _navigationViewModel,
-                _navigationViewModelHistoric);
+                _navigationViewModelHistoric,
+                reportingCurrencyProvider);
             dashboardView.DataContext = dashboardViewModel;
 
             var viewsByKey = new Dictionary<string, object>

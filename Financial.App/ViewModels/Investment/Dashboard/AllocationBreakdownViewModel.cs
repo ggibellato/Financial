@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Interfaces;
 using Financial.Presentation.App.ViewModels.Investment;
+using Financial.Shared.Abstractions.Currencies;
 using Microsoft.Extensions.Logging;
 using OxyPlot;
 
@@ -18,6 +19,7 @@ public class AllocationBreakdownViewModel : ViewModelBase
     private bool _isLoading;
     private string? _errorMessage;
     private int _requestId;
+    private Currency? _brokerCurrencyFilter;
 
     public AllocationBreakdownViewModel(
         IAllocationBreakdownService allocationService,
@@ -93,20 +95,42 @@ public class AllocationBreakdownViewModel : ViewModelBase
 
     public bool IsEmpty => Entries.Count == 0;
 
-    public bool ShowChart => ShowContent && !IsEmpty;
+    public bool ShowChart => ShowContent && !IsEmpty && !IsUnavailable;
 
-    public Task LoadAsync() => ExecuteRefreshAsync(
+    /// <summary>Whether every dimension's totals failed to convert — mirrors the KPI tiles'
+    /// unavailable state, replacing the dimension tabs with a retryable error.</summary>
+    public bool IsUnavailable => _breakdown?.IsUnavailable ?? false;
+
+    public bool ShowDimensionTabs => ShowContent && !IsUnavailable;
+
+    /// <summary>Whether some, but not all, currency groups failed to convert.</summary>
+    public bool IsPartial => _breakdown?.IsPartial ?? false;
+
+    /// <summary>The currency every market value in this panel is expressed in, or null when no
+    /// display currency was requested (native, unconverted response).</summary>
+    public string? DisplayCurrencyLabel => _breakdown?.DisplayCurrency;
+
+    /// <summary>Distinguishes "the active broker-currency filter matches no brokers at all" from the
+    /// generic "this dimension has nothing priced" case the empty message otherwise reports.</summary>
+    public string? EmptyFilterMessage =>
+        _brokerCurrencyFilter is not null && IsEmpty ? "No brokers use the selected currency" : null;
+
+    public string? GenericEmptyMessage =>
+        IsEmpty && EmptyFilterMessage is null ? "No priced holdings to display for this view." : null;
+
+    public Task LoadAsync(Currency? displayCurrency = null, Currency? brokerCurrencyFilter = null) => ExecuteRefreshAsync(
         () => ++_requestId,
         id => id == _requestId,
         loading => IsLoading = loading,
         error => ErrorMessage = error,
         async isCurrent =>
         {
-            var breakdown = await _allocationService.GetAllocationBreakdownAsync().ConfigureAwait(false);
+            var breakdown = await _allocationService.GetAllocationBreakdownAsync(displayCurrency, brokerCurrencyFilter);
 
             if (isCurrent())
             {
                 _breakdown = breakdown;
+                _brokerCurrencyFilter = brokerCurrencyFilter;
                 RebuildSelectedDimension();
             }
         },
@@ -126,6 +150,12 @@ public class AllocationBreakdownViewModel : ViewModelBase
 
         OnPropertyChanged(nameof(IsEmpty));
         OnPropertyChanged(nameof(ShowChart));
+        OnPropertyChanged(nameof(ShowDimensionTabs));
+        OnPropertyChanged(nameof(IsPartial));
+        OnPropertyChanged(nameof(IsUnavailable));
+        OnPropertyChanged(nameof(DisplayCurrencyLabel));
+        OnPropertyChanged(nameof(EmptyFilterMessage));
+        OnPropertyChanged(nameof(GenericEmptyMessage));
     }
 
     private IEnumerable<AllocationEntryRowViewModel> SelectedDimensionEntries()

@@ -1,5 +1,6 @@
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Interfaces;
+using Financial.Shared.Abstractions.Currencies;
 using Microsoft.Extensions.Logging;
 
 namespace Financial.Presentation.App.ViewModels.Investment.Dashboard;
@@ -89,6 +90,11 @@ public class DashboardKpiTilesViewModel : ViewModelBase
 
     public bool ShowContent => !IsLoading && !HasError;
 
+    /// <summary>Always false — the native (unconverted) tile row is permanently hidden now that a
+    /// display currency is always supplied; kept as a property, not deleted markup, per this class's
+    /// existing Show*-toggle convention.</summary>
+    public bool ShowNativeTotals => false;
+
     public decimal? MarketValue => _summary?.MarketValue;
 
     public decimal? Invested => _summary?.Invested;
@@ -141,14 +147,14 @@ public class DashboardKpiTilesViewModel : ViewModelBase
 
     public bool ShowPartialNotice => PartialNoticeText != null;
 
-    public Task LoadAsync() => ExecuteRefreshAsync(
+    public Task LoadAsync(Currency? displayCurrency = null, Currency? brokerCurrencyFilter = null) => ExecuteRefreshAsync(
         () => ++_requestId,
         id => id == _requestId,
         loading => IsLoading = loading,
         error => ErrorMessage = error,
         async isCurrent =>
         {
-            var summary = await _dashboardService.GetDashboardAsync();
+            var summary = await _dashboardService.GetDashboardAsync(displayCurrency, brokerCurrencyFilter);
 
             if (!isCurrent())
             {

@@ -2,6 +2,7 @@ using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Enums;
 using Financial.Presentation.App.ViewModels.Investment;
 using Financial.Presentation.App.ViewModels.Investment.Dashboard;
+using Financial.Shared.Abstractions.Currencies;
 using Financial.TestUtilities;
 using FluentAssertions;
 
@@ -30,7 +31,8 @@ public class DashboardViewModelTests
         StubDataQualityReportService? reportService = null,
         StubUpcomingIncomeService? incomeService = null,
         FakeNavigationTree? activeTree = null,
-        FakeNavigationTree? historicTree = null)
+        FakeNavigationTree? historicTree = null,
+        StubReportingCurrencyProvider? reportingCurrencyProvider = null)
     {
         dashboardService ??= new StubPortfolioDashboardService { Dashboard = new PortfolioDashboardDTO { MarketValue = 1000m } };
         allocationService ??= new StubAllocationBreakdownService { Breakdown = Allocation() };
@@ -41,7 +43,9 @@ public class DashboardViewModelTests
         var warnings = new DataQualityWarningsViewModel(reportService, new RecordingLogger<DataQualityWarningsViewModel>());
         var income = new UpcomingIncomeViewModel(incomeService, new RecordingLogger<UpcomingIncomeViewModel>());
         var viewModel = new DashboardViewModel(
-            kpiTiles, allocation, warnings, income, activeTree ?? new FakeNavigationTree(), historicTree ?? new FakeNavigationTree());
+            kpiTiles, allocation, warnings, income,
+            activeTree ?? new FakeNavigationTree(), historicTree ?? new FakeNavigationTree(),
+            reportingCurrencyProvider ?? new StubReportingCurrencyProvider());
         return (viewModel, dashboardService, allocationService);
     }
 
@@ -58,6 +62,77 @@ public class DashboardViewModelTests
         vm.Income.Entries.Should().ContainSingle();
         vm.ShowPanels.Should().BeTrue();
         vm.ShowPageLevelError.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Constructor_SeedsDisplayCurrencyFromReportingCurrencyProvider_IgnoringEnabledFlag()
+    {
+        var (vm, _, _) = CreateViewModel(reportingCurrencyProvider: new StubReportingCurrencyProvider(Currency.BRL, enabled: false));
+
+        vm.DisplayCurrency.Should().Be(Currency.BRL);
+        vm.IsBrlSelected.Should().BeTrue();
+        vm.IsGbpSelected.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Constructor_SeedsBrokerCurrencyFilterToAll()
+    {
+        var (vm, _, _) = CreateViewModel();
+
+        vm.BrokerCurrencyFilter.Should().BeNull();
+    }
+
+    [Fact]
+    public void Constructor_LoadsEveryPanelWithSeededFilterValues()
+    {
+        var dashboardService = new StubPortfolioDashboardService { Dashboard = new PortfolioDashboardDTO { MarketValue = 1000m } };
+        var allocationService = new StubAllocationBreakdownService { Breakdown = Allocation() };
+        var (_, _, _) = CreateViewModel(
+            dashboardService, allocationService,
+            reportingCurrencyProvider: new StubReportingCurrencyProvider(Currency.BRL));
+
+        dashboardService.LastDisplayCurrency.Should().Be(Currency.BRL);
+        dashboardService.LastBrokerCurrencyFilter.Should().BeNull();
+        allocationService.LastDisplayCurrency.Should().Be(Currency.BRL);
+        allocationService.LastBrokerCurrencyFilter.Should().BeNull();
+    }
+
+    [Fact]
+    public void SettingDisplayCurrency_ReloadsOnlyKpiTilesAndAllocation_LeavingWarningsAndIncomeUntouched()
+    {
+        var dashboardService = new StubPortfolioDashboardService { Dashboard = new PortfolioDashboardDTO { MarketValue = 1000m } };
+        var allocationService = new StubAllocationBreakdownService { Breakdown = Allocation() };
+        var reportService = new StubDataQualityReportService { Report = Report() };
+        var incomeService = new StubUpcomingIncomeService { Entries = Income() };
+        var (vm, _, _) = CreateViewModel(dashboardService, allocationService, reportService, incomeService);
+
+        vm.DisplayCurrency = Currency.USD;
+
+        dashboardService.LastDisplayCurrency.Should().Be(Currency.USD);
+        allocationService.LastDisplayCurrency.Should().Be(Currency.USD);
+        dashboardService.GetDashboardCallCount.Should().Be(2);
+        allocationService.GetAllocationBreakdownCallCount.Should().Be(2);
+        reportService.GenerateReportCallCount.Should().Be(1);
+        incomeService.GetUpcomingIncomeCallCount.Should().Be(1);
+    }
+
+    [Fact]
+    public void SettingBrokerCurrencyFilter_ReloadsOnlyKpiTilesAndAllocation()
+    {
+        var dashboardService = new StubPortfolioDashboardService { Dashboard = new PortfolioDashboardDTO { MarketValue = 1000m } };
+        var allocationService = new StubAllocationBreakdownService { Breakdown = Allocation() };
+        var reportService = new StubDataQualityReportService { Report = Report() };
+        var incomeService = new StubUpcomingIncomeService { Entries = Income() };
+        var (vm, _, _) = CreateViewModel(dashboardService, allocationService, reportService, incomeService);
+
+        vm.BrokerCurrencyFilter = Currency.BRL;
+
+        dashboardService.LastBrokerCurrencyFilter.Should().Be(Currency.BRL);
+        allocationService.LastBrokerCurrencyFilter.Should().Be(Currency.BRL);
+        dashboardService.GetDashboardCallCount.Should().Be(2);
+        allocationService.GetAllocationBreakdownCallCount.Should().Be(2);
+        reportService.GenerateReportCallCount.Should().Be(1);
+        incomeService.GetUpcomingIncomeCallCount.Should().Be(1);
     }
 
     [Fact]
@@ -373,19 +448,22 @@ public class DashboardViewModelTests
         var income = new UpcomingIncomeViewModel(
             new StubUpcomingIncomeService(), new RecordingLogger<UpcomingIncomeViewModel>());
         var tree = new FakeNavigationTree();
+        var reportingCurrencyProvider = new StubReportingCurrencyProvider();
 
-        var missingKpiTiles = () => new DashboardViewModel(null!, allocation, warnings, income, tree, tree);
-        var missingAllocation = () => new DashboardViewModel(kpiTiles, null!, warnings, income, tree, tree);
-        var missingWarnings = () => new DashboardViewModel(kpiTiles, allocation, null!, income, tree, tree);
-        var missingIncome = () => new DashboardViewModel(kpiTiles, allocation, warnings, null!, tree, tree);
-        var missingActiveTree = () => new DashboardViewModel(kpiTiles, allocation, warnings, income, null!, tree);
-        var missingHistoricTree = () => new DashboardViewModel(kpiTiles, allocation, warnings, income, tree, null!);
+        var missingKpiTiles = () => new DashboardViewModel(null!, allocation, warnings, income, tree, tree, reportingCurrencyProvider);
+        var missingAllocation = () => new DashboardViewModel(kpiTiles, null!, warnings, income, tree, tree, reportingCurrencyProvider);
+        var missingWarnings = () => new DashboardViewModel(kpiTiles, allocation, null!, income, tree, tree, reportingCurrencyProvider);
+        var missingIncome = () => new DashboardViewModel(kpiTiles, allocation, warnings, null!, tree, tree, reportingCurrencyProvider);
+        var missingActiveTree = () => new DashboardViewModel(kpiTiles, allocation, warnings, income, null!, tree, reportingCurrencyProvider);
+        var missingHistoricTree = () => new DashboardViewModel(kpiTiles, allocation, warnings, income, tree, null!, reportingCurrencyProvider);
+        var missingReportingCurrencyProvider = () => new DashboardViewModel(kpiTiles, allocation, warnings, income, tree, tree, null!);
 
         missingKpiTiles.Should().Throw<ArgumentNullException>();
         missingAllocation.Should().Throw<ArgumentNullException>();
         missingWarnings.Should().Throw<ArgumentNullException>();
         missingIncome.Should().Throw<ArgumentNullException>();
         missingActiveTree.Should().Throw<ArgumentNullException>();
+        missingReportingCurrencyProvider.Should().Throw<ArgumentNullException>();
         missingHistoricTree.Should().Throw<ArgumentNullException>();
     }
 }

@@ -163,6 +163,72 @@ public class AllocationBreakdownViewModelTests
         act.Should().Throw<ArgumentNullException>();
     }
 
+    [Fact]
+    public async Task LoadAsync_WithDisplayCurrencyAndBrokerCurrencyFilter_PassesBothToTheService()
+    {
+        var (vm, service) = CreateViewModel();
+
+        await vm.LoadAsync(Currency.GBP, Currency.BRL);
+
+        service.LastDisplayCurrency.Should().Be(Currency.GBP);
+        service.LastBrokerCurrencyFilter.Should().Be(Currency.BRL);
+    }
+
+    [Fact]
+    public async Task LoadAsync_MapsDisplayCurrencyIsPartialIsUnavailableFromTheDto()
+    {
+        var service = new StubAllocationBreakdownService
+        {
+            Breakdown = new AllocationBreakdownDTO { DisplayCurrency = "GBP", IsPartial = true, IsUnavailable = false },
+        };
+        var (vm, _) = CreateViewModel(service);
+
+        await vm.LoadAsync(Currency.GBP);
+
+        vm.DisplayCurrencyLabel.Should().Be("GBP");
+        vm.IsPartial.Should().BeTrue();
+        vm.IsUnavailable.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task LoadAsync_WhenUnavailable_HidesTheDimensionTabsAndChart()
+    {
+        var service = new StubAllocationBreakdownService
+        {
+            Breakdown = new AllocationBreakdownDTO { DisplayCurrency = "GBP", IsUnavailable = true },
+        };
+        var (vm, _) = CreateViewModel(service);
+
+        await vm.LoadAsync(Currency.GBP);
+
+        vm.IsUnavailable.Should().BeTrue();
+        vm.ShowDimensionTabs.Should().BeFalse();
+        vm.ShowChart.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task LoadAsync_WithBrokerCurrencyFilterMatchingNoBrokers_SetsEmptyFilterMessage()
+    {
+        var service = new StubAllocationBreakdownService { Breakdown = new AllocationBreakdownDTO() };
+        var (vm, _) = CreateViewModel(service);
+
+        await vm.LoadAsync(Currency.GBP, Currency.USD);
+
+        vm.IsEmpty.Should().BeTrue();
+        vm.EmptyFilterMessage.Should().Be("No brokers use the selected currency");
+    }
+
+    [Fact]
+    public async Task LoadAsync_WithoutBrokerCurrencyFilter_EmptyDimension_KeepsTheGenericEmptyMessage()
+    {
+        var (vm, _) = CreateViewModel(new StubAllocationBreakdownService { Breakdown = new AllocationBreakdownDTO() });
+
+        await vm.LoadAsync();
+
+        vm.IsEmpty.Should().BeTrue();
+        vm.EmptyFilterMessage.Should().BeNull();
+    }
+
     private static int SliceCount(AllocationBreakdownViewModel viewModel) =>
         viewModel.PlotModel.Series.OfType<PieSeries>().Single().Slices.Count;
 }
@@ -175,9 +241,15 @@ internal sealed class StubAllocationBreakdownService : IAllocationBreakdownServi
 
     public int GetAllocationBreakdownCallCount { get; private set; }
 
+    public Currency? LastDisplayCurrency { get; private set; }
+
+    public Currency? LastBrokerCurrencyFilter { get; private set; }
+
     public Task<AllocationBreakdownDTO> GetAllocationBreakdownAsync(Currency? displayCurrency = null, Currency? brokerCurrencyFilter = null)
     {
         GetAllocationBreakdownCallCount++;
+        LastDisplayCurrency = displayCurrency;
+        LastBrokerCurrencyFilter = brokerCurrencyFilter;
 
         if (ThrowOnGetAllocationBreakdown is not null)
         {

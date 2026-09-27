@@ -231,6 +231,39 @@ public class DashboardKpiTilesViewModelTests
 
         act.Should().Throw<ArgumentNullException>();
     }
+
+    [Fact]
+    public async Task LoadAsync_WithDisplayCurrencyAndBrokerCurrencyFilter_PassesBothToTheService()
+    {
+        var service = new StubPortfolioDashboardService { Dashboard = Summary() };
+        var (vm, _) = CreateViewModel(service);
+
+        await vm.LoadAsync(Currency.GBP, Currency.BRL);
+
+        service.LastDisplayCurrency.Should().Be(Currency.GBP);
+        service.LastBrokerCurrencyFilter.Should().Be(Currency.BRL);
+    }
+
+    [Fact]
+    public async Task LoadAsync_WithoutArguments_PreservesExistingNoParamBehavior()
+    {
+        var service = new StubPortfolioDashboardService { Dashboard = Summary() };
+        var (vm, _) = CreateViewModel(service);
+
+        await vm.LoadAsync();
+
+        service.LastDisplayCurrency.Should().BeNull();
+        service.LastBrokerCurrencyFilter.Should().BeNull();
+        vm.MarketValue.Should().Be(1000m);
+    }
+
+    [Fact]
+    public void ShowNativeTotals_IsAlwaysFalse()
+    {
+        var (vm, _) = CreateViewModel();
+
+        vm.ShowNativeTotals.Should().BeFalse();
+    }
 }
 
 internal sealed class StubPortfolioDashboardService : IPortfolioDashboardService
@@ -243,9 +276,15 @@ internal sealed class StubPortfolioDashboardService : IPortfolioDashboardService
 
     public int GetDashboardCallCount { get; private set; }
 
+    public Currency? LastDisplayCurrency { get; private set; }
+
+    public Currency? LastBrokerCurrencyFilter { get; private set; }
+
     public async Task<PortfolioDashboardDTO> GetDashboardAsync(Currency? displayCurrency = null, Currency? brokerCurrencyFilter = null)
     {
         GetDashboardCallCount++;
+        LastDisplayCurrency = displayCurrency;
+        LastBrokerCurrencyFilter = brokerCurrencyFilter;
 
         if (Gate is not null)
         {
