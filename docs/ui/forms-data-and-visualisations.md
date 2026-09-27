@@ -410,18 +410,28 @@ Web's shared `useSortableRows` hook (`hooks/useSortableRows.ts`) +
 `docs/ui/wpf.md`) — both implement the same 3-state cycle (unsorted ->
 ascending -> descending -> unsorted), null-last in both directions.
 
-A record-list grid whose primary column is a literal date (Transactions,
-Credits, Price History, Disposals, Corporate Actions, Expenses, Income,
-Bank operations, Controle Mãe, Dividend History — not an aggregate/summary
-grid like Dividend Check's by-year totals, and not a grid where a date is
-only a secondary column, like Portfolio Holdings' "first investment" or the
-Cards grid's "next invoice due") defaults to **descending by that date
-column**, with the header showing the same active-sort indicator it would
-after the user clicked it — `useSortableRows`' `defaultSort` parameter (seeded
-with the exported `DATE_DESC_SORT` constant) on Web,
+A grid with a genuine per-row date/month/year column — whether that's the
+row's primary identity (Transactions, Credits, Price History, Disposals,
+Corporate Actions, Expenses, Income, Bank operations, Controle Mãe,
+Dividend History and its by-year totals, Reserva's Movements) or a
+secondary column (Portfolio Holdings' "first investment", the Cards
+grid's "next invoice due") — defaults to **descending by that column**,
+with the header showing the same active-sort indicator it would after the
+user clicked it — `useSortableRows`' `defaultSort` parameter (seeded with
+the exported `DATE_DESC_SORT` constant, or an equivalent literal for a
+non-`date` columnKey) on Web,
 `SortableColumnsBehavior.DefaultSortMemberPath`/`DefaultSortDirection` on
-WPF. A grid intentionally excluded from sorting entirely (e.g. Reserva's
-Movements grid) does not get a default sort either.
+WPF.
+
+A grid gets no default sort only when it genuinely has no per-row
+date/month/year field to sort by — an aggregate/summary grid pivoting
+months or years into separate columns (Annual Summary), a grid scoped to
+a single month with no row-level date (Investment Snapshots), or a field
+that's a plain integer rather than a date (Recurring Bills'/Mensais'
+day-of-month `dueDay`) — or when it's a WPF-only grid whose Web
+counterpart isn't sortable at all either (Admin's Credit Cards list, the
+Tax workbook, Settings' credit-card calendar sync status): WPF stays in
+sync with Web rather than getting a sort Web doesn't have.
 
 ### Chart filter/mode toggle ("chip") pattern
 

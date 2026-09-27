@@ -192,10 +192,12 @@ unthemed classic Windows chrome — a known, open gap. Closing it needs a custom
   `CanUserSortColumns="True"` click-to-sort, which is 2-state and null-first.
   It matches Web's `useSortableRows` hook: the same 3-state (unsorted ->
   ascending -> descending -> unsorted), null-last cycle. Opt a specific grid
-  out with `SortableColumnsBehavior.IsEnabled="False"` (e.g. Reserva's
-  Movements grid). A record-list grid whose primary column is a literal date
-  sets `DefaultSortMemberPath`/`DefaultSortDirection="Descending"` on the
-  `DataGrid` to start already sorted, arrow shown, matching Web's
+  out with `SortableColumnsBehavior.IsEnabled="False"` only when Web's
+  equivalent isn't sortable either (e.g. Annual Summary's three grids, whose
+  columns are pivoted months/years, not sortable dimensions — see
+  `AnnualSummaryView.xaml`). A grid with a genuine per-row date/month/year
+  column sets `DefaultSortMemberPath`/`DefaultSortDirection="Descending"` on
+  the `DataGrid` to start already sorted, arrow shown, matching Web's
   `defaultSort` — see `docs/ui/forms-data-and-visualisations.md`'s "Data
   grids" section for which grids this applies to.
 - A free-text column (description/note/label) whose values are occasionally

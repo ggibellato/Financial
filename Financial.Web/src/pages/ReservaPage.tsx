@@ -9,9 +9,9 @@ import TruncatedText from '../components/TruncatedText'
 import WithdrawalForm from '../components/WithdrawalForm'
 import DataTableCell from '../components/grid/DataTableCell'
 import SortableColumnHeader from '../components/grid/SortableColumnHeader'
-import { useSortableRows } from '../hooks/useSortableRows'
+import { DATE_DESC_SORT, useSortableRows } from '../hooks/useSortableRows'
 import type { ReserveBucketBalanceDto } from '../api/types'
-import { LOCKED_MOVEMENT_MESSAGE, useReserva } from '../hooks/useReserva'
+import { LOCKED_MOVEMENT_MESSAGE, useReserva, type ReserveMovementRow } from '../hooks/useReserva'
 import { confirmThenRun } from '../utils/confirmThenRun'
 import { formatN2, formatShortDate } from '../utils/formatters'
 import './ReservaPage.css'
@@ -19,6 +19,13 @@ import './ReservaPage.css'
 const BALANCE_ACCESSORS = {
   bucket: (b: ReserveBucketBalanceDto) => b.bucketName,
   balance: (b: ReserveBucketBalanceDto) => b.balance,
+}
+
+const MOVEMENT_ACCESSORS = {
+  date: (m: ReserveMovementRow) => new Date(m.date),
+  bucket: (m: ReserveMovementRow) => m.bucketName,
+  description: (m: ReserveMovementRow) => m.description,
+  amount: (m: ReserveMovementRow) => m.amount,
 }
 
 function BalanceColumns() {
@@ -97,6 +104,9 @@ export default function ReservaPage() {
 
   const { sortedRows: sortedBalances, sortState: balanceSortState, requestSort: requestBalanceSort } =
     useSortableRows(balances, BALANCE_ACCESSORS)
+
+  const { sortedRows: sortedMovementRows, sortState: movementSortState, requestSort: requestMovementSort } =
+    useSortableRows(movementRows, MOVEMENT_ACCESSORS, DATE_DESC_SORT)
 
   // useReserva asks whether to proceed when the server rejects a withdrawal with 409; how to ask,
   // and in what words, is presentation and belongs here. This page already owned its other
@@ -232,15 +242,36 @@ export default function ReservaPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHeaderCell />
-                    <TableHeaderCell>Date</TableHeaderCell>
-                    <TableHeaderCell>Bucket</TableHeaderCell>
-                    <TableHeaderCell>Description</TableHeaderCell>
-                    <TableHeaderCell className="data-table__col--numeric">Amount</TableHeaderCell>
+                    <SortableColumnHeader
+                      label="Date"
+                      columnKey="date"
+                      sortDirection={movementSortState?.columnKey === 'date' ? movementSortState.direction : undefined}
+                      onSort={requestMovementSort}
+                    />
+                    <SortableColumnHeader
+                      label="Bucket"
+                      columnKey="bucket"
+                      sortDirection={movementSortState?.columnKey === 'bucket' ? movementSortState.direction : undefined}
+                      onSort={requestMovementSort}
+                    />
+                    <SortableColumnHeader
+                      label="Description"
+                      columnKey="description"
+                      sortDirection={movementSortState?.columnKey === 'description' ? movementSortState.direction : undefined}
+                      onSort={requestMovementSort}
+                    />
+                    <SortableColumnHeader
+                      label="Amount"
+                      columnKey="amount"
+                      numeric
+                      sortDirection={movementSortState?.columnKey === 'amount' ? movementSortState.direction : undefined}
+                      onSort={requestMovementSort}
+                    />
                     <TableHeaderCell />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {movementRows.map((m) => (
+                  {sortedMovementRows.map((m) => (
                     <Fragment key={m.id}>
                       <TableRow>
                         <TableCell>
