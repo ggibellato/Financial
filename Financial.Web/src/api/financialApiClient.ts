@@ -21,6 +21,7 @@ import type {
   BrokerUpdateDto,
   CalculateXirrRequestDto,
   CalendarConnectionStatusDto,
+  Currency,
   CalendarDisconnectResultDto,
   CardStatementDto,
   CreditCardCalendarSyncStatusDto,
@@ -189,8 +190,8 @@ export interface FinancialApiClient {
   getAssetPriceFetchScope: () => Promise<PortfolioReferenceDto[]>
   getPortfolioAssetsSummary: (brokerName: string, portfolioName: string, scope?: InvestmentScope) => Promise<PortfolioAssetSummaryItemDto[]>
   calculateXirr: (cashFlows: AssetCashFlowDto[], terminalValue: number) => Promise<XirrResultDto>
-  getDashboard: () => Promise<PortfolioDashboardDto>
-  getAllocationBreakdown: () => Promise<AllocationBreakdownDto>
+  getDashboard: (displayCurrency?: Currency, brokerCurrency?: Currency) => Promise<PortfolioDashboardDto>
+  getAllocationBreakdown: (displayCurrency?: Currency, brokerCurrency?: Currency) => Promise<AllocationBreakdownDto>
   getDataQualityReport: () => Promise<DataQualityReportDto>
   getUpcomingIncome: () => Promise<UpcomingIncomeDto[]>
   getReserveBalances: () => Promise<ReserveBucketBalanceDto[]>
@@ -356,6 +357,18 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
   }
 
   const buildScopeQuery = (scope: InvestmentScope) => `?scope=${scope}`
+
+  const buildCurrencyQuery = (displayCurrency?: Currency, brokerCurrency?: Currency) => {
+    const params = new URLSearchParams()
+    if (displayCurrency) {
+      params.set('displayCurrency', displayCurrency)
+    }
+    if (brokerCurrency) {
+      params.set('brokerCurrency', brokerCurrency)
+    }
+    const query = params.toString()
+    return query ? `?${query}` : ''
+  }
 
   return {
     getNavigationTree: (scope = 'active') => request<TreeNodeDto>(`/navigation/tree${buildScopeQuery(scope)}`),
@@ -543,8 +556,10 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
         method: 'POST',
         body: JSON.stringify({ cashFlows, terminalValue } satisfies CalculateXirrRequestDto),
       }),
-    getDashboard: () => request<PortfolioDashboardDto>('/dashboard'),
-    getAllocationBreakdown: () => request<AllocationBreakdownDto>('/allocation-breakdown'),
+    getDashboard: (displayCurrency, brokerCurrency) =>
+      request<PortfolioDashboardDto>(`/dashboard${buildCurrencyQuery(displayCurrency, brokerCurrency)}`),
+    getAllocationBreakdown: (displayCurrency, brokerCurrency) =>
+      request<AllocationBreakdownDto>(`/allocation-breakdown${buildCurrencyQuery(displayCurrency, brokerCurrency)}`),
     getDataQualityReport: () => request<DataQualityReportDto>('/data-quality-report'),
     getUpcomingIncome: () => request<UpcomingIncomeDto[]>('/upcoming-income'),
     getReserveBalances: () => request<ReserveBucketBalanceDto[]>('/reserve/balances'),

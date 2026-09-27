@@ -1,5 +1,5 @@
 import { apiClient } from '../api/financialApiClient'
-import type { PortfolioDashboardDto } from '../api/types'
+import type { BrokerCurrencyFilter, Currency, PortfolioDashboardDto } from '../api/types'
 import { useAsyncResource } from './useAsyncResource'
 
 export interface DashboardSummaryData {
@@ -9,10 +9,16 @@ export interface DashboardSummaryData {
   retry: () => void
 }
 
-export function useDashboardSummary(): DashboardSummaryData {
+export function useDashboardSummary(
+  displayCurrency: Currency | null,
+  brokerCurrencyFilter: BrokerCurrencyFilter,
+): DashboardSummaryData {
   const { data, isLoading, error, retry } = useAsyncResource<PortfolioDashboardDto>(
-    () => apiClient.getDashboard(),
-    [],
+    () =>
+      displayCurrency
+        ? apiClient.getDashboard(displayCurrency, brokerCurrencyFilter === 'ALL' ? undefined : brokerCurrencyFilter)
+        : null,
+    [displayCurrency, brokerCurrencyFilter],
     'Unable to load dashboard summary',
   )
 

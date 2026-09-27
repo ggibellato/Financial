@@ -2336,4 +2336,58 @@ describe('financialApiClient', () => {
     expect(init?.method).toBe('PUT')
     expect(JSON.parse(init?.body as string)).toEqual(requestBody)
   })
+
+  it('getDashboard_with_no_params_requests_the_bare_path', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(okResponse({}))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await client.getDashboard()
+
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/dashboard`)
+  })
+
+  it('getDashboard_with_both_params_appends_displayCurrency_and_brokerCurrency_to_the_query_string', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(okResponse({}))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await client.getDashboard('GBP', 'BRL')
+
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/dashboard?displayCurrency=GBP&brokerCurrency=BRL`)
+  })
+
+  it('getDashboard_with_only_displayCurrency_omits_brokerCurrency_from_the_query_string', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(okResponse({}))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await client.getDashboard('GBP')
+
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/dashboard?displayCurrency=GBP`)
+  })
+
+  it('getAllocationBreakdown_with_no_params_requests_the_bare_path', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(okResponse({}))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await client.getAllocationBreakdown()
+
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/allocation-breakdown`)
+  })
+
+  it('getAllocationBreakdown_with_both_params_appends_displayCurrency_and_brokerCurrency_to_the_query_string', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(okResponse({}))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await client.getAllocationBreakdown('GBP', 'BRL')
+
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/allocation-breakdown?displayCurrency=GBP&brokerCurrency=BRL`)
+  })
+
+  it('getAllocationBreakdown_with_only_displayCurrency_omits_brokerCurrency_from_the_query_string', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(okResponse({}))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await client.getAllocationBreakdown('GBP')
+
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/allocation-breakdown?displayCurrency=GBP`)
+  })
 })
