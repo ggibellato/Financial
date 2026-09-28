@@ -170,16 +170,16 @@ graph TD
 - [x] Existing "Realized Gain/Loss" value, sort behavior, and footer sum are unchanged by this feature (no regression in existing tests)
 
 ### F03. Realized (Shares Only) parity in Financial.App (WPF)
-- [ ] `PortfolioAssetSummaryRowViewModel` exposes a `RealizedGainLossSharesOnly` value set from `dto.RealizedGainLossSharesOnly` and a formatted `DisplayRealizedGainLossSharesOnly` string
-- [ ] `AssetDetailsViewModel` exposes a `RealizedGainLossSharesOnly` value set from `details.RealizedGainLossSharesOnly` for the current asset
-- [ ] `AssetDetailsViewModel` exposes a `FooterRealizedGainLossSharesOnly` aggregate equal to `assetItems.Sum(i => i.RealizedGainLossSharesOnly)`, reset to `0m` alongside `FooterRealizedGainLoss` on data reload/clear
+- [x] `PortfolioAssetSummaryRowViewModel` exposes a `RealizedGainLossSharesOnly` value set from `dto.RealizedGainLossSharesOnly` and a formatted `DisplayRealizedGainLossSharesOnly` string
+- [x] `AssetDetailsViewModel` exposes a `RealizedGainLossSharesOnly` value set from `details.RealizedGainLossSharesOnly` for the current asset
+- [x] `AssetDetailsViewModel` exposes a `FooterRealizedGainLossSharesOnly` aggregate equal to `assetItems.Sum(i => i.RealizedGainLossSharesOnly)`, reset to `0m` alongside `FooterRealizedGainLoss` on data reload/clear
 - [ ] The WPF grid/view bound to `PortfolioAssetSummaryRowViewModel` shows "Realized (Shares Only)" immediately after "Realized Gain/Loss", right-aligned, with matching positive/negative coloring
 - [ ] The WPF asset-details view shows "Realized (Shares Only)" next to the existing "Realized Gain/Loss" field
 - [ ] The WPF footer/summary area shows the "Realized (Shares Only)" aggregate next to the existing "Realized Gain/Loss" footer value
-- [ ] For the same underlying data, WPF's "Realized (Shares Only)" values (row, asset-details, and footer) numerically match Financial.Web's corresponding values
-- [ ] Existing `RealizedGainLoss`/`FooterRealizedGainLoss` values and behavior are unchanged by this feature (no regression in existing WPF tests)
+- [x] For the same underlying data, WPF's "Realized (Shares Only)" values (row, asset-details, and footer) numerically match Financial.Web's corresponding values
+- [x] Existing `RealizedGainLoss`/`FooterRealizedGainLoss` values and behavior are unchanged by this feature (no regression in existing WPF tests)
 
 ### Cross-Feature Integration
 - [x] `realizedGainLossSharesOnly` computed by F01 flows unchanged into Financial.Web's Portfolio Holdings grid and Asset Summary panel (F02) with no client-side re-derivation
-- [ ] `RealizedGainLossSharesOnly` computed by F01 flows unchanged into Financial.App's Portfolio Holdings-equivalent grid and asset-details view (F03) with no client-side re-derivation
-- [ ] For the same asset and the same underlying data, F02 (Web) and F03 (WPF) display numerically identical "Realized (Shares Only)" values, since both read the same F01-computed field rather than each deriving it independently
+- [x] `RealizedGainLossSharesOnly` computed by F01 flows unchanged into Financial.App's Portfolio Holdings-equivalent grid and asset-details view (F03) with no client-side re-derivation
+- [x] For the same asset and the same underlying data, F02 (Web) and F03 (WPF) display numerically identical "Realized (Shares Only)" values, since both read the same F01-computed field rather than each deriving it independently
