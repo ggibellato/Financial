@@ -65,4 +65,30 @@ public class CardStatementTests
 
         first.Id.Should().NotBe(second.Id);
     }
+
+    [Fact]
+    public void IsFor_MatchingCardYearAndMonth_ReturnsTrue()
+    {
+        var statement = CardStatement.Create(ChaseMaster4023, 2026, 7);
+
+        statement.IsFor(ChaseMaster4023.Id, 2026, 7).Should().BeTrue();
+    }
+
+    [Theory]
+    [InlineData(2026, 8)]
+    [InlineData(2027, 7)]
+    public void IsFor_DifferentYearOrMonth_ReturnsFalse(int year, int month)
+    {
+        var statement = CardStatement.Create(ChaseMaster4023, 2026, 7);
+
+        statement.IsFor(ChaseMaster4023.Id, year, month).Should().BeFalse();
+    }
+
+    [Fact]
+    public void IsFor_DifferentCard_ReturnsFalse()
+    {
+        var statement = CardStatement.Create(ChaseMaster4023, 2026, 7);
+
+        statement.IsFor(BaAmex.Id, 2026, 7).Should().BeFalse();
+    }
 }

@@ -44,7 +44,7 @@ public sealed class CardStatementService : ICardStatementService
                 var created = false;
                 foreach (var card in activeCards)
                 {
-                    if (existingStatements.Any(s => s.CreditCard.Id == card.Id))
+                    if (existingStatements.Any(s => s.IsFor(card.Id, year, month)))
                     {
                         continue;
                     }

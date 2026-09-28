@@ -47,6 +47,17 @@ public class PaymentsDueServiceTests
         return card;
     }
 
+    private void AddStatement(CreditCard card, DateOnly period, bool paid = false)
+    {
+        var statement = CardStatement.Create(card, period.Year, period.Month);
+        if (paid)
+        {
+            statement.MarkPaid();
+        }
+
+        _repository.AddCardStatement(statement);
+    }
+
     [Fact]
     public void Constructor_WithNullRepository_Throws()
     {
@@ -124,6 +135,45 @@ public class PaymentsDueServiceTests
             DueDate = PinnedToday.AddDays(3),
             DaysRemaining = 3
         });
+    }
+
+    [Fact]
+    public void GetPaymentsDue_CreditCardWithPaidStatementForInvoicePeriod_IsExcluded()
+    {
+        var dueDate = PinnedToday.AddDays(3);
+        var card = CreateCard("Nubank", dueDate);
+        _repository.AddCreditCard(card);
+        AddStatement(card, dueDate, paid: true);
+
+        var result = _sut.GetPaymentsDue();
+
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void GetPaymentsDue_CreditCardWithUnpaidStatementForInvoicePeriod_IsIncluded()
+    {
+        var dueDate = PinnedToday.AddDays(3);
+        var card = CreateCard("Nubank", dueDate);
+        _repository.AddCreditCard(card);
+        AddStatement(card, dueDate);
+
+        var result = _sut.GetPaymentsDue();
+
+        result.Should().ContainSingle().Which.Name.Should().Be("Nubank");
+    }
+
+    [Fact]
+    public void GetPaymentsDue_CreditCardWithPaidStatementForDifferentPeriod_IsIncluded()
+    {
+        var dueDate = PinnedToday.AddDays(3);
+        var card = CreateCard("Nubank", dueDate);
+        _repository.AddCreditCard(card);
+        AddStatement(card, dueDate.AddMonths(-1), paid: true);
+
+        var result = _sut.GetPaymentsDue();
+
+        result.Should().ContainSingle().Which.Name.Should().Be("Nubank");
     }
 
     [Fact]
