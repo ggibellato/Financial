@@ -142,6 +142,7 @@ public sealed class NavigationService : INavigationService
                 TotalSold = totalSold,
                 TotalCredits = totalCredits,
                 RealizedGainLoss = asset.RealizedGainLoss,
+                RealizedGainLossSharesOnly = asset.RealizedGainLossSharesOnly,
                 MarketValue = valuation.MarketValue,
                 CostOfUnitsHeld = valuation.CostOfUnitsHeld,
                 UnrealisedGain = valuation.UnrealisedGain,

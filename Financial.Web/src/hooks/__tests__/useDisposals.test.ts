@@ -70,6 +70,7 @@ const ASSET_DETAILS: AssetDetailsDto = {
   totalSold: 600,
   totalCredits: 0,
   realizedGainLoss: 100,
+  realizedGainLossSharesOnly: 100,
   marketValue: null,
   costOfUnitsHeld: 500,
   unrealisedGain: null,

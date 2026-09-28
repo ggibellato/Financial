@@ -24,6 +24,7 @@ public class PortfolioAssetSummaryRowViewModelTests
         decimal currentMonthCredits = 0m,
         decimal? totalBought = null,
         decimal realizedGainLoss = 0m,
+        decimal realizedGainLossSharesOnly = 0m,
         decimal? averageSellPrice = null,
         decimal? marketValue = null,
         decimal? costOfUnitsHeld = null,
@@ -43,6 +44,7 @@ public class PortfolioAssetSummaryRowViewModelTests
             TotalSold = 0m,
             TotalInvested = totalInvested,
             RealizedGainLoss = realizedGainLoss,
+            RealizedGainLossSharesOnly = realizedGainLossSharesOnly,
             PortfolioWeight = portfolioWeight,
             TotalCredits = totalCredits,
             CashFlows = cashFlows ?? [],
@@ -677,6 +679,36 @@ public class PortfolioAssetSummaryRowViewModelTests
         var row = BuildRow(realizedGainLoss: -50m);
         row.RealizedGainLossIsNegative.Should().BeTrue();
         row.RealizedGainLossIsPositive.Should().BeFalse();
+    }
+
+    [Fact]
+    public void RealizedGainLossSharesOnly_SetFromDto_NotDerived()
+    {
+        var row = BuildRow(realizedGainLoss: 10m, totalCredits: 50m, realizedGainLossSharesOnly: 999m);
+        row.RealizedGainLossSharesOnly.Should().Be(999m);
+    }
+
+    [Fact]
+    public void DisplayRealizedGainLossSharesOnly_FormatsN2()
+    {
+        var row = BuildRow(realizedGainLossSharesOnly: 123.456m);
+        row.DisplayRealizedGainLossSharesOnly.Should().Be("123.46");
+    }
+
+    [Fact]
+    public void RealizedGainLossSharesOnlyIsPositive_WhenGainPositive_IsTrue()
+    {
+        var row = BuildRow(realizedGainLossSharesOnly: 100m);
+        row.RealizedGainLossSharesOnlyIsPositive.Should().BeTrue();
+        row.RealizedGainLossSharesOnlyIsNegative.Should().BeFalse();
+    }
+
+    [Fact]
+    public void RealizedGainLossSharesOnlyIsNegative_WhenLossNegative_IsTrue()
+    {
+        var row = BuildRow(realizedGainLossSharesOnly: -50m);
+        row.RealizedGainLossSharesOnlyIsNegative.Should().BeTrue();
+        row.RealizedGainLossSharesOnlyIsPositive.Should().BeFalse();
     }
 
     [Fact]

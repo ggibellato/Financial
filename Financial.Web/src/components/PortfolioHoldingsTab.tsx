@@ -107,6 +107,13 @@ function AssetRow({ item, rowPrice, isHistoric }: AssetRowProps) {
           <span className={getProfitClass(item.realizedGainLoss)}>{formatN2(item.realizedGainLoss)}</span>
         </DataTableCell>
       )}
+      {isHistoric && (
+        <DataTableCell label="Realized (Shares Only)">
+          <span className={getProfitClass(item.realizedGainLossSharesOnly)}>
+            {formatN2(item.realizedGainLossSharesOnly)}
+          </span>
+        </DataTableCell>
+      )}
       {!isHistoric && (
         <DataTableCell label="Current Value">
           {renderGatedCell(rowPrice.isLoading, rowPrice.fetchFailed, currentValue, v => formatN2(v))}
@@ -209,6 +216,7 @@ export default function PortfolioHoldingsTab() {
     portfolioWeight: (r) => r.item.portfolioWeight,
     totalInvested: (r) => r.item.totalInvested,
     realizedGainLoss: (r) => r.item.realizedGainLoss,
+    realizedGainLossSharesOnly: (r) => r.item.realizedGainLossSharesOnly,
     currentValue: (r) => computeCurrentValue(r.item, isHistoric),
     totalCredits: (r) => r.item.totalCredits,
     averagePrice: (r) => r.item.averagePrice,
@@ -243,8 +251,9 @@ export default function PortfolioHoldingsTab() {
             ? items.reduce((acc, it) => acc + (it.estimatedAnnualCredits ?? 0), 0)
             : null
           const realizedGainLoss = items.reduce((acc, it) => acc + it.realizedGainLoss, 0)
+          const realizedGainLossSharesOnly = items.reduce((acc, it) => acc + it.realizedGainLossSharesOnly, 0)
           const cv = computeCurrentValueFooter(items, rowPrices)
-          return { totalInvested, totalCredits, currentMonthCredits, estAnnualCredits, realizedGainLoss, cv }
+          return { totalInvested, totalCredits, currentMonthCredits, estAnnualCredits, realizedGainLoss, realizedGainLossSharesOnly, cv }
         })()
       : null
 
@@ -264,6 +273,9 @@ export default function PortfolioHoldingsTab() {
                 <SortableColumnHeader rowSpan={2} numeric label="Total Invested" columnKey="totalInvested" sortDirection={sortDirectionFor('totalInvested')} onSort={requestSort} />
                 {isHistoric && (
                   <SortableColumnHeader rowSpan={2} numeric label="Realized Gain/Loss" columnKey="realizedGainLoss" sortDirection={sortDirectionFor('realizedGainLoss')} onSort={requestSort} />
+                )}
+                {isHistoric && (
+                  <SortableColumnHeader rowSpan={2} numeric label="Realized (Shares Only)" columnKey="realizedGainLossSharesOnly" sortDirection={sortDirectionFor('realizedGainLossSharesOnly')} onSort={requestSort} />
                 )}
                 {!isHistoric && (
                   <SortableColumnHeader rowSpan={2} numeric label="Current Value" columnKey="currentValue" sortDirection={sortDirectionFor('currentValue')} onSort={requestSort} />
@@ -309,6 +321,12 @@ export default function PortfolioHoldingsTab() {
             <div className="portfolio-holdings__footer-item">
               <span className="portfolio-holdings__footer-label" data-label="Realized Gain/Loss" />
               <input type="text" readOnly className="portfolio-holdings__footer-value" value={formatN2(footer.realizedGainLoss)} tabIndex={-1} />
+            </div>
+          )}
+          {isHistoric && (
+            <div className="portfolio-holdings__footer-item">
+              <span className="portfolio-holdings__footer-label" data-label="Realized (Shares Only)" />
+              <input type="text" readOnly className="portfolio-holdings__footer-value" value={formatN2(footer.realizedGainLossSharesOnly)} tabIndex={-1} />
             </div>
           )}
           {!isHistoric && (

@@ -6745,6 +6745,8 @@ export interface components {
             quantity?: number;
             /** Format: double */
             realizedGainLoss?: number;
+            /** Format: double */
+            realizedGainLossSharesOnly?: number;
             taxJurisdictions?: string[];
             ticker: string;
             /** Format: double */
@@ -7787,6 +7789,8 @@ export interface components {
             priceOnlyReturn: null | number;
             /** Format: double */
             realizedGainLoss: number;
+            /** Format: double */
+            realizedGainLossSharesOnly: number;
             ticker: string;
             /** Format: double */
             totalBought: number;

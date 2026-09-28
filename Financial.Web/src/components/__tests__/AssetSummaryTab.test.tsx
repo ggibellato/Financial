@@ -54,6 +54,7 @@ const ASSET: AssetDetailsDto = {
   totalSold: 500,
   totalCredits: 50,
   realizedGainLoss: 75,
+  realizedGainLossSharesOnly: 25,
   marketValue: null,
   costOfUnitsHeld: 2000,
   unrealisedGain: null,
@@ -315,6 +316,51 @@ describe('AssetSummaryTab', () => {
     renderAssetSummaryTab('historic')
     const label = screen.getByText('Realized Gain/Loss')
     expect(label.nextElementSibling).toHaveClass('asset-summary__value--green')
+  })
+
+  it('renders_realized_gain_loss_shares_only_field_directly_below_realized_gain_loss_for_historic_closed_asset', () => {
+    setMock({
+      asset: { ...ASSET, quantity: 0, realizedGainLoss: 75, totalCredits: 50, realizedGainLossSharesOnly: 999 },
+      showCurrentSection: false,
+      portfolioWeight: 100,
+    })
+    renderAssetSummaryTab('historic')
+    const realizedGainLossLabel = screen.getByText('Realized Gain/Loss')
+    const sharesOnlyLabel = screen.getByText('Realized (Shares Only)')
+    expect(sharesOnlyLabel.closest('.asset-summary__field')).toBe(
+      realizedGainLossLabel.closest('.asset-summary__field')?.nextElementSibling,
+    )
+    expect(sharesOnlyLabel.nextElementSibling?.textContent).toBe('999.00')
+  })
+
+  it('does_not_render_realized_gain_loss_shares_only_field_when_realized_section_is_hidden_for_active_scope', () => {
+    setMock({ asset: ASSET, showCurrentSection: true, price: PRICE })
+    renderAssetSummaryTab('active')
+    expect(screen.queryByText('Realized (Shares Only)')).not.toBeInTheDocument()
+  })
+
+  it('renders_positive_realized_gain_loss_shares_only_in_green_for_historic_scope', () => {
+    setMock({
+      asset: { ...ASSET, quantity: 0, realizedGainLossSharesOnly: 75 },
+      showCurrentSection: false,
+      portfolioWeight: 100,
+    })
+    renderAssetSummaryTab('historic')
+    const label = screen.getByText('Realized (Shares Only)')
+    expect(label.nextElementSibling).toHaveClass('asset-summary__value--green')
+  })
+
+  it('renders_negative_realized_gain_loss_shares_only_in_red_when_shares_only_result_differs_in_sign_from_realized_gain_loss', () => {
+    setMock({
+      asset: { ...ASSET, quantity: 0, realizedGainLoss: 10, realizedGainLossSharesOnly: -40 },
+      showCurrentSection: false,
+      portfolioWeight: 100,
+    })
+    renderAssetSummaryTab('historic')
+    const realizedGainLossLabel = screen.getByText('Realized Gain/Loss')
+    expect(realizedGainLossLabel.nextElementSibling).toHaveClass('asset-summary__value--green')
+    const sharesOnlyLabel = screen.getByText('Realized (Shares Only)')
+    expect(sharesOnlyLabel.nextElementSibling).toHaveClass('asset-summary__value--red')
   })
 
   it('hides_realized_totals_section_for_active_scope', () => {

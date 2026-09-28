@@ -146,6 +146,14 @@ export default function AssetSummaryTab() {
               </span>
             </div>
             <div className="asset-summary__field">
+              <span className="asset-summary__label">Realized (Shares Only)</span>
+              <span
+                className={`asset-summary__value ${signClass(asset.realizedGainLossSharesOnly, 'asset-summary__value')}`}
+              >
+                {formatN2(asset.realizedGainLossSharesOnly)}
+              </span>
+            </div>
+            <div className="asset-summary__field">
               <span className="asset-summary__label">Portfolio Weight</span>
               <span className="asset-summary__value">
                 {portfolioWeight === null ? '—' : formatPercentFraction(portfolioWeight / 100)}

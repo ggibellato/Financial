@@ -76,6 +76,7 @@ const ITEM_1: PortfolioAssetSummaryItemDto = {
   totalSold: 0,
   totalInvested: 2500,
   realizedGainLoss: 0,
+  realizedGainLossSharesOnly: 0,
   portfolioWeight: 23.4,
   marketValue: null,
   costOfUnitsHeld: 2500,
@@ -163,9 +164,28 @@ describe('PortfolioHoldingsTab', () => {
     setPortfolioMock({ items: [ITEM_1], rowPrices: [IDLE_ROW_PRICE] })
     renderComponent('historic')
     expect(screen.getByText('Realized Gain/Loss')).toBeInTheDocument()
+    expect(screen.getByText('Realized (Shares Only)')).toBeInTheDocument()
     expect(screen.getByText('Sold Price')).toBeInTheDocument()
     expect(screen.queryByText('Current Value')).not.toBeInTheDocument()
     expect(screen.queryByText('Current Price')).not.toBeInTheDocument()
+  })
+
+  it('renders_realized_gain_loss_shares_only_column_header_immediately_after_realized_gain_loss_in_historic_scope', () => {
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [ITEM_1], rowPrices: [IDLE_ROW_PRICE] })
+    renderComponent('historic')
+    const headers = screen.getAllByRole('columnheader')
+    const realizedIndex = headers.findIndex(h => h.textContent === 'Realized Gain/Loss')
+    const sharesOnlyIndex = headers.findIndex(h => h.textContent === 'Realized (Shares Only)')
+    expect(realizedIndex).toBeGreaterThanOrEqual(0)
+    expect(sharesOnlyIndex).toBe(realizedIndex + 1)
+  })
+
+  it('does_not_render_realized_gain_loss_shares_only_column_in_active_scope', () => {
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [ITEM_1], rowPrices: [LOADING_ROW_PRICE] })
+    renderComponent('active')
+    expect(screen.queryByText('Realized (Shares Only)')).not.toBeInTheDocument()
   })
 
   it('renders_asset_row_with_correctly_formatted_values', () => {
@@ -231,6 +251,44 @@ describe('PortfolioHoldingsTab', () => {
     expect(input.value).toBe('-70.00')
   })
 
+  it('renders_realized_gain_loss_shares_only_value_from_dto_field_for_historic_asset', () => {
+    const item: PortfolioAssetSummaryItemDto = {
+      ...ITEM_1,
+      realizedGainLoss: 280,
+      totalCredits: 30,
+      realizedGainLossSharesOnly: 999,
+    }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item], rowPrices: [IDLE_ROW_PRICE] })
+    renderComponent('historic')
+    const cell = screen.getByText('ALZR11').closest('tr')!
+    expect(within(cell).getByText(formatN2(999))).toBeInTheDocument()
+  })
+
+  it('renders_footer_realized_gain_loss_shares_only_sum', () => {
+    const item1: PortfolioAssetSummaryItemDto = { ...ITEM_1, realizedGainLossSharesOnly: 250 }
+    const item2: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'MXRF11', realizedGainLossSharesOnly: -25 }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item1, item2], rowPrices: [IDLE_ROW_PRICE, IDLE_ROW_PRICE] })
+    const { container } = renderComponent('historic')
+    const input = container.querySelector('[data-label="Realized (Shares Only)"] + input') as HTMLInputElement
+    expect(input.value).toBe('225.00')
+  })
+
+  it('applies_positive_or_negative_color_class_to_realized_gain_loss_shares_only_independent_of_realized_gain_loss_sign', () => {
+    const positiveItem: PortfolioAssetSummaryItemDto = { ...ITEM_1, realizedGainLoss: -10, realizedGainLossSharesOnly: 40 }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [positiveItem], rowPrices: [IDLE_ROW_PRICE] })
+    const { container, unmount } = renderComponent('historic')
+    expect(container.querySelector('.portfolio-holdings__profit--green')?.textContent).toBe(formatN2(40))
+    unmount()
+
+    const negativeItem: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'MXRF11', realizedGainLoss: 10, realizedGainLossSharesOnly: -40 }
+    setPortfolioMock({ items: [negativeItem], rowPrices: [IDLE_ROW_PRICE] })
+    const { container: container2 } = renderComponent('historic')
+    expect(container2.querySelector('.portfolio-holdings__profit--red')?.textContent).toBe(formatN2(-40))
+  })
+
   it('renders_sold_price_for_historic_asset', () => {
     const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, averageSellPrice: 115.5 }
     setAggregatedMock({ summary: SUMMARY })
@@ -246,7 +304,7 @@ describe('PortfolioHoldingsTab', () => {
     renderComponent('historic')
     // rows[0]/[1] are the two header rows; rows[2] is the single data row.
     const dataRow = screen.getAllByRole('row')[2]
-    const cell = within(dataRow).getAllByRole('cell')[8] // "Sold Price" column
+    const cell = within(dataRow).getAllByRole('cell')[9] // "Sold Price" column
     expect(cell.textContent?.replace('Sold Price:', '')).toBe('—')
   })
 
@@ -286,8 +344,8 @@ describe('PortfolioHoldingsTab', () => {
     renderComponent('historic')
     // rows[0]/[1] are the two header rows; rows[2] is the single data row.
     const cells = within(screen.getAllByRole('row')[2]).getAllByRole('cell')
-    expect(cells[9].textContent?.replace('Profit %:', '')).toBe('—') // "Profit %" column
-    expect(cells[10].textContent?.replace('Profit % w/ Credits:', '')).toBe('—') // "Profit % w/ Credits" column
+    expect(cells[10].textContent?.replace('Profit %:', '')).toBe('—') // "Profit %" column
+    expect(cells[11].textContent?.replace('Profit % w/ Credits:', '')).toBe('—') // "Profit % w/ Credits" column
   })
 
   it('renders_historic_xirr_from_the_resolved_row_rate', () => {
@@ -894,6 +952,29 @@ describe('PortfolioHoldingsTab', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Realized Gain/Loss' }))
     expect(screen.getByRole('columnheader', { name: 'Realized Gain/Loss' })).toHaveAttribute('aria-sort', 'ascending')
+  })
+
+  it('sorts_rows_by_realized_gain_loss_shares_only_ascending_then_descending_independently_of_realized_gain_loss', () => {
+    const item1: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'AAA11', realizedGainLossSharesOnly: 50 }
+    const item2: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'BBB11', realizedGainLossSharesOnly: -20 }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item1, item2], rowPrices: [IDLE_ROW_PRICE, IDLE_ROW_PRICE] })
+    renderComponent('historic')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Realized (Shares Only)' }))
+    expect(screen.getByRole('columnheader', { name: 'Realized (Shares Only)' })).toHaveAttribute('aria-sort', 'ascending')
+    expect(screen.getByRole('columnheader', { name: 'Realized Gain/Loss' })).toHaveAttribute('aria-sort', 'none')
+
+    let rows = screen.getAllByRole('row')
+    expect(within(rows[2]).getAllByRole('cell')[0].textContent?.replace('Asset Name:', '')).toBe('BBB11')
+    expect(within(rows[3]).getAllByRole('cell')[0].textContent?.replace('Asset Name:', '')).toBe('AAA11')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Realized (Shares Only)' }))
+    expect(screen.getByRole('columnheader', { name: 'Realized (Shares Only)' })).toHaveAttribute('aria-sort', 'descending')
+
+    rows = screen.getAllByRole('row')
+    expect(within(rows[2]).getAllByRole('cell')[0].textContent?.replace('Asset Name:', '')).toBe('AAA11')
+    expect(within(rows[3]).getAllByRole('cell')[0].textContent?.replace('Asset Name:', '')).toBe('BBB11')
   })
 
   it('clicking_each_remaining_sortable_header_engages_that_columns_sort', () => {
