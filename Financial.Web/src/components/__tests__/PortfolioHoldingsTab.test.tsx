@@ -76,6 +76,7 @@ const ITEM_1: PortfolioAssetSummaryItemDto = {
   totalSold: 0,
   totalInvested: 2500,
   realizedGainLoss: 0,
+  realizedGainLossSharesOnly: 0,
   portfolioWeight: 23.4,
   marketValue: null,
   costOfUnitsHeld: 2500,

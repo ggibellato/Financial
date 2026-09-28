@@ -504,6 +504,10 @@
             "format": "double",
             "type": "number"
           },
+          "realizedGainLossSharesOnly": {
+            "format": "double",
+            "type": "number"
+          },
           "taxJurisdictions": {
             "items": {
               "type": "string"
@@ -3964,6 +3968,10 @@
             ]
           },
           "realizedGainLoss": {
+            "format": "double",
+            "type": "number"
+          },
+          "realizedGainLossSharesOnly": {
             "format": "double",
             "type": "number"
           },
