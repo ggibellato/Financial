@@ -35,6 +35,7 @@ public class PortfolioAssetSummaryRowViewModel : ViewModelBase
     public decimal TotalBought { get; }
     public decimal TotalInvested { get; }
     public decimal RealizedGainLoss { get; }
+    public decimal RealizedGainLossSharesOnly { get; }
     public decimal? PortfolioWeight { get; }
     public decimal TotalCredits { get; }
     public IReadOnlyList<AssetCashFlowDTO> CashFlows { get; }
@@ -112,6 +113,10 @@ public class PortfolioAssetSummaryRowViewModel : ViewModelBase
     public bool RealizedGainLossIsPositive => RealizedGainLoss > 0;
     public bool RealizedGainLossIsNegative => RealizedGainLoss < 0;
 
+    public string DisplayRealizedGainLossSharesOnly => RealizedGainLossSharesOnly.ToString("N2");
+    public bool RealizedGainLossSharesOnlyIsPositive => RealizedGainLossSharesOnly > 0;
+    public bool RealizedGainLossSharesOnlyIsNegative => RealizedGainLossSharesOnly < 0;
+
     public string DisplaySoldPrice => AverageSellPrice.HasValue ? AverageSellPrice.Value.ToString("N2") : "—";
 
     // Realized capital gain alone (credits excluded), matching the active-scope semantic
@@ -154,6 +159,7 @@ public class PortfolioAssetSummaryRowViewModel : ViewModelBase
         TotalBought = dto.TotalBought;
         TotalInvested = dto.TotalInvested;
         RealizedGainLoss = dto.RealizedGainLoss;
+        RealizedGainLossSharesOnly = dto.RealizedGainLossSharesOnly;
         PortfolioWeight = dto.PortfolioWeight;
         TotalCredits = dto.TotalCredits;
         CashFlows = dto.CashFlows;

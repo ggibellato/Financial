@@ -42,6 +42,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private decimal _totalSold;
     private decimal _totalCredits;
     private decimal _realizedGainLoss;
+    private decimal _realizedGainLossSharesOnly;
     private decimal? _realizedPortfolioWeight;
     private decimal _todayCurrentValue;
     private string _todayCurrentValueAsOf = string.Empty;
@@ -60,6 +61,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private CancellationTokenSource? _rowPriceCts;
     private decimal _footerTotalInvested;
     private decimal _footerRealizedGainLoss;
+    private decimal _footerRealizedGainLossSharesOnly;
     private decimal _footerTotalCredits;
     private decimal _footerCurrentMonthCredits;
     private string _footerCurrentMonthLabel = string.Empty;
@@ -140,6 +142,12 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     {
         get => _realizedGainLoss;
         private set => SetProperty(ref _realizedGainLoss, value);
+    }
+
+    public decimal RealizedGainLossSharesOnly
+    {
+        get => _realizedGainLossSharesOnly;
+        private set => SetProperty(ref _realizedGainLossSharesOnly, value);
     }
 
     public bool HasCreditsContext
@@ -400,6 +408,11 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         get => _footerRealizedGainLoss;
         private set => SetProperty(ref _footerRealizedGainLoss, value);
     }
+    public decimal FooterRealizedGainLossSharesOnly
+    {
+        get => _footerRealizedGainLossSharesOnly;
+        private set => SetProperty(ref _footerRealizedGainLossSharesOnly, value);
+    }
     public decimal FooterTotalCredits { get => _footerTotalCredits; private set => SetProperty(ref _footerTotalCredits, value); }
     public decimal FooterCurrentMonthCredits
     {
@@ -526,6 +539,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
 
         FooterTotalInvested = summary.TotalInvested;
         FooterRealizedGainLoss = assetItems.Sum(i => i.RealizedGainLoss);
+        FooterRealizedGainLossSharesOnly = assetItems.Sum(i => i.RealizedGainLossSharesOnly);
         FooterTotalCredits = summary.TotalCredits;
         FooterCurrentMonthCredits = assetItems.Sum(i => i.CurrentMonthCredits);
         FooterCurrentMonthLabel = "Credits " + DateTime.Today.ToString("MMM yyyy", CultureInfo.InvariantCulture);
@@ -578,6 +592,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         TotalSold = details.TotalSold;
         TotalCredits = details.TotalCredits;
         RealizedGainLoss = details.RealizedGainLoss;
+        RealizedGainLossSharesOnly = details.RealizedGainLossSharesOnly;
         RealizedPortfolioWeight = realizedPortfolioWeight;
         HasCreditsContext = true;
         ApplyValuation(details);
@@ -601,6 +616,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         PortfolioAssetSummaryRows.Clear();
         FooterTotalInvested = 0m;
         FooterRealizedGainLoss = 0m;
+        FooterRealizedGainLossSharesOnly = 0m;
         FooterTotalCredits = 0m;
         FooterCurrentMonthCredits = 0m;
         FooterCurrentMonthLabel = string.Empty;
@@ -982,6 +998,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         TotalSold = 0;
         TotalCredits = 0;
         RealizedGainLoss = 0;
+        RealizedGainLossSharesOnly = 0;
         RealizedPortfolioWeight = null;
         _cashFlowsWithCredits = Array.Empty<AssetCashFlowDTO>();
         _cashFlowsWithoutCredits = Array.Empty<AssetCashFlowDTO>();
