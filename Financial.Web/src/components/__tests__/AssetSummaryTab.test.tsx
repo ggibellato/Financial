@@ -293,7 +293,7 @@ describe('AssetSummaryTab', () => {
     expect(screen.getByText('Portfolio Weight')).toBeInTheDocument()
     expect(screen.queryByText('Current')).not.toBeInTheDocument()
     expect(screen.getByText('XIRR')).toBeInTheDocument()
-    expect(screen.getByText('XIRR w/ Credits')).toBeInTheDocument()
+    expect(screen.getByText('XIRR (Shares only)')).toBeInTheDocument()
   })
 
   it('renders_dash_for_historic_xirr_while_not_yet_computed', () => {
@@ -305,6 +305,8 @@ describe('AssetSummaryTab', () => {
     renderAssetSummaryTab('historic')
     const xirrLabel = screen.getByText('XIRR')
     expect(xirrLabel.nextElementSibling?.textContent).toBe('—')
+    const xirrSharesOnlyLabel = screen.getByText('XIRR (Shares only)')
+    expect(xirrSharesOnlyLabel.nextElementSibling?.textContent).toBe('—')
   })
 
   it('renders_positive_realized_gain_loss_in_green_for_historic_scope', () => {

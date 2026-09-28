@@ -91,18 +91,9 @@
                                Foreground="{Binding AssetDetails.RealizedGainLoss, Converter={StaticResource SignedValueToBrushConverter}}"
                                Margin="10,5"
                                Visibility="{Binding AssetDetails.IsHistoricScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                    <TextBlock Grid.Row="8" Grid.Column="2" Text="Portfolio Weight:" FontWeight="Bold" Margin="20,5,0,5"
+                    <TextBlock Grid.Row="8" Grid.Column="2" Text="Realized (Shares Only):" FontWeight="Bold" Margin="20,5,0,5"
                                Visibility="{Binding AssetDetails.IsHistoricScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
                     <TextBlock Grid.Row="8" Grid.Column="3"
-                               Text="{Binding AssetDetails.DisplayRealizedPortfolioWeight, Mode=OneWay}"
-                               TextAlignment="Right"
-                               FontFamily="Consolas"
-                               Margin="10,5"
-                               Visibility="{Binding AssetDetails.IsHistoricScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
-
-                    <TextBlock Grid.Row="9" Grid.Column="0" Text="Realized (Shares Only):" FontWeight="Bold" Margin="0,5"
-                               Visibility="{Binding AssetDetails.IsHistoricScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                    <TextBlock Grid.Row="9" Grid.Column="1"
                                Text="{Binding AssetDetails.RealizedGainLossSharesOnly, Mode=OneWay, StringFormat=N2}"
                                TextAlignment="Right"
                                FontFamily="Consolas"
@@ -110,22 +101,31 @@
                                Margin="10,5"
                                Visibility="{Binding AssetDetails.IsHistoricScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
-                    <TextBlock Grid.Row="10" Grid.Column="0" Text="XIRR:" FontWeight="Bold" Margin="0,5"
+                    <TextBlock Grid.Row="9" Grid.Column="0" Text="XIRR:" FontWeight="Bold" Margin="0,5"
                                Visibility="{Binding AssetDetails.IsHistoricScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                    <TextBlock Grid.Row="10" Grid.Column="1"
+                    <TextBlock Grid.Row="9" Grid.Column="1"
+                               Text="{Binding AssetDetails.RealizedXirrWithCredits, Mode=OneWay, StringFormat=P2, TargetNullValue='—'}"
+                               TextAlignment="Right"
+                               FontFamily="Consolas"
+                               Foreground="{Binding AssetDetails.RealizedXirrWithCredits, Converter={StaticResource SignedValueToBrushConverter}}"
+                               Margin="10,5"
+                               Visibility="{Binding AssetDetails.IsHistoricScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                    <TextBlock Grid.Row="9" Grid.Column="2" Text="XIRR (Shares only):" FontWeight="Bold" Margin="20,5,0,5"
+                               Visibility="{Binding AssetDetails.IsHistoricScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                    <TextBlock Grid.Row="9" Grid.Column="3"
                                Text="{Binding AssetDetails.RealizedXirr, Mode=OneWay, StringFormat=P2, TargetNullValue='—'}"
                                TextAlignment="Right"
                                FontFamily="Consolas"
                                Foreground="{Binding AssetDetails.RealizedXirr, Converter={StaticResource SignedValueToBrushConverter}}"
                                Margin="10,5"
                                Visibility="{Binding AssetDetails.IsHistoricScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                    <TextBlock Grid.Row="10" Grid.Column="2" Text="XIRR w/ Credits:" FontWeight="Bold" Margin="20,5,0,5"
+
+                    <TextBlock Grid.Row="10" Grid.Column="0" Text="Portfolio Weight:" FontWeight="Bold" Margin="0,5"
                                Visibility="{Binding AssetDetails.IsHistoricScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                    <TextBlock Grid.Row="10" Grid.Column="3"
-                               Text="{Binding AssetDetails.RealizedXirrWithCredits, Mode=OneWay, StringFormat=P2, TargetNullValue='—'}"
+                    <TextBlock Grid.Row="10" Grid.Column="1"
+                               Text="{Binding AssetDetails.DisplayRealizedPortfolioWeight, Mode=OneWay}"
                                TextAlignment="Right"
                                FontFamily="Consolas"
-                               Foreground="{Binding AssetDetails.RealizedXirrWithCredits, Converter={StaticResource SignedValueToBrushConverter}}"
                                Margin="10,5"
                                Visibility="{Binding AssetDetails.IsHistoricScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
