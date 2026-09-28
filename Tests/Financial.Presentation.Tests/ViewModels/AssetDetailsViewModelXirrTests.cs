@@ -32,6 +32,7 @@ public class AssetDetailsViewModelXirrTests
     private static AssetDetailsDTO BuildAssetDetails(
         decimal totalCredits = 0m,
         decimal realizedGainLoss = 0m,
+        decimal realizedGainLossSharesOnly = 0m,
         decimal? marketValue = null,
         decimal costOfUnitsHeld = 1000m,
         decimal? unrealisedGain = null,
@@ -47,6 +48,7 @@ public class AssetDetailsViewModelXirrTests
         AveragePrice = 1000m,
         TotalCredits = totalCredits,
         RealizedGainLoss = realizedGainLoss,
+        RealizedGainLossSharesOnly = realizedGainLossSharesOnly,
         MarketValue = marketValue,
         CostOfUnitsHeld = costOfUnitsHeld,
         UnrealisedGain = unrealisedGain,
@@ -154,6 +156,27 @@ public class AssetDetailsViewModelXirrTests
         vm.Clear();
 
         vm.RealizedGainLoss.Should().Be(0m);
+    }
+
+    [Fact]
+    public void LoadAssetDetails_SetsRealizedGainLossSharesOnly_FromDto()
+    {
+        var vm = BuildViewModel();
+
+        vm.LoadAssetDetails(BuildAssetDetails(realizedGainLoss: 62m, realizedGainLossSharesOnly: 25m));
+
+        vm.RealizedGainLossSharesOnly.Should().Be(25m);
+    }
+
+    [Fact]
+    public void Clear_ResetsRealizedGainLossSharesOnlyToZero()
+    {
+        var vm = BuildViewModel();
+        vm.LoadAssetDetails(BuildAssetDetails(realizedGainLossSharesOnly: 25m));
+
+        vm.Clear();
+
+        vm.RealizedGainLossSharesOnly.Should().Be(0m);
     }
 
     [Fact]

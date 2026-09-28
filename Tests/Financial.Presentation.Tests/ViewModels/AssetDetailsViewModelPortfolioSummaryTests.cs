@@ -53,6 +53,7 @@ public class AssetDetailsViewModelPortfolioSummaryTests
         decimal currentMonthCredits = 0m,
         decimal? estimatedAnnualCredits = null,
         decimal realizedGainLoss = 0m,
+        decimal realizedGainLossSharesOnly = 0m,
         decimal? marketValue = null)
     {
         return new PortfolioAssetSummaryItemDTO
@@ -65,6 +66,7 @@ public class AssetDetailsViewModelPortfolioSummaryTests
             TotalSold = 0m,
             TotalInvested = totalInvested,
             RealizedGainLoss = realizedGainLoss,
+            RealizedGainLossSharesOnly = realizedGainLossSharesOnly,
             PortfolioWeight = 50m,
             TotalCredits = totalCredits,
             CurrentMonthCredits = currentMonthCredits,
@@ -411,6 +413,15 @@ public class AssetDetailsViewModelPortfolioSummaryTests
     }
 
     [Fact]
+    public void LoadPortfolioSummary_SetsFooterRealizedGainLossSharesOnly_SumOfRows()
+    {
+        var vm = BuildViewModel();
+        var items = new[] { BuildItem(realizedGainLossSharesOnly: 80m), BuildItem(realizedGainLossSharesOnly: -20m) };
+        vm.LoadPortfolioSummary("Broker", "Portfolio", new AggregatedSummaryDTO(), [], items);
+        vm.FooterRealizedGainLossSharesOnly.Should().Be(60m);
+    }
+
+    [Fact]
     public void LoadPortfolioSummary_SetsFooterTotalCredits_FromServerSummary_NotClientSum()
     {
         var vm = BuildViewModel();
@@ -484,13 +495,14 @@ public class AssetDetailsViewModelPortfolioSummaryTests
     public void Clear_AfterLoadPortfolioSummary_ResetsFooterProperties()
     {
         var vm = BuildViewModel();
-        var items = new[] { BuildItem(totalInvested: 1000m, totalCredits: 50m, currentMonthCredits: 10m, estimatedAnnualCredits: 600m, realizedGainLoss: 200m) };
+        var items = new[] { BuildItem(totalInvested: 1000m, totalCredits: 50m, currentMonthCredits: 10m, estimatedAnnualCredits: 600m, realizedGainLoss: 200m, realizedGainLossSharesOnly: 150m) };
         vm.LoadPortfolioSummary("Broker", "Portfolio", new AggregatedSummaryDTO(), [], items);
 
         vm.Clear();
 
         vm.FooterTotalInvested.Should().Be(0m);
         vm.FooterRealizedGainLoss.Should().Be(0m);
+        vm.FooterRealizedGainLossSharesOnly.Should().Be(0m);
         vm.FooterTotalCredits.Should().Be(0m);
         vm.FooterCurrentMonthCredits.Should().Be(0m);
         vm.FooterCurrentMonthLabel.Should().Be(string.Empty);
