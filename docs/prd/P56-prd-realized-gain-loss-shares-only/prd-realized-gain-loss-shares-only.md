@@ -150,13 +150,13 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Realized (Shares Only) domain calculation and API exposure
-- [ ] `Asset.RealizedGainLossSharesOnly` equals the sum of `GainLoss` across active `DisposalRecords`, with `Credits` entirely excluded
-- [ ] For an asset with non-zero credits, `Asset.RealizedGainLoss - Asset.RealizedGainLossSharesOnly` equals the sum of that asset's `Credit.Value`
-- [ ] `Asset.RealizedGainLoss`'s existing value and formula are unchanged
-- [ ] `PortfolioAssetSummaryItemDTO.RealizedGainLossSharesOnly` is populated by `PortfolioAssetSummaryBuilder` and matches the corresponding `Asset.RealizedGainLossSharesOnly`
-- [ ] `AssetDetailsDTO.RealizedGainLossSharesOnly` is populated by `NavigationService` and matches the corresponding `Asset.RealizedGainLossSharesOnly`
-- [ ] The OpenAPI contract snapshot includes `realizedGainLossSharesOnly` on both affected schemas, and `OpenApiContractTests` passes against the regenerated snapshot
-- [ ] `Financial.Web/src/api/generated/openapi.ts` is regenerated and includes the new field; `npm run build` (tsc -b) succeeds
+- [x] `Asset.RealizedGainLossSharesOnly` equals the sum of `GainLoss` across active `DisposalRecords`, with `Credits` entirely excluded
+- [x] For an asset with non-zero credits, `Asset.RealizedGainLoss - Asset.RealizedGainLossSharesOnly` equals the sum of that asset's `Credit.Value`
+- [x] `Asset.RealizedGainLoss`'s existing value and formula are unchanged
+- [x] `PortfolioAssetSummaryItemDTO.RealizedGainLossSharesOnly` is populated by `PortfolioAssetSummaryBuilder` and matches the corresponding `Asset.RealizedGainLossSharesOnly`
+- [x] `AssetDetailsDTO.RealizedGainLossSharesOnly` is populated by `NavigationService` and matches the corresponding `Asset.RealizedGainLossSharesOnly`
+- [x] The OpenAPI contract snapshot includes `realizedGainLossSharesOnly` on both affected schemas, and `OpenApiContractTests` passes against the regenerated snapshot
+- [x] `Financial.Web/src/api/generated/openapi.ts` is regenerated and includes the new field; `npm run build` (tsc -b) succeeds
 
 ### F02. Realized (Shares Only) in Financial.Web
 - [ ] Portfolio Holdings grid (Historic scope) shows a "Realized (Shares Only)" column immediately after "Realized Gain/Loss"
