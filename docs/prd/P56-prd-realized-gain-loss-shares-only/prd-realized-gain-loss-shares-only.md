@@ -159,15 +159,15 @@ graph TD
 - [x] `Financial.Web/src/api/generated/openapi.ts` is regenerated and includes the new field; `npm run build` (tsc -b) succeeds
 
 ### F02. Realized (Shares Only) in Financial.Web
-- [ ] Portfolio Holdings grid (Historic scope) shows a "Realized (Shares Only)" column immediately after "Realized Gain/Loss"
-- [ ] Each row's "Realized (Shares Only)" value equals `realizedGainLossSharesOnly` as served by the API for that asset
-- [ ] The "Realized (Shares Only)" column is sortable (ascending/descending) independently of the "Realized Gain/Loss" column
-- [ ] The Portfolio Holdings footer shows a "Realized (Shares Only)" total equal to the sum of `realizedGainLossSharesOnly` across all listed historic assets
-- [ ] Positive "Realized (Shares Only)" values render in the same "positive" color class as positive "Realized Gain/Loss" values; negative values render in the same "negative" color class
-- [ ] The "Realized (Shares Only)" column/footer cell does not render in Active scope, matching the existing "Realized Gain/Loss" column's visibility
-- [ ] Asset Summary panel (historic, closed position) shows a "Realized (Shares Only)" field directly below "Realized Gain/Loss" within the existing "Realized" section, equal to `asset.realizedGainLossSharesOnly`
-- [ ] Asset Summary panel does not show "Realized (Shares Only)" when the "Realized" section itself is hidden (open/active position)
-- [ ] Existing "Realized Gain/Loss" value, sort behavior, and footer sum are unchanged by this feature (no regression in existing tests)
+- [x] Portfolio Holdings grid (Historic scope) shows a "Realized (Shares Only)" column immediately after "Realized Gain/Loss"
+- [x] Each row's "Realized (Shares Only)" value equals `realizedGainLossSharesOnly` as served by the API for that asset
+- [x] The "Realized (Shares Only)" column is sortable (ascending/descending) independently of the "Realized Gain/Loss" column
+- [x] The Portfolio Holdings footer shows a "Realized (Shares Only)" total equal to the sum of `realizedGainLossSharesOnly` across all listed historic assets
+- [x] Positive "Realized (Shares Only)" values render in the same "positive" color class as positive "Realized Gain/Loss" values; negative values render in the same "negative" color class
+- [x] The "Realized (Shares Only)" column/footer cell does not render in Active scope, matching the existing "Realized Gain/Loss" column's visibility
+- [x] Asset Summary panel (historic, closed position) shows a "Realized (Shares Only)" field directly below "Realized Gain/Loss" within the existing "Realized" section, equal to `asset.realizedGainLossSharesOnly`
+- [x] Asset Summary panel does not show "Realized (Shares Only)" when the "Realized" section itself is hidden (open/active position)
+- [x] Existing "Realized Gain/Loss" value, sort behavior, and footer sum are unchanged by this feature (no regression in existing tests)
 
 ### F03. Realized (Shares Only) parity in Financial.App (WPF)
 - [ ] `PortfolioAssetSummaryRowViewModel` exposes a `RealizedGainLossSharesOnly` value set from `dto.RealizedGainLossSharesOnly` and a formatted `DisplayRealizedGainLossSharesOnly` string
@@ -180,6 +180,6 @@ graph TD
 - [ ] Existing `RealizedGainLoss`/`FooterRealizedGainLoss` values and behavior are unchanged by this feature (no regression in existing WPF tests)
 
 ### Cross-Feature Integration
-- [ ] `realizedGainLossSharesOnly` computed by F01 flows unchanged into Financial.Web's Portfolio Holdings grid and Asset Summary panel (F02) with no client-side re-derivation
+- [x] `realizedGainLossSharesOnly` computed by F01 flows unchanged into Financial.Web's Portfolio Holdings grid and Asset Summary panel (F02) with no client-side re-derivation
 - [ ] `RealizedGainLossSharesOnly` computed by F01 flows unchanged into Financial.App's Portfolio Holdings-equivalent grid and asset-details view (F03) with no client-side re-derivation
 - [ ] For the same asset and the same underlying data, F02 (Web) and F03 (WPF) display numerically identical "Realized (Shares Only)" values, since both read the same F01-computed field rather than each deriving it independently
