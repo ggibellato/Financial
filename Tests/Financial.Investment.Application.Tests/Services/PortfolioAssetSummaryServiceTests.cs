@@ -735,6 +735,19 @@ public class PortfolioAssetSummaryServiceTests
     }
 
     [Fact]
+    public void GetPortfolioAssetsSummary_ActiveScope_ComputesRealizedGainLossSharesOnly()
+    {
+        var asset = MakeAsset("TEST", "TST", "BVMF");
+        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 5m, 60m, 0m));
+        asset.RecordTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 5m, 50m, 0m));
+        _repository.AssetsByBrokerPortfolio = [asset];
+
+        var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
+
+        result[0].RealizedGainLossSharesOnly.Should().Be(-50m);
+    }
+
+    [Fact]
     public void GetPortfolioAssetsSummary_HistoricScope_QueriesHistoricScopeFromRepository()
     {
         _repository.AssetsByBrokerPortfolio = [MakeAsset("TEST", "TST", "BVMF")];
@@ -774,6 +787,20 @@ public class PortfolioAssetSummaryServiceTests
 
         // RealizedGainLoss = TotalSold - TotalBought + TotalCredits = 250 - 300 + 20 = -30
         result[0].RealizedGainLoss.Should().Be(-30m);
+    }
+
+    [Fact]
+    public void GetPortfolioAssetsSummary_HistoricScope_ComputesRealizedGainLossSharesOnly()
+    {
+        var asset = MakeAsset("CLOSEDASSET", "CLOSEDASSET", "BVMF");
+        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 5m, 60m, 0m));
+        asset.RecordTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 5m, 50m, 0m));
+        asset.AddCredit(Credit.Create(DateTime.Today, Credit.CreditType.Dividend, 20m));
+        _repository.AssetsByBrokerPortfolio = [asset];
+
+        var result = CreateService().GetPortfolioAssetsSummary("XPI", "Uncategorized", InvestmentScope.Historic);
+
+        result[0].RealizedGainLossSharesOnly.Should().Be(-50m, "TotalSold - TotalBought, credits excluded: 250 - 300 = -50");
     }
 
     [Fact]

@@ -708,6 +708,19 @@ public class AssetTests
     }
 
     [Fact]
+    public void RealizedGainLossSharesOnly_ExcludesCredits_MatchesDisposalRecordSumAlone()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 3, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 5, 1), Transaction.TransactionType.Buy, 15m, 100m, 0m));
+        asset.RecordTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 110m, 0m));
+        asset.AddCredit(Credit.Create(new DateTime(2021, 6, 1), Credit.CreditType.Dividend, 12m));
+
+        asset.RealizedGainLossSharesOnly.Should().Be(50m, "550 proceeds minus 5x100 cost basis, with the 12 credit excluded");
+        asset.RealizedGainLoss.Should().Be(62m);
+    }
+
+    [Fact]
     public void RecordTransaction_UnderFifo_TransactionsRealizedCapitalGainReflectsDisposalRecordsNotWeightedAverage()
     {
         var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
