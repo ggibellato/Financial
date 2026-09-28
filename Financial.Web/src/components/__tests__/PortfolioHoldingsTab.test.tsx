@@ -247,7 +247,7 @@ describe('PortfolioHoldingsTab', () => {
     renderComponent('historic')
     // rows[0]/[1] are the two header rows; rows[2] is the single data row.
     const dataRow = screen.getAllByRole('row')[2]
-    const cell = within(dataRow).getAllByRole('cell')[8] // "Sold Price" column
+    const cell = within(dataRow).getAllByRole('cell')[9] // "Sold Price" column
     expect(cell.textContent?.replace('Sold Price:', '')).toBe('—')
   })
 
@@ -287,8 +287,8 @@ describe('PortfolioHoldingsTab', () => {
     renderComponent('historic')
     // rows[0]/[1] are the two header rows; rows[2] is the single data row.
     const cells = within(screen.getAllByRole('row')[2]).getAllByRole('cell')
-    expect(cells[9].textContent?.replace('Profit %:', '')).toBe('—') // "Profit %" column
-    expect(cells[10].textContent?.replace('Profit % w/ Credits:', '')).toBe('—') // "Profit % w/ Credits" column
+    expect(cells[10].textContent?.replace('Profit %:', '')).toBe('—') // "Profit %" column
+    expect(cells[11].textContent?.replace('Profit % w/ Credits:', '')).toBe('—') // "Profit % w/ Credits" column
   })
 
   it('renders_historic_xirr_from_the_resolved_row_rate', () => {
