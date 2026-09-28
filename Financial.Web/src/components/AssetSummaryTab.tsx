@@ -154,21 +154,21 @@ export default function AssetSummaryTab() {
               </span>
             </div>
             <div className="asset-summary__field">
-              <span className="asset-summary__label">Portfolio Weight</span>
-              <span className="asset-summary__value">
-                {portfolioWeight === null ? '—' : formatPercentFraction(portfolioWeight / 100)}
+              <span className="asset-summary__label">XIRR</span>
+              <span className={`asset-summary__value ${xirrWithCreditsClass}`}>
+                {xirrWithCredits === null ? '—' : formatPercentFraction(xirrWithCredits)}
               </span>
             </div>
             <div className="asset-summary__field">
-              <span className="asset-summary__label">XIRR</span>
+              <span className="asset-summary__label">XIRR (Shares only)</span>
               <span className={`asset-summary__value ${xirrClass}`}>
                 {xirr === null ? '—' : formatPercentFraction(xirr)}
               </span>
             </div>
             <div className="asset-summary__field">
-              <span className="asset-summary__label">XIRR w/ Credits</span>
-              <span className={`asset-summary__value ${xirrWithCreditsClass}`}>
-                {xirrWithCredits === null ? '—' : formatPercentFraction(xirrWithCredits)}
+              <span className="asset-summary__label">Portfolio Weight</span>
+              <span className="asset-summary__value">
+                {portfolioWeight === null ? '—' : formatPercentFraction(portfolioWeight / 100)}
               </span>
             </div>
           </>
