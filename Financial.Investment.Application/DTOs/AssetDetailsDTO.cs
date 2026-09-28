@@ -44,6 +44,8 @@ public class AssetDetailsDTO
     /// </summary>
     public decimal RealizedGainLoss { get; set; }
 
+    public decimal RealizedGainLossSharesOnly { get; set; }
+
     public decimal? MarketValue { get; set; }
     public decimal CostOfUnitsHeld { get; set; }
     public decimal? UnrealisedGain { get; set; }

@@ -19,6 +19,7 @@ public sealed class PortfolioAssetSummaryItemDTO
     public decimal TotalSold { get; init; }
     public decimal TotalInvested { get; init; }
     public decimal RealizedGainLoss { get; init; }
+    public decimal RealizedGainLossSharesOnly { get; init; }
     public decimal? PortfolioWeight { get; init; }
     public decimal? MarketValue { get; init; }
     public decimal CostOfUnitsHeld { get; init; }

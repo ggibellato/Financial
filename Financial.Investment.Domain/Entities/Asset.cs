@@ -39,6 +39,9 @@ public class Asset
     public decimal RealizedGainLoss =>
         DisposalRecords.Where(d => d.Status == DisposalRecordStatus.Active).Sum(d => d.GainLoss) + Credits.Sum(c => c.Value);
 
+    public decimal RealizedGainLossSharesOnly =>
+        DisposalRecords.Where(d => d.Status == DisposalRecordStatus.Active).Sum(d => d.GainLoss);
+
     public PositionType PositionType => Quantity switch
     {
         > 0 => PositionType.Long,
