@@ -88,14 +88,15 @@ public sealed class PaymentsDueService : IPaymentsDueService
     {
         try
         {
-            var paidStatementKeys = _repository.GetCardStatements()
-                .Where(statement => statement.IsPaid)
-                .Select(statement => (statement.CreditCard.Id, statement.Year, statement.Month))
-                .ToHashSet();
+            var statements = _repository.GetCardStatements().ToList();
 
             return _repository.GetCreditCards()
                 .Where(card => card.NextInvoiceDueDate is not null)
-                .Where(card => !paidStatementKeys.Contains((card.Id, card.NextInvoiceDueDate!.Value.Year, card.NextInvoiceDueDate!.Value.Month)))
+                .Where(card => !statements.Any(s =>
+                    s.CreditCard.Id == card.Id
+                    && s.Year == card.NextInvoiceDueDate!.Value.Year
+                    && s.Month == card.NextInvoiceDueDate!.Value.Month
+                    && s.IsPaid))
                 .Select(card => TryBuildPayment(CreditCardType, card.Name, card.NextInvoiceDueDate!.Value, today))
                 .Where(payment => payment is not null)
                 .Select(payment => payment!)
