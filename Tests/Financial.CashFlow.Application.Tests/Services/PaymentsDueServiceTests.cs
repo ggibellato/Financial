@@ -47,6 +47,17 @@ public class PaymentsDueServiceTests
         return card;
     }
 
+    private void AddStatement(CreditCard card, DateOnly period, bool paid = false)
+    {
+        var statement = CardStatement.Create(card, period.Year, period.Month);
+        if (paid)
+        {
+            statement.MarkPaid();
+        }
+
+        _repository.AddCardStatement(statement);
+    }
+
     [Fact]
     public void Constructor_WithNullRepository_Throws()
     {
@@ -129,11 +140,10 @@ public class PaymentsDueServiceTests
     [Fact]
     public void GetPaymentsDue_CreditCardWithPaidStatementForInvoicePeriod_IsExcluded()
     {
-        var card = CreateCard("Nubank", PinnedToday.AddDays(3));
+        var dueDate = PinnedToday.AddDays(3);
+        var card = CreateCard("Nubank", dueDate);
         _repository.AddCreditCard(card);
-        var statement = CardStatement.Create(card, PinnedToday.AddDays(3).Year, PinnedToday.AddDays(3).Month);
-        statement.MarkPaid();
-        _repository.AddCardStatement(statement);
+        AddStatement(card, dueDate, paid: true);
 
         var result = _sut.GetPaymentsDue();
 
@@ -143,10 +153,10 @@ public class PaymentsDueServiceTests
     [Fact]
     public void GetPaymentsDue_CreditCardWithUnpaidStatementForInvoicePeriod_IsIncluded()
     {
-        var card = CreateCard("Nubank", PinnedToday.AddDays(3));
+        var dueDate = PinnedToday.AddDays(3);
+        var card = CreateCard("Nubank", dueDate);
         _repository.AddCreditCard(card);
-        var statement = CardStatement.Create(card, PinnedToday.AddDays(3).Year, PinnedToday.AddDays(3).Month);
-        _repository.AddCardStatement(statement);
+        AddStatement(card, dueDate);
 
         var result = _sut.GetPaymentsDue();
 
@@ -159,10 +169,7 @@ public class PaymentsDueServiceTests
         var dueDate = PinnedToday.AddDays(3);
         var card = CreateCard("Nubank", dueDate);
         _repository.AddCreditCard(card);
-        var previousMonth = dueDate.AddMonths(-1);
-        var statement = CardStatement.Create(card, previousMonth.Year, previousMonth.Month);
-        statement.MarkPaid();
-        _repository.AddCardStatement(statement);
+        AddStatement(card, dueDate.AddMonths(-1), paid: true);
 
         var result = _sut.GetPaymentsDue();
 

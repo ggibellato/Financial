@@ -22,6 +22,9 @@ public class CardStatement
             IsPaid = false
         };
 
+    public bool IsFor(Guid creditCardId, int year, int month) =>
+        CreditCard.Id == creditCardId && Year == year && Month == month;
+
     public void MarkPaid()
     {
         IsPaid = true;

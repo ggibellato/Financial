@@ -92,12 +92,9 @@ public sealed class PaymentsDueService : IPaymentsDueService
 
             return _repository.GetCreditCards()
                 .Where(card => card.NextInvoiceDueDate is not null)
-                .Where(card => !statements.Any(s =>
-                    s.CreditCard.Id == card.Id
-                    && s.Year == card.NextInvoiceDueDate!.Value.Year
-                    && s.Month == card.NextInvoiceDueDate!.Value.Month
-                    && s.IsPaid))
-                .Select(card => TryBuildPayment(CreditCardType, card.Name, card.NextInvoiceDueDate!.Value, today))
+                .Select(card => (Card: card, DueDate: card.NextInvoiceDueDate!.Value))
+                .Where(x => !statements.Any(s => s.IsFor(x.Card.Id, x.DueDate.Year, x.DueDate.Month) && s.IsPaid))
+                .Select(x => TryBuildPayment(CreditCardType, x.Card.Name, x.DueDate, today))
                 .Where(payment => payment is not null)
                 .Select(payment => payment!)
                 .ToList();
