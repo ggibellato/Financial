@@ -173,9 +173,9 @@ graph TD
 - [x] `PortfolioAssetSummaryRowViewModel` exposes a `RealizedGainLossSharesOnly` value set from `dto.RealizedGainLossSharesOnly` and a formatted `DisplayRealizedGainLossSharesOnly` string
 - [x] `AssetDetailsViewModel` exposes a `RealizedGainLossSharesOnly` value set from `details.RealizedGainLossSharesOnly` for the current asset
 - [x] `AssetDetailsViewModel` exposes a `FooterRealizedGainLossSharesOnly` aggregate equal to `assetItems.Sum(i => i.RealizedGainLossSharesOnly)`, reset to `0m` alongside `FooterRealizedGainLoss` on data reload/clear
-- [ ] The WPF grid/view bound to `PortfolioAssetSummaryRowViewModel` shows "Realized (Shares Only)" immediately after "Realized Gain/Loss", right-aligned, with matching positive/negative coloring
-- [ ] The WPF asset-details view shows "Realized (Shares Only)" next to the existing "Realized Gain/Loss" field
-- [ ] The WPF footer/summary area shows the "Realized (Shares Only)" aggregate next to the existing "Realized Gain/Loss" footer value
+- [x] The WPF grid/view bound to `PortfolioAssetSummaryRowViewModel` shows "Realized (Shares Only)" immediately after "Realized Gain/Loss", right-aligned, with matching positive/negative coloring
+- [x] The WPF asset-details view shows "Realized (Shares Only)" next to the existing "Realized Gain/Loss" field
+- [x] The WPF footer/summary area shows the "Realized (Shares Only)" aggregate next to the existing "Realized Gain/Loss" footer value
 - [x] For the same underlying data, WPF's "Realized (Shares Only)" values (row, asset-details, and footer) numerically match Financial.Web's corresponding values
 - [x] Existing `RealizedGainLoss`/`FooterRealizedGainLoss` values and behavior are unchanged by this feature (no regression in existing WPF tests)
 
