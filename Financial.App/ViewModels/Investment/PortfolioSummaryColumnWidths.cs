@@ -13,6 +13,7 @@ public class PortfolioSummaryColumnWidths : ViewModelBase
     private double _totalInvested = 110;
     private double _portfolioWeight = 90;
     private double _totalCredits = 100;
+    private double _realizedGainLossSharesOnly = 100;
     private double _currentValue = 100;
     private double _averagePrice = 100;
     private double _currentPrice = 100;
@@ -31,6 +32,7 @@ public class PortfolioSummaryColumnWidths : ViewModelBase
     public double TotalInvested { get => _totalInvested; set => SetProperty(ref _totalInvested, value); }
     public double PortfolioWeight { get => _portfolioWeight; set => SetProperty(ref _portfolioWeight, value); }
     public double TotalCredits { get => _totalCredits; set => SetProperty(ref _totalCredits, value); }
+    public double RealizedGainLossSharesOnly { get => _realizedGainLossSharesOnly; set => SetProperty(ref _realizedGainLossSharesOnly, value); }
     public double CurrentValue { get => _currentValue; set => SetProperty(ref _currentValue, value); }
     public double AveragePrice { get => _averagePrice; set => SetProperty(ref _averagePrice, value); }
     public double CurrentPrice { get => _currentPrice; set => SetProperty(ref _currentPrice, value); }

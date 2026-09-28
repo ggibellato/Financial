@@ -449,6 +449,26 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Header="Realized (Shares Only)" SortMemberPath="RealizedGainLossSharesOnly" Width="{Binding Source={StaticResource ColWidths}, Path=RealizedGainLossSharesOnly, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding DisplayRealizedGainLossSharesOnly}" TextAlignment="Right" Padding="8" VerticalAlignment="Center">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding RealizedGainLossSharesOnlyIsPositive}" Value="True">
+                                                                <Setter Property="Foreground" Value="Green"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding RealizedGainLossSharesOnlyIsNegative}" Value="True">
+                                                                <Setter Property="Foreground" Value="Red"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
                                 <DataGridTextColumn Header="Total Credits" Binding="{Binding DisplayTotalCredits}" Width="{Binding Source={StaticResource ColWidths}, Path=TotalCredits, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>
@@ -579,6 +599,12 @@
                             <TextBlock Text="{Binding AssetDetails.FooterRealizedGainLoss, StringFormat=N2}"
                                        FontFamily="Consolas" FontWeight="Bold"
                                        Foreground="{Binding AssetDetails.FooterRealizedGainLoss, Converter={StaticResource SignedValueToBrushConverter}}"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,20,0">
+                            <TextBlock Text="Realized (Shares Only):" Margin="0,0,5,0"/>
+                            <TextBlock Text="{Binding AssetDetails.FooterRealizedGainLossSharesOnly, StringFormat=N2}"
+                                       FontFamily="Consolas" FontWeight="Bold"
+                                       Foreground="{Binding AssetDetails.FooterRealizedGainLossSharesOnly, Converter={StaticResource SignedValueToBrushConverter}}"/>
                         </StackPanel>
                         <local:PortfolioFooterStat Margin="0,0,20,0"
                                                     Label="{Binding AssetDetails.FooterCurrentMonthLabel, StringFormat='{}{0}:'}"
