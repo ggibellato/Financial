@@ -8296,6 +8296,10 @@ export interface components {
             /** Format: date */
             date: string;
             description: string;
+            /** Format: uuid */
+            expenseCategoryId?: null | string;
+            /** Format: uuid */
+            paymentSourceBankId?: null | string;
         };
         XirrResultDTO: {
             /** Format: double */

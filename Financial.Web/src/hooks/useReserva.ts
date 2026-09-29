@@ -487,6 +487,8 @@ export function useReserva(): ReservaData {
         date: withdrawalDate,
         description: withdrawalDescription,
         confirmed,
+        paymentSourceBankId: null,
+        expenseCategoryId: null,
       })
       .then(() => {
         setStoredDefault(WITHDRAWAL_DATE_KEY, withdrawalDate)

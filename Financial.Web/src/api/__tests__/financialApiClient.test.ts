@@ -534,7 +534,15 @@ describe('financialApiClient', () => {
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
     const error = await client
-      .postWithdrawal({ bucketId: 'b3', amount: 100, date: '2026-07-01', description: 'Test', confirmed: false })
+      .postWithdrawal({
+        bucketId: 'b3',
+        amount: 100,
+        date: '2026-07-01',
+        description: 'Test',
+        confirmed: false,
+        paymentSourceBankId: null,
+        expenseCategoryId: null,
+      })
       .catch((e: unknown) => e)
 
     expect(error).toBeInstanceOf(ApiError)
@@ -612,6 +620,8 @@ describe('financialApiClient', () => {
       date: '2026-07-01',
       description: 'Groceries top-up',
       confirmed: false,
+      paymentSourceBankId: null,
+      expenseCategoryId: null,
     }
     const responseBody: ReserveMovementDto = {
       id: 'm2',
