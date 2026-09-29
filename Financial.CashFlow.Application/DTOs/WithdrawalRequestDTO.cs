@@ -13,4 +13,10 @@ public sealed class WithdrawalRequestDTO
 
     /// <summary>Set true to proceed despite an overdraft warning.</summary>
     public bool Confirmed { get; init; }
+
+    /// <summary>Bank the withdrawal passes through. Omit for a direct withdrawal; requires <see cref="ExpenseCategoryId"/> when set.</summary>
+    public Guid? PaymentSourceBankId { get; init; }
+
+    /// <summary>Category of the expense recorded on the bank. Required when <see cref="PaymentSourceBankId"/> is set, and rejected without it.</summary>
+    public Guid? ExpenseCategoryId { get; init; }
 }
