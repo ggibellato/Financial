@@ -310,10 +310,7 @@ public sealed class ReserveService : IReserveService
 
         DescriptionValidator.EnsureWithinLimit(request.Description);
 
-        if (!EntityIdResolver.TryResolve(request.PaymentSourceBankId, _repository.GetBanks(), b => b.Id, out var bank))
-        {
-            throw new ArgumentException($"Payment source '{request.PaymentSourceBankId}' is not recognized.");
-        }
+        var bank = CashFlowReferenceResolver.ResolvePaymentSource(_repository.GetBanks(), request.PaymentSourceBankId.Value);
 
         var categories = _repository.GetCategories().ToList();
         var reserva = categories.FirstOrDefault(c => string.Equals(c.Name, Category.ReservaName, StringComparison.OrdinalIgnoreCase))
@@ -327,17 +324,9 @@ public sealed class ReserveService : IReserveService
         ];
     }
 
-    private static Category ResolveExpenseCategory(IReadOnlyCollection<Category> categories, Guid categoryId, Category reserva)
+    private static Category ResolveExpenseCategory(IEnumerable<Category> categories, Guid categoryId, Category reserva)
     {
-        if (!EntityIdResolver.TryResolve(categoryId, categories, c => c.Id, out var category))
-        {
-            throw new ArgumentException($"Category '{categoryId}' is not recognized.");
-        }
-
-        if (!category!.Active)
-        {
-            throw new ArgumentException($"Category '{category.Name}' is inactive and cannot be used for new entries.");
-        }
+        var category = CashFlowReferenceResolver.ResolveActiveCategory(categories, categoryId);
 
         if (category.IsInvestment || category.Id == reserva.Id)
         {

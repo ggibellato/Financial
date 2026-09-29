@@ -164,7 +164,7 @@ public class ReserveEndpointsTests : ApiEndpointTests
     [Fact]
     public async Task PostWithdrawal_WithBankAndCategory_CreatesMovementAndTwoExpenses()
     {
-        var response = await Client.PostAsJsonAsync("/api/v1/financial/reserve/withdrawals", BankWithdrawal());
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/reserve/withdrawals", BankWithdrawal(confirmed: true));
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var expenses = await Client.GetFromJsonAsync<List<ExpenseDTO>>("/api/v1/financial/expenses/month/2026/7");
@@ -180,7 +180,7 @@ public class ReserveEndpointsTests : ApiEndpointTests
     {
         var response = await Client.PostAsJsonAsync(
             "/api/v1/financial/reserve/withdrawals",
-            BankWithdrawal(withBank: false, withCategory: false));
+            BankWithdrawal(withBank: false, withCategory: false, confirmed: true));
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var expenses = await Client.GetFromJsonAsync<List<ExpenseDTO>>("/api/v1/financial/expenses/month/2026/7");
@@ -226,14 +226,14 @@ public class ReserveEndpointsTests : ApiEndpointTests
     }
 
     private static WithdrawalRequestDTO BankWithdrawal(
-        bool withBank = true, bool withCategory = true, Guid? categoryId = null, decimal amount = 250m) =>
+        bool withBank = true, bool withCategory = true, Guid? categoryId = null, decimal amount = 250m, bool confirmed = false) =>
         new()
         {
             BucketId = ArianaId,
             Amount = amount,
             Date = new DateOnly(2026, 7, 2),
             Description = "Car service",
-            Confirmed = amount <= 250m,
+            Confirmed = confirmed,
             PaymentSourceBankId = withBank ? ChaseId : null,
             ExpenseCategoryId = withCategory ? categoryId ?? MercadoCategoryId : null
         };
