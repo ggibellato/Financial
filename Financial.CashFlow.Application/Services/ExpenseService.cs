@@ -212,26 +212,11 @@ public sealed class ExpenseService : IExpenseService
     {
         DescriptionValidator.EnsureWithinLimit(description);
 
-        if (!EntityIdResolver.TryResolve(categoryId, _repository.GetCategories(), c => c.Id, out var category))
-        {
-            throw new ArgumentException($"Category '{categoryId}' is not recognized.");
-        }
+        var category = CashFlowReferenceResolver.ResolveActiveCategory(_repository.GetCategories(), categoryId);
 
-        if (!category!.Active)
-        {
-            throw new ArgumentException($"Category '{category.Name}' is inactive and cannot be used for new entries.");
-        }
-
-        Bank? parsedPaymentSourceBank = null;
-        if (paymentSourceBankId is not null)
-        {
-            if (!EntityIdResolver.TryResolve(paymentSourceBankId, _repository.GetBanks(), b => b.Id, out var bank))
-            {
-                throw new ArgumentException($"Payment source '{paymentSourceBankId}' is not recognized.");
-            }
-
-            parsedPaymentSourceBank = bank!;
-        }
+        var parsedPaymentSourceBank = paymentSourceBankId is { } bankId
+            ? CashFlowReferenceResolver.ResolvePaymentSource(_repository.GetBanks(), bankId)
+            : null;
 
         CreditCardEntity? parsedCreditCard = null;
         if (creditCardId is not null)

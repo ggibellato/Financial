@@ -508,6 +508,231 @@ public class ReserveServiceTests
     }
 
     [Fact]
+    public async Task PostWithdrawalAsync_WithoutBank_CreatesNoExpenses()
+    {
+        var repository = CreateBankRepository();
+
+        await CreateService(repository).PostWithdrawalAsync(BankWithdrawal(repository, withBank: false, withCategory: false));
+
+        using (new AssertionScope())
+        {
+            repository.ReserveMovements.Should().HaveCount(2);
+            repository.Expenses.Should().BeEmpty();
+        }
+    }
+
+    [Fact]
+    public async Task PostWithdrawalAsync_WithBankAndCategory_CreatesMovementAndTwoExpenses()
+    {
+        var repository = CreateBankRepository();
+        var request = BankWithdrawal(repository);
+
+        await CreateService(repository).PostWithdrawalAsync(request);
+
+        using (new AssertionScope())
+        {
+            repository.ReserveMovements.Should().ContainSingle(m => m.Amount == -request.Amount);
+            repository.Expenses.Should().HaveCount(2);
+            repository.Expenses.Should().OnlyContain(e =>
+                e.PaymentSourceBank!.Id == request.PaymentSourceBankId
+                && e.CreditCard == null
+                && e.Date == request.Date
+                && e.Description == request.Description);
+            repository.Expenses.Should().ContainSingle(e => e.Category.Name == Category.ReservaName && e.Value == -request.Amount);
+            repository.Expenses.Should().ContainSingle(e => e.Category.Id == request.ExpenseCategoryId && e.Value == request.Amount);
+            repository.SaveChangesCallCount.Should().Be(1);
+        }
+    }
+
+    [Fact]
+    public async Task PostWithdrawalAsync_BankWithoutCategory_Throws()
+    {
+        var repository = CreateBankRepository();
+
+        var act = async () => await CreateService(repository).PostWithdrawalAsync(BankWithdrawal(repository, withCategory: false));
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*Category is required when a bank is selected*");
+        AssertNothingSaved(repository);
+    }
+
+    [Fact]
+    public async Task PostWithdrawalAsync_CategoryWithoutBank_Throws()
+    {
+        var repository = CreateBankRepository();
+
+        var act = async () => await CreateService(repository).PostWithdrawalAsync(BankWithdrawal(repository, withBank: false));
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*bank is required*");
+        AssertNothingSaved(repository);
+    }
+
+    [Fact]
+    public async Task PostWithdrawalAsync_UnknownBank_Throws()
+    {
+        var repository = CreateBankRepository();
+
+        var act = async () => await CreateService(repository).PostWithdrawalAsync(BankWithdrawal(repository, bankId: Guid.NewGuid()));
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*Payment source*not recognized*");
+        AssertNothingSaved(repository);
+    }
+
+    [Fact]
+    public async Task PostWithdrawalAsync_UnknownCategory_Throws()
+    {
+        var repository = CreateBankRepository();
+
+        var act = async () => await CreateService(repository).PostWithdrawalAsync(BankWithdrawal(repository, categoryId: Guid.NewGuid()));
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*Category*not recognized*");
+        AssertNothingSaved(repository);
+    }
+
+    [Fact]
+    public async Task PostWithdrawalAsync_InactiveCategory_Throws()
+    {
+        var repository = CreateBankRepository();
+        var inactive = Category.Create("Old", isActive: false);
+        repository.Categories.Add(inactive);
+
+        var act = async () => await CreateService(repository).PostWithdrawalAsync(BankWithdrawal(repository, categoryId: inactive.Id));
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*inactive*");
+        AssertNothingSaved(repository);
+    }
+
+    [Theory]
+    [InlineData("Investimento")]
+    [InlineData(Category.ReservaName)]
+    public async Task PostWithdrawalAsync_InvestmentOrReservaCategory_Throws(string categoryName)
+    {
+        var repository = CreateBankRepository();
+        var category = repository.Categories.First(c => c.Name == categoryName);
+
+        var act = async () => await CreateService(repository).PostWithdrawalAsync(BankWithdrawal(repository, categoryId: category.Id));
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*cannot be used for a withdrawal expense*");
+        AssertNothingSaved(repository);
+    }
+
+    [Fact]
+    public async Task PostWithdrawalAsync_ReservaCategoryInactive_StillSucceeds()
+    {
+        var repository = CreateBankRepository();
+        var reserva = repository.Categories.First(c => c.Name == Category.ReservaName);
+        reserva.Update(reserva.Name, active: false, isInvestment: false, isTithe: false);
+
+        await CreateService(repository).PostWithdrawalAsync(BankWithdrawal(repository));
+
+        repository.Expenses.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task PostWithdrawalAsync_ReservaCategoryMissing_Throws()
+    {
+        var repository = CreateBankRepository();
+        var request = BankWithdrawal(repository);
+        repository.Categories.RemoveAll(c => c.Name == Category.ReservaName);
+
+        var act = async () => await CreateService(repository).PostWithdrawalAsync(request);
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*not configured*");
+        AssertNothingSaved(repository);
+    }
+
+    [Fact]
+    public async Task PostWithdrawalAsync_BankPathOverdraft_RequiresConfirmation()
+    {
+        var repository = CreateBankRepository();
+        var request = BankWithdrawal(repository, amount: 500m);
+        var service = CreateService(repository);
+
+        var act = async () => await service.PostWithdrawalAsync(request);
+
+        await act.Should().ThrowAsync<OverdraftConfirmationRequiredException>();
+        AssertNothingSaved(repository, movements: 1);
+
+        await service.PostWithdrawalAsync(BankWithdrawal(repository, amount: 500m, confirmed: true));
+        repository.Expenses.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task PostWithdrawalAsync_BankPathDescriptionTooLong_Throws()
+    {
+        var repository = CreateBankRepository();
+        var request = BankWithdrawal(repository, description: new string('x', 201));
+
+        var act = async () => await CreateService(repository).PostWithdrawalAsync(request);
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*must not exceed*");
+        AssertNothingSaved(repository);
+    }
+
+    [Fact]
+    public async Task PostWithdrawalAsync_BankPathSaveFails_RollsBackMovementAndBothExpenses()
+    {
+        var repository = CreateBankRepository();
+        repository.ThrowOnNextSave = true;
+
+        var act = async () => await CreateService(repository).PostWithdrawalAsync(BankWithdrawal(repository));
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+        AssertNothingSaved(repository, movements: 1);
+    }
+
+    [Fact]
+    public async Task PostWithdrawalAsync_BankPathFailure_LogsNoDescriptionOrExceptionMessage()
+    {
+        var repository = CreateBankRepository();
+        var logger = new RecordingLogger<ReserveService>();
+        var service = new ReserveService(repository, _tracer, logger);
+        var request = BankWithdrawal(repository, withCategory: false, description: "Secret dentist");
+
+        var act = async () => await service.PostWithdrawalAsync(request);
+
+        await act.Should().ThrowAsync<ArgumentException>();
+        logger.Entries.Should().Contain(e => e.Message == "PostWithdrawal started");
+        logger.Entries.Should().OnlyContain(e => !e.Message.Contains("Secret dentist") && !e.Message.Contains("Category is required"));
+    }
+
+    private static StubCashFlowRepository CreateBankRepository()
+    {
+        var repository = new StubCashFlowRepository(
+            seedDefaultBanks: true, seedDefaultReserveBuckets: true, seedDefaultCategories: true);
+        repository.Seed("Investimento", 100m);
+        return repository;
+    }
+
+    private static WithdrawalRequestDTO BankWithdrawal(
+        StubCashFlowRepository repository,
+        bool withBank = true,
+        bool withCategory = true,
+        Guid? bankId = null,
+        Guid? categoryId = null,
+        decimal amount = 30m,
+        bool confirmed = false,
+        string description = "Dentist") =>
+        new()
+        {
+            BucketId = repository.ReserveBuckets.First(b => b.Name == "Investimento").Id,
+            Amount = amount,
+            Date = new DateOnly(2026, 7, 1),
+            Description = description,
+            Confirmed = confirmed,
+            PaymentSourceBankId = withBank ? bankId ?? repository.Banks.First(b => b.Name == "Chase").Id : null,
+            ExpenseCategoryId = withCategory ? categoryId ?? repository.Categories.First(c => c.Name == "Saude").Id : null
+        };
+
+    private static void AssertNothingSaved(StubCashFlowRepository repository, int movements = 1)
+    {
+        using (new AssertionScope())
+        {
+            repository.Expenses.Should().BeEmpty();
+            repository.ReserveMovements.Should().HaveCount(movements, "only the seed movement may remain");
+        }
+    }
+
+    [Fact]
     public void GetBucketBalances_WhenRepositoryThrowsUnexpectedly_Rethrows()
     {
         _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");

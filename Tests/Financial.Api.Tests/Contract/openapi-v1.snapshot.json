@@ -5603,6 +5603,20 @@
           },
           "description": {
             "type": "string"
+          },
+          "expenseCategoryId": {
+            "format": "uuid",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "paymentSourceBankId": {
+            "format": "uuid",
+            "type": [
+              "null",
+              "string"
+            ]
           }
         },
         "required": [

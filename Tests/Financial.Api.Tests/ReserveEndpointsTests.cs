@@ -11,6 +11,9 @@ public class ReserveEndpointsTests : ApiEndpointTests
     private static readonly Guid ArianaId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-300000000003");
     private static readonly Guid ArianaIncomeSourceId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-000000000002");
     private static readonly Guid ChaseId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000003");
+    private static readonly Guid MercadoCategoryId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-600000000008");
+    private static readonly Guid InvestimentoCategoryId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-600000000013");
+    private static readonly Guid ReservaCategoryId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-600000000014");
 
     [Fact]
     public async Task PostIncomeSplit_ValidRequest_ReturnsOkWithComputedSplit()
@@ -156,6 +159,91 @@ public class ReserveEndpointsTests : ApiEndpointTests
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var balancesAfter = await Client.GetFromJsonAsync<List<ReserveBucketBalanceDTO>>("/api/v1/financial/reserve/balances");
         balancesAfter!.Single(b => b.BucketName == "Gleison").Balance.Should().Be(gleisonBefore);
+    }
+
+    [Fact]
+    public async Task PostWithdrawal_WithBankAndCategory_CreatesMovementAndTwoExpenses()
+    {
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/reserve/withdrawals", BankWithdrawal(confirmed: true));
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var expenses = await Client.GetFromJsonAsync<List<ExpenseDTO>>("/api/v1/financial/expenses/month/2026/7");
+        expenses.Should().HaveCount(2);
+        expenses.Should().ContainSingle(e => e.CategoryId == ReservaCategoryId && e.Value == -250m && e.PaymentSourceBankId == ChaseId);
+        expenses.Should().ContainSingle(e => e.CategoryId == MercadoCategoryId && e.Value == 250m && e.PaymentSourceBankId == ChaseId);
+        var movements = await Client.GetFromJsonAsync<List<ReserveMovementDTO>>("/api/v1/financial/reserve/movements");
+        movements.Should().ContainSingle(m => m.Amount == -250m);
+    }
+
+    [Fact]
+    public async Task PostWithdrawal_WithoutBank_CreatesNoExpenses()
+    {
+        var response = await Client.PostAsJsonAsync(
+            "/api/v1/financial/reserve/withdrawals",
+            BankWithdrawal(withBank: false, withCategory: false, confirmed: true));
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var expenses = await Client.GetFromJsonAsync<List<ExpenseDTO>>("/api/v1/financial/expenses/month/2026/7");
+        expenses.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task PostWithdrawal_BankWithoutCategory_ReturnsBadRequestAndSavesNothing()
+    {
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/reserve/withdrawals", BankWithdrawal(withCategory: false));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await response.Content.ReadAsStringAsync()).Should().Contain("Category is required when a bank is selected");
+        await AssertNothingCreatedAsync();
+    }
+
+    [Theory]
+    [InlineData("unknown")]
+    [InlineData("investment")]
+    [InlineData("reserva")]
+    public async Task PostWithdrawal_InvalidCategory_ReturnsBadRequestAndSavesNothing(string kind)
+    {
+        var categoryId = kind switch
+        {
+            "investment" => InvestimentoCategoryId,
+            "reserva" => ReservaCategoryId,
+            _ => Guid.NewGuid()
+        };
+
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/reserve/withdrawals", BankWithdrawal(categoryId: categoryId));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        await AssertNothingCreatedAsync();
+    }
+
+    [Fact]
+    public async Task PostWithdrawal_BankPathOverdraftUnconfirmed_ReturnsConflictAndSavesNothing()
+    {
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/reserve/withdrawals", BankWithdrawal(amount: 99999m));
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        await AssertNothingCreatedAsync();
+    }
+
+    private static WithdrawalRequestDTO BankWithdrawal(
+        bool withBank = true, bool withCategory = true, Guid? categoryId = null, decimal amount = 250m, bool confirmed = false) =>
+        new()
+        {
+            BucketId = ArianaId,
+            Amount = amount,
+            Date = new DateOnly(2026, 7, 2),
+            Description = "Car service",
+            Confirmed = confirmed,
+            PaymentSourceBankId = withBank ? ChaseId : null,
+            ExpenseCategoryId = withCategory ? categoryId ?? MercadoCategoryId : null
+        };
+
+    private async Task AssertNothingCreatedAsync()
+    {
+        var expenses = await Client.GetFromJsonAsync<List<ExpenseDTO>>("/api/v1/financial/expenses/month/2026/7");
+        var movements = await Client.GetFromJsonAsync<List<ReserveMovementDTO>>("/api/v1/financial/reserve/movements");
+        expenses.Should().BeEmpty();
+        movements.Should().BeEmpty();
     }
 
     [Fact]

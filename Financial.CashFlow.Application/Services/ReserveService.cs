@@ -115,6 +115,8 @@ public sealed class ReserveService : IReserveService
                 throw new ArgumentException($"Reserve bucket '{request.BucketId}' is not recognized.");
             }
 
+            var bankExpenses = BuildBankExpenses(request);
+
             var currentBalance = GetBalance(bucket!);
             if (request.Amount > currentBalance && !request.Confirmed)
             {
@@ -128,11 +130,21 @@ public sealed class ReserveService : IReserveService
                 () => _repository.ApplyAndSaveAsync(() =>
                 {
                     _repository.AddReserveMovement(movement);
+                    foreach (var expense in bankExpenses)
+                    {
+                        _repository.AddExpense(expense);
+                    }
+
                     return true;
                 }),
                 () => _repository.ApplyAndSaveAsync(() =>
                 {
                     _repository.DeleteReserveMovement(movement.Id);
+                    foreach (var expense in bankExpenses)
+                    {
+                        _repository.DeleteExpense(expense.Id);
+                    }
+
                     return false;
                 })).ConfigureAwait(false);
 
@@ -277,6 +289,51 @@ public sealed class ReserveService : IReserveService
     {
         _logger.LogInformation("{Operation} started", operationName);
         return _tracer.StartServiceSpan("CashFlow", nameof(ReserveService), operationName, EntityType);
+    }
+
+    private List<Expense> BuildBankExpenses(WithdrawalRequestDTO request)
+    {
+        if (request.PaymentSourceBankId is null && request.ExpenseCategoryId is null)
+        {
+            return [];
+        }
+
+        if (request.PaymentSourceBankId is null)
+        {
+            throw new ArgumentException("A bank is required when an expense category is given.");
+        }
+
+        if (request.ExpenseCategoryId is null)
+        {
+            throw new ArgumentException("Category is required when a bank is selected.");
+        }
+
+        DescriptionValidator.EnsureWithinLimit(request.Description);
+
+        var bank = CashFlowReferenceResolver.ResolvePaymentSource(_repository.GetBanks(), request.PaymentSourceBankId.Value);
+
+        var categories = _repository.GetCategories().ToList();
+        var reserva = categories.FirstOrDefault(c => string.Equals(c.Name, Category.ReservaName, StringComparison.OrdinalIgnoreCase))
+            ?? throw new ArgumentException($"Category '{Category.ReservaName}' is not configured.");
+        var expenseCategory = ResolveExpenseCategory(categories, request.ExpenseCategoryId.Value, reserva);
+
+        return
+        [
+            Expense.Create(request.Date, request.Description, -request.Amount, reserva, bank, creditCard: null),
+            Expense.Create(request.Date, request.Description, request.Amount, expenseCategory, bank, creditCard: null)
+        ];
+    }
+
+    private static Category ResolveExpenseCategory(IEnumerable<Category> categories, Guid categoryId, Category reserva)
+    {
+        var category = CashFlowReferenceResolver.ResolveActiveCategory(categories, categoryId);
+
+        if (category.IsInvestment || category.Id == reserva.Id)
+        {
+            throw new ArgumentException($"Category '{category.Name}' cannot be used for a withdrawal expense.");
+        }
+
+        return category;
     }
 
     private decimal GetBalance(ReserveBucket bucket) =>

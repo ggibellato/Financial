@@ -13,4 +13,8 @@ public sealed class WithdrawalRequestDTO
 
     /// <summary>Set true to proceed despite an overdraft warning.</summary>
     public bool Confirmed { get; init; }
+
+    public Guid? PaymentSourceBankId { get; init; }
+
+    public Guid? ExpenseCategoryId { get; init; }
 }
