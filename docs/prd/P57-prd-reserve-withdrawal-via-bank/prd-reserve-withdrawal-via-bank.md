@@ -213,15 +213,15 @@ graph TD
 - [x] The OpenAPI snapshot and generated TypeScript types are regenerated, committed and pass their freshness tests
 
 ### F02. Web Withdrawal Form (React)
-- [ ] The form shows an optional "Through bank" select, empty by default, listing all banks
-- [ ] Selecting a bank reveals the "Expense category" select preselected to the bucket-named category when one exists
-- [ ] With no matching category, the category stays empty and submit shows "Category is required when a bank is selected."
-- [ ] Clearing the bank hides the category and the request omits both fields
-- [ ] Changing the bucket updates the default category only if the user has not manually chosen one
-- [ ] Submit with a bank sends bank and category identifiers; success closes the form and refreshes the reserve data
-- [ ] Server 400 and 409 responses are shown inline/with the existing confirmation dialog and the entered values are kept
-- [ ] The new fields are keyboard operable, labelled, and show visible focus
-- [ ] `npm run build`, `npm run lint`, `npm test` pass
+- [x] The form shows an optional "Through bank" select, empty by default, listing all banks
+- [x] Selecting a bank reveals the "Expense category" select preselected to the bucket-named category when one exists
+- [x] With no matching category, the category stays empty and submit shows "Category is required when a bank is selected."
+- [x] Clearing the bank hides the category and the request omits both fields
+- [x] Changing the bucket updates the default category only if the user has not manually chosen one
+- [x] Submit with a bank sends bank and category identifiers; success closes the form and refreshes the reserve data
+- [x] Server 400 and 409 responses are shown inline/with the existing confirmation dialog and the entered values are kept
+- [x] The new fields are keyboard operable, labelled, and show visible focus
+- [x] `npm run build`, `npm run lint`, `npm test` pass
 
 ### F03. WPF Withdrawal Form Parity
 - [ ] The WPF form has the same two new fields, in the same order, with the same defaults and show/hide behavior as the web form
