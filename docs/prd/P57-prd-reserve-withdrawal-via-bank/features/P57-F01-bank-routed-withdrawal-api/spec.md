@@ -19,7 +19,6 @@ Complexity: simple (one service method, one DTO, no persistence-shape change, no
 - `Financial.CashFlow.Application/DTOs/WithdrawalRequestDTO.cs` — modified: two optional fields.
 - `Financial.CashFlow.Application/Services/ReserveService.cs` — modified: validation + bank-side expense creation inside `PostWithdrawalAsync`.
 - `Financial.CashFlow.Domain/Entities/Category.cs` — modified: `public const string ReservaName = "Reserva"` (rule lives on the owning entity, per `docs/rules/implementation.md` §Domain rules).
-- `Financial.Api/Controllers/ReserveController.cs` — modified: XML doc for `PostWithdrawal` (Swagger-visible) mentions the new fields.
 - `Tests/Financial.Api.Tests/Contract/openapi-v1.snapshot.json` — regenerated.
 - `Financial.Web/src/api/generated/openapi.ts` — regenerated (`npm run generate-api-types`); `types.ts` alias needs no change.
 - `Tests/Financial.CashFlow.Application.Tests/Services/ReserveServiceTests.cs` — modified.
@@ -50,7 +49,7 @@ graph TD
 | Bank validation | Existence only, via `EntityIdResolver` | Require "active" | **Deviation from PRD:** `Bank` has no active/inactive concept in the domain, so the PRD's "active bank" rule cannot be implemented without a new field; existence is the enforceable rule. PRD F01 text is updated to match |
 | Field pairing | Bank without category, or category without bank, throws `ArgumentException` (mapped to 400) | Ignore a lone category | Prevents silently dropping user input |
 | Description length | `DescriptionValidator.EnsureWithinLimit` on the description when a bank is supplied | Validate always | Expense enforces the 200-char limit; the reserve movement path is unchanged for direct withdrawals |
-| No comments on new code | None | XML docs on DTO members | Project no-comments policy; the DTO's existing doc comments stay, new members get a `<summary>` only because Swagger reads DTO docs (tooling exception) |
+| No comments on new code | None, including no XML docs on the new DTO members and no controller doc edit | XML docs for Swagger | Project no-comments policy; the regenerated OpenAPI snapshot carries no description text for the new fields, so the tooling exception does not apply |
 
 ## 4. Component Overview
 
@@ -61,7 +60,6 @@ graph TD
 | `Financial.CashFlow.Application/DTOs/WithdrawalRequestDTO.cs` | Modified | Request contract | Add optional `PaymentSourceBankId` (Guid?) and `ExpenseCategoryId` (Guid?) |
 | `Financial.CashFlow.Application/Services/ReserveService.cs` | Modified | Use case | Validate bank/category pairing; resolve bank, chosen category, `Reserva` category; build the 2 expenses; include them in the compensating save. Keep the standard span/log/failure shape; extract validation/creation into small private methods |
 | `Financial.CashFlow.Domain/Entities/Category.cs` | Modified | Domain entity | Add `ReservaName` constant |
-| `Financial.Api/Controllers/ReserveController.cs` | Modified | Endpoint | Update XML docs so the OpenAPI text describes the new optional fields |
 
 **Contract artifacts:**
 

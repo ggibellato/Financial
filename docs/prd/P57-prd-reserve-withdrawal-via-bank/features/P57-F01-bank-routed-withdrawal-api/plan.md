@@ -17,12 +17,10 @@
 
 **4. Bank-side expense creation** - Build the two expenses for the bank path and include them, with the reserve movement, in the existing compensating save so all three are applied or rolled back together.
 
-**5. Controller documentation** - Update the withdrawal endpoint's XML documentation so the generated OpenAPI text describes the new optional fields.
-
 ### Stage 3: Contract Artifacts and Verification
 
-**6. OpenAPI snapshot** - Regenerate the committed snapshot, review that only the two new optional properties changed, and confirm the contract test passes.
+**5. OpenAPI snapshot** - Regenerate the committed snapshot, review that only the two new optional properties changed, and confirm the contract test passes.
 
-**7. Web generated types** - Regenerate the Web API types from the snapshot and commit the result so the freshness test passes.
+**6. Web generated types** - Regenerate the Web API types from the snapshot and commit the result so the freshness test passes.
 
-**8. Tests and Definition of Done** - Add the service and endpoint tests listed in the spec, run the full backend suite and the Web build/tests, and complete the Definition of Done checklist from `docs/rules/implementation.md`, including a comment/XML-doc grep of new code.
+**7. Tests and Definition of Done** - Add the service and endpoint tests listed in the spec, run the full backend suite and the Web build/tests, and complete the Definition of Done checklist from `docs/rules/implementation.md`, including a comment/XML-doc grep of new code.
