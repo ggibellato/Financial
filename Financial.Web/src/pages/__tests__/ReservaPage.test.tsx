@@ -3,12 +3,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import ReservaPage from '../ReservaPage'
 import { ApiError } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { ReserveBucketBalanceDto, ReserveBucketDto, ReserveMovementDto } from '../../api/types'
+import type { BankDto, CategoryDto, ReserveBucketBalanceDto, ReserveBucketDto, ReserveMovementDto } from '../../api/types'
 
 const {
   getReserveBalancesMock,
   getReserveMovementsMock,
   getReserveBucketsMock,
+  getBanksMock,
+  getCategoriesMock,
   postIncomeSplitMock,
   postWithdrawalMock,
   updateReserveMovementMock,
@@ -17,6 +19,8 @@ const {
   getReserveBalancesMock: vi.fn<FinancialApiClient['getReserveBalances']>(),
   getReserveMovementsMock: vi.fn<FinancialApiClient['getReserveMovements']>(),
   getReserveBucketsMock: vi.fn<FinancialApiClient['getReserveBuckets']>(),
+  getBanksMock: vi.fn<FinancialApiClient['getBanks']>(),
+  getCategoriesMock: vi.fn<FinancialApiClient['getCategories']>(),
   postIncomeSplitMock: vi.fn<FinancialApiClient['postIncomeSplit']>(),
   postWithdrawalMock: vi.fn<FinancialApiClient['postWithdrawal']>(),
   updateReserveMovementMock: vi.fn<FinancialApiClient['updateReserveMovement']>(),
@@ -28,6 +32,8 @@ vi.mock('../../api/financialApiClient', () => ({
     getReserveBalances: getReserveBalancesMock,
     getReserveMovements: getReserveMovementsMock,
     getReserveBuckets: getReserveBucketsMock,
+    getBanks: getBanksMock,
+    getCategories: getCategoriesMock,
     postIncomeSplit: postIncomeSplitMock,
     postWithdrawal: postWithdrawalMock,
     updateReserveMovement: updateReserveMovementMock,
@@ -56,11 +62,25 @@ const BUCKETS: ReserveBucketDto[] = [
   { id: 'b4', name: 'Gleison', isActive: true, splitPercentage: 16.67, warning: null },
 ]
 
+const BANKS: BankDto[] = [
+  { id: 'bk1', name: 'Chase', roundUpEnabled: true, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false },
+  { id: 'bk2', name: 'Barclays', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false },
+]
+
+const CATEGORIES: CategoryDto[] = [
+  { id: 'c1', name: 'Ariana', active: true, isInvestment: false, isTithe: false, hasReferences: false },
+  { id: 'c2', name: 'Saude', active: true, isInvestment: false, isTithe: false, hasReferences: false },
+  { id: 'c3', name: 'Investimento', active: true, isInvestment: true, isTithe: false, hasReferences: false },
+  { id: 'c4', name: 'Reserva', active: true, isInvestment: false, isTithe: false, hasReferences: false },
+]
+
 describe('ReservaPage', () => {
   beforeEach(() => {
     getReserveBalancesMock.mockReset()
     getReserveMovementsMock.mockReset()
     getReserveBucketsMock.mockReset()
+    getBanksMock.mockReset()
+    getCategoriesMock.mockReset()
     postIncomeSplitMock.mockReset()
     postWithdrawalMock.mockReset()
     updateReserveMovementMock.mockReset()
@@ -68,6 +88,8 @@ describe('ReservaPage', () => {
     getReserveBalancesMock.mockResolvedValue(BALANCES)
     getReserveMovementsMock.mockResolvedValue(MOVEMENTS)
     getReserveBucketsMock.mockResolvedValue(BUCKETS)
+    getBanksMock.mockResolvedValue(BANKS)
+    getCategoriesMock.mockResolvedValue(CATEGORIES)
     sessionStorage.clear()
   })
 
@@ -235,6 +257,171 @@ describe('ReservaPage', () => {
       }),
     )
     await waitFor(() => expect(screen.getByText('700.00')).toBeInTheDocument())
+  })
+
+  describe('withdrawal through a bank', () => {
+    async function openWithdrawalForm() {
+      render(<ReservaPage />)
+      await waitFor(() => expect(screen.getByRole('button', { name: 'New Withdrawal' })).toBeInTheDocument())
+      fireEvent.click(screen.getByRole('button', { name: 'New Withdrawal' }))
+    }
+
+    function fillRequiredFields() {
+      fireEvent.change(screen.getByLabelText(/^Amount/), { target: { value: '30' } })
+      fireEvent.change(screen.getByLabelText(/^Date/), { target: { value: '2026-07-01' } })
+      fireEvent.change(screen.getByLabelText(/^Description/), { target: { value: 'Dentist' } })
+    }
+
+    const submit = () => fireEvent.click(screen.getByRole('button', { name: 'Add Withdrawal' }))
+
+    it('offers an optional Through bank select listing every bank, empty by default', async () => {
+      await openWithdrawalForm()
+
+      const bankSelect = screen.getByRole('combobox', { name: /^Through bank/ }) as HTMLSelectElement
+      expect(bankSelect.value).toBe('')
+      expect(within(bankSelect).getAllByRole('option').map((o) => o.textContent)).toEqual([
+        'No bank (direct)',
+        'Chase',
+        'Barclays',
+      ])
+    })
+
+    it('offers contextual help explaining Through bank', async () => {
+      await openWithdrawalForm()
+
+      expect(screen.getByRole('button', { name: /Through bank information/ })).toBeInTheDocument()
+    })
+
+    it('shows no category field until a bank is selected', async () => {
+      await openWithdrawalForm()
+      expect(screen.queryByLabelText(/^Expense category/)).not.toBeInTheDocument()
+
+      fireEvent.change(screen.getByRole('combobox', { name: /^Through bank/ }), { target: { value: 'bk1' } })
+
+      expect(screen.getByLabelText(/^Expense category/)).toBeInTheDocument()
+    })
+
+    it('lists only eligible categories and preselects the one named after the bucket', async () => {
+      await openWithdrawalForm()
+      fireEvent.change(screen.getByLabelText(/^Bucket/), { target: { value: 'b3' } })
+
+      fireEvent.change(screen.getByRole('combobox', { name: /^Through bank/ }), { target: { value: 'bk1' } })
+
+      const categorySelect = screen.getByLabelText(/^Expense category/) as HTMLSelectElement
+      expect(categorySelect.value).toBe('c1')
+      expect(within(categorySelect).getAllByRole('option').map((o) => o.textContent)).toEqual([
+        'Select a category',
+        'Ariana',
+        'Saude',
+      ])
+    })
+
+    it('shows the required message under the category when none matches and none is chosen', async () => {
+      await openWithdrawalForm()
+      fillRequiredFields()
+      fireEvent.change(screen.getByRole('combobox', { name: /^Through bank/ }), { target: { value: 'bk1' } })
+
+      submit()
+
+      expect(await screen.findByText('Category is required when a bank is selected.')).toBeInTheDocument()
+      expect(postWithdrawalMock).not.toHaveBeenCalled()
+    })
+
+    it('hides the category and posts null ids after the bank is cleared', async () => {
+      postWithdrawalMock.mockResolvedValue({ ...MOVEMENTS[0], id: 'm9', amount: -30 })
+      await openWithdrawalForm()
+      fillRequiredFields()
+      fireEvent.change(screen.getByRole('combobox', { name: /^Through bank/ }), { target: { value: 'bk1' } })
+      fireEvent.change(screen.getByRole('combobox', { name: /^Through bank/ }), { target: { value: '' } })
+
+      expect(screen.queryByLabelText(/^Expense category/)).not.toBeInTheDocument()
+      submit()
+
+      await waitFor(() =>
+        expect(postWithdrawalMock).toHaveBeenCalledWith(
+          expect.objectContaining({ paymentSourceBankId: null, expenseCategoryId: null }),
+        ),
+      )
+    })
+
+    it('keeps a manually chosen category when the bucket changes', async () => {
+      await openWithdrawalForm()
+      fireEvent.change(screen.getByLabelText(/^Bucket/), { target: { value: 'b3' } })
+      fireEvent.change(screen.getByRole('combobox', { name: /^Through bank/ }), { target: { value: 'bk1' } })
+      fireEvent.change(screen.getByLabelText(/^Expense category/), { target: { value: 'c2' } })
+
+      fireEvent.change(screen.getByLabelText(/^Bucket/), { target: { value: 'b4' } })
+
+      expect((screen.getByLabelText(/^Expense category/) as HTMLSelectElement).value).toBe('c2')
+    })
+
+    it('posts both ids, closes the form and refreshes the reserve data on success', async () => {
+      postWithdrawalMock.mockResolvedValue({ ...MOVEMENTS[0], id: 'm9', amount: -30 })
+      await openWithdrawalForm()
+      fillRequiredFields()
+      fireEvent.change(screen.getByRole('combobox', { name: /^Through bank/ }), { target: { value: 'bk2' } })
+      fireEvent.change(screen.getByLabelText(/^Expense category/), { target: { value: 'c2' } })
+
+      submit()
+
+      await waitFor(() =>
+        expect(postWithdrawalMock).toHaveBeenCalledWith(
+          expect.objectContaining({ paymentSourceBankId: 'bk2', expenseCategoryId: 'c2', confirmed: false }),
+        ),
+      )
+      await waitFor(() => expect(screen.queryByText('New Withdrawal', { selector: 'h2' })).not.toBeInTheDocument())
+      expect(getReserveBalancesMock).toHaveBeenCalledTimes(2)
+    })
+
+    it('shows a server rejection as the general error and keeps the entered values', async () => {
+      postWithdrawalMock.mockRejectedValue(new ApiError('Category is inactive.', 400))
+      await openWithdrawalForm()
+      fillRequiredFields()
+      fireEvent.change(screen.getByRole('combobox', { name: /^Through bank/ }), { target: { value: 'bk1' } })
+      fireEvent.change(screen.getByLabelText(/^Expense category/), { target: { value: 'c2' } })
+
+      submit()
+
+      expect(await screen.findByText('Category is inactive.')).toBeInTheDocument()
+      expect((screen.getByLabelText(/^Description/) as HTMLInputElement).value).toBe('Dentist')
+      expect((screen.getByRole('combobox', { name: /^Through bank/ }) as HTMLSelectElement).value).toBe('bk1')
+      expect((screen.getByLabelText(/^Expense category/) as HTMLSelectElement).value).toBe('c2')
+    })
+
+    it('disables every withdrawal control while saving', async () => {
+      postWithdrawalMock.mockReturnValue(new Promise(() => {}))
+      await openWithdrawalForm()
+      fillRequiredFields()
+      fireEvent.change(screen.getByRole('combobox', { name: /^Through bank/ }), { target: { value: 'bk1' } })
+      fireEvent.change(screen.getByLabelText(/^Expense category/), { target: { value: 'c2' } })
+
+      submit()
+
+      await waitFor(() => expect(screen.getByRole('button', { name: 'Saving...' })).toBeDisabled())
+      for (const label of [/^Date/, /^Bucket/, /^Expense category/, /^Description/, /^Amount/]) {
+        expect(screen.getByLabelText(label)).toBeDisabled()
+      }
+      expect(screen.getByRole('combobox', { name: /^Through bank/ })).toBeDisabled()
+      expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled()
+    })
+
+    it('orders the fields Date, Bucket, Through bank, Expense category, Description, Amount', async () => {
+      await openWithdrawalForm()
+      fireEvent.change(screen.getByRole('combobox', { name: /^Through bank/ }), { target: { value: 'bk1' } })
+
+      const controls = [
+        screen.getByLabelText(/^Date/),
+        screen.getByLabelText(/^Bucket/),
+        screen.getByRole('combobox', { name: /^Through bank/ }),
+        screen.getByLabelText(/^Expense category/),
+        screen.getByLabelText(/^Description/),
+        screen.getByLabelText(/^Amount/),
+      ]
+
+      for (let i = 0; i < controls.length - 1; i += 1) {
+        expect(controls[i].compareDocumentPosition(controls[i + 1]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+      }
+    })
   })
 
   // useReserva no longer prompts; it asks its caller. These two prove the page is the caller

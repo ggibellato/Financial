@@ -1,11 +1,20 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { ApiError } from '../api/apiError'
 import { apiClient } from '../api/financialApiClient'
-import type { IncomeSplitResultDto, ReserveBucketBalanceDto, ReserveBucketDto, ReserveMovementDto } from '../api/types'
+import type {
+  BankDto,
+  CategoryDto,
+  IncomeSplitResultDto,
+  ReserveBucketBalanceDto,
+  ReserveBucketDto,
+  ReserveMovementDto,
+} from '../api/types'
 import { getErrorMessage, todayIsoDate } from '../utils/formatters'
 import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
 import { computeActiveSplitPercentage, isActiveSplitBalanced } from '../utils/reserveBucketSplit'
+import { defaultExpenseCategoryId, eligibleWithdrawalCategories } from '../utils/withdrawalExpenseCategories'
 const BUCKET_REQUIRED_ERROR = 'Bucket is required'
+const EXPENSE_CATEGORY_REQUIRED_ERROR = 'Category is required when a bank is selected.'
 
 const SPLIT_DATE_KEY = 'incomeSplit.date'
 const WITHDRAWAL_DATE_KEY = 'withdrawal.date'
@@ -13,7 +22,13 @@ const WITHDRAWAL_BUCKET_KEY = 'withdrawal.bucketId'
 
 export type SplitFormField = 'splitDate' | 'splitAmount' | 'splitDescription'
 
-export type WithdrawalFormField = 'withdrawalBucketId' | 'withdrawalAmount' | 'withdrawalDate' | 'withdrawalDescription'
+export type WithdrawalFormField =
+  | 'withdrawalBucketId'
+  | 'withdrawalAmount'
+  | 'withdrawalDate'
+  | 'withdrawalDescription'
+  | 'withdrawalBankId'
+  | 'withdrawalExpenseCategoryId'
 
 export type EditMovementField = 'editMovementBucketId' | 'editMovementAmount' | 'editMovementDate' | 'editMovementDescription'
 
@@ -37,6 +52,8 @@ interface ReservaState {
   balances: ReserveBucketBalanceDto[]
   movements: ReserveMovementDto[]
   buckets: ReserveBucketDto[]
+  banks: BankDto[]
+  categories: CategoryDto[]
   isLoading: boolean
   error: string | null
   retryCount: number
@@ -53,6 +70,8 @@ interface ReservaState {
   withdrawalAmount: string
   withdrawalDate: string
   withdrawalDescription: string
+  withdrawalBankId: string
+  withdrawalExpenseCategoryId: string
   isSubmittingWithdrawal: boolean
   withdrawalError: string | null
   withdrawalErrorFields: Partial<Record<WithdrawalFormField, string>>
@@ -72,7 +91,13 @@ type ReservaAction =
   | { type: 'FETCH_START' }
   | {
       type: 'FETCH_SUCCESS'
-      payload: { balances: ReserveBucketBalanceDto[]; movements: ReserveMovementDto[]; buckets?: ReserveBucketDto[] }
+      payload: {
+        balances: ReserveBucketBalanceDto[]
+        movements: ReserveMovementDto[]
+        buckets?: ReserveBucketDto[]
+        banks?: BankDto[]
+        categories?: CategoryDto[]
+      }
     }
   | { type: 'FETCH_ERROR'; payload: string }
   | { type: 'RETRY' }
@@ -109,12 +134,16 @@ const BLANK_WITHDRAWAL_FORM_FIELDS = {
   withdrawalAmount: '',
   withdrawalDate: '',
   withdrawalDescription: '',
+  withdrawalBankId: '',
+  withdrawalExpenseCategoryId: '',
 } as const
 
 const INITIAL_STATE: ReservaState = {
   balances: [],
   movements: [],
   buckets: [],
+  banks: [],
+  categories: [],
   isLoading: true,
   error: null,
   retryCount: 0,
@@ -154,6 +183,8 @@ function reducer(state: ReservaState, action: ReservaAction): ReservaState {
         balances: action.payload.balances,
         movements: action.payload.movements,
         buckets,
+        banks: action.payload.banks ?? state.banks,
+        categories: action.payload.categories ?? state.categories,
         withdrawalBucketId: state.withdrawalBucketId || defaultBucketId(buckets),
       }
     }
@@ -193,7 +224,13 @@ function reducer(state: ReservaState, action: ReservaAction): ReservaState {
         withdrawalErrorFields: {},
       }
     case 'SET_WITHDRAWAL_FIELD':
-      return { ...state, [action.payload.field]: action.payload.value }
+      return {
+        ...state,
+        [action.payload.field]: action.payload.value,
+        ...(action.payload.field === 'withdrawalBankId' && action.payload.value === ''
+          ? { withdrawalExpenseCategoryId: '' }
+          : {}),
+      }
     case 'WITHDRAWAL_START':
       return { ...state, isSubmittingWithdrawal: true, withdrawalError: null, withdrawalErrorFields: {} }
     case 'WITHDRAWAL_SUCCESS':
@@ -301,6 +338,10 @@ export interface ReservaData {
   withdrawalAmount: string
   withdrawalDate: string
   withdrawalDescription: string
+  withdrawalBankId: string
+  withdrawalExpenseCategoryId: string
+  withdrawalBanks: BankDto[]
+  withdrawalCategoryOptions: CategoryDto[]
   isSubmittingWithdrawal: boolean
   withdrawalError: string | null
   withdrawalErrorFields: Partial<Record<WithdrawalFormField, string>>
@@ -371,14 +412,18 @@ export function useReserva(): ReservaData {
   // Never flips isLoading itself, so it can be reused both for the initial/retry load (which
   // wraps it with FETCH_START) and for post-mutation refreshes (which call it directly, keeping
   // the grids mounted so their own sort/filter state survives).
-  const fetchReservaData = useCallback((options?: { includeBuckets?: boolean }) => {
-    const includeBuckets = options?.includeBuckets ?? true
+  const fetchReservaData = useCallback((options?: { includeReferenceData?: boolean }) => {
+    const includeReferenceData = options?.includeReferenceData ?? true
     return Promise.all([
       apiClient.getReserveBalances(),
       apiClient.getReserveMovements(),
-      includeBuckets ? apiClient.getReserveBuckets().catch(() => []) : Promise.resolve(undefined),
+      includeReferenceData ? apiClient.getReserveBuckets().catch(() => []) : Promise.resolve(undefined),
+      includeReferenceData ? apiClient.getBanks().catch(() => []) : Promise.resolve(undefined),
+      includeReferenceData ? apiClient.getCategories().catch(() => []) : Promise.resolve(undefined),
     ])
-      .then(([balances, movements, buckets]) => dispatch({ type: 'FETCH_SUCCESS', payload: { balances, movements, buckets } }))
+      .then(([balances, movements, buckets, banks, categories]) =>
+        dispatch({ type: 'FETCH_SUCCESS', payload: { balances, movements, buckets, banks, categories } }),
+      )
       .catch((err: unknown) => {
         dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, 'Unable to load Reserva data') })
       })
@@ -397,6 +442,12 @@ export function useReserva(): ReservaData {
   const movementRows = useMemo(() => buildMovementRows(state.movements), [state.movements])
 
   const splitPercentageWarning = useMemo(() => computeSplitPercentageWarning(state.buckets), [state.buckets])
+
+  const withdrawalCategoryOptions = useMemo(() => eligibleWithdrawalCategories(state.categories), [state.categories])
+
+  const withdrawalExpenseCategoryId =
+    state.withdrawalExpenseCategoryId ||
+    defaultExpenseCategoryId(withdrawalCategoryOptions, state.buckets.find((b) => b.id === state.withdrawalBucketId)?.name ?? '')
 
   const retry = useCallback(() => dispatch({ type: 'RETRY' }), [])
 
@@ -467,7 +518,7 @@ export function useReserva(): ReservaData {
       .then((result) => {
         setStoredDefault(SPLIT_DATE_KEY, splitDate)
         dispatch({ type: 'SPLIT_SUCCESS', payload: result })
-        void fetchReservaData({ includeBuckets: false })
+        void fetchReservaData({ includeReferenceData: false })
       })
       .catch((err: unknown) => {
         dispatch({
@@ -478,7 +529,7 @@ export function useReserva(): ReservaData {
   }
 
   function performWithdrawal(confirmed: boolean, confirmProceed: ConfirmProceed) {
-    const { withdrawalBucketId, withdrawalAmount, withdrawalDate, withdrawalDescription } = state
+    const { withdrawalBucketId, withdrawalAmount, withdrawalDate, withdrawalDescription, withdrawalBankId } = state
 
     void apiClient
       .postWithdrawal({
@@ -487,14 +538,14 @@ export function useReserva(): ReservaData {
         date: withdrawalDate,
         description: withdrawalDescription,
         confirmed,
-        paymentSourceBankId: null,
-        expenseCategoryId: null,
+        paymentSourceBankId: withdrawalBankId || null,
+        expenseCategoryId: withdrawalBankId ? withdrawalExpenseCategoryId : null,
       })
       .then(() => {
         setStoredDefault(WITHDRAWAL_DATE_KEY, withdrawalDate)
         setStoredDefault(WITHDRAWAL_BUCKET_KEY, withdrawalBucketId)
         dispatch({ type: 'WITHDRAWAL_SUCCESS' })
-        void fetchReservaData({ includeBuckets: false })
+        void fetchReservaData({ includeReferenceData: false })
       })
       .catch((err: unknown) => {
         if (err instanceof ApiError && err.status === 409 && !confirmed) {
@@ -514,7 +565,7 @@ export function useReserva(): ReservaData {
   }
 
   function submitWithdrawal(confirmProceed: ConfirmProceed) {
-    const { withdrawalBucketId, withdrawalAmount, withdrawalDate, withdrawalDescription } = state
+    const { withdrawalBucketId, withdrawalAmount, withdrawalDate, withdrawalDescription, withdrawalBankId } = state
     const errors: Partial<Record<WithdrawalFormField, string>> = {}
 
     if (!withdrawalDate.trim()) {
@@ -523,6 +574,10 @@ export function useReserva(): ReservaData {
 
     if (!withdrawalBucketId.trim()) {
       errors.withdrawalBucketId = BUCKET_REQUIRED_ERROR
+    }
+
+    if (withdrawalBankId && !withdrawalExpenseCategoryId) {
+      errors.withdrawalExpenseCategoryId = EXPENSE_CATEGORY_REQUIRED_ERROR
     }
 
     if (!withdrawalDescription.trim()) {
@@ -582,7 +637,7 @@ export function useReserva(): ReservaData {
       })
       .then(() => {
         dispatch({ type: 'SAVE_MOVEMENT_SUCCESS' })
-        void fetchReservaData({ includeBuckets: false })
+        void fetchReservaData({ includeReferenceData: false })
       })
       .catch((err: unknown) => {
         dispatch({
@@ -599,7 +654,7 @@ export function useReserva(): ReservaData {
       .deleteReserveMovement(id)
       .then(() => {
         dispatch({ type: 'DELETE_MOVEMENT_SUCCESS' })
-        void fetchReservaData({ includeBuckets: false })
+        void fetchReservaData({ includeReferenceData: false })
       })
       .catch((err: unknown) => {
         dispatch({
@@ -637,6 +692,10 @@ export function useReserva(): ReservaData {
     withdrawalAmount: state.withdrawalAmount,
     withdrawalDate: state.withdrawalDate,
     withdrawalDescription: state.withdrawalDescription,
+    withdrawalBankId: state.withdrawalBankId,
+    withdrawalExpenseCategoryId,
+    withdrawalBanks: state.banks,
+    withdrawalCategoryOptions,
     isSubmittingWithdrawal: state.isSubmittingWithdrawal,
     withdrawalError: state.withdrawalError,
     withdrawalErrorFields: state.withdrawalErrorFields,

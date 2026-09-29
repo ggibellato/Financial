@@ -117,13 +117,13 @@ The core value is that a Reserva-funded expense is recorded once, correctly, on 
 - F01: extended withdrawal contract (optional bank identifier, category identifier), reserve movement result
 
 **Capabilities:**
-- `WithdrawalForm` gains a "Through bank" select listing active banks, empty by default with an empty option meaning "No bank (direct)".
+- `WithdrawalForm` gains a "Through bank" select listing all banks, empty by default with an empty option meaning "No bank (direct)".
 - When a bank is selected, an "Expense category" select appears listing active, non-investment, non-`Reserva` categories.
 - Category defaults to the category whose name equals the selected bucket's name (case-insensitive); if none matches, it stays empty and required. Changing the bucket re-applies the default only while the user has not manually chosen a category.
 - Clearing the bank hides the category field and drops its value; the request then omits both fields.
 - The bank and category selections are not remembered between opens (the existing last-used date and bucket behavior is unchanged).
 - Client validation mirrors server messages: "Category is required when a bank is selected."; existing messages unchanged.
-- Field order: Bucket, Amount, Date, Description, Through bank, Expense category.
+- Field order: Date, Bucket, Through bank, Expense category, Description, Amount.
 
 **Experience:**
 - Initial: bank empty, category hidden.
@@ -213,7 +213,7 @@ graph TD
 - [x] The OpenAPI snapshot and generated TypeScript types are regenerated, committed and pass their freshness tests
 
 ### F02. Web Withdrawal Form (React)
-- [ ] The form shows an optional "Through bank" select, empty by default, listing active banks only
+- [ ] The form shows an optional "Through bank" select, empty by default, listing all banks
 - [ ] Selecting a bank reveals the "Expense category" select preselected to the bucket-named category when one exists
 - [ ] With no matching category, the category stays empty and submit shows "Category is required when a bank is selected."
 - [ ] Clearing the bank hides the category and the request omits both fields

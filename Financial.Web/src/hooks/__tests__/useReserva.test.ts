@@ -2,13 +2,15 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { ReserveBucketBalanceDto, ReserveBucketDto, ReserveMovementDto } from '../../api/types'
+import type { BankDto, CategoryDto, ReserveBucketBalanceDto, ReserveBucketDto, ReserveMovementDto } from '../../api/types'
 import { useReserva } from '../useReserva'
 
 const {
   getReserveBalancesMock,
   getReserveMovementsMock,
   getReserveBucketsMock,
+  getBanksMock,
+  getCategoriesMock,
   postIncomeSplitMock,
   postWithdrawalMock,
   updateReserveMovementMock,
@@ -17,6 +19,8 @@ const {
   getReserveBalancesMock: vi.fn<FinancialApiClient['getReserveBalances']>(),
   getReserveMovementsMock: vi.fn<FinancialApiClient['getReserveMovements']>(),
   getReserveBucketsMock: vi.fn<FinancialApiClient['getReserveBuckets']>(),
+  getBanksMock: vi.fn<FinancialApiClient['getBanks']>(),
+  getCategoriesMock: vi.fn<FinancialApiClient['getCategories']>(),
   postIncomeSplitMock: vi.fn<FinancialApiClient['postIncomeSplit']>(),
   postWithdrawalMock: vi.fn<FinancialApiClient['postWithdrawal']>(),
   updateReserveMovementMock: vi.fn<FinancialApiClient['updateReserveMovement']>(),
@@ -28,6 +32,8 @@ vi.mock('../../api/financialApiClient', () => ({
     getReserveBalances: getReserveBalancesMock,
     getReserveMovements: getReserveMovementsMock,
     getReserveBuckets: getReserveBucketsMock,
+    getBanks: getBanksMock,
+    getCategories: getCategoriesMock,
     postIncomeSplit: postIncomeSplitMock,
     postWithdrawal: postWithdrawalMock,
     updateReserveMovement: updateReserveMovementMock,
@@ -56,6 +62,19 @@ const BUCKETS: ReserveBucketDto[] = [
   { id: 'b4', name: 'Gleison', isActive: true, splitPercentage: 16.67, warning: null },
 ]
 
+const BANKS: BankDto[] = [
+  { id: 'bk1', name: 'Chase', roundUpEnabled: true, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false },
+  { id: 'bk2', name: 'Barclays', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false },
+]
+
+const CATEGORIES: CategoryDto[] = [
+  { id: 'c1', name: 'Ariana', active: true, isInvestment: false, isTithe: false, hasReferences: false },
+  { id: 'c2', name: 'Saude', active: true, isInvestment: false, isTithe: false, hasReferences: false },
+  { id: 'c3', name: 'Investimento', active: true, isInvestment: true, isTithe: false, hasReferences: false },
+  { id: 'c4', name: 'Reserva', active: true, isInvestment: false, isTithe: false, hasReferences: false },
+  { id: 'c5', name: 'Old', active: false, isInvestment: false, isTithe: false, hasReferences: false },
+]
+
 // Only the 409 tests should reach the confirmation policy. Everywhere else, being asked at all
 // is the bug - so the default stub fails the test instead of quietly answering.
 const rejectUnexpectedConfirm = (): boolean => {
@@ -67,6 +86,8 @@ describe('useReserva', () => {
     getReserveBalancesMock.mockReset()
     getReserveMovementsMock.mockReset()
     getReserveBucketsMock.mockReset()
+    getBanksMock.mockReset()
+    getCategoriesMock.mockReset()
     postIncomeSplitMock.mockReset()
     postWithdrawalMock.mockReset()
     updateReserveMovementMock.mockReset()
@@ -74,6 +95,8 @@ describe('useReserva', () => {
     getReserveBalancesMock.mockResolvedValue(BALANCES)
     getReserveMovementsMock.mockResolvedValue(MOVEMENTS)
     getReserveBucketsMock.mockResolvedValue(BUCKETS)
+    getBanksMock.mockResolvedValue(BANKS)
+    getCategoriesMock.mockResolvedValue(CATEGORIES)
     sessionStorage.clear()
   })
 
@@ -626,5 +649,164 @@ describe('useReserva', () => {
 
     await waitFor(() => expect(getReserveBalancesMock).toHaveBeenCalledTimes(2))
     await waitFor(() => expect(getReserveMovementsMock).toHaveBeenCalledTimes(2))
+  })
+
+  describe('withdrawal through a bank', () => {
+    const MOVEMENT = { ...MOVEMENTS[0], id: 'm9', amount: -30, description: 'Dentist' }
+
+    async function loadWithBucket(bucketId: string) {
+      const { result } = renderHook(() => useReserva())
+      await waitFor(() => expect(result.current.isLoading).toBe(false))
+      act(() => result.current.setWithdrawalField('withdrawalBucketId', bucketId))
+      act(() => result.current.setWithdrawalField('withdrawalAmount', '30'))
+      act(() => result.current.setWithdrawalField('withdrawalDate', '2026-07-01'))
+      act(() => result.current.setWithdrawalField('withdrawalDescription', 'Dentist'))
+      return result
+    }
+
+    it('loads banks and eligible category options with the reserve data', async () => {
+      const { result } = renderHook(() => useReserva())
+      await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+      expect(result.current.withdrawalBanks).toEqual(BANKS)
+      expect(result.current.withdrawalCategoryOptions.map((c) => c.name)).toEqual(['Ariana', 'Saude'])
+      expect(getBanksMock).toHaveBeenCalledTimes(1)
+      expect(getCategoriesMock).toHaveBeenCalledTimes(1)
+    })
+
+    it('still loads the reserve data when banks or categories fail to load', async () => {
+      getBanksMock.mockRejectedValue(new Error('down'))
+      getCategoriesMock.mockRejectedValue(new Error('down'))
+
+      const { result } = renderHook(() => useReserva())
+      await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+      expect(result.current.error).toBeNull()
+      expect(result.current.withdrawalBanks).toEqual([])
+      expect(result.current.withdrawalCategoryOptions).toEqual([])
+    })
+
+    it('posts null bank and category when no bank is selected', async () => {
+      postWithdrawalMock.mockResolvedValue(MOVEMENT)
+      const result = await loadWithBucket('b3')
+
+      act(() => result.current.submitWithdrawal(rejectUnexpectedConfirm))
+
+      await waitFor(() => expect(postWithdrawalMock).toHaveBeenCalledTimes(1))
+      expect(postWithdrawalMock).toHaveBeenCalledWith(
+        expect.objectContaining({ paymentSourceBankId: null, expenseCategoryId: null }),
+      )
+    })
+
+    it('defaults the category to the one named after the selected bucket', async () => {
+      const result = await loadWithBucket('b3')
+
+      act(() => result.current.setWithdrawalField('withdrawalBankId', 'bk1'))
+
+      expect(result.current.withdrawalExpenseCategoryId).toBe('c1')
+    })
+
+    it('leaves the category empty when no eligible category matches the bucket name', async () => {
+      const result = await loadWithBucket('b1')
+
+      act(() => result.current.setWithdrawalField('withdrawalBankId', 'bk1'))
+
+      expect(result.current.withdrawalExpenseCategoryId).toBe('')
+    })
+
+    it('follows the bucket for the default until the user picks a category', async () => {
+      const result = await loadWithBucket('b3')
+      act(() => result.current.setWithdrawalField('withdrawalBankId', 'bk1'))
+
+      act(() => result.current.setWithdrawalField('withdrawalBucketId', 'b1'))
+      expect(result.current.withdrawalExpenseCategoryId).toBe('')
+
+      act(() => result.current.setWithdrawalField('withdrawalExpenseCategoryId', 'c2'))
+      act(() => result.current.setWithdrawalField('withdrawalBucketId', 'b3'))
+      expect(result.current.withdrawalExpenseCategoryId).toBe('c2')
+    })
+
+    it('drops the chosen category and posts nulls after the bank is cleared', async () => {
+      postWithdrawalMock.mockResolvedValue(MOVEMENT)
+      const result = await loadWithBucket('b3')
+      act(() => result.current.setWithdrawalField('withdrawalBankId', 'bk1'))
+      act(() => result.current.setWithdrawalField('withdrawalExpenseCategoryId', 'c2'))
+
+      act(() => result.current.setWithdrawalField('withdrawalBankId', ''))
+      act(() => result.current.submitWithdrawal(rejectUnexpectedConfirm))
+
+      expect(result.current.withdrawalExpenseCategoryId).toBe('c1')
+      await waitFor(() => expect(postWithdrawalMock).toHaveBeenCalledTimes(1))
+      expect(postWithdrawalMock).toHaveBeenCalledWith(
+        expect.objectContaining({ paymentSourceBankId: null, expenseCategoryId: null }),
+      )
+    })
+
+    it('requires a category when a bank is selected and posts nothing', async () => {
+      const result = await loadWithBucket('b1')
+      act(() => result.current.setWithdrawalField('withdrawalBankId', 'bk1'))
+
+      act(() => result.current.submitWithdrawal(rejectUnexpectedConfirm))
+
+      expect(result.current.withdrawalErrorFields.withdrawalExpenseCategoryId).toBe(
+        'Category is required when a bank is selected.',
+      )
+      expect(postWithdrawalMock).not.toHaveBeenCalled()
+    })
+
+    it('posts both ids when a bank and category are selected', async () => {
+      postWithdrawalMock.mockResolvedValue(MOVEMENT)
+      const result = await loadWithBucket('b1')
+      act(() => result.current.setWithdrawalField('withdrawalBankId', 'bk2'))
+      act(() => result.current.setWithdrawalField('withdrawalExpenseCategoryId', 'c2'))
+
+      act(() => result.current.submitWithdrawal(rejectUnexpectedConfirm))
+
+      await waitFor(() => expect(postWithdrawalMock).toHaveBeenCalledTimes(1))
+      expect(postWithdrawalMock).toHaveBeenCalledWith(
+        expect.objectContaining({ paymentSourceBankId: 'bk2', expenseCategoryId: 'c2', confirmed: false }),
+      )
+    })
+
+    it('clears the bank and category after cancel', async () => {
+      const result = await loadWithBucket('b1')
+      act(() => result.current.setWithdrawalField('withdrawalBankId', 'bk1'))
+      act(() => result.current.setWithdrawalField('withdrawalExpenseCategoryId', 'c2'))
+
+      act(() => result.current.cancelWithdrawalForm())
+
+      expect(result.current.withdrawalBankId).toBe('')
+      expect(result.current.withdrawalExpenseCategoryId).toBe('')
+    })
+
+    it('clears the bank and category after a successful submit', async () => {
+      postWithdrawalMock.mockResolvedValue(MOVEMENT)
+      const result = await loadWithBucket('b1')
+      act(() => result.current.setWithdrawalField('withdrawalBankId', 'bk1'))
+      act(() => result.current.setWithdrawalField('withdrawalExpenseCategoryId', 'c2'))
+
+      act(() => result.current.submitWithdrawal(rejectUnexpectedConfirm))
+
+      await waitFor(() => expect(result.current.withdrawalBankId).toBe(''))
+      expect(postWithdrawalMock).toHaveBeenCalledTimes(1)
+      expect(result.current.withdrawalExpenseCategoryId).toBe('')
+    })
+
+    it('replays a 409 with confirmed and keeps both ids', async () => {
+      postWithdrawalMock
+        .mockRejectedValueOnce(new ApiError('This withdrawal exceeds the balance.', 409))
+        .mockResolvedValueOnce(MOVEMENT)
+      const result = await loadWithBucket('b1')
+      act(() => result.current.setWithdrawalField('withdrawalBankId', 'bk1'))
+      act(() => result.current.setWithdrawalField('withdrawalExpenseCategoryId', 'c2'))
+
+      act(() => result.current.submitWithdrawal(() => true))
+
+      await waitFor(() => expect(postWithdrawalMock).toHaveBeenCalledTimes(2))
+      expect(postWithdrawalMock).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({ confirmed: true, paymentSourceBankId: 'bk1', expenseCategoryId: 'c2' }),
+      )
+    })
   })
 })

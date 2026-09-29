@@ -1,5 +1,6 @@
-import { Button, Field, Input, MessageBar, MessageBarBody, Select, Text } from '@fluentui/react-components'
-import type { ReserveBucketDto } from '../api/types'
+import { Button, Field, InfoLabel, Input, MessageBar, MessageBarBody, Select, Text } from '@fluentui/react-components'
+import type { LabelProps } from '@fluentui/react-components'
+import type { BankDto, CategoryDto, ReserveBucketDto } from '../api/types'
 import type { WithdrawalFormField } from '../hooks/useReserva'
 import { useFieldError } from '../hooks/useFieldError'
 import { useFormPanelStyles } from './formPanelStyles'
@@ -9,7 +10,11 @@ interface WithdrawalFormProps {
   amount: string
   date: string
   description: string
+  bankId: string
+  expenseCategoryId: string
   buckets: ReserveBucketDto[]
+  banks: BankDto[]
+  categories: CategoryDto[]
   isSubmitting: boolean
   error: string | null
   errorFields: Partial<Record<WithdrawalFormField, string>>
@@ -23,7 +28,11 @@ export default function WithdrawalForm({
   amount,
   date,
   description,
+  bankId,
+  expenseCategoryId,
   buckets,
+  banks,
+  categories,
   isSubmitting,
   error,
   errorFields,
@@ -48,7 +57,12 @@ export default function WithdrawalForm({
           validationState={fieldError('withdrawalDate') ? 'error' : 'none'}
           validationMessage={fieldError('withdrawalDate')}
         >
-          <Input type="date" value={date} onChange={(e) => onFieldChange('withdrawalDate', e.target.value)} />
+          <Input
+            type="date"
+            value={date}
+            disabled={isSubmitting}
+            onChange={(e) => onFieldChange('withdrawalDate', e.target.value)}
+          />
         </Field>
 
         <Field
@@ -57,7 +71,11 @@ export default function WithdrawalForm({
           validationState={fieldError('withdrawalBucketId') ? 'error' : 'none'}
           validationMessage={fieldError('withdrawalBucketId')}
         >
-          <Select value={bucketId} onChange={(e) => onFieldChange('withdrawalBucketId', e.target.value)}>
+          <Select
+            value={bucketId}
+            disabled={isSubmitting}
+            onChange={(e) => onFieldChange('withdrawalBucketId', e.target.value)}
+          >
             {buckets.map((bucket) => (
               <option key={bucket.id} value={bucket.id}>
                 {bucket.name}
@@ -67,12 +85,64 @@ export default function WithdrawalForm({
         </Field>
 
         <Field
+          label={{
+            children: (_: unknown, props: LabelProps) => (
+              <InfoLabel
+                {...props}
+                info="Choose a bank when the money passes through it. The bank records a Reserva return and an expense in the category you pick."
+              >
+                Through bank
+              </InfoLabel>
+            ),
+          }}
+        >
+          <Select
+            value={bankId}
+            disabled={isSubmitting}
+            onChange={(e) => onFieldChange('withdrawalBankId', e.target.value)}
+          >
+            <option value="">No bank (direct)</option>
+            {banks.map((bank) => (
+              <option key={bank.id} value={bank.id}>
+                {bank.name}
+              </option>
+            ))}
+          </Select>
+        </Field>
+
+        {bankId !== '' && (
+          <Field
+            label="Expense category"
+            required
+            validationState={fieldError('withdrawalExpenseCategoryId') ? 'error' : 'none'}
+            validationMessage={fieldError('withdrawalExpenseCategoryId')}
+          >
+            <Select
+              value={expenseCategoryId}
+              disabled={isSubmitting}
+              onChange={(e) => onFieldChange('withdrawalExpenseCategoryId', e.target.value)}
+            >
+              <option value="">Select a category</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        )}
+
+        <Field
           label="Description"
           required
           validationState={fieldError('withdrawalDescription') ? 'error' : 'none'}
           validationMessage={fieldError('withdrawalDescription')}
         >
-          <Input value={description} onChange={(e) => onFieldChange('withdrawalDescription', e.target.value)} />
+          <Input
+            value={description}
+            disabled={isSubmitting}
+            onChange={(e) => onFieldChange('withdrawalDescription', e.target.value)}
+          />
         </Field>
 
         <Field
@@ -86,6 +156,7 @@ export default function WithdrawalForm({
             step="0.01"
             min="0"
             value={amount}
+            disabled={isSubmitting}
             onChange={(e) => onFieldChange('withdrawalAmount', e.target.value)}
           />
         </Field>
@@ -95,7 +166,7 @@ export default function WithdrawalForm({
         <Button appearance="primary" disabled={isSubmitting} onClick={onSubmit}>
           {isSubmitting ? 'Saving...' : 'Add Withdrawal'}
         </Button>
-        <Button appearance="secondary" onClick={onCancel}>
+        <Button appearance="secondary" disabled={isSubmitting} onClick={onCancel}>
           Cancel
         </Button>
       </div>
