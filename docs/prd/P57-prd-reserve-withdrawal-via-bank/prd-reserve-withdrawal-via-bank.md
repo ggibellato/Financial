@@ -200,17 +200,17 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Bank-Routed Withdrawal API
-- [ ] A withdrawal without bank and category creates exactly 1 reserve movement and 0 expenses, identical to current behavior
-- [ ] A withdrawal with a valid bank and category creates exactly 1 reserve movement and 2 expenses in one save
-- [ ] The `Reserva`-category expense has value `-Amount`; the chosen-category expense has value `+Amount`; both are on the selected bank with the withdrawal's date and description
-- [ ] A bank without a category is rejected with 400 and nothing is saved
-- [ ] A category without a bank is rejected with 400 and nothing is saved
-- [ ] An unknown bank is rejected with 400 and nothing is saved
-- [ ] An unknown, inactive, investment or `Reserva` category is rejected with 400 and nothing is saved
-- [ ] An overdrawn bucket without `Confirmed` returns 409 and nothing is saved; with `Confirmed` the 3 records are created
-- [ ] A simulated save failure leaves 0 of the 3 records persisted
-- [ ] Failure logs contain no amounts, descriptions or exception messages, only operation name, exception type and allow-listed identifiers
-- [ ] The OpenAPI snapshot and generated TypeScript types are regenerated, committed and pass their freshness tests
+- [x] A withdrawal without bank and category creates exactly 1 reserve movement and 0 expenses, identical to current behavior
+- [x] A withdrawal with a valid bank and category creates exactly 1 reserve movement and 2 expenses in one save
+- [x] The `Reserva`-category expense has value `-Amount`; the chosen-category expense has value `+Amount`; both are on the selected bank with the withdrawal's date and description
+- [x] A bank without a category is rejected with 400 and nothing is saved
+- [x] A category without a bank is rejected with 400 and nothing is saved
+- [x] An unknown bank is rejected with 400 and nothing is saved
+- [x] An unknown, inactive, investment or `Reserva` category is rejected with 400 and nothing is saved
+- [x] An overdrawn bucket without `Confirmed` returns 409 and nothing is saved; with `Confirmed` the 3 records are created
+- [x] A simulated save failure leaves 0 of the 3 records persisted
+- [x] Failure logs contain no amounts, descriptions or exception messages, only operation name, exception type and allow-listed identifiers
+- [x] The OpenAPI snapshot and generated TypeScript types are regenerated, committed and pass their freshness tests
 
 ### F02. Web Withdrawal Form (React)
 - [ ] The form shows an optional "Through bank" select, empty by default, listing active banks only
