@@ -24,11 +24,14 @@ public class ReservaViewModelTests
         CreateViewModel(_ => confirm);
 
     private static (ReservaViewModel ViewModel, StubReserveService Service) CreateViewModel(
-        Func<string, bool> confirm, StubReserveBucketService? bucketService = null, RecordingLogger<ReservaViewModel>? logger = null)
+        Func<string, bool> confirm, StubReserveBucketService? bucketService = null, RecordingLogger<ReservaViewModel>? logger = null,
+        StubBankService? bankService = null, StubCategoryService? categoryService = null)
     {
         var service = new StubReserveService();
         var buckets = bucketService ?? new StubReserveBucketService { ReserveBuckets = DefaultBuckets };
-        var viewModel = new ReservaViewModel(service, buckets, confirm, logger ?? new RecordingLogger<ReservaViewModel>());
+        var viewModel = new ReservaViewModel(
+            service, buckets, bankService ?? new StubBankService(), categoryService ?? new StubCategoryService(), confirm,
+            logger ?? new RecordingLogger<ReservaViewModel>());
         return (viewModel, service);
     }
 
@@ -462,5 +465,77 @@ public class ReservaViewModelTests
             w.Message.Should().Contain(nameof(InvalidOperationException));
             w.Message.Should().NotContain("Ariana", "exception messages may embed bucket names/balances and must stay out of the log");
         });
+    }
+
+    [Fact]
+    public async Task RefreshAsync_LoadsBanksAndCategoriesIntoTheWithdrawalForm()
+    {
+        var banks = new StubBankService
+        {
+            Banks =
+            [
+                new BankDTO
+                {
+                    Id = Guid.NewGuid(), Name = "Chase", RoundUpEnabled = false, OpeningBalance = 0m,
+                    OpeningBalanceDate = new DateOnly(2026, 1, 1), HasReferences = false,
+                },
+            ],
+        };
+        var categories = new StubCategoryService
+        {
+            Categories =
+            [
+                new CategoryDTO { Id = Guid.NewGuid(), Name = "Saude", Active = true, IsInvestment = false, IsTithe = false, HasReferences = false },
+                new CategoryDTO { Id = Guid.NewGuid(), Name = "Reserva", Active = true, IsInvestment = false, IsTithe = false, HasReferences = false },
+            ],
+        };
+        var (viewModel, _) = CreateViewModel(_ => true, bankService: banks, categoryService: categories);
+
+        await viewModel.RefreshAsync();
+
+        viewModel.Withdrawal.BankOptions.Select(o => o.Name).Should().Equal("No bank (direct)", "Chase");
+        viewModel.Withdrawal.CategoryOptions.Select(c => c.Name).Should().Equal("Saude");
+    }
+
+    [Fact]
+    public async Task RefreshAsync_BankAndCategoryServicesThrow_StillLoadsReserveDataAndLogsTheErrorTypeOnly()
+    {
+        var logger = new RecordingLogger<ReservaViewModel>();
+        var banks = new StubBankService { ThrowOnGet = new InvalidOperationException("bank Chase balance 654.27") };
+        var categories = new StubCategoryService { ThrowOnGet = new InvalidOperationException("category Saude") };
+        var (viewModel, _) = CreateViewModel(_ => true, logger: logger, bankService: banks, categoryService: categories);
+
+        await viewModel.RefreshAsync();
+
+        viewModel.HasError.Should().BeFalse();
+        viewModel.Buckets.Should().HaveCount(4);
+        viewModel.Withdrawal.BankOptions.Should().Equal(WithdrawalBankOption.Direct);
+        viewModel.Withdrawal.CategoryOptions.Should().BeEmpty();
+        var warnings = logger.Entries.Where(e => e.Level == Microsoft.Extensions.Logging.LogLevel.Warning).ToList();
+        warnings.Should().Contain(w => w.Message.Contains("Banks"));
+        warnings.Should().Contain(w => w.Message.Contains("Categories"));
+        warnings.Should().AllSatisfy(w =>
+        {
+            w.Message.Should().NotContain("Chase");
+            w.Message.Should().NotContain("Saude");
+        });
+    }
+
+    [Fact]
+    public async Task DeleteMovement_DoesNotReloadBanksOrCategories()
+    {
+        var banks = new StubBankService();
+        var (viewModel, _) = CreateViewModel(_ => true, bankService: banks);
+        await viewModel.RefreshAsync();
+        var callCountAfterInitialLoad = banks.GetBanksCallCount;
+        var row = new ReserveMovementRow
+        {
+            Id = Guid.NewGuid(), BucketId = InvestimentoId, BucketName = "Investimento", Amount = 10m,
+            Date = DateOnly.FromDateTime(DateTime.Today), Description = "Test",
+        };
+
+        await viewModel.DeleteMovementAsync(row);
+
+        banks.GetBanksCallCount.Should().Be(callCountAfterInitialLoad);
     }
 }

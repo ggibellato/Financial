@@ -97,6 +97,8 @@ namespace Financial.Presentation.App
                     services.AddTransient<ReservaViewModel>(sp => new ReservaViewModel(
                         sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.IReserveService>(),
                         sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.IReserveBucketService>(),
+                        sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.IBankService>(),
+                        sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.ICategoryService>(),
                         confirm,
                         sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<ReservaViewModel>>()));
                     services.AddTransient<ReservaView>();

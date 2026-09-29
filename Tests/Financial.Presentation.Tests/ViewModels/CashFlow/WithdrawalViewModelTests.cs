@@ -203,4 +203,238 @@ public class WithdrawalViewModelTests
         viewModel.WithdrawalAmount.Should().BeEmpty();
         viewModel.WithdrawalDescription.Should().BeEmpty();
     }
+
+    private static readonly Guid ArianaId = Guid.NewGuid();
+    private static readonly Guid ChaseId = Guid.NewGuid();
+    private static readonly Guid ArianaCategoryId = Guid.NewGuid();
+    private static readonly Guid SaudeCategoryId = Guid.NewGuid();
+
+    private static BankDTO Bank(Guid id, string name) => new()
+    {
+        Id = id,
+        Name = name,
+        RoundUpEnabled = false,
+        OpeningBalance = 0m,
+        OpeningBalanceDate = new DateOnly(2026, 1, 1),
+        HasReferences = false,
+    };
+
+    private static CategoryDTO Category(Guid id, string name, bool active = true, bool isInvestment = false) => new()
+    {
+        Id = id,
+        Name = name,
+        Active = active,
+        IsInvestment = isInvestment,
+        IsTithe = false,
+        HasReferences = false,
+    };
+
+    private static (WithdrawalViewModel ViewModel, StubReserveService Service) CreateBankViewModel(
+        Func<string, bool>? confirm = null, Func<Task>? refresh = null)
+    {
+        var service = new StubReserveService();
+        var buckets = new ObservableCollection<ReserveBucketDTO>
+        {
+            new() { Id = InvestimentoId, Name = "Investimento", IsActive = true, SplitPercentage = 50m },
+            new() { Id = ArianaId, Name = "Ariana", IsActive = true, SplitPercentage = 50m },
+        };
+        var viewModel = new WithdrawalViewModel(
+            service, buckets, confirm ?? (_ => true), closeOtherForms: () => { }, refresh: refresh ?? (() => Task.CompletedTask));
+        viewModel.LoadReferenceData(
+            [Bank(ChaseId, "Chase")],
+            [
+                Category(ArianaCategoryId, "Ariana"),
+                Category(SaudeCategoryId, "Saude"),
+                Category(Guid.NewGuid(), "Investimento", isInvestment: true),
+                Category(Guid.NewGuid(), "Reserva"),
+                Category(Guid.NewGuid(), "Old", active: false),
+            ]);
+        viewModel.ShowWithdrawalFormCommand.Execute(null);
+        viewModel.WithdrawalAmount = "20";
+        viewModel.WithdrawalDescription = "Car service";
+        return (viewModel, service);
+    }
+
+    [Fact]
+    public void LoadReferenceData_ListsDirectOptionThenBanks_AndEligibleCategories()
+    {
+        var (viewModel, _) = CreateBankViewModel();
+
+        viewModel.BankOptions.Select(o => o.Name).Should().Equal("No bank (direct)", "Chase");
+        viewModel.CategoryOptions.Select(c => c.Name).Should().Equal("Ariana", "Saude");
+        viewModel.SelectedBankOption.Should().Be(WithdrawalBankOption.Direct);
+        viewModel.IsBankSelected.Should().BeFalse();
+    }
+
+    [Fact]
+    public void LoadReferenceData_NeverClearsTheBankOptionsSoTheDirectSelectionSurvives()
+    {
+        var (viewModel, _) = CreateBankViewModel();
+        var collectionActions = new List<System.Collections.Specialized.NotifyCollectionChangedAction>();
+        viewModel.BankOptions.CollectionChanged += (_, e) => collectionActions.Add(e.Action);
+
+        viewModel.LoadReferenceData([Bank(ChaseId, "Chase"), Bank(Guid.NewGuid(), "Barclays")], []);
+
+        collectionActions.Should().NotContain(System.Collections.Specialized.NotifyCollectionChangedAction.Reset);
+        viewModel.BankOptions[0].Should().BeSameAs(WithdrawalBankOption.Direct);
+        viewModel.BankOptions.Select(o => o.Name).Should().Equal("No bank (direct)", "Chase", "Barclays");
+        viewModel.SelectedBankOption.Should().BeSameAs(WithdrawalBankOption.Direct);
+    }
+
+    [Fact]
+    public void WithdrawalBankOption_ToString_IsTheDisplayName()
+    {
+        new WithdrawalBankOption(Guid.NewGuid(), "Chase").ToString().Should().Be("Chase");
+        WithdrawalBankOption.Direct.ToString().Should().Be("No bank (direct)");
+    }
+
+    [Fact]
+    public void SelectingBank_ShowsCategoryAndDefaultsToBucketNamedCategory()
+    {
+        var (viewModel, _) = CreateBankViewModel();
+        viewModel.WithdrawalBucketId = ArianaId;
+
+        viewModel.SelectedBankOption = viewModel.BankOptions[1];
+
+        viewModel.IsBankSelected.Should().BeTrue();
+        viewModel.WithdrawalExpenseCategoryId.Should().Be(ArianaCategoryId);
+    }
+
+    [Fact]
+    public void SelectingBank_NoCategoryMatchesTheBucket_LeavesCategoryEmpty()
+    {
+        var (viewModel, _) = CreateBankViewModel();
+
+        viewModel.SelectedBankOption = viewModel.BankOptions[1];
+
+        viewModel.WithdrawalExpenseCategoryId.Should().BeNull();
+    }
+
+    [Fact]
+    public void BucketChange_UpdatesDefaultCategoryUntilTheUserChoosesOne()
+    {
+        var (viewModel, _) = CreateBankViewModel();
+        viewModel.SelectedBankOption = viewModel.BankOptions[1];
+
+        viewModel.WithdrawalBucketId = ArianaId;
+        viewModel.WithdrawalExpenseCategoryId.Should().Be(ArianaCategoryId);
+
+        viewModel.WithdrawalExpenseCategoryId = SaudeCategoryId;
+        viewModel.WithdrawalBucketId = InvestimentoId;
+        viewModel.WithdrawalExpenseCategoryId.Should().Be(SaudeCategoryId);
+    }
+
+    [Fact]
+    public async Task ClearingBank_DropsExplicitCategory_AndPostsNullIds()
+    {
+        var (viewModel, service) = CreateBankViewModel();
+        viewModel.SelectedBankOption = viewModel.BankOptions[1];
+        viewModel.WithdrawalExpenseCategoryId = SaudeCategoryId;
+
+        viewModel.SelectedBankOption = WithdrawalBankOption.Direct;
+        await viewModel.SubmitWithdrawalAsync();
+
+        viewModel.IsBankSelected.Should().BeFalse();
+        service.WithdrawalRequests.Should().ContainSingle();
+        service.WithdrawalRequests[0].PaymentSourceBankId.Should().BeNull();
+        service.WithdrawalRequests[0].ExpenseCategoryId.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task SubmitWithdrawal_BankWithoutCategory_ShowsCategoryFieldError_AndPostsNothing()
+    {
+        var (viewModel, service) = CreateBankViewModel();
+        viewModel.SelectedBankOption = viewModel.BankOptions[1];
+
+        await viewModel.SubmitWithdrawalAsync();
+
+        service.WithdrawalRequests.Should().BeEmpty();
+        viewModel.ExpenseCategoryFieldError.Should().Be("Category is required when a bank is selected.");
+        viewModel.WithdrawalGeneralSaveError.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task SubmitWithdrawal_BankAndCategory_PostsBothIds_ClosesFormAndRefreshes()
+    {
+        var refreshCount = 0;
+        var (viewModel, service) = CreateBankViewModel(refresh: () =>
+        {
+            refreshCount++;
+            return Task.CompletedTask;
+        });
+        viewModel.SelectedBankOption = viewModel.BankOptions[1];
+        viewModel.WithdrawalExpenseCategoryId = SaudeCategoryId;
+
+        await viewModel.SubmitWithdrawalAsync();
+
+        service.WithdrawalRequests.Should().ContainSingle();
+        service.WithdrawalRequests[0].PaymentSourceBankId.Should().Be(ChaseId);
+        service.WithdrawalRequests[0].ExpenseCategoryId.Should().Be(SaudeCategoryId);
+        viewModel.IsWithdrawalFormOpen.Should().BeFalse();
+        refreshCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task SubmitWithdrawal_BankPathOverdraftConfirmed_ResubmitsWithBothIds()
+    {
+        var (viewModel, service) = CreateBankViewModel(confirm: _ => true);
+        service.ThrowOverdraftOnUnconfirmedWithdrawal = true;
+        viewModel.SelectedBankOption = viewModel.BankOptions[1];
+        viewModel.WithdrawalExpenseCategoryId = SaudeCategoryId;
+
+        await viewModel.SubmitWithdrawalAsync();
+
+        service.WithdrawalRequests.Should().HaveCount(2);
+        service.WithdrawalRequests[1].Confirmed.Should().BeTrue();
+        service.WithdrawalRequests[1].PaymentSourceBankId.Should().Be(ChaseId);
+        service.WithdrawalRequests[1].ExpenseCategoryId.Should().Be(SaudeCategoryId);
+    }
+
+    [Fact]
+    public async Task SubmitWithdrawal_BankPathBackendRejects_KeepsFormOpenWithValuesAndShowsServerError()
+    {
+        var (viewModel, service) = CreateBankViewModel();
+        service.ThrowOnWithdrawal = new InvalidOperationException("Category 'Saude' is inactive and cannot be used for new entries.");
+        viewModel.SelectedBankOption = viewModel.BankOptions[1];
+        viewModel.WithdrawalExpenseCategoryId = SaudeCategoryId;
+
+        await viewModel.SubmitWithdrawalAsync();
+
+        viewModel.IsWithdrawalFormOpen.Should().BeTrue();
+        viewModel.SelectedBankOption.Id.Should().Be(ChaseId);
+        viewModel.WithdrawalExpenseCategoryId.Should().Be(SaudeCategoryId);
+        viewModel.WithdrawalAmount.Should().Be("20");
+        viewModel.WithdrawalGeneralSaveError.Should().Be(service.ThrowOnWithdrawal.Message);
+        viewModel.ExpenseCategoryFieldError.Should().BeNull();
+    }
+
+    [Fact]
+    public void ShowWithdrawalForm_ResetsBankAndCategory()
+    {
+        var (viewModel, _) = CreateBankViewModel();
+        viewModel.SelectedBankOption = viewModel.BankOptions[1];
+        viewModel.WithdrawalExpenseCategoryId = SaudeCategoryId;
+
+        viewModel.ShowWithdrawalFormCommand.Execute(null);
+
+        viewModel.SelectedBankOption.Should().Be(WithdrawalBankOption.Direct);
+        viewModel.WithdrawalExpenseCategoryId.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task IsWithdrawalFormEditable_IsFalseWhileSubmitting()
+    {
+        bool? editableDuringSave = null;
+        WithdrawalViewModel? viewModel = null;
+        (viewModel, _) = CreateBankViewModel(refresh: () =>
+        {
+            editableDuringSave = viewModel!.IsWithdrawalFormEditable;
+            return Task.CompletedTask;
+        });
+
+        await viewModel.SubmitWithdrawalAsync();
+
+        editableDuringSave.Should().BeFalse();
+        viewModel.IsWithdrawalFormEditable.Should().BeTrue();
+    }
 }

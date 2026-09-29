@@ -12,6 +12,8 @@ public class ReservaViewModel : ViewModelBase
 
     private readonly IReserveService _reserveService;
     private readonly IReserveBucketService _reserveBucketService;
+    private readonly IBankService _bankService;
+    private readonly ICategoryService _categoryService;
     private readonly Func<string, bool> _confirm;
     private readonly ILogger<ReservaViewModel> _logger;
 
@@ -80,15 +82,19 @@ public class ReservaViewModel : ViewModelBase
 
     public RelayCommand RetryCommand { get; }
 
-    public ReservaViewModel(IReserveService reserveService, IReserveBucketService reserveBucketService, Func<string, bool> confirm, ILogger<ReservaViewModel> logger)
+    public ReservaViewModel(
+        IReserveService reserveService, IReserveBucketService reserveBucketService, IBankService bankService,
+        ICategoryService categoryService, Func<string, bool> confirm, ILogger<ReservaViewModel> logger)
     {
         _reserveService = reserveService ?? throw new ArgumentNullException(nameof(reserveService));
         _reserveBucketService = reserveBucketService ?? throw new ArgumentNullException(nameof(reserveBucketService));
+        _bankService = bankService ?? throw new ArgumentNullException(nameof(bankService));
+        _categoryService = categoryService ?? throw new ArgumentNullException(nameof(categoryService));
         _confirm = confirm ?? throw new ArgumentNullException(nameof(confirm));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        Split = new IncomeSplitViewModel(_reserveService, CloseAllForms, () => RefreshAsync(includeBuckets: false));
-        Withdrawal = new WithdrawalViewModel(_reserveService, Buckets, _confirm, CloseAllForms, () => RefreshAsync(includeBuckets: false));
+        Split = new IncomeSplitViewModel(_reserveService, CloseAllForms, () => RefreshAsync(includeReferenceData: false));
+        Withdrawal = new WithdrawalViewModel(_reserveService, Buckets, _confirm, CloseAllForms, () => RefreshAsync(includeReferenceData: false));
 
         RetryCommand = new RelayCommand(async () => await RefreshAsync());
         InitializeEditDeleteCommands();
@@ -103,16 +109,16 @@ public class ReservaViewModel : ViewModelBase
     /// constructor's initial load racing a manual retry) by discarding a completion whose
     /// request has been superseded.
     /// </summary>
-    /// <param name="includeBuckets">
-    /// Whether to also reload <see cref="Buckets"/>. Rebuilding that collection clears it before
+    /// <param name="includeReferenceData">
+    /// Whether to also reload <see cref="Buckets"/>, banks and categories. Rebuilding those collections clears them before
     /// re-adding items, which resets a bound ComboBox's SelectedValue — harmless on initial
     /// load/retry (no bucket form can be open yet), but a mutation-triggered refresh can run
     /// while the Withdrawal or Edit form is still open (their form panel isn't mutually exclusive
     /// with the movement grid's row actions), so those callers pass false to avoid silently
-    /// clearing the user's in-progress bucket selection. Buckets are seeded-only and never change
-    /// mid-session, so skipping the reload there loses nothing.
+    /// clearing the user's in-progress selections. That reference data is seeded or admin-edited and does not
+    /// change during a withdrawal, so skipping the reload there loses nothing.
     /// </param>
-    internal Task RefreshAsync(bool includeBuckets = true) => ExecuteRefreshAsync(
+    internal Task RefreshAsync(bool includeReferenceData = true) => ExecuteRefreshAsync(
         () => ++_refreshRequestId,
         id => id == _refreshRequestId,
         loading => IsLoading = loading,
@@ -121,11 +127,11 @@ public class ReservaViewModel : ViewModelBase
         {
             var balancesTask = Task.Run(() => _reserveService.GetBucketBalances());
             var movementsTask = Task.Run(() => _reserveService.GetMovementHistory());
-            var bucketsTask = includeBuckets ? Task.Run(TryGetReserveBuckets) : null;
+            var referenceDataTask = includeReferenceData ? Task.Run(LoadReferenceData) : null;
             var pendingTasks = new List<Task> { balancesTask, movementsTask };
-            if (bucketsTask is not null)
+            if (referenceDataTask is not null)
             {
-                pendingTasks.Add(bucketsTask);
+                pendingTasks.Add(referenceDataTask);
             }
             await Task.WhenAll(pendingTasks);
             var balances = balancesTask.Result;
@@ -141,10 +147,12 @@ public class ReservaViewModel : ViewModelBase
 
             ReplaceAll(Movements, ReserveMovementRow.BuildRows(movements));
 
-            if (bucketsTask is not null)
+            if (referenceDataTask is not null)
             {
-                ReplaceAll(Buckets, bucketsTask.Result);
+                var (buckets, banks, categories) = referenceDataTask.Result;
+                ReplaceAll(Buckets, buckets);
                 OnPropertyChanged(nameof(SplitPercentageWarning));
+                Withdrawal.LoadReferenceData(banks, categories);
                 if (Withdrawal.WithdrawalBucketId is null)
                 {
                     Withdrawal.WithdrawalBucketId = Withdrawal.DefaultBucketId();
@@ -154,17 +162,22 @@ public class ReservaViewModel : ViewModelBase
         // error.type only - the message may embed bucket names/balances (FR-014).
         ex => _logger.LogError("Reserva refresh failed with {ErrorType}", ex.GetType().Name));
 
-    /// <summary>Bucket metadata is optional display data: a failure here degrades to an empty list instead of failing the whole refresh.</summary>
-    private IReadOnlyList<ReserveBucketDTO> TryGetReserveBuckets()
+    private (IReadOnlyList<ReserveBucketDTO> Buckets, IReadOnlyList<BankDTO> Banks, IReadOnlyList<CategoryDTO> Categories) LoadReferenceData() =>
+        (TryGetLookup("Reserve buckets", _reserveBucketService.GetReserveBuckets),
+         TryGetLookup("Banks", _bankService.GetBanks),
+         TryGetLookup("Categories", _categoryService.GetCategories));
+
+    /// <summary>Lookup data is optional display data: a failure here degrades to an empty list instead of failing the whole refresh.</summary>
+    private IReadOnlyList<T> TryGetLookup<T>(string lookupName, Func<IReadOnlyList<T>> fetch)
     {
         try
         {
-            return _reserveBucketService.GetReserveBuckets();
+            return fetch();
         }
         catch (Exception ex)
         {
             // Optional display data - degrade to an empty list, but visibly in the log stream.
-            _logger.LogWarning("Reserve buckets lookup failed with {ErrorType}; continuing with an empty list", ex.GetType().Name);
+            _logger.LogWarning("{Lookup} lookup failed with {ErrorType}; continuing with an empty list", lookupName, ex.GetType().Name);
             return [];
         }
     }
@@ -331,7 +344,7 @@ public class ReservaViewModel : ViewModelBase
                 });
 
                 CloseEditForm();
-                await RefreshAsync(includeBuckets: false);
+                await RefreshAsync(includeReferenceData: false);
             });
     }
 
@@ -356,7 +369,7 @@ public class ReservaViewModel : ViewModelBase
         try
         {
             await _reserveService.DeleteMovementAsync(row.Id);
-            await RefreshAsync(includeBuckets: false);
+            await RefreshAsync(includeReferenceData: false);
         }
         catch (Exception ex)
         {
