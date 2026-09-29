@@ -55,7 +55,7 @@ public static class ReservasSheetImporter
                     continue;
                 }
 
-                movements.Add(ReserveMovement.Create(bucket, amount.Value, date, description));
+                movements.Add(ReserveMovement.Create(bucket, Math.Round(amount.Value, 2, MidpointRounding.AwayFromZero), date, description));
             }
         }
 

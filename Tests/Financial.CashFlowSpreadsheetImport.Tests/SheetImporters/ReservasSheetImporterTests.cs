@@ -55,6 +55,21 @@ public class ReservasSheetImporterTests : IDisposable
     }
 
     [Fact]
+    public void Import_BucketAmountWithMoreThanTwoDecimals_RoundsToTwoDecimals()
+    {
+        _sheet.Cell(1, 1).Value = "Data";
+
+        _sheet.Cell(2, 1).Value = new DateTime(2021, 2, 1);
+        _sheet.Cell(2, 6).Value = 28.422;
+        _sheet.Cell(2, 7).Value = 28.425;
+
+        var movements = ReservasSheetImporter.Import(_sheet, FourBuckets, _report);
+
+        movements.Should().Contain(m => m.Bucket == Investimento && m.Amount == 28.42m);
+        movements.Should().Contain(m => m.Bucket == HouseTreats && m.Amount == 28.43m);
+    }
+
+    [Fact]
     public void Import_DizimoColumnPopulated_IsIgnoredAsNonBucketIntermediateValue()
     {
         _sheet.Cell(1, 1).Value = "Data";
