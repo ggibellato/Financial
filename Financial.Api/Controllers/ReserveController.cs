@@ -36,7 +36,7 @@ public sealed class ReserveController : ControllerBase
     }
 
     /// <summary>Withdraws an amount from a reserve bucket.</summary>
-    /// <param name="request">The withdrawal amount and target bucket.</param>
+    /// <param name="request">The withdrawal amount and target bucket. When a bank and expense category are supplied, the withdrawal passes through that bank: a negative Reserva-category expense and a positive expense in the chosen category are also recorded on it.</param>
     /// <returns>200 OK with the resulting movement, 400 Bad Request if the request is invalid, or 409 Conflict if the withdrawal would overdraft the bucket without confirmation.</returns>
     [HttpPost("withdrawals")]
     [ProducesResponseType(typeof(ReserveMovementDTO), StatusCodes.Status200OK)]
