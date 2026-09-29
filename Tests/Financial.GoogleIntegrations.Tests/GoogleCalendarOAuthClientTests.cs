@@ -49,14 +49,15 @@ public class GoogleCalendarOAuthClientTests
     }
 
     [Fact]
-    public void BuildEvent_SpansTenToElevenUtc_OnTheGivenDate()
+    public void BuildEvent_SpansTenToElevenInTheGivenTimeZone_OnTheGivenDate()
     {
-        var calendarEvent = GoogleCalendarOAuthClient.BuildEvent("title", "description", new DateOnly(2026, 9, 10));
+        var brazil = TimeZoneInfo.CreateCustomTimeZone("brazil", TimeSpan.FromHours(-3), "brazil", "brazil");
 
-        calendarEvent.Start.DateTimeDateTimeOffset.Should().Be(new DateTimeOffset(2026, 9, 10, 10, 0, 0, TimeSpan.Zero));
-        calendarEvent.End.DateTimeDateTimeOffset.Should().Be(new DateTimeOffset(2026, 9, 10, 11, 0, 0, TimeSpan.Zero));
-        calendarEvent.Start.TimeZone.Should().Be("UTC");
-        calendarEvent.End.TimeZone.Should().Be("UTC");
+        var calendarEvent = GoogleCalendarOAuthClient.BuildEvent("title", "description", new DateOnly(2026, 9, 10), brazil);
+
+        calendarEvent.Start.DateTimeDateTimeOffset.Should().Be(new DateTimeOffset(2026, 9, 10, 10, 0, 0, TimeSpan.FromHours(-3)));
+        calendarEvent.End.DateTimeDateTimeOffset.Should().Be(new DateTimeOffset(2026, 9, 10, 11, 0, 0, TimeSpan.FromHours(-3)));
+        calendarEvent.Start.DateTimeDateTimeOffset!.Value.UtcDateTime.Hour.Should().Be(13);
         calendarEvent.Summary.Should().Be("title");
         calendarEvent.Description.Should().Be("description");
     }
@@ -65,7 +66,7 @@ public class GoogleCalendarOAuthClientTests
     [Trait("AC", "P45-F02-credit-card-due-date-event-sync-04")]
     public void BuildEvent_HasExactlyTwoPopupReminders_OneDayAndOneHourBeforeItsStart()
     {
-        var calendarEvent = GoogleCalendarOAuthClient.BuildEvent("title", "description", new DateOnly(2026, 9, 10));
+        var calendarEvent = GoogleCalendarOAuthClient.BuildEvent("title", "description", new DateOnly(2026, 9, 10), TimeZoneInfo.Utc);
 
         calendarEvent.Reminders.UseDefault.Should().BeFalse();
         calendarEvent.Reminders.Overrides.Should().HaveCount(2);

@@ -167,7 +167,7 @@ internal sealed class GoogleCalendarOAuthClient : IGoogleCalendarOAuthClient
         string accessToken, string calendarId, string title, string description, DateOnly date, CancellationToken cancellationToken = default) =>
         ExecuteInCalendarAsync(accessToken, calendarId, async service =>
         {
-            var calendarEvent = BuildEvent(title, description, date);
+            var calendarEvent = BuildEvent(title, description, date, TimeZoneInfo.Local);
             var created = await GoogleRetryPolicy.ExecuteWithRetryAsync(
                 () => service.Events.Insert(calendarEvent, calendarId).ExecuteAsync(cancellationToken)).ConfigureAwait(false);
             return created.Id;
@@ -177,7 +177,7 @@ internal sealed class GoogleCalendarOAuthClient : IGoogleCalendarOAuthClient
         string accessToken, string calendarId, string eventId, string title, string description, DateOnly date, CancellationToken cancellationToken = default) =>
         ExecuteInCalendarAsync(accessToken, calendarId, service =>
         {
-            var calendarEvent = BuildEvent(title, description, date);
+            var calendarEvent = BuildEvent(title, description, date, TimeZoneInfo.Local);
             return GoogleRetryPolicy.ExecuteWithRetryAsync(
                 () => service.Events.Update(calendarEvent, calendarId, eventId).ExecuteAsync(cancellationToken));
         });
@@ -187,21 +187,20 @@ internal sealed class GoogleCalendarOAuthClient : IGoogleCalendarOAuthClient
             GoogleRetryPolicy.ExecuteWithRetryAsync(
                 () => service.Events.Delete(calendarId, eventId).ExecuteAsync(cancellationToken)));
 
-    private static readonly TimeSpan EventStartUtc = TimeSpan.FromHours(10);
+    private static readonly TimeSpan EventStartLocal = TimeSpan.FromHours(10);
     private static readonly TimeSpan EventDuration = TimeSpan.FromHours(1);
     private static readonly int[] ReminderMinutesBeforeStart = [1440, 60];
 
-    /// <summary>Internal (not private) so <c>Financial.GoogleIntegrations.Tests</c> can pin the
-    /// fixed 10:00-11:00 UTC window + 1-day/1-hour popup-reminder shape without a live Google API call.</summary>
-    internal static Event BuildEvent(string title, string description, DateOnly date)
+    internal static Event BuildEvent(string title, string description, DateOnly date, TimeZoneInfo timeZone)
     {
-        var start = new DateTimeOffset(date.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero) + EventStartUtc;
+        var localStart = date.ToDateTime(TimeOnly.MinValue) + EventStartLocal;
+        var start = new DateTimeOffset(localStart, timeZone.GetUtcOffset(localStart));
         return new Event
         {
             Summary = title,
             Description = description,
-            Start = new EventDateTime { DateTimeDateTimeOffset = start, TimeZone = "UTC" },
-            End = new EventDateTime { DateTimeDateTimeOffset = start + EventDuration, TimeZone = "UTC" },
+            Start = new EventDateTime { DateTimeDateTimeOffset = start },
+            End = new EventDateTime { DateTimeDateTimeOffset = start + EventDuration },
             Reminders = new Event.RemindersData
             {
                 UseDefault = false,
