@@ -15,6 +15,27 @@ public class WithdrawalFormValidationTests
         Validate(bucketId ?? ValidBucketId, amount, ValidDate, description);
 
     [Fact]
+    public void BankWithoutCategory_ReturnsCategoryRequired()
+    {
+        WithdrawalFormValidation.BuildValidationMessage(ValidBucketId, "50", ValidDate, "Groceries", Guid.NewGuid(), null)
+            .Should().Be("Category is required when a bank is selected.");
+    }
+
+    [Fact]
+    public void BankWithCategory_ReturnsEmpty()
+    {
+        WithdrawalFormValidation.BuildValidationMessage(ValidBucketId, "50", ValidDate, "Groceries", Guid.NewGuid(), Guid.NewGuid())
+            .Should().BeEmpty();
+    }
+
+    [Fact]
+    public void CategoryWithoutBank_IsIgnored()
+    {
+        WithdrawalFormValidation.BuildValidationMessage(ValidBucketId, "50", ValidDate, "Groceries", null, Guid.NewGuid())
+            .Should().BeEmpty();
+    }
+
+    [Fact]
     public void ValidForm_ReturnsEmpty()
     {
         Validate().Should().BeEmpty();

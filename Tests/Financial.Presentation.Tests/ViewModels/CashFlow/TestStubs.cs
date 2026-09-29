@@ -130,8 +130,19 @@ internal sealed class StubBankService : IBankService
 {
     public List<BankDTO> Banks { get; set; } = [];
     public List<BankBalanceDTO> BankBalances { get; set; } = [];
+    public Exception? ThrowOnGet { get; set; }
+    public int GetBanksCallCount { get; private set; }
 
-    public IReadOnlyList<BankDTO> GetBanks() => Banks;
+    public IReadOnlyList<BankDTO> GetBanks()
+    {
+        GetBanksCallCount++;
+        if (ThrowOnGet is { } ex)
+        {
+            throw ex;
+        }
+
+        return Banks;
+    }
 
     public Task<BankDTO> CreateBankAsync(BankCreateDTO request) => throw new NotSupportedException();
 
@@ -361,8 +372,17 @@ internal sealed class StubCreditCardService : ICreditCardService
 internal sealed class StubCategoryService : ICategoryService
 {
     public List<CategoryDTO> Categories { get; set; } = [];
+    public Exception? ThrowOnGet { get; set; }
 
-    public IReadOnlyList<CategoryDTO> GetCategories() => Categories;
+    public IReadOnlyList<CategoryDTO> GetCategories()
+    {
+        if (ThrowOnGet is { } ex)
+        {
+            throw ex;
+        }
+
+        return Categories;
+    }
 
     public Task<CategoryDTO> CreateCategoryAsync(CategoryCreateDTO request)
     {

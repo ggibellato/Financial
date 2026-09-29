@@ -224,12 +224,12 @@ graph TD
 - [x] `npm run build`, `npm run lint`, `npm test` pass
 
 ### F03. WPF Withdrawal Form Parity
-- [ ] The WPF form has the same two new fields, in the same order, with the same defaults and show/hide behavior as the web form
-- [ ] Validation text matches the web app, including "Category is required when a bank is selected."
-- [ ] The request omits bank and category when no bank is selected
-- [ ] Overdraft confirmation and post-submit refresh behave as before
-- [ ] Server errors are attributed to the correct field or shown as the general error, and the form values are retained
-- [ ] The new controls are keyboard navigable, have visible focus and automation names
+- [x] The WPF form has the same two new fields, in the same order, with the same defaults and show/hide behavior as the web form
+- [x] Validation text matches the web app, including "Category is required when a bank is selected."
+- [x] The request omits bank and category when no bank is selected
+- [x] Overdraft confirmation and post-submit refresh behave as before
+- [x] Server errors are attributed to the correct field or shown as the general error, and the form values are retained
+- [x] The new controls are keyboard navigable, have visible focus and automation names
 - [ ] Manual WPF GUI check confirms the outcome matches the web app for a bank-routed and a direct withdrawal
 
 ### Cross-Feature Integration

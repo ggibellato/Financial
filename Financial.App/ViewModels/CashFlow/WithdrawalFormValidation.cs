@@ -2,13 +2,21 @@ namespace Financial.Presentation.App.ViewModels.CashFlow;
 
 public static class WithdrawalFormValidation
 {
-    public static string BuildValidationMessage(Guid? bucketId, string amount, DateTime? date, string description)
+    public const string ExpenseCategoryRequired = "Category is required when a bank is selected.";
+
+    public static string BuildValidationMessage(
+        Guid? bucketId, string amount, DateTime? date, string description, Guid? bankId = null, Guid? expenseCategoryId = null)
     {
         var errors = new List<string>();
 
         if (bucketId is null)
         {
             errors.Add("Bucket is required.");
+        }
+
+        if (bankId is not null && expenseCategoryId is null)
+        {
+            errors.Add(ExpenseCategoryRequired);
         }
 
         if (!decimal.TryParse(amount, out var parsedAmount) || parsedAmount <= 0)
