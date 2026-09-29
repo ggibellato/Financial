@@ -59,7 +59,7 @@ attempting to connect returns an error rather than crashing the app.
 - `CashFlow:GoogleCalendar:CredentialsPath` — local file storing the connection's tokens, separate from `data-cashflow.json` and from the `GoogleDrive` credentials above. Defaults to `data/google-calendar-credentials.json` if unset (git-ignored, like every other local credentials file).
 
 Once connected, saving an active credit card with a due date automatically syncs one persistent
-all-day event per card (with a 1-day-before reminder) in the background - it never blocks or
+10:00-11:00 UTC event per card (with 1-day and 1-hour-before reminders) in the background - it never blocks or
 fails the save itself. `POST .../integrations/calendar/credit-cards/{id}/resync` and
 `POST .../integrations/calendar/resync-all` manually retry a failed sync; `GET
 .../integrations/calendar/credit-cards/sync-status` reports each card's current sync state.

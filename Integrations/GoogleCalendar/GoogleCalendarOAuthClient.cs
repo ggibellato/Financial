@@ -187,20 +187,30 @@ internal sealed class GoogleCalendarOAuthClient : IGoogleCalendarOAuthClient
             GoogleRetryPolicy.ExecuteWithRetryAsync(
                 () => service.Events.Delete(calendarId, eventId).ExecuteAsync(cancellationToken)));
 
+    private static readonly TimeSpan EventStartUtc = TimeSpan.FromHours(10);
+    private static readonly TimeSpan EventDuration = TimeSpan.FromHours(1);
+    private static readonly int[] ReminderMinutesBeforeStart = [1440, 60];
+
     /// <summary>Internal (not private) so <c>Financial.GoogleIntegrations.Tests</c> can pin the
-    /// fixed all-day + 1-day-before-popup-reminder shape without a live Google API call.</summary>
-    internal static Event BuildEvent(string title, string description, DateOnly date) => new()
+    /// fixed 10:00-11:00 UTC window + 1-day/1-hour popup-reminder shape without a live Google API call.</summary>
+    internal static Event BuildEvent(string title, string description, DateOnly date)
     {
-        Summary = title,
-        Description = description,
-        Start = new EventDateTime { Date = date.ToString("yyyy-MM-dd") },
-        End = new EventDateTime { Date = date.AddDays(1).ToString("yyyy-MM-dd") },
-        Reminders = new Event.RemindersData
+        var start = new DateTimeOffset(date.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero) + EventStartUtc;
+        return new Event
         {
-            UseDefault = false,
-            Overrides = new List<EventReminder> { new() { Method = "popup", Minutes = 1440 } }
-        }
-    };
+            Summary = title,
+            Description = description,
+            Start = new EventDateTime { DateTimeDateTimeOffset = start, TimeZone = "UTC" },
+            End = new EventDateTime { DateTimeDateTimeOffset = start + EventDuration, TimeZone = "UTC" },
+            Reminders = new Event.RemindersData
+            {
+                UseDefault = false,
+                Overrides = ReminderMinutesBeforeStart
+                    .Select(minutes => new EventReminder { Method = "popup", Minutes = minutes })
+                    .ToList()
+            }
+        };
+    }
 
     /// <summary>Opens the calendar service for the call, translating a not-found API response into
     /// <see cref="GoogleCalendarNotFoundException"/> - the shape every event operation below needs.</summary>

@@ -49,26 +49,28 @@ public class GoogleCalendarOAuthClientTests
     }
 
     [Fact]
-    public void BuildEvent_IsAllDay_OnTheGivenDate()
+    public void BuildEvent_SpansTenToElevenUtc_OnTheGivenDate()
     {
         var calendarEvent = GoogleCalendarOAuthClient.BuildEvent("title", "description", new DateOnly(2026, 9, 10));
 
-        calendarEvent.Start.Date.Should().Be("2026-09-10");
-        calendarEvent.End.Date.Should().Be("2026-09-11");
+        calendarEvent.Start.DateTimeDateTimeOffset.Should().Be(new DateTimeOffset(2026, 9, 10, 10, 0, 0, TimeSpan.Zero));
+        calendarEvent.End.DateTimeDateTimeOffset.Should().Be(new DateTimeOffset(2026, 9, 10, 11, 0, 0, TimeSpan.Zero));
+        calendarEvent.Start.TimeZone.Should().Be("UTC");
+        calendarEvent.End.TimeZone.Should().Be("UTC");
         calendarEvent.Summary.Should().Be("title");
         calendarEvent.Description.Should().Be("description");
     }
 
     [Fact]
     [Trait("AC", "P45-F02-credit-card-due-date-event-sync-04")]
-    public void BuildEvent_HasExactlyOnePopupReminderSet1440MinutesBeforeItsStart()
+    public void BuildEvent_HasExactlyTwoPopupReminders_OneDayAndOneHourBeforeItsStart()
     {
         var calendarEvent = GoogleCalendarOAuthClient.BuildEvent("title", "description", new DateOnly(2026, 9, 10));
 
         calendarEvent.Reminders.UseDefault.Should().BeFalse();
-        calendarEvent.Reminders.Overrides.Should().ContainSingle();
-        calendarEvent.Reminders.Overrides[0].Method.Should().Be("popup");
-        calendarEvent.Reminders.Overrides[0].Minutes.Should().Be(1440);
+        calendarEvent.Reminders.Overrides.Should().HaveCount(2);
+        calendarEvent.Reminders.Overrides.Should().OnlyContain(r => r.Method == "popup");
+        calendarEvent.Reminders.Overrides.Select(r => r.Minutes).Should().BeEquivalentTo(new int?[] { 1440, 60 });
     }
 
     [Fact]

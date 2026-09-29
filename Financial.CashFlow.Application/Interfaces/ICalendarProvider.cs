@@ -45,7 +45,7 @@ public interface ICalendarProvider
     Task<string?> FindEventIdByTitlePrefixAsync(
         string accessToken, string calendarId, string titlePrefix, CancellationToken cancellationToken = default);
 
-    /// <summary>Creates a single all-day event with a fixed 1-day-before popup reminder, and
+    /// <summary>Creates a single 10:00-11:00 UTC event with fixed 1-day and 1-hour popup reminders, and
     /// returns its provider-assigned id. Throws <see cref="Exceptions.CalendarNotFoundException"/>
     /// when <paramref name="calendarId"/> no longer exists.</summary>
     Task<string> CreateEventAsync(
