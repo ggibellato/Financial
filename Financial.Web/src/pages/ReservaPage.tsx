@@ -78,6 +78,10 @@ export default function ReservaPage() {
     withdrawalAmount,
     withdrawalDate,
     withdrawalDescription,
+    withdrawalBankId,
+    withdrawalExpenseCategoryId,
+    withdrawalBanks,
+    withdrawalCategoryOptions,
     isSubmittingWithdrawal,
     withdrawalError,
     withdrawalErrorFields,
@@ -159,7 +163,11 @@ export default function ReservaPage() {
           amount={withdrawalAmount}
           date={withdrawalDate}
           description={withdrawalDescription}
+          bankId={withdrawalBankId}
+          expenseCategoryId={withdrawalExpenseCategoryId}
           buckets={buckets}
+          banks={withdrawalBanks}
+          categories={withdrawalCategoryOptions}
           isSubmitting={isSubmittingWithdrawal}
           error={withdrawalError}
           errorFields={withdrawalErrorFields}

@@ -117,13 +117,13 @@ The core value is that a Reserva-funded expense is recorded once, correctly, on 
 - F01: extended withdrawal contract (optional bank identifier, category identifier), reserve movement result
 
 **Capabilities:**
-- `WithdrawalForm` gains a "Through bank" select listing active banks, empty by default with an empty option meaning "No bank (direct)".
+- `WithdrawalForm` gains a "Through bank" select listing all banks, empty by default with an empty option meaning "No bank (direct)".
 - When a bank is selected, an "Expense category" select appears listing active, non-investment, non-`Reserva` categories.
 - Category defaults to the category whose name equals the selected bucket's name (case-insensitive); if none matches, it stays empty and required. Changing the bucket re-applies the default only while the user has not manually chosen a category.
 - Clearing the bank hides the category field and drops its value; the request then omits both fields.
 - The bank and category selections are not remembered between opens (the existing last-used date and bucket behavior is unchanged).
 - Client validation mirrors server messages: "Category is required when a bank is selected."; existing messages unchanged.
-- Field order: Bucket, Amount, Date, Description, Through bank, Expense category.
+- Field order: Date, Bucket, Through bank, Expense category, Description, Amount.
 
 **Experience:**
 - Initial: bank empty, category hidden.
@@ -213,15 +213,15 @@ graph TD
 - [x] The OpenAPI snapshot and generated TypeScript types are regenerated, committed and pass their freshness tests
 
 ### F02. Web Withdrawal Form (React)
-- [ ] The form shows an optional "Through bank" select, empty by default, listing active banks only
-- [ ] Selecting a bank reveals the "Expense category" select preselected to the bucket-named category when one exists
-- [ ] With no matching category, the category stays empty and submit shows "Category is required when a bank is selected."
-- [ ] Clearing the bank hides the category and the request omits both fields
-- [ ] Changing the bucket updates the default category only if the user has not manually chosen one
-- [ ] Submit with a bank sends bank and category identifiers; success closes the form and refreshes the reserve data
-- [ ] Server 400 and 409 responses are shown inline/with the existing confirmation dialog and the entered values are kept
-- [ ] The new fields are keyboard operable, labelled, and show visible focus
-- [ ] `npm run build`, `npm run lint`, `npm test` pass
+- [x] The form shows an optional "Through bank" select, empty by default, listing all banks
+- [x] Selecting a bank reveals the "Expense category" select preselected to the bucket-named category when one exists
+- [x] With no matching category, the category stays empty and submit shows "Category is required when a bank is selected."
+- [x] Clearing the bank hides the category and the request omits both fields
+- [x] Changing the bucket updates the default category only if the user has not manually chosen one
+- [x] Submit with a bank sends bank and category identifiers; success closes the form and refreshes the reserve data
+- [x] Server 400 and 409 responses are shown inline/with the existing confirmation dialog and the entered values are kept
+- [x] The new fields are keyboard operable, labelled, and show visible focus
+- [x] `npm run build`, `npm run lint`, `npm test` pass
 
 ### F03. WPF Withdrawal Form Parity
 - [ ] The WPF form has the same two new fields, in the same order, with the same defaults and show/hide behavior as the web form
