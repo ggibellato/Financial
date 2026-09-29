@@ -167,7 +167,7 @@ internal sealed class GoogleCalendarOAuthClient : IGoogleCalendarOAuthClient
         string accessToken, string calendarId, string title, string description, DateOnly date, CancellationToken cancellationToken = default) =>
         ExecuteInCalendarAsync(accessToken, calendarId, async service =>
         {
-            var calendarEvent = BuildEvent(title, description, date);
+            var calendarEvent = BuildEvent(title, description, date, TimeZoneInfo.Local);
             var created = await GoogleRetryPolicy.ExecuteWithRetryAsync(
                 () => service.Events.Insert(calendarEvent, calendarId).ExecuteAsync(cancellationToken)).ConfigureAwait(false);
             return created.Id;
@@ -177,7 +177,7 @@ internal sealed class GoogleCalendarOAuthClient : IGoogleCalendarOAuthClient
         string accessToken, string calendarId, string eventId, string title, string description, DateOnly date, CancellationToken cancellationToken = default) =>
         ExecuteInCalendarAsync(accessToken, calendarId, service =>
         {
-            var calendarEvent = BuildEvent(title, description, date);
+            var calendarEvent = BuildEvent(title, description, date, TimeZoneInfo.Local);
             return GoogleRetryPolicy.ExecuteWithRetryAsync(
                 () => service.Events.Update(calendarEvent, calendarId, eventId).ExecuteAsync(cancellationToken));
         });
@@ -187,20 +187,29 @@ internal sealed class GoogleCalendarOAuthClient : IGoogleCalendarOAuthClient
             GoogleRetryPolicy.ExecuteWithRetryAsync(
                 () => service.Events.Delete(calendarId, eventId).ExecuteAsync(cancellationToken)));
 
-    /// <summary>Internal (not private) so <c>Financial.GoogleIntegrations.Tests</c> can pin the
-    /// fixed all-day + 1-day-before-popup-reminder shape without a live Google API call.</summary>
-    internal static Event BuildEvent(string title, string description, DateOnly date) => new()
+    private static readonly TimeSpan EventStartLocal = TimeSpan.FromHours(10);
+    private static readonly TimeSpan EventDuration = TimeSpan.FromHours(1);
+    private static readonly int[] ReminderMinutesBeforeStart = [1440, 60];
+
+    internal static Event BuildEvent(string title, string description, DateOnly date, TimeZoneInfo timeZone)
     {
-        Summary = title,
-        Description = description,
-        Start = new EventDateTime { Date = date.ToString("yyyy-MM-dd") },
-        End = new EventDateTime { Date = date.AddDays(1).ToString("yyyy-MM-dd") },
-        Reminders = new Event.RemindersData
+        var localStart = date.ToDateTime(TimeOnly.MinValue) + EventStartLocal;
+        var start = new DateTimeOffset(localStart, timeZone.GetUtcOffset(localStart));
+        return new Event
         {
-            UseDefault = false,
-            Overrides = new List<EventReminder> { new() { Method = "popup", Minutes = 1440 } }
-        }
-    };
+            Summary = title,
+            Description = description,
+            Start = new EventDateTime { DateTimeDateTimeOffset = start },
+            End = new EventDateTime { DateTimeDateTimeOffset = start + EventDuration },
+            Reminders = new Event.RemindersData
+            {
+                UseDefault = false,
+                Overrides = ReminderMinutesBeforeStart
+                    .Select(minutes => new EventReminder { Method = "popup", Minutes = minutes })
+                    .ToList()
+            }
+        };
+    }
 
     /// <summary>Opens the calendar service for the call, translating a not-found API response into
     /// <see cref="GoogleCalendarNotFoundException"/> - the shape every event operation below needs.</summary>
