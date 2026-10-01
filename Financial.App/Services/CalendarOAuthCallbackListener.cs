@@ -29,11 +29,12 @@ public sealed class CalendarOAuthCallbackListener : ICalendarOAuthCallbackListen
         });
 
         HttpListenerContext context;
+        // Cancellation can stop the listener before GetContextAsync runs, which throws InvalidOperationException.
         try
         {
             context = await listener.GetContextAsync().ConfigureAwait(false);
         }
-        catch (Exception ex) when (ex is HttpListenerException or ObjectDisposedException)
+        catch (Exception ex) when (ex is HttpListenerException or ObjectDisposedException or InvalidOperationException)
         {
             throw new OperationCanceledException(
                 "The OAuth callback listener was stopped before Google redirected back.", ex, cancellationToken);
