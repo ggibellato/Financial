@@ -197,6 +197,19 @@ public class InvestmentSnapshotsViewModelTests
     }
 
     [Fact]
+    public async Task EditSnapshot_OpensFormShowingAccountLabel()
+    {
+        var (viewModel, service) = CreateViewModel();
+        var today = DateTime.Today;
+        service.Snapshots = [CreateSnapshot(today.Year, today.Month, "Mortgage", true, 1000m)];
+        await viewModel.RefreshAsync();
+
+        viewModel.EditSnapshotCommand.Execute(viewModel.Snapshots.Single());
+
+        viewModel.EditAccountLabel.Should().Be("Mortgage (liability)");
+    }
+
+    [Fact]
     public async Task EditSnapshot_ValidForm_CallsUpdateServiceAndClosesForm()
     {
         var (viewModel, service) = CreateViewModel();

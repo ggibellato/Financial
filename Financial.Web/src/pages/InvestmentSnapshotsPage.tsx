@@ -24,17 +24,19 @@ function SnapshotColumns() {
   )
 }
 
+function snapshotLabel(snapshot: InvestmentSnapshotDto) {
+  return snapshot.isLiability ? `${snapshot.accountName} (liability)` : snapshot.accountName
+}
+
 interface SnapshotRowProps {
   snapshot: InvestmentSnapshotDto
   onEdit: (snapshot: InvestmentSnapshotDto) => void
 }
 
 function SnapshotRow({ snapshot, onEdit }: SnapshotRowProps) {
-  const label = snapshot.isLiability ? `${snapshot.accountName} (liability)` : snapshot.accountName
-
   return (
     <TableRow>
-      <DataTableCell label="Account">{label}</DataTableCell>
+      <DataTableCell label="Account">{snapshotLabel(snapshot)}</DataTableCell>
       <DataTableCell label="Value" className="data-table__col--numeric">
         {formatN2(snapshot.value)}
       </DataTableCell>
@@ -76,6 +78,7 @@ export default function InvestmentSnapshotsPage() {
 
   const suggestedValues = useSuggestedValues(year, month, refresh)
   const isEditing = editingId !== null
+  const editingSnapshot = snapshots.find((snapshot) => snapshot.id === editingId)
   const styles = useFormPanelStyles()
   const fieldError = useFieldError(saveErrorFields)
 
@@ -136,6 +139,9 @@ export default function InvestmentSnapshotsPage() {
           </Text>
 
           <div className={styles.grid}>
+            <Field label="Account">
+              <Input value={editingSnapshot ? snapshotLabel(editingSnapshot) : ''} disabled readOnly />
+            </Field>
             <Field
               label="Value"
               required
