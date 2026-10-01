@@ -88,6 +88,17 @@ describe('InvestmentSnapshotsPage', () => {
     await waitFor(() => expect(screen.getByText('999.00')).toBeInTheDocument())
   })
 
+  it('shows the account being edited in a read-only Account field', async () => {
+    render(<InvestmentSnapshotsPage />)
+
+    await waitFor(() => expect(screen.getByText('Account0')).toBeInTheDocument())
+    fireEvent.click(screen.getAllByRole('button', { name: 'Edit snapshot' })[0])
+
+    const accountInput = screen.getByLabelText('Account')
+    expect(accountInput).toHaveValue('Account0')
+    expect(accountInput).toHaveAttribute('readonly')
+  })
+
   it('sorts rows by clicking the Value column header, keeping the totals row fixed as the last row', async () => {
     const { container } = render(<InvestmentSnapshotsPage />)
 

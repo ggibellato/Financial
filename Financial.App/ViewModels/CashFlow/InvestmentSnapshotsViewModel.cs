@@ -121,8 +121,15 @@ public class InvestmentSnapshotsViewModel : ViewModelBase
     private bool _isEditFormOpen;
     private Guid? _editingSnapshotId;
     private string _editValue = string.Empty;
+    private string _editAccountLabel = string.Empty;
     private bool _isSaving;
     private string? _editSaveError;
+
+    public string EditAccountLabel
+    {
+        get => _editAccountLabel;
+        private set => SetProperty(ref _editAccountLabel, value);
+    }
 
     public bool IsEditFormOpen
     {
@@ -184,6 +191,7 @@ public class InvestmentSnapshotsViewModel : ViewModelBase
 
         CloseSuggestPanel();
         _editingSnapshotId = row.Id;
+        EditAccountLabel = row.DisplayLabel;
         EditValue = row.Value.ToString();
         EditSaveError = null;
         IsEditFormOpen = true;

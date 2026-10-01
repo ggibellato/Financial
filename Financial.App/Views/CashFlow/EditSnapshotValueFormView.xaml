@@ -36,6 +36,12 @@
             <TextBlock Grid.Row="0" Grid.ColumnSpan="4" FontWeight="Bold" Text="Edit Snapshot" Margin="0,0,0,8"/>
 
             <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,8,8">
+                <TextBlock Style="{StaticResource FieldLabelStyle}" Text="Account"/>
+                <TextBox AutomationProperties.Name="Account" IsReadOnly="True" IsTabStop="False"
+                         Text="{Binding EditAccountLabel, Mode=OneWay}"/>
+            </StackPanel>
+
+            <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,8,8">
                 <TextBlock Style="{StaticResource FieldLabelStyle}">
                     <Run Text="Value"/>
                     <Run Text=" *" Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>

@@ -91,6 +91,21 @@ public class CalendarOAuthCallbackListenerTests
         await act.Should().ThrowAsync<OperationCanceledException>();
     }
 
+    [Fact]
+    public async Task ListenAsync_WhenAlreadyCancelled_ThrowsOperationCanceled()
+    {
+        var port = GetFreeTcpPort();
+        var authorizationUrl = "https://accounts.google.com/o/oauth2/v2/auth" +
+            $"?client_id=fake-client-id&state=xyz&redirect_uri={Uri.EscapeDataString($"http://localhost:{port}/")}";
+        var sut = new CalendarOAuthCallbackListener();
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        Func<Task> act = async () => await sut.ListenAsync(authorizationUrl, cts.Token);
+
+        await act.Should().ThrowAsync<OperationCanceledException>();
+    }
+
     private static int GetFreeTcpPort()
     {
         var listener = new TcpListener(System.Net.IPAddress.Loopback, 0);
