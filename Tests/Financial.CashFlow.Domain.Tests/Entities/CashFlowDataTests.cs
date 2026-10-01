@@ -512,7 +512,7 @@ public class CashFlowDataTests
     [Fact]
     public void AddTitheCarryForward_AddsOnlyToTitheCarryForwardsCollection()
     {
-        _sut.AddTitheCarryForward(TitheCarryForward.Create(2026, 8, 50m));
+        _sut.AddTitheCarryForward(TitheCarryForward.Create(2026, 8, false));
 
         CheckCollectionCounts(new CheckItemsQuantity(TitheCarryForwards: 1));
     }

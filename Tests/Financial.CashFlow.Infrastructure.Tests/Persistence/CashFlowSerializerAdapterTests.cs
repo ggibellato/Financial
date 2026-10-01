@@ -47,7 +47,7 @@ public class CashFlowSerializerAdapterTests
         var investmentSnapshot = InvestmentSnapshot.Create(investmentAccount, 2026, 7, 1250.00m);
         var transfer = Transfer.Create(new DateOnly(2026, 7, 25), bank, destinationBank, 500.00m, "Round-up top-up");
         var balanceAdjustment = BalanceAdjustment.Create(new DateOnly(2026, 7, 25), bank, 2340.17m, -4.20m, "Matched against July statement");
-        var titheCarryForward = TitheCarryForward.Create(2026, 8, 142.50m);
+        var titheCarryForward = TitheCarryForward.Create(2026, 8, false);
 
         original.AddReserveBucket(reserveBucket);
         original.AddCreditCard(creditCard);
@@ -149,7 +149,6 @@ public class CashFlowSerializerAdapterTests
             var resultTitheCarryForward = result.TitheCarryForwards.Should().ContainSingle().Which;
             resultTitheCarryForward.Year.Should().Be(titheCarryForward.Year);
             resultTitheCarryForward.Month.Should().Be(titheCarryForward.Month);
-            resultTitheCarryForward.Amount.Should().Be(titheCarryForward.Amount);
             resultTitheCarryForward.Included.Should().Be(titheCarryForward.Included);
             result.TitheCarryForwardEffectiveFrom.Should().Be(new DateOnly(2026, 6, 1));
 
@@ -243,6 +242,26 @@ public class CashFlowSerializerAdapterTests
         var act = () => _sut.Deserialize(json);
 
         act.Should().Throw<JsonException>().WithMessage($"*{missingBankId}*");
+    }
+
+    [Fact]
+    public void Deserialize_LegacyTitheCarryForwardWithAmount_IgnoresTheAmount()
+    {
+        var json = """
+            {
+              "Expenses": [], "CardStatements": [], "RecurringBills": [],
+              "MaeLedgerEntries": [], "InvestmentSnapshots": [], "InvestmentAccounts": [],
+              "Incomes": [], "IncomeSources": [], "Transfers": [], "BalanceAdjustments": [],
+              "Banks": [], "CreditCards": [], "Categories": [], "ReserveBuckets": [], "ReserveMovements": [],
+              "TitheCarryForwards": [{ "Year": 2026, "Month": 10, "Amount": 219.078, "Included": false }]
+            }
+            """;
+
+        var result = _sut.Deserialize(json);
+
+        var decision = result.TitheCarryForwards.Should().ContainSingle().Which;
+        decision.Month.Should().Be(10);
+        decision.Included.Should().BeFalse();
     }
 
     [Fact]

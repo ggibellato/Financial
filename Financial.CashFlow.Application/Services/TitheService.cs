@@ -50,15 +50,24 @@ public sealed class TitheService : ITitheService
                 throw new ArgumentException("Month must be between 1 and 12.", nameof(month));
             }
 
-            var record = _repository.GetTitheCarryForwards().FirstOrDefault(d => d.Year == year && d.Month == month);
-            if (record is null)
+            var anchor = await ResolveAnchorAsync().ConfigureAwait(false);
+            if (Resolve(year, month, anchor).CarryForward is null)
             {
                 throw new ArgumentException($"No carry-forward is available for {year}-{month:D2}.");
             }
 
             await _repository.ApplyAndSaveAsync(() =>
             {
-                record.SetIncluded(included);
+                var record = FindDecision(year, month);
+                if (record is null)
+                {
+                    _repository.AddTitheCarryForward(TitheCarryForward.Create(year, month, included));
+                }
+                else
+                {
+                    record.SetIncluded(included);
+                }
+
                 return true;
             }).ConfigureAwait(false);
 
@@ -75,85 +84,66 @@ public sealed class TitheService : ITitheService
         }
     }
 
-    /// <summary>
-    /// Resolves a month's Tithe figures, lazily anchoring <see cref="ICashFlowRepository.GetTitheCarryForwardEffectiveFrom"/>
-    /// on the very first call and lazily walking back through any unresolved earlier months to
-    /// snapshot the cascading carry-forward chain, before persisting everything in a single save.
-    /// </summary>
-    private async Task<TitheSummaryDTO> ResolveMonthAsync(int year, int month)
+    private async Task<DateOnly> ResolveAnchorAsync()
     {
         var effectiveFrom = _repository.GetTitheCarryForwardEffectiveFrom();
-        var newEffectiveFrom = effectiveFrom is null
-            ? new DateOnly(DateTime.Today.Year, DateTime.Today.Month, 1)
-            : (DateOnly?)null;
-        var anchor = effectiveFrom ?? newEffectiveFrom!.Value;
-
-        var pendingNew = new Dictionary<(int Year, int Month), TitheCarryForward>();
-        var summary = Resolve(year, month, anchor, pendingNew);
-
-        if (newEffectiveFrom is not null || pendingNew.Count > 0)
+        if (effectiveFrom is not null)
         {
-            await _repository.ApplyAndSaveAsync(() =>
-            {
-                if (newEffectiveFrom is not null)
-                {
-                    _repository.SetTitheCarryForwardEffectiveFrom(newEffectiveFrom.Value);
-                }
-
-                foreach (var record in pendingNew.Values)
-                {
-                    _repository.AddTitheCarryForward(record);
-                }
-
-                return true;
-            }).ConfigureAwait(false);
+            return effectiveFrom.Value;
         }
 
-        return summary;
+        var anchor = new DateOnly(DateTime.Today.Year, DateTime.Today.Month, 1);
+        await _repository.ApplyAndSaveAsync(() =>
+        {
+            _repository.SetTitheCarryForwardEffectiveFrom(anchor);
+            return true;
+        }).ConfigureAwait(false);
+
+        return anchor;
     }
 
-    private TitheSummaryDTO Resolve(
-        int year, int month, DateOnly anchor, Dictionary<(int Year, int Month), TitheCarryForward> pendingNew)
+    private async Task<TitheSummaryDTO> ResolveMonthAsync(int year, int month)
+    {
+        var anchor = await ResolveAnchorAsync().ConfigureAwait(false);
+        return Resolve(year, month, anchor);
+    }
+
+    private TitheCarryForward? FindDecision(int year, int month) =>
+        _repository.GetTitheCarryForwards().FirstOrDefault(d => d.Year == year && d.Month == month);
+
+    private TitheSummaryDTO Resolve(int year, int month, DateOnly anchor)
     {
         var baseBalance = ComputeBaseBalance(year, month, out var calculatedTithe);
-        var target = new DateOnly(year, month, 1);
         var (prevYear, prevMonth) = PreviousMonth(year, month);
 
-        var record = _repository.GetTitheCarryForwards().FirstOrDefault(d => d.Year == year && d.Month == month);
-        if (record is null && pendingNew.TryGetValue((year, month), out var pending))
+        var carryAmount = 0m;
+        var included = false;
+        if (new DateOnly(year, month, 1) > anchor)
         {
-            record = pending;
-        }
-
-        if (record is null && target > anchor)
-        {
-            var prevTarget = new DateOnly(prevYear, prevMonth, 1);
-            var predecessorAdjusted = prevTarget <= anchor
+            var previousBalance = new DateOnly(prevYear, prevMonth, 1) <= anchor
                 ? ComputeBaseBalance(prevYear, prevMonth, out _)
-                : Resolve(prevYear, prevMonth, anchor, pendingNew).TitheBalance;
+                : Resolve(prevYear, prevMonth, anchor).TitheBalance;
 
-            if (predecessorAdjusted > 0)
+            if (previousBalance > 0)
             {
-                record = TitheCarryForward.Create(year, month, predecessorAdjusted);
-                pendingNew[(year, month)] = record;
+                carryAmount = previousBalance;
+                included = FindDecision(year, month)?.Included ?? true;
             }
         }
-
-        var titheBalance = baseBalance + (record is { Included: true } ? record.Amount : 0m);
 
         return new TitheSummaryDTO
         {
             CalculatedTithe = calculatedTithe,
-            TitheBalance = titheBalance,
-            CarryForward = record is null
-                ? null
-                : new TitheCarryForwardDTO
+            TitheBalance = baseBalance + (included ? carryAmount : 0m),
+            CarryForward = carryAmount > 0
+                ? new TitheCarryForwardDTO
                 {
-                    Amount = record.Amount,
-                    Included = record.Included,
+                    Amount = carryAmount,
+                    Included = included,
                     FromYear = prevYear,
                     FromMonth = prevMonth
                 }
+                : null
         };
     }
 

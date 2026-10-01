@@ -446,10 +446,10 @@ public class CashFlowJsonRepositoryTests
         try
         {
             var data = CashFlowData.Create();
-            data.AddTitheCarryForward(TitheCarryForward.Create(2026, 8, 50m));
+            data.AddTitheCarryForward(TitheCarryForward.Create(2026, 8, false));
             var repository = new CashFlowJsonRepository(data, new LocalJsonStorage(path), new CashFlowSerializerAdapter());
 
-            repository.GetTitheCarryForwards().Should().ContainSingle().Which.Amount.Should().Be(50m);
+            repository.GetTitheCarryForwards().Should().ContainSingle().Which.Included.Should().BeFalse();
         }
         finally
         {
