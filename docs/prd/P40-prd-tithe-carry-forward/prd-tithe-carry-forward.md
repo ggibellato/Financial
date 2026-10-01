@@ -1,5 +1,7 @@
 # Tithe Carry-Forward
 
+> **Amended 2026-10-01 — carry-in is derived, no longer snapshotted.** Locking the carried amount the first time a month was viewed left stale figures behind: Oct 2026 kept offering 219.08 "from Sept" after September was fully paid (balance -0.45). The carried amount is now always the previous month's current Tithe Balance (offered only when positive); only the per-month include/exclude decision is persisted. Wherever this document says the amount is "snapshotted", "locked", "original", or that later edits cannot change a carried amount (Objective 3, Section 5 rules, Section 9 snapshot criteria), this note supersedes it. Legacy `Amount` values in existing data files are ignored.
+
 ## 1. Executive Summary
 
 Tithe Carry-Forward extends Financial's existing CashFlow Tithe calculation so that an unpaid tithe obligation is no longer silently forgotten at the start of a new month. Today, `TitheService` recomputes each month's Calculated Tithe (10% of that month's net income) and Tithe Balance (Calculated Tithe minus that month's Dizimo-flagged expenses) completely fresh, with no memory of any prior month — a shortfall from August simply disappears the moment September begins.

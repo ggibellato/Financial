@@ -271,7 +271,7 @@ public class TitheServiceTests
     }
 
     [Fact]
-    public async Task UpdateCarryForwardInclusionAsync_ReIncludeAfterExclude_RestoresOriginalSnapshotAmount()
+    public async Task UpdateCarryForwardInclusionAsync_ReIncludeAfterExclude_RestoresCarriedAmount()
     {
         _repository.Incomes.Add(Income.Create(new DateOnly(ThisMonth.Year, ThisMonth.Month, 1), Source("Gleison"), null, 1000m, Barclays));
         await _sut.GetTitheSummaryAsync(ThisMonth.Year, ThisMonth.Month);
@@ -285,18 +285,48 @@ public class TitheServiceTests
     }
 
     [Fact]
-    public async Task GetTitheSummaryAsync_EditingResolvedSourceMonth_DoesNotChangeLaterSnapshottedCarry()
+    public async Task GetTitheSummaryAsync_EditingSourceMonthAfterLaterMonthWasViewed_UpdatesLaterCarry()
     {
         _repository.Incomes.Add(Income.Create(new DateOnly(ThisMonth.Year, ThisMonth.Month, 1), Source("Gleison"), null, 1000m, Barclays));
         await _sut.GetTitheSummaryAsync(ThisMonth.Year, ThisMonth.Month);
         await _sut.GetTitheSummaryAsync(NextMonth.Year, NextMonth.Month);
 
-        // Editing "this month" after "next month" already snapshotted its carry-in must not change it.
         _repository.Incomes.Add(Income.Create(new DateOnly(ThisMonth.Year, ThisMonth.Month, 2), Source("Gleison"), null, 9000m, Barclays));
 
         var result = await _sut.GetTitheSummaryAsync(NextMonth.Year, NextMonth.Month);
 
-        result.CarryForward!.Amount.Should().Be(100m);
+        result.CarryForward!.Amount.Should().Be(1000m);
+    }
+
+    [Fact]
+    public async Task GetTitheSummaryAsync_SourceMonthPaidAfterLaterMonthWasViewed_DropsCarry()
+    {
+        _repository.Incomes.Add(Income.Create(new DateOnly(ThisMonth.Year, ThisMonth.Month, 1), Source("Gleison"), null, 1000m, Barclays));
+        await _sut.GetTitheSummaryAsync(ThisMonth.Year, ThisMonth.Month);
+        (await _sut.GetTitheSummaryAsync(NextMonth.Year, NextMonth.Month)).CarryForward.Should().NotBeNull();
+
+        _repository.Expenses.Add(Expense.Create(new DateOnly(ThisMonth.Year, ThisMonth.Month, 15), "Tithe", 105m, Dizimo, Barclays, null));
+
+        var result = await _sut.GetTitheSummaryAsync(NextMonth.Year, NextMonth.Month);
+
+        result.CarryForward.Should().BeNull();
+        result.TitheBalance.Should().Be(0m);
+    }
+
+    [Fact]
+    public async Task GetTitheSummaryAsync_ExcludedCarryStaysExcludedWhenAmountChanges()
+    {
+        _repository.Incomes.Add(Income.Create(new DateOnly(ThisMonth.Year, ThisMonth.Month, 1), Source("Gleison"), null, 1000m, Barclays));
+        await _sut.GetTitheSummaryAsync(ThisMonth.Year, ThisMonth.Month);
+        await _sut.GetTitheSummaryAsync(NextMonth.Year, NextMonth.Month);
+        await _sut.UpdateCarryForwardInclusionAsync(NextMonth.Year, NextMonth.Month, false);
+
+        _repository.Incomes.Add(Income.Create(new DateOnly(ThisMonth.Year, ThisMonth.Month, 2), Source("Gleison"), null, 1000m, Barclays));
+
+        var result = await _sut.GetTitheSummaryAsync(NextMonth.Year, NextMonth.Month);
+
+        result.CarryForward!.Amount.Should().Be(200m);
+        result.CarryForward.Included.Should().BeFalse();
     }
 
     [Fact]
