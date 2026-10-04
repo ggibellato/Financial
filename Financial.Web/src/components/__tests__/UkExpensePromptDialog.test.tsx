@@ -1,8 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import UkExpensePromptDialog from '../UkExpensePromptDialog'
 import type { BankDto, CategoryDto, RecurringBillDto } from '../../api/types'
-import { todayIsoDate } from '../../utils/formatters'
 
 const BILL: RecurringBillDto = {
   id: 'b1',
@@ -45,12 +44,21 @@ function renderDialog(overrides: Partial<React.ComponentProps<typeof UkExpensePr
 }
 
 describe('UkExpensePromptDialog', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-07-01T00:30:00+01:00'))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   it('renders prefilled Description, Value, and today\'s Date', () => {
     renderDialog()
 
     expect(screen.getByLabelText(/^Description/)).toHaveValue('Council Tax')
     expect(screen.getByLabelText(/^Value/)).toHaveValue(120)
-    expect(screen.getByLabelText(/^Date/)).toHaveValue(todayIsoDate())
+    expect(screen.getByLabelText(/^Date/)).toHaveValue('2026-07-01')
   })
 
   it('Confirm is disabled until Bank and Category are selected', () => {
@@ -76,7 +84,7 @@ describe('UkExpensePromptDialog', () => {
     expect(onConfirm).toHaveBeenCalledWith({
       description: 'Council Tax',
       value: 120,
-      date: todayIsoDate(),
+      date: '2026-07-01',
       bankId: 'bank-1',
       categoryId: 'cat-1',
     })

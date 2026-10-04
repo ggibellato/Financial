@@ -1,5 +1,5 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AssetDetailsDto, AssetPriceSnapshotDto, SelectedNode, TransactionDto } from '../../api/types'
 import { createSelectedNodeWrapper } from '../../test-utils/selectedNodeTestWrapper'
@@ -101,6 +101,10 @@ const ASSET_DETAILS: AssetDetailsDto = {
 }
 
 describe('usePriceHistory', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   beforeEach(() => {
     getAssetDetailsMock.mockReset()
     setAssetPriceMock.mockReset()
@@ -191,11 +195,12 @@ describe('usePriceHistory', () => {
     const { result } = renderHook(() => usePriceHistory(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.entries).toHaveLength(2))
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-07-01T00:30:00+01:00'))
     act(() => result.current.showNewForm())
-    const today = new Date().toISOString().slice(0, 10)
     expect(result.current.isFormVisible).toBe(true)
     expect(result.current.editingDate).toBeNull()
-    expect(result.current.formDate).toBe(today)
+    expect(result.current.formDate).toBe('2026-07-01')
     expect(result.current.formPrice).toBe('')
   })
 
@@ -352,7 +357,9 @@ describe('usePriceHistory', () => {
   })
 
   it('filteredEntries_excludes_entries_outside_the_selected_window', async () => {
-    const recent: AssetPriceSnapshotDto = { date: new Date().toISOString().slice(0, 10), price: 100, isManual: true, currency: 'BRL', source: 'Manual', sourceReference: null, valuationMethod: 'MarketPrice', retrievedAt: new Date().toISOString() }
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-07-01T00:30:00+01:00'))
+    const recent: AssetPriceSnapshotDto = { date: '2026-07-01', price: 100, isManual: true, currency: 'BRL', source: 'Manual', sourceReference: null, valuationMethod: 'MarketPrice', retrievedAt: new Date().toISOString() }
     const old: AssetPriceSnapshotDto = { date: '2020-01-01', price: 50, isManual: false, currency: 'BRL', source: 'Google', sourceReference: null, valuationMethod: 'MarketPrice', retrievedAt: '2020-01-01T00:00:00Z' }
     getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, priceSnapshots: [recent, old] })
     const { wrapper, setNode } = createSelectedNodeWrapper()

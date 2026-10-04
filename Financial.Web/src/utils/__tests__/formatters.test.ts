@@ -12,6 +12,7 @@ import {
   parseMonthInputValue,
   previousYearJanuaryFirst,
   toInputDate,
+  todayIsoDate,
 } from '../formatters'
 
 describe('pad', () => {
@@ -91,6 +92,23 @@ describe('formatDateTime', () => {
 describe('toInputDate', () => {
   it('toInputDate_IsoStringWithTime_ReturnsDatePortionOnly', () => {
     expect(toInputDate('2026-07-05T12:00:00Z')).toBe('2026-07-05')
+  })
+})
+
+describe('todayIsoDate', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it.each([
+    ['2026-07-01T00:30:00+01:00', '2026-07-01'],
+    ['2026-01-31T23:59:00Z', '2026-01-31'],
+    ['2026-03-01T00:30:00Z', '2026-03-01'],
+  ])('todayIsoDate_At%s_ReturnsTheLocalCalendarDate', (instant, expected) => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(instant))
+
+    expect(todayIsoDate()).toBe(expected)
   })
 })
 

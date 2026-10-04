@@ -1,5 +1,5 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { BankDto, CategoryDto, ReserveBucketBalanceDto, ReserveBucketDto, ReserveMovementDto } from '../../api/types'
@@ -82,6 +82,10 @@ const rejectUnexpectedConfirm = (): boolean => {
 }
 
 describe('useReserva', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   beforeEach(() => {
     getReserveBalancesMock.mockReset()
     getReserveMovementsMock.mockReset()
@@ -239,10 +243,11 @@ describe('useReserva', () => {
     const { result } = renderHook(() => useReserva())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-07-01T00:30:00+01:00'))
     act(() => result.current.showSplitForm())
 
-    const today = new Date().toISOString().slice(0, 10)
-    expect(result.current.splitDate).toBe(today)
+    expect(result.current.splitDate).toBe('2026-07-01')
   })
 
   it('persists the split date after a successful submit, for the next split form', async () => {
@@ -332,10 +337,11 @@ describe('useReserva', () => {
     const { result } = renderHook(() => useReserva())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-07-01T00:30:00+01:00'))
     act(() => result.current.showWithdrawalForm())
 
-    const today = new Date().toISOString().slice(0, 10)
-    expect(result.current.withdrawalDate).toBe(today)
+    expect(result.current.withdrawalDate).toBe('2026-07-01')
   })
 
   it('persists the withdrawal date and bucket after a successful submit, for the next withdrawal form', async () => {

@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { act, renderHook } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { BankDto, CategoryDto, CreditCardDto, ExpenseDto } from '../../api/types'
 import { computeRoundUpSuggestion, useExpenseForm } from '../useExpenseForm'
@@ -56,6 +56,10 @@ const EXPENSE: ExpenseDto = {
 
 describe('useExpenseForm', () => {
   let onSaved: () => void
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
 
   beforeEach(() => {
     createExpenseMock.mockReset()
@@ -543,12 +547,14 @@ describe('useExpenseForm', () => {
     expect(updateExpenseMock).toHaveBeenCalledWith('e9', expect.objectContaining({ roundUpAmount: null }))
   })
 
-  it('defaults a first-ever create form to today, with no persisted date yet', () => {
+  it('defaults a first-ever create form to the local date just after midnight BST, with no persisted date yet', () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-07-01T00:30:00+01:00'))
     const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
 
     act(() => result.current.showCreateForm('bank'))
 
-    expect(result.current.date).toBe(new Date().toISOString().slice(0, 10))
+    expect(result.current.date).toBe('2026-07-01')
   })
 
   it('persists date, payment source, and category after a successful create, for the next create form', async () => {

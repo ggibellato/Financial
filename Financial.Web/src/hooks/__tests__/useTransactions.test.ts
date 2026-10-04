@@ -1,5 +1,5 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AssetDetailsDto, SelectedNode, TransactionDto, TransactionSummaryItemDto } from '../../api/types'
 import { createSelectedNodeWrapper } from '../../test-utils/selectedNodeTestWrapper'
@@ -138,6 +138,10 @@ const ASSET_DETAILS: AssetDetailsDto = {
 }
 
 describe('useTransactions', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   beforeEach(() => {
     getAssetDetailsMock.mockReset()
     addTransactionMock.mockReset()
@@ -208,11 +212,12 @@ describe('useTransactions', () => {
     const { result } = renderHook(() => useTransactions(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.asset).not.toBeNull())
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-07-01T00:30:00+01:00'))
     act(() => result.current.showNewForm())
-    const today = new Date().toISOString().slice(0, 10)
     expect(result.current.isFormVisible).toBe(true)
     expect(result.current.editingId).toBeNull()
-    expect(result.current.formDate).toBe(today)
+    expect(result.current.formDate).toBe('2026-07-01')
     expect(result.current.formType).toBe('Buy')
     expect(result.current.formQuantity).toBe('')
     expect(result.current.formUnitPrice).toBe('')

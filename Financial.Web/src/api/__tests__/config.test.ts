@@ -25,11 +25,15 @@ describe('API_BASE_URL', () => {
     expect(API_BASE_URL).toBe('/api/v1/financial')
   })
 
-  it('API_BASE_URL_WhenUnset_ReturnsEmptyString', async () => {
+  it('API_BASE_URL_WhenUnset_Throws', async () => {
     vi.stubEnv('API_BASE_URL', undefined)
 
-    const { API_BASE_URL } = await import('../config')
+    await expect(import('../config')).rejects.toThrow('API_BASE_URL must be set')
+  })
 
-    expect(API_BASE_URL).toBe('')
+  it('API_BASE_URL_WhenEmpty_Throws', async () => {
+    vi.stubEnv('API_BASE_URL', '')
+
+    await expect(import('../config')).rejects.toThrow('API_BASE_URL must be set')
   })
 })

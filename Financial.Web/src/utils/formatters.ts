@@ -74,7 +74,8 @@ export function previousYearJanuaryFirst(): string {
 }
 
 export function todayIsoDate(): string {
-  return new Date().toISOString().slice(0, 10)
+  const now = new Date()
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
 }
 
 export function formatMonthYear(date: Date): string {
