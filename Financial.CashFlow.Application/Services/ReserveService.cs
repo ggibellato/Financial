@@ -3,6 +3,7 @@ using Financial.CashFlow.Application.Exceptions;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
 using Financial.Shared.Abstractions.Persistence;
 using Microsoft.Extensions.Logging;
@@ -340,13 +341,19 @@ public sealed class ReserveService : IReserveService
         _repository.GetReserveMovements().Where(m => m.Bucket == bucket).Sum(m => m.Amount);
 
     /// <summary>The per-bucket fan-out shared with IncomeService's automated split: one movement
-    /// per active bucket, using each bucket's own percentage rule. No validation - callers apply
-    /// their own request-level rules first (see PostIncomeSplitAsync above).</summary>
+    /// per active bucket, with the rounding residual allocated by ReserveSplitAllocator. No
+    /// validation - callers apply their own request-level rules first (see PostIncomeSplitAsync
+    /// above).</summary>
     internal static List<ReserveMovement> CreateSplitMovements(
-        IEnumerable<ReserveBucket> activeBuckets, decimal amount, DateOnly date, string description, Income? income = null) =>
-        activeBuckets
-            .Select(bucket => ReserveMovement.Create(bucket, bucket.CalculateSplitAmount(amount), date, description, income))
+        IEnumerable<ReserveBucket> activeBuckets, decimal amount, DateOnly date, string description, Income? income = null)
+    {
+        var buckets = activeBuckets.ToList();
+        var amounts = ReserveSplitAllocator.Allocate(buckets, amount);
+
+        return buckets
+            .Select((bucket, i) => ReserveMovement.Create(bucket, amounts[i], date, description, income))
             .ToList();
+    }
 
     private static void EnsureNotLinkedToIncome(ReserveMovement movement)
     {
