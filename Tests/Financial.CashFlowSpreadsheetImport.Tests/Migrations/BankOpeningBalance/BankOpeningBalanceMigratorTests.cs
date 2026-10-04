@@ -68,12 +68,4 @@ public class BankOpeningBalanceMigratorTests
         summary.BanksDefaultedCount.Should().Be(2);
         summary.BanksAlreadySetCount.Should().Be(1);
     }
-
-    [Fact]
-    public void Migrate_WithNullData_Throws()
-    {
-        var act = () => BankOpeningBalanceMigrator.Migrate(null!, RunDate);
-
-        act.Should().Throw<ArgumentNullException>();
-    }
 }

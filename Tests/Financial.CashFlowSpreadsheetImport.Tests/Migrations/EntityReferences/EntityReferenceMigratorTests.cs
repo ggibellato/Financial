@@ -5,8 +5,21 @@ using FluentAssertions.Execution;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.Migrations.EntityReferences;
 
-public class EntityReferenceMigratorTests
+public class EntityReferenceMigratorTests : FileMigratorContractTests
 {
+    protected override string LegacyFileJson() => LegacyFixtureJson();
+
+    protected override string CurrentShapeJson() => """
+        {
+          "Expenses": [], "ReserveMovements": [], "CardStatements": [], "RecurringBills": [],
+          "MaeLedgerEntries": [], "InvestmentSnapshots": [], "InvestmentAccounts": [],
+          "Banks": [{ "Id": "88888888-8888-8888-8888-888888888888", "Name": "Barclays", "RoundUpEnabled": false }],
+          "IncomeSources": [], "Incomes": [], "Transfers": [], "BalanceAdjustments": []
+        }
+        """;
+
+    protected override bool MigrateReportsAlreadyCurrentShape(string path) => EntityReferenceMigrator.Migrate(path).AlreadyCurrentShape;
+
     private static readonly Guid IncomeSourceId = Guid.Parse("11111111-1111-1111-1111-111111111111");
     private static readonly Guid InvestmentAccountId = Guid.Parse("22222222-2222-2222-2222-222222222222");
     private static readonly Guid IncomeId = Guid.Parse("33333333-3333-3333-3333-333333333333");
@@ -45,13 +58,6 @@ public class EntityReferenceMigratorTests
           ]
         }
         """;
-
-    private static string CreateTempFile(string content)
-    {
-        var path = Path.Combine(Path.GetTempPath(), $"cashflow-entityref-{Guid.NewGuid():N}.json");
-        File.WriteAllText(path, content);
-        return path;
-    }
 
     [Fact]
     public void Migrate_LegacyShapedFile_AssignsBankIdsAndRewritesEveryReferencingEntity()
@@ -107,51 +113,6 @@ public class EntityReferenceMigratorTests
                 snapshot.Id.Should().Be(InvestmentSnapshotId);
                 snapshot.Account.Id.Should().Be(InvestmentAccountId);
             }
-        }
-        finally
-        {
-            File.Delete(path);
-            DeleteBackups(path);
-        }
-    }
-
-    [Fact]
-    public void Migrate_SecondRunOnAlreadyMigratedFile_MakesNoFurtherChanges()
-    {
-        var path = CreateTempFile(LegacyFixtureJson());
-
-        try
-        {
-            EntityReferenceMigrator.Migrate(path);
-            var contentAfterFirstRun = File.ReadAllText(path);
-
-            var secondSummary = EntityReferenceMigrator.Migrate(path);
-
-            using (new AssertionScope())
-            {
-                secondSummary.AlreadyCurrentShape.Should().BeTrue();
-                File.ReadAllText(path).Should().Be(contentAfterFirstRun);
-            }
-        }
-        finally
-        {
-            File.Delete(path);
-            DeleteBackups(path);
-        }
-    }
-
-    [Fact]
-    public void Migrate_CreatesABackupBeforeWriting()
-    {
-        var path = CreateTempFile(LegacyFixtureJson());
-        var directory = Path.GetDirectoryName(path)!;
-        var nameWithoutExtension = Path.GetFileNameWithoutExtension(path);
-
-        try
-        {
-            EntityReferenceMigrator.Migrate(path);
-
-            Directory.GetFiles(directory, $"{nameWithoutExtension}.backup-migration-*").Should().ContainSingle();
         }
         finally
         {
@@ -234,53 +195,4 @@ public class EntityReferenceMigratorTests
         }
     }
 
-    [Fact]
-    public void Migrate_FileAlreadyInCurrentShape_ReturnsNoOpSummaryAndTouchesNothing()
-    {
-        var currentShapeJson = """
-            {
-              "Expenses": [], "ReserveMovements": [], "CardStatements": [], "RecurringBills": [],
-              "MaeLedgerEntries": [], "InvestmentSnapshots": [], "InvestmentAccounts": [],
-              "Banks": [{ "Id": "88888888-8888-8888-8888-888888888888", "Name": "Barclays", "RoundUpEnabled": false }],
-              "IncomeSources": [], "Incomes": [], "Transfers": [], "BalanceAdjustments": []
-            }
-            """;
-        var path = CreateTempFile(currentShapeJson);
-
-        try
-        {
-            var summary = EntityReferenceMigrator.Migrate(path);
-
-            using (new AssertionScope())
-            {
-                summary.AlreadyCurrentShape.Should().BeTrue();
-                File.ReadAllText(path).Should().Be(currentShapeJson);
-                Directory.GetFiles(Path.GetDirectoryName(path)!, $"{Path.GetFileNameWithoutExtension(path)}.backup-migration-*").Should().BeEmpty();
-            }
-        }
-        finally
-        {
-            File.Delete(path);
-        }
-    }
-
-    [Fact]
-    public void Migrate_FileDoesNotExist_ReturnsNoOpSummary()
-    {
-        var missingPath = Path.Combine(Path.GetTempPath(), $"cashflow-entityref-missing-{Guid.NewGuid():N}.json");
-
-        var summary = EntityReferenceMigrator.Migrate(missingPath);
-
-        summary.AlreadyCurrentShape.Should().BeTrue();
-    }
-
-    private static void DeleteBackups(string path)
-    {
-        var directory = Path.GetDirectoryName(path)!;
-        var nameWithoutExtension = Path.GetFileNameWithoutExtension(path);
-        foreach (var backup in Directory.GetFiles(directory, $"{nameWithoutExtension}.backup-migration-*"))
-        {
-            File.Delete(backup);
-        }
-    }
 }

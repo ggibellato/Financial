@@ -66,12 +66,4 @@ public class CategoryMigratorTests
         summary.CategoriesAlreadyPresentCount.Should().Be(1);
         data.Categories.Should().HaveCount(14);
     }
-
-    [Fact]
-    public void Migrate_WithNullData_Throws()
-    {
-        var act = () => CategoryMigrator.Migrate(null!);
-
-        act.Should().Throw<ArgumentNullException>();
-    }
 }

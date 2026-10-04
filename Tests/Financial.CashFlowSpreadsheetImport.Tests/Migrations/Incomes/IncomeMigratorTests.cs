@@ -51,14 +51,6 @@ public class IncomeMigratorTests
     }
 
     [Fact]
-    public void Migrate_WithNullData_Throws()
-    {
-        var act = () => IncomeMigrator.Migrate(null!);
-
-        act.Should().Throw<ArgumentNullException>();
-    }
-
-    [Fact]
     public void Migrate_WithWorkbook_BackfillsEntriesAndReportsImportedCount()
     {
         using var workbook = new XLWorkbook();

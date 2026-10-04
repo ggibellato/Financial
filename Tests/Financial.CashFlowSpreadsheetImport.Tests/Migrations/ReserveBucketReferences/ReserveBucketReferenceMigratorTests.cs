@@ -5,8 +5,21 @@ using FluentAssertions.Execution;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.Migrations.ReserveBucketReferences;
 
-public class ReserveBucketReferenceMigratorTests
+public class ReserveBucketReferenceMigratorTests : FileMigratorContractTests
 {
+    protected override string LegacyFileJson() => LegacyFixtureJson();
+
+    protected override string CurrentShapeJson() => """
+        {
+          "Expenses": [], "ReserveMovements": [], "CardStatements": [], "RecurringBills": [],
+          "MaeLedgerEntries": [], "InvestmentSnapshots": [], "InvestmentAccounts": [],
+          "Banks": [], "IncomeSources": [], "ReserveBuckets": [],
+          "Incomes": [], "Transfers": [], "BalanceAdjustments": []
+        }
+        """;
+
+    protected override bool MigrateReportsAlreadyCurrentShape(string path) => ReserveBucketReferenceMigrator.Migrate(path).AlreadyCurrentShape;
+
     private static readonly Guid MovementId = Guid.Parse("11111111-1111-1111-1111-111111111111");
     private static readonly Guid SeededBucketId = Guid.Parse("22222222-2222-2222-2222-222222222222");
 
@@ -34,23 +47,6 @@ public class ReserveBucketReferenceMigratorTests
           "Incomes": [], "IncomeSources": [], "Transfers": [], "BalanceAdjustments": [], "Banks": []
         }
         """;
-
-    private static string CreateTempFile(string content)
-    {
-        var path = Path.Combine(Path.GetTempPath(), $"cashflow-bucketref-{Guid.NewGuid():N}.json");
-        File.WriteAllText(path, content);
-        return path;
-    }
-
-    private static void DeleteBackups(string path)
-    {
-        var directory = Path.GetDirectoryName(path)!;
-        var nameWithoutExtension = Path.GetFileNameWithoutExtension(path);
-        foreach (var backup in Directory.GetFiles(directory, $"{nameWithoutExtension}.backup-migration-*"))
-        {
-            File.Delete(backup);
-        }
-    }
 
     [Fact]
     public void Migrate_LegacyFileWithNoSeededBuckets_BootstrapsTheCanonicalFiveAndRewritesTheMovement()
@@ -113,51 +109,6 @@ public class ReserveBucketReferenceMigratorTests
     }
 
     [Fact]
-    public void Migrate_SecondRunOnAlreadyMigratedFile_MakesNoFurtherChanges()
-    {
-        var path = CreateTempFile(LegacyFixtureJson());
-
-        try
-        {
-            ReserveBucketReferenceMigrator.Migrate(path);
-            var contentAfterFirstRun = File.ReadAllText(path);
-
-            var secondSummary = ReserveBucketReferenceMigrator.Migrate(path);
-
-            using (new AssertionScope())
-            {
-                secondSummary.AlreadyCurrentShape.Should().BeTrue();
-                File.ReadAllText(path).Should().Be(contentAfterFirstRun);
-            }
-        }
-        finally
-        {
-            File.Delete(path);
-            DeleteBackups(path);
-        }
-    }
-
-    [Fact]
-    public void Migrate_CreatesABackupBeforeWriting()
-    {
-        var path = CreateTempFile(LegacyFixtureJson());
-        var directory = Path.GetDirectoryName(path)!;
-        var nameWithoutExtension = Path.GetFileNameWithoutExtension(path);
-
-        try
-        {
-            ReserveBucketReferenceMigrator.Migrate(path);
-
-            Directory.GetFiles(directory, $"{nameWithoutExtension}.backup-migration-*").Should().ContainSingle();
-        }
-        finally
-        {
-            File.Delete(path);
-            DeleteBackups(path);
-        }
-    }
-
-    [Fact]
     public void Migrate_MovementWithUnresolvableBucketName_IsFlaggedAndOmittedFromTheRewrittenFile()
     {
         var path = CreateTempFile(LegacyFixtureJson(bucketName: "NotABucket"));
@@ -181,45 +132,5 @@ public class ReserveBucketReferenceMigratorTests
             File.Delete(path);
             DeleteBackups(path);
         }
-    }
-
-    [Fact]
-    public void Migrate_FileAlreadyInCurrentShape_ReturnsNoOpSummaryAndTouchesNothing()
-    {
-        var currentShapeJson = """
-            {
-              "Expenses": [], "ReserveMovements": [], "CardStatements": [], "RecurringBills": [],
-              "MaeLedgerEntries": [], "InvestmentSnapshots": [], "InvestmentAccounts": [],
-              "Banks": [], "IncomeSources": [], "ReserveBuckets": [],
-              "Incomes": [], "Transfers": [], "BalanceAdjustments": []
-            }
-            """;
-        var path = CreateTempFile(currentShapeJson);
-
-        try
-        {
-            var summary = ReserveBucketReferenceMigrator.Migrate(path);
-
-            using (new AssertionScope())
-            {
-                summary.AlreadyCurrentShape.Should().BeTrue();
-                File.ReadAllText(path).Should().Be(currentShapeJson);
-                Directory.GetFiles(Path.GetDirectoryName(path)!, $"{Path.GetFileNameWithoutExtension(path)}.backup-migration-*").Should().BeEmpty();
-            }
-        }
-        finally
-        {
-            File.Delete(path);
-        }
-    }
-
-    [Fact]
-    public void Migrate_FileDoesNotExist_ReturnsNoOpSummary()
-    {
-        var missingPath = Path.Combine(Path.GetTempPath(), $"cashflow-bucketref-missing-{Guid.NewGuid():N}.json");
-
-        var summary = ReserveBucketReferenceMigrator.Migrate(missingPath);
-
-        summary.AlreadyCurrentShape.Should().BeTrue();
     }
 }

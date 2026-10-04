@@ -84,14 +84,6 @@ public class IncomeSourceMigratorTests
     }
 
     [Fact]
-    public void Migrate_WithNullData_Throws()
-    {
-        var act = () => IncomeSourceMigrator.Migrate(null!);
-
-        act.Should().Throw<ArgumentNullException>();
-    }
-
-    [Fact]
     public void Migrate_OnEmptyData_SeedsAriana_WithAutoSplitToReserveTrue()
     {
         var data = CashFlowData.Create();

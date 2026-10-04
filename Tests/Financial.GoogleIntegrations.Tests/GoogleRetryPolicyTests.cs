@@ -8,31 +8,43 @@ namespace Financial.GoogleIntegrations.Tests;
 
 public class GoogleRetryPolicyTests
 {
+    public delegate Task<int> RetryRunner(Func<int> action, int maxRetries, Action<string>? logger);
+
+    private static readonly RetryRunner Sync = (action, maxRetries, logger) =>
+        Task.FromResult(GoogleRetryPolicy.ExecuteWithRetry(action, maxRetries, logger));
+
+    private static readonly RetryRunner Async = (action, maxRetries, logger) =>
+        GoogleRetryPolicy.ExecuteWithRetryAsync(() => Task.FromResult(action()), maxRetries, logger);
+
+    public static TheoryData<string, RetryRunner> Runners() => new() { { "sync", Sync }, { "async", Async } };
+
     private static GoogleApiException RateLimitedException() =>
         new("sheets", "Rate limited") { HttpStatusCode = HttpStatusCode.TooManyRequests };
 
-    [Fact]
-    public async Task ExecuteWithRetryAsync_ActionSucceedsImmediately_ReturnsResultWithoutRetrying()
+    [Theory]
+    [MemberData(nameof(Runners))]
+    public async Task ExecuteWithRetry_ActionSucceedsImmediately_ReturnsResultWithoutRetrying(string mode, RetryRunner run)
     {
         var callCount = 0;
 
-        var result = await GoogleRetryPolicy.ExecuteWithRetryAsync(() =>
+        var result = await run(() =>
         {
             callCount++;
-            return Task.FromResult(42);
-        });
+            return 42;
+        }, 5, null);
 
         result.Should().Be(42);
         callCount.Should().Be(1);
     }
 
-    [Fact]
-    public async Task ExecuteWithRetryAsync_RateLimitedOnce_RetriesAndReturnsResult_InvokingLogger()
+    [Theory]
+    [MemberData(nameof(Runners))]
+    public async Task ExecuteWithRetry_RateLimitedOnce_RetriesAndReturnsResult_InvokingLogger(string mode, RetryRunner run)
     {
         var callCount = 0;
         var logMessages = new List<string>();
 
-        var result = await GoogleRetryPolicy.ExecuteWithRetryAsync(
+        var result = await run(
             () =>
             {
                 callCount++;
@@ -40,47 +52,47 @@ public class GoogleRetryPolicyTests
                 {
                     throw RateLimitedException();
                 }
-                return Task.FromResult(7);
+                return 7;
             },
-            maxRetries: 3,
-            logger: logMessages.Add);
+            3,
+            logMessages.Add);
 
         result.Should().Be(7);
         callCount.Should().Be(2);
         logMessages.Should().ContainSingle(m => m.Contains("Retry 1/3"));
     }
 
-    [Fact]
-    public async Task ExecuteWithRetryAsync_ExceedsMaxRetries_ThrowsHttpRequestExceptionWrappingOriginal()
+    [Theory]
+    [MemberData(nameof(Runners))]
+    public async Task ExecuteWithRetry_ExceedsMaxRetries_ThrowsHttpRequestExceptionWrappingOriginal(string mode, RetryRunner run)
     {
-        var act = async () => await GoogleRetryPolicy.ExecuteWithRetryAsync<int>(
-            () => throw RateLimitedException(),
-            maxRetries: 0);
+        var act = async () => await run(() => throw RateLimitedException(), 0, null);
 
         var thrown = await act.Should().ThrowAsync<HttpRequestException>();
         thrown.Which.InnerException.Should().BeOfType<GoogleApiException>();
     }
 
-    [Fact]
-    public async Task ExecuteWithRetryAsync_NonRateLimitStatusCode_PropagatesImmediatelyWithoutRetrying()
+    [Theory]
+    [MemberData(nameof(Runners))]
+    public async Task ExecuteWithRetry_NonRateLimitStatusCode_PropagatesImmediatelyWithoutRetrying(string mode, RetryRunner run)
     {
         var callCount = 0;
 
-        var act = async () => await GoogleRetryPolicy.ExecuteWithRetryAsync<int>(() =>
+        var act = async () => await run(() =>
         {
             callCount++;
             throw new GoogleApiException("sheets", "Bad request") { HttpStatusCode = HttpStatusCode.BadRequest };
-        });
+        }, 5, null);
 
         await act.Should().ThrowAsync<GoogleApiException>();
         callCount.Should().Be(1);
     }
 
-    [Fact]
-    public async Task ExecuteWithRetryAsync_NonGoogleApiException_PropagatesImmediately()
+    [Theory]
+    [MemberData(nameof(Runners))]
+    public async Task ExecuteWithRetry_NonGoogleApiException_PropagatesImmediately(string mode, RetryRunner run)
     {
-        var act = async () => await GoogleRetryPolicy.ExecuteWithRetryAsync<int>(
-            () => throw new InvalidOperationException("Unrelated failure"));
+        var act = async () => await run(() => throw new InvalidOperationException("Unrelated failure"), 5, null);
 
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
@@ -97,79 +109,5 @@ public class GoogleRetryPolicyTests
         });
 
         callCount.Should().Be(1);
-    }
-
-    [Fact]
-    public void ExecuteWithRetry_ActionSucceedsImmediately_ReturnsResultWithoutRetrying()
-    {
-        var callCount = 0;
-
-        var result = GoogleRetryPolicy.ExecuteWithRetry(() =>
-        {
-            callCount++;
-            return 42;
-        });
-
-        result.Should().Be(42);
-        callCount.Should().Be(1);
-    }
-
-    [Fact]
-    public void ExecuteWithRetry_RateLimitedOnce_RetriesAndReturnsResult_InvokingLogger()
-    {
-        var callCount = 0;
-        var logMessages = new List<string>();
-
-        var result = GoogleRetryPolicy.ExecuteWithRetry(
-            () =>
-            {
-                callCount++;
-                if (callCount == 1)
-                {
-                    throw RateLimitedException();
-                }
-                return 7;
-            },
-            maxRetries: 3,
-            logger: logMessages.Add);
-
-        result.Should().Be(7);
-        callCount.Should().Be(2);
-        logMessages.Should().ContainSingle(m => m.Contains("Retry 1/3"));
-    }
-
-    [Fact]
-    public void ExecuteWithRetry_ExceedsMaxRetries_ThrowsHttpRequestExceptionWrappingOriginal()
-    {
-        var act = () => GoogleRetryPolicy.ExecuteWithRetry<int>(
-            () => throw RateLimitedException(),
-            maxRetries: 0);
-
-        var thrown = act.Should().Throw<HttpRequestException>();
-        thrown.Which.InnerException.Should().BeOfType<GoogleApiException>();
-    }
-
-    [Fact]
-    public void ExecuteWithRetry_NonRateLimitStatusCode_PropagatesImmediatelyWithoutRetrying()
-    {
-        var callCount = 0;
-
-        var act = () => GoogleRetryPolicy.ExecuteWithRetry<int>(() =>
-        {
-            callCount++;
-            throw new GoogleApiException("sheets", "Bad request") { HttpStatusCode = HttpStatusCode.BadRequest };
-        });
-
-        act.Should().Throw<GoogleApiException>();
-        callCount.Should().Be(1);
-    }
-
-    [Fact]
-    public void ExecuteWithRetry_NonGoogleApiException_PropagatesImmediately()
-    {
-        var act = () => GoogleRetryPolicy.ExecuteWithRetry<int>(
-            () => throw new InvalidOperationException("Unrelated failure"));
-
-        act.Should().Throw<InvalidOperationException>();
     }
 }
