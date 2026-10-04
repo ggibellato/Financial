@@ -224,10 +224,19 @@ One-off console/desktop tools for migrating data from spreadsheets into the JSON
 Reads a personal expense-tracking Excel workbook and populates `data-cashflow.json`.
 
 ```bash
-dotnet run --project Tools/CashFlowSpreadsheetImport -- <path-to-Despesas.xlsx> [output-json-path] [--mensais-only]
+dotnet run --project Tools/CashFlowSpreadsheetImport -- <path-to-Despesas.xlsx> --output <path-to-output.json> [--mensais-only]
 ```
 
-Defaults to reading `Despesas.xlsx` from the Downloads folder and writing to `data/data-cashflow.json`. If the output file already exists, it's backed up automatically (timestamped sibling file) before being overwritten.
+Both the workbook and `--output` are required; there are no default paths. The tool refuses to run (exit 2) when `--output` is missing or is the live `data/data-cashflow.json`, so always point it at a temp copy of the data file and swap the result in yourself. If the output file already exists, it's backed up automatically (timestamped sibling file) before being overwritten.
+
+A full rebuild does not carry over Transfers, BalanceAdjustments, Tithe carry-forwards or user-added Categories (this is intended). Before writing, the tool prints how many of each the existing output file holds, e.g. `Not carried over: Transfers 12, BalanceAdjustments 3, Tithe carry-forwards 1, Categories 4`. `--mensais-only` keeps existing data and omits that line.
+
+| Exit code | Meaning |
+|---|---|
+| 0 | Import written |
+| 1 | Workbook not found |
+| 2 | Missing or invalid arguments, or `--output` is the live data file |
+| 3 | Existing output file could not be read; nothing was written |
 
 ### ImportGoogleSpreadSheets
 
