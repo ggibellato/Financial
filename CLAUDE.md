@@ -43,8 +43,8 @@ Tests use **xUnit** + **FluentAssertions**.
 Coverage is collected on every CI run; `backend`, `wpf`, and `web` each publish their own
 coverage table to the workflow run's step summary (`.github/workflows/build.yml`, each job's
 `Publish coverage summary` step) and post one combined sticky PR comment (the
-`coverage-comment` job) — a row per project with its line-coverage % and gate verdict, plus a
-link to the run's coverage-report artifacts. `coverlet.runsettings` declares the `XPlat code
+`coverage-comment` job) — a row per project with its line and branch coverage %, each behind a
+traffic-light icon, plus a link to the run's coverage-report artifacts. `coverlet.runsettings` declares the `XPlat code
 coverage` collector; passing `--settings` is what turns collection on, so there is no
 `--collect` argument anywhere. To reproduce it locally:
 
@@ -52,12 +52,15 @@ coverage` collector; passing `--settings` is what turns collection on, so there 
 dotnet test --settings coverlet.runsettings --results-directory TestResults
 ```
 
-All three jobs share one gate, `.github/actions/coverage-gate` (a local composite action): it
+All three jobs share one step, `.github/actions/coverage-gate` (a local composite action): it
 reads a `reportgenerator` `Summary.json`'s `summary.linecoverage`, bands it green (100%) /
-yellow (95–99.99%) / amber (90–94.99%) / red (<90%), and fails the step on red — `web` runs
+yellow (95–99.99%) / amber (90–94.99%) / red (<90%), and fails the step on red. It also reads
+`summary.branchcoverage` and shows it behind the same kind of icon (bands shifted down ten
+points: green ≥90%, yellow ≥85%, amber ≥80%, red below) — branch coverage is informational and
+never fails the step. `web` runs
 `reportgenerator` against the `lcov` report vitest's `coverage.reporter` also produces
 (`Financial.Web/vite.config.ts`), so all three jobs' gates read the identical report shape.
-**The gate is enforced**: a red result fails its job, which fails `ci-status` — the sole
+**The 90% line tripwire is enforced**: a red line result fails its job, which fails `ci-status` — the sole
 required check — and blocks merge.
 
 `coverlet.runsettings`' `<Exclude>` is what keeps the % meaningful: besides non-app assemblies
