@@ -52,6 +52,7 @@ Security-relevant configuration (`Financial.Api/appsettings*.json`, `Program.cs`
 ## Safeguards
 
 - `.github/scripts/detect-changes.test.sh` pins which jobs each kind of path triggers. It sources the classifier and runs as the first step of the `changes` job, so a rule mistake that would silently skip jobs fails `changes` and `ci-status`.
+- `.github/scripts/test-hygiene.sh` runs in `changes` on pull requests and scans only the lines the change adds (`git diff -U0`) for `DateTime.Now/Today/UtcNow` in tests or in production files that use `TimeProvider`, `Task.Delay(`/`Thread.Sleep(`/`Skip =` in `Tests/`, and `.only(`/`.skip(`/`waitForTimeout(` in the web sources (`new Date()` in a web test with no fake clock is a warning). Legacy violations on unchanged lines are never reported. Append `// hygiene-allow: <reason>` to exempt one line; the reason is mandatory and exemptions are listed in the job summary. `.github/scripts/test-hygiene.test.sh` pins every rule against a throwaway repository and runs in `changes` first. Run it locally with `bash .github/scripts/test-hygiene.test.sh`, or scan a branch with `bash .github/scripts/test-hygiene.sh main HEAD`.
 - A path no rule recognises runs everything, and the step summary names it — add a rule rather than living with the full run.
 - No base commit (first push, force-push that orphaned `github.event.before`) or a failing `git diff` runs everything.
 - The `changes` job uses the merge-base with the PR base, so a stale branch is diffed against the commit it forked from, not the current `main` tip.

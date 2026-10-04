@@ -120,6 +120,7 @@ Before adding a test class, check whether the setup you need already exists. Reu
    The optional parameters let the few tests that must differ on one dependency opt out without repeating the whole construction sequence. Reference: `Tests/Financial.CashFlow.Application.Tests/Services/ExpenseServiceTests.cs:23-45`.
 4. **Instance fields, never `static`.** A `static readonly` tracer or logger accumulates recorded state across every test in the class.
 5. **Extract only when there is something to hoist.** If each test constructs from its own input rather than from identical dependencies, leave it alone and say so in the PR — `AssetTests`, `XirrCalculatorTests` and `DateFormatConverterTests` were deliberately left alone for exactly this reason. Never create a base class for a single consumer.
+6. **CI rejects newly added flaky-test patterns.** `.github/scripts/test-hygiene.sh` fails a pull request that adds `DateTime.Now/Today/UtcNow` (in `Tests/`, or in a production file that already uses `TimeProvider`), `Task.Delay(`/`Thread.Sleep(` or `Skip =` in `Tests/`, or `.only(`/`.skip(`/`waitForTimeout(` in the web sources. Inject `TimeProvider`, await the operation's `Task`, delete or fix the test. Only when none of that is possible, append `// hygiene-allow: <reason>` to the line; the reason is mandatory and the exemption is listed in the job summary. Existing violations on unchanged lines are not reported.
 
 What to test, and at which layer, is the `testing-guide-Financial` skill's job. This section is only about how the test class is wired.
 

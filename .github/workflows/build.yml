@@ -39,6 +39,9 @@ jobs:
     - name: Self-test the change classifier
       run: bash .github/scripts/detect-changes.test.sh
 
+    - name: Self-test the test-hygiene scanner
+      run: bash .github/scripts/test-hygiene.test.sh
+
     - name: Detect affected jobs
       id: detect
       env:
@@ -51,6 +54,15 @@ jobs:
         fi
         merge_base=$(git merge-base "$BASE_SHA" "$HEAD_SHA" 2>/dev/null || echo "$BASE_SHA")
         bash .github/scripts/detect-changes.sh "$merge_base" "$HEAD_SHA"
+
+    - name: Scan added lines for test hygiene
+      if: github.event_name == 'pull_request'
+      env:
+        BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      run: |
+        merge_base=$(git merge-base "$BASE_SHA" "$HEAD_SHA" 2>/dev/null || echo "$BASE_SHA")
+        bash .github/scripts/test-hygiene.sh "$merge_base" "$HEAD_SHA"
 
   backend:
     needs: changes
