@@ -529,12 +529,12 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Deterministic Test Infrastructure
-- [ ] A default `ApiTestFactory` resolves the stub FX provider, and a guard test asserts this.
-- [ ] `dotnet test Tests/Financial.Api.Tests` passes with outbound network disabled.
-- [ ] A test opting into the real FX chain must call an explicitly named method. No CI test calls it.
-- [ ] A Frankfurter call against a hanging handler returns the fallback result in < 11 s.
-- [ ] A Frankfurter 5xx makes ≤ 1 request per requested date.
-- [ ] `TZ=Europe/London` and `LANG=en-GB` are set in the `backend`, `wpf`, `web` and `smoke` jobs and in vitest setup.
+- [x] A default `ApiTestFactory` resolves the stub FX provider, and a guard test asserts this.
+- [x] `dotnet test Tests/Financial.Api.Tests` passes with outbound network disabled.
+- [x] A test opting into the real FX chain must call an explicitly named method. No CI test calls it.
+- [x] A Frankfurter call against a hanging handler returns the fallback result in < 11 s.
+- [x] A Frankfurter 5xx makes ≤ 1 request per requested date.
+- [x] `TZ=Europe/London` and `LANG=en-GB` are set in the `backend`, `wpf`, `web` and `smoke` jobs and in vitest setup.
 
 ### F02. CI Gate Hardening
 - [ ] With `CI=true` and `UPDATE_OPENAPI_SNAPSHOT=1`, `OpenApiContractTests` fails with the guard message.
