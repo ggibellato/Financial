@@ -30,7 +30,7 @@ public class OpenApiContractTests
     /// Set to any non-empty value to rewrite the snapshot instead of asserting against it.
     /// See CLAUDE.md for the PowerShell and bash invocations.
     /// </summary>
-    private const string UpdateFlag = "UPDATE_OPENAPI_SNAPSHOT";
+    private const string UpdateFlag = SnapshotUpdateFlag.Name;
 
     [Fact]
     public async Task OpenApiDocument_MatchesTheCommittedSnapshot()
@@ -38,7 +38,7 @@ public class OpenApiContractTests
         var current = Canonicalize(await FetchDocumentAsync());
         var snapshotPath = ResolveSnapshotPath();
 
-        if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(UpdateFlag)))
+        if (SnapshotUpdateFlag.IsRequested(Environment.GetEnvironmentVariable))
         {
             Directory.CreateDirectory(Path.GetDirectoryName(snapshotPath)!);
             await File.WriteAllTextAsync(snapshotPath, current, Encoding.UTF8);
