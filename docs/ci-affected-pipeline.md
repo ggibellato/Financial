@@ -13,11 +13,11 @@ checks them (first match wins):
 
 | Group | Paths | Why it is its own group |
 |---|---|---|
-| Docs | `docs/`, `specs/`, `dev-util/`, `.claude/`, `.specify/`, `*.md`, `LICENSE`, `.gitignore`, `.editorconfig`, `.dockerignore` | Nothing here reaches a build |
+| Docs | `docs/`, `specs/`, `dev-util/`, `.claude/`, `.specify/`, `LICENSE`, `.gitignore`, `.editorconfig`, `.dockerignore`, and `*.md` outside the source directories below | Nothing here reaches a build. A Markdown file inside `Financial.*`, `Tests/`, `Tools/` or `Integrations/` follows that directory's rule |
 | Contract (server side) | `Financial.Api/`, `Tests/Financial.Api.Tests/` (includes the OpenAPI snapshot) | The HTTP surface `Financial.Web` is compiled against |
 | Contract (DTOs) | `Financial.*.Application/DTOs/` | Wire format for the SPA **and** linked in-process into the WPF app |
 | Contract (client side) | `Financial.Web/src/api/` | Hand-written TypeScript mirror of the DTOs (`types.ts`, client) |
-| WPF | `Financial.App/`, `Tests/Financial.Presentation.Tests/` | Desktop front end; nothing else depends on it |
+| WPF | `Financial.App/` (also runs `backend`), `Tests/Financial.Presentation.Tests/` | Desktop front end; nothing else depends on it. `Financial.App` also runs `backend` because `Financial.Architecture.Tests`, which pin its references, run there |
 | Web | `Financial.Web/` | React SPA; nothing else depends on it |
 | Backend core | `Financial.*.Domain/`, `Financial.*.Application/`, `Financial.*.Infrastructure/`, `Financial.Shared.*/`, `Integrations/`, `Tools/`, `Tests/`, `coverlet.runsettings` | Shared libraries; WPF references them directly, the API hosts them |
 | Infra | `.github/`, `Dockerfile*`, `docker-compose*`, `Financial.slnx`, `global.json`, `nuget.config`, `Directory.*`, `scripts/`, `deploy/`, `data/` | Build/deploy plumbing and data templates; can affect anything |
@@ -31,7 +31,8 @@ checks them (first match wins):
 | Contract (server side) | ✔ | – | ✔ | ✔ |
 | Contract (DTOs) | ✔ | ✔ | ✔ | ✔ |
 | Contract (client side) | – | – | ✔ | ✔ |
-| WPF | – | ✔ | – | – |
+| WPF (`Financial.App/`) | ✔ | ✔ | – | – |
+| WPF tests (`Tests/Financial.Presentation.Tests/`) | – | ✔ | – | – |
 | Web | – | – | ✔ | ✔ |
 | Backend core | ✔ | ✔ | – | ✔ |
 | Infra / unclassified / no base commit / diff failure | ✔ | ✔ | ✔ | ✔ |
@@ -39,8 +40,8 @@ checks them (first match wins):
 
 Jobs:
 
-- **backend** (Windows) — builds `Financial.Api` and runs every `Tests/*.Tests.csproj` listed in `Financial.slnx` except the WPF one, with coverage and a blocking 90% coverage gate (see `CLAUDE.md`).
-- **wpf** (Windows) — builds `Financial.App` and runs `Financial.Presentation.Tests` + `Financial.Architecture.Tests`, with coverage (scoped to `Financial.Presentation.App` only) and the same blocking coverage gate as `backend`.
+- **backend** (Windows) — builds `Financial.Api` and runs every `Tests/*.Tests.csproj` listed in `Financial.slnx` except the WPF one (so `Financial.Architecture.Tests` run here, and only here), with coverage and a blocking 90% coverage gate (see `CLAUDE.md`).
+- **wpf** (Windows) — builds `Financial.App` and runs `Financial.Presentation.Tests`, with coverage (scoped to `Financial.Presentation.App` only) and the same blocking coverage gate as `backend`.
 - **web** (Ubuntu) — `npm run lint`, `npm run test:coverage`, `npm run build`, with the same blocking coverage gate as `backend`/`wpf`.
 - **coverage-comment** (Ubuntu) — posts one combined sticky PR comment with backend/wpf/web's coverage %, gate verdict, and a link to the run's coverage-report artifacts. Not in `ci-status`'s `needs`, so a failure here (e.g. the comment action itself erroring) never blocks merge.
 - **smoke** (Ubuntu) — publishes the API with the built SPA and runs the Playwright smoke test. Runs whenever either side of the HTTP boundary changed, even when a backend/web job was skipped.
@@ -50,6 +51,7 @@ Security-relevant configuration (`Financial.Api/appsettings*.json`, `Program.cs`
 
 ## Safeguards
 
+- `.github/scripts/detect-changes.test.sh` pins which jobs each kind of path triggers. It sources the classifier and runs as the first step of the `changes` job, so a rule mistake that would silently skip jobs fails `changes` and `ci-status`.
 - A path no rule recognises runs everything, and the step summary names it — add a rule rather than living with the full run.
 - No base commit (first push, force-push that orphaned `github.event.before`) or a failing `git diff` runs everything.
 - The `changes` job uses the merge-base with the PR base, so a stale branch is diffed against the commit it forked from, not the current `main` tip.
@@ -68,11 +70,19 @@ EOF
 
 Do this after the workflow is merged, otherwise PRs opened before the merge will wait on a check that never reports.
 
+## Merge-gate bypass
+
+`main` is protected: `ci-status` and `semantic-pr` are required, and one approving review is needed.
+`enforce_admins` is deliberately `false`. This is a single-owner repository and administrator
+override is the escape hatch for an emergency (for example, a broken `ci-status` that blocks its own
+fix). Any administrator merge on a red build must be followed by a fix PR that restores green; do
+not leave `main` red.
+
 ## Extending
 
 - **New shared library** (e.g. `Financial.Shared.Something/`): already covered by the `Financial.Shared.*/` pattern.
 - **New bounded context** (`Financial.Foo.{Domain,Application,Infrastructure}`): covered by the `Financial.*.Domain/` family of patterns; its DTOs fall under the DTO contract rule automatically.
-- **New front end or service**: add a job to `build.yml`, an output to the `changes` job, a `case` branch in `detect-changes.sh` for its paths, and list it in `ci-status`'s `needs`. Decide which contract rule(s) should also set its flag.
+- **New front end or service**: add a job to `build.yml`, an output to the `changes` job, a `case` branch in `detect-changes.sh` for its paths (with a case in `detect-changes.test.sh`), and list it in `ci-status`'s `needs`. Decide which contract rule(s) should also set its flag.
 - **New test project**: add it to `Financial.slnx`; the backend job discovers it from there.
 
 Test a rule change locally before pushing:
@@ -80,3 +90,5 @@ Test a rule change locally before pushing:
 ```bash
 bash .github/scripts/detect-changes.sh origin/main HEAD
 ```
+
+Run the classifier self-test with `bash .github/scripts/detect-changes.test.sh`.

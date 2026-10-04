@@ -25,7 +25,7 @@ classify() {
   local path="$1"
   case "$path" in
     # Documentation and agent tooling: nothing to build.
-    docs/*|specs/*|dev-util/*|.claude/*|.specify/*|*.md|LICENSE|.gitignore|.editorconfig|.dockerignore)
+    docs/*|specs/*|dev-util/*|.claude/*|.specify/*|LICENSE|.gitignore|.editorconfig|.dockerignore)
       reasons+=("docs: $path") ;;
 
     # API surface the web SPA is compiled against (controllers, OpenAPI snapshot).
@@ -43,7 +43,12 @@ classify() {
       web=true; smoke=true
       reasons+=("contract (web side): $path") ;;
 
-    Financial.App/*|Tests/Financial.Presentation.Tests/*)
+    # Financial.Architecture.Tests (backend job) pin Financial.App's references.
+    Financial.App/*)
+      wpf=true; backend=true
+      reasons+=("wpf+backend: $path") ;;
+
+    Tests/Financial.Presentation.Tests/*)
       wpf=true
       reasons+=("wpf: $path") ;;
 
@@ -56,6 +61,10 @@ classify() {
       backend=true; wpf=true; smoke=true
       reasons+=("backend: $path") ;;
 
+    # Markdown inside a source directory matched a rule above; only the rest is documentation.
+    *.md)
+      reasons+=("docs: $path") ;;
+
     # Build, deploy, data templates and CI plumbing affect every job.
     .github/*|Dockerfile*|docker-compose*|Financial.slnx|global.json|nuget.config|Directory.*|scripts/*|deploy/*|data/*)
       run_everything "infra: $path" ;;
@@ -64,6 +73,8 @@ classify() {
       run_everything "unclassified path: $path" ;;
   esac
 }
+
+[[ "${BASH_SOURCE[0]}" != "$0" ]] && return 0
 
 if [[ "${FULL_RUN:-false}" == true ]]; then
   run_everything "FULL_RUN requested"

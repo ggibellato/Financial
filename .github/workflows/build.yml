@@ -36,6 +36,9 @@ jobs:
       with:
         fetch-depth: 0
 
+    - name: Self-test the change classifier
+      run: bash .github/scripts/detect-changes.test.sh
+
     - name: Detect affected jobs
       id: detect
       env:
@@ -138,12 +141,9 @@ jobs:
       run: dotnet build Financial.App/Financial.App.csproj --configuration Release
 
     - name: Run tests
-      run: |
-        dotnet test Tests/Financial.Presentation.Tests --configuration Release --verbosity normal --settings coverlet.runsettings --results-directory TestResults
-        dotnet test Tests/Financial.Architecture.Tests --configuration Release --verbosity normal
+      run: dotnet test Tests/Financial.Presentation.Tests --configuration Release --verbosity normal --settings coverlet.runsettings --results-directory TestResults
 
-    # Only Financial.Presentation.Tests collects coverage above (Architecture.Tests doesn't pass
-    # --settings). Financial.Presentation.Tests loads its dependencies' assemblies too (backend
+    # Financial.Presentation.Tests loads its dependencies' assemblies too (backend
     # projects Financial.App composes), so this filters the report down to Financial.Presentation.App
     # itself - the counterpart to backend's, which deliberately excludes this same assembly to
     # avoid double-attributing it.
