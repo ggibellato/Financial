@@ -12,8 +12,8 @@ public class CashFlowData
     private readonly IdCollection<ReserveMovement> _reserveMovements = new(i => i.Id);
     public IReadOnlyCollection<ReserveMovement> ReserveMovements => _reserveMovements;
 
-    private readonly List<CardStatement> _cardStatements = new();
-    public IReadOnlyCollection<CardStatement> CardStatements => _cardStatements.AsReadOnly();
+    private readonly ItemCollection<CardStatement> _cardStatements = new();
+    public IReadOnlyCollection<CardStatement> CardStatements => _cardStatements;
 
     private readonly IdCollection<RecurringBill> _recurringBills = new(i => i.Id);
     public IReadOnlyCollection<RecurringBill> RecurringBills => _recurringBills;
@@ -21,8 +21,8 @@ public class CashFlowData
     private readonly IdCollection<MaeLedgerEntry> _maeLedgerEntries = new(i => i.Id);
     public IReadOnlyCollection<MaeLedgerEntry> MaeLedgerEntries => _maeLedgerEntries;
 
-    private readonly List<InvestmentSnapshot> _investmentSnapshots = new();
-    public IReadOnlyCollection<InvestmentSnapshot> InvestmentSnapshots => _investmentSnapshots.AsReadOnly();
+    private readonly ItemCollection<InvestmentSnapshot> _investmentSnapshots = new();
+    public IReadOnlyCollection<InvestmentSnapshot> InvestmentSnapshots => _investmentSnapshots;
 
     private readonly IdCollection<Bank> _banks = new(i => i.Id);
     public IReadOnlyCollection<Bank> Banks => _banks;
@@ -33,8 +33,8 @@ public class CashFlowData
     private readonly IdCollection<InvestmentAccount> _investmentAccounts = new(i => i.Id);
     public IReadOnlyCollection<InvestmentAccount> InvestmentAccounts => _investmentAccounts;
 
-    private readonly List<ReserveBucket> _reserveBuckets = new();
-    public IReadOnlyCollection<ReserveBucket> ReserveBuckets => _reserveBuckets.AsReadOnly();
+    private readonly ItemCollection<ReserveBucket> _reserveBuckets = new();
+    public IReadOnlyCollection<ReserveBucket> ReserveBuckets => _reserveBuckets;
 
     private readonly IdCollection<Income> _incomes = new(i => i.Id);
     public IReadOnlyCollection<Income> Incomes => _incomes;
@@ -51,8 +51,8 @@ public class CashFlowData
     private readonly IdCollection<Category> _categories = new(i => i.Id);
     public IReadOnlyCollection<Category> Categories => _categories;
 
-    private readonly List<TitheCarryForward> _titheCarryForwards = new();
-    public IReadOnlyCollection<TitheCarryForward> TitheCarryForwards => _titheCarryForwards.AsReadOnly();
+    private readonly ItemCollection<TitheCarryForward> _titheCarryForwards = new();
+    public IReadOnlyCollection<TitheCarryForward> TitheCarryForwards => _titheCarryForwards;
 
     public DateOnly? TitheCarryForwardEffectiveFrom { get; private set; }
 
