@@ -537,14 +537,14 @@ graph TD
 - [x] `TZ=Europe/London` and `LANG=en-GB` are set in the `backend`, `wpf`, `web` and `smoke` jobs and in vitest setup.
 
 ### F02. CI Gate Hardening
-- [ ] With `CI=true` and `UPDATE_OPENAPI_SNAPSHOT=1`, `OpenApiContractTests` fails with the guard message.
-- [ ] With `CI` unset, the update flow still rewrites the snapshot.
-- [ ] Adding a project reference from any `Financial.CashFlow.*` to any `Financial.Investment.*` (or the reverse) fails `BoundedContextIsolationTests`.
-- [ ] A Domain project referencing `Microsoft.AspNetCore.*` or `System.Text.Json` fails the Domain purity test.
-- [ ] `Financial.Architecture.Tests` runs in `backend` only.
-- [ ] The `detect-changes.sh` self-test has ≥ 15 cases and runs in the `changes` job. A deliberately broken rule fails it.
-- [ ] A `*.md` change under `Financial.Web/src` is not classified as docs-only.
-- [ ] `docs/ci-affected-pipeline.md` documents `enforce_admins: false` and the follow-up rule.
+- [x] With `CI=true` and `UPDATE_OPENAPI_SNAPSHOT=1`, `OpenApiContractTests` fails with the guard message.
+- [x] With `CI` unset, the update flow still rewrites the snapshot.
+- [x] Adding a project reference from any `Financial.CashFlow.*` to any `Financial.Investment.*` (or the reverse) fails `BoundedContextIsolationTests`.
+- [x] A Domain project referencing `Microsoft.AspNetCore.*` or `System.Text.Json` fails the Domain purity test.
+- [x] `Financial.Architecture.Tests` runs in `backend` only.
+- [x] The `detect-changes.sh` self-test has ≥ 15 cases and runs in the `changes` job. A deliberately broken rule fails it.
+- [x] A `*.md` change under `Financial.Web/src` is not classified as docs-only.
+- [x] `docs/ci-affected-pipeline.md` documents `enforce_admins: false` and the follow-up rule.
 
 ### F03. Data-Integrity Defect Fixes
 - [x] The concurrent read/write test throws `InvalidOperationException` on the pre-fix code and passes after the fix.
