@@ -6,7 +6,7 @@
 
 ### Stage 1: Network-Free API Tests (PR1)
 
-**1. Deterministic FX provider** - Add the fixed-rate provider to the shared test utilities, with the committed rate table described in the spec.
+**1. Default stub rate** - Make the shared stub exchange-rate provider, with a fixed rate, the API test factory default; no new provider class.
 
 **2. Factory default and opt-in** - Make the API test factory register that provider by default, keep explicit overrides winning, and add the named opt-in for the real exchange-rate chain.
 

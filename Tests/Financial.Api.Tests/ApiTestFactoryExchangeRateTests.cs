@@ -8,12 +8,12 @@ namespace Financial.Api.Tests;
 public class ApiTestFactoryExchangeRateTests
 {
     [Fact]
-    public void DefaultFactory_ResolvesDeterministicExchangeRateProvider()
+    public void DefaultFactory_ResolvesTheStubExchangeRateProvider()
     {
         using var factory = new ApiTestFactory();
 
         var provider = factory.Services.GetRequiredService<IExchangeRateProvider>();
 
-        provider.Should().BeOfType<DeterministicExchangeRateProvider>();
+        provider.Should().BeOfType<StubExchangeRateProvider>();
     }
 }

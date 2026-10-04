@@ -18,9 +18,10 @@ public abstract class ApiEndpointTests : IAsyncLifetime
     protected ApiEndpointTests(
         IExchangeRateProvider? exchangeRateProvider = null,
         TimeProvider? timeProvider = null,
-        ICalendarProvider? calendarProvider = null)
+        ICalendarProvider? calendarProvider = null,
+        bool useRealExchangeRates = false)
     {
-        _factory = new ApiTestFactory(exchangeRateProvider, timeProvider, calendarProvider);
+        _factory = new ApiTestFactory(exchangeRateProvider, timeProvider, calendarProvider, useRealExchangeRates);
     }
 
     /// <summary>The API client for this test's own host, created on first use so a test that builds

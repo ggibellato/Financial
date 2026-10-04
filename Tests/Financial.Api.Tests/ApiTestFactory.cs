@@ -12,34 +12,32 @@ namespace Financial.Api.Tests;
 
 internal sealed class ApiTestFactory : WebApplicationFactory<Program>
 {
+    private const decimal DefaultExchangeRate = 1m;
+
     private readonly string _dataFilePath;
     private readonly string _cashFlowDataFilePath;
     private readonly string _fxRatesDataFilePath;
     private readonly string _calendarCredentialsPath;
-    private readonly IExchangeRateProvider? _exchangeRateProviderOverride;
+    private readonly IExchangeRateProvider? _exchangeRateProvider;
     private readonly TimeProvider? _timeProviderOverride;
     private readonly ICalendarProvider? _calendarProviderOverride;
-    private bool _useRealExchangeRates;
     private bool _disposed;
 
     public ApiTestFactory(
         IExchangeRateProvider? exchangeRateProviderOverride = null,
         TimeProvider? timeProviderOverride = null,
-        ICalendarProvider? calendarProviderOverride = null)
+        ICalendarProvider? calendarProviderOverride = null,
+        bool useRealExchangeRates = false)
     {
         _dataFilePath = CreateTempDataFile();
         _cashFlowDataFilePath = CreateTempCashFlowDataFilePath();
         _fxRatesDataFilePath = Path.Combine(Path.GetTempPath(), $"financial-api-fxrates-{Guid.NewGuid():N}.json");
         _calendarCredentialsPath = Path.Combine(Path.GetTempPath(), $"financial-api-calendar-{Guid.NewGuid():N}.json");
-        _exchangeRateProviderOverride = exchangeRateProviderOverride;
+        _exchangeRateProvider = useRealExchangeRates
+            ? null
+            : exchangeRateProviderOverride ?? new StubExchangeRateProvider(DefaultExchangeRate);
         _timeProviderOverride = timeProviderOverride;
         _calendarProviderOverride = calendarProviderOverride;
-    }
-
-    public ApiTestFactory WithRealExchangeRates()
-    {
-        _useRealExchangeRates = true;
-        return this;
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -59,20 +57,12 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
             config.AddInMemoryCollection(settings);
         });
 
-        if (_exchangeRateProviderOverride is not null)
+        if (_exchangeRateProvider is not null)
         {
             builder.ConfigureTestServices(services =>
             {
                 services.RemoveAll<IExchangeRateProvider>();
-                services.AddSingleton(_exchangeRateProviderOverride);
-            });
-        }
-        else if (!_useRealExchangeRates)
-        {
-            builder.ConfigureTestServices(services =>
-            {
-                services.RemoveAll<IExchangeRateProvider>();
-                services.AddSingleton<IExchangeRateProvider, DeterministicExchangeRateProvider>();
+                services.AddSingleton(_exchangeRateProvider);
             });
         }
 
