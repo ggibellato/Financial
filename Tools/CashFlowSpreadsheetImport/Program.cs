@@ -34,11 +34,11 @@ if (!ImportArguments.TryParse(args, out var arguments, out var refusal))
     return 2;
 }
 
-var (workbookPath, outputPath, mensaisOnly) = arguments!;
+var (workbookPath, outputPath, mensaisOnly) = arguments;
 
 if (LiveDataFileGuard.IsLiveDataFile(outputPath, AppContext.BaseDirectory))
 {
-    Console.Error.WriteLine(ImportArguments.FullLiveFileRefusal);
+    Console.Error.WriteLine(ImportArguments.OutputRequiredRefusal);
     return 2;
 }
 

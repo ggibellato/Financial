@@ -3,23 +3,13 @@ using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migratio
 
 namespace Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Reporting;
 
-public sealed class NonCarriedRecordsReport
+public sealed record NonCarriedRecordsReport(
+    int Transfers,
+    int BalanceAdjustments,
+    int TitheCarryForwards,
+    string? TitheEffectiveFrom,
+    int UserCategories)
 {
-    private readonly int _transfers;
-    private readonly int _balanceAdjustments;
-    private readonly int _titheCarryForwards;
-    private readonly string? _titheEffectiveFrom;
-    private readonly int _userCategories;
-
-    private NonCarriedRecordsReport(int transfers, int balanceAdjustments, int titheCarryForwards, string? titheEffectiveFrom, int userCategories)
-    {
-        _transfers = transfers;
-        _balanceAdjustments = balanceAdjustments;
-        _titheCarryForwards = titheCarryForwards;
-        _titheEffectiveFrom = titheEffectiveFrom;
-        _userCategories = userCategories;
-    }
-
     // Counted from raw JSON, not the typed document: the typed loader rejects legacy shapes that
     // the migrations only fix later, and reading raw keeps this check free of side effects.
     public static NonCarriedRecordsReport FromJson(string json)
@@ -35,21 +25,26 @@ public sealed class NonCarriedRecordsReport
             : null;
 
         return new NonCarriedRecordsReport(
-            ArrayItems(root, "Transfers").Count(),
-            ArrayItems(root, "BalanceAdjustments").Count(),
-            ArrayItems(root, "TitheCarryForwards").Count(),
+            CountOf(root, "Transfers"),
+            CountOf(root, "BalanceAdjustments"),
+            CountOf(root, "TitheCarryForwards"),
             effectiveFrom,
             userCategories);
     }
 
     public string Render()
     {
-        var tithe = _titheEffectiveFrom is null
-            ? $"Tithe carry-forwards {_titheCarryForwards}"
-            : $"Tithe carry-forwards {_titheCarryForwards} (effective from {_titheEffectiveFrom})";
+        var tithe = TitheEffectiveFrom is null
+            ? $"Tithe carry-forwards {TitheCarryForwards}"
+            : $"Tithe carry-forwards {TitheCarryForwards} (effective from {TitheEffectiveFrom})";
 
-        return $"Not carried over: Transfers {_transfers}, BalanceAdjustments {_balanceAdjustments}, {tithe}, Categories {_userCategories}";
+        return $"Not carried over: Transfers {Transfers}, BalanceAdjustments {BalanceAdjustments}, {tithe}, Categories {UserCategories}";
     }
+
+    private static int CountOf(JsonElement root, string propertyName) =>
+        root.TryGetProperty(propertyName, out var array) && array.ValueKind == JsonValueKind.Array
+            ? array.GetArrayLength()
+            : 0;
 
     private static IEnumerable<JsonElement> ArrayItems(JsonElement root, string propertyName) =>
         root.TryGetProperty(propertyName, out var array) && array.ValueKind == JsonValueKind.Array

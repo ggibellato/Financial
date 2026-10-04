@@ -25,17 +25,8 @@ public class CashFlowJsonRepositoryConcurrencyTests
         });
         await storage.WriteEntered.Task;
 
-        var seen = 1;
-        var drain = () =>
-        {
-            while (enumerator.MoveNext())
-            {
-                seen++;
-            }
-        };
-
-        drain.Should().NotThrow();
-        seen.Should().Be(SeededExpenseCount);
+        Func<int> drain = () => CountRemaining(enumerator);
+        drain.Should().NotThrow().Which.Should().Be(SeededExpenseCount - 1);
 
         storage.ReleaseWrite();
         await save;
@@ -58,17 +49,8 @@ public class CashFlowJsonRepositoryConcurrencyTests
         });
         await storage.WriteEntered.Task;
 
-        var seen = 1;
-        var drain = () =>
-        {
-            while (enumerator.MoveNext())
-            {
-                seen++;
-            }
-        };
-
-        drain.Should().NotThrow();
-        seen.Should().Be(SeededExpenseCount);
+        Func<int> drain = () => CountRemaining(enumerator);
+        drain.Should().NotThrow().Which.Should().Be(SeededExpenseCount - 1);
 
         storage.ReleaseWrite();
         await save;
@@ -94,20 +76,22 @@ public class CashFlowJsonRepositoryConcurrencyTests
         });
         await storage.WriteEntered.Task;
 
-        var seen = 1;
-        var drain = () =>
-        {
-            while (enumerator.MoveNext())
-            {
-                seen++;
-            }
-        };
-
-        drain.Should().NotThrow();
-        seen.Should().Be(2);
+        Func<int> drain = () => CountRemaining(enumerator);
+        drain.Should().NotThrow().Which.Should().Be(1);
 
         storage.ReleaseWrite();
         await save;
+    }
+
+    private static int CountRemaining<T>(IEnumerator<T> enumerator)
+    {
+        var count = 0;
+        while (enumerator.MoveNext())
+        {
+            count++;
+        }
+
+        return count;
     }
 
     private static (CashFlowJsonRepository Repository, BlockingJsonStorage Storage) CreateRepositoryWithExpenses(int count)
