@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
 # Self-test for detect-changes.sh: every case pins the jobs one path must trigger.
-# Usage: bash .github/scripts/detect-changes.test.sh
 set -u
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=detect-changes.sh
 source "$here/detect-changes.sh"
 
 failures=0
@@ -28,6 +26,8 @@ check "README.md"                                              "false false fals
 check "CLAUDE.md"                                              "false false false false"
 check ".claude/skills/testing-guide-Financial/SKILL.md"        "false false false false"
 check ".github/pull_request_template.md"                       "false false false false"
+check "deploy/README.md"                                       "false false false false"
+check "scripts/README.md"                                      "false false false false"
 check "Financial.Web/src/foo.md"                               "false false true true"
 check "Tests/Financial.Api.Tests/README.md"                    "true false true true"
 check "Financial.CashFlow.Domain/README.md"                    "true true false true"

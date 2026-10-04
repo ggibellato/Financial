@@ -13,7 +13,7 @@ checks them (first match wins):
 
 | Group | Paths | Why it is its own group |
 |---|---|---|
-| Docs | `docs/`, `specs/`, `dev-util/`, `.claude/`, `.specify/`, `LICENSE`, `.gitignore`, `.editorconfig`, `.dockerignore`, and any `*.md` that no source-directory rule below claims first | Nothing here reaches a build. A Markdown file inside `Financial.*`, `Tests/`, `Tools/` or `Integrations/` follows that directory's rule instead (the `*.md` rule is checked after them) |
+| Docs | `docs/`, `specs/`, `dev-util/`, `.claude/`, `.specify/`, `LICENSE`, `.gitignore`, `.editorconfig`, `.dockerignore`, and `*.md` outside the source directories below | Nothing here reaches a build. A Markdown file inside `Financial.*`, `Tests/`, `Tools/` or `Integrations/` follows that directory's rule |
 | Contract (server side) | `Financial.Api/`, `Tests/Financial.Api.Tests/` (includes the OpenAPI snapshot) | The HTTP surface `Financial.Web` is compiled against |
 | Contract (DTOs) | `Financial.*.Application/DTOs/` | Wire format for the SPA **and** linked in-process into the WPF app |
 | Contract (client side) | `Financial.Web/src/api/` | Hand-written TypeScript mirror of the DTOs (`types.ts`, client) |
@@ -51,7 +51,7 @@ Security-relevant configuration (`Financial.Api/appsettings*.json`, `Program.cs`
 
 ## Safeguards
 
-- `.github/scripts/detect-changes.test.sh` pins which jobs each kind of path triggers (22 cases). It sources the classifier and runs as the first step of the `changes` job, so a rule mistake that would silently skip jobs fails `changes` and `ci-status`. Add a case whenever you add or change a rule.
+- `.github/scripts/detect-changes.test.sh` pins which jobs each kind of path triggers. It sources the classifier and runs as the first step of the `changes` job, so a rule mistake that would silently skip jobs fails `changes` and `ci-status`.
 - A path no rule recognises runs everything, and the step summary names it — add a rule rather than living with the full run.
 - No base commit (first push, force-push that orphaned `github.event.before`) or a failing `git diff` runs everything.
 - The `changes` job uses the merge-base with the PR base, so a stale branch is diffed against the commit it forked from, not the current `main` tip.
@@ -90,3 +90,5 @@ Test a rule change locally before pushing:
 ```bash
 bash .github/scripts/detect-changes.sh origin/main HEAD
 ```
+
+Run the classifier self-test with `bash .github/scripts/detect-changes.test.sh`.

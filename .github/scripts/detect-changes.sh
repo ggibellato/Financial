@@ -10,6 +10,9 @@
 # FULL_RUN=true bypasses classification entirely (used for every push to main).
 set -u
 
+BASE_SHA="${1:-}"
+HEAD_SHA="${2:-HEAD}"
+
 backend=false; wpf=false; web=false; smoke=false
 reasons=()
 
@@ -71,47 +74,39 @@ classify() {
   esac
 }
 
-main() {
-  local BASE_SHA="${1:-}"
-  local HEAD_SHA="${2:-HEAD}"
-  local changed
+[[ "${BASH_SOURCE[0]}" != "$0" ]] && return 0
 
-  if [[ "${FULL_RUN:-false}" == true ]]; then
-    run_everything "FULL_RUN requested"
-  elif [[ -z "$BASE_SHA" || "$BASE_SHA" =~ ^0+$ ]]; then
-    run_everything "no base commit to diff against"
-  elif ! changed=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" 2>/dev/null); then
-    run_everything "git diff $BASE_SHA..$HEAD_SHA failed"
-  elif [[ -z "$changed" ]]; then
-    reasons+=("no files changed")
-  else
-    while IFS= read -r path; do
-      classify "$path"
-    done <<< "$changed"
-  fi
-
-  {
-    echo "backend=$backend"
-    echo "wpf=$wpf"
-    echo "web=$web"
-    echo "smoke=$smoke"
-  } >> "${GITHUB_OUTPUT:-/dev/stdout}"
-
-  {
-    echo "### Affected jobs"
-    echo
-    echo "| backend | wpf | web | smoke |"
-    echo "|---|---|---|---|"
-    echo "| $backend | $wpf | $web | $smoke |"
-    echo
-    echo "<details><summary>Why</summary>"
-    echo
-    printf -- '- %s\n' "${reasons[@]}" | sort -u
-    echo
-    echo "</details>"
-  } >> "${GITHUB_STEP_SUMMARY:-/dev/stdout}"
-}
-
-if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
-  main "$@"
+if [[ "${FULL_RUN:-false}" == true ]]; then
+  run_everything "FULL_RUN requested"
+elif [[ -z "$BASE_SHA" || "$BASE_SHA" =~ ^0+$ ]]; then
+  run_everything "no base commit to diff against"
+elif ! changed=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" 2>/dev/null); then
+  run_everything "git diff $BASE_SHA..$HEAD_SHA failed"
+elif [[ -z "$changed" ]]; then
+  reasons+=("no files changed")
+else
+  while IFS= read -r path; do
+    classify "$path"
+  done <<< "$changed"
 fi
+
+{
+  echo "backend=$backend"
+  echo "wpf=$wpf"
+  echo "web=$web"
+  echo "smoke=$smoke"
+} >> "${GITHUB_OUTPUT:-/dev/stdout}"
+
+{
+  echo "### Affected jobs"
+  echo
+  echo "| backend | wpf | web | smoke |"
+  echo "|---|---|---|---|"
+  echo "| $backend | $wpf | $web | $smoke |"
+  echo
+  echo "<details><summary>Why</summary>"
+  echo
+  printf -- '- %s\n' "${reasons[@]}" | sort -u
+  echo
+  echo "</details>"
+} >> "${GITHUB_STEP_SUMMARY:-/dev/stdout}"
