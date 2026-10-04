@@ -71,8 +71,9 @@ jobs:
     runs-on: windows-latest
     outputs:
       coverage: ${{ steps.gate.outputs.coverage }}
-      band: ${{ steps.gate.outputs.band }}
       emoji: ${{ steps.gate.outputs.emoji }}
+      branch: ${{ steps.gate.outputs.branch }}
+      branch-emoji: ${{ steps.gate.outputs.branch-emoji }}
     steps:
     - name: Pin timezone and culture
       shell: pwsh
@@ -133,8 +134,9 @@ jobs:
     runs-on: windows-latest
     outputs:
       coverage: ${{ steps.gate.outputs.coverage }}
-      band: ${{ steps.gate.outputs.band }}
       emoji: ${{ steps.gate.outputs.emoji }}
+      branch: ${{ steps.gate.outputs.branch }}
+      branch-emoji: ${{ steps.gate.outputs.branch-emoji }}
     steps:
     - name: Pin timezone and culture
       shell: pwsh
@@ -187,8 +189,9 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       coverage: ${{ steps.gate.outputs.coverage }}
-      band: ${{ steps.gate.outputs.band }}
       emoji: ${{ steps.gate.outputs.emoji }}
+      branch: ${{ steps.gate.outputs.branch }}
+      branch-emoji: ${{ steps.gate.outputs.branch-emoji }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
@@ -261,38 +264,43 @@ jobs:
       env:
         BACKEND_RESULT: ${{ needs.backend.result }}
         BACKEND_COVERAGE: ${{ needs.backend.outputs.coverage }}
-        BACKEND_BAND: ${{ needs.backend.outputs.band }}
         BACKEND_EMOJI: ${{ needs.backend.outputs.emoji }}
+        BACKEND_BRANCH: ${{ needs.backend.outputs.branch }}
+        BACKEND_BRANCH_EMOJI: ${{ needs.backend.outputs.branch-emoji }}
         WPF_RESULT: ${{ needs.wpf.result }}
         WPF_COVERAGE: ${{ needs.wpf.outputs.coverage }}
-        WPF_BAND: ${{ needs.wpf.outputs.band }}
         WPF_EMOJI: ${{ needs.wpf.outputs.emoji }}
+        WPF_BRANCH: ${{ needs.wpf.outputs.branch }}
+        WPF_BRANCH_EMOJI: ${{ needs.wpf.outputs.branch-emoji }}
         WEB_RESULT: ${{ needs.web.result }}
         WEB_COVERAGE: ${{ needs.web.outputs.coverage }}
-        WEB_BAND: ${{ needs.web.outputs.band }}
         WEB_EMOJI: ${{ needs.web.outputs.emoji }}
+        WEB_BRANCH: ${{ needs.web.outputs.branch }}
+        WEB_BRANCH_EMOJI: ${{ needs.web.outputs.branch-emoji }}
         RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
       run: |
-        # band/emoji are already computed by each job's own coverage-gate step; this just lays
-        # out the row, plus a fallback for a job that didn't run or produced nothing.
+        # The emojis are already computed by each job's own coverage-gate step; this just lays out
+        # the row, plus a fallback for a job that didn't run or produced nothing.
         row() {
-          local name="$1" result="$2" coverage="$3" band="$4" emoji="$5"
+          local name="$1" result="$2" coverage="$3" emoji="$4" branch="$5" branch_emoji="$6"
           if [ "$result" = "skipped" ]; then
-            echo "| $name | – | ⚪ not run this time |"
+            echo "| $name | ⚪ not run | ⚪ not run |"
           elif [ "$result" != "success" ] || [ -z "$coverage" ]; then
-            echo "| $name | – | ⚠️ unavailable |"
+            echo "| $name | ⚠️ unavailable | ⚠️ unavailable |"
+          elif [ -z "$branch" ]; then
+            echo "| $name | $emoji ${coverage}% | ⚪ n/a |"
           else
-            echo "| $name | ${coverage}% | $emoji $band |"
+            echo "| $name | $emoji ${coverage}% | $branch_emoji ${branch}% |"
           fi
         }
         {
           echo "### Coverage summary"
           echo
-          echo "| Project | Line coverage | Gate (90% required) |"
-          echo "|:---|---:|:---|"
-          row "Backend (.NET)" "$BACKEND_RESULT" "$BACKEND_COVERAGE" "$BACKEND_BAND" "$BACKEND_EMOJI"
-          row "WPF (Financial.App)" "$WPF_RESULT" "$WPF_COVERAGE" "$WPF_BAND" "$WPF_EMOJI"
-          row "Web (Financial.Web)" "$WEB_RESULT" "$WEB_COVERAGE" "$WEB_BAND" "$WEB_EMOJI"
+          echo "| Project | Line coverage | Branch coverage |"
+          echo "|:---|---:|---:|"
+          row "Backend (.NET)" "$BACKEND_RESULT" "$BACKEND_COVERAGE" "$BACKEND_EMOJI" "$BACKEND_BRANCH" "$BACKEND_BRANCH_EMOJI"
+          row "WPF (Financial.App)" "$WPF_RESULT" "$WPF_COVERAGE" "$WPF_EMOJI" "$WPF_BRANCH" "$WPF_BRANCH_EMOJI"
+          row "Web (Financial.Web)" "$WEB_RESULT" "$WEB_COVERAGE" "$WEB_EMOJI" "$WEB_BRANCH" "$WEB_BRANCH_EMOJI"
           echo
           echo "[Full coverage reports (artifacts)]($RUN_URL)"
         } > coverage-comment.md

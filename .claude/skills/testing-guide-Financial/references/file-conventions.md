@@ -101,15 +101,16 @@ npm run smoke-test        # Playwright, needs the published API up (see e2e-envi
 
 ## Coverage philosophy — thorough, CI bands as targets
 
-Decided 2026-09-06. The CI coverage gate (`Check coverage threshold` step in each of the
-`backend`, `wpf`, `web` jobs, `continue-on-error: true`) bands line coverage:
+Decided 2026-09-06. The CI coverage step (`Check coverage threshold` in each of the `backend`,
+`wpf`, `web` jobs) shows line and branch coverage behind the same traffic-light icon; the PR
+comment repeats them. A line result below 90% fails the step; branch coverage never does.
 
-| Band | Line coverage | Meaning |
+| Icon | Coverage (line or branch) | Meaning |
 |---|---|---|
-| 🟢 green | 100% | target for every new artifact's own tests |
-| 🟡 yellow | 95–99.99% | acceptable; note what is uncovered in the PR |
-| 🟠 amber | 90–94.99% | fix before the next feature on that area |
-| 🔴 red | < 90% | the step fails visibly; treat as a defect to fix in the same PR |
+| 🟢 green | ≥ 90% | healthy |
+| 🟡 yellow | 85–89.99% | slipping; note what is uncovered in the PR |
+| 🟠 amber | 80–84.99% | fix before the next feature on that area |
+| 🔴 red | < 80% | treat as a defect to fix in the same PR |
 
 Measured whole-repo per job: `backend` = every .NET assembly except `Financial.Presentation.App`
 (`-assemblyfilters:+*;-Financial.Presentation.App`), `wpf` = `Financial.Presentation.App` only,
