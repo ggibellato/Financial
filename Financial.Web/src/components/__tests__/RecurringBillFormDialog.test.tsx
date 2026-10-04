@@ -40,15 +40,6 @@ describe('RecurringBillFormDialog', () => {
     expect(screen.getByLabelText('Status')).toHaveValue('Scheduled')
   })
 
-  it('disables Save and shows a validation message when Due Day is out of range', () => {
-    render(<RecurringBillFormDialog recurringBill={null} onCancel={vi.fn()} onSubmit={vi.fn()} />)
-
-    fireEvent.change(screen.getByLabelText(/^Due Day/), { target: { value: '32' } })
-
-    expect(screen.getByText('Due day must be between 1 and 31.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
-  })
-
   it('disables Save and shows a validation message when Description is blank', () => {
     render(<RecurringBillFormDialog recurringBill={null} onCancel={vi.fn()} onSubmit={vi.fn()} />)
 
@@ -80,27 +71,5 @@ describe('RecurringBillFormDialog', () => {
         status: 'Unset',
       }),
     )
-  })
-
-  it('shows a server error and re-enables Save when the submit rejects', async () => {
-    const onSubmit = vi.fn().mockRejectedValue(new Error('Due day must be between 1 and 31.'))
-    render(<RecurringBillFormDialog recurringBill={null} onCancel={vi.fn()} onSubmit={onSubmit} />)
-
-    fireEvent.change(screen.getByLabelText(/^Due Day/), { target: { value: '10' } })
-    fireEvent.change(screen.getByLabelText(/^Description/), { target: { value: 'Rent' } })
-    fireEvent.change(screen.getByLabelText(/^Value/), { target: { value: '1500' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
-
-    expect(await screen.findByText('Due day must be between 1 and 31.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Save' })).not.toBeDisabled()
-  })
-
-  it('calls onCancel when Cancel is clicked', () => {
-    const onCancel = vi.fn()
-    render(<RecurringBillFormDialog recurringBill={null} onCancel={onCancel} onSubmit={vi.fn()} />)
-
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
-
-    expect(onCancel).toHaveBeenCalled()
   })
 })

@@ -227,18 +227,13 @@ describe('TransactionsTab', () => {
     expect(screen.getByText('15/03/2024')).toBeInTheDocument()
   })
 
-  it('renders_buy_type_in_green_bold', () => {
-    setMock({ transactions: [TRANSACTION_BUY] })
+  it.each([
+    [TRANSACTION_BUY, 'Buy', 'transactions-tab__type--buy'],
+    [TRANSACTION_SELL, 'Sell', 'transactions-tab__type--sell'],
+  ])('renders_%#_transaction_type_%s_with_its_class', (transaction, label, typeClass) => {
+    setMock({ transactions: [transaction] })
     render(<TransactionsTab />)
-    const typeCell = screen.getByText('Buy')
-    expect(typeCell).toHaveClass('transactions-tab__type--buy')
-  })
-
-  it('renders_sell_type_in_red_bold', () => {
-    setMock({ transactions: [TRANSACTION_SELL] })
-    render(<TransactionsTab />)
-    const typeCell = screen.getByText('Sell')
-    expect(typeCell).toHaveClass('transactions-tab__type--sell')
+    expect(screen.getByText(label)).toHaveClass(typeClass)
   })
 
   it('renders_quantity_with_8_decimal_places', () => {

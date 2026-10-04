@@ -87,28 +87,14 @@ describe('AggregatedSummaryTab', () => {
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument()
   })
 
-  it('renders_total_bought_in_green', () => {
+  it.each([
+    ['Total Bought', 'aggregated-summary__value--green'],
+    ['Total Sold', 'aggregated-summary__value--red'],
+    ['Total Credits', 'aggregated-summary__value--blue'],
+  ])('renders_%s_value_with_its_colour_class', (label, colourClass) => {
     setMock({ summary: SUMMARY })
     renderComponent()
-    const label = screen.getByText('Total Bought')
-    const valueEl = label.nextElementSibling
-    expect(valueEl).toHaveClass('aggregated-summary__value--green')
-  })
-
-  it('renders_total_sold_in_red', () => {
-    setMock({ summary: SUMMARY })
-    renderComponent()
-    const label = screen.getByText('Total Sold')
-    const valueEl = label.nextElementSibling
-    expect(valueEl).toHaveClass('aggregated-summary__value--red')
-  })
-
-  it('renders_total_credits_in_blue', () => {
-    setMock({ summary: SUMMARY })
-    renderComponent()
-    const label = screen.getByText('Total Credits')
-    const valueEl = label.nextElementSibling
-    expect(valueEl).toHaveClass('aggregated-summary__value--blue')
+    expect(screen.getByText(label).nextElementSibling).toHaveClass(colourClass)
   })
 
   it('renders_total_invested_after_total_credits', () => {

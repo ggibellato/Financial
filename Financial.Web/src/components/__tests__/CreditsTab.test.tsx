@@ -204,25 +204,14 @@ describe('CreditsTab', () => {
     expect(screen.getByText('15/03/2024')).toBeInTheDocument()
   })
 
-  it('renders_dividend_type_with_dividend_class', () => {
-    setMock({ credits: [CREDIT_DIVIDEND] })
+  it.each([
+    [CREDIT_DIVIDEND, 'Dividend', 'credits-tab__type--dividend'],
+    [CREDIT_SECURITIES_LENDING_INCOME, 'Securities Lending Income', 'credits-tab__type--securities-lending-income'],
+    [CREDIT_JCP, 'JCP', 'credits-tab__type--jcp'],
+  ])('renders_%#_credit_type_%s_with_its_class', (credit, label, typeClass) => {
+    setMock({ credits: [credit] })
     render(<CreditsTab />)
-    const typeCell = screen.getByText('Dividend')
-    expect(typeCell).toHaveClass('credits-tab__type--dividend')
-  })
-
-  it('renders_securities_lending_income_type_with_its_class', () => {
-    setMock({ credits: [CREDIT_SECURITIES_LENDING_INCOME] })
-    render(<CreditsTab />)
-    const typeCell = screen.getByText('Securities Lending Income')
-    expect(typeCell).toHaveClass('credits-tab__type--securities-lending-income')
-  })
-
-  it('renders_jcp_type_with_jcp_class', () => {
-    setMock({ credits: [CREDIT_JCP] })
-    render(<CreditsTab />)
-    const typeCell = screen.getByText('JCP')
-    expect(typeCell).toHaveClass('credits-tab__type--jcp')
+    expect(screen.getByText(label)).toHaveClass(typeClass)
   })
 
   it('renders_value_in_n2_bold', () => {

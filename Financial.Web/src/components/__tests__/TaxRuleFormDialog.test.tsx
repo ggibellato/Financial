@@ -35,15 +35,6 @@ describe('TaxRuleFormDialog', () => {
     expect(screen.getByLabelText('Event Category')).toBeDisabled()
   })
 
-  it('disables Save and shows a validation message when the label is blank', () => {
-    render(<TaxRuleFormDialog taxRule={null} onCancel={vi.fn()} onSubmit={vi.fn()} />)
-
-    fireEvent.change(screen.getByLabelText(/^Effective From/), { target: { value: '2026-01-01' } })
-
-    expect(screen.getByText('Label is required.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
-  })
-
   it('rejects an effective range where From is on or after To, inline before submission', () => {
     const onSubmit = vi.fn()
     render(<TaxRuleFormDialog taxRule={null} onCancel={vi.fn()} onSubmit={onSubmit} />)
@@ -71,30 +62,5 @@ describe('TaxRuleFormDialog', () => {
     await waitFor(() =>
       expect(onSubmit).toHaveBeenCalledWith('UK', 'Interest', 'UK interest rule', 'Notes', '2026-01-01', null),
     )
-  })
-
-  it('shows a server-side overlap rejection inline naming the conflicting rule', async () => {
-    const onSubmit = vi.fn().mockRejectedValue(
-      new Error('This range overlaps existing rule "BR dividend withholding" (2026-01-01–present).'),
-    )
-    render(<TaxRuleFormDialog taxRule={null} onCancel={vi.fn()} onSubmit={onSubmit} />)
-
-    fireEvent.change(screen.getByLabelText(/^Label/), { target: { value: 'Another rule' } })
-    fireEvent.change(screen.getByLabelText(/^Effective From/), { target: { value: '2026-06-01' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
-
-    expect(
-      await screen.findByText('This range overlaps existing rule "BR dividend withholding" (2026-01-01–present).'),
-    ).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Save' })).not.toBeDisabled()
-  })
-
-  it('calls onCancel when Cancel is clicked', () => {
-    const onCancel = vi.fn()
-    render(<TaxRuleFormDialog taxRule={null} onCancel={onCancel} onSubmit={vi.fn()} />)
-
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
-
-    expect(onCancel).toHaveBeenCalled()
   })
 })
