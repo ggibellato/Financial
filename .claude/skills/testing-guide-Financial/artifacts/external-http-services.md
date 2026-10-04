@@ -5,7 +5,7 @@
 Two sub-types live in these folders:
 
 1. **HTTP-backed providers** that call a genuine external API through an injected `HttpClient`:
-   `FrankfurterExchangeRateProvider` (`https://api.frankfurter.dev/v1/`) and `YahooFinanceService`
+   `FrankfurterExchangeRateProvider` (`https://api.frankfurter.dev/v2/`) and `YahooFinanceService`
    (`https://query1.finance.yahoo.com/`).
 2. **Fetchers, adapters and fallbacks** that orchestrate providers behind `IFinanceService` /
    `IAssetPriceFetcher`: `AssetPriceService`, `StandardAssetPriceFetcher`,
@@ -58,7 +58,7 @@ private static FrankfurterExchangeRateProvider CreateProvider(Func<HttpRequestMe
     new(CreateClient(new FakeHttpMessageHandler(respond)), NullLogger<FrankfurterExchangeRateProvider>.Instance);
 
 private static HttpClient CreateClient(HttpMessageHandler handler) =>
-    new(handler) { BaseAddress = new Uri("https://api.frankfurter.dev/v1/") };
+    new(handler) { BaseAddress = new Uri("https://api.frankfurter.dev/v2/") };
 
 [Fact]
 public async Task GetHistoricalRateAsync_WhenHttpRequestThrows_LogsTheExceptionType()

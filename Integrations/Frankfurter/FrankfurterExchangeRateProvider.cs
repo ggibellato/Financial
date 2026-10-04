@@ -9,7 +9,7 @@ namespace Financial.Integrations.Frankfurter;
 
 public sealed class FrankfurterExchangeRateProvider : IExchangeRateProvider, IUsdRateFetcher
 {
-    public const string BaseAddress = "https://api.frankfurter.dev/v1/";
+    public const string BaseAddress = "https://api.frankfurter.dev/v2/";
 
     public static readonly TimeSpan DefaultCallBudget = TimeSpan.FromSeconds(10);
 
@@ -36,7 +36,7 @@ public sealed class FrankfurterExchangeRateProvider : IExchangeRateProvider, IUs
 
         for (var offset = 0; offset <= MaxFallbackDays; offset++)
         {
-            var reply = await FetchAsync(date.AddDays(-offset), $"from={from}&to={to}", budget.Token).ConfigureAwait(false);
+            var reply = await FetchAsync(date.AddDays(-offset), $"base={from}&quotes={to}", budget.Token).ConfigureAwait(false);
             if (reply.Failed)
             {
                 return null;
@@ -57,7 +57,7 @@ public sealed class FrankfurterExchangeRateProvider : IExchangeRateProvider, IUs
 
         for (var offset = 0; offset <= MaxFallbackDays; offset++)
         {
-            var reply = await FetchAsync(date.AddDays(-offset), $"from={Currency.USD}&to={Currency.BRL},{Currency.GBP}", budget.Token)
+            var reply = await FetchAsync(date.AddDays(-offset), $"base={Currency.USD}&quotes={Currency.BRL},{Currency.GBP}", budget.Token)
                 .ConfigureAwait(false);
             if (reply.Failed)
             {
@@ -82,7 +82,7 @@ public sealed class FrankfurterExchangeRateProvider : IExchangeRateProvider, IUs
     {
         try
         {
-            var path = $"{date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}?{query}";
+            var path = $"rates?date={date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}&{query}";
             using var response = await _httpClient.GetAsync(path, cancellationToken).ConfigureAwait(false);
 
             if (response.StatusCode == HttpStatusCode.NotFound)
@@ -91,8 +91,8 @@ public sealed class FrankfurterExchangeRateProvider : IExchangeRateProvider, IUs
             }
 
             response.EnsureSuccessStatusCode();
-            var body = await response.Content.ReadFromJsonAsync<FrankfurterResponse>(cancellationToken).ConfigureAwait(false);
-            return new Reply(Failed: false, body?.Rates);
+            var quotes = await response.Content.ReadFromJsonAsync<List<FrankfurterQuote>>(cancellationToken).ConfigureAwait(false);
+            return new Reply(Failed: false, quotes?.ToDictionary(quote => quote.Quote, quote => quote.Rate));
         }
         catch (Exception ex)
         {
@@ -105,8 +105,9 @@ public sealed class FrankfurterExchangeRateProvider : IExchangeRateProvider, IUs
 
     private sealed record Reply(bool Failed, Dictionary<string, decimal>? Rates);
 
-    private sealed class FrankfurterResponse
+    private sealed class FrankfurterQuote
     {
-        public Dictionary<string, decimal>? Rates { get; set; }
+        public string Quote { get; set; } = string.Empty;
+        public decimal Rate { get; set; }
     }
 }

@@ -20,7 +20,7 @@ public class FrankfurterExchangeRateProviderTests
     {
         var provider = CreateProvider(_ => new HttpResponseMessage(HttpStatusCode.OK)
         {
-            Content = new StringContent("""{"amount":1,"base":"BRL","date":"2026-07-01","rates":{"USD":0.19}}""")
+            Content = new StringContent("""[{"date":"2026-07-01","base":"BRL","quote":"USD","rate":0.19}]""")
         });
 
         var rate = await provider.GetHistoricalRateAsync(new DateOnly(2026, 7, 1), Currency.BRL, Currency.USD);
@@ -80,7 +80,7 @@ public class FrankfurterExchangeRateProviderTests
     {
         var provider = CreateProvider(_ => new HttpResponseMessage(HttpStatusCode.OK)
         {
-            Content = new StringContent("""{"amount":1,"base":"BRL","date":"2026-07-01","rates":{"EUR":0.15}}""")
+            Content = new StringContent("""[{"date":"2026-07-01","base":"BRL","quote":"EUR","rate":0.15}]""")
         });
 
         var rate = await provider.GetHistoricalRateAsync(new DateOnly(2026, 7, 1), Currency.BRL, Currency.GBP);
@@ -97,7 +97,7 @@ public class FrankfurterExchangeRateProviderTests
             requestedDates.Add(ExtractDate(request));
             return new HttpResponseMessage(HttpStatusCode.OK)
             {
-                Content = new StringContent("""{"amount":1,"base":"BRL","date":"2026-07-01","rates":{"GBP":0.146}}""")
+                Content = new StringContent("""[{"date":"2026-07-01","base":"BRL","quote":"GBP","rate":0.146}]""")
             };
         });
 
@@ -122,13 +122,13 @@ public class FrankfurterExchangeRateProviderTests
             {
                 return new HttpResponseMessage(HttpStatusCode.OK)
                 {
-                    Content = new StringContent("""{"amount":1,"base":"BRL","date":"2026-07-02","rates":{"GBP":0.15}}""")
+                    Content = new StringContent("""[{"date":"2026-07-02","base":"BRL","quote":"GBP","rate":0.15}]""")
                 };
             }
 
             return new HttpResponseMessage(HttpStatusCode.OK)
             {
-                Content = new StringContent("""{"amount":1,"base":"BRL","date":"2026-07-02","rates":{}}""")
+                Content = new StringContent("""[]""")
             };
         });
 
@@ -148,7 +148,7 @@ public class FrankfurterExchangeRateProviderTests
             requestedDates.Add(ExtractDate(request));
             return new HttpResponseMessage(HttpStatusCode.OK)
             {
-                Content = new StringContent("""{"amount":1,"base":"BRL","date":"2026-07-01","rates":{}}""")
+                Content = new StringContent("""[]""")
             };
         });
 
@@ -166,7 +166,7 @@ public class FrankfurterExchangeRateProviderTests
     {
         var provider = CreateProvider(_ => new HttpResponseMessage(HttpStatusCode.OK)
         {
-            Content = new StringContent("""{"amount":1,"base":"USD","date":"2026-09-18","rates":{"BRL":5.452317,"GBP":0.771845}}""")
+            Content = new StringContent("""[{"date":"2026-09-18","base":"USD","quote":"BRL","rate":5.452317},{"date":"2026-09-18","base":"USD","quote":"GBP","rate":0.771845}]""")
         });
 
         var result = await provider.FetchAsync(new DateOnly(2026, 9, 18));
@@ -183,10 +183,10 @@ public class FrankfurterExchangeRateProviderTests
         {
             requestCount++;
             var query = Uri.UnescapeDataString(request.RequestUri!.Query);
-            query.Should().Contain("from=USD").And.Contain("to=BRL,GBP");
+            query.Should().Contain("base=USD").And.Contain("quotes=BRL,GBP");
             return new HttpResponseMessage(HttpStatusCode.OK)
             {
-                Content = new StringContent("""{"amount":1,"base":"USD","date":"2026-09-18","rates":{"BRL":5.45,"GBP":0.77}}""")
+                Content = new StringContent("""[{"date":"2026-09-18","base":"USD","quote":"BRL","rate":5.45},{"date":"2026-09-18","base":"USD","quote":"GBP","rate":0.77}]""")
             };
         });
 
@@ -204,7 +204,7 @@ public class FrankfurterExchangeRateProviderTests
             requestedDates.Add(ExtractDate(request));
             return new HttpResponseMessage(HttpStatusCode.OK)
             {
-                Content = new StringContent("""{"amount":1,"base":"USD","date":"2026-09-18","rates":{"BRL":5.45}}""")
+                Content = new StringContent("""[{"date":"2026-09-18","base":"USD","quote":"BRL","rate":5.45}]""")
             };
         });
 
@@ -220,7 +220,7 @@ public class FrankfurterExchangeRateProviderTests
     {
         var provider = CreateProvider(_ => new HttpResponseMessage(HttpStatusCode.OK)
         {
-            Content = new StringContent("""{"amount":1,"base":"USD","date":"2026-09-18","rates":{"GBP":0.77}}""")
+            Content = new StringContent("""[{"date":"2026-09-18","base":"USD","quote":"GBP","rate":0.77}]""")
         });
 
         var result = await provider.FetchAsync(new DateOnly(2026, 9, 18));
@@ -243,13 +243,13 @@ public class FrankfurterExchangeRateProviderTests
             {
                 return new HttpResponseMessage(HttpStatusCode.OK)
                 {
-                    Content = new StringContent("""{"amount":1,"base":"USD","date":"2026-09-17","rates":{"BRL":5.44,"GBP":0.76}}""")
+                    Content = new StringContent("""[{"date":"2026-09-17","base":"USD","quote":"BRL","rate":5.44},{"date":"2026-09-17","base":"USD","quote":"GBP","rate":0.76}]""")
                 };
             }
 
             return new HttpResponseMessage(HttpStatusCode.OK)
             {
-                Content = new StringContent("""{"amount":1,"base":"USD","date":"2026-09-17","rates":{}}""")
+                Content = new StringContent("""[]""")
             };
         });
 
@@ -269,7 +269,7 @@ public class FrankfurterExchangeRateProviderTests
             requestedDates.Add(ExtractDate(request));
             return new HttpResponseMessage(HttpStatusCode.OK)
             {
-                Content = new StringContent("""{"amount":1,"base":"USD","date":"2026-09-18","rates":{}}""")
+                Content = new StringContent("""[]""")
             };
         });
 
@@ -409,7 +409,7 @@ public class FrankfurterExchangeRateProviderTests
             return date == "2026-07-03"
                 ? new HttpResponseMessage(HttpStatusCode.OK)
                 {
-                    Content = new StringContent("""{"amount":1,"base":"BRL","date":"2026-07-03","rates":{"GBP":0.15}}""")
+                    Content = new StringContent("""[{"date":"2026-07-03","base":"BRL","quote":"GBP","rate":0.15}]""")
                 }
                 : new HttpResponseMessage(HttpStatusCode.NotFound);
         });
@@ -422,10 +422,10 @@ public class FrankfurterExchangeRateProviderTests
 
     [Fact]
     public void BaseAddress_PointsAtTheCurrentFrankfurterHost() =>
-        FrankfurterExchangeRateProvider.BaseAddress.Should().Be("https://api.frankfurter.dev/v1/");
+        FrankfurterExchangeRateProvider.BaseAddress.Should().Be("https://api.frankfurter.dev/v2/");
 
     private static string ExtractDate(HttpRequestMessage request) =>
-        request.RequestUri!.AbsolutePath.Split('/')[^1];
+        System.Web.HttpUtility.ParseQueryString(request.RequestUri!.Query)["date"]!;
 
     private static HttpClient CreateClient(HttpMessageHandler handler) =>
         new(handler) { BaseAddress = new Uri(FrankfurterExchangeRateProvider.BaseAddress) };
