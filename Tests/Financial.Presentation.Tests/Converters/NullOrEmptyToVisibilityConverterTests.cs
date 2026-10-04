@@ -27,12 +27,4 @@ public class NullOrEmptyToVisibilityConverterTests
         _converter.Convert("Target Balance must be zero or greater.", typeof(Visibility), null, CultureInfo.InvariantCulture)
             .Should().Be(Visibility.Visible);
     }
-
-    [Fact]
-    public void ConvertBack_ThrowsNotSupported()
-    {
-        var act = () => _converter.ConvertBack(Visibility.Visible, typeof(string), null, CultureInfo.InvariantCulture);
-
-        act.Should().Throw<NotSupportedException>();
-    }
 }

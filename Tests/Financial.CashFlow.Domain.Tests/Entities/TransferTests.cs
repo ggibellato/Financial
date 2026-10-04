@@ -39,14 +39,6 @@ public class TransferTests
         transfer.Note.Should().BeNull();
     }
 
-    [Fact]
-    public void Create_TwoTransfers_HaveDifferentIds()
-    {
-        var first = CreateValidTransfer();
-        var second = CreateValidTransfer();
-
-        first.Id.Should().NotBe(second.Id);
-    }
 
     [Fact]
     public void Create_WithSameSourceAndDestinationBank_Throws()

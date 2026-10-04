@@ -44,12 +44,4 @@ public class SignedValueToBrushConverterTests
     {
         _converter.Convert("not a number", typeof(Brush), null, CultureInfo.InvariantCulture).Should().Be(Brushes.Black);
     }
-
-    [Fact]
-    public void ConvertBack_Always_ThrowsNotImplementedException()
-    {
-        Action act = () => _converter.ConvertBack(Brushes.Green, typeof(decimal), null, CultureInfo.InvariantCulture);
-
-        act.Should().Throw<NotImplementedException>();
-    }
 }

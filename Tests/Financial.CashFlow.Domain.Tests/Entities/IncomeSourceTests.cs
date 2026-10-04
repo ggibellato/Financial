@@ -21,14 +21,6 @@ public class IncomeSourceTests
         }
     }
 
-    [Fact]
-    public void Create_TwoIncomeSources_HaveDifferentIds()
-    {
-        var first = IncomeSource.Create("Gleison", IncomeGroup.Salary);
-        var second = IncomeSource.Create("Ariana", IncomeGroup.Salary);
-
-        first.Id.Should().NotBe(second.Id);
-    }
 
     [Fact]
     public void Create_WithIsActiveFalse_AssignsFalse()

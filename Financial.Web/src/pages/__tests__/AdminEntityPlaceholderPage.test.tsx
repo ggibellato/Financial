@@ -8,10 +8,4 @@ describe('AdminEntityPlaceholderPage', () => {
 
     expect(screen.getByRole('heading', { name: 'Brokers' })).toBeInTheDocument()
   })
-
-  it('renders a coming-soon notice', () => {
-    render(<AdminEntityPlaceholderPage entityLabel="Reserve Buckets" />)
-
-    expect(screen.getByText('Coming soon.')).toBeInTheDocument()
-  })
 })

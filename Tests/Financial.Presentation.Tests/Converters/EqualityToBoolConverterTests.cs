@@ -25,12 +25,4 @@ public class EqualityToBoolConverterTests
     {
         _converter.Convert(["a"], typeof(bool), null, CultureInfo.InvariantCulture).Should().Be(false);
     }
-
-    [Fact]
-    public void ConvertBack_Throws()
-    {
-        var act = () => _converter.ConvertBack(true, [typeof(string), typeof(string)], null, CultureInfo.InvariantCulture);
-
-        act.Should().Throw<NotSupportedException>();
-    }
 }

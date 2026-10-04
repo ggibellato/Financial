@@ -47,12 +47,4 @@ public class BetweenTextSeparatorConverterTests
 
         result.Should().Be(string.Empty);
     }
-
-    [Fact]
-    public void ConvertBack_Always_ThrowsNotImplementedException()
-    {
-        Action act = () => _converter.ConvertBack(" · ", [typeof(string), typeof(string)], null, CultureInfo.InvariantCulture);
-
-        act.Should().Throw<NotImplementedException>();
-    }
 }

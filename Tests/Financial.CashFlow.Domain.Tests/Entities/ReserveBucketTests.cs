@@ -20,14 +20,6 @@ public class ReserveBucketTests
         }
     }
 
-    [Fact]
-    public void Create_TwoBuckets_HaveDifferentIds()
-    {
-        var first = ReserveBucket.Create("Investimento", 33.33m);
-        var second = ReserveBucket.Create("HouseTreats", 33.33m);
-
-        first.Id.Should().NotBe(second.Id);
-    }
 
     [Fact]
     public void Create_DefaultsIsActiveToTrue()

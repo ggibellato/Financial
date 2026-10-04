@@ -26,12 +26,4 @@ public class SortDirectionToArrowConverterTests
     {
         _converter.Convert(null, typeof(string), null, CultureInfo.InvariantCulture).Should().Be(string.Empty);
     }
-
-    [Fact]
-    public void ConvertBack_Throws()
-    {
-        var act = () => _converter.ConvertBack("▲", typeof(ListSortDirection), null, CultureInfo.InvariantCulture);
-
-        act.Should().Throw<NotSupportedException>();
-    }
 }

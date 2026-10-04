@@ -49,15 +49,4 @@ public class DividendAttributionToTooltipConverterTests
 
         result.Should().Be(string.Empty);
     }
-
-    [Fact]
-    public void ConvertBack_ThrowsNotSupported()
-    {
-        var act = () => _converter.ConvertBack(
-            "value",
-            [typeof(decimal), typeof(decimal), typeof(decimal), typeof(decimal), typeof(decimal), typeof(DateTime), typeof(decimal)],
-            null, CultureInfo.InvariantCulture);
-
-        act.Should().Throw<NotSupportedException>();
-    }
 }

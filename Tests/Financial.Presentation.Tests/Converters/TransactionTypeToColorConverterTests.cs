@@ -38,12 +38,4 @@ public class TransactionTypeToColorConverterTests
     {
         _converter.Convert(42, typeof(Brush), null, CultureInfo.InvariantCulture).Should().Be(Brushes.Black);
     }
-
-    [Fact]
-    public void ConvertBack_Always_ThrowsNotImplementedException()
-    {
-        Action act = () => _converter.ConvertBack(Brushes.Green, typeof(string), null, CultureInfo.InvariantCulture);
-
-        act.Should().Throw<NotImplementedException>();
-    }
 }

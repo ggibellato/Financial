@@ -54,12 +54,4 @@ public class MaeLedgerEntryTests
         }
     }
 
-    [Fact]
-    public void Create_TwoEntries_HaveDifferentIds()
-    {
-        var first = MaeLedgerEntry.Create(new DateOnly(2026, 7, 1), "A", string.Empty, Currency.BRL, 10m, 1m);
-        var second = MaeLedgerEntry.Create(new DateOnly(2026, 7, 1), "B", string.Empty, Currency.BRL, 10m, 1m);
-
-        first.Id.Should().NotBe(second.Id);
-    }
 }

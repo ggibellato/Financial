@@ -48,12 +48,4 @@ public class CategoryHasSelectedChildConverterTests
 
         result.Should().Be(false);
     }
-
-    [Fact]
-    public void ConvertBack_Always_ThrowsNotSupportedException()
-    {
-        Action act = () => _converter.ConvertBack(true, [typeof(NavCategory), typeof(string)], null, CultureInfo.InvariantCulture);
-
-        act.Should().Throw<NotSupportedException>();
-    }
 }

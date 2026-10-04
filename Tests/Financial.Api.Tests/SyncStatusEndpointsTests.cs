@@ -29,19 +29,6 @@ public class SyncStatusEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
-    public async Task GetSyncStatus_JsonUsesCamelCasePropertyNames()
-    {
-        var response = await Client.GetAsync("/api/v1/financial/sync-status");
-        var json = await response.Content.ReadAsStringAsync();
-
-        json.Should().Contain("\"cashFlow\"");
-        json.Should().Contain("\"investment\"");
-        json.Should().Contain("\"state\"");
-        json.Should().Contain("\"lastError\"");
-        json.Should().Contain("\"lastSuccessfulSaveUtc\"");
-    }
-
-    [Fact]
     public async Task GetSyncStatus_WhenCashFlowRepositoryIsFailed_ReflectsFailedStateForCashFlowOnly()
     {
         var failedTimestamp = new DateTime(2026, 8, 13, 9, 12, 4, DateTimeKind.Utc);

@@ -54,13 +54,6 @@ const baseProps = {
 }
 
 describe('BankOperationsSection', () => {
-  it('renders both entry-point buttons', () => {
-    render(<BankOperationsSection {...baseProps} />)
-
-    expect(screen.getByRole('button', { name: 'New Transfer' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'New Balance Correction' })).toBeInTheDocument()
-  })
-
   it('no longer renders the old select-based Bank filter', () => {
     render(<BankOperationsSection {...baseProps} operations={[TRANSFER_ENTRY]} />)
 

@@ -15,10 +15,10 @@ using Microsoft.Extensions.Options;
 
 namespace Financial.Api.Tests.Controllers;
 
-// These guard clauses (constructor null-checks and non-nullable [FromBody] null-checks) are
-// unreachable via real HTTP calls: DI never passes null constructor args, and [ApiController]'s
-// automatic model validation short-circuits a null body for non-nullable [FromBody] parameters
-// before the action method ever runs. They're tested by calling the controllers directly.
+// Constructor null-checks are unreachable via real HTTP calls (DI never passes null constructor
+// args), so they are tested by calling the controllers directly. Empty request bodies are the
+// opposite: [FromBody] parameters are nullable, so the controllers' own guard is what returns 400,
+// and EmptyBodyEndpointsTests pins that over HTTP for every endpoint.
 public class ControllerGuardClauseTests
 {
     [Fact]
@@ -33,26 +33,6 @@ public class ControllerGuardClauseTests
     {
         Action act = () => new AssetPricesController(new StubAssetPriceHistoryService(), null!);
         act.Should().Throw<ArgumentNullException>().WithParameterName("priceLookupService");
-    }
-
-    [Fact]
-    public async Task AssetPricesController_SetPrice_NullRequest_ReturnsBadRequest()
-    {
-        var controller = new AssetPricesController(new StubAssetPriceHistoryService(), new StubAssetPriceLookupService());
-
-        var result = await controller.SetPrice(null!);
-
-        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
-    }
-
-    [Fact]
-    public async Task AssetPricesController_DeletePrice_NullRequest_ReturnsBadRequest()
-    {
-        var controller = new AssetPricesController(new StubAssetPriceHistoryService(), new StubAssetPriceLookupService());
-
-        var result = await controller.DeletePrice(null!);
-
-        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
     }
 
     [Fact]
@@ -77,36 +57,6 @@ public class ControllerGuardClauseTests
     }
 
     [Fact]
-    public async Task AssetsController_MoveAsset_NullBody_ReturnsBadRequest()
-    {
-        var controller = new AssetsController(new StubNavigationService(), new StubAssetMoveService(), new StubAssetAdminService());
-
-        var result = await controller.MoveAsset(null!);
-
-        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
-    }
-
-    [Fact]
-    public async Task AssetsController_CreateAsset_NullBody_ReturnsBadRequest()
-    {
-        var controller = new AssetsController(new StubNavigationService(), new StubAssetMoveService(), new StubAssetAdminService());
-
-        var result = await controller.CreateAsset(null!);
-
-        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
-    }
-
-    [Fact]
-    public async Task AssetsController_UpdateAsset_NullBody_ReturnsBadRequest()
-    {
-        var controller = new AssetsController(new StubNavigationService(), new StubAssetMoveService(), new StubAssetAdminService());
-
-        var result = await controller.UpdateAsset("Broker", "Portfolio", "Asset", null!);
-
-        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
-    }
-
-    [Fact]
     public void PortfoliosController_NullPortfolioService_Throws()
     {
         Action act = () => new PortfoliosController(null!);
@@ -118,36 +68,6 @@ public class ControllerGuardClauseTests
     {
         Action act = () => new BrokersController(null!);
         act.Should().Throw<ArgumentNullException>();
-    }
-
-    [Fact]
-    public async Task BrokersController_CreateBroker_NullRequest_ReturnsBadRequest()
-    {
-        var controller = new BrokersController(new StubBrokerService());
-
-        var result = await controller.CreateBroker(null);
-
-        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
-    }
-
-    [Fact]
-    public async Task BrokersController_UpdateBroker_NullRequest_ReturnsBadRequest()
-    {
-        var controller = new BrokersController(new StubBrokerService());
-
-        var result = await controller.UpdateBroker("XPI", null);
-
-        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
-    }
-
-    [Fact]
-    public async Task BrokersController_SetCostBasisMethod_NullRequest_ReturnsBadRequest()
-    {
-        var controller = new BrokersController(new StubBrokerService());
-
-        var result = await controller.SetCostBasisMethod("XPI", null);
-
-        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
     }
 
     [Fact]
@@ -228,36 +148,6 @@ public class ControllerGuardClauseTests
     }
 
     [Fact]
-    public async Task CreditsController_AddCredit_NullRequest_ReturnsBadRequest()
-    {
-        var controller = new CreditsController(new StubCreditQueryService(), new StubCreditService());
-
-        var result = await controller.AddCredit(null!);
-
-        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
-    }
-
-    [Fact]
-    public async Task CreditsController_UpdateCredit_NullRequest_ReturnsBadRequest()
-    {
-        var controller = new CreditsController(new StubCreditQueryService(), new StubCreditService());
-
-        var result = await controller.UpdateCredit(null!);
-
-        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
-    }
-
-    [Fact]
-    public async Task CreditsController_DeleteCredit_NullRequest_ReturnsBadRequest()
-    {
-        var controller = new CreditsController(new StubCreditQueryService(), new StubCreditService());
-
-        var result = await controller.DeleteCredit(null!);
-
-        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
-    }
-
-    [Fact]
     public void TransactionsController_NullTransactionService_Throws()
     {
         Action act = () => new TransactionsController(null!, new StubTransactionQueryService());
@@ -272,36 +162,6 @@ public class ControllerGuardClauseTests
     }
 
     [Fact]
-    public async Task TransactionsController_AddTransaction_NullRequest_ReturnsBadRequest()
-    {
-        var controller = new TransactionsController(new StubTransactionService(), new StubTransactionQueryService());
-
-        var result = await controller.AddTransaction(null!);
-
-        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
-    }
-
-    [Fact]
-    public async Task TransactionsController_UpdateTransaction_NullRequest_ReturnsBadRequest()
-    {
-        var controller = new TransactionsController(new StubTransactionService(), new StubTransactionQueryService());
-
-        var result = await controller.UpdateTransaction(null!);
-
-        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
-    }
-
-    [Fact]
-    public async Task TransactionsController_DeleteTransaction_NullRequest_ReturnsBadRequest()
-    {
-        var controller = new TransactionsController(new StubTransactionService(), new StubTransactionQueryService());
-
-        var result = await controller.DeleteTransaction(null!);
-
-        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
-    }
-
-    [Fact]
     public void CorporateActionsController_NullCorporateActionService_Throws()
     {
         Action act = () => new CorporateActionsController(null!, new StubCorporateActionQueryService());
@@ -313,76 +173,6 @@ public class ControllerGuardClauseTests
     {
         Action act = () => new CorporateActionsController(new StubCorporateActionService(), null!);
         act.Should().Throw<ArgumentNullException>().WithParameterName("corporateActionQueryService");
-    }
-
-    [Fact]
-    public async Task CorporateActionsController_AddSplit_NullRequest_ReturnsBadRequest()
-    {
-        var controller = new CorporateActionsController(new StubCorporateActionService(), new StubCorporateActionQueryService());
-
-        var result = await controller.AddSplit(null!);
-
-        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
-    }
-
-    [Fact]
-    public async Task CorporateActionsController_UpdateSplit_NullRequest_ReturnsBadRequest()
-    {
-        var controller = new CorporateActionsController(new StubCorporateActionService(), new StubCorporateActionQueryService());
-
-        var result = await controller.UpdateSplit(null!);
-
-        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
-    }
-
-    [Fact]
-    public async Task CorporateActionsController_AddMerger_NullRequest_ReturnsBadRequest()
-    {
-        var controller = new CorporateActionsController(new StubCorporateActionService(), new StubCorporateActionQueryService());
-
-        var result = await controller.AddMerger(null!);
-
-        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
-    }
-
-    [Fact]
-    public async Task CorporateActionsController_UpdateMerger_NullRequest_ReturnsBadRequest()
-    {
-        var controller = new CorporateActionsController(new StubCorporateActionService(), new StubCorporateActionQueryService());
-
-        var result = await controller.UpdateMerger(null!);
-
-        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
-    }
-
-    [Fact]
-    public async Task CorporateActionsController_AddSpinOff_NullRequest_ReturnsBadRequest()
-    {
-        var controller = new CorporateActionsController(new StubCorporateActionService(), new StubCorporateActionQueryService());
-
-        var result = await controller.AddSpinOff(null!);
-
-        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
-    }
-
-    [Fact]
-    public async Task CorporateActionsController_UpdateSpinOff_NullRequest_ReturnsBadRequest()
-    {
-        var controller = new CorporateActionsController(new StubCorporateActionService(), new StubCorporateActionQueryService());
-
-        var result = await controller.UpdateSpinOff(null!);
-
-        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
-    }
-
-    [Fact]
-    public async Task CorporateActionsController_DeleteCorporateAction_NullRequest_ReturnsBadRequest()
-    {
-        var controller = new CorporateActionsController(new StubCorporateActionService(), new StubCorporateActionQueryService());
-
-        var result = await controller.DeleteCorporateAction(null!);
-
-        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
     }
 
     [Fact]
@@ -486,56 +276,6 @@ public class ControllerGuardClauseTests
     }
 
     [Fact]
-    public async Task BanksController_CreateBank_NullRequest_ReturnsBadRequest()
-    {
-        var controller = new BanksController(new StubBankService(), new StubBalanceAdjustmentService());
-
-        var result = await controller.CreateBank(null!);
-
-        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
-    }
-
-    [Fact]
-    public async Task BanksController_UpdateBank_NullRequest_ReturnsBadRequest()
-    {
-        var controller = new BanksController(new StubBankService(), new StubBalanceAdjustmentService());
-
-        var result = await controller.UpdateBank(Guid.NewGuid(), null!);
-
-        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
-    }
-
-    [Fact]
-    public async Task BanksController_UpdateOpeningBalance_NullRequest_ReturnsBadRequest()
-    {
-        var controller = new BanksController(new StubBankService(), new StubBalanceAdjustmentService());
-
-        var result = await controller.UpdateOpeningBalance(Guid.NewGuid(), null!);
-
-        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
-    }
-
-    [Fact]
-    public async Task BanksController_AddAdjustment_NullRequest_ReturnsBadRequest()
-    {
-        var controller = new BanksController(new StubBankService(), new StubBalanceAdjustmentService());
-
-        var result = await controller.AddAdjustment(Guid.NewGuid(), null!);
-
-        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
-    }
-
-    [Fact]
-    public async Task BanksController_UpdateAdjustment_NullRequest_ReturnsBadRequest()
-    {
-        var controller = new BanksController(new StubBankService(), new StubBalanceAdjustmentService());
-
-        var result = await controller.UpdateAdjustment(Guid.NewGuid(), Guid.NewGuid(), null!);
-
-        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
-    }
-
-    [Fact]
     public void CardStatementsController_NullService_Throws()
     {
         Action act = () => new CardStatementsController(null!);
@@ -606,70 +346,10 @@ public class ControllerGuardClauseTests
     }
 
     [Fact]
-    public async Task MensaisController_CreateBill_NullRequest_ReturnsBadRequest()
-    {
-        var controller = new MensaisController(new StubMensaisService());
-
-        var result = await controller.CreateBill(null!);
-
-        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
-    }
-
-    [Fact]
-    public async Task MensaisController_UpdateBill_NullRequest_ReturnsBadRequest()
-    {
-        var controller = new MensaisController(new StubMensaisService());
-
-        var result = await controller.UpdateBill(Guid.NewGuid(), null!);
-
-        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
-    }
-
-    [Fact]
-    public async Task MensaisController_UpdateBillStatus_NullRequest_ReturnsBadRequest()
-    {
-        var controller = new MensaisController(new StubMensaisService());
-
-        var result = await controller.UpdateBillStatus(Guid.NewGuid(), null!);
-
-        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
-    }
-
-    [Fact]
     public void ReserveController_NullService_Throws()
     {
         Action act = () => new ReserveController(null!);
         act.Should().Throw<ArgumentNullException>();
-    }
-
-    [Fact]
-    public async Task ReserveController_PostIncomeSplit_NullRequest_ReturnsBadRequest()
-    {
-        var controller = new ReserveController(new StubReserveService());
-
-        var result = await controller.PostIncomeSplit(null!);
-
-        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
-    }
-
-    [Fact]
-    public async Task ReserveController_PostWithdrawal_NullRequest_ReturnsBadRequest()
-    {
-        var controller = new ReserveController(new StubReserveService());
-
-        var result = await controller.PostWithdrawal(null!);
-
-        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
-    }
-
-    [Fact]
-    public async Task ReserveController_UpdateMovement_NullRequest_ReturnsBadRequest()
-    {
-        var controller = new ReserveController(new StubReserveService());
-
-        var result = await controller.UpdateMovement(Guid.NewGuid(), null!);
-
-        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
     }
 
     [Fact]
@@ -705,26 +385,6 @@ public class ControllerGuardClauseTests
     {
         Action act = () => new TaxWorkbookController(null!);
         act.Should().Throw<ArgumentNullException>().WithParameterName("taxWorkbookService");
-    }
-
-    [Fact]
-    public async Task TaxRulesController_CreateTaxRule_NullRequest_ReturnsBadRequest()
-    {
-        var controller = new TaxRulesController(new StubTaxRuleService());
-
-        var result = await controller.CreateTaxRule(null);
-
-        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
-    }
-
-    [Fact]
-    public async Task TaxRulesController_UpdateTaxRule_NullRequest_ReturnsBadRequest()
-    {
-        var controller = new TaxRulesController(new StubTaxRuleService());
-
-        var result = await controller.UpdateTaxRule(Guid.NewGuid(), null);
-
-        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
     }
 
     private sealed class StubHostEnvironment : IHostEnvironment

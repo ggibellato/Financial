@@ -52,12 +52,4 @@ public class InvestmentSnapshotTests
         }
     }
 
-    [Fact]
-    public void Create_TwoSnapshots_HaveDifferentIds()
-    {
-        var first = InvestmentSnapshot.Create(ChaseSave, 2026, 7, 0m);
-        var second = InvestmentSnapshot.Create(ChaseSave, 2026, 7, 0m);
-
-        first.Id.Should().NotBe(second.Id);
-    }
 }

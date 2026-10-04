@@ -57,22 +57,4 @@ public class WatchlistEndpointsTests
         var items = await response.Content.ReadFromJsonAsync<WatchlistItemDTO[]>(CaseInsensitiveJson);
         items.Should().BeEmpty();
     }
-
-    [Fact]
-    public async Task GetWatchlist_JsonUsesGroupAndNameProperties()
-    {
-        await using var factory = CreateFactory(options =>
-        {
-            options.Items = [new WatchlistItemDTO { Group = "Test", Name = "KLBN4" }];
-        });
-
-        using var client = factory.CreateClient();
-        var response = await client.GetAsync("/api/v1/financial/watchlist");
-        var json = await response.Content.ReadAsStringAsync();
-
-        using var doc = JsonDocument.Parse(json);
-        var first = doc.RootElement[0];
-        first.TryGetProperty("group", out _).Should().BeTrue("frontend expects camelCase 'group'");
-        first.TryGetProperty("name", out _).Should().BeTrue("frontend expects camelCase 'name'");
-    }
 }

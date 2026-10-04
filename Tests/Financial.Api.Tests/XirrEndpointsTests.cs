@@ -27,14 +27,6 @@ public class XirrEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
-    public async Task Calculate_EmptyBody_ReturnsBadRequest()
-    {
-        var response = await Client.PostAsJsonAsync<CalculateXirrRequestDTO?>("/api/v1/financial/xirr/calculate", null);
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-    }
-
-    [Fact]
     public async Task Calculate_InsufficientCashFlows_ReturnsOkWithNullXirr()
     {
         var request = new CalculateXirrRequestDTO { CashFlows = [], TerminalValue = 0m };

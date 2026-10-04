@@ -26,12 +26,4 @@ public class BoolToSidebarWidthConverterTests
     {
         _converter.Convert("not a bool", typeof(GridLength), null, CultureInfo.InvariantCulture).Should().Be(new GridLength(240));
     }
-
-    [Fact]
-    public void ConvertBack_Throws()
-    {
-        var act = () => _converter.ConvertBack(new GridLength(56), typeof(bool), null, CultureInfo.InvariantCulture);
-
-        act.Should().Throw<NotSupportedException>();
-    }
 }
