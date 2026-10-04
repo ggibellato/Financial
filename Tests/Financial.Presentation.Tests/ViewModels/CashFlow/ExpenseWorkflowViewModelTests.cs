@@ -312,50 +312,21 @@ public class ExpenseWorkflowViewModelTests
     }
 
     [Fact]
-    public void CreatingExpense_DefaultBankIsRoundUpEnabled_ShowsFieldAndSuggestsOnValueEntry()
+    public void TypingValue_KeepsRecalculatingTheSuggestion_UntilEditedManually()
     {
         var (viewModel, _, _) = CreateViewModel();
         viewModel.ShowCreateExpenseFormCommand.Execute("bank");
-
         viewModel.ShowRoundUpField.Should().BeTrue();
 
+        viewModel.ExpenseFormValue = "9";
+        viewModel.ExpenseFormRoundUpAmount.Should().Be("0.00");
+
         viewModel.ExpenseFormValue = "9.40";
+        viewModel.ExpenseFormRoundUpAmount.Should().Be("0.60");
 
-        viewModel.ExpenseFormRoundUpAmount.Should().Be("0.6");
-    }
-
-    [Fact]
-    public void TypingValueDigitByDigit_KeepsRecalculatingTheRoundUpSuggestion()
-    {
-        var (viewModel, _, _) = CreateViewModel();
-        viewModel.ShowCreateExpenseFormCommand.Execute("bank");
-
-        viewModel.ExpenseFormValue = "1";
-        viewModel.ExpenseFormRoundUpAmount.Should().Be("0");
-
-        viewModel.ExpenseFormValue = "15";
-        viewModel.ExpenseFormRoundUpAmount.Should().Be("0");
-
-        viewModel.ExpenseFormValue = "15.2";
-        viewModel.ExpenseFormRoundUpAmount.Should().Be("0.8");
-
-        viewModel.ExpenseFormValue = "15.20";
-        viewModel.ExpenseFormRoundUpAmount.Should().Be("0.8");
-    }
-
-    [Fact]
-    public void EditingRoundUpFieldManually_StopsRecalculatingAsValueKeepsChanging()
-    {
-        var (viewModel, _, _) = CreateViewModel();
-        viewModel.ShowCreateExpenseFormCommand.Execute("bank");
-
-        viewModel.ExpenseFormValue = "15.20";
-        viewModel.ExpenseFormRoundUpAmount.Should().Be("0.8");
-
-        viewModel.ExpenseFormRoundUpAmount = "0.50";
-        viewModel.ExpenseFormValue = "15.99";
-
-        viewModel.ExpenseFormRoundUpAmount.Should().Be("0.50");
+        viewModel.ExpenseFormRoundUpAmount = "0.10";
+        viewModel.ExpenseFormValue = "9.80";
+        viewModel.ExpenseFormRoundUpAmount.Should().Be("0.10");
     }
 
     [Fact]

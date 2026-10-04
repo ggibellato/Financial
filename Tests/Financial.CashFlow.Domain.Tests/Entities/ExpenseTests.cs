@@ -2,6 +2,8 @@ using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using FluentAssertions;
 using FluentAssertions.Execution;
+using System.Globalization;
+using System.Text.Json;
 using CreditCard = Financial.CashFlow.Domain.Entities.CreditCard;
 
 namespace Financial.CashFlow.Domain.Tests;
@@ -570,18 +572,36 @@ public class ExpenseTests
         act.Should().Throw<ArgumentException>().WithMessage("*already-settled expense*");
     }
 
-    [Theory]
-    [InlineData(9.40, 0.60)]
-    [InlineData(10.00, 0.00)]
-    [InlineData(0.01, 0.99)]
-    [InlineData(-9.40, 0.00)]
-    [InlineData(-10.00, 0.00)]
-    public void RoundUpSuggestion_ComputesDifferenceToNextWholePound(decimal value, decimal expected)
+    public static TheoryData<string, string> RoundUpSuggestionCases()
     {
-        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Test", value, Mercado, Chase, null);
-
-        expense.RoundUpSuggestion.Should().Be(expected);
+        var path = Path.Combine(AppContext.BaseDirectory, "TestData", "round-up-suggestion-cases.json");
+        var cases = JsonSerializer.Deserialize<List<RoundUpCase>>(File.ReadAllText(path), new JsonSerializerOptions(JsonSerializerDefaults.Web))!;
+        var data = new TheoryData<string, string>();
+        foreach (var c in cases)
+        {
+            data.Add(c.Value, c.Suggestion);
+        }
+        return data;
     }
+
+    [Theory]
+    [MemberData(nameof(RoundUpSuggestionCases))]
+    public void RoundUpSuggestion_MatchesCommittedCases(string value, string expected)
+    {
+        var parsed = decimal.Parse(value, CultureInfo.InvariantCulture);
+
+        Expense.ComputeRoundUpSuggestion(parsed).Should().Be(decimal.Parse(expected, CultureInfo.InvariantCulture));
+    }
+
+    [Fact]
+    public void RoundUpSuggestion_OnExpense_UsesTheSameRule()
+    {
+        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Test", 9.995m, Mercado, Chase, null);
+
+        expense.RoundUpSuggestion.Should().Be(0.01m);
+    }
+
+    private sealed record RoundUpCase(string Value, string Suggestion);
 
     [Fact]
     public void SetRoundUpAmount_OnImmediatePaymentWithinRange_Succeeds()
