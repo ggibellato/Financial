@@ -24,8 +24,11 @@ FAKE_CLOCK='useFakeTimers|setSystemTime|pinDate'
 ALLOW='//[[:space:]]*hygiene-allow:'
 ALLOW_WITH_REASON='//[[:space:]]*hygiene-allow:[[:space:]]*[^[:space:]]'
 
+declare -A head_content
+
 file_mentions() {
-  git show "$HEAD_SHA:$1" 2>/dev/null | grep -Eq "$2"
+  [[ -v head_content[$1] ]] || head_content[$1]="$(git show "$HEAD_SHA:$1" 2>/dev/null)"
+  grep -Eq "$2" <<< "${head_content[$1]}"
 }
 
 record() {
