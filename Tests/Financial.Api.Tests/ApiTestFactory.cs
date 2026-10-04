@@ -19,6 +19,8 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
     private readonly IExchangeRateProvider? _exchangeRateProviderOverride;
     private readonly TimeProvider? _timeProviderOverride;
     private readonly ICalendarProvider? _calendarProviderOverride;
+    private const decimal DefaultExchangeRate = 1m;
+
     private bool _useRealExchangeRates;
     private bool _disposed;
 
@@ -72,7 +74,7 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
             builder.ConfigureTestServices(services =>
             {
                 services.RemoveAll<IExchangeRateProvider>();
-                services.AddSingleton<IExchangeRateProvider, DeterministicExchangeRateProvider>();
+                services.AddSingleton<IExchangeRateProvider>(new StubExchangeRateProvider(DefaultExchangeRate));
             });
         }
 
