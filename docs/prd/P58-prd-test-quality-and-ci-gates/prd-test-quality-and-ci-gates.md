@@ -547,14 +547,14 @@ graph TD
 - [ ] `docs/ci-affected-pipeline.md` documents `enforce_admins: false` and the follow-up rule.
 
 ### F03. Data-Integrity Defect Fixes
-- [ ] The concurrent read/write test throws `InvalidOperationException` on the pre-fix code and passes after the fix.
-- [ ] Readers observe either the full before state or the full after state, never a partial list.
-- [ ] A split of £100.01 at 33.33/33.33/33.34% produces 33.33/33.33/33.35.
-- [ ] The conservation theory (≥ 50 amounts) passes, with the sum equal to the base to the penny.
-- [ ] `IncomeServiceTests` split expectations are literals.
-- [ ] The import tool without `--output` exits 2, writes nothing, and prints the refusal message.
-- [ ] The import tool with `--output` resolving to the live data file exits 2 and leaves the file's timestamp unchanged.
-- [ ] A valid import run prints the non-carried counts per type before writing.
+- [x] The concurrent read/write test throws `InvalidOperationException` on the pre-fix code and passes after the fix.
+- [x] Readers observe either the full before state or the full after state, never a partial list.
+- [x] A split of £100.01 at 33.33/33.33/33.34% produces 33.33/33.33/33.35.
+- [x] The conservation theory (≥ 50 amounts) passes, with the sum equal to the base to the penny.
+- [x] `IncomeServiceTests` split expectations are literals.
+- [x] The import tool without `--output` exits 2, writes nothing, and prints the refusal message.
+- [x] The import tool with `--output` resolving to the live data file exits 2 and leaves the file's timestamp unchanged.
+- [x] A valid import run prints the non-carried counts per type before writing.
 
 ### F04. Cross-Front-End Correctness Fixes
 - [ ] Domain round-up tests pass for 9.40 → 0.60, 10.00 → 0.00, 0.01 → 0.99 and 9.995 → 0.01.
