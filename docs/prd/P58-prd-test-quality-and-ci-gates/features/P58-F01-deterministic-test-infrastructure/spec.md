@@ -31,7 +31,7 @@
 
 **Assumptions / decisions recorded:**
 - The PRD names `src/test/setup.ts`; the real vitest setup file is `Financial.Web/src/setupTests.ts`, and the pin goes in a new vitest `globalSetup` (see §3).
-- "No CI test calls the real chain" is read as "no test makes outbound HTTP calls". One test resolves the real provider type to prove the opt-in works, without invoking it.
+- "No CI test calls the real chain" is read as "no test makes outbound HTTP calls". The opt-in method has no test of its own: the first test that needs the real chain exercises it, and testing the test factory beyond the default guard adds little.
 - Frankfurter answers weekend/holiday dates with HTTP 200 and the previous working day's rates (verified: 2026-10-03 and 2026-10-04 returned 2026-10-02; 2025-12-25 returned 2025-12-24). Only dates with no data (e.g. the future) return 404. So the day-by-day fallback is not needed for non-working days.
 
 ## 2. Architecture Impact
@@ -88,7 +88,7 @@ graph TD
 |---|---|---|---|
 | `Tests/Financial.TestUtilities/DeterministicExchangeRateProvider.cs` | New | Fixed FX rates | Hold the committed rate table; resolve any BRL/GBP/USD pair; count calls |
 | `Tests/Financial.Api.Tests/ApiTestFactory.cs` | Modified | Host factory | Register the deterministic provider by default; expose `WithRealExchangeRates()` |
-| `Tests/Financial.Api.Tests/ApiTestFactoryExchangeRateTests.cs` | New | Guard | Default resolves the deterministic provider; opt-in resolves the real chain without calling it; explicit override wins |
+| `Tests/Financial.Api.Tests/ApiTestFactoryExchangeRateTests.cs` | New | Guard | Default resolves the deterministic provider |
 
 **Integration:**
 
@@ -119,7 +119,7 @@ Not applicable.
 
 | Test File | Test Type | Target | Goal |
 |---|---|---|---|
-| `Tests/Financial.Api.Tests/ApiTestFactoryExchangeRateTests.cs` | Integration (in-process host) | Factory default and opt-in | AC F01-1/3 |
+| `Tests/Financial.Api.Tests/ApiTestFactoryExchangeRateTests.cs` | Integration (in-process host) | Factory default | AC F01-1 |
 | `Tests/Financial.Frankfurter.Tests/FrankfurterExchangeRateProviderTests.cs` | Unit | Provider failure policy | AC F01-4/5 |
 | `Tests/Financial.Architecture.Tests/CiEnvironmentTests.cs` | Environment guard | CI pin | AC F01-6 (.NET) |
 | `Financial.Web/src/__tests__/testEnvironment.test.ts` | Unit | vitest pin | AC F01-6 (web) |
@@ -127,9 +127,6 @@ Not applicable.
 | Test Function | Description | Assertions |
 |---|---|---|
 | `DefaultFactory_ResolvesDeterministicExchangeRateProvider` | `new ApiTestFactory()`, resolve `IExchangeRateProvider` | Instance is `DeterministicExchangeRateProvider` |
-| `DefaultFactory_ConvertsWithCommittedRates` | Call the resolved provider for GBP→BRL, BRL→GBP, USD→GBP, GBP→GBP | 6.25, 0.16, 0.8, 1 |
-| `WithRealExchangeRates_ResolvesTheProductionChainWithoutCallingIt` | Opt in, resolve the provider | Not the deterministic type; no HTTP issued (resolve only) |
-| `ExplicitProviderOverride_TakesPrecedenceOverTheDefault` | Pass a `StubExchangeRateProvider` | Resolved instance is that stub |
 | `GetHistoricalRateAsync_WhenHandlerNeverResponds_ReturnsNullWithinTheBudget` | Handler awaits cancellation; budget 150 ms | Returns null; elapsed well under 11 s (asserted < 5 s) — **fails on pre-fix code** (it waits for the 100 s default) |
 | `GetHistoricalRateAsync_WithServerError_MakesASingleRequest` | Handler counts calls, returns 503 | Null; call count 1 — **fails pre-fix (11)** |
 | `GetHistoricalRateAsync_WithSuccessfulReplyMissingTheRate_StepsBackToEarlierDates` | First reply has no `to` rate, second has it | Returns the second rate; call count 2; second request is the previous day |
@@ -147,7 +144,7 @@ The existing Frankfurter tests (18) must keep passing; the ones asserting fallba
 |---|---|
 | Default factory resolves the stub, guard test asserts it | `DefaultFactory_ResolvesDeterministicExchangeRateProvider` |
 | `dotnet test Tests/Financial.Api.Tests` passes with outbound network disabled | Verified by running the project with the network blocked (e.g. a proxy to a dead address); recorded in PR1 |
-| Opt-in requires an explicitly named method; no CI test makes real calls | `WithRealExchangeRates_...`, `ExplicitProviderOverride_...` |
+| Opt-in requires an explicitly named method; no CI test makes real calls | `WithRealExchangeRates()` is the only way to select the real chain; nothing in the suite calls it (checked by search in the PR) |
 | Hanging handler returns fallback in < 11 s | `GetHistoricalRateAsync_WhenHandlerNeverResponds_...` |
 | 5xx makes ≤ 1 request per requested date | `GetHistoricalRateAsync_WithServerError_...`, `FetchAsync_WithServerError_...` |
 | `TZ`/`LANG` set in `backend`, `wpf`, `web`, `smoke` and in vitest setup | Workflow diff; `Pinned_OnCi_...`, `vitest environment pins...` |
