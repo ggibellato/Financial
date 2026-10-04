@@ -622,11 +622,11 @@ graph TD
 - [ ] `AnnualAverageMonthsCalculator` January and 2017 cases have direct tests.
 
 ### F11. Test Hygiene Gate
-- [ ] Adding `Task.Delay(` to a test file fails the `changes` job with a file:line message.
-- [ ] Adding a new `DateTime.Now` to a service that injects `TimeProvider` fails the job.
-- [ ] Adding `it.only(` fails both lint and hygiene.
-- [ ] An existing legacy violation on an unchanged line does not fail the job.
-- [ ] A line ending with `// hygiene-allow: <reason>` passes and is listed in the job summary.
+- [x] Adding `Task.Delay(` to a test file fails the `changes` job with a file:line message.
+- [x] Adding a new `DateTime.Now` to a service that injects `TimeProvider` fails the job.
+- [x] Adding `it.only(` fails both lint and hygiene.
+- [x] An existing legacy violation on an unchanged line does not fail the job.
+- [x] A line ending with `// hygiene-allow: <reason>` passes and is listed in the job summary.
 
 ### F12. React Playwright E2E Suite
 - [ ] `smoke-test.mjs` is removed, and `npm run smoke-test` runs `playwright test --grep @smoke`.
