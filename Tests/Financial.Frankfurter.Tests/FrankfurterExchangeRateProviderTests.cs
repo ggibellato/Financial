@@ -128,7 +128,7 @@ public class FrankfurterExchangeRateProviderTests
 
             return new HttpResponseMessage(HttpStatusCode.OK)
             {
-                Content = new StringContent("""[]""")
+                Content = new StringContent("[]")
             };
         });
 
@@ -148,7 +148,7 @@ public class FrankfurterExchangeRateProviderTests
             requestedDates.Add(ExtractDate(request));
             return new HttpResponseMessage(HttpStatusCode.OK)
             {
-                Content = new StringContent("""[]""")
+                Content = new StringContent("[]")
             };
         });
 
@@ -249,7 +249,7 @@ public class FrankfurterExchangeRateProviderTests
 
             return new HttpResponseMessage(HttpStatusCode.OK)
             {
-                Content = new StringContent("""[]""")
+                Content = new StringContent("[]")
             };
         });
 
@@ -269,7 +269,7 @@ public class FrankfurterExchangeRateProviderTests
             requestedDates.Add(ExtractDate(request));
             return new HttpResponseMessage(HttpStatusCode.OK)
             {
-                Content = new StringContent("""[]""")
+                Content = new StringContent("[]")
             };
         });
 
@@ -324,10 +324,7 @@ public class FrankfurterExchangeRateProviderTests
     [Fact]
     public async Task GetHistoricalRateAsync_WhenUpstreamNeverAnswers_ReturnsNullWithinTheCallBudget()
     {
-        var provider = new FrankfurterExchangeRateProvider(
-            new HttpClient(new HangingHandler()) { BaseAddress = new Uri(FrankfurterExchangeRateProvider.BaseAddress) },
-            NullLogger<FrankfurterExchangeRateProvider>.Instance,
-            TimeSpan.FromMilliseconds(200));
+        var provider = CreateHangingProvider();
 
         var stopwatch = Stopwatch.StartNew();
         var rate = await provider.GetHistoricalRateAsync(new DateOnly(2026, 7, 1), Currency.BRL, Currency.GBP);
@@ -339,10 +336,7 @@ public class FrankfurterExchangeRateProviderTests
     [Fact]
     public async Task FetchAsync_WhenUpstreamNeverAnswers_ReturnsEmptyResultWithinTheCallBudget()
     {
-        var provider = new FrankfurterExchangeRateProvider(
-            new HttpClient(new HangingHandler()) { BaseAddress = new Uri(FrankfurterExchangeRateProvider.BaseAddress) },
-            NullLogger<FrankfurterExchangeRateProvider>.Instance,
-            TimeSpan.FromMilliseconds(200));
+        var provider = CreateHangingProvider();
 
         var stopwatch = Stopwatch.StartNew();
         var result = await provider.FetchAsync(new DateOnly(2026, 9, 18));
@@ -429,6 +423,9 @@ public class FrankfurterExchangeRateProviderTests
 
     private static HttpClient CreateClient(HttpMessageHandler handler) =>
         new(handler) { BaseAddress = new Uri(FrankfurterExchangeRateProvider.BaseAddress) };
+
+    private static FrankfurterExchangeRateProvider CreateHangingProvider() =>
+        new(CreateClient(new HangingHandler()), NullLogger<FrankfurterExchangeRateProvider>.Instance, TimeSpan.FromMilliseconds(200));
 
     private sealed class HangingHandler : HttpMessageHandler
     {

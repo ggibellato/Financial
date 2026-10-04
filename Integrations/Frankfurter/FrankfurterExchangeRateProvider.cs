@@ -11,7 +11,7 @@ public sealed class FrankfurterExchangeRateProvider : IExchangeRateProvider, IUs
 {
     public const string BaseAddress = "https://api.frankfurter.dev/v2/";
 
-    public static readonly TimeSpan DefaultCallBudget = TimeSpan.FromSeconds(10);
+    private static readonly TimeSpan DefaultCallBudget = TimeSpan.FromSeconds(10);
 
     private const int MaxFallbackDays = 10;
 
@@ -36,7 +36,7 @@ public sealed class FrankfurterExchangeRateProvider : IExchangeRateProvider, IUs
 
         for (var offset = 0; offset <= MaxFallbackDays; offset++)
         {
-            var reply = await FetchAsync(date.AddDays(-offset), $"base={from}&quotes={to}", budget.Token).ConfigureAwait(false);
+            var reply = await QueryRatesAsync(date.AddDays(-offset), $"base={from}&quotes={to}", budget.Token).ConfigureAwait(false);
             if (reply.Failed)
             {
                 return null;
@@ -57,7 +57,7 @@ public sealed class FrankfurterExchangeRateProvider : IExchangeRateProvider, IUs
 
         for (var offset = 0; offset <= MaxFallbackDays; offset++)
         {
-            var reply = await FetchAsync(date.AddDays(-offset), $"base={Currency.USD}&quotes={Currency.BRL},{Currency.GBP}", budget.Token)
+            var reply = await QueryRatesAsync(date.AddDays(-offset), $"base={Currency.USD}&quotes={Currency.BRL},{Currency.GBP}", budget.Token)
                 .ConfigureAwait(false);
             if (reply.Failed)
             {
@@ -78,7 +78,7 @@ public sealed class FrankfurterExchangeRateProvider : IExchangeRateProvider, IUs
     private static decimal? RateOf(Dictionary<string, decimal>? rates, Currency currency) =>
         rates is not null && rates.TryGetValue(currency.ToString(), out var rate) ? rate : null;
 
-    private async Task<Reply> FetchAsync(DateOnly date, string query, CancellationToken cancellationToken)
+    private async Task<Reply> QueryRatesAsync(DateOnly date, string query, CancellationToken cancellationToken)
     {
         try
         {
