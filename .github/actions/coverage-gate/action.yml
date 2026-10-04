@@ -19,7 +19,7 @@ outputs:
     description: Branch coverage percentage, rounded to 2 decimals (empty when the report has none)
     value: ${{ steps.gate.outputs.branch }}
   branch-emoji:
-    description: Traffic-light emoji for the branch coverage (same bands shifted down 10 points, as branches run lower)
+    description: Traffic-light emoji for the branch coverage (same bands as the line emoji)
     value: ${{ steps.gate.outputs.branch-emoji }}
 runs:
   using: composite
@@ -45,9 +45,9 @@ runs:
         if ($null -ne $branchCoverage) {
           $branchCoverage = [math]::Round([double]$branchCoverage, 2)
           $branch = "$branchCoverage"
-          if ($branchCoverage -ge 90) { $branchEmoji = '🟢' }
-          elseif ($branchCoverage -ge 85) { $branchEmoji = '🟡' }
-          elseif ($branchCoverage -ge 80) { $branchEmoji = '🟠' }
+          if ($branchCoverage -ge 100) { $branchEmoji = '🟢' }
+          elseif ($branchCoverage -ge 95) { $branchEmoji = '🟡' }
+          elseif ($branchCoverage -ge 90) { $branchEmoji = '🟠' }
           else { $branchEmoji = '🔴' }
         }
         $branchText = if ($branch) { "$branch%" } else { 'n/a' }
