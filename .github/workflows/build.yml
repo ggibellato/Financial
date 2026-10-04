@@ -18,6 +18,10 @@ permissions:
 # .github/scripts/detect-changes.sh); skipped jobs report "skipped" and `ci-status` is the single
 # required check that fails only when a job that actually ran failed. Every push to main runs the
 # full pipeline regardless of what changed: main must always be deployable.
+env:
+  TZ: Europe/London
+  LANG: en-GB
+
 jobs:
   changes:
     runs-on: ubuntu-latest
@@ -49,9 +53,6 @@ jobs:
     needs: changes
     if: needs.changes.outputs.backend == 'true'
     runs-on: windows-latest
-    env:
-      TZ: Europe/London
-      LANG: en-GB
     outputs:
       coverage: ${{ steps.gate.outputs.coverage }}
       band: ${{ steps.gate.outputs.band }}
@@ -114,9 +115,6 @@ jobs:
     needs: changes
     if: needs.changes.outputs.wpf == 'true'
     runs-on: windows-latest
-    env:
-      TZ: Europe/London
-      LANG: en-GB
     outputs:
       coverage: ${{ steps.gate.outputs.coverage }}
       band: ${{ steps.gate.outputs.band }}
@@ -174,9 +172,6 @@ jobs:
     needs: changes
     if: needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
-    env:
-      TZ: Europe/London
-      LANG: en-GB
     outputs:
       coverage: ${{ steps.gate.outputs.coverage }}
       band: ${{ steps.gate.outputs.band }}
@@ -305,9 +300,6 @@ jobs:
       && !contains(needs.*.result, 'failure')
       && !contains(needs.*.result, 'cancelled')
     runs-on: ubuntu-latest
-    env:
-      TZ: Europe/London
-      LANG: en-GB
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
