@@ -96,6 +96,7 @@ graph TD
 - Tithe carry-forwards are counted as `TitheCarryForwards.Count`; a set `TitheCarryForwardEffectiveFrom` is reported as part of the same line (`Tithe carry-forwards 1 (effective from 2026-04-01)`).
 - The non-carried report is printed only in full-rebuild mode. In `--mensais-only` mode `data == existingData`, nothing is dropped, and the line is omitted.
 - When the output file does not exist yet, there is nothing to report and no line is printed.
+- The counts are read from the raw JSON of the existing output file (`Transfers`, `BalanceAdjustments`, `TitheCarryForwards`, `Categories`), not from a typed `CashFlowData`: the typed loader rejects legacy shapes that the migrations only fix later, and raw reading keeps the check free of side effects so a corrupt file exits 3 before anything is written. `NonCarriedRecordsReport.FromJson(string)` replaces the planned data-based constructor.
 - Exit codes: `0` success, `1` workbook not found (unchanged), `2` argument/guard refusal, `3` existing output unreadable.
 
 ## 4. Component Overview
@@ -202,7 +203,7 @@ The concurrency tests interleave deterministically (enumerator held open across 
 | `IsLiveDataFile_SamePathDifferentCaseAndSeparators_ReturnsTrue` | temp dir with a fake `Financial.slnx`, `data/data-cashflow.json`; output given as `..\`-relative, mixed case | True |
 | `IsLiveDataFile_TempCopyWithSameFileName_ReturnsFalse` | `<temp>/copy/data-cashflow.json` | False |
 | `IsLiveDataFile_NoRepoRootFound_ReturnsFalse` | start dir with no `Financial.slnx` ancestor | False |
-| `Run_OutputIsLiveFile_LeavesFileTimestampUnchanged` | Preflight entry used by `Program.cs` against a temp "repo" whose live file has a known `LastWriteTimeUtc` | Exit 2; timestamp and bytes unchanged; no backup sibling created |
+| *(replaced by a manual check)* `Run_OutputIsLiveFile_LeavesFileTimestampUnchanged` | `Program.cs` is a top-level script, so the refusal path is exercised by running the built tool with `--output data/data-cashflow.json` and comparing the file's timestamp before and after | Exit 2; timestamp unchanged; no backup sibling created |
 | `Render_WithAllTypesPresent_ListsCountsInFixedOrder` | data with 12 transfers, 3 adjustments, 1 carry-forward, 4 non-seeded + 14 seeded categories | Exactly `Not carried over: Transfers 12, BalanceAdjustments 3, Tithe carry-forwards 1, Categories 4` |
 | `Render_SeededCategoryDifferentCase_NotCounted` | `"mercado"` present | Categories 0 |
 | `Render_WithEffectiveFromDate_IncludesDate` | effective-from set | Date appears on the tithe segment |
