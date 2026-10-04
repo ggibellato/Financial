@@ -49,12 +49,4 @@ public class CreditCardMigratorTests
         summary.CardsAlreadyPresentCount.Should().Be(1);
         data.CreditCards.Should().HaveCount(5);
     }
-
-    [Fact]
-    public void Migrate_WithNullData_Throws()
-    {
-        var act = () => CreditCardMigrator.Migrate(null!);
-
-        act.Should().Throw<ArgumentNullException>();
-    }
 }

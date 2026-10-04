@@ -9,18 +9,17 @@ namespace Financial.CashFlow.Domain.Tests.Entities
         [Fact]
         public void Create_WithValidValues_SetsAllProperties()
         {
-            var category = Category.Create("Mercado", isInvestment: false, isTithe: false, isActive: true);
+            var category = Category.Create("Mercado", isInvestment: true, isTithe: true, isActive: false);
 
             using (new AssertionScope())
             {
                 category.Id.Should().NotBeEmpty();
                 category.Name.Should().Be("Mercado");
-                category.Active.Should().BeTrue();
-                category.IsInvestment.Should().BeFalse();
-                category.IsTithe.Should().BeFalse();
+                category.Active.Should().BeFalse();
+                category.IsInvestment.Should().BeTrue();
+                category.IsTithe.Should().BeTrue();
             }
         }
-
 
         [Fact]
         public void Create_DefaultsActiveToTrueAndFlagsToFalse()
@@ -33,30 +32,6 @@ namespace Financial.CashFlow.Domain.Tests.Entities
                 category.IsInvestment.Should().BeFalse();
                 category.IsTithe.Should().BeFalse();
             }
-        }
-
-        [Fact]
-        public void Create_WithIsInvestmentTrue_AssignsIsInvestment()
-        {
-            var category = Category.Create("Investimento", isInvestment: true);
-
-            category.IsInvestment.Should().BeTrue();
-        }
-
-        [Fact]
-        public void Create_WithIsTitheTrue_AssignsIsTithe()
-        {
-            var category = Category.Create("Dizimo", isTithe: true);
-
-            category.IsTithe.Should().BeTrue();
-        }
-
-        [Fact]
-        public void Create_WithIsActiveFalse_AssignsFalse()
-        {
-            var category = Category.Create("Mercado", isActive: false);
-
-            category.Active.Should().BeFalse();
         }
 
         [Theory]

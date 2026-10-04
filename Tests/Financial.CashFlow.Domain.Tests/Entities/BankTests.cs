@@ -6,13 +6,15 @@ namespace Financial.CashFlow.Domain.Tests;
 
 public class BankTests
 {
-    [Fact]
-    public void Create_AssignsNameAndRoundUpEnabled()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Create_AssignsNameAndRoundUpEnabled(bool roundUpEnabled)
     {
-        var bank = Bank.Create("Chase", roundUpEnabled: true);
+        var bank = Bank.Create("Chase", roundUpEnabled);
 
         bank.Name.Should().Be("Chase");
-        bank.RoundUpEnabled.Should().BeTrue();
+        bank.RoundUpEnabled.Should().Be(roundUpEnabled);
     }
 
     [Fact]
@@ -59,14 +61,6 @@ public class BankTests
             bank.OpeningBalance.Should().Be(100m);
             bank.OpeningBalanceDate.Should().Be(new DateOnly(2026, 7, 1));
         }
-    }
-
-    [Fact]
-    public void Create_WithRoundUpDisabled_AssignsFalse()
-    {
-        var bank = Bank.Create("Barclays", roundUpEnabled: false);
-
-        bank.RoundUpEnabled.Should().BeFalse();
     }
 
     [Theory]

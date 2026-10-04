@@ -10,24 +10,16 @@ public class IncomeSourceTests
     [Fact]
     public void Create_AssignsAllFieldsAndANewId()
     {
-        var incomeSource = IncomeSource.Create("Gleison", IncomeGroup.Salary);
+        var incomeSource = IncomeSource.Create("Lottery", IncomeGroup.NonReportable, isActive: false, autoSplitToReserve: true);
 
         using (new AssertionScope())
         {
             incomeSource.Id.Should().NotBeEmpty();
-            incomeSource.Name.Should().Be("Gleison");
-            incomeSource.Group.Should().Be(IncomeGroup.Salary);
-            incomeSource.IsActive.Should().BeTrue();
+            incomeSource.Name.Should().Be("Lottery");
+            incomeSource.Group.Should().Be(IncomeGroup.NonReportable);
+            incomeSource.IsActive.Should().BeFalse();
+            incomeSource.AutoSplitToReserve.Should().BeTrue();
         }
-    }
-
-
-    [Fact]
-    public void Create_WithIsActiveFalse_AssignsFalse()
-    {
-        var incomeSource = IncomeSource.Create("Lottery", IncomeGroup.NonReportable, isActive: false);
-
-        incomeSource.IsActive.Should().BeFalse();
     }
 
     [Theory]
@@ -47,14 +39,6 @@ public class IncomeSourceTests
         var incomeSource = IncomeSource.Create("Gleison", IncomeGroup.Salary);
 
         incomeSource.AutoSplitToReserve.Should().BeFalse();
-    }
-
-    [Fact]
-    public void Create_WithAutoSplitToReserveTrue_AssignsTrue()
-    {
-        var incomeSource = IncomeSource.Create("Ariana", IncomeGroup.Salary, autoSplitToReserve: true);
-
-        incomeSource.AutoSplitToReserve.Should().BeTrue();
     }
 
     [Fact]

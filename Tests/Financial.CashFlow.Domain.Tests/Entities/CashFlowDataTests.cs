@@ -14,6 +14,8 @@ public class CashFlowDataTests
     private static readonly IncomeSource Lottery = IncomeSource.Create("Lottery", IncomeGroup.NonReportable);
     private static readonly InvestmentAccount ChaseSaveAccount =
         InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false);
+    private static readonly Category Casa = Category.Create("Casa");
+    private static readonly ReserveBucketEntity TestBucket = ReserveBucketEntity.Create("Investimento", 33.33m);
 
     private readonly CashFlowData _sut;
 
@@ -21,386 +23,93 @@ public class CashFlowDataTests
         _sut = CashFlowData.Create();
     }
 
+    public sealed record CollectionWiring(
+        string Name,
+        Func<object> CreateItem,
+        Action<CashFlowData, object> Add,
+        Action<CashFlowData, Guid>? Remove,
+        Func<CashFlowData, IReadOnlyCollection<object>> Items,
+        Func<object, Guid> IdOf)
+    {
+        public override string ToString() => Name;
+    }
+
+    private static CollectionWiring Wiring<T>(
+        string name,
+        Func<T> create,
+        Action<CashFlowData, T> add,
+        Action<CashFlowData, Guid>? remove,
+        Func<CashFlowData, IReadOnlyCollection<T>> items,
+        Func<T, Guid> idOf) where T : class =>
+        new(name, create, (data, item) => add(data, (T)item), remove, data => items(data).Cast<object>().ToArray(), item => idOf((T)item));
+
+    private static readonly CollectionWiring[] AllWirings =
+    [
+        Wiring("Banks", () => Bank.Create("Barclays", roundUpEnabled: false), (d, i) => d.AddBank(i), (d, id) => d.RemoveBank(id), d => d.Banks, i => i.Id),
+        Wiring("IncomeSources", () => IncomeSource.Create("Gleison", IncomeGroup.Salary), (d, i) => d.AddIncomeSource(i), (d, id) => d.RemoveIncomeSource(id), d => d.IncomeSources, i => i.Id),
+        Wiring("ReserveBuckets", () => ReserveBucketEntity.Create("Investimento", 33.33m), (d, i) => d.AddReserveBucket(i), null, d => d.ReserveBuckets, i => i.Id),
+        Wiring("CreditCards", () => Domain.Entities.CreditCard.Create("VISA 1", isActive: true), (d, i) => d.AddCreditCard(i), (d, id) => d.RemoveCreditCard(id), d => d.CreditCards, i => i.Id),
+        Wiring("Categories", () => Category.Create("Mercado"), (d, i) => d.AddCategory(i), (d, id) => d.RemoveCategory(id), d => d.Categories, i => i.Id),
+        Wiring("Expenses", () => Expense.Create(new DateOnly(2026, 7, 1), "Test expense", 10m, Casa, Chase, null), (d, i) => d.AddExpense(i), (d, id) => d.RemoveExpense(id), d => d.Expenses, i => i.Id),
+        Wiring("ReserveMovements", () => ReserveMovement.Create(TestBucket, 10m, new DateOnly(2026, 7, 1), "Test movement"), (d, i) => d.AddReserveMovement(i), (d, id) => d.RemoveReserveMovement(id), d => d.ReserveMovements, i => i.Id),
+        Wiring("CardStatements", () => CardStatement.Create(Domain.Entities.CreditCard.Create("BarclaysPlatinumVisa8003"), 2026, 7), (d, i) => d.AddCardStatement(i), null, d => d.CardStatements, i => i.Id),
+        Wiring("RecurringBills", () => RecurringBill.Create(10, "Test bill", 100m, Area.Brasil, string.Empty, null, null), (d, i) => d.AddRecurringBill(i), (d, id) => d.RemoveRecurringBill(id), d => d.RecurringBills, i => i.Id),
+        Wiring("MaeLedgerEntries", () => MaeLedgerEntry.Create(new DateOnly(2026, 7, 1), "Test entry", string.Empty, Currency.BRL, 100m, 15m), (d, i) => d.AddMaeLedgerEntry(i), (d, id) => d.RemoveMaeLedgerEntry(id), d => d.MaeLedgerEntries, i => i.Id),
+        Wiring("InvestmentSnapshots", () => InvestmentSnapshot.Create(ChaseSaveAccount, 2026, 7, 100m), (d, i) => d.AddInvestmentSnapshot(i), null, d => d.InvestmentSnapshots, i => i.Id),
+        Wiring("InvestmentAccounts", () => InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false), (d, i) => d.AddInvestmentAccount(i), (d, id) => d.RemoveInvestmentAccount(id), d => d.InvestmentAccounts, i => i.Id),
+        Wiring("Incomes", CreateIncome, (d, i) => d.AddIncome(i), (d, id) => d.RemoveIncome(id), d => d.Incomes, i => i.Id),
+        Wiring("Transfers", CreateTransfer, (d, i) => d.AddTransfer(i), (d, id) => d.RemoveTransfer(id), d => d.Transfers, i => i.Id),
+        Wiring("BalanceAdjustments", CreateBalanceAdjustment, (d, i) => d.AddBalanceAdjustment(i), (d, id) => d.RemoveBalanceAdjustment(id), d => d.BalanceAdjustments, i => i.Id),
+        Wiring("TitheCarryForwards", () => TitheCarryForward.Create(2026, 8, false), (d, i) => d.AddTitheCarryForward(i), null, d => d.TitheCarryForwards, _ => Guid.Empty),
+    ];
+
+    public static TheoryData<CollectionWiring> AddableCollections() => new(AllWirings);
+
+    public static TheoryData<CollectionWiring> RemovableCollections() => new(AllWirings.Where(w => w.Remove is not null));
+
     [Fact]
     public void Create_StartsWithAllCollectionsEmpty()
     {
-        _sut.Expenses.Should().BeEmpty();
-        _sut.ReserveMovements.Should().BeEmpty();
-        _sut.CardStatements.Should().BeEmpty();
-        _sut.RecurringBills.Should().BeEmpty();
-        _sut.MaeLedgerEntries.Should().BeEmpty();
-        _sut.InvestmentSnapshots.Should().BeEmpty();
-        _sut.InvestmentAccounts.Should().BeEmpty();
-        _sut.Banks.Should().BeEmpty();
-        _sut.IncomeSources.Should().BeEmpty();
-        _sut.ReserveBuckets.Should().BeEmpty();
-        _sut.Incomes.Should().BeEmpty();
-        _sut.Transfers.Should().BeEmpty();
-        _sut.BalanceAdjustments.Should().BeEmpty();
-        _sut.CreditCards.Should().BeEmpty();
-        _sut.Categories.Should().BeEmpty();
-        _sut.TitheCarryForwards.Should().BeEmpty();
+        AllWirings.Should().OnlyContain(w => w.Items(_sut).Count == 0);
         _sut.TitheCarryForwardEffectiveFrom.Should().BeNull();
     }
 
-    [Fact]
-    public void AddBank_AddsOnlyToBanksCollection()
+    [Theory]
+    [MemberData(nameof(AddableCollections))]
+    public void Add_AddsOnlyToTheMatchingCollection(CollectionWiring wiring)
     {
-        _sut.AddBank(Bank.Create("Barclays", roundUpEnabled: false));
-        CheckCollectionCounts(new CheckItemsQuantity(Banks: 1));
+        var item = wiring.CreateItem();
+
+        wiring.Add(_sut, item);
+
+        wiring.Items(_sut).Should().ContainSingle().Which.Should().BeSameAs(item);
+        AllWirings.Where(other => other != wiring).Should().OnlyContain(other => other.Items(_sut).Count == 0);
     }
 
-    [Fact]
-    public void RemoveBank_RemovesOnlyTheMatchingBank()
+    [Theory]
+    [MemberData(nameof(RemovableCollections))]
+    public void Remove_RemovesOnlyTheMatchingItem(CollectionWiring wiring)
     {
-        var toRemove = Bank.Create("Barclays", roundUpEnabled: false);
-        var toKeep = Bank.Create("Chase", roundUpEnabled: true);
-        _sut.AddBank(toRemove);
-        _sut.AddBank(toKeep);
+        var toRemove = wiring.CreateItem();
+        var toKeep = wiring.CreateItem();
+        wiring.Add(_sut, toRemove);
+        wiring.Add(_sut, toKeep);
 
-        _sut.RemoveBank(toRemove.Id);
+        wiring.Remove!(_sut, wiring.IdOf(toRemove));
 
-        _sut.Banks.Should().ContainSingle().Which.Should().BeSameAs(toKeep);
+        wiring.Items(_sut).Should().ContainSingle().Which.Should().BeSameAs(toKeep);
     }
 
-    [Fact]
-    public void RemoveBank_WithUnknownId_DoesNothing()
+    [Theory]
+    [MemberData(nameof(RemovableCollections))]
+    public void Remove_WithUnknownId_LeavesTheCollectionUnchanged(CollectionWiring wiring)
     {
-        _sut.AddBank(Bank.Create("Barclays", roundUpEnabled: false));
+        var item = wiring.CreateItem();
+        wiring.Add(_sut, item);
 
-        _sut.RemoveBank(Guid.NewGuid());
+        wiring.Remove!(_sut, Guid.NewGuid());
 
-        CheckCollectionCounts(new CheckItemsQuantity(Banks: 1));
-    }
-
-    [Fact]
-    public void AddIncomeSource_AddsOnlyToIncomeSourcesCollection()
-    {
-        _sut.AddIncomeSource(IncomeSource.Create("Gleison", IncomeGroup.Salary));
-
-        CheckCollectionCounts(new CheckItemsQuantity(IncomeSources: 1));
-    }
-
-    [Fact]
-    public void RemoveIncomeSource_RemovesOnlyTheMatchingIncomeSource()
-    {
-        var toRemove = IncomeSource.Create("Gleison", IncomeGroup.Salary);
-        var toKeep = IncomeSource.Create("Ariana", IncomeGroup.Salary);
-        _sut.AddIncomeSource(toRemove);
-        _sut.AddIncomeSource(toKeep);
-
-        _sut.RemoveIncomeSource(toRemove.Id);
-
-        _sut.IncomeSources.Should().ContainSingle().Which.Should().BeSameAs(toKeep);
-    }
-
-    [Fact]
-    public void RemoveIncomeSource_WithUnknownId_DoesNothing()
-    {
-        _sut.AddIncomeSource(IncomeSource.Create("Gleison", IncomeGroup.Salary));
-
-        _sut.RemoveIncomeSource(Guid.NewGuid());
-
-        CheckCollectionCounts(new CheckItemsQuantity(IncomeSources: 1));
-    }
-
-    [Fact]
-    public void AddReserveBucket_AddsOnlyToReserveBucketsCollection()
-    {
-        _sut.AddReserveBucket(ReserveBucketEntity.Create("Investimento", 33.33m));
-
-        CheckCollectionCounts(new CheckItemsQuantity(ReserveBuckets: 1));
-    }
-
-    [Fact]
-    public void AddCreditCard_AddsOnlyToCreditCardsCollection()
-    {
-        _sut.AddCreditCard(Domain.Entities.CreditCard.Create("VISA 1", isActive: true));
-
-        CheckCollectionCounts(new CheckItemsQuantity(CreditCards: 1));
-    }
-
-    [Fact]
-    public void RemoveCreditCard_RemovesOnlyTheMatchingCreditCard()
-    {
-        var toRemove = Domain.Entities.CreditCard.Create("VISA 1", isActive: true);
-        var toKeep = Domain.Entities.CreditCard.Create("VISA 2", isActive: true);
-        _sut.AddCreditCard(toRemove);
-        _sut.AddCreditCard(toKeep);
-
-        _sut.RemoveCreditCard(toRemove.Id);
-
-        _sut.CreditCards.Should().ContainSingle().Which.Should().BeSameAs(toKeep);
-    }
-
-    [Fact]
-    public void RemoveCreditCard_WithUnknownId_DoesNothing()
-    {
-        _sut.AddCreditCard(Domain.Entities.CreditCard.Create("VISA 1", isActive: true));
-
-        _sut.RemoveCreditCard(Guid.NewGuid());
-
-        CheckCollectionCounts(new CheckItemsQuantity(CreditCards: 1));
-    }
-
-    [Fact]
-    public void AddCategory_AddsOnlyToCategoriesCollection()
-    {
-        _sut.AddCategory(Category.Create("Mercado"));
-
-        CheckCollectionCounts(new CheckItemsQuantity(Categories: 1));
-    }
-
-    [Fact]
-    public void RemoveCategory_RemovesOnlyTheMatchingCategory()
-    {
-        var toRemove = Category.Create("Mercado");
-        var toKeep = Category.Create("Casa");
-        _sut.AddCategory(toRemove);
-        _sut.AddCategory(toKeep);
-
-        _sut.RemoveCategory(toRemove.Id);
-
-        _sut.Categories.Should().ContainSingle().Which.Should().BeSameAs(toKeep);
-    }
-
-    [Fact]
-    public void RemoveCategory_WithUnknownId_DoesNothing()
-    {
-        _sut.AddCategory(Category.Create("Mercado"));
-
-        _sut.RemoveCategory(Guid.NewGuid());
-
-        CheckCollectionCounts(new CheckItemsQuantity(Categories: 1));
-    }
-
-    [Fact]
-    public void AddExpense_AddsOnlyToExpensesCollection()
-    {
-        _sut.AddExpense(CreateExpense());
-
-        CheckCollectionCounts(new CheckItemsQuantity(Expenses: 1));
-    }
-
-    [Fact]
-    public void RemoveExpense_RemovesOnlyTheMatchingExpense()
-    {
-        var toKeep = CreateExpense();
-        var toRemove = CreateExpense();
-        _sut.AddExpense(toKeep);
-        _sut.AddExpense(toRemove);
-
-        _sut.RemoveExpense(toRemove.Id);
-
-        _sut.Expenses.Should().ContainSingle().Which.Id.Should().Be(toKeep.Id);
-    }
-
-    [Fact]
-    public void RemoveExpense_WithUnknownId_LeavesCollectionUnchanged()
-    {
-        _sut.AddExpense(CreateExpense());
-        
-        _sut.RemoveExpense(Guid.NewGuid());
-
-        _sut.Expenses.Should().ContainSingle();
-    }
-
-    private static readonly Category Casa = Category.Create("Casa");
-
-    private static Expense CreateExpense() =>
-        Expense.Create(new DateOnly(2026, 7, 1), "Test expense", 10m, Casa, Chase, null);
-
-    [Fact]
-    public void AddReserveMovement_AddsOnlyToReserveMovementsCollection()
-    {
-        _sut.AddReserveMovement(CreateReserveMovement());
-
-        CheckCollectionCounts(new CheckItemsQuantity(ReserveMovements: 1));
-    }
-
-    [Fact]
-    public void RemoveReserveMovement_RemovesOnlyTheMatchingMovement()
-    {
-        var toKeep = CreateReserveMovement();
-        var toRemove = CreateReserveMovement();
-        _sut.AddReserveMovement(toKeep);
-        _sut.AddReserveMovement(toRemove);
-
-        _sut.RemoveReserveMovement(toRemove.Id);
-
-        _sut.ReserveMovements.Should().ContainSingle().Which.Id.Should().Be(toKeep.Id);
-    }
-
-    [Fact]
-    public void RemoveReserveMovement_WithUnknownId_LeavesCollectionUnchanged()
-    {
-        _sut.AddReserveMovement(CreateReserveMovement());
-
-        _sut.RemoveReserveMovement(Guid.NewGuid());
-
-        _sut.ReserveMovements.Should().ContainSingle();
-    }
-
-    private static readonly ReserveBucketEntity TestBucket = ReserveBucketEntity.Create("Investimento", 33.33m);
-
-    private static ReserveMovement CreateReserveMovement() =>
-        ReserveMovement.Create(TestBucket, 10m, new DateOnly(2026, 7, 1), "Test movement");
-
-    [Fact]
-    public void AddCardStatement_AddsOnlyToCardStatementsCollection()
-    {
-        _sut.AddCardStatement(CardStatement.Create(Domain.Entities.CreditCard.Create("BarclaysPlatinumVisa8003"), 2026, 7));
-
-        CheckCollectionCounts(new CheckItemsQuantity(CardStatements: 1));
-    }
-
-    [Fact]
-    public void AddRecurringBill_AddsOnlyToRecurringBillsCollection()
-    {
-        _sut.AddRecurringBill(CreateRecurringBill());
-
-        CheckCollectionCounts(new CheckItemsQuantity(RecurringBills: 1));
-    }
-
-    [Fact]
-    public void RemoveRecurringBill_RemovesOnlyTheMatchingBill()
-    {
-        var toKeep = CreateRecurringBill();
-        var toRemove = CreateRecurringBill();
-        _sut.AddRecurringBill(toKeep);
-        _sut.AddRecurringBill(toRemove);
-
-        _sut.RemoveRecurringBill(toRemove.Id);
-
-        _sut.RecurringBills.Should().ContainSingle().Which.Id.Should().Be(toKeep.Id);
-    }
-
-    [Fact]
-    public void RemoveRecurringBill_WithUnknownId_LeavesCollectionUnchanged()
-    {
-        _sut.AddRecurringBill(CreateRecurringBill());
-
-        _sut.RemoveRecurringBill(Guid.NewGuid());
-
-        _sut.RecurringBills.Should().ContainSingle();
-    }
-
-    private static RecurringBill CreateRecurringBill() =>
-        RecurringBill.Create(10, "Test bill", 100m, Area.Brasil, string.Empty, null, null);
-
-    [Fact]
-    public void AddMaeLedgerEntry_AddsOnlyToMaeLedgerEntriesCollection()
-    {
-        _sut.AddMaeLedgerEntry(CreateMaeLedgerEntry());
-
-        CheckCollectionCounts(new CheckItemsQuantity(MaeLedgerEntries: 1));
-    }
-
-    private static MaeLedgerEntry CreateMaeLedgerEntry() =>
-        MaeLedgerEntry.Create(new DateOnly(2026, 7, 1), "Test entry", string.Empty, Currency.BRL, 100m, 15m);
-
-    [Fact]
-    public void RemoveMaeLedgerEntry_RemovesOnlyTheMatchingEntry()
-    {
-        var toKeep = CreateMaeLedgerEntry();
-        var toRemove = CreateMaeLedgerEntry();
-        _sut.AddMaeLedgerEntry(toKeep);
-        _sut.AddMaeLedgerEntry(toRemove);
-
-        _sut.RemoveMaeLedgerEntry(toRemove.Id);
-
-        _sut.MaeLedgerEntries.Should().ContainSingle().Which.Id.Should().Be(toKeep.Id);
-    }
-
-    [Fact]
-    public void RemoveMaeLedgerEntry_WithUnknownId_LeavesCollectionUnchanged()
-    {
-        _sut.AddMaeLedgerEntry(CreateMaeLedgerEntry());
-
-        _sut.RemoveMaeLedgerEntry(Guid.NewGuid());
-
-        _sut.MaeLedgerEntries.Should().ContainSingle();
-    }
-
-    [Fact]
-    public void AddInvestmentSnapshot_AddsOnlyToInvestmentSnapshotsCollection()
-    {
-        _sut.AddInvestmentSnapshot(InvestmentSnapshot.Create(ChaseSaveAccount, 2026, 7, 100m));
-
-        CheckCollectionCounts(new CheckItemsQuantity(InvestmentSnapshots: 1));
-    }
-
-    [Fact]
-    public void AddInvestmentAccount_AddsOnlyToInvestmentAccountsCollection()
-    {
-        _sut.AddInvestmentAccount(InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false));
-
-        CheckCollectionCounts(new CheckItemsQuantity(InvestmentAccounts: 1));
-    }
-
-    [Fact]
-    public void RemoveInvestmentAccount_RemovesOnlyTheMatchingAccount()
-    {
-        var toRemove = InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false);
-        var toKeep = InvestmentAccount.Create("BaAmex", isActive: true, isLiability: true);
-        _sut.AddInvestmentAccount(toRemove);
-        _sut.AddInvestmentAccount(toKeep);
-
-        _sut.RemoveInvestmentAccount(toRemove.Id);
-
-        _sut.InvestmentAccounts.Should().ContainSingle().Which.Should().BeSameAs(toKeep);
-    }
-
-    [Fact]
-    public void RemoveInvestmentAccount_WithUnknownId_DoesNothing()
-    {
-        _sut.AddInvestmentAccount(InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false));
-
-        _sut.RemoveInvestmentAccount(Guid.NewGuid());
-
-        CheckCollectionCounts(new CheckItemsQuantity(InvestmentAccounts: 1));
-    }
-
-    [Fact]
-    public void AddIncome_AddsOnlyToIncomesCollection()
-    {
-        _sut.AddIncome(CreateIncome());
-
-        CheckCollectionCounts(new CheckItemsQuantity(Incomes: 1));
-    }
-
-    [Fact]
-    public void RemoveIncome_RemovesOnlyTheMatchingIncome()
-    {
-        var toKeep = CreateIncome();
-        var toRemove = CreateIncome();
-        _sut.AddIncome(toKeep);
-        _sut.AddIncome(toRemove);
-
-        _sut.RemoveIncome(toRemove.Id);
-
-        _sut.Incomes.Should().ContainSingle().Which.Id.Should().Be(toKeep.Id);
-    }
-
-    [Fact]
-    public void RemoveIncome_WithUnknownId_LeavesCollectionUnchanged()
-    {
-        _sut.AddIncome(CreateIncome());
-
-        _sut.RemoveIncome(Guid.NewGuid());
-
-        _sut.Incomes.Should().ContainSingle();
-    }
-
-    private static Income CreateIncome() =>
-        Income.Create(new DateOnly(2026, 7, 1), Lottery, null, 10m, Chase);
-
-    [Fact]
-    public void AddTransfer_AddsOnlyToTransfersCollection()
-    {
-        _sut.AddTransfer(CreateTransfer());
-
-        CheckCollectionCounts(new CheckItemsQuantity(Transfers: 1));
+        wiring.Items(_sut).Should().ContainSingle().Which.Should().BeSameAs(item);
     }
 
     [Fact]
@@ -427,40 +136,6 @@ public class CashFlowDataTests
     }
 
     [Fact]
-    public void RemoveTransfer_RemovesOnlyTheMatchingTransfer()
-    {
-        var toKeep = CreateTransfer();
-        var toRemove = CreateTransfer();
-        _sut.AddTransfer(toKeep);
-        _sut.AddTransfer(toRemove);
-
-        _sut.RemoveTransfer(toRemove.Id);
-
-        _sut.Transfers.Should().ContainSingle().Which.Id.Should().Be(toKeep.Id);
-    }
-
-    [Fact]
-    public void RemoveTransfer_WithUnknownId_LeavesCollectionUnchanged()
-    {
-        _sut.AddTransfer(CreateTransfer());
-
-        _sut.RemoveTransfer(Guid.NewGuid());
-
-        _sut.Transfers.Should().ContainSingle();
-    }
-
-    private static Transfer CreateTransfer() =>
-        Transfer.Create(new DateOnly(2026, 7, 1), Barclays, Trading212, 500m, "Test transfer");
-
-    [Fact]
-    public void AddBalanceAdjustment_AddsOnlyToBalanceAdjustmentsCollection()
-    {
-        _sut.AddBalanceAdjustment(CreateBalanceAdjustment());
-
-        CheckCollectionCounts(new CheckItemsQuantity(BalanceAdjustments: 1));
-    }
-
-    [Fact]
     public void UpdateBalanceAdjustment_ReplacesTheMatchingEntry()
     {
         var adjustment = CreateBalanceAdjustment();
@@ -484,40 +159,6 @@ public class CashFlowDataTests
     }
 
     [Fact]
-    public void RemoveBalanceAdjustment_RemovesOnlyTheMatchingAdjustment()
-    {
-        var toKeep = CreateBalanceAdjustment();
-        var toRemove = CreateBalanceAdjustment();
-        _sut.AddBalanceAdjustment(toKeep);
-        _sut.AddBalanceAdjustment(toRemove);
-
-        _sut.RemoveBalanceAdjustment(toRemove.Id);
-
-        _sut.BalanceAdjustments.Should().ContainSingle().Which.Id.Should().Be(toKeep.Id);
-    }
-
-    [Fact]
-    public void RemoveBalanceAdjustment_WithUnknownId_LeavesCollectionUnchanged()
-    {
-        _sut.AddBalanceAdjustment(CreateBalanceAdjustment());
-
-        _sut.RemoveBalanceAdjustment(Guid.NewGuid());
-
-        _sut.BalanceAdjustments.Should().ContainSingle();
-    }
-
-    private static BalanceAdjustment CreateBalanceAdjustment() =>
-        BalanceAdjustment.Create(new DateOnly(2026, 7, 1), Barclays, 100m, 0m, "Test adjustment");
-
-    [Fact]
-    public void AddTitheCarryForward_AddsOnlyToTitheCarryForwardsCollection()
-    {
-        _sut.AddTitheCarryForward(TitheCarryForward.Create(2026, 8, false));
-
-        CheckCollectionCounts(new CheckItemsQuantity(TitheCarryForwards: 1));
-    }
-
-    [Fact]
     public void SetTitheCarryForwardEffectiveFrom_SetsTheValue()
     {
         _sut.SetTitheCarryForwardEffectiveFrom(new DateOnly(2026, 9, 1));
@@ -535,28 +176,12 @@ public class CashFlowDataTests
         _sut.TitheCarryForwardEffectiveFrom.Should().Be(new DateOnly(2026, 10, 1));
     }
 
-    private record CheckItemsQuantity(int Expenses = 0, int ReserveMovements = 0, int CardStatements = 0,
-        int RecurringBills = 0, int MaeLedgerEntries = 0, int InvestmentSnapshots = 0, int InvestmentAccounts = 0, int Banks = 0,
-        int IncomeSources = 0, int ReserveBuckets = 0, int Incomes = 0, int Transfers = 0, int BalanceAdjustments = 0, int CreditCards = 0,
-        int Categories = 0, int TitheCarryForwards = 0);
+    private static Income CreateIncome() =>
+        Income.Create(new DateOnly(2026, 7, 1), Lottery, null, 10m, Chase);
 
-    private void CheckCollectionCounts(CheckItemsQuantity expected)
-    {
-        _sut.Expenses.Count.Should().Be(expected.Expenses);
-        _sut.ReserveMovements.Count.Should().Be(expected.ReserveMovements);
-        _sut.CardStatements.Count.Should().Be(expected.CardStatements);
-        _sut.RecurringBills.Count.Should().Be(expected.RecurringBills);
-        _sut.MaeLedgerEntries.Count.Should().Be(expected.MaeLedgerEntries);
-        _sut.InvestmentSnapshots.Count.Should().Be(expected.InvestmentSnapshots);
-        _sut.InvestmentAccounts.Count.Should().Be(expected.InvestmentAccounts);
-        _sut.Banks.Count.Should().Be(expected.Banks);
-        _sut.IncomeSources.Count.Should().Be(expected.IncomeSources);
-        _sut.ReserveBuckets.Count.Should().Be(expected.ReserveBuckets);
-        _sut.Incomes.Count.Should().Be(expected.Incomes);
-        _sut.Transfers.Count.Should().Be(expected.Transfers);
-        _sut.BalanceAdjustments.Count.Should().Be(expected.BalanceAdjustments);
-        _sut.CreditCards.Count.Should().Be(expected.CreditCards);
-        _sut.Categories.Count.Should().Be(expected.Categories);
-        _sut.TitheCarryForwards.Count.Should().Be(expected.TitheCarryForwards);
-    }
+    private static Transfer CreateTransfer() =>
+        Transfer.Create(new DateOnly(2026, 7, 1), Barclays, Trading212, 500m, "Test transfer");
+
+    private static BalanceAdjustment CreateBalanceAdjustment() =>
+        BalanceAdjustment.Create(new DateOnly(2026, 7, 1), Barclays, 100m, 0m, "Test adjustment");
 }

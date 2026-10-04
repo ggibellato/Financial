@@ -5,8 +5,21 @@ using FluentAssertions.Execution;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.Migrations.CreditCardReferences;
 
-public class CreditCardReferenceMigratorTests
+public class CreditCardReferenceMigratorTests : FileMigratorContractTests
 {
+    protected override string LegacyFileJson() => LegacyFixtureJson();
+
+    protected override string CurrentShapeJson() => """
+        {
+          "Expenses": [], "ReserveMovements": [], "CardStatements": [], "RecurringBills": [],
+          "MaeLedgerEntries": [], "InvestmentSnapshots": [], "InvestmentAccounts": [],
+          "Banks": [], "IncomeSources": [], "ReserveBuckets": [], "CreditCards": [],
+          "Incomes": [], "Transfers": [], "BalanceAdjustments": []
+        }
+        """;
+
+    protected override bool MigrateReportsAlreadyCurrentShape(string path) => CreditCardReferenceMigrator.Migrate(path).AlreadyCurrentShape;
+
     private static readonly Guid ExpenseId = Guid.Parse("11111111-1111-1111-1111-111111111111");
     private static readonly Guid CardStatementId = Guid.Parse("22222222-2222-2222-2222-222222222222");
     private static readonly Guid SeededCardId = Guid.Parse("33333333-3333-3333-3333-333333333333");
@@ -52,23 +65,6 @@ public class CreditCardReferenceMigratorTests
           ]
         }
         """;
-
-    private static string CreateTempFile(string content)
-    {
-        var path = Path.Combine(Path.GetTempPath(), $"cashflow-cardref-{Guid.NewGuid():N}.json");
-        File.WriteAllText(path, content);
-        return path;
-    }
-
-    private static void DeleteBackups(string path)
-    {
-        var directory = Path.GetDirectoryName(path)!;
-        var nameWithoutExtension = Path.GetFileNameWithoutExtension(path);
-        foreach (var backup in Directory.GetFiles(directory, $"{nameWithoutExtension}.backup-migration-*"))
-        {
-            File.Delete(backup);
-        }
-    }
 
     [Fact]
     public void Migrate_LegacyFileWithNoSeededCards_BootstrapsTheCanonicalFiveAndRewritesExpenseAndStatement()
@@ -136,51 +132,6 @@ public class CreditCardReferenceMigratorTests
     }
 
     [Fact]
-    public void Migrate_SecondRunOnAlreadyMigratedFile_MakesNoFurtherChanges()
-    {
-        var path = CreateTempFile(LegacyFixtureJson());
-
-        try
-        {
-            CreditCardReferenceMigrator.Migrate(path);
-            var contentAfterFirstRun = File.ReadAllText(path);
-
-            var secondSummary = CreditCardReferenceMigrator.Migrate(path);
-
-            using (new AssertionScope())
-            {
-                secondSummary.AlreadyCurrentShape.Should().BeTrue();
-                File.ReadAllText(path).Should().Be(contentAfterFirstRun);
-            }
-        }
-        finally
-        {
-            File.Delete(path);
-            DeleteBackups(path);
-        }
-    }
-
-    [Fact]
-    public void Migrate_CreatesABackupBeforeWriting()
-    {
-        var path = CreateTempFile(LegacyFixtureJson());
-        var directory = Path.GetDirectoryName(path)!;
-        var nameWithoutExtension = Path.GetFileNameWithoutExtension(path);
-
-        try
-        {
-            CreditCardReferenceMigrator.Migrate(path);
-
-            Directory.GetFiles(directory, $"{nameWithoutExtension}.backup-migration-*").Should().ContainSingle();
-        }
-        finally
-        {
-            File.Delete(path);
-            DeleteBackups(path);
-        }
-    }
-
-    [Fact]
     public void Migrate_ExpenseWithUnresolvableCardName_AbortsWithoutWritingOrBackingUpTheFile()
     {
         var path = CreateTempFile(LegacyFixtureJson(expenseCardName: "NotACard"));
@@ -230,45 +181,5 @@ public class CreditCardReferenceMigratorTests
             File.Delete(path);
             DeleteBackups(path);
         }
-    }
-
-    [Fact]
-    public void Migrate_FileAlreadyInCurrentShape_ReturnsNoOpSummaryAndTouchesNothing()
-    {
-        var currentShapeJson = """
-            {
-              "Expenses": [], "ReserveMovements": [], "CardStatements": [], "RecurringBills": [],
-              "MaeLedgerEntries": [], "InvestmentSnapshots": [], "InvestmentAccounts": [],
-              "Banks": [], "IncomeSources": [], "ReserveBuckets": [], "CreditCards": [],
-              "Incomes": [], "Transfers": [], "BalanceAdjustments": []
-            }
-            """;
-        var path = CreateTempFile(currentShapeJson);
-
-        try
-        {
-            var summary = CreditCardReferenceMigrator.Migrate(path);
-
-            using (new AssertionScope())
-            {
-                summary.AlreadyCurrentShape.Should().BeTrue();
-                File.ReadAllText(path).Should().Be(currentShapeJson);
-                Directory.GetFiles(Path.GetDirectoryName(path)!, $"{Path.GetFileNameWithoutExtension(path)}.backup-migration-*").Should().BeEmpty();
-            }
-        }
-        finally
-        {
-            File.Delete(path);
-        }
-    }
-
-    [Fact]
-    public void Migrate_FileDoesNotExist_ReturnsNoOpSummary()
-    {
-        var missingPath = Path.Combine(Path.GetTempPath(), $"cashflow-cardref-missing-{Guid.NewGuid():N}.json");
-
-        var summary = CreditCardReferenceMigrator.Migrate(missingPath);
-
-        summary.AlreadyCurrentShape.Should().BeTrue();
     }
 }

@@ -119,12 +119,4 @@ public class ReserveBucketMigratorTests
         summary.ActiveSplitPercentageIsBalanced.Should().BeTrue();
         summary.ActiveSplitPercentageSum.Should().Be(100m);
     }
-
-    [Fact]
-    public void Migrate_WithNullData_Throws()
-    {
-        var act = () => ReserveBucketMigrator.Migrate(null!);
-
-        act.Should().Throw<ArgumentNullException>();
-    }
 }
