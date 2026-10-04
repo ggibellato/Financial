@@ -11,31 +11,18 @@ public class ImportArgumentsTests
     private const string UsageLine =
         "Usage: CashFlowSpreadsheetImport <workbook.xlsx> --output <path> [--mensais-only]";
 
-    [Fact]
-    public void TryParse_NoArguments_RefusesWithOutputRequiredMessage()
+    [Theory]
+    [InlineData]
+    [InlineData("a.xlsx")]
+    [InlineData("--output", "out.json")]
+    [InlineData("a.xlsx", "--output")]
+    [InlineData("--output", "a.xlsx", "--mensais-only")]
+    public void TryParse_WithoutWorkbookOrOutputValue_RefusesWithOutputRequiredMessage(params string[] args)
     {
-        var parsed = ImportArguments.TryParse([], out var arguments, out var refusal);
+        var parsed = ImportArguments.TryParse(args, out var arguments, out var refusal);
 
         parsed.Should().BeFalse();
         arguments.Should().BeNull();
-        refusal.Should().Be(RefusalLine + Environment.NewLine + UsageLine);
-    }
-
-    [Fact]
-    public void TryParse_WorkbookWithoutOutput_RefusesWithOutputRequiredMessage()
-    {
-        var parsed = ImportArguments.TryParse(["a.xlsx"], out _, out var refusal);
-
-        parsed.Should().BeFalse();
-        refusal.Should().Be(RefusalLine + Environment.NewLine + UsageLine);
-    }
-
-    [Fact]
-    public void TryParse_OutputWithoutWorkbook_RefusesWithOutputRequiredMessage()
-    {
-        var parsed = ImportArguments.TryParse(["--output", "out.json"], out _, out var refusal);
-
-        parsed.Should().BeFalse();
         refusal.Should().Be(RefusalLine + Environment.NewLine + UsageLine);
     }
 
@@ -46,17 +33,6 @@ public class ImportArgumentsTests
 
         parsed.Should().BeFalse();
         refusal.Should().Be("Unexpected argument 'b.json'. Pass the output path with --output." + Environment.NewLine + UsageLine);
-    }
-
-    [Theory]
-    [InlineData("a.xlsx", "--output")]
-    [InlineData("--output", "a.xlsx", "--mensais-only")]
-    public void TryParse_OutputFlagWithoutValue_RefusesWithOutputRequiredMessage(params string[] args)
-    {
-        var parsed = ImportArguments.TryParse(args, out _, out var refusal);
-
-        parsed.Should().BeFalse();
-        refusal.Should().Be(RefusalLine + Environment.NewLine + UsageLine);
     }
 
     [Fact]
