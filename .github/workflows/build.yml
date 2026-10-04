@@ -39,10 +39,12 @@ jobs:
     - name: Self-test the change classifier
       run: bash .github/scripts/detect-changes.test.sh
 
-    - name: Detect affected jobs
-      id: detect
+    - name: Self-test the test-hygiene scanner
+      run: bash .github/scripts/test-hygiene.test.sh
+
+    - name: Resolve the diff base
+      id: base
       env:
-        FULL_RUN: ${{ github.event_name == 'push' }}
         BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
         HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       run: |
@@ -50,7 +52,18 @@ jobs:
           git fetch --no-tags origin "$BASE_SHA" || true
         fi
         merge_base=$(git merge-base "$BASE_SHA" "$HEAD_SHA" 2>/dev/null || echo "$BASE_SHA")
-        bash .github/scripts/detect-changes.sh "$merge_base" "$HEAD_SHA"
+        echo "merge_base=$merge_base" >> "$GITHUB_OUTPUT"
+        echo "head=$HEAD_SHA" >> "$GITHUB_OUTPUT"
+
+    - name: Detect affected jobs
+      id: detect
+      env:
+        FULL_RUN: ${{ github.event_name == 'push' }}
+      run: bash .github/scripts/detect-changes.sh "${{ steps.base.outputs.merge_base }}" "${{ steps.base.outputs.head }}"
+
+    - name: Scan added lines for test hygiene
+      if: github.event_name == 'pull_request'
+      run: bash .github/scripts/test-hygiene.sh "${{ steps.base.outputs.merge_base }}" "${{ steps.base.outputs.head }}"
 
   backend:
     needs: changes
