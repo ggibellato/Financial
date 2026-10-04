@@ -49,11 +49,20 @@ jobs:
     needs: changes
     if: needs.changes.outputs.backend == 'true'
     runs-on: windows-latest
+    env:
+      TZ: Europe/London
+      LANG: en-GB
     outputs:
       coverage: ${{ steps.gate.outputs.coverage }}
       band: ${{ steps.gate.outputs.band }}
       emoji: ${{ steps.gate.outputs.emoji }}
     steps:
+    - name: Pin timezone and culture
+      shell: pwsh
+      run: |
+        Set-TimeZone -Id "GMT Standard Time"
+        Set-Culture en-GB
+
     - name: Checkout code
       uses: actions/checkout@v6
 
@@ -105,11 +114,20 @@ jobs:
     needs: changes
     if: needs.changes.outputs.wpf == 'true'
     runs-on: windows-latest
+    env:
+      TZ: Europe/London
+      LANG: en-GB
     outputs:
       coverage: ${{ steps.gate.outputs.coverage }}
       band: ${{ steps.gate.outputs.band }}
       emoji: ${{ steps.gate.outputs.emoji }}
     steps:
+    - name: Pin timezone and culture
+      shell: pwsh
+      run: |
+        Set-TimeZone -Id "GMT Standard Time"
+        Set-Culture en-GB
+
     - name: Checkout code
       uses: actions/checkout@v6
 
@@ -156,6 +174,9 @@ jobs:
     needs: changes
     if: needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
+    env:
+      TZ: Europe/London
+      LANG: en-GB
     outputs:
       coverage: ${{ steps.gate.outputs.coverage }}
       band: ${{ steps.gate.outputs.band }}
@@ -284,6 +305,9 @@ jobs:
       && !contains(needs.*.result, 'failure')
       && !contains(needs.*.result, 'cancelled')
     runs-on: ubuntu-latest
+    env:
+      TZ: Europe/London
+      LANG: en-GB
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
