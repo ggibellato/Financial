@@ -18,6 +18,10 @@ permissions:
 # .github/scripts/detect-changes.sh); skipped jobs report "skipped" and `ci-status` is the single
 # required check that fails only when a job that actually ran failed. Every push to main runs the
 # full pipeline regardless of what changed: main must always be deployable.
+env:
+  TZ: Europe/London
+  LANG: en-GB
+
 jobs:
   changes:
     runs-on: ubuntu-latest
@@ -54,6 +58,12 @@ jobs:
       band: ${{ steps.gate.outputs.band }}
       emoji: ${{ steps.gate.outputs.emoji }}
     steps:
+    - name: Pin timezone and culture
+      shell: pwsh
+      run: |
+        Set-TimeZone -Id "GMT Standard Time"
+        Set-Culture en-GB
+
     - name: Checkout code
       uses: actions/checkout@v6
 
@@ -110,6 +120,12 @@ jobs:
       band: ${{ steps.gate.outputs.band }}
       emoji: ${{ steps.gate.outputs.emoji }}
     steps:
+    - name: Pin timezone and culture
+      shell: pwsh
+      run: |
+        Set-TimeZone -Id "GMT Standard Time"
+        Set-Culture en-GB
+
     - name: Checkout code
       uses: actions/checkout@v6
 

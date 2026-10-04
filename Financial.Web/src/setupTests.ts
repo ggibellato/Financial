@@ -3,6 +3,10 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup } from '@testing-library/react'
 import { afterEach, vi } from 'vitest'
 
+// Assigned at runtime because Node on Windows ignores TZ set before launch; LANG cannot be set
+// in-process, so the locale comes from the environment and testEnvironment.test.ts guards it.
+process.env.TZ = 'Europe/London'
+
 afterEach(() => {
   cleanup()
 })
