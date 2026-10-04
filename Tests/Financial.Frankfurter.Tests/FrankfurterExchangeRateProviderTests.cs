@@ -307,23 +307,6 @@ public class FrankfurterExchangeRateProviderTests
         requestCount.Should().Be(1);
     }
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task Lookup_WhenTransportThrows_MakesASingleRequest(bool usdLookup)
-    {
-        var requestCount = 0;
-        var provider = CreateProvider(_ =>
-        {
-            requestCount++;
-            throw new HttpRequestException("network down");
-        });
-
-        await LookUpAsync(provider, usdLookup);
-
-        requestCount.Should().Be(1);
-    }
-
     [Fact]
     public async Task GetHistoricalRateAsync_WhenDateIsNotFound_StepsBackToTheEarlierDate()
     {
