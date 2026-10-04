@@ -14,6 +14,7 @@ import {
   toInputDate,
   todayIsoDate,
 } from '../formatters'
+import { pinDate } from '../../test-utils/pinDate'
 
 describe('pad', () => {
   it('pad_SingleDigit_PadsWithLeadingZero', () => {
@@ -105,8 +106,7 @@ describe('todayIsoDate', () => {
     ['2026-01-31T23:59:00Z', '2026-01-31'],
     ['2026-03-01T00:30:00Z', '2026-03-01'],
   ])('todayIsoDate_At%s_ReturnsTheLocalCalendarDate', (instant, expected) => {
-    vi.useFakeTimers({ toFake: ['Date'] })
-    vi.setSystemTime(new Date(instant))
+    pinDate(instant)
 
     expect(todayIsoDate()).toBe(expected)
   })

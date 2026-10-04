@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { BankDto, CategoryDto, CreditCardDto, ExpenseDto } from '../../api/types'
 import { computeRoundUpSuggestion, useExpenseForm } from '../useExpenseForm'
+import { pinDate } from '../../test-utils/pinDate'
 
 const { createExpenseMock, updateExpenseMock } = vi.hoisted(() => ({
   createExpenseMock: vi.fn<FinancialApiClient['createExpense']>(),
@@ -548,8 +549,7 @@ describe('useExpenseForm', () => {
   })
 
   it('defaults a first-ever create form to the local date just after midnight BST, with no persisted date yet', () => {
-    vi.useFakeTimers({ toFake: ['Date'] })
-    vi.setSystemTime(new Date('2026-07-01T00:30:00+01:00'))
+    pinDate('2026-07-01T00:30:00+01:00')
     const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
 
     act(() => result.current.showCreateForm('bank'))

@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import UkExpensePromptDialog from '../UkExpensePromptDialog'
 import type { BankDto, CategoryDto, RecurringBillDto } from '../../api/types'
+import { pinDate } from '../../test-utils/pinDate'
 
 const BILL: RecurringBillDto = {
   id: 'b1',
@@ -45,8 +46,7 @@ function renderDialog(overrides: Partial<React.ComponentProps<typeof UkExpensePr
 
 describe('UkExpensePromptDialog', () => {
   beforeEach(() => {
-    vi.useFakeTimers({ toFake: ['Date'] })
-    vi.setSystemTime(new Date('2026-07-01T00:30:00+01:00'))
+    pinDate('2026-07-01T00:30:00+01:00')
   })
 
   afterEach(() => {

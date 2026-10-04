@@ -4,6 +4,7 @@ import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AssetDetailsDto, AssetPriceSnapshotDto, SelectedNode, TransactionDto } from '../../api/types'
 import { createSelectedNodeWrapper } from '../../test-utils/selectedNodeTestWrapper'
 import { usePriceHistory } from '../usePriceHistory'
+import { pinDate } from '../../test-utils/pinDate'
 
 const { getAssetDetailsMock, setAssetPriceMock, deleteAssetPriceMock } = vi.hoisted(() => ({
   getAssetDetailsMock: vi.fn<FinancialApiClient['getAssetDetails']>(),
@@ -195,8 +196,7 @@ describe('usePriceHistory', () => {
     const { result } = renderHook(() => usePriceHistory(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.entries).toHaveLength(2))
-    vi.useFakeTimers({ toFake: ['Date'] })
-    vi.setSystemTime(new Date('2026-07-01T00:30:00+01:00'))
+    pinDate('2026-07-01T00:30:00+01:00')
     act(() => result.current.showNewForm())
     expect(result.current.isFormVisible).toBe(true)
     expect(result.current.editingDate).toBeNull()
@@ -357,8 +357,7 @@ describe('usePriceHistory', () => {
   })
 
   it('filteredEntries_excludes_entries_outside_the_selected_window', async () => {
-    vi.useFakeTimers({ toFake: ['Date'] })
-    vi.setSystemTime(new Date('2026-07-01T00:30:00+01:00'))
+    pinDate('2026-07-01T00:30:00+01:00')
     const recent: AssetPriceSnapshotDto = { date: '2026-07-01', price: 100, isManual: true, currency: 'BRL', source: 'Manual', sourceReference: null, valuationMethod: 'MarketPrice', retrievedAt: new Date().toISOString() }
     const old: AssetPriceSnapshotDto = { date: '2020-01-01', price: 50, isManual: false, currency: 'BRL', source: 'Google', sourceReference: null, valuationMethod: 'MarketPrice', retrievedAt: '2020-01-01T00:00:00Z' }
     getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, priceSnapshots: [recent, old] })

@@ -5,6 +5,7 @@ import { ApiError } from '../../api/apiError'
 import type { BalanceAdjustmentDto } from '../../api/types'
 import type { BankTotal } from '../useMonthly'
 import { useBalanceAdjustmentForm } from '../useBalanceAdjustmentForm'
+import { pinDate } from '../../test-utils/pinDate'
 
 const { createBalanceAdjustmentMock, updateBalanceAdjustmentMock } = vi.hoisted(() => ({
   createBalanceAdjustmentMock: vi.fn<FinancialApiClient['createBalanceAdjustment']>(),
@@ -53,8 +54,7 @@ describe('useBalanceAdjustmentForm', () => {
   it('openCreateForm defaults date to today and opens with no bank pre-selected, when nothing was persisted yet', () => {
     const { result } = renderHook(() => useBalanceAdjustmentForm(BANK_TOTALS, vi.fn()))
 
-    vi.useFakeTimers({ toFake: ['Date'] })
-    vi.setSystemTime(new Date('2026-07-01T00:30:00+01:00'))
+    pinDate('2026-07-01T00:30:00+01:00')
     act(() => result.current.openCreateForm())
 
     expect(result.current.isOpen).toBe(true)

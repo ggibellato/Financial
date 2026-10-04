@@ -4,6 +4,7 @@ import { ApiError } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { BankDto, CategoryDto, ReserveBucketBalanceDto, ReserveBucketDto, ReserveMovementDto } from '../../api/types'
 import { useReserva } from '../useReserva'
+import { pinDate } from '../../test-utils/pinDate'
 
 const {
   getReserveBalancesMock,
@@ -243,8 +244,7 @@ describe('useReserva', () => {
     const { result } = renderHook(() => useReserva())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
-    vi.useFakeTimers({ toFake: ['Date'] })
-    vi.setSystemTime(new Date('2026-07-01T00:30:00+01:00'))
+    pinDate('2026-07-01T00:30:00+01:00')
     act(() => result.current.showSplitForm())
 
     expect(result.current.splitDate).toBe('2026-07-01')
@@ -337,8 +337,7 @@ describe('useReserva', () => {
     const { result } = renderHook(() => useReserva())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
-    vi.useFakeTimers({ toFake: ['Date'] })
-    vi.setSystemTime(new Date('2026-07-01T00:30:00+01:00'))
+    pinDate('2026-07-01T00:30:00+01:00')
     act(() => result.current.showWithdrawalForm())
 
     expect(result.current.withdrawalDate).toBe('2026-07-01')

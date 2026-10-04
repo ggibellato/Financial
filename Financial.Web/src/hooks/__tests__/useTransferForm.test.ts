@@ -4,6 +4,7 @@ import type { FinancialApiClient } from '../../api/financialApiClient'
 import { ApiError } from '../../api/apiError'
 import type { BankDto, TransferDto } from '../../api/types'
 import { useTransferForm } from '../useTransferForm'
+import { pinDate } from '../../test-utils/pinDate'
 
 const { createTransferMock, updateTransferMock } = vi.hoisted(() => ({
   createTransferMock: vi.fn<FinancialApiClient['createTransfer']>(),
@@ -53,8 +54,7 @@ describe('useTransferForm', () => {
   it('openCreateForm defaults date to today and source to the first bank', () => {
     const { result } = renderHook(() => useTransferForm(BANKS, vi.fn()))
 
-    vi.useFakeTimers({ toFake: ['Date'] })
-    vi.setSystemTime(new Date('2026-07-01T00:30:00+01:00'))
+    pinDate('2026-07-01T00:30:00+01:00')
     act(() => result.current.openCreateForm())
 
     expect(result.current.isOpen).toBe(true)

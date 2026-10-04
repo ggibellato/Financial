@@ -5,6 +5,7 @@ import type { AssetDetailsDto, SelectedNode, TransactionDto, TransactionSummaryI
 import { createSelectedNodeWrapper } from '../../test-utils/selectedNodeTestWrapper'
 import { formatMonthKey } from '../../utils/formatters'
 import { buildMonthlyNetInvested, useTransactions } from '../useTransactions'
+import { pinDate } from '../../test-utils/pinDate'
 
 const {
   getAssetDetailsMock,
@@ -212,8 +213,7 @@ describe('useTransactions', () => {
     const { result } = renderHook(() => useTransactions(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.asset).not.toBeNull())
-    vi.useFakeTimers({ toFake: ['Date'] })
-    vi.setSystemTime(new Date('2026-07-01T00:30:00+01:00'))
+    pinDate('2026-07-01T00:30:00+01:00')
     act(() => result.current.showNewForm())
     expect(result.current.isFormVisible).toBe(true)
     expect(result.current.editingId).toBeNull()
