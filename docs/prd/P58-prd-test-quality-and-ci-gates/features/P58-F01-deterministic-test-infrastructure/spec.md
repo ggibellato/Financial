@@ -15,8 +15,8 @@
 **Scope.**
 
 **Included:**
-- `ApiTestFactory` default: the existing `StubExchangeRateProvider` with a fixed rate of 1, and `WithRealExchangeRates()` as the explicit opt-in (first user: `FxRateProviderCompositionAcceptanceTests`, which checks the real layered chain against a seeded store).
-- `WithRealExchangeRates()` opt-in on `ApiTestFactory`.
+- `ApiTestFactory` default: the existing `StubExchangeRateProvider` with a fixed rate of 1, and the `useRealExchangeRates` constructor argument as the explicit opt-in (first user: `FxRateProviderCompositionAcceptanceTests`, which checks the real layered chain against a seeded store).
+- `useRealExchangeRates` opt-in on `ApiTestFactory` (and on the `ApiEndpointTests` base class).
 - Frankfurter timeout, failure semantics and base address.
 - `TZ`/`LANG` for the four CI jobs (Windows jobs through the system timezone and culture) and vitest.
 
@@ -45,7 +45,7 @@
 | Component | Path | Change |
 |---|---|---|
 | Test stub reused | `Tests/Financial.TestUtilities/StubExchangeRateProvider.cs` | Unchanged; becomes the factory default |
-| API test factory | `Tests/Financial.Api.Tests/ApiTestFactory.cs` | Default stub, `WithRealExchangeRates()` |
+| API test factory | `Tests/Financial.Api.Tests/ApiTestFactory.cs` | Default stub, `useRealExchangeRates` argument |
 | Factory guard tests | `Tests/Financial.Api.Tests/ApiTestFactoryExchangeRateTests.cs` | New |
 | Frankfurter provider | `Integrations/Frankfurter/FrankfurterExchangeRateProvider.cs` | Budget, failure semantics, base address |
 | Frankfurter tests | `Tests/Financial.Frankfurter.Tests/FrankfurterExchangeRateProviderTests.cs` | New cases |
@@ -59,7 +59,7 @@
 graph TD
     A["Api.Tests"] --> B["ApiTestFactory"]
     B -->|default| C["StubExchangeRateProvider (rate 1)"]
-    B -->|"WithRealExchangeRates()"| D["Cached -> UsdBased -> Frankfurter"]
+    B -->|"useRealExchangeRates: true"| D["Cached -> UsdBased -> Frankfurter"]
     D --> E["api.frankfurter.dev/v1"]
     F["CI jobs"] -->|"TZ, LANG, system tz/culture"| G["dotnet test and vitest"]
     H["vitest globalSetup"] -->|"TZ, LANG before workers"| G
@@ -70,9 +70,9 @@ graph TD
 | Decision | Chosen Approach | Alternative Considered | Trade-off |
 |---|---|---|---|
 | Default provider | The existing `StubExchangeRateProvider(1m)`: one fixed rate for every pair, so a default-converted value is unchanged | A new `DeterministicExchangeRateProvider` with a USD-based table and derived cross rates (built in PR1, removed after review: no test needs consistent cross rates, and it hid a test that relies on the real chain) | A default test cannot assert converted values; any test that does must pass its own provider, as about 14 already do |
-| Where the stub is registered | In `ApiTestFactory.ConfigureWebHost` through `ConfigureTestServices` + `RemoveAll<IExchangeRateProvider>()`, unless an explicit override or `WithRealExchangeRates()` is set | Change production DI | Keeps production wiring untouched |
-| Precedence | Explicit constructor override > `WithRealExchangeRates()` > deterministic default | Last call wins | Existing tests that pass their own provider are unchanged |
-| Opt-in API | `ApiTestFactory.WithRealExchangeRates()` sets a flag and returns the factory; must be called before the host starts | Constructor flag | Readable at the call site; the factory builds its host lazily, so the flag is read in time |
+| Where the stub is registered | In `ApiTestFactory.ConfigureWebHost` through `ConfigureTestServices` + `RemoveAll<IExchangeRateProvider>()`, unless an explicit override or `useRealExchangeRates` is true | Change production DI | Keeps production wiring untouched |
+| Precedence | `useRealExchangeRates: true` (real chain, any provider argument is ignored) > explicit provider argument > the stub default | Last call wins | Existing tests that pass their own provider are unchanged |
+| Opt-in API | A `bool useRealExchangeRates = false` constructor argument on `ApiTestFactory`, passed through `ApiEndpointTests` | A fluent `WithRealExchangeRates()` mutator (built first, replaced after review) | One way to configure the factory and a read-only flag; the base class threads one more argument |
 | Failure semantics | A timeout, network error or non-success status ends the lookup and returns null. Walking back to earlier dates happens only on a successful reply with no usable rate | Keep walking back and cap total time | Worst case drops from ~18 min to the 10 s budget; 5xx makes 1 request per lookup. Non-working days are served by Frankfurter itself, so nothing is lost |
 | Time budget | One `CancellationTokenSource` per public call (`GetHistoricalRateAsync`, `FetchAsync`), 10 s by default, passed to `GetFromJsonAsync`; the budget is an optional constructor parameter so tests use milliseconds | `HttpClient.Timeout = 10 s` | Covers the whole lookup, not one request; honours cancellation; tests stay fast |
 | Base address | `https://api.frankfurter.dev/v1/` (the old host answers 301 to it) | Keep the old host | Removes a redirect hop and a dependency on a retired host. Relative request paths are unchanged |
@@ -86,7 +86,7 @@ graph TD
 
 | File Path | New/Modified | Purpose | Key Responsibilities |
 |---|---|---|---|
-| `Tests/Financial.Api.Tests/ApiTestFactory.cs` | Modified | Host factory | Register `StubExchangeRateProvider(1m)` by default; expose `WithRealExchangeRates()` |
+| `Tests/Financial.Api.Tests/ApiTestFactory.cs` | Modified | Host factory | Register `StubExchangeRateProvider(1m)` by default; expose the `useRealExchangeRates` argument |
 | `Tests/Financial.Api.Tests/ApiTestFactoryExchangeRateTests.cs` | New | Guard | Default resolves the stub provider |
 
 **Integration:**
@@ -143,7 +143,7 @@ The existing Frankfurter tests (18) must keep passing; the ones asserting fallba
 |---|---|
 | Default factory resolves the stub, guard test asserts it | `DefaultFactory_ResolvesTheStubExchangeRateProvider` |
 | `dotnet test Tests/Financial.Api.Tests` passes with outbound network disabled | Verified by running the project with the network blocked (e.g. a proxy to a dead address); recorded in PR1 |
-| Opt-in requires an explicitly named method; no CI test makes real calls | `WithRealExchangeRates()` is the only way to select the real chain; nothing in the suite calls it (checked by search in the PR) |
+| Opt-in requires an explicitly named switch; no CI test makes real calls | `useRealExchangeRates: true` is the only way to select the real chain; its only user is the store-backed composition test, which needs no network |
 | Hanging handler returns fallback in < 11 s | `GetHistoricalRateAsync_WhenHandlerNeverResponds_...` |
 | 5xx makes ≤ 1 request per requested date | `GetHistoricalRateAsync_WithServerError_...`, `FetchAsync_WithServerError_...` |
 | `TZ`/`LANG` set in `backend`, `wpf`, `web`, `smoke` and in vitest setup | Workflow diff; `Pinned_OnCi_...`, `vitest environment pins...` |

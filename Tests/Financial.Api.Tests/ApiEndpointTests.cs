@@ -21,11 +21,7 @@ public abstract class ApiEndpointTests : IAsyncLifetime
         ICalendarProvider? calendarProvider = null,
         bool useRealExchangeRates = false)
     {
-        _factory = new ApiTestFactory(exchangeRateProvider, timeProvider, calendarProvider);
-        if (useRealExchangeRates)
-        {
-            _factory.WithRealExchangeRates();
-        }
+        _factory = new ApiTestFactory(exchangeRateProvider, timeProvider, calendarProvider, useRealExchangeRates);
     }
 
     /// <summary>The API client for this test's own host, created on first use so a test that builds
