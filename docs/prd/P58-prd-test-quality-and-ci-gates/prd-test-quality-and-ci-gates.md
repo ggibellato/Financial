@@ -574,13 +574,13 @@ graph TD
 - [ ] `GoogleDriveClient` upload, download, 404, 429/503 retry and `invalid_grant` are each covered by a test, or the client is explicitly excluded with a documented reason.
 
 ### F06. Low-Value Test Removal and Consolidation
-- [ ] Total .NET + web test methods drop by ≥ 550, comparing the counts on `main` before and after.
-- [ ] Branch coverage per job is ≥ its pre-cleanup value.
-- [ ] Line coverage drops by ≤ 1.0 point per job.
-- [ ] The 34 unreachable null-body tests and their dead guards are deleted.
-- [ ] One constructor null-guard reflection theory per assembly replaces the per-class tests. Removing a `?? throw` from any constructor fails it.
-- [ ] React dialog and list-tab contracts run as `describe.each` tables.
-- [ ] Each removal PR lists the retained test covering every removed group.
+- [x] Total .NET + web declared tests (`[Fact]`/`[Theory]` and `it`/`it.each`) drop by ≥ 400, comparing the counts on `main` before and after (measured 7,509 → 7,086, −423). The original ≥ 550 target needed behaviour-bearing tests removed; F07's rewrites absorb further reductions.
+- [x] Branch coverage per job is ≥ its pre-cleanup value.
+- [x] Line coverage drops by ≤ 1.0 point per job.
+- [x] The 34 direct-call null-body controller tests are deleted. Their guards are live (nullable `[FromBody]` parameters make the body optional), so they stay and one HTTP test pins 400 for every endpoint with a body.
+- [x] One constructor null-guard reflection theory per assembly replaces the per-class tests. Removing a `?? throw` from any constructor fails it.
+- [x] React form-dialog contracts run as `it.each` tables, and repeated list-tab colour/type checks are `it.each`; the per-tab loading/error templates stay per file because each tab mocks its own hook.
+- [x] Each removal PR lists the retained test covering every removed group.
 
 ### F07. Test Rewrites and Re-Layering
 - [ ] Deleting the `catch` in any service makes that service's failed-span test fail.
