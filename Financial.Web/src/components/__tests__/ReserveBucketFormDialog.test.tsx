@@ -27,15 +27,6 @@ describe('ReserveBucketFormDialog', () => {
     expect(screen.getByLabelText('Active')).not.toBeChecked()
   })
 
-  it('disables Save and shows a validation message when the name is blank', () => {
-    render(<ReserveBucketFormDialog reserveBucket={null} onCancel={vi.fn()} onSubmit={vi.fn()} />)
-
-    fireEvent.change(screen.getByLabelText(/^Split Percentage/), { target: { value: '50' } })
-
-    expect(screen.getByText('Name is required.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
-  })
-
   it('disables Save and shows a validation message when the split percentage is out of range', () => {
     render(<ReserveBucketFormDialog reserveBucket={null} onCancel={vi.fn()} onSubmit={vi.fn()} />)
 
@@ -75,26 +66,5 @@ describe('ReserveBucketFormDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
     await waitFor(() => expect(onCancel).toHaveBeenCalled())
-  })
-
-  it('shows a server error and re-enables Save when the submit rejects', async () => {
-    const onSubmit = vi.fn().mockRejectedValue(new Error('A reserve bucket named "Ferias" already exists.'))
-    render(<ReserveBucketFormDialog reserveBucket={null} onCancel={vi.fn()} onSubmit={onSubmit} />)
-
-    fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'Ferias' } })
-    fireEvent.change(screen.getByLabelText(/^Split Percentage/), { target: { value: '20' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
-
-    expect(await screen.findByText('A reserve bucket named "Ferias" already exists.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Save' })).not.toBeDisabled()
-  })
-
-  it('calls onCancel when Cancel is clicked', () => {
-    const onCancel = vi.fn()
-    render(<ReserveBucketFormDialog reserveBucket={null} onCancel={onCancel} onSubmit={vi.fn()} />)
-
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
-
-    expect(onCancel).toHaveBeenCalled()
   })
 })

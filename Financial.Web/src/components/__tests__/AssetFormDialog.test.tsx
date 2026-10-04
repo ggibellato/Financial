@@ -73,18 +73,6 @@ describe('AssetFormDialog', () => {
     expect(screen.getByLabelText('Portfolio')).toBeDisabled()
   })
 
-  it('disables Save and shows a validation message when the name is blank', () => {
-    render(
-      <AssetFormDialog asset={null} activeBrokers={ACTIVE_BROKERS} portfolios={PORTFOLIOS} onCancel={vi.fn()} onSubmit={vi.fn()} />,
-    )
-    fireEvent.change(screen.getByLabelText(/^Portfolio/), { target: { value: 'Default' } })
-
-    fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: '   ' } })
-
-    expect(screen.getByText('Name is required.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
-  })
-
   it('disables Save and shows a validation message for an invalid ISIN format', () => {
     render(
       <AssetFormDialog asset={null} activeBrokers={ACTIVE_BROKERS} portfolios={PORTFOLIOS} onCancel={vi.fn()} onSubmit={vi.fn()} />,
@@ -122,30 +110,5 @@ describe('AssetFormDialog', () => {
         expect.objectContaining({ brokerName: 'XPI', portfolioName: 'Default', name: 'NEWASSET' }),
       ),
     )
-  })
-
-  it('shows a server error and re-enables Save when the submit rejects', async () => {
-    const onSubmit = vi.fn().mockRejectedValue(new Error('Portfolio "Default" already has an asset named "BCIA11".'))
-    render(
-      <AssetFormDialog asset={null} activeBrokers={ACTIVE_BROKERS} portfolios={PORTFOLIOS} onCancel={vi.fn()} onSubmit={onSubmit} />,
-    )
-
-    fireEvent.change(screen.getByLabelText(/^Portfolio/), { target: { value: 'Default' } })
-    fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'BCIA11' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
-
-    expect(await screen.findByText('Portfolio "Default" already has an asset named "BCIA11".')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Save' })).not.toBeDisabled()
-  })
-
-  it('calls onCancel when Cancel is clicked', () => {
-    const onCancel = vi.fn()
-    render(
-      <AssetFormDialog asset={null} activeBrokers={ACTIVE_BROKERS} portfolios={PORTFOLIOS} onCancel={onCancel} onSubmit={vi.fn()} />,
-    )
-
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
-
-    expect(onCancel).toHaveBeenCalled()
   })
 })

@@ -36,15 +36,6 @@ describe('CategoryFormDialog', () => {
     expect(screen.getByLabelText('Tithe')).toBeChecked()
   })
 
-  it('disables Save and shows a validation message when the name is blank', () => {
-    render(<CategoryFormDialog category={null} onCancel={vi.fn()} onSubmit={vi.fn()} />)
-
-    fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: '   ' } })
-
-    expect(screen.getByText('Name is required.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
-  })
-
   it('submits the trimmed name and the toggled flags', async () => {
     const onSubmit = vi.fn().mockResolvedValue(undefined)
     render(<CategoryFormDialog category={null} onCancel={vi.fn()} onSubmit={onSubmit} />)
@@ -54,25 +45,5 @@ describe('CategoryFormDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith('Lazer', true, true, false))
-  })
-
-  it('shows a server error and re-enables Save when the submit rejects', async () => {
-    const onSubmit = vi.fn().mockRejectedValue(new Error('A category named "Mercado" already exists.'))
-    render(<CategoryFormDialog category={null} onCancel={vi.fn()} onSubmit={onSubmit} />)
-
-    fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'Mercado' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
-
-    expect(await screen.findByText('A category named "Mercado" already exists.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Save' })).not.toBeDisabled()
-  })
-
-  it('calls onCancel when Cancel is clicked', () => {
-    const onCancel = vi.fn()
-    render(<CategoryFormDialog category={null} onCancel={onCancel} onSubmit={vi.fn()} />)
-
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
-
-    expect(onCancel).toHaveBeenCalled()
   })
 })

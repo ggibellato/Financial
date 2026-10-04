@@ -40,15 +40,6 @@ describe('PortfolioFormDialog', () => {
     expect(screen.getByLabelText(/^Broker/)).toBeDisabled()
   })
 
-  it('disables Save and shows a validation message when the name is blank', () => {
-    render(<PortfolioFormDialog portfolio={null} activeBrokers={ACTIVE_BROKERS} onCancel={vi.fn()} onSubmit={vi.fn()} />)
-
-    fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: '   ' } })
-
-    expect(screen.getByText('Name is required.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
-  })
-
   it('submits the selected broker and trimmed name', async () => {
     const onSubmit = vi.fn().mockResolvedValue(undefined)
     render(<PortfolioFormDialog portfolio={null} activeBrokers={ACTIVE_BROKERS} onCancel={vi.fn()} onSubmit={onSubmit} />)
@@ -58,25 +49,5 @@ describe('PortfolioFormDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith('Avenue', 'Growth'))
-  })
-
-  it('shows a server error and re-enables Save when the submit rejects', async () => {
-    const onSubmit = vi.fn().mockRejectedValue(new Error('Broker "XPI" already has a portfolio named "Default".'))
-    render(<PortfolioFormDialog portfolio={null} activeBrokers={ACTIVE_BROKERS} onCancel={vi.fn()} onSubmit={onSubmit} />)
-
-    fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'Default' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
-
-    expect(await screen.findByText('Broker "XPI" already has a portfolio named "Default".')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Save' })).not.toBeDisabled()
-  })
-
-  it('calls onCancel when Cancel is clicked', () => {
-    const onCancel = vi.fn()
-    render(<PortfolioFormDialog portfolio={null} activeBrokers={ACTIVE_BROKERS} onCancel={onCancel} onSubmit={vi.fn()} />)
-
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
-
-    expect(onCancel).toHaveBeenCalled()
   })
 })

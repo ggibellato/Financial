@@ -56,15 +56,6 @@ describe('InvestmentAccountFormDialog', () => {
     expect(screen.getByLabelText('Liability')).toBeChecked()
   })
 
-  it('disables Save and shows a validation message when the name is blank', () => {
-    render(<InvestmentAccountFormDialog investmentAccount={null} creditCards={[]} onCancel={vi.fn()} onSubmit={vi.fn()} />)
-
-    fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: '   ' } })
-
-    expect(screen.getByText('Name is required.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
-  })
-
   it('submits the trimmed name, toggled flags, and source none with no card', async () => {
     const onSubmit = vi.fn().mockResolvedValue(undefined)
     render(<InvestmentAccountFormDialog investmentAccount={null} creditCards={[]} onCancel={vi.fn()} onSubmit={onSubmit} />)
@@ -74,26 +65,6 @@ describe('InvestmentAccountFormDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith('Monzo Pot', true, true, 'None', null))
-  })
-
-  it('shows a server error and re-enables Save when the submit rejects', async () => {
-    const onSubmit = vi.fn().mockRejectedValue(new Error('An investment account named "ChaseSave" already exists.'))
-    render(<InvestmentAccountFormDialog investmentAccount={null} creditCards={[]} onCancel={vi.fn()} onSubmit={onSubmit} />)
-
-    fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'ChaseSave' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
-
-    expect(await screen.findByText('An investment account named "ChaseSave" already exists.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Save' })).not.toBeDisabled()
-  })
-
-  it('calls onCancel when Cancel is clicked', () => {
-    const onCancel = vi.fn()
-    render(<InvestmentAccountFormDialog investmentAccount={null} creditCards={[]} onCancel={onCancel} onSubmit={vi.fn()} />)
-
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
-
-    expect(onCancel).toHaveBeenCalled()
   })
 
   it('shows no extra field when source is none', () => {

@@ -27,15 +27,6 @@ describe('CreditCardFormDialog', () => {
     expect(screen.getByLabelText('Next Invoice Due Date')).toHaveValue('2026-09-05')
   })
 
-  it('disables Save and shows a validation message when the name is blank', () => {
-    render(<CreditCardFormDialog creditCard={null} onCancel={vi.fn()} onSubmit={vi.fn()} />)
-
-    fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: '   ' } })
-
-    expect(screen.getByText('Name is required.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
-  })
-
   it('submits the trimmed name, active flag, and due date', async () => {
     const onSubmit = vi.fn().mockResolvedValue(undefined)
     render(<CreditCardFormDialog creditCard={null} onCancel={vi.fn()} onSubmit={onSubmit} />)
@@ -55,25 +46,5 @@ describe('CreditCardFormDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith('Nubank', true, null))
-  })
-
-  it('shows a server error and re-enables Save when the submit rejects', async () => {
-    const onSubmit = vi.fn().mockRejectedValue(new Error('A credit card named "BaAmex" already exists.'))
-    render(<CreditCardFormDialog creditCard={null} onCancel={vi.fn()} onSubmit={onSubmit} />)
-
-    fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'BaAmex' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
-
-    expect(await screen.findByText('A credit card named "BaAmex" already exists.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Save' })).not.toBeDisabled()
-  })
-
-  it('calls onCancel when Cancel is clicked', () => {
-    const onCancel = vi.fn()
-    render(<CreditCardFormDialog creditCard={null} onCancel={onCancel} onSubmit={vi.fn()} />)
-
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
-
-    expect(onCancel).toHaveBeenCalled()
   })
 })

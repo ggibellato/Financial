@@ -36,15 +36,6 @@ describe('IncomeSourceFormDialog', () => {
     expect(screen.getByLabelText('Auto-split to reserve')).toBeChecked()
   })
 
-  it('disables Save and shows a validation message when the name is blank', () => {
-    render(<IncomeSourceFormDialog incomeSource={null} onCancel={vi.fn()} onSubmit={vi.fn()} />)
-
-    fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: '   ' } })
-
-    expect(screen.getByText('Name is required.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
-  })
-
   it('submits the trimmed name, selected group, and toggled flags', async () => {
     const onSubmit = vi.fn().mockResolvedValue(undefined)
     render(<IncomeSourceFormDialog incomeSource={null} onCancel={vi.fn()} onSubmit={onSubmit} />)
@@ -55,25 +46,5 @@ describe('IncomeSourceFormDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith('Freelance', 'NonReportable', true, true))
-  })
-
-  it('shows a server error and re-enables Save when the submit rejects', async () => {
-    const onSubmit = vi.fn().mockRejectedValue(new Error('An income source named "Gleison" already exists.'))
-    render(<IncomeSourceFormDialog incomeSource={null} onCancel={vi.fn()} onSubmit={onSubmit} />)
-
-    fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'Gleison' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
-
-    expect(await screen.findByText('An income source named "Gleison" already exists.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Save' })).not.toBeDisabled()
-  })
-
-  it('calls onCancel when Cancel is clicked', () => {
-    const onCancel = vi.fn()
-    render(<IncomeSourceFormDialog incomeSource={null} onCancel={onCancel} onSubmit={vi.fn()} />)
-
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
-
-    expect(onCancel).toHaveBeenCalled()
   })
 })

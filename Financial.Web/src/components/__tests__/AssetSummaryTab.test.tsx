@@ -142,28 +142,14 @@ describe('AssetSummaryTab', () => {
     expect(screen.getByText('Tax Jurisdiction').nextElementSibling).toHaveTextContent('—')
   })
 
-  it('renders_total_bought_in_green', () => {
+  it.each([
+    ['Total Bought', 'asset-summary__value--green'],
+    ['Total Sold', 'asset-summary__value--red'],
+    ['Total Credits', 'asset-summary__value--blue'],
+  ])('renders_%s_value_with_its_colour_class', (label, colourClass) => {
     setMock({ asset: ASSET })
     renderAssetSummaryTab()
-    const totalBoughtLabel = screen.getByText('Total Bought')
-    const valueEl = totalBoughtLabel.nextElementSibling
-    expect(valueEl).toHaveClass('asset-summary__value--green')
-  })
-
-  it('renders_total_sold_in_red', () => {
-    setMock({ asset: ASSET })
-    renderAssetSummaryTab()
-    const totalSoldLabel = screen.getByText('Total Sold')
-    const valueEl = totalSoldLabel.nextElementSibling
-    expect(valueEl).toHaveClass('asset-summary__value--red')
-  })
-
-  it('renders_total_credits_in_blue', () => {
-    setMock({ asset: ASSET })
-    renderAssetSummaryTab()
-    const totalCreditsLabel = screen.getByText('Total Credits')
-    const valueEl = totalCreditsLabel.nextElementSibling
-    expect(valueEl).toHaveClass('asset-summary__value--blue')
+    expect(screen.getByText(label).nextElementSibling).toHaveClass(colourClass)
   })
 
   it('renders_current_section_when_quantity_and_price_nonzero', () => {
