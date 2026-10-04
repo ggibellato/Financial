@@ -19,6 +19,7 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
     private readonly IExchangeRateProvider? _exchangeRateProviderOverride;
     private readonly TimeProvider? _timeProviderOverride;
     private readonly ICalendarProvider? _calendarProviderOverride;
+    private bool _useRealExchangeRates;
     private bool _disposed;
 
     public ApiTestFactory(
@@ -33,6 +34,12 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
         _exchangeRateProviderOverride = exchangeRateProviderOverride;
         _timeProviderOverride = timeProviderOverride;
         _calendarProviderOverride = calendarProviderOverride;
+    }
+
+    public ApiTestFactory WithRealExchangeRates()
+    {
+        _useRealExchangeRates = true;
+        return this;
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -58,6 +65,14 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
             {
                 services.RemoveAll<IExchangeRateProvider>();
                 services.AddSingleton(_exchangeRateProviderOverride);
+            });
+        }
+        else if (!_useRealExchangeRates)
+        {
+            builder.ConfigureTestServices(services =>
+            {
+                services.RemoveAll<IExchangeRateProvider>();
+                services.AddSingleton<IExchangeRateProvider, DeterministicExchangeRateProvider>();
             });
         }
 
