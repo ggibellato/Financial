@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net;
 using Financial.Integrations.Frankfurter;
 using Financial.Shared.Abstractions.Currencies;
@@ -17,10 +18,7 @@ public class FrankfurterExchangeRateProviderTests
     [Trait("AC", "P49-F01-shared-exchange-rate-provider-01")]
     public async Task GetHistoricalRateAsync_WithSuccessfulResponse_ParsesTheRate()
     {
-        var provider = CreateProvider(_ => new HttpResponseMessage(HttpStatusCode.OK)
-        {
-            Content = new StringContent("""{"amount":1,"base":"BRL","date":"2026-07-01","rates":{"USD":0.19}}""")
-        });
+        var provider = CreateProvider(_ => Ok("""[{"date":"2026-07-01","base":"BRL","quote":"USD","rate":0.19}]"""));
 
         var rate = await provider.GetHistoricalRateAsync(new DateOnly(2026, 7, 1), Currency.BRL, Currency.USD);
 
@@ -40,10 +38,7 @@ public class FrankfurterExchangeRateProviderTests
     [Fact]
     public async Task GetHistoricalRateAsync_WithMalformedBody_ReturnsNull()
     {
-        var provider = CreateProvider(_ => new HttpResponseMessage(HttpStatusCode.OK)
-        {
-            Content = new StringContent("not json")
-        });
+        var provider = CreateProvider(_ => Ok("not json"));
 
         var rate = await provider.GetHistoricalRateAsync(new DateOnly(2026, 7, 1), Currency.BRL, Currency.GBP);
 
@@ -77,10 +72,7 @@ public class FrankfurterExchangeRateProviderTests
     [Fact]
     public async Task GetHistoricalRateAsync_WhenResponseMissingRequestedCurrency_ReturnsNull()
     {
-        var provider = CreateProvider(_ => new HttpResponseMessage(HttpStatusCode.OK)
-        {
-            Content = new StringContent("""{"amount":1,"base":"BRL","date":"2026-07-01","rates":{"EUR":0.15}}""")
-        });
+        var provider = CreateProvider(_ => Ok("""[{"date":"2026-07-01","base":"BRL","quote":"EUR","rate":0.15}]"""));
 
         var rate = await provider.GetHistoricalRateAsync(new DateOnly(2026, 7, 1), Currency.BRL, Currency.GBP);
 
@@ -94,10 +86,7 @@ public class FrankfurterExchangeRateProviderTests
         var provider = CreateProvider(request =>
         {
             requestedDates.Add(ExtractDate(request));
-            return new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent("""{"amount":1,"base":"BRL","date":"2026-07-01","rates":{"GBP":0.146}}""")
-            };
+            return Ok("""[{"date":"2026-07-01","base":"BRL","quote":"GBP","rate":0.146}]""");
         });
 
         var rate = await provider.GetHistoricalRateAsync(new DateOnly(2026, 7, 1), Currency.BRL, Currency.GBP);
@@ -119,16 +108,10 @@ public class FrankfurterExchangeRateProviderTests
 
             if (date == AvailableDate)
             {
-                return new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent("""{"amount":1,"base":"BRL","date":"2026-07-02","rates":{"GBP":0.15}}""")
-                };
+                return Ok("""[{"date":"2026-07-02","base":"BRL","quote":"GBP","rate":0.15}]""");
             }
 
-            return new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent("""{"amount":1,"base":"BRL","date":"2026-07-02","rates":{}}""")
-            };
+            return Ok("[]");
         });
 
         var rate = await provider.GetHistoricalRateAsync(new DateOnly(2026, 7, 4), Currency.BRL, Currency.GBP);
@@ -145,10 +128,7 @@ public class FrankfurterExchangeRateProviderTests
         var provider = CreateProvider(request =>
         {
             requestedDates.Add(ExtractDate(request));
-            return new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent("""{"amount":1,"base":"BRL","date":"2026-07-01","rates":{}}""")
-            };
+            return Ok("[]");
         });
 
         var rate = await provider.GetHistoricalRateAsync(new DateOnly(2026, 7, 15), Currency.BRL, Currency.GBP);
@@ -163,10 +143,7 @@ public class FrankfurterExchangeRateProviderTests
     [Fact]
     public async Task FetchAsync_WithSuccessfulResponse_ParsesBothCurrencies()
     {
-        var provider = CreateProvider(_ => new HttpResponseMessage(HttpStatusCode.OK)
-        {
-            Content = new StringContent("""{"amount":1,"base":"USD","date":"2026-09-18","rates":{"BRL":5.452317,"GBP":0.771845}}""")
-        });
+        var provider = CreateProvider(_ => Ok("""[{"date":"2026-09-18","base":"USD","quote":"BRL","rate":5.452317},{"date":"2026-09-18","base":"USD","quote":"GBP","rate":0.771845}]"""));
 
         var result = await provider.FetchAsync(new DateOnly(2026, 9, 18));
 
@@ -182,11 +159,8 @@ public class FrankfurterExchangeRateProviderTests
         {
             requestCount++;
             var query = Uri.UnescapeDataString(request.RequestUri!.Query);
-            query.Should().Contain("from=USD").And.Contain("to=BRL,GBP");
-            return new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent("""{"amount":1,"base":"USD","date":"2026-09-18","rates":{"BRL":5.45,"GBP":0.77}}""")
-            };
+            query.Should().Contain("base=USD").And.Contain("quotes=BRL,GBP");
+            return Ok("""[{"date":"2026-09-18","base":"USD","quote":"BRL","rate":5.45},{"date":"2026-09-18","base":"USD","quote":"GBP","rate":0.77}]""");
         });
 
         await provider.FetchAsync(new DateOnly(2026, 9, 18));
@@ -201,10 +175,7 @@ public class FrankfurterExchangeRateProviderTests
         var provider = CreateProvider(request =>
         {
             requestedDates.Add(ExtractDate(request));
-            return new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent("""{"amount":1,"base":"USD","date":"2026-09-18","rates":{"BRL":5.45}}""")
-            };
+            return Ok("""[{"date":"2026-09-18","base":"USD","quote":"BRL","rate":5.45}]""");
         });
 
         var result = await provider.FetchAsync(new DateOnly(2026, 9, 18));
@@ -217,10 +188,7 @@ public class FrankfurterExchangeRateProviderTests
     [Fact]
     public async Task FetchAsync_WithOnlyGbpInResponse_ReturnsPartialResult()
     {
-        var provider = CreateProvider(_ => new HttpResponseMessage(HttpStatusCode.OK)
-        {
-            Content = new StringContent("""{"amount":1,"base":"USD","date":"2026-09-18","rates":{"GBP":0.77}}""")
-        });
+        var provider = CreateProvider(_ => Ok("""[{"date":"2026-09-18","base":"USD","quote":"GBP","rate":0.77}]"""));
 
         var result = await provider.FetchAsync(new DateOnly(2026, 9, 18));
 
@@ -240,16 +208,10 @@ public class FrankfurterExchangeRateProviderTests
 
             if (date == AvailableDate)
             {
-                return new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent("""{"amount":1,"base":"USD","date":"2026-09-17","rates":{"BRL":5.44,"GBP":0.76}}""")
-                };
+                return Ok("""[{"date":"2026-09-17","base":"USD","quote":"BRL","rate":5.44},{"date":"2026-09-17","base":"USD","quote":"GBP","rate":0.76}]""");
             }
 
-            return new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent("""{"amount":1,"base":"USD","date":"2026-09-17","rates":{}}""")
-            };
+            return Ok("[]");
         });
 
         var result = await provider.FetchAsync(new DateOnly(2026, 9, 19));
@@ -266,10 +228,7 @@ public class FrankfurterExchangeRateProviderTests
         var provider = CreateProvider(request =>
         {
             requestedDates.Add(ExtractDate(request));
-            return new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent("""{"amount":1,"base":"USD","date":"2026-09-18","rates":{}}""")
-            };
+            return Ok("[]");
         });
 
         var result = await provider.FetchAsync(new DateOnly(2026, 9, 18));
@@ -298,10 +257,7 @@ public class FrankfurterExchangeRateProviderTests
     [Fact]
     public async Task FetchAsync_WithMalformedBody_ReturnsEmptyResult()
     {
-        var provider = CreateProvider(_ => new HttpResponseMessage(HttpStatusCode.OK)
-        {
-            Content = new StringContent("not json")
-        });
+        var provider = CreateProvider(_ => Ok("not json"));
 
         var result = await provider.FetchAsync(new DateOnly(2026, 9, 18));
 
@@ -320,9 +276,85 @@ public class FrankfurterExchangeRateProviderTests
         result.GbpRate.Should().BeNull();
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Lookup_WhenUpstreamNeverAnswers_GivesUpWithinTheCallBudget(bool usdLookup)
+    {
+        var provider = CreateHangingProvider();
+
+        var stopwatch = Stopwatch.StartNew();
+        var found = await LookUpAsync(provider, usdLookup);
+
+        found.Should().BeFalse();
+        stopwatch.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(5));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Lookup_WithServerError_MakesASingleRequest(bool usdLookup)
+    {
+        var requestCount = 0;
+        var provider = CreateProvider(_ =>
+        {
+            requestCount++;
+            return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+        });
+
+        await LookUpAsync(provider, usdLookup);
+
+        requestCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task GetHistoricalRateAsync_WhenDateIsNotFound_StepsBackToTheEarlierDate()
+    {
+        var requestedDates = new List<string>();
+        var provider = CreateProvider(request =>
+        {
+            var date = ExtractDate(request);
+            requestedDates.Add(date);
+
+            return date == "2026-07-03"
+                ? Ok("""[{"date":"2026-07-03","base":"BRL","quote":"GBP","rate":0.15}]""")
+                : new HttpResponseMessage(HttpStatusCode.NotFound);
+        });
+
+        var rate = await provider.GetHistoricalRateAsync(new DateOnly(2026, 7, 4), Currency.BRL, Currency.GBP);
+
+        rate.Should().Be(0.15m);
+        requestedDates.Should().Equal("2026-07-04", "2026-07-03");
+    }
+
+    private static async Task<bool> LookUpAsync(FrankfurterExchangeRateProvider provider, bool usdLookup)
+    {
+        if (usdLookup)
+        {
+            var result = await provider.FetchAsync(new DateOnly(2026, 9, 18));
+            return result.BrlRate is not null || result.GbpRate is not null;
+        }
+
+        return await provider.GetHistoricalRateAsync(new DateOnly(2026, 7, 1), Currency.BRL, Currency.GBP) is not null;
+    }
+
+    private static HttpResponseMessage Ok(string json) => new(HttpStatusCode.OK) { Content = new StringContent(json) };
+
     private static string ExtractDate(HttpRequestMessage request) =>
-        request.RequestUri!.AbsolutePath.TrimStart('/');
+        System.Web.HttpUtility.ParseQueryString(request.RequestUri!.Query)["date"]!;
 
     private static HttpClient CreateClient(HttpMessageHandler handler) =>
-        new(handler) { BaseAddress = new Uri("https://api.frankfurter.app/") };
+        new(handler) { BaseAddress = new Uri(FrankfurterExchangeRateProvider.BaseAddress) };
+
+    private static FrankfurterExchangeRateProvider CreateHangingProvider() =>
+        new(CreateClient(new HangingHandler()), NullLogger<FrankfurterExchangeRateProvider>.Instance, TimeSpan.FromMilliseconds(200));
+
+    private sealed class HangingHandler : HttpMessageHandler
+    {
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            await Task.Delay(Timeout.Infinite, cancellationToken);
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        }
+    }
 }
