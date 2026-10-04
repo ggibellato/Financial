@@ -1,8 +1,10 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { act, renderHook } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { BankDto, CategoryDto, CreditCardDto, ExpenseDto } from '../../api/types'
-import { useExpenseForm } from '../useExpenseForm'
+import { computeRoundUpSuggestion, useExpenseForm } from '../useExpenseForm'
 
 const { createExpenseMock, updateExpenseMock } = vi.hoisted(() => ({
   createExpenseMock: vi.fn<FinancialApiClient['createExpense']>(),
@@ -410,35 +412,20 @@ describe('useExpenseForm', () => {
     expect(result.current.roundUpAmount).toBe('0.10')
   })
 
-  it('keeps recalculating the suggestion as the value is typed digit by digit, instead of freezing at the first keystroke', () => {
+  it('keeps recalculating as typed until manually edited', () => {
     const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
 
     act(() => result.current.setField('paymentSource', 'bank-trading212'))
 
-    act(() => result.current.setField('value', '1'))
+    act(() => result.current.setField('value', '9'))
     expect(result.current.roundUpAmount).toBe('0.00')
 
-    act(() => result.current.setField('value', '15'))
-    expect(result.current.roundUpAmount).toBe('0.00')
+    act(() => result.current.setField('value', '9.40'))
+    expect(result.current.roundUpAmount).toBe('0.60')
 
-    act(() => result.current.setField('value', '15.2'))
-    expect(result.current.roundUpAmount).toBe('0.80')
-
-    act(() => result.current.setField('value', '15.20'))
-    expect(result.current.roundUpAmount).toBe('0.80')
-  })
-
-  it('stops recalculating once the round-up field is edited manually, even as the value keeps changing', () => {
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
-
-    act(() => result.current.setField('paymentSource', 'bank-trading212'))
-    act(() => result.current.setField('value', '15.20'))
-    expect(result.current.roundUpAmount).toBe('0.80')
-
-    act(() => result.current.setField('roundUpAmount', '0.50'))
-    act(() => result.current.setField('value', '15.99'))
-
-    expect(result.current.roundUpAmount).toBe('0.50')
+    act(() => result.current.setField('roundUpAmount', '0.10'))
+    act(() => result.current.setField('value', '9.80'))
+    expect(result.current.roundUpAmount).toBe('0.10')
   })
 
   it('picking a non-round-up bank does not fill a suggestion', () => {
@@ -612,4 +599,16 @@ describe('useExpenseForm', () => {
 
     expect(result.current.creditCardId).toBe('card-chase')
   })
+})
+
+describe('computeRoundUpSuggestion', () => {
+  const casesPath = resolve(__dirname, '../../../../Tests/Financial.CashFlow.Domain.Tests/TestData/round-up-suggestion-cases.json')
+  const cases: { value: string; suggestion: string }[] = JSON.parse(readFileSync(casesPath, 'utf8'))
+
+  it.each(cases.filter((c) => Number(c.value) > 0).map((c) => [c.value, c.suggestion]))(
+    'matches the committed Domain case %s -> %s',
+    (value, suggestion) => {
+      expect(computeRoundUpSuggestion(Number(value)).toFixed(2)).toBe(suggestion)
+    },
+  )
 })

@@ -16,6 +16,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="TestData\*.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Using Include="Xunit" />
   </ItemGroup>
 

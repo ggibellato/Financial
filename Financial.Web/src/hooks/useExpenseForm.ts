@@ -19,7 +19,7 @@ const PAYMENT_SOURCE_KEY = 'expense.paymentSource'
 const CREDIT_CARD_KEY = 'expense.creditCardId'
 const CATEGORY_KEY = 'expense.categoryId'
 
-function computeRoundUpSuggestion(value: number): number {
+export function computeRoundUpSuggestion(value: number): number {
   return Math.round((Math.ceil(value) - value) * 100) / 100
 }
 

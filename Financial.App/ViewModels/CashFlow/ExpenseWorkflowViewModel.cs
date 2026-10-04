@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
+using Financial.CashFlow.Domain.Entities;
 using Financial.Shared.Abstractions.Observability;
 using static Financial.Presentation.App.Helpers.ObservableCollectionHelper;
 
@@ -486,8 +487,7 @@ public class ExpenseWorkflowViewModel : ViewModelBase
             return string.Empty;
         }
 
-        var suggestion = Math.Round((Math.Ceiling(value) - value) * 100, MidpointRounding.AwayFromZero) / 100;
-        return suggestion.ToString("0.##");
+        return Expense.ComputeRoundUpSuggestion(value).ToString("F2");
     }
 
     internal async Task SaveExpenseAsync()

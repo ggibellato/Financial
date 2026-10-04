@@ -25,7 +25,10 @@ public class Expense
         : PaymentSourceBank is null ? ExpensePaymentStatus.CreditCardCharge
         : ExpensePaymentStatus.CreditCardSettled;
 
-    public decimal RoundUpSuggestion => Value <= 0 ? 0m : Math.Ceiling(Value) - Value;
+    public decimal RoundUpSuggestion => ComputeRoundUpSuggestion(Value);
+
+    public static decimal ComputeRoundUpSuggestion(decimal value) =>
+        value <= 0 ? 0m : Math.Round(Math.Ceiling(value) - value, 2, MidpointRounding.AwayFromZero);
 
     /// <summary>
     /// <see cref="RoundUpSuggestion"/>, but only when it is actually offerable: no round-up already
