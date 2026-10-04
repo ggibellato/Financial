@@ -347,7 +347,6 @@ public class IncomeServiceTests
     {
         var repository = CreateSplitCapableRepository();
         var service = CreateService(repository);
-        var splitBase = 2205.00m; // 2450.00 * 0.90
 
         var result = await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest()));
 
@@ -355,10 +354,16 @@ public class IncomeServiceTests
         {
             result.SplitToReserve.Should().BeTrue();
             repository.ReserveMovements.Should().HaveCount(4);
-            foreach (var bucket in repository.ReserveBuckets)
+            var expectedAmounts = new Dictionary<string, decimal>
             {
-                var expectedAmount = bucket.CalculateSplitAmount(splitBase);
-                repository.ReserveMovements.Should().ContainSingle(m => m.Bucket == bucket)
+                ["Investimento"] = 734.93m,
+                ["HouseTreats"] = 734.93m,
+                ["Ariana"] = 367.57m,
+                ["Gleison"] = 367.57m
+            };
+            foreach (var (bucketName, expectedAmount) in expectedAmounts)
+            {
+                repository.ReserveMovements.Should().ContainSingle(m => m.Bucket.Name == bucketName)
                     .Which.Should().Match<ReserveMovement>(m => m.Amount == expectedAmount && m.Income!.Id == result.Id);
             }
         }
@@ -449,7 +454,6 @@ public class IncomeServiceTests
         var service = CreateService(repository);
         var added = await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest()));
         var originalMovementIds = repository.ReserveMovements.Select(m => m.Id).ToList();
-        var newSplitBase = 900.00m; // 1000.00 * 0.90
 
         var result = await service.UpdateIncomeAsync(added.Id, ToUpdateDto(repository, ValidArianaSplitRequest() with { NetValue = 1000.00m }));
 
@@ -460,7 +464,7 @@ public class IncomeServiceTests
             repository.ReserveMovements.Select(m => m.Id).Should().NotIntersectWith(originalMovementIds);
             var investimento = repository.ReserveBuckets.Single(b => b.Name == "Investimento");
             repository.ReserveMovements.Should().ContainSingle(m => m.Bucket == investimento)
-                .Which.Amount.Should().Be(investimento.CalculateSplitAmount(newSplitBase));
+                .Which.Amount.Should().Be(299.97m);
         }
     }
 

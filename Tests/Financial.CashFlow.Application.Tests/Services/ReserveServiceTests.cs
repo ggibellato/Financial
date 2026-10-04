@@ -68,6 +68,30 @@ public class ReserveServiceTests
     }
 
     [Fact]
+    public async Task PostIncomeSplitAsync_WithThirdsSplit_PersistsConservedMovements()
+    {
+        var repository = new StubCashFlowRepository();
+        repository.AddReserveBucket(ReserveBucket.Create("Investimento", 33.33m));
+        repository.AddReserveBucket(ReserveBucket.Create("HouseTreats", 33.33m));
+        repository.AddReserveBucket(ReserveBucket.Create("Ariana", 33.34m));
+        var sut = CreateService(repository);
+
+        var result = await sut.PostIncomeSplitAsync(new IncomeSplitRequestDTO
+        {
+            Date = new DateOnly(2026, 7, 1),
+            Amount = 100.01m,
+            Description = "Ramsay"
+        });
+
+        using (new AssertionScope())
+        {
+            result.Buckets.Select(b => b.Amount).Should().Equal(33.33m, 33.33m, 33.35m);
+            result.Total.Should().Be(100.01m);
+            repository.ReserveMovements.Select(m => m.Amount).Should().Equal(33.33m, 33.33m, 33.35m);
+        }
+    }
+
+    [Fact]
     public async Task PostIncomeSplitAsync_WithInactiveBucket_ExcludesItFromMovementsAndResult()
     {
         _repository.ReserveBuckets.RemoveAll(b => b.Name == "Gleison");
