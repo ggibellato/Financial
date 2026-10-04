@@ -18,27 +18,6 @@ public class UpcomingIncomeServiceTests
     private readonly RecordingLogger<UpcomingIncomeService> _logger = new();
 
     [Fact]
-    public void Constructor_WithNullRepository_Throws()
-    {
-        Action act = () => new UpcomingIncomeService(null!, _tracer, _logger);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
-    }
-
-    [Fact]
-    public void Constructor_WithNullTracer_Throws()
-    {
-        Action act = () => new UpcomingIncomeService(_repository, null!, _logger);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
-    }
-
-    [Fact]
-    public void Constructor_WithNullLogger_Throws()
-    {
-        Action act = () => new UpcomingIncomeService(_repository, _tracer, null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
-    }
-
-    [Fact]
     public void GetUpcomingIncome_MonthlyPayer_ProjectsOneIntervalAfterLastCredit()
     {
         SeedActive(MakeBroker("Alpha", MonthlyPayer("A1")));

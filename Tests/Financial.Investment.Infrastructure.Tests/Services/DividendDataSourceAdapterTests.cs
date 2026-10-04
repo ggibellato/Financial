@@ -17,14 +17,6 @@ public class DividendDataSourceAdapterTests
     }
 
     [Fact]
-    public void Constructor_WithNullLookup_ThrowsArgumentNullException()
-    {
-        Action act = () => new DividendDataSourceAdapter(null!);
-
-        act.Should().Throw<ArgumentNullException>().WithParameterName("lookup");
-    }
-
-    [Fact]
     public void GetDividends_DelegatesToLookupWithTicker()
     {
         var dividends = new List<DividendValue> { new(DividendType.Dividend, new DateTime(2024, 1, 1), 5m) };

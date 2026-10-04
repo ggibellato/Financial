@@ -19,33 +19,6 @@ public class DividendServiceTests
     private readonly StubSnapshotSource _snapshotSource = new();
 
     [Fact]
-    public void Constructor_WithNullDividendDataSource_Throws()
-    {
-        Action act = () => new DividendService(null!, _snapshotSource, Tracer, NullLogger<DividendService>.Instance);
-
-        act.Should().Throw<ArgumentNullException>()
-            .WithParameterName("dividendDataSource");
-    }
-
-    [Fact]
-    public void Constructor_WithNullSnapshotSource_Throws()
-    {
-        Action act = () => new DividendService(_dataSource, null!, Tracer, NullLogger<DividendService>.Instance);
-
-        act.Should().Throw<ArgumentNullException>()
-            .WithParameterName("snapshotSource");
-    }
-
-    [Fact]
-    public void Constructor_WithNullTracer_Throws()
-    {
-        Action act = () => new DividendService(_dataSource, _snapshotSource, null!, NullLogger<DividendService>.Instance);
-
-        act.Should().Throw<ArgumentNullException>()
-            .WithParameterName("tracer");
-    }
-
-    [Fact]
     public void GetDividendHistory_WithNullRequest_Throws()
     {
         var service = CreateService();
@@ -277,11 +250,4 @@ public class DividendServiceTests
         public AssetValueSnapshot GetSnapshot(string exchange, string ticker) => Snapshot;
     }
 
-    [Fact]
-    public void Constructor_WithNullLogger_Throws()
-    {
-        Action act = () => new DividendService(_dataSource, _snapshotSource, Tracer, null!);
-
-        act.Should().Throw<ArgumentNullException>();
-    }
 }

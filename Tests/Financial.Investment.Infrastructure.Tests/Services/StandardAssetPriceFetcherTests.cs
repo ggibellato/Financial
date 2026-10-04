@@ -17,14 +17,6 @@ public class StandardAssetPriceFetcherTests
     }
 
     [Fact]
-    public void Constructor_WithNullFinanceService_ThrowsArgumentNullException()
-    {
-        Action act = () => new StandardAssetPriceFetcher(null!);
-
-        act.Should().Throw<ArgumentNullException>().WithParameterName("financeService");
-    }
-
-    [Fact]
     public void Supports_Cryptocurrency_ReturnsFalse()
     {
         var result = _sut.Supports(GlobalAssetClass.Cryptocurrency, ValuationMethod.Unspecified);

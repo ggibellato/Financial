@@ -474,6 +474,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         ICorporateActionService? corporateActionService = null,
         IAssetAdminService? assetAdminService = null)
     {
+        ArgumentNullException.ThrowIfNull(transactionService);
         _creditService = creditService ?? throw new ArgumentNullException(nameof(creditService));
         _priceLookupService = priceLookupService;
         _priceHistoryService = priceHistoryService;

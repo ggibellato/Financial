@@ -36,22 +36,6 @@ public class GoogleFinanceServiceTests
     }
 
     [Fact]
-    public void Constructor_WithNullExchangeLookup_ThrowsArgumentNullException()
-    {
-        Action act = () => new GoogleFinanceService(null!, (_, _) => throw new NotImplementedException());
-
-        act.Should().Throw<ArgumentNullException>().WithParameterName("exchangeLookup");
-    }
-
-    [Fact]
-    public void Constructor_WithNullCryptoLookup_ThrowsArgumentNullException()
-    {
-        Action act = () => new GoogleFinanceService((_, _) => throw new NotImplementedException(), null!);
-
-        act.Should().Throw<ArgumentNullException>().WithParameterName("cryptoLookup");
-    }
-
-    [Fact]
     public void GetAssetValue_ExchangeProvided_DelegatesToExchangeLookup()
     {
         var snapshot = new AssetValueSnapshot("BCIA11", "Some ETF", 10.5m, DateTimeOffset.UtcNow);

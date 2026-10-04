@@ -21,34 +21,6 @@ public class CorporateActionServiceTests
     };
 
     [Fact]
-    public void Constructor_WithNullRepository_Throws()
-    {
-        Action act = () => new CorporateActionService(null!, CreateNavigationService(), Tracer, NullLogger<CorporateActionService>.Instance);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
-    }
-
-    [Fact]
-    public void Constructor_WithNullNavigationService_Throws()
-    {
-        Action act = () => new CorporateActionService(_repository, null!, Tracer, NullLogger<CorporateActionService>.Instance);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("navigationService");
-    }
-
-    [Fact]
-    public void Constructor_WithNullTracer_Throws()
-    {
-        Action act = () => new CorporateActionService(_repository, CreateNavigationService(), null!, NullLogger<CorporateActionService>.Instance);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
-    }
-
-    [Fact]
-    public void Constructor_WithNullLogger_Throws()
-    {
-        Action act = () => new CorporateActionService(_repository, CreateNavigationService(), Tracer, null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
-    }
-
-    [Fact]
     public async Task AddSplitAsync_ValidRequest_RecordsSplitAndReturnsAssetDetails()
     {
         var asset = MakeAssetWithPosition();

@@ -15,6 +15,7 @@ public sealed class AssetPriceFetchController : ControllerBase
 
     public AssetPriceFetchController(IOptions<AssetPriceFetchOptions> options)
     {
+        ArgumentNullException.ThrowIfNull(options);
         _options = options.Value;
     }
 

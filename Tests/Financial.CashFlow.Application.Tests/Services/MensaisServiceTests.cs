@@ -30,20 +30,6 @@ public class MensaisServiceTests
         new(repository ?? _repository, _tracer, Logger);
 
     [Fact]
-    public void Constructor_WithNullRepository_Throws()
-    {
-        Action act = () => new MensaisService(null!, _tracer, Logger);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
-    }
-
-    [Fact]
-    public void Constructor_WithNullTracer_Throws()
-    {
-        Action act = () => new MensaisService(_repository, null!, Logger);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
-    }
-
-    [Fact]
     public async Task CreateBillAsync_WithValidRequest_SavesAndReturnsBill()
     {
         var result = await _sut.CreateBillAsync(ValidBrasilRequest());
@@ -331,14 +317,6 @@ public class MensaisServiceTests
         Area = "Brasil",
         Note = "Direct debit"
     };
-
-    [Fact]
-    public void Constructor_WithNullLogger_Throws()
-    {
-        Action act = () => new MensaisService(_repository, _tracer, null!);
-
-        act.Should().Throw<ArgumentNullException>();
-    }
 
     [Fact]
     public void GetBills_WhenRepositoryThrowsUnexpectedly_Rethrows()

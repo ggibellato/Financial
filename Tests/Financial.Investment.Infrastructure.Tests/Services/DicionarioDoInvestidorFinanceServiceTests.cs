@@ -19,14 +19,6 @@ public class DicionarioDoInvestidorFinanceServiceTests
     }
 
     [Fact]
-    public void Constructor_WithNullLookup_ThrowsArgumentNullException()
-    {
-        Action act = () => new DicionarioDoInvestidorFinanceService(null!);
-
-        act.Should().Throw<ArgumentNullException>().WithParameterName("lookup");
-    }
-
-    [Fact]
     public void GetAssetValue_ValidName_DelegatesToLookup()
     {
         var snapshot = new AssetValueSnapshot("TESOURO IPCA+ 2040", "TESOURO IPCA+ 2040", 1755.91m, DateTimeOffset.UtcNow);

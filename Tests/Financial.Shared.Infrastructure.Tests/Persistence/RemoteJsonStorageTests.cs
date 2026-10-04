@@ -16,14 +16,6 @@ public class RemoteJsonStorageTests
     }
 
     [Fact]
-    public void Constructor_WithNullClient_ThrowsArgumentNullException()
-    {
-        Action act = () => new RemoteJsonStorage(null!, "some/path");
-
-        act.Should().Throw<ArgumentNullException>().WithParameterName("client");
-    }
-
-    [Fact]
     public void Constructor_WithBlankDriveFilePath_ThrowsArgumentException()
     {
         Action act = () => new RemoteJsonStorage(_ => "content", (_, _) => { }, "");

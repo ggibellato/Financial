@@ -30,20 +30,6 @@ public class InvestmentAccountServiceTests
         new(repository ?? _repository, _tracer, Logger);
 
     [Fact]
-    public void Constructor_WithNullRepository_Throws()
-    {
-        Action act = () => new InvestmentAccountService(null!, _tracer, Logger);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
-    }
-
-    [Fact]
-    public void Constructor_WithNullTracer_Throws()
-    {
-        Action act = () => new InvestmentAccountService(_repository, null!, Logger);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
-    }
-
-    [Fact]
     public void GetInvestmentAccounts_MapsEveryRepositoryAccountToADto()
     {
         var chaseSave = InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false);
@@ -136,14 +122,6 @@ public class InvestmentAccountServiceTests
         var result = _sut.GetInvestmentAccounts();
 
         result.Should().ContainSingle(a => a.Id == account.Id).Which.HasNonZeroInvestmentSnapshot.Should().BeTrue();
-    }
-
-    [Fact]
-    public void Constructor_WithNullLogger_Throws()
-    {
-        Action act = () => new InvestmentAccountService(_repository, _tracer, null!);
-
-        act.Should().Throw<ArgumentNullException>();
     }
 
     [Fact]

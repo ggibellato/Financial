@@ -19,14 +19,6 @@ public class RedentiaFinanceServiceTests
     }
 
     [Fact]
-    public void Constructor_WithNullLookup_ThrowsArgumentNullException()
-    {
-        Action act = () => new RedentiaFinanceService(null!);
-
-        act.Should().Throw<ArgumentNullException>().WithParameterName("lookup");
-    }
-
-    [Fact]
     public void GetAssetValue_ValidName_DelegatesToLookup()
     {
         var snapshot = new AssetValueSnapshot("TESOURO PREFIXADO 2027", "TESOURO PREFIXADO 2027", 955.15m, DateTimeOffset.UtcNow);

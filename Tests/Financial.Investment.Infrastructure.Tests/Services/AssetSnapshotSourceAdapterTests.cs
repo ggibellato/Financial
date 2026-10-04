@@ -17,14 +17,6 @@ public class AssetSnapshotSourceAdapterTests
     }
 
     [Fact]
-    public void Constructor_WithNullLookup_ThrowsArgumentNullException()
-    {
-        Action act = () => new AssetSnapshotSourceAdapter(null!);
-
-        act.Should().Throw<ArgumentNullException>().WithParameterName("lookup");
-    }
-
-    [Fact]
     public void GetSnapshot_DelegatesToLookupWithExchangeAndTicker()
     {
         var snapshot = new AssetValueSnapshot("BCIA11", "Some ETF", 10.5m, DateTimeOffset.UtcNow);

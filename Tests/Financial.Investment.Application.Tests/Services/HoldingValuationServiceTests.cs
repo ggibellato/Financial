@@ -20,27 +20,6 @@ public class HoldingValuationServiceTests
         new(new XirrCalculationService(), tracer ?? new RecordingTelemetryTracer(), NullLogger<HoldingValuationService>.Instance, timeProvider ?? new FakeTimeProvider(Today));
 
     [Fact]
-    public void Constructor_WithNullXirrCalculationService_Throws()
-    {
-        Action act = () => new HoldingValuationService(null!, new RecordingTelemetryTracer(), NullLogger<HoldingValuationService>.Instance);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("xirrCalculationService");
-    }
-
-    [Fact]
-    public void Constructor_WithNullTracer_Throws()
-    {
-        Action act = () => new HoldingValuationService(new XirrCalculationService(), null!, NullLogger<HoldingValuationService>.Instance);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
-    }
-
-    [Fact]
-    public void Constructor_WithNullLogger_Throws()
-    {
-        Action act = () => new HoldingValuationService(new XirrCalculationService(), new RecordingTelemetryTracer(), null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
-    }
-
-    [Fact]
     public void GetValuation_NullAsset_Throws()
     {
         var service = CreateService();

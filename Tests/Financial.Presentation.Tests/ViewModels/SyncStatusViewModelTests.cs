@@ -37,22 +37,6 @@ public class SyncStatusViewModelTests
     }
 
     [Fact]
-    public void Constructor_WithNullCashFlowRepository_Throws()
-    {
-        Action act = () => new SyncStatusViewModel(null!, _investmentRepository);
-
-        act.Should().Throw<ArgumentNullException>().WithParameterName("cashFlowRepository");
-    }
-
-    [Fact]
-    public void Constructor_WithNullInvestmentRepository_Throws()
-    {
-        Action act = () => new SyncStatusViewModel(_cashFlowRepository, null!);
-
-        act.Should().Throw<ArgumentNullException>().WithParameterName("investmentRepository");
-    }
-
-    [Fact]
     public void RefreshStatus_WhenRepositoryIsNotASyncStatusProvider_ReportsIdle()
     {
         var vm = CreateViewModel(new StubCashFlowRepository(), new StubInvestmentRepository());

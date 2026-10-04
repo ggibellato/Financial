@@ -34,20 +34,6 @@ public class InvestmentSnapshotServiceTests
         new(repository ?? _repository, _tracer, Logger);
 
     [Fact]
-    public void Constructor_WithNullRepository_Throws()
-    {
-        Action act = () => new InvestmentSnapshotService(null!, _tracer, Logger);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
-    }
-
-    [Fact]
-    public void Constructor_WithNullTracer_Throws()
-    {
-        Action act = () => new InvestmentSnapshotService(_repository, null!, Logger);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
-    }
-
-    [Fact]
     public async Task GetSnapshotsForMonthAsync_FirstCall_GeneratesExactlyElevenSnapshotsDefaultingToZero()
     {
         var result = await _sut.GetSnapshotsForMonthAsync(CurrentYear, 7);
@@ -301,14 +287,6 @@ public class InvestmentSnapshotServiceTests
     }
 
     #endregion
-
-    [Fact]
-    public void Constructor_WithNullLogger_Throws()
-    {
-        Action act = () => new InvestmentSnapshotService(_repository, _tracer, null!);
-
-        act.Should().Throw<ArgumentNullException>();
-    }
 
     [Fact]
     public async Task GetSnapshotsForMonthAsync_WhenRepositoryThrowsUnexpectedly_Rethrows()

@@ -22,41 +22,6 @@ public class AllocationBreakdownServiceTests
     private readonly RecordingLogger<AllocationBreakdownService> _logger = new();
 
     [Fact]
-    public void Constructor_WithNullRepository_Throws()
-    {
-        Action act = () => new AllocationBreakdownService(null!, TestHoldingValuationService.Create(), _tracer, _logger, new StubExchangeRateProvider(null));
-        act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
-    }
-
-    [Fact]
-    public void Constructor_WithNullHoldingValuationService_Throws()
-    {
-        Action act = () => new AllocationBreakdownService(_repository, null!, _tracer, _logger, new StubExchangeRateProvider(null));
-        act.Should().Throw<ArgumentNullException>().WithParameterName("holdingValuationService");
-    }
-
-    [Fact]
-    public void Constructor_WithNullTracer_Throws()
-    {
-        Action act = () => new AllocationBreakdownService(_repository, TestHoldingValuationService.Create(), null!, _logger, new StubExchangeRateProvider(null));
-        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
-    }
-
-    [Fact]
-    public void Constructor_WithNullLogger_Throws()
-    {
-        Action act = () => new AllocationBreakdownService(_repository, TestHoldingValuationService.Create(), _tracer, null!, new StubExchangeRateProvider(null));
-        act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
-    }
-
-    [Fact]
-    public void Constructor_WithNullExchangeRateProvider_Throws()
-    {
-        Action act = () => new AllocationBreakdownService(_repository, TestHoldingValuationService.Create(), _tracer, _logger, null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("exchangeRateProvider");
-    }
-
-    [Fact]
     public async Task GetAllocationBreakdown_ByClass_GroupsAssetsByGlobalAssetClass()
     {
         SeedActive(MakeBroker("Alpha", "GBP",

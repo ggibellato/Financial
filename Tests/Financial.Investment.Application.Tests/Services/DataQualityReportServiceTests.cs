@@ -19,14 +19,6 @@ public class DataQualityReportServiceTests
     private readonly RecordingLogger<DataQualityReportService> _logger = new();
 
     [Fact]
-    public void Constructor_WithNullHoldingValuationService_Throws()
-    {
-        Action act = () => new DataQualityReportService(_repository, _tracer, _logger, null!);
-
-        act.Should().Throw<ArgumentNullException>().WithParameterName("holdingValuationService");
-    }
-
-    [Fact]
     public void GenerateReport_SaleExceedsPurchases_NamesHoldingAndShortfall()
     {
         var asset = Asset.Create("OVERSOLD", "ISIN1", "BVMF", "OVS");

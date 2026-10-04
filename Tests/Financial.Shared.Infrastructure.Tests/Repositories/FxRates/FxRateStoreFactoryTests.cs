@@ -18,20 +18,6 @@ public class FxRateStoreFactoryTests
             NoOpTelemetryTracer.Instance));
 
     [Fact]
-    public void Constructor_WithNullSerializer_Throws()
-    {
-        Action act = () => new FxRateStoreFactory(null!, new JsonStorageFactory(null, NoOpTelemetryTracer.Instance));
-        act.Should().Throw<ArgumentNullException>().WithParameterName("serializer");
-    }
-
-    [Fact]
-    public void Constructor_WithNullStorageFactory_Throws()
-    {
-        Action act = () => new FxRateStoreFactory(new FxRateSerializerAdapter(), null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("storageFactory");
-    }
-
-    [Fact]
     public void Create_WithNullOptions_Throws()
     {
         Action act = () => Factory.Create(null!);

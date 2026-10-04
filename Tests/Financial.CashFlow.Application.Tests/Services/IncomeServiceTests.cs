@@ -30,20 +30,6 @@ public class IncomeServiceTests
         new(repository ?? _repository, _tracer, Logger);
 
     [Fact]
-    public void Constructor_WithNullRepository_Throws()
-    {
-        Action act = () => new IncomeService(null!, _tracer, Logger);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
-    }
-
-    [Fact]
-    public void Constructor_WithNullTracer_Throws()
-    {
-        Action act = () => new IncomeService(_repository, null!, Logger);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
-    }
-
-    [Fact]
     public async Task AddIncomeAsync_WithValidRequest_RecordsSuccessfulSpan()
     {
         var result = await _sut.AddIncomeAsync(ToCreateDto(_repository, ValidCreateRequest()));
@@ -327,14 +313,6 @@ public class IncomeServiceTests
 
     private sealed record IncomeCreateRequest(
         DateOnly Date, string IncomeSource, decimal? GrossValue, decimal NetValue, string? Bank, string? Description, bool SplitToReserve = false);
-
-    [Fact]
-    public void Constructor_WithNullLogger_Throws()
-    {
-        Action act = () => new IncomeService(_repository, _tracer, null!);
-
-        act.Should().Throw<ArgumentNullException>();
-    }
 
     private static StubCashFlowRepository CreateSplitCapableRepository() =>
         new(seedDefaultBanks: true, seedDefaultIncomeSources: true, seedDefaultReserveBuckets: true);

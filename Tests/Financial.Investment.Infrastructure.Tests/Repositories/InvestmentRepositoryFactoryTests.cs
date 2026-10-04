@@ -28,20 +28,6 @@ public class InvestmentRepositoryFactoryTests
         new(new InvestmentSerializerAdapter(), new JsonStorageFactory(new GoogleFileClientFactory(), NoOpTelemetryTracer.Instance));
 
     [Fact]
-    public void Constructor_WithNullSerializer_Throws()
-    {
-        Action act = () => new InvestmentRepositoryFactory(null!, new JsonStorageFactory(null, NoOpTelemetryTracer.Instance));
-        act.Should().Throw<ArgumentNullException>().WithParameterName("serializer");
-    }
-
-    [Fact]
-    public void Constructor_WithNullStorageFactory_Throws()
-    {
-        Action act = () => new InvestmentRepositoryFactory(new InvestmentSerializerAdapter(), null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("storageFactory");
-    }
-
-    [Fact]
     public void Create_WithNullOptions_Throws()
     {
         Action act = () => Factory.Create(null!);

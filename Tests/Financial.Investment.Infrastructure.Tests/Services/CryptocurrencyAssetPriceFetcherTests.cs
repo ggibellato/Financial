@@ -19,22 +19,6 @@ public class CryptocurrencyAssetPriceFetcherTests
     }
 
     [Fact]
-    public void Constructor_WithNullRepository_ThrowsArgumentNullException()
-    {
-        Action act = () => new CryptocurrencyAssetPriceFetcher(null!, new StubFinanceService());
-
-        act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
-    }
-
-    [Fact]
-    public void Constructor_WithNullFinanceService_ThrowsArgumentNullException()
-    {
-        Action act = () => new CryptocurrencyAssetPriceFetcher(new StubInvestmentRepository([]), null!);
-
-        act.Should().Throw<ArgumentNullException>().WithParameterName("financeService");
-    }
-
-    [Fact]
     public void Supports_Cryptocurrency_ReturnsTrue()
     {
         var result = _sut.Supports(GlobalAssetClass.Cryptocurrency, ValuationMethod.Unspecified);

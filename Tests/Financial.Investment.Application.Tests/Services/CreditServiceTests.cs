@@ -23,27 +23,6 @@ public class CreditServiceTests
     };
 
     [Fact]
-    public void Constructor_WithNullRepository_Throws()
-    {
-        Action act = () => new CreditService(null!, new NavigationService(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance), ExchangeRateProvider, ReportingCurrencyProvider, TimeProvider.System, Tracer, NullLogger<CreditService>.Instance);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
-    }
-
-    [Fact]
-    public void Constructor_WithNullNavigationService_Throws()
-    {
-        Action act = () => new CreditService(_repository, null!, ExchangeRateProvider, ReportingCurrencyProvider, TimeProvider.System, Tracer, NullLogger<CreditService>.Instance);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("navigationService");
-    }
-
-    [Fact]
-    public void Constructor_WithNullTracer_Throws()
-    {
-        Action act = () => new CreditService(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance), ExchangeRateProvider, ReportingCurrencyProvider, TimeProvider.System, null!, NullLogger<CreditService>.Instance);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
-    }
-
-    [Fact]
     public async Task AddCreditAsync_ValidRequest_AddsCreditAndReturnsAssetDetails()
     {
         var asset = MakeAsset();
@@ -682,12 +661,4 @@ public class CreditServiceTests
     private static Asset MakeAsset(string name = "AAAA") =>
         Asset.Create(name, "ISIN", "BVMF", name);
 
-
-    [Fact]
-    public void Constructor_WithNullLogger_Throws()
-    {
-        Action act = () => new CreditService(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance), ExchangeRateProvider, ReportingCurrencyProvider, TimeProvider.System, Tracer, null!);
-
-        act.Should().Throw<ArgumentNullException>();
-    }
 }

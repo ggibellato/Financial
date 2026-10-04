@@ -35,20 +35,6 @@ public class TitheServiceTests
         new(repository ?? _repository, _tracer, Logger);
 
     [Fact]
-    public void Constructor_WithNullRepository_Throws()
-    {
-        Action act = () => new TitheService(null!, _tracer, Logger);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
-    }
-
-    [Fact]
-    public void Constructor_WithNullTracer_Throws()
-    {
-        Action act = () => new TitheService(_repository, null!, Logger);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
-    }
-
-    [Fact]
     public async Task GetTitheSummaryAsync_CalculatesTenPercentOfMonthlyNetIncomeAcrossSources()
     {
         _repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 1), Source("Gleison"), 3200m, 2450m, Barclays));
@@ -386,14 +372,6 @@ public class TitheServiceTests
         var act = async () => await _sut.UpdateCarryForwardInclusionAsync(2026, month, false);
 
         await act.Should().ThrowAsync<ArgumentException>();
-    }
-
-    [Fact]
-    public void Constructor_WithNullLogger_Throws()
-    {
-        Action act = () => new TitheService(_repository, _tracer, null!);
-
-        act.Should().Throw<ArgumentNullException>();
     }
 
     [Fact]

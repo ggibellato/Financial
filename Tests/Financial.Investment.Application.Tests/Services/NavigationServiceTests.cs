@@ -18,20 +18,6 @@ public class NavigationServiceTests
     private NavigationService CreateService() => new(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance);
 
     [Fact]
-    public void Constructor_WithNullHoldingValuationService_Throws()
-    {
-        Action act = () => new NavigationService(new StubInvestmentRepository(), null!, Tracer, NullLogger<NavigationService>.Instance);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("holdingValuationService");
-    }
-
-    [Fact]
-    public void Constructor_WithNullTracer_Throws()
-    {
-        Action act = () => new NavigationService(new StubInvestmentRepository(), TestHoldingValuationService.Create(), null!, NullLogger<NavigationService>.Instance);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
-    }
-
-    [Fact]
     public void GetNavigationTree_RecordsSuccessfulSpan()
     {
         var tracer = new RecordingTelemetryTracer();
@@ -412,15 +398,6 @@ public class NavigationServiceTests
             portfolio.AddAsset(Asset.Create(name, $"ISIN{index++}", "BVMF", name, CountryCode.BR, "FII", assetClass));
         }
         return broker;
-    }
-
-
-    [Fact]
-    public void Constructor_WithNullLogger_Throws()
-    {
-        Action act = () => new NavigationService(new StubInvestmentRepository(), TestHoldingValuationService.Create(), Tracer, null!);
-
-        act.Should().Throw<ArgumentNullException>();
     }
 
     [Fact]

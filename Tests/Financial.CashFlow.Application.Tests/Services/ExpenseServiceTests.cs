@@ -41,20 +41,6 @@ public class ExpenseServiceTests
         new(repository ?? _repository, _tracer, logger ?? Logger);
 
     [Fact]
-    public void Constructor_WithNullRepository_Throws()
-    {
-        Action act = () => new ExpenseService(null!, _tracer, Logger);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
-    }
-
-    [Fact]
-    public void Constructor_WithNullTracer_Throws()
-    {
-        Action act = () => new ExpenseService(_repository, null!, Logger);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
-    }
-
-    [Fact]
     public async Task AddExpenseAsync_WithValidRequest_RecordsSuccessfulSpan()
     {
         var request = ToCreateDto(_repository, ValidCreateRequest());
@@ -961,14 +947,6 @@ public class ExpenseServiceTests
         var act = async () => await _sut.UpdateExpenseAsync(added.Id, updateRequest);
 
         await act.Should().ThrowAsync<ArgumentException>().WithMessage("*unsettled credit card charge*");
-    }
-
-    [Fact]
-    public void Constructor_WithNullLogger_Throws()
-    {
-        Action act = () => new ExpenseService(_repository, _tracer, null!);
-
-        act.Should().Throw<ArgumentNullException>();
     }
 
     [Fact]

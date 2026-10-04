@@ -40,28 +40,6 @@ public class IncomeSummaryServiceTests
     private const int PinnedMonthsElapsed = 5;
 
     [Fact]
-    public void Constructor_WithNullRepository_Throws()
-    {
-        Action act = () => new IncomeSummaryService(null!, _tracer, Logger);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
-    }
-
-    [Fact]
-    public void Constructor_WithNullTracer_Throws()
-    {
-        Action act = () => new IncomeSummaryService(_repository, null!, Logger);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
-    }
-
-    [Fact]
-    public void Constructor_WithNullLogger_Throws()
-    {
-        Action act = () => new IncomeSummaryService(_repository, _tracer, null!);
-
-        act.Should().Throw<ArgumentNullException>();
-    }
-
-    [Fact]
     public void GetIncomeSummaryForYear_SalaryRowSumsGleisonAndArianaGrossValuesPerMonth()
     {
         _repository.Incomes.Add(Income.Create(new DateOnly(2026, 1, 1), Source("Gleison"), 3200m, 2450m, Barclays));

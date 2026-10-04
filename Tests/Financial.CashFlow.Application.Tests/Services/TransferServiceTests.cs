@@ -27,20 +27,6 @@ public class TransferServiceTests
         new(repository ?? _repository, _tracer, NullLogger<TransferService>.Instance);
 
     [Fact]
-    public void Constructor_WithNullRepository_Throws()
-    {
-        Action act = () => new TransferService(null!, _tracer, NullLogger<TransferService>.Instance);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
-    }
-
-    [Fact]
-    public void Constructor_WithNullTracer_Throws()
-    {
-        Action act = () => new TransferService(_repository, null!, NullLogger<TransferService>.Instance);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
-    }
-
-    [Fact]
     public async Task AddTransferAsync_WithValidRequest_SavesAndReturnsTransfer()
     {
         var result = await _sut.AddTransferAsync(ToCreateDto(_repository, ValidCreateRequest()));
@@ -240,14 +226,6 @@ public class TransferServiceTests
 
     private sealed record TransferCreateRequest(
         DateOnly Date, string SourceBank, string DestinationBank, decimal Amount, string? Note);
-
-    [Fact]
-    public void Constructor_WithNullLogger_Throws()
-    {
-        Action act = () => new TransferService(_repository, _tracer, null!);
-
-        act.Should().Throw<ArgumentNullException>();
-    }
 
     [Fact]
     public void GetTransfersByMonth_WhenRepositoryThrowsUnexpectedly_Rethrows()

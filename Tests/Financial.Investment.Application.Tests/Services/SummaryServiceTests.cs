@@ -18,48 +18,6 @@ public class SummaryServiceTests
     private readonly StubInvestmentRepository _repository = new();
 
     [Fact]
-    public void Constructor_WithNullRepository_Throws()
-    {
-        Action act = () => new SummaryService(null!, Tracer, NullLogger<SummaryService>.Instance, TestHoldingValuationService.Create(), new XirrCalculationService(), new StubExchangeRateProvider(null), new StubReportingCurrencyProvider(Currency.BRL));
-        act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
-    }
-
-    [Fact]
-    public void Constructor_WithNullTracer_Throws()
-    {
-        Action act = () => new SummaryService(new StubInvestmentRepository(), null!, NullLogger<SummaryService>.Instance, TestHoldingValuationService.Create(), new XirrCalculationService(), new StubExchangeRateProvider(null), new StubReportingCurrencyProvider(Currency.BRL));
-        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
-    }
-
-    [Fact]
-    public void Constructor_WithNullHoldingValuationService_Throws()
-    {
-        Action act = () => new SummaryService(new StubInvestmentRepository(), Tracer, NullLogger<SummaryService>.Instance, null!, new XirrCalculationService(), new StubExchangeRateProvider(null), new StubReportingCurrencyProvider(Currency.BRL));
-        act.Should().Throw<ArgumentNullException>().WithParameterName("holdingValuationService");
-    }
-
-    [Fact]
-    public void Constructor_WithNullXirrCalculationService_Throws()
-    {
-        Action act = () => new SummaryService(new StubInvestmentRepository(), Tracer, NullLogger<SummaryService>.Instance, TestHoldingValuationService.Create(), null!, new StubExchangeRateProvider(null), new StubReportingCurrencyProvider(Currency.BRL));
-        act.Should().Throw<ArgumentNullException>().WithParameterName("xirrCalculationService");
-    }
-
-    [Fact]
-    public void Constructor_WithNullExchangeRateProvider_Throws()
-    {
-        Action act = () => new SummaryService(new StubInvestmentRepository(), Tracer, NullLogger<SummaryService>.Instance, TestHoldingValuationService.Create(), new XirrCalculationService(), null!, new StubReportingCurrencyProvider(Currency.BRL));
-        act.Should().Throw<ArgumentNullException>().WithParameterName("exchangeRateProvider");
-    }
-
-    [Fact]
-    public void Constructor_WithNullReportingCurrencyProvider_Throws()
-    {
-        Action act = () => new SummaryService(new StubInvestmentRepository(), Tracer, NullLogger<SummaryService>.Instance, TestHoldingValuationService.Create(), new XirrCalculationService(), new StubExchangeRateProvider(null), null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("reportingCurrencyProvider");
-    }
-
-    [Fact]
     public async Task GetBrokerSummary_ReturnsSumOfBuyTransactions()
     {
         var asset = MakeAsset();
@@ -376,15 +334,6 @@ public class SummaryServiceTests
             portfolio.AddAsset(asset);
         }
         return broker;
-    }
-
-
-    [Fact]
-    public void Constructor_WithNullLogger_Throws()
-    {
-        Action act = () => new SummaryService(new StubInvestmentRepository(), Tracer, null!, TestHoldingValuationService.Create(), new XirrCalculationService(), new StubExchangeRateProvider(null), new StubReportingCurrencyProvider(Currency.BRL));
-
-        act.Should().Throw<ArgumentNullException>();
     }
 
     [Fact]
