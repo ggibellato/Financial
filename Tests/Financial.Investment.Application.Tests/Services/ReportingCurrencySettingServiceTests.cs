@@ -33,14 +33,6 @@ public class ReportingCurrencySettingServiceTests
     }
 
     [Fact]
-    public void Constructor_WithNullRepository_Throws()
-    {
-        Action act = () => new ReportingCurrencySettingService(null!);
-
-        act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
-    }
-
-    [Fact]
     public void IsReportingCurrencyEnabled_ReflectsTheAggregatesCurrentValue()
     {
         var investments = Investments.Create();

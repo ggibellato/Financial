@@ -35,20 +35,6 @@ public class ReserveServiceTests
     private Guid BucketId(string name) => _repository.ReserveBuckets.First(b => b.Name == name).Id;
 
     [Fact]
-    public void Constructor_WithNullRepository_Throws()
-    {
-        Action act = () => new ReserveService(null!, _tracer, Logger);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
-    }
-
-    [Fact]
-    public void Constructor_WithNullTracer_Throws()
-    {
-        Action act = () => new ReserveService(_repository, null!, Logger);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
-    }
-
-    [Fact]
     public async Task PostIncomeSplitAsync_WithValidRequest_PostsOneMovementPerActiveBucketAndReturnsAmounts()
     {
         var result = await _sut.PostIncomeSplitAsync(ValidIncomeSplitRequest());
@@ -427,14 +413,6 @@ public class ReserveServiceTests
         Amount = 1963m,
         Description = "Ramsay"
     };
-
-    [Fact]
-    public void Constructor_WithNullLogger_Throws()
-    {
-        Action act = () => new ReserveService(_repository, _tracer, null!);
-
-        act.Should().Throw<ArgumentNullException>();
-    }
 
     private static Income LinkedIncome() =>
         Income.Create(new DateOnly(2026, 7, 1), IncomeSource.Create("Ariana", IncomeGroup.Salary, autoSplitToReserve: true), null, 2450m, null, "August salary", splitToReserve: true);

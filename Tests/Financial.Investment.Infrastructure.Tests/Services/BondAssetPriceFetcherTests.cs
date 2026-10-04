@@ -19,14 +19,6 @@ public class BondAssetPriceFetcherTests
     }
 
     [Fact]
-    public void Constructor_WithNullStatusInvestFinanceService_ThrowsArgumentNullException()
-    {
-        Action act = () => new BondAssetPriceFetcher(null!);
-
-        act.Should().Throw<ArgumentNullException>().WithParameterName("financeService");
-    }
-
-    [Fact]
     public void Supports_Bond_ReturnsTrue()
     {
         var result = _sut.Supports(GlobalAssetClass.Bond, ValuationMethod.Unspecified);

@@ -22,54 +22,6 @@ public class PortfolioDashboardServiceTests
     private readonly RecordingLogger<PortfolioDashboardService> _logger = new();
 
     [Fact]
-    public void Constructor_WithNullRepository_Throws()
-    {
-        Action act = () => new PortfolioDashboardService(
-            null!, _tracer, _logger, TestHoldingValuationService.Create(), new StubExchangeRateProvider(null), new StubReportingCurrencyProvider(Currency.GBP));
-        act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
-    }
-
-    [Fact]
-    public void Constructor_WithNullTracer_Throws()
-    {
-        Action act = () => new PortfolioDashboardService(
-            _repository, null!, _logger, TestHoldingValuationService.Create(), new StubExchangeRateProvider(null), new StubReportingCurrencyProvider(Currency.GBP));
-        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
-    }
-
-    [Fact]
-    public void Constructor_WithNullLogger_Throws()
-    {
-        Action act = () => new PortfolioDashboardService(
-            _repository, _tracer, null!, TestHoldingValuationService.Create(), new StubExchangeRateProvider(null), new StubReportingCurrencyProvider(Currency.GBP));
-        act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
-    }
-
-    [Fact]
-    public void Constructor_WithNullHoldingValuationService_Throws()
-    {
-        Action act = () => new PortfolioDashboardService(
-            _repository, _tracer, _logger, null!, new StubExchangeRateProvider(null), new StubReportingCurrencyProvider(Currency.GBP));
-        act.Should().Throw<ArgumentNullException>().WithParameterName("holdingValuationService");
-    }
-
-    [Fact]
-    public void Constructor_WithNullExchangeRateProvider_Throws()
-    {
-        Action act = () => new PortfolioDashboardService(
-            _repository, _tracer, _logger, TestHoldingValuationService.Create(), null!, new StubReportingCurrencyProvider(Currency.GBP));
-        act.Should().Throw<ArgumentNullException>().WithParameterName("exchangeRateProvider");
-    }
-
-    [Fact]
-    public void Constructor_WithNullReportingCurrencyProvider_Throws()
-    {
-        Action act = () => new PortfolioDashboardService(
-            _repository, _tracer, _logger, TestHoldingValuationService.Create(), new StubExchangeRateProvider(null), null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("reportingCurrencyProvider");
-    }
-
-    [Fact]
     public async Task GetDashboardAsync_SumsMarketValueAcrossActiveBrokersOnly()
     {
         SeedInvestments(

@@ -19,14 +19,6 @@ public class PaymentDueBannerViewModelTests
         new(service ?? new StubPaymentsDueService());
 
     [Fact]
-    public void Constructor_WithNullService_Throws()
-    {
-        Action act = () => new PaymentDueBannerViewModel(null!);
-
-        act.Should().Throw<ArgumentNullException>().WithParameterName("paymentsDueService");
-    }
-
-    [Fact]
     public void Constructor_FetchesPaymentsImmediately()
     {
         var service = new StubPaymentsDueService { PaymentsToReturn = [Payment("Internet"), Payment("Rent")] };

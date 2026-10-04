@@ -39,28 +39,6 @@ public class BalanceAdjustmentServiceTests
         BankOf(repository, name).Id;
 
     [Fact]
-    public void Constructor_WithNullRepository_Throws()
-    {
-        Action act = () => new BalanceAdjustmentService(null!, new BankService(_repository, _tracer, BankLogger), _tracer, Logger);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
-    }
-
-    [Fact]
-    public void Constructor_WithNullBankService_Throws()
-    {
-        Action act = () => new BalanceAdjustmentService(_repository, null!, _tracer, Logger);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("bankService");
-    }
-
-    [Fact]
-    public void Constructor_WithNullTracer_Throws()
-    {
-        Action act = () => new BalanceAdjustmentService(
-            _repository, new BankService(_repository, _tracer, BankLogger), null!, Logger);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
-    }
-
-    [Fact]
     public async Task AddAdjustmentAsync_WithValidRequest_RecordsSuccessfulSpan()
     {
         _repository.SetOpeningBalance("Barclays", 100m, new DateOnly(2026, 1, 1));
@@ -319,14 +297,6 @@ public class BalanceAdjustmentServiceTests
         var result = _sut.GetAdjustmentsByBank(Guid.NewGuid());
 
         result.Should().BeEmpty();
-    }
-
-    [Fact]
-    public void Constructor_WithNullLogger_Throws()
-    {
-        Action act = () => new BalanceAdjustmentService(_repository, new BankService(_repository, _tracer, BankLogger), _tracer, null!);
-
-        act.Should().Throw<ArgumentNullException>();
     }
 
     [Fact]

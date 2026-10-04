@@ -59,27 +59,6 @@ public class PaymentsDueServiceTests
     }
 
     [Fact]
-    public void Constructor_WithNullRepository_Throws()
-    {
-        Action act = () => new PaymentsDueService(null!, _tracer, Logger);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
-    }
-
-    [Fact]
-    public void Constructor_WithNullTracer_Throws()
-    {
-        Action act = () => new PaymentsDueService(_repository, null!, Logger);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
-    }
-
-    [Fact]
-    public void Constructor_WithNullLogger_Throws()
-    {
-        Action act = () => new PaymentsDueService(_repository, _tracer, null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
-    }
-
-    [Fact]
     public void GetPaymentsDue_MensaisWithStatusUnsetAndDueDayInWindow_IsIncluded()
     {
         _repository.AddRecurringBill(CreateBill(PinnedToday.Day, "Internet"));

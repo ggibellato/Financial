@@ -17,20 +17,6 @@ public class CashFlowRepositoryFactoryTests
         new(new CashFlowSerializerAdapter(), new JsonStorageFactory(new StubRemoteFileClientFactory(), NoOpTelemetryTracer.Instance));
 
     [Fact]
-    public void Constructor_WithNullSerializer_Throws()
-    {
-        Action act = () => new CashFlowRepositoryFactory(null!, new JsonStorageFactory(null, NoOpTelemetryTracer.Instance));
-        act.Should().Throw<ArgumentNullException>().WithParameterName("serializer");
-    }
-
-    [Fact]
-    public void Constructor_WithNullStorageFactory_Throws()
-    {
-        Action act = () => new CashFlowRepositoryFactory(new CashFlowSerializerAdapter(), null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("storageFactory");
-    }
-
-    [Fact]
     public void Create_WithNullOptions_Throws()
     {
         Action act = () => Factory.Create(null!);

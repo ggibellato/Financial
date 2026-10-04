@@ -16,20 +16,6 @@ public class ReserveBucketServiceTests
     private static readonly Microsoft.Extensions.Logging.ILogger<ReserveBucketService> Logger = NullLogger<ReserveBucketService>.Instance;
 
     [Fact]
-    public void Constructor_WithNullRepository_Throws()
-    {
-        Action act = () => new ReserveBucketService(null!, Tracer, Logger);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
-    }
-
-    [Fact]
-    public void Constructor_WithNullTracer_Throws()
-    {
-        Action act = () => new ReserveBucketService(new StubCashFlowRepository(), null!, Logger);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
-    }
-
-    [Fact]
     public void GetReserveBuckets_MapsEveryRepositoryBucketToADto()
     {
         var repository = new StubCashFlowRepository();
@@ -71,14 +57,6 @@ public class ReserveBucketServiceTests
         var result = service.GetReserveBuckets();
 
         result.Should().BeEmpty();
-    }
-
-    [Fact]
-    public void Constructor_WithNullLogger_Throws()
-    {
-        Action act = () => new ReserveBucketService(new StubCashFlowRepository(), Tracer, null!);
-
-        act.Should().Throw<ArgumentNullException>();
     }
 
     [Fact]

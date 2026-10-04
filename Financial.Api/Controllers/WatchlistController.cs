@@ -15,6 +15,7 @@ public sealed class WatchlistController : ControllerBase
 
     public WatchlistController(IOptions<WatchlistOptions> options)
     {
+        ArgumentNullException.ThrowIfNull(options);
         _options = options.Value;
     }
 

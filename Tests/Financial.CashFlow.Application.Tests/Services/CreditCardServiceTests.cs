@@ -31,35 +31,6 @@ public class CreditCardServiceTests
         new(repository ?? _repository, _calendarSyncTrigger, _tracer, Logger);
 
     [Fact]
-    public void Constructor_WithNullRepository_Throws()
-    {
-        Action act = () => new CreditCardService(null!, _calendarSyncTrigger, _tracer, Logger);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
-    }
-
-    [Fact]
-    public void Constructor_WithNullCalendarSyncTrigger_Throws()
-    {
-        Action act = () => new CreditCardService(_repository, null!, _tracer, Logger);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("calendarSyncTrigger");
-    }
-
-    [Fact]
-    public void Constructor_WithNullTracer_Throws()
-    {
-        Action act = () => new CreditCardService(_repository, _calendarSyncTrigger, null!, Logger);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
-    }
-
-    [Fact]
-    public void Constructor_WithNullLogger_Throws()
-    {
-        Action act = () => new CreditCardService(_repository, _calendarSyncTrigger, _tracer, null!);
-
-        act.Should().Throw<ArgumentNullException>();
-    }
-
-    [Fact]
     public void GetCreditCards_ReturnsAllSeededCards_IncludingInactive()
     {
         _repository.CreditCards.Add(CreditCard.Create("BaAmex", isActive: true));

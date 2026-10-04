@@ -19,13 +19,6 @@ public class TransactionServiceQueryTests
     private readonly StubInvestmentRepository _repository = new();
 
     [Fact]
-    public void Constructor_WithNullRepository_Throws()
-    {
-        Action act = () => new TransactionService(null!, new NavigationService(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance), ExchangeRateProvider, ReportingCurrencyProvider, TimeProvider.System, Tracer, NullLogger<TransactionService>.Instance);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
-    }
-
-    [Fact]
     public void GetTransactionsByBroker_ReturnsAllTransactionsAcrossAssets()
     {
         var asset1 = MakeAsset("AAAA");

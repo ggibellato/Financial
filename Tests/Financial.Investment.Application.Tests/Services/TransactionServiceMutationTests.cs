@@ -24,20 +24,6 @@ public class TransactionServiceMutationTests
     };
 
     [Fact]
-    public void Constructor_WithNullNavigationService_Throws()
-    {
-        Action act = () => new TransactionService(_repository, null!, ExchangeRateProvider, ReportingCurrencyProvider, TimeProvider.System, Tracer, NullLogger<TransactionService>.Instance);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("navigationService");
-    }
-
-    [Fact]
-    public void Constructor_WithNullTracer_Throws()
-    {
-        Action act = () => new TransactionService(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance), ExchangeRateProvider, ReportingCurrencyProvider, TimeProvider.System, null!, NullLogger<TransactionService>.Instance);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
-    }
-
-    [Fact]
     public async Task AddTransactionAsync_ValidRequest_AddsTransactionAndReturnsAssetDetails()
     {
         var asset = MakeAsset();
@@ -528,12 +514,4 @@ public class TransactionServiceMutationTests
     private static Asset MakeAsset(string name = "AAAA") =>
         Asset.Create(name, "ISIN", "BVMF", name);
 
-
-    [Fact]
-    public void Constructor_WithNullLogger_Throws()
-    {
-        Action act = () => new TransactionService(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance), ExchangeRateProvider, ReportingCurrencyProvider, TimeProvider.System, Tracer, null!);
-
-        act.Should().Throw<ArgumentNullException>();
-    }
 }

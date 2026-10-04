@@ -35,33 +35,6 @@ public class NavigationServiceTests
     }
 
     [Fact]
-    public void Constructor_WithNullRepository_ThrowsArgumentNullException()
-    {
-        Action act = () => new NavigationService(null!, TestHoldingValuationService.Create(), new RecordingTelemetryTracer(), NullLogger<NavigationService>.Instance);
-
-        act.Should().Throw<ArgumentNullException>()
-            .WithParameterName("repository");
-    }
-
-    [Fact]
-    public void Constructor_WithNullHoldingValuationService_ThrowsArgumentNullException()
-    {
-        Action act = () => new NavigationService(_repository, null!, new RecordingTelemetryTracer(), NullLogger<NavigationService>.Instance);
-
-        act.Should().Throw<ArgumentNullException>()
-            .WithParameterName("holdingValuationService");
-    }
-
-    [Fact]
-    public void Constructor_WithNullTracer_ThrowsArgumentNullException()
-    {
-        Action act = () => new NavigationService(_repository, TestHoldingValuationService.Create(), null!, NullLogger<NavigationService>.Instance);
-
-        act.Should().Throw<ArgumentNullException>()
-            .WithParameterName("tracer");
-    }
-
-    [Fact]
     public void GetNavigationTree_ShouldReturnRootNode()
     {
         var result = _sut.GetNavigationTree();

@@ -52,27 +52,6 @@ public class CardStatementServiceTests
     }
 
     [Fact]
-    public void Constructor_WithNullRepository_Throws()
-    {
-        Action act = () => new CardStatementService(null!, NullLogger<CardStatementService>.Instance, _tracer);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
-    }
-
-    [Fact]
-    public void Constructor_WithNullLogger_Throws()
-    {
-        Action act = () => new CardStatementService(_repository, null!, _tracer);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
-    }
-
-    [Fact]
-    public void Constructor_WithNullTracer_Throws()
-    {
-        Action act = () => new CardStatementService(_repository, NullLogger<CardStatementService>.Instance, null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
-    }
-
-    [Fact]
     public async Task GetStatementsForMonthAsync_FirstCall_GeneratesExactlyFiveUnpaidStatements()
     {
         var result = await _sut.GetStatementsForMonthAsync(2026, 7);

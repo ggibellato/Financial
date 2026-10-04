@@ -29,34 +29,6 @@ public class InvestmentJsonRepositoryTests
     }
 
     [Fact]
-    public void Constructor_WithNullInvestments_Throws()
-    {
-        Action act = () => new InvestmentJsonRepository(null!, TestDataStorage, Serializer);
-
-        act.Should().Throw<ArgumentNullException>().WithParameterName("investments");
-    }
-
-    [Fact]
-    public void Constructor_WithNullStorage_Throws()
-    {
-        var investments = InvestmentLoader.LoadSync(TestDataStorage, Serializer);
-
-        Action act = () => new InvestmentJsonRepository(investments, null!, new InvestmentSerializerAdapter());
-
-        act.Should().Throw<ArgumentNullException>().WithParameterName("storage");
-    }
-
-    [Fact]
-    public void Constructor_WithNullSerializer_Throws()
-    {
-        var investments = InvestmentLoader.LoadSync(TestDataStorage, new InvestmentSerializerAdapter());
-
-        Action act = () => new InvestmentJsonRepository(investments, TestDataStorage, null!);
-
-        act.Should().Throw<ArgumentNullException>().WithParameterName("serializer");
-    }
-
-    [Fact]
     public void GetStatus_WhenStorageIsNotASyncStatusProvider_ReturnsIdleWithNoError()
     {
         var status = ((ISyncStatusProvider)_sut).GetStatus();

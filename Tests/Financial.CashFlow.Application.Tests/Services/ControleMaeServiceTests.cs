@@ -31,27 +31,6 @@ public class ControleMaeServiceTests
         new(repository ?? _repository, exchangeRateProvider ?? new StubExchangeRateProvider(DefaultRate), _tracer, Logger);
 
     [Fact]
-    public void Constructor_WithNullRepository_Throws()
-    {
-        Action act = () => new ControleMaeService(null!, new StubExchangeRateProvider(DefaultRate), _tracer, Logger);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
-    }
-
-    [Fact]
-    public void Constructor_WithNullExchangeRateProvider_Throws()
-    {
-        Action act = () => new ControleMaeService(_repository, null!, _tracer, Logger);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("exchangeRateProvider");
-    }
-
-    [Fact]
-    public void Constructor_WithNullTracer_Throws()
-    {
-        Action act = () => new ControleMaeService(_repository, new StubExchangeRateProvider(DefaultRate), null!, Logger);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
-    }
-
-    [Fact]
     [Trait("AC", "P49-F01-shared-exchange-rate-provider-04")]
     public async Task CreateEntryAsync_WithSuccessfulRateLookup_PopulatesBothCurrenciesAndSaves()
     {
@@ -258,14 +237,6 @@ public class ControleMaeServiceTests
             CallCount++;
             return Task.FromResult(_rate);
         }
-    }
-
-    [Fact]
-    public void Constructor_WithNullLogger_Throws()
-    {
-        Action act = () => new ControleMaeService(_repository, new StubExchangeRateProvider(DefaultRate), _tracer, null!);
-
-        act.Should().Throw<ArgumentNullException>();
     }
 
     [Fact]

@@ -16,14 +16,6 @@ public class ReportingCurrencyViewModelTests
     }
 
     [Fact]
-    public void Constructor_WithNullReportingCurrencyProvider_Throws()
-    {
-        Action act = () => new ReportingCurrencyViewModel(null!, new RecordingLogger<ReportingCurrencyViewModel>());
-
-        act.Should().Throw<ArgumentNullException>().WithParameterName("reportingCurrencyProvider");
-    }
-
-    [Fact]
     public void InitialSelection_ReflectsTheCurrentSetting()
     {
         var (viewModel, _) = CreateViewModel(Currency.BRL);

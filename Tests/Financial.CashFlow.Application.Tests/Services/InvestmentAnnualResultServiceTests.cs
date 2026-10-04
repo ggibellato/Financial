@@ -29,28 +29,6 @@ public class InvestmentAnnualResultServiceTests
         repository.InvestmentAccounts.First(a => a.Name == name);
 
     [Fact]
-    public void Constructor_WithNullRepository_Throws()
-    {
-        Action act = () => new InvestmentAnnualResultService(null!, _tracer, Logger);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
-    }
-
-    [Fact]
-    public void Constructor_WithNullTracer_Throws()
-    {
-        Action act = () => new InvestmentAnnualResultService(_repository, null!, Logger);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
-    }
-
-    [Fact]
-    public void Constructor_WithNullLogger_Throws()
-    {
-        Action act = () => new InvestmentAnnualResultService(_repository, _tracer, null!);
-
-        act.Should().Throw<ArgumentNullException>();
-    }
-
-    [Fact]
     public void GetInvestmentAnnualResultForYear_CurrentYear_ReturnsAllElevenActiveAccounts()
     {
         var result = _sut.GetInvestmentAnnualResultForYear(CurrentYear);

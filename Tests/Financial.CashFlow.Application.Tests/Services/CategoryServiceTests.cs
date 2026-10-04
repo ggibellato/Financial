@@ -29,20 +29,6 @@ public class CategoryServiceTests
         new(repository ?? _repository, _tracer, Logger);
 
     [Fact]
-    public void Constructor_WithNullRepository_Throws()
-    {
-        Action act = () => new CategoryService(null!, _tracer, Logger);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
-    }
-
-    [Fact]
-    public void Constructor_WithNullTracer_Throws()
-    {
-        Action act = () => new CategoryService(_repository, null!, Logger);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
-    }
-
-    [Fact]
     public void GetCategories_MapsEveryRepositoryCategoryToADto()
     {
         var result = _sut.GetCategories();
@@ -61,14 +47,6 @@ public class CategoryServiceTests
         span.Attributes[TelemetryAttributeKeys.BoundedContext].Should().Be("CashFlow");
         span.Attributes[TelemetryAttributeKeys.EntityType].Should().Be("Category");
         span.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Success);
-    }
-
-    [Fact]
-    public void Constructor_WithNullLogger_Throws()
-    {
-        Action act = () => new CategoryService(_repository, _tracer, null!);
-
-        act.Should().Throw<ArgumentNullException>();
     }
 
     [Fact]

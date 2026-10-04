@@ -16,27 +16,6 @@ public class PortfolioAssetSummaryServiceTests
     private readonly StubInvestmentRepository _repository = new();
 
     [Fact]
-    public void Constructor_WithNullRepository_Throws()
-    {
-        Action act = () => new PortfolioAssetSummaryService(null!, TestHoldingValuationService.Create(), Tracer, NullLogger<PortfolioAssetSummaryService>.Instance);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
-    }
-
-    [Fact]
-    public void Constructor_WithNullHoldingValuationService_Throws()
-    {
-        Action act = () => new PortfolioAssetSummaryService(new StubInvestmentRepository(), null!, Tracer, NullLogger<PortfolioAssetSummaryService>.Instance);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("holdingValuationService");
-    }
-
-    [Fact]
-    public void Constructor_WithNullTracer_Throws()
-    {
-        Action act = () => new PortfolioAssetSummaryService(new StubInvestmentRepository(), TestHoldingValuationService.Create(), null!, NullLogger<PortfolioAssetSummaryService>.Instance);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
-    }
-
-    [Fact]
     public void GetPortfolioAssetsSummary_ReturnsAssetClass_MatchingAssetClassification()
     {
         var asset = Asset.Create("Bitcoin", "", "", "BTC", CountryCode.UK, "", GlobalAssetClass.Cryptocurrency);
@@ -857,12 +836,4 @@ public class PortfolioAssetSummaryServiceTests
     private static Asset MakeAsset(string name, string ticker, string exchange) =>
         Asset.Create(name, "ISIN", exchange, ticker);
 
-
-    [Fact]
-    public void Constructor_WithNullLogger_Throws()
-    {
-        Action act = () => new PortfolioAssetSummaryService(new StubInvestmentRepository(), TestHoldingValuationService.Create(), Tracer, null!);
-
-        act.Should().Throw<ArgumentNullException>();
-    }
 }

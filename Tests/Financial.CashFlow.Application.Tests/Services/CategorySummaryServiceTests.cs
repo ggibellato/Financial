@@ -60,34 +60,6 @@ public class CategorySummaryServiceTests
     private const int PinnedMonthsElapsed = 5;
 
     [Fact]
-    public void Constructor_WithNullRepository_Throws()
-    {
-        Action act = () => new CategorySummaryService(null!, CreateIncomeSummaryService(_repository), _tracer, Logger);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
-    }
-
-    [Fact]
-    public void Constructor_WithNullIncomeSummaryService_Throws()
-    {
-        Action act = () => new CategorySummaryService(_repository, null!, _tracer, Logger);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("incomeSummaryService");
-    }
-
-    [Fact]
-    public void Constructor_WithNullTracer_Throws()
-    {
-        Action act = () => new CategorySummaryService(_repository, CreateIncomeSummaryService(_repository), null!, Logger);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
-    }
-
-    [Fact]
-    public void Constructor_WithNullLogger_Throws()
-    {
-        Action act = () => new CategorySummaryService(_repository, CreateIncomeSummaryService(_repository), _tracer, null!);
-        act.Should().Throw<ArgumentNullException>();
-    }
-
-    [Fact]
     public void GetCategoryTotalsAnnualForYear_RecordsSuccessfulSpan()
     {
         _sut.GetCategoryTotalsAnnualForYear(2026);

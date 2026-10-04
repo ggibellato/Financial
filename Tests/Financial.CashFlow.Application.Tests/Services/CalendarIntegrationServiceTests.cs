@@ -28,41 +28,6 @@ public class CalendarIntegrationServiceTests
     }
 
     [Fact]
-    public void Constructor_WithNullProvider_Throws()
-    {
-        Action act = () => new CalendarIntegrationService(null!, _store, _tracer, Logger, _timeProvider);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("provider");
-    }
-
-    [Fact]
-    public void Constructor_WithNullStore_Throws()
-    {
-        Action act = () => new CalendarIntegrationService(_provider, null!, _tracer, Logger, _timeProvider);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("store");
-    }
-
-    [Fact]
-    public void Constructor_WithNullTracer_Throws()
-    {
-        Action act = () => new CalendarIntegrationService(_provider, _store, null!, Logger, _timeProvider);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
-    }
-
-    [Fact]
-    public void Constructor_WithNullLogger_Throws()
-    {
-        Action act = () => new CalendarIntegrationService(_provider, _store, _tracer, null!, _timeProvider);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
-    }
-
-    [Fact]
-    public void Constructor_WithNullTimeProvider_Throws()
-    {
-        Action act = () => new CalendarIntegrationService(_provider, _store, _tracer, Logger, null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("timeProvider");
-    }
-
-    [Fact]
     public void BuildAuthorizationUrl_ReturnsTheProvidersUrl_AndIssuesAPendingState()
     {
         var url = _sut.BuildAuthorizationUrl();

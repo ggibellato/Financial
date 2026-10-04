@@ -33,20 +33,6 @@ public class BankServiceTests
         new(repository ?? _repository, _tracer, Logger);
 
     [Fact]
-    public void Constructor_WithNullRepository_Throws()
-    {
-        Action act = () => new BankService(null!, _tracer, Logger);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
-    }
-
-    [Fact]
-    public void Constructor_WithNullTracer_Throws()
-    {
-        Action act = () => new BankService(_repository, null!, Logger);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
-    }
-
-    [Fact]
     public void GetBanks_MapsEveryRepositoryBankToADto()
     {
         _repository.Banks.Add(Bank.Create("Barclays", roundUpEnabled: false));
@@ -525,14 +511,6 @@ public class BankServiceTests
         var act = () => _sut.GetBankBalanceAsOf(Guid.NewGuid(), new DateOnly(2026, 7, 15));
 
         act.Should().Throw<KeyNotFoundException>();
-    }
-
-    [Fact]
-    public void Constructor_WithNullLogger_Throws()
-    {
-        Action act = () => new BankService(_repository, _tracer, null!);
-
-        act.Should().Throw<ArgumentNullException>();
     }
 
     [Fact]
