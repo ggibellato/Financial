@@ -13,7 +13,7 @@ outputs:
     description: Line coverage percentage, rounded to 2 decimals
     value: ${{ steps.gate.outputs.coverage }}
   emoji:
-    description: Traffic-light emoji for the line coverage (green 100, yellow 95, amber 90, red below)
+    description: Traffic-light emoji for the line coverage (green 90 and up, yellow 85, amber 80, red below)
     value: ${{ steps.gate.outputs.emoji }}
   branch:
     description: Branch coverage percentage, rounded to 2 decimals (empty when the report has none)
@@ -34,21 +34,21 @@ runs:
           "🔴 Coverage gate: could not read line coverage from the report" | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
           exit 1
         }
+        function Get-CoverageEmoji([double]$value) {
+          if ($value -ge 90) { return '🟢' }
+          elseif ($value -ge 85) { return '🟡' }
+          elseif ($value -ge 80) { return '🟠' }
+          else { return '🔴' }
+        }
         $lineCoverage = [math]::Round([double]$lineCoverage, 2)
-        if ($lineCoverage -ge 100) { $band = 'green'; $emoji = '🟢' }
-        elseif ($lineCoverage -ge 95) { $band = 'yellow'; $emoji = '🟡' }
-        elseif ($lineCoverage -ge 90) { $band = 'amber'; $emoji = '🟠' }
-        else { $band = 'red'; $emoji = '🔴' }
+        $emoji = Get-CoverageEmoji $lineCoverage
         $branchCoverage = $summary.summary.branchcoverage
         $branch = ''
         $branchEmoji = '⚪'
         if ($null -ne $branchCoverage) {
           $branchCoverage = [math]::Round([double]$branchCoverage, 2)
           $branch = "$branchCoverage"
-          if ($branchCoverage -ge 100) { $branchEmoji = '🟢' }
-          elseif ($branchCoverage -ge 95) { $branchEmoji = '🟡' }
-          elseif ($branchCoverage -ge 90) { $branchEmoji = '🟠' }
-          else { $branchEmoji = '🔴' }
+          $branchEmoji = Get-CoverageEmoji $branchCoverage
         }
         $branchText = if ($branch) { "$branch%" } else { 'n/a' }
         "$emoji ${{ inputs.label }} line coverage: $lineCoverage%, $branchEmoji branch coverage: $branchText" | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
@@ -56,9 +56,7 @@ runs:
         "emoji=$emoji" | Out-File -Append -Encoding utf8 $env:GITHUB_OUTPUT
         "branch=$branch" | Out-File -Append -Encoding utf8 $env:GITHUB_OUTPUT
         "branch-emoji=$branchEmoji" | Out-File -Append -Encoding utf8 $env:GITHUB_OUTPUT
-        if ($band -eq 'red') {
-          Write-Host "::error::${{ inputs.label }} line coverage $lineCoverage% is below the 90% gate"
+        if ($lineCoverage -lt 90) {
+          Write-Host "::error::${{ inputs.label }} line coverage $lineCoverage% is below the 90% floor"
           exit 1
-        } elseif ($band -ne 'green') {
-          Write-Host "::warning::${{ inputs.label }} line coverage $lineCoverage% ($band)"
         }
