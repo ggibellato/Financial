@@ -11,7 +11,7 @@
   unset → `LocalJson`; `"GoogleDrive"` → remote storage; `"NotARealProvider"` →
   `InvalidOperationException` with `*is not supported*` on resolution, not on registration.
 - **Configured-library contracts**: `AddHttpClient<IExchangeRateProvider, FrankfurterExchangeRateProvider>`
-  sets `BaseAddress` to `https://api.frankfurter.app/`; `AddObservability` binds
+  sets `BaseAddress` to `https://api.frankfurter.dev/v1/`; `AddObservability` binds
   `ObservabilityOptions` defaults (`Enabled=false`, `Backend=Jaeger`, `Endpoint=http://localhost:4317`).
 - **Composition-root invariants**: `IJsonStorageFactory` and `ITelemetryTracer` are registered
   by `Program.cs` / `App.xaml.cs` before the `Add*Infrastructure` calls; the DI test mirrors that

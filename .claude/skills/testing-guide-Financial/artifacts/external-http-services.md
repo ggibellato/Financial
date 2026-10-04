@@ -5,7 +5,7 @@
 Two sub-types live in these folders:
 
 1. **HTTP-backed providers** that call a genuine external API through an injected `HttpClient`:
-   `FrankfurterExchangeRateProvider` (`https://api.frankfurter.app/`) and `YahooFinanceService`
+   `FrankfurterExchangeRateProvider` (`https://api.frankfurter.dev/v1/`) and `YahooFinanceService`
    (`https://query1.finance.yahoo.com/`).
 2. **Fetchers, adapters and fallbacks** that orchestrate providers behind `IFinanceService` /
    `IAssetPriceFetcher`: `AssetPriceService`, `StandardAssetPriceFetcher`,
@@ -21,6 +21,7 @@ Two sub-types live in these folders:
 - Non-2xx status → the documented outcome (`FrankfurterExchangeRateProvider` returns `null`;
   `YahooFinanceService` throws `InvalidOperationException`).
 - Malformed body, body missing the requested key → `null` / exception.
+- A handler that never answers → the provider's per-call budget (10 s in production, a constructor argument in tests) cancels it and the documented empty result comes back; a 5xx or thrown transport error makes exactly one request.
 - Transport failure (`HttpRequestException` thrown by the handler) → swallowed **and logged by
   exception type** (`RecordingLogger<T>.Entries` contains `nameof(HttpRequestException)` at
   `Warning`), or propagated — whichever the class documents.
@@ -57,7 +58,7 @@ private static FrankfurterExchangeRateProvider CreateProvider(Func<HttpRequestMe
     new(CreateClient(new FakeHttpMessageHandler(respond)), NullLogger<FrankfurterExchangeRateProvider>.Instance);
 
 private static HttpClient CreateClient(HttpMessageHandler handler) =>
-    new(handler) { BaseAddress = new Uri("https://api.frankfurter.app/") };
+    new(handler) { BaseAddress = new Uri("https://api.frankfurter.dev/v1/") };
 
 [Fact]
 public async Task GetHistoricalRateAsync_WhenHttpRequestThrows_LogsTheExceptionType()

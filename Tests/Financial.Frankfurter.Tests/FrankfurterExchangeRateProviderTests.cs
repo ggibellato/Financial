@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net;
 using Financial.Integrations.Frankfurter;
 using Financial.Shared.Abstractions.Currencies;
@@ -320,9 +321,121 @@ public class FrankfurterExchangeRateProviderTests
         result.GbpRate.Should().BeNull();
     }
 
+    [Fact]
+    public async Task GetHistoricalRateAsync_WhenUpstreamNeverAnswers_ReturnsNullWithinTheCallBudget()
+    {
+        var provider = new FrankfurterExchangeRateProvider(
+            new HttpClient(new HangingHandler()) { BaseAddress = new Uri(FrankfurterExchangeRateProvider.BaseAddress) },
+            NullLogger<FrankfurterExchangeRateProvider>.Instance,
+            TimeSpan.FromMilliseconds(200));
+
+        var stopwatch = Stopwatch.StartNew();
+        var rate = await provider.GetHistoricalRateAsync(new DateOnly(2026, 7, 1), Currency.BRL, Currency.GBP);
+
+        rate.Should().BeNull();
+        stopwatch.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(5));
+    }
+
+    [Fact]
+    public async Task FetchAsync_WhenUpstreamNeverAnswers_ReturnsEmptyResultWithinTheCallBudget()
+    {
+        var provider = new FrankfurterExchangeRateProvider(
+            new HttpClient(new HangingHandler()) { BaseAddress = new Uri(FrankfurterExchangeRateProvider.BaseAddress) },
+            NullLogger<FrankfurterExchangeRateProvider>.Instance,
+            TimeSpan.FromMilliseconds(200));
+
+        var stopwatch = Stopwatch.StartNew();
+        var result = await provider.FetchAsync(new DateOnly(2026, 9, 18));
+
+        result.BrlRate.Should().BeNull();
+        result.GbpRate.Should().BeNull();
+        stopwatch.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(5));
+    }
+
+    [Fact]
+    public async Task GetHistoricalRateAsync_WithServerError_MakesASingleRequest()
+    {
+        var requestCount = 0;
+        var provider = CreateProvider(_ =>
+        {
+            requestCount++;
+            return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+        });
+
+        await provider.GetHistoricalRateAsync(new DateOnly(2026, 7, 1), Currency.BRL, Currency.GBP);
+
+        requestCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task FetchAsync_WithServerError_MakesASingleRequest()
+    {
+        var requestCount = 0;
+        var provider = CreateProvider(_ =>
+        {
+            requestCount++;
+            return new HttpResponseMessage(HttpStatusCode.InternalServerError);
+        });
+
+        await provider.FetchAsync(new DateOnly(2026, 9, 18));
+
+        requestCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task GetHistoricalRateAsync_WhenTransportThrows_MakesASingleRequest()
+    {
+        var requestCount = 0;
+        var provider = CreateProvider(_ =>
+        {
+            requestCount++;
+            throw new HttpRequestException("network down");
+        });
+
+        await provider.GetHistoricalRateAsync(new DateOnly(2026, 7, 1), Currency.BRL, Currency.GBP);
+
+        requestCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task GetHistoricalRateAsync_WhenDateIsNotFound_StepsBackToTheEarlierDate()
+    {
+        var requestedDates = new List<string>();
+        var provider = CreateProvider(request =>
+        {
+            var date = ExtractDate(request);
+            requestedDates.Add(date);
+
+            return date == "2026-07-03"
+                ? new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("""{"amount":1,"base":"BRL","date":"2026-07-03","rates":{"GBP":0.15}}""")
+                }
+                : new HttpResponseMessage(HttpStatusCode.NotFound);
+        });
+
+        var rate = await provider.GetHistoricalRateAsync(new DateOnly(2026, 7, 4), Currency.BRL, Currency.GBP);
+
+        rate.Should().Be(0.15m);
+        requestedDates.Should().Equal("2026-07-04", "2026-07-03");
+    }
+
+    [Fact]
+    public void BaseAddress_PointsAtTheCurrentFrankfurterHost() =>
+        FrankfurterExchangeRateProvider.BaseAddress.Should().Be("https://api.frankfurter.dev/v1/");
+
     private static string ExtractDate(HttpRequestMessage request) =>
-        request.RequestUri!.AbsolutePath.TrimStart('/');
+        request.RequestUri!.AbsolutePath.Split('/')[^1];
 
     private static HttpClient CreateClient(HttpMessageHandler handler) =>
-        new(handler) { BaseAddress = new Uri("https://api.frankfurter.app/") };
+        new(handler) { BaseAddress = new Uri(FrankfurterExchangeRateProvider.BaseAddress) };
+
+    private sealed class HangingHandler : HttpMessageHandler
+    {
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            await Task.Delay(Timeout.Infinite, cancellationToken);
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        }
+    }
 }
