@@ -10,9 +10,6 @@
 # FULL_RUN=true bypasses classification entirely (used for every push to main).
 set -u
 
-BASE_SHA="${1:-}"
-HEAD_SHA="${2:-HEAD}"
-
 backend=false; wpf=false; web=false; smoke=false
 reasons=()
 
@@ -25,7 +22,7 @@ classify() {
   local path="$1"
   case "$path" in
     # Documentation and agent tooling: nothing to build.
-    docs/*|specs/*|dev-util/*|.claude/*|.specify/*|*.md|LICENSE|.gitignore|.editorconfig|.dockerignore)
+    docs/*|specs/*|dev-util/*|.claude/*|.specify/*|LICENSE|.gitignore|.editorconfig|.dockerignore)
       reasons+=("docs: $path") ;;
 
     # API surface the web SPA is compiled against (controllers, OpenAPI snapshot).
@@ -43,7 +40,12 @@ classify() {
       web=true; smoke=true
       reasons+=("contract (web side): $path") ;;
 
-    Financial.App/*|Tests/Financial.Presentation.Tests/*)
+    # Financial.Architecture.Tests (backend job) pin Financial.App's references.
+    Financial.App/*)
+      wpf=true; backend=true
+      reasons+=("wpf+backend: $path") ;;
+
+    Tests/Financial.Presentation.Tests/*)
       wpf=true
       reasons+=("wpf: $path") ;;
 
@@ -56,6 +58,10 @@ classify() {
       backend=true; wpf=true; smoke=true
       reasons+=("backend: $path") ;;
 
+    # Markdown inside a source directory matched a rule above; only the rest is documentation.
+    *.md)
+      reasons+=("docs: $path") ;;
+
     # Build, deploy, data templates and CI plumbing affect every job.
     .github/*|Dockerfile*|docker-compose*|Financial.slnx|global.json|nuget.config|Directory.*|scripts/*|deploy/*|data/*)
       run_everything "infra: $path" ;;
@@ -65,37 +71,47 @@ classify() {
   esac
 }
 
-if [[ "${FULL_RUN:-false}" == true ]]; then
-  run_everything "FULL_RUN requested"
-elif [[ -z "$BASE_SHA" || "$BASE_SHA" =~ ^0+$ ]]; then
-  run_everything "no base commit to diff against"
-elif ! changed=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" 2>/dev/null); then
-  run_everything "git diff $BASE_SHA..$HEAD_SHA failed"
-elif [[ -z "$changed" ]]; then
-  reasons+=("no files changed")
-else
-  while IFS= read -r path; do
-    classify "$path"
-  done <<< "$changed"
+main() {
+  local BASE_SHA="${1:-}"
+  local HEAD_SHA="${2:-HEAD}"
+  local changed
+
+  if [[ "${FULL_RUN:-false}" == true ]]; then
+    run_everything "FULL_RUN requested"
+  elif [[ -z "$BASE_SHA" || "$BASE_SHA" =~ ^0+$ ]]; then
+    run_everything "no base commit to diff against"
+  elif ! changed=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" 2>/dev/null); then
+    run_everything "git diff $BASE_SHA..$HEAD_SHA failed"
+  elif [[ -z "$changed" ]]; then
+    reasons+=("no files changed")
+  else
+    while IFS= read -r path; do
+      classify "$path"
+    done <<< "$changed"
+  fi
+
+  {
+    echo "backend=$backend"
+    echo "wpf=$wpf"
+    echo "web=$web"
+    echo "smoke=$smoke"
+  } >> "${GITHUB_OUTPUT:-/dev/stdout}"
+
+  {
+    echo "### Affected jobs"
+    echo
+    echo "| backend | wpf | web | smoke |"
+    echo "|---|---|---|---|"
+    echo "| $backend | $wpf | $web | $smoke |"
+    echo
+    echo "<details><summary>Why</summary>"
+    echo
+    printf -- '- %s\n' "${reasons[@]}" | sort -u
+    echo
+    echo "</details>"
+  } >> "${GITHUB_STEP_SUMMARY:-/dev/stdout}"
+}
+
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  main "$@"
 fi
-
-{
-  echo "backend=$backend"
-  echo "wpf=$wpf"
-  echo "web=$web"
-  echo "smoke=$smoke"
-} >> "${GITHUB_OUTPUT:-/dev/stdout}"
-
-{
-  echo "### Affected jobs"
-  echo
-  echo "| backend | wpf | web | smoke |"
-  echo "|---|---|---|---|"
-  echo "| $backend | $wpf | $web | $smoke |"
-  echo
-  echo "<details><summary>Why</summary>"
-  echo
-  printf -- '- %s\n' "${reasons[@]}" | sort -u
-  echo
-  echo "</details>"
-} >> "${GITHUB_STEP_SUMMARY:-/dev/stdout}"
