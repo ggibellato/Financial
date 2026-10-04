@@ -1,4 +1,6 @@
+using System.Text.Json;
 using ClosedXML.Excel;
+using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.CommandLine;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.Banks;
@@ -25,20 +27,38 @@ const string ReservasSheetName = "Reservas";
 const string MensaisSheetName = "Mensais";
 const string ControleMaeSheetName = "Controle mae";
 const string ResumoSheetPrefix = "Resumo";
-const string MensaisOnlyFlag = "--mensais-only";
 
-var mensaisOnly = args.Contains(MensaisOnlyFlag);
-var positionalArgs = args.Where(a => a != MensaisOnlyFlag).ToArray();
+if (!ImportArguments.TryParse(args, out var arguments, out var refusal))
+{
+    Console.Error.WriteLine(refusal);
+    return 2;
+}
 
-var workbookPath = positionalArgs.Length > 0 ? positionalArgs[0] : @"C:\Users\ggibe\Downloads\Despesas.xlsx";
-var outputPath = positionalArgs.Length > 1
-    ? positionalArgs[1]
-    : Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "data", "data-cashflow.json"));
+var (workbookPath, outputPath, mensaisOnly) = arguments!;
+
+if (LiveDataFileGuard.IsLiveDataFile(outputPath, AppContext.BaseDirectory))
+{
+    Console.Error.WriteLine(ImportArguments.FullLiveFileRefusal);
+    return 2;
+}
 
 if (!File.Exists(workbookPath))
 {
     Console.Error.WriteLine($"Workbook not found at '{workbookPath}'.");
     return 1;
+}
+
+if (!mensaisOnly && File.Exists(outputPath))
+{
+    try
+    {
+        Console.WriteLine(NonCarriedRecordsReport.FromJson(File.ReadAllText(outputPath)).Render());
+    }
+    catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)
+    {
+        Console.Error.WriteLine($"Cannot read existing output to report non-carried records: {ex.Message}");
+        return 3;
+    }
 }
 
 string? legacyRawJson = null;

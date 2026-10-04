@@ -30,6 +30,9 @@ public static class CategoryMigrator
     private const string InvestmentCategoryName = "Investimento";
     private const string TitheCategoryName = "Dizimo";
 
+    public static bool IsSeededCategoryName(string name) =>
+        SeededCategoryNames.Contains(name, StringComparer.OrdinalIgnoreCase);
+
     public static CategoryMigrationSummary Migrate(CashFlowData data)
     {
         ArgumentNullException.ThrowIfNull(data);
