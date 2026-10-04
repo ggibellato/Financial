@@ -1,10 +1,11 @@
 import { act, renderHook } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import { ApiError } from '../../api/apiError'
 import type { BalanceAdjustmentDto } from '../../api/types'
 import type { BankTotal } from '../useMonthly'
 import { useBalanceAdjustmentForm } from '../useBalanceAdjustmentForm'
+import { pinDate } from '../../test-utils/pinDate'
 
 const { createBalanceAdjustmentMock, updateBalanceAdjustmentMock } = vi.hoisted(() => ({
   createBalanceAdjustmentMock: vi.fn<FinancialApiClient['createBalanceAdjustment']>(),
@@ -34,6 +35,10 @@ const ADJUSTMENT: BalanceAdjustmentDto = {
 }
 
 describe('useBalanceAdjustmentForm', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   beforeEach(() => {
     createBalanceAdjustmentMock.mockReset()
     updateBalanceAdjustmentMock.mockReset()
@@ -49,14 +54,14 @@ describe('useBalanceAdjustmentForm', () => {
   it('openCreateForm defaults date to today and opens with no bank pre-selected, when nothing was persisted yet', () => {
     const { result } = renderHook(() => useBalanceAdjustmentForm(BANK_TOTALS, vi.fn()))
 
+    pinDate('2026-07-01T00:30:00+01:00')
     act(() => result.current.openCreateForm())
 
-    const today = new Date().toISOString().slice(0, 10)
     expect(result.current.isOpen).toBe(true)
     expect(result.current.isEditing).toBe(false)
     expect(result.current.bankName).toBe('')
     expect(result.current.currentBalance).toBe(0)
-    expect(result.current.date).toBe(today)
+    expect(result.current.date).toBe('2026-07-01')
     expect(result.current.savedDelta).toBeNull()
   })
 

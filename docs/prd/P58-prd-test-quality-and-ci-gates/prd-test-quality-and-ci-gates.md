@@ -557,12 +557,12 @@ graph TD
 - [x] A valid import run prints the non-carried counts per type before writing.
 
 ### F04. Cross-Front-End Correctness Fixes
-- [ ] Domain round-up tests pass for 9.40 → 0.60, 10.00 → 0.00, 0.01 → 0.99 and 9.995 → 0.01.
-- [ ] Typing 9.40 shows `0.60` in both React and WPF, and both interaction tests assert `0.60`.
-- [ ] The per-front-end round-up value-table tests are removed.
-- [ ] `todayIsoDate()` at `2026-07-01T00:30+01:00` returns `'2026-07-01'`. The test fails on the pre-fix code.
-- [ ] No web test computes an expected date with `toISOString().slice(0,10)`.
-- [ ] No test asserts an empty `API_BASE_URL` as valid.
+- [x] Domain round-up tests pass for 9.40 → 0.60, 10.00 → 0.00, 0.01 → 0.99 and 9.995 → 0.01.
+- [x] Typing 9.40 shows `0.60` in both React and WPF, and both interaction tests assert `0.60`.
+- [x] The per-front-end round-up value-table tests are removed.
+- [x] `todayIsoDate()` at `2026-07-01T00:30+01:00` returns `'2026-07-01'`. The test fails on the pre-fix code.
+- [x] No web test computes an expected date with `toISOString().slice(0,10)`.
+- [x] No test asserts an empty `API_BASE_URL` as valid.
 - [ ] (Full Scope) The reserve-split tolerance rule exists only in the Application service, and both front ends show the server's single message.
 
 ### F05. API Host Boundary Tests

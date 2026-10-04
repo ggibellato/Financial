@@ -1,9 +1,10 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AssetDetailsDto, CreditDto, SelectedNode } from '../../api/types'
 import { createSelectedNodeWrapper } from '../../test-utils/selectedNodeTestWrapper'
 import { useCredits } from '../useCredits'
+import { pinDate } from '../../test-utils/pinDate'
 
 const {
   getAssetDetailsMock,
@@ -141,6 +142,10 @@ const ASSET_DETAILS: AssetDetailsDto = {
 }
 
 describe('useCredits', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   beforeEach(() => {
     getAssetDetailsMock.mockReset()
     getCreditsByBrokerMock.mockReset()
@@ -303,11 +308,11 @@ describe('useCredits', () => {
     const { result } = renderHook(() => useCredits(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.credits).toHaveLength(2))
+    pinDate('2026-07-01T00:30:00+01:00')
     act(() => result.current.showNewForm())
-    const today = new Date().toISOString().slice(0, 10)
     expect(result.current.isFormVisible).toBe(true)
     expect(result.current.editingId).toBeNull()
-    expect(result.current.formDate).toBe(today)
+    expect(result.current.formDate).toBe('2026-07-01')
     expect(result.current.formType).toBe('Dividend')
     expect(result.current.formValue).toBe('')
   })

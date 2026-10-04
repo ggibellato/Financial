@@ -1,8 +1,9 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { MaeLedgerEntryDto, MaeLedgerTotalsDto } from '../../api/types'
 import { useControleMae } from '../useControleMae'
+import { pinDate } from '../../test-utils/pinDate'
 
 const CURRENT_YEAR = new Date().getFullYear()
 const DEFAULT_FROM_DATE = `${CURRENT_YEAR - 1}-01-01`
@@ -47,6 +48,10 @@ const ENTRIES: MaeLedgerEntryDto[] = [
 const TOTALS: MaeLedgerTotalsDto = { totalBrlValue: 1000, totalGbpValue: 145.3 }
 
 describe('useControleMae', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   beforeEach(() => {
     getMaeLedgerEntriesFromDateMock.mockReset()
     getMaeLedgerTotalsMock.mockReset()
@@ -131,10 +136,10 @@ describe('useControleMae', () => {
     const { result } = renderHook(() => useControleMae())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
+    pinDate('2026-07-01T00:30:00+01:00')
     act(() => result.current.showCreateForm())
 
-    const today = new Date().toISOString().slice(0, 10)
-    expect(result.current.createDate).toBe(today)
+    expect(result.current.createDate).toBe('2026-07-01')
     expect(result.current.createSourceCurrency).toBe('BRL')
   })
 

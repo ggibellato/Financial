@@ -1,9 +1,10 @@
 import { act, renderHook } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import { ApiError } from '../../api/apiError'
 import type { BankDto, TransferDto } from '../../api/types'
 import { useTransferForm } from '../useTransferForm'
+import { pinDate } from '../../test-utils/pinDate'
 
 const { createTransferMock, updateTransferMock } = vi.hoisted(() => ({
   createTransferMock: vi.fn<FinancialApiClient['createTransfer']>(),
@@ -34,6 +35,10 @@ const TRANSFER: TransferDto = {
 }
 
 describe('useTransferForm', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   beforeEach(() => {
     createTransferMock.mockReset()
     updateTransferMock.mockReset()
@@ -49,12 +54,12 @@ describe('useTransferForm', () => {
   it('openCreateForm defaults date to today and source to the first bank', () => {
     const { result } = renderHook(() => useTransferForm(BANKS, vi.fn()))
 
+    pinDate('2026-07-01T00:30:00+01:00')
     act(() => result.current.openCreateForm())
 
-    const today = new Date().toISOString().slice(0, 10)
     expect(result.current.isOpen).toBe(true)
     expect(result.current.isEditing).toBe(false)
-    expect(result.current.date).toBe(today)
+    expect(result.current.date).toBe('2026-07-01')
     expect(result.current.sourceBank).toBe('bank-barclays')
     expect(result.current.destinationBank).toBe('')
   })
