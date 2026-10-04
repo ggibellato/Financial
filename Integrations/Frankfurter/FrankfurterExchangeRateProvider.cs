@@ -36,13 +36,13 @@ public sealed class FrankfurterExchangeRateProvider : IExchangeRateProvider, IUs
 
         for (var offset = 0; offset <= MaxFallbackDays; offset++)
         {
-            var reply = await QueryRatesAsync(date.AddDays(-offset), $"base={from}&quotes={to}", budget.Token).ConfigureAwait(false);
-            if (reply.Failed)
+            var rates = await QueryRatesAsync(date.AddDays(-offset), $"base={from}&quotes={to}", budget.Token).ConfigureAwait(false);
+            if (rates is null)
             {
                 return null;
             }
 
-            if (reply.Rates is not null && reply.Rates.TryGetValue(to.ToString(), out var rate))
+            if (rates.TryGetValue(to.ToString(), out var rate))
             {
                 return rate;
             }
@@ -57,15 +57,15 @@ public sealed class FrankfurterExchangeRateProvider : IExchangeRateProvider, IUs
 
         for (var offset = 0; offset <= MaxFallbackDays; offset++)
         {
-            var reply = await QueryRatesAsync(date.AddDays(-offset), $"base={Currency.USD}&quotes={Currency.BRL},{Currency.GBP}", budget.Token)
+            var rates = await QueryRatesAsync(date.AddDays(-offset), $"base={Currency.USD}&quotes={Currency.BRL},{Currency.GBP}", budget.Token)
                 .ConfigureAwait(false);
-            if (reply.Failed)
+            if (rates is null)
             {
                 break;
             }
 
-            var brlRate = RateOf(reply.Rates, Currency.BRL);
-            var gbpRate = RateOf(reply.Rates, Currency.GBP);
+            var brlRate = RateOf(rates, Currency.BRL);
+            var gbpRate = RateOf(rates, Currency.GBP);
             if (brlRate is not null || gbpRate is not null)
             {
                 return new UsdRateFetchResult(brlRate, gbpRate);
@@ -75,10 +75,10 @@ public sealed class FrankfurterExchangeRateProvider : IExchangeRateProvider, IUs
         return new UsdRateFetchResult(null, null);
     }
 
-    private static decimal? RateOf(Dictionary<string, decimal>? rates, Currency currency) =>
-        rates is not null && rates.TryGetValue(currency.ToString(), out var rate) ? rate : null;
+    private static decimal? RateOf(Dictionary<string, decimal> rates, Currency currency) =>
+        rates.TryGetValue(currency.ToString(), out var rate) ? rate : null;
 
-    private async Task<Reply> QueryRatesAsync(DateOnly date, string query, CancellationToken cancellationToken)
+    private async Task<Dictionary<string, decimal>?> QueryRatesAsync(DateOnly date, string query, CancellationToken cancellationToken)
     {
         try
         {
@@ -87,23 +87,21 @@ public sealed class FrankfurterExchangeRateProvider : IExchangeRateProvider, IUs
 
             if (response.StatusCode == HttpStatusCode.NotFound)
             {
-                return new Reply(Failed: false, Rates: null);
+                return [];
             }
 
             response.EnsureSuccessStatusCode();
             var quotes = await response.Content.ReadFromJsonAsync<List<FrankfurterQuote>>(cancellationToken).ConfigureAwait(false);
-            return new Reply(Failed: false, quotes?.ToDictionary(quote => quote.Quote, quote => quote.Rate));
+            return quotes?.ToDictionary(quote => quote.Quote, quote => quote.Rate) ?? [];
         }
         catch (Exception ex)
         {
             _logger.LogWarning(
                 "Failed to fetch exchange rates ({Query}) for {Date} with {ErrorType}",
                 query, date, ex.GetType().Name);
-            return new Reply(Failed: true, Rates: null);
+            return null;
         }
     }
-
-    private sealed record Reply(bool Failed, Dictionary<string, decimal>? Rates);
 
     private sealed class FrankfurterQuote
     {
