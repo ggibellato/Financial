@@ -55,14 +55,6 @@ public class RecurringBillTests
         act.Should().Throw<ArgumentException>().WithMessage("*Description is required*");
     }
 
-    [Fact]
-    public void Create_TwoBills_HaveDifferentIds()
-    {
-        var first = RecurringBill.Create(1, "A", 10m, Area.UK, string.Empty, null, null);
-        var second = RecurringBill.Create(1, "B", 10m, Area.UK, string.Empty, null, null);
-
-        first.Id.Should().NotBe(second.Id);
-    }
 
     [Fact]
     public void Update_ChangesEveryField()

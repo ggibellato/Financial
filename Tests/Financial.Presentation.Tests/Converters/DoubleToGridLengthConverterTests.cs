@@ -24,12 +24,4 @@ public class DoubleToGridLengthConverterTests
 
         result.Should().Be(GridLength.Auto);
     }
-
-    [Fact]
-    public void ConvertBack_Always_ThrowsNotSupportedException()
-    {
-        Action act = () => _converter.ConvertBack(new GridLength(120.0), typeof(double), null, CultureInfo.InvariantCulture);
-
-        act.Should().Throw<NotSupportedException>();
-    }
 }

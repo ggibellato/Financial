@@ -43,12 +43,4 @@ public class FxRateSnapshotToTooltipConverterTests
 
         result.Should().Be(string.Empty);
     }
-
-    [Fact]
-    public void ConvertBack_ThrowsNotSupported()
-    {
-        var act = () => _converter.ConvertBack("value", [typeof(string), typeof(FxRateSnapshotDTO)], null, CultureInfo.InvariantCulture);
-
-        act.Should().Throw<NotSupportedException>();
-    }
 }

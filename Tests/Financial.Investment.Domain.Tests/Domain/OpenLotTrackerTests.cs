@@ -56,9 +56,6 @@ public class OpenLotTrackerTests
 
         lots.Should().ContainSingle();
         lots[0].RemainingQuantity.Should().Be(6m);
-        // OpenLot itself carries no gain/loss field at all - the type proves TransferOut cannot
-        // produce one here.
-        typeof(OpenLot).GetProperty("GainLoss").Should().BeNull();
     }
 
     [Fact]

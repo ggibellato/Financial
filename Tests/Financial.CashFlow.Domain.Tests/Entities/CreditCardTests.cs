@@ -19,14 +19,6 @@ namespace Financial.CashFlow.Domain.Tests.Entities
             }
         }
 
-        [Fact]
-        public void Create_TwoCards_HaveDifferentIds()
-        {
-            var first = CreditCard.Create("Investimento", isActive: true);
-            var second = CreditCard.Create("HouseTreats", isActive: true);
-
-            first.Id.Should().NotBe(second.Id);
-        }
 
         [Fact]
         public void Create_DefaultsIsActiveToTrue()

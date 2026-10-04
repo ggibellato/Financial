@@ -21,14 +21,6 @@ namespace Financial.CashFlow.Domain.Tests.Entities
             }
         }
 
-        [Fact]
-        public void Create_TwoCategories_HaveDifferentIds()
-        {
-            var first = Category.Create("Mercado");
-            var second = Category.Create("Casa");
-
-            first.Id.Should().NotBe(second.Id);
-        }
 
         [Fact]
         public void Create_DefaultsActiveToTrueAndFlagsToFalse()

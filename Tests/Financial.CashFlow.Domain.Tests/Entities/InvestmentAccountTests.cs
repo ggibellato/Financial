@@ -40,14 +40,6 @@ public class InvestmentAccountTests
         act.Should().Throw<ArgumentException>();
     }
 
-    [Fact]
-    public void Create_TwoAccounts_HaveDifferentIds()
-    {
-        var first = InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false);
-        var second = InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false);
-
-        first.Id.Should().NotBe(second.Id);
-    }
 
     [Fact]
     public void Update_ChangesNameActiveAndLiability()

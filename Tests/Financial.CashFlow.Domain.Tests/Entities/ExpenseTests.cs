@@ -67,14 +67,6 @@ public class ExpenseTests
         }
     }
 
-    [Fact]
-    public void Create_TwoExpenses_HaveDifferentIds()
-    {
-        var first = Expense.Create(new DateOnly(2026, 7, 1), "A", 1m, Casa, Chase, null);
-        var second = Expense.Create(new DateOnly(2026, 7, 1), "B", 2m, Casa, Chase, null);
-
-        first.Id.Should().NotBe(second.Id);
-    }
 
     [Fact]
     public void Create_WithPaymentSourceOnly_ComputesImmediatePayment()

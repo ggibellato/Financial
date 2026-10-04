@@ -38,12 +38,4 @@ public class GroupHasSelectedChildConverterTests
 
         result.Should().Be(false);
     }
-
-    [Fact]
-    public void ConvertBack_Always_ThrowsNotSupportedException()
-    {
-        Action act = () => _converter.ConvertBack(true, [typeof(IReadOnlyList<NavChild>), typeof(string)], null, CultureInfo.InvariantCulture);
-
-        act.Should().Throw<NotSupportedException>();
-    }
 }

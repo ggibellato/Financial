@@ -344,12 +344,6 @@ describe('CreditsTab', () => {
     expect(mockSetFilter).toHaveBeenCalledWith('last-3-months')
   })
 
-  it('renders_mode_toggles', () => {
-    render(<CreditsTab />)
-    expect(screen.getByRole('tab', { name: 'Stacked' })).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: 'Grouped' })).toBeInTheDocument()
-  })
-
   it('active_mode_has_active_class', () => {
     setMock({ selectedMode: 'Stacked' })
     render(<CreditsTab />)
@@ -380,12 +374,6 @@ describe('CreditsTab', () => {
     render(<CreditsTab />)
     fireEvent.click(screen.getByRole('tab', { name: 'Line' }))
     expect(mockSetChartType).toHaveBeenCalledWith('Line')
-  })
-
-  it('renders_relabelled_toggle_rows', () => {
-    render(<CreditsTab />)
-    expect(screen.getByText('View:')).toBeInTheDocument()
-    expect(screen.getByText('Group:')).toBeInTheDocument()
   })
 
   it('renders_bar_chart_unchanged_when_bar_selected', () => {

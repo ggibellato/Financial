@@ -58,12 +58,4 @@ public class InvestmentAccountSourceDisplayConverterTests
 
         result.Should().Be("—");
     }
-
-    [Fact]
-    public void ConvertBack_Throws()
-    {
-        var act = () => _converter.ConvertBack("—", [typeof(string)], null, CultureInfo.InvariantCulture);
-
-        act.Should().Throw<NotSupportedException>();
-    }
 }

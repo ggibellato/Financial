@@ -35,14 +35,6 @@ public class IncomeTests
         }
     }
 
-    [Fact]
-    public void Create_TwoIncomes_HaveDifferentIds()
-    {
-        var first = Income.Create(new DateOnly(2026, 7, 1), Lottery, null, 10m, Chase);
-        var second = Income.Create(new DateOnly(2026, 7, 1), Lottery, null, 20m, Chase);
-
-        first.Id.Should().NotBe(second.Id);
-    }
 
     [Fact]
     public void Create_WithoutGrossValue_AllowsNull()

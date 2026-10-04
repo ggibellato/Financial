@@ -57,14 +57,6 @@ public class CardStatementTests
         statement.IsPaid.Should().BeFalse();
     }
 
-    [Fact]
-    public void Create_TwoStatements_HaveDifferentIds()
-    {
-        var first = CardStatement.Create(BaAmex, 2026, 7);
-        var second = CardStatement.Create(BaAmex, 2026, 7);
-
-        first.Id.Should().NotBe(second.Id);
-    }
 
     [Fact]
     public void IsFor_MatchingCardYearAndMonth_ReturnsTrue()

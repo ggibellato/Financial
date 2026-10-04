@@ -35,14 +35,6 @@ public class ReserveMovementTests
         movement.Amount.Should().Be(-50m);
     }
 
-    [Fact]
-    public void Create_TwoMovements_HaveDifferentIds()
-    {
-        var first = ReserveMovement.Create(Investimento, 10m, new DateOnly(2026, 7, 1), "A");
-        var second = ReserveMovement.Create(Investimento, 10m, new DateOnly(2026, 7, 1), "B");
-
-        first.Id.Should().NotBe(second.Id);
-    }
 
     [Fact]
     public void Update_ChangesAllFields()

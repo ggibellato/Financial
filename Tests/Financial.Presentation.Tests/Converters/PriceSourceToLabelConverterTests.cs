@@ -32,12 +32,4 @@ public class PriceSourceToLabelConverterTests
 
         result.Should().Be(string.Empty);
     }
-
-    [Fact]
-    public void ConvertBack_Always_ThrowsNotSupportedException()
-    {
-        var act = () => _converter.ConvertBack("Manual", typeof(PriceSource), null, CultureInfo.InvariantCulture);
-
-        act.Should().Throw<NotSupportedException>();
-    }
 }

@@ -37,14 +37,6 @@ public class BalanceAdjustmentTests
         adjustment.Note.Should().BeNull();
     }
 
-    [Fact]
-    public void Create_TwoAdjustments_HaveDifferentIds()
-    {
-        var first = CreateValidAdjustment();
-        var second = CreateValidAdjustment();
-
-        first.Id.Should().NotBe(second.Id);
-    }
 
     [Fact]
     public void Create_WithZeroTargetBalance_Succeeds()

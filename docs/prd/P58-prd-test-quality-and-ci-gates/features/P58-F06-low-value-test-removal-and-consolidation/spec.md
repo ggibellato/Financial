@@ -71,7 +71,7 @@ Affected areas: `Tests/**` (many files), `Financial.Web/src/**/__tests__/**`, `F
 | File Path | New/Modified | Purpose |
 |-----------|--------------|---------|
 | `Tests/Financial.Api.Tests/Controllers/ControllerGuardClauseTests.cs` | Modified | Delete the 35 null-body tests (constructor-guard tests in the same file move to Stage 2) |
-| `Financial.Api/Controllers/*.cs` | Modified | Remove the `if (request is null) return BadRequest` guards on non-nullable `[FromBody]` parameters only; guards on nullable bodies stay (reachable) |
+| `Tests/Financial.Api.Tests/EmptyBodyEndpointsTests.cs` | New | One HTTP test that sends an empty body to every endpoint with a `[FromBody]` parameter and expects 400. Replaces the direct-call null-body tests. The controllers' `if (request is null)` guards stay: their parameters are nullable (`T? request`), so the body is optional and the guard is what returns 400 (verified: removing one makes the endpoint return 500). Deleting them was the PRD's plan; it was based on the stale "unreachable via HTTP" comment in `ControllerGuardClauseTests` |
 | WPF converter tests (`Tests/Financial.Presentation.Tests/...`) | Modified | Delete the 19 `ConvertBack_*Throws*` tests |
 | Domain/Application test files holding duplicate ID tests | Modified | Keep one "assigns non-empty ID" per aggregate root |
 | `Tests/Financial.Shared.Infrastructure.Tests/Sync/SyncStatusTests.cs` | Modified | Delete `SyncState_Should_Have_Exactly_Four_Members` |
@@ -143,7 +143,7 @@ F06 deletes and merges tests, so verification is that protection did not drop:
 | Total .NET + web test methods drop by ≥ 550 | Stage 5 count table |
 | Branch coverage per job ≥ pre-cleanup | per-PR coverage comparison |
 | Line coverage drops ≤ 1.0 point per job | per-PR coverage comparison |
-| The 34 unreachable null-body tests and their dead guards deleted | Stage 1 diff (`ControllerGuardClauseTests.cs` null-body tests and the `request is null` branches) |
+| The 34 null-body tests deleted | Stage 1 diff. The guards are not dead (nullable `[FromBody]` parameters make the body optional), so they stay and `EmptyBodyEndpointsTests` pins the 400 over HTTP; the PRD box wording is amended in Stage 5 |
 | One constructor null-guard reflection theory per assembly; removing a `?? throw` fails it | Stage 2 theories and revert checks |
 | React dialog and list-tab contracts run as `describe.each` tables | Stage 4 |
 | Each removal PR lists the retained covering test per removed group | PR bodies |

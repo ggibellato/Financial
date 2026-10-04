@@ -43,12 +43,4 @@ public class BillStatusToBrushConverterTests
         result.Should().BeOfType<SolidColorBrush>()
             .Which.Color.Should().Be((Color)ColorConverter.ConvertFromString("#FFFFFFFF")!);
     }
-
-    [Fact]
-    public void ConvertBack_Always_ThrowsNotImplementedException()
-    {
-        Action act = () => _converter.ConvertBack(Brushes.Green, typeof(string), null, CultureInfo.InvariantCulture);
-
-        act.Should().Throw<NotImplementedException>();
-    }
 }

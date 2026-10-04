@@ -175,12 +175,4 @@ public class TitheEndpointsTests : ApiEndpointTests
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
-
-    [Fact]
-    public async Task UpdateCarryForwardInclusion_NullBody_ReturnsBadRequest()
-    {
-        var response = await Client.PutAsJsonAsync<object?>("/api/v1/financial/tithe/month/2026/7/carry-forward", null);
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-    }
 }

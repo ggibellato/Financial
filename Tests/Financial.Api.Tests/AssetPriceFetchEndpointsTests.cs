@@ -56,22 +56,4 @@ public class AssetPriceFetchEndpointsTests
         var portfolios = await response.Content.ReadFromJsonAsync<PortfolioReferenceDTO[]>(CaseInsensitiveJson);
         portfolios.Should().BeEmpty();
     }
-
-    [Fact]
-    public async Task GetAssetPriceFetch_JsonUsesBrokerNameAndPortfolioNameProperties()
-    {
-        await using var factory = CreateFactory(options =>
-        {
-            options.Portfolios = [new PortfolioReferenceDTO { BrokerName = "XPI", PortfolioName = "FII" }];
-        });
-
-        using var client = factory.CreateClient();
-        var response = await client.GetAsync("/api/v1/financial/asset-price-fetch");
-        var json = await response.Content.ReadAsStringAsync();
-
-        using var doc = JsonDocument.Parse(json);
-        var first = doc.RootElement[0];
-        first.TryGetProperty("brokerName", out _).Should().BeTrue("frontend expects camelCase 'brokerName'");
-        first.TryGetProperty("portfolioName", out _).Should().BeTrue("frontend expects camelCase 'portfolioName'");
-    }
 }

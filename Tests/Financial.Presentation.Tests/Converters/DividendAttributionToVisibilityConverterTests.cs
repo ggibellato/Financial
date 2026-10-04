@@ -20,12 +20,4 @@ public class DividendAttributionToVisibilityConverterTests
     {
         _converter.Convert(null, typeof(Visibility), null, CultureInfo.InvariantCulture).Should().Be(Visibility.Collapsed);
     }
-
-    [Fact]
-    public void ConvertBack_Throws()
-    {
-        var act = () => _converter.ConvertBack(Visibility.Visible, typeof(decimal?), null, CultureInfo.InvariantCulture);
-
-        act.Should().Throw<NotSupportedException>();
-    }
 }

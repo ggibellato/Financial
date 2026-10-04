@@ -64,21 +64,6 @@ public class DividendEndpointsTests
     }
 
     [Fact]
-    public async Task GetDividendSummary_JsonContainsAverageDividendLastFiveYears()
-    {
-        // Verifies that the camelCase JSON property name matches what the frontend TypeScript type expects.
-        // A rename on the C# side without updating this test will fail immediately.
-        await using var factory = CreateFactory();
-        using var client = factory.CreateClient();
-        var response = await client.GetAsync("/api/v1/financial/dividends/BCIA11/summary?exchange=BVMF");
-
-        var json = await response.Content.ReadAsStringAsync();
-        using var doc = JsonDocument.Parse(json);
-        doc.RootElement.TryGetProperty("averageDividendLastFiveYears", out _)
-            .Should().BeTrue("the frontend expects the property to be named 'averageDividendLastFiveYears'");
-    }
-
-    [Fact]
     public async Task GetDividendSummary_WhenServiceThrows_ReturnsNotFoundWithFriendlyDetail()
     {
         await using var factory = CreateFactory(throwOnLookup: true);

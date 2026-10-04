@@ -26,12 +26,4 @@ public class NodeTypeToVisibilityConverterTests
     {
         _converter.Convert(42, typeof(Visibility), null, CultureInfo.InvariantCulture).Should().Be(Visibility.Collapsed);
     }
-
-    [Fact]
-    public void ConvertBack_Always_ThrowsNotImplementedException()
-    {
-        Action act = () => _converter.ConvertBack(Visibility.Visible, typeof(string), null, CultureInfo.InvariantCulture);
-
-        act.Should().Throw<NotImplementedException>();
-    }
 }

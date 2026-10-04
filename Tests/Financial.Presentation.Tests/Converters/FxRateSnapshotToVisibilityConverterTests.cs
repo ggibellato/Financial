@@ -23,12 +23,4 @@ public class FxRateSnapshotToVisibilityConverterTests
 
         _converter.Convert(snapshot, typeof(Visibility), null, CultureInfo.InvariantCulture).Should().Be(Visibility.Visible);
     }
-
-    [Fact]
-    public void ConvertBack_ThrowsNotSupported()
-    {
-        var act = () => _converter.ConvertBack(Visibility.Visible, typeof(FxRateSnapshotDTO), null, CultureInfo.InvariantCulture);
-
-        act.Should().Throw<NotSupportedException>();
-    }
 }
