@@ -29,6 +29,7 @@ scripts/deploy.local.json
 TestResults
 CoverageReport
 .tools
+test-skill-validation
 
 #specific files
 .gitignore.bak
