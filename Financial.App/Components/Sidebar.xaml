@@ -10,6 +10,7 @@
         <DataTemplate x:Key="NavChildButtonTemplate" DataType="{x:Type nav:NavChild}">
             <Button Command="{Binding DataContext.SelectItemCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                     CommandParameter="{Binding ViewKey}"
+                    AutomationProperties.AutomationId="{Binding Id, StringFormat=nav-{0}}"
                     HorizontalContentAlignment="Left"
                     Background="Transparent"
                     BorderThickness="0"

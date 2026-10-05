@@ -59,6 +59,7 @@ The E2E project does not reference `Financial.App` code. It carries a project re
 
 ### Assumptions
 
+- Stage 1 as built: `Border`, `StackPanel` and `Grid` have no UI Automation peer, so the planned `sidebar` and `asset-summary` ids were dropped (an id on them is never exposed); the contract test and `docs/ui/wpf.md` say so. Verified by launching the app and reading the ids back through UIA.
 - Applied without asking (no PRD detail): D1-D10; per-test process; `net10.0-windows` target; xUnit 2.9.3, FluentAssertions 6.12.0, `Microsoft.NET.Test.Sdk` 17.14.1 as in `Financial.Presentation.Tests`; FlaUI package version = latest stable at implementation time, pinned.
 - The seeded cashflow dataset has no expenses, so journey 5 asserts that the Monthly summary renders (category total `0.00`, the `Barclays` bank row) rather than a non-zero figure. A seeded non-zero month is deferred.
 - WPF-UI's `ui:Button` exposes UIA `Button` patterns and `Invoke`, so `AutomationId` on it is honoured; verified during Stage 2 against the real app, not assumed.
@@ -94,8 +95,8 @@ The E2E project does not reference `Financial.App` code. It carries a project re
 | File Path | New/Modified | Ids added |
 |-----------|--------------|-----------|
 | `Financial.App/MainWindow.xaml` | Modified | `main-window`, `main-breadcrumb` |
-| `Financial.App/Components/Sidebar.xaml` | Modified | `nav-<childId>` on each navigation button, bound to the item id (templated), `sidebar` |
-| `Financial.App/Components/NavigationView.xaml` | Modified | `investment-tree`, `asset-summary`, `asset-summary-name` |
+| `Financial.App/Components/Sidebar.xaml` | Modified | `nav-<childId>` on each navigation button, bound to the item id (templated) |
+| `Financial.App/Components/NavigationView.xaml` | Modified | `investment-tree`, `asset-summary-name`; tree items get `AutomationProperties.Name` = the node's display name (they exposed the view-model type name before, an accessibility defect and the only way to find a broker or asset) |
 | `Financial.App/Views/CashFlow/MonthlyView.xaml` | Modified | `monthly-tabs`, `monthly-error`, `monthly-retry` |
 | `Financial.App/Views/CashFlow/MonthlySummaryView.xaml` | Modified | `monthly-category-grid`, `monthly-category-total` |
 | `Financial.App/Views/CashFlow/ExpenseSectionView.xaml` | Modified | `monthly-expenses-grid`, `monthly-new-expense` |
@@ -129,7 +130,7 @@ Skipped: nothing persisted by this feature. The suite reads `data.test.json` and
 
 | # | Test | Steps | Assertions |
 |---|------|-------|------------|
-| 1 | `App_Starts_ShowsMainWindowAndNavigation` | launch | window title `Financial tools`; `main-window`, `sidebar` and `investment-tree` found; broker `XPI` tree item visible |
+| 1 | `App_Starts_ShowsMainWindowAndNavigation` | launch | window title `Financial tools`; `main-window` and `nav-active-investments` found; after opening Active Investments, `investment-tree` found and a tree item named `XPI (BRL)` present |
 | 2 | `InvestmentAsset_OpensWithSummary` | expand XPI, Default, select `BCIA11` | `asset-summary-name` reads `BCIA11`; summary panel visible |
 | 3 | `AddExpense_AppearsInMonthlyList` | `nav-monthly`, tab `Bank expenses`, `monthly-new-expense`, fill description `e2e-<guid>`, value `12.34`, category `Mercado`, payment source `Barclays`, `expense-form-save` | `monthly-expenses-grid` contains a row with the description |
 | 4 | `AddExpense_BlankValue_ShowsFieldErrorAndAddsNothing` | open the form, description only, save | `expense-form-value-error` shows `Value must be a non-zero number.`; grid has no row for that description; form still open |
