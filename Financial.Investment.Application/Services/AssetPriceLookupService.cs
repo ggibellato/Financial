@@ -4,6 +4,7 @@ using Financial.Investment.Application.Validation;
 using Financial.Investment.Domain.Entities;
 using Financial.Investment.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
+using Financial.Shared.Abstractions.Time;
 using Financial.Shared.Abstractions.Persistence;
 using Microsoft.Extensions.Logging;
 
@@ -227,7 +228,7 @@ public sealed class AssetPriceLookupService : IAssetPriceLookupService
 
     private AssetPriceSnapshot? FindManualPriceForToday(Asset asset)
     {
-        var entry = asset.GetPriceForDate(DateOnly.FromDateTime(_timeProvider.GetLocalNow().Date));
+        var entry = asset.GetPriceForDate(_timeProvider.GetLocalToday());
         return entry?.IsManual == true ? entry : null;
     }
 
@@ -247,7 +248,7 @@ public sealed class AssetPriceLookupService : IAssetPriceLookupService
             AsOfDate = snapshot.Date,
             IsManual = snapshot.IsManual,
             Source = snapshot.Source,
-            MarketStatus = MarketStatusCalculator.For(snapshot.Date, DateOnly.FromDateTime(_timeProvider.GetLocalNow().Date))
+            MarketStatus = MarketStatusCalculator.For(snapshot.Date, _timeProvider.GetLocalToday())
         };
 
     /// <summary>
@@ -281,7 +282,7 @@ public sealed class AssetPriceLookupService : IAssetPriceLookupService
     /// </summary>
     private async Task RecordAutomaticPriceIfNeededAsync(Asset asset, decimal price, PriceSource source)
     {
-        var today = DateOnly.FromDateTime(_timeProvider.GetLocalNow().Date);
+        var today = _timeProvider.GetLocalToday();
         AssetPriceSnapshot? displaced = null;
         var wrote = false;
 

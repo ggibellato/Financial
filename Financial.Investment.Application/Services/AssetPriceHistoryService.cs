@@ -2,6 +2,7 @@ using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.Entities;
 using Financial.Shared.Abstractions.Observability;
+using Financial.Shared.Abstractions.Time;
 using Microsoft.Extensions.Logging;
 
 namespace Financial.Investment.Application.Services;
@@ -49,7 +50,7 @@ public sealed class AssetPriceHistoryService : IAssetPriceHistoryService
                     var source = asset.ValuationMethod == ValuationMethod.ProviderValue
                         ? PriceSource.ProviderValuation
                         : PriceSource.Manual;
-                    asset.SetPrice(request.Date, request.Price, source, request.Currency ?? string.Empty, request.SourceReference, _timeProvider.GetUtcNow(), DateOnly.FromDateTime(_timeProvider.GetLocalNow().Date));
+                    asset.SetPrice(request.Date, request.Price, source, request.Currency ?? string.Empty, request.SourceReference, _timeProvider.GetUtcNow(), _timeProvider.GetLocalToday());
                     return true;
                 }).ConfigureAwait(false);
 
