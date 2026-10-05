@@ -15,7 +15,7 @@ namespace Financial.Investment.Application.Tests.Services;
 [Trait("Category", "Unit")]
 public class TransactionServiceMutationTests
 {
-    private static readonly ITelemetryTracer Tracer = new RecordingTelemetryTracer();
+    private readonly RecordingTelemetryTracer _tracer = new();
     private static readonly IExchangeRateProvider ExchangeRateProvider = new StubExchangeRateProvider(0.15m);
     private static readonly IReportingCurrencyProvider ReportingCurrencyProvider = new StubReportingCurrencyProvider();
 
@@ -76,7 +76,7 @@ public class TransactionServiceMutationTests
     {
         _repository.Asset = MakeAsset();
         var tracer = new RecordingTelemetryTracer();
-        var service = new TransactionService(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance), ExchangeRateProvider, ReportingCurrencyProvider, TimeProvider.System, tracer, NullLogger<TransactionService>.Instance);
+        var service = new TransactionService(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), _tracer, NullLogger<NavigationService>.Instance), ExchangeRateProvider, ReportingCurrencyProvider, TimeProvider.System, tracer, NullLogger<TransactionService>.Instance);
 
         await service.AddTransactionAsync(new TransactionCreateDTO
         {
@@ -204,7 +204,7 @@ public class TransactionServiceMutationTests
         asset.AddTransaction(Transaction.CreateWithId(txId, new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m, currency: Currency.BRL, fxRateSnapshot: originalSnapshot));
         _repository.Asset = asset;
         var provider = new StubExchangeRateProvider(0.99m);
-        var service = new TransactionService(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance), provider, ReportingCurrencyProvider, TimeProvider.System, Tracer, NullLogger<TransactionService>.Instance);
+        var service = new TransactionService(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), _tracer, NullLogger<NavigationService>.Instance), provider, ReportingCurrencyProvider, TimeProvider.System, _tracer, NullLogger<TransactionService>.Instance);
 
         await service.UpdateTransactionAsync(new TransactionUpdateDTO
         {
@@ -297,7 +297,7 @@ public class TransactionServiceMutationTests
     }
 
     [Fact]
-    public async Task AddTransactionAsync_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    public async Task AddTransactionAsync_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
         _repository.Asset = MakeAsset();
         _repository.ThrowOnApplyAndSaveAsync = new InvalidOperationException("simulated failure");
@@ -315,10 +315,11 @@ public class TransactionServiceMutationTests
         });
 
         await act.Should().ThrowAsync<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("Investment.TransactionService.AddTransaction");
     }
 
     [Fact]
-    public async Task UpdateTransactionAsync_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    public async Task UpdateTransactionAsync_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
         _repository.Asset = MakeAsset();
         _repository.ThrowOnApplyAndSaveAsync = new InvalidOperationException("simulated failure");
@@ -336,10 +337,11 @@ public class TransactionServiceMutationTests
         });
 
         await act.Should().ThrowAsync<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("Investment.TransactionService.UpdateTransaction");
     }
 
     [Fact]
-    public async Task DeleteTransactionAsync_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    public async Task DeleteTransactionAsync_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
         _repository.Asset = MakeAsset();
         _repository.ThrowOnApplyAndSaveAsync = new InvalidOperationException("simulated failure");
@@ -353,6 +355,7 @@ public class TransactionServiceMutationTests
         });
 
         await act.Should().ThrowAsync<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("Investment.TransactionService.DeleteTransaction");
     }
 
     [Fact]
@@ -510,7 +513,7 @@ public class TransactionServiceMutationTests
         classification.SourceId.Should().Be(asset.DisposalRecords.Single().Id);
     }
 
-    private TransactionService CreateService() => new(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance), ExchangeRateProvider, ReportingCurrencyProvider, TimeProvider.System, Tracer, NullLogger<TransactionService>.Instance);
+    private TransactionService CreateService() => new(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), _tracer, NullLogger<NavigationService>.Instance), ExchangeRateProvider, ReportingCurrencyProvider, TimeProvider.System, _tracer, NullLogger<TransactionService>.Instance);
 
     private static Asset MakeAsset(string name = "AAAA") =>
         Asset.Create(name, "ISIN", "BVMF", name);

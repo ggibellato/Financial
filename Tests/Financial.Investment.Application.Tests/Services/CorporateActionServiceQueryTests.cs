@@ -13,7 +13,7 @@ namespace Financial.Investment.Application.Tests.Services;
 [Trait("Category", "Unit")]
 public class CorporateActionServiceQueryTests
 {
-    private static readonly ITelemetryTracer Tracer = new RecordingTelemetryTracer();
+    private readonly RecordingTelemetryTracer _tracer = new();
 
     private readonly StubInvestmentRepository _repository = new();
 
@@ -62,13 +62,14 @@ public class CorporateActionServiceQueryTests
     }
 
     [Fact]
-    public void GetCorporateActionsByPortfolio_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    public void GetCorporateActionsByPortfolio_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
         _repository.ThrowOnGetAssetsByBrokerPortfolio = new InvalidOperationException("simulated failure");
 
         Action act = () => CreateService().GetCorporateActionsByPortfolio("XPI", "Default");
 
         act.Should().Throw<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("Investment.CorporateActionService.GetCorporateActionsByPortfolio");
     }
 
     [Fact]
@@ -120,7 +121,7 @@ public class CorporateActionServiceQueryTests
         result.Should().ContainSingle().Which.CalculationStatus.Should().BeNull("a split never has a linked TaxClassification");
     }
 
-    private CorporateActionService CreateService() => new(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance), TestClock.At(), Tracer, NullLogger<CorporateActionService>.Instance);
+    private CorporateActionService CreateService() => new(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), _tracer, NullLogger<NavigationService>.Instance), TestClock.At(), _tracer, NullLogger<CorporateActionService>.Instance);
 
     private static Asset MakeAssetWithSplit(string name)
     {

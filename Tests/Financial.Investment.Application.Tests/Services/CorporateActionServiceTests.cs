@@ -14,7 +14,7 @@ namespace Financial.Investment.Application.Tests.Services;
 [Trait("Category", "Unit")]
 public class CorporateActionServiceTests
 {
-    private static readonly ITelemetryTracer Tracer = new RecordingTelemetryTracer();
+    private readonly RecordingTelemetryTracer _tracer = new();
 
     private readonly StubInvestmentRepository _repository = new()
     {
@@ -283,7 +283,7 @@ public class CorporateActionServiceTests
     }
 
     [Fact]
-    public async Task AddSplitAsync_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    public async Task AddSplitAsync_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
         _repository.Asset = MakeAssetWithPosition();
         _repository.ThrowOnApplyAndSaveAsync = new InvalidOperationException("simulated failure");
@@ -298,6 +298,7 @@ public class CorporateActionServiceTests
         });
 
         await act.Should().ThrowAsync<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("Investment.CorporateActionService.AddSplit");
     }
 
     [Fact]
@@ -854,10 +855,10 @@ public class CorporateActionServiceTests
     }
 
     private CorporateActionService CreateService() =>
-        new(_repository, CreateNavigationService(), TestClock.At(), Tracer, NullLogger<CorporateActionService>.Instance);
+        new(_repository, CreateNavigationService(), TestClock.At(), _tracer, NullLogger<CorporateActionService>.Instance);
 
     private NavigationService CreateNavigationService() =>
-        new(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance);
+        new(_repository, TestHoldingValuationService.Create(), _tracer, NullLogger<NavigationService>.Instance);
 
     private static Asset MakeAssetWithPosition(string name = "AAAA")
     {

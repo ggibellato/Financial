@@ -15,7 +15,7 @@ namespace Financial.Investment.Application.Tests.Services;
 public class SummaryServiceTests
 {
     private static readonly DateTimeOffset Today = new(2026, 8, 14, 12, 0, 0, TimeSpan.Zero);
-    private static readonly ITelemetryTracer Tracer = new RecordingTelemetryTracer();
+    private readonly RecordingTelemetryTracer _tracer = new();
 
     private readonly StubInvestmentRepository _repository = new();
 
@@ -315,7 +315,7 @@ public class SummaryServiceTests
     private SummaryService CreateService(TimeProvider? timeProvider = null)
     {
         var clock = timeProvider ?? TestClock.At();
-        return new(_repository, Tracer, NullLogger<SummaryService>.Instance, TestHoldingValuationService.Create(clock), new XirrCalculationService(clock),
+        return new(_repository, _tracer, NullLogger<SummaryService>.Instance, TestHoldingValuationService.Create(clock), new XirrCalculationService(clock),
             new StubExchangeRateProvider(null), new StubReportingCurrencyProvider(Currency.BRL), clock);
     }
 
@@ -342,23 +342,25 @@ public class SummaryServiceTests
     }
 
     [Fact]
-    public async Task GetBrokerSummary_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    public async Task GetBrokerSummary_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
         _repository.ThrowOnGetBrokerList = new InvalidOperationException("simulated failure");
 
         Func<Task> act = () => CreateService().GetBrokerSummaryAsync("XPI");
 
         await act.Should().ThrowAsync<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("Investment.SummaryService.GetBrokerSummary");
     }
 
     [Fact]
-    public async Task GetPortfolioSummary_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    public async Task GetPortfolioSummary_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
         _repository.ThrowOnGetBrokerList = new InvalidOperationException("simulated failure");
 
         Func<Task> act = () => CreateService().GetPortfolioSummaryAsync("XPI", "Default");
 
         await act.Should().ThrowAsync<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("Investment.SummaryService.GetPortfolioSummary");
     }
 
     [Fact]
@@ -496,7 +498,7 @@ public class SummaryServiceTests
         _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", asset)];
 
         var service = new SummaryService(
-            _repository, Tracer, NullLogger<SummaryService>.Instance, TestHoldingValuationService.Create(new FakeTimeProvider(Today)),
+            _repository, _tracer, NullLogger<SummaryService>.Instance, TestHoldingValuationService.Create(new FakeTimeProvider(Today)),
             new XirrCalculationService(TestClock.At()), new StubExchangeRateProvider(0.2m), new StubReportingCurrencyProvider(Currency.GBP),
             new FakeTimeProvider(Today));
 
@@ -518,7 +520,7 @@ public class SummaryServiceTests
         _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", asset)];
 
         var service = new SummaryService(
-            _repository, Tracer, NullLogger<SummaryService>.Instance, TestHoldingValuationService.Create(new FakeTimeProvider(Today)),
+            _repository, _tracer, NullLogger<SummaryService>.Instance, TestHoldingValuationService.Create(new FakeTimeProvider(Today)),
             new XirrCalculationService(TestClock.At()), new StubExchangeRateProvider(null), new StubReportingCurrencyProvider(Currency.GBP),
             new FakeTimeProvider(Today));
 
@@ -539,7 +541,7 @@ public class SummaryServiceTests
         _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", asset)];
 
         var service = new SummaryService(
-            _repository, Tracer, NullLogger<SummaryService>.Instance, TestHoldingValuationService.Create(new FakeTimeProvider(Today)),
+            _repository, _tracer, NullLogger<SummaryService>.Instance, TestHoldingValuationService.Create(new FakeTimeProvider(Today)),
             new XirrCalculationService(TestClock.At()), new StubExchangeRateProvider(0.2m), new StubReportingCurrencyProvider(Currency.GBP),
             new FakeTimeProvider(Today));
 
@@ -561,7 +563,7 @@ public class SummaryServiceTests
         var exchangeRateProvider = new StubExchangeRateProvider(0.2m);
 
         var service = new SummaryService(
-            _repository, Tracer, NullLogger<SummaryService>.Instance, TestHoldingValuationService.Create(new FakeTimeProvider(Today)),
+            _repository, _tracer, NullLogger<SummaryService>.Instance, TestHoldingValuationService.Create(new FakeTimeProvider(Today)),
             new XirrCalculationService(TestClock.At()), exchangeRateProvider, new StubReportingCurrencyProvider(Currency.GBP, enabled: false),
             new FakeTimeProvider(Today));
 

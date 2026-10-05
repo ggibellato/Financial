@@ -104,10 +104,9 @@ public class AssetMoveServiceTests
         var act = async () => await CreateService().MoveAssetAsync(CreateRequest());
         await act.Should().ThrowAsync<InvestmentRuleViolationException>();
 
-        var span = _tracer.Spans.Should().ContainSingle(s => s.Name.EndsWith("MoveAsset")).Which;
+        _tracer.ShouldHaveFailedSpan<InvestmentRuleViolationException>("Investment.AssetMoveService.MoveAsset");
         using (new AssertionScope())
         {
-            span.RecordedException.Should().BeOfType<InvestmentRuleViolationException>();
 
             // The boundary that finally handles the exception writes the log line. Logging the
             // reason here would double every failure, and the reason names holdings the user owns.
@@ -200,10 +199,9 @@ public class AssetMoveServiceTests
         var act = async () => await CreateService().ArchiveAssetAsync(CreateArchiveRequest());
         await act.Should().ThrowAsync<InvestmentRuleViolationException>();
 
-        var span = _tracer.Spans.Should().ContainSingle(s => s.Name.EndsWith("ArchiveAsset")).Which;
+        _tracer.ShouldHaveFailedSpan<InvestmentRuleViolationException>("Investment.AssetMoveService.ArchiveAsset");
         using (new AssertionScope())
         {
-            span.RecordedException.Should().BeOfType<InvestmentRuleViolationException>();
             _logger.Entries.Should().NotContain(entry => entry.Message.Contains("VOD"));
         }
     }

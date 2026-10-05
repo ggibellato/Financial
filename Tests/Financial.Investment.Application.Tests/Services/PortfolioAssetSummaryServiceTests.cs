@@ -12,7 +12,7 @@ namespace Financial.Investment.Application.Tests.Services;
 [Trait("Category", "Unit")]
 public class PortfolioAssetSummaryServiceTests
 {
-    private static readonly ITelemetryTracer Tracer = new RecordingTelemetryTracer();
+    private readonly RecordingTelemetryTracer _tracer = new();
 
     private readonly StubInvestmentRepository _repository = new();
 
@@ -832,7 +832,7 @@ public class PortfolioAssetSummaryServiceTests
         result[0].LastMonthCreditsPercent.Should().Be(1m);
     }
 
-    private PortfolioAssetSummaryService CreateService() => new(_repository, TestHoldingValuationService.Create(), TestClock.At(), Tracer, NullLogger<PortfolioAssetSummaryService>.Instance);
+    private PortfolioAssetSummaryService CreateService() => new(_repository, TestHoldingValuationService.Create(), TestClock.At(), _tracer, NullLogger<PortfolioAssetSummaryService>.Instance);
 
     private static Asset MakeAsset(string name, string ticker, string exchange) =>
         Asset.Create(name, "ISIN", exchange, ticker);

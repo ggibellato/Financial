@@ -289,7 +289,7 @@ public class PortfolioDashboardServiceTests
 
         await act.Should().ThrowAsync<InvalidOperationException>();
         using var _ = new AssertionScope();
-        _tracer.Spans.Should().ContainSingle(span => span.RecordedException is InvalidOperationException);
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("Investment.PortfolioDashboardService.GetDashboard");
         _logger.Entries.Should().NotContain(entry => entry.Message.Contains("simulated failure"));
     }
 
@@ -301,7 +301,7 @@ public class PortfolioDashboardServiceTests
         Func<Task> act = () => CreateService().GetDashboardAsync();
 
         await act.Should().ThrowAsync<ArgumentException>();
-        _tracer.Spans.Should().ContainSingle(span => span.RecordedException is ArgumentException);
+        _tracer.ShouldHaveFailedSpan<ArgumentException>("Investment.PortfolioDashboardService.GetDashboard");
     }
 
     [Fact]

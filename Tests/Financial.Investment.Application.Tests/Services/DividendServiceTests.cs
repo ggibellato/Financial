@@ -14,7 +14,7 @@ namespace Financial.Investment.Application.Tests.Services;
 [Trait("Category", "Unit")]
 public class DividendServiceTests
 {
-    private static readonly ITelemetryTracer Tracer = new RecordingTelemetryTracer();
+    private readonly RecordingTelemetryTracer _tracer = new();
 
     private readonly StubDividendDataSource _dataSource = new();
     private readonly StubSnapshotSource _snapshotSource = new();
@@ -225,7 +225,7 @@ public class DividendServiceTests
         }
     }
 
-    private DividendService CreateService() => new(_dataSource, _snapshotSource, TestClock.At(), Tracer, NullLogger<DividendService>.Instance);
+    private DividendService CreateService() => new(_dataSource, _snapshotSource, TestClock.At(), _tracer, NullLogger<DividendService>.Instance);
 
     private static DividendLookupRequestDTO MakeRequest(string exchange = "NYSE", string ticker = "TICK") =>
         new() { Exchange = exchange, Ticker = ticker };
