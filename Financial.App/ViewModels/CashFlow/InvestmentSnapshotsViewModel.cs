@@ -1,3 +1,4 @@
+using Financial.Shared.Abstractions.Time;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using Financial.CashFlow.Application.DTOs;
@@ -81,7 +82,7 @@ public class InvestmentSnapshotsViewModel : ViewModelBase
         _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _investmentSnapshotService = investmentSnapshotService ?? throw new ArgumentNullException(nameof(investmentSnapshotService));
 
-        var today = _timeProvider.GetLocalNow().Date;
+        var today = _timeProvider.GetLocalDate();
         _year = today.Year;
         _month = today.Month;
 

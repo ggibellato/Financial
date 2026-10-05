@@ -1,3 +1,4 @@
+using Financial.Shared.Abstractions.Time;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using Financial.Investment.Application.DTOs;
@@ -260,7 +261,7 @@ public sealed class TransactionDialogViewModel : ViewModelBase
     }
 
     public static TransactionDialogViewModel CreateForAdd(string brokerName, string portfolioName, string assetName, TimeProvider timeProvider) =>
-        CreateForAdd(brokerName, portfolioName, assetName, timeProvider.GetLocalNow().Date, "Buy", false, null);
+        CreateForAdd(brokerName, portfolioName, assetName, timeProvider.GetLocalDate(), "Buy", false, null);
 
     public static TransactionDialogViewModel CreateForAdd(
         string brokerName,

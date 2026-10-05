@@ -1,3 +1,4 @@
+using Financial.Shared.Abstractions.Time;
 using System.ComponentModel;
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Domain.Entities;
@@ -325,7 +326,7 @@ public sealed class CorporateActionFormViewModel : ViewModelBase
         TargetAssetPickerViewModel? targetAssetPicker = null,
         decimal sourceQuantity = 0m,
         decimal sourceCostBasis = 0m) =>
-        new(CorporateActionFormMode.Add, brokerName, portfolioName, assetName, Guid.Empty, timeProvider.GetLocalNow().Date,
+        new(CorporateActionFormMode.Add, brokerName, portfolioName, assetName, Guid.Empty, timeProvider.GetLocalDate(),
             CorporateActionFormValidation.SplitTypeValue, 0m, 0m, null,
             targetAssetPicker ?? new TargetAssetPickerViewModel(Array.Empty<AssetAdminDTO>()),
             string.Empty, assetName, sourceQuantity, sourceCostBasis, 0m, null, 0m, 0m);

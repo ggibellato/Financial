@@ -1,3 +1,4 @@
+using Financial.Shared.Abstractions.Time;
 using System.Collections.ObjectModel;
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Enums;
@@ -495,7 +496,7 @@ public class TransactionsTabViewModel : ViewModelBase
         TransactionDialogViewModel? vm = null;
         vm = TransactionDialogViewModel.CreateForAdd(
             _brokerName(), _portfolioName(), _assetName(),
-            _lastUsedTransactionDate ?? _timeProvider.GetLocalNow().Date,
+            _lastUsedTransactionDate ?? _timeProvider.GetLocalDate(),
             _lastUsedTransactionType ?? "Buy",
             _isSpecificIdBroker(),
             () => _ = FetchOpenLotsAsync(vm!));
@@ -606,7 +607,7 @@ public class TransactionsTabViewModel : ViewModelBase
             ? _brokerPortfolioTransactions.Select(t => (t.Date, t.NetCash))
             : Transactions.Select(t => (t.Date, t.NetCash));
 
-        var months = TransactionsMonthlyAggregator.BuildMonthlyNetInvested(source, _transactionsFilterGroup.SelectedValue, _timeProvider.GetLocalNow().Date);
+        var months = TransactionsMonthlyAggregator.BuildMonthlyNetInvested(source, _transactionsFilterGroup.SelectedValue, _timeProvider.GetLocalDate());
         _transactionsChartMonths = months;
         TransactionsPlotModel = TransactionsChartBuilder.Build(months, _transactionsChartModeGroup.SelectedValue);
         if (TransactionsPlotModel != null)

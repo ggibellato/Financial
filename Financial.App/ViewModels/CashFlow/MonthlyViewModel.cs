@@ -1,3 +1,4 @@
+using Financial.Shared.Abstractions.Time;
 using System.Collections.ObjectModel;
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
@@ -183,7 +184,7 @@ public class MonthlyViewModel : ViewModelBase
         _categoryService = categoryService ?? throw new ArgumentNullException(nameof(categoryService));
         _confirm = confirm ?? throw new ArgumentNullException(nameof(confirm));
 
-        var today = _timeProvider.GetLocalNow().Date;
+        var today = _timeProvider.GetLocalDate();
         _year = today.Year;
         _month = today.Month;
 

@@ -1,3 +1,4 @@
+using Financial.Shared.Abstractions.Time;
 using System.Collections.ObjectModel;
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
@@ -160,7 +161,7 @@ public class TransferWorkflowViewModel : ViewModelBase
     private void ShowCreateTransferForm(Guid? sourceBank)
     {
         _editingTransferId = null;
-        TransferFormDate = _lastUsedTransferDate ?? _timeProvider.GetLocalNow().Date;
+        TransferFormDate = _lastUsedTransferDate ?? _timeProvider.GetLocalDate();
         var resolvedSourceBank = sourceBank
             ?? (_lastUsedTransferSourceBank is { } lastSource && Banks.Any(b => b.Id == lastSource) ? (Guid?)lastSource : null)
             ?? (Banks.Count > 0 ? Banks[0].Id : null);

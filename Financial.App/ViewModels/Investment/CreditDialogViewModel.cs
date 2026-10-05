@@ -1,3 +1,4 @@
+using Financial.Shared.Abstractions.Time;
 namespace Financial.Presentation.App.ViewModels.Investment;
 
 public enum CreditDialogMode
@@ -165,7 +166,7 @@ public sealed class CreditDialogViewModel : ViewModelBase
     }
 
     public static CreditDialogViewModel CreateForAdd(string brokerName, string portfolioName, string assetName, TimeProvider timeProvider) =>
-        CreateForAdd(brokerName, portfolioName, assetName, timeProvider.GetLocalNow().Date, "Dividend");
+        CreateForAdd(brokerName, portfolioName, assetName, timeProvider.GetLocalDate(), "Dividend");
 
     public static CreditDialogViewModel CreateForAdd(string brokerName, string portfolioName, string assetName, DateTime date, string type)
     {

@@ -1,3 +1,4 @@
+using Financial.Shared.Abstractions.Time;
 using System.Collections.ObjectModel;
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
@@ -229,7 +230,7 @@ public class IncomeWorkflowViewModel : ViewModelBase
     private void ShowCreateIncomeForm()
     {
         _editingIncomeId = null;
-        IncomeFormDate = _lastUsedIncomeDate ?? _timeProvider.GetLocalNow().Date;
+        IncomeFormDate = _lastUsedIncomeDate ?? _timeProvider.GetLocalDate();
         IncomeFormSource = _lastUsedIncomeSource is { } lastSource && IncomeSourceOptions.Any(s => s.Id == lastSource)
             ? lastSource
             : (IncomeSourceOptions.Count > 0 ? IncomeSourceOptions[0].Id : null);

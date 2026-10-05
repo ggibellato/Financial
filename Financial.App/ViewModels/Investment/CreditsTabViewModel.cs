@@ -1,3 +1,4 @@
+using Financial.Shared.Abstractions.Time;
 using System.Collections.ObjectModel;
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Interfaces;
@@ -353,7 +354,7 @@ public class CreditsTabViewModel : ViewModelBase
     private Task<CreditDialogData?> ShowAddCreditFormAsync() =>
         ShowCreditFormAsync(CreditDialogViewModel.CreateForAdd(
             _brokerName(), _portfolioName(), _assetName(),
-            _lastUsedCreditDate ?? _timeProvider.GetLocalNow().Date,
+            _lastUsedCreditDate ?? _timeProvider.GetLocalDate(),
             _lastUsedCreditType ?? "Dividend"));
 
     private Task<CreditDialogData?> ShowUpdateCreditFormAsync()
@@ -420,7 +421,7 @@ public class CreditsTabViewModel : ViewModelBase
 
     private IEnumerable<CreditDTO> FilterCredits(IEnumerable<CreditDTO> credits, PeriodFilter filter)
     {
-        var (start, endExclusive) = PeriodFilterHelper.GetDateRange(filter, _timeProvider.GetLocalNow().Date);
+        var (start, endExclusive) = PeriodFilterHelper.GetDateRange(filter, _timeProvider.GetLocalDate());
         if (start is null) return credits;
         return credits.Where(credit => credit.Date >= start && credit.Date < endExclusive);
     }

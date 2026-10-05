@@ -1,3 +1,4 @@
+using Financial.Shared.Abstractions.Time;
 using Financial.CashFlow.Application.DTOs;
 
 namespace Financial.Presentation.App.ViewModels.CashFlow;
@@ -113,7 +114,7 @@ public sealed class UkExpensePromptDialogViewModel : ViewModelBase
         BillDescription = bill.Description;
         _description = bill.Description;
         _value = bill.Value.ToString();
-        _date = _timeProvider.GetLocalNow().Date;
+        _date = _timeProvider.GetLocalDate();
 
         ConfirmCommand = new RelayCommand(Confirm, CanConfirm);
         SkipCommand = new RelayCommand(Skip);

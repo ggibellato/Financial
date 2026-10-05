@@ -1,3 +1,4 @@
+using Financial.Shared.Abstractions.Time;
 namespace Financial.Presentation.App.ViewModels.Investment;
 
 public enum PriceDialogMode
@@ -99,7 +100,7 @@ public sealed class PriceDialogViewModel : ViewModelBase
     }
 
     public static PriceDialogViewModel CreateForAdd(string brokerName, string portfolioName, string assetName, TimeProvider timeProvider) =>
-        CreateForAdd(brokerName, portfolioName, assetName, timeProvider.GetLocalNow().Date, timeProvider);
+        CreateForAdd(brokerName, portfolioName, assetName, timeProvider.GetLocalDate(), timeProvider);
 
     public static PriceDialogViewModel CreateForAdd(string brokerName, string portfolioName, string assetName, DateTime date, TimeProvider timeProvider) =>
         new(PriceDialogMode.Add, brokerName, portfolioName, assetName, date, 0, timeProvider);
@@ -138,7 +139,7 @@ public sealed class PriceDialogViewModel : ViewModelBase
 
     private void Validate()
     {
-        ValidationMessage = PriceDialogValidation.BuildValidationMessage(Mode == PriceDialogMode.Delete, Date, Price, _timeProvider.GetLocalNow().Date);
+        ValidationMessage = PriceDialogValidation.BuildValidationMessage(Mode == PriceDialogMode.Delete, Date, Price, _timeProvider.GetLocalDate());
         ConfirmCommand.RaiseCanExecuteChanged();
     }
 }

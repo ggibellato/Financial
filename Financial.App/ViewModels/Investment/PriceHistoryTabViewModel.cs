@@ -1,3 +1,4 @@
+using Financial.Shared.Abstractions.Time;
 using System.Collections.ObjectModel;
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Interfaces;
@@ -248,7 +249,7 @@ public class PriceHistoryTabViewModel : ViewModelBase
 
     private IEnumerable<AssetPriceSnapshotDTO> FilterPriceHistory(IEnumerable<AssetPriceSnapshotDTO> entries, PeriodFilter filter)
     {
-        var (start, endExclusive) = PeriodFilterHelper.GetDateRange(filter, _timeProvider.GetLocalNow().Date);
+        var (start, endExclusive) = PeriodFilterHelper.GetDateRange(filter, _timeProvider.GetLocalDate());
         if (start is null) return entries;
         return entries.Where(entry =>
         {
@@ -259,7 +260,7 @@ public class PriceHistoryTabViewModel : ViewModelBase
 
     private IEnumerable<TransactionDTO> FilterTransactions(IEnumerable<TransactionDTO> transactions, PeriodFilter filter)
     {
-        var (start, endExclusive) = PeriodFilterHelper.GetDateRange(filter, _timeProvider.GetLocalNow().Date);
+        var (start, endExclusive) = PeriodFilterHelper.GetDateRange(filter, _timeProvider.GetLocalDate());
         if (start is null) return transactions;
         return transactions.Where(transaction => transaction.Date >= start && transaction.Date < endExclusive);
     }
@@ -339,7 +340,7 @@ public class PriceHistoryTabViewModel : ViewModelBase
 
     private Task<PriceDialogData?> ShowAddPriceFormAsync() =>
         ShowPriceFormAsync(PriceDialogViewModel.CreateForAdd(
-            _brokerName(), _portfolioName(), _assetName(), _lastUsedPriceDate ?? _timeProvider.GetLocalNow().Date, _timeProvider));
+            _brokerName(), _portfolioName(), _assetName(), _lastUsedPriceDate ?? _timeProvider.GetLocalDate(), _timeProvider));
 
     private Task<PriceDialogData?> ShowUpdatePriceFormAsync()
     {

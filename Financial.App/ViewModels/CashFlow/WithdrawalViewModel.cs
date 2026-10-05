@@ -1,3 +1,4 @@
+using Financial.Shared.Abstractions.Time;
 using System.Collections.ObjectModel;
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Exceptions;
@@ -209,7 +210,7 @@ public class WithdrawalViewModel : ViewModelBase
             ? lastBucket
             : DefaultBucketId();
         WithdrawalAmount = string.Empty;
-        WithdrawalDate = _lastUsedWithdrawalDate ?? _timeProvider.GetLocalNow().Date;
+        WithdrawalDate = _lastUsedWithdrawalDate ?? _timeProvider.GetLocalDate();
         WithdrawalDescription = string.Empty;
         _explicitExpenseCategoryId = null;
         SelectedBankOption = WithdrawalBankOption.Direct;
