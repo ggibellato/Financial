@@ -189,7 +189,7 @@ public class AllocationBreakdownServiceTests
         Func<Task> act = () => CreateService().GetAllocationBreakdownAsync();
 
         await act.Should().ThrowAsync<ArgumentException>();
-        _tracer.Spans.Should().ContainSingle(span => span.RecordedException is ArgumentException);
+        _tracer.ShouldHaveFailedSpan<ArgumentException>("Investment.AllocationBreakdownService.GetAllocationBreakdown");
     }
 
     [Fact]
@@ -201,7 +201,7 @@ public class AllocationBreakdownServiceTests
 
         await act.Should().ThrowAsync<InvalidOperationException>();
         using var _ = new AssertionScope();
-        _tracer.Spans.Should().ContainSingle(span => span.RecordedException is InvalidOperationException);
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("Investment.AllocationBreakdownService.GetAllocationBreakdown");
         _logger.Entries.Should().NotContain(entry => entry.Message.Contains("simulated failure"));
     }
 

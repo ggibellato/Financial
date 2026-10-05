@@ -13,10 +13,10 @@ namespace Financial.Investment.Application.Tests.Services;
 [Trait("Category", "Unit")]
 public class NavigationServiceTests
 {
-    private static readonly ITelemetryTracer Tracer = new RecordingTelemetryTracer();
+    private readonly RecordingTelemetryTracer _tracer = new();
 
     private readonly StubInvestmentRepository _repository = new();
-    private NavigationService CreateService() => new(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance);
+    private NavigationService CreateService() => new(_repository, TestHoldingValuationService.Create(), _tracer, NullLogger<NavigationService>.Instance);
 
     [Fact]
     public void GetNavigationTree_RecordsSuccessfulSpan()
@@ -528,43 +528,47 @@ public class NavigationServiceTests
     }
 
     [Fact]
-    public void GetNavigationTree_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    public void GetNavigationTree_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
         _repository.ThrowOnGetBrokerList = new InvalidOperationException("simulated failure");
 
         Action act = () => CreateService().GetNavigationTree();
 
         act.Should().Throw<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("Investment.NavigationService.GetNavigationTree");
     }
 
     [Fact]
-    public void GetAssetDetails_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    public void GetAssetDetails_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
         _repository.ThrowOnGetAsset = new InvalidOperationException("simulated failure");
 
         Action act = () => CreateService().GetAssetDetails("Broker", "Portfolio", "ASSET1");
 
         act.Should().Throw<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("Investment.NavigationService.GetAssetDetails");
     }
 
     [Fact]
-    public void GetBrokers_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    public void GetBrokers_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
         _repository.ThrowOnGetBrokerList = new InvalidOperationException("simulated failure");
 
         Action act = () => CreateService().GetBrokers();
 
         act.Should().Throw<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("Investment.NavigationService.GetBrokers");
     }
 
     [Fact]
-    public void GetAssetsByBrokerPortfolio_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    public void GetAssetsByBrokerPortfolio_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
         _repository.ThrowOnGetAssetsByBrokerPortfolio = new InvalidOperationException("simulated failure");
 
         Action act = () => CreateService().GetAssetsByBrokerPortfolio("Broker", "Portfolio");
 
         act.Should().Throw<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("Investment.NavigationService.GetAssetsByBrokerPortfolio");
     }
 
     [Fact]
@@ -616,12 +620,13 @@ public class NavigationServiceTests
     }
 
     [Fact]
-    public void GetOpenLots_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    public void GetOpenLots_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
         _repository.ThrowOnGetAsset = new InvalidOperationException("simulated failure");
 
         Action act = () => CreateService().GetOpenLots("Broker", "Portfolio", "ASSET1");
 
         act.Should().Throw<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("Investment.NavigationService.GetOpenLots");
     }
 }

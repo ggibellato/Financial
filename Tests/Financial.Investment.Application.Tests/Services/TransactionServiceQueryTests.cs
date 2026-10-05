@@ -13,7 +13,7 @@ namespace Financial.Investment.Application.Tests.Services;
 [Trait("Category", "Unit")]
 public class TransactionServiceQueryTests
 {
-    private static readonly ITelemetryTracer Tracer = new RecordingTelemetryTracer();
+    private readonly RecordingTelemetryTracer _tracer = new();
     private static readonly IExchangeRateProvider ExchangeRateProvider = new StubExchangeRateProvider(0.15m);
     private static readonly IReportingCurrencyProvider ReportingCurrencyProvider = new StubReportingCurrencyProvider();
 
@@ -183,26 +183,28 @@ public class TransactionServiceQueryTests
     }
 
     [Fact]
-    public void GetTransactionsByBroker_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    public void GetTransactionsByBroker_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
         _repository.ThrowOnGetAssetsByBroker = new InvalidOperationException("simulated failure");
 
         Action act = () => CreateService().GetTransactionsByBroker("XPI");
 
         act.Should().Throw<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("Investment.TransactionService.GetTransactionsByBroker");
     }
 
     [Fact]
-    public void GetTransactionsByPortfolio_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    public void GetTransactionsByPortfolio_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
         _repository.ThrowOnGetAssetsByBrokerPortfolio = new InvalidOperationException("simulated failure");
 
         Action act = () => CreateService().GetTransactionsByPortfolio("XPI", "Default");
 
         act.Should().Throw<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("Investment.TransactionService.GetTransactionsByPortfolio");
     }
 
-    private TransactionService CreateService() => new(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance), ExchangeRateProvider, ReportingCurrencyProvider, TimeProvider.System, Tracer, NullLogger<TransactionService>.Instance);
+    private TransactionService CreateService() => new(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), _tracer, NullLogger<NavigationService>.Instance), ExchangeRateProvider, ReportingCurrencyProvider, TimeProvider.System, _tracer, NullLogger<TransactionService>.Instance);
 
     private static Asset MakeAsset(string name = "TEST") =>
         Asset.Create(name, "ISIN", "BVMF", name);

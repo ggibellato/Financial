@@ -153,7 +153,7 @@ public class UpcomingIncomeServiceTests
 
         act.Should().Throw<InvalidOperationException>();
         using var _ = new AssertionScope();
-        _tracer.Spans.Should().ContainSingle(span => span.RecordedException is InvalidOperationException);
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("Investment.UpcomingIncomeService.GetUpcomingIncome");
         _logger.Entries.Should().NotContain(entry => entry.Message.Contains("simulated failure"));
     }
 
