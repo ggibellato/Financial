@@ -1,7 +1,6 @@
 using Financial.Shared.Abstractions.Currencies;
 using Financial.Shared.Abstractions.Currencies.FxRates;
 using Financial.Shared.Abstractions.Sync;
-using Financial.TestUtilities;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
