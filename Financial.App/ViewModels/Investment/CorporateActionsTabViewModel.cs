@@ -30,6 +30,8 @@ public class CorporateActionsTabViewModel : ViewModelBase
     private decimal _assetQuantity;
     private decimal _assetCostBasis;
 
+    private readonly TimeProvider _timeProvider;
+
     public CorporateActionsTabViewModel(
         ICorporateActionService? corporateActionService,
         Func<bool> hasContext,
@@ -38,8 +40,10 @@ public class CorporateActionsTabViewModel : ViewModelBase
         Func<string> assetName,
         Action<AssetDetailsDTO> applyDetails,
         Action<string, string, MessageBoxImage> showMessage,
+        TimeProvider timeProvider,
         IAssetAdminService? assetAdminService = null)
     {
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _corporateActionService = corporateActionService;
         _assetAdminService = assetAdminService;
         _hasContext = hasContext ?? throw new ArgumentNullException(nameof(hasContext));
@@ -468,7 +472,7 @@ public class CorporateActionsTabViewModel : ViewModelBase
     internal Task<CorporateActionFormData?> ShowAddCorporateActionFormAsync()
     {
         var picker = new TargetAssetPickerViewModel(BuildTargetAssetOptions());
-        var vm = CorporateActionFormViewModel.CreateForAdd(_brokerName(), _portfolioName(), _assetName(), picker, _assetQuantity, _assetCostBasis);
+        var vm = CorporateActionFormViewModel.CreateForAdd(_brokerName(), _portfolioName(), _assetName(), _timeProvider, picker, _assetQuantity, _assetCostBasis);
         return ShowCorporateActionFormAsync(vm);
     }
 

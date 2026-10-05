@@ -26,6 +26,7 @@ public class AssetDetailsViewModelPortfolioSummaryTests
             navigationService ?? new FakeNavigationService(),
             portfolioAssetSummaryService ?? new FakePortfolioAssetSummaryService(),
             new ProfitCalculationService(),
+            TestClock.At(),
             scope,
             priceService ?? new NeverResolvingPriceService());
     }
@@ -284,8 +285,8 @@ public class AssetDetailsViewModelPortfolioSummaryTests
         var vm = BuildViewModel();
         var credits = new List<CreditDTO>
         {
-            new() { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Dividend", Value = 100m },
-            new() { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Interest", Value = 50m }
+            new() { Id = Guid.NewGuid(), Date = TestClock.LocalToday, Type = "Dividend", Value = 100m },
+            new() { Id = Guid.NewGuid(), Date = TestClock.LocalToday, Type = "Interest", Value = 50m }
         };
         vm.LoadPortfolioSummary("Broker", "Portfolio", new AggregatedSummaryDTO(), credits, BuildItems());
         vm.Credits.Credits.Count.Should().Be(2);
@@ -444,8 +445,7 @@ public class AssetDetailsViewModelPortfolioSummaryTests
     {
         var vm = BuildViewModel();
         vm.LoadPortfolioSummary("Broker", "Portfolio", new AggregatedSummaryDTO(), [], BuildItems(1));
-        vm.FooterCurrentMonthLabel.Should().StartWith("Credits ");
-        vm.FooterCurrentMonthLabel.Should().MatchRegex(@"Credits [A-Z][a-z]{2} \d{4}");
+        vm.FooterCurrentMonthLabel.Should().Be("Credits Oct 2026");
     }
 
     [Fact]

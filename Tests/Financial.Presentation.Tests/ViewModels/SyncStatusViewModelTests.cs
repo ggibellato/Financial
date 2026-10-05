@@ -149,7 +149,7 @@ public class SyncStatusViewModelTests
         var vm = CreateViewModel();
         vm.IsIndicatorVisible.Should().BeTrue();
 
-        _cashFlowRepository.StatusToReturn = new SyncStatus(SyncState.Idle, null, DateTime.UtcNow);
+        _cashFlowRepository.StatusToReturn = new SyncStatus(SyncState.Idle, null, TestClock.Default.UtcDateTime);
         vm.RefreshStatus();
 
         vm.IsIndicatorVisible.Should().BeFalse();

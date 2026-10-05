@@ -26,7 +26,7 @@ public class PriceHistoryTabViewModelTests
             () => PortfolioName,
             () => AssetName,
             spy.ApplyDetails,
-            spy.ShowMessage);
+            spy.ShowMessage, TestClock.At());
         return (viewModel, stubService, spy);
     }
 
@@ -40,11 +40,11 @@ public class PriceHistoryTabViewModelTests
             () => PortfolioName,
             () => AssetName,
             spy.ApplyDetails,
-            spy.ShowMessage);
+            spy.ShowMessage, TestClock.At());
         return (viewModel, spy);
     }
 
-    private static PriceDialogData ValidDialogData(decimal price = 25m) => new(DateOnly.FromDateTime(DateTime.Today), price);
+    private static PriceDialogData ValidDialogData(decimal price = 25m) => new(TestClock.Today, price);
 
     private static Task<PriceDialogData?> AsForm(PriceDialogData? data) => Task.FromResult(data);
 
@@ -99,7 +99,7 @@ public class PriceHistoryTabViewModelTests
         var expectedDetails = new AssetDetailsDTO { Name = AssetName, BrokerName = BrokerName, PortfolioName = PortfolioName, Ticker = "T" };
         var service = new StubPriceService { SetResult = expectedDetails };
         var (viewModel, _, spy) = Build(service: service);
-        var date = DateOnly.FromDateTime(DateTime.Today);
+        var date = TestClock.Today;
 
         await viewModel.Set(() => AsForm(new PriceDialogData(date, 42.5m)));
 
@@ -118,7 +118,7 @@ public class PriceHistoryTabViewModelTests
         var expectedDetails = new AssetDetailsDTO { Name = AssetName, BrokerName = BrokerName, PortfolioName = PortfolioName, Ticker = "T" };
         var service = new StubPriceService { SetResult = expectedDetails };
         var (viewModel, _, _) = Build(service: service);
-        var usedDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-3));
+        var usedDate = DateOnly.FromDateTime(TestClock.LocalToday.AddDays(-3));
 
         await viewModel.Set(() => AsForm(new PriceDialogData(usedDate, 42.5m)));
 
@@ -141,7 +141,7 @@ public class PriceHistoryTabViewModelTests
     public async Task Delete_NullService_DoesNotCallServiceOrShowMessage()
     {
         var (viewModel, spy) = BuildWithNullService();
-        var selected = new AssetPriceSnapshotDTO { Date = DateOnly.FromDateTime(DateTime.Today), Price = 10m, IsManual = true };
+        var selected = new AssetPriceSnapshotDTO { Date = TestClock.Today, Price = 10m, IsManual = true };
 
         await viewModel.Delete(selected, () => true);
 
@@ -153,7 +153,7 @@ public class PriceHistoryTabViewModelTests
     public async Task Delete_NotManual_ShowsWarningAndDoesNotCallService()
     {
         var (viewModel, service, spy) = Build();
-        var selected = new AssetPriceSnapshotDTO { Date = DateOnly.FromDateTime(DateTime.Today), Price = 10m, IsManual = false };
+        var selected = new AssetPriceSnapshotDTO { Date = TestClock.Today, Price = 10m, IsManual = false };
 
         await viewModel.Delete(selected, () => true);
 
@@ -165,7 +165,7 @@ public class PriceHistoryTabViewModelTests
     public async Task Delete_NotConfirmed_DoesNotCallService()
     {
         var (viewModel, service, _) = Build();
-        var selected = new AssetPriceSnapshotDTO { Date = DateOnly.FromDateTime(DateTime.Today), Price = 10m, IsManual = true };
+        var selected = new AssetPriceSnapshotDTO { Date = TestClock.Today, Price = 10m, IsManual = true };
 
         await viewModel.Delete(selected, () => false);
 
@@ -177,7 +177,7 @@ public class PriceHistoryTabViewModelTests
     {
         var service = new StubPriceService { DeleteResult = null };
         var (viewModel, _, spy) = Build(service: service);
-        var selected = new AssetPriceSnapshotDTO { Date = DateOnly.FromDateTime(DateTime.Today), Price = 10m, IsManual = true };
+        var selected = new AssetPriceSnapshotDTO { Date = TestClock.Today, Price = 10m, IsManual = true };
 
         await viewModel.Delete(selected, () => true);
 
@@ -191,7 +191,7 @@ public class PriceHistoryTabViewModelTests
         var expectedDetails = new AssetDetailsDTO { Name = AssetName, BrokerName = BrokerName, PortfolioName = PortfolioName, Ticker = "T" };
         var service = new StubPriceService { DeleteResult = expectedDetails };
         var (viewModel, _, spy) = Build(service: service);
-        var date = DateOnly.FromDateTime(DateTime.Today);
+        var date = TestClock.Today;
         var selected = new AssetPriceSnapshotDTO { Date = date, Price = 10m, IsManual = true };
 
         await viewModel.Delete(selected, () => true);
@@ -220,7 +220,7 @@ public class PriceHistoryTabViewModelTests
         var expectedDetails = new AssetDetailsDTO { Name = AssetName, BrokerName = BrokerName, PortfolioName = PortfolioName, Ticker = "T" };
         var service = new StubPriceService { SetResult = expectedDetails };
         var (viewModel, svc, spy) = Build(service: service);
-        var entry = new AssetPriceSnapshotDTO { Date = DateOnly.FromDateTime(DateTime.Today), Price = 10m, IsManual = true };
+        var entry = new AssetPriceSnapshotDTO { Date = TestClock.Today, Price = 10m, IsManual = true };
 
         viewModel.UpdatePriceCommand.Execute(entry);
 
@@ -240,7 +240,7 @@ public class PriceHistoryTabViewModelTests
     public void UpdatePriceCommand_WithParameterAndCancelledForm_DoesNotCallService()
     {
         var (viewModel, svc, _) = Build();
-        var entry = new AssetPriceSnapshotDTO { Date = DateOnly.FromDateTime(DateTime.Today), Price = 10m, IsManual = true };
+        var entry = new AssetPriceSnapshotDTO { Date = TestClock.Today, Price = 10m, IsManual = true };
 
         viewModel.UpdatePriceCommand.Execute(entry);
         viewModel.PriceFormViewModel!.CancelCommand.Execute(null);
@@ -253,7 +253,7 @@ public class PriceHistoryTabViewModelTests
     public void DeletePriceCommand_WithNonManualEntry_SelectsEntryAndShowsWarningWithoutOpeningRealDialog()
     {
         var (viewModel, svc, spy) = Build();
-        var entry = new AssetPriceSnapshotDTO { Date = DateOnly.FromDateTime(DateTime.Today), Price = 10m, IsManual = false };
+        var entry = new AssetPriceSnapshotDTO { Date = TestClock.Today, Price = 10m, IsManual = false };
 
         viewModel.DeletePriceCommand.Execute(entry);
 

@@ -164,8 +164,8 @@ public sealed class CreditDialogViewModel : ViewModelBase
         Validate();
     }
 
-    public static CreditDialogViewModel CreateForAdd(string brokerName, string portfolioName, string assetName) =>
-        CreateForAdd(brokerName, portfolioName, assetName, DateTime.Today, "Dividend");
+    public static CreditDialogViewModel CreateForAdd(string brokerName, string portfolioName, string assetName, TimeProvider timeProvider) =>
+        CreateForAdd(brokerName, portfolioName, assetName, timeProvider.GetLocalNow().Date, "Dividend");
 
     public static CreditDialogViewModel CreateForAdd(string brokerName, string portfolioName, string assetName, DateTime date, string type)
     {

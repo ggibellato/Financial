@@ -15,7 +15,7 @@ public class CorporateActionRowViewModelTests
     [InlineData(CorporateAction.CorporateActionType.SpinOff, "Spin-off")]
     public void TypeLabel_MapsEachTypeToItsDisplayLabel(CorporateAction.CorporateActionType type, string expectedLabel)
     {
-        var row = new CorporateActionRowViewModel(new CorporateActionDTO { Id = Guid.NewGuid(), Type = type, EffectiveDate = DateTime.Today }, AffectedAssetName);
+        var row = new CorporateActionRowViewModel(new CorporateActionDTO { Id = Guid.NewGuid(), Type = type, EffectiveDate = TestClock.LocalToday }, AffectedAssetName);
 
         row.TypeLabel.Should().Be(expectedLabel);
     }
@@ -24,7 +24,7 @@ public class CorporateActionRowViewModelTests
     public void ResultingChange_Split_ShowsRescaledRatio()
     {
         var row = new CorporateActionRowViewModel(
-            new CorporateActionDTO { Id = Guid.NewGuid(), Type = CorporateAction.CorporateActionType.Split, EffectiveDate = DateTime.Today, RatioFactor = 2m },
+            new CorporateActionDTO { Id = Guid.NewGuid(), Type = CorporateAction.CorporateActionType.Split, EffectiveDate = TestClock.LocalToday, RatioFactor = 2m },
             AffectedAssetName);
 
         row.ResultingChange.Should().Be("Quantity/average cost rescaled ×2");
@@ -34,7 +34,7 @@ public class CorporateActionRowViewModelTests
     public void ResultingChange_MergerSourceRole_ShowsPositionClosed()
     {
         var row = new CorporateActionRowViewModel(
-            new CorporateActionDTO { Id = Guid.NewGuid(), Type = CorporateAction.CorporateActionType.Merger, EffectiveDate = DateTime.Today, Role = CorporateAction.CorporateActionRole.Source },
+            new CorporateActionDTO { Id = Guid.NewGuid(), Type = CorporateAction.CorporateActionType.Merger, EffectiveDate = TestClock.LocalToday, Role = CorporateAction.CorporateActionRole.Source },
             AffectedAssetName);
 
         row.ResultingChange.Should().Be("Position closed and converted");
@@ -48,7 +48,7 @@ public class CorporateActionRowViewModelTests
             {
                 Id = Guid.NewGuid(),
                 Type = CorporateAction.CorporateActionType.Merger,
-                EffectiveDate = DateTime.Today,
+                EffectiveDate = TestClock.LocalToday,
                 Role = CorporateAction.CorporateActionRole.Target,
                 ConvertedQuantity = 150m
             },
@@ -65,7 +65,7 @@ public class CorporateActionRowViewModelTests
             {
                 Id = Guid.NewGuid(),
                 Type = CorporateAction.CorporateActionType.Merger,
-                EffectiveDate = DateTime.Today,
+                EffectiveDate = TestClock.LocalToday,
                 Role = CorporateAction.CorporateActionRole.Target
             },
             AffectedAssetName);
@@ -77,7 +77,7 @@ public class CorporateActionRowViewModelTests
     public void ResultingChange_SpinOffParentRole_ShowsCostBasisReduced()
     {
         var row = new CorporateActionRowViewModel(
-            new CorporateActionDTO { Id = Guid.NewGuid(), Type = CorporateAction.CorporateActionType.SpinOff, EffectiveDate = DateTime.Today, Role = CorporateAction.CorporateActionRole.Parent },
+            new CorporateActionDTO { Id = Guid.NewGuid(), Type = CorporateAction.CorporateActionType.SpinOff, EffectiveDate = TestClock.LocalToday, Role = CorporateAction.CorporateActionRole.Parent },
             AffectedAssetName);
 
         row.ResultingChange.Should().Be("Cost basis reduced by spin-off");
@@ -91,7 +91,7 @@ public class CorporateActionRowViewModelTests
             {
                 Id = Guid.NewGuid(),
                 Type = CorporateAction.CorporateActionType.SpinOff,
-                EffectiveDate = DateTime.Today,
+                EffectiveDate = TestClock.LocalToday,
                 Role = CorporateAction.CorporateActionRole.New,
                 ConvertedQuantity = 40m
             },
@@ -104,7 +104,7 @@ public class CorporateActionRowViewModelTests
     public void ResultingChange_SpinOffNewRoleWithoutConvertedQuantity_ShowsGenericMessage()
     {
         var row = new CorporateActionRowViewModel(
-            new CorporateActionDTO { Id = Guid.NewGuid(), Type = CorporateAction.CorporateActionType.SpinOff, EffectiveDate = DateTime.Today, Role = CorporateAction.CorporateActionRole.New },
+            new CorporateActionDTO { Id = Guid.NewGuid(), Type = CorporateAction.CorporateActionType.SpinOff, EffectiveDate = TestClock.LocalToday, Role = CorporateAction.CorporateActionRole.New },
             AffectedAssetName);
 
         row.ResultingChange.Should().Be("Units received from spin-off");
@@ -114,7 +114,7 @@ public class CorporateActionRowViewModelTests
     public void HasCalculationStatus_NullStatus_IsFalse()
     {
         var row = new CorporateActionRowViewModel(
-            new CorporateActionDTO { Id = Guid.NewGuid(), Type = CorporateAction.CorporateActionType.Merger, EffectiveDate = DateTime.Today, CalculationStatus = null },
+            new CorporateActionDTO { Id = Guid.NewGuid(), Type = CorporateAction.CorporateActionType.Merger, EffectiveDate = TestClock.LocalToday, CalculationStatus = null },
             AffectedAssetName);
 
         row.HasCalculationStatus.Should().BeFalse();
@@ -128,7 +128,7 @@ public class CorporateActionRowViewModelTests
             {
                 Id = Guid.NewGuid(),
                 Type = CorporateAction.CorporateActionType.Merger,
-                EffectiveDate = DateTime.Today,
+                EffectiveDate = TestClock.LocalToday,
                 CalculationStatus = CalculationStatus.RequiresReview
             },
             AffectedAssetName);

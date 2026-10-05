@@ -12,7 +12,7 @@ public class CreditDialogViewModelTests
     [InlineData(CreditDialogMode.Delete, "Delete Credit", "Delete")]
     public void TitleAndConfirmLabel_ReflectMode(CreditDialogMode mode, string expectedTitle, string expectedConfirmLabel)
     {
-        var viewModel = new CreditDialogViewModel(mode, "XPI", "Default", "PETR4", Guid.NewGuid(), DateTime.Today, "Dividend", 10m, 0m);
+        var viewModel = new CreditDialogViewModel(mode, "XPI", "Default", "PETR4", Guid.NewGuid(), TestClock.LocalToday, "Dividend", 10m, 0m);
 
         viewModel.Title.Should().Be(expectedTitle);
         viewModel.ConfirmLabel.Should().Be(expectedConfirmLabel);
@@ -21,7 +21,7 @@ public class CreditDialogViewModelTests
     [Fact]
     public void IsReadOnlyAndIsEditable_OnDeleteMode_AreOppositeAndReadOnly()
     {
-        var viewModel = CreditDialogViewModel.CreateForDelete("XPI", "Default", "PETR4", Guid.NewGuid(), DateTime.Today, "Dividend", 10m, 0m);
+        var viewModel = CreditDialogViewModel.CreateForDelete("XPI", "Default", "PETR4", Guid.NewGuid(), TestClock.LocalToday, "Dividend", 10m, 0m);
 
         viewModel.IsReadOnly.Should().BeTrue();
         viewModel.IsEditable.Should().BeFalse();
@@ -32,7 +32,7 @@ public class CreditDialogViewModelTests
     [InlineData(CreditDialogMode.Update)]
     public void IsReadOnlyAndIsEditable_OnNonDeleteMode_AreOppositeAndEditable(CreditDialogMode mode)
     {
-        var viewModel = new CreditDialogViewModel(mode, "XPI", "Default", "PETR4", Guid.NewGuid(), DateTime.Today, "Dividend", 10m, 0m);
+        var viewModel = new CreditDialogViewModel(mode, "XPI", "Default", "PETR4", Guid.NewGuid(), TestClock.LocalToday, "Dividend", 10m, 0m);
 
         viewModel.IsReadOnly.Should().BeFalse();
         viewModel.IsEditable.Should().BeTrue();
@@ -41,7 +41,7 @@ public class CreditDialogViewModelTests
     [Fact]
     public void CreateForAdd_DefaultZeroValue_ConfirmCommandCannotExecute()
     {
-        var viewModel = CreditDialogViewModel.CreateForAdd("XPI", "Default", "PETR4");
+        var viewModel = CreditDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", TestClock.At());
 
         viewModel.Mode.Should().Be(CreditDialogMode.Add);
         viewModel.CreditId.Should().Be(Guid.Empty);
@@ -51,7 +51,7 @@ public class CreditDialogViewModelTests
     [Fact]
     public void ConfirmCommand_CanExecute_FalseWhileValidationMessageIsNotEmpty()
     {
-        var viewModel = CreditDialogViewModel.CreateForAdd("XPI", "Default", "PETR4");
+        var viewModel = CreditDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", TestClock.At());
 
         viewModel.Value = 0m; // Invalid: value must be greater than zero.
 
@@ -61,9 +61,9 @@ public class CreditDialogViewModelTests
     [Fact]
     public void ConfirmCommand_CanExecute_TrueOnceAllFieldsAreValid()
     {
-        var viewModel = CreditDialogViewModel.CreateForAdd("XPI", "Default", "PETR4");
+        var viewModel = CreditDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", TestClock.At());
 
-        viewModel.Date = DateTime.Today;
+        viewModel.Date = TestClock.LocalToday;
         viewModel.Type = "Dividend";
         viewModel.Value = 10m;
 
@@ -81,8 +81,8 @@ public class CreditDialogViewModelTests
     [Fact]
     public void ConfirmCommand_WhenValid_RaisesCloseRequestedWithTrue()
     {
-        var viewModel = CreditDialogViewModel.CreateForAdd("XPI", "Default", "PETR4");
-        viewModel.Date = DateTime.Today;
+        var viewModel = CreditDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", TestClock.At());
+        viewModel.Date = TestClock.LocalToday;
         viewModel.Type = "Dividend";
         viewModel.Value = 10m;
         bool? raisedResult = null;
@@ -96,7 +96,7 @@ public class CreditDialogViewModelTests
     [Fact]
     public void ConfirmCommand_WhenInvalid_DoesNotRaiseCloseRequested()
     {
-        var viewModel = CreditDialogViewModel.CreateForAdd("XPI", "Default", "PETR4");
+        var viewModel = CreditDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", TestClock.At());
         viewModel.Value = 0m;
         var raised = false;
         viewModel.CloseRequested += (_, _) => raised = true;
@@ -109,7 +109,7 @@ public class CreditDialogViewModelTests
     [Fact]
     public void CancelCommand_Execute_RaisesCloseRequestedWithFalse()
     {
-        var viewModel = CreditDialogViewModel.CreateForAdd("XPI", "Default", "PETR4");
+        var viewModel = CreditDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", TestClock.At());
         bool? raisedResult = null;
         viewModel.CloseRequested += (_, result) => raisedResult = result;
 
@@ -136,7 +136,7 @@ public class CreditDialogViewModelTests
     [Fact]
     public void NetAmount_ComputesFromValueAndWithheld()
     {
-        var viewModel = CreditDialogViewModel.CreateForAdd("XPI", "Default", "PETR4");
+        var viewModel = CreditDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", TestClock.At());
 
         viewModel.Value = 10m;
         viewModel.Withheld = 3m;
@@ -147,7 +147,7 @@ public class CreditDialogViewModelTests
     [Fact]
     public void NetAmount_ComputesFromValueWithheldAndIntermediationFee()
     {
-        var viewModel = CreditDialogViewModel.CreateForAdd("XPI", "Default", "PETR4");
+        var viewModel = CreditDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", TestClock.At());
 
         viewModel.Value = 0.16m;
         viewModel.Withheld = 0.03m;
@@ -159,7 +159,7 @@ public class CreditDialogViewModelTests
     [Fact]
     public void CreateForAdd_DefaultsIntermediationFeeToZero()
     {
-        var viewModel = CreditDialogViewModel.CreateForAdd("XPI", "Default", "PETR4");
+        var viewModel = CreditDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", TestClock.At());
 
         viewModel.IntermediationFee.Should().Be(0m);
     }
@@ -177,7 +177,7 @@ public class CreditDialogViewModelTests
     [Fact]
     public void CreateForAdd_DefaultsSharesForDividendToNull()
     {
-        var viewModel = CreditDialogViewModel.CreateForAdd("XPI", "Default", "PETR4");
+        var viewModel = CreditDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", TestClock.At());
 
         viewModel.SharesForDividend.Should().BeNull();
     }
@@ -185,7 +185,7 @@ public class CreditDialogViewModelTests
     [Fact]
     public void CreateForUpdate_PreservesSharesForDividend()
     {
-        var viewModel = CreditDialogViewModel.CreateForUpdate("XPI", "Default", "PETR4", Guid.NewGuid(), DateTime.Today, "Dividend", 25m, 5m, 800m);
+        var viewModel = CreditDialogViewModel.CreateForUpdate("XPI", "Default", "PETR4", Guid.NewGuid(), TestClock.LocalToday, "Dividend", 25m, 5m, 800m);
 
         viewModel.SharesForDividend.Should().Be(800m);
     }
@@ -193,8 +193,8 @@ public class CreditDialogViewModelTests
     [Fact]
     public void ConfirmCommand_CanExecute_FalseWhenSharesForDividendIsZero()
     {
-        var viewModel = CreditDialogViewModel.CreateForAdd("XPI", "Default", "PETR4");
-        viewModel.Date = DateTime.Today;
+        var viewModel = CreditDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", TestClock.At());
+        viewModel.Date = TestClock.LocalToday;
         viewModel.Type = "Dividend";
         viewModel.Value = 10m;
 
@@ -206,8 +206,8 @@ public class CreditDialogViewModelTests
     [Fact]
     public void ConfirmCommand_CanExecute_TrueWithAPositiveSharesForDividend()
     {
-        var viewModel = CreditDialogViewModel.CreateForAdd("XPI", "Default", "PETR4");
-        viewModel.Date = DateTime.Today;
+        var viewModel = CreditDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", TestClock.At());
+        viewModel.Date = TestClock.LocalToday;
         viewModel.Type = "Dividend";
         viewModel.Value = 10m;
 

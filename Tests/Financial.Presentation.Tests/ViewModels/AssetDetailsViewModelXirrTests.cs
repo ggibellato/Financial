@@ -25,6 +25,7 @@ public class AssetDetailsViewModelXirrTests
             navigationService ?? new FakeNavigationService(),
             new FakePortfolioAssetSummaryService(),
             new ProfitCalculationService(),
+            TestClock.At(),
             scope,
             priceService ?? new FixedPriceService(0m));
     }
@@ -291,7 +292,7 @@ public class AssetDetailsViewModelXirrTests
         public Task<AssetPriceDTO> GetCurrentPriceAsync(AssetPriceRequestDTO request)
         {
             CallCount++;
-            return Task.FromResult(new AssetPriceDTO { Exchange = request.Exchange, Ticker = request.Ticker, Price = _price, AsOf = DateTimeOffset.UtcNow });
+            return Task.FromResult(new AssetPriceDTO { Exchange = request.Exchange, Ticker = request.Ticker, Price = _price, AsOf = TestClock.Default });
         }
     }
 

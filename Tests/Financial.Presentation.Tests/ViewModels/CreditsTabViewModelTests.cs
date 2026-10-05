@@ -27,13 +27,13 @@ public class CreditsTabViewModelTests
             () => PortfolioName,
             () => AssetName,
             spy.ApplyDetails,
-            spy.ShowMessage);
+            spy.ShowMessage, TestClock.At());
         return (viewModel, stubService, spy);
     }
 
     private static CreditDialogData ValidDialogData(Guid? id = null) => new(
         CreditId: id ?? Guid.NewGuid(),
-        Date: DateTime.Today,
+        Date: TestClock.LocalToday,
         Type: "Dividend",
         Value: 12.5m,
         Withheld: 0m);
@@ -121,7 +121,7 @@ public class CreditsTabViewModelTests
         var expectedDetails = new AssetDetailsDTO { Name = AssetName, BrokerName = BrokerName, PortfolioName = PortfolioName, Ticker = "T" };
         var service = new StubCreditService { AddResult = expectedDetails };
         var (viewModel, _, _) = Build(service: service);
-        var usedDate = DateTime.Today.AddDays(-3);
+        var usedDate = TestClock.LocalToday.AddDays(-3);
 
         await viewModel.Add(() => AsForm(ValidDialogData() with { Date = usedDate, Type = "SecuritiesLendingIncome" }));
 
@@ -145,7 +145,7 @@ public class CreditsTabViewModelTests
     public async Task Update_EmptyId_ShowsWarningAndDoesNotCallService()
     {
         var (viewModel, service, spy) = Build();
-        var selected = new CreditDTO { Id = Guid.Empty, Date = DateTime.Today, Type = "Dividend", Value = 1m };
+        var selected = new CreditDTO { Id = Guid.Empty, Date = TestClock.LocalToday, Type = "Dividend", Value = 1m };
 
         await viewModel.Update(selected, () => AsForm(ValidDialogData()));
 
@@ -157,7 +157,7 @@ public class CreditsTabViewModelTests
     public async Task Update_DialogCancelled_DoesNotCallService()
     {
         var (viewModel, service, _) = Build();
-        var selected = new CreditDTO { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Dividend", Value = 1m };
+        var selected = new CreditDTO { Id = Guid.NewGuid(), Date = TestClock.LocalToday, Type = "Dividend", Value = 1m };
 
         await viewModel.Update(selected, () => AsForm(null));
 
@@ -168,7 +168,7 @@ public class CreditsTabViewModelTests
     public async Task Update_InvalidType_ShowsWarningAndDoesNotCallService()
     {
         var (viewModel, service, spy) = Build();
-        var selected = new CreditDTO { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Dividend", Value = 1m };
+        var selected = new CreditDTO { Id = Guid.NewGuid(), Date = TestClock.LocalToday, Type = "Dividend", Value = 1m };
 
         await viewModel.Update(selected, () => AsForm(ValidDialogData(selected.Id) with { Type = "NotAType" }));
 
@@ -183,7 +183,7 @@ public class CreditsTabViewModelTests
         var service = new StubCreditService { UpdateResult = expectedDetails };
         var (viewModel, _, spy) = Build(service: service);
         var id = Guid.NewGuid();
-        var selected = new CreditDTO { Id = id, Date = DateTime.Today, Type = "Dividend", Value = 1m };
+        var selected = new CreditDTO { Id = id, Date = TestClock.LocalToday, Type = "Dividend", Value = 1m };
 
         await viewModel.Update(selected, () => AsForm(ValidDialogData(id) with { Type = "SecuritiesLendingIncome", Value = 99m }));
 
@@ -201,7 +201,7 @@ public class CreditsTabViewModelTests
         var service = new StubCreditService { UpdateResult = expectedDetails };
         var (viewModel, _, _) = Build(service: service);
         var id = Guid.NewGuid();
-        var selected = new CreditDTO { Id = id, Date = DateTime.Today, Type = "Dividend", Value = 1m };
+        var selected = new CreditDTO { Id = id, Date = TestClock.LocalToday, Type = "Dividend", Value = 1m };
 
         await viewModel.Update(selected, () => AsForm(ValidDialogData(id) with { SharesForDividend = 800m }));
 
@@ -214,7 +214,7 @@ public class CreditsTabViewModelTests
         var service = new StubCreditService { UpdateResult = null };
         var (viewModel, _, spy) = Build(service: service);
         var id = Guid.NewGuid();
-        var selected = new CreditDTO { Id = id, Date = DateTime.Today, Type = "Dividend", Value = 1m };
+        var selected = new CreditDTO { Id = id, Date = TestClock.LocalToday, Type = "Dividend", Value = 1m };
 
         await viewModel.Update(selected, () => AsForm(ValidDialogData(id)));
 
@@ -236,7 +236,7 @@ public class CreditsTabViewModelTests
     public async Task Delete_EmptyId_ShowsWarningAndDoesNotCallService()
     {
         var (viewModel, service, spy) = Build();
-        var selected = new CreditDTO { Id = Guid.Empty, Date = DateTime.Today, Type = "Dividend", Value = 1m };
+        var selected = new CreditDTO { Id = Guid.Empty, Date = TestClock.LocalToday, Type = "Dividend", Value = 1m };
 
         await viewModel.Delete(selected, () => true);
 
@@ -248,7 +248,7 @@ public class CreditsTabViewModelTests
     public async Task Delete_NotConfirmed_DoesNotCallService()
     {
         var (viewModel, service, _) = Build();
-        var selected = new CreditDTO { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Dividend", Value = 1m };
+        var selected = new CreditDTO { Id = Guid.NewGuid(), Date = TestClock.LocalToday, Type = "Dividend", Value = 1m };
 
         await viewModel.Delete(selected, () => false);
 
@@ -262,7 +262,7 @@ public class CreditsTabViewModelTests
         var service = new StubCreditService { DeleteResult = expectedDetails };
         var (viewModel, _, spy) = Build(service: service);
         var id = Guid.NewGuid();
-        var selected = new CreditDTO { Id = id, Date = DateTime.Today, Type = "Dividend", Value = 1m };
+        var selected = new CreditDTO { Id = id, Date = TestClock.LocalToday, Type = "Dividend", Value = 1m };
 
         await viewModel.Delete(selected, () => true);
 
@@ -277,7 +277,7 @@ public class CreditsTabViewModelTests
     {
         var service = new StubCreditService { DeleteResult = null };
         var (viewModel, _, spy) = Build(service: service);
-        var selected = new CreditDTO { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Dividend", Value = 1m };
+        var selected = new CreditDTO { Id = Guid.NewGuid(), Date = TestClock.LocalToday, Type = "Dividend", Value = 1m };
 
         await viewModel.Delete(selected, () => true);
 
@@ -296,7 +296,7 @@ public class CreditsTabViewModelTests
             () => PortfolioName,
             () => AssetName,
             spy.ApplyDetails,
-            spy.ShowMessage);
+            spy.ShowMessage, TestClock.At());
 
         await viewModel.Add(() => AsForm(ValidDialogData()));
 
@@ -315,8 +315,8 @@ public class CreditsTabViewModelTests
             () => PortfolioName,
             () => AssetName,
             spy.ApplyDetails,
-            spy.ShowMessage);
-        var selected = new CreditDTO { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Dividend", Value = 1m };
+            spy.ShowMessage, TestClock.At());
+        var selected = new CreditDTO { Id = Guid.NewGuid(), Date = TestClock.LocalToday, Type = "Dividend", Value = 1m };
 
         await viewModel.Delete(selected, () => true);
 
@@ -351,7 +351,7 @@ public class CreditsTabViewModelTests
     public void Load_WithCredits_PopulatesCollectionClearsSelectionAndBuildsPlot()
     {
         var (viewModel, _, _) = Build();
-        var credits = new List<CreditDTO> { new() { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Dividend", Value = 10m } };
+        var credits = new List<CreditDTO> { new() { Id = Guid.NewGuid(), Date = TestClock.LocalToday, Type = "Dividend", Value = 10m } };
 
         viewModel.Load("ctx", credits);
 
@@ -365,7 +365,7 @@ public class CreditsTabViewModelTests
     public void UpdatePlotWidth_WithPlotModelAndPositiveWidth_AppliesLabelDensityWithoutThrowing()
     {
         var (viewModel, _, _) = Build();
-        viewModel.Load("ctx", [new() { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Dividend", Value = 10m }]);
+        viewModel.Load("ctx", [new() { Id = Guid.NewGuid(), Date = TestClock.LocalToday, Type = "Dividend", Value = 10m }]);
 
         var act = () => viewModel.UpdatePlotWidth(400);
 
@@ -376,7 +376,7 @@ public class CreditsTabViewModelTests
     public void UpdatePlotWidth_WithNonPositiveWidth_IsNoOp()
     {
         var (viewModel, _, _) = Build();
-        viewModel.Load("ctx", [new() { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Dividend", Value = 10m }]);
+        viewModel.Load("ctx", [new() { Id = Guid.NewGuid(), Date = TestClock.LocalToday, Type = "Dividend", Value = 10m }]);
 
         var act = () => viewModel.UpdatePlotWidth(0);
 
@@ -389,7 +389,7 @@ public class CreditsTabViewModelTests
         var expectedDetails = new AssetDetailsDTO { Name = AssetName, BrokerName = BrokerName, PortfolioName = PortfolioName, Ticker = "T" };
         var service = new StubCreditService { UpdateResult = expectedDetails };
         var (viewModel, svc, spy) = Build(service: service);
-        var credit = new CreditDTO { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Dividend", Value = 1m };
+        var credit = new CreditDTO { Id = Guid.NewGuid(), Date = TestClock.LocalToday, Type = "Dividend", Value = 1m };
 
         viewModel.UpdateCreditCommand.Execute(credit);
 
@@ -410,7 +410,7 @@ public class CreditsTabViewModelTests
     public void UpdateCreditCommand_WithParameterAndCancelledForm_DoesNotCallService()
     {
         var (viewModel, svc, _) = Build();
-        var credit = new CreditDTO { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Dividend", Value = 1m };
+        var credit = new CreditDTO { Id = Guid.NewGuid(), Date = TestClock.LocalToday, Type = "Dividend", Value = 1m };
 
         viewModel.UpdateCreditCommand.Execute(credit);
         viewModel.CreditFormViewModel!.CancelCommand.Execute(null);
@@ -423,7 +423,7 @@ public class CreditsTabViewModelTests
     public void DeleteCreditCommand_WithEmptyIdParameter_SelectsCreditAndShowsWarningWithoutOpeningRealDialog()
     {
         var (viewModel, svc, spy) = Build();
-        var credit = new CreditDTO { Id = Guid.Empty, Date = DateTime.Today, Type = "Dividend", Value = 1m };
+        var credit = new CreditDTO { Id = Guid.Empty, Date = TestClock.LocalToday, Type = "Dividend", Value = 1m };
 
         viewModel.DeleteCreditCommand.Execute(credit);
 

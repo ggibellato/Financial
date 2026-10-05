@@ -11,7 +11,7 @@ public class PriceDialogValidationTests
     public void BuildValidationMessage_DeleteMode_ReturnsEmpty()
     {
         var result = PriceDialogValidation.BuildValidationMessage(
-            isDeleteMode: true, date: DateTime.MinValue, price: -1);
+            isDeleteMode: true, date: DateTime.MinValue, price: -1, TestClock.LocalToday);
 
         result.Should().BeEmpty();
     }
@@ -20,7 +20,7 @@ public class PriceDialogValidationTests
     public void BuildValidationMessage_AllFieldsValid_ReturnsEmpty()
     {
         var result = PriceDialogValidation.BuildValidationMessage(
-            isDeleteMode: false, date: ValidDate, price: 10m);
+            isDeleteMode: false, date: ValidDate, price: 10m, TestClock.LocalToday);
 
         result.Should().BeEmpty();
     }
@@ -29,7 +29,7 @@ public class PriceDialogValidationTests
     public void BuildValidationMessage_DateIsMinValue_IncludesDateError()
     {
         var result = PriceDialogValidation.BuildValidationMessage(
-            isDeleteMode: false, date: DateTime.MinValue, price: 10m);
+            isDeleteMode: false, date: DateTime.MinValue, price: 10m, TestClock.LocalToday);
 
         result.Should().Contain("Date is required.");
     }
@@ -38,7 +38,7 @@ public class PriceDialogValidationTests
     public void BuildValidationMessage_FutureDate_IncludesFutureDateError()
     {
         var result = PriceDialogValidation.BuildValidationMessage(
-            isDeleteMode: false, date: DateTime.Today.AddDays(1), price: 10m);
+            isDeleteMode: false, date: TestClock.LocalToday.AddDays(1), price: 10m, TestClock.LocalToday);
 
         result.Should().Contain("Price date cannot be in the future.");
     }
@@ -49,7 +49,7 @@ public class PriceDialogValidationTests
     public void BuildValidationMessage_PriceNotPositive_IncludesPriceError(decimal price)
     {
         var result = PriceDialogValidation.BuildValidationMessage(
-            isDeleteMode: false, date: ValidDate, price: price);
+            isDeleteMode: false, date: ValidDate, price: price, TestClock.LocalToday);
 
         result.Should().Contain("Price must be greater than zero.");
     }
@@ -58,7 +58,7 @@ public class PriceDialogValidationTests
     public void BuildValidationMessage_AllFieldsInvalid_IncludesEveryError()
     {
         var result = PriceDialogValidation.BuildValidationMessage(
-            isDeleteMode: false, date: DateTime.MinValue, price: 0m);
+            isDeleteMode: false, date: DateTime.MinValue, price: 0m, TestClock.LocalToday);
 
         result.Should().Contain("Date is required.");
         result.Should().Contain("Price must be greater than zero.");

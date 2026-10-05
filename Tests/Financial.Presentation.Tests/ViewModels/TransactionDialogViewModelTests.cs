@@ -14,7 +14,7 @@ public class TransactionDialogViewModelTests
     [InlineData(TransactionDialogMode.Delete, "Delete Transaction", "Delete")]
     public void TitleAndConfirmLabel_ReflectMode(TransactionDialogMode mode, string expectedTitle, string expectedConfirmLabel)
     {
-        var viewModel = new TransactionDialogViewModel(mode, "XPI", "Default", "PETR4", Guid.NewGuid(), DateTime.Today, "Buy", 10m, 5m, 0m, 0m);
+        var viewModel = new TransactionDialogViewModel(mode, "XPI", "Default", "PETR4", Guid.NewGuid(), TestClock.LocalToday, "Buy", 10m, 5m, 0m, 0m);
 
         viewModel.Title.Should().Be(expectedTitle);
         viewModel.ConfirmLabel.Should().Be(expectedConfirmLabel);
@@ -23,7 +23,7 @@ public class TransactionDialogViewModelTests
     [Fact]
     public void IsReadOnlyAndIsEditable_OnDeleteMode_AreOppositeAndReadOnly()
     {
-        var viewModel = TransactionDialogViewModel.CreateForDelete("XPI", "Default", "PETR4", Guid.NewGuid(), DateTime.Today, "Buy", 10m, 5m, 0m, 0m);
+        var viewModel = TransactionDialogViewModel.CreateForDelete("XPI", "Default", "PETR4", Guid.NewGuid(), TestClock.LocalToday, "Buy", 10m, 5m, 0m, 0m);
 
         viewModel.IsReadOnly.Should().BeTrue();
         viewModel.IsEditable.Should().BeFalse();
@@ -32,7 +32,7 @@ public class TransactionDialogViewModelTests
     [Fact]
     public void NetCash_ComputesFromQuantityUnitPriceFeesAndWithheld()
     {
-        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4");
+        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", TestClock.At());
 
         viewModel.Quantity = 10m;
         viewModel.UnitPrice = 5m;
@@ -49,7 +49,7 @@ public class TransactionDialogViewModelTests
     [InlineData(nameof(TransactionDialogViewModel.Withheld))]
     public void SettingQuantityUnitPriceFeesOrWithheld_RaisesNetCashPropertyChanged(string propertyToSet)
     {
-        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4");
+        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", TestClock.At());
         var raisedProperties = new List<string?>();
         viewModel.PropertyChanged += (_, e) => raisedProperties.Add(e.PropertyName);
 
@@ -75,7 +75,7 @@ public class TransactionDialogViewModelTests
     [Fact]
     public void CreateForAdd_DefaultZeroQuantity_ConfirmCommandCannotExecute()
     {
-        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4");
+        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", TestClock.At());
 
         viewModel.Mode.Should().Be(TransactionDialogMode.Add);
         viewModel.TransactionId.Should().Be(Guid.Empty);
@@ -85,9 +85,9 @@ public class TransactionDialogViewModelTests
     [Fact]
     public void ConfirmCommand_CanExecute_TrueOnceAllFieldsAreValid()
     {
-        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4");
+        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", TestClock.At());
 
-        viewModel.Date = DateTime.Today;
+        viewModel.Date = TestClock.LocalToday;
         viewModel.Type = "Buy";
         viewModel.Quantity = 10m;
         viewModel.UnitPrice = 5m;
@@ -107,7 +107,7 @@ public class TransactionDialogViewModelTests
     [Fact]
     public void ConfirmCommand_WhenValid_RaisesCloseRequestedWithTrue()
     {
-        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4");
+        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", TestClock.At());
         viewModel.Type = "Buy";
         viewModel.Quantity = 10m;
         viewModel.UnitPrice = 5m;
@@ -122,7 +122,7 @@ public class TransactionDialogViewModelTests
     [Fact]
     public void ConfirmCommand_WhenInvalid_DoesNotRaiseCloseRequested()
     {
-        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4"); // Quantity defaults to 0, invalid.
+        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", TestClock.At()); // Quantity defaults to 0, invalid.
         var raised = false;
         viewModel.CloseRequested += (_, _) => raised = true;
 
@@ -134,7 +134,7 @@ public class TransactionDialogViewModelTests
     [Fact]
     public void CancelCommand_Execute_RaisesCloseRequestedWithFalse()
     {
-        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4");
+        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", TestClock.At());
         bool? raisedResult = null;
         viewModel.CloseRequested += (_, result) => raisedResult = result;
 
@@ -171,7 +171,7 @@ public class TransactionDialogViewModelTests
     [Fact]
     public void RequiresLotAllocation_AddModeSellTypeSpecificIdBroker_IsTrue()
     {
-        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", DateTime.Today, "Sell", isSpecificIdBroker: true);
+        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", TestClock.LocalToday, "Sell", isSpecificIdBroker: true);
 
         viewModel.RequiresLotAllocation.Should().BeTrue();
     }
@@ -179,7 +179,7 @@ public class TransactionDialogViewModelTests
     [Fact]
     public void RequiresLotAllocation_AddModeBuyTypeSpecificIdBroker_IsFalse()
     {
-        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", DateTime.Today, "Buy", isSpecificIdBroker: true);
+        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", TestClock.LocalToday, "Buy", isSpecificIdBroker: true);
 
         viewModel.RequiresLotAllocation.Should().BeFalse();
     }
@@ -187,7 +187,7 @@ public class TransactionDialogViewModelTests
     [Fact]
     public void RequiresLotAllocation_NotSpecificIdBroker_IsFalseEvenForSellType()
     {
-        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", DateTime.Today, "Sell", isSpecificIdBroker: false);
+        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", TestClock.LocalToday, "Sell", isSpecificIdBroker: false);
 
         viewModel.RequiresLotAllocation.Should().BeFalse();
     }
@@ -195,7 +195,7 @@ public class TransactionDialogViewModelTests
     [Fact]
     public void RequiresLotAllocation_UpdateMode_IsAlwaysFalse()
     {
-        var viewModel = TransactionDialogViewModel.CreateForUpdate("XPI", "Default", "PETR4", Guid.NewGuid(), DateTime.Today, "Sell", 10m, 5m, 0m, 0m);
+        var viewModel = TransactionDialogViewModel.CreateForUpdate("XPI", "Default", "PETR4", Guid.NewGuid(), TestClock.LocalToday, "Sell", 10m, 5m, 0m, 0m);
 
         viewModel.RequiresLotAllocation.Should().BeFalse();
     }
@@ -204,7 +204,7 @@ public class TransactionDialogViewModelTests
     public void ChangingTypeToSell_ForSpecificIdBroker_TriggersOpenLotsFetchOnce()
     {
         var fetchCount = 0;
-        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", DateTime.Today, "Buy", true, () => fetchCount++);
+        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", TestClock.LocalToday, "Buy", true, () => fetchCount++);
 
         viewModel.Type = "Sell";
         viewModel.Type = "Redemption";
@@ -216,7 +216,7 @@ public class TransactionDialogViewModelTests
     public void CreateForAdd_InitialTypeAlreadyRequiresLotAllocation_FetchesImmediately()
     {
         var fetchCount = 0;
-        TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", DateTime.Today, "Sell", true, () => fetchCount++);
+        TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", TestClock.LocalToday, "Sell", true, () => fetchCount++);
 
         fetchCount.Should().Be(1);
     }
@@ -224,7 +224,7 @@ public class TransactionDialogViewModelTests
     [Fact]
     public void SetOpenLots_PopulatesRowsAndComputesAllocatedTotal()
     {
-        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", DateTime.Today, "Sell", isSpecificIdBroker: true);
+        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", TestClock.LocalToday, "Sell", isSpecificIdBroker: true);
         var lot = Lot(15m);
 
         viewModel.SetOpenLots([lot]);
@@ -236,7 +236,7 @@ public class TransactionDialogViewModelTests
     [Fact]
     public void CanConfirm_RequiresLotAllocation_FalseUntilAllocationExactlyMatchesQuantity()
     {
-        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", DateTime.Today, "Sell", isSpecificIdBroker: true);
+        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", TestClock.LocalToday, "Sell", isSpecificIdBroker: true);
         viewModel.Quantity = 10m;
         viewModel.UnitPrice = 5m;
         viewModel.SetOpenLots([Lot(15m)]);
@@ -251,7 +251,7 @@ public class TransactionDialogViewModelTests
     [Fact]
     public void CanConfirm_RequiresLotAllocation_FalseWhenALotIsOverAllocated()
     {
-        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", DateTime.Today, "Sell", isSpecificIdBroker: true);
+        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", TestClock.LocalToday, "Sell", isSpecificIdBroker: true);
         viewModel.Quantity = 10m;
         viewModel.UnitPrice = 5m;
         viewModel.SetOpenLots([Lot(5m)]);
@@ -265,7 +265,7 @@ public class TransactionDialogViewModelTests
     [Fact]
     public void CanConfirm_RequiresLotAllocation_FalseWhileLoadingOpenLots()
     {
-        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", DateTime.Today, "Sell", isSpecificIdBroker: true);
+        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", TestClock.LocalToday, "Sell", isSpecificIdBroker: true);
         viewModel.Quantity = 10m;
         viewModel.UnitPrice = 5m;
 
@@ -277,7 +277,7 @@ public class TransactionDialogViewModelTests
     [Fact]
     public void CanConfirm_RequiresLotAllocation_FalseOnOpenLotsError()
     {
-        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", DateTime.Today, "Sell", isSpecificIdBroker: true);
+        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", TestClock.LocalToday, "Sell", isSpecificIdBroker: true);
         viewModel.Quantity = 10m;
         viewModel.UnitPrice = 5m;
 
@@ -290,7 +290,7 @@ public class TransactionDialogViewModelTests
     public void RetryOpenLotsCommand_InvokesFetchCallbackEvenAfterInitialFetch()
     {
         var fetchCount = 0;
-        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", DateTime.Today, "Sell", true, () => fetchCount++);
+        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", TestClock.LocalToday, "Sell", true, () => fetchCount++);
 
         viewModel.RetryOpenLotsCommand.Execute(null);
 
@@ -300,7 +300,7 @@ public class TransactionDialogViewModelTests
     [Fact]
     public void ReportSubmitFailed_PreservesEnteredLotAllocation()
     {
-        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", DateTime.Today, "Sell", isSpecificIdBroker: true);
+        var viewModel = TransactionDialogViewModel.CreateForAdd("XPI", "Default", "PETR4", TestClock.LocalToday, "Sell", isSpecificIdBroker: true);
         viewModel.SetOpenLots([Lot(15m)]);
         viewModel.OpenLots.Single().Quantity = 7m;
 

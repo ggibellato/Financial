@@ -37,7 +37,7 @@ public class FxRateSnapshotToTooltipConverterTests
     [Fact]
     public void Convert_MissingCurrency_ReturnsEmpty()
     {
-        var snapshot = new FxRateSnapshotDTO { ToCurrency = "GBP", Rate = 5m, Source = "Frankfurter", RetrievedAt = DateTimeOffset.UtcNow };
+        var snapshot = new FxRateSnapshotDTO { ToCurrency = "GBP", Rate = 5m, Source = "Frankfurter", RetrievedAt = TestClock.Default };
 
         var result = _converter.Convert([null, snapshot], typeof(string), null, CultureInfo.InvariantCulture);
 

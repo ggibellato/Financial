@@ -19,7 +19,7 @@ public class AssetDetailsViewModelCreditsChartTests
             new StubTransactionQueryService(),
             new FakeNavigationService(),
             new FakePortfolioAssetSummaryService(),
-            new ProfitCalculationService());
+            new ProfitCalculationService(), TestClock.At());
     }
 
     [Fact]
@@ -62,7 +62,7 @@ public class AssetDetailsViewModelCreditsChartTests
     {
         var credits = new List<CreditDTO>
         {
-            new() { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Dividend", Value = 100m },
+            new() { Id = Guid.NewGuid(), Date = TestClock.LocalToday, Type = "Dividend", Value = 100m },
         };
         var vm = BuildViewModel();
         vm.LoadBrokerSummary("XPI", new AggregatedSummaryDTO(), credits);

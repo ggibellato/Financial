@@ -34,6 +34,7 @@ public class TransactionsTabViewModelTests
             () => AssetName,
             spy.ApplyDetails,
             spy.ShowMessage,
+            TestClock.At(),
             navigationService,
             isSpecificIdBroker);
         return (viewModel, stubService, spy);
@@ -41,7 +42,7 @@ public class TransactionsTabViewModelTests
 
     private static TransactionDialogData ValidDialogData(Guid? id = null) => new(
         TransactionId: id ?? Guid.NewGuid(),
-        Date: DateTime.Today,
+        Date: TestClock.LocalToday,
         Type: "Buy",
         Quantity: 10m,
         UnitPrice: 25m,
@@ -121,7 +122,7 @@ public class TransactionsTabViewModelTests
     {
         var service = new StubTransactionService { ExceptionToThrow = new InvestmentRuleViolationException("Cannot sell 15 units on 2024-02-01 — only 10 were held on that date.") };
         var (viewModel, _, spy) = Build(service: service);
-        viewModel.Load("ctx", [new() { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Buy", Quantity = 10m, UnitPrice = 5m, Fees = 0m }]);
+        viewModel.Load("ctx", [new() { Id = Guid.NewGuid(), Date = TestClock.LocalToday, Type = "Buy", Quantity = 10m, UnitPrice = 5m, Fees = 0m }]);
 
         var act = async () => await viewModel.Add(() => AsForm(ValidDialogData()));
 
@@ -195,10 +196,10 @@ public class TransactionsTabViewModelTests
     /// own tracked SynchronizationContext may post rather than run inline.</summary>
     private static async Task WaitUntilAsync(Func<bool> condition, int timeoutMs = 2000)
     {
-        var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+        var deadline = TestClock.Default.UtcDateTime.AddMilliseconds(timeoutMs);
         while (!condition())
         {
-            if (DateTime.UtcNow > deadline)
+            if (TestClock.Default.UtcDateTime > deadline)
             {
                 throw new TimeoutException("Condition was not met within the timeout.");
             }
@@ -225,7 +226,7 @@ public class TransactionsTabViewModelTests
         var expectedDetails = new AssetDetailsDTO { Name = AssetName, BrokerName = BrokerName, PortfolioName = PortfolioName, Ticker = "T" };
         var service = new StubTransactionService { AddResult = expectedDetails };
         var (viewModel, _, _) = Build(service: service);
-        var usedDate = DateTime.Today.AddDays(-3);
+        var usedDate = TestClock.LocalToday.AddDays(-3);
 
         await viewModel.Add(() => AsForm(ValidDialogData() with { Date = usedDate, Type = "Sell" }));
 
@@ -249,7 +250,7 @@ public class TransactionsTabViewModelTests
     public async Task Update_EmptyId_ShowsWarningAndDoesNotCallService()
     {
         var (viewModel, service, spy) = Build();
-        var selected = new TransactionDTO { Id = Guid.Empty, Date = DateTime.Today, Type = "Buy", Quantity = 1m, UnitPrice = 1m, Fees = 0m };
+        var selected = new TransactionDTO { Id = Guid.Empty, Date = TestClock.LocalToday, Type = "Buy", Quantity = 1m, UnitPrice = 1m, Fees = 0m };
 
         await viewModel.Update(selected, () => AsForm(ValidDialogData()));
 
@@ -261,7 +262,7 @@ public class TransactionsTabViewModelTests
     public async Task Update_DialogCancelled_DoesNotCallService()
     {
         var (viewModel, service, _) = Build();
-        var selected = new TransactionDTO { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Buy", Quantity = 1m, UnitPrice = 1m, Fees = 0m };
+        var selected = new TransactionDTO { Id = Guid.NewGuid(), Date = TestClock.LocalToday, Type = "Buy", Quantity = 1m, UnitPrice = 1m, Fees = 0m };
 
         await viewModel.Update(selected, () => AsForm(null));
 
@@ -272,7 +273,7 @@ public class TransactionsTabViewModelTests
     public async Task Update_InvalidType_ShowsWarningAndDoesNotCallService()
     {
         var (viewModel, service, spy) = Build();
-        var selected = new TransactionDTO { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Buy", Quantity = 1m, UnitPrice = 1m, Fees = 0m };
+        var selected = new TransactionDTO { Id = Guid.NewGuid(), Date = TestClock.LocalToday, Type = "Buy", Quantity = 1m, UnitPrice = 1m, Fees = 0m };
 
         await viewModel.Update(selected, () => AsForm(ValidDialogData(selected.Id) with { Type = "NotAType" }));
 
@@ -287,7 +288,7 @@ public class TransactionsTabViewModelTests
         var service = new StubTransactionService { UpdateResult = expectedDetails };
         var (viewModel, _, spy) = Build(service: service);
         var id = Guid.NewGuid();
-        var selected = new TransactionDTO { Id = id, Date = DateTime.Today, Type = "Buy", Quantity = 1m, UnitPrice = 1m, Fees = 0m };
+        var selected = new TransactionDTO { Id = id, Date = TestClock.LocalToday, Type = "Buy", Quantity = 1m, UnitPrice = 1m, Fees = 0m };
 
         await viewModel.Update(selected, () => AsForm(ValidDialogData(id) with { Type = "Sell", Quantity = 3m }));
 
@@ -304,7 +305,7 @@ public class TransactionsTabViewModelTests
         var service = new StubTransactionService { UpdateResult = null };
         var (viewModel, _, spy) = Build(service: service);
         var id = Guid.NewGuid();
-        var selected = new TransactionDTO { Id = id, Date = DateTime.Today, Type = "Buy", Quantity = 1m, UnitPrice = 1m, Fees = 0m };
+        var selected = new TransactionDTO { Id = id, Date = TestClock.LocalToday, Type = "Buy", Quantity = 1m, UnitPrice = 1m, Fees = 0m };
 
         await viewModel.Update(selected, () => AsForm(ValidDialogData(id)));
 
@@ -317,7 +318,7 @@ public class TransactionsTabViewModelTests
     {
         var service = new StubTransactionService { ExceptionToThrow = new InvestmentRuleViolationException("This change would leave the sale of 80 units on 2024-06-01 short by 30 units — only 50 would be held on that date.") };
         var (viewModel, _, spy) = Build(service: service);
-        var selected = new TransactionDTO { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Buy", Quantity = 100m, UnitPrice = 5m, Fees = 0m };
+        var selected = new TransactionDTO { Id = Guid.NewGuid(), Date = TestClock.LocalToday, Type = "Buy", Quantity = 100m, UnitPrice = 5m, Fees = 0m };
 
         var act = async () => await viewModel.Update(selected, () => AsForm(ValidDialogData(selected.Id)));
 
@@ -340,7 +341,7 @@ public class TransactionsTabViewModelTests
     public async Task Delete_EmptyId_ShowsWarningAndDoesNotCallService()
     {
         var (viewModel, service, spy) = Build();
-        var selected = new TransactionDTO { Id = Guid.Empty, Date = DateTime.Today, Type = "Buy", Quantity = 1m, UnitPrice = 1m, Fees = 0m };
+        var selected = new TransactionDTO { Id = Guid.Empty, Date = TestClock.LocalToday, Type = "Buy", Quantity = 1m, UnitPrice = 1m, Fees = 0m };
 
         await viewModel.Delete(selected, () => true);
 
@@ -352,7 +353,7 @@ public class TransactionsTabViewModelTests
     public async Task Delete_NotConfirmed_DoesNotCallService()
     {
         var (viewModel, service, _) = Build();
-        var selected = new TransactionDTO { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Buy", Quantity = 1m, UnitPrice = 1m, Fees = 0m };
+        var selected = new TransactionDTO { Id = Guid.NewGuid(), Date = TestClock.LocalToday, Type = "Buy", Quantity = 1m, UnitPrice = 1m, Fees = 0m };
 
         await viewModel.Delete(selected, () => false);
 
@@ -366,7 +367,7 @@ public class TransactionsTabViewModelTests
         var service = new StubTransactionService { DeleteResult = expectedDetails };
         var (viewModel, _, spy) = Build(service: service);
         var id = Guid.NewGuid();
-        var selected = new TransactionDTO { Id = id, Date = DateTime.Today, Type = "Buy", Quantity = 1m, UnitPrice = 1m, Fees = 0m };
+        var selected = new TransactionDTO { Id = id, Date = TestClock.LocalToday, Type = "Buy", Quantity = 1m, UnitPrice = 1m, Fees = 0m };
 
         await viewModel.Delete(selected, () => true);
 
@@ -381,7 +382,7 @@ public class TransactionsTabViewModelTests
     {
         var service = new StubTransactionService { DeleteResult = null };
         var (viewModel, _, spy) = Build(service: service);
-        var selected = new TransactionDTO { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Buy", Quantity = 1m, UnitPrice = 1m, Fees = 0m };
+        var selected = new TransactionDTO { Id = Guid.NewGuid(), Date = TestClock.LocalToday, Type = "Buy", Quantity = 1m, UnitPrice = 1m, Fees = 0m };
 
         await viewModel.Delete(selected, () => true);
 
@@ -402,7 +403,7 @@ public class TransactionsTabViewModelTests
             () => PortfolioName,
             () => AssetName,
             spy.ApplyDetails,
-            spy.ShowMessage);
+            spy.ShowMessage, TestClock.At());
 
         await viewModel.Add(() => AsForm(ValidDialogData()));
 
@@ -423,8 +424,8 @@ public class TransactionsTabViewModelTests
             () => PortfolioName,
             () => AssetName,
             spy.ApplyDetails,
-            spy.ShowMessage);
-        var selected = new TransactionDTO { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Buy", Quantity = 1m, UnitPrice = 1m, Fees = 0m };
+            spy.ShowMessage, TestClock.At());
+        var selected = new TransactionDTO { Id = Guid.NewGuid(), Date = TestClock.LocalToday, Type = "Buy", Quantity = 1m, UnitPrice = 1m, Fees = 0m };
 
         await viewModel.Delete(selected, () => true);
 
@@ -437,7 +438,7 @@ public class TransactionsTabViewModelTests
     {
         var service = new StubTransactionService { ExceptionToThrow = new InvestmentRuleViolationException("This change would leave the sale of 10 units on 2024-02-01 short by 10 units — only 0 would be held on that date.") };
         var (viewModel, _, spy) = Build(service: service);
-        var selected = new TransactionDTO { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Buy", Quantity = 10m, UnitPrice = 5m, Fees = 0m };
+        var selected = new TransactionDTO { Id = Guid.NewGuid(), Date = TestClock.LocalToday, Type = "Buy", Quantity = 10m, UnitPrice = 5m, Fees = 0m };
 
         var act = async () => await viewModel.Delete(selected, () => true);
 
@@ -473,7 +474,7 @@ public class TransactionsTabViewModelTests
         var (viewModel, _, _) = Build();
         var transactions = new List<TransactionDTO>
         {
-            new() { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Buy", Quantity = 10m, UnitPrice = 5m, Fees = 0m },
+            new() { Id = Guid.NewGuid(), Date = TestClock.LocalToday, Type = "Buy", Quantity = 10m, UnitPrice = 5m, Fees = 0m },
         };
 
         viewModel.Load("ctx", transactions);
@@ -489,7 +490,7 @@ public class TransactionsTabViewModelTests
     public void UpdatePlotWidth_WithNonPositiveWidth_IsNoOp()
     {
         var (viewModel, _, _) = Build();
-        viewModel.Load("ctx", [new() { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Buy", Quantity = 10m, UnitPrice = 5m, Fees = 0m }]);
+        viewModel.Load("ctx", [new() { Id = Guid.NewGuid(), Date = TestClock.LocalToday, Type = "Buy", Quantity = 10m, UnitPrice = 5m, Fees = 0m }]);
 
         var act = () => viewModel.UpdatePlotWidth(0);
 
@@ -527,7 +528,7 @@ public class TransactionsTabViewModelTests
         var expectedDetails = new AssetDetailsDTO { Name = AssetName, BrokerName = BrokerName, PortfolioName = PortfolioName, Ticker = "T" };
         var service = new StubTransactionService { UpdateResult = expectedDetails };
         var (viewModel, svc, spy) = Build(service: service);
-        var tx = new TransactionDTO { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Buy", Quantity = 10m, UnitPrice = 5m, Fees = 0m };
+        var tx = new TransactionDTO { Id = Guid.NewGuid(), Date = TestClock.LocalToday, Type = "Buy", Quantity = 10m, UnitPrice = 5m, Fees = 0m };
 
         viewModel.UpdateTransactionCommand.Execute(tx);
 
@@ -547,7 +548,7 @@ public class TransactionsTabViewModelTests
     public void UpdateTransactionCommand_WithParameterAndCancelledForm_DoesNotCallService()
     {
         var (viewModel, svc, _) = Build();
-        var tx = new TransactionDTO { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Buy", Quantity = 10m, UnitPrice = 5m, Fees = 0m };
+        var tx = new TransactionDTO { Id = Guid.NewGuid(), Date = TestClock.LocalToday, Type = "Buy", Quantity = 10m, UnitPrice = 5m, Fees = 0m };
 
         viewModel.UpdateTransactionCommand.Execute(tx);
         viewModel.TransactionFormViewModel!.CancelCommand.Execute(null);
@@ -560,7 +561,7 @@ public class TransactionsTabViewModelTests
     public void DeleteTransactionCommand_WithEmptyIdParameter_SelectsTransactionAndShowsWarningWithoutOpeningRealDialog()
     {
         var (viewModel, svc, spy) = Build();
-        var tx = new TransactionDTO { Id = Guid.Empty, Date = DateTime.Today, Type = "Buy", Quantity = 10m, UnitPrice = 5m, Fees = 0m };
+        var tx = new TransactionDTO { Id = Guid.Empty, Date = TestClock.LocalToday, Type = "Buy", Quantity = 10m, UnitPrice = 5m, Fees = 0m };
 
         viewModel.DeleteTransactionCommand.Execute(tx);
 
@@ -612,10 +613,10 @@ public class TransactionsTabViewModelTests
     [Fact]
     public async Task FetchOpenLotsAsync_PopulatesDialogOpenLotsFromNavigationService()
     {
-        var lot = new OpenLotDTO { SourceTransactionId = Guid.NewGuid(), Date = DateTime.Today, RemainingQuantity = 10m, UnitCost = 5m };
+        var lot = new OpenLotDTO { SourceTransactionId = Guid.NewGuid(), Date = TestClock.LocalToday, RemainingQuantity = 10m, UnitCost = 5m };
         var navigationService = new FakeNavigationService { OpenLotsToReturn = [lot] };
         var (viewModel, _, _) = Build(navigationService: navigationService, isSpecificIdBroker: () => true);
-        var dialogVm = TransactionDialogViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName, DateTime.Today, "Sell", true, null);
+        var dialogVm = TransactionDialogViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName, TestClock.LocalToday, "Sell", true, null);
 
         await viewModel.FetchOpenLotsAsync(dialogVm);
 
@@ -629,7 +630,7 @@ public class TransactionsTabViewModelTests
     {
         var navigationService = new FakeNavigationService { ThrowOnGetOpenLots = new InvalidOperationException("boom") };
         var (viewModel, _, _) = Build(navigationService: navigationService, isSpecificIdBroker: () => true);
-        var dialogVm = TransactionDialogViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName, DateTime.Today, "Sell", true, null);
+        var dialogVm = TransactionDialogViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName, TestClock.LocalToday, "Sell", true, null);
 
         await viewModel.FetchOpenLotsAsync(dialogVm);
 
@@ -640,7 +641,7 @@ public class TransactionsTabViewModelTests
     public async Task FetchOpenLotsAsync_NullNavigationService_SetsOpenLotsError()
     {
         var (viewModel, _, _) = Build(isSpecificIdBroker: () => true);
-        var dialogVm = TransactionDialogViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName, DateTime.Today, "Sell", true, null);
+        var dialogVm = TransactionDialogViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName, TestClock.LocalToday, "Sell", true, null);
 
         await viewModel.FetchOpenLotsAsync(dialogVm);
 

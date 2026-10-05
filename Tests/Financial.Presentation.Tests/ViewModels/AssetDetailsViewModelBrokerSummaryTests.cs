@@ -24,6 +24,7 @@ public class AssetDetailsViewModelBrokerSummaryTests
             new FakeNavigationService(),
             new FakePortfolioAssetSummaryService(),
             new ProfitCalculationService(),
+            TestClock.At(),
             scope);
     }
 
@@ -138,8 +139,8 @@ public class AssetDetailsViewModelBrokerSummaryTests
         var vm = BuildViewModel();
         var credits = new List<CreditDTO>
         {
-            new() { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Dividend", Value = 100m },
-            new() { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Interest", Value = 50m }
+            new() { Id = Guid.NewGuid(), Date = TestClock.LocalToday, Type = "Dividend", Value = 100m },
+            new() { Id = Guid.NewGuid(), Date = TestClock.LocalToday, Type = "Interest", Value = 50m }
         };
         vm.LoadBrokerSummary("XPI", new AggregatedSummaryDTO(), credits);
         vm.Credits.Credits.Count.Should().Be(2);

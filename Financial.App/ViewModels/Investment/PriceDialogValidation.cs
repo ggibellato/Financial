@@ -2,7 +2,7 @@ namespace Financial.Presentation.App.ViewModels.Investment;
 
 public static class PriceDialogValidation
 {
-    public static string BuildValidationMessage(bool isDeleteMode, DateTime date, decimal price)
+    public static string BuildValidationMessage(bool isDeleteMode, DateTime date, decimal price, DateTime today)
     {
         if (isDeleteMode)
         {
@@ -15,7 +15,7 @@ public static class PriceDialogValidation
         {
             errors.Add("Date is required.");
         }
-        else if (date.Date > DateTime.Today)
+        else if (date.Date > today)
         {
             errors.Add("Price date cannot be in the future.");
         }

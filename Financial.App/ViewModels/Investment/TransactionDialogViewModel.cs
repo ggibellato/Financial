@@ -259,8 +259,8 @@ public sealed class TransactionDialogViewModel : ViewModelBase
         Validate();
     }
 
-    public static TransactionDialogViewModel CreateForAdd(string brokerName, string portfolioName, string assetName) =>
-        CreateForAdd(brokerName, portfolioName, assetName, DateTime.Today, "Buy", false, null);
+    public static TransactionDialogViewModel CreateForAdd(string brokerName, string portfolioName, string assetName, TimeProvider timeProvider) =>
+        CreateForAdd(brokerName, portfolioName, assetName, timeProvider.GetLocalNow().Date, "Buy", false, null);
 
     public static TransactionDialogViewModel CreateForAdd(
         string brokerName,

@@ -12,10 +12,10 @@ public class CorporateActionFormViewModelTests
     [Fact]
     public void CreateForAdd_DefaultsEffectiveDateToTodayWithBlankRatioAndNote()
     {
-        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName);
+        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName, TestClock.At());
 
         vm.Mode.Should().Be(CorporateActionFormMode.Add);
-        vm.EffectiveDate.Should().Be(DateTime.Today);
+        vm.EffectiveDate.Should().Be(TestClock.LocalToday);
         vm.Type.Should().Be("Split");
         vm.RatioNumerator.Should().Be(0m);
         vm.RatioDenominator.Should().Be(0m);
@@ -57,7 +57,7 @@ public class CorporateActionFormViewModelTests
     [Fact]
     public void ConfirmCommand_OneForOneRatio_ShowsExactMessageAndCannotExecute()
     {
-        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName);
+        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName, TestClock.At());
         vm.EffectiveDate = new DateTime(2026, 1, 1);
         vm.RatioNumerator = 1m;
         vm.RatioDenominator = 1m;
@@ -69,7 +69,7 @@ public class CorporateActionFormViewModelTests
     [Fact]
     public void ConfirmCommand_InvalidRatio_ShowsExactMessageAndCannotExecute()
     {
-        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName);
+        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName, TestClock.At());
         vm.EffectiveDate = new DateTime(2026, 1, 1);
         vm.RatioNumerator = 0m;
         vm.RatioDenominator = 0m;
@@ -81,7 +81,7 @@ public class CorporateActionFormViewModelTests
     [Fact]
     public void ConfirmCommand_ValidRatio_CanExecuteAndRaisesCloseRequestedTrue()
     {
-        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName);
+        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName, TestClock.At());
         vm.EffectiveDate = new DateTime(2026, 1, 1);
         vm.RatioNumerator = 3m;
         vm.RatioDenominator = 1m;
@@ -98,7 +98,7 @@ public class CorporateActionFormViewModelTests
     [Fact]
     public void CancelCommand_RaisesCloseRequestedFalse()
     {
-        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName);
+        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName, TestClock.At());
 
         bool? closedWith = null;
         vm.CloseRequested += (_, result) => closedWith = result;
@@ -120,7 +120,7 @@ public class CorporateActionFormViewModelTests
     [Fact]
     public void ReportSubmitFailed_SetsValidationMessageAndBlocksResubmit()
     {
-        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName);
+        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName, TestClock.At());
         vm.EffectiveDate = new DateTime(2026, 1, 1);
         vm.RatioNumerator = 3m;
         vm.RatioDenominator = 1m;
@@ -137,7 +137,7 @@ public class CorporateActionFormViewModelTests
     [Fact]
     public void ChangingAFieldAfterReportSubmitFailed_ReEvaluatesValidationMessage()
     {
-        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName);
+        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName, TestClock.At());
         vm.EffectiveDate = new DateTime(2026, 1, 1);
         vm.RatioNumerator = 3m;
         vm.RatioDenominator = 1m;
@@ -152,7 +152,7 @@ public class CorporateActionFormViewModelTests
     [Fact]
     public void SelectingMergerType_RevealsMergerFieldsStepAndHidesSplitFields()
     {
-        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName);
+        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName, TestClock.At());
 
         vm.Type = CorporateActionFormValidation.MergerTypeValue;
 
@@ -165,7 +165,7 @@ public class CorporateActionFormViewModelTests
     [Fact]
     public void SplitType_NeverEntersMergerSteps()
     {
-        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName);
+        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName, TestClock.At());
 
         vm.IsMergerFieldsStep.Should().BeFalse();
         vm.IsMergerConfirmStep.Should().BeFalse();
@@ -174,7 +174,7 @@ public class CorporateActionFormViewModelTests
     [Fact]
     public void MergerConfirmCommand_OnFieldsStep_AdvancesToConfirmStepWithoutClosing()
     {
-        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName);
+        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName, TestClock.At());
         vm.Type = CorporateActionFormValidation.MergerTypeValue;
         vm.EffectiveDate = new DateTime(2026, 1, 1);
         vm.TargetAssetPicker!.AssetName = "Company B";
@@ -194,7 +194,7 @@ public class CorporateActionFormViewModelTests
     [Fact]
     public void MergerConfirmCommand_OnConfirmStep_RaisesCloseRequestedTrue()
     {
-        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName);
+        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName, TestClock.At());
         vm.Type = CorporateActionFormValidation.MergerTypeValue;
         vm.EffectiveDate = new DateTime(2026, 1, 1);
         vm.TargetAssetPicker!.AssetName = "Company B";
@@ -211,7 +211,7 @@ public class CorporateActionFormViewModelTests
     [Fact]
     public void MergerBackCommand_ReturnsToFieldsStepPreservingEnteredValues()
     {
-        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName);
+        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName, TestClock.At());
         vm.Type = CorporateActionFormValidation.MergerTypeValue;
         vm.EffectiveDate = new DateTime(2026, 1, 1);
         vm.TargetAssetPicker!.AssetName = "Company B";
@@ -233,7 +233,7 @@ public class CorporateActionFormViewModelTests
     [Fact]
     public void MergerConfirmLabel_ReadsContinueThenConfirmAndSave()
     {
-        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName);
+        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName, TestClock.At());
         vm.Type = CorporateActionFormValidation.MergerTypeValue;
 
         vm.ConfirmLabel.Should().Be("Continue");
@@ -249,7 +249,7 @@ public class CorporateActionFormViewModelTests
     [Fact]
     public void MergerAddMode_MissingTargetAsset_BlocksAdvancingPastFieldsStep()
     {
-        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName);
+        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName, TestClock.At());
         vm.Type = CorporateActionFormValidation.MergerTypeValue;
         vm.EffectiveDate = new DateTime(2026, 1, 1);
         vm.ExchangeRatio = 2m;
@@ -263,7 +263,7 @@ public class CorporateActionFormViewModelTests
     [Fact]
     public void MergerExchangeRatioNotPositive_BlocksAdvancingPastFieldsStep()
     {
-        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName);
+        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName, TestClock.At());
         vm.Type = CorporateActionFormValidation.MergerTypeValue;
         vm.EffectiveDate = new DateTime(2026, 1, 1);
         vm.TargetAssetPicker!.AssetName = "Company B";
@@ -290,7 +290,7 @@ public class CorporateActionFormViewModelTests
     [Fact]
     public void ReportSubmitFailed_OnMergerConfirmStep_KeepsConfirmEnabledForRetry()
     {
-        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName);
+        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName, TestClock.At());
         vm.Type = CorporateActionFormValidation.MergerTypeValue;
         vm.EffectiveDate = new DateTime(2026, 1, 1);
         vm.TargetAssetPicker!.AssetName = "Company B";
@@ -308,7 +308,7 @@ public class CorporateActionFormViewModelTests
     public void MergerConfirmSummary_MatchesExpectedWording()
     {
         var vm = CorporateActionFormViewModel.CreateForAdd(
-            BrokerName, PortfolioName, AssetName, sourceQuantity: 100m, sourceCostBasis: 5000m);
+            BrokerName, PortfolioName, AssetName, TestClock.At(), sourceQuantity: 100m, sourceCostBasis: 5000m);
         vm.Type = CorporateActionFormValidation.MergerTypeValue;
         vm.TargetAssetPicker!.AssetName = "Company B";
         vm.ExchangeRatio = 2m;
@@ -321,7 +321,7 @@ public class CorporateActionFormViewModelTests
     public void SpinOffLivePreview_ComputesStaysWithParentAndMovesToNewFromAllocationPercentage()
     {
         var vm = CorporateActionFormViewModel.CreateForAdd(
-            BrokerName, PortfolioName, AssetName, sourceCostBasis: 4000m);
+            BrokerName, PortfolioName, AssetName, TestClock.At(), sourceCostBasis: 4000m);
         vm.Type = CorporateActionFormValidation.SpinOffTypeValue;
 
         vm.AllocationPercentage = 25m;
@@ -333,7 +333,7 @@ public class CorporateActionFormViewModelTests
     [Fact]
     public void SpinOffNewAssetDisplayName_Empty_FallsBackToPlaceholderText()
     {
-        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName);
+        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName, TestClock.At());
         vm.Type = CorporateActionFormValidation.SpinOffTypeValue;
 
         vm.SpinOffNewAssetDisplayName.Should().Be("the new asset");
@@ -342,7 +342,7 @@ public class CorporateActionFormViewModelTests
     [Fact]
     public void TargetAssetPickerAssetNameChanged_RaisesLivePreviewPropertyChanged()
     {
-        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName);
+        var vm = CorporateActionFormViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName, TestClock.At());
         vm.Type = CorporateActionFormValidation.SpinOffTypeValue;
         var raisedProperties = new List<string>();
         vm.PropertyChanged += (_, e) => raisedProperties.Add(e.PropertyName!);

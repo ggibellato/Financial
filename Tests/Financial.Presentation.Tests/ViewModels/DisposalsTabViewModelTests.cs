@@ -31,7 +31,7 @@ public class DisposalsTabViewModelTests
             TaxYear = taxYear,
             Status = status,
             SupersededByRecordId = supersededByRecordId,
-            CreatedAt = DateTimeOffset.UtcNow
+            CreatedAt = TestClock.Default
         };
     }
 

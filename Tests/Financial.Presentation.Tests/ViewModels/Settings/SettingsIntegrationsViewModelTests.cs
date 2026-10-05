@@ -49,7 +49,7 @@ public class SettingsIntegrationsViewModelTests
             AccountEmail = "user@gmail.com",
             CalendarName = "Financial - Credit Card Due Dates",
             CalendarId = "cal-1",
-            ConnectedAtUtc = DateTimeOffset.UtcNow,
+            ConnectedAtUtc = TestClock.Default,
         };
 
         await viewModel.RefreshAsync();
@@ -140,10 +140,10 @@ public class SettingsIntegrationsViewModelTests
 
     private static async Task WaitUntilAsync(Func<bool> condition, int timeoutMs = 5000)
     {
-        var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+        var deadline = TestClock.Default.UtcDateTime.AddMilliseconds(timeoutMs);
         while (!condition())
         {
-            if (DateTime.UtcNow > deadline)
+            if (TestClock.Default.UtcDateTime > deadline)
             {
                 throw new TimeoutException("Condition was not met within the timeout.");
             }

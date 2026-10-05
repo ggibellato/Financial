@@ -754,13 +754,13 @@ public class MainNavigationViewModelBaseTests
         public TransactionsTabViewModel Transactions => TransactionsSpy;
         public CreditsTabViewModel Credits { get; } = new(
             null, () => false, () => string.Empty, () => string.Empty, () => string.Empty,
-            _ => { }, (_, _, _) => { });
+            _ => { }, (_, _, _) => { }, TestClock.At());
         public PriceHistoryTabViewModel PriceHistory { get; } = new(
             null, () => false, () => string.Empty, () => string.Empty, () => string.Empty,
-            _ => { }, (_, _, _) => { });
+            _ => { }, (_, _, _) => { }, TestClock.At());
         public CorporateActionsTabViewModel CorporateActions { get; } = new(
             null, () => false, () => string.Empty, () => string.Empty, () => string.Empty,
-            _ => { }, (_, _, _) => { });
+            _ => { }, (_, _, _) => { }, TestClock.At());
         public AssetDetailsDTO? LastAssetDetails { get; private set; }
         public decimal? LastRealizedPortfolioWeight { get; private set; }
         public Guid? FocusedCorporateActionId { get; private set; }
@@ -810,7 +810,7 @@ public class MainNavigationViewModelBaseTests
         public SpyTransactionsTabViewModel() : base(
             null, new StubTransactionQueryService(), InvestmentScope.Active,
             () => false, () => string.Empty, () => string.Empty, () => string.Empty,
-            _ => { }, (_, _, _) => { })
+            _ => { }, (_, _, _) => { }, TestClock.At())
         {
         }
 

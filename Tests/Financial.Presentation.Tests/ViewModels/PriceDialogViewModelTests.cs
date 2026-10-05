@@ -11,7 +11,7 @@ public class PriceDialogViewModelTests
     [InlineData(PriceDialogMode.Delete, "Delete Price", "Delete")]
     public void TitleAndConfirmLabel_ReflectMode(PriceDialogMode mode, string expectedTitle, string expectedConfirmLabel)
     {
-        var viewModel = new PriceDialogViewModel(mode, "XPI", "Default", "BCIA11", DateTime.Today, 10m);
+        var viewModel = new PriceDialogViewModel(mode, "XPI", "Default", "BCIA11", TestClock.LocalToday, 10m, TestClock.At());
 
         viewModel.Title.Should().Be(expectedTitle);
         viewModel.ConfirmLabel.Should().Be(expectedConfirmLabel);
@@ -20,7 +20,7 @@ public class PriceDialogViewModelTests
     [Fact]
     public void IsReadOnlyAndIsEditable_OnDeleteMode_AreOppositeAndReadOnly()
     {
-        var viewModel = PriceDialogViewModel.CreateForDelete("XPI", "Default", "BCIA11", DateTime.Today, 10m);
+        var viewModel = PriceDialogViewModel.CreateForDelete("XPI", "Default", "BCIA11", TestClock.LocalToday, 10m, TestClock.At());
 
         viewModel.IsReadOnly.Should().BeTrue();
         viewModel.IsEditable.Should().BeFalse();
@@ -31,7 +31,7 @@ public class PriceDialogViewModelTests
     [InlineData(PriceDialogMode.Update)]
     public void IsReadOnlyAndIsEditable_OnNonDeleteMode_AreOppositeAndEditable(PriceDialogMode mode)
     {
-        var viewModel = new PriceDialogViewModel(mode, "XPI", "Default", "BCIA11", DateTime.Today, 10m);
+        var viewModel = new PriceDialogViewModel(mode, "XPI", "Default", "BCIA11", TestClock.LocalToday, 10m, TestClock.At());
 
         viewModel.IsReadOnly.Should().BeFalse();
         viewModel.IsEditable.Should().BeTrue();
@@ -40,17 +40,31 @@ public class PriceDialogViewModelTests
     [Fact]
     public void CreateForAdd_DefaultZeroPrice_ConfirmCommandCannotExecute()
     {
-        var viewModel = PriceDialogViewModel.CreateForAdd("XPI", "Default", "BCIA11");
+        var viewModel = PriceDialogViewModel.CreateForAdd("XPI", "Default", "BCIA11", TestClock.At());
 
         viewModel.Mode.Should().Be(PriceDialogMode.Add);
-        viewModel.Date.Should().Be(DateTime.Today);
+        viewModel.Date.Should().Be(TestClock.LocalToday);
+        viewModel.ConfirmCommand.CanExecute(null).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Date_JustAfterMidnightOnTheFirstOfJuly_AllowsTodayAndRejectsTomorrow()
+    {
+        var clock = TestClock.At(TestClock.FirstOfJulyJustAfterMidnight);
+        var viewModel = PriceDialogViewModel.CreateForAdd("XPI", "Default", "BCIA11", clock);
+        viewModel.Price = 10m;
+
+        viewModel.ConfirmCommand.CanExecute(null).Should().BeTrue();
+
+        viewModel.Date = new DateTime(2026, 7, 2);
+
         viewModel.ConfirmCommand.CanExecute(null).Should().BeFalse();
     }
 
     [Fact]
     public void ConfirmCommand_CanExecute_FalseWhileValidationMessageIsNotEmpty()
     {
-        var viewModel = PriceDialogViewModel.CreateForAdd("XPI", "Default", "BCIA11");
+        var viewModel = PriceDialogViewModel.CreateForAdd("XPI", "Default", "BCIA11", TestClock.At());
 
         viewModel.Price = 0m; // Invalid: price must be greater than zero.
 
@@ -60,9 +74,9 @@ public class PriceDialogViewModelTests
     [Fact]
     public void ConfirmCommand_CanExecute_TrueOnceAllFieldsAreValid()
     {
-        var viewModel = PriceDialogViewModel.CreateForAdd("XPI", "Default", "BCIA11");
+        var viewModel = PriceDialogViewModel.CreateForAdd("XPI", "Default", "BCIA11", TestClock.At());
 
-        viewModel.Date = DateTime.Today;
+        viewModel.Date = TestClock.LocalToday;
         viewModel.Price = 10m;
 
         viewModel.ConfirmCommand.CanExecute(null).Should().BeTrue();
@@ -71,7 +85,7 @@ public class PriceDialogViewModelTests
     [Fact]
     public void ConfirmCommand_CanExecute_AlwaysTrueOnDeleteModeRegardlessOfFieldValidity()
     {
-        var viewModel = PriceDialogViewModel.CreateForDelete("XPI", "Default", "BCIA11", DateTime.MinValue, 0m);
+        var viewModel = PriceDialogViewModel.CreateForDelete("XPI", "Default", "BCIA11", DateTime.MinValue, 0m, TestClock.At());
 
         viewModel.ConfirmCommand.CanExecute(null).Should().BeTrue();
     }
@@ -79,8 +93,8 @@ public class PriceDialogViewModelTests
     [Fact]
     public void ConfirmCommand_WhenValid_RaisesCloseRequestedWithTrue()
     {
-        var viewModel = PriceDialogViewModel.CreateForAdd("XPI", "Default", "BCIA11");
-        viewModel.Date = DateTime.Today;
+        var viewModel = PriceDialogViewModel.CreateForAdd("XPI", "Default", "BCIA11", TestClock.At());
+        viewModel.Date = TestClock.LocalToday;
         viewModel.Price = 10m;
         bool? raisedResult = null;
         viewModel.CloseRequested += (_, result) => raisedResult = result;
@@ -93,7 +107,7 @@ public class PriceDialogViewModelTests
     [Fact]
     public void ConfirmCommand_WhenInvalid_DoesNotRaiseCloseRequested()
     {
-        var viewModel = PriceDialogViewModel.CreateForAdd("XPI", "Default", "BCIA11");
+        var viewModel = PriceDialogViewModel.CreateForAdd("XPI", "Default", "BCIA11", TestClock.At());
         viewModel.Price = 0m;
         var raised = false;
         viewModel.CloseRequested += (_, _) => raised = true;
@@ -106,7 +120,7 @@ public class PriceDialogViewModelTests
     [Fact]
     public void CancelCommand_Execute_RaisesCloseRequestedWithFalse()
     {
-        var viewModel = PriceDialogViewModel.CreateForAdd("XPI", "Default", "BCIA11");
+        var viewModel = PriceDialogViewModel.CreateForAdd("XPI", "Default", "BCIA11", TestClock.At());
         bool? raisedResult = null;
         viewModel.CloseRequested += (_, result) => raisedResult = result;
 
@@ -120,7 +134,7 @@ public class PriceDialogViewModelTests
     {
         var date = new DateTime(2026, 7, 1);
 
-        var viewModel = PriceDialogViewModel.CreateForUpdate("XPI", "Default", "BCIA11", date, 25m);
+        var viewModel = PriceDialogViewModel.CreateForUpdate("XPI", "Default", "BCIA11", date, 25m, TestClock.At());
 
         viewModel.Date.Should().Be(date);
         viewModel.Price.Should().Be(25m);

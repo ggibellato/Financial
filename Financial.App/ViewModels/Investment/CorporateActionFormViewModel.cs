@@ -321,10 +321,11 @@ public sealed class CorporateActionFormViewModel : ViewModelBase
         string brokerName,
         string portfolioName,
         string assetName,
+        TimeProvider timeProvider,
         TargetAssetPickerViewModel? targetAssetPicker = null,
         decimal sourceQuantity = 0m,
         decimal sourceCostBasis = 0m) =>
-        new(CorporateActionFormMode.Add, brokerName, portfolioName, assetName, Guid.Empty, DateTime.Today,
+        new(CorporateActionFormMode.Add, brokerName, portfolioName, assetName, Guid.Empty, timeProvider.GetLocalNow().Date,
             CorporateActionFormValidation.SplitTypeValue, 0m, 0m, null,
             targetAssetPicker ?? new TargetAssetPickerViewModel(Array.Empty<AssetAdminDTO>()),
             string.Empty, assetName, sourceQuantity, sourceCostBasis, 0m, null, 0m, 0m);
