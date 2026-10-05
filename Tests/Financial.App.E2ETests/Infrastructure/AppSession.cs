@@ -11,16 +11,13 @@ namespace Financial.App.E2ETests.Infrastructure;
 internal sealed class AppSession : IDisposable
 {
     private static readonly TimeSpan MainWindowTimeout = TimeSpan.FromSeconds(30);
-    private static readonly TimeSpan CloseTimeout = TimeSpan.FromSeconds(5);
-    private static readonly Lazy<bool> Reaped = new(() =>
-    {
-        OrphanReaper.Reap();
-        return true;
-    });
+    private static readonly TimeSpan ExitTimeout = TimeSpan.FromSeconds(5);
 
     private readonly string _directory;
     private readonly Application _application;
     private readonly UIA3Automation _automation;
+
+    static AppSession() => OrphanReaper.Reap();
 
     private AppSession(string directory, Application application, UIA3Automation automation, Window window)
     {
@@ -34,7 +31,6 @@ internal sealed class AppSession : IDisposable
 
     public static void Run(string testName, Action<AppSession> test)
     {
-        _ = Reaped.Value;
         using var session = Launch();
         try
         {
@@ -50,7 +46,7 @@ internal sealed class AppSession : IDisposable
     public void Dispose()
     {
         _automation.Dispose();
-        Shutdown(_application, _directory, closeGracefully: true);
+        KillAndDelete(_application.ProcessId, _directory);
     }
 
     private static AppSession Launch()
@@ -82,22 +78,10 @@ internal sealed class AppSession : IDisposable
         }
         catch (Exception exception)
         {
-            var outcome = DescribeExit(application);
+            var outcome = application.HasExited ? $"exited with code {application.ExitCode}" : "still running";
             automation.Dispose();
-            Shutdown(application, directory, closeGracefully: false);
+            KillAndDelete(application.ProcessId, directory);
             throw new InvalidOperationException($"Financial.App did not show its main window ({outcome}): {exception.Message}", exception);
-        }
-    }
-
-    private static string DescribeExit(Application application)
-    {
-        try
-        {
-            return application.HasExited ? $"exited with code {application.ExitCode}" : "still running";
-        }
-        catch (Exception exception) when (exception is InvalidOperationException or Win32Exception)
-        {
-            return "state unknown";
         }
     }
 
@@ -122,27 +106,9 @@ internal sealed class AppSession : IDisposable
         environment["Observability__Enabled"] = "false";
     }
 
-    private static void Shutdown(Application application, string directory, bool closeGracefully)
+    private static void KillAndDelete(int processId, string directory)
     {
-        try
-        {
-            if (closeGracefully && !application.HasExited)
-            {
-                application.Close();
-            }
-
-            using var process = Process.GetProcessById(application.ProcessId);
-            if (!process.WaitForExit(CloseTimeout))
-            {
-                process.Kill(entireProcessTree: true);
-                process.WaitForExit(CloseTimeout);
-            }
-        }
-        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or Win32Exception)
-        {
-            Console.Error.WriteLine($"Financial.App already gone at shutdown: {exception.Message}");
-        }
-
+        OrphanReaper.Kill(processId, expectedStartTicks: null, ExitTimeout);
         OrphanReaper.TryDelete(directory);
     }
 
@@ -160,20 +126,19 @@ internal sealed class AppSession : IDisposable
             File.WriteAllText(Path.Combine(target, "screen-error.txt"), exception.ToString());
         }
 
-        File.WriteAllText(Path.Combine(target, "process.txt"), DescribeProcess());
+        File.WriteAllText(
+            Path.Combine(target, "process.txt"),
+            _application.HasExited
+                ? $"Financial.App exited during the test with code {_application.ExitCode}."
+                : "Financial.App was still running when the test failed.");
 
         var logs = Path.Combine(Path.GetDirectoryName(AppPaths.ExePath())!, "logs");
-        if (Directory.Exists(logs))
+        var latestLog = Directory.Exists(logs)
+            ? Directory.EnumerateFiles(logs, "app-*.log").OrderByDescending(File.GetLastWriteTimeUtc).FirstOrDefault()
+            : null;
+        if (latestLog is not null)
         {
-            foreach (var log in Directory.EnumerateFiles(logs, "app-*.log").OrderByDescending(File.GetLastWriteTimeUtc).Take(1))
-            {
-                File.Copy(log, Path.Combine(target, Path.GetFileName(log)), overwrite: true);
-            }
+            File.Copy(latestLog, Path.Combine(target, Path.GetFileName(latestLog)), overwrite: true);
         }
     }
-
-    private string DescribeProcess() =>
-        _application.HasExited
-            ? $"Financial.App exited during the test with code {_application.ExitCode}."
-            : "Financial.App was still running when the test failed.";
 }

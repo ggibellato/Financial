@@ -4,7 +4,6 @@ using FluentAssertions;
 
 namespace Financial.App.E2ETests.Smoke;
 
-[Collection(E2ECollection.Name)]
 [Trait("Category", "E2E")]
 [Trait("Category", "Smoke")]
 public class AddExpenseTests
@@ -16,12 +15,9 @@ public class AddExpenseTests
         {
             var window = session.Window;
             var description = $"e2e-{Guid.NewGuid():N}";
-            OpenNewExpenseForm(window);
 
-            window.FindById("expense-form-description").AsTextBox().Text = description;
+            FillExpenseForm(window, description);
             window.FindById("expense-form-value").AsTextBox().Text = "12.34";
-            window.FindById("expense-form-category").AsComboBox().Select("Mercado");
-            window.FindById("expense-form-payment-source").AsComboBox().Select("Barclays");
             window.FindById("expense-form-save").Press();
 
             window.FindById("monthly-expenses-grid").FindByName(description);
@@ -35,24 +31,22 @@ public class AddExpenseTests
         {
             var window = session.Window;
             var description = $"e2e-blank-{Guid.NewGuid():N}";
-            OpenNewExpenseForm(window);
 
-            window.FindById("expense-form-description").AsTextBox().Text = description;
-            window.FindById("expense-form-category").AsComboBox().Select("Mercado");
-            window.FindById("expense-form-payment-source").AsComboBox().Select("Barclays");
+            FillExpenseForm(window, description);
             window.FindById("expense-form-save").Press();
 
             window.FindById("expense-form-value-error").Name.Should().Be("Value must be a non-zero number.");
-            window.FindById("expense-form-save").Should().NotBeNull("the form stays open after a rejected save");
-            window.FindById("monthly-expenses-grid").ContainsName(description).Should().BeFalse();
+            window.FindById("expense-form-save");
+            window.FindById("monthly-expenses-grid").HasName(description).Should().BeFalse();
         });
     }
 
-    private static void OpenNewExpenseForm(Window window)
+    private static void FillExpenseForm(Window window, string description)
     {
-        window.FindById("nav-monthly").Press();
-        window.FindById("monthly-tabs");
-        window.SelectTab("Bank expenses");
+        window.OpenMonthly("Bank expenses");
         window.FindById("monthly-new-expense").Press();
+        window.FindById("expense-form-description").AsTextBox().Text = description;
+        window.FindById("expense-form-category").AsComboBox().Select("Mercado");
+        window.FindById("expense-form-payment-source").AsComboBox().Select("Barclays");
     }
 }

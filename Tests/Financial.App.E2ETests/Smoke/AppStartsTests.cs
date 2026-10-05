@@ -4,7 +4,6 @@ using FluentAssertions;
 
 namespace Financial.App.E2ETests.Smoke;
 
-[Collection(E2ECollection.Name)]
 [Trait("Category", "E2E")]
 [Trait("Category", "Smoke")]
 public class AppStartsTests
