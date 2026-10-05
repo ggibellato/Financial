@@ -11,11 +11,13 @@ public sealed class InvestmentRepositoryFactory
 
     private readonly IInvestmentSerializer _serializer;
     private readonly IJsonStorageFactory _storageFactory;
+    private readonly TimeProvider _timeProvider;
 
-    public InvestmentRepositoryFactory(IInvestmentSerializer serializer, IJsonStorageFactory storageFactory)
+    public InvestmentRepositoryFactory(IInvestmentSerializer serializer, IJsonStorageFactory storageFactory, TimeProvider timeProvider)
     {
         _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
         _storageFactory = storageFactory ?? throw new ArgumentNullException(nameof(storageFactory));
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
     }
 
     public IInvestmentRepository Create(InvestmentRepositorySelectionOptions options)
@@ -26,7 +28,7 @@ public sealed class InvestmentRepositoryFactory
         }
 
         var storage = CreateStorage(options);
-        var investments = InvestmentLoader.LoadSync(storage, _serializer);
+        var investments = InvestmentLoader.LoadSync(storage, _serializer, _timeProvider);
         return new InvestmentJsonRepository(investments, storage, _serializer);
     }
 

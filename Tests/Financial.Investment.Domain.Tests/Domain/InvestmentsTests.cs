@@ -633,7 +633,7 @@ public class InvestmentsTests
         var broker = Broker.Create("XPI", "BRL");
         var asset = Asset.Create("Asset A", "ISIN123", "BVMF", "AAA");
         asset.AppendTaxClassification(TaxClassification.CreateForCredit(
-            Guid.NewGuid(), Jurisdiction.BR, "2026", EventCategory.Dividend, 100m, 0m, 100m, CalculationStatus.Final, rule.Id));
+            Guid.NewGuid(), Jurisdiction.BR, "2026", EventCategory.Dividend, 100m, 0m, 100m, CalculationStatus.Final, rule.Id, TestClock.Default));
         broker.AddPortfolio("Default").AddAsset(asset);
         investments.AddActiveBroker(broker);
 
@@ -653,7 +653,7 @@ public class InvestmentsTests
         var broker = Broker.Create("XPI", "BRL");
         var asset = Asset.Create("Asset A", "ISIN123", "BVMF", "AAA");
         var classification = TaxClassification.CreateForCredit(
-            Guid.NewGuid(), Jurisdiction.BR, "2026", EventCategory.Dividend, 100m, 0m, 100m, CalculationStatus.Final, rule.Id);
+            Guid.NewGuid(), Jurisdiction.BR, "2026", EventCategory.Dividend, 100m, 0m, 100m, CalculationStatus.Final, rule.Id, TestClock.Default);
         classification.Supersede(null);
         asset.AppendTaxClassification(classification);
         broker.AddPortfolio("Default").AddAsset(asset);

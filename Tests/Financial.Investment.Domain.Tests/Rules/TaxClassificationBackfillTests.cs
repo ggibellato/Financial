@@ -18,9 +18,9 @@ public class TaxClassificationBackfillTests
         asset.AddTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 110m, 0m));
         broker.AddPortfolio("Default").AddAsset(asset);
         investments.AddActiveBroker(broker);
-        DisposalRecordBackfill.Apply(investments);
+        DisposalRecordBackfill.Apply(investments, TestClock.Default);
 
-        var failures = TaxClassificationBackfill.Apply(investments);
+        var failures = TaxClassificationBackfill.Apply(investments, TestClock.Default);
 
         failures.Should().BeEmpty();
         var classification = asset.TaxClassifications.Should().ContainSingle().Subject;
@@ -39,7 +39,7 @@ public class TaxClassificationBackfillTests
         broker.AddPortfolio("Default").AddAsset(asset);
         investments.AddActiveBroker(broker);
 
-        var failures = TaxClassificationBackfill.Apply(investments);
+        var failures = TaxClassificationBackfill.Apply(investments, TestClock.Default);
 
         failures.Should().BeEmpty();
         var classification = asset.TaxClassifications.Should().ContainSingle().Subject;
@@ -57,8 +57,8 @@ public class TaxClassificationBackfillTests
         broker.AddPortfolio("Default").AddAsset(asset);
         investments.AddActiveBroker(broker);
 
-        TaxClassificationBackfill.Apply(investments);
-        TaxClassificationBackfill.Apply(investments);
+        TaxClassificationBackfill.Apply(investments, TestClock.Default);
+        TaxClassificationBackfill.Apply(investments, TestClock.Default);
 
         asset.TaxClassifications.Should().ContainSingle();
     }
@@ -76,7 +76,7 @@ public class TaxClassificationBackfillTests
         var record = asset.DisposalRecords.Single();
         record.Supersede(null);
 
-        var failures = TaxClassificationBackfill.Apply(investments);
+        var failures = TaxClassificationBackfill.Apply(investments, TestClock.Default);
 
         failures.Should().BeEmpty();
         asset.TaxClassifications.Should().BeEmpty();
@@ -99,7 +99,7 @@ public class TaxClassificationBackfillTests
         historicBroker.AddPortfolio("Closed").AddAsset(historicAsset);
         investments.AddHistoricBroker(historicBroker);
 
-        var failures = TaxClassificationBackfill.Apply(investments);
+        var failures = TaxClassificationBackfill.Apply(investments, TestClock.Default);
 
         failures.Should().BeEmpty();
         activeAsset.TaxClassifications.Should().ContainSingle();

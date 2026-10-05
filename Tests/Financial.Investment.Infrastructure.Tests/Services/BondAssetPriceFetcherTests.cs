@@ -71,7 +71,7 @@ public class BondAssetPriceFetcherTests
     [Fact]
     public void GetSnapshot_ValidName_DelegatesToStatusInvestFinanceService()
     {
-        var snapshot = new AssetValueSnapshot("TESOURO IPCA+ 2029", "TESOURO IPCA+ 2029", 3775.97m, DateTimeOffset.UtcNow);
+        var snapshot = new AssetValueSnapshot("TESOURO IPCA+ 2029", "TESOURO IPCA+ 2029", 3775.97m, TestClock.Default);
         var fetcher = new BondAssetPriceFetcher(new StatusInvestFinanceService(_ => snapshot));
         var request = new AssetPriceRequestDTO { Exchange = "", Ticker = "TESOURO IPCA+ 2029", Name = "TESOURO IPCA+ 2029" };
 
@@ -84,7 +84,7 @@ public class BondAssetPriceFetcherTests
     public void GetSnapshot_ValidRequest_ForwardsExchangeAndTickerToFinanceService()
     {
         AssetValueRequestDTO? captured = null;
-        var snapshot = new AssetValueSnapshot("TESOURO IPCA+ 2029", "TESOURO IPCA+ 2029", 3775.97m, DateTimeOffset.UtcNow);
+        var snapshot = new AssetValueSnapshot("TESOURO IPCA+ 2029", "TESOURO IPCA+ 2029", 3775.97m, TestClock.Default);
         var fetcher = new BondAssetPriceFetcher(new FakeFinanceService(request =>
         {
             captured = request;

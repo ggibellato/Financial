@@ -50,11 +50,11 @@ public class TransactionServiceQueryTests
     public void GetTransactionsByBroker_IncludesInactiveAssets()
     {
         var activeAsset = MakeAsset("AAAA");
-        activeAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 10m, 10m, 0m));
+        activeAsset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 10m, 10m, 0m));
 
         var inactiveAsset = MakeAsset("BBBB");
-        inactiveAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 5m, 10m, 0m));
-        inactiveAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 5m, 10m, 0m));
+        inactiveAsset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 5m, 10m, 0m));
+        inactiveAsset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Sell, 5m, 10m, 0m));
         _repository.AssetsByBroker = [activeAsset, inactiveAsset];
 
         var result = CreateService().GetTransactionsByBroker("XPI");
@@ -110,7 +110,7 @@ public class TransactionServiceQueryTests
     public void GetTransactionsByBroker_ReturnsEmptyOnNullOrWhitespaceBrokerName(string? brokerName)
     {
         var asset = MakeAsset("AAAA");
-        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 1m, 10m, 0m));
+        asset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 1m, 10m, 0m));
         _repository.AssetsByBroker = [asset];
 
         var result = CreateService().GetTransactionsByBroker(brokerName!);
@@ -122,7 +122,7 @@ public class TransactionServiceQueryTests
     public void GetTransactionsByPortfolio_ReturnsThatPortfoliosTransactions()
     {
         var asset = MakeAsset("AAAA");
-        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 10m, 10m, 0m));
+        asset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 10m, 10m, 0m));
         _repository.AssetsByBrokerPortfolio = [asset];
         _repository.AssetsByBroker = [MakeAsset("SHOULD_NOT_APPEAR")];
 
@@ -173,7 +173,7 @@ public class TransactionServiceQueryTests
     public void GetTransactionsByPortfolio_ReturnsEmptyOnNullOrWhitespaceParameters(string? brokerName, string? portfolioName)
     {
         var asset = MakeAsset("AAAA");
-        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 1m, 10m, 0m));
+        asset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 1m, 10m, 0m));
         _repository.AssetsByBrokerPortfolio = [asset];
 
         var result = CreateService().GetTransactionsByPortfolio(brokerName!, portfolioName!);

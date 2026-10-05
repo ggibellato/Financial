@@ -13,7 +13,7 @@ public class TaxClassificationTests
         var ruleId = Guid.NewGuid();
 
         var classification = TaxClassification.CreateForDisposal(
-            disposalId, Jurisdiction.BR, "2026", 1000m, 600m, 400m, CalculationStatus.Final, ruleId);
+            disposalId, Jurisdiction.BR, "2026", 1000m, 600m, 400m, CalculationStatus.Final, ruleId, TestClock.Default);
 
         using (new AssertionScope())
         {
@@ -42,7 +42,7 @@ public class TaxClassificationTests
         var creditId = Guid.NewGuid();
 
         var classification = TaxClassification.CreateForCredit(
-            creditId, Jurisdiction.UK, "2025/26", EventCategory.Interest, 100m, 20m, 80m, CalculationStatus.Incomplete, null);
+            creditId, Jurisdiction.UK, "2025/26", EventCategory.Interest, 100m, 20m, 80m, CalculationStatus.Incomplete, null, TestClock.Default);
 
         using (new AssertionScope())
         {
@@ -67,7 +67,7 @@ public class TaxClassificationTests
         var ruleId = Guid.NewGuid();
 
         var classification = TaxClassification.CreateForCorporateAction(
-            corporateActionId, Jurisdiction.UK, "2025/26", 1000m, CalculationStatus.Final, ruleId);
+            corporateActionId, Jurisdiction.UK, "2025/26", 1000m, CalculationStatus.Final, ruleId, TestClock.Default);
 
         using (new AssertionScope())
         {
@@ -94,7 +94,7 @@ public class TaxClassificationTests
     public void CreateForCorporateAction_NoMatchingRule_LeavesTaxRuleIdNull()
     {
         var classification = TaxClassification.CreateForCorporateAction(
-            Guid.NewGuid(), Jurisdiction.BR, "2026", 1000m, CalculationStatus.RequiresReview, null);
+            Guid.NewGuid(), Jurisdiction.BR, "2026", 1000m, CalculationStatus.RequiresReview, null, TestClock.Default);
 
         classification.TaxRuleId.Should().BeNull();
     }
@@ -103,7 +103,7 @@ public class TaxClassificationTests
     public void Supersede_SetsStatusAndReplacementId()
     {
         var classification = TaxClassification.CreateForCredit(
-            Guid.NewGuid(), Jurisdiction.BR, "2026", EventCategory.Dividend, 100m, 0m, 100m, CalculationStatus.Final, Guid.NewGuid());
+            Guid.NewGuid(), Jurisdiction.BR, "2026", EventCategory.Dividend, 100m, 0m, 100m, CalculationStatus.Final, Guid.NewGuid(), TestClock.Default);
         var replacementId = Guid.NewGuid();
 
         classification.Supersede(replacementId);
@@ -119,7 +119,7 @@ public class TaxClassificationTests
     public void Supersede_AlreadySuperseded_Throws()
     {
         var classification = TaxClassification.CreateForCredit(
-            Guid.NewGuid(), Jurisdiction.BR, "2026", EventCategory.Dividend, 100m, 0m, 100m, CalculationStatus.Final, null);
+            Guid.NewGuid(), Jurisdiction.BR, "2026", EventCategory.Dividend, 100m, 0m, 100m, CalculationStatus.Final, null, TestClock.Default);
         classification.Supersede(null);
 
         Action act = () => classification.Supersede(Guid.NewGuid());

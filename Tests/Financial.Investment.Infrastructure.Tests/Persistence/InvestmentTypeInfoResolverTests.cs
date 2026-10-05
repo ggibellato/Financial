@@ -121,7 +121,7 @@ public class InvestmentTypeInfoResolverTests
         // from transactions rather than trusting the excluded JSON fields directly.
         var options = CreateOptions();
         var asset = Asset.Create("Test", "ISIN", "BVMF", "TST");
-        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 5m, 10m, 0m));
+        asset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 5m, 10m, 0m));
 
         var json = JsonSerializer.Serialize(asset, options);
         var deserialized = JsonSerializer.Deserialize<Asset>(json, options);

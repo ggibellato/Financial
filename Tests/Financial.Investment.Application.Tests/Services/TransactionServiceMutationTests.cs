@@ -199,7 +199,7 @@ public class TransactionServiceMutationTests
     {
         var asset = MakeAsset();
         var txId = Guid.NewGuid();
-        var originalSnapshot = FxRateSnapshot.Create(Currency.GBP, 0.146m, FxRateSource.Frankfurter, DateTimeOffset.UtcNow);
+        var originalSnapshot = FxRateSnapshot.Create(Currency.GBP, 0.146m, FxRateSource.Frankfurter, TestClock.Default);
         asset.AddTransaction(Transaction.CreateWithId(txId, new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m, currency: Currency.BRL, fxRateSnapshot: originalSnapshot));
         _repository.Asset = asset;
         var provider = new StubExchangeRateProvider(0.99m);

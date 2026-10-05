@@ -17,10 +17,12 @@
 
   <ItemGroup>
     <Using Include="Xunit" />
+    <Using Include="Financial.TestUtilities" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\Financial.Investment.Domain\Financial.Investment.Domain.csproj" />
+    <ProjectReference Include="..\Financial.TestUtilities\Financial.TestUtilities.csproj" />
   </ItemGroup>
 
 </Project>

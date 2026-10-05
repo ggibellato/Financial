@@ -40,6 +40,10 @@
     </Content>
   </ItemGroup>
 
+  <ItemGroup>
+    <Using Include="Financial.TestUtilities" />
+  </ItemGroup>
+
 </Project>
 
 

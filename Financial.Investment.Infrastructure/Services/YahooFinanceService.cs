@@ -29,10 +29,12 @@ public sealed class YahooFinanceService : IFinanceService
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
     private readonly HttpClient _httpClient;
+    private readonly TimeProvider _timeProvider;
 
-    public YahooFinanceService(HttpClient httpClient)
+    public YahooFinanceService(HttpClient httpClient, TimeProvider timeProvider)
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _httpClient.BaseAddress = new Uri(BaseAddress);
         _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgent);
     }
@@ -102,7 +104,7 @@ public sealed class YahooFinanceService : IFinanceService
             var name = string.IsNullOrWhiteSpace(meta.ShortName) ? ticker : meta.ShortName.Trim();
             var asOf = meta.RegularMarketTime is long unixSeconds
                 ? DateTimeOffset.FromUnixTimeSeconds(unixSeconds)
-                : DateTimeOffset.UtcNow;
+                : _timeProvider.GetUtcNow();
 
             return new AssetValueSnapshot(ticker, name, price, asOf, PriceSource.Yahoo);
         }

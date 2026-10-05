@@ -11,7 +11,7 @@ public class AssetPriceSnapshotTests
         var date = new DateOnly(2026, 8, 15);
         var retrievedAt = new DateTimeOffset(2026, 8, 15, 10, 0, 0, TimeSpan.Zero);
 
-        var entry = AssetPriceSnapshot.Create(date, 1234.56m, ValuationMethod.MarketPrice, PriceSource.Manual, "GBP", "ref-1", retrievedAt);
+        var entry = AssetPriceSnapshot.Create(date, 1234.56m, ValuationMethod.MarketPrice, PriceSource.Manual, "GBP", "ref-1", retrievedAt, date);
 
         using (new FluentAssertions.Execution.AssertionScope())
         {
@@ -29,7 +29,7 @@ public class AssetPriceSnapshotTests
     [Fact]
     public void Create_WithZeroPrice_Throws()
     {
-        Action act = () => Create(DateOnly.FromDateTime(DateTime.Today), 0m, ValuationMethod.MarketPrice);
+        Action act = () => Create(TestClock.Today, 0m, ValuationMethod.MarketPrice);
 
         act.Should().Throw<ArgumentException>().WithMessage("Price must be greater than zero.");
     }
@@ -37,7 +37,7 @@ public class AssetPriceSnapshotTests
     [Fact]
     public void Create_WithNegativePrice_Throws()
     {
-        Action act = () => Create(DateOnly.FromDateTime(DateTime.Today), -1m, ValuationMethod.MarketPrice);
+        Action act = () => Create(TestClock.Today, -1m, ValuationMethod.MarketPrice);
 
         act.Should().Throw<ArgumentException>().WithMessage("Price must be greater than zero.");
     }
@@ -47,7 +47,7 @@ public class AssetPriceSnapshotTests
     [InlineData(ValuationMethod.Manual)]
     public void Create_WithZeroPrice_ForValueBasedMethod_Succeeds(ValuationMethod valuationMethod)
     {
-        var entry = Create(DateOnly.FromDateTime(DateTime.Today), 0m, valuationMethod);
+        var entry = Create(TestClock.Today, 0m, valuationMethod);
 
         entry.Price.Should().Be(0m);
     }
@@ -57,7 +57,7 @@ public class AssetPriceSnapshotTests
     [InlineData(ValuationMethod.Manual)]
     public void Create_WithNegativePrice_ForValueBasedMethod_Throws(ValuationMethod valuationMethod)
     {
-        Action act = () => Create(DateOnly.FromDateTime(DateTime.Today), -1m, valuationMethod);
+        Action act = () => Create(TestClock.Today, -1m, valuationMethod);
 
         act.Should().Throw<ArgumentException>().WithMessage("Price must not be negative.");
     }
@@ -65,7 +65,7 @@ public class AssetPriceSnapshotTests
     [Fact]
     public void Create_WithFutureDate_Throws()
     {
-        var futureDate = DateOnly.FromDateTime(DateTime.Today).AddDays(1);
+        var futureDate = TestClock.Today.AddDays(1);
 
         Action act = () => Create(futureDate, 10m, ValuationMethod.MarketPrice);
 
@@ -75,7 +75,7 @@ public class AssetPriceSnapshotTests
     [Fact]
     public void Create_WithTodayDate_Succeeds()
     {
-        var today = DateOnly.FromDateTime(DateTime.Today);
+        var today = TestClock.Today;
 
         var entry = Create(today, 10m, ValuationMethod.MarketPrice);
 
@@ -85,12 +85,12 @@ public class AssetPriceSnapshotTests
     [Fact]
     public void IsManual_DerivesFromSource()
     {
-        var today = DateOnly.FromDateTime(DateTime.Today);
+        var today = TestClock.Today;
 
         Create(today, 10m, ValuationMethod.MarketPrice, PriceSource.Manual).IsManual.Should().BeTrue();
         Create(today, 10m, ValuationMethod.MarketPrice, PriceSource.Google).IsManual.Should().BeFalse();
     }
 
     private static AssetPriceSnapshot Create(DateOnly date, decimal price, ValuationMethod valuationMethod, PriceSource source = PriceSource.Unknown) =>
-        AssetPriceSnapshot.Create(date, price, valuationMethod, source, currency: string.Empty, sourceReference: null, DateTimeOffset.UtcNow);
+        AssetPriceSnapshot.Create(date, price, valuationMethod, source, currency: string.Empty, sourceReference: null, TestClock.Default, TestClock.Today);
 }

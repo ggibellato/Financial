@@ -6,12 +6,12 @@ namespace Financial.Investment.Application.Tests.Services;
 
 public class XirrCalculationServiceTests
 {
-    private readonly XirrCalculationService _sut = new();
+    private readonly XirrCalculationService _sut = new(TestClock.At());
 
     [Fact]
     public void Calculate_SingleInvestmentGrowingTenPercent_ReturnsApproximatelyTenPercent()
     {
-        var oneYearAgo = DateTime.Today.AddYears(-1);
+        var oneYearAgo = TestClock.LocalToday.AddYears(-1);
         var cashFlows = new List<AssetCashFlowDTO>
         {
             new() { Date = oneYearAgo, Amount = -1000m }
@@ -34,7 +34,7 @@ public class XirrCalculationServiceTests
     [Fact]
     public void Calculate_AppendsTerminalValueAsTodaysCashFlow()
     {
-        var oneYearAgo = DateTime.Today.AddYears(-1);
+        var oneYearAgo = TestClock.LocalToday.AddYears(-1);
         var cashFlows = new List<AssetCashFlowDTO>
         {
             new() { Date = oneYearAgo, Amount = -1000m }
@@ -62,11 +62,11 @@ public class XirrCalculationServiceTests
     [Fact]
     public void Calculate_TwoArgOverload_MatchesTheAsOfOverloadCalledWithToday()
     {
-        var oneYearAgo = DateTime.Today.AddYears(-1);
+        var oneYearAgo = TestClock.LocalToday.AddYears(-1);
         var cashFlows = new List<AssetCashFlowDTO> { new() { Date = oneYearAgo, Amount = -1000m } };
 
         var twoArgResult = _sut.Calculate(cashFlows, 1100m);
-        var asOfResult = _sut.Calculate(cashFlows, 1100m, DateTime.Today);
+        var asOfResult = _sut.Calculate(cashFlows, 1100m, TestClock.LocalToday);
 
         asOfResult.Should().Be(twoArgResult);
     }

@@ -58,7 +58,7 @@ Dependency direction is unchanged. Domain gains parameters, not references. `Tim
 
 ### Assumptions
 
-- Applied without asking (no PRD detail): D1-D11; WPF view models take a required `TimeProvider`; stage order below; `TEST_CULTURE` env var name; named pinned instants in `TestClock` are `2026-07-15T12:00:00+01:00` (default), `2026-01-31T23:59:00+00:00`, `2026-03-01T00:30:00+00:00`, `2026-07-01T00:30:00+01:00`.
+- Applied without asking (no PRD detail): D1-D11; WPF view models take a required `TimeProvider`; stage order below; `TEST_CULTURE` env var name; named pinned instants in `TestClock` are `Default` = `2026-10-05T12:00:00+01:00` (chosen after the latest hard-coded fixture dates in the suite, so none of them is "in the future"), `EndOfJanuary` = `2026-01-31T23:59:00+00:00`, `StartOfMarch` = `2026-03-01T00:30:00+00:00`, `FirstOfJulyJustAfterMidnight` = `2026-07-01T00:30:00+01:00`.
 - The PRD's "17 sites" is the backend list; the real count is 22 backend (extra: `AssetPriceHistoryService`, `Asset.cs`, `YahooFinanceService`, a few repeated reads inside listed files). Discovery by grep at implementation time is authoritative; the permanent scan is what proves completeness.
 - `Task.Delay` in non-WPF tests (CashFlow/Investment repository tests waiting 300 ms or 2 s for a negative, `Frankfurter` hanging-handler test using `Timeout.Infinite`) is out of this feature unless it appears in a flake; the PRD only requires `CreditCardCalendarSyncServiceTests`, `DebouncedJsonStorageTests:137` and the WPF project. They stay on F11's diff-only rule.
 - The web side needs no clock change: F04 already pinned `todayIsoDate`; F08 only touches web `waitFor` timeouts and adds formatter locale tests.

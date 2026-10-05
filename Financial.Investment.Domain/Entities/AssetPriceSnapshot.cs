@@ -29,10 +29,11 @@ public class AssetPriceSnapshot
         PriceSource source,
         string currency,
         string? sourceReference,
-        DateTimeOffset retrievedAt)
+        DateTimeOffset retrievedAt,
+        DateOnly today)
     {
         ValidatePrice(price, valuationMethod);
-        ValidateDate(date);
+        ValidateDate(date, today);
 
         return new()
         {
@@ -63,9 +64,9 @@ public class AssetPriceSnapshot
         }
     }
 
-    private static void ValidateDate(DateOnly date)
+    private static void ValidateDate(DateOnly date, DateOnly today)
     {
-        if (date > DateOnly.FromDateTime(DateTime.Today))
+        if (date > today)
         {
             throw new ArgumentException("Price date cannot be in the future.");
         }

@@ -17,22 +17,23 @@ public static class DisposalRecordRegenerator
         Asset asset,
         CostBasisMethod method,
         DateTime anchor,
+        DateTimeOffset createdAt,
         Guid? seedTransactionId = null,
         IReadOnlyList<SpecificLotAllocation>? seedAllocation = null,
         Investments? investments = null) =>
-        Commit(ComputePlan(asset, method, anchor, seedTransactionId, seedAllocation), investments);
+        Commit(ComputePlan(asset, method, anchor, createdAt, seedTransactionId, seedAllocation), createdAt, investments);
 
     // Every asset's plan is computed before any is committed, so a throw for any one asset leaves every asset untouched.
-    public static void RegenerateBroker(Broker broker, Investments? investments = null)
+    public static void RegenerateBroker(Broker broker, DateTimeOffset createdAt, Investments? investments = null)
     {
         var plans = broker.Portfolios
             .SelectMany(portfolio => portfolio.Assets)
-            .Select(asset => ComputePlan(asset, broker.CostBasisMethod, DateTime.MinValue))
+            .Select(asset => ComputePlan(asset, broker.CostBasisMethod, DateTime.MinValue, createdAt))
             .ToList();
 
         foreach (var plan in plans)
         {
-            Commit(plan, investments);
+            Commit(plan, createdAt, investments);
         }
     }
 
@@ -40,6 +41,7 @@ public static class DisposalRecordRegenerator
         Asset asset,
         CostBasisMethod method,
         DateTime anchor,
+        DateTimeOffset createdAt,
         Guid? seedTransactionId = null,
         IReadOnlyList<SpecificLotAllocation>? seedAllocation = null)
     {
@@ -74,7 +76,7 @@ public static class DisposalRecordRegenerator
                         var allocation = transaction.Id == seedTransactionId ? seedAllocation : ReconstructAllocation(existing);
 
                         var newRecord = DisposalRecordCalculator.Calculate(
-                            transaction, preceding, method, transaction.Currency.ToString(), allocation, precedingCorporateActions);
+                            transaction, preceding, method, transaction.Currency.ToString(), createdAt, allocation, precedingCorporateActions);
 
                         if (existing is not null)
                         {
@@ -94,7 +96,7 @@ public static class DisposalRecordRegenerator
         return new RegenerationPlan(asset, toRetire, replacements, newOnly);
     }
 
-    private static void Commit(RegenerationPlan plan, Investments? investments)
+    private static void Commit(RegenerationPlan plan, DateTimeOffset createdAt, Investments? investments)
     {
         foreach (var record in plan.ToRetire)
         {
@@ -111,7 +113,7 @@ public static class DisposalRecordRegenerator
             plan.Asset.AppendBackfilledDisposalRecord(newRecord);
             if (investments is not null)
             {
-                var newClassification = TaxClassificationCalculator.CalculateForDisposal(newRecord, investments);
+                var newClassification = TaxClassificationCalculator.CalculateForDisposal(newRecord, investments, createdAt);
                 plan.Asset.SupersedeTaxClassificationBySource(SourceType.Disposal, existing.Id, newClassification.Id);
                 plan.Asset.AppendTaxClassification(newClassification);
             }
@@ -122,7 +124,7 @@ public static class DisposalRecordRegenerator
             plan.Asset.AppendBackfilledDisposalRecord(newRecord);
             if (investments is not null)
             {
-                plan.Asset.AppendTaxClassification(TaxClassificationCalculator.CalculateForDisposal(newRecord, investments));
+                plan.Asset.AppendTaxClassification(TaxClassificationCalculator.CalculateForDisposal(newRecord, investments, createdAt));
             }
         }
 

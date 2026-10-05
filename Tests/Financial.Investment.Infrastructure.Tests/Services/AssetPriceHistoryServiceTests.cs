@@ -132,7 +132,7 @@ public class AssetPriceHistoryServiceTests
                 BrokerName = BrokerName,
                 PortfolioName = PortfolioName,
                 AssetName = AssetName,
-                Date = DateOnly.FromDateTime(DateTime.Today).AddDays(1),
+                Date = TestClock.Today.AddDays(1),
                 Price = 100m
             });
 
@@ -310,7 +310,7 @@ public class AssetPriceHistoryServiceTests
 
         var storage = new LocalJsonStorage(tempFile);
         var serializer = new InvestmentSerializerAdapter();
-        return (new InvestmentJsonRepository(InvestmentLoader.LoadSync(storage, serializer), storage, serializer),
+        return (new InvestmentJsonRepository(InvestmentLoader.LoadSync(storage, serializer, TestClock.At()), storage, serializer),
             new RecordingTelemetryTracer(), tempFile);
     }
 
@@ -318,7 +318,7 @@ public class AssetPriceHistoryServiceTests
     {
         var (repository, tracer, tempFile) = CreateRepositoryOverTempCopy();
         var navigationService = new NavigationService(repository, TestHoldingValuationService.Create(), tracer, NullLogger<NavigationService>.Instance);
-        var service = new AssetPriceHistoryService(repository, navigationService, tracer, NullLogger<AssetPriceHistoryService>.Instance);
+        var service = new AssetPriceHistoryService(repository, navigationService, TestClock.At(), tracer, NullLogger<AssetPriceHistoryService>.Instance);
 
         return (service, repository, tempFile);
     }

@@ -17,17 +17,20 @@ public sealed class CorporateActionService : ICorporateActionService, ICorporate
 
     private readonly IInvestmentRepository _repository;
     private readonly INavigationService _navigationService;
+    private readonly TimeProvider _timeProvider;
     private readonly ITelemetryTracer _tracer;
     private readonly ILogger<CorporateActionService> _logger;
 
     public CorporateActionService(
         IInvestmentRepository repository,
         INavigationService navigationService,
+        TimeProvider timeProvider,
         ITelemetryTracer tracer,
         ILogger<CorporateActionService> logger)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -47,7 +50,7 @@ public sealed class CorporateActionService : ICorporateActionService, ICorporate
                 {
                     var corporateAction = CorporateAction.CreateSplit(request.EffectiveDate, request.RatioFactor, request.Note);
                     var method = ResolveCostBasisMethod(request.BrokerName);
-                    asset.RecordCorporateAction(corporateAction, method, _repository.GetInvestments());
+                    asset.RecordCorporateAction(corporateAction, _timeProvider.GetUtcNow(), method, _repository.GetInvestments());
                     return true;
                 }).ConfigureAwait(false);
 
@@ -85,7 +88,7 @@ public sealed class CorporateActionService : ICorporateActionService, ICorporate
                 {
                     var updatedCorporateAction = CorporateAction.CreateSplitWithId(request.Id, request.EffectiveDate, request.RatioFactor, request.Note);
                     var method = ResolveCostBasisMethod(request.BrokerName);
-                    return asset.ReviseCorporateAction(updatedCorporateAction, method, _repository.GetInvestments());
+                    return asset.ReviseCorporateAction(updatedCorporateAction, _timeProvider.GetUtcNow(), method, _repository.GetInvestments());
                 }).ConfigureAwait(false);
 
             span.MarkSuccess();
@@ -134,7 +137,7 @@ public sealed class CorporateActionService : ICorporateActionService, ICorporate
                 var sourceRecord = CorporateAction.CreateMergerSource(
                     request.EffectiveDate, request.ExchangeRatio, request.CashInLieuAmount, request.Note,
                     correlationId, request.TargetAssetName, convertedQuantity, carriedCostBasis);
-                sourceAsset.RecordCorporateAction(sourceRecord, method, investments);
+                sourceAsset.RecordCorporateAction(sourceRecord, _timeProvider.GetUtcNow(), method, investments);
 
                 try
                 {
@@ -148,7 +151,7 @@ public sealed class CorporateActionService : ICorporateActionService, ICorporate
                         out var isNewTarget);
                     var targetRecord = CorporateAction.CreateMergerTarget(
                         request.EffectiveDate, request.Note, correlationId, sourceAsset.Name, convertedQuantity, carriedCostBasis);
-                    targetAsset.RecordCorporateAction(targetRecord, method, investments, brokerCurrency);
+                    targetAsset.RecordCorporateAction(targetRecord, _timeProvider.GetUtcNow(), method, investments, brokerCurrency);
 
                     if (isNewTarget)
                     {
@@ -157,7 +160,7 @@ public sealed class CorporateActionService : ICorporateActionService, ICorporate
                 }
                 catch
                 {
-                    sourceAsset.RetractCorporateAction(sourceRecord.Id, method, investments);
+                    sourceAsset.RetractCorporateAction(sourceRecord.Id, _timeProvider.GetUtcNow(), method, investments);
                     throw;
                 }
 
@@ -227,11 +230,11 @@ public sealed class CorporateActionService : ICorporateActionService, ICorporate
                 var compensations = new Stack<Action>();
                 try
                 {
-                    sourceAsset.RetractCorporateAction(previousSourceRecord.Id, method, investments);
-                    compensations.Push(() => sourceAsset.RecordCorporateAction(previousSourceRecord, method, investments));
+                    sourceAsset.RetractCorporateAction(previousSourceRecord.Id, _timeProvider.GetUtcNow(), method, investments);
+                    compensations.Push(() => sourceAsset.RecordCorporateAction(previousSourceRecord, _timeProvider.GetUtcNow(), method, investments));
 
-                    targetAsset.RetractCorporateAction(previousTargetRecord.Id, method, investments);
-                    compensations.Push(() => targetAsset.RecordCorporateAction(previousTargetRecord, method, investments, brokerCurrency));
+                    targetAsset.RetractCorporateAction(previousTargetRecord.Id, _timeProvider.GetUtcNow(), method, investments);
+                    compensations.Push(() => targetAsset.RecordCorporateAction(previousTargetRecord, _timeProvider.GetUtcNow(), method, investments, brokerCurrency));
 
                     var (quantity, averagePrice) = sourceAsset.PositionAsOf(request.EffectiveDate);
                     var carriedCostBasis = quantity * averagePrice;
@@ -240,13 +243,13 @@ public sealed class CorporateActionService : ICorporateActionService, ICorporate
                     var newSourceRecord = CorporateAction.CreateMergerSourceWithId(
                         request.Id, request.EffectiveDate, request.ExchangeRatio, request.CashInLieuAmount, request.Note,
                         correlationId, targetAsset.Name, convertedQuantity, carriedCostBasis);
-                    sourceAsset.RecordCorporateAction(newSourceRecord, method, investments);
-                    compensations.Push(() => sourceAsset.RetractCorporateAction(newSourceRecord.Id, method, investments));
+                    sourceAsset.RecordCorporateAction(newSourceRecord, _timeProvider.GetUtcNow(), method, investments);
+                    compensations.Push(() => sourceAsset.RetractCorporateAction(newSourceRecord.Id, _timeProvider.GetUtcNow(), method, investments));
 
                     var newTargetRecord = CorporateAction.CreateMergerTargetWithId(
                         previousTargetRecord.Id, request.EffectiveDate, request.Note,
                         correlationId, sourceAsset.Name, convertedQuantity, carriedCostBasis);
-                    targetAsset.RecordCorporateAction(newTargetRecord, method, investments, brokerCurrency);
+                    targetAsset.RecordCorporateAction(newTargetRecord, _timeProvider.GetUtcNow(), method, investments, brokerCurrency);
                 }
                 catch
                 {
@@ -319,7 +322,7 @@ public sealed class CorporateActionService : ICorporateActionService, ICorporate
                 var parentRecord = CorporateAction.CreateSpinOffParent(
                     request.EffectiveDate, request.AllocationPercentage, request.Note,
                     correlationId, request.NewAssetName, request.QuantityReceived, carriedCostBasis);
-                parentAsset.RecordCorporateAction(parentRecord, method, investments);
+                parentAsset.RecordCorporateAction(parentRecord, _timeProvider.GetUtcNow(), method, investments);
 
                 try
                 {
@@ -330,7 +333,7 @@ public sealed class CorporateActionService : ICorporateActionService, ICorporate
                         out var isNewAsset);
                     var newRecord = CorporateAction.CreateSpinOffNew(
                         request.EffectiveDate, request.Note, correlationId, parentAsset.Name, request.QuantityReceived, carriedCostBasis);
-                    newAsset.RecordCorporateAction(newRecord, method, investments, brokerCurrency);
+                    newAsset.RecordCorporateAction(newRecord, _timeProvider.GetUtcNow(), method, investments, brokerCurrency);
 
                     if (isNewAsset)
                     {
@@ -339,7 +342,7 @@ public sealed class CorporateActionService : ICorporateActionService, ICorporate
                 }
                 catch
                 {
-                    parentAsset.RetractCorporateAction(parentRecord.Id, method, investments);
+                    parentAsset.RetractCorporateAction(parentRecord.Id, _timeProvider.GetUtcNow(), method, investments);
                     throw;
                 }
 
@@ -409,11 +412,11 @@ public sealed class CorporateActionService : ICorporateActionService, ICorporate
                 var compensations = new Stack<Action>();
                 try
                 {
-                    parentAsset.RetractCorporateAction(previousParentRecord.Id, method, investments);
-                    compensations.Push(() => parentAsset.RecordCorporateAction(previousParentRecord, method, investments));
+                    parentAsset.RetractCorporateAction(previousParentRecord.Id, _timeProvider.GetUtcNow(), method, investments);
+                    compensations.Push(() => parentAsset.RecordCorporateAction(previousParentRecord, _timeProvider.GetUtcNow(), method, investments));
 
-                    newAsset.RetractCorporateAction(previousNewRecord.Id, method, investments);
-                    compensations.Push(() => newAsset.RecordCorporateAction(previousNewRecord, method, investments, brokerCurrency));
+                    newAsset.RetractCorporateAction(previousNewRecord.Id, _timeProvider.GetUtcNow(), method, investments);
+                    compensations.Push(() => newAsset.RecordCorporateAction(previousNewRecord, _timeProvider.GetUtcNow(), method, investments, brokerCurrency));
 
                     var (quantity, averagePrice) = parentAsset.PositionAsOf(request.EffectiveDate);
                     var carriedCostBasis = CalculateCarriedCostBasis(request.AllocationPercentage, quantity, averagePrice);
@@ -421,13 +424,13 @@ public sealed class CorporateActionService : ICorporateActionService, ICorporate
                     var newParentRecord = CorporateAction.CreateSpinOffParentWithId(
                         request.Id, request.EffectiveDate, request.AllocationPercentage, request.Note,
                         correlationId, newAsset.Name, request.QuantityReceived, carriedCostBasis);
-                    parentAsset.RecordCorporateAction(newParentRecord, method, investments);
-                    compensations.Push(() => parentAsset.RetractCorporateAction(newParentRecord.Id, method, investments));
+                    parentAsset.RecordCorporateAction(newParentRecord, _timeProvider.GetUtcNow(), method, investments);
+                    compensations.Push(() => parentAsset.RetractCorporateAction(newParentRecord.Id, _timeProvider.GetUtcNow(), method, investments));
 
                     var newNewRecord = CorporateAction.CreateSpinOffNewWithId(
                         previousNewRecord.Id, request.EffectiveDate, request.Note,
                         correlationId, parentAsset.Name, request.QuantityReceived, carriedCostBasis);
-                    newAsset.RecordCorporateAction(newNewRecord, method, investments, brokerCurrency);
+                    newAsset.RecordCorporateAction(newNewRecord, _timeProvider.GetUtcNow(), method, investments, brokerCurrency);
                 }
                 catch
                 {
@@ -558,7 +561,7 @@ public sealed class CorporateActionService : ICorporateActionService, ICorporate
 
         if (found.Type == CorporateAction.CorporateActionType.Split)
         {
-            return asset.RetractCorporateAction(found.Id, method, investments);
+            return asset.RetractCorporateAction(found.Id, _timeProvider.GetUtcNow(), method, investments);
         }
 
         var linkedAsset = _repository.GetAsset(request.BrokerName, request.PortfolioName, found.LinkedAssetName!)
@@ -566,14 +569,14 @@ public sealed class CorporateActionService : ICorporateActionService, ICorporate
         var linkedRecord = linkedAsset.CorporateActions.FirstOrDefault(ca => ca.CorrelationId == found.CorrelationId && ca.Id != found.Id)
             ?? throw new InvalidOperationException($"Corporate action {found.Id} has no linked record for correlation id {found.CorrelationId}.");
 
-        asset.RetractCorporateAction(found.Id, method, investments);
+        asset.RetractCorporateAction(found.Id, _timeProvider.GetUtcNow(), method, investments);
         try
         {
-            linkedAsset.RetractCorporateAction(linkedRecord.Id, method, investments);
+            linkedAsset.RetractCorporateAction(linkedRecord.Id, _timeProvider.GetUtcNow(), method, investments);
         }
         catch
         {
-            asset.RecordCorporateAction(found, method, investments, ResolveBrokerCurrency(request.BrokerName));
+            asset.RecordCorporateAction(found, _timeProvider.GetUtcNow(), method, investments, ResolveBrokerCurrency(request.BrokerName));
             throw;
         }
 

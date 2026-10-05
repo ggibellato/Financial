@@ -17,7 +17,7 @@ public class CreditTests
     [Fact]
     public void Create_AssignsCurrencyAndFxRateSnapshot()
     {
-        var snapshot = FxRateSnapshot.Create(Currency.GBP, 0.146m, FxRateSource.Frankfurter, DateTimeOffset.UtcNow);
+        var snapshot = FxRateSnapshot.Create(Currency.GBP, 0.146m, FxRateSource.Frankfurter, TestClock.Default);
 
         var credit = Credit.Create(new DateTime(2024, 1, 1), Credit.CreditType.Dividend, 10m, withheld: 0m, currency: Currency.BRL, fxRateSnapshot: snapshot);
 

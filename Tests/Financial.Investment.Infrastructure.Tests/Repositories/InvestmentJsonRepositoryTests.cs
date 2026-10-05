@@ -25,7 +25,7 @@ public class InvestmentJsonRepositoryTests
     private static InvestmentJsonRepository CreateRepository(string dataFile)
     {
         var storage = new LocalJsonStorage(dataFile);
-        return new InvestmentJsonRepository(InvestmentLoader.LoadSync(storage, Serializer), storage, Serializer);
+        return new InvestmentJsonRepository(InvestmentLoader.LoadSync(storage, Serializer, TestClock.At()), storage, Serializer);
     }
 
     [Fact]
@@ -239,7 +239,7 @@ public class InvestmentJsonRepositoryTests
 
         var storage = new RecordingJsonStorage();
         var repository = new InvestmentJsonRepository(investments, storage, Serializer);
-        var today = DateOnly.FromDateTime(DateTime.Today);
+        var today = TestClock.Today;
         var assets = repository.GetAssetsByBrokerPortfolio("XPI", "Default").ToList();
 
         var saves = assets.Select((asset, index) => Task.Run(() =>

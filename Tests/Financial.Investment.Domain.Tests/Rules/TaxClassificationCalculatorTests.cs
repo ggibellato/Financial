@@ -17,7 +17,7 @@ public class TaxClassificationCalculatorTests
             10m,
             1000m,
             currency,
-            "2026");
+            "2026", TestClock.Default);
 
     [Fact]
     public void CalculateForDisposal_DerivesJurisdictionFromCurrency_Brl()
@@ -25,7 +25,7 @@ public class TaxClassificationCalculatorTests
         var record = CreateDisposalRecord(Currency.BRL);
         var investments = Investments.Create();
 
-        var classification = TaxClassificationCalculator.CalculateForDisposal(record, investments);
+        var classification = TaxClassificationCalculator.CalculateForDisposal(record, investments, TestClock.Default);
 
         classification.Jurisdiction.Should().Be(Jurisdiction.BR);
     }
@@ -38,7 +38,7 @@ public class TaxClassificationCalculatorTests
         var record = CreateDisposalRecord(currency);
         var investments = Investments.Create();
 
-        var classification = TaxClassificationCalculator.CalculateForDisposal(record, investments);
+        var classification = TaxClassificationCalculator.CalculateForDisposal(record, investments, TestClock.Default);
 
         classification.Jurisdiction.Should().Be(Jurisdiction.UK);
     }
@@ -49,7 +49,7 @@ public class TaxClassificationCalculatorTests
         var record = CreateDisposalRecord();
         var investments = Investments.Create();
 
-        var classification = TaxClassificationCalculator.CalculateForDisposal(record, investments);
+        var classification = TaxClassificationCalculator.CalculateForDisposal(record, investments, TestClock.Default);
 
         using (new AssertionScope())
         {
@@ -66,7 +66,7 @@ public class TaxClassificationCalculatorTests
         var rule = investments.CreateTaxRule(
             Jurisdiction.BR, EventCategory.CapitalGain, "BR capital gains", "desc", new DateOnly(2026, 1, 1), null);
 
-        var classification = TaxClassificationCalculator.CalculateForDisposal(record, investments);
+        var classification = TaxClassificationCalculator.CalculateForDisposal(record, investments, TestClock.Default);
 
         using (new AssertionScope())
         {
@@ -81,7 +81,7 @@ public class TaxClassificationCalculatorTests
         var record = CreateDisposalRecord();
         var investments = Investments.Create();
 
-        var classification = TaxClassificationCalculator.CalculateForDisposal(record, investments);
+        var classification = TaxClassificationCalculator.CalculateForDisposal(record, investments, TestClock.Default);
 
         using (new AssertionScope())
         {
@@ -105,7 +105,7 @@ public class TaxClassificationCalculatorTests
         var credit = Credit.Create(new DateTime(2026, 6, 1), type, 100m, 10m, Currency.BRL);
         var investments = Investments.Create();
 
-        var classification = TaxClassificationCalculator.CalculateForCredit(credit, investments);
+        var classification = TaxClassificationCalculator.CalculateForCredit(credit, investments, TestClock.Default);
 
         classification.EventCategory.Should().Be(expected);
     }
@@ -116,7 +116,7 @@ public class TaxClassificationCalculatorTests
         var credit = Credit.Create(new DateTime(2026, 6, 1), Credit.CreditType.Dividend, 100m, 10m, Currency.BRL);
         var investments = Investments.Create();
 
-        var classification = TaxClassificationCalculator.CalculateForCredit(credit, investments);
+        var classification = TaxClassificationCalculator.CalculateForCredit(credit, investments, TestClock.Default);
 
         using (new AssertionScope())
         {
@@ -132,7 +132,7 @@ public class TaxClassificationCalculatorTests
         var credit = Credit.Create(new DateTime(2026, 6, 1), Credit.CreditType.Dividend, 100m, 0m, Currency.BRL);
         var investments = Investments.Create();
 
-        var classification = TaxClassificationCalculator.CalculateForCredit(credit, investments);
+        var classification = TaxClassificationCalculator.CalculateForCredit(credit, investments, TestClock.Default);
 
         classification.CalculationStatus.Should().Be(CalculationStatus.Incomplete);
     }
@@ -145,7 +145,7 @@ public class TaxClassificationCalculatorTests
         var rule = investments.CreateTaxRule(
             Jurisdiction.BR, EventCategory.Dividend, "BR dividend", "desc", new DateOnly(2026, 1, 1), null);
 
-        var classification = TaxClassificationCalculator.CalculateForCredit(credit, investments);
+        var classification = TaxClassificationCalculator.CalculateForCredit(credit, investments, TestClock.Default);
 
         using (new AssertionScope())
         {
@@ -160,7 +160,7 @@ public class TaxClassificationCalculatorTests
         var credit = Credit.Create(new DateTime(2026, 3, 1), Credit.CreditType.Dividend, 100m, 0m, Currency.BRL);
         var investments = Investments.Create();
 
-        var classification = TaxClassificationCalculator.CalculateForCredit(credit, investments);
+        var classification = TaxClassificationCalculator.CalculateForCredit(credit, investments, TestClock.Default);
 
         classification.TaxYear.Should().Be("2026");
     }
@@ -171,7 +171,7 @@ public class TaxClassificationCalculatorTests
         var credit = Credit.Create(new DateTime(2026, 3, 1), Credit.CreditType.Dividend, 100m, 0m, Currency.GBP);
         var investments = Investments.Create();
 
-        var classification = TaxClassificationCalculator.CalculateForCredit(credit, investments);
+        var classification = TaxClassificationCalculator.CalculateForCredit(credit, investments, TestClock.Default);
 
         classification.TaxYear.Should().Be("2025/26");
     }
@@ -186,7 +186,7 @@ public class TaxClassificationCalculatorTests
         var target = CreateMergerTargetRecord();
         var investments = Investments.Create();
 
-        var classification = TaxClassificationCalculator.CalculateForCorporateAction(target, Currency.BRL, investments);
+        var classification = TaxClassificationCalculator.CalculateForCorporateAction(target, Currency.BRL, investments, TestClock.Default);
 
         classification.Jurisdiction.Should().Be(Jurisdiction.BR);
     }
@@ -199,7 +199,7 @@ public class TaxClassificationCalculatorTests
         var target = CreateMergerTargetRecord();
         var investments = Investments.Create();
 
-        var classification = TaxClassificationCalculator.CalculateForCorporateAction(target, currency, investments);
+        var classification = TaxClassificationCalculator.CalculateForCorporateAction(target, currency, investments, TestClock.Default);
 
         classification.Jurisdiction.Should().Be(Jurisdiction.UK);
     }
@@ -210,7 +210,7 @@ public class TaxClassificationCalculatorTests
         var target = CreateMergerTargetRecord();
         var investments = Investments.Create();
 
-        var classification = TaxClassificationCalculator.CalculateForCorporateAction(target, Currency.BRL, investments);
+        var classification = TaxClassificationCalculator.CalculateForCorporateAction(target, Currency.BRL, investments, TestClock.Default);
 
         using (new AssertionScope())
         {
@@ -227,7 +227,7 @@ public class TaxClassificationCalculatorTests
         var rule = investments.CreateTaxRule(
             Jurisdiction.BR, EventCategory.CorporateAction, "BR corporate actions", "desc", new DateOnly(2026, 1, 1), null);
 
-        var classification = TaxClassificationCalculator.CalculateForCorporateAction(target, Currency.BRL, investments);
+        var classification = TaxClassificationCalculator.CalculateForCorporateAction(target, Currency.BRL, investments, TestClock.Default);
 
         using (new AssertionScope())
         {
@@ -242,7 +242,7 @@ public class TaxClassificationCalculatorTests
         var target = CreateMergerTargetRecord();
         var investments = Investments.Create();
 
-        var classification = TaxClassificationCalculator.CalculateForCorporateAction(target, Currency.BRL, investments);
+        var classification = TaxClassificationCalculator.CalculateForCorporateAction(target, Currency.BRL, investments, TestClock.Default);
 
         using (new AssertionScope())
         {
@@ -259,7 +259,7 @@ public class TaxClassificationCalculatorTests
         var target = CreateMergerTargetRecord(new DateTime(2026, 3, 1));
         var investments = Investments.Create();
 
-        var classification = TaxClassificationCalculator.CalculateForCorporateAction(target, Currency.BRL, investments);
+        var classification = TaxClassificationCalculator.CalculateForCorporateAction(target, Currency.BRL, investments, TestClock.Default);
 
         classification.TaxYear.Should().Be("2026");
     }
@@ -270,7 +270,7 @@ public class TaxClassificationCalculatorTests
         var target = CreateMergerTargetRecord(new DateTime(2026, 3, 1));
         var investments = Investments.Create();
 
-        var classification = TaxClassificationCalculator.CalculateForCorporateAction(target, Currency.GBP, investments);
+        var classification = TaxClassificationCalculator.CalculateForCorporateAction(target, Currency.GBP, investments, TestClock.Default);
 
         classification.TaxYear.Should().Be("2025/26");
     }
@@ -285,7 +285,7 @@ public class TaxClassificationCalculatorTests
         var spinOffNew = CreateSpinOffNewRecord();
         var investments = Investments.Create();
 
-        var classification = TaxClassificationCalculator.CalculateForCorporateAction(spinOffNew, Currency.BRL, investments);
+        var classification = TaxClassificationCalculator.CalculateForCorporateAction(spinOffNew, Currency.BRL, investments, TestClock.Default);
 
         using (new AssertionScope())
         {
@@ -304,7 +304,7 @@ public class TaxClassificationCalculatorTests
             new DateTime(2026, 6, 1), 15m, null, Guid.NewGuid(), "SPINCO", 5m, 150m);
         var investments = Investments.Create();
 
-        Action act = () => TaxClassificationCalculator.CalculateForCorporateAction(spinOffParent, Currency.BRL, investments);
+        Action act = () => TaxClassificationCalculator.CalculateForCorporateAction(spinOffParent, Currency.BRL, investments, TestClock.Default);
 
         act.Should().Throw<InvalidOperationException>();
     }
@@ -315,7 +315,7 @@ public class TaxClassificationCalculatorTests
         var split = CorporateAction.CreateSplit(new DateTime(2026, 6, 1), 2.0m);
         var investments = Investments.Create();
 
-        Action act = () => TaxClassificationCalculator.CalculateForCorporateAction(split, Currency.BRL, investments);
+        Action act = () => TaxClassificationCalculator.CalculateForCorporateAction(split, Currency.BRL, investments, TestClock.Default);
 
         act.Should().Throw<InvalidOperationException>();
     }
@@ -327,7 +327,7 @@ public class TaxClassificationCalculatorTests
             new DateTime(2026, 6, 1), 0.5m, null, null, Guid.NewGuid(), "XCORP", 40m, 1000m);
         var investments = Investments.Create();
 
-        Action act = () => TaxClassificationCalculator.CalculateForCorporateAction(mergerSource, Currency.BRL, investments);
+        Action act = () => TaxClassificationCalculator.CalculateForCorporateAction(mergerSource, Currency.BRL, investments, TestClock.Default);
 
         act.Should().Throw<InvalidOperationException>();
     }

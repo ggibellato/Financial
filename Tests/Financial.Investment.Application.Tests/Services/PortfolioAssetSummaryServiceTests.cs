@@ -34,7 +34,7 @@ public class PortfolioAssetSummaryServiceTests
         asset.AddTransaction(Transaction.Create(new DateTime(2021, 3, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
         asset.AddTransaction(Transaction.Create(new DateTime(2021, 5, 1), Transaction.TransactionType.Buy, 15m, 100m, 0m));
         asset.RecordTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 110m, 0m));
-        asset.SetPrice(DateOnly.FromDateTime(DateTime.Today), 120m, isManual: false);
+        asset.SetPrice(TestClock.Today, 120m, isManual: false);
         _repository.AssetsByBrokerPortfolio = [asset];
 
         var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
@@ -73,12 +73,12 @@ public class PortfolioAssetSummaryServiceTests
     public void GetPortfolioAssetsSummary_ActiveScope_ComputesPortfolioWeightFromMarketValue()
     {
         var asset1 = MakeAsset("ALPHA", "ALP", "BVMF");
-        asset1.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 1m, 300m, 0m));
-        asset1.SetPrice(DateOnly.FromDateTime(DateTime.Today), 300m, isManual: false);
+        asset1.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 1m, 300m, 0m));
+        asset1.SetPrice(TestClock.Today, 300m, isManual: false);
 
         var asset2 = MakeAsset("BETA", "BET", "BVMF");
-        asset2.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 1m, 700m, 0m));
-        asset2.SetPrice(DateOnly.FromDateTime(DateTime.Today), 700m, isManual: false);
+        asset2.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 1m, 700m, 0m));
+        asset2.SetPrice(TestClock.Today, 700m, isManual: false);
 
         _repository.AssetsByBrokerPortfolio = [asset1, asset2];
 
@@ -93,12 +93,12 @@ public class PortfolioAssetSummaryServiceTests
     public void GetPortfolioAssetsSummary_ActiveScope_AppreciatedHoldingsShareExceedsItsCostBasedShare()
     {
         var appreciated = MakeAsset("APPRECIATED", "APR", "BVMF");
-        appreciated.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 1m, 100m, 0m));
-        appreciated.SetPrice(DateOnly.FromDateTime(DateTime.Today), 400m, isManual: false);
+        appreciated.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 1m, 100m, 0m));
+        appreciated.SetPrice(TestClock.Today, 400m, isManual: false);
 
         var flat = MakeAsset("FLAT", "FLT", "BVMF");
-        flat.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 1m, 100m, 0m));
-        flat.SetPrice(DateOnly.FromDateTime(DateTime.Today), 100m, isManual: false);
+        flat.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 1m, 100m, 0m));
+        flat.SetPrice(TestClock.Today, 100m, isManual: false);
 
         _repository.AssetsByBrokerPortfolio = [appreciated, flat];
 
@@ -113,11 +113,11 @@ public class PortfolioAssetSummaryServiceTests
     public void GetPortfolioAssetsSummary_ActiveScope_UnpricedHolding_ReportsUnknownShareNotZero()
     {
         var priced = MakeAsset("PRICED", "PRD", "BVMF");
-        priced.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 1m, 100m, 0m));
-        priced.SetPrice(DateOnly.FromDateTime(DateTime.Today), 100m, isManual: false);
+        priced.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 1m, 100m, 0m));
+        priced.SetPrice(TestClock.Today, 100m, isManual: false);
 
         var unpriced = MakeAsset("UNPRICED", "UNP", "BVMF");
-        unpriced.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 1m, 500m, 0m));
+        unpriced.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 1m, 500m, 0m));
 
         _repository.AssetsByBrokerPortfolio = [priced, unpriced];
 
@@ -132,10 +132,10 @@ public class PortfolioAssetSummaryServiceTests
     public void GetPortfolioAssetsSummary_ActiveScope_AllHoldingsUnpriced_EveryShareIsUnknown()
     {
         var asset1 = MakeAsset("ALPHA", "ALP", "BVMF");
-        asset1.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 1m, 300m, 0m));
+        asset1.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 1m, 300m, 0m));
 
         var asset2 = MakeAsset("BETA", "BET", "BVMF");
-        asset2.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 1m, 700m, 0m));
+        asset2.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 1m, 700m, 0m));
 
         _repository.AssetsByBrokerPortfolio = [asset1, asset2];
 
@@ -149,7 +149,7 @@ public class PortfolioAssetSummaryServiceTests
     {
         var asset = MakeAsset("TEST", "TST", "BVMF");
         asset.AddTransaction(Transaction.Create(new DateTime(2020, 1, 1), Transaction.TransactionType.Buy, 1m, 100m, 0m));
-        asset.SetPrice(DateOnly.FromDateTime(DateTime.Today), 100000m, isManual: false);
+        asset.SetPrice(TestClock.Today, 100000m, isManual: false);
         asset.AddCredit(Credit.Create(new DateTime(2024, 6, 1), Credit.CreditType.Dividend, 10m));
         _repository.AssetsByBrokerPortfolio = [asset];
 
@@ -163,12 +163,12 @@ public class PortfolioAssetSummaryServiceTests
     public void GetPortfolioAssetsSummary_ReturnsZeroPortfolioWeight_WhenAllTotalInvestedAreZero()
     {
         var asset1 = MakeAsset("ALPHA", "ALP", "BVMF");
-        asset1.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 1m, 100m, 0m));
-        asset1.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 1m, 100m, 0m));
+        asset1.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 1m, 100m, 0m));
+        asset1.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Sell, 1m, 100m, 0m));
 
         var asset2 = MakeAsset("BETA", "BET", "BVMF");
-        asset2.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 1m, 200m, 0m));
-        asset2.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 1m, 200m, 0m));
+        asset2.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 1m, 200m, 0m));
+        asset2.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Sell, 1m, 200m, 0m));
 
         _repository.AssetsByBrokerPortfolio = [asset1, asset2];
 
@@ -204,11 +204,11 @@ public class PortfolioAssetSummaryServiceTests
     public void GetPortfolioAssetsSummary_IncludesAllAssets_RegardlessOfActiveStatus()
     {
         var active = MakeAsset("ACTIVE", "ACT", "BVMF");
-        active.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 10m, 10m, 0m));
+        active.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 10m, 10m, 0m));
 
         var inactive = MakeAsset("INACTIVE", "INA", "BVMF");
-        inactive.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 5m, 10m, 0m));
-        inactive.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 5m, 10m, 0m));
+        inactive.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 5m, 10m, 0m));
+        inactive.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Sell, 5m, 10m, 0m));
 
         _repository.AssetsByBrokerPortfolio = [active, inactive];
 
@@ -253,7 +253,7 @@ public class PortfolioAssetSummaryServiceTests
     public void GetPortfolioAssetsSummary_ReturnsTotalCredits_SumOfAllCreditValues()
     {
         var asset = MakeAsset("TEST", "TST", "BVMF");
-        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 1m, 10m, 0m));
+        asset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 1m, 10m, 0m));
         asset.AddCredit(Credit.Create(new DateTime(2023, 1, 1), Credit.CreditType.Dividend, 30m));
         asset.AddCredit(Credit.Create(new DateTime(2023, 6, 1), Credit.CreditType.SecuritiesLendingIncome, 15m));
         _repository.AssetsByBrokerPortfolio = [asset];
@@ -267,7 +267,7 @@ public class PortfolioAssetSummaryServiceTests
     public void GetPortfolioAssetsSummary_ReturnsTotalCredits_Zero_WhenNoCredits()
     {
         var asset = MakeAsset("TEST", "TST", "BVMF");
-        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 1m, 100m, 0m));
+        asset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 1m, 100m, 0m));
         _repository.AssetsByBrokerPortfolio = [asset];
 
         var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
@@ -462,8 +462,8 @@ public class PortfolioAssetSummaryServiceTests
     [Fact]
     public void GetPortfolioAssetsSummary_ExcludesFutureCreditDatesFromLastMonthCalculation()
     {
-        var pastDate = DateTime.Today.AddMonths(-1);
-        var futureDate = DateTime.Today.AddDays(5);
+        var pastDate = TestClock.LocalToday.AddMonths(-1);
+        var futureDate = TestClock.LocalToday.AddDays(5);
         var asset = MakeAsset("TEST", "TST", "BVMF");
         asset.AddTransaction(Transaction.Create(new DateTime(2020, 1, 1), Transaction.TransactionType.Buy, 1m, 100m, 0m));
         asset.AddCredit(Credit.Create(pastDate, Credit.CreditType.Dividend, 10m));
@@ -664,7 +664,7 @@ public class PortfolioAssetSummaryServiceTests
     [Fact]
     public void GetPortfolioAssetsSummary_ReturnsCurrentMonthCredits_SumOfCurrentMonthCredits()
     {
-        var today = DateTime.Today;
+        var today = TestClock.LocalToday;
         var asset = MakeAsset("TEST", "TST", "BVMF");
         asset.AddTransaction(Transaction.Create(new DateTime(2020, 1, 1), Transaction.TransactionType.Buy, 1m, 100m, 0m));
         asset.AddCredit(Credit.Create(new DateTime(today.Year, today.Month, 1), Credit.CreditType.Dividend, 12m));
@@ -682,7 +682,7 @@ public class PortfolioAssetSummaryServiceTests
     {
         var asset = MakeAsset("TEST", "TST", "BVMF");
         asset.AddTransaction(Transaction.Create(new DateTime(2020, 1, 1), Transaction.TransactionType.Buy, 1m, 100m, 0m));
-        asset.AddCredit(Credit.Create(DateTime.Today.AddMonths(-1), Credit.CreditType.Dividend, 15m));
+        asset.AddCredit(Credit.Create(TestClock.LocalToday.AddMonths(-1), Credit.CreditType.Dividend, 15m));
         _repository.AssetsByBrokerPortfolio = [asset];
 
         var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
@@ -704,8 +704,8 @@ public class PortfolioAssetSummaryServiceTests
     public void GetPortfolioAssetsSummary_ActiveScope_ComputesRealizedGainLossFromTransactionReplay()
     {
         var asset = MakeAsset("TEST", "TST", "BVMF");
-        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 5m, 60m, 0m));
-        asset.RecordTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 5m, 50m, 0m));
+        asset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 5m, 60m, 0m));
+        asset.RecordTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Sell, 5m, 50m, 0m));
         _repository.AssetsByBrokerPortfolio = [asset];
 
         var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
@@ -717,8 +717,8 @@ public class PortfolioAssetSummaryServiceTests
     public void GetPortfolioAssetsSummary_ActiveScope_ComputesRealizedGainLossSharesOnly()
     {
         var asset = MakeAsset("TEST", "TST", "BVMF");
-        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 5m, 60m, 0m));
-        asset.RecordTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 5m, 50m, 0m));
+        asset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 5m, 60m, 0m));
+        asset.RecordTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Sell, 5m, 50m, 0m));
         _repository.AssetsByBrokerPortfolio = [asset];
 
         var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
@@ -740,8 +740,8 @@ public class PortfolioAssetSummaryServiceTests
     public void GetPortfolioAssetsSummary_HistoricScope_WeightsByGrossTotalBought()
     {
         var asset = MakeAsset("CLOSEDASSET", "CLOSEDASSET", "BVMF");
-        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 5m, 60m, 0m));
-        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 5m, 50m, 0m));
+        asset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 5m, 60m, 0m));
+        asset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Sell, 5m, 50m, 0m));
         _repository.AssetsByBrokerPortfolio = [asset];
 
         var result = CreateService().GetPortfolioAssetsSummary("XPI", "Uncategorized", InvestmentScope.Historic);
@@ -757,9 +757,9 @@ public class PortfolioAssetSummaryServiceTests
     public void GetPortfolioAssetsSummary_HistoricScope_ComputesRealizedGainLoss()
     {
         var asset = MakeAsset("CLOSEDASSET", "CLOSEDASSET", "BVMF");
-        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 5m, 60m, 0m));
-        asset.RecordTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 5m, 50m, 0m));
-        asset.AddCredit(Credit.Create(DateTime.Today, Credit.CreditType.Dividend, 20m));
+        asset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 5m, 60m, 0m));
+        asset.RecordTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Sell, 5m, 50m, 0m));
+        asset.AddCredit(Credit.Create(TestClock.LocalToday, Credit.CreditType.Dividend, 20m));
         _repository.AssetsByBrokerPortfolio = [asset];
 
         var result = CreateService().GetPortfolioAssetsSummary("XPI", "Uncategorized", InvestmentScope.Historic);
@@ -772,9 +772,9 @@ public class PortfolioAssetSummaryServiceTests
     public void GetPortfolioAssetsSummary_HistoricScope_ComputesRealizedGainLossSharesOnly()
     {
         var asset = MakeAsset("CLOSEDASSET", "CLOSEDASSET", "BVMF");
-        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 5m, 60m, 0m));
-        asset.RecordTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 5m, 50m, 0m));
-        asset.AddCredit(Credit.Create(DateTime.Today, Credit.CreditType.Dividend, 20m));
+        asset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 5m, 60m, 0m));
+        asset.RecordTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Sell, 5m, 50m, 0m));
+        asset.AddCredit(Credit.Create(TestClock.LocalToday, Credit.CreditType.Dividend, 20m));
         _repository.AssetsByBrokerPortfolio = [asset];
 
         var result = CreateService().GetPortfolioAssetsSummary("XPI", "Uncategorized", InvestmentScope.Historic);
@@ -786,8 +786,8 @@ public class PortfolioAssetSummaryServiceTests
     public void GetPortfolioAssetsSummary_HistoricScope_ComputesAverageSellPrice()
     {
         var asset = MakeAsset("CLOSEDASSET", "CLOSEDASSET", "BVMF");
-        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 5m, 60m, 0m));
-        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 5m, 50m, 0m));
+        asset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 5m, 60m, 0m));
+        asset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Sell, 5m, 50m, 0m));
         _repository.AssetsByBrokerPortfolio = [asset];
 
         var result = CreateService().GetPortfolioAssetsSummary("XPI", "Uncategorized", InvestmentScope.Historic);
@@ -799,12 +799,12 @@ public class PortfolioAssetSummaryServiceTests
     public void GetPortfolioAssetsSummary_HistoricScope_PortfolioWeightsSumTo100Percent()
     {
         var asset1 = MakeAsset("ALPHA", "ALP", "BVMF");
-        asset1.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 1m, 300m, 0m));
-        asset1.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 1m, 290m, 0m));
+        asset1.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 1m, 300m, 0m));
+        asset1.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Sell, 1m, 290m, 0m));
 
         var asset2 = MakeAsset("BETA", "BET", "BVMF");
-        asset2.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 1m, 700m, 0m));
-        asset2.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 1m, 690m, 0m));
+        asset2.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 1m, 700m, 0m));
+        asset2.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Sell, 1m, 690m, 0m));
 
         _repository.AssetsByBrokerPortfolio = [asset1, asset2];
 
@@ -831,7 +831,7 @@ public class PortfolioAssetSummaryServiceTests
         result[0].LastMonthCreditsPercent.Should().Be(1m);
     }
 
-    private PortfolioAssetSummaryService CreateService() => new(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<PortfolioAssetSummaryService>.Instance);
+    private PortfolioAssetSummaryService CreateService() => new(_repository, TestHoldingValuationService.Create(), TestClock.At(), Tracer, NullLogger<PortfolioAssetSummaryService>.Instance);
 
     private static Asset MakeAsset(string name, string ticker, string exchange) =>
         Asset.Create(name, "ISIN", exchange, ticker);

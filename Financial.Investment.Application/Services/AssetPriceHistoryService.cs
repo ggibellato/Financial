@@ -2,6 +2,7 @@ using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.Entities;
 using Financial.Shared.Abstractions.Observability;
+using Financial.Shared.Abstractions.Time;
 using Microsoft.Extensions.Logging;
 
 namespace Financial.Investment.Application.Services;
@@ -12,17 +13,20 @@ public sealed class AssetPriceHistoryService : IAssetPriceHistoryService
 
     private readonly IInvestmentRepository _repository;
     private readonly INavigationService _navigationService;
+    private readonly TimeProvider _timeProvider;
     private readonly ITelemetryTracer _tracer;
     private readonly ILogger<AssetPriceHistoryService> _logger;
 
     public AssetPriceHistoryService(
         IInvestmentRepository repository,
         INavigationService navigationService,
+        TimeProvider timeProvider,
         ITelemetryTracer tracer,
         ILogger<AssetPriceHistoryService> logger)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -46,7 +50,7 @@ public sealed class AssetPriceHistoryService : IAssetPriceHistoryService
                     var source = asset.ValuationMethod == ValuationMethod.ProviderValue
                         ? PriceSource.ProviderValuation
                         : PriceSource.Manual;
-                    asset.SetPrice(request.Date, request.Price, source, request.Currency ?? string.Empty, request.SourceReference, DateTimeOffset.UtcNow);
+                    asset.SetPrice(request.Date, request.Price, source, request.Currency ?? string.Empty, request.SourceReference, _timeProvider.GetUtcNow(), _timeProvider.GetLocalToday());
                     return true;
                 }).ConfigureAwait(false);
 

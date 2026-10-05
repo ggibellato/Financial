@@ -61,13 +61,15 @@ public static class InvestmentInfrastructureServiceCollectionExtensions
                 secondFallback,
                 logger));
         });
+        services.TryAddSingleton(TimeProvider.System);
         services.AddSingleton<IInvestmentRepository>(sp =>
         {
             var settings = sp.GetRequiredService<IOptions<InvestmentRepositorySettingsOptions>>().Value;
             var options = BuildRepositoryOptions(settings);
             return new InvestmentRepositoryFactory(
                 sp.GetRequiredService<IInvestmentSerializer>(),
-                sp.GetRequiredService<IJsonStorageFactory>()).Create(options);
+                sp.GetRequiredService<IJsonStorageFactory>(),
+                sp.GetRequiredService<TimeProvider>()).Create(options);
         });
         services.AddSingleton<IAssetPriceService, AssetPriceService>();
         services.AddHttpClient<FrankfurterExchangeRateProvider>();

@@ -1,3 +1,4 @@
+using Financial.TestUtilities;
 using System.IO;
 using System.Linq;
 using Financial.Investment.Infrastructure.Persistence;
@@ -36,7 +37,7 @@ public class ExampleDataFileTests
         var storage = new LocalJsonStorage(ExampleFilePath);
         var serializer = new InvestmentSerializerAdapter();
 
-        var act = () => InvestmentLoader.LoadSync(storage, serializer);
+        var act = () => InvestmentLoader.LoadSync(storage, serializer, TestClock.At());
 
         act.Should().NotThrow(
             "a fresh checkout seeds from this file, so anything it cannot deserialize stops the app at startup");
@@ -52,7 +53,7 @@ public class ExampleDataFileTests
         var storage = new LocalJsonStorage(ExampleFilePath);
         var serializer = new InvestmentSerializerAdapter();
 
-        var investments = InvestmentLoader.LoadSync(storage, serializer);
+        var investments = InvestmentLoader.LoadSync(storage, serializer, TestClock.At());
 
         investments.ActiveBrokers.Should().NotBeEmpty();
         investments.ActiveBrokers.SelectMany(b => b.Portfolios).SelectMany(p => p.Assets).Should().NotBeEmpty();

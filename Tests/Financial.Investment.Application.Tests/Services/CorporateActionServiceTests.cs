@@ -47,7 +47,7 @@ public class CorporateActionServiceTests
     {
         _repository.Asset = MakeAssetWithPosition();
         var tracer = new RecordingTelemetryTracer();
-        var service = new CorporateActionService(_repository, CreateNavigationService(), tracer, NullLogger<CorporateActionService>.Instance);
+        var service = new CorporateActionService(_repository, CreateNavigationService(), TestClock.At(), tracer, NullLogger<CorporateActionService>.Instance);
 
         await service.AddSplitAsync(new CorporateActionSplitCreateDTO
         {
@@ -437,7 +437,7 @@ public class CorporateActionServiceTests
         var (broker, _, _) = MakeMergerFixture();
         var tracer = new RecordingTelemetryTracer();
         var service = new CorporateActionService(
-            new StubInvestmentRepository { Broker = broker, Brokers = [broker] }, CreateNavigationService(), tracer, NullLogger<CorporateActionService>.Instance);
+            new StubInvestmentRepository { Broker = broker, Brokers = [broker] }, CreateNavigationService(), TestClock.At(), tracer, NullLogger<CorporateActionService>.Instance);
 
         await service.AddMergerAsync(new CorporateActionMergerCreateDTO
         {
@@ -714,7 +714,7 @@ public class CorporateActionServiceTests
         var (broker, _, _) = MakeSpinOffFixture();
         var tracer = new RecordingTelemetryTracer();
         var service = new CorporateActionService(
-            new StubInvestmentRepository { Broker = broker, Brokers = [broker] }, CreateNavigationService(), tracer, NullLogger<CorporateActionService>.Instance);
+            new StubInvestmentRepository { Broker = broker, Brokers = [broker] }, CreateNavigationService(), TestClock.At(), tracer, NullLogger<CorporateActionService>.Instance);
 
         await service.AddSpinOffAsync(new CorporateActionSpinOffCreateDTO
         {
@@ -853,7 +853,7 @@ public class CorporateActionServiceTests
     }
 
     private CorporateActionService CreateService() =>
-        new(_repository, CreateNavigationService(), Tracer, NullLogger<CorporateActionService>.Instance);
+        new(_repository, CreateNavigationService(), TestClock.At(), Tracer, NullLogger<CorporateActionService>.Instance);
 
     private NavigationService CreateNavigationService() =>
         new(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance);

@@ -12,17 +12,20 @@ public sealed class PortfolioAssetSummaryService : IPortfolioAssetSummaryService
 
     private readonly IInvestmentRepository _repository;
     private readonly IHoldingValuationService _holdingValuationService;
+    private readonly TimeProvider _timeProvider;
     private readonly ITelemetryTracer _tracer;
     private readonly ILogger<PortfolioAssetSummaryService> _logger;
 
     public PortfolioAssetSummaryService(
         IInvestmentRepository repository,
         IHoldingValuationService holdingValuationService,
+        TimeProvider timeProvider,
         ITelemetryTracer tracer,
         ILogger<PortfolioAssetSummaryService> logger)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _holdingValuationService = holdingValuationService ?? throw new ArgumentNullException(nameof(holdingValuationService));
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -47,7 +50,7 @@ public sealed class PortfolioAssetSummaryService : IPortfolioAssetSummaryService
                 return [];
             }
 
-            var result = PortfolioAssetSummaryBuilder.Build(assets, DateTime.Today, scope, _holdingValuationService);
+            var result = PortfolioAssetSummaryBuilder.Build(assets, _timeProvider.GetLocalNow().Date, scope, _holdingValuationService);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetPortfolioAssetsSummary");

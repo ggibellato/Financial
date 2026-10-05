@@ -4,6 +4,7 @@ using Financial.Investment.Application.Validation;
 using Financial.Investment.Domain.Entities;
 using Financial.Investment.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
+using Financial.Shared.Abstractions.Time;
 using Financial.Shared.Abstractions.Persistence;
 using Microsoft.Extensions.Logging;
 
@@ -16,6 +17,7 @@ public sealed class AssetPriceLookupService : IAssetPriceLookupService
     private readonly IInvestmentRepository _repository;
     private readonly INavigationService _navigationService;
     private readonly IAssetPriceService _assetPriceService;
+    private readonly TimeProvider _timeProvider;
     private readonly ITelemetryTracer _tracer;
     private readonly ILogger<AssetPriceLookupService> _logger;
 
@@ -23,11 +25,12 @@ public sealed class AssetPriceLookupService : IAssetPriceLookupService
         IInvestmentRepository repository,
         INavigationService navigationService,
         IAssetPriceService assetPriceService,
-        ITelemetryTracer tracer, ILogger<AssetPriceLookupService> logger)
+        TimeProvider timeProvider, ITelemetryTracer tracer, ILogger<AssetPriceLookupService> logger)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
         _assetPriceService = assetPriceService ?? throw new ArgumentNullException(nameof(assetPriceService));
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -223,9 +226,9 @@ public sealed class AssetPriceLookupService : IAssetPriceLookupService
         return _repository.GetAsset(request.BrokerName, request.PortfolioName, request.AssetName);
     }
 
-    private static AssetPriceSnapshot? FindManualPriceForToday(Asset asset)
+    private AssetPriceSnapshot? FindManualPriceForToday(Asset asset)
     {
-        var entry = asset.GetPriceForDate(DateOnly.FromDateTime(DateTime.Today));
+        var entry = asset.GetPriceForDate(_timeProvider.GetLocalToday());
         return entry?.IsManual == true ? entry : null;
     }
 
@@ -234,7 +237,7 @@ public sealed class AssetPriceLookupService : IAssetPriceLookupService
     /// AsOf stays null. Previously neither was set, and the caller had nothing to show under
     /// "As of" for a price it had read from history.
     /// </summary>
-    private static AssetPriceDTO BuildPriceFrom(AssetPriceSnapshot snapshot, AssetPriceRequestDTO request) =>
+    private AssetPriceDTO BuildPriceFrom(AssetPriceSnapshot snapshot, AssetPriceRequestDTO request) =>
         new()
         {
             Exchange = request.Exchange,
@@ -245,7 +248,7 @@ public sealed class AssetPriceLookupService : IAssetPriceLookupService
             AsOfDate = snapshot.Date,
             IsManual = snapshot.IsManual,
             Source = snapshot.Source,
-            MarketStatus = MarketStatusCalculator.For(snapshot.Date, DateOnly.FromDateTime(DateTime.Today))
+            MarketStatus = MarketStatusCalculator.For(snapshot.Date, _timeProvider.GetLocalToday())
         };
 
     /// <summary>
@@ -279,7 +282,7 @@ public sealed class AssetPriceLookupService : IAssetPriceLookupService
     /// </summary>
     private async Task RecordAutomaticPriceIfNeededAsync(Asset asset, decimal price, PriceSource source)
     {
-        var today = DateOnly.FromDateTime(DateTime.Today);
+        var today = _timeProvider.GetLocalToday();
         AssetPriceSnapshot? displaced = null;
         var wrote = false;
 
@@ -302,7 +305,7 @@ public sealed class AssetPriceLookupService : IAssetPriceLookupService
                 wrote = true;
                 // The named provider that actually answered (research.md #2) - not the generic
                 // "automatic" the simple SetPrice(date, price, isManual) overload would stamp.
-                asset.SetPrice(today, price, source, currency: string.Empty, sourceReference: null, DateTimeOffset.UtcNow);
+                asset.SetPrice(today, price, source, currency: string.Empty, sourceReference: null, _timeProvider.GetUtcNow(), today);
                 return true;
             }),
             // Only undo when the write actually happened - a failure before that point (e.g. inside

@@ -51,8 +51,8 @@ public class AssetPriceServiceTests
     [Fact]
     public void GetCurrentPrice_CryptocurrencyAssetClass_DispatchesToMatchingFetcher()
     {
-        var cryptoSnapshot = new AssetValueSnapshot("BTC", "Bitcoin", 50000m, DateTimeOffset.UtcNow);
-        var standardSnapshot = new AssetValueSnapshot("BCIA11", "Some ETF", 10.5m, DateTimeOffset.UtcNow);
+        var cryptoSnapshot = new AssetValueSnapshot("BTC", "Bitcoin", 50000m, TestClock.Default);
+        var standardSnapshot = new AssetValueSnapshot("BCIA11", "Some ETF", 10.5m, TestClock.Default);
         var standardFetcher = new StubFetcher(assetClass => assetClass != GlobalAssetClass.Cryptocurrency, standardSnapshot);
         var cryptoFetcher = new StubFetcher(assetClass => assetClass == GlobalAssetClass.Cryptocurrency, cryptoSnapshot);
         var service = new AssetPriceService([standardFetcher, cryptoFetcher]);
@@ -67,8 +67,8 @@ public class AssetPriceServiceTests
     [Fact]
     public void GetCurrentPrice_NonCryptocurrencyAssetClass_DispatchesToMatchingFetcher()
     {
-        var cryptoSnapshot = new AssetValueSnapshot("BTC", "Bitcoin", 50000m, DateTimeOffset.UtcNow);
-        var standardSnapshot = new AssetValueSnapshot("BCIA11", "Some ETF", 10.5m, DateTimeOffset.UtcNow);
+        var cryptoSnapshot = new AssetValueSnapshot("BTC", "Bitcoin", 50000m, TestClock.Default);
+        var standardSnapshot = new AssetValueSnapshot("BCIA11", "Some ETF", 10.5m, TestClock.Default);
         var standardFetcher = new StubFetcher(assetClass => assetClass != GlobalAssetClass.Cryptocurrency, standardSnapshot);
         var cryptoFetcher = new StubFetcher(assetClass => assetClass == GlobalAssetClass.Cryptocurrency, cryptoSnapshot);
         var service = new AssetPriceService([standardFetcher, cryptoFetcher]);
@@ -83,7 +83,7 @@ public class AssetPriceServiceTests
     [Fact]
     public void GetCurrentPrice_NoFetcherSupportsAssetClass_ThrowsNamingTheClass()
     {
-        var snapshot = new AssetValueSnapshot("XXX", "First Fetcher", 1m, DateTimeOffset.UtcNow);
+        var snapshot = new AssetValueSnapshot("XXX", "First Fetcher", 1m, TestClock.Default);
         var service = new AssetPriceService([new StubFetcher(_ => false, snapshot), new StubFetcher(_ => false, snapshot)]);
         var request = new AssetPriceRequestDTO { Exchange = "BVMF", Ticker = "XXX", AssetClass = GlobalAssetClass.PrivateCredit };
 
@@ -100,7 +100,7 @@ public class AssetPriceServiceTests
     [Fact]
     public void GetCurrentPrice_NoFetcherSupportsAssetClass_DoesNotCallAnyFetcher()
     {
-        var snapshot = new AssetValueSnapshot("XXX", "First Fetcher", 1m, DateTimeOffset.UtcNow);
+        var snapshot = new AssetValueSnapshot("XXX", "First Fetcher", 1m, TestClock.Default);
         var fetcher = new StubFetcher(_ => false, snapshot);
         var service = new AssetPriceService([fetcher]);
         var request = new AssetPriceRequestDTO { Exchange = "BVMF", Ticker = "XXX", AssetClass = GlobalAssetClass.Pension };
