@@ -23,7 +23,7 @@ var investments = InvestmentLoader.LoadSync(storage, serializer, TimeProvider.Sy
 var repository = new InvestmentJsonRepository(investments, storage, serializer);
 
 var holdingValuationService = new HoldingValuationService(
-    new XirrCalculationService(TimeProvider.System), NoOpTelemetryTracer.Instance, NullLogger<HoldingValuationService>.Instance);
+    new XirrCalculationService(TimeProvider.System), NoOpTelemetryTracer.Instance, NullLogger<HoldingValuationService>.Instance, TimeProvider.System);
 
 IDataQualityReportService service = new DataQualityReportService(
     repository, NoOpTelemetryTracer.Instance, NullLogger<DataQualityReportService>.Instance, holdingValuationService);

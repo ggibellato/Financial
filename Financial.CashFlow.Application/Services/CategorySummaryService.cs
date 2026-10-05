@@ -28,13 +28,13 @@ public sealed class CategorySummaryService : ICategorySummaryService
         IIncomeSummaryService incomeSummaryService,
         ITelemetryTracer tracer,
         ILogger<CategorySummaryService> logger,
-        TimeProvider? timeProvider = null)
+        TimeProvider timeProvider)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _incomeSummaryService = incomeSummaryService ?? throw new ArgumentNullException(nameof(incomeSummaryService));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _timeProvider = timeProvider ?? TimeProvider.System;
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
     }
 
     public IReadOnlyList<CategoryAnnualTotalDTO> GetCategoryTotalsForYear(int year)

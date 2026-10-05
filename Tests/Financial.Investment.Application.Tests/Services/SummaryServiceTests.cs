@@ -313,7 +313,7 @@ public class SummaryServiceTests
 
     private SummaryService CreateService(TimeProvider? timeProvider = null) =>
         new(_repository, Tracer, NullLogger<SummaryService>.Instance, TestHoldingValuationService.Create(timeProvider), new XirrCalculationService(TestClock.At()),
-            new StubExchangeRateProvider(null), new StubReportingCurrencyProvider(Currency.BRL), timeProvider);
+            new StubExchangeRateProvider(null), new StubReportingCurrencyProvider(Currency.BRL), timeProvider ?? TestClock.At());
 
     private static Asset MakeAsset(string name = "TEST", string ticker = "TEST") =>
         Asset.Create(name, "ISIN", "BVMF", ticker);

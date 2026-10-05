@@ -24,13 +24,13 @@ public sealed class PaymentsDueService : IPaymentsDueService
         ICashFlowRepository repository,
         ITelemetryTracer tracer,
         ILogger<PaymentsDueService> logger,
-        TimeProvider? timeProvider = null,
+        TimeProvider timeProvider,
         TimeZoneInfo? timeZone = null)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _timeProvider = timeProvider ?? TimeProvider.System;
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _timeZone = timeZone ?? TimeZoneInfo.Local;
     }
 

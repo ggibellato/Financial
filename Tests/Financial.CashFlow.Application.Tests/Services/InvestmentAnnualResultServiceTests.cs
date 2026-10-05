@@ -22,7 +22,7 @@ public class InvestmentAnnualResultServiceTests
     {
         _repository = CreateRepository();
         _tracer = new RecordingTelemetryTracer();
-        _sut = new InvestmentAnnualResultService(_repository, _tracer, Logger);
+        _sut = new InvestmentAnnualResultService(_repository, _tracer, Logger, TestClock.At());
     }
 
     private static InvestmentAccount Account(StubCashFlowRepository repository, string name) =>

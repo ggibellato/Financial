@@ -44,7 +44,7 @@ public sealed class PortfolioDashboardService : IPortfolioDashboardService
         IHoldingValuationService holdingValuationService,
         IExchangeRateProvider exchangeRateProvider,
         IReportingCurrencyProvider reportingCurrencyProvider,
-        TimeProvider? timeProvider = null)
+        TimeProvider timeProvider)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
@@ -52,7 +52,7 @@ public sealed class PortfolioDashboardService : IPortfolioDashboardService
         _holdingValuationService = holdingValuationService ?? throw new ArgumentNullException(nameof(holdingValuationService));
         _exchangeRateProvider = exchangeRateProvider ?? throw new ArgumentNullException(nameof(exchangeRateProvider));
         _reportingCurrencyProvider = reportingCurrencyProvider ?? throw new ArgumentNullException(nameof(reportingCurrencyProvider));
-        _timeProvider = timeProvider ?? TimeProvider.System;
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
     }
 
     public async Task<PortfolioDashboardDTO> GetDashboardAsync(Currency? displayCurrency = null, Currency? brokerCurrencyFilter = null)

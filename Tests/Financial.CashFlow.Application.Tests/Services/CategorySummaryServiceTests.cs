@@ -44,12 +44,13 @@ public class CategorySummaryServiceTests
     private CategorySummaryService CreateService(StubCashFlowRepository? repository = null, TimeProvider? timeProvider = null)
     {
         var repo = repository ?? _repository;
-        var incomeSummaryService = new IncomeSummaryService(repo, new RecordingTelemetryTracer(), IncomeLogger, timeProvider);
-        return new(repo, incomeSummaryService, _tracer, Logger, timeProvider);
+        var clock = timeProvider ?? TestClock.At();
+        var incomeSummaryService = new IncomeSummaryService(repo, new RecordingTelemetryTracer(), IncomeLogger, clock);
+        return new(repo, incomeSummaryService, _tracer, Logger, clock);
     }
 
     private static IIncomeSummaryService CreateIncomeSummaryService(StubCashFlowRepository repository) =>
-        new IncomeSummaryService(repository, new RecordingTelemetryTracer(), IncomeLogger);
+        new IncomeSummaryService(repository, new RecordingTelemetryTracer(), IncomeLogger, TestClock.At());
 
     private static Category CategoryByName(StubCashFlowRepository repository, string name) =>
         repository.Categories.First(c => c.Name == name);

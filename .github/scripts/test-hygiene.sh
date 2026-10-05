@@ -63,9 +63,9 @@ scan_line() {
       if [[ "$text" =~ $SKIPPED_TEST ]]; then
         record error "$file" "$line" "$text" "Skip =" "fix or delete the test instead of skipping it"
       fi ;;
-    *.cs)
-      if [[ "$text" =~ $WALL_CLOCK ]] && file_mentions "$file" 'TimeProvider'; then
-        record error "$file" "$line" "$text" "${BASH_REMATCH[0]}" "use the injected TimeProvider"
+    Financial.*/*.cs)
+      if [[ "$text" =~ $WALL_CLOCK ]]; then
+        record error "$file" "$line" "$text" "${BASH_REMATCH[0]}" "take a TimeProvider and read time from it"
       fi ;;
     Financial.Web/src/*.ts|Financial.Web/src/*.tsx|Financial.Web/tests/e2e/*.ts|Financial.Web/tests/e2e/*.tsx)
       if [[ "$text" =~ $FOCUSED_OR_WAIT ]]; then
