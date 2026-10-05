@@ -14,7 +14,7 @@ built SPA from `wwwroot`) and Playwright's Chromium — over real HTTP against r
 | SPA | `npm run build` with `.env` = `API_BASE_URL=/api/v1/financial`, copied into `publish/wwwroot/` |
 | Data | `Tests/Financial.Api.Tests/TestData/data.test.json` → `/tmp/data.smoke-test.json`; `data-cashflow.test.json` → `/tmp/data-cashflow.smoke-test.json`; `Investment__Repository__Provider=LocalJson`, `CashFlow__Repository__Provider=LocalJson` |
 | Readiness | `curl -sf http://localhost:8080/api/v1/financial/health` polled up to 30 s |
-| Driver | `node Financial.Web/scripts/smoke-test.mjs` — `chromium.launch()`, `SMOKE_APP_URL=http://localhost:8080` |
+| Driver | `npm run smoke-test` in `Financial.Web` — `playwright test --grep @smoke` (`@playwright/test`, Chromium headless, `SMOKE_APP_URL=http://localhost:8080`); on failure the job uploads `playwright-report/` and `test-results/` (trace, screenshot, video) |
 | Providers | Frankfurter/Yahoo/Google are simply unreachable or unused; nothing is faked — the seeded data avoids live prices and observability is disabled |
 
 Trigger rules live in `.github/scripts/detect-changes.sh`: the job runs when either side of
@@ -37,7 +37,7 @@ $env:Investment__Repository__Provider='LocalJson'; $env:Investment__DataJsonFile
 $env:CashFlow__Repository__Provider='LocalJson';   $env:CashFlow__DataJsonFile="$env:TEMP/data-cashflow.smoke-test.json"
 $env:ASPNETCORE_URLS='http://localhost:8081'; $env:SMOKE_APP_URL='http://localhost:8081'
 Start-Process dotnet -ArgumentList 'Financial.Api.dll' -WorkingDirectory publish
-node Financial.Web/scripts/smoke-test.mjs
+cd Financial.Web; npm run smoke-test
 ```
 
 Do not use `--no-launch-profile` with `dotnet run` for a dev-server variant: it drops
@@ -46,25 +46,38 @@ Do not use `--no-launch-profile` with `dotnet run` for a dev-server variant: it 
 is same-origin.
 
 Data is seeded by copying the test JSON files and torn down by the OS temp directory / the CI
-runner; the script itself seeds three expenses through `POST /expenses` and never cleans them
-(fresh copies each run).
+runner. The suite never cleans up: write specs use a per-run unique description and the one
+spec that seeds expenses skips seeding on a retry. **Restart the API on fresh copies before each
+local run** — a second run on the same data seeds the Historic Summary Average twice.
 
-## What the script proves today, and what to add
+## Guard against the live data
 
-Today (`smoke-test.mjs`): app loads with no console errors, the investment tree renders
-`XPI`, `/cashflow/annual-summary` → "Historic Summary Average" tab shows `Mercado = 25.00`
-for the seeded year. That is one success journey across API + SPA — it exists because a
-bundle that compiles can still render blank data when the frontend types drift.
+`tests/e2e/global-setup.ts` runs before any browser starts and aborts unless:
 
-Per the fundamentals, E2E owes each critical flow one success and one failure journey.
-Missing today and to be added in the same script (or a `@playwright/test` suite, see
-`../artifacts/future-types.md`):
+- `SMOKE_APP_URL` is set (no default; `localhost:5173` used to be one),
+- `GET /health` answers within 60 s, and
+- `GET /categories` contains the inactive `E2E-TEST-DATA` category that only
+  `data-cashflow.test.json` has.
 
-- One rejected submission surfaced in the UI (`negative-path-testing.md` lists three candidates).
-- One keyboard-only completion of a critical workflow (`cross-cutting-concerns.md`, Accessibility).
+The sentinel replaces a "which data file are you on" endpoint on purpose:
+`DiagnosticsController` does not serve data-file paths.
 
-Keep journeys to the critical set — this is a single-user tool; Integration is where breadth
-lives.
+## What the suite proves
+
+Six `@smoke` specs in `Financial.Web/tests/e2e/`, each also failing on any console error:
+
+| Spec | Journey |
+|---|---|
+| `app-loads` | `/` renders the investment tree (`XPI`) |
+| `investment-asset` | XPI → Default → BCIA11 shows the asset summary |
+| `add-expense` (3) | add an expense (`e2e-<runId>`) and see it listed; blank value → `Value must be a non-zero number`, nothing POSTed; forced 500 → error shown, form usable |
+| `historic-average` | seed three expenses → Historic Summary Average shows `Mercado` `25.00` (catches frontend/API shape drift that still compiles) |
+
+Rules: locate by role, label or visible text; `data-testid` only with a comment saying why; no
+CSS classes, XPath, DOM position or fixed waits (`eslint-plugin-playwright` and the F11 hygiene
+scan enforce the last). Debug locally with `npx playwright test --headed`, `--ui` or `--debug`.
+Still missing: one keyboard-only completion of a critical workflow
+(`cross-cutting-concerns.md`, Accessibility).
 
 ## WPF
 

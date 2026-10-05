@@ -1,6 +1,6 @@
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
-import { coverageConfigDefaults } from 'vitest/config'
+import { configDefaults, coverageConfigDefaults } from 'vitest/config'
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), 'API_')
@@ -17,6 +17,7 @@ export default defineConfig(({ mode }) => {
     },
     test: {
       environment: 'jsdom',
+      exclude: [...configDefaults.exclude, 'tests/e2e/**'],
       setupFiles: './src/setupTests.ts',
       coverage: {
         provider: 'v8',

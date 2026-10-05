@@ -53,7 +53,7 @@ This revision replaces the previous guide, which called the in-process `WebAppli
   the tag and the assertion differ.
 - **The E2E environment.** The CI `smoke` job in `.github/workflows/build.yml` publishes the API,
   embeds the built SPA in `wwwroot`, seeds `Tests/Financial.Api.Tests/TestData/*.test.json`,
-  starts `dotnet Financial.Api.dll` on port 8080 and runs `Financial.Web/scripts/smoke-test.mjs`
+  starts `dotnet Financial.Api.dll` on port 8080 and runs the `Financial.Web/tests/e2e` Playwright suite (`npm run smoke-test`)
   in Chromium. Two real processes, real HTTP, real JSON files — that is E2E here. Reproduce the
   same steps locally on a free port. WPF has no E2E harness. See `references/e2e-environment.md`.
 - **Why DI tests exist, and where.** `AddFinancialCashFlowInfrastructure`, `AddFinancialInfrastructure`,
@@ -182,7 +182,7 @@ corresponding guide for the complete recipe.
 | React pages | `Financial.Web/src/pages/*Page.tsx` | Integration (frontend) | `artifacts/react-pages.md` |
 | Web API client | `Financial.Web/src/api/financialApiClient.ts` | Unit | `artifacts/web-api-client.md` |
 | Web utils, context, navigation | `Financial.Web/src/{utils,context,navigation}/*.ts*` | Unit | `artifacts/web-utils-context-navigation.md` |
-| Critical cross-process journeys | `Financial.Web/scripts/smoke-test.mjs` | E2E | `references/e2e-environment.md` |
+| Critical cross-process journeys | `Financial.Web/tests/e2e/*.spec.ts` | E2E | `references/e2e-environment.md` |
 | Future types | — | — | `artifacts/future-types.md` |
 
 ## 5. Anti-patterns — Do NOT Do This

@@ -18,7 +18,7 @@ change. Three tests plus one build step keep the two sides honest.
 - **Downstream compiles**: `tsc -b` (part of `npm run build`) fails at every call site that
   reads a renamed/removed field — the "regenerate + typecheck" step the fundamentals require.
 - **Runtime shape agreement**: the smoke journey seeds data through the API and checks a
-  computed value renders (`Financial.Web/scripts/smoke-test.mjs`) — catches a drift that
+  computed value renders (`Financial.Web/tests/e2e/historic-average.spec.ts`) — catches a drift that
   compiles but renders blank.
 - Negative: an intentional snapshot change without regeneration must fail the freshness test;
   an unintentional DTO rename must fail the snapshot test naming the endpoint.

@@ -12,3 +12,4 @@
   the expected task sequence, terminology, fields, actions, states, and
   formatting that WPF must match.
 - For significant UI work, use the `fluent-ui` skill.
+- E2E specs (`tests/e2e`): locate by role, label or visible text first; `data-testid` only with a comment explaining why; no CSS classes, XPath, DOM position or fixed waits.

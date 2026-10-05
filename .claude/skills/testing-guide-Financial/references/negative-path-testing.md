@@ -94,10 +94,9 @@ gets its own tagged test (`feature-traceability.md`).
 
 ## E2E (smoke run)
 
-Required per critical flow: one failure journey. Today `Financial.Web/scripts/smoke-test.mjs`
-has one success journey (seed three expenses → Historic Summary Average shows `25.00`) and
-**no failure journey** — the next change to the script adds one. The realistic options with the
-published API on seeded JSON:
+Required per critical flow: one failure journey. `Financial.Web/tests/e2e/add-expense.spec.ts`
+has two: a blank value rejected inline with nothing sent, and a forced 500 shown with the form
+still usable. Further options with the published API on seeded JSON:
 
 - **Rejected submission end to end**: POST an expense with `value: 0` through the UI form and
   assert the inline validation / 400 message renders and the row does not appear.

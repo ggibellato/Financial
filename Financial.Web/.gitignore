@@ -14,6 +14,8 @@ dist-ssr
 
 # test + coverage output (CI regenerates these every run)
 coverage
+playwright-report
+test-results
 
 # Editor directories and files
 .vscode/*

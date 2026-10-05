@@ -120,7 +120,7 @@ its `../artifacts/*.md` guide), "out of scope — reason", or "resolved in Phase
 | `src/test/`, `src/test-utils/` | test helpers (`renderWithFluent.tsx`, `selectedNodeTestWrapper.tsx`) | |
 | `src/setupTests.ts`, `src/main.tsx`, `src/App.tsx` (files) | setup / entry / shell | `App.tsx` tested as a page; `main.tsx` excluded from coverage |
 | `src/assets/`, `src/styles/`, `src/theme/` | out of scope — static assets, CSS, token object | |
-| `scripts/` | E2E (`e2e-environment.md`) | `smoke-test.mjs` |
+| `tests/e2e/`, `playwright.config.ts` | E2E (`e2e-environment.md`) | `*.spec.ts`, `global-setup.ts` |
 | `public/`, `.vite/`, `dist/` | out of scope — static/build output | |
 | config files (`vite.config.ts`, `tsconfig*.json`, `eslint.config.js`, `.env*`) | out of scope — build config | quoted in `file-conventions.md` |
 

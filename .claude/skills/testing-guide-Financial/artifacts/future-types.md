@@ -60,10 +60,10 @@ arrives with the right test rather than a new convention.
 
 ## Playwright test files beyond the smoke script
 
-- `Financial.Web/scripts/smoke-test.mjs` is a plain Node script. If journeys multiply, move
-  to `@playwright/test` with a `playwright.config.ts` whose `webServer` starts the published
-  API on a non-8080 port (`feedback_never_smoke_test_against_live_port`). Each journey is E2E
-  and needs one failure journey (`../references/negative-path-testing.md`).
+- Done: the suite is `@playwright/test` under `Financial.Web/tests/e2e`. It deliberately has
+  no `webServer`: the published API is started separately on a non-8080 port
+  (`feedback_never_smoke_test_against_live_port`). Each new journey is E2E and needs one failure
+  journey (`../references/negative-path-testing.md`).
 
 ## WPF UI automation (FlaUI / WinAppDriver)
 

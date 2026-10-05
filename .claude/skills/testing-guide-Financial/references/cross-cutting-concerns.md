@@ -98,7 +98,7 @@ pattern or an explicit "not applicable".
 - Seeds: `Tests/Financial.TestUtilities/TestData/data.test.json` (`TestDataPaths.DataJsonFile`),
   `Tests/Financial.Api.Tests/TestData/data-cashflow.test.json` (smoke seed),
   `ApiTestFactory.SeededBanksJson` (mirrors the migration tool's output; ids reused by every
-  endpoint test and by `smoke-test.mjs`).
+  endpoint test and by the E2E specs).
 - Layer: Integration. Recipe: `../artifacts/example-and-seed-data.md`.
 
 ## 7. Same-repo frontend faking its own backend — sanctioned exception, documented

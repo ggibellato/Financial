@@ -43,7 +43,7 @@ project (`Services/`, `Persistence/`, `Repositories/`, `DependencyInjection/`, `
 - Unit: `*.Domain.Tests`, `*.Application.Tests`, `Presentation.Tests/{ViewModels,Converters,Behaviors,Helpers,Input,Navigation}`, `WebPageParser.Tests`, parsing/resolver folders of the import tools.
 - Integration: `Api.Tests` (except `Controllers/`), `*.Infrastructure.Tests/{Repositories,Persistence,DependencyInjection}`, `Shared.Infrastructure.Tests`, `Architecture.Tests`, `Observability.Tests`, `Presentation.Tests/{DependencyInjection,Views,Acceptance}`, import-tool `SheetImporters/` and `Migrations/`.
 - AC-tracing: `Acceptance/` folders + the `AC` trait.
-- E2E: nothing in `Tests/` — `Financial.Web/scripts/smoke-test.mjs`.
+- E2E: nothing in `Tests/` — `Financial.Web/tests/e2e/*.spec.ts` (`@playwright/test`).
 
 ### Commands
 
@@ -96,7 +96,7 @@ npm run test:coverage     # what the web CI job runs
 npm run build             # tsc -b && vite build — the type-check gate (run after every change)
 npm run lint
 npx vitest list -t "\[AC P42-F02"    # AC audit
-npm run smoke-test        # Playwright, needs the published API up (see e2e-environment.md)
+npm run smoke-test        # Playwright @smoke specs, needs the published API on test data (see e2e-environment.md)
 ```
 
 ## Coverage philosophy — thorough, CI bands as targets

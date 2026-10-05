@@ -33,5 +33,6 @@ export default defineConfig([
   {
     ...playwright.configs['flat/recommended'],
     files: ['tests/e2e/**'],
+    rules: { 'react-hooks/rules-of-hooks': 'off' },
   },
 ])
