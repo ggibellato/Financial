@@ -52,6 +52,11 @@ classify() {
       wpf=true
       reasons+=("wpf: $path") ;;
 
+    # Drives the built Financial.App through UI Automation and nothing else.
+    Tests/Financial.App.E2ETests/*)
+      wpf=true
+      reasons+=("wpf-e2e: $path") ;;
+
     Financial.Web/*)
       web=true; smoke=true
       reasons+=("web: $path") ;;

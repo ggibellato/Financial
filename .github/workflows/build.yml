@@ -92,9 +92,10 @@ jobs:
     - name: Build
       run: dotnet build --configuration Release
 
-    # Every test project in the solution except the WPF one, which the `wpf` job owns.
+    # Every test project in the solution except the WPF ones: `wpf` owns the view-model tests and
+    # `wpf-e2e` the UI-automation suite, which needs an interactive desktop and the built exe.
     - name: Run tests
-      run: dotnet test --configuration Release --no-build --verbosity normal --filter "FullyQualifiedName!~Financial.Presentation.Tests" --settings coverlet.runsettings --results-directory TestResults
+      run: dotnet test --configuration Release --no-build --verbosity normal --filter "FullyQualifiedName!~Financial.Presentation.Tests&FullyQualifiedName!~Financial.App.E2ETests" --settings coverlet.runsettings --results-directory TestResults
 
     # coverlet.runsettings declares the XPlat collector itself, so --settings is enough to turn
     # collection on - no --collect argument, and so no "XPlat Code Coverage" quoting to get wrong
@@ -182,6 +183,40 @@ jobs:
       with:
         name: coverage-report-wpf
         path: CoverageReport
+
+  # Drives the real Financial.App through UI Automation (FlaUI/UIA3) on a hosted Windows runner's
+  # interactive desktop. Runs whenever `wpf` runs; per-test screenshots and the app log are
+  # uploaded on failure. See docs/ci-affected-pipeline.md for the nightly fallback rule.
+  wpf-e2e:
+    needs: [ changes, wpf ]
+    if: >-
+      always()
+      && needs.changes.outputs.wpf == 'true'
+      && !contains(needs.*.result, 'failure')
+      && !contains(needs.*.result, 'cancelled')
+    runs-on: windows-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v6
+      with:
+        dotnet-version: 10.0.x
+
+    - name: Build WPF app and E2E tests
+      run: dotnet build Tests/Financial.App.E2ETests/Financial.App.E2ETests.csproj --configuration Release
+
+    - name: Run WPF smoke
+      run: dotnet test Tests/Financial.App.E2ETests --configuration Release --no-build --verbosity normal --filter "Category=Smoke"
+
+    - name: Upload E2E artifacts
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: wpf-e2e-artifacts
+        path: TestResults/e2e-artifacts
+        retention-days: 14
 
   web:
     needs: changes
@@ -406,7 +441,7 @@ jobs:
   # The one status check branch protection requires. Always runs; passes when every job either
   # succeeded or was legitimately skipped by `changes`, fails otherwise.
   ci-status:
-    needs: [ changes, backend, wpf, web, smoke ]
+    needs: [ changes, backend, wpf, wpf-e2e, web, smoke ]
     if: always()
     runs-on: ubuntu-latest
     steps:
