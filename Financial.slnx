@@ -35,6 +35,7 @@
 		<Project Path="Tests/Financial.Investment.Domain.Tests/Financial.Investment.Domain.Tests.csproj" />
 		<Project Path="Tests/Financial.Investment.Infrastructure.Tests/Financial.Investment.Infrastructure.Tests.csproj" />
 		<Project Path="Tests/Financial.Shared.Infrastructure.Tests/Financial.Shared.Infrastructure.Tests.csproj" />
+		<Project Path="Tests/Financial.Shared.Abstractions.Tests/Financial.Shared.Abstractions.Tests.csproj" />
 		<Project Path="Tests/Financial.Architecture.Tests/Financial.Architecture.Tests.csproj" />
 		<Project Path="Tests/Financial.Presentation.Tests/Financial.Presentation.Tests.csproj" />
 		<Project Path="Tests/Financial.App.E2ETests/Financial.App.E2ETests.csproj" />

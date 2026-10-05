@@ -1,27 +1,15 @@
 using Financial.Shared.Abstractions.Currencies;
 using FluentAssertions;
 
-namespace Financial.Shared.Infrastructure.Tests.Currencies;
+namespace Financial.Shared.Abstractions.Tests.Currencies;
 
 [Trait("Category", "Unit")]
 public class InMemoryCachedExchangeRateProviderTests
 {
-    private sealed class CountingExchangeRateProvider : IExchangeRateProvider
-    {
-        public int CallCount { get; private set; }
-        public decimal? NextResult { get; set; } = 5.1m;
-
-        public Task<decimal?> GetHistoricalRateAsync(DateOnly date, Currency from, Currency to)
-        {
-            CallCount++;
-            return Task.FromResult(NextResult);
-        }
-    }
-
     [Fact]
     public async Task GetHistoricalRateAsync_SecondCallForSameKey_DoesNotCallInnerAgain()
     {
-        var inner = new CountingExchangeRateProvider();
+        var inner = new StubExchangeRateProvider(5.1m);
         var cache = new InMemoryCachedExchangeRateProvider(() => inner);
         var date = new DateOnly(2026, 1, 15);
 
@@ -36,7 +24,7 @@ public class InMemoryCachedExchangeRateProviderTests
     [Fact]
     public async Task GetHistoricalRateAsync_DifferentDates_CallsInnerForEach()
     {
-        var inner = new CountingExchangeRateProvider();
+        var inner = new StubExchangeRateProvider(5.1m);
         var cache = new InMemoryCachedExchangeRateProvider(() => inner);
 
         await cache.GetHistoricalRateAsync(new DateOnly(2026, 1, 15), Currency.BRL, Currency.GBP);
@@ -48,7 +36,7 @@ public class InMemoryCachedExchangeRateProviderTests
     [Fact]
     public async Task GetHistoricalRateAsync_NullResult_IsNotCached()
     {
-        var inner = new CountingExchangeRateProvider { NextResult = null };
+        var inner = new StubExchangeRateProvider(null);
         var cache = new InMemoryCachedExchangeRateProvider(() => inner);
         var date = new DateOnly(2026, 1, 15);
 
@@ -63,7 +51,7 @@ public class InMemoryCachedExchangeRateProviderTests
     [Fact]
     public async Task GetHistoricalRateAsync_DifferentCurrencyPairSameDate_CallsInnerForEach()
     {
-        var inner = new CountingExchangeRateProvider();
+        var inner = new StubExchangeRateProvider(5.1m);
         var cache = new InMemoryCachedExchangeRateProvider(() => inner);
         var date = new DateOnly(2026, 1, 15);
 
