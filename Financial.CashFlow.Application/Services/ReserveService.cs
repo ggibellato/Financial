@@ -122,7 +122,7 @@ public sealed class ReserveService : IReserveService
             if (request.Amount > currentBalance && !request.Confirmed)
             {
                 throw new OverdraftConfirmationRequiredException(
-                    $"This withdrawal exceeds {bucket!.Name}'s balance of {currentBalance:F2}. Set confirmed=true to proceed.");
+                    FormattableString.Invariant($"This withdrawal exceeds {bucket!.Name}'s balance of {currentBalance:F2}. Set confirmed=true to proceed."));
             }
 
             var movement = ReserveMovement.Create(bucket!, -request.Amount, request.Date, request.Description);

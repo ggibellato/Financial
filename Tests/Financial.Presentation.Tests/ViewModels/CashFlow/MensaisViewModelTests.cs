@@ -1,3 +1,4 @@
+using Financial.Tests;
 using Financial.CashFlow.Application.DTOs;
 using Financial.Presentation.App.Controls;
 using Financial.Presentation.App.ViewModels.CashFlow;
@@ -7,6 +8,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.ViewModels.CashFlow;
 
+[UseCulture("en-GB")]
 public class MensaisViewModelTests
 {
     private static (MensaisViewModel ViewModel, StubMensaisService Service, StubExpenseService ExpenseService, StubBankService BankService, StubCategoryService CategoryService, StubDialogService DialogService) CreateViewModel(bool confirm = true) =>

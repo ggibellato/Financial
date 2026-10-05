@@ -231,7 +231,7 @@ public class Expense
         if (amount < MinRoundUpAmount || amount > MaxRoundUpAmount)
         {
             throw new ArgumentException(
-                $"Round-up amount must be between £{MinRoundUpAmount:F2} and £{MaxRoundUpAmount:F2}.");
+                FormattableString.Invariant($"Round-up amount must be between £{MinRoundUpAmount:F2} and £{MaxRoundUpAmount:F2}."));
         }
 
         RoundUpAmount = amount;

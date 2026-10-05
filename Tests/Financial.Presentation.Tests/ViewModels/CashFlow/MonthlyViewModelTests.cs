@@ -1,3 +1,4 @@
+using Financial.Tests;
 using Financial.CashFlow.Application.DTOs;
 using Financial.Presentation.App.ViewModels.CashFlow;
 using Financial.Shared.Abstractions.Observability;
@@ -6,6 +7,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.ViewModels.CashFlow;
 
+[UseCulture("en-GB")]
 public class MonthlyViewModelTests
 {
     private static readonly Guid BarclaysId = Guid.NewGuid();

@@ -1,3 +1,4 @@
+using Financial.Tests;
 using System.Globalization;
 using Financial.Investment.Application.DTOs;
 using Financial.Presentation.App.Converters;
@@ -5,6 +6,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.Converters;
 
+[UseCulture("en-GB")]
 public class FxRateSnapshotToTooltipConverterTests
 {
     private readonly FxRateSnapshotToTooltipConverter _converter = new();

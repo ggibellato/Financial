@@ -1,3 +1,4 @@
+using Financial.Tests;
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Services;
 using Financial.Presentation.App.ViewModels;
@@ -6,6 +7,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.ViewModels;
 
+[UseCulture("en-GB")]
 public class PortfolioAssetSummaryRowViewModelTests
 {
     private static PortfolioAssetSummaryRowViewModel BuildRow(

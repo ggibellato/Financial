@@ -1,3 +1,4 @@
+using Financial.Tests;
 using Financial.Integrations.GoogleSheets;
 using FluentAssertions;
 using Google.Apis.Sheets.v4.Data;
@@ -35,5 +36,16 @@ public class GoogleSheetValueParserTests
         var act = () => GoogleSheetValueParser.ToDecimal(value);
 
         act.Should().Throw<FormatException>();
+    }
+
+    [Theory]
+    [InlineData("12.5", 12.5)]
+    [InlineData("65.637", 65.637)]
+    [InlineData("-656.37", -656.37)]
+    [InlineData("1,234.50", 1234.50)]
+    [UseCulture("pt-BR")]
+    public void ToDecimal_WithMachineFormattedString_ParsesInvariantlyWhateverTheHostCulture(string cell, double expected)
+    {
+        GoogleSheetValueParser.ToDecimal(cell).Should().Be((decimal)expected);
     }
 }

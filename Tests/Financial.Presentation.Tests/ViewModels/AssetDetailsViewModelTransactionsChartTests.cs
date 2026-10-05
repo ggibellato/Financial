@@ -65,7 +65,8 @@ public class AssetDetailsViewModelTransactionsChartTests
         // returns instantly, so the background Task.Run could reach ApplyFetchedTransactions
         // (which sets IsTransactionsLoading = false) before this synchronous assertion runs -
         // a real, previously-observed race (flaked in CI 2026-08-21), not a hypothetical one.
-        var vm = BuildViewModel(transactionQueryService: new BlockingTransactionQueryService());
+        using var blockingService = new BlockingTransactionQueryService();
+        var vm = BuildViewModel(transactionQueryService: blockingService);
         _ = vm.Transactions.LoadBroker("XPI");
         vm.Transactions.IsTransactionsLoading.Should().BeTrue();
     }
@@ -226,24 +227,22 @@ public class AssetDetailsViewModelTransactionsChartTests
         vm.Transactions.IsTransactionsAggregateView.Should().BeFalse();
     }
 
-    private sealed class BlockingTransactionQueryService : ITransactionQueryService
+    private sealed class BlockingTransactionQueryService : ITransactionQueryService, IDisposable
     {
-        // Bounded, not infinite: same reasoning as NeverResolvingPriceService
-        // (AssetDetailsViewModelPortfolioSummaryTests.cs) - the test only needs the block to
-        // outlast its own synchronous assertion, and an unbounded wait would accumulate
-        // permanently-blocked threads across the test run.
-        private readonly SemaphoreSlim _blocker = new(0);
-        private static readonly TimeSpan MaxBlockDuration = TimeSpan.FromSeconds(2);
+        private readonly ManualResetEventSlim _released = new();
+        private static readonly TimeSpan SafetyCap = TimeSpan.FromSeconds(30);
+
+        public void Dispose() => _released.Set();
 
         public IReadOnlyList<TransactionSummaryItemDTO> GetTransactionsByBroker(string brokerName, InvestmentScope scope = InvestmentScope.Active)
         {
-            _blocker.Wait(MaxBlockDuration);
+            _released.Wait(SafetyCap);
             return [];
         }
 
         public IReadOnlyList<TransactionSummaryItemDTO> GetTransactionsByPortfolio(string brokerName, string portfolioName, InvestmentScope scope = InvestmentScope.Active)
         {
-            _blocker.Wait(MaxBlockDuration);
+            _released.Wait(SafetyCap);
             return [];
         }
 

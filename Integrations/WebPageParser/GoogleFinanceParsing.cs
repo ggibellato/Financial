@@ -22,7 +22,7 @@ internal static class GoogleFinanceParsing
             .Replace(GbxCurrencyCode, "")
             .Replace("£", "")
             .Trim();
-        var value = decimal.Parse(cleaned);
+        var value = decimal.Parse(cleaned, NumberStyles.Number, CultureInfo.InvariantCulture);
         if (rawValue.Contains(GbxCurrencyCode))
         {
             value /= GbxPenceToGbpDivisor;

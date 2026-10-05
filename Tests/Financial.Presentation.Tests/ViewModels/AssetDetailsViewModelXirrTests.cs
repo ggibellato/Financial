@@ -1,3 +1,4 @@
+using Financial.Tests;
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
@@ -9,6 +10,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.ViewModels;
 
+[UseCulture("en-GB")]
 public class AssetDetailsViewModelXirrTests
 {
     private static AssetDetailsViewModel BuildViewModel(

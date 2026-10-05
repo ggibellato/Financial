@@ -305,7 +305,8 @@ public class AssetDetailsViewModelBrokerSummaryTests
         // instantly, so the background Task.Run could reach ApplyBrokerBreakdown (which sets
         // IsBreakdownLoading = false) before this synchronous assertion runs - a real,
         // previously-observed race, not a hypothetical one.
-        var vm = BuildViewModel(new BlockingBrokerBreakdownService());
+        using var blockingService = new BlockingBrokerBreakdownService();
+        var vm = BuildViewModel(blockingService);
         _ = vm.LoadBrokerBreakdown("XPI");
         vm.IsBreakdownLoading.Should().BeTrue();
     }
@@ -518,18 +519,16 @@ public class AssetDetailsViewModelBrokerSummaryTests
         vm.IsReportingCurrencyAvailable.Should().BeTrue();
     }
 
-    private sealed class BlockingBrokerBreakdownService : IBrokerBreakdownService
+    private sealed class BlockingBrokerBreakdownService : IBrokerBreakdownService, IDisposable
     {
-        // Bounded, not infinite: same reasoning as NeverResolvingPriceService
-        // (AssetDetailsViewModelPortfolioSummaryTests.cs) - the test only needs the block to
-        // outlast its own synchronous assertion, and an unbounded wait would accumulate
-        // permanently-blocked threads across the test run.
-        private readonly SemaphoreSlim _blocker = new(0);
-        private static readonly TimeSpan MaxBlockDuration = TimeSpan.FromSeconds(2);
+        private readonly ManualResetEventSlim _released = new();
+        private static readonly TimeSpan SafetyCap = TimeSpan.FromSeconds(30);
+
+        public void Dispose() => _released.Set();
 
         public IReadOnlyList<PortfolioBreakdownItemDTO> GetBrokerBreakdown(string brokerName, InvestmentScope scope = InvestmentScope.Active)
         {
-            _blocker.Wait(MaxBlockDuration);
+            _released.Wait(SafetyCap);
             return [];
         }
     }

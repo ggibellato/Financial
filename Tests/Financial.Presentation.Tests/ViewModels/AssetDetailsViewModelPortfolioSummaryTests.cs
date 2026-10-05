@@ -1,3 +1,4 @@
+using Financial.Tests;
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
@@ -9,6 +10,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.ViewModels;
 
+[UseCulture("en-GB")]
 public class AssetDetailsViewModelPortfolioSummaryTests
 {
     private static AssetDetailsViewModel BuildViewModel(
@@ -568,20 +570,8 @@ public class AssetDetailsViewModelPortfolioSummaryTests
 
     private sealed class NeverResolvingPriceService : IAssetPriceLookupService
     {
-        // Bounded, not infinite: every test using this leaves its background Task.Run
-        // blocked on a thread-pool worker for the block's duration. Assertions that rely
-        // on "still loading" check state synchronously right after LoadPortfolioSummary,
-        // so they never depend on the block lasting any particular length - an unbounded
-        // Wait() here just accumulates permanently-blocked threads across the test run
-        // until later, unrelated tests get starved for a thread-pool slot.
-        private readonly SemaphoreSlim _blocker = new SemaphoreSlim(0);
-        private static readonly TimeSpan MaxBlockDuration = TimeSpan.FromSeconds(2);
-
-        public Task<AssetPriceDTO> GetCurrentPriceAsync(AssetPriceRequestDTO request)
-        {
-            _blocker.Wait(MaxBlockDuration);
-            return Task.FromResult(new AssetPriceDTO { Exchange = request.Exchange, Ticker = request.Ticker, Price = 0m });
-        }
+        public Task<AssetPriceDTO> GetCurrentPriceAsync(AssetPriceRequestDTO request) =>
+            new TaskCompletionSource<AssetPriceDTO>().Task;
     }
 
     private sealed class CountingPriceService : IAssetPriceLookupService
