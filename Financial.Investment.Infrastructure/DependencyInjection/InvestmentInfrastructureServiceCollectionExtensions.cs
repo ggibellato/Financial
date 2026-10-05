@@ -80,6 +80,7 @@ public static class InvestmentInfrastructureServiceCollectionExtensions
             new InMemoryCachedExchangeRateProvider(() => new UsdBasedExchangeRateProvider(
                 sp.GetRequiredService<IFxRateStore>(),
                 sp.GetRequiredService<FrankfurterExchangeRateProvider>(),
+                sp.GetRequiredService<TimeProvider>(),
                 sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<UsdBasedExchangeRateProvider>>())));
 
         return services;

@@ -15,7 +15,8 @@ public class FxRateStoreFactoryTests
         new JsonStorageFactory(
             new StubRemoteFileClientFactory(
                 new StubRemoteFileClient(() => new FxRateSerializerAdapter().Serialize(new Dictionary<DateOnly, FxRateRecord>()))),
-            NoOpTelemetryTracer.Instance));
+            NoOpTelemetryTracer.Instance),
+        TestClock.At());
 
     [Fact]
     public void Create_WithNullOptions_Throws()

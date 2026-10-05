@@ -222,7 +222,7 @@ public class GoogleCalendarProviderAdapterTests
             LastClientSecret = clientSecret;
             LastRedirectUri = redirectUri;
             LastCode = code;
-            return Task.FromResult(new GoogleOAuthTokenResult("access-token", "refresh-token", DateTimeOffset.UtcNow.AddHours(1)));
+            return Task.FromResult(new GoogleOAuthTokenResult("access-token", "refresh-token", TestClock.Default.AddHours(1)));
         }
 
         public Task<GoogleOAuthTokenResult> RefreshAccessTokenAsync(
@@ -235,7 +235,7 @@ public class GoogleCalendarProviderAdapterTests
                 throw new GoogleTokenRevokedException("revoked", new InvalidOperationException());
             }
 
-            return Task.FromResult(new GoogleOAuthTokenResult("refreshed-access-token", null, DateTimeOffset.UtcNow.AddHours(1)));
+            return Task.FromResult(new GoogleOAuthTokenResult("refreshed-access-token", null, TestClock.Default.AddHours(1)));
         }
 
         public Task RevokeTokenAsync(string token, CancellationToken cancellationToken = default) => Task.CompletedTask;

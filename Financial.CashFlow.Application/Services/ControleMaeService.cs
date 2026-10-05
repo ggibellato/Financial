@@ -4,6 +4,7 @@ using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
 using Financial.Shared.Abstractions.Currencies;
 using Financial.Shared.Abstractions.Observability;
+using Financial.Shared.Abstractions.Time;
 using Microsoft.Extensions.Logging;
 
 namespace Financial.CashFlow.Application.Services;
@@ -14,13 +15,15 @@ public sealed class ControleMaeService : IControleMaeService
 
     private readonly ICashFlowRepository _repository;
     private readonly IExchangeRateProvider _exchangeRateProvider;
+    private readonly TimeProvider _timeProvider;
     private readonly ITelemetryTracer _tracer;
     private readonly ILogger<ControleMaeService> _logger;
 
-    public ControleMaeService(ICashFlowRepository repository, IExchangeRateProvider exchangeRateProvider, ITelemetryTracer tracer, ILogger<ControleMaeService> logger)
+    public ControleMaeService(ICashFlowRepository repository, IExchangeRateProvider exchangeRateProvider, TimeProvider timeProvider, ITelemetryTracer tracer, ILogger<ControleMaeService> logger)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _exchangeRateProvider = exchangeRateProvider ?? throw new ArgumentNullException(nameof(exchangeRateProvider));
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -48,7 +51,7 @@ public sealed class ControleMaeService : IControleMaeService
                 throw new ArgumentException($"Currency '{request.SourceCurrency}' is not recognized.");
             }
 
-            var today = DateOnly.FromDateTime(DateTime.Now);
+            var today = _timeProvider.GetLocalToday();
             if (request.Date > today)
             {
                 throw new ArgumentException("Date must not be in the future.");

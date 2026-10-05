@@ -15,12 +15,14 @@ public sealed class InvestmentSnapshotService : IInvestmentSnapshotService
     private const string EntityType = "InvestmentSnapshot";
 
     private readonly ICashFlowRepository _repository;
+    private readonly TimeProvider _timeProvider;
     private readonly ITelemetryTracer _tracer;
     private readonly ILogger<InvestmentSnapshotService> _logger;
 
-    public InvestmentSnapshotService(ICashFlowRepository repository, ITelemetryTracer tracer, ILogger<InvestmentSnapshotService> logger)
+    public InvestmentSnapshotService(ICashFlowRepository repository, TimeProvider timeProvider, ITelemetryTracer tracer, ILogger<InvestmentSnapshotService> logger)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -32,7 +34,7 @@ public sealed class InvestmentSnapshotService : IInvestmentSnapshotService
         {
             var accounts = _repository.GetInvestmentAccounts().ToList();
             var allSnapshots = _repository.GetInvestmentSnapshots().ToList();
-            var scopedAccounts = YearScopedInvestmentAccountResolver.ResolveForYear(accounts, allSnapshots, year, DateTime.Now.Year);
+            var scopedAccounts = YearScopedInvestmentAccountResolver.ResolveForYear(accounts, allSnapshots, year, _timeProvider.GetLocalNow().Year);
             var scopedIds = scopedAccounts.Select(a => a.Id).ToHashSet();
 
             var existingSnapshots = allSnapshots

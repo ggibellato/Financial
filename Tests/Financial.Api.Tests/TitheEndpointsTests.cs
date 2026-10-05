@@ -116,7 +116,7 @@ public class TitheEndpointsTests : ApiEndpointTests
     // --- Carry-forward: dates computed relative to "today" since the effective-from boundary
     // auto-anchors to the real current month the first time it's resolved (see TitheServiceTests).
 
-    private static DateOnly ThisMonth => new(DateTime.Today.Year, DateTime.Today.Month, 1);
+    private static DateOnly ThisMonth => new(TestClock.Today.Year, TestClock.Today.Month, 1);
     private static DateOnly NextMonth => ThisMonth.AddMonths(1);
 
     [Fact]

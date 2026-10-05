@@ -52,7 +52,7 @@ public class FxRateSerializerAdapterTests
     [Fact]
     public void Round_Trip_Preserves_At_Least_Six_Decimal_Places()
     {
-        var record = new FxRateRecord(5.452317m, 0.771845m, "frankfurter", DateTimeOffset.UtcNow);
+        var record = new FxRateRecord(5.452317m, 0.771845m, "frankfurter", TestClock.Default);
         var ratesByDate = new Dictionary<DateOnly, FxRateRecord> { [new DateOnly(2026, 9, 18)] = record };
 
         var json = Serializer.Serialize(ratesByDate);
@@ -81,8 +81,8 @@ public class FxRateSerializerAdapterTests
     {
         var ratesByDate = new Dictionary<DateOnly, FxRateRecord>
         {
-            [new DateOnly(2026, 9, 17)] = new FxRateRecord(5.40m, 0.77m, "frankfurter", DateTimeOffset.UtcNow),
-            [new DateOnly(2026, 9, 18)] = new FxRateRecord(5.45m, 0.78m, "frankfurter", DateTimeOffset.UtcNow)
+            [new DateOnly(2026, 9, 17)] = new FxRateRecord(5.40m, 0.77m, "frankfurter", TestClock.Default),
+            [new DateOnly(2026, 9, 18)] = new FxRateRecord(5.45m, 0.78m, "frankfurter", TestClock.Default)
         };
 
         var json = Serializer.Serialize(ratesByDate);

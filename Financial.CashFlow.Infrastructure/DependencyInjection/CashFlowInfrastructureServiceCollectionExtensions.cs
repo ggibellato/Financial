@@ -29,6 +29,7 @@ public static class CashFlowInfrastructureServiceCollectionExtensions
             options.GoogleDriveCredentialsPath = configuration[CashFlowRepositoryConfigurationKeys.GoogleDriveCredentialsPath];
             options.GoogleDriveFilePath = configuration[CashFlowRepositoryConfigurationKeys.GoogleDriveFilePath];
         });
+        services.TryAddSingleton(TimeProvider.System);
         services.AddSingleton<ICashFlowSerializer, CashFlowSerializerAdapter>();
         services.AddHttpClient<FrankfurterExchangeRateProvider>();
         // TryAdd: Investment's own AddFinancialInfrastructure registers the same shared
@@ -38,6 +39,7 @@ public static class CashFlowInfrastructureServiceCollectionExtensions
             new InMemoryCachedExchangeRateProvider(() => new UsdBasedExchangeRateProvider(
                 sp.GetRequiredService<IFxRateStore>(),
                 sp.GetRequiredService<FrankfurterExchangeRateProvider>(),
+                sp.GetRequiredService<TimeProvider>(),
                 sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<UsdBasedExchangeRateProvider>>())));
         services.AddSingleton<ICashFlowRepository>(sp =>
         {

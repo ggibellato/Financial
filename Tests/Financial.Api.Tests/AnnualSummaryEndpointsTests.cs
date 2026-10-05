@@ -227,7 +227,7 @@ public class AnnualSummaryEndpointsTests : ApiEndpointTests
     [Fact]
     public async Task GetInvestmentAnnualResult_NoData_ReturnsEmptyAccountsArray()
     {
-        var pastYear = DateTime.UtcNow.Year - 5;
+        var pastYear = TestClock.Today.Year - 5;
 
         var response = await Client.GetAsync($"/api/v1/financial/annual-summary/{pastYear}/investment-annual-result");
 

@@ -32,7 +32,7 @@ public class TitheServiceTests
     }
 
     private TitheService CreateService(StubCashFlowRepository? repository = null) =>
-        new(repository ?? _repository, _tracer, Logger);
+        new(repository ?? _repository, TestClock.At(), _tracer, Logger);
 
     [Fact]
     public async Task GetTitheSummaryAsync_CalculatesTenPercentOfMonthlyNetIncomeAcrossSources()
@@ -170,11 +170,10 @@ public class TitheServiceTests
         result.CarryForward.Should().BeNull();
     }
 
-    // --- Carry-forward: these use dates computed relative to "today" (like CardStatementServiceTests
-    // does for DateTime.Today-dependent behavior), since TitheCarryForwardEffectiveFrom auto-anchors
-    // to the real current month the first time it's read as unset.
+    // --- Carry-forward: dates are relative to the pinned clock, since TitheCarryForwardEffectiveFrom
+    // auto-anchors to the current month the first time it's read as unset.
 
-    private static DateOnly ThisMonth => new(DateTime.Today.Year, DateTime.Today.Month, 1);
+    private static DateOnly ThisMonth => new(TestClock.Today.Year, TestClock.Today.Month, 1);
     private static DateOnly NextMonth => ThisMonth.AddMonths(1);
     private static DateOnly MonthAfterNext => ThisMonth.AddMonths(2);
 

@@ -27,7 +27,7 @@ public class CardStatementServiceTests
     }
 
     private CardStatementService CreateService(StubCashFlowRepository? repository = null) =>
-        new(repository ?? _repository, NullLogger<CardStatementService>.Instance, _tracer);
+        new(repository ?? _repository, TestClock.At(), NullLogger<CardStatementService>.Instance, _tracer);
 
     private static CreditCard Card(StubCashFlowRepository repository, string name) =>
         repository.CreditCards.First(c => c.Name == name);
@@ -182,7 +182,7 @@ public class CardStatementServiceTests
         {
             result.IsPaid.Should().BeTrue();
             result.OutstandingTotal.Should().Be(0m);
-            var today = DateOnly.FromDateTime(DateTime.Today);
+            var today = TestClock.Today;
             foreach (var expense in new[] { first, second })
             {
                 expense.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardSettled);

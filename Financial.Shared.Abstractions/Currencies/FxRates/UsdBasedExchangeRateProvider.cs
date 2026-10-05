@@ -1,3 +1,4 @@
+using Financial.Shared.Abstractions.Time;
 using Microsoft.Extensions.Logging;
 
 namespace Financial.Shared.Abstractions.Currencies.FxRates;
@@ -6,13 +7,15 @@ public sealed class UsdBasedExchangeRateProvider : IExchangeRateProvider
 {
     private readonly IFxRateStore _store;
     private readonly IUsdRateFetcher _fetcher;
+    private readonly TimeProvider _timeProvider;
     private readonly ILogger<UsdBasedExchangeRateProvider> _logger;
 
     public UsdBasedExchangeRateProvider(
-        IFxRateStore store, IUsdRateFetcher fetcher, ILogger<UsdBasedExchangeRateProvider> logger)
+        IFxRateStore store, IUsdRateFetcher fetcher, TimeProvider timeProvider, ILogger<UsdBasedExchangeRateProvider> logger)
     {
         _store = store ?? throw new ArgumentNullException(nameof(store));
         _fetcher = fetcher ?? throw new ArgumentNullException(nameof(fetcher));
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -23,7 +26,7 @@ public sealed class UsdBasedExchangeRateProvider : IExchangeRateProvider
             return 1m;
         }
 
-        var today = DateOnly.FromDateTime(DateTime.Now);
+        var today = _timeProvider.GetLocalToday();
 
         if (date >= today)
         {
@@ -40,7 +43,7 @@ public sealed class UsdBasedExchangeRateProvider : IExchangeRateProvider
         var fetched = await _fetcher.FetchAsync(date).ConfigureAwait(false);
         if (fetched.BrlRate is not null && fetched.GbpRate is not null)
         {
-            var record = new FxRateRecord(fetched.BrlRate.Value, fetched.GbpRate.Value, "frankfurter", DateTimeOffset.UtcNow);
+            var record = new FxRateRecord(fetched.BrlRate.Value, fetched.GbpRate.Value, "frankfurter", _timeProvider.GetUtcNow());
             await _store.SetRateAsync(date, record).ConfigureAwait(false);
         }
 

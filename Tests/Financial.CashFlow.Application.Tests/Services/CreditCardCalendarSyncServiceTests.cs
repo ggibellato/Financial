@@ -27,7 +27,7 @@ public class CreditCardCalendarSyncServiceTests
         _connectionStore = new FakeCalendarConnectionStore();
         _calendarIntegrationService = new FakeCalendarIntegrationService();
         _repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true);
-        _cardStatementService = new CardStatementService(_repository, NullLogger<CardStatementService>.Instance, new RecordingTelemetryTracer());
+        _cardStatementService = new CardStatementService(_repository, TestClock.At(), NullLogger<CardStatementService>.Instance, new RecordingTelemetryTracer());
         _statusStore = new SignallingCalendarSyncStatusStore();
         _timeProvider = new FakeTimeProvider(Now);
         _sut = new CreditCardCalendarSyncService(

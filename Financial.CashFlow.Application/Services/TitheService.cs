@@ -3,6 +3,7 @@ using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
+using Financial.Shared.Abstractions.Time;
 using Microsoft.Extensions.Logging;
 
 namespace Financial.CashFlow.Application.Services;
@@ -12,12 +13,14 @@ public sealed class TitheService : ITitheService
     private const string EntityType = "TitheSummary";
 
     private readonly ICashFlowRepository _repository;
+    private readonly TimeProvider _timeProvider;
     private readonly ITelemetryTracer _tracer;
     private readonly ILogger<TitheService> _logger;
 
-    public TitheService(ICashFlowRepository repository, ITelemetryTracer tracer, ILogger<TitheService> logger)
+    public TitheService(ICashFlowRepository repository, TimeProvider timeProvider, ITelemetryTracer tracer, ILogger<TitheService> logger)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -92,7 +95,8 @@ public sealed class TitheService : ITitheService
             return effectiveFrom.Value;
         }
 
-        var anchor = new DateOnly(DateTime.Today.Year, DateTime.Today.Month, 1);
+        var today = _timeProvider.GetLocalToday();
+        var anchor = new DateOnly(today.Year, today.Month, 1);
         await _repository.ApplyAndSaveAsync(() =>
         {
             _repository.SetTitheCarryForwardEffectiveFrom(anchor);
