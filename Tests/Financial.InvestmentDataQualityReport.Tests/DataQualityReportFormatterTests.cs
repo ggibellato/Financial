@@ -6,6 +6,7 @@ using FluentAssertions;
 
 namespace Financial.InvestmentDataQualityReport.Tests;
 
+[Trait("Category", "Unit")]
 public class DataQualityReportFormatterTests
 {
     [Fact]

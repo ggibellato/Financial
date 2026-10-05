@@ -4,6 +4,7 @@ using FluentAssertions;
 
 namespace Financial.Investment.Domain.Tests.Domain;
 
+[Trait("Category", "Unit")]
 public class TransactionFeeCalculatorTests
 {
     [Fact]

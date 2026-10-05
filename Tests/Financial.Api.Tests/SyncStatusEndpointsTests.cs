@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Financial.Api.Tests;
 
+[Trait("Category", "Integration")]
 public class SyncStatusEndpointsTests : ApiEndpointTests
 {
     [Fact]

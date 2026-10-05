@@ -9,6 +9,7 @@ using CreditCard = Financial.CashFlow.Domain.Entities.CreditCard;
 
 namespace Financial.CashFlow.Infrastructure.Tests.Persistence;
 
+[Trait("Category", "Unit")]
 public class CashFlowSerializerAdapterTests
 {
     private readonly CashFlowSerializerAdapter _sut;

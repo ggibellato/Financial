@@ -8,6 +8,7 @@ using Xunit;
 
 namespace Financial.Investment.Application.Tests.Services;
 
+[Trait("Category", "Unit")]
 public class PortfolioDashboardConvertedBuilderTests
 {
     private static readonly DateOnly AsOf = new(2026, 8, 14);

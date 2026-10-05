@@ -6,8 +6,9 @@ namespace Financial.WebPageParser.Tests;
 /// <summary>
 /// Manual verification tests for Google Finance selectors.
 /// These tests make real HTTP requests and should be run manually when verifying selector changes.
-/// Mark as [Fact] to run, or keep as [Fact(Skip = "Manual")] to skip in CI.
+/// Category=Live: excluded from PR CI, run with `dotnet test --filter Category=Live`.
 /// </summary>
+[Trait("Category", "Live")]
 public class GoogleFinanceVerificationTests
 {
     private readonly ITestOutputHelper _output;
@@ -17,7 +18,7 @@ public class GoogleFinanceVerificationTests
         _output = output;
     }
 
-    [Fact(Skip = "Manual verification test - requires internet connection")]
+    [Fact]
     public void VerifySelectors_WithMultipleBrazilianStocks()
     {
         _output.WriteLine("Testing Google Finance selectors with live data...");
@@ -49,7 +50,7 @@ public class GoogleFinanceVerificationTests
         }
     }
 
-    [Fact(Skip = "Manual verification test - requires internet connection")]
+    [Fact]
     public void VerifySelectors_WithInternationalStocks()
     {
         _output.WriteLine("Testing Google Finance selectors with international stocks...");
@@ -79,7 +80,7 @@ public class GoogleFinanceVerificationTests
         }
     }
 
-    [Fact(Skip = "Manual - use this to run the detailed verifier utility")]
+    [Fact]
     public void RunDetailedVerification()
     {
         GoogleFinanceVerifier.VerifyMultipleUrls();

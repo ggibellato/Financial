@@ -8,6 +8,7 @@ using FluentAssertions.Execution;
 
 namespace Financial.Investment.Application.Tests.Services;
 
+[Trait("Category", "Unit")]
 public class TaxRuleServiceTests
 {
     private readonly StubInvestmentRepository _repository = new() { Investments = Domain.Entities.Investments.Create() };

@@ -5,6 +5,7 @@ using FluentAssertions;
 namespace Financial.Presentation.Tests.ViewModels.Admin;
 
 [UseCulture("en-GB")]
+[Trait("Category", "Unit")]
 public class ReserveBucketFormDialogViewModelTests
 {
     [Fact]

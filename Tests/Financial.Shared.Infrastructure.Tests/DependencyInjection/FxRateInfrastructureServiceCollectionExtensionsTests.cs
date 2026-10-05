@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Financial.Shared.Infrastructure.Tests.DependencyInjection;
 
+[Trait("Category", "Integration")]
 public class FxRateInfrastructureServiceCollectionExtensionsTests
 {
     [Fact]

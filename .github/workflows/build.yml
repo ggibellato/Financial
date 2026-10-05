@@ -96,7 +96,7 @@ jobs:
     # Every test project in the solution except the WPF ones: `wpf` owns the view-model tests and
     # `wpf-e2e` the UI-automation suite, which needs an interactive desktop and the built exe.
     - name: Run tests
-      run: dotnet test --configuration Release --no-build --verbosity normal --filter "FullyQualifiedName!~Financial.Presentation.Tests&Category!=E2E" --settings coverlet.runsettings --results-directory TestResults
+      run: dotnet test --configuration Release --no-build --verbosity normal --filter "FullyQualifiedName!~Financial.Presentation.Tests&Category!=E2E&Category!=Live" --settings coverlet.runsettings --results-directory TestResults
 
     # coverlet.runsettings declares the XPlat collector itself, so --settings is enough to turn
     # collection on - no --collect argument, and so no "XPlat Code Coverage" quoting to get wrong

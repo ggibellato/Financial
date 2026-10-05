@@ -8,6 +8,7 @@ using FluentAssertions;
 
 namespace Financial.Investment.Infrastructure.Tests.Services;
 
+[Trait("Category", "Integration")]
 public class BondAssetPriceFetcherTests
 {
     /// <summary>Every test drives the same BondAssetPriceFetcher, so it is wired once here.</summary>

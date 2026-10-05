@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Financial.CashFlow.Application.Tests.Services;
 
+[Trait("Category", "Unit")]
 public class CategoryServiceTests
 {
     private static readonly Microsoft.Extensions.Logging.ILogger<CategoryService> Logger = NullLogger<CategoryService>.Instance;

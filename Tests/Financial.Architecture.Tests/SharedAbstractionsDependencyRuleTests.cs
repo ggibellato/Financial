@@ -4,6 +4,7 @@ using FluentAssertions;
 
 namespace Financial.Architecture.Tests;
 
+[Trait("Category", "Unit")]
 public class SharedAbstractionsDependencyRuleTests
 {
     private static readonly Assembly SharedAbstractionsAssembly =

@@ -2,6 +2,7 @@ using FluentAssertions;
 
 namespace Financial.Api.Tests;
 
+[Trait("Category", "Unit")]
 public class SnapshotUpdateFlagTests
 {
     private static Func<string, string?> Environment(string? flag, string? ci) =>

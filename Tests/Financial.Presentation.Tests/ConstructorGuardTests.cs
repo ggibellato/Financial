@@ -3,6 +3,7 @@ using Financial.TestUtilities;
 
 namespace Financial.Presentation.Tests;
 
+[Trait("Category", "Unit")]
 public class ConstructorGuardTests
 {
     private static readonly Dictionary<string, string> Allowed = new()

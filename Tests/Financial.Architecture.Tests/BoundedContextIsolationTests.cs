@@ -3,6 +3,7 @@ using Financial.Architecture.Tests.Infrastructure;
 
 namespace Financial.Architecture.Tests;
 
+[Trait("Category", "Unit")]
 public class BoundedContextIsolationTests
 {
     public static TheoryData<string, string, string> ContextLayers => new()

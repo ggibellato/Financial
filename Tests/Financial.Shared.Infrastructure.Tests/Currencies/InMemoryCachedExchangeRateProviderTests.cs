@@ -3,6 +3,7 @@ using FluentAssertions;
 
 namespace Financial.Shared.Infrastructure.Tests.Currencies;
 
+[Trait("Category", "Unit")]
 public class InMemoryCachedExchangeRateProviderTests
 {
     private sealed class CountingExchangeRateProvider : IExchangeRateProvider

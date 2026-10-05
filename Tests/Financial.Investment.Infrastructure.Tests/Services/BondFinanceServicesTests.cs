@@ -6,6 +6,7 @@ using FluentAssertions;
 
 namespace Financial.Investment.Infrastructure.Tests.Services;
 
+[Trait("Category", "Integration")]
 public class BondFinanceServicesTests
 {
     public static TheoryData<string, Func<Func<string, AssetValueSnapshot>?, IFinanceService>, string, decimal> Services() => new()

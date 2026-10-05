@@ -5,6 +5,7 @@ using OxyPlot.Annotations;
 
 namespace Financial.Presentation.Tests.ViewModels;
 
+[Trait("Category", "Unit")]
 public class OxyPlotChartBuilderHelpersTests
 {
     [Theory]

@@ -6,6 +6,7 @@ using FluentAssertions;
 
 namespace Financial.InvestmentSpreadsheetImport.Tests;
 
+[Trait("Category", "Unit")]
 public class GoogleSheetsAssetReaderTests
 {
     private readonly StubDataSource _dataSource;

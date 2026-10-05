@@ -4,6 +4,7 @@ using FluentAssertions;
 
 namespace Financial.Investment.Application.Tests.Services;
 
+[Trait("Category", "Unit")]
 public class XirrCalculationServiceTests
 {
     private readonly XirrCalculationService _sut = new(TestClock.At());

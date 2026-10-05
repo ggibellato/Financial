@@ -6,6 +6,7 @@ using FluentAssertions.Execution;
 
 namespace Financial.Investment.Domain.Tests;
 
+[Trait("Category", "Unit")]
 public class AssetTests
 {
     [Fact]

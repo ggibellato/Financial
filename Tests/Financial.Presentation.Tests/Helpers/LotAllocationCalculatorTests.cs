@@ -5,6 +5,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.Helpers;
 
+[Trait("Category", "Unit")]
 public class LotAllocationCalculatorTests
 {
     private static LotAllocationRowViewModel Row(decimal remaining, decimal quantity = 0m) =>

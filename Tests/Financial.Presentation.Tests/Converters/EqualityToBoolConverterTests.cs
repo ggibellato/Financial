@@ -4,6 +4,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.Converters;
 
+[Trait("Category", "Unit")]
 public class EqualityToBoolConverterTests
 {
     private readonly EqualityToBoolConverter _converter = new();

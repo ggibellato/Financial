@@ -9,6 +9,7 @@ using System.Text.Json;
 
 namespace Financial.Api.Tests;
 
+[Trait("Category", "Integration")]
 public class AssetPriceFetchEndpointsTests
 {
     private static readonly JsonSerializerOptions CaseInsensitiveJson = new() { PropertyNameCaseInsensitive = true };

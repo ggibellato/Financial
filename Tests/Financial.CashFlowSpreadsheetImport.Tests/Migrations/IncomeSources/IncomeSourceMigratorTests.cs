@@ -5,6 +5,7 @@ using FluentAssertions;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.Migrations.IncomeSources;
 
+[Trait("Category", "Unit")]
 public class IncomeSourceMigratorTests
 {
     [Fact]

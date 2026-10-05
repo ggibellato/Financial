@@ -4,6 +4,7 @@ using FluentAssertions;
 
 namespace Financial.CashFlow.Domain.Tests.Rules;
 
+[Trait("Category", "Unit")]
 public class ReserveSplitAllocatorTests
 {
     private static readonly decimal[] ThirdsSplit = [33.33m, 33.33m, 33.34m];

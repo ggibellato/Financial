@@ -4,6 +4,7 @@ using HtmlAgilityPack;
 
 namespace Financial.WebPageParser.Tests;
 
+[Trait("Category", "Unit")]
 public class DicionarioDoInvestidorTests
 {
     [Fact]

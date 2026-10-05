@@ -13,6 +13,7 @@ namespace Financial.Presentation.Tests.Views.Investment;
 /// MultiBinding paths) and asserts every one resolves to a real DTO property, following
 /// ExpenseGridBindingTests's pattern.
 /// </summary>
+[Trait("Category", "Unit")]
 public class TransactionsAndCreditsGridBindingTests
 {
     [Fact]

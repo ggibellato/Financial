@@ -17,6 +17,7 @@ namespace Financial.Presentation.Tests.Services;
 /// manually instead - run Financial.App and complete a real Google Calendar connect (see F04's
 /// spec.md addendum).
 /// </summary>
+[Trait("Category", "Unit")]
 public class CalendarOAuthCallbackListenerTests
 {
     [Fact]

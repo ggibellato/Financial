@@ -7,6 +7,7 @@ using FluentAssertions;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.Migrations.Incomes;
 
+[Trait("Category", "Unit")]
 public class IncomeMigratorTests
 {
     private static readonly Bank Chase = Bank.Create("Chase", roundUpEnabled: true);

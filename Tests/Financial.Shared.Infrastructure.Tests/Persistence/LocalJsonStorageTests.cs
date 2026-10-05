@@ -4,6 +4,7 @@ using System.IO;
 
 namespace Financial.Shared.Infrastructure.Tests.Persistence;
 
+[Trait("Category", "Integration")]
 public class LocalJsonStorageTests
 {
     [Fact]

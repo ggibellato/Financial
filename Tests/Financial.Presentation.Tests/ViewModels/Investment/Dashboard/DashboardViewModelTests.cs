@@ -8,6 +8,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.ViewModels.Investment.Dashboard;
 
+[Trait("Category", "Unit")]
 public class DashboardViewModelTests
 {
     private static AllocationBreakdownDTO Allocation() => new()

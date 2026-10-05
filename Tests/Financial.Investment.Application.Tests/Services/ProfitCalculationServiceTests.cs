@@ -3,6 +3,7 @@ using FluentAssertions;
 
 namespace Financial.Investment.Application.Tests.Services;
 
+[Trait("Category", "Unit")]
 public class ProfitCalculationServiceTests
 {
     private readonly ProfitCalculationService _sut = new();

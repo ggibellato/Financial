@@ -6,6 +6,7 @@ using Google;
 
 namespace Financial.GoogleIntegrations.Tests;
 
+[Trait("Category", "Unit")]
 public class GoogleTransientErrorTranslatorTests
 {
     private static GoogleApiException GoogleApiException(HttpStatusCode statusCode) =>

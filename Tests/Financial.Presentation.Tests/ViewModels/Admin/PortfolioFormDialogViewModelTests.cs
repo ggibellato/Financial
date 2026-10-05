@@ -3,6 +3,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.ViewModels.Admin;
 
+[Trait("Category", "Unit")]
 public class PortfolioFormDialogViewModelTests
 {
     [Fact]

@@ -4,6 +4,7 @@ using FluentAssertions.Execution;
 
 namespace Financial.CashFlow.Domain.Tests.Entities
 {
+    [Trait("Category", "Unit")]
     public class CreditCardTests
     {
         [Fact]

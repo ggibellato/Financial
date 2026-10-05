@@ -13,6 +13,7 @@ namespace Financial.Api.Tests.Controllers;
 /// <summary>The dividend lookup catches swallow provider exceptions into a 404; the failure
 /// must be visible in the log stream (logging-audit.md residual finding), carrying the public
 /// ticker symbol and the exception type - never the provider's message.</summary>
+[Trait("Category", "Unit")]
 public class DividendsControllerLoggingTests
 {
     private const string ProviderMessage = "provider row said: account 12345 balance 999.99";

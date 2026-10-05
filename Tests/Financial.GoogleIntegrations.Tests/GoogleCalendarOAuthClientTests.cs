@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Financial.GoogleIntegrations.Tests;
 
+[Trait("Category", "Unit")]
 public class GoogleCalendarOAuthClientTests
 {
     private static IGoogleCalendarOAuthClient CreateClient()

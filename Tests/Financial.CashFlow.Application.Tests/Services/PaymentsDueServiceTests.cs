@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Financial.CashFlow.Application.Tests.Services;
 
+[Trait("Category", "Unit")]
 public class PaymentsDueServiceTests
 {
     private static readonly Microsoft.Extensions.Logging.ILogger<PaymentsDueService> Logger = NullLogger<PaymentsDueService>.Instance;

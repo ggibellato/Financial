@@ -5,6 +5,7 @@ using OxyPlot.Series;
 
 namespace Financial.Presentation.Tests.ViewModels;
 
+[Trait("Category", "Unit")]
 public class CreditsChartBuilderTests
 {
     private static List<CreditsMonthTypeTotals> BuildMonths() => new()

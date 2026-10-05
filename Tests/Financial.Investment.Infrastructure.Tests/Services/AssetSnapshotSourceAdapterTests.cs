@@ -4,6 +4,7 @@ using FluentAssertions;
 
 namespace Financial.Investment.Infrastructure.Tests.Services;
 
+[Trait("Category", "Integration")]
 public class AssetSnapshotSourceAdapterTests
 {
     [Fact]

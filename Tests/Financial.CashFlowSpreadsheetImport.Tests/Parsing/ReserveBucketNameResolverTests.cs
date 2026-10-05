@@ -4,6 +4,7 @@ using FluentAssertions;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.Parsing;
 
+[Trait("Category", "Unit")]
 public class ReserveBucketNameResolverTests
 {
     private static readonly ReserveBucket[] Buckets =

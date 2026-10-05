@@ -5,6 +5,7 @@ using Serilog;
 
 namespace Financial.Observability.Tests;
 
+[Trait("Category", "Unit")]
 public class SerilogObservabilityExtensionsTests
 {
     [Fact]

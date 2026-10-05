@@ -6,6 +6,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.ViewModels;
 
+[Trait("Category", "Unit")]
 public class AssetDetailsViewModelDisposalsTests
 {
     private static AssetDetailsViewModel BuildViewModel()

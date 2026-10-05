@@ -10,6 +10,7 @@ namespace Financial.Architecture.Tests;
 /// shared contracts only through Financial.Shared.Abstractions, never through
 /// Financial.Shared.Infrastructure directly.
 /// </summary>
+[Trait("Category", "Unit")]
 public class SharedInfrastructureIsolationRuleTests
 {
     public static TheoryData<string> IsolatedProjects => new()

@@ -4,6 +4,7 @@ using FluentAssertions.Execution;
 
 namespace Financial.CashFlow.Domain.Tests;
 
+[Trait("Category", "Unit")]
 public class CardStatementTests
 {
     private static readonly CreditCard BarclaysPlatinumVisa8003 = CreditCard.Create("BarclaysPlatinumVisa8003");

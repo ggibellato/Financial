@@ -6,6 +6,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.ViewModels.Admin;
 
+[Trait("Category", "Unit")]
 public class PortfoliosViewModelTests
 {
     private static (PortfoliosViewModel ViewModel, StubPortfolioService PortfolioService, StubBrokerService BrokerService, StubDialogService Dialog) CreateViewModel()

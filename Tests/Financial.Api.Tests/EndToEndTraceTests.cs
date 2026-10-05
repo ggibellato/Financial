@@ -21,6 +21,7 @@ namespace Financial.Api.Tests;
 /// Core's per-request Activity (auto-instrumentation); the two explicit spans are captured by a
 /// RecordingTelemetryTracer registered via ConfigureTestServices, and correlation is proven by
 /// both spans carrying that same request Activity's trace id.</summary>
+[Trait("Category", "Integration")]
 public class EndToEndTraceTests
 {
     private static readonly Guid BarclaysId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000001");

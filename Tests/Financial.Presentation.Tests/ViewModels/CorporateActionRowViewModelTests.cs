@@ -5,6 +5,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.ViewModels;
 
+[Trait("Category", "Unit")]
 public class CorporateActionRowViewModelTests
 {
     private const string AffectedAssetName = "BBAS3";

@@ -6,6 +6,7 @@ using OxyPlot.Series;
 
 namespace Financial.Presentation.Tests.ViewModels;
 
+[Trait("Category", "Unit")]
 public class PriceHistoryChartBuilderTests
 {
     [Fact]

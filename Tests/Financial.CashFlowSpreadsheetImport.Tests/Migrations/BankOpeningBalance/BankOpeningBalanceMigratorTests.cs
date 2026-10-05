@@ -4,6 +4,7 @@ using FluentAssertions;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.Migrations.BankOpeningBalance;
 
+[Trait("Category", "Unit")]
 public class BankOpeningBalanceMigratorTests
 {
     private static readonly DateOnly RunDate = new(2026, 7, 24);

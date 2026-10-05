@@ -4,6 +4,7 @@ using FluentAssertions;
 
 namespace Financial.Observability.Tests;
 
+[Trait("Category", "Unit")]
 public class OtlpExporterSettingsResolverTests
 {
     [Fact]

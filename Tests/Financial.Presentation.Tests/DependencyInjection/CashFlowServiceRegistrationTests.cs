@@ -12,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Financial.Presentation.Tests.DependencyInjection;
 
+[Trait("Category", "Unit")]
 public class CashFlowServiceRegistrationTests
 {
     [Fact]

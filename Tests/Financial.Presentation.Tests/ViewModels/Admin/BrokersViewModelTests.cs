@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Financial.Presentation.Tests.ViewModels.Admin;
 
+[Trait("Category", "Unit")]
 public class BrokersViewModelTests
 {
     private static (BrokersViewModel ViewModel, StubBrokerService Service, StubDialogService Dialog) CreateViewModel()

@@ -7,6 +7,7 @@ using FluentAssertions;
 namespace Financial.Presentation.Tests.ViewModels.CashFlow;
 
 [UseCulture("en-GB")]
+[Trait("Category", "Unit")]
 public class ReservaViewModelTests
 {
     private static readonly Guid InvestimentoId = Guid.NewGuid();

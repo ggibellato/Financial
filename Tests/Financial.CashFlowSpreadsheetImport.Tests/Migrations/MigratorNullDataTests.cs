@@ -8,6 +8,7 @@ using FluentAssertions;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.Migrations;
 
+[Trait("Category", "Unit")]
 public class MigratorNullDataTests
 {
     public static TheoryData<string, Action> MigratorsOverData() => new()

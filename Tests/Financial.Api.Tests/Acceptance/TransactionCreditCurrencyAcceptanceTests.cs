@@ -15,6 +15,7 @@ namespace Financial.Api.Tests.Acceptance;
 /// the same Integration pattern as any other AC-tracing test, just without a response body to read
 /// the captured fields from.
 /// </summary>
+[Trait("Category", "Integration")]
 public class TransactionCreditCurrencyAcceptanceTests : ApiEndpointTests
 {
     private const string BrokerName = "XPI";

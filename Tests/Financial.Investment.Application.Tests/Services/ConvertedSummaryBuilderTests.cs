@@ -9,6 +9,7 @@ using Xunit;
 
 namespace Financial.Investment.Application.Tests.Services;
 
+[Trait("Category", "Unit")]
 public class ConvertedSummaryBuilderTests
 {
     private static readonly DateTime AsOf = new(2026, 8, 14);

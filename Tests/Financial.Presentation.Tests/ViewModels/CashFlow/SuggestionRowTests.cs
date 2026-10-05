@@ -4,6 +4,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.ViewModels.CashFlow;
 
+[Trait("Category", "Unit")]
 public class SuggestionRowTests
 {
     private static InvestmentSnapshotSuggestionDTO CreateDto(decimal currentValue) => new()
@@ -57,6 +58,7 @@ public class SuggestionRowTests
     }
 }
 
+[Trait("Category", "Unit")]
 public class SuggestionSkippedRowTests
 {
     [Fact]

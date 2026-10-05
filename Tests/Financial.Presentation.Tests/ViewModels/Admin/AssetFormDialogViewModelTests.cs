@@ -5,6 +5,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.ViewModels.Admin;
 
+[Trait("Category", "Unit")]
 public class AssetFormDialogViewModelTests
 {
     private static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> PortfoliosByBroker =

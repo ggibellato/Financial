@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Financial.CashFlow.Application.Tests.Services;
 
+[Trait("Category", "Unit")]
 public class TitheServiceTests
 {
     private static readonly Microsoft.Extensions.Logging.ILogger<TitheService> Logger = NullLogger<TitheService>.Instance;

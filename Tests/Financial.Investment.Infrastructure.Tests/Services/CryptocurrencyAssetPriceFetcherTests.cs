@@ -9,6 +9,7 @@ using FluentAssertions;
 
 namespace Financial.Investment.Infrastructure.Tests.Services;
 
+[Trait("Category", "Integration")]
 public class CryptocurrencyAssetPriceFetcherTests
 {
     private readonly CryptocurrencyAssetPriceFetcher _sut;

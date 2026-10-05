@@ -8,6 +8,7 @@ using CreditCard = Financial.CashFlow.Domain.Entities.CreditCard;
 
 namespace Financial.CashFlow.Domain.Tests;
 
+[Trait("Category", "Unit")]
 public class ExpenseTests
 {
     private static readonly Bank Chase = Bank.Create("Chase", roundUpEnabled: true);

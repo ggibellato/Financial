@@ -9,6 +9,7 @@ using FluentAssertions;
 namespace Financial.Presentation.Tests.ViewModels.Investment.Dashboard;
 
 [UseCulture("en-GB")]
+[Trait("Category", "Unit")]
 public class DataQualityWarningsViewModelTests
 {
     private static DataQualityReportDTO FullReport() => new()

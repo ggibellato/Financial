@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Financial.Api.Tests;
 
+[Trait("Category", "Integration")]
 public class ObservabilityDisabledTests : ApiEndpointTests
 {
     [Fact]

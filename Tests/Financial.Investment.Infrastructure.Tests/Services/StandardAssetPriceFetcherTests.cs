@@ -7,6 +7,7 @@ using FluentAssertions;
 
 namespace Financial.Investment.Infrastructure.Tests.Services;
 
+[Trait("Category", "Integration")]
 public class StandardAssetPriceFetcherTests
 {
     private readonly StandardAssetPriceFetcher _sut;

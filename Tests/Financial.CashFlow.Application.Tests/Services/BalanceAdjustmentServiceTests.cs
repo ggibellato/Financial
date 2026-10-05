@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Financial.CashFlow.Application.Tests.Services;
 
+[Trait("Category", "Unit")]
 public class BalanceAdjustmentServiceTests
 {
     private static readonly Microsoft.Extensions.Logging.ILogger<BalanceAdjustmentService> Logger = NullLogger<BalanceAdjustmentService>.Instance;

@@ -6,6 +6,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.ViewModels.Investment.Dashboard;
 
+[Trait("Category", "Unit")]
 public class UpcomingIncomeViewModelTests
 {
     private static UpcomingIncomeDTO Entry(string assetName, int daysAhead, decimal amount = 10m) => new(

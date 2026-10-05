@@ -8,6 +8,7 @@ using Xunit;
 
 namespace Financial.Investment.Application.Tests.Services;
 
+[Trait("Category", "Unit")]
 public class UpcomingIncomeServiceTests
 {
     private static readonly DateTime PurchaseDate = new(2024, 12, 1);

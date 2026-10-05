@@ -11,6 +11,7 @@ using FluentAssertions;
 namespace Financial.Presentation.Tests.ViewModels;
 
 [UseCulture("en-GB")]
+[Trait("Category", "Unit")]
 public class AssetDetailsViewModelXirrTests
 {
     private static AssetDetailsViewModel BuildViewModel(

@@ -5,6 +5,7 @@ using FluentAssertions;
 
 namespace Financial.InvestmentSpreadsheetImport.Tests;
 
+[Trait("Category", "Unit")]
 public class AssetClassificationLookupTests
 {
     [Fact]

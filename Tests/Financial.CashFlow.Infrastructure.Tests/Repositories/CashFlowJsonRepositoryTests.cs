@@ -10,6 +10,7 @@ using FluentAssertions;
 
 namespace Financial.CashFlow.Infrastructure.Tests.Repositories;
 
+[Trait("Category", "Integration")]
 public class CashFlowJsonRepositoryTests
 {
     [Fact]

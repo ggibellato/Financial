@@ -5,6 +5,7 @@ using FluentAssertions.Execution;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.Migrations.CreditCardReferences;
 
+[Trait("Category", "Integration")]
 public class CreditCardReferenceMigratorTests : FileMigratorContractTests
 {
     protected override string LegacyFileJson() => LegacyFixtureJson();

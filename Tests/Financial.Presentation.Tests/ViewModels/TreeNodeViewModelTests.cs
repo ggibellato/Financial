@@ -6,6 +6,7 @@ using FluentAssertions.Execution;
 
 namespace Financial.Presentation.Tests.ViewModels;
 
+[Trait("Category", "Unit")]
 public class TreeNodeViewModelTests
 {
     private static TreeNodeDTO BuildDto(string name, TreeNodeType nodeType, Dictionary<string, object>? metadata = null, List<TreeNodeDTO>? children = null) =>

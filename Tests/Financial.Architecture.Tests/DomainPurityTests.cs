@@ -3,6 +3,7 @@ using Financial.Architecture.Tests.Infrastructure;
 
 namespace Financial.Architecture.Tests;
 
+[Trait("Category", "Unit")]
 public class DomainPurityTests
 {
     private static readonly string[] ForbiddenPrefixes =

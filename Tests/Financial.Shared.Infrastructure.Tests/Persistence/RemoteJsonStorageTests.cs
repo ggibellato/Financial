@@ -5,6 +5,7 @@ using FluentAssertions;
 
 namespace Financial.Shared.Infrastructure.Tests.Persistence;
 
+[Trait("Category", "Integration")]
 public class RemoteJsonStorageTests
 {
     /// <summary>The tracer is the same in every span test; the download/upload callbacks are what each test varies.</summary>

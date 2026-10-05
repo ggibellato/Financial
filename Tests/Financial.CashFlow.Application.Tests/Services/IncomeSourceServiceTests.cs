@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Financial.CashFlow.Application.Tests.Services;
 
+[Trait("Category", "Unit")]
 public class IncomeSourceServiceTests
 {
     private static readonly Microsoft.Extensions.Logging.ILogger<IncomeSourceService> Logger = NullLogger<IncomeSourceService>.Instance;

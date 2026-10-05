@@ -6,6 +6,7 @@ using System.Text.Json.Serialization.Metadata;
 
 namespace Financial.Investment.Infrastructure.Tests.Persistence;
 
+[Trait("Category", "Unit")]
 public class InvestmentTypeInfoResolverTests
 {
     private static JsonSerializerOptions CreateOptions() => new()

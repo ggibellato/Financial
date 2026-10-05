@@ -4,6 +4,7 @@ using FluentAssertions;
 
 namespace Financial.Shared.Infrastructure.Tests.Hosting;
 
+[Trait("Category", "Unit")]
 public class ShutdownFlushHostedServiceTests
 {
     [Fact]

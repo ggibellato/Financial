@@ -9,6 +9,7 @@ namespace Financial.Shared.Infrastructure.Tests.Persistence.FxRates;
 /// copy `data/data-fx-rates.example.json`, and nothing else in the suite reads it, so it could
 /// stop deserializing without a single test noticing.
 /// </summary>
+[Trait("Category", "Integration")]
 public class ExampleDataFileTests
 {
     private static string ExampleFilePath =>

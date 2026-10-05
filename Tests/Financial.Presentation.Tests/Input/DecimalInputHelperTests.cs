@@ -5,6 +5,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.Input;
 
+[Trait("Category", "Unit")]
 public class DecimalInputHelperTests : IClassFixture<StaThreadFixture>
 {
     private readonly StaThreadFixture _sta;

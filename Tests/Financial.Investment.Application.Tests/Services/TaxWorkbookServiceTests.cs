@@ -7,6 +7,7 @@ using FluentAssertions.Execution;
 
 namespace Financial.Investment.Application.Tests.Services;
 
+[Trait("Category", "Unit")]
 public class TaxWorkbookServiceTests
 {
     private readonly StubInvestmentRepository _repository = new() { Investments = Investments.Create() };

@@ -4,6 +4,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.Behaviors;
 
+[Trait("Category", "Unit")]
 public class SortCycleTests
 {
     [Fact]

@@ -6,6 +6,7 @@ using FluentAssertions;
 
 namespace Financial.Investment.Infrastructure.Tests.Persistence;
 
+[Trait("Category", "Unit")]
 public class InvestmentSerializerAdapterTests
 {
     private static readonly InvestmentSerializerAdapter Serializer = new();

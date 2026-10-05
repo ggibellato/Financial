@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Financial.Api.Tests.Acceptance;
 
+[Trait("Category", "Integration")]
 public class CreditCardDueDateEventSyncAcceptanceTests : ApiEndpointTests
 {
     private const string CalendarRoute = "/api/v1/financial/integrations/calendar";

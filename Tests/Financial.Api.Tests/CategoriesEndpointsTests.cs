@@ -6,6 +6,7 @@ using System.Net.Http.Json;
 
 namespace Financial.Api.Tests;
 
+[Trait("Category", "Integration")]
 public class CategoriesEndpointsTests : ApiEndpointTests
 {
     private static readonly Guid MercadoId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-600000000008");

@@ -10,6 +10,7 @@ using System.Windows;
 
 namespace Financial.Presentation.Tests.ViewModels;
 
+[Trait("Category", "Unit")]
 public class MainNavigationViewModelBaseTests
 {
     private readonly StubSummaryService _summaryService;

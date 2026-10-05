@@ -3,6 +3,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.Helpers;
 
+[Trait("Category", "Unit")]
 public class PeriodFilterHelperTests
 {
     private static readonly DateTime ReferenceDate = new(2026, 7, 15);

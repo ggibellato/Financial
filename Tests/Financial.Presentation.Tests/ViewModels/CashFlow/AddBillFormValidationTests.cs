@@ -3,6 +3,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.ViewModels.CashFlow;
 
+[Trait("Category", "Unit")]
 public class AddBillFormValidationTests
 {
     private static string Validate(string description = "Rent", string dueDay = "10", string value = "100") =>

@@ -6,6 +6,7 @@ using Google;
 
 namespace Financial.GoogleIntegrations.Tests;
 
+[Trait("Category", "Unit")]
 public class GoogleRetryPolicyTests
 {
     public delegate Task<int> RetryRunner(Func<int> action, int maxRetries, Action<string>? logger, Func<TimeSpan, CancellationToken, Task> delay);

@@ -7,6 +7,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.ViewModels;
 
+[Trait("Category", "Unit")]
 public class TaxWorkbookViewModelTests
 {
     private static readonly TaxWorkbookOptionDTO[] Options =

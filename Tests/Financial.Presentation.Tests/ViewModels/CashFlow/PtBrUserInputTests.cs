@@ -7,6 +7,7 @@ using FluentAssertions;
 namespace Financial.Presentation.Tests.ViewModels.CashFlow;
 
 [UseCulture("pt-BR")]
+[Trait("Category", "Unit")]
 public class PtBrUserInputTests
 {
     private static readonly Guid CategoryId = Guid.NewGuid();

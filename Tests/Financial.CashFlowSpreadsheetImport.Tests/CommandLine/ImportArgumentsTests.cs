@@ -3,6 +3,7 @@ using FluentAssertions;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.CommandLine;
 
+[Trait("Category", "Unit")]
 public class ImportArgumentsTests
 {
     private const string RefusalLine =

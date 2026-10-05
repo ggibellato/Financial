@@ -11,6 +11,7 @@ using System.IO;
 
 namespace Financial.Investment.Infrastructure.Tests.Repositories;
 
+[Trait("Category", "Integration")]
 public class InvestmentJsonRepositoryTests
 {
     /// <summary>Every test round-trips through the same stateless serializer; only the backing

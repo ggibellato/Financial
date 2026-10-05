@@ -5,6 +5,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.ViewModels;
 
+[Trait("Category", "Unit")]
 public class DisposalsTabViewModelTests
 {
     private static DisposalRecordDTO CreateRecord(

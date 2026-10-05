@@ -7,6 +7,7 @@ using Microsoft.Extensions.Options;
 
 namespace Financial.Observability.Tests;
 
+[Trait("Category", "Unit")]
 public class ObservabilityServiceCollectionExtensionsTests
 {
     [Fact]

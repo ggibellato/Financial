@@ -3,6 +3,7 @@ using FluentAssertions;
 
 namespace Financial.CashFlow.Domain.Tests;
 
+[Trait("Category", "Unit")]
 public class TitheCarryForwardTests
 {
     [Theory]

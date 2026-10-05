@@ -7,6 +7,7 @@ using FluentAssertions;
 
 namespace Financial.CashFlow.Infrastructure.Tests.Persistence;
 
+[Trait("Category", "Unit")]
 public abstract class ReferenceConverterTests<T> where T : class
 {
     protected abstract T CreateEntity();

@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Financial.Investment.Infrastructure.Tests.Services;
 
+[Trait("Category", "Integration")]
 public class FallbackFinanceServiceTests
 {
     private readonly RecordingLogger<FallbackFinanceService> _logger;

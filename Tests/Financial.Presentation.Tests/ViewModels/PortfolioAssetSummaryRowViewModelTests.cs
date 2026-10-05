@@ -8,6 +8,7 @@ using FluentAssertions;
 namespace Financial.Presentation.Tests.ViewModels;
 
 [UseCulture("en-GB")]
+[Trait("Category", "Unit")]
 public class PortfolioAssetSummaryRowViewModelTests
 {
     private static PortfolioAssetSummaryRowViewModel BuildRow(

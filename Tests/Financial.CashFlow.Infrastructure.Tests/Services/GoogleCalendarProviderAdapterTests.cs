@@ -7,6 +7,7 @@ using Microsoft.Extensions.Options;
 
 namespace Financial.CashFlow.Infrastructure.Tests.Services;
 
+[Trait("Category", "Unit")]
 public class GoogleCalendarProviderAdapterTests
 {
     private readonly FakeGoogleCalendarOAuthClient _oAuthClient = new();

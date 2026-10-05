@@ -9,6 +9,7 @@ using FluentAssertions.Execution;
 
 namespace Financial.Api.Tests.Acceptance;
 
+[Trait("Category", "Integration")]
 public class DataQualityWarningsAcceptanceTests : ApiEndpointTests
 {
     private const string ReportRoute = "/api/v1/financial/data-quality-report";

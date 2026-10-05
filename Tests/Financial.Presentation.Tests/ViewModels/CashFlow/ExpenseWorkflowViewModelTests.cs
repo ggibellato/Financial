@@ -10,6 +10,7 @@ using FluentAssertions;
 namespace Financial.Presentation.Tests.ViewModels.CashFlow;
 
 [UseCulture("en-GB")]
+[Trait("Category", "Unit")]
 public class ExpenseWorkflowViewModelTests
 {
     /// <summary>Unchecks every filter option except the given values, mirroring how a user would

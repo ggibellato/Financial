@@ -6,6 +6,7 @@ using FluentAssertions.Execution;
 
 namespace Financial.Investment.Domain.Tests.Rules;
 
+[Trait("Category", "Unit")]
 public class TaxClassificationCalculatorTests
 {
     private static DisposalRecord CreateDisposalRecord(Currency currency = Currency.BRL, DateTime? date = null) =>

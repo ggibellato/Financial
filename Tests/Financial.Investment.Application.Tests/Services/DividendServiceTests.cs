@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Financial.Investment.Application.Tests.Services;
 
+[Trait("Category", "Unit")]
 public class DividendServiceTests
 {
     private static readonly ITelemetryTracer Tracer = new RecordingTelemetryTracer();

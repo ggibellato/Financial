@@ -4,6 +4,7 @@ using FluentAssertions;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.Parsing;
 
+[Trait("Category", "Unit")]
 public class CategoryResolverTests
 {
     private static readonly Dictionary<string, Category> CategoriesByName = new(StringComparer.OrdinalIgnoreCase)

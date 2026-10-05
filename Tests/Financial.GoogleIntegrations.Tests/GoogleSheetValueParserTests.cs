@@ -5,6 +5,7 @@ using Google.Apis.Sheets.v4.Data;
 
 namespace Financial.GoogleIntegrations.Tests;
 
+[Trait("Category", "Unit")]
 public class GoogleSheetValueParserTests
 {
     [Fact]

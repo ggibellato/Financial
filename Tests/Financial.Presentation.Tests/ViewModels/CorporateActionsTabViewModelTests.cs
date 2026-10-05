@@ -9,6 +9,7 @@ using System.Windows;
 
 namespace Financial.Presentation.Tests.ViewModels;
 
+[Trait("Category", "Unit")]
 public class CorporateActionsTabViewModelTests
 {
     private const string BrokerName = "XPI";

@@ -3,6 +3,7 @@ using FluentAssertions;
 
 namespace Financial.WebPageParser.Tests;
 
+[Trait("Category", "Unit")]
 public class GoogleFinanceCryptocurrencyUrlTests
 {
     [Fact]

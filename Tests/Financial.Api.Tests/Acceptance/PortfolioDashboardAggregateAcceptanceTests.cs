@@ -9,6 +9,7 @@ using FluentAssertions.Execution;
 
 namespace Financial.Api.Tests.Acceptance;
 
+[Trait("Category", "Integration")]
 public class PortfolioDashboardCurrencyAndBrokerFilterAcceptanceTests : ApiEndpointTests
 {
     private const string DashboardRoute = "/api/v1/financial/dashboard";
@@ -167,6 +168,7 @@ public class PortfolioDashboardCurrencyAndBrokerFilterAcceptanceTests : ApiEndpo
     }
 }
 
+[Trait("Category", "Integration")]
 public class PortfolioDashboardAggregateAcceptanceTests : ApiEndpointTests
 {
     private const string DashboardRoute = "/api/v1/financial/dashboard";

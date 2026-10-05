@@ -4,6 +4,7 @@ using FluentAssertions;
 
 namespace Financial.CashFlow.Infrastructure.Tests.Persistence;
 
+[Trait("Category", "Integration")]
 public class CashFlowLoaderTests
 {
     private readonly CashFlowSerializerAdapter _serializer;

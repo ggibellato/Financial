@@ -6,6 +6,7 @@ using FluentAssertions;
 
 namespace Financial.Shared.Infrastructure.Tests.Resilience;
 
+[Trait("Category", "Unit")]
 public class TransientRetryPolicyTests
 {
     [Fact]

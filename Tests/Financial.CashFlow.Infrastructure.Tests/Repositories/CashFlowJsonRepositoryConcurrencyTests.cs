@@ -6,6 +6,7 @@ using FluentAssertions;
 
 namespace Financial.CashFlow.Infrastructure.Tests.Repositories;
 
+[Trait("Category", "Integration")]
 public class CashFlowJsonRepositoryConcurrencyTests
 {
     private const int SeededExpenseCount = 1000;

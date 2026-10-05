@@ -3,6 +3,7 @@ using FluentAssertions;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.CommandLine;
 
+[Trait("Category", "Integration")]
 public sealed class LiveDataFileGuardTests : IDisposable
 {
     private readonly string _root = Path.Combine(Path.GetTempPath(), "cf-guard-" + Guid.NewGuid().ToString("N"));

@@ -11,6 +11,7 @@ namespace Financial.Architecture.Tests;
 /// pins each one to its current, reviewed set — an addition here must be a deliberate edit to the
 /// allowlist, not a silent side effect of an unrelated change.
 /// </summary>
+[Trait("Category", "Unit")]
 public class PresentationDependencyRuleTests
 {
     private static readonly IReadOnlyCollection<string> ApiAllowedFinancialAssemblies = new[]

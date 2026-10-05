@@ -9,6 +9,7 @@ using FluentAssertions;
 namespace Financial.Presentation.Tests.ViewModels.CashFlow;
 
 [UseCulture("en-GB")]
+[Trait("Category", "Unit")]
 public class MensaisViewModelTests
 {
     private static (MensaisViewModel ViewModel, StubMensaisService Service, StubExpenseService ExpenseService, StubBankService BankService, StubCategoryService CategoryService, StubDialogService DialogService) CreateViewModel(bool confirm = true) =>

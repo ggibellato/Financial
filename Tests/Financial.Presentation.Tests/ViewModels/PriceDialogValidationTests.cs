@@ -3,6 +3,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.ViewModels;
 
+[Trait("Category", "Unit")]
 public class PriceDialogValidationTests
 {
     private static readonly DateTime ValidDate = new(2026, 7, 15);

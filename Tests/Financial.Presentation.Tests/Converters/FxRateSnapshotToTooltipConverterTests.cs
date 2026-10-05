@@ -7,6 +7,7 @@ using FluentAssertions;
 namespace Financial.Presentation.Tests.Converters;
 
 [UseCulture("en-GB")]
+[Trait("Category", "Unit")]
 public class FxRateSnapshotToTooltipConverterTests
 {
     private readonly FxRateSnapshotToTooltipConverter _converter = new();

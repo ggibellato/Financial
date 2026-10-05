@@ -4,6 +4,7 @@ using FluentAssertions;
 
 namespace Financial.Shared.Infrastructure.Tests.Persistence.FxRates;
 
+[Trait("Category", "Unit")]
 public class FxRateSerializerAdapterTests
 {
     private static readonly FxRateSerializerAdapter Serializer = new();

@@ -4,6 +4,7 @@ using Financial.Shared.Infrastructure.Tests.Persistence;
 
 namespace Financial.Shared.Infrastructure.Tests.Persistence.FxRates;
 
+[Trait("Category", "Integration")]
 public class FxRateLoaderTests
 {
     private static readonly FxRateSerializerAdapter Serializer = new();

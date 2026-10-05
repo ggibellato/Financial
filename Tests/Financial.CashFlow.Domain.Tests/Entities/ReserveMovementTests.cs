@@ -5,6 +5,7 @@ using FluentAssertions.Execution;
 
 namespace Financial.CashFlow.Domain.Tests;
 
+[Trait("Category", "Unit")]
 public class ReserveMovementTests
 {
     private static readonly ReserveBucket Investimento = ReserveBucket.Create("Investimento", 33.33m);

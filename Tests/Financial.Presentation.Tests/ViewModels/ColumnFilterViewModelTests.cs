@@ -3,6 +3,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.ViewModels;
 
+[Trait("Category", "Unit")]
 public class ColumnFilterViewModelTests
 {
     private sealed record Row(string Id, string? Category, string? Card);

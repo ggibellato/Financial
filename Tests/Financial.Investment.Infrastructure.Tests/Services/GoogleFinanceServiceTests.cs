@@ -5,6 +5,7 @@ using FluentAssertions;
 
 namespace Financial.Investment.Infrastructure.Tests.Services;
 
+[Trait("Category", "Integration")]
 public class GoogleFinanceServiceTests
 {
     /// <summary>The default service the request-validation tests exercise; the parsing tests inject their own transport.</summary>

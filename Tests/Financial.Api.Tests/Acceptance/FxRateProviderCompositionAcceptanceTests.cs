@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Financial.Api.Tests.Acceptance;
 
+[Trait("Category", "Integration")]
 public class FxRateProviderCompositionAcceptanceTests() : ApiEndpointTests(useRealExchangeRates: true)
 {
     private static readonly DateOnly HistoricalDate = TestClock.Today.AddDays(-30);

@@ -13,6 +13,7 @@ using System.IO;
 
 namespace Financial.Investment.Infrastructure.Tests.Repositories;
 
+[Trait("Category", "Integration")]
 public class InvestmentRepositoryFactoryTests
 {
     /// <summary>The same factory over a stubbed remote-file client, for the tests that must not reach Google Drive.</summary>

@@ -5,6 +5,7 @@ using Wpf.Ui.Controls;
 
 namespace Financial.Presentation.Tests.ViewModels;
 
+[Trait("Category", "Unit")]
 public class PaymentDueRowViewModelTests
 {
     private static PaymentDueDTO Payment(string type = "Mensais", string name = "Internet", int daysRemaining = 0) => new()

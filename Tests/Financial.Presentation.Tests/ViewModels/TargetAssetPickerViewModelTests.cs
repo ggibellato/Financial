@@ -5,6 +5,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.ViewModels;
 
+[Trait("Category", "Unit")]
 public class TargetAssetPickerViewModelTests
 {
     private static AssetAdminDTO Asset(string name) => new()

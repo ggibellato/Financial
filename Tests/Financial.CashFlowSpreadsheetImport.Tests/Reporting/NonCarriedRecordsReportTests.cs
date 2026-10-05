@@ -4,6 +4,7 @@ using FluentAssertions;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.Reporting;
 
+[Trait("Category", "Unit")]
 public class NonCarriedRecordsReportTests
 {
     private static readonly string[] SeededNames =

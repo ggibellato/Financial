@@ -4,6 +4,7 @@ using FluentAssertions.Execution;
 
 namespace Financial.CashFlow.Domain.Tests;
 
+[Trait("Category", "Unit")]
 public class InvestmentSnapshotTests
 {
     private static readonly InvestmentAccount PlatinumVisa8003 =
