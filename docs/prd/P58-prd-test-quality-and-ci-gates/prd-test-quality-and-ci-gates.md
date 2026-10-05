@@ -630,13 +630,13 @@ graph TD
 - [x] A line ending with `// hygiene-allow: <reason>` passes and is listed in the job summary.
 
 ### F12. React Playwright E2E Suite
-- [ ] `smoke-test.mjs` is removed, and `npm run smoke-test` runs `playwright test --grep @smoke`.
-- [ ] Running without `SMOKE_APP_URL` aborts before launching a browser, and the API receives no requests.
-- [ ] Running against an API serving non-test data (no `E2E-TEST-DATA` sentinel) aborts with the refusal message.
-- [ ] All 6 smoke specs pass in CI headless in ≤ 5 min.
-- [ ] The expense-add spec's record carries the run's unique ID.
-- [ ] A forced failure uploads a trace, screenshot and video as artifacts.
-- [ ] The specs contain no CSS-class, XPath or `waitForTimeout` locators or waits (ESLint playwright rules pass).
+- [x] `smoke-test.mjs` is removed, and `npm run smoke-test` runs `playwright test --grep @smoke`.
+- [x] Running without `SMOKE_APP_URL` aborts before launching a browser, and the API receives no requests.
+- [x] Running against an API serving non-test data (no `E2E-TEST-DATA` sentinel) aborts with the refusal message.
+- [x] All 6 smoke specs pass in CI headless in ≤ 5 min.
+- [x] The expense-add spec's record carries the run's unique ID.
+- [x] A forced failure uploads a trace, screenshot and video as artifacts.
+- [x] The specs contain no CSS-class, XPath or `waitForTimeout` locators or waits (ESLint playwright rules pass).
 
 ### F13. WPF FlaUI E2E Suite
 - [ ] `Tests/Financial.App.E2ETests` exists, references FlaUI.Core and FlaUI.UIA3, and is excluded from coverage and the unit jobs.
