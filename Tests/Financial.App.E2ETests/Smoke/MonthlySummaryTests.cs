@@ -18,7 +18,7 @@ public class MonthlySummaryTests
             window.FindById("monthly-tabs");
             window.SelectTab("Summary");
 
-            window.FindById("monthly-category-total").Name.Should().Be("Category total 0.00");
+            window.FindById("monthly-category-total").Name.Should().Be("forced failure check");
             window.FindById("monthly-banks-grid").FindByName("Barclays");
         });
     }
