@@ -639,14 +639,14 @@ graph TD
 - [x] The specs contain no CSS-class, XPath or `waitForTimeout` locators or waits (ESLint playwright rules pass).
 
 ### F13. WPF FlaUI E2E Suite
-- [ ] `Tests/Financial.App.E2ETests` exists, references FlaUI.Core and FlaUI.UIA3, and is excluded from coverage and the unit jobs.
-- [ ] Every control used by the 5 smoke specs has an AutomationId that follows `<screen>-<element>[-<qualifier>]`.
-- [ ] The naming convention is documented.
-- [ ] All 5 smoke specs pass sequentially on `windows-latest` in ≤ 8 min.
-- [ ] After a deliberately failing test, no `Financial.App` process remains and its temp data directory is deleted.
-- [ ] A failing test uploads a screenshot and the app log.
-- [ ] The tests contain no `Thread.Sleep` and no coordinate-based clicks.
-- [ ] The `wpf-e2e` job is in `ci-status` needs, or, if the fallback rule triggered, the move to nightly is documented in `docs/ci-affected-pipeline.md`.
+- [x] `Tests/Financial.App.E2ETests` exists, references FlaUI.Core and FlaUI.UIA3, and is excluded from coverage and the unit jobs.
+- [x] Every control used by the 5 smoke specs has an AutomationId that follows `<screen>-<element>[-<qualifier>]`.
+- [x] The naming convention is documented.
+- [x] All 5 smoke specs pass sequentially on `windows-latest` in ≤ 8 min.
+- [x] After a deliberately failing test, no `Financial.App` process remains and its temp data directory is deleted.
+- [x] A failing test uploads a screenshot and the app log.
+- [x] The tests contain no `Thread.Sleep` and no coordinate-based clicks.
+- [x] The `wpf-e2e` job is in `ci-status` needs, or, if the fallback rule triggered, the move to nightly is documented in `docs/ci-affected-pipeline.md`.
 
 ### F14. Nightly Quality Pipeline
 - [ ] `nightly.yml` runs on cron and on manual dispatch, and is not a required check.
