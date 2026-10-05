@@ -12,6 +12,7 @@ namespace Financial.Api.Tests;
 /// <summary>Covers DomainExceptionMappingMiddleware's logging: every domain exception it
 /// translates into a 4xx must leave a record in the log stream, but that record must never
 /// carry the exception message - those embed financial values and entity names.</summary>
+[Trait("Category", "Unit")]
 public class DomainExceptionLoggingTests
 {
     [Fact]

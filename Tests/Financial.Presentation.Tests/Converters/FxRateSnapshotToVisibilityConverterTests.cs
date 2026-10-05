@@ -6,6 +6,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.Converters;
 
+[Trait("Category", "Unit")]
 public class FxRateSnapshotToVisibilityConverterTests
 {
     private readonly FxRateSnapshotToVisibilityConverter _converter = new();

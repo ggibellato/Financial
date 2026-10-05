@@ -3,6 +3,7 @@ using FluentAssertions;
 
 namespace Financial.Investment.Domain.Tests;
 
+[Trait("Category", "Unit")]
 public class XirrCalculatorTests
 {
     /// <summary>

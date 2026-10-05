@@ -7,6 +7,7 @@ using FluentAssertions.Execution;
 
 namespace Financial.Api.Tests.Acceptance;
 
+[Trait("Category", "Integration")]
 public class UpcomingIncomeAcceptanceTests : ApiEndpointTests
 {
     private const string UpcomingIncomeRoute = "/api/v1/financial/upcoming-income";

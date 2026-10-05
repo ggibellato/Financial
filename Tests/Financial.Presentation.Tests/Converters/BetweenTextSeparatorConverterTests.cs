@@ -4,6 +4,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.Converters;
 
+[Trait("Category", "Unit")]
 public class BetweenTextSeparatorConverterTests
 {
     private readonly BetweenTextSeparatorConverter _converter = new();

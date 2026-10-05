@@ -6,6 +6,7 @@ using System.Net.Http.Json;
 
 namespace Financial.Api.Tests;
 
+[Trait("Category", "Integration")]
 public class ControleMaeEndpointsTests() : ApiEndpointTests(new StubExchangeRateProvider(DefaultRate))
 {
     private const decimal DefaultRate = 1.5m;

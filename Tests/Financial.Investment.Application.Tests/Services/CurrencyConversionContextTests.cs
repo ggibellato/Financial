@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Financial.Investment.Application.Tests.Services;
 
+[Trait("Category", "Unit")]
 public class CurrencyConversionContextTests
 {
     private static readonly DateOnly FirstDate = new(2025, 1, 1);

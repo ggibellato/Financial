@@ -6,6 +6,7 @@ using FluentAssertions.Execution;
 
 namespace Financial.Api.Tests;
 
+[Trait("Category", "Integration")]
 public class DashboardEndpointsTests : ApiEndpointTests
 {
     [Fact]

@@ -9,6 +9,7 @@ namespace Financial.Presentation.Tests.ViewModels;
 /// to archive instead. Whether a destination is legal is the domain's to decide, so there is
 /// nothing here asserting rules - only shape.
 /// </summary>
+[Trait("Category", "Unit")]
 public class MoveAssetDialogViewModelTests
 {
     [Fact]

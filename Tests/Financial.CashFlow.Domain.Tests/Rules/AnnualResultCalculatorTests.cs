@@ -4,6 +4,7 @@ using FluentAssertions;
 
 namespace Financial.CashFlow.Domain.Tests.Rules;
 
+[Trait("Category", "Unit")]
 public class AnnualResultCalculatorTests
 {
     [Fact]

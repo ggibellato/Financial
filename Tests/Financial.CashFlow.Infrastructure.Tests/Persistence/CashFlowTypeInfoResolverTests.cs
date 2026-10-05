@@ -8,6 +8,7 @@ using CreditCard = Financial.CashFlow.Domain.Entities.CreditCard;
 
 namespace Financial.CashFlow.Infrastructure.Tests.Persistence;
 
+[Trait("Category", "Unit")]
 public class CashFlowTypeInfoResolverTests
 {
     private static JsonSerializerOptions CreateOptions(ReferenceResolutionContext? context = null) => new()

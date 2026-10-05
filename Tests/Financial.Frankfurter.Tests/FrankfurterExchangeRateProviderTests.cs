@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Financial.Frankfurter.Tests;
 
+[Trait("Category", "Unit")]
 public class FrankfurterExchangeRateProviderTests
 {
     private static FrankfurterExchangeRateProvider CreateProvider(Func<HttpRequestMessage, HttpResponseMessage> respond) =>

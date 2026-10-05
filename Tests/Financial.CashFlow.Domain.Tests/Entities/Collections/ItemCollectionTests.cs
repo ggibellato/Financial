@@ -3,6 +3,7 @@ using FluentAssertions;
 
 namespace Financial.CashFlow.Domain.Tests.Entities.Collections
 {
+    [Trait("Category", "Unit")]
     public class ItemCollectionTests
     {
         private class Item

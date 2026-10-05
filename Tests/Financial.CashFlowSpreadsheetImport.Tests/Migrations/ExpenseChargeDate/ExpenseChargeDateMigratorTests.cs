@@ -7,6 +7,7 @@ using CreditCardEntity = Financial.CashFlow.Domain.Entities.CreditCard;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.Migrations.ExpenseChargeDate;
 
+[Trait("Category", "Unit")]
 public class ExpenseChargeDateMigratorTests
 {
     // Legacy records carry both CardTag and PaymentSource with ChargeDate/InvoiceDate absent -

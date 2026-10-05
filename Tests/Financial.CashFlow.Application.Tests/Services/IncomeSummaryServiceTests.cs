@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Financial.CashFlow.Application.Tests.Services;
 
+[Trait("Category", "Unit")]
 public class IncomeSummaryServiceTests
 {
     private static readonly int CurrentYear = TestClock.Today.Year;

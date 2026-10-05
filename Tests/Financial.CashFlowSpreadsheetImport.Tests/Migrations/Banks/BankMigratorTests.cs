@@ -6,6 +6,7 @@ using CreditCardEntity = Financial.CashFlow.Domain.Entities.CreditCard;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.Migrations.Banks;
 
+[Trait("Category", "Unit")]
 public class BankMigratorTests
 {
     [Fact]

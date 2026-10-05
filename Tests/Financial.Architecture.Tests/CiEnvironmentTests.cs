@@ -3,6 +3,7 @@ using FluentAssertions;
 
 namespace Financial.Architecture.Tests;
 
+[Trait("Category", "Unit")]
 public class CiEnvironmentTests
 {
     [Fact]

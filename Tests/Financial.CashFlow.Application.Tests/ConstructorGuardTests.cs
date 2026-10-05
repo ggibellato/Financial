@@ -3,6 +3,7 @@ using Financial.TestUtilities;
 
 namespace Financial.CashFlow.Application.Tests;
 
+[Trait("Category", "Unit")]
 public class ConstructorGuardTests
 {
     public static IEnumerable<object[]> Cases() => ConstructorGuardAssertions.Cases(typeof(BankService).Assembly);

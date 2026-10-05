@@ -5,6 +5,7 @@ using System.Net.Http.Json;
 
 namespace Financial.Api.Tests;
 
+[Trait("Category", "Integration")]
 public class TransactionEndpointsTests : ApiEndpointTests
 {
     [Fact]

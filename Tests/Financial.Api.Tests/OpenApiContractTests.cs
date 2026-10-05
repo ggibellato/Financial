@@ -24,6 +24,7 @@ namespace Financial.Api.Tests;
 /// committed document is also the artefact <c>types.ts</c> can eventually be generated from (§4.4).
 /// </para>
 /// </summary>
+[Trait("Category", "Integration")]
 public class OpenApiContractTests
 {
     /// <summary>

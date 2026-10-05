@@ -3,6 +3,7 @@ using Financial.TestUtilities;
 
 namespace Financial.Investment.Infrastructure.Tests;
 
+[Trait("Category", "Unit")]
 public class ConstructorGuardTests
 {
     public static IEnumerable<object[]> Cases() => ConstructorGuardAssertions.Cases(typeof(InvestmentJsonRepository).Assembly);

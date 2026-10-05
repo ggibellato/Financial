@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Financial.CashFlow.Application.Tests.Services;
 
+[Trait("Category", "Unit")]
 public class InvestmentAnnualResultServiceTests
 {
     private static readonly int CurrentYear = TestClock.Today.Year;

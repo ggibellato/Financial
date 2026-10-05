@@ -7,6 +7,7 @@ using System.Net.Http.Json;
 
 namespace Financial.Api.Tests.Acceptance;
 
+[Trait("Category", "Integration")]
 public class ValuationParityAcceptanceTests : ApiEndpointTests
 {
     [Fact]

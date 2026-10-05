@@ -5,6 +5,7 @@ using FluentAssertions;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.SheetImporters;
 
+[Trait("Category", "Unit")]
 public class MensaisSheetImporterTests : IDisposable
 {
     /// <summary>Every test drives a fresh workbook, worksheet; xUnit builds one instance per test, so they stay

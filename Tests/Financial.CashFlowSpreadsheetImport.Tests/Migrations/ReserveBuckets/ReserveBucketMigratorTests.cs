@@ -4,6 +4,7 @@ using FluentAssertions;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.Migrations.ReserveBuckets;
 
+[Trait("Category", "Unit")]
 public class ReserveBucketMigratorTests
 {
     [Fact]

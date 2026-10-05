@@ -4,6 +4,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.ViewModels.CashFlow;
 
+[Trait("Category", "Unit")]
 public class WithdrawalCategoryRulesTests
 {
     private static CategoryDTO Category(string name, bool active = true, bool isInvestment = false) => new()

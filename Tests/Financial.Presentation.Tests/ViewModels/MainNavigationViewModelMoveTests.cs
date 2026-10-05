@@ -19,6 +19,7 @@ namespace Financial.Presentation.Tests.ViewModels;
 /// The move command on the navigation view model: what it sends, what it does with a refusal, and
 /// that the tree ends up showing the asset where it landed.
 /// </summary>
+[Trait("Category", "Unit")]
 public class MainNavigationViewModelMoveTests
 {
     private readonly StubAssetMoveService _moveService = new();

@@ -7,6 +7,7 @@ using System.Text.Json;
 
 namespace Financial.Api.Tests;
 
+[Trait("Category", "Integration")]
 public class SwaggerEndpointsTests
 {
     [Fact]

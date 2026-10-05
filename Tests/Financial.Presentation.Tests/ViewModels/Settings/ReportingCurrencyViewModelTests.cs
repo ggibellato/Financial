@@ -5,6 +5,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.ViewModels.Settings;
 
+[Trait("Category", "Unit")]
 public class ReportingCurrencyViewModelTests
 {
     private static (ReportingCurrencyViewModel ViewModel, StubReportingCurrencyProvider Provider) CreateViewModel(

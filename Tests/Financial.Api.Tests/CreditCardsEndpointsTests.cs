@@ -5,6 +5,7 @@ using System.Net.Http.Json;
 
 namespace Financial.Api.Tests;
 
+[Trait("Category", "Integration")]
 public class CreditCardsEndpointsTests : ApiEndpointTests
 {
     private static readonly Guid BaAmexId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-500000000004");

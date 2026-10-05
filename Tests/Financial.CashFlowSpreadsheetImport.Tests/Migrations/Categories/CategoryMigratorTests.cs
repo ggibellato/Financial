@@ -4,6 +4,7 @@ using FluentAssertions;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.Migrations.Categories;
 
+[Trait("Category", "Unit")]
 public class CategoryMigratorTests
 {
     [Fact]

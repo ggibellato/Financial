@@ -5,6 +5,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.ViewModels.CashFlow;
 
+[Trait("Category", "Unit")]
 public class WithdrawalViewModelTests
 {
     private static readonly Guid InvestimentoId = Guid.NewGuid();

@@ -5,6 +5,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.ViewModels;
 
+[Trait("Category", "Unit")]
 public class MainShellViewModelTests
 {
     private static Dictionary<string, object> BuildViewMap() => new()

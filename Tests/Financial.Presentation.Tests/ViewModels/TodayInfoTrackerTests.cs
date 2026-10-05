@@ -7,6 +7,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.ViewModels;
 
+[Trait("Category", "Unit")]
 public class TodayInfoTrackerTests
 {
     private readonly StubPriceService _priceService;

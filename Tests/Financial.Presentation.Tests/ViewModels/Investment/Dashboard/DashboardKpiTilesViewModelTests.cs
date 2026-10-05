@@ -7,6 +7,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.ViewModels.Investment.Dashboard;
 
+[Trait("Category", "Unit")]
 public class DashboardKpiTilesViewModelTests
 {
     private static PortfolioDashboardDTO Summary() => new()

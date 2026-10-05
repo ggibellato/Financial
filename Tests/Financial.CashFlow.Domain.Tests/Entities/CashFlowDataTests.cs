@@ -6,6 +6,7 @@ using ReserveBucketEntity = Financial.CashFlow.Domain.Entities.ReserveBucket;
 
 namespace Financial.CashFlow.Domain.Tests;
 
+[Trait("Category", "Unit")]
 public class CashFlowDataTests
 {
     private static readonly Bank Chase = Bank.Create("Chase", roundUpEnabled: true);

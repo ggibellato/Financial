@@ -6,6 +6,7 @@ using FluentAssertions;
 
 namespace Financial.Shared.Infrastructure.Tests.Persistence;
 
+[Trait("Category", "Integration")]
 public class JsonStorageFactoryTests
 {
     [Fact]

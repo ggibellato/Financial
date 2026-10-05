@@ -12,6 +12,7 @@ using CreditCard = Financial.CashFlow.Domain.Entities.CreditCard;
 
 namespace Financial.CashFlow.Application.Tests.Services;
 
+[Trait("Category", "Unit")]
 public class CardStatementServiceTests
 {
 

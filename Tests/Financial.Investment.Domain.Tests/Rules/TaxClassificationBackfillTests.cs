@@ -6,6 +6,7 @@ using FluentAssertions;
 
 namespace Financial.Investment.Domain.Tests.Rules;
 
+[Trait("Category", "Unit")]
 public class TaxClassificationBackfillTests
 {
     [Fact]

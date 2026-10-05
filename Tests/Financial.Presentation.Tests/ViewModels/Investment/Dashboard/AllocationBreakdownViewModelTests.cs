@@ -9,6 +9,7 @@ using OxyPlot.Series;
 
 namespace Financial.Presentation.Tests.ViewModels.Investment.Dashboard;
 
+[Trait("Category", "Unit")]
 public class AllocationBreakdownViewModelTests
 {
     private static AllocationBreakdownDTO Breakdown() => new()

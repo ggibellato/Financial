@@ -4,6 +4,7 @@ using FluentAssertions;
 
 namespace Financial.Investment.Application.Tests;
 
+[Trait("Category", "Unit")]
 public class CreditTypeParserTests
 {
     public static IEnumerable<object?[]> NullValues => new[]

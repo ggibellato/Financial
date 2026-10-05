@@ -6,6 +6,7 @@ using FluentAssertions;
 namespace Financial.Presentation.Tests.Converters;
 
 [UseCulture("en-GB")]
+[Trait("Category", "Unit")]
 public class DividendAttributionToTooltipConverterTests
 {
     private readonly DividendAttributionToTooltipConverter _converter = new();

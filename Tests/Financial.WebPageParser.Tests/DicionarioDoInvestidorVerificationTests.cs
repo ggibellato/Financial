@@ -8,8 +8,9 @@ namespace Financial.WebPageParser.Tests;
 /// These tests make real HTTP requests and should be run manually, on a
 /// machine with normal internet access, to confirm the live page structure
 /// before this feature is relied on in production.
-/// Mark as [Fact] to run, or keep as [Fact(Skip = "Manual")] to skip in CI.
+/// Category=Live: excluded from PR CI, run with `dotnet test --filter Category=Live`.
 /// </summary>
+[Trait("Category", "Live")]
 public class DicionarioDoInvestidorVerificationTests
 {
     private readonly ITestOutputHelper _output;
@@ -19,7 +20,7 @@ public class DicionarioDoInvestidorVerificationTests
         _output = output;
     }
 
-    [Fact(Skip = "Manual verification test - requires internet connection")]
+    [Fact]
     public void VerifySelectors_WithCurrentlyOfferedBonds()
     {
         _output.WriteLine("Testing dicionariodoinvestidor.com bond-list scraping with live data...");
@@ -45,7 +46,7 @@ public class DicionarioDoInvestidorVerificationTests
         }
     }
 
-    [Fact(Skip = "Manual verification test - requires internet connection")]
+    [Fact]
     public void VerifySelectors_BondNotCurrentlyOffered_ThrowsInvalidOperationException()
     {
         _output.WriteLine("Testing a matured/no-longer-offered bond title, which this site does not list...");

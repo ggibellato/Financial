@@ -4,6 +4,7 @@ using FluentAssertions;
 
 namespace Financial.Investment.Application.Tests.Services;
 
+[Trait("Category", "Unit")]
 public class AssetCashFlowBuilderTests
 {
     private static Asset MakeAsset(string name) => Asset.Create(name, "ISIN", "BVMF", name);

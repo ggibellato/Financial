@@ -5,6 +5,7 @@ using FluentAssertions;
 
 namespace Financial.Investment.Domain.Tests;
 
+[Trait("Category", "Unit")]
 public class TransactionsTests
 {
     /// <summary>Every test drives the same Transactions, so it is wired once here.</summary>

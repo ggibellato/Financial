@@ -12,6 +12,7 @@ namespace Financial.Presentation.Tests.Views.Investment;
 /// deep-link focus with no build error. Pins that link the same way
 /// TransactionsAndCreditsGridBindingTests pins DataGrid column bindings to real DTO properties.
 /// </summary>
+[Trait("Category", "Unit")]
 public class NavigationViewTabOrderTests
 {
     [Fact]

@@ -4,6 +4,7 @@ using FluentAssertions;
 
 namespace Financial.CashFlow.Application.Tests.Validation;
 
+[Trait("Category", "Unit")]
 public class EntityIdResolverTests
 {
     private static readonly Bank[] Banks =

@@ -9,6 +9,7 @@ using FluentAssertions;
 
 namespace Financial.Shared.Infrastructure.Tests.Persistence;
 
+[Trait("Category", "Integration")]
 public class DebouncedJsonStorageTests
 {
     /// <summary>The wrapped storage and the tracer are the same in every test; only the debounce

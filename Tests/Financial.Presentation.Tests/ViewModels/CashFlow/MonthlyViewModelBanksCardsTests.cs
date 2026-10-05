@@ -6,6 +6,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.ViewModels.CashFlow;
 
+[Trait("Category", "Unit")]
 public class MonthlyViewModelBanksCardsTests
 {
     private static readonly Guid BarclaysId = Guid.NewGuid();

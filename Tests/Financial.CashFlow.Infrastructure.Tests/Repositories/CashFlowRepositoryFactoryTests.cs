@@ -11,6 +11,7 @@ using FluentAssertions;
 
 namespace Financial.CashFlow.Infrastructure.Tests.Repositories;
 
+[Trait("Category", "Integration")]
 public class CashFlowRepositoryFactoryTests
 {
     private static readonly CashFlowRepositoryFactory Factory =

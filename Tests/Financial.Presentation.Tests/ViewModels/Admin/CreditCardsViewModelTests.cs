@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Financial.Presentation.Tests.ViewModels.Admin;
 
+[Trait("Category", "Unit")]
 public class CreditCardsViewModelTests
 {
     private static (CreditCardsViewModel ViewModel, StubCreditCardService Service, StubDialogService Dialog) CreateViewModel()

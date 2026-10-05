@@ -5,6 +5,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.Converters;
 
+[Trait("Category", "Unit")]
 public class PositionTypeToColorConverterTests
 {
     private readonly PositionTypeToColorConverter _converter = new();

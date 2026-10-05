@@ -5,6 +5,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.Converters;
 
+[Trait("Category", "Unit")]
 public class PriceSourceToLabelConverterTests
 {
     private readonly PriceSourceToLabelConverter _converter = new();

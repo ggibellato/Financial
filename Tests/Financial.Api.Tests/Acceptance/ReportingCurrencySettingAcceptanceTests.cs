@@ -6,6 +6,7 @@ using FluentAssertions;
 
 namespace Financial.Api.Tests.Acceptance;
 
+[Trait("Category", "Integration")]
 public class ReportingCurrencySettingAcceptanceTests : ApiEndpointTests
 {
     private const string BrokerName = "XPI";
@@ -60,6 +61,7 @@ public class ReportingCurrencySettingAcceptanceTests : ApiEndpointTests
     }
 }
 
+[Trait("Category", "Integration")]
 public class ReportingCurrencyConvertedTotalsAcceptanceTests : ApiEndpointTests
 {
     private const string BrokerName = "XPI";
@@ -113,6 +115,7 @@ public class ReportingCurrencyConvertedTotalsAcceptanceTests : ApiEndpointTests
     }
 }
 
+[Trait("Category", "Integration")]
 public class ReportingCurrencyPartialConversionAcceptanceTests : ApiEndpointTests
 {
     private const string BrokerName = "XPI";
@@ -137,6 +140,7 @@ public class ReportingCurrencyPartialConversionAcceptanceTests : ApiEndpointTest
     }
 }
 
+[Trait("Category", "Integration")]
 public class ReportingCurrencyUnavailableAcceptanceTests : ApiEndpointTests
 {
     private const string BrokerName = "XPI";

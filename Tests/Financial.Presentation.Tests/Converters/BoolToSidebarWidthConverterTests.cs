@@ -5,6 +5,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.Converters;
 
+[Trait("Category", "Unit")]
 public class BoolToSidebarWidthConverterTests
 {
     private readonly BoolToSidebarWidthConverter _converter = new();

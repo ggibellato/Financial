@@ -3,6 +3,7 @@ using FluentAssertions.Execution;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.Migrations;
 
+[Trait("Category", "Integration")]
 public abstract class FileMigratorContractTests
 {
     protected abstract string LegacyFileJson();

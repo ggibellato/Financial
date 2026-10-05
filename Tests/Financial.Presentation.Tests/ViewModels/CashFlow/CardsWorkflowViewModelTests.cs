@@ -10,6 +10,7 @@ namespace Financial.Presentation.Tests.ViewModels.CashFlow;
 /// <summary>Covers CardsWorkflowViewModel.CreditCardManagementRows, the merged Credit Card tab grid
 /// (statement + due-date/active management in one row per card) - mirrors Financial.Web's
 /// CardsGrid merge tests.</summary>
+[Trait("Category", "Unit")]
 public class CardsWorkflowViewModelTests
 {
     private static readonly Guid BarclaysId = Guid.NewGuid();

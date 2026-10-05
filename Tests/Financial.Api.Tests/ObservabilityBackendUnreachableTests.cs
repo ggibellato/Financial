@@ -12,6 +12,7 @@ namespace Financial.Api.Tests;
 /// observability container running at all, the app must start and function normally -
 /// telemetry export failures are retried silently in the background, never surfaced
 /// to the user.</summary>
+[Trait("Category", "Integration")]
 public class ObservabilityBackendUnreachableTests
 {
     // UseSetting (not ConfigureAppConfiguration): AddObservability binds its options inline

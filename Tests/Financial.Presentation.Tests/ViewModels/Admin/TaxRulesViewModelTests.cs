@@ -6,6 +6,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.ViewModels.Admin;
 
+[Trait("Category", "Unit")]
 public class TaxRulesViewModelTests
 {
     private static (TaxRulesViewModel ViewModel, StubTaxRuleService Service, StubDialogService Dialog) CreateViewModel()

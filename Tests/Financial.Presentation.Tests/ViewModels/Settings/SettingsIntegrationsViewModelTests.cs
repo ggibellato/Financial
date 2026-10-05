@@ -7,6 +7,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.ViewModels.Settings;
 
+[Trait("Category", "Unit")]
 public class SettingsIntegrationsViewModelTests
 {
     private static (

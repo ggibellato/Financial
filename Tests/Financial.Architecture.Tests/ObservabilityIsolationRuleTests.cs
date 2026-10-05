@@ -12,6 +12,7 @@ namespace Financial.Architecture.Tests;
 /// Flagged as a follow-up in the Phase 1 post-review note of
 /// specs/001-application-observability/tasks.md.
 /// </summary>
+[Trait("Category", "Unit")]
 public class ObservabilityIsolationRuleTests
 {
     public static TheoryData<string> TelemetryRecordingProjects => new()

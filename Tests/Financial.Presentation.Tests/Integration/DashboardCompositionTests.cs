@@ -21,6 +21,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 namespace Financial.Presentation.Tests.Integration;
 
 // Runs against a throwaway copy of the committed fixture, never the live data file.
+[Trait("Category", "Unit")]
 public class DashboardCompositionTests : IDisposable
 {
     private readonly string _dataFile;

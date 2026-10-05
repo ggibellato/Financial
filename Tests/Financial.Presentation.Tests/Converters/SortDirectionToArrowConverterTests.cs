@@ -5,6 +5,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.Converters;
 
+[Trait("Category", "Unit")]
 public class SortDirectionToArrowConverterTests
 {
     private readonly SortDirectionToArrowConverter _converter = new();

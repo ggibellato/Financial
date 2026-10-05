@@ -11,6 +11,7 @@ using System.Collections.Specialized;
 
 namespace Financial.Presentation.Tests.ViewModels;
 
+[Trait("Category", "Unit")]
 public class AssetPriceFetchViewModelTests
 {
     private readonly StubNavigationService _navigationService;

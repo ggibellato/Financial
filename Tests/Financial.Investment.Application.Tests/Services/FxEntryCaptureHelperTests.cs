@@ -7,6 +7,7 @@ using FluentAssertions;
 
 namespace Financial.Investment.Application.Tests.Services;
 
+[Trait("Category", "Unit")]
 public class FxEntryCaptureHelperTests
 {
     private static readonly StubReportingCurrencyProvider ReportingCurrencyProvider = new();

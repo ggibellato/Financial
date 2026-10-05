@@ -10,6 +10,7 @@ namespace Financial.Observability.Tests;
 
 /// <summary>T045: the OTLP exporter is configured per backend (plain endpoint for Jaeger,
 /// Basic Auth + HTTP for Langfuse), and a misconfigured backend fails fast at startup.</summary>
+[Trait("Category", "Unit")]
 public class BackendConfigurationTests
 {
     [Fact]

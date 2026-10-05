@@ -9,6 +9,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.ViewModels;
 
+[Trait("Category", "Unit")]
 public class AssetDetailsViewModelTransactionsChartTests
 {
     private readonly StubTransactionQueryService _transactionQueryService;

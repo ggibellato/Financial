@@ -6,6 +6,7 @@ using FluentAssertions.Execution;
 
 namespace Financial.Investment.Application.Tests.Services;
 
+[Trait("Category", "Unit")]
 public class NavigationMapperTests
 {
     [Fact]

@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace Financial.Api.Tests.Acceptance;
 
+[Trait("Category", "Integration")]
 public class GoogleCalendarAccountConnectionAcceptanceTests : ApiEndpointTests
 {
     private const string BaseRoute = "/api/v1/financial/integrations/calendar";

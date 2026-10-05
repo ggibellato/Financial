@@ -6,6 +6,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.Converters;
 
+[Trait("Category", "Unit")]
 public class DoubleToDataGridLengthConverterTests
 {
     private readonly DoubleToDataGridLengthConverter _converter = new();

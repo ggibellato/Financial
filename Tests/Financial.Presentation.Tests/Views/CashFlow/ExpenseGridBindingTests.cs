@@ -15,6 +15,7 @@ namespace Financial.Presentation.Tests.Views.CashFlow;
 /// assert every one resolves to a real <see cref="ExpenseDTO"/> property, so a future rename that
 /// misses one of these two files fails a test instead of silently rendering a blank column.
 /// </summary>
+[Trait("Category", "Unit")]
 public class ExpenseGridBindingTests
 {
     [Theory]

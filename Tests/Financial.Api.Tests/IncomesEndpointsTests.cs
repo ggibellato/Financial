@@ -5,6 +5,7 @@ using System.Net.Http.Json;
 
 namespace Financial.Api.Tests;
 
+[Trait("Category", "Integration")]
 public class IncomesEndpointsTests : ApiEndpointTests
 {
     private static readonly Guid BarclaysId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000001");

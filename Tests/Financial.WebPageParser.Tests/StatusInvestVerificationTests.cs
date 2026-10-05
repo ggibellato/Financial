@@ -8,8 +8,9 @@ namespace Financial.WebPageParser.Tests;
 /// These tests make real HTTP requests and should be run manually, on a
 /// machine with normal internet access, to confirm the live page structure
 /// before this feature is relied on in production.
-/// Mark as [Fact] to run, or keep as [Fact(Skip = "Manual")] to skip in CI.
+/// Category=Live: excluded from PR CI, run with `dotnet test --filter Category=Live`.
 /// </summary>
+[Trait("Category", "Live")]
 public class StatusInvestVerificationTests
 {
     private readonly ITestOutputHelper _output;
@@ -19,7 +20,7 @@ public class StatusInvestVerificationTests
         _output = output;
     }
 
-    [Fact(Skip = "Manual verification test - requires internet connection")]
+    [Fact]
     public void VerifySelectors_WithKnownBonds()
     {
         _output.WriteLine("Testing Status Invest sell-price scraping with live data...");
@@ -47,7 +48,7 @@ public class StatusInvestVerificationTests
         }
     }
 
-    [Fact(Skip = "Manual verification test - requires internet connection")]
+    [Fact]
     public void VerifySelectors_UnknownBond_ThrowsInvalidOperationException()
     {
         _output.WriteLine("Testing a bond title that should not resolve to a valid page...");

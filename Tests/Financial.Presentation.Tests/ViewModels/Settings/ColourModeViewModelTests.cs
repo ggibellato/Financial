@@ -4,6 +4,7 @@ using Wpf.Ui.Controls;
 
 namespace Financial.Presentation.Tests.ViewModels.Settings;
 
+[Trait("Category", "Unit")]
 public class ColourModeViewModelTests
 {
     private static ColourModeViewModel Create(

@@ -8,6 +8,7 @@ using Microsoft.Extensions.Hosting;
 
 namespace Financial.Api.Tests;
 
+[Trait("Category", "Integration")]
 public class ShutdownFlushHostedServiceRegistrationTests : ApiEndpointTests
 {
     [Fact]

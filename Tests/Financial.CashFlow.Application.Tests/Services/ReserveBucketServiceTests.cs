@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Financial.CashFlow.Application.Tests.Services;
 
+[Trait("Category", "Unit")]
 public class ReserveBucketServiceTests
 {
     private static readonly ITelemetryTracer Tracer = new RecordingTelemetryTracer();

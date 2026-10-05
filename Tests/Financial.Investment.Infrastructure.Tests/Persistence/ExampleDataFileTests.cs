@@ -19,6 +19,7 @@ namespace Financial.Investment.Infrastructure.Tests.Persistence;
 /// itself rather than a copy that can drift from it.
 /// </para>
 /// </summary>
+[Trait("Category", "Integration")]
 public class ExampleDataFileTests
 {
     private static string ExampleFilePath =>

@@ -4,6 +4,7 @@ using FluentAssertions;
 
 namespace Financial.Api.Tests;
 
+[Trait("Category", "Integration")]
 public class ReportingCurrencyEndpointsTests : ApiEndpointTests
 {
     private const string BrokerName = "XPI";

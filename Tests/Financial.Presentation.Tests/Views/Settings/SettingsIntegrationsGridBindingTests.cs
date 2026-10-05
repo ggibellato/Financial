@@ -12,6 +12,7 @@ namespace Financial.Presentation.Tests.Views.Settings;
 /// status DataGrid's column bindings and asserts every one resolves to a real
 /// <see cref="CalendarSyncRow"/> property, following ExpenseGridBindingTests's pattern.
 /// </summary>
+[Trait("Category", "Unit")]
 public class SettingsIntegrationsGridBindingTests
 {
     [Fact]

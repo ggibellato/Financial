@@ -5,6 +5,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.Views;
 
+[Trait("Category", "Unit")]
 public class AutomationIdContractTests
 {
     private static readonly (string Xaml, string Id)[] RequiredIds =

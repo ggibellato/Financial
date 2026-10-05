@@ -6,6 +6,7 @@ using FluentAssertions;
 
 namespace Financial.Api.Tests.Acceptance;
 
+[Trait("Category", "Integration")]
 public class TaxRulesAcceptanceTests : ApiEndpointTests
 {
     private const string BaseRoute = "/api/v1/financial/tax-rules";

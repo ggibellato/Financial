@@ -3,6 +3,7 @@ using FluentAssertions;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.Migrations;
 
+[Trait("Category", "Integration")]
 public class MigrationBackupTests
 {
     [Fact]

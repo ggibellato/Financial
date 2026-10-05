@@ -3,6 +3,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.Navigation;
 
+[Trait("Category", "Unit")]
 public class NavTreeTests
 {
     [Fact]

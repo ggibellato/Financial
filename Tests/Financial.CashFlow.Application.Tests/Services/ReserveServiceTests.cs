@@ -12,6 +12,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Financial.CashFlow.Application.Tests.Services;
 
+[Trait("Category", "Unit")]
 public class ReserveServiceTests
 {
     private static readonly Microsoft.Extensions.Logging.ILogger<ReserveService> Logger = NullLogger<ReserveService>.Instance;

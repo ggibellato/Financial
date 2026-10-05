@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Financial.Shared.Infrastructure.Tests.Currencies.FxRates;
 
+[Trait("Category", "Unit")]
 public class UsdBasedExchangeRateProviderTests
 {
     private sealed class FakeFxRateStore : IFxRateStore

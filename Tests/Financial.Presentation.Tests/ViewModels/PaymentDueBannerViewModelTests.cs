@@ -5,6 +5,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.ViewModels;
 
+[Trait("Category", "Unit")]
 public class PaymentDueBannerViewModelTests
 {
     private static PaymentDueDTO Payment(string name, int daysRemaining = 3) => new()

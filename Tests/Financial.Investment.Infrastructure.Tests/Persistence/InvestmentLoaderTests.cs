@@ -9,6 +9,7 @@ using FluentAssertions;
 
 namespace Financial.Investment.Infrastructure.Tests.Persistence;
 
+[Trait("Category", "Integration")]
 public class InvestmentLoaderTests
 {
     [Fact]

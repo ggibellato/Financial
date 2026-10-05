@@ -4,6 +4,7 @@ using FluentAssertions;
 
 namespace Financial.CashFlow.Infrastructure.Tests.Persistence;
 
+[Trait("Category", "Integration")]
 public class CalendarConnectionStoreTests
 {
     private static string CreateTempPath() =>

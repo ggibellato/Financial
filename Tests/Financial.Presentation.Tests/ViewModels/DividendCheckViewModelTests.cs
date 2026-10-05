@@ -8,6 +8,7 @@ using Microsoft.Extensions.Options;
 
 namespace Financial.Presentation.Tests.ViewModels;
 
+[Trait("Category", "Unit")]
 public class DividendCheckViewModelTests
 {
     private readonly StubDividendService _dividendService = new();

@@ -5,6 +5,7 @@ using FluentAssertions;
 
 namespace Financial.Architecture.Tests;
 
+[Trait("Category", "Unit")]
 public partial class ProductionClockReadsTests
 {
     // Composition roots register the system clock; a control with no composition root reads it directly.

@@ -5,6 +5,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.ViewModels.CashFlow;
 
+[Trait("Category", "Unit")]
 public class ControleMaeViewModelTests
 {
     private static (ControleMaeViewModel ViewModel, StubControleMaeService Service) CreateViewModel(bool confirm = true) =>

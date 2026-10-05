@@ -13,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Financial.CashFlow.Infrastructure.Tests.DependencyInjection;
 
+[Trait("Category", "Integration")]
 public class CashFlowInfrastructureServiceCollectionExtensionsTests
 {
     [Fact]

@@ -13,6 +13,7 @@ using CreditCard = Financial.CashFlow.Domain.Entities.CreditCard;
 
 namespace Financial.CashFlow.Application.Tests.Services;
 
+[Trait("Category", "Unit")]
 public class InvestmentSnapshotServiceTests
 {
     private static readonly int CurrentYear = TestClock.Today.Year;

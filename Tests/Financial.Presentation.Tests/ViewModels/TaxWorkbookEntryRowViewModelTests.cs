@@ -6,6 +6,7 @@ using Wpf.Ui.Controls;
 
 namespace Financial.Presentation.Tests.ViewModels;
 
+[Trait("Category", "Unit")]
 public class TaxWorkbookEntryRowViewModelTests
 {
     private static TaxWorkbookEntryDTO Entry(CalculationStatus status) => new()

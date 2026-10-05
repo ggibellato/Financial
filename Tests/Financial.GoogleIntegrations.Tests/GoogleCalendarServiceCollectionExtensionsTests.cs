@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Financial.GoogleIntegrations.Tests;
 
+[Trait("Category", "Unit")]
 public class GoogleCalendarServiceCollectionExtensionsTests
 {
     [Fact]

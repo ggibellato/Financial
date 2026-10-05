@@ -3,6 +3,7 @@ using FluentAssertions;
 
 namespace Financial.CashFlow.Domain.Tests.ValueObjects;
 
+[Trait("Category", "Unit")]
 public class MonthlySeriesTests
 {
     private static readonly decimal[] TwelveMonths =

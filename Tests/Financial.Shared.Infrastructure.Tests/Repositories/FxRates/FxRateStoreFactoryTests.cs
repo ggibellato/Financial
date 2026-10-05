@@ -8,6 +8,7 @@ using FluentAssertions;
 
 namespace Financial.Shared.Infrastructure.Tests.Repositories.FxRates;
 
+[Trait("Category", "Integration")]
 public class FxRateStoreFactoryTests
 {
     private static readonly FxRateStoreFactory Factory = new(

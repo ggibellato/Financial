@@ -4,6 +4,7 @@ using FluentAssertions;
 
 namespace Financial.Architecture.Tests;
 
+[Trait("Category", "Unit")]
 public class InvestmentDependencyRuleTests
 {
     private static readonly Assembly DomainAssembly = ProjectAssembly.Load("Financial.Investment.Domain");

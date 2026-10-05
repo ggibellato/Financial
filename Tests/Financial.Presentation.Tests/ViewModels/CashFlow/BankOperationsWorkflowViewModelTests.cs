@@ -10,6 +10,7 @@ namespace Financial.Presentation.Tests.ViewModels.CashFlow;
 /// <summary>
 /// Covers the Bank tab's flat, cross-bank operations list and its bank filter.
 /// </summary>
+[Trait("Category", "Unit")]
 public class BankOperationsWorkflowViewModelTests
 {
     private static readonly Guid BarclaysId = Guid.NewGuid();

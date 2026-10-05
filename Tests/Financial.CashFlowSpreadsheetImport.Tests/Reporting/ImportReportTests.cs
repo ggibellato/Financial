@@ -3,6 +3,7 @@ using FluentAssertions;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.Reporting;
 
+[Trait("Category", "Unit")]
 public class ImportReportTests
 {
     [Fact]

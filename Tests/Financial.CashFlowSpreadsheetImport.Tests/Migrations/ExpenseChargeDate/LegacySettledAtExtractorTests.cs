@@ -3,6 +3,7 @@ using FluentAssertions;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.Migrations.ExpenseChargeDate;
 
+[Trait("Category", "Unit")]
 public class LegacySettledAtExtractorTests
 {
     [Fact]

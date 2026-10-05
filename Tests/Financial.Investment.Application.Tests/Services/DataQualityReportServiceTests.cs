@@ -10,6 +10,7 @@ using FluentAssertions.Execution;
 
 namespace Financial.Investment.Application.Tests.Services;
 
+[Trait("Category", "Unit")]
 public class DataQualityReportServiceTests
 {
     private static readonly DateTimeOffset Today = new(2026, 8, 14, 9, 0, 0, TimeSpan.Zero);

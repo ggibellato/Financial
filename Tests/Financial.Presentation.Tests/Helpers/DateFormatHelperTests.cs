@@ -4,6 +4,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.Helpers;
 
+[Trait("Category", "Unit")]
 public class DateFormatHelperTests
 {
     [Fact]

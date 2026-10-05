@@ -16,6 +16,7 @@ namespace Financial.Api.Tests.Acceptance;
 /// than one flat constant, is what makes this a real proof rather than two codepaths coincidentally
 /// agreeing on the only value either could ever return.
 /// </summary>
+[Trait("Category", "Integration")]
 public class ExchangeRateCrossFeatureConsistencyAcceptanceTests : ApiEndpointTests
 {
     private const string BrokerName = "FxParityXPI";

@@ -6,6 +6,7 @@ using FluentAssertions;
 
 namespace Financial.Investment.Application.Tests.Services;
 
+[Trait("Category", "Unit")]
 public class ReportingCurrencySettingServiceTests
 {
     [Fact]

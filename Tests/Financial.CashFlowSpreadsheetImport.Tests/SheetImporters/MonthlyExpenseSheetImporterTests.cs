@@ -8,6 +8,7 @@ using CreditCardEntity = Financial.CashFlow.Domain.Entities.CreditCard;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.SheetImporters;
 
+[Trait("Category", "Unit")]
 public class MonthlyExpenseSheetImporterTests : IDisposable
 {
     /// <summary>Every test drives a fresh workbook and import report; xUnit builds one instance per test, so they stay

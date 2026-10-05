@@ -3,6 +3,7 @@ using FluentAssertions;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.Parsing;
 
+[Trait("Category", "Unit")]
 public class SheetNameParserTests
 {
     [Theory]

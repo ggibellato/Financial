@@ -8,6 +8,7 @@ namespace Financial.Architecture.Tests;
 /// Enforces the vendor-SDK-isolation convention (P49 F01) for the Frankfurter integration:
 /// it depends only on the shared kernel, never on either bounded context.
 /// </summary>
+[Trait("Category", "Unit")]
 public class FrankfurterIsolationRuleTests
 {
     private static readonly Assembly FrankfurterAssembly =

@@ -9,6 +9,7 @@ using FluentAssertions.Execution;
 
 namespace Financial.Api.Tests.Acceptance;
 
+[Trait("Category", "Integration")]
 public class AllocationBreakdownAcceptanceTests : ApiEndpointTests
 {
     private const string AllocationBreakdownRoute = "/api/v1/financial/allocation-breakdown";
@@ -147,6 +148,7 @@ public class AllocationBreakdownAcceptanceTests : ApiEndpointTests
     }
 }
 
+[Trait("Category", "Integration")]
 public class AllocationBreakdownCurrencyAndBrokerFilterAcceptanceTests : ApiEndpointTests
 {
     private const string AllocationBreakdownRoute = "/api/v1/financial/allocation-breakdown";
