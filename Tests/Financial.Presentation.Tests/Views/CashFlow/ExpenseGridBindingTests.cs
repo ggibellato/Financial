@@ -1,3 +1,4 @@
+using Financial.TestUtilities;
 using System.IO;
 using System.Text.RegularExpressions;
 using Financial.CashFlow.Application.DTOs;
@@ -21,7 +22,7 @@ public class ExpenseGridBindingTests
     [InlineData("CreditCardExpensesView.xaml")]
     public void ExpenseDataGridColumns_BindOnlyToExistingExpenseDTOProperties(string xamlFileName)
     {
-        var xamlPath = Path.Combine(FindRepoRoot(), "Financial.App", "Views", "CashFlow", xamlFileName);
+        var xamlPath = Path.Combine(RepoRoot.Find(), "Financial.App", "Views", "CashFlow", xamlFileName);
         File.Exists(xamlPath).Should().BeTrue($"expected to find {xamlPath}");
         var xaml = File.ReadAllText(xamlPath);
 
@@ -38,16 +39,5 @@ public class ExpenseGridBindingTests
         boundProperties.Should().OnlyContain(
             p => expenseDtoProperties.Contains(p),
             $"every DataGridTextColumn in {xamlFileName}'s expense grid should bind to a real ExpenseDTO property");
-    }
-
-    private static string FindRepoRoot()
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "Financial.slnx")))
-        {
-            dir = dir.Parent;
-        }
-
-        return dir?.FullName ?? throw new InvalidOperationException("Could not locate repo root (Financial.slnx not found in any ancestor directory).");
     }
 }

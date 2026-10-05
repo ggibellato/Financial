@@ -6,6 +6,9 @@ namespace Financial.TestUtilities;
 
 public static class TestHoldingValuationService
 {
-    public static IHoldingValuationService Create(TimeProvider? timeProvider = null) =>
-        new HoldingValuationService(new XirrCalculationService(timeProvider ?? TestClock.At()), new RecordingTelemetryTracer(), NullLogger<HoldingValuationService>.Instance, timeProvider);
+    public static IHoldingValuationService Create(TimeProvider? timeProvider = null)
+    {
+        var clock = timeProvider ?? TestClock.At();
+        return new HoldingValuationService(new XirrCalculationService(clock), new RecordingTelemetryTracer(), NullLogger<HoldingValuationService>.Instance, clock);
+    }
 }

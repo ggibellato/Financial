@@ -17,8 +17,8 @@
 - **Constructor guards**: `Constructor_WithNullRepository_Throws` and one per dependency, with
   `.WithParameterName(...)`.
 - **Time-dependent services** (`PaymentsDueService`, `CategorySummaryService`,
-  `HistoricAverageService`, `IncomeSummaryService`, `InvestmentAnnualResultService`) take an
-  optional `TimeProvider` — pass `new FakeTimeProvider(DateTimeOffset)` and test the exact
+  `HistoricAverageService`, `IncomeSummaryService`, `InvestmentAnnualResultService`) take a
+  required `TimeProvider` — pass `TestClock.At(...)` (a `FakeTimeProvider`) and test the exact
   boundary day (due today, due in 5 days, due in 6 days).
 - **Negative paths**: invalid DTO values (zero amount, unknown id), repository read failure
   (the stub's failure hooks), provider returning `null`.

@@ -1,3 +1,4 @@
+using Financial.TestUtilities;
 using System.IO;
 using System.Text.RegularExpressions;
 using FluentAssertions;
@@ -92,15 +93,5 @@ public class AutomationIdContractTests
         return AutomationIdAttribute.Matches(File.ReadAllText(xamlPath)).Select(match => match.Groups[1].Value);
     }
 
-    private static string FindAppRoot()
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "Financial.slnx")))
-        {
-            dir = dir.Parent;
-        }
-
-        var root = dir?.FullName ?? throw new InvalidOperationException("Could not locate repo root (Financial.slnx not found in any ancestor directory).");
-        return Path.Combine(root, "Financial.App");
-    }
+    private static string FindAppRoot() => Path.Combine(RepoRoot.Find(), "Financial.App");
 }

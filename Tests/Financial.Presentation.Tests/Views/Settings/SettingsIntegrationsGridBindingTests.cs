@@ -1,3 +1,4 @@
+using Financial.TestUtilities;
 using System.IO;
 using System.Text.RegularExpressions;
 using Financial.Presentation.App.ViewModels.Settings;
@@ -16,7 +17,7 @@ public class SettingsIntegrationsGridBindingTests
     [Fact]
     public void SyncStatusDataGridColumns_BindOnlyToExistingCalendarSyncRowProperties()
     {
-        var xamlPath = Path.Combine(FindRepoRoot(), "Financial.App", "Views", "Settings", "SettingsIntegrationsView.xaml");
+        var xamlPath = Path.Combine(RepoRoot.Find(), "Financial.App", "Views", "Settings", "SettingsIntegrationsView.xaml");
         File.Exists(xamlPath).Should().BeTrue($"expected to find {xamlPath}");
         var xaml = File.ReadAllText(xamlPath);
 
@@ -38,20 +39,9 @@ public class SettingsIntegrationsGridBindingTests
     [Fact]
     public void SettingsIntegrationsView_NeverUsesRunTextBinding()
     {
-        var xamlPath = Path.Combine(FindRepoRoot(), "Financial.App", "Views", "Settings", "SettingsIntegrationsView.xaml");
+        var xamlPath = Path.Combine(RepoRoot.Find(), "Financial.App", "Views", "Settings", "SettingsIntegrationsView.xaml");
         var xaml = File.ReadAllText(xamlPath);
 
         xaml.Should().NotContain("<Run Text=\"{Binding", "Run.Text defaults to TwoWay and crashes on a read-only bound property");
-    }
-
-    private static string FindRepoRoot()
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "Financial.slnx")))
-        {
-            dir = dir.Parent;
-        }
-
-        return dir?.FullName ?? throw new InvalidOperationException("Could not locate repo root (Financial.slnx not found in any ancestor directory).");
     }
 }

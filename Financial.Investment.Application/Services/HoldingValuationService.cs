@@ -20,12 +20,12 @@ public sealed class HoldingValuationService : IHoldingValuationService
         IXirrCalculationService xirrCalculationService,
         ITelemetryTracer tracer,
         ILogger<HoldingValuationService> logger,
-        TimeProvider? timeProvider = null)
+        TimeProvider timeProvider)
     {
         _xirrCalculationService = xirrCalculationService ?? throw new ArgumentNullException(nameof(xirrCalculationService));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _timeProvider = timeProvider ?? TimeProvider.System;
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
     }
 
     public HoldingValuation GetValuation(Asset asset, InvestmentScope scope)

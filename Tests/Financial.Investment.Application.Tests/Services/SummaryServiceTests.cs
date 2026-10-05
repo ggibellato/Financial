@@ -311,9 +311,12 @@ public class SummaryServiceTests
         result.HoldingCount.Should().Be(0);
     }
 
-    private SummaryService CreateService(TimeProvider? timeProvider = null) =>
-        new(_repository, Tracer, NullLogger<SummaryService>.Instance, TestHoldingValuationService.Create(timeProvider), new XirrCalculationService(TestClock.At()),
-            new StubExchangeRateProvider(null), new StubReportingCurrencyProvider(Currency.BRL), timeProvider);
+    private SummaryService CreateService(TimeProvider? timeProvider = null)
+    {
+        var clock = timeProvider ?? TestClock.At();
+        return new(_repository, Tracer, NullLogger<SummaryService>.Instance, TestHoldingValuationService.Create(clock), new XirrCalculationService(clock),
+            new StubExchangeRateProvider(null), new StubReportingCurrencyProvider(Currency.BRL), clock);
+    }
 
     private static Asset MakeAsset(string name = "TEST", string ticker = "TEST") =>
         Asset.Create(name, "ISIN", "BVMF", ticker);

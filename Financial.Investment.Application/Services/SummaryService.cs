@@ -30,7 +30,7 @@ public sealed class SummaryService : ISummaryService
         IXirrCalculationService xirrCalculationService,
         IExchangeRateProvider exchangeRateProvider,
         IReportingCurrencyProvider reportingCurrencyProvider,
-        TimeProvider? timeProvider = null)
+        TimeProvider timeProvider)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
@@ -39,7 +39,7 @@ public sealed class SummaryService : ISummaryService
         _xirrCalculationService = xirrCalculationService ?? throw new ArgumentNullException(nameof(xirrCalculationService));
         _exchangeRateProvider = exchangeRateProvider ?? throw new ArgumentNullException(nameof(exchangeRateProvider));
         _reportingCurrencyProvider = reportingCurrencyProvider ?? throw new ArgumentNullException(nameof(reportingCurrencyProvider));
-        _timeProvider = timeProvider ?? TimeProvider.System;
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
     }
 
     public async Task<AggregatedSummaryDTO> GetBrokerSummaryAsync(string brokerName, InvestmentScope scope = InvestmentScope.Active)

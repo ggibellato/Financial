@@ -27,14 +27,14 @@ public sealed class AllocationBreakdownService : IAllocationBreakdownService
         ITelemetryTracer tracer,
         ILogger<AllocationBreakdownService> logger,
         IExchangeRateProvider exchangeRateProvider,
-        TimeProvider? timeProvider = null)
+        TimeProvider timeProvider)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _holdingValuationService = holdingValuationService ?? throw new ArgumentNullException(nameof(holdingValuationService));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _exchangeRateProvider = exchangeRateProvider ?? throw new ArgumentNullException(nameof(exchangeRateProvider));
-        _timeProvider = timeProvider ?? TimeProvider.System;
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
     }
 
     public async Task<AllocationBreakdownDTO> GetAllocationBreakdownAsync(Currency? displayCurrency = null, Currency? brokerCurrencyFilter = null)

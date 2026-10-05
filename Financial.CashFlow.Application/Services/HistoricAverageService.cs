@@ -23,12 +23,12 @@ public sealed class HistoricAverageService : IHistoricAverageService
     private readonly ITelemetryTracer _tracer;
     private readonly ILogger<HistoricAverageService> _logger;
 
-    public HistoricAverageService(ICashFlowRepository repository, ITelemetryTracer tracer, ILogger<HistoricAverageService> logger, TimeProvider? timeProvider = null)
+    public HistoricAverageService(ICashFlowRepository repository, ITelemetryTracer tracer, ILogger<HistoricAverageService> logger, TimeProvider timeProvider)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _timeProvider = timeProvider ?? TimeProvider.System;
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
     }
 
     public IReadOnlyList<CategoryAnnualAverageDTO> GetHistoricSummaryAverageFromYear(int year)

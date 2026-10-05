@@ -33,7 +33,7 @@ public class IncomeSummaryServiceTests
     }
 
     private IncomeSummaryService CreateService(StubCashFlowRepository? repository = null, TimeProvider? timeProvider = null) =>
-        new(repository ?? _repository, _tracer, Logger, timeProvider);
+        new(repository ?? _repository, _tracer, Logger, timeProvider ?? TestClock.At());
 
     // Pinned to a fixed mid-year date so "current year" averaging tests don't have to branch on
     // (or silently no-op during) the real wall-clock month - June guarantees 5 completed months.

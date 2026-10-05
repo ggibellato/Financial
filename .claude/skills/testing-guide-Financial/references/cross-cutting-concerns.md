@@ -7,13 +7,13 @@ pattern or an explicit "not applicable".
 
 ## 1. Time, clock and concurrency-dependent code — covered
 
-- **Where**: `TimeProvider` injected into `PaymentsDueService(ICashFlowRepository, ITelemetryTracer, ILogger<PaymentsDueService>, TimeProvider? timeProvider = null, TimeZoneInfo? timeZone = null)`,
+- **Where**: `TimeProvider` injected into `PaymentsDueService(ICashFlowRepository, ITelemetryTracer, ILogger<PaymentsDueService>, TimeProvider timeProvider, TimeZoneInfo? timeZone = null)`,
   `CategorySummaryService`, `HistoricAverageService`, `IncomeSummaryService`,
   `InvestmentAnnualResultService`, and `DebouncedJsonStorage(IJsonStorage inner, TimeSpan debounceWindow, TimeProvider? timeProvider = null, …)`;
   registered in `CashFlowApplicationServiceCollectionExtensions`. Web: the banner auto-dismiss
   timer in `usePaymentsDue`; WPF: `TodayInfoTracker`.
-- **Unit**: `new FakeTimeProvider(new DateTimeOffset(2026, 9, 10, 9, 0, 0, TimeSpan.Zero))`
-  (`Tests/Financial.TestUtilities/FakeTimeProvider.cs`, fixed `GetUtcNow`) — assert the exact
+- **Unit**: `new FakeTimeProvider(new DateTimeOffset(2026, 9, 10, 9, 0, 0, TimeSpan.Zero))` or
+  `TestClock.At(TestClock.EndOfJanuary)` (`Tests/Financial.TestUtilities/TestClock.cs`, London zone) — assert the exact
   fire boundary (due in 5 days included, 6 excluded; clamped `DueDay` in February).
 - **Integration**: `ObservableFakeClock` (wraps `Microsoft.Extensions.Time.Testing.FakeTimeProvider`,
   counts armed timers) drives `DebouncedJsonStorage` — write during window resets it, write

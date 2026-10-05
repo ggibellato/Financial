@@ -1,3 +1,4 @@
+using Financial.TestUtilities;
 using System.IO;
 using System.Text.RegularExpressions;
 using Financial.Investment.Application.DTOs;
@@ -17,7 +18,7 @@ public class TransactionsAndCreditsGridBindingTests
     [Fact]
     public void TransactionsDataGridColumns_BindOnlyToExistingTransactionDTOProperties()
     {
-        var xamlPath = Path.Combine(FindRepoRoot(), "Financial.App", "Views", "Investment", "TransactionsView.xaml");
+        var xamlPath = Path.Combine(RepoRoot.Find(), "Financial.App", "Views", "Investment", "TransactionsView.xaml");
         File.Exists(xamlPath).Should().BeTrue($"expected to find {xamlPath}");
         var xaml = File.ReadAllText(xamlPath);
 
@@ -30,7 +31,7 @@ public class TransactionsAndCreditsGridBindingTests
     [Fact]
     public void CreditsDataGridColumns_BindOnlyToExistingCreditDTOProperties()
     {
-        var xamlPath = Path.Combine(FindRepoRoot(), "Financial.App", "Views", "Investment", "CreditsView.xaml");
+        var xamlPath = Path.Combine(RepoRoot.Find(), "Financial.App", "Views", "Investment", "CreditsView.xaml");
         File.Exists(xamlPath).Should().BeTrue($"expected to find {xamlPath}");
         var xaml = File.ReadAllText(xamlPath);
 
@@ -54,16 +55,5 @@ public class TransactionsAndCreditsGridBindingTests
         boundProperties.Should().OnlyContain(
             p => dtoProperties.Contains(p),
             $"every column binding in the {dtoType.Name} grid should bind to a real {dtoType.Name} property");
-    }
-
-    private static string FindRepoRoot()
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "Financial.slnx")))
-        {
-            dir = dir.Parent;
-        }
-
-        return dir?.FullName ?? throw new InvalidOperationException("Could not locate repo root (Financial.slnx not found in any ancestor directory).");
     }
 }

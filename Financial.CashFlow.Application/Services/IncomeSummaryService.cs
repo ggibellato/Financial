@@ -23,12 +23,12 @@ public sealed class IncomeSummaryService : IIncomeSummaryService
     private readonly ITelemetryTracer _tracer;
     private readonly ILogger<IncomeSummaryService> _logger;
 
-    public IncomeSummaryService(ICashFlowRepository repository, ITelemetryTracer tracer, ILogger<IncomeSummaryService> logger, TimeProvider? timeProvider = null)
+    public IncomeSummaryService(ICashFlowRepository repository, ITelemetryTracer tracer, ILogger<IncomeSummaryService> logger, TimeProvider timeProvider)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _timeProvider = timeProvider ?? TimeProvider.System;
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
     }
 
     public IncomeAnnualSummaryDTO GetIncomeSummaryForYear(int year)

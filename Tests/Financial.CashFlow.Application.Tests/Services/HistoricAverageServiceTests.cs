@@ -31,7 +31,7 @@ public class HistoricAverageServiceTests
     }
 
     private HistoricAverageService CreateService(StubCashFlowRepository? repository = null, TimeProvider? timeProvider = null) =>
-        new(repository ?? _repository, _tracer, Logger, timeProvider);
+        new(repository ?? _repository, _tracer, Logger, timeProvider ?? TestClock.At());
 
     private static Category CategoryByName(StubCashFlowRepository repository, string name) =>
         repository.Categories.First(c => c.Name == name);

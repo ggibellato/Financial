@@ -64,7 +64,10 @@ put Financial.Orders.Application/Clocked.cs 'class Clocked { TimeProvider _t; Da
 check "DateTime.Now in a class that injects TimeProvider" 1 "Clocked.cs:1 adds DateTime.Now"
 
 put Financial.Orders.Application/Unclocked.cs 'class Unclocked { DateTime x = DateTime.Now; }'
-check "DateTime.Now in a production file without TimeProvider" 0 ""
+check "DateTime.Now in a Financial.* production file, injected clock or not" 1 "Unclocked.cs:1 adds DateTime.Now"
+
+put Tools/Importer/Program.cs 'var now = DateTime.Now;'
+check "DateTime.Now in a Tools project (outside the Financial.* gate)" 0 ""
 
 put Tests/Foo/FooTests.cs '[Fact(Skip = "later")]'
 check "Skip = in a test" 1 "adds Skip ="
