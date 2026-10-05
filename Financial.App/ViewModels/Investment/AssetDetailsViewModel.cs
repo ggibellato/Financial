@@ -846,10 +846,12 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         UpdateCommandStates();
     }
 
+    internal Task PortfolioValuationLoaded { get; private set; } = Task.CompletedTask;
+
     private void FetchRowPricesAsync(IReadOnlyList<PortfolioAssetSummaryRowViewModel> rows, CancellationToken cancellationToken, string brokerName, string portfolioName)
     {
         var rowTasks = rows.Select(row => FetchRowPriceAsync(row, cancellationToken, brokerName, portfolioName)).ToArray();
-        _ = RefreshPortfolioValuationAsync(rowTasks, cancellationToken, brokerName, portfolioName);
+        PortfolioValuationLoaded = RefreshPortfolioValuationAsync(rowTasks, cancellationToken, brokerName, portfolioName);
     }
 
     private Task FetchRowPriceAsync(PortfolioAssetSummaryRowViewModel row, CancellationToken cancellationToken, string brokerName, string portfolioName)

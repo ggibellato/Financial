@@ -138,9 +138,7 @@ public class AssetDetailsViewModelCoverageTests
 
         vm.LoadPortfolioSummary("Broker", "Portfolio", new AggregatedSummaryDTO(), [], items);
 
-        var deadline = TestClock.Default.UtcDateTime.AddSeconds(5);
-        while (vm.PortfolioAssetSummaryRows.Any(r => r.IsLoadingPrice) && TestClock.Default.UtcDateTime < deadline)
-            await Task.Delay(25);
+        await vm.PortfolioValuationLoaded;
 
         vm.PortfolioAssetSummaryRows.Should().OnlyContain(r => !r.IsLoadingPrice);
     }

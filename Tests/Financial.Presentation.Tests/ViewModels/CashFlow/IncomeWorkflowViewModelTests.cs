@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Time.Testing;
 using Financial.CashFlow.Application.DTOs;
 using Financial.Presentation.App.ViewModels;
 using Financial.Presentation.App.ViewModels.CashFlow;
@@ -39,11 +40,13 @@ public class IncomeWorkflowViewModelTests
         new() { Id = ChaseId, Name = "Chase", RoundUpEnabled = false, OpeningBalance = 0, OpeningBalanceDate = TestClock.Today, HasReferences = false },
     ];
 
-    private static (IncomeWorkflowViewModel ViewModel, StubIncomeService Service) CreateViewModel(
+    private readonly FakeTimeProvider _clock = TestClock.At();
+
+    private (IncomeWorkflowViewModel ViewModel, StubIncomeService Service) CreateViewModel(
         bool confirmDeletes = true, Func<Task>? refresh = null)
     {
         var incomeService = new StubIncomeService();
-        var viewModel = new IncomeWorkflowViewModel(incomeService, confirm: _ => confirmDeletes, TestClock.At(), refresh ?? (() => Task.CompletedTask));
+        var viewModel = new IncomeWorkflowViewModel(incomeService, confirm: _ => confirmDeletes, _clock, refresh ?? (() => Task.CompletedTask));
         return (viewModel, incomeService);
     }
 
@@ -133,7 +136,7 @@ public class IncomeWorkflowViewModelTests
         viewModel.IncomeFormNetValue = "50";
         viewModel.IncomeFormBank = BarclaysId;
 
-        await viewModel.SaveIncomeAsync();
+        await SaveAsync(viewModel);
 
         incomes.LastCreateRequest.Should().NotBeNull();
         incomes.LastCreateRequest!.NetValue.Should().Be(50m);
@@ -153,7 +156,7 @@ public class IncomeWorkflowViewModelTests
         viewModel.IncomeFormBank = BarclaysId;
         viewModel.IncomeFormDescription = "Chip ISA dividend";
 
-        await viewModel.SaveIncomeAsync();
+        await SaveAsync(viewModel);
 
         incomes.LastCreateRequest.Should().NotBeNull();
         incomes.LastCreateRequest!.Description.Should().Be("Chip ISA dividend");
@@ -254,6 +257,19 @@ public class IncomeWorkflowViewModelTests
         viewModel.IncomeFormSplitToReserve.Should().BeTrue();
     }
 
+    private Task SaveAsync(IncomeWorkflowViewModel viewModel) => ExpireConfirmationAsync(viewModel.SaveIncomeAsync());
+
+    private async Task ExpireConfirmationAsync(Task saveTask)
+    {
+        while (!saveTask.IsCompleted)
+        {
+            _clock.Advance(TimeSpan.FromSeconds(4));
+            await Task.Yield();
+        }
+
+        await saveTask;
+    }
+
     [Fact]
     public async Task SaveIncomeAsync_WithSplitChecked_SendsSplitToReserveTrue()
     {
@@ -265,7 +281,7 @@ public class IncomeWorkflowViewModelTests
         viewModel.IncomeFormNetValue = "2450";
         viewModel.IncomeFormBank = BarclaysId;
 
-        await viewModel.SaveIncomeAsync();
+        await SaveAsync(viewModel);
 
         incomes.LastCreateRequest.Should().NotBeNull();
         incomes.LastCreateRequest!.SplitToReserve.Should().BeTrue();
@@ -283,13 +299,13 @@ public class IncomeWorkflowViewModelTests
         viewModel.IncomeFormBank = BarclaysId;
 
         var saveTask = viewModel.SaveIncomeAsync();
-        // The confirmation message is set before the hide-delay awaits, so it's observable
-        // immediately once the save itself (not the delay) has completed.
-        await Task.Delay(50);
+        await AsyncWait.UntilAsync(() => viewModel.IncomeSplitConfirmationMessage is not null);
 
         viewModel.IncomeSplitConfirmationMessage.Should().Be("Income saved and split to reserve");
 
-        await saveTask;
+        await ExpireConfirmationAsync(saveTask);
+
+        viewModel.IncomeSplitConfirmationMessage.Should().BeNull();
     }
 
     [Fact]
@@ -303,7 +319,7 @@ public class IncomeWorkflowViewModelTests
         viewModel.IncomeFormNetValue = "50";
         viewModel.IncomeFormBank = BarclaysId;
 
-        await viewModel.SaveIncomeAsync();
+        await SaveAsync(viewModel);
 
         incomes.LastCreateRequest!.SplitToReserve.Should().BeFalse();
         viewModel.IncomeSplitConfirmationMessage.Should().BeNull();
@@ -321,7 +337,7 @@ public class IncomeWorkflowViewModelTests
         viewModel.IncomeFormNetValue = "2450";
         viewModel.IncomeFormBank = ChaseId;
 
-        await viewModel.SaveIncomeAsync();
+        await SaveAsync(viewModel);
 
         viewModel.ShowCreateIncomeFormCommand.Execute(null);
 
@@ -342,7 +358,7 @@ public class IncomeWorkflowViewModelTests
         viewModel.IncomeFormBank = BarclaysId;
         viewModel.IncomeFormDescription = "Chip ISA dividend";
 
-        await viewModel.SaveIncomeAsync();
+        await SaveAsync(viewModel);
 
         viewModel.ShowCreateIncomeFormCommand.Execute(null);
 
@@ -366,7 +382,7 @@ public class IncomeWorkflowViewModelTests
         viewModel.EditIncomeCommand.Execute(income);
         viewModel.IncomeFormNetValue = "75";
 
-        await viewModel.SaveIncomeAsync();
+        await SaveAsync(viewModel);
 
         incomes.LastUpdateRequest.Should().NotBeNull();
         incomes.LastUpdateRequest!.Value.Id.Should().Be(income.Id);
@@ -407,7 +423,7 @@ public class IncomeWorkflowViewModelTests
         viewModel.IncomeFormNetValue = "50";
         viewModel.IncomeFormBank = null;
 
-        await viewModel.SaveIncomeAsync();
+        await SaveAsync(viewModel);
 
         incomes.LastCreateRequest.Should().NotBeNull();
         incomes.LastCreateRequest!.BankId.Should().BeNull();
@@ -449,7 +465,7 @@ public class IncomeWorkflowViewModelTests
         viewModel.IncomeFormSource = LotterySourceId;
         viewModel.IncomeFormNetValue = "50";
 
-        await viewModel.SaveIncomeAsync();
+        await SaveAsync(viewModel);
 
         incomes.LastCreateRequest.Should().BeNull();
         viewModel.DateFieldError.Should().Be(viewModel.IncomeSaveError);
@@ -466,7 +482,7 @@ public class IncomeWorkflowViewModelTests
         viewModel.IncomeFormSource = null;
         viewModel.IncomeFormNetValue = "50";
 
-        await viewModel.SaveIncomeAsync();
+        await SaveAsync(viewModel);
 
         incomes.LastCreateRequest.Should().BeNull();
         viewModel.SourceFieldError.Should().Be(viewModel.IncomeSaveError);
@@ -482,7 +498,7 @@ public class IncomeWorkflowViewModelTests
         viewModel.IncomeFormSource = LotterySourceId;
         viewModel.IncomeFormNetValue = "abc";
 
-        await viewModel.SaveIncomeAsync();
+        await SaveAsync(viewModel);
 
         incomes.LastCreateRequest.Should().BeNull();
         viewModel.NetValueFieldError.Should().Be(viewModel.IncomeSaveError);
@@ -497,11 +513,11 @@ public class IncomeWorkflowViewModelTests
         viewModel.IncomeFormDate = null;
         viewModel.IncomeFormSource = LotterySourceId;
         viewModel.IncomeFormNetValue = "50";
-        await viewModel.SaveIncomeAsync();
+        await SaveAsync(viewModel);
         viewModel.DateFieldError.Should().NotBeNull();
 
         viewModel.IncomeFormDate = TestClock.LocalToday;
-        await viewModel.SaveIncomeAsync();
+        await SaveAsync(viewModel);
 
         viewModel.DateFieldError.Should().BeNull();
     }

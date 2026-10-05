@@ -225,7 +225,7 @@ public class CorporateActionsTabViewModelTests
         var (viewModel, _, spy) = Build(service: service);
 
         viewModel.AddCommand.Execute(null);
-        await WaitUntilAsync(() => viewModel.FormViewModel != null);
+        await AsyncWait.UntilAsync(() => viewModel.FormViewModel != null);
         var formVm = viewModel.FormViewModel!;
         formVm.EffectiveDate = new DateTime(2026, 3, 1);
         formVm.RatioNumerator = 5m;
@@ -233,7 +233,7 @@ public class CorporateActionsTabViewModelTests
         formVm.Note = "typed note";
 
         formVm.ConfirmCommand.Execute(null);
-        await WaitUntilAsync(() => !string.IsNullOrEmpty(formVm.ValidationMessage));
+        await AsyncWait.UntilAsync(() => !string.IsNullOrEmpty(formVm.ValidationMessage));
 
         // Critical retry-loop assertion: the SAME form instance stays open with everything the
         // user typed still intact - a server-side refusal must not discard entered values.
@@ -256,19 +256,19 @@ public class CorporateActionsTabViewModelTests
         var (viewModel, _, spy) = Build(service: service);
 
         viewModel.AddCommand.Execute(null);
-        await WaitUntilAsync(() => viewModel.FormViewModel != null);
+        await AsyncWait.UntilAsync(() => viewModel.FormViewModel != null);
         var formVm = viewModel.FormViewModel!;
         formVm.EffectiveDate = new DateTime(2026, 3, 1);
         formVm.RatioNumerator = 5m;
         formVm.RatioDenominator = 1m;
         formVm.ConfirmCommand.Execute(null);
-        await WaitUntilAsync(() => !string.IsNullOrEmpty(formVm.ValidationMessage));
+        await AsyncWait.UntilAsync(() => !string.IsNullOrEmpty(formVm.ValidationMessage));
 
         service.ExceptionToThrow = null;
         service.AddSplitResult = expectedDetails;
         formVm.RatioNumerator = 4m;
         formVm.ConfirmCommand.Execute(null);
-        await WaitUntilAsync(() => spy.AppliedDetails != null);
+        await AsyncWait.UntilAsync(() => spy.AppliedDetails != null);
 
         viewModel.IsFormOpen.Should().BeFalse();
         viewModel.FormViewModel.Should().BeNull();
@@ -523,7 +523,7 @@ public class CorporateActionsTabViewModelTests
         var (viewModel, _, spy) = Build(service: service, assetAdminService: assetAdminService);
 
         viewModel.AddCommand.Execute(null);
-        await WaitUntilAsync(() => viewModel.FormViewModel != null);
+        await AsyncWait.UntilAsync(() => viewModel.FormViewModel != null);
         var formVm = viewModel.FormViewModel!;
         formVm.Type = "Merger";
         formVm.EffectiveDate = new DateTime(2026, 3, 1);
@@ -532,9 +532,9 @@ public class CorporateActionsTabViewModelTests
         formVm.CashInLieuAmount = 5m;
 
         formVm.ConfirmCommand.Execute(null);
-        await WaitUntilAsync(() => formVm.IsMergerConfirmStep);
+        await AsyncWait.UntilAsync(() => formVm.IsMergerConfirmStep);
         formVm.ConfirmCommand.Execute(null);
-        await WaitUntilAsync(() => !string.IsNullOrEmpty(formVm.ValidationMessage));
+        await AsyncWait.UntilAsync(() => !string.IsNullOrEmpty(formVm.ValidationMessage));
 
         viewModel.IsFormOpen.Should().BeTrue();
         viewModel.FormViewModel.Should().BeSameAs(formVm);
@@ -619,7 +619,7 @@ public class CorporateActionsTabViewModelTests
         var (viewModel, _, spy) = Build(service: service, assetAdminService: assetAdminService);
 
         viewModel.AddCommand.Execute(null);
-        await WaitUntilAsync(() => viewModel.FormViewModel != null);
+        await AsyncWait.UntilAsync(() => viewModel.FormViewModel != null);
         var formVm = viewModel.FormViewModel!;
         formVm.Type = "SpinOff";
         formVm.EffectiveDate = new DateTime(2026, 3, 1);
@@ -628,7 +628,7 @@ public class CorporateActionsTabViewModelTests
         formVm.AllocationPercentage = 25m;
 
         formVm.ConfirmCommand.Execute(null);
-        await WaitUntilAsync(() => !string.IsNullOrEmpty(formVm.ValidationMessage));
+        await AsyncWait.UntilAsync(() => !string.IsNullOrEmpty(formVm.ValidationMessage));
 
         viewModel.IsFormOpen.Should().BeTrue();
         viewModel.FormViewModel.Should().BeSameAs(formVm);
@@ -638,22 +638,6 @@ public class CorporateActionsTabViewModelTests
         formVm.AllocationPercentage.Should().Be(25m);
         spy.AppliedDetails.Should().BeNull();
         spy.Messages.Should().BeEmpty();
-    }
-
-    /// <summary>Polls rather than assumes synchronous continuation timing: the production code
-    /// path under test runs through an `async void` command handler, whose continuations xUnit's
-    /// own tracked SynchronizationContext may post rather than run inline.</summary>
-    private static async Task WaitUntilAsync(Func<bool> condition, int timeoutMs = 2000)
-    {
-        var deadline = TestClock.Default.UtcDateTime.AddMilliseconds(timeoutMs);
-        while (!condition())
-        {
-            if (TestClock.Default.UtcDateTime > deadline)
-            {
-                throw new TimeoutException("Condition was not met within the timeout.");
-            }
-            await Task.Delay(10);
-        }
     }
 
     private sealed class Spy
