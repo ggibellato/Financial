@@ -213,7 +213,7 @@ npm test
 npm run build
 ```
 
-Other useful `Financial.Web` scripts: `npm run test:watch` (watch mode), `npm run preview` (preview a production build), `npm run smoke-test` (Playwright-based smoke test against a running instance, also run in CI).
+Other useful `Financial.Web` scripts: `npm run test:watch` (watch mode), `npm run preview` (preview a production build), `npm run smoke-test` (Playwright `@smoke` specs against a running instance on the test data, also run in CI).
 
 ## Import tooling
 

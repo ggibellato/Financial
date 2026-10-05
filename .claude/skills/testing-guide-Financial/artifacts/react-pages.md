@@ -34,9 +34,9 @@ AC-tracing tests draw their setup from.
   single fake — the backend is a separate deployable (`../references/mock-health-rules.md`).
   `sessionStorage`/`localStorage` are real jsdom storage, cleared in `afterEach`.
 - **Unit**: not for pages — their logic lives in hooks/components.
-- **E2E**: one critical journey per workflow in `Financial.Web/scripts/smoke-test.mjs`
-  against the published API (`../references/e2e-environment.md`); today that is Historic
-  Summary Average.
+- **E2E**: one critical journey per workflow in `Financial.Web/tests/e2e/`
+  against the published API (`../references/e2e-environment.md`); today: app load, asset summary, add expense (success, validation and
+  server-error journeys) and Historic Summary Average.
 
 ## Setup pattern
 

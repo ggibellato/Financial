@@ -131,7 +131,8 @@ npm run build           # tsc -b && vite build — run this (not just vitest) to
 npm test                 # vitest run
 npm run test:watch
 npm run test:coverage   # vitest run --coverage — same command the web CI job's coverage gate uses
-npm run smoke-test      # Playwright smoke test against a running API + web server (see .github/workflows/build.yml)
+npm run smoke-test      # Playwright @smoke specs (needs SMOKE_APP_URL: a published app on the test data, see e2e-environment.md)
+npm run test:e2e        # every Playwright spec; add --headed, --ui or --debug to watch or step through one
 npm run generate-api-types  # regenerate src/api/generated/openapi.ts from the OpenAPI snapshot; commit the result
 ```
 
