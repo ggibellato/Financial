@@ -1,3 +1,4 @@
+using Financial.Shared.Abstractions.Time;
 using System.Collections.ObjectModel;
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
@@ -254,7 +255,7 @@ public class ControleMaeViewModel : ViewModelBase
     private void ShowCreateForm()
     {
         CloseAllForms();
-        CreateDate = _lastUsedCreateDate ?? _timeProvider.GetLocalNow().Date;
+        CreateDate = _lastUsedCreateDate ?? _timeProvider.GetLocalDate();
         CreateDescription = string.Empty;
         CreateNote = string.Empty;
         CreateCurrency = _lastUsedCreateCurrency is { } lastCurrency && Currencies.Contains(lastCurrency) ? lastCurrency : Currencies[0];

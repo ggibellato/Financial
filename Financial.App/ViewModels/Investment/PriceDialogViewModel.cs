@@ -1,3 +1,4 @@
+using Financial.Shared.Abstractions.Time;
 namespace Financial.Presentation.App.ViewModels.Investment;
 
 public enum PriceDialogMode
@@ -72,14 +73,18 @@ public sealed class PriceDialogViewModel : ViewModelBase
 
     public event EventHandler<bool?>? CloseRequested;
 
+    private readonly TimeProvider _timeProvider;
+
     public PriceDialogViewModel(
         PriceDialogMode mode,
         string brokerName,
         string portfolioName,
         string assetName,
         DateTime date,
-        decimal price)
+        decimal price,
+        TimeProvider timeProvider)
     {
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         Mode = mode;
         BrokerName = brokerName;
         PortfolioName = portfolioName;
@@ -94,17 +99,17 @@ public sealed class PriceDialogViewModel : ViewModelBase
         Validate();
     }
 
-    public static PriceDialogViewModel CreateForAdd(string brokerName, string portfolioName, string assetName) =>
-        CreateForAdd(brokerName, portfolioName, assetName, DateTime.Today);
+    public static PriceDialogViewModel CreateForAdd(string brokerName, string portfolioName, string assetName, TimeProvider timeProvider) =>
+        CreateForAdd(brokerName, portfolioName, assetName, timeProvider.GetLocalDate(), timeProvider);
 
-    public static PriceDialogViewModel CreateForAdd(string brokerName, string portfolioName, string assetName, DateTime date) =>
-        new(PriceDialogMode.Add, brokerName, portfolioName, assetName, date, 0);
+    public static PriceDialogViewModel CreateForAdd(string brokerName, string portfolioName, string assetName, DateTime date, TimeProvider timeProvider) =>
+        new(PriceDialogMode.Add, brokerName, portfolioName, assetName, date, 0, timeProvider);
 
-    public static PriceDialogViewModel CreateForUpdate(string brokerName, string portfolioName, string assetName, DateTime date, decimal price) =>
-        new(PriceDialogMode.Update, brokerName, portfolioName, assetName, date, price);
+    public static PriceDialogViewModel CreateForUpdate(string brokerName, string portfolioName, string assetName, DateTime date, decimal price, TimeProvider timeProvider) =>
+        new(PriceDialogMode.Update, brokerName, portfolioName, assetName, date, price, timeProvider);
 
-    public static PriceDialogViewModel CreateForDelete(string brokerName, string portfolioName, string assetName, DateTime date, decimal price) =>
-        new(PriceDialogMode.Delete, brokerName, portfolioName, assetName, date, price);
+    public static PriceDialogViewModel CreateForDelete(string brokerName, string portfolioName, string assetName, DateTime date, decimal price, TimeProvider timeProvider) =>
+        new(PriceDialogMode.Delete, brokerName, portfolioName, assetName, date, price, timeProvider);
 
     private void Confirm()
     {
@@ -134,7 +139,7 @@ public sealed class PriceDialogViewModel : ViewModelBase
 
     private void Validate()
     {
-        ValidationMessage = PriceDialogValidation.BuildValidationMessage(Mode == PriceDialogMode.Delete, Date, Price);
+        ValidationMessage = PriceDialogValidation.BuildValidationMessage(Mode == PriceDialogMode.Delete, Date, Price, _timeProvider.GetLocalDate());
         ConfirmCommand.RaiseCanExecuteChanged();
     }
 }

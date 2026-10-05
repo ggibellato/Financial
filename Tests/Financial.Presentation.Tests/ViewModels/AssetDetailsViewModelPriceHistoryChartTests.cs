@@ -19,7 +19,7 @@ public class AssetDetailsViewModelPriceHistoryChartTests
             new StubTransactionQueryService(),
             new FakeNavigationService(),
             new FakePortfolioAssetSummaryService(),
-            new ProfitCalculationService());
+            new ProfitCalculationService(), TestClock.At());
     }
 
     private static AssetDetailsDTO BuildAssetDetails(
@@ -83,8 +83,8 @@ public class AssetDetailsViewModelPriceHistoryChartTests
     {
         var entries = new List<AssetPriceSnapshotDTO>
         {
-            new() { Date = DateOnly.FromDateTime(DateTime.Today), Price = 100m, IsManual = true },
-            new() { Date = DateOnly.FromDateTime(DateTime.Today.AddYears(-2)), Price = 50m, IsManual = false },
+            new() { Date = TestClock.Today, Price = 100m, IsManual = true },
+            new() { Date = DateOnly.FromDateTime(TestClock.LocalToday.AddYears(-2)), Price = 50m, IsManual = false },
         };
         var vm = BuildViewModel();
         vm.LoadAssetDetails(BuildAssetDetails("XPI", "TEST", entries));
@@ -100,7 +100,7 @@ public class AssetDetailsViewModelPriceHistoryChartTests
     public void Clear_ResetsPriceHistoryState()
     {
         var vm = BuildViewModel();
-        vm.LoadAssetDetails(BuildAssetDetails("XPI", "TEST", [new() { Date = DateOnly.FromDateTime(DateTime.Today), Price = 100m, IsManual = true }]));
+        vm.LoadAssetDetails(BuildAssetDetails("XPI", "TEST", [new() { Date = TestClock.Today, Price = 100m, IsManual = true }]));
 
         vm.Clear();
 
@@ -114,8 +114,8 @@ public class AssetDetailsViewModelPriceHistoryChartTests
     {
         var transactions = new List<TransactionDTO>
         {
-            new() { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Buy", Quantity = 10m, UnitPrice = 90m, Fees = 1m, NetCash = 901m },
-            new() { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Sell", Quantity = 5m, UnitPrice = 130m, Fees = 1m, NetCash = 649m },
+            new() { Id = Guid.NewGuid(), Date = TestClock.LocalToday, Type = "Buy", Quantity = 10m, UnitPrice = 90m, Fees = 1m, NetCash = 901m },
+            new() { Id = Guid.NewGuid(), Date = TestClock.LocalToday, Type = "Sell", Quantity = 5m, UnitPrice = 130m, Fees = 1m, NetCash = 649m },
         };
         var vm = BuildViewModel();
 
@@ -131,8 +131,8 @@ public class AssetDetailsViewModelPriceHistoryChartTests
     {
         var transactions = new List<TransactionDTO>
         {
-            new() { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Buy", Quantity = 10m, UnitPrice = 90m, Fees = 1m, NetCash = 901m },
-            new() { Id = Guid.NewGuid(), Date = DateTime.Today.AddYears(-2), Type = "Buy", Quantity = 10m, UnitPrice = 80m, Fees = 1m, NetCash = 801m },
+            new() { Id = Guid.NewGuid(), Date = TestClock.LocalToday, Type = "Buy", Quantity = 10m, UnitPrice = 90m, Fees = 1m, NetCash = 901m },
+            new() { Id = Guid.NewGuid(), Date = TestClock.LocalToday.AddYears(-2), Type = "Buy", Quantity = 10m, UnitPrice = 80m, Fees = 1m, NetCash = 801m },
         };
         var vm = BuildViewModel();
         vm.LoadAssetDetails(BuildAssetDetails("XPI", "TEST", [], transactions));

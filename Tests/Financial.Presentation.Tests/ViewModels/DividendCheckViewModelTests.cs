@@ -99,13 +99,13 @@ public class DividendCheckViewModelTests
         Ticker = "TICK",
         Name = "Sample Asset",
         CurrentPrice = 10m,
-        PriceAsOf = DateTimeOffset.UtcNow,
+        PriceAsOf = TestClock.Default,
         AverageDividendLastFiveYears = 1m,
         DividendYieldPercent = 10m,
         PriceMaxBuy = 12m,
         DiscountPercent = 5m,
-        History = [new DividendHistoryItemDTO { Type = "Dividend", Date = DateTime.Today, Value = 1m }],
-        YearTotals = [new DividendYearTotalDTO { Year = DateTime.Today.Year, Total = 1m }]
+        History = [new DividendHistoryItemDTO { Type = "Dividend", Date = TestClock.LocalToday, Value = 1m }],
+        YearTotals = [new DividendYearTotalDTO { Year = TestClock.LocalToday.Year, Total = 1m }]
     };
 
     private sealed class StubDividendService : IDividendService

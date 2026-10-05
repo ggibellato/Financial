@@ -459,6 +459,8 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     public RelayCommand RefreshTodayInfoCommand => _refreshTodayInfoCommand;
     public RelayCommand CopyAssetNameCommand => _copyAssetNameCommand;
 
+    private readonly TimeProvider _timeProvider;
+
     public AssetDetailsViewModel(
         ITransactionService transactionService,
         ICreditService creditService,
@@ -468,6 +470,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         INavigationService navigationService,
         IPortfolioAssetSummaryService portfolioAssetSummaryService,
         IProfitCalculationService profitCalculationService,
+        TimeProvider timeProvider,
         InvestmentScope scope = InvestmentScope.Active,
         IAssetPriceLookupService? priceLookupService = null,
         IAssetPriceHistoryService? priceHistoryService = null,
@@ -483,6 +486,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
         _portfolioAssetSummaryService = portfolioAssetSummaryService ?? throw new ArgumentNullException(nameof(portfolioAssetSummaryService));
         _profitCalculationService = profitCalculationService ?? throw new ArgumentNullException(nameof(profitCalculationService));
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _scope = scope;
         _todayInfo = new TodayInfoTracker(ApplyTodayInfo, ResetTodayInfo, UpdateCommandStates);
         Transactions = new TransactionsTabViewModel(
@@ -495,6 +499,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
             () => AssetName,
             details => LoadAssetDetails(details),
             (message, caption, image) => MessageBox.Show(message, caption, MessageBoxButton.OK, image),
+            _timeProvider,
             _navigationService,
             () => CostBasisMethod == CostBasisMethod.SpecificId);
         Credits = new CreditsTabViewModel(
@@ -504,7 +509,8 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
             () => PortfolioName,
             () => AssetName,
             details => LoadAssetDetails(details),
-            (message, caption, image) => MessageBox.Show(message, caption, MessageBoxButton.OK, image));
+            (message, caption, image) => MessageBox.Show(message, caption, MessageBoxButton.OK, image),
+            _timeProvider);
         PriceHistory = new PriceHistoryTabViewModel(
             _priceHistoryService,
             () => HasAssetContext,
@@ -512,7 +518,8 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
             () => PortfolioName,
             () => AssetName,
             details => LoadAssetDetails(details),
-            (message, caption, image) => MessageBox.Show(message, caption, MessageBoxButton.OK, image));
+            (message, caption, image) => MessageBox.Show(message, caption, MessageBoxButton.OK, image),
+            _timeProvider);
         Disposals = new DisposalsTabViewModel();
         CorporateActions = new CorporateActionsTabViewModel(
             corporateActionService,
@@ -522,6 +529,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
             () => AssetName,
             details => LoadAssetDetails(details),
             (message, caption, image) => MessageBox.Show(message, caption, MessageBoxButton.OK, image),
+            _timeProvider,
             assetAdminService);
         _refreshTodayInfoCommand = new RelayCommand(RefreshTodayInfo, CanRefreshTodayInfo);
         _copyAssetNameCommand = new RelayCommand(CopyAssetName, CanCopyAssetName);
@@ -543,7 +551,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         FooterRealizedGainLossSharesOnly = assetItems.Sum(i => i.RealizedGainLossSharesOnly);
         FooterTotalCredits = summary.TotalCredits;
         FooterCurrentMonthCredits = assetItems.Sum(i => i.CurrentMonthCredits);
-        FooterCurrentMonthLabel = "Credits " + DateTime.Today.ToString("MMM yyyy", CultureInfo.InvariantCulture);
+        FooterCurrentMonthLabel = "Credits " + _timeProvider.GetLocalNow().ToString("MMM yyyy", CultureInfo.InvariantCulture);
         var withEstimated = assetItems.Where(i => i.EstimatedAnnualCredits.HasValue).ToList();
         FooterEstimatedAnnualCreditsDisplay = withEstimated.Any()
             ? withEstimated.Sum(i => i.EstimatedAnnualCredits!.Value).ToString("N2")

@@ -11,15 +11,15 @@ public class UpcomingIncomeViewModelTests
     private static UpcomingIncomeDTO Entry(string assetName, int daysAhead, decimal amount = 10m) => new(
         assetName,
         "Chase",
-        DateTime.Today.AddDays(daysAhead).AddMonths(-1),
-        DateTime.Today.AddDays(daysAhead),
+        TestClock.LocalToday.AddDays(daysAhead).AddMonths(-1),
+        TestClock.LocalToday.AddDays(daysAhead),
         amount);
 
     private static (UpcomingIncomeViewModel ViewModel, StubUpcomingIncomeService Service) CreateViewModel(
         params UpcomingIncomeDTO[] entries)
     {
         var service = new StubUpcomingIncomeService { Entries = entries };
-        var viewModel = new UpcomingIncomeViewModel(service, new RecordingLogger<UpcomingIncomeViewModel>());
+        var viewModel = new UpcomingIncomeViewModel(service, TestClock.At(), new RecordingLogger<UpcomingIncomeViewModel>());
         return (viewModel, service);
     }
 
@@ -131,7 +131,7 @@ public class UpcomingIncomeViewModelTests
     public async Task AFailedLoad_ReportsTheErrorAndKeepsTheContentHidden()
     {
         var service = new StubUpcomingIncomeService { ThrowOnGetUpcomingIncome = new InvalidOperationException("boom") };
-        var viewModel = new UpcomingIncomeViewModel(service, new RecordingLogger<UpcomingIncomeViewModel>());
+        var viewModel = new UpcomingIncomeViewModel(service, TestClock.At(), new RecordingLogger<UpcomingIncomeViewModel>());
 
         await viewModel.LoadAsync();
 
@@ -146,7 +146,7 @@ public class UpcomingIncomeViewModelTests
     public async Task RefreshCommand_ClearsAnEarlierErrorAndReloads()
     {
         var service = new StubUpcomingIncomeService { ThrowOnGetUpcomingIncome = new InvalidOperationException("boom") };
-        var viewModel = new UpcomingIncomeViewModel(service, new RecordingLogger<UpcomingIncomeViewModel>());
+        var viewModel = new UpcomingIncomeViewModel(service, TestClock.At(), new RecordingLogger<UpcomingIncomeViewModel>());
         await viewModel.LoadAsync();
         viewModel.HasError.Should().BeTrue();
 
@@ -162,7 +162,7 @@ public class UpcomingIncomeViewModelTests
     [Fact]
     public void Constructor_RejectsAMissingService()
     {
-        var act = () => new UpcomingIncomeViewModel(null!, new RecordingLogger<UpcomingIncomeViewModel>());
+        var act = () => new UpcomingIncomeViewModel(null!, TestClock.At(), new RecordingLogger<UpcomingIncomeViewModel>());
 
         act.Should().Throw<ArgumentNullException>();
     }

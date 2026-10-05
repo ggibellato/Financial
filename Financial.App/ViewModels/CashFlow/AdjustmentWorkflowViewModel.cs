@@ -1,3 +1,4 @@
+using Financial.Shared.Abstractions.Time;
 using System.Collections.ObjectModel;
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
@@ -167,7 +168,7 @@ public class AdjustmentWorkflowViewModel : ViewModelBase
     {
         _editingAdjustmentBank = null;
         _editingAdjustmentId = null;
-        AdjustmentFormDate = _lastUsedAdjustmentDate ?? _timeProvider.GetLocalNow().Date;
+        AdjustmentFormDate = _lastUsedAdjustmentDate ?? _timeProvider.GetLocalDate();
         AdjustmentFormTargetBalance = string.Empty;
         AdjustmentFormNote = string.Empty;
         AdjustmentSaveError = null;

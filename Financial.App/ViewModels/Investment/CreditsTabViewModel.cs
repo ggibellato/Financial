@@ -1,3 +1,4 @@
+using Financial.Shared.Abstractions.Time;
 using System.Collections.ObjectModel;
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Interfaces;
@@ -47,6 +48,8 @@ public class CreditsTabViewModel : ViewModelBase
     private DateTime? _lastUsedCreditDate;
     private string? _lastUsedCreditType;
 
+    private readonly TimeProvider _timeProvider;
+
     public CreditsTabViewModel(
         ICreditService? creditService,
         Func<bool> hasContext,
@@ -54,8 +57,10 @@ public class CreditsTabViewModel : ViewModelBase
         Func<string> portfolioName,
         Func<string> assetName,
         Action<AssetDetailsDTO> applyDetails,
-        Action<string, string, MessageBoxImage> showMessage)
+        Action<string, string, MessageBoxImage> showMessage,
+        TimeProvider timeProvider)
     {
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _creditService = creditService;
         _hasContext = hasContext ?? throw new ArgumentNullException(nameof(hasContext));
         _brokerName = brokerName ?? throw new ArgumentNullException(nameof(brokerName));
@@ -349,7 +354,7 @@ public class CreditsTabViewModel : ViewModelBase
     private Task<CreditDialogData?> ShowAddCreditFormAsync() =>
         ShowCreditFormAsync(CreditDialogViewModel.CreateForAdd(
             _brokerName(), _portfolioName(), _assetName(),
-            _lastUsedCreditDate ?? DateTime.Today,
+            _lastUsedCreditDate ?? _timeProvider.GetLocalDate(),
             _lastUsedCreditType ?? "Dividend"));
 
     private Task<CreditDialogData?> ShowUpdateCreditFormAsync()
@@ -414,9 +419,9 @@ public class CreditsTabViewModel : ViewModelBase
         RefreshCreditsByMonthChart(FilterCredits(Credits, _creditsFilterGroup.SelectedValue));
     }
 
-    private static IEnumerable<CreditDTO> FilterCredits(IEnumerable<CreditDTO> credits, PeriodFilter filter)
+    private IEnumerable<CreditDTO> FilterCredits(IEnumerable<CreditDTO> credits, PeriodFilter filter)
     {
-        var (start, endExclusive) = PeriodFilterHelper.GetDateRange(filter, DateTime.Today);
+        var (start, endExclusive) = PeriodFilterHelper.GetDateRange(filter, _timeProvider.GetLocalDate());
         if (start is null) return credits;
         return credits.Where(credit => credit.Date >= start && credit.Date < endExclusive);
     }

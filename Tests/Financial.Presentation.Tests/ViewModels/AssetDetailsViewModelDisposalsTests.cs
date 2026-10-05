@@ -18,7 +18,7 @@ public class AssetDetailsViewModelDisposalsTests
             new StubTransactionQueryService(),
             new FakeNavigationService(),
             new FakePortfolioAssetSummaryService(),
-            new ProfitCalculationService());
+            new ProfitCalculationService(), TestClock.At());
     }
 
     private static DisposalRecordDTO CreateRecord(string taxYear) => new()
@@ -36,7 +36,7 @@ public class AssetDetailsViewModelDisposalsTests
         TaxYear = taxYear,
         Status = DisposalRecordStatus.Active,
         SupersededByRecordId = null,
-        CreatedAt = DateTimeOffset.UtcNow
+        CreatedAt = TestClock.Default
     };
 
     private static AssetDetailsDTO BuildAssetDetails(IReadOnlyList<DisposalRecordDTO> disposalRecords) => new()

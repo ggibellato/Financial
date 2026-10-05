@@ -1,3 +1,4 @@
+using Financial.Shared.Abstractions.Time;
 using System.Collections.ObjectModel;
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
@@ -380,7 +381,7 @@ public class ExpenseWorkflowViewModel : ViewModelBase
     private void ShowCreateExpenseForm(string? mode)
     {
         _editingExpenseId = null;
-        ExpenseFormDate = _lastUsedExpenseDate ?? _timeProvider.GetLocalNow().Date;
+        ExpenseFormDate = _lastUsedExpenseDate ?? _timeProvider.GetLocalDate();
         ExpenseFormDescription = string.Empty;
         ExpenseFormCategoryId = _lastUsedExpenseCategoryId is { } lastCategoryId && _categories.Any(c => c.Id == lastCategoryId)
             ? lastCategoryId

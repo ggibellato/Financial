@@ -242,7 +242,7 @@ public class AssetPriceFetchViewModelTests
                 Ticker = request.Ticker,
                 Name = "Test",
                 Price = 1m,
-                AsOf = DateTimeOffset.UtcNow
+                AsOf = TestClock.Default
             });
         }
     }

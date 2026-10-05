@@ -8,7 +8,7 @@ namespace Financial.Presentation.Tests.Helpers;
 public class LotAllocationCalculatorTests
 {
     private static LotAllocationRowViewModel Row(decimal remaining, decimal quantity = 0m) =>
-        new(new OpenLotDTO { SourceTransactionId = Guid.NewGuid(), Date = DateTime.Today, RemainingQuantity = remaining, UnitCost = 10m })
+        new(new OpenLotDTO { SourceTransactionId = Guid.NewGuid(), Date = TestClock.LocalToday, RemainingQuantity = remaining, UnitCost = 10m })
         {
             Quantity = quantity
         };

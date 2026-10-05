@@ -27,6 +27,7 @@ public class AssetDetailsViewModelCoverageTests
             navigationService ?? new FakeNavigationService(),
             portfolioAssetSummaryService ?? new FakePortfolioAssetSummaryService(),
             new ProfitCalculationService(),
+            TestClock.At(),
             scope,
             priceLookupService,
             priceHistoryService);
@@ -116,7 +117,7 @@ public class AssetDetailsViewModelCoverageTests
     {
         var vm = BuildViewModel();
         var summary = new AggregatedSummaryDTO { TotalBought = 500m, TotalSold = 100m };
-        var credits = new List<CreditDTO> { new() { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Dividend", Value = 25m } };
+        var credits = new List<CreditDTO> { new() { Id = Guid.NewGuid(), Date = TestClock.LocalToday, Type = "Dividend", Value = 25m } };
 
         vm.LoadPortfolioCredits("Broker", "Portfolio", summary, credits);
 
@@ -137,8 +138,8 @@ public class AssetDetailsViewModelCoverageTests
 
         vm.LoadPortfolioSummary("Broker", "Portfolio", new AggregatedSummaryDTO(), [], items);
 
-        var deadline = DateTime.UtcNow.AddSeconds(5);
-        while (vm.PortfolioAssetSummaryRows.Any(r => r.IsLoadingPrice) && DateTime.UtcNow < deadline)
+        var deadline = TestClock.Default.UtcDateTime.AddSeconds(5);
+        while (vm.PortfolioAssetSummaryRows.Any(r => r.IsLoadingPrice) && TestClock.Default.UtcDateTime < deadline)
             await Task.Delay(25);
 
         vm.PortfolioAssetSummaryRows.Should().OnlyContain(r => !r.IsLoadingPrice);
@@ -151,7 +152,7 @@ public class AssetDetailsViewModelCoverageTests
         var transactionService = new ConfigurableTransactionService { DeleteResult = expectedDetails };
         var vm = BuildViewModel(transactionService: transactionService);
         vm.LoadAssetDetails(BuildAssetDetails());
-        var tx = new TransactionDTO { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Buy", Quantity = 1m, UnitPrice = 1m, Fees = 0m };
+        var tx = new TransactionDTO { Id = Guid.NewGuid(), Date = TestClock.LocalToday, Type = "Buy", Quantity = 1m, UnitPrice = 1m, Fees = 0m };
 
         vm.Transactions.DeleteTransactionCommand.CanExecute(tx).Should().BeTrue();
         await vm.Transactions.Delete(tx, () => true);
@@ -170,7 +171,7 @@ public class AssetDetailsViewModelCoverageTests
         var creditService = new ConfigurableCreditService { DeleteResult = expectedDetails };
         var vm = BuildViewModel(creditService: creditService);
         vm.LoadAssetDetails(BuildAssetDetails());
-        var credit = new CreditDTO { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Dividend", Value = 10m };
+        var credit = new CreditDTO { Id = Guid.NewGuid(), Date = TestClock.LocalToday, Type = "Dividend", Value = 10m };
 
         vm.Credits.DeleteCreditCommand.CanExecute(credit).Should().BeTrue();
         await vm.Credits.Delete(credit, () => true);
@@ -189,7 +190,7 @@ public class AssetDetailsViewModelCoverageTests
         var priceHistoryService = new ConfigurablePriceHistoryService { DeleteResult = expectedDetails };
         var vm = BuildViewModel(priceHistoryService: priceHistoryService);
         vm.LoadAssetDetails(BuildAssetDetails());
-        var entry = new AssetPriceSnapshotDTO { Date = DateOnly.FromDateTime(DateTime.Today), Price = 10m, IsManual = true };
+        var entry = new AssetPriceSnapshotDTO { Date = TestClock.Today, Price = 10m, IsManual = true };
 
         vm.PriceHistory.DeletePriceCommand.CanExecute(entry).Should().BeTrue();
         await vm.PriceHistory.Delete(entry, () => true);

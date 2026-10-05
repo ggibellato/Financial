@@ -19,7 +19,7 @@ public class FxRateSnapshotToVisibilityConverterTests
     [Fact]
     public void Convert_FxRateSnapshotDto_ReturnsVisible()
     {
-        var snapshot = new FxRateSnapshotDTO { ToCurrency = "GBP", Rate = 5.1m, Source = "Frankfurter", RetrievedAt = DateTimeOffset.UtcNow };
+        var snapshot = new FxRateSnapshotDTO { ToCurrency = "GBP", Rate = 5.1m, Source = "Frankfurter", RetrievedAt = TestClock.Default };
 
         _converter.Convert(snapshot, typeof(Visibility), null, CultureInfo.InvariantCulture).Should().Be(Visibility.Visible);
     }

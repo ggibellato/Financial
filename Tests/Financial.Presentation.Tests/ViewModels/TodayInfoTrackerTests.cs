@@ -338,7 +338,7 @@ public class TodayInfoTrackerTests
                 Ticker = request.Ticker,
                 Name = request.Name ?? request.Ticker,
                 Price = 3775.97m,
-                AsOf = DateTimeOffset.UtcNow,
+                AsOf = TestClock.Default,
                 IsManual = _isManual
             });
         }

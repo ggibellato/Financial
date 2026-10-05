@@ -1,3 +1,4 @@
+using Financial.Shared.Abstractions.Time;
 using System.Collections.ObjectModel;
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Enums;
@@ -54,6 +55,8 @@ public class TransactionsTabViewModel : ViewModelBase
     private DateTime? _lastUsedTransactionDate;
     private string? _lastUsedTransactionType;
 
+    private readonly TimeProvider _timeProvider;
+
     public TransactionsTabViewModel(
         ITransactionService? transactionService,
         ITransactionQueryService transactionQueryService,
@@ -64,9 +67,11 @@ public class TransactionsTabViewModel : ViewModelBase
         Func<string> assetName,
         Action<AssetDetailsDTO> applyDetails,
         Action<string, string, MessageBoxImage> showMessage,
+        TimeProvider timeProvider,
         INavigationService? navigationService = null,
         Func<bool>? isSpecificIdBroker = null)
     {
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _transactionService = transactionService;
         _transactionQueryService = transactionQueryService ?? throw new ArgumentNullException(nameof(transactionQueryService));
         _navigationService = navigationService;
@@ -491,7 +496,7 @@ public class TransactionsTabViewModel : ViewModelBase
         TransactionDialogViewModel? vm = null;
         vm = TransactionDialogViewModel.CreateForAdd(
             _brokerName(), _portfolioName(), _assetName(),
-            _lastUsedTransactionDate ?? DateTime.Today,
+            _lastUsedTransactionDate ?? _timeProvider.GetLocalDate(),
             _lastUsedTransactionType ?? "Buy",
             _isSpecificIdBroker(),
             () => _ = FetchOpenLotsAsync(vm!));
@@ -602,7 +607,7 @@ public class TransactionsTabViewModel : ViewModelBase
             ? _brokerPortfolioTransactions.Select(t => (t.Date, t.NetCash))
             : Transactions.Select(t => (t.Date, t.NetCash));
 
-        var months = TransactionsMonthlyAggregator.BuildMonthlyNetInvested(source, _transactionsFilterGroup.SelectedValue, DateTime.Today);
+        var months = TransactionsMonthlyAggregator.BuildMonthlyNetInvested(source, _transactionsFilterGroup.SelectedValue, _timeProvider.GetLocalDate());
         _transactionsChartMonths = months;
         TransactionsPlotModel = TransactionsChartBuilder.Build(months, _transactionsChartModeGroup.SelectedValue);
         if (TransactionsPlotModel != null)

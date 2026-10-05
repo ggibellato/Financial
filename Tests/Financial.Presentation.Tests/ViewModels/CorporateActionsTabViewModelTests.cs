@@ -30,6 +30,7 @@ public class CorporateActionsTabViewModelTests
             () => AssetName,
             spy.ApplyDetails,
             spy.ShowMessage,
+            TestClock.At(),
             assetAdminService);
         return (viewModel, stubService, spy);
     }
@@ -139,7 +140,7 @@ public class CorporateActionsTabViewModelTests
     public void Clear_ResetsCollectionAndFlags()
     {
         var (viewModel, _, _) = Build();
-        var record = new CorporateActionDTO { Id = Guid.NewGuid(), Type = CorporateAction.CorporateActionType.Split, EffectiveDate = DateTime.Today, RatioFactor = 2m };
+        var record = new CorporateActionDTO { Id = Guid.NewGuid(), Type = CorporateAction.CorporateActionType.Split, EffectiveDate = TestClock.LocalToday, RatioFactor = 2m };
         viewModel.Load("ctx", [record], AssetName);
 
         viewModel.Clear();
@@ -157,7 +158,7 @@ public class CorporateActionsTabViewModelTests
         viewModel.ShowAddCorporateActionFormAsync();
         var formVm = viewModel.FormViewModel!;
 
-        formVm.EffectiveDate.Should().Be(DateTime.Today);
+        formVm.EffectiveDate.Should().Be(TestClock.LocalToday);
         formVm.RatioNumerator.Should().Be(0m);
         formVm.RatioDenominator.Should().Be(0m);
         formVm.Note.Should().BeEmpty();
@@ -308,7 +309,7 @@ public class CorporateActionsTabViewModelTests
     {
         var (viewModel, service, spy) = Build();
         var row = new CorporateActionRowViewModel(
-            new CorporateActionDTO { Id = Guid.Empty, Type = CorporateAction.CorporateActionType.Split, EffectiveDate = DateTime.Today, RatioFactor = 2m },
+            new CorporateActionDTO { Id = Guid.Empty, Type = CorporateAction.CorporateActionType.Split, EffectiveDate = TestClock.LocalToday, RatioFactor = 2m },
             AssetName);
 
         await viewModel.Update(row, () => AsForm(ValidFormData()));
@@ -331,7 +332,7 @@ public class CorporateActionsTabViewModelTests
     public async Task Delete_NotConfirmed_DoesNotCallService()
     {
         var (viewModel, service, _) = Build();
-        var record = new CorporateActionDTO { Id = Guid.NewGuid(), Type = CorporateAction.CorporateActionType.Split, EffectiveDate = DateTime.Today, RatioFactor = 2m };
+        var record = new CorporateActionDTO { Id = Guid.NewGuid(), Type = CorporateAction.CorporateActionType.Split, EffectiveDate = TestClock.LocalToday, RatioFactor = 2m };
         viewModel.Load("ctx", [record], AssetName);
         var selected = viewModel.CorporateActions.Single();
 
@@ -347,7 +348,7 @@ public class CorporateActionsTabViewModelTests
         var service = new StubCorporateActionService { DeleteResult = expectedDetails };
         var (viewModel, _, spy) = Build(service: service);
         var id = Guid.NewGuid();
-        var record = new CorporateActionDTO { Id = id, Type = CorporateAction.CorporateActionType.Split, EffectiveDate = DateTime.Today, RatioFactor = 2m };
+        var record = new CorporateActionDTO { Id = id, Type = CorporateAction.CorporateActionType.Split, EffectiveDate = TestClock.LocalToday, RatioFactor = 2m };
         viewModel.Load("ctx", [record], AssetName);
         var selected = viewModel.CorporateActions.Single();
 
@@ -363,7 +364,7 @@ public class CorporateActionsTabViewModelTests
     {
         var service = new StubCorporateActionService { ExceptionToThrow = new InvestmentRuleViolationException("Cannot delete: a later corporate action depends on this one.") };
         var (viewModel, _, spy) = Build(service: service);
-        var record = new CorporateActionDTO { Id = Guid.NewGuid(), Type = CorporateAction.CorporateActionType.Split, EffectiveDate = DateTime.Today, RatioFactor = 2m };
+        var record = new CorporateActionDTO { Id = Guid.NewGuid(), Type = CorporateAction.CorporateActionType.Split, EffectiveDate = TestClock.LocalToday, RatioFactor = 2m };
         viewModel.Load("ctx", [record], AssetName);
         var selected = viewModel.CorporateActions.Single();
 
@@ -379,7 +380,7 @@ public class CorporateActionsTabViewModelTests
     {
         var (viewModel, svc, spy) = Build();
         var row = new CorporateActionRowViewModel(
-            new CorporateActionDTO { Id = Guid.Empty, Type = CorporateAction.CorporateActionType.Split, EffectiveDate = DateTime.Today, RatioFactor = 2m },
+            new CorporateActionDTO { Id = Guid.Empty, Type = CorporateAction.CorporateActionType.Split, EffectiveDate = TestClock.LocalToday, RatioFactor = 2m },
             AssetName);
 
         viewModel.DeleteCommand.Execute(row);
@@ -402,7 +403,7 @@ public class CorporateActionsTabViewModelTests
     {
         var (viewModel, _, _) = Build();
         var row = new CorporateActionRowViewModel(
-            new CorporateActionDTO { Id = Guid.NewGuid(), Type = CorporateAction.CorporateActionType.Split, EffectiveDate = DateTime.Today, RatioFactor = 2m },
+            new CorporateActionDTO { Id = Guid.NewGuid(), Type = CorporateAction.CorporateActionType.Split, EffectiveDate = TestClock.LocalToday, RatioFactor = 2m },
             AssetName);
 
         viewModel.UpdateCommand.CanExecute(row).Should().BeTrue();
@@ -414,7 +415,7 @@ public class CorporateActionsTabViewModelTests
     {
         var (viewModel, _, _) = Build();
         var row = new CorporateActionRowViewModel(
-            new CorporateActionDTO { Id = Guid.NewGuid(), Type = CorporateAction.CorporateActionType.Merger, EffectiveDate = DateTime.Today },
+            new CorporateActionDTO { Id = Guid.NewGuid(), Type = CorporateAction.CorporateActionType.Merger, EffectiveDate = TestClock.LocalToday },
             AssetName);
 
         viewModel.UpdateCommand.CanExecute(row).Should().BeTrue();
@@ -426,7 +427,7 @@ public class CorporateActionsTabViewModelTests
     {
         var (viewModel, _, _) = Build();
         var row = new CorporateActionRowViewModel(
-            new CorporateActionDTO { Id = Guid.NewGuid(), Type = CorporateAction.CorporateActionType.SpinOff, EffectiveDate = DateTime.Today },
+            new CorporateActionDTO { Id = Guid.NewGuid(), Type = CorporateAction.CorporateActionType.SpinOff, EffectiveDate = TestClock.LocalToday },
             AssetName);
 
         viewModel.UpdateCommand.CanExecute(row).Should().BeTrue();
@@ -644,10 +645,10 @@ public class CorporateActionsTabViewModelTests
     /// own tracked SynchronizationContext may post rather than run inline.</summary>
     private static async Task WaitUntilAsync(Func<bool> condition, int timeoutMs = 2000)
     {
-        var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+        var deadline = TestClock.Default.UtcDateTime.AddMilliseconds(timeoutMs);
         while (!condition())
         {
-            if (DateTime.UtcNow > deadline)
+            if (TestClock.Default.UtcDateTime > deadline)
             {
                 throw new TimeoutException("Condition was not met within the timeout.");
             }

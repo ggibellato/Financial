@@ -1,3 +1,4 @@
+using Financial.Shared.Abstractions.Time;
 using System.Collections.ObjectModel;
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Interfaces;
@@ -38,6 +39,8 @@ public class PriceHistoryTabViewModel : ViewModelBase
     // sessionStorage-backed persistence.
     private DateTime? _lastUsedPriceDate;
 
+    private readonly TimeProvider _timeProvider;
+
     public PriceHistoryTabViewModel(
         IAssetPriceHistoryService? priceService,
         Func<bool> hasContext,
@@ -45,8 +48,10 @@ public class PriceHistoryTabViewModel : ViewModelBase
         Func<string> portfolioName,
         Func<string> assetName,
         Action<AssetDetailsDTO> applyDetails,
-        Action<string, string, MessageBoxImage> showMessage)
+        Action<string, string, MessageBoxImage> showMessage,
+        TimeProvider timeProvider)
     {
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _priceService = priceService;
         _hasContext = hasContext ?? throw new ArgumentNullException(nameof(hasContext));
         _brokerName = brokerName ?? throw new ArgumentNullException(nameof(brokerName));
@@ -242,9 +247,9 @@ public class PriceHistoryTabViewModel : ViewModelBase
         RefreshPriceHistoryChart(filteredEntries, filteredTransactions);
     }
 
-    private static IEnumerable<AssetPriceSnapshotDTO> FilterPriceHistory(IEnumerable<AssetPriceSnapshotDTO> entries, PeriodFilter filter)
+    private IEnumerable<AssetPriceSnapshotDTO> FilterPriceHistory(IEnumerable<AssetPriceSnapshotDTO> entries, PeriodFilter filter)
     {
-        var (start, endExclusive) = PeriodFilterHelper.GetDateRange(filter, DateTime.Today);
+        var (start, endExclusive) = PeriodFilterHelper.GetDateRange(filter, _timeProvider.GetLocalDate());
         if (start is null) return entries;
         return entries.Where(entry =>
         {
@@ -253,9 +258,9 @@ public class PriceHistoryTabViewModel : ViewModelBase
         });
     }
 
-    private static IEnumerable<TransactionDTO> FilterTransactions(IEnumerable<TransactionDTO> transactions, PeriodFilter filter)
+    private IEnumerable<TransactionDTO> FilterTransactions(IEnumerable<TransactionDTO> transactions, PeriodFilter filter)
     {
-        var (start, endExclusive) = PeriodFilterHelper.GetDateRange(filter, DateTime.Today);
+        var (start, endExclusive) = PeriodFilterHelper.GetDateRange(filter, _timeProvider.GetLocalDate());
         if (start is null) return transactions;
         return transactions.Where(transaction => transaction.Date >= start && transaction.Date < endExclusive);
     }
@@ -335,14 +340,14 @@ public class PriceHistoryTabViewModel : ViewModelBase
 
     private Task<PriceDialogData?> ShowAddPriceFormAsync() =>
         ShowPriceFormAsync(PriceDialogViewModel.CreateForAdd(
-            _brokerName(), _portfolioName(), _assetName(), _lastUsedPriceDate ?? DateTime.Today));
+            _brokerName(), _portfolioName(), _assetName(), _lastUsedPriceDate ?? _timeProvider.GetLocalDate(), _timeProvider));
 
     private Task<PriceDialogData?> ShowUpdatePriceFormAsync()
     {
         if (SelectedPriceEntry == null) return Task.FromResult<PriceDialogData?>(null);
         var vm = PriceDialogViewModel.CreateForUpdate(
             _brokerName(), _portfolioName(), _assetName(),
-            SelectedPriceEntry.Date.ToDateTime(TimeOnly.MinValue), SelectedPriceEntry.Price);
+            SelectedPriceEntry.Date.ToDateTime(TimeOnly.MinValue), SelectedPriceEntry.Price, _timeProvider);
         return ShowPriceFormAsync(vm);
     }
 
@@ -351,7 +356,7 @@ public class PriceHistoryTabViewModel : ViewModelBase
         if (SelectedPriceEntry == null) return false;
         var vm = PriceDialogViewModel.CreateForDelete(
             _brokerName(), _portfolioName(), _assetName(),
-            SelectedPriceEntry.Date.ToDateTime(TimeOnly.MinValue), SelectedPriceEntry.Price);
+            SelectedPriceEntry.Date.ToDateTime(TimeOnly.MinValue), SelectedPriceEntry.Price, _timeProvider);
         var dialog = new PriceDialog(vm) { Owner = System.Windows.Application.Current?.MainWindow };
         return dialog.ShowDialog() == true;
     }

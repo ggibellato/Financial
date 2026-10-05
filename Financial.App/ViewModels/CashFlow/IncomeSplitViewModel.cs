@@ -1,3 +1,4 @@
+using Financial.Shared.Abstractions.Time;
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 
@@ -131,7 +132,7 @@ public class IncomeSplitViewModel : ViewModelBase
     internal void ShowSplitForm()
     {
         _closeOtherForms();
-        SplitDate = _lastUsedSplitDate ?? _timeProvider.GetLocalNow().Date;
+        SplitDate = _lastUsedSplitDate ?? _timeProvider.GetLocalDate();
         SplitAmount = string.Empty;
         SplitDescription = string.Empty;
         SplitSaveError = null;

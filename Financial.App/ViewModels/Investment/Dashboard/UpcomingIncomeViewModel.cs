@@ -1,3 +1,4 @@
+using Financial.Shared.Abstractions.Time;
 using System.Collections.ObjectModel;
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Interfaces;
@@ -16,10 +17,14 @@ public class UpcomingIncomeViewModel : ViewModelBase
     private string? _errorMessage;
     private int _requestId;
 
+    private readonly TimeProvider _timeProvider;
+
     public UpcomingIncomeViewModel(
         IUpcomingIncomeService incomeService,
+        TimeProvider timeProvider,
         ILogger<UpcomingIncomeViewModel> logger)
     {
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _incomeService = incomeService ?? throw new ArgumentNullException(nameof(incomeService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
@@ -138,7 +143,7 @@ public class UpcomingIncomeViewModel : ViewModelBase
     // and hiding it would silently lose an overdue payment.
     private void ApplyWindowFilter()
     {
-        var limit = DateTime.Today.AddDays(SelectedWindowDays);
+        var limit = _timeProvider.GetLocalDate().AddDays(SelectedWindowDays);
 
         Entries.Clear();
 

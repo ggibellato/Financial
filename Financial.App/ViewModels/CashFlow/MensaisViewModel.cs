@@ -1,3 +1,4 @@
+using Financial.Shared.Abstractions.Time;
 using System.Collections.ObjectModel;
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
@@ -95,7 +96,7 @@ public class MensaisViewModel : ViewModelBase
         _confirm = confirm ?? throw new ArgumentNullException(nameof(confirm));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        var today = _timeProvider.GetLocalNow().Date;
+        var today = _timeProvider.GetLocalDate();
         _displayYear = today.Year;
         _displayMonth = today.Month;
 

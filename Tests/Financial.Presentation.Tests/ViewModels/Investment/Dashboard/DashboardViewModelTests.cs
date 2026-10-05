@@ -22,7 +22,7 @@ public class DashboardViewModelTests
 
     private static UpcomingIncomeDTO[] Income() =>
     [
-        new("VUSA", "Chase", DateTime.Today.AddDays(-20), DateTime.Today.AddDays(10), 12m),
+        new("VUSA", "Chase", TestClock.LocalToday.AddDays(-20), TestClock.LocalToday.AddDays(10), 12m),
     ];
 
     private static (DashboardViewModel ViewModel, StubPortfolioDashboardService Dashboard, StubAllocationBreakdownService Allocation) CreateViewModel(
@@ -41,7 +41,7 @@ public class DashboardViewModelTests
         var kpiTiles = new DashboardKpiTilesViewModel(dashboardService, new RecordingLogger<DashboardKpiTilesViewModel>());
         var allocation = new AllocationBreakdownViewModel(allocationService, new RecordingLogger<AllocationBreakdownViewModel>());
         var warnings = new DataQualityWarningsViewModel(reportService, new RecordingLogger<DataQualityWarningsViewModel>());
-        var income = new UpcomingIncomeViewModel(incomeService, new RecordingLogger<UpcomingIncomeViewModel>());
+        var income = new UpcomingIncomeViewModel(incomeService, TestClock.At(), new RecordingLogger<UpcomingIncomeViewModel>());
         var viewModel = new DashboardViewModel(
             kpiTiles, allocation, warnings, income,
             activeTree ?? new FakeNavigationTree(), historicTree ?? new FakeNavigationTree(),
@@ -446,7 +446,7 @@ public class DashboardViewModelTests
         var warnings = new DataQualityWarningsViewModel(
             new StubDataQualityReportService(), new RecordingLogger<DataQualityWarningsViewModel>());
         var income = new UpcomingIncomeViewModel(
-            new StubUpcomingIncomeService(), new RecordingLogger<UpcomingIncomeViewModel>());
+            new StubUpcomingIncomeService(), TestClock.At(), new RecordingLogger<UpcomingIncomeViewModel>());
         var tree = new FakeNavigationTree();
         var reportingCurrencyProvider = new StubReportingCurrencyProvider();
 
