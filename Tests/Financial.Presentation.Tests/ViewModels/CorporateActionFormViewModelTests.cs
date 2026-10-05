@@ -1,8 +1,10 @@
+using Financial.Tests;
 using Financial.Presentation.App.ViewModels.Investment;
 using FluentAssertions;
 
 namespace Financial.Presentation.Tests.ViewModels;
 
+[UseCulture("en-GB")]
 public class CorporateActionFormViewModelTests
 {
     private const string BrokerName = "XPI";

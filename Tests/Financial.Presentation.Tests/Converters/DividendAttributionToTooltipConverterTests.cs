@@ -1,9 +1,11 @@
+using Financial.Tests;
 using System.Globalization;
 using Financial.Presentation.App.Converters;
 using FluentAssertions;
 
 namespace Financial.Presentation.Tests.Converters;
 
+[UseCulture("en-GB")]
 public class DividendAttributionToTooltipConverterTests
 {
     private readonly DividendAttributionToTooltipConverter _converter = new();

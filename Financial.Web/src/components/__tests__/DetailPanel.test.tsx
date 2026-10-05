@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import DetailPanel from '../DetailPanel'
 import { SelectedNodeProvider, useSelectedNode } from '../../context/SelectedNodeContext'
 import type { FinancialApiClient } from '../../api/financialApiClient'
@@ -112,6 +112,21 @@ const activeAssetNode: SelectedNode = {
 const flatAssetNode: SelectedNode = { ...activeAssetNode, positionType: 'Flat' }
 const shortAssetNode: SelectedNode = { ...activeAssetNode, positionType: 'Short' }
 const deepLinkedAssetNode: SelectedNode = { ...activeAssetNode, pendingCorporateActionId: 'ca-123' }
+
+// DetailPanel lazy-loads every tab; resolving those chunks for the first time is what is slow, so do it
+// before the tests rather than giving each waitFor a larger budget.
+beforeAll(async () => {
+  await Promise.all([
+    import('../AggregatedSummaryTab'),
+    import('../PortfolioSummaryTab'),
+    import('../PortfolioHoldingsTab'),
+    import('../CreditsTab'),
+    import('../TransactionsTab'),
+    import('../PriceHistoryTab'),
+    import('../DisposalsTab'),
+    import('../CorporateActionsTab'),
+  ])
+})
 
 describe('DetailPanel', () => {
   beforeEach(() => {
@@ -263,7 +278,7 @@ describe('DetailPanel', () => {
     act(() => screen.getByTestId('setter').click())
     fireEvent.click(screen.getByRole('tab', { name: 'Holdings' }))
     expect(screen.getByRole('tab', { name: 'Holdings' })).toHaveAttribute('aria-selected', 'true')
-    await waitFor(() => expect(screen.getByRole('table')).toBeInTheDocument(), { timeout: 5000 })
+    await waitFor(() => expect(screen.getByRole('table')).toBeInTheDocument())
   })
 
   it('shows Price History tab for an asset node', () => {
@@ -353,10 +368,7 @@ describe('DetailPanel', () => {
     renderPanel(brokerNode)
     act(() => screen.getByTestId('setter').click())
     fireEvent.click(screen.getByRole('tab', { name: 'Transactions' }))
-    await waitFor(
-      () => expect(screen.getByText('Net Invested by Month')).toBeInTheDocument(),
-      { timeout: 5000 },
-    )
+    await waitFor(() => expect(screen.getByText('Net Invested by Month')).toBeInTheDocument())
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
   })
 
@@ -364,10 +376,7 @@ describe('DetailPanel', () => {
     renderPanel(portfolioNode)
     act(() => screen.getByTestId('setter').click())
     fireEvent.click(screen.getByRole('tab', { name: 'Transactions' }))
-    await waitFor(
-      () => expect(screen.getByText('Net Invested by Month')).toBeInTheDocument(),
-      { timeout: 5000 },
-    )
+    await waitFor(() => expect(screen.getByText('Net Invested by Month')).toBeInTheDocument())
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
   })
 

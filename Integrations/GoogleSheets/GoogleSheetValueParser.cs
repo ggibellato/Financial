@@ -1,3 +1,4 @@
+using System.Globalization;
 using Google.Apis.Sheets.v4.Data;
 
 namespace Financial.Integrations.GoogleSheets;
@@ -12,6 +13,6 @@ public static class GoogleSheetValueParser
         }
 
         var value = (rawCellValue.ToString() ?? string.Empty).Replace(",", "");
-        return decimal.Parse(value);
+        return decimal.Parse(value, NumberStyles.Number, CultureInfo.InvariantCulture);
     }
 }

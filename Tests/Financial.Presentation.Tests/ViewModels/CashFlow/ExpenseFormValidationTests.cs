@@ -1,8 +1,10 @@
+using Financial.Tests;
 using Financial.Presentation.App.ViewModels.CashFlow;
 using FluentAssertions;
 
 namespace Financial.Presentation.Tests.ViewModels.CashFlow;
 
+[UseCulture("en-GB")]
 public class ExpenseFormValidationTests
 {
     private static readonly DateTime ValidDate = TestClock.LocalToday;

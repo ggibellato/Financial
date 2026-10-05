@@ -165,3 +165,36 @@ describe('previousYearJanuaryFirst', () => {
     expect(previousYearJanuaryFirst()).toBe('2025-01-01')
   })
 })
+
+describe('number formatters follow the host locale', () => {
+  async function importFormattersFor(locale: string) {
+    vi.resetModules()
+    const RealNumberFormat = Intl.NumberFormat
+    vi.spyOn(Intl, 'NumberFormat').mockImplementation(function (
+      _locale?: string | string[],
+      options?: Intl.NumberFormatOptions,
+    ) {
+      return new RealNumberFormat(locale, options)
+    } as unknown as typeof Intl.NumberFormat)
+    return import('../formatters')
+  }
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('formatN2_EnGb_UsesCommaGroupingAndDotDecimal', async () => {
+    const { formatN2 } = await importFormattersFor('en-GB')
+    expect(formatN2(1234.5)).toBe('1,234.50')
+  })
+
+  it('formatN2_PtBr_UsesDotGroupingAndCommaDecimal', async () => {
+    const { formatN2 } = await importFormattersFor('pt-BR')
+    expect(formatN2(1234.5)).toBe('1.234,50')
+  })
+
+  it('formatPercent1_PtBr_UsesCommaDecimal', async () => {
+    const { formatPercent1 } = await importFormattersFor('pt-BR')
+    expect(formatPercent1(12.5)).toBe('12,5%')
+  })
+})

@@ -2,6 +2,7 @@
 
   <ItemGroup Condition="'$(IsTestProject)' == 'true'">
     <Compile Include="$(MSBuildThisFileDirectory)TestCultureInitializer.cs" Link="TestCultureInitializer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)UseCultureAttribute.cs" Link="UseCultureAttribute.cs" />
   </ItemGroup>
 
 </Project>

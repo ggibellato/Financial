@@ -1,3 +1,4 @@
+using Financial.Tests;
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.Entities;
@@ -7,6 +8,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.ViewModels.Investment.Dashboard;
 
+[UseCulture("en-GB")]
 public class DataQualityWarningsViewModelTests
 {
     private static DataQualityReportDTO FullReport() => new()

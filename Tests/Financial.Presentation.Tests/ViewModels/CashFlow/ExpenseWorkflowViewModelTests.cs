@@ -1,3 +1,4 @@
+using Financial.Tests;
 using System.Collections.ObjectModel;
 using Financial.CashFlow.Application.DTOs;
 using Financial.Presentation.App.ViewModels;
@@ -8,6 +9,7 @@ using FluentAssertions;
 
 namespace Financial.Presentation.Tests.ViewModels.CashFlow;
 
+[UseCulture("en-GB")]
 public class ExpenseWorkflowViewModelTests
 {
     /// <summary>Unchecks every filter option except the given values, mirroring how a user would

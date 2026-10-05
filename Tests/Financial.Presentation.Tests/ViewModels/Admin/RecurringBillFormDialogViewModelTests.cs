@@ -1,8 +1,10 @@
+using Financial.Tests;
 using Financial.Presentation.App.ViewModels.Admin;
 using FluentAssertions;
 
 namespace Financial.Presentation.Tests.ViewModels.Admin;
 
+[UseCulture("en-GB")]
 public class RecurringBillFormDialogViewModelTests
 {
     [Fact]

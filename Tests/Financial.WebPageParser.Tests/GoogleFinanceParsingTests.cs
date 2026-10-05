@@ -1,3 +1,4 @@
+using Financial.Tests;
 using Financial.Integrations.WebPageParser;
 using FluentAssertions;
 
@@ -72,5 +73,15 @@ public class GoogleFinanceParsingTests
         var result = GoogleFinanceParsing.TryParseAsOf("not a date at all");
 
         result.Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData("R$ 9.40", 9.40)]
+    [InlineData("£1,234.50", 1234.50)]
+    [InlineData("GBX1250.5", 12.505)]
+    [UseCulture("pt-BR")]
+    public void ParsePriceValue_ParsesInvariantlyWhateverTheHostCulture(string raw, double expected)
+    {
+        GoogleFinanceParsing.ParsePriceValue(raw).Should().Be((decimal)expected);
     }
 }

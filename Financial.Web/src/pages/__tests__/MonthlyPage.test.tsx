@@ -999,7 +999,7 @@ describe('MonthlyPage', () => {
 
     await waitFor(() => expect(updateExpenseMock).toHaveBeenCalledWith('e1', expect.objectContaining({ value: 50 })))
     const expensesSection = within(screen.getByRole('button', { name: 'New Expense' }).closest('section')!)
-    await waitFor(() => expect(expensesSection.getByText('50.00')).toBeInTheDocument(), { timeout: 3000 })
+    await waitFor(() => expect(expensesSection.getByText('50.00')).toBeInTheDocument())
   })
 
   it('deletes an expense after confirmation', async () => {
@@ -1147,7 +1147,7 @@ describe('MonthlyPage', () => {
 
     await waitFor(() => expect(updateIncomeMock).toHaveBeenCalledWith('i1', expect.objectContaining({ netValue: 500 })))
     const incomeSection = within(screen.getByRole('button', { name: 'New Income' }).closest('section')!)
-    await waitFor(() => expect(incomeSection.getByText('500.00')).toBeInTheDocument(), { timeout: 3000 })
+    await waitFor(() => expect(incomeSection.getByText('500.00')).toBeInTheDocument())
   })
 
   it('deletes an income entry after confirmation', async () => {
