@@ -28,7 +28,7 @@ public class ControleMaeServiceTests
     }
 
     private ControleMaeService CreateService(StubCashFlowRepository? repository = null, IExchangeRateProvider? exchangeRateProvider = null) =>
-        new(repository ?? _repository, exchangeRateProvider ?? new StubExchangeRateProvider(DefaultRate), _tracer, Logger);
+        new(repository ?? _repository, exchangeRateProvider ?? new StubExchangeRateProvider(DefaultRate), TestClock.At(), _tracer, Logger);
 
     [Fact]
     [Trait("AC", "P49-F01-shared-exchange-rate-provider-04")]
@@ -82,7 +82,7 @@ public class ControleMaeServiceTests
     {
         var provider = new StubExchangeRateProvider(DefaultRate);
         var service = CreateService(exchangeRateProvider: provider);
-        var futureDate = DateOnly.FromDateTime(DateTime.Now.AddDays(1));
+        var futureDate = TestClock.Today.AddDays(1);
 
         var act = async () => await service.CreateEntryAsync(new MaeLedgerEntryCreateDTO
         {

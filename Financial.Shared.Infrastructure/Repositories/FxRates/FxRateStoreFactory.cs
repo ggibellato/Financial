@@ -11,11 +11,13 @@ public sealed class FxRateStoreFactory
 
     private readonly IFxRateSerializer _serializer;
     private readonly IJsonStorageFactory _storageFactory;
+    private readonly TimeProvider _timeProvider;
 
-    public FxRateStoreFactory(IFxRateSerializer serializer, IJsonStorageFactory storageFactory)
+    public FxRateStoreFactory(IFxRateSerializer serializer, IJsonStorageFactory storageFactory, TimeProvider timeProvider)
     {
         _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
         _storageFactory = storageFactory ?? throw new ArgumentNullException(nameof(storageFactory));
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
     }
 
     public IFxRateStore Create(FxRateRepositorySelectionOptions options)
@@ -24,7 +26,7 @@ public sealed class FxRateStoreFactory
 
         var storage = CreateStorage(options);
         var ratesByDate = FxRateLoader.LoadSync(storage, _serializer);
-        return new FxRateJsonStore(ratesByDate, storage, _serializer);
+        return new FxRateJsonStore(ratesByDate, storage, _serializer, _timeProvider);
     }
 
     private IJsonStorage CreateStorage(FxRateRepositorySelectionOptions options) =>

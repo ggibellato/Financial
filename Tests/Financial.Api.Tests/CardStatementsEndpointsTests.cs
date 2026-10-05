@@ -98,7 +98,7 @@ public class CardStatementsEndpointsTests : ApiEndpointTests
         settled.PaymentStatus.Should().Be("CreditCardSettled");
         settled.PaymentSourceBankId.Should().Be(Trading212Id);
         settled.PaymentSourceBankName.Should().Be("Trading212");
-        settled.Date.Should().Be(DateOnly.FromDateTime(DateTime.Today));
+        settled.Date.Should().Be(TestClock.Today);
     }
 
     [Fact]

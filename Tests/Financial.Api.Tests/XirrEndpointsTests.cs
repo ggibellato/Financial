@@ -13,7 +13,7 @@ public class XirrEndpointsTests : ApiEndpointTests
     {
         var request = new CalculateXirrRequestDTO
         {
-            CashFlows = [new AssetCashFlowDTO { Date = DateTime.Today.AddYears(-1), Amount = -1000m }],
+            CashFlows = [new AssetCashFlowDTO { Date = TestClock.LocalToday.AddYears(-1), Amount = -1000m }],
             TerminalValue = 1100m
         };
 

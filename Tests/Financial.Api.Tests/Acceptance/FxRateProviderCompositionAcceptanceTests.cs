@@ -9,7 +9,7 @@ namespace Financial.Api.Tests.Acceptance;
 
 public class FxRateProviderCompositionAcceptanceTests() : ApiEndpointTests(useRealExchangeRates: true)
 {
-    private static readonly DateOnly HistoricalDate = DateOnly.FromDateTime(DateTime.Now).AddDays(-30);
+    private static readonly DateOnly HistoricalDate = TestClock.Today.AddDays(-30);
 
     [Fact]
     public void ExchangeRateProvider_ResolvedTwice_IsTheSameSharedSingleton()
@@ -24,7 +24,7 @@ public class FxRateProviderCompositionAcceptanceTests() : ApiEndpointTests(useRe
     public async Task ControleMaeCreateEntry_UsesRateFromTheLayeredFxRateProviderChain()
     {
         var store = Services.GetRequiredService<IFxRateStore>();
-        await store.SetRateAsync(HistoricalDate, new FxRateRecord(5.0m, 0.8m, "frankfurter", DateTimeOffset.UtcNow));
+        await store.SetRateAsync(HistoricalDate, new FxRateRecord(5.0m, 0.8m, "frankfurter", TestClock.Default));
 
         var response = await Client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new MaeLedgerEntryCreateDTO
         {

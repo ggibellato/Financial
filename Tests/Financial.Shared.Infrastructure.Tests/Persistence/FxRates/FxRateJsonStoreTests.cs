@@ -12,7 +12,7 @@ public class FxRateJsonStoreTests
     [Fact]
     public void TryGetRate_Existing_Date_Returns_Stored_Record()
     {
-        var record = new FxRateRecord(5.45m, 0.77m, "frankfurter", DateTimeOffset.UtcNow);
+        var record = new FxRateRecord(5.45m, 0.77m, "frankfurter", TestClock.Default);
         var store = CreateStore(new Dictionary<DateOnly, FxRateRecord> { [new DateOnly(2026, 9, 18)] = record });
 
         var result = store.TryGetRate(new DateOnly(2026, 9, 18));
@@ -34,8 +34,8 @@ public class FxRateJsonStoreTests
     public async Task SetRateAsync_Persists_New_Date_To_Storage()
     {
         var storage = new ControllableJsonStorage();
-        var store = new FxRateJsonStore(new Dictionary<DateOnly, FxRateRecord>(), storage, Serializer);
-        var record = new FxRateRecord(5.45m, 0.77m, "frankfurter", DateTimeOffset.UtcNow);
+        var store = new FxRateJsonStore(new Dictionary<DateOnly, FxRateRecord>(), storage, Serializer, TestClock.At());
+        var record = new FxRateRecord(5.45m, 0.77m, "frankfurter", TestClock.Default);
         var historicalDate = new DateOnly(2026, 1, 1);
 
         await store.SetRateAsync(historicalDate, record);
@@ -48,9 +48,9 @@ public class FxRateJsonStoreTests
     public async Task SetRateAsync_Rejects_Todays_Date()
     {
         var storage = new ControllableJsonStorage();
-        var store = new FxRateJsonStore(new Dictionary<DateOnly, FxRateRecord>(), storage, Serializer);
-        var today = DateOnly.FromDateTime(DateTime.Now);
-        var record = new FxRateRecord(5.45m, 0.77m, "frankfurter", DateTimeOffset.UtcNow);
+        var store = new FxRateJsonStore(new Dictionary<DateOnly, FxRateRecord>(), storage, Serializer, TestClock.At());
+        var today = TestClock.Today;
+        var record = new FxRateRecord(5.45m, 0.77m, "frankfurter", TestClock.Default);
 
         await store.SetRateAsync(today, record);
 
@@ -62,8 +62,8 @@ public class FxRateJsonStoreTests
     public async Task SetRateAsync_Two_Dates_In_Quick_Succession_Both_Persisted()
     {
         var storage = new ControllableJsonStorage();
-        var store = new FxRateJsonStore(new Dictionary<DateOnly, FxRateRecord>(), storage, Serializer);
-        var record = new FxRateRecord(5.45m, 0.77m, "frankfurter", DateTimeOffset.UtcNow);
+        var store = new FxRateJsonStore(new Dictionary<DateOnly, FxRateRecord>(), storage, Serializer, TestClock.At());
+        var record = new FxRateRecord(5.45m, 0.77m, "frankfurter", TestClock.Default);
 
         await Task.WhenAll(
             store.SetRateAsync(new DateOnly(2026, 1, 1), record),
@@ -79,8 +79,8 @@ public class FxRateJsonStoreTests
     {
         var storage = new ControllableJsonStorage();
         storage.FailNextWrites(1);
-        var store = new FxRateJsonStore(new Dictionary<DateOnly, FxRateRecord>(), storage, Serializer);
-        var record = new FxRateRecord(5.45m, 0.77m, "frankfurter", DateTimeOffset.UtcNow);
+        var store = new FxRateJsonStore(new Dictionary<DateOnly, FxRateRecord>(), storage, Serializer, TestClock.At());
+        var record = new FxRateRecord(5.45m, 0.77m, "frankfurter", TestClock.Default);
         var historicalDate = new DateOnly(2026, 1, 1);
 
         var act = () => store.SetRateAsync(historicalDate, record);
@@ -90,5 +90,5 @@ public class FxRateJsonStoreTests
     }
 
     private static FxRateJsonStore CreateStore(Dictionary<DateOnly, FxRateRecord> seed) =>
-        new(seed, new ControllableJsonStorage(), Serializer);
+        new(seed, new ControllableJsonStorage(), Serializer, TestClock.At());
 }

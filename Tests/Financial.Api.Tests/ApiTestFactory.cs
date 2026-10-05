@@ -19,7 +19,7 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
     private readonly string _fxRatesDataFilePath;
     private readonly string _calendarCredentialsPath;
     private readonly IExchangeRateProvider? _exchangeRateProvider;
-    private readonly TimeProvider? _timeProviderOverride;
+    private readonly TimeProvider _timeProvider;
     private readonly ICalendarProvider? _calendarProviderOverride;
     private bool _disposed;
 
@@ -36,7 +36,7 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
         _exchangeRateProvider = useRealExchangeRates
             ? null
             : exchangeRateProviderOverride ?? new StubExchangeRateProvider(DefaultExchangeRate);
-        _timeProviderOverride = timeProviderOverride;
+        _timeProvider = timeProviderOverride ?? TestClock.At();
         _calendarProviderOverride = calendarProviderOverride;
     }
 
@@ -66,14 +66,11 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
             });
         }
 
-        if (_timeProviderOverride is not null)
+        builder.ConfigureTestServices(services =>
         {
-            builder.ConfigureTestServices(services =>
-            {
-                services.RemoveAll<TimeProvider>();
-                services.AddSingleton(_timeProviderOverride);
-            });
-        }
+            services.RemoveAll<TimeProvider>();
+            services.AddSingleton(_timeProvider);
+        });
 
         if (_calendarProviderOverride is not null)
         {

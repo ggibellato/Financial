@@ -238,7 +238,7 @@ public class SummaryEndpointsTests : ApiEndpointTests
             BrokerName = "XPI",
             PortfolioName = "Default",
             AssetName = "BCIA11",
-            Date = DateOnly.FromDateTime(DateTime.UtcNow),
+            Date = TestClock.Today,
             Price = 15m
         });
         priceResponse.StatusCode.Should().Be(HttpStatusCode.OK);

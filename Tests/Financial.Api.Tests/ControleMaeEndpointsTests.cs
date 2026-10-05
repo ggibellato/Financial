@@ -77,7 +77,7 @@ public class ControleMaeEndpointsTests() : ApiEndpointTests(new StubExchangeRate
     {
         var response = await Client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new MaeLedgerEntryCreateDTO
         {
-            Date = DateOnly.FromDateTime(DateTime.Now.AddDays(1)),
+            Date = TestClock.Today.AddDays(1),
             Description = "Future",
             SourceCurrency = "BRL",
             SourceValue = 10m

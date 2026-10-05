@@ -10,7 +10,7 @@ namespace Financial.CashFlow.Application.Tests.Services;
 
 public class InvestmentAnnualResultServiceTests
 {
-    private static readonly int CurrentYear = DateTime.Now.Year;
+    private static readonly int CurrentYear = TestClock.Today.Year;
     private static readonly int PastYear = CurrentYear - 5;
     private static readonly Microsoft.Extensions.Logging.ILogger<InvestmentAnnualResultService> Logger = NullLogger<InvestmentAnnualResultService>.Instance;
 
@@ -199,7 +199,7 @@ public class InvestmentAnnualResultServiceTests
     [Fact]
     public void GetInvestmentAnnualResultForYear_CurrentYear_FullYearNetChangeUsesCurrentMonthNotDecember()
     {
-        var currentMonth = DateTime.Now.Month;
+        var currentMonth = TestClock.Today.Month;
         _repository.InvestmentSnapshots.Add(InvestmentSnapshot.Create(Account(_repository, "ChaseSave"), CurrentYear, 1, 1000m));
         if (currentMonth != 1)
         {
@@ -240,7 +240,7 @@ public class InvestmentAnnualResultServiceTests
     public void GetInvestmentAnnualResultForYear_CurrentYear_AverageAndSumOnlyIncludeMonthsThroughTheCurrentMonth()
     {
         _repository.InvestmentSnapshots.Add(InvestmentSnapshot.Create(Account(_repository, "ChaseSave"), CurrentYear - 1, 12, 500m));
-        var currentMonth = DateTime.Now.Month;
+        var currentMonth = TestClock.Today.Month;
         var value = 600m;
         for (var month = 1; month <= currentMonth; month++)
         {

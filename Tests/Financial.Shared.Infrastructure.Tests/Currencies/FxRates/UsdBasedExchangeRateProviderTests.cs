@@ -63,7 +63,7 @@ public class UsdBasedExchangeRateProviderTests
     public async Task GetHistoricalRateAsync_HistoricalDateAlreadyInStore_ComputesFromStoredRatesOnly()
     {
         var store = new FakeFxRateStore();
-        store.Seed(HistoricalDate, new FxRateRecord(5.0m, 0.8m, "frankfurter", DateTimeOffset.UtcNow));
+        store.Seed(HistoricalDate, new FxRateRecord(5.0m, 0.8m, "frankfurter", TestClock.Default));
         var fetcher = new FakeUsdRateFetcher();
         var provider = CreateProvider(store, fetcher);
 
@@ -94,7 +94,7 @@ public class UsdBasedExchangeRateProviderTests
         var store = new FakeFxRateStore();
         var fetcher = new FakeUsdRateFetcher { NextResult = new UsdRateFetchResult(5.0m, 0.8m) };
         var provider = CreateProvider(store, fetcher);
-        var today = DateOnly.FromDateTime(DateTime.Now);
+        var today = TestClock.Today;
 
         var rate = await provider.GetHistoricalRateAsync(today, Currency.USD, Currency.BRL);
 
@@ -107,7 +107,7 @@ public class UsdBasedExchangeRateProviderTests
     public async Task GetHistoricalRateAsync_AllSixPairsForSameDate_AreMathematicallyConsistent()
     {
         var store = new FakeFxRateStore();
-        store.Seed(HistoricalDate, new FxRateRecord(5.0m, 0.8m, "frankfurter", DateTimeOffset.UtcNow));
+        store.Seed(HistoricalDate, new FxRateRecord(5.0m, 0.8m, "frankfurter", TestClock.Default));
         var provider = CreateProvider(store, new FakeUsdRateFetcher());
 
         var usdToBrl = await provider.GetHistoricalRateAsync(HistoricalDate, Currency.USD, Currency.BRL);
@@ -167,9 +167,9 @@ public class UsdBasedExchangeRateProviderTests
     public async Task GetHistoricalRateAsync_StoredRateIsZero_ReturnsNullAndLogsWarningWithDateOnly()
     {
         var store = new FakeFxRateStore();
-        store.Seed(HistoricalDate, new FxRateRecord(0m, 0.8m, "frankfurter", DateTimeOffset.UtcNow));
+        store.Seed(HistoricalDate, new FxRateRecord(0m, 0.8m, "frankfurter", TestClock.Default));
         var logger = new RecordingLogger<UsdBasedExchangeRateProvider>();
-        var provider = new UsdBasedExchangeRateProvider(store, new FakeUsdRateFetcher(), logger);
+        var provider = new UsdBasedExchangeRateProvider(store, new FakeUsdRateFetcher(), TestClock.At(), logger);
 
         var rate = await provider.GetHistoricalRateAsync(HistoricalDate, Currency.USD, Currency.BRL);
 
@@ -181,7 +181,7 @@ public class UsdBasedExchangeRateProviderTests
     public async Task GetHistoricalRateAsync_RateFromStore_UsedWithNoRedundantFetcherCall()
     {
         var store = new FakeFxRateStore();
-        store.Seed(HistoricalDate, new FxRateRecord(5.0m, 0.8m, "frankfurter", DateTimeOffset.UtcNow));
+        store.Seed(HistoricalDate, new FxRateRecord(5.0m, 0.8m, "frankfurter", TestClock.Default));
         var fetcher = new FakeUsdRateFetcher();
         var provider = CreateProvider(store, fetcher);
 
@@ -209,5 +209,5 @@ public class UsdBasedExchangeRateProviderTests
     }
 
     private static UsdBasedExchangeRateProvider CreateProvider(IFxRateStore store, IUsdRateFetcher fetcher) =>
-        new(store, fetcher, NullLogger<UsdBasedExchangeRateProvider>.Instance);
+        new(store, fetcher, TestClock.At(), NullLogger<UsdBasedExchangeRateProvider>.Instance);
 }

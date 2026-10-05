@@ -54,7 +54,7 @@ public class CalendarConnectionStoreTests
     {
         var path = CreateTempPath();
         var store = new CalendarConnectionStore(path);
-        store.Save(new CalendarConnection("user@gmail.com", "cal", "at", "rt", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, new Dictionary<Guid, string>()));
+        store.Save(new CalendarConnection("user@gmail.com", "cal", "at", "rt", TestClock.Default, TestClock.Default, new Dictionary<Guid, string>()));
 
         store.Delete();
 

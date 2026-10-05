@@ -12,7 +12,7 @@ namespace Financial.CashFlow.Application.Tests.Services;
 
 public class IncomeSummaryServiceTests
 {
-    private static readonly int CurrentYear = DateTime.Now.Year;
+    private static readonly int CurrentYear = TestClock.Today.Year;
     private static readonly Microsoft.Extensions.Logging.ILogger<IncomeSummaryService> Logger = NullLogger<IncomeSummaryService>.Instance;
 
     private static readonly Bank Barclays = Bank.Create("Barclays", roundUpEnabled: false);

@@ -12,7 +12,7 @@ namespace Financial.CashFlow.Application.Tests.Services;
 
 public class HistoricAverageServiceTests
 {
-    private static readonly int CurrentYear = DateTime.Now.Year;
+    private static readonly int CurrentYear = TestClock.Today.Year;
     private static readonly Microsoft.Extensions.Logging.ILogger<HistoricAverageService> Logger = NullLogger<HistoricAverageService>.Instance;
 
     private static readonly Bank Barclays = Bank.Create("Barclays", roundUpEnabled: false);
@@ -115,10 +115,10 @@ public class HistoricAverageServiceTests
     [Fact]
     public void GetHistoricSummaryAverageFromYear_MergesIncomeAveragesIntoMatchingYearsInDescendingOrder()
     {
-        _repository.Expenses.Add(Expense.Create(new DateOnly(DateTime.UtcNow.Year + 1, 4, 5), "Should not be there", 10m, CategoryByName(_repository, "Mercado"), Barclays, null));
+        _repository.Expenses.Add(Expense.Create(new DateOnly(TestClock.Today.Year + 1, 4, 5), "Should not be there", 10m, CategoryByName(_repository, "Mercado"), Barclays, null));
         _repository.Expenses.Add(Expense.Create(new DateOnly(2025, 4, 5), "2025", 10m, CategoryByName(_repository, "Mercado"), Barclays, null));
         _repository.Expenses.Add(Expense.Create(new DateOnly(2023, 4, 5), "2023", 10m, CategoryByName(_repository, "Mercado"), Barclays, null));
-        _repository.Incomes.Add(Income.Create(new DateOnly(DateTime.UtcNow.Year+1, 4, 5), Source("Gleison"), 9999m, 9999m, Barclays));
+        _repository.Incomes.Add(Income.Create(new DateOnly(TestClock.Today.Year+1, 4, 5), Source("Gleison"), 9999m, 9999m, Barclays));
         _repository.Incomes.Add(Income.Create(new DateOnly(2025, 4, 5), Source("Gleison"), 1200m, 1200m, Barclays));
         _repository.Incomes.Add(Income.Create(new DateOnly(2023, 4, 5), Source("Gleison"), 900m, 900m, Barclays));
 

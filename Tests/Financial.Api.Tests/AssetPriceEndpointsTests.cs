@@ -142,7 +142,7 @@ public class AssetPriceEndpointsTests : ApiEndpointTests
         price!.IsManual.Should().BeFalse();
 
         var repository = factory.Services.GetRequiredService<IInvestmentRepository>();
-        var entry = repository.GetAsset("XPI", "Default", "BCIA11")!.GetPriceForDate(DateOnly.FromDateTime(DateTime.Today));
+        var entry = repository.GetAsset("XPI", "Default", "BCIA11")!.GetPriceForDate(TestClock.Today);
         entry.Should().NotBeNull();
         entry!.Price.Should().Be(10.5m);
         entry.IsManual.Should().BeFalse();
@@ -154,7 +154,7 @@ public class AssetPriceEndpointsTests : ApiEndpointTests
         await using var factory = CreateFactory(new FailingAssetPriceServiceStub());
         using var client = factory.CreateClient();
 
-        var today = DateOnly.FromDateTime(DateTime.Today);
+        var today = TestClock.Today;
         var repository = factory.Services.GetRequiredService<IInvestmentRepository>();
         repository.GetAsset("XPI", "Default", "BCIA11")!.SetPrice(today, 321.5m, isManual: true);
         await repository.ApplyAndSaveAsync(() => true);
@@ -259,7 +259,7 @@ public class AssetPriceEndpointsTests : ApiEndpointTests
             BrokerName = "XPI",
             PortfolioName = "Default",
             AssetName = "BCIA11",
-            Date = DateOnly.FromDateTime(DateTime.Today).AddDays(-30),
+            Date = TestClock.Today.AddDays(-30),
             Price = 1234.56m
         });
 
@@ -279,7 +279,7 @@ public class AssetPriceEndpointsTests : ApiEndpointTests
             BrokerName = "XPI",
             PortfolioName = "Default",
             AssetName = "BCIA11",
-            Date = DateOnly.FromDateTime(DateTime.Today).AddDays(1),
+            Date = TestClock.Today.AddDays(1),
             Price = 100m
         });
 

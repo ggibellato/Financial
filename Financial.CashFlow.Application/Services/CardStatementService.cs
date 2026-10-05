@@ -4,6 +4,7 @@ using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using Financial.Shared.Abstractions.Observability;
+using Financial.Shared.Abstractions.Time;
 using Financial.Shared.Abstractions.Persistence;
 using Microsoft.Extensions.Logging;
 
@@ -14,12 +15,14 @@ public sealed class CardStatementService : ICardStatementService
     private const string EntityType = "CardStatement";
 
     private readonly ICashFlowRepository _repository;
+    private readonly TimeProvider _timeProvider;
     private readonly ILogger<CardStatementService> _logger;
     private readonly ITelemetryTracer _tracer;
 
-    public CardStatementService(ICashFlowRepository repository, ILogger<CardStatementService> logger, ITelemetryTracer tracer)
+    public CardStatementService(ICashFlowRepository repository, TimeProvider timeProvider, ILogger<CardStatementService> logger, ITelemetryTracer tracer)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
     }
@@ -108,7 +111,7 @@ public sealed class CardStatementService : ICardStatementService
                 throw new ArgumentException($"Payment source '{request.PaymentSourceBankId}' is not recognized.");
             }
 
-            var settledAt = DateOnly.FromDateTime(DateTime.Today);
+            var settledAt = _timeProvider.GetLocalToday();
             var charges = GetStatementExpenses(statement, ExpensePaymentStatus.CreditCardCharge);
             // The warning text embeds the statement's invoice period, so it stays in the DTO/logs
             // only, never as a span attribute (logging-audit.md's note on this string).

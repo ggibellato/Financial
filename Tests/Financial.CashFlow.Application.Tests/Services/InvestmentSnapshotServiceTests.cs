@@ -15,7 +15,7 @@ namespace Financial.CashFlow.Application.Tests.Services;
 
 public class InvestmentSnapshotServiceTests
 {
-    private static readonly int CurrentYear = DateTime.Now.Year;
+    private static readonly int CurrentYear = TestClock.Today.Year;
     private static readonly int PastYear = CurrentYear - 5;
     private static readonly Microsoft.Extensions.Logging.ILogger<InvestmentSnapshotService> Logger = NullLogger<InvestmentSnapshotService>.Instance;
 
@@ -31,7 +31,7 @@ public class InvestmentSnapshotServiceTests
     }
 
     private InvestmentSnapshotService CreateService(StubCashFlowRepository? repository = null) =>
-        new(repository ?? _repository, _tracer, Logger);
+        new(repository ?? _repository, TestClock.At(), _tracer, Logger);
 
     [Fact]
     public async Task GetSnapshotsForMonthAsync_FirstCall_GeneratesExactlyElevenSnapshotsDefaultingToZero()
@@ -166,7 +166,7 @@ public class InvestmentSnapshotServiceTests
         repository.InvestmentAccounts.AddRange([creditCardAccount, reserveAccount, noneAccount]);
 
         var tracer = new RecordingTelemetryTracer();
-        var service = new InvestmentSnapshotService(repository, tracer, Logger);
+        var service = new InvestmentSnapshotService(repository, TestClock.At(), tracer, Logger);
 
         return (repository, service, card, creditCardAccount, reserveAccount, noneAccount);
     }
@@ -278,7 +278,7 @@ public class InvestmentSnapshotServiceTests
     public async Task GetSuggestionsForMonth_UsesSameYearScopingAsSnapshotGrid()
     {
         var (_, service, _, creditCardAccount, _, _) = CreateSuggestionsFixture();
-        var pastYear = DateTime.Now.Year - 5;
+        var pastYear = TestClock.Today.Year - 5;
 
         var result = await service.GetSuggestionsForMonthAsync(pastYear, 8);
 

@@ -15,7 +15,7 @@ namespace Financial.CashFlow.Application.Tests.Services;
 
 public class CategorySummaryServiceTests
 {
-    private static readonly int CurrentYear = DateTime.Now.Year;
+    private static readonly int CurrentYear = TestClock.Today.Year;
     private static readonly Microsoft.Extensions.Logging.ILogger<CategorySummaryService> Logger = NullLogger<CategorySummaryService>.Instance;
     private static readonly Microsoft.Extensions.Logging.ILogger<IncomeSummaryService> IncomeLogger = NullLogger<IncomeSummaryService>.Instance;
 

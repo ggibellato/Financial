@@ -3,6 +3,7 @@ using System.Diagnostics;
 using Financial.Shared.Abstractions.Currencies.FxRates;
 using Financial.Shared.Abstractions.Persistence;
 using Financial.Shared.Abstractions.Sync;
+using Financial.Shared.Abstractions.Time;
 
 namespace Financial.Shared.Infrastructure.Persistence.FxRates;
 
@@ -11,17 +12,19 @@ public sealed class FxRateJsonStore : IFxRateStore
     private readonly ConcurrentDictionary<DateOnly, FxRateRecord> _ratesByDate;
     private readonly IJsonStorage _storage;
     private readonly IFxRateSerializer _serializer;
+    private readonly TimeProvider _timeProvider;
 
     // SemaphoreSlim, not lock: the critical section awaits storage I/O.
     private readonly SemaphoreSlim _writeGate = new(1, 1);
 
     public FxRateJsonStore(
-        Dictionary<DateOnly, FxRateRecord> ratesByDate, IJsonStorage storage, IFxRateSerializer serializer)
+        Dictionary<DateOnly, FxRateRecord> ratesByDate, IJsonStorage storage, IFxRateSerializer serializer, TimeProvider timeProvider)
     {
         ArgumentNullException.ThrowIfNull(ratesByDate);
         _ratesByDate = new ConcurrentDictionary<DateOnly, FxRateRecord>(ratesByDate);
         _storage = storage ?? throw new ArgumentNullException(nameof(storage));
         _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
     }
 
     public FxRateRecord? TryGetRate(DateOnly date) =>
@@ -31,7 +34,7 @@ public sealed class FxRateJsonStore : IFxRateStore
     {
         ArgumentNullException.ThrowIfNull(record);
 
-        if (date == DateOnly.FromDateTime(DateTime.Now))
+        if (date == _timeProvider.GetLocalToday())
         {
             Trace.TraceWarning(
                 $"FxRateJsonStore: refused to persist {date:yyyy-MM-dd} - today's rate is intraday and is never stored.");

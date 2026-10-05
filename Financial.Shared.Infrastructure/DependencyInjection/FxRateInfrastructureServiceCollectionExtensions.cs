@@ -6,6 +6,7 @@ using Financial.Shared.Infrastructure.Persistence.FxRates;
 using Financial.Shared.Infrastructure.Repositories.FxRates;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 
 namespace Financial.Shared.Infrastructure.DependencyInjection;
@@ -23,6 +24,7 @@ public static class FxRateInfrastructureServiceCollectionExtensions
             options.GoogleDriveCredentialsPath = configuration[FxRateRepositoryConfigurationKeys.GoogleDriveCredentialsPath];
             options.GoogleDriveFilePath = configuration[FxRateRepositoryConfigurationKeys.GoogleDriveFilePath];
         });
+        services.TryAddSingleton(TimeProvider.System);
         services.AddSingleton<IFxRateSerializer, FxRateSerializerAdapter>();
         services.AddSingleton<IFxRateStore>(sp =>
         {
@@ -30,7 +32,8 @@ public static class FxRateInfrastructureServiceCollectionExtensions
             var options = BuildRepositoryOptions(settings);
             return new FxRateStoreFactory(
                 sp.GetRequiredService<IFxRateSerializer>(),
-                sp.GetRequiredService<IJsonStorageFactory>()).Create(options);
+                sp.GetRequiredService<IJsonStorageFactory>(),
+                sp.GetRequiredService<TimeProvider>()).Create(options);
         });
 
         return services;
