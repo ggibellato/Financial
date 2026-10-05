@@ -378,13 +378,14 @@ Both work in small, single-feature PRs (target ≤ 8 non-test code files) on a b
 
 **Capabilities:**
 - `Financial.Web/playwright.config.ts`: `testDir: './tests/e2e'`, `headless: true`, `retries: CI ? 2 : 0`, `workers: CI ? 2 : undefined`, `trace: 'on-first-retry'`, `screenshot: 'only-on-failure'`, `video: 'retain-on-failure'`, `baseURL` from the required `SMOKE_APP_URL`.
-- Global setup refuses to run (exit 1, `SMOKE_APP_URL is required` / `API is not serving test data`) unless `SMOKE_APP_URL` is set **and** a health/info endpoint confirms the configured data files are test files. If no such endpoint exists, a Development/Testing-only endpoint reports the data file names. `smoke-test.mjs` is deleted and `npm run smoke-test` runs `playwright test --grep @smoke`.
-- Smoke specs, 5 in total (≤ 5 min in CI):
+- Global setup refuses to run (exit 1, `SMOKE_APP_URL is required` / `API is not serving test data`) unless `SMOKE_APP_URL` is set **and** the app serves the committed test data, proven by an inactive sentinel category `E2E-TEST-DATA` (present only in the test JSON) read through the existing `/categories` endpoint; no endpoint reports data-file paths, which `DiagnosticsController` deliberately does not serve. `smoke-test.mjs` is deleted and `npm run smoke-test` runs `playwright test --grep @smoke`.
+- Smoke specs, 6 in total (≤ 5 min in CI):
   1. App loads and the dashboard tree renders with no console errors.
   2. Navigate to an investment asset and see its summary values.
   3. Add an expense with a unique description (`e2e-<runId>`) and see it in the monthly list.
-  4. Submitting the expense form with a blank value shows the validation message and the Save button stays disabled.
+  4. Submitting the expense form with a blank value shows the validation message and nothing is sent (the form disables its button only while saving; validation runs on submit).
   5. A server error (forced through a seeded invalid operation or a `page.route` 500 on one call) shows the user-facing error state.
+  6. The Historic Summary Average shows the value computed from three expenses seeded through the API (the drift check the previous smoke script ran).
 - Write specs use unique data and run serially (`test.describe.configure({ mode: 'serial' })`). Read specs run in parallel.
 - Locators: `getByRole` or `getByLabel` first, `data-testid` only with a comment explaining why. No CSS classes, XPath, DOM position or `waitForTimeout`.
 - The `smoke` CI job installs Chromium, starts the published app on seeded test JSON (as today), runs `npx playwright test --grep @smoke`, and uploads `playwright-report/` and `test-results/` on failure.
@@ -631,8 +632,8 @@ graph TD
 ### F12. React Playwright E2E Suite
 - [ ] `smoke-test.mjs` is removed, and `npm run smoke-test` runs `playwright test --grep @smoke`.
 - [ ] Running without `SMOKE_APP_URL` aborts before launching a browser, and the API receives no requests.
-- [ ] Running against an API serving non-test data files aborts with the refusal message.
-- [ ] All 5 smoke specs pass in CI headless in ≤ 5 min.
+- [ ] Running against an API serving non-test data (no `E2E-TEST-DATA` sentinel) aborts with the refusal message.
+- [ ] All 6 smoke specs pass in CI headless in ≤ 5 min.
 - [ ] The expense-add spec's record carries the run's unique ID.
 - [ ] A forced failure uploads a trace, screenshot and video as artifacts.
 - [ ] The specs contain no CSS-class, XPath or `waitForTimeout` locators or waits (ESLint playwright rules pass).
