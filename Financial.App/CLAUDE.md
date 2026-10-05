@@ -15,3 +15,4 @@
 - Preserve keyboard navigation, focus visibility, high-DPI behavior, and
   high-contrast support.
 - For significant UI work, use the `fluent-ui` skill.
+- Give any control an end-to-end journey needs an `AutomationProperties.AutomationId` (`<screen>-<element>[-<qualifier>]`, kebab-case; see `docs/ui/wpf.md` §Automation IDs) and add it to `AutomationIdContractTests`.

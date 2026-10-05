@@ -7,7 +7,7 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <DataGrid Grid.Row="0" ItemsSource="{Binding FilteredBankTotals}" AutoGenerateColumns="False" IsReadOnly="True">
+        <DataGrid Grid.Row="0" AutomationProperties.Name="Bank totals" AutomationProperties.AutomationId="monthly-banks-grid" ItemsSource="{Binding FilteredBankTotals}" AutoGenerateColumns="False" IsReadOnly="True">
             <DataGrid.Columns>
                 <DataGridTextColumn x:Name="BankColumn" Binding="{Binding Bank}" Header="Bank" Width="*"
                                      ElementStyle="{StaticResource PlainColumnTextStyle}"/>

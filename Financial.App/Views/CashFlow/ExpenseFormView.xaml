@@ -68,7 +68,7 @@
                     <Run Text="Date"/>
                     <Run Text=" *" Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
                 </TextBlock>
-                <DatePicker AutomationProperties.Name="Expense date"
+                <DatePicker AutomationProperties.Name="Expense date" AutomationProperties.AutomationId="expense-form-date"
                             AutomationProperties.HelpText="Required"
                             SelectedDate="{Binding ExpenseFormDate, UpdateSourceTrigger=PropertyChanged}"/>
                 <TextBlock Style="{StaticResource FieldErrorTextStyle}" Text="{Binding DateFieldError}"/>
@@ -79,10 +79,10 @@
                     <Run Text="Description"/>
                     <Run Text=" *" Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
                 </TextBlock>
-                <TextBox AutomationProperties.Name="Description"
+                <TextBox AutomationProperties.Name="Description" AutomationProperties.AutomationId="expense-form-description"
                          AutomationProperties.HelpText="Required"
                          Text="{Binding ExpenseFormDescription, UpdateSourceTrigger=PropertyChanged}"/>
-                <TextBlock Style="{StaticResource FieldErrorTextStyle}" Text="{Binding DescriptionFieldError}"/>
+                <TextBlock Style="{StaticResource FieldErrorTextStyle}" AutomationProperties.AutomationId="expense-form-description-error" Text="{Binding DescriptionFieldError}"/>
             </StackPanel>
 
             <StackPanel Grid.Row="1" Grid.Column="3" Margin="0,0,0,8"
@@ -92,7 +92,7 @@
                         <Run Text="Card"/>
                         <Run Text=" *" Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
                     </TextBlock>
-                    <ComboBox AutomationProperties.Name="Card"
+                    <ComboBox AutomationProperties.Name="Card" AutomationProperties.AutomationId="expense-form-card"
                               AutomationProperties.HelpText="Required"
                               ItemsSource="{Binding ActiveCreditCards}" DisplayMemberPath="Name"
                               SelectedValue="{Binding ExpenseFormCreditCardId, UpdateSourceTrigger=PropertyChanged}"
@@ -103,7 +103,7 @@
                         <Run Text="Payment Source"/>
                         <Run Text=" *" Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
                     </TextBlock>
-                    <ComboBox AutomationProperties.Name="Payment source"
+                    <ComboBox AutomationProperties.Name="Payment source" AutomationProperties.AutomationId="expense-form-payment-source"
                               AutomationProperties.HelpText="Required"
                               ItemsSource="{Binding Banks}" DisplayMemberPath="Name"
                               SelectedValue="{Binding ExpenseFormPaymentSource, UpdateSourceTrigger=PropertyChanged}"
@@ -117,12 +117,12 @@
                     <Run Text="Value"/>
                     <Run Text=" *" Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
                 </TextBlock>
-                <TextBox AutomationProperties.Name="Value"
+                <TextBox AutomationProperties.Name="Value" AutomationProperties.AutomationId="expense-form-value"
                          AutomationProperties.HelpText="Required"
                          Text="{Binding ExpenseFormValue, UpdateSourceTrigger=LostFocus}"
                          behaviors:DecimalInputBehavior.IsEnabled="True"
                          behaviors:DecimalInputBehavior.AllowSign="True"/>
-                <TextBlock Style="{StaticResource FieldErrorTextStyle}" Text="{Binding ValueFieldError}"/>
+                <TextBlock Style="{StaticResource FieldErrorTextStyle}" AutomationProperties.AutomationId="expense-form-value-error" Text="{Binding ValueFieldError}"/>
             </StackPanel>
 
             <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,0,8,8">
@@ -130,7 +130,7 @@
                     <Run Text="Category"/>
                     <Run Text=" *" Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
                 </TextBlock>
-                <ComboBox AutomationProperties.Name="Category"
+                <ComboBox AutomationProperties.Name="Category" AutomationProperties.AutomationId="expense-form-category"
                           AutomationProperties.HelpText="Required"
                           ItemsSource="{Binding ActiveCategories}" DisplayMemberPath="Name"
                           SelectedValue="{Binding ExpenseFormCategoryId, UpdateSourceTrigger=PropertyChanged}"
@@ -149,7 +149,7 @@
                 </StackPanel>
                 <StackPanel Visibility="{Binding ShowRoundUpField, Converter={StaticResource BoolToVisibilityConverter}}">
                     <TextBlock Text="Round-Up" Style="{StaticResource FieldLabelStyle}"/>
-                    <TextBox AutomationProperties.Name="Round-up amount"
+                    <TextBox AutomationProperties.Name="Round-up amount" AutomationProperties.AutomationId="expense-form-round-up"
                              Text="{Binding ExpenseFormRoundUpAmount, UpdateSourceTrigger=LostFocus}"
                              behaviors:DecimalInputBehavior.IsEnabled="True"/>
                     <TextBlock Style="{StaticResource FieldErrorTextStyle}" Text="{Binding RoundUpAmountFieldError}"/>
@@ -174,7 +174,7 @@
                        Text="{Binding ExpenseGeneralSaveError}"/>
 
             <StackPanel Grid.Row="5" Grid.ColumnSpan="4" Orientation="Horizontal">
-                <ui:Button MinWidth="90" Appearance="Primary" Command="{Binding SaveExpenseCommand}"
+                <ui:Button MinWidth="90" Appearance="Primary" Command="{Binding SaveExpenseCommand}" AutomationProperties.AutomationId="expense-form-save"
                            Visibility="{Binding ShowPaymentModeFields, Converter={StaticResource BoolToVisibilityConverter}}">
                     <ui:Button.Style>
                         <Style TargetType="{x:Type ui:Button}" BasedOn="{StaticResource {x:Type ui:Button}}">
@@ -190,7 +190,7 @@
                         </Style>
                     </ui:Button.Style>
                 </ui:Button>
-                <ui:Button Content="Cancel" MinWidth="90" Margin="8,0,0,0" Appearance="Secondary"
+                <ui:Button Content="Cancel" MinWidth="90" Margin="8,0,0,0" Appearance="Secondary" AutomationProperties.AutomationId="expense-form-cancel"
                            Command="{Binding CancelExpenseFormCommand}"/>
             </StackPanel>
         </Grid>

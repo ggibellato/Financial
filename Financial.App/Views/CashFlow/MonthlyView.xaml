@@ -15,15 +15,15 @@
                                          SelectedMonth="{Binding Month, Mode=TwoWay}"/>
         </StackPanel>
 
-        <TextBlock Grid.Row="1" Text="Loading..." FontSize="14"
+        <TextBlock Grid.Row="1" Text="Loading..." FontSize="14" AutomationProperties.LiveSetting="Polite"
                     Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
         <StackPanel Grid.Row="1" Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}">
-            <TextBlock Text="{Binding Error}" Foreground="{DynamicResource SystemFillColorCriticalBrush}" TextWrapping="Wrap"/>
-            <Button Content="Retry" Command="{Binding RetryCommand}" HorizontalAlignment="Left" Margin="0,8,0,0"/>
+            <TextBlock Text="{Binding Error}" AutomationProperties.AutomationId="monthly-error" AutomationProperties.LiveSetting="Assertive" Foreground="{DynamicResource SystemFillColorCriticalBrush}" TextWrapping="Wrap"/>
+            <Button Content="Retry" Command="{Binding RetryCommand}" AutomationProperties.AutomationId="monthly-retry" HorizontalAlignment="Left" Margin="0,8,0,0"/>
         </StackPanel>
 
-        <TabControl Grid.Row="1" Visibility="{Binding ShowContent, Converter={StaticResource BoolToVisibilityConverter}}">
+        <TabControl Grid.Row="1" AutomationProperties.AutomationId="monthly-tabs" Visibility="{Binding ShowContent, Converter={StaticResource BoolToVisibilityConverter}}">
             <TabItem Header="Summary">
                 <local:MonthlySummaryView/>
             </TabItem>

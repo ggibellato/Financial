@@ -210,6 +210,24 @@ unthemed classic Windows chrome — a known, open gap. Closing it needs a custom
   `Text`, matching React's `TruncatedText` truncate-and-reveal-on-hover/focus
   pattern (`docs/ui/react.md`).
 
+## Automation IDs
+
+`AutomationProperties.AutomationId` is the stable handle UI-automation tests (`Tests/Financial.App.E2ETests`, FlaUI/UIA3) use to find a control. It is separate from `AutomationProperties.Name`, which is the user-facing accessible name and changes with copy edits.
+
+- Format: `<screen>-<element>[-<qualifier>]`, lowercase kebab-case (`expense-form-value`, `monthly-category-total`, `nav-monthly`).
+- Unique among the elements present in the window at the same time. Tab content is created only for the selected tab, so the same view in two tabs (for example the banks grid) may share an id.
+- Add one to every control an end-to-end journey needs: fields, buttons, grids, validation text, the tree. Do not add ids speculatively.
+- Only elements with a UI Automation peer expose an id: `Border`, `StackPanel` and `Grid` do not, so put it on the control inside (`TextBlock`, `Button`, `DataGrid`, `TextBox`, `TreeView`, `TabControl`) and use a name where the label is the contract.
+- Templated items bind the id to their data (`nav-{0}` from the navigation item id; broker, portfolio and asset tree items are found by their accessible name, which is the node's display name).
+- `Financial.Presentation.Tests/Views/AutomationIdContractTests` lists the ids the E2E journeys rely on and fails if one disappears from its XAML or breaks the convention; add a row when you add an id a journey uses.
+
+| Screen | Ids |
+|---|---|
+| Shell | `main-window`, `main-breadcrumb`, `nav-<item id>` (every entry of the expanded sidebar; the collapsed-sidebar flyout buttons have none) |
+| Investments | `investment-tree`, `asset-summary-name` |
+| Monthly | `monthly-tabs`, `monthly-error`, `monthly-retry`, `monthly-category-grid`, `monthly-category-total`, `monthly-banks-grid`, `monthly-expenses-grid`, `monthly-new-expense` |
+| Expense form | `expense-form-date`, `-description`, `-description-error`, `-card`, `-payment-source`, `-value`, `-value-error`, `-category`, `-round-up`, `-save`, `-cancel` |
+
 ## Dialogs and contextual UI
 
 - Use the approved dialog/window pattern.

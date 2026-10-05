@@ -20,7 +20,7 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <ui:Button Grid.Row="0" Content="New Expense" HorizontalAlignment="Left" Margin="0,0,0,8"
+        <ui:Button Grid.Row="0" Content="New Expense" AutomationProperties.AutomationId="monthly-new-expense" HorizontalAlignment="Left" Margin="0,0,0,8"
                    Appearance="Primary" Icon="{ui:SymbolIcon Symbol=Add20}"
                    Command="{Binding ShowCreateExpenseFormCommand}" CommandParameter="bank"/>
 
@@ -31,7 +31,7 @@
                    Foreground="{DynamicResource SystemFillColorCriticalBrush}"
                    Text="{Binding DeletingExpenseError}"/>
 
-        <DataGrid Grid.Row="3" ItemsSource="{Binding FilteredExpenses}" AutomationProperties.Name="Expenses"
+        <DataGrid Grid.Row="3" ItemsSource="{Binding FilteredExpenses}" AutomationProperties.Name="Expenses" AutomationProperties.AutomationId="monthly-expenses-grid"
                   AutoGenerateColumns="False" IsReadOnly="True" CanUserResizeRows="False" CanUserSortColumns="True"
                   GridLinesVisibility="Horizontal" HeadersVisibility="Column" SelectionMode="Single"
                   behaviors:SortableColumnsBehavior.DefaultSortMemberPath="Date"
