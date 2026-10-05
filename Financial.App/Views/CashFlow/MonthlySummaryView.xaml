@@ -29,7 +29,7 @@
 
             <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,8,0,0">
                 <TextBlock Text="Total: "/>
-                <TextBlock Text="{Binding CategoryTotalsSum, StringFormat=N2}" AutomationProperties.Name="Category total" AutomationProperties.AutomationId="monthly-category-total" FontWeight="Bold"/>
+                <TextBlock Text="{Binding CategoryTotalsSum, StringFormat=N2}" AutomationProperties.Name="{Binding CategoryTotalsSum, StringFormat='Category total {0:N2}'}" AutomationProperties.AutomationId="monthly-category-total" FontWeight="Bold"/>
             </StackPanel>
         </Grid>
 

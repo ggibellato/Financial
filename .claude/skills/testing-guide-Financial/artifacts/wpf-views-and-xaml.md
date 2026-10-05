@@ -28,9 +28,10 @@
 - **Contract tests (Integration-shaped, single process)** for XAML ↔ DTO agreement: they read
   the real XAML file from the repo (`FindRepoRoot()` walks up to `Financial.slnx`) and reflect
   over the real DTO — no WPF runtime needed.
-- **No automated E2E** for WPF: no UI-automation harness exists (no FlaUI/WinAppDriver in any
-  csproj). The manual run stands in. If one is added later, click by
-  `GetClickablePoint()` from the automation element, never by screenshot-guessed coordinates
+- **E2E** lives in `Tests/Financial.App.E2ETests` (FlaUI/UIA3, `references/e2e-environment.md`),
+  not in this layer: five smoke journeys drive the built exe. A control a journey needs gets an
+  `AutomationProperties.AutomationId` (`docs/ui/wpf.md` §Automation IDs) and a row in
+  `AutomationIdContractTests`. Never click by screenshot-guessed coordinates
   (`feedback_wpf_automation_clickable_point`).
 - Behaviour behind the view is Unit-tested in the ViewModel (`wpf-viewmodels.md`).
 
