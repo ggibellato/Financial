@@ -1,6 +1,6 @@
 using System.IO;
 using System.Text.RegularExpressions;
-using Financial.Architecture.Tests.Infrastructure;
+using Financial.TestUtilities;
 using FluentAssertions;
 
 namespace Financial.Architecture.Tests;
@@ -62,7 +62,7 @@ public partial class ProductionClockReadsTests
         for (var i = 0; i < lines.Length; i++)
         {
             var code = lines[i].TrimStart();
-            if (code.StartsWith("//", StringComparison.Ordinal) || code.StartsWith("///", StringComparison.Ordinal) || code.StartsWith('*'))
+            if (code.StartsWith("//", StringComparison.Ordinal) || code.StartsWith('*'))
             {
                 continue;
             }

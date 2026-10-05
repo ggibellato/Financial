@@ -1,7 +1,6 @@
-using System.IO;
-namespace Financial.Architecture.Tests.Infrastructure;
+namespace Financial.TestUtilities;
 
-internal static class RepoRoot
+public static class RepoRoot
 {
     public static string Find()
     {
