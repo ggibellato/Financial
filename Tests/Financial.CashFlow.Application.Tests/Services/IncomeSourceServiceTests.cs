@@ -266,13 +266,14 @@ public class IncomeSourceServiceTests
     }
 
     [Fact]
-    public void GetIncomeSources_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    public void GetIncomeSources_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
         _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
 
         Action act = () => _sut.GetIncomeSources();
 
         act.Should().Throw<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.IncomeSourceService.GetIncomeSources");
     }
 
     [Fact]

@@ -281,12 +281,13 @@ public class InvestmentAnnualResultServiceTests
     }
 
     [Fact]
-    public void GetInvestmentAnnualResultForYear_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    public void GetInvestmentAnnualResultForYear_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
         _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
 
         Action act = () => _sut.GetInvestmentAnnualResultForYear(CurrentYear);
 
         act.Should().Throw<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.InvestmentAnnualResultService.GetInvestmentAnnualResultForYear");
     }
 }

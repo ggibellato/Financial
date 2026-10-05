@@ -508,12 +508,13 @@ public class IncomeServiceTests
     }
 
     [Fact]
-    public void GetIncomesByMonth_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    public void GetIncomesByMonth_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
         _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
 
         Action act = () => _sut.GetIncomesByMonth(2026, 9);
 
         act.Should().Throw<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.IncomeService.GetIncomesByMonth");
     }
 }

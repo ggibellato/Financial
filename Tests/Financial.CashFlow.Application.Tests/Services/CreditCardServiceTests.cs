@@ -326,12 +326,13 @@ public class CreditCardServiceTests
     }
 
     [Fact]
-    public void GetCreditCards_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    public void GetCreditCards_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
         _repository.ThrowOnNextGetCreditCards = true;
 
         Action act = () => _sut.GetCreditCards();
 
         act.Should().Throw<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.CreditCardService.GetCreditCards");
     }
 }

@@ -236,13 +236,14 @@ public class CategoryServiceTests
     }
 
     [Fact]
-    public void GetCategories_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    public void GetCategories_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
         _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
 
         Action act = () => _sut.GetCategories();
 
         act.Should().Throw<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.CategoryService.GetCategories");
     }
 
     [Fact]

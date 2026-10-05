@@ -301,12 +301,13 @@ public class BalanceAdjustmentServiceTests
     }
 
     [Fact]
-    public void GetAdjustmentsByBank_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    public void GetAdjustmentsByBank_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
         _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
 
         Action act = () => _sut.GetAdjustmentsByBank(Guid.NewGuid());
 
         act.Should().Throw<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.BalanceAdjustmentService.GetAdjustmentsByBank");
     }
 }

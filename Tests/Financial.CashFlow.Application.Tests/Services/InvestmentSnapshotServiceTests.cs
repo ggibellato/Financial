@@ -290,22 +290,24 @@ public class InvestmentSnapshotServiceTests
     #endregion
 
     [Fact]
-    public async Task GetSnapshotsForMonthAsync_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    public async Task GetSnapshotsForMonthAsync_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
         _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
 
         var act = async () => await _sut.GetSnapshotsForMonthAsync(2026, 7);
 
         await act.Should().ThrowAsync<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.InvestmentSnapshotService.GetSnapshotsForMonth");
     }
 
     [Fact]
-    public async Task GetSuggestionsForMonthAsync_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    public async Task GetSuggestionsForMonthAsync_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
         _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
 
         var act = async () => await _sut.GetSuggestionsForMonthAsync(2026, 7);
 
         await act.Should().ThrowAsync<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.InvestmentSnapshotService.GetSuggestionsForMonth");
     }
 }

@@ -424,13 +424,14 @@ public class InvestmentAccountServiceTests
     }
 
     [Fact]
-    public void GetInvestmentAccounts_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    public void GetInvestmentAccounts_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
         _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
 
         Action act = () => _sut.GetInvestmentAccounts();
 
         act.Should().Throw<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.InvestmentAccountService.GetInvestmentAccounts");
     }
 
     [Fact]

@@ -242,14 +242,16 @@ public class ReserveBucketServiceTests
     }
 
     [Fact]
-    public void GetReserveBuckets_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    public void GetReserveBuckets_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
         var repository = new StubCashFlowRepository { ThrowOnNextRead = new InvalidOperationException("simulated failure") };
-        var service = new ReserveBucketService(repository, Tracer, Logger);
+        var tracer = new RecordingTelemetryTracer();
+        var service = new ReserveBucketService(repository, tracer, Logger);
 
         Action act = () => service.GetReserveBuckets();
 
         act.Should().Throw<InvalidOperationException>();
+        tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.ReserveBucketService.GetReserveBuckets");
     }
 
     [Fact]

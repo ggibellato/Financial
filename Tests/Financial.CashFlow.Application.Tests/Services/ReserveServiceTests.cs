@@ -736,23 +736,25 @@ public class ReserveServiceTests
     }
 
     [Fact]
-    public void GetBucketBalances_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    public void GetBucketBalances_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
         _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
 
         Action act = () => _sut.GetBucketBalances();
 
         act.Should().Throw<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.ReserveService.GetBucketBalances");
     }
 
     [Fact]
-    public void GetMovementHistory_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    public void GetMovementHistory_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
         _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
 
         Action act = () => _sut.GetMovementHistory();
 
         act.Should().Throw<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.ReserveService.GetMovementHistory");
     }
 
     [Fact]

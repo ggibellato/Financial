@@ -229,22 +229,24 @@ public class TransferServiceTests
         DateOnly Date, string SourceBank, string DestinationBank, decimal Amount, string? Note);
 
     [Fact]
-    public void GetTransfersByMonth_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    public void GetTransfersByMonth_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
         _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
 
         Action act = () => _sut.GetTransfersByMonth(2026, 7);
 
         act.Should().Throw<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.TransferService.GetTransfersByMonth");
     }
 
     [Fact]
-    public void GetTransfersByBank_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    public void GetTransfersByBank_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
         _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
 
         Action act = () => _sut.GetTransfersByBank(Guid.NewGuid());
 
         act.Should().Throw<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.TransferService.GetTransfersByBank");
     }
 }
