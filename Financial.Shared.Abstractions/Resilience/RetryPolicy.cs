@@ -7,18 +7,19 @@ public static class RetryPolicy
     public static Task<T> ExecuteWithRetryAsync<T>(
         Func<Task<T>> action, Func<Exception, bool> isRetryable, int maxRetries = 5, Action<string>? logger = null,
         Func<TimeSpan, CancellationToken, Task>? delay = null) =>
-        ExecuteWithRetryCoreAsync(action, isRetryable, maxRetries, logger, delay ?? Task.Delay);
+        ExecuteWithRetryCoreAsync(action, isRetryable, maxRetries, logger, delay);
 
     public static T ExecuteWithRetry<T>(
         Func<T> action, Func<Exception, bool> isRetryable, int maxRetries = 5, Action<string>? logger = null,
         Func<TimeSpan, CancellationToken, Task>? delay = null) =>
-        ExecuteWithRetryCoreAsync(() => Task.FromResult(action()), isRetryable, maxRetries, logger, delay ?? Task.Delay)
+        ExecuteWithRetryCoreAsync(() => Task.FromResult(action()), isRetryable, maxRetries, logger, delay)
             .GetAwaiter().GetResult();
 
     private static async Task<T> ExecuteWithRetryCoreAsync<T>(
         Func<Task<T>> action, Func<Exception, bool> isRetryable, int maxRetries, Action<string>? logger,
-        Func<TimeSpan, CancellationToken, Task> delay)
+        Func<TimeSpan, CancellationToken, Task>? delay)
     {
+        delay ??= Task.Delay;
         var retryCount = 0;
         while (true)
         {

@@ -4,6 +4,7 @@ using Financial.Investment.Domain.Entities;
 using Financial.Shared.Abstractions.Currencies;
 using Financial.Shared.Abstractions.Observability;
 using Financial.TestUtilities;
+using Microsoft.Extensions.Time.Testing;
 using FluentAssertions;
 using FluentAssertions.Execution;
 

@@ -173,7 +173,8 @@ public sealed class DebouncedJsonStorage : IJsonStorage, ISyncStatusProvider
                 // The retry policy's message carries only the exception type and retry counters,
                 // never document content - safe to log verbatim (logging-audit.md priority 3:
                 // a retry firing must be visible in the log stream).
-                message => _logger.LogWarning("JsonStorage.Save {RetryDetail}", message)).ConfigureAwait(false);
+                message => _logger.LogWarning("JsonStorage.Save {RetryDetail}", message),
+                (wait, cancellationToken) => Task.Delay(wait, _timeProvider, cancellationToken)).ConfigureAwait(false);
 
             span.MarkSuccess();
             HandleSaveSuccess();

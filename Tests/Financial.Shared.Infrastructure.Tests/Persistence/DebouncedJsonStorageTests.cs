@@ -4,6 +4,7 @@ using Financial.Shared.Abstractions.Resilience;
 using Financial.Shared.Infrastructure.Persistence;
 using Financial.Shared.Abstractions.Sync;
 using Financial.TestUtilities;
+using Microsoft.Extensions.Time.Testing;
 using FluentAssertions;
 
 namespace Financial.Shared.Infrastructure.Tests.Persistence;
@@ -99,17 +100,21 @@ public class DebouncedJsonStorageTests
     [Fact]
     public async Task RetriesExhausted_StatusBecomesFailed_LastSuccessfulSaveUtcPreserved()
     {
-        var fixedTime = new FakeTimeProvider(new DateTimeOffset(2026, 8, 13, 10, 0, 0, TimeSpan.Zero));
+        var clock = new ObservableFakeClock(new DateTimeOffset(2026, 8, 13, 10, 0, 0, TimeSpan.Zero));
         var storage = new DebouncedJsonStorage(
-            _inner, TimeSpan.FromMilliseconds(20), fixedTime, maxRetries: 0, flushTimeout: TimeSpan.FromSeconds(8));
+            _inner, TimeSpan.FromMilliseconds(20), clock, maxRetries: 0, flushTimeout: TimeSpan.FromSeconds(8));
 
         await storage.WriteAsync("{\"a\":1}");
+        await WaitForAsync(() => clock.TimersArmed == 1);
+        clock.Advance(TimeSpan.FromMilliseconds(20));
         await WaitForAsync(() => storage.GetStatus().State == SyncState.Idle);
         var successTimestamp = storage.GetStatus().LastSuccessfulSaveUtc;
         successTimestamp.Should().NotBeNull();
 
         _inner.FailNextWrites(1);
         await storage.WriteAsync("{\"a\":2}");
+        await WaitForAsync(() => clock.TimersArmed == 2);
+        clock.Advance(TimeSpan.FromMilliseconds(20));
 
         await WaitForAsync(() => storage.GetStatus().State == SyncState.Failed);
 
@@ -146,14 +151,16 @@ public class DebouncedJsonStorageTests
     [Fact]
     public async Task SuccessfulSave_StatusBecomesIdle_LastSuccessfulSaveUtcUpdates()
     {
-        var fixedTime = new FakeTimeProvider(new DateTimeOffset(2026, 8, 13, 12, 0, 0, TimeSpan.Zero));
-        var storage = new DebouncedJsonStorage(_inner, TimeSpan.FromMilliseconds(20), fixedTime);
+        var clock = new ObservableFakeClock(new DateTimeOffset(2026, 8, 13, 12, 0, 0, TimeSpan.Zero));
+        var storage = new DebouncedJsonStorage(_inner, TimeSpan.FromMilliseconds(20), clock);
 
         await storage.WriteAsync("{\"a\":1}");
+        await WaitForAsync(() => clock.TimersArmed == 1);
+        clock.Advance(TimeSpan.FromMilliseconds(20));
 
         await WaitForAsync(() => storage.GetStatus().State == SyncState.Idle);
 
-        storage.GetStatus().LastSuccessfulSaveUtc.Should().Be(fixedTime.GetUtcNow().UtcDateTime);
+        storage.GetStatus().LastSuccessfulSaveUtc.Should().Be(clock.GetUtcNow().UtcDateTime);
     }
 
     [Fact]
@@ -292,14 +299,18 @@ public class DebouncedJsonStorageTests
     [Fact]
     public async Task TransientWriteFailure_LogsAWarningForTheRetry_ThenSucceedsWithoutAnError()
     {
+        var clock = new ObservableFakeClock(new DateTimeOffset(2026, 8, 13, 10, 0, 0, TimeSpan.Zero));
         _inner.FailNextWrites(1);
         var logger = new RecordingLogger<DebouncedJsonStorage>();
         var storage = new DebouncedJsonStorage(
-            _inner, TimeSpan.FromMilliseconds(20), null, maxRetries: 5, flushTimeout: TimeSpan.FromSeconds(8), logger: logger);
+            _inner, TimeSpan.FromMilliseconds(20), clock, maxRetries: 5, flushTimeout: TimeSpan.FromSeconds(8), logger: logger);
 
         await storage.WriteAsync("{\"a\":1}");
-        // First attempt fails, the retry policy waits 2s, the second attempt succeeds.
-        await WaitForAsync(() => storage.GetStatus().State == SyncState.Idle, TimeSpan.FromSeconds(10));
+        await WaitForAsync(() => clock.TimersArmed == 1);
+        clock.Advance(TimeSpan.FromMilliseconds(20));
+        await WaitForAsync(() => clock.TimersArmed == 2);
+        clock.Advance(TimeSpan.FromSeconds(2));
+        await WaitForAsync(() => storage.GetStatus().State == SyncState.Idle);
 
         var warning = logger.Entries.Should().ContainSingle(e => e.Level == Microsoft.Extensions.Logging.LogLevel.Warning).Which;
         warning.Message.Should().Contain("Retry 1/5");

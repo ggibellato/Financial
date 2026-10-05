@@ -1,7 +1,11 @@
+using Microsoft.Extensions.Time.Testing;
+
 namespace Financial.TestUtilities;
 
 public static class TestClock
 {
+    private static readonly Lazy<TimeZoneInfo> London = new(() => TimeZoneInfo.FindSystemTimeZoneById("Europe/London"));
+
     public static readonly DateTimeOffset Midsummer = new(2026, 7, 15, 12, 0, 0, TimeSpan.FromHours(1));
 
     public static readonly DateTimeOffset EndOfJanuary = new(2026, 1, 31, 23, 59, 0, TimeSpan.Zero);
@@ -10,5 +14,10 @@ public static class TestClock
 
     public static readonly DateTimeOffset FirstOfJulyJustAfterMidnight = new(2026, 7, 1, 0, 30, 0, TimeSpan.FromHours(1));
 
-    public static FakeTimeProvider At(DateTimeOffset? instant = null) => new(instant ?? Midsummer);
+    public static FakeTimeProvider At(DateTimeOffset? instant = null)
+    {
+        var clock = new FakeTimeProvider(instant ?? Midsummer);
+        clock.SetLocalTimeZone(London.Value);
+        return clock;
+    }
 }
