@@ -121,12 +121,15 @@ public class DebouncedJsonStorageTests
     [Fact]
     public async Task SaveFailure_DoesNotAutoStartFollowUpCycle()
     {
+        var clock = new ObservableFakeClock(new DateTimeOffset(2026, 8, 13, 10, 0, 0, TimeSpan.Zero));
         _inner.HoldWritesUntilReleased();
         _inner.FailNextWrites(1);
         var storage = new DebouncedJsonStorage(
-            _inner, TimeSpan.FromMilliseconds(20), null, maxRetries: 0, flushTimeout: TimeSpan.FromSeconds(8));
+            _inner, TimeSpan.FromMilliseconds(20), clock, maxRetries: 0, flushTimeout: TimeSpan.FromSeconds(8));
 
         await storage.WriteAsync("{\"a\":1}");
+        await WaitForAsync(() => clock.TimersArmed == 1);
+        clock.Advance(TimeSpan.FromMilliseconds(20));
         await WaitForAsync(() => storage.GetStatus().State == SyncState.Saving);
 
         await storage.WriteAsync("{\"a\":2}");
@@ -134,8 +137,8 @@ public class DebouncedJsonStorageTests
         _inner.Release();
 
         await WaitForAsync(() => storage.GetStatus().State == SyncState.Failed);
-        await Task.Delay(200);
 
+        clock.TimersArmed.Should().Be(1, "a failed save must not arm a follow-up debounce timer");
         _inner.WrittenJson.Should().BeEmpty();
         storage.GetStatus().State.Should().Be(SyncState.Failed);
     }

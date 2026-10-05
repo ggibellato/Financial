@@ -5,16 +5,19 @@ public static class RetryPolicy
     private const int InitialDelayMs = 2000;
 
     public static Task<T> ExecuteWithRetryAsync<T>(
-        Func<Task<T>> action, Func<Exception, bool> isRetryable, int maxRetries = 5, Action<string>? logger = null) =>
-        ExecuteWithRetryCoreAsync(action, isRetryable, maxRetries, logger, ms => Task.Delay(ms));
+        Func<Task<T>> action, Func<Exception, bool> isRetryable, int maxRetries = 5, Action<string>? logger = null,
+        Func<TimeSpan, CancellationToken, Task>? delay = null) =>
+        ExecuteWithRetryCoreAsync(action, isRetryable, maxRetries, logger, delay ?? Task.Delay);
 
     public static T ExecuteWithRetry<T>(
-        Func<T> action, Func<Exception, bool> isRetryable, int maxRetries = 5, Action<string>? logger = null) =>
-        ExecuteWithRetryCoreAsync(() => Task.FromResult(action()), isRetryable, maxRetries, logger, SleepAsync)
+        Func<T> action, Func<Exception, bool> isRetryable, int maxRetries = 5, Action<string>? logger = null,
+        Func<TimeSpan, CancellationToken, Task>? delay = null) =>
+        ExecuteWithRetryCoreAsync(() => Task.FromResult(action()), isRetryable, maxRetries, logger, delay ?? Task.Delay)
             .GetAwaiter().GetResult();
 
     private static async Task<T> ExecuteWithRetryCoreAsync<T>(
-        Func<Task<T>> action, Func<Exception, bool> isRetryable, int maxRetries, Action<string>? logger, Func<int, Task> wait)
+        Func<Task<T>> action, Func<Exception, bool> isRetryable, int maxRetries, Action<string>? logger,
+        Func<TimeSpan, CancellationToken, Task> delay)
     {
         var retryCount = 0;
         while (true)
@@ -28,15 +31,9 @@ public static class RetryPolicy
                 retryCount++;
                 var waitTime = CalculateWaitTimeMs(retryCount);
                 logger?.Invoke($"Retry {retryCount}/{maxRetries} after {ex.GetType().Name}. Waiting {waitTime}ms...");
-                await wait(waitTime);
+                await delay(TimeSpan.FromMilliseconds(waitTime), CancellationToken.None);
             }
         }
-    }
-
-    private static Task SleepAsync(int milliseconds)
-    {
-        Thread.Sleep(milliseconds);
-        return Task.CompletedTask;
     }
 
     private static int CalculateWaitTimeMs(int retryCount) => InitialDelayMs * (int)Math.Pow(2, retryCount - 1);

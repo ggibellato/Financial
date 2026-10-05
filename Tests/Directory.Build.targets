@@ -1,0 +1,7 @@
+<Project>
+
+  <ItemGroup Condition="'$(IsTestProject)' == 'true'">
+    <Compile Include="$(MSBuildThisFileDirectory)TestCultureInitializer.cs" Link="TestCultureInitializer.cs" />
+  </ItemGroup>
+
+</Project>
