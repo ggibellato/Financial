@@ -141,12 +141,9 @@ public class InvestmentSnapshotsViewModelTests
             Suggestions = [CreateSuggestion(id, "PlatinumVisa8003", currentValue: 0m, suggestedValue: -5m)],
             NotUpdated = [],
         };
-        viewModel.SuggestValuesCommand.Execute(null);
+        await viewModel.OpenSuggestPanelAsync();
 
-        viewModel.ApplySuggestionsCommand.Execute(null);
-        var deadline = TestClock.Default.UtcDateTime.AddSeconds(5);
-        while (viewModel.IsApplyingSuggestions && TestClock.Default.UtcDateTime < deadline)
-            await Task.Delay(25);
+        await viewModel.ApplySuggestionsAsync();
 
         service.UpdateRequests.Should().BeEmpty();
         viewModel.FailedSuggestionRows.Should().ContainSingle(r => r.SnapshotId == id);
@@ -348,10 +345,9 @@ public class InvestmentSnapshotsViewModelTests
             ],
             NotUpdated = [],
         };
-        viewModel.SuggestValuesCommand.Execute(null);
+        await viewModel.OpenSuggestPanelAsync();
 
-        viewModel.ApplySuggestionsCommand.Execute(null);
-        await Task.Delay(50);
+        await viewModel.ApplySuggestionsAsync();
 
         service.UpdateRequests.Should().ContainSingle(r => r.Id == included);
         service.UpdateRequests.Should().NotContain(r => r.Id == excluded);
@@ -378,11 +374,10 @@ public class InvestmentSnapshotsViewModelTests
             ],
             NotUpdated = [],
         };
-        viewModel.SuggestValuesCommand.Execute(null);
+        await viewModel.OpenSuggestPanelAsync();
         service.ThrowOnUpdateForId = willFail;
 
-        viewModel.ApplySuggestionsCommand.Execute(null);
-        await Task.Delay(50);
+        await viewModel.ApplySuggestionsAsync();
 
         viewModel.HasCompletedApply.Should().BeTrue();
         viewModel.SucceededCount.Should().Be(1);
@@ -402,15 +397,13 @@ public class InvestmentSnapshotsViewModelTests
             Suggestions = [CreateSuggestion(willFailThenSucceed, "PlatinumVisa8003", currentValue: 0m, suggestedValue: 142.17m)],
             NotUpdated = [],
         };
-        viewModel.SuggestValuesCommand.Execute(null);
+        await viewModel.OpenSuggestPanelAsync();
         service.ThrowOnUpdateForId = willFailThenSucceed;
-        viewModel.ApplySuggestionsCommand.Execute(null);
-        await Task.Delay(50);
+        await viewModel.ApplySuggestionsAsync();
         var callCountAfterFailedApply = service.GetSuggestionsForMonthCallCount;
 
         service.ThrowOnUpdateForId = null;
-        viewModel.RetryFailedSuggestionsCommand.Execute(null);
-        await Task.Delay(50);
+        await viewModel.RetryFailedSuggestionsAsync();
 
         service.GetSuggestionsForMonthCallCount.Should().Be(callCountAfterFailedApply);
         service.UpdateRequests.Should().ContainSingle(r => r.Id == willFailThenSucceed && r.Request.Value == 142.17m);

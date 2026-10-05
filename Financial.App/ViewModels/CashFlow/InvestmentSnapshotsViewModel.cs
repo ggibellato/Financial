@@ -393,22 +393,27 @@ public class InvestmentSnapshotsViewModel : ViewModelBase
 
     private void InitializeSuggestValuesCommands()
     {
-        SuggestValuesCommand = new RelayCommand(OpenSuggestPanel);
+        SuggestValuesCommand = new RelayCommand(() => _ = OpenSuggestPanelAsync());
         CancelSuggestValuesCommand = new RelayCommand(CloseSuggestPanel);
         RetrySuggestionsFetchCommand = new RelayCommand(async () => await FetchSuggestionsAsync());
         ApplySuggestionsCommand = new RelayCommand(
-            async () => await ApplySuggestionRowsAsync(SuggestionRows.Where(r => r.Included).ToList()),
+            async () => await ApplySuggestionsAsync(),
             () => CheckedSuggestionsCount > 0);
         RetryFailedSuggestionsCommand = new RelayCommand(
-            async () => await ApplySuggestionRowsAsync(FailedSuggestionRows));
+            async () => await RetryFailedSuggestionsAsync());
     }
 
-    private void OpenSuggestPanel()
+    internal Task OpenSuggestPanelAsync()
     {
         CloseEditForm();
         IsSuggestPanelOpen = true;
-        _ = FetchSuggestionsAsync();
+        return FetchSuggestionsAsync();
     }
+
+    internal Task ApplySuggestionsAsync() =>
+        ApplySuggestionRowsAsync(SuggestionRows.Where(r => r.Included).ToList());
+
+    internal Task RetryFailedSuggestionsAsync() => ApplySuggestionRowsAsync(FailedSuggestionRows);
 
     private void CloseSuggestPanel()
     {

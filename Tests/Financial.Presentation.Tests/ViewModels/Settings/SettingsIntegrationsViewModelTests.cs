@@ -109,7 +109,7 @@ public class SettingsIntegrationsViewModelTests
         var viewModel = new SettingsIntegrationsViewModel(
             calendarIntegration, calendarSync, creditCards, new StubBrowserLauncher(), new StubCalendarOAuthCallbackListener(),
             new StubDialogService(), new RecordingLogger<SettingsIntegrationsViewModel>());
-        await WaitUntilAsync(() => !viewModel.IsLoading);
+        await AsyncWait.UntilAsync(() => !viewModel.IsLoading);
 
         // Request A ("stale"): gate GetStatusAsync (a plain awaited Task, not a Task.Run - a fully
         // deterministic suspension point) and GetCreditCards, so once released it captures an EMPTY
@@ -121,7 +121,7 @@ public class SettingsIntegrationsViewModelTests
 
         var staleRefreshTask = viewModel.RefreshAsync();
         pendingStatus.SetResult(new CalendarConnectionStatusDTO { Connected = false });
-        await WaitUntilAsync(() => creditCards.HasEnteredBlock);
+        await AsyncWait.UntilAsync(() => creditCards.HasEnteredBlock);
         // Request A is now blocked inside GetCreditCards(), having already captured its empty snapshot.
 
         // Request B ("fresh"): fully unblocked, completes normally with real data.
@@ -136,20 +136,6 @@ public class SettingsIntegrationsViewModelTests
         await staleRefreshTask;
 
         viewModel.SyncRows.Should().ContainSingle(r => r.CreditCardId == cardId);
-    }
-
-    private static async Task WaitUntilAsync(Func<bool> condition, int timeoutMs = 5000)
-    {
-        var deadline = TestClock.Default.UtcDateTime.AddMilliseconds(timeoutMs);
-        while (!condition())
-        {
-            if (TestClock.Default.UtcDateTime > deadline)
-            {
-                throw new TimeoutException("Condition was not met within the timeout.");
-            }
-
-            await Task.Delay(10);
-        }
     }
 
     [Fact]
@@ -189,7 +175,7 @@ public class SettingsIntegrationsViewModelTests
         callbackListener.PendingListen = pending;
 
         var connectTask = viewModel.ConnectAsync();
-        await WaitUntilAsync(() => viewModel.IsConnecting);
+        await AsyncWait.UntilAsync(() => viewModel.IsConnecting);
 
         viewModel.IsConnecting.Should().BeTrue();
 
@@ -231,7 +217,7 @@ public class SettingsIntegrationsViewModelTests
         callbackListener.PendingListen = pending;
 
         var firstConnect = viewModel.ConnectAsync();
-        await WaitUntilAsync(() => viewModel.IsConnecting);
+        await AsyncWait.UntilAsync(() => viewModel.IsConnecting);
         await viewModel.ConnectAsync();
 
         browserLauncher.OpenUrlCallCount.Should().Be(1);

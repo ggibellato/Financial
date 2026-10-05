@@ -324,7 +324,7 @@ public class IncomeWorkflowViewModel : ViewModelBase
             if (savedIncome.SplitToReserve)
             {
                 IncomeSplitConfirmationMessage = "Income saved and split to reserve";
-                await Task.Delay(IncomeSplitConfirmationHideDelayMs);
+                await Task.Delay(TimeSpan.FromMilliseconds(IncomeSplitConfirmationHideDelayMs), _timeProvider);
                 IncomeSplitConfirmationMessage = null;
             }
         },
