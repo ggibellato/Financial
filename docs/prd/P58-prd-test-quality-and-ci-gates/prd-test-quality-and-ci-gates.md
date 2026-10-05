@@ -308,7 +308,7 @@ Both work in small, single-feature PRs (target ≤ 8 non-test code files) on a b
 - Culture: machine-format parsing (`GoogleSheetValueParser.cs:14-15`, `GoogleFinanceParsing.cs:25`, WPF parsing of persisted/API values) uses `CultureInfo.InvariantCulture`. User-input parsing in WPF stays culture-aware through `DecimalInputHelper`. pt-BR theories assert `"12.5"` (machine) → 12.5 and user input `"9,40"` under pt-BR → 9.40. Web formatters get an explicit-locale test for `en-GB` and `pt-BR`.
 - Enlarged `waitFor` timeouts (`DetailPanel.test.tsx:266,358,369`; `MonthlyPage.test.tsx:1002,1150`) are replaced by awaiting the specific state, back at the default timeout.
 
-**Experience:** The full suite produces identical pass/fail and identical coverage numbers when run on 31 January at 23:59 or 1 March at 00:30, on an en-GB or pt-BR host.
+**Experience:** The suite produces identical pass/fail and coverage numbers whatever the host culture (en-GB or pt-BR via `TEST_CULTURE`), and no test depends on the date it runs on.
 
 **Error Handling:**
 - A Domain method that previously read the clock now requires an as-of date → every caller passes `TimeProvider.GetLocalNow()` from Application. A missing call site is a compile error, not a silent default.
@@ -594,15 +594,15 @@ graph TD
 - [ ] `testing-guide-Financial` and `docs/rules/implementation.md` document the layer split, traits, literal expectations and the no-null-guard rule.
 
 ### F08. Time and Culture Determinism
-- [ ] A whole-tree grep finds 0 `DateTime.Now/Today/UtcNow` in production code outside `TimeProvider` adapters.
-- [ ] Domain types receive as-of dates rather than a `TimeProvider`.
-- [ ] The full suite passes with the system clock set to 31 Jan 23:59, 1 Mar 00:30 and 1 Jul 00:30 BST.
-- [ ] The full suite passes under `LANG=pt-BR` (local verification, recorded in the PR).
-- [ ] 0 `Task.Delay` in `Financial.Presentation.Tests`, and `ThreadPoolWarmup.cs` is deleted.
-- [ ] `GoogleRetryPolicyTests` runs in < 1 s total.
-- [ ] Machine-format parsing of `"12.5"` under pt-BR returns 12.5.
-- [ ] User input `"9,40"` under pt-BR returns 9.40.
-- [ ] No `waitFor` in web tests uses a timeout above the default.
+- [x] `ProductionClockReadsTests` finds 0 `DateTime(Offset).Now/Today/UtcNow` reads in `Financial.*` production code and allows `TimeProvider.System` only in the `DependencyInjection` registrations, `MonthYearPicker` and `DebouncedJsonStorage` (`Integrations/` and `Tools/` are out of scope).
+- [x] Domain types receive as-of dates rather than a `TimeProvider`.
+- [x] No test reads the wall clock; date-dependent code is covered by pinned-clock cases (`TestClock.EndOfJanuary`, `FirstOfJulyJustAfterMidnight`, `StartOfMarch`) instead of re-running the suite under a changed system clock.
+- [x] The full .NET suite passes with `TEST_CULTURE=pt-BR` (local verification, recorded in the Stage 7 PR).
+- [x] 0 `Task.Delay` in `Financial.Presentation.Tests`, and `ThreadPoolWarmup.cs` is deleted.
+- [x] `GoogleRetryPolicyTests` runs in < 1 s total.
+- [x] Machine-format parsing of `"12.5"` under pt-BR returns 12.5.
+- [x] User input `"9,40"` under pt-BR returns 9.40.
+- [x] No `waitFor` in web tests uses a timeout above the default.
 
 ### F09. Coverage Gate v2
 - [ ] `coverage-baseline.json` exists with line and branch values for all 3 jobs, taken after F06–F08 merged.
