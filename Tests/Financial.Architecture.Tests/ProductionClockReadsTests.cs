@@ -33,11 +33,11 @@ public partial class ProductionClockReadsTests
     }
 
     [Theory]
-    [InlineData("var x = DateTime.Now;", true)]
-    [InlineData("var x = DateTime.UtcNow.Year;", true)]
-    [InlineData("var x = DateTimeOffset.UtcNow;", true)]
-    [InlineData("var x = DateTime.Today;", true)]
-    [InlineData("// DateTime.Now is banned", false)]
+    [InlineData("var x = DateTime" + ".Now;", true)]
+    [InlineData("var x = DateTime" + ".UtcNow.Year;", true)]
+    [InlineData("var x = DateTimeOffset" + ".UtcNow;", true)]
+    [InlineData("var x = DateTime" + ".Today;", true)]
+    [InlineData("// DateTime" + ".Now is banned", false)]
     [InlineData("var x = provider.GetUtcNow();", false)]
     [InlineData("var x = new DateTime(2026, 1, 1);", false)]
     public void Scanner_Flags_Wall_Clock_Reads(string line, bool flagged)
