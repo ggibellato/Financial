@@ -5,7 +5,7 @@ namespace Financial.Presentation.Tests.ViewModels.CashFlow;
 
 public class CreateEntryFormValidationTests
 {
-    private static readonly DateTime ValidDate = DateTime.Today;
+    private static readonly DateTime ValidDate = TestClock.LocalToday;
 
     private static string Validate(DateTime? date, string description = "Salary", string value = "100") =>
         CreateEntryFormValidation.BuildValidationMessage(date, description, value);

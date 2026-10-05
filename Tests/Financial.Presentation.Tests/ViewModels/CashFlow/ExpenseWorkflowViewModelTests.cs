@@ -25,8 +25,8 @@ public class ExpenseWorkflowViewModelTests
 
     private static readonly List<BankDTO> DefaultBanks =
     [
-        new() { Id = BarclaysId, Name = "Barclays", RoundUpEnabled = true, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today), HasReferences = false },
-        new() { Id = ChaseId, Name = "Chase", RoundUpEnabled = false, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today), HasReferences = false },
+        new() { Id = BarclaysId, Name = "Barclays", RoundUpEnabled = true, OpeningBalance = 0, OpeningBalanceDate = TestClock.Today, HasReferences = false },
+        new() { Id = ChaseId, Name = "Chase", RoundUpEnabled = false, OpeningBalance = 0, OpeningBalanceDate = TestClock.Today, HasReferences = false },
     ];
 
     private static readonly Guid BaAmexId = Guid.NewGuid();
@@ -61,16 +61,29 @@ public class ExpenseWorkflowViewModelTests
         var creditCards = new ObservableCollection<CreditCardDTO>(DefaultCreditCards);
         var viewModel = new ExpenseWorkflowViewModel(
             expenseService, categories, banks, creditCards,
-            confirm: _ => confirmDeletes, tracer ?? new RecordingTelemetryTracer(), refresh ?? (() => Task.CompletedTask));
+            confirm: _ => confirmDeletes, TestClock.At(), tracer ?? new RecordingTelemetryTracer(), refresh ?? (() => Task.CompletedTask));
         return (viewModel, expenseService, banks);
+    }
+
+    [Fact]
+    public void ShowCreateExpenseForm_DefaultsTheDateToTheLocalDay_JustAfterMidnightOnTheFirstOfJuly()
+    {
+        var viewModel = new ExpenseWorkflowViewModel(
+            new StubExpenseService(), new ObservableCollection<CategoryDTO>(DefaultCategories), new ObservableCollection<BankDTO>(DefaultBanks),
+            new ObservableCollection<CreditCardDTO>(DefaultCreditCards), _ => true, TestClock.At(TestClock.FirstOfJulyJustAfterMidnight),
+            new RecordingTelemetryTracer(), () => Task.CompletedTask);
+
+        viewModel.ShowCreateExpenseFormCommand.Execute("bank");
+
+        viewModel.ExpenseFormDate.Should().Be(new DateTime(2026, 7, 1));
     }
 
     [Fact]
     public void ApplyRefresh_PopulatesExpensesAndUnpaidCardCharges()
     {
         var (viewModel, _, _) = CreateViewModel();
-        var expense = new ExpenseDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "Test", Value = 10m, CategoryId = Guid.NewGuid(), CategoryName = "Mercado", PaymentStatus = "ImmediatePayment" };
-        var unpaidCharge = new ExpenseDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "Uber", Value = 18.4m, CategoryId = Guid.NewGuid(), CategoryName = "Extras", CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex", PaymentStatus = "CreditCardCharge" };
+        var expense = new ExpenseDTO { Id = Guid.NewGuid(), Date = TestClock.Today, Description = "Test", Value = 10m, CategoryId = Guid.NewGuid(), CategoryName = "Mercado", PaymentStatus = "ImmediatePayment" };
+        var unpaidCharge = new ExpenseDTO { Id = Guid.NewGuid(), Date = TestClock.Today, Description = "Uber", Value = 18.4m, CategoryId = Guid.NewGuid(), CategoryName = "Extras", CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex", PaymentStatus = "CreditCardCharge" };
 
         viewModel.ApplyRefresh([expense], [unpaidCharge]);
 
@@ -87,7 +100,7 @@ public class ExpenseWorkflowViewModelTests
         var creditCards = new ObservableCollection<CreditCardDTO>(DefaultCreditCards);
         var viewModel = new ExpenseWorkflowViewModel(
             expenseService, categories, banks, creditCards,
-            confirm: _ => true, new RecordingTelemetryTracer(), () => Task.CompletedTask);
+            confirm: _ => true, TestClock.At(), new RecordingTelemetryTracer(), () => Task.CompletedTask);
         var newCategory = new CategoryDTO { Id = Guid.NewGuid(), Name = "New", Active = true, IsInvestment = false, IsTithe = false, HasReferences = false };
 
         categories.Add(newCategory);
@@ -100,7 +113,7 @@ public class ExpenseWorkflowViewModelTests
     public void EditExpenseCommand_FromUnpaidCardCharges_OpensFormPrefilled()
     {
         var (viewModel, _, _) = CreateViewModel();
-        var unpaidCharge = new ExpenseDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "Uber", Value = 18.4m, CategoryId = Guid.NewGuid(), CategoryName = "Extras", CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex", PaymentStatus = "CreditCardCharge" };
+        var unpaidCharge = new ExpenseDTO { Id = Guid.NewGuid(), Date = TestClock.Today, Description = "Uber", Value = 18.4m, CategoryId = Guid.NewGuid(), CategoryName = "Extras", CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex", PaymentStatus = "CreditCardCharge" };
 
         viewModel.EditExpenseCommand.Execute(unpaidCharge);
 
@@ -116,7 +129,7 @@ public class ExpenseWorkflowViewModelTests
         var tracer = new RecordingTelemetryTracer();
         var (viewModel, _, banks) = CreateViewModel(tracer: tracer);
         viewModel.ShowCreateExpenseFormCommand.Execute("bank");
-        viewModel.ExpenseFormDate = DateTime.Today;
+        viewModel.ExpenseFormDate = TestClock.LocalToday;
         viewModel.ExpenseFormDescription = "Groceries";
         viewModel.ExpenseFormCategoryId = DefaultCategories[0].Id;
         viewModel.ExpenseFormValue = "25.50";
@@ -134,7 +147,7 @@ public class ExpenseWorkflowViewModelTests
     {
         var (viewModel, expenses, banks) = CreateViewModel();
         viewModel.ShowCreateExpenseFormCommand.Execute("bank");
-        viewModel.ExpenseFormDate = DateTime.Today;
+        viewModel.ExpenseFormDate = TestClock.LocalToday;
         viewModel.ExpenseFormDescription = "Groceries";
         viewModel.ExpenseFormCategoryId = DefaultCategories[0].Id;
         viewModel.ExpenseFormValue = "25.50";
@@ -153,7 +166,7 @@ public class ExpenseWorkflowViewModelTests
     {
         var (viewModel, expenses, _) = CreateViewModel();
         viewModel.ShowCreateExpenseFormCommand.Execute("card");
-        viewModel.ExpenseFormDate = DateTime.Today;
+        viewModel.ExpenseFormDate = TestClock.LocalToday;
         viewModel.ExpenseFormDescription = "Flight";
         viewModel.ExpenseFormCategoryId = DefaultCategories[2].Id;
         viewModel.ExpenseFormValue = "300";
@@ -203,7 +216,7 @@ public class ExpenseWorkflowViewModelTests
     {
         var (viewModel, expenses, banks) = CreateViewModel();
         viewModel.ShowCreateExpenseFormCommand.Execute("bank");
-        viewModel.ExpenseFormDate = DateTime.Today;
+        viewModel.ExpenseFormDate = TestClock.LocalToday;
         viewModel.ExpenseFormDescription = "Charitable offer";
         viewModel.ExpenseFormCategoryId = DefaultCategories[3].Id;
         viewModel.ExpenseFormValue = "50";
@@ -222,7 +235,7 @@ public class ExpenseWorkflowViewModelTests
         var (viewModel, _, banks) = CreateViewModel();
         var expense = new ExpenseDTO
         {
-            Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "Offer",
+            Id = Guid.NewGuid(), Date = TestClock.Today, Description = "Offer",
             Value = 50m, CategoryId = DefaultCategories[3].Id, CategoryName = "Dizimo",
             PaymentSourceBankId = banks[0].Id, PaymentSourceBankName = banks[0].Name,
             PaymentStatus = "ImmediatePayment", CountsAsTithe = false,
@@ -275,7 +288,7 @@ public class ExpenseWorkflowViewModelTests
         var settledExpense = new ExpenseDTO
         {
             Id = Guid.NewGuid(),
-            Date = DateOnly.FromDateTime(DateTime.Today),
+            Date = TestClock.Today,
             Description = "Settled",
             Value = 10m,
             CategoryId = Guid.NewGuid(), CategoryName = "Mercado",
@@ -348,7 +361,7 @@ public class ExpenseWorkflowViewModelTests
         var settledExpense = new ExpenseDTO
         {
             Id = Guid.NewGuid(),
-            Date = DateOnly.FromDateTime(DateTime.Today),
+            Date = TestClock.Today,
             Description = "Settled",
             Value = 10m,
             CategoryId = Guid.NewGuid(), CategoryName = "Mercado",
@@ -363,7 +376,7 @@ public class ExpenseWorkflowViewModelTests
     public async Task DeleteExpense_CallsServiceAndRefreshes()
     {
         var (viewModel, expenses, _) = CreateViewModel();
-        var expense = new ExpenseDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "X", Value = 1m, CategoryId = Guid.NewGuid(), CategoryName = "Mercado", PaymentStatus = "ImmediatePayment" };
+        var expense = new ExpenseDTO { Id = Guid.NewGuid(), Date = TestClock.Today, Description = "X", Value = 1m, CategoryId = Guid.NewGuid(), CategoryName = "Mercado", PaymentStatus = "ImmediatePayment" };
 
         await viewModel.DeleteExpenseAsync(expense);
 
@@ -374,7 +387,7 @@ public class ExpenseWorkflowViewModelTests
     public async Task DeleteExpense_ConfirmationDeclined_DoesNotCallService()
     {
         var (viewModel, expenses, _) = CreateViewModel(confirmDeletes: false);
-        var expense = new ExpenseDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "X", Value = 1m, CategoryId = Guid.NewGuid(), CategoryName = "Mercado", PaymentStatus = "ImmediatePayment" };
+        var expense = new ExpenseDTO { Id = Guid.NewGuid(), Date = TestClock.Today, Description = "X", Value = 1m, CategoryId = Guid.NewGuid(), CategoryName = "Mercado", PaymentStatus = "ImmediatePayment" };
 
         await viewModel.DeleteExpenseAsync(expense);
 
@@ -387,7 +400,7 @@ public class ExpenseWorkflowViewModelTests
         var (viewModel, expenses, banks) = CreateViewModel();
         var expense = new ExpenseDTO
         {
-            Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "Old",
+            Id = Guid.NewGuid(), Date = TestClock.Today, Description = "Old",
             Value = 10m, CategoryId = Guid.NewGuid(), CategoryName = "Mercado", PaymentSourceBankId = ChaseId, PaymentSourceBankName = banks[1].Name, PaymentStatus = "ImmediatePayment",
         };
 
@@ -409,7 +422,7 @@ public class ExpenseWorkflowViewModelTests
     {
         var (viewModel, expenses, banks) = CreateViewModel();
         viewModel.ShowCreateExpenseFormCommand.Execute("bank");
-        viewModel.ExpenseFormDate = DateTime.Today;
+        viewModel.ExpenseFormDate = TestClock.LocalToday;
         viewModel.ExpenseFormDescription = "";
         viewModel.ExpenseFormCategoryId = DefaultCategories[0].Id;
         viewModel.ExpenseFormValue = "10";
@@ -444,7 +457,7 @@ public class ExpenseWorkflowViewModelTests
     {
         var (viewModel, expenses, banks) = CreateViewModel();
         viewModel.ShowCreateExpenseFormCommand.Execute("bank");
-        viewModel.ExpenseFormDate = DateTime.Today;
+        viewModel.ExpenseFormDate = TestClock.LocalToday;
         viewModel.ExpenseFormDescription = "";
         viewModel.ExpenseFormValue = "10";
         viewModel.ExpenseFormPaymentSource = banks[0].Id;
@@ -463,7 +476,7 @@ public class ExpenseWorkflowViewModelTests
     {
         var (viewModel, expenses, banks) = CreateViewModel();
         viewModel.ShowCreateExpenseFormCommand.Execute("bank");
-        viewModel.ExpenseFormDate = DateTime.Today;
+        viewModel.ExpenseFormDate = TestClock.LocalToday;
         viewModel.ExpenseFormDescription = "Groceries";
         viewModel.ExpenseFormCategoryId = null;
         viewModel.ExpenseFormValue = "10";
@@ -480,7 +493,7 @@ public class ExpenseWorkflowViewModelTests
     {
         var (viewModel, expenses, banks) = CreateViewModel();
         viewModel.ShowCreateExpenseFormCommand.Execute("bank");
-        viewModel.ExpenseFormDate = DateTime.Today;
+        viewModel.ExpenseFormDate = TestClock.LocalToday;
         viewModel.ExpenseFormDescription = "Groceries";
         viewModel.ExpenseFormValue = "0";
         viewModel.ExpenseFormPaymentSource = banks[0].Id;
@@ -496,7 +509,7 @@ public class ExpenseWorkflowViewModelTests
     {
         var (viewModel, expenses, _) = CreateViewModel();
         viewModel.ShowCreateExpenseFormCommand.Execute("bank");
-        viewModel.ExpenseFormDate = DateTime.Today;
+        viewModel.ExpenseFormDate = TestClock.LocalToday;
         viewModel.ExpenseFormDescription = "Groceries";
         viewModel.ExpenseFormValue = "10";
         viewModel.ExpenseFormPaymentSource = null;
@@ -512,7 +525,7 @@ public class ExpenseWorkflowViewModelTests
     {
         var (viewModel, expenses, _) = CreateViewModel();
         viewModel.ShowCreateExpenseFormCommand.Execute("card");
-        viewModel.ExpenseFormDate = DateTime.Today;
+        viewModel.ExpenseFormDate = TestClock.LocalToday;
         viewModel.ExpenseFormDescription = "Flight";
         viewModel.ExpenseFormValue = "300";
         viewModel.ExpenseFormCreditCardId = null;
@@ -528,7 +541,7 @@ public class ExpenseWorkflowViewModelTests
     {
         var (viewModel, expenses, banks) = CreateViewModel();
         viewModel.ShowCreateExpenseFormCommand.Execute("bank");
-        viewModel.ExpenseFormDate = DateTime.Today;
+        viewModel.ExpenseFormDate = TestClock.LocalToday;
         viewModel.ExpenseFormDescription = "Groceries";
         viewModel.ExpenseFormValue = "10";
         viewModel.ExpenseFormPaymentSource = banks[0].Id;
@@ -545,7 +558,7 @@ public class ExpenseWorkflowViewModelTests
     {
         var (viewModel, _, banks) = CreateViewModel();
         viewModel.ShowCreateExpenseFormCommand.Execute("bank");
-        viewModel.ExpenseFormDate = DateTime.Today;
+        viewModel.ExpenseFormDate = TestClock.LocalToday;
         viewModel.ExpenseFormDescription = "";
         viewModel.ExpenseFormValue = "10";
         viewModel.ExpenseFormPaymentSource = banks[0].Id;
@@ -649,7 +662,7 @@ public class ExpenseWorkflowViewModelTests
         var expenseService = new StubExpenseService();
         var viewModel = new ExpenseWorkflowViewModel(
             expenseService, new ObservableCollection<CategoryDTO>(DefaultCategories), new ObservableCollection<BankDTO>(DefaultBanks),
-            new ObservableCollection<CreditCardDTO>([cardWithFutureInvoice]), confirm: _ => true, new RecordingTelemetryTracer(), () => Task.CompletedTask);
+            new ObservableCollection<CreditCardDTO>([cardWithFutureInvoice]), confirm: _ => true, TestClock.At(), new RecordingTelemetryTracer(), () => Task.CompletedTask);
         viewModel.ShowCreateExpenseFormCommand.Execute("card");
         viewModel.ExpenseFormDate = new DateTime(2026, 7, 15);
 
@@ -667,7 +680,7 @@ public class ExpenseWorkflowViewModelTests
         var expenseService = new StubExpenseService();
         var viewModel = new ExpenseWorkflowViewModel(
             expenseService, new ObservableCollection<CategoryDTO>(DefaultCategories), new ObservableCollection<BankDTO>(DefaultBanks),
-            new ObservableCollection<CreditCardDTO>([cardWithPastInvoice, cardWithNoInvoice]), confirm: _ => true, new RecordingTelemetryTracer(), () => Task.CompletedTask);
+            new ObservableCollection<CreditCardDTO>([cardWithPastInvoice, cardWithNoInvoice]), confirm: _ => true, TestClock.At(), new RecordingTelemetryTracer(), () => Task.CompletedTask);
         viewModel.ShowCreateExpenseFormCommand.Execute("card");
         viewModel.ExpenseFormDate = new DateTime(2026, 7, 15);
 
@@ -687,7 +700,7 @@ public class ExpenseWorkflowViewModelTests
         var expenseService = new StubExpenseService();
         var viewModel = new ExpenseWorkflowViewModel(
             expenseService, new ObservableCollection<CategoryDTO>(DefaultCategories), new ObservableCollection<BankDTO>(DefaultBanks),
-            new ObservableCollection<CreditCardDTO>([cardWithFutureInvoice]), confirm: _ => true, new RecordingTelemetryTracer(), () => Task.CompletedTask);
+            new ObservableCollection<CreditCardDTO>([cardWithFutureInvoice]), confirm: _ => true, TestClock.At(), new RecordingTelemetryTracer(), () => Task.CompletedTask);
         viewModel.ShowCreateExpenseFormCommand.Execute("card");
         viewModel.ExpenseFormDate = new DateTime(2026, 7, 15);
         viewModel.ExpenseFormInvoiceYear = 2026;
@@ -721,7 +734,7 @@ public class ExpenseWorkflowViewModelTests
     {
         var (viewModel, expenses, banks) = CreateViewModel();
         viewModel.ShowCreateExpenseFormCommand.Execute("bank");
-        viewModel.ExpenseFormDate = DateTime.Today;
+        viewModel.ExpenseFormDate = TestClock.LocalToday;
         viewModel.ExpenseFormDescription = "Groceries";
         viewModel.ExpenseFormCategoryId = DefaultCategories[0].Id;
         viewModel.ExpenseFormValue = "25.50";
@@ -763,7 +776,7 @@ public class ExpenseWorkflowViewModelTests
     private static ExpenseDTO MakeExpense(string description, string categoryName, string? creditCardName = null, string? paymentSourceBankName = null) => new()
     {
         Id = Guid.NewGuid(),
-        Date = DateOnly.FromDateTime(DateTime.Today),
+        Date = TestClock.Today,
         Description = description,
         Value = 10m,
         CategoryId = Guid.NewGuid(),
@@ -871,7 +884,7 @@ public class ExpenseWorkflowViewModelTests
     {
         var (viewModel, _, banks) = CreateViewModel();
         viewModel.ShowCreateExpenseFormCommand.Execute("bank");
-        viewModel.ExpenseFormDate = DateTime.Today;
+        viewModel.ExpenseFormDate = TestClock.LocalToday;
         viewModel.ExpenseFormDescription = "Groceries";
         viewModel.ExpenseFormValue = "25";
         viewModel.ExpenseFormPaymentSource = banks[1].Id;
@@ -888,7 +901,7 @@ public class ExpenseWorkflowViewModelTests
     {
         var (viewModel, _, _) = CreateViewModel();
         viewModel.ShowCreateExpenseFormCommand.Execute("card");
-        viewModel.ExpenseFormDate = DateTime.Today;
+        viewModel.ExpenseFormDate = TestClock.LocalToday;
         viewModel.ExpenseFormDescription = "Flight";
         viewModel.ExpenseFormValue = "300";
         viewModel.ExpenseFormCreditCardId = DefaultCreditCards[0].Id;

@@ -162,10 +162,13 @@ public class WithdrawalViewModel : ViewModelBase
     public RelayCommand CancelWithdrawalFormCommand { get; }
     public RelayCommand SubmitWithdrawalCommand { get; }
 
+    private readonly TimeProvider _timeProvider;
+
     public WithdrawalViewModel(
         IReserveService reserveService, ObservableCollection<ReserveBucketDTO> buckets,
-        Func<string, bool> confirm, Action closeOtherForms, Func<Task> refresh)
+        Func<string, bool> confirm, Action closeOtherForms, TimeProvider timeProvider, Func<Task> refresh)
     {
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _reserveService = reserveService ?? throw new ArgumentNullException(nameof(reserveService));
         Buckets = buckets ?? throw new ArgumentNullException(nameof(buckets));
         _confirm = confirm ?? throw new ArgumentNullException(nameof(confirm));
@@ -206,7 +209,7 @@ public class WithdrawalViewModel : ViewModelBase
             ? lastBucket
             : DefaultBucketId();
         WithdrawalAmount = string.Empty;
-        WithdrawalDate = _lastUsedWithdrawalDate ?? DateTime.Today;
+        WithdrawalDate = _lastUsedWithdrawalDate ?? _timeProvider.GetLocalNow().Date;
         WithdrawalDescription = string.Empty;
         _explicitExpenseCategoryId = null;
         SelectedBankOption = WithdrawalBankOption.Direct;

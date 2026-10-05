@@ -142,8 +142,11 @@ public class TransferWorkflowViewModel : ViewModelBase
     public RelayCommand SaveTransferCommand { get; }
     public RelayCommand<TransferDTO> EditTransferCommand { get; }
 
-    public TransferWorkflowViewModel(ITransferService transferService, ObservableCollection<BankDTO> banks, Func<Task> refresh)
+    private readonly TimeProvider _timeProvider;
+
+    public TransferWorkflowViewModel(ITransferService transferService, ObservableCollection<BankDTO> banks, TimeProvider timeProvider, Func<Task> refresh)
     {
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _transferService = transferService ?? throw new ArgumentNullException(nameof(transferService));
         Banks = banks ?? throw new ArgumentNullException(nameof(banks));
         _refresh = refresh ?? throw new ArgumentNullException(nameof(refresh));
@@ -157,7 +160,7 @@ public class TransferWorkflowViewModel : ViewModelBase
     private void ShowCreateTransferForm(Guid? sourceBank)
     {
         _editingTransferId = null;
-        TransferFormDate = _lastUsedTransferDate ?? DateTime.Today;
+        TransferFormDate = _lastUsedTransferDate ?? _timeProvider.GetLocalNow().Date;
         var resolvedSourceBank = sourceBank
             ?? (_lastUsedTransferSourceBank is { } lastSource && Banks.Any(b => b.Id == lastSource) ? (Guid?)lastSource : null)
             ?? (Banks.Count > 0 ? Banks[0].Id : null);

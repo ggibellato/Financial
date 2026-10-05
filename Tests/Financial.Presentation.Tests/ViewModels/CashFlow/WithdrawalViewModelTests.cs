@@ -17,7 +17,7 @@ public class WithdrawalViewModelTests
         {
             new() { Id = InvestimentoId, Name = "Investimento", IsActive = true, SplitPercentage = 100m },
         };
-        var viewModel = new WithdrawalViewModel(service, bucketList, confirm ?? (_ => true), closeOtherForms: () => { }, refresh: () => Task.CompletedTask);
+        var viewModel = new WithdrawalViewModel(service, bucketList, confirm ?? (_ => true), closeOtherForms: () => { }, TestClock.At(), refresh: () => Task.CompletedTask);
         return (viewModel, service);
     }
 
@@ -188,7 +188,7 @@ public class WithdrawalViewModelTests
         };
         var (viewModel, _) = CreateViewModel(buckets);
         viewModel.ShowWithdrawalFormCommand.Execute(null);
-        var usedDate = DateTime.Today.AddDays(-4);
+        var usedDate = TestClock.LocalToday.AddDays(-4);
         viewModel.WithdrawalBucketId = otherBucketId;
         viewModel.WithdrawalDate = usedDate;
         viewModel.WithdrawalAmount = "30";
@@ -239,7 +239,7 @@ public class WithdrawalViewModelTests
             new() { Id = ArianaId, Name = "Ariana", IsActive = true, SplitPercentage = 50m },
         };
         var viewModel = new WithdrawalViewModel(
-            service, buckets, confirm ?? (_ => true), closeOtherForms: () => { }, refresh: refresh ?? (() => Task.CompletedTask));
+            service, buckets, confirm ?? (_ => true), closeOtherForms: () => { }, TestClock.At(), refresh: refresh ?? (() => Task.CompletedTask));
         viewModel.LoadReferenceData(
             [Bank(ChaseId, "Chase")],
             [

@@ -28,7 +28,7 @@ public class MonthlyViewModelCategoriesTests
         var incomes = new StubIncomeService();
         var banks = new StubBankService
         {
-            Banks = [new BankDTO { Id = BarclaysId, Name = "Barclays", RoundUpEnabled = false, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today), HasReferences = false }],
+            Banks = [new BankDTO { Id = BarclaysId, Name = "Barclays", RoundUpEnabled = false, OpeningBalance = 0, OpeningBalanceDate = TestClock.Today, HasReferences = false }],
         };
         var incomeSources = new StubIncomeSourceService();
         var tithe = new StubTitheService();
@@ -45,7 +45,7 @@ public class MonthlyViewModelCategoriesTests
             ],
         };
 
-        var viewModel = new MonthlyViewModel(expenses, incomes, banks, incomeSources, tithe, transfers, adjustments, cardStatements, creditCards, categories, confirm: _ => true, new RecordingTelemetryTracer());
+        var viewModel = new MonthlyViewModel(expenses, incomes, banks, incomeSources, tithe, transfers, adjustments, cardStatements, creditCards, categories, confirm: _ => true, TestClock.At(), new RecordingTelemetryTracer());
         return (viewModel, expenses);
     }
 
@@ -115,7 +115,7 @@ public class MonthlyViewModelCategoriesTests
         var (viewModel, expenses) = CreateViewModel();
         await viewModel.RefreshAsync();
         viewModel.Expense.ShowCreateExpenseFormCommand.Execute("bank");
-        viewModel.Expense.ExpenseFormDate = DateTime.Today;
+        viewModel.Expense.ExpenseFormDate = TestClock.LocalToday;
         viewModel.Expense.ExpenseFormDescription = "Groceries";
         viewModel.Expense.ExpenseFormValue = "10";
         viewModel.Expense.ExpenseFormCategoryId = MercadoId;

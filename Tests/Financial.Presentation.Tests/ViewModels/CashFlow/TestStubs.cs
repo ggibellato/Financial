@@ -620,7 +620,7 @@ internal sealed class StubControleMaeService : IControleMaeService
     public Guid? LastDeletedId { get; private set; }
     public int GetEntriesFromDateCallCount { get; private set; }
     public int GetTotalsCallCount { get; private set; }
-    public DateOnly? LastFromDate { get; private set; }
+    public System.Collections.Concurrent.ConcurrentQueue<DateOnly> RequestedFromDates { get; } = new();
     public Exception? ThrowOnDelete { get; set; }
 
     public Task<MaeLedgerEntryDTO> CreateEntryAsync(MaeLedgerEntryCreateDTO request)
@@ -640,7 +640,7 @@ internal sealed class StubControleMaeService : IControleMaeService
     public IReadOnlyList<MaeLedgerEntryDTO> GetEntriesFromDate(DateOnly fromDate)
     {
         GetEntriesFromDateCallCount++;
-        LastFromDate = fromDate;
+        RequestedFromDates.Enqueue(fromDate);
         return Entries.Where(e => e.Date >= fromDate).ToList();
     }
 

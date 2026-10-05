@@ -76,13 +76,16 @@ public class ControleMaeViewModel : ViewModelBase
 
     public RelayCommand RetryCommand { get; }
 
-    public ControleMaeViewModel(IControleMaeService controleMaeService, Func<string, bool> confirm, ILogger<ControleMaeViewModel> logger)
+    private readonly TimeProvider _timeProvider;
+
+    public ControleMaeViewModel(IControleMaeService controleMaeService, Func<string, bool> confirm, TimeProvider timeProvider, ILogger<ControleMaeViewModel> logger)
     {
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _controleMaeService = controleMaeService ?? throw new ArgumentNullException(nameof(controleMaeService));
         _confirm = confirm ?? throw new ArgumentNullException(nameof(confirm));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        _fromDate = new DateTime(DateTime.Today.Year - 1, 1, 1);
+        _fromDate = new DateTime(_timeProvider.GetLocalNow().Year - 1, 1, 1);
 
         RetryCommand = new RelayCommand(async () =>
         {
@@ -251,7 +254,7 @@ public class ControleMaeViewModel : ViewModelBase
     private void ShowCreateForm()
     {
         CloseAllForms();
-        CreateDate = _lastUsedCreateDate ?? DateTime.Today;
+        CreateDate = _lastUsedCreateDate ?? _timeProvider.GetLocalNow().Date;
         CreateDescription = string.Empty;
         CreateNote = string.Empty;
         CreateCurrency = _lastUsedCreateCurrency is { } lastCurrency && Currencies.Contains(lastCurrency) ? lastCurrency : Currencies[0];

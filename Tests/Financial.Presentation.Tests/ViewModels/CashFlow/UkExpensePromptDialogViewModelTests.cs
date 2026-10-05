@@ -27,11 +27,11 @@ public class UkExpensePromptDialogViewModelTests
     {
         var bill = Bill();
 
-        var viewModel = new UkExpensePromptDialogViewModel(bill, [], []);
+        var viewModel = new UkExpensePromptDialogViewModel(bill, [], [], TestClock.At());
 
         viewModel.Description.Should().Be("Council Tax");
         viewModel.Value.Should().Be("120");
-        viewModel.Date.Date.Should().Be(DateTime.Today);
+        viewModel.Date.Date.Should().Be(TestClock.LocalToday);
         viewModel.BankId.Should().BeNull();
         viewModel.CategoryId.Should().BeNull();
     }
@@ -39,7 +39,7 @@ public class UkExpensePromptDialogViewModelTests
     [Fact]
     public void ConfirmCommand_StartsDisabled_NoBankOrCategorySelected()
     {
-        var viewModel = new UkExpensePromptDialogViewModel(Bill(), [], []);
+        var viewModel = new UkExpensePromptDialogViewModel(Bill(), [], [], TestClock.At());
 
         viewModel.ConfirmCommand.CanExecute(null).Should().BeFalse();
     }
@@ -49,7 +49,7 @@ public class UkExpensePromptDialogViewModelTests
     {
         var bankId = Guid.NewGuid();
         var categoryId = Guid.NewGuid();
-        var viewModel = new UkExpensePromptDialogViewModel(Bill(), [Bank(bankId, "Barclays")], [Category(categoryId, "Bills")]);
+        var viewModel = new UkExpensePromptDialogViewModel(Bill(), [Bank(bankId, "Barclays")], [Category(categoryId, "Bills")], TestClock.At());
 
         viewModel.BankId = bankId;
         viewModel.ConfirmCommand.CanExecute(null).Should().BeFalse();
@@ -67,7 +67,7 @@ public class UkExpensePromptDialogViewModelTests
     {
         var bankId = Guid.NewGuid();
         var categoryId = Guid.NewGuid();
-        var viewModel = new UkExpensePromptDialogViewModel(Bill(), [Bank(bankId, "Barclays")], [Category(categoryId, "Bills")])
+        var viewModel = new UkExpensePromptDialogViewModel(Bill(), [Bank(bankId, "Barclays")], [Category(categoryId, "Bills")], TestClock.At())
         {
             BankId = bankId,
             CategoryId = categoryId,
@@ -82,7 +82,7 @@ public class UkExpensePromptDialogViewModelTests
     {
         var bankId = Guid.NewGuid();
         var categoryId = Guid.NewGuid();
-        var viewModel = new UkExpensePromptDialogViewModel(Bill(), [Bank(bankId, "Barclays")], [Category(categoryId, "Bills")])
+        var viewModel = new UkExpensePromptDialogViewModel(Bill(), [Bank(bankId, "Barclays")], [Category(categoryId, "Bills")], TestClock.At())
         {
             BankId = bankId,
             CategoryId = categoryId,
@@ -99,7 +99,7 @@ public class UkExpensePromptDialogViewModelTests
     [Fact]
     public void SkipCommand_Execute_SetsDecisionSkipAndRaisesCloseRequestedTrue()
     {
-        var viewModel = new UkExpensePromptDialogViewModel(Bill(), [], []);
+        var viewModel = new UkExpensePromptDialogViewModel(Bill(), [], [], TestClock.At());
         bool? result = null;
         viewModel.CloseRequested += (_, r) => result = r;
 
@@ -112,7 +112,7 @@ public class UkExpensePromptDialogViewModelTests
     [Fact]
     public void CancelCommand_Execute_SetsDecisionCancelAndRaisesCloseRequestedFalse()
     {
-        var viewModel = new UkExpensePromptDialogViewModel(Bill(), [], []);
+        var viewModel = new UkExpensePromptDialogViewModel(Bill(), [], [], TestClock.At());
         bool? result = null;
         viewModel.CloseRequested += (_, r) => result = r;
 

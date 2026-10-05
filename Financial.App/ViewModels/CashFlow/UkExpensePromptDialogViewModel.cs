@@ -101,8 +101,11 @@ public sealed class UkExpensePromptDialogViewModel : ViewModelBase
 
     public event EventHandler<bool?>? CloseRequested;
 
-    public UkExpensePromptDialogViewModel(RecurringBillDTO bill, IReadOnlyList<BankDTO> banks, IReadOnlyList<CategoryDTO> categories)
+    private readonly TimeProvider _timeProvider;
+
+    public UkExpensePromptDialogViewModel(RecurringBillDTO bill, IReadOnlyList<BankDTO> banks, IReadOnlyList<CategoryDTO> categories, TimeProvider timeProvider)
     {
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         ArgumentNullException.ThrowIfNull(bill);
         Banks = banks ?? throw new ArgumentNullException(nameof(banks));
         Categories = categories ?? throw new ArgumentNullException(nameof(categories));
@@ -110,7 +113,7 @@ public sealed class UkExpensePromptDialogViewModel : ViewModelBase
         BillDescription = bill.Description;
         _description = bill.Description;
         _value = bill.Value.ToString();
-        _date = DateTime.Today;
+        _date = _timeProvider.GetLocalNow().Date;
 
         ConfirmCommand = new RelayCommand(Confirm, CanConfirm);
         SkipCommand = new RelayCommand(Skip);

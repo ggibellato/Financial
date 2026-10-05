@@ -16,10 +16,10 @@ public class TransferWorkflowViewModelTests
         var transferService = new StubTransferService();
         var banks = new ObservableCollection<BankDTO>
         {
-            new() { Id = BarclaysId, Name = "Barclays", RoundUpEnabled = true, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today), HasReferences = false },
-            new() { Id = ChaseId, Name = "Chase", RoundUpEnabled = false, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today), HasReferences = false },
+            new() { Id = BarclaysId, Name = "Barclays", RoundUpEnabled = true, OpeningBalance = 0, OpeningBalanceDate = TestClock.Today, HasReferences = false },
+            new() { Id = ChaseId, Name = "Chase", RoundUpEnabled = false, OpeningBalance = 0, OpeningBalanceDate = TestClock.Today, HasReferences = false },
         };
-        var viewModel = new TransferWorkflowViewModel(transferService, banks, refresh ?? (() => Task.CompletedTask));
+        var viewModel = new TransferWorkflowViewModel(transferService, banks, TestClock.At(), refresh ?? (() => Task.CompletedTask));
         return (viewModel, transferService, banks);
     }
 
@@ -28,7 +28,7 @@ public class TransferWorkflowViewModelTests
     {
         var (viewModel, transfers, banks) = CreateViewModel();
         viewModel.ShowMoveMoneyFormCommand.Execute(banks[0].Id);
-        viewModel.TransferFormDate = DateTime.Today;
+        viewModel.TransferFormDate = TestClock.LocalToday;
         viewModel.TransferFormDestinationBank = banks[1].Id;
         viewModel.TransferFormAmount = "75";
 
@@ -46,7 +46,7 @@ public class TransferWorkflowViewModelTests
     {
         var (viewModel, transfers, banks) = CreateViewModel();
         viewModel.ShowMoveMoneyFormCommand.Execute(banks[0].Id);
-        viewModel.TransferFormDate = DateTime.Today;
+        viewModel.TransferFormDate = TestClock.LocalToday;
         viewModel.TransferFormDestinationBank = banks[0].Id;
         viewModel.TransferFormAmount = "75";
 
@@ -69,7 +69,7 @@ public class TransferWorkflowViewModelTests
         var (viewModel, transfers, banks) = CreateViewModel();
         transfers.ThrowOnAdd = "Insufficient funds in source bank.";
         viewModel.ShowMoveMoneyFormCommand.Execute(banks[0].Id);
-        viewModel.TransferFormDate = DateTime.Today;
+        viewModel.TransferFormDate = TestClock.LocalToday;
         viewModel.TransferFormDestinationBank = banks[1].Id;
         viewModel.TransferFormAmount = "75";
 
@@ -85,7 +85,7 @@ public class TransferWorkflowViewModelTests
     public async Task EditTransfer_ValidForm_CallsUpdateServiceWithCorrectId()
     {
         var (viewModel, transfers, _) = CreateViewModel();
-        var transfer = new TransferDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), SourceBankId = BarclaysId, SourceBankName = "Barclays", DestinationBankId = ChaseId, DestinationBankName = "Chase", Amount = 50m };
+        var transfer = new TransferDTO { Id = Guid.NewGuid(), Date = TestClock.Today, SourceBankId = BarclaysId, SourceBankName = "Barclays", DestinationBankId = ChaseId, DestinationBankName = "Chase", Amount = 50m };
 
         viewModel.EditTransferCommand.Execute(transfer);
         viewModel.TransferFormAmount = "60";
@@ -130,7 +130,7 @@ public class TransferWorkflowViewModelTests
         var (viewModel, transfers, banks) = CreateViewModel();
         viewModel.ShowMoveMoneyFormCommand.Execute(null);
         viewModel.TransferFormSourceBank = null;
-        viewModel.TransferFormDate = DateTime.Today;
+        viewModel.TransferFormDate = TestClock.LocalToday;
         viewModel.TransferFormDestinationBank = banks[1].Id;
         viewModel.TransferFormAmount = "75";
 
@@ -145,7 +145,7 @@ public class TransferWorkflowViewModelTests
     {
         var (viewModel, transfers, banks) = CreateViewModel();
         viewModel.ShowMoveMoneyFormCommand.Execute(banks[0].Id);
-        viewModel.TransferFormDate = DateTime.Today;
+        viewModel.TransferFormDate = TestClock.LocalToday;
         viewModel.TransferFormDestinationBank = null;
         viewModel.TransferFormAmount = "75";
 
@@ -160,7 +160,7 @@ public class TransferWorkflowViewModelTests
     {
         var (viewModel, transfers, banks) = CreateViewModel();
         viewModel.ShowMoveMoneyFormCommand.Execute(banks[0].Id);
-        viewModel.TransferFormDate = DateTime.Today;
+        viewModel.TransferFormDate = TestClock.LocalToday;
         viewModel.TransferFormDestinationBank = banks[0].Id;
         viewModel.TransferFormAmount = "75";
 
@@ -175,7 +175,7 @@ public class TransferWorkflowViewModelTests
     {
         var (viewModel, transfers, banks) = CreateViewModel();
         viewModel.ShowMoveMoneyFormCommand.Execute(banks[0].Id);
-        viewModel.TransferFormDate = DateTime.Today;
+        viewModel.TransferFormDate = TestClock.LocalToday;
         viewModel.TransferFormDestinationBank = banks[1].Id;
         viewModel.TransferFormAmount = "0";
 
@@ -196,7 +196,7 @@ public class TransferWorkflowViewModelTests
         await viewModel.SaveTransferAsync();
         viewModel.DateFieldError.Should().NotBeNull();
 
-        viewModel.TransferFormDate = DateTime.Today;
+        viewModel.TransferFormDate = TestClock.LocalToday;
         await viewModel.SaveTransferAsync();
 
         viewModel.DateFieldError.Should().BeNull();
@@ -207,7 +207,7 @@ public class TransferWorkflowViewModelTests
     {
         var (viewModel, _, banks) = CreateViewModel();
         viewModel.ShowMoveMoneyFormCommand.Execute(null);
-        var usedDate = DateTime.Today.AddDays(-2);
+        var usedDate = TestClock.LocalToday.AddDays(-2);
         viewModel.TransferFormDate = usedDate;
         viewModel.TransferFormSourceBank = banks[1].Id;
         viewModel.TransferFormDestinationBank = banks[0].Id;
@@ -227,7 +227,7 @@ public class TransferWorkflowViewModelTests
     {
         var (viewModel, _, banks) = CreateViewModel();
         viewModel.ShowMoveMoneyFormCommand.Execute(null);
-        viewModel.TransferFormDate = DateTime.Today;
+        viewModel.TransferFormDate = TestClock.LocalToday;
         viewModel.TransferFormSourceBank = banks[1].Id;
         viewModel.TransferFormDestinationBank = banks[0].Id;
         viewModel.TransferFormAmount = "75";
@@ -243,7 +243,7 @@ public class TransferWorkflowViewModelTests
     {
         var (viewModel, _, banks) = CreateViewModel();
         viewModel.ShowMoveMoneyFormCommand.Execute(banks[0].Id);
-        viewModel.TransferFormDate = DateTime.Today;
+        viewModel.TransferFormDate = TestClock.LocalToday;
         viewModel.TransferFormDestinationBank = banks[1].Id;
         viewModel.TransferFormAmount = "75";
         viewModel.TransferFormNote = "Round-up top-up";
@@ -260,7 +260,7 @@ public class TransferWorkflowViewModelTests
     public void EditBankOperation_Transfer_OpensTransferFormPrefilled()
     {
         var (viewModel, _, _) = CreateViewModel();
-        var transfer = new TransferDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), SourceBankId = BarclaysId, SourceBankName = "Barclays", DestinationBankId = ChaseId, DestinationBankName = "Chase", Amount = 33m };
+        var transfer = new TransferDTO { Id = Guid.NewGuid(), Date = TestClock.Today, SourceBankId = BarclaysId, SourceBankName = "Barclays", DestinationBankId = ChaseId, DestinationBankName = "Chase", Amount = 33m };
 
         viewModel.EditTransferCommand.Execute(transfer);
 

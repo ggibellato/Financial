@@ -74,11 +74,14 @@ public class InvestmentSnapshotsViewModel : ViewModelBase
 
     public RelayCommand RetryCommand { get; }
 
-    public InvestmentSnapshotsViewModel(IInvestmentSnapshotService investmentSnapshotService)
+    private readonly TimeProvider _timeProvider;
+
+    public InvestmentSnapshotsViewModel(IInvestmentSnapshotService investmentSnapshotService, TimeProvider timeProvider)
     {
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _investmentSnapshotService = investmentSnapshotService ?? throw new ArgumentNullException(nameof(investmentSnapshotService));
 
-        var today = DateTime.Today;
+        var today = _timeProvider.GetLocalNow().Date;
         _year = today.Year;
         _month = today.Month;
 

@@ -26,7 +26,7 @@ public class MensaisViewModelTests
         };
         var viewModel = new MensaisViewModel(
             service, expenseService, bankService, categoryService, dialogService,
-            confirm, logger ?? new RecordingLogger<MensaisViewModel>());
+            confirm, TestClock.At(), logger ?? new RecordingLogger<MensaisViewModel>());
         return (viewModel, service, expenseService, bankService, categoryService, dialogService);
     }
 

@@ -12,11 +12,11 @@ public partial class MonthYearPicker : UserControl
 
     public static readonly DependencyProperty SelectedYearProperty = DependencyProperty.Register(
         nameof(SelectedYear), typeof(int), typeof(MonthYearPicker),
-        new PropertyMetadata(DateTime.Today.Year, OnSelectedPeriodChanged));
+        new PropertyMetadata(TimeProvider.System.GetLocalNow().Year, OnSelectedPeriodChanged));
 
     public static readonly DependencyProperty SelectedMonthProperty = DependencyProperty.Register(
         nameof(SelectedMonth), typeof(int), typeof(MonthYearPicker),
-        new PropertyMetadata(DateTime.Today.Month, OnSelectedPeriodChanged));
+        new PropertyMetadata(TimeProvider.System.GetLocalNow().Month, OnSelectedPeriodChanged));
 
     public int SelectedYear
     {
@@ -67,8 +67,8 @@ public partial class MonthYearPicker : UserControl
         // ExpenseFormView's Invoice Month field binds these before "New
         // Expense" is first clicked. Fall back to today rather than let an
         // invalid DateTime crash the binding pipeline.
-        var year = SelectedYear is >= 1 and <= 9999 ? SelectedYear : DateTime.Today.Year;
-        var month = SelectedMonth is >= 1 and <= 12 ? SelectedMonth : DateTime.Today.Month;
+        var year = SelectedYear is >= 1 and <= 9999 ? SelectedYear : TimeProvider.System.GetLocalNow().Year;
+        var month = SelectedMonth is >= 1 and <= 12 ? SelectedMonth : TimeProvider.System.GetLocalNow().Month;
         triggerButton.Content = new DateTime(year, month, 1).ToString("MMMM yyyy");
     }
 

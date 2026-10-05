@@ -15,11 +15,21 @@ public class AnnualSummaryViewModelTests
         var categoryService = new StubCategorySummaryService();
         var investmentService = new StubInvestmentAnnualResultService();
         var historicService = new StubHistoricAverageService();
-        var viewModel = new AnnualSummaryViewModel(categoryService, investmentService, historicService);
+        var viewModel = new AnnualSummaryViewModel(categoryService, investmentService, historicService, TestClock.At());
         return (viewModel, categoryService, investmentService, historicService);
     }
 
     private static decimal[] MonthlyArray(decimal value) => Enumerable.Repeat(value, 12).ToArray();
+
+    [Fact]
+    public void Year_DefaultsToTheClockYear_OnNewYearsEve()
+    {
+        var clock = TestClock.At(new DateTimeOffset(2025, 12, 31, 23, 30, 0, TimeSpan.Zero));
+        var viewModel = new AnnualSummaryViewModel(
+            new StubCategorySummaryService(), new StubInvestmentAnnualResultService(), new StubHistoricAverageService(), clock);
+
+        viewModel.Year.Should().Be(2025);
+    }
 
     [Fact]
     public async Task RefreshAsync_BuildsCategoryTotalsRowsInCorrectOrderWithSpacersAndEmphasis()

@@ -37,8 +37,8 @@ public class MonthlyViewModelBanksCardsTests
         {
             Banks =
             [
-                new BankDTO { Id = BarclaysId, Name = "Barclays", RoundUpEnabled = true, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today), HasReferences = false },
-                new BankDTO { Id = ChaseId, Name = "Chase", RoundUpEnabled = false, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today), HasReferences = false },
+                new BankDTO { Id = BarclaysId, Name = "Barclays", RoundUpEnabled = true, OpeningBalance = 0, OpeningBalanceDate = TestClock.Today, HasReferences = false },
+                new BankDTO { Id = ChaseId, Name = "Chase", RoundUpEnabled = false, OpeningBalance = 0, OpeningBalanceDate = TestClock.Today, HasReferences = false },
             ],
         };
         var incomeSources = new StubIncomeSourceService();
@@ -49,7 +49,7 @@ public class MonthlyViewModelBanksCardsTests
         var creditCards = new StubCreditCardService();
         var categories = new StubCategoryService();
 
-        var viewModel = new MonthlyViewModel(expenses, incomes, banks, incomeSources, tithe, transfers, adjustments, cards, creditCards, categories, confirm: _ => confirmDeletes, new RecordingTelemetryTracer());
+        var viewModel = new MonthlyViewModel(expenses, incomes, banks, incomeSources, tithe, transfers, adjustments, cards, creditCards, categories, confirm: _ => confirmDeletes, TestClock.At(), new RecordingTelemetryTracer());
         return (viewModel, expenses, banks, transfers, adjustments, cards);
     }
 
@@ -60,8 +60,8 @@ public class MonthlyViewModelBanksCardsTests
         banks.BankBalances = [new BankBalanceDTO { Bank = "Barclays", Balance = 250m }, new BankBalanceDTO { Bank = "Chase", Balance = 10m }];
         expenses.Expenses =
         [
-            new ExpenseDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "A", Value = 20m, CategoryId = Guid.NewGuid(), CategoryName = "Mercado", PaymentSourceBankId = BarclaysId, PaymentSourceBankName = "Barclays", PaymentStatus = "ImmediatePayment", RoundUpAmount = 0.30m },
-            new ExpenseDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "B", Value = 15m, CategoryId = Guid.NewGuid(), CategoryName = "Mercado", PaymentSourceBankId = BarclaysId, PaymentSourceBankName = "Barclays", PaymentStatus = "ImmediatePayment", RoundUpAmount = 0.20m },
+            new ExpenseDTO { Id = Guid.NewGuid(), Date = TestClock.Today, Description = "A", Value = 20m, CategoryId = Guid.NewGuid(), CategoryName = "Mercado", PaymentSourceBankId = BarclaysId, PaymentSourceBankName = "Barclays", PaymentStatus = "ImmediatePayment", RoundUpAmount = 0.30m },
+            new ExpenseDTO { Id = Guid.NewGuid(), Date = TestClock.Today, Description = "B", Value = 15m, CategoryId = Guid.NewGuid(), CategoryName = "Mercado", PaymentSourceBankId = BarclaysId, PaymentSourceBankName = "Barclays", PaymentStatus = "ImmediatePayment", RoundUpAmount = 0.20m },
         ];
 
         await viewModel.RefreshAsync();
@@ -105,7 +105,7 @@ public class MonthlyViewModelBanksCardsTests
         banks.BankBalances = [new BankBalanceDTO { Bank = "Barclays", Balance = 250m }, new BankBalanceDTO { Bank = "Chase", Balance = 10m }];
         expenses.Expenses =
         [
-            new ExpenseDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "A", Value = 20m, CategoryId = Guid.NewGuid(), CategoryName = "Mercado", PaymentSourceBankId = BarclaysId, PaymentSourceBankName = "Barclays", PaymentStatus = "ImmediatePayment", RoundUpAmount = 0.30m },
+            new ExpenseDTO { Id = Guid.NewGuid(), Date = TestClock.Today, Description = "A", Value = 20m, CategoryId = Guid.NewGuid(), CategoryName = "Mercado", PaymentSourceBankId = BarclaysId, PaymentSourceBankName = "Barclays", PaymentStatus = "ImmediatePayment", RoundUpAmount = 0.30m },
         ];
         await viewModel.RefreshAsync();
         var sumBefore = viewModel.BankTotalsSum;
@@ -176,7 +176,7 @@ public class MonthlyViewModelBanksCardsTests
         var creditCardService = new StubCreditCardService { CreditCards = creditCards };
         var categories = new StubCategoryService();
 
-        var viewModel = new MonthlyViewModel(expenses, incomes, banks, incomeSources, tithe, transfers, adjustments, cards, creditCardService, categories, confirm: _ => true, new RecordingTelemetryTracer());
+        var viewModel = new MonthlyViewModel(expenses, incomes, banks, incomeSources, tithe, transfers, adjustments, cards, creditCardService, categories, confirm: _ => true, TestClock.At(), new RecordingTelemetryTracer());
         return (viewModel, creditCardService);
     }
 }

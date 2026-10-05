@@ -113,8 +113,11 @@ public class IncomeSplitViewModel : ViewModelBase
     public RelayCommand SubmitSplitCommand { get; }
     public RelayCommand DismissSplitResultCommand { get; }
 
-    public IncomeSplitViewModel(IReserveService reserveService, Action closeOtherForms, Func<Task> refresh)
+    private readonly TimeProvider _timeProvider;
+
+    public IncomeSplitViewModel(IReserveService reserveService, Action closeOtherForms, TimeProvider timeProvider, Func<Task> refresh)
     {
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _reserveService = reserveService ?? throw new ArgumentNullException(nameof(reserveService));
         _closeOtherForms = closeOtherForms ?? throw new ArgumentNullException(nameof(closeOtherForms));
         _refresh = refresh ?? throw new ArgumentNullException(nameof(refresh));
@@ -128,7 +131,7 @@ public class IncomeSplitViewModel : ViewModelBase
     internal void ShowSplitForm()
     {
         _closeOtherForms();
-        SplitDate = _lastUsedSplitDate ?? DateTime.Today;
+        SplitDate = _lastUsedSplitDate ?? _timeProvider.GetLocalNow().Date;
         SplitAmount = string.Empty;
         SplitDescription = string.Empty;
         SplitSaveError = null;

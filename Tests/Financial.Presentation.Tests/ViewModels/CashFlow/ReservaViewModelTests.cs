@@ -31,6 +31,7 @@ public class ReservaViewModelTests
         var buckets = bucketService ?? new StubReserveBucketService { ReserveBuckets = DefaultBuckets };
         var viewModel = new ReservaViewModel(
             service, buckets, bankService ?? new StubBankService(), categoryService ?? new StubCategoryService(), confirm,
+            TestClock.At(),
             logger ?? new RecordingLogger<ReservaViewModel>());
         return (viewModel, service);
     }
@@ -57,7 +58,7 @@ public class ReservaViewModelTests
     public async Task Movements_GroupsSameDateDescriptionSplitWithCorrectSubtotal()
     {
         var (viewModel, service) = CreateViewModel();
-        var date = DateOnly.FromDateTime(DateTime.Today);
+        var date = TestClock.Today;
         service.Movements =
         [
             new ReserveMovementDTO { Id = Guid.NewGuid(), BucketId = InvestimentoId, BucketName = "Investimento", Amount = 10m, Date = date, Description = "Salary" },
@@ -87,7 +88,7 @@ public class ReservaViewModelTests
         var movement = new ReserveMovementRow
         {
             Id = Guid.NewGuid(), BucketId = InvestimentoId, BucketName = "Investimento", Amount = 10m,
-            Date = DateOnly.FromDateTime(DateTime.Today), Description = "Salary",
+            Date = TestClock.Today, Description = "Salary",
         };
 
         viewModel.EditMovementCommand.Execute(movement);
@@ -108,7 +109,7 @@ public class ReservaViewModelTests
         var movement = new ReserveMovementRow
         {
             Id = Guid.NewGuid(), BucketId = InvestimentoId, BucketName = "Investimento", Amount = 10m,
-            Date = DateOnly.FromDateTime(DateTime.Today), Description = "Salary",
+            Date = TestClock.Today, Description = "Salary",
         };
         viewModel.EditMovementCommand.Execute(movement);
         viewModel.EditDate = null;
@@ -127,7 +128,7 @@ public class ReservaViewModelTests
         var movement = new ReserveMovementRow
         {
             Id = Guid.NewGuid(), BucketId = InvestimentoId, BucketName = "Investimento", Amount = 10m,
-            Date = DateOnly.FromDateTime(DateTime.Today), Description = "Salary",
+            Date = TestClock.Today, Description = "Salary",
         };
         viewModel.EditMovementCommand.Execute(movement);
         viewModel.EditBucketId = null;
@@ -145,7 +146,7 @@ public class ReservaViewModelTests
         var movement = new ReserveMovementRow
         {
             Id = Guid.NewGuid(), BucketId = InvestimentoId, BucketName = "Investimento", Amount = 10m,
-            Date = DateOnly.FromDateTime(DateTime.Today), Description = "Salary",
+            Date = TestClock.Today, Description = "Salary",
         };
         viewModel.EditMovementCommand.Execute(movement);
         viewModel.EditDescription = "";
@@ -163,7 +164,7 @@ public class ReservaViewModelTests
         var movement = new ReserveMovementRow
         {
             Id = Guid.NewGuid(), BucketId = InvestimentoId, BucketName = "Investimento", Amount = 10m,
-            Date = DateOnly.FromDateTime(DateTime.Today), Description = "Salary",
+            Date = TestClock.Today, Description = "Salary",
         };
         viewModel.EditMovementCommand.Execute(movement);
         viewModel.EditAmount = "not-a-number";
@@ -181,7 +182,7 @@ public class ReservaViewModelTests
         var movement = new ReserveMovementRow
         {
             Id = Guid.NewGuid(), BucketId = InvestimentoId, BucketName = "Investimento", Amount = 10m,
-            Date = DateOnly.FromDateTime(DateTime.Today), Description = "Salary",
+            Date = TestClock.Today, Description = "Salary",
         };
         viewModel.EditMovementCommand.Execute(movement);
         viewModel.EditDescription = "";
@@ -206,7 +207,7 @@ public class ReservaViewModelTests
         var row = new ReserveMovementRow
         {
             Id = Guid.NewGuid(), BucketId = InvestimentoId, BucketName = "Investimento", Amount = 10m,
-            Date = DateOnly.FromDateTime(DateTime.Today), Description = "Salary", IsPartOfGroup = true,
+            Date = TestClock.Today, Description = "Salary", IsPartOfGroup = true,
         };
 
         await viewModel.DeleteMovementAsync(row);
@@ -227,7 +228,7 @@ public class ReservaViewModelTests
         var row = new ReserveMovementRow
         {
             Id = Guid.NewGuid(), BucketId = InvestimentoId, BucketName = "Investimento", Amount = -10m,
-            Date = DateOnly.FromDateTime(DateTime.Today), Description = "Groceries", IsPartOfGroup = false,
+            Date = TestClock.Today, Description = "Groceries", IsPartOfGroup = false,
         };
 
         await viewModel.DeleteMovementAsync(row);
@@ -342,7 +343,7 @@ public class ReservaViewModelTests
         var row = new ReserveMovementRow
         {
             Id = Guid.NewGuid(), BucketId = InvestimentoId, BucketName = "Investimento", Amount = 10m,
-            Date = DateOnly.FromDateTime(DateTime.Today), Description = "Test",
+            Date = TestClock.Today, Description = "Test",
         };
 
         await viewModel.DeleteMovementAsync(row);
@@ -373,7 +374,7 @@ public class ReservaViewModelTests
         var movement = new ReserveMovementDTO
         {
             Id = Guid.NewGuid(), BucketId = InvestimentoId, BucketName = "Investimento", Amount = 100m,
-            Date = DateOnly.FromDateTime(DateTime.Today), Description = "Salary", IncomeId = Guid.NewGuid(),
+            Date = TestClock.Today, Description = "Salary", IncomeId = Guid.NewGuid(),
         };
 
         var rows = ReserveMovementRow.BuildRows([movement]);
@@ -387,7 +388,7 @@ public class ReservaViewModelTests
         var movement = new ReserveMovementDTO
         {
             Id = Guid.NewGuid(), BucketId = InvestimentoId, BucketName = "Investimento", Amount = 100m,
-            Date = DateOnly.FromDateTime(DateTime.Today), Description = "Groceries",
+            Date = TestClock.Today, Description = "Groceries",
         };
 
         var rows = ReserveMovementRow.BuildRows([movement]);
@@ -402,7 +403,7 @@ public class ReservaViewModelTests
         var row = new ReserveMovementRow
         {
             Id = Guid.NewGuid(), BucketId = InvestimentoId, BucketName = "Investimento", Amount = 10m,
-            Date = DateOnly.FromDateTime(DateTime.Today), Description = "Salary", IncomeId = Guid.NewGuid(),
+            Date = TestClock.Today, Description = "Salary", IncomeId = Guid.NewGuid(),
         };
 
         viewModel.EditMovementCommand.CanExecute(row).Should().BeFalse();
@@ -415,7 +416,7 @@ public class ReservaViewModelTests
         var row = new ReserveMovementRow
         {
             Id = Guid.NewGuid(), BucketId = InvestimentoId, BucketName = "Investimento", Amount = 10m,
-            Date = DateOnly.FromDateTime(DateTime.Today), Description = "Salary",
+            Date = TestClock.Today, Description = "Salary",
         };
 
         viewModel.EditMovementCommand.CanExecute(row).Should().BeTrue();
@@ -428,7 +429,7 @@ public class ReservaViewModelTests
         var row = new ReserveMovementRow
         {
             Id = Guid.NewGuid(), BucketId = InvestimentoId, BucketName = "Investimento", Amount = 10m,
-            Date = DateOnly.FromDateTime(DateTime.Today), Description = "Salary", IncomeId = Guid.NewGuid(),
+            Date = TestClock.Today, Description = "Salary", IncomeId = Guid.NewGuid(),
         };
 
         viewModel.DeleteMovementCommand.CanExecute(row).Should().BeFalse();
@@ -441,7 +442,7 @@ public class ReservaViewModelTests
         var row = new ReserveMovementRow
         {
             Id = Guid.NewGuid(), BucketId = InvestimentoId, BucketName = "Investimento", Amount = 10m,
-            Date = DateOnly.FromDateTime(DateTime.Today), Description = "Salary",
+            Date = TestClock.Today, Description = "Salary",
         };
 
         viewModel.DeleteMovementCommand.CanExecute(row).Should().BeTrue();
@@ -531,7 +532,7 @@ public class ReservaViewModelTests
         var row = new ReserveMovementRow
         {
             Id = Guid.NewGuid(), BucketId = InvestimentoId, BucketName = "Investimento", Amount = 10m,
-            Date = DateOnly.FromDateTime(DateTime.Today), Description = "Test",
+            Date = TestClock.Today, Description = "Test",
         };
 
         await viewModel.DeleteMovementAsync(row);

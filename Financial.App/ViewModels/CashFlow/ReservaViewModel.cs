@@ -82,10 +82,13 @@ public class ReservaViewModel : ViewModelBase
 
     public RelayCommand RetryCommand { get; }
 
+    private readonly TimeProvider _timeProvider;
+
     public ReservaViewModel(
         IReserveService reserveService, IReserveBucketService reserveBucketService, IBankService bankService,
-        ICategoryService categoryService, Func<string, bool> confirm, ILogger<ReservaViewModel> logger)
+        ICategoryService categoryService, Func<string, bool> confirm, TimeProvider timeProvider, ILogger<ReservaViewModel> logger)
     {
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _reserveService = reserveService ?? throw new ArgumentNullException(nameof(reserveService));
         _reserveBucketService = reserveBucketService ?? throw new ArgumentNullException(nameof(reserveBucketService));
         _bankService = bankService ?? throw new ArgumentNullException(nameof(bankService));
@@ -93,8 +96,8 @@ public class ReservaViewModel : ViewModelBase
         _confirm = confirm ?? throw new ArgumentNullException(nameof(confirm));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        Split = new IncomeSplitViewModel(_reserveService, CloseAllForms, () => RefreshAsync(includeReferenceData: false));
-        Withdrawal = new WithdrawalViewModel(_reserveService, Buckets, _confirm, CloseAllForms, () => RefreshAsync(includeReferenceData: false));
+        Split = new IncomeSplitViewModel(_reserveService, CloseAllForms, _timeProvider, () => RefreshAsync(includeReferenceData: false));
+        Withdrawal = new WithdrawalViewModel(_reserveService, Buckets, _confirm, CloseAllForms, _timeProvider, () => RefreshAsync(includeReferenceData: false));
 
         RetryCommand = new RelayCommand(async () => await RefreshAsync());
         InitializeEditDeleteCommands();
