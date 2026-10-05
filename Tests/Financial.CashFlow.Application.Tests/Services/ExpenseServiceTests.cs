@@ -65,10 +65,7 @@ public class ExpenseServiceTests
         var act = async () => await _sut.AddExpenseAsync(request);
 
         await act.Should().ThrowAsync<ArgumentException>();
-        var span = _tracer.Spans.Should().ContainSingle().Which;
-        span.Name.Should().Be("CashFlow.ExpenseService.AddExpense");
-        span.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Failed);
-        span.RecordedException.Should().BeOfType<ArgumentException>();
+        _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.ExpenseService.AddExpense");
     }
 
     [Fact]
@@ -966,32 +963,35 @@ public class ExpenseServiceTests
     }
 
     [Fact]
-    public void GetExpensesByMonth_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    public void GetExpensesByMonth_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
         _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
 
         Action act = () => _sut.GetExpensesByMonth(2026, 7);
 
         act.Should().Throw<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.ExpenseService.GetExpensesByMonth");
     }
 
     [Fact]
-    public void GetUnpaidCardChargesByMonth_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    public void GetUnpaidCardChargesByMonth_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
         _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
 
         Action act = () => _sut.GetUnpaidCardChargesByMonth(2026, 7);
 
         act.Should().Throw<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.ExpenseService.GetUnpaidCardChargesByMonth");
     }
 
     [Fact]
-    public void GetCategoryTotalsByMonth_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    public void GetCategoryTotalsByMonth_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
         _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
 
         Action act = () => _sut.GetCategoryTotalsByMonth(2026, 7);
 
         act.Should().Throw<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.ExpenseService.GetCategoryTotalsByMonth");
     }
 }

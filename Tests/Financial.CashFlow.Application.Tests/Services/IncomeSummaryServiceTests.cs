@@ -195,23 +195,25 @@ public class IncomeSummaryServiceTests
     }
 
     [Fact]
-    public void GetIncomeSummaryForYear_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    public void GetIncomeSummaryForYear_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
         _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
 
         Action act = () => _sut.GetIncomeSummaryForYear(CurrentYear);
 
         act.Should().Throw<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.IncomeSummaryService.GetIncomeSummaryForYear");
     }
 
     [Fact]
-    public void GetSalaryAfterTaxesSeriesForYear_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    public void GetSalaryAfterTaxesSeriesForYear_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
         _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
 
         Action act = () => _sut.GetSalaryAfterTaxesSeriesForYear(CurrentYear);
 
         act.Should().Throw<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.IncomeSummaryService.GetSalaryAfterTaxesSeriesForYear");
     }
 
     private static StubCashFlowRepository CreateRepository()

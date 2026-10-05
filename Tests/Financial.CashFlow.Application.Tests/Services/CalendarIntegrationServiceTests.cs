@@ -262,17 +262,18 @@ public class CalendarIntegrationServiceTests
     }
 
     [Fact]
-    public void BuildAuthorizationUrl_WhenProviderThrows_Rethrows()
+    public void BuildAuthorizationUrl_WhenProviderThrows_RecordsFailedSpanAndRethrows()
     {
         _provider.BuildAuthorizationUrlThrows = true;
 
         Action act = () => _sut.BuildAuthorizationUrl();
 
         act.Should().Throw<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.CalendarIntegrationService.BuildAuthorizationUrl");
     }
 
     [Fact]
-    public async Task CompleteConnectionAsync_WhenStoreLoadThrows_Rethrows()
+    public async Task CompleteConnectionAsync_WhenStoreLoadThrows_RecordsFailedSpanAndRethrows()
     {
         _sut.BuildAuthorizationUrl();
         _store.ThrowOnLoad = new InvalidOperationException("simulated load failure");
@@ -280,36 +281,40 @@ public class CalendarIntegrationServiceTests
         Func<Task> act = () => _sut.CompleteConnectionAsync(code: "auth-code", state: _provider.LastState, error: null);
 
         await act.Should().ThrowAsync<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.CalendarIntegrationService.CompleteConnection");
     }
 
     [Fact]
-    public async Task GetStatusAsync_WhenStoreLoadThrows_Rethrows()
+    public async Task GetStatusAsync_WhenStoreLoadThrows_RecordsFailedSpanAndRethrows()
     {
         _store.ThrowOnLoad = new InvalidOperationException("simulated load failure");
 
         Func<Task> act = () => _sut.GetStatusAsync();
 
         await act.Should().ThrowAsync<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.CalendarIntegrationService.GetStatus");
     }
 
     [Fact]
-    public async Task DisconnectAsync_WhenStoreLoadThrows_Rethrows()
+    public async Task DisconnectAsync_WhenStoreLoadThrows_RecordsFailedSpanAndRethrows()
     {
         _store.ThrowOnLoad = new InvalidOperationException("simulated load failure");
 
         Func<Task> act = () => _sut.DisconnectAsync();
 
         await act.Should().ThrowAsync<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.CalendarIntegrationService.Disconnect");
     }
 
     [Fact]
-    public async Task GetValidAccessTokenAsync_WhenStoreLoadThrows_Rethrows()
+    public async Task GetValidAccessTokenAsync_WhenStoreLoadThrows_RecordsFailedSpanAndRethrows()
     {
         _store.ThrowOnLoad = new InvalidOperationException("simulated load failure");
 
         Func<Task> act = () => _sut.GetValidAccessTokenAsync();
 
         await act.Should().ThrowAsync<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.CalendarIntegrationService.GetValidAccessToken");
     }
 
     [Fact]

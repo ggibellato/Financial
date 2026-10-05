@@ -371,23 +371,25 @@ public class CategorySummaryServiceTests
     }
 
     [Fact]
-    public void GetCategoryTotalsForYear_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    public void GetCategoryTotalsForYear_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
         _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
 
         Action act = () => _sut.GetCategoryTotalsForYear(CurrentYear);
 
         act.Should().Throw<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.CategorySummaryService.GetCategoryTotalsForYear");
     }
 
     [Fact]
-    public void GetCategoryTotalsAnnualForYear_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    public void GetCategoryTotalsAnnualForYear_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
         _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
 
         Action act = () => _sut.GetCategoryTotalsAnnualForYear(CurrentYear);
 
         act.Should().Throw<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.CategorySummaryService.GetCategoryTotalsAnnualForYear");
     }
 
     private static StubCashFlowRepository CreateRepository()

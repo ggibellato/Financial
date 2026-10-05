@@ -241,22 +241,24 @@ public class ControleMaeServiceTests
     }
 
     [Fact]
-    public void GetEntriesFromDate_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    public void GetEntriesFromDate_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
         _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
 
         Action act = () => _sut.GetEntriesFromDate(new DateOnly(2026, 1, 1));
 
         act.Should().Throw<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.ControleMaeService.GetEntriesFromDate");
     }
 
     [Fact]
-    public void GetTotals_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    public void GetTotals_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
         _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
 
         Action act = () => _sut.GetTotals();
 
         act.Should().Throw<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.ControleMaeService.GetTotals");
     }
 }

@@ -515,12 +515,13 @@ public class CardStatementServiceTests
     }
 
     [Fact]
-    public async Task GetStatementsForMonthAsync_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    public async Task GetStatementsForMonthAsync_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
         _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
 
         var act = async () => await _sut.GetStatementsForMonthAsync(2026, 9);
 
         await act.Should().ThrowAsync<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.CardStatementService.GetStatementsForMonth");
     }
 }

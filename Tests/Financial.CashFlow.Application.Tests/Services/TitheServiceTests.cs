@@ -375,12 +375,13 @@ public class TitheServiceTests
     }
 
     [Fact]
-    public async Task GetTitheSummaryAsync_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    public async Task GetTitheSummaryAsync_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
         _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
 
         var act = async () => await _sut.GetTitheSummaryAsync(2026, 9);
 
         await act.Should().ThrowAsync<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.TitheService.GetTitheSummaryAsync");
     }
 }

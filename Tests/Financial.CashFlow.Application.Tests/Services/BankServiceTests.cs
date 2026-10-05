@@ -515,13 +515,14 @@ public class BankServiceTests
     }
 
     [Fact]
-    public void GetBanks_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    public void GetBanks_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
         _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
 
         Action act = () => _sut.GetBanks();
 
         act.Should().Throw<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.BankService.GetBanks");
     }
 
     [Fact]
@@ -537,13 +538,14 @@ public class BankServiceTests
     }
 
     [Fact]
-    public void GetBankBalancesByMonth_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    public void GetBankBalancesByMonth_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
         _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
 
         Action act = () => _sut.GetBankBalancesByMonth(2026, 7);
 
         act.Should().Throw<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.BankService.GetBankBalancesByMonth");
     }
 
     [Fact]

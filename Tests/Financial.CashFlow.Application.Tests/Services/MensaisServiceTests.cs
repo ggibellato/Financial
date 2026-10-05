@@ -320,22 +320,24 @@ public class MensaisServiceTests
     };
 
     [Fact]
-    public void GetBills_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    public void GetBills_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
         _repository.ThrowOnNextGetRecurringBills = true;
 
         Action act = () => _sut.GetBills();
 
         act.Should().Throw<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.MensaisService.GetBills");
     }
 
     [Fact]
-    public async Task ResetAllToUnsetAsync_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    public async Task ResetAllToUnsetAsync_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
         _repository.ThrowOnNextGetRecurringBills = true;
 
         var act = async () => await _sut.ResetAllToUnsetAsync();
 
         await act.Should().ThrowAsync<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.MensaisService.ResetAllToUnset");
     }
 }

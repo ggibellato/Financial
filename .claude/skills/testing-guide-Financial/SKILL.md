@@ -76,7 +76,8 @@ This revision replaces the previous guide, which called the in-process `WebAppli
   `RecordingTelemetryTracer`, `RecordingLogger<T>`, `FakeTimeProvider`, `TestDataPaths`) — never a
   local copy. API tests derive from `ApiEndpointTests`; never `new ApiTestFactory()` in a test
   class. Elsewhere: constructor + `Create*` helper with optional parameters; recorders are
-  instance fields, never `static`. Prove failure paths with the recorders and assert the
+  instance fields, never `static`. Prove failure paths with the recorders (`_tracer.ShouldHaveFailedSpan<T>(spanName)` from
+  `TelemetryAssertions` for a failed span) and assert the
   exception **type** is logged, never a message or a value. No mocking framework exists (no
   Moq/NSubstitute in any csproj, no MSW in `package.json`); stubs are hand-written.
 

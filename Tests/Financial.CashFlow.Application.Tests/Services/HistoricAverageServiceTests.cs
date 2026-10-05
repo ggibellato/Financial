@@ -357,12 +357,13 @@ public class HistoricAverageServiceTests
     }
 
     [Fact]
-    public void GetHistoricSummaryAverageFromYear_WhenRepositoryThrowsUnexpectedly_Rethrows()
+    public void GetHistoricSummaryAverageFromYear_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
         _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
 
         Action act = () => _sut.GetHistoricSummaryAverageFromYear(CurrentYear);
 
         act.Should().Throw<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.HistoricAverageService.GetHistoricSummaryAverageFromYear");
     }
 }
