@@ -217,10 +217,9 @@ public class HoldingValuationServiceTests
         Action act = () => service.GetValuation(null!, InvestmentScope.Active);
         act.Should().Throw<ArgumentNullException>();
 
-        var span = tracer.Spans.Should().ContainSingle().Which;
+        tracer.ShouldHaveFailedSpan<ArgumentNullException>("Investment.HoldingValuationService.GetValuation");
         using (new AssertionScope())
         {
-            span.RecordedException.Should().BeOfType<ArgumentNullException>();
             logger.Entries.Should().NotContain(entry => entry.Level == Microsoft.Extensions.Logging.LogLevel.Error);
         }
     }

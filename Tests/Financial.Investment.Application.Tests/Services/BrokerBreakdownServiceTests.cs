@@ -11,7 +11,7 @@ namespace Financial.Investment.Application.Tests.Services;
 [Trait("Category", "Unit")]
 public class BrokerBreakdownServiceTests
 {
-    private static readonly ITelemetryTracer Tracer = new RecordingTelemetryTracer();
+    private readonly RecordingTelemetryTracer _tracer = new();
 
     private readonly StubInvestmentRepository _repository = new();
 
@@ -274,7 +274,7 @@ public class BrokerBreakdownServiceTests
         result.Single().Assets.Select(a => a.AssetName).Should().Equal("AAAA3", "ZZZZ3");
     }
 
-    private BrokerBreakdownService CreateService() => new(_repository, Tracer, NullLogger<BrokerBreakdownService>.Instance);
+    private BrokerBreakdownService CreateService() => new(_repository, _tracer, NullLogger<BrokerBreakdownService>.Instance);
 
     private static Asset MakeAsset(string name = "TEST", string ticker = "TEST") =>
         Asset.Create(name, "ISIN", "BVMF", ticker);

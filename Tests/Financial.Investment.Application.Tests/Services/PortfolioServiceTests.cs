@@ -247,10 +247,9 @@ public class PortfolioServiceTests
         var act = async () => await CreateService().DeleteEmptyPortfolioAsync("XPI", "Default", InvestmentScope.Active);
         await act.Should().ThrowAsync<InvestmentRuleViolationException>();
 
-        var span = _tracer.Spans.Should().ContainSingle(s => s.Name.EndsWith("DeleteEmptyPortfolio")).Which;
+        _tracer.ShouldHaveFailedSpan<InvestmentRuleViolationException>("Investment.PortfolioService.DeleteEmptyPortfolio");
         using (new AssertionScope())
         {
-            span.RecordedException.Should().BeOfType<InvestmentRuleViolationException>();
             _logger.Entries.Should().NotContain(entry => entry.Message.Contains("Default"));
         }
     }
