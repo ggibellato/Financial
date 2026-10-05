@@ -18,7 +18,7 @@ public class HoldingValuationServiceTests
     private static Asset MakeAsset(string name = "AAAA") => Asset.Create(name, "ISIN", "BVMF", name);
 
     private HoldingValuationService CreateService(ITelemetryTracer? tracer = null, TimeProvider? timeProvider = null) =>
-        new(new XirrCalculationService(), tracer ?? new RecordingTelemetryTracer(), NullLogger<HoldingValuationService>.Instance, timeProvider ?? new FakeTimeProvider(Today));
+        new(new XirrCalculationService(TestClock.At()), tracer ?? new RecordingTelemetryTracer(), NullLogger<HoldingValuationService>.Instance, timeProvider ?? new FakeTimeProvider(Today));
 
     [Fact]
     public void GetValuation_NullAsset_Throws()
@@ -211,7 +211,7 @@ public class HoldingValuationServiceTests
     {
         var tracer = new RecordingTelemetryTracer();
         var logger = new RecordingLogger<HoldingValuationService>();
-        var service = new HoldingValuationService(new XirrCalculationService(), tracer, logger, new FakeTimeProvider(Today));
+        var service = new HoldingValuationService(new XirrCalculationService(TestClock.At()), tracer, logger, new FakeTimeProvider(Today));
 
         Action act = () => service.GetValuation(null!, InvestmentScope.Active);
         act.Should().Throw<ArgumentNullException>();

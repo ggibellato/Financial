@@ -71,7 +71,7 @@ public class CryptocurrencyAssetPriceFetcherTests
     [Fact]
     public void GetSnapshot_KnownBroker_DelegatesToFinanceServiceWithResolvedCurrency()
     {
-        var snapshot = new AssetValueSnapshot("BTC", "Bitcoin", 50000m, DateTimeOffset.UtcNow);
+        var snapshot = new AssetValueSnapshot("BTC", "Bitcoin", 50000m, TestClock.Default);
         var brokers = new[] { Broker.Create("Coinbase", "GBP") };
         var fetcher = new CryptocurrencyAssetPriceFetcher(new StubInvestmentRepository(brokers), new StubFinanceService(snapshot));
         var request = new AssetPriceRequestDTO

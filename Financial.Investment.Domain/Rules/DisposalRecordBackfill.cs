@@ -9,7 +9,7 @@ public sealed record DisposalRecordBackfillFailure(Guid TransactionId, string Me
 
 public static class DisposalRecordBackfill
 {
-    public static IReadOnlyList<DisposalRecordBackfillFailure> Apply(Investments investments)
+    public static IReadOnlyList<DisposalRecordBackfillFailure> Apply(Investments investments, DateTimeOffset createdAt)
     {
         var failures = new List<DisposalRecordBackfillFailure>();
 
@@ -19,7 +19,7 @@ public static class DisposalRecordBackfill
             {
                 foreach (var asset in portfolio.Assets)
                 {
-                    ApplyToAsset(asset, failures);
+                    ApplyToAsset(asset, createdAt, failures);
                 }
             }
         }
@@ -27,7 +27,7 @@ public static class DisposalRecordBackfill
         return failures;
     }
 
-    private static void ApplyToAsset(Asset asset, List<DisposalRecordBackfillFailure> failures)
+    private static void ApplyToAsset(Asset asset, DateTimeOffset createdAt, List<DisposalRecordBackfillFailure> failures)
     {
         var existingTransactionIds = asset.DisposalRecords.Select(record => record.TransactionId).ToHashSet();
         var preceding = new List<Transaction>();
@@ -42,7 +42,7 @@ public static class DisposalRecordBackfill
                 try
                 {
                     var record = DisposalRecordCalculator.Calculate(
-                        transaction, preceding, CostBasisMethod.AverageCost, transaction.Currency.ToString());
+                        transaction, preceding, CostBasisMethod.AverageCost, transaction.Currency.ToString(), createdAt);
                     asset.AppendBackfilledDisposalRecord(record);
                 }
                 catch (Exception ex)

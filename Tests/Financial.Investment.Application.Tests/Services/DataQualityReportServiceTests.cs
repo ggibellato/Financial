@@ -57,7 +57,7 @@ public class DataQualityReportServiceTests
     public void GenerateReport_OpenHoldingWithNoRecordedPrice_IsNamed()
     {
         var asset = Asset.Create("UNPRICED", "ISIN1", "BVMF", "UNP");
-        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 1m, 10m, 0m));
+        asset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 1m, 10m, 0m));
 
         SeedActive(asset);
 
@@ -70,8 +70,8 @@ public class DataQualityReportServiceTests
     public void GenerateReport_OpenHoldingWithRecordedPrice_NotReported()
     {
         var asset = Asset.Create("PRICED", "ISIN1", "BVMF", "PRC");
-        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 1m, 10m, 0m));
-        asset.SetPrice(DateOnly.FromDateTime(DateTime.Today), 15m, isManual: false);
+        asset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 1m, 10m, 0m));
+        asset.SetPrice(TestClock.Today, 15m, isManual: false);
 
         SeedActive(asset);
 
@@ -128,11 +128,11 @@ public class DataQualityReportServiceTests
     public void GenerateReport_UnclassifiedAndUnpriced_LinksTheTwoProblems()
     {
         var linked = Asset.Create("BONDNOTCLASSIFIED", "ISIN1", "BVMF", "BNC");
-        linked.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 1m, 1000m, 0m));
+        linked.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 1m, 1000m, 0m));
 
         var unclassifiedButPriced = Asset.Create("PRICEDUNCLASSIFIED", "ISIN2", "BVMF", "PUC");
-        unclassifiedButPriced.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 1m, 100m, 0m));
-        unclassifiedButPriced.SetPrice(DateOnly.FromDateTime(DateTime.Today), 100m, isManual: false);
+        unclassifiedButPriced.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 1m, 100m, 0m));
+        unclassifiedButPriced.SetPrice(TestClock.Today, 100m, isManual: false);
 
         SeedActive(linked, unclassifiedButPriced);
 
@@ -194,7 +194,7 @@ public class DataQualityReportServiceTests
         oversold.AddTransaction(Transaction.Create(new DateTime(2021, 6, 1), Transaction.TransactionType.Sell, 8m, 12m, 0m));
 
         var unpriced = Asset.Create("UNPRICED", "ISIN2", "BVMF", "UNP");
-        unpriced.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 1m, 10m, 0m));
+        unpriced.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 1m, 10m, 0m));
 
         SeedActive(oversold, unpriced);
 

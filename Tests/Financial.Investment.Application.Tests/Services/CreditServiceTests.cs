@@ -187,7 +187,7 @@ public class CreditServiceTests
     {
         var asset = MakeAsset();
         var creditId = Guid.NewGuid();
-        var originalSnapshot = FxRateSnapshot.Create(Currency.GBP, 0.146m, FxRateSource.Frankfurter, DateTimeOffset.UtcNow);
+        var originalSnapshot = FxRateSnapshot.Create(Currency.GBP, 0.146m, FxRateSource.Frankfurter, TestClock.Default);
         asset.AddCredit(Credit.CreateWithId(creditId, new DateTime(2024, 1, 1), Credit.CreditType.Dividend, 5m, currency: Currency.BRL, fxRateSnapshot: originalSnapshot));
         _repository.Asset = asset;
         var provider = new StubExchangeRateProvider(0.99m);
@@ -285,7 +285,7 @@ public class CreditServiceTests
     public void GetCreditsByBroker_ReturnsCreditsFromAsset()
     {
         var asset = MakeAsset();
-        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 1m, 10m, 0m));
+        asset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 1m, 10m, 0m));
         asset.AddCredit(Credit.Create(new DateTime(2024, 1, 1), Credit.CreditType.Dividend, 5m));
         _repository.AssetsByBroker = [asset];
 
@@ -298,12 +298,12 @@ public class CreditServiceTests
     public void GetCreditsByBroker_IncludesCreditsFromFlatAndShortAssets()
     {
         var flatAsset = MakeAsset("FLAT");
-        flatAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 1m, 10m, 0m));
-        flatAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 1m, 10m, 0m));
+        flatAsset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 1m, 10m, 0m));
+        flatAsset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Sell, 1m, 10m, 0m));
         flatAsset.AddCredit(Credit.Create(new DateTime(2024, 1, 1), Credit.CreditType.Dividend, 3m));
 
         var shortAsset = MakeAsset("SHORT");
-        shortAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 1m, 10m, 0m));
+        shortAsset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Sell, 1m, 10m, 0m));
         shortAsset.AddCredit(Credit.Create(new DateTime(2024, 1, 2), Credit.CreditType.SecuritiesLendingIncome, 7m));
 
         _repository.AssetsByBroker = [flatAsset, shortAsset];
@@ -329,7 +329,7 @@ public class CreditServiceTests
     public void GetCreditsByPortfolio_ReturnsCreditsFromAsset()
     {
         var asset = MakeAsset();
-        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 1m, 10m, 0m));
+        asset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 1m, 10m, 0m));
         asset.AddCredit(Credit.Create(new DateTime(2024, 1, 1), Credit.CreditType.Dividend, 5m));
         _repository.AssetsByBrokerPortfolio = [asset];
 
@@ -342,12 +342,12 @@ public class CreditServiceTests
     public void GetCreditsByPortfolio_IncludesCreditsFromFlatAndShortAssets()
     {
         var flatAsset = MakeAsset("FLAT");
-        flatAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 1m, 10m, 0m));
-        flatAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 1m, 10m, 0m));
+        flatAsset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 1m, 10m, 0m));
+        flatAsset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Sell, 1m, 10m, 0m));
         flatAsset.AddCredit(Credit.Create(new DateTime(2024, 1, 1), Credit.CreditType.Dividend, 3m));
 
         var shortAsset = MakeAsset("SHORT");
-        shortAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 1m, 10m, 0m));
+        shortAsset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Sell, 1m, 10m, 0m));
         shortAsset.AddCredit(Credit.Create(new DateTime(2024, 1, 2), Credit.CreditType.SecuritiesLendingIncome, 7m));
 
         _repository.AssetsByBrokerPortfolio = [flatAsset, shortAsset];

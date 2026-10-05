@@ -66,7 +66,7 @@ public sealed class CreditService : ICreditService, ICreditQueryService
                 (asset, creditType) =>
                 {
                     var credit = Credit.Create(request.Date, creditType, request.Value, request.Withheld, currency, fxRateSnapshot, request.SharesForDividend, request.IntermediationFee);
-                    asset.AddCredit(credit, _repository.GetInvestments());
+                    asset.AddCredit(credit, _timeProvider.GetUtcNow(), _repository.GetInvestments());
                     return true;
                 }).ConfigureAwait(false);
 
@@ -108,7 +108,7 @@ public sealed class CreditService : ICreditService, ICreditQueryService
                     var updatedCredit = Credit.CreateWithId(
                         request.Id, request.Date, creditType, request.Value, request.Withheld,
                         existing?.Currency ?? default, existing?.FxRateSnapshot, request.SharesForDividend, request.IntermediationFee);
-                    return asset.UpdateCredit(updatedCredit, _repository.GetInvestments());
+                    return asset.UpdateCredit(updatedCredit, _timeProvider.GetUtcNow(), _repository.GetInvestments());
                 }).ConfigureAwait(false);
 
             span.MarkSuccess();

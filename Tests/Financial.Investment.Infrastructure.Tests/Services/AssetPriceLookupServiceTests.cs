@@ -35,7 +35,7 @@ public class AssetPriceLookupServiceTests
             result.Price.Should().Be(123.45m);
             result.IsManual.Should().BeFalse();
 
-            var today = DateOnly.FromDateTime(DateTime.Today);
+            var today = TestClock.Today;
             var entry = repository.GetAsset(BrokerName, PortfolioName, AssetName)!.GetPriceForDate(today);
             entry.Should().NotBeNull();
             entry!.Price.Should().Be(123.45m);
@@ -72,7 +72,7 @@ public class AssetPriceLookupServiceTests
         var (innerRepository, tracer, tempFile) = CreateRepositoryOverTempCopy();
         var repository = new CountingRepository(innerRepository);
         var navigationService = new NavigationService(repository, TestHoldingValuationService.Create(), tracer, NullLogger<NavigationService>.Instance);
-        var service = new AssetPriceLookupService(repository, navigationService, capturingService, tracer, NullLogger<AssetPriceLookupService>.Instance);
+        var service = new AssetPriceLookupService(repository, navigationService, capturingService, TestClock.At(), tracer, NullLogger<AssetPriceLookupService>.Instance);
         try
         {
             repository.GetAsset(BrokerName, PortfolioName, AssetName)!.SetValuationMethod(ValuationMethod.BondQuote);
@@ -97,7 +97,7 @@ public class AssetPriceLookupServiceTests
         {
             await service.GetCurrentPriceAsync(BuildRequest());
 
-            var today = DateOnly.FromDateTime(DateTime.Today);
+            var today = TestClock.Today;
             var entry = repository.GetAsset(BrokerName, PortfolioName, AssetName)!.GetPriceForDate(today);
             entry.Should().NotBeNull();
             entry!.Source.Should().Be(PriceSource.Google);
@@ -114,9 +114,9 @@ public class AssetPriceLookupServiceTests
         var (service, repository, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.Success(123.45m, PriceSource.Google));
         try
         {
-            var today = DateOnly.FromDateTime(DateTime.Today);
+            var today = TestClock.Today;
             var asset = repository.GetAsset(BrokerName, PortfolioName, AssetName)!;
-            asset.SetPrice(today, 123.45m, PriceSource.Unknown, currency: string.Empty, sourceReference: null, DateTimeOffset.UtcNow);
+            asset.SetPrice(today, 123.45m, PriceSource.Unknown, currency: string.Empty, sourceReference: null, TestClock.Default, today);
             await repository.ApplyAndSaveAsync(() => true);
 
             await service.GetCurrentPriceAsync(BuildRequest());
@@ -138,9 +138,9 @@ public class AssetPriceLookupServiceTests
         var (service, repository, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.Failure());
         try
         {
-            var oldDate = DateOnly.FromDateTime(DateTime.Today).AddDays(-10);
+            var oldDate = TestClock.Today.AddDays(-10);
             var asset = repository.GetAsset(BrokerName, PortfolioName, AssetName)!;
-            asset.SetPrice(oldDate, 88m, PriceSource.StatusInvest, currency: "BRL", sourceReference: null, DateTimeOffset.UtcNow);
+            asset.SetPrice(oldDate, 88m, PriceSource.StatusInvest, currency: "BRL", sourceReference: null, TestClock.Default, oldDate);
 
             var result = await service.GetCurrentPriceAsync(BuildRequest());
 
@@ -180,7 +180,7 @@ public class AssetPriceLookupServiceTests
         var (service, repository, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.Success(200m));
         try
         {
-            var today = DateOnly.FromDateTime(DateTime.Today);
+            var today = TestClock.Today;
             repository.GetAsset(BrokerName, PortfolioName, AssetName)!.SetPrice(today, 100m, isManual: true);
             await repository.ApplyAndSaveAsync(() => true);
 
@@ -206,7 +206,7 @@ public class AssetPriceLookupServiceTests
         try
         {
             repository.GetAsset(BrokerName, PortfolioName, AssetName)!
-                .SetPrice(DateOnly.FromDateTime(DateTime.Today), 100m, isManual: true);
+                .SetPrice(TestClock.Today, 100m, isManual: true);
             await repository.ApplyAndSaveAsync(() => true);
             var savesBefore = repository.SaveCount;
 
@@ -231,7 +231,7 @@ public class AssetPriceLookupServiceTests
         try
         {
             repository.GetAsset(BrokerName, PortfolioName, AssetName)!
-                .SetPrice(DateOnly.FromDateTime(DateTime.Today), 100m, isManual: true);
+                .SetPrice(TestClock.Today, 100m, isManual: true);
             await repository.ApplyAndSaveAsync(() => true);
 
             var result = await service.GetCurrentPriceAsync(BuildRequest());
@@ -250,7 +250,7 @@ public class AssetPriceLookupServiceTests
         var (service, repository, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.Success(200m));
         try
         {
-            var today = DateOnly.FromDateTime(DateTime.Today);
+            var today = TestClock.Today;
             repository.GetAsset(BrokerName, PortfolioName, AssetName)!
                 .SetPrice(today.AddDays(-1), 100m, isManual: true);
             await repository.ApplyAndSaveAsync(() => true);
@@ -276,7 +276,7 @@ public class AssetPriceLookupServiceTests
         var (service, repository, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.Failure());
         try
         {
-            var today = DateOnly.FromDateTime(DateTime.Today);
+            var today = TestClock.Today;
             repository.GetAsset(BrokerName, PortfolioName, AssetName)!.SetPrice(today, 321.5m, isManual: true);
             await repository.ApplyAndSaveAsync(() => true);
 
@@ -297,7 +297,7 @@ public class AssetPriceLookupServiceTests
         var (service, repository, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.Failure());
         try
         {
-            var today = DateOnly.FromDateTime(DateTime.Today);
+            var today = TestClock.Today;
             repository.GetAsset(BrokerName, PortfolioName, AssetName)!.SetPrice(today, 88m, isManual: false);
             await repository.ApplyAndSaveAsync(() => true);
 
@@ -318,7 +318,7 @@ public class AssetPriceLookupServiceTests
         var (service, repository, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.Failure());
         try
         {
-            var yesterday = DateOnly.FromDateTime(DateTime.Today).AddDays(-1);
+            var yesterday = TestClock.Today.AddDays(-1);
             repository.GetAsset(BrokerName, PortfolioName, AssetName)!.SetPrice(yesterday, 75m, isManual: false);
             await repository.ApplyAndSaveAsync(() => true);
 
@@ -339,7 +339,7 @@ public class AssetPriceLookupServiceTests
         var (service, repository, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.Failure());
         try
         {
-            var today = DateOnly.FromDateTime(DateTime.Today);
+            var today = TestClock.Today;
             var asset = repository.GetAsset(BrokerName, PortfolioName, AssetName)!;
             asset.SetPrice(today.AddDays(-5), 50m, isManual: false);
             asset.SetPrice(today.AddDays(-1), 75m, isManual: false);
@@ -368,7 +368,7 @@ public class AssetPriceLookupServiceTests
         var (service, repository, logger, tempFile) = CreateRecordingServiceOverRepository(StubAssetPriceService.Failure());
         try
         {
-            var today = DateOnly.FromDateTime(DateTime.Today);
+            var today = TestClock.Today;
             repository.GetAsset(BrokerName, PortfolioName, AssetName)!.SetPrice(today, 88m, isManual: false);
             await repository.ApplyAndSaveAsync(() => true);
 
@@ -393,7 +393,7 @@ public class AssetPriceLookupServiceTests
         var (service, repository, logger, tempFile) = CreateRecordingServiceOverRepository(StubAssetPriceService.Failure());
         try
         {
-            var today = DateOnly.FromDateTime(DateTime.Today);
+            var today = TestClock.Today;
             repository.GetAsset(BrokerName, PortfolioName, AssetName)!.SetPrice(today, 88m, isManual: false);
             await repository.ApplyAndSaveAsync(() => true);
 
@@ -483,7 +483,7 @@ public class AssetPriceLookupServiceTests
 
             repository.SaveCount.Should().Be(1);
             ReloadAssetFromDisk(tempFile)!.PriceSnapshots
-                .Count(entry => entry.Date == DateOnly.FromDateTime(DateTime.Today))
+                .Count(entry => entry.Date == TestClock.Today)
                 .Should().Be(1);
         }
         finally
@@ -498,7 +498,7 @@ public class AssetPriceLookupServiceTests
         var (service, repository, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.NotUsed());
         try
         {
-            var oldDate = DateOnly.FromDateTime(DateTime.Today).AddDays(-30);
+            var oldDate = TestClock.Today.AddDays(-30);
             var asset = repository.GetAsset(BrokerName, PortfolioName, AssetName)!;
             asset.SetValuationMethod(ValuationMethod.ProviderValue);
             asset.SetPrice(oldDate, 5000m, isManual: false);
@@ -520,7 +520,7 @@ public class AssetPriceLookupServiceTests
         var (service, repository, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.NotUsed());
         try
         {
-            var oldDate = DateOnly.FromDateTime(DateTime.Today).AddDays(-30);
+            var oldDate = TestClock.Today.AddDays(-30);
             var asset = repository.GetAsset(BrokerName, PortfolioName, AssetName)!;
             asset.SetValuationMethod(ValuationMethod.Manual);
             asset.SetPrice(oldDate, 1234.56m, isManual: false);
@@ -631,7 +631,7 @@ public class AssetPriceLookupServiceTests
         {
             await service.GetCurrentPriceAsync(BuildRequest());
 
-            var entry = ReloadAssetFromDisk(tempFile)!.GetPriceForDate(DateOnly.FromDateTime(DateTime.Today));
+            var entry = ReloadAssetFromDisk(tempFile)!.GetPriceForDate(TestClock.Today);
             entry.Should().NotBeNull();
             entry!.Price.Should().Be(321.5m);
             entry.IsManual.Should().BeFalse();
@@ -650,7 +650,7 @@ public class AssetPriceLookupServiceTests
         {
             await service.GetCurrentPriceAsync(BuildRequest());
 
-            ReloadAssetFromDisk(tempFile)!.GetPriceForDate(DateOnly.FromDateTime(DateTime.Today))
+            ReloadAssetFromDisk(tempFile)!.GetPriceForDate(TestClock.Today)
                 .Should().BeNull("the save threw, so nothing reached the file");
         }
         finally
@@ -673,7 +673,7 @@ public class AssetPriceLookupServiceTests
             await service.GetCurrentPriceAsync(BuildRequest());
 
             repository.GetAsset(BrokerName, PortfolioName, AssetName)!
-                .GetPriceForDate(DateOnly.FromDateTime(DateTime.Today))
+                .GetPriceForDate(TestClock.Today)
                 .Should().BeNull("the save threw, so the in-memory write must have been reverted");
         }
         finally
@@ -735,14 +735,14 @@ public class AssetPriceLookupServiceTests
         File.Copy(TestDataPaths.DataJsonFile, tempFile, true);
 
         var serializer = new InvestmentSerializerAdapter();
-        var investments = InvestmentLoader.LoadSync(new LocalJsonStorage(tempFile), serializer);
+        var investments = InvestmentLoader.LoadSync(new LocalJsonStorage(tempFile), serializer, TestClock.At());
         var storage = new WriteFailingJsonStorage(new LocalJsonStorage(tempFile));
 
         var tracer = new RecordingTelemetryTracer();
         var repository = new InvestmentJsonRepository(investments, storage, serializer);
         var navigationService = new NavigationService(repository, TestHoldingValuationService.Create(), tracer, NullLogger<NavigationService>.Instance);
         var service = new AssetPriceLookupService(
-            repository, navigationService, assetPriceService, tracer, new RecordingLogger<AssetPriceLookupService>());
+            repository, navigationService, assetPriceService, TestClock.At(), tracer, new RecordingLogger<AssetPriceLookupService>());
 
         return (service, repository, tempFile);
     }
@@ -751,7 +751,7 @@ public class AssetPriceLookupServiceTests
     {
         var storage = new LocalJsonStorage(tempFile);
         var serializer = new InvestmentSerializerAdapter();
-        var repository = new InvestmentJsonRepository(InvestmentLoader.LoadSync(storage, serializer), storage, serializer);
+        var repository = new InvestmentJsonRepository(InvestmentLoader.LoadSync(storage, serializer, TestClock.At()), storage, serializer);
         return repository.GetAsset(BrokerName, PortfolioName, AssetName);
     }
 
@@ -763,7 +763,7 @@ public class AssetPriceLookupServiceTests
 
         IJsonStorage storage = new LocalJsonStorage(tempFile);
         var serializer = new InvestmentSerializerAdapter();
-        var investments = InvestmentLoader.LoadSync(storage, serializer);
+        var investments = InvestmentLoader.LoadSync(storage, serializer, TestClock.At());
         if (failWrites)
         {
             storage = new WriteFailingJsonStorage(storage);
@@ -774,7 +774,7 @@ public class AssetPriceLookupServiceTests
         var repository = new InvestmentJsonRepository(investments, storage, serializer);
         var navigationService = new NavigationService(repository, TestHoldingValuationService.Create(), tracer, NullLogger<NavigationService>.Instance);
 
-        return (new AssetPriceLookupService(repository, navigationService, assetPriceService, tracer, logger), tracer, logger, tempFile);
+        return (new AssetPriceLookupService(repository, navigationService, assetPriceService, TestClock.At(), tracer, logger), tracer, logger, tempFile);
     }
 
     private static (AssetPriceLookupService Service, RecordingTelemetryTracer Tracer, RecordingLogger<AssetPriceLookupService> Logger, string TempFile)
@@ -807,7 +807,7 @@ public class AssetPriceLookupServiceTests
 
         var storage = new LocalJsonStorage(tempFile);
         var serializer = new InvestmentSerializerAdapter();
-        return (new InvestmentJsonRepository(InvestmentLoader.LoadSync(storage, serializer), storage, serializer),
+        return (new InvestmentJsonRepository(InvestmentLoader.LoadSync(storage, serializer, TestClock.At()), storage, serializer),
             new RecordingTelemetryTracer(), tempFile);
     }
 
@@ -820,7 +820,7 @@ public class AssetPriceLookupServiceTests
         var logger = new RecordingLogger<AssetPriceLookupService>();
         var navigationService = new NavigationService(repository, TestHoldingValuationService.Create(), tracer, NullLogger<NavigationService>.Instance);
 
-        return (new AssetPriceLookupService(repository, navigationService, assetPriceService, tracer, logger), repository, logger, tempFile);
+        return (new AssetPriceLookupService(repository, navigationService, assetPriceService, TestClock.At(), tracer, logger), repository, logger, tempFile);
     }
 
     private static (AssetPriceLookupService Service, CountingRepository Repository, string TempFile) CreateServiceWithAssetPriceService(IAssetPriceService assetPriceService)
@@ -828,7 +828,7 @@ public class AssetPriceLookupServiceTests
         var (innerRepository, tracer, tempFile) = CreateRepositoryOverTempCopy();
         var repository = new CountingRepository(innerRepository);
         var navigationService = new NavigationService(repository, TestHoldingValuationService.Create(), tracer, NullLogger<NavigationService>.Instance);
-        var service = new AssetPriceLookupService(repository, navigationService, assetPriceService, tracer, NullLogger<AssetPriceLookupService>.Instance);
+        var service = new AssetPriceLookupService(repository, navigationService, assetPriceService, TestClock.At(), tracer, NullLogger<AssetPriceLookupService>.Instance);
 
         return (service, repository, tempFile);
     }

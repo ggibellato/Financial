@@ -9,7 +9,7 @@ public static class InvestmentLoader
 {
     // Intentionally synchronous: called from DI factory at startup before the app's async loop begins.
     // ConfigureAwait(false) avoids SynchronizationContext deadlock in WPF startup context.
-    public static Investments LoadSync(IJsonStorage storage, IInvestmentSerializer serializer)
+    public static Investments LoadSync(IJsonStorage storage, IInvestmentSerializer serializer, TimeProvider timeProvider)
     {
         var json = storage.ReadAsync()
             .ConfigureAwait(false)
@@ -17,13 +17,14 @@ public static class InvestmentLoader
             .GetResult();
 
         var investments = serializer.Deserialize(json);
+        var createdAt = timeProvider.GetUtcNow();
 
-        foreach (var failure in DisposalRecordBackfill.Apply(investments))
+        foreach (var failure in DisposalRecordBackfill.Apply(investments, createdAt))
         {
             Trace.TraceWarning($"DisposalRecord backfill skipped transaction {failure.TransactionId}: {failure.Message}");
         }
 
-        foreach (var failure in TaxClassificationBackfill.Apply(investments))
+        foreach (var failure in TaxClassificationBackfill.Apply(investments, createdAt))
         {
             Trace.TraceWarning($"TaxClassification backfill skipped source {failure.SourceId}: {failure.Message}");
         }

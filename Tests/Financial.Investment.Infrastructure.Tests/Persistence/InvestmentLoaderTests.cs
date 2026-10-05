@@ -1,3 +1,4 @@
+using Financial.TestUtilities;
 using System;
 using System.IO;
 using System.Linq;
@@ -29,7 +30,7 @@ public class InvestmentLoaderTests
         {
             var storage = new LocalJsonStorage(tempFile);
 
-            var loaded = InvestmentLoader.LoadSync(storage, serializer);
+            var loaded = InvestmentLoader.LoadSync(storage, serializer, TestClock.At());
 
             var loadedAsset = loaded.ActiveBrokers.Single().Portfolios.Single().Assets.Single();
             loadedAsset.DisposalRecords.Should().ContainSingle();
@@ -60,7 +61,7 @@ public class InvestmentLoaderTests
         {
             var storage = new LocalJsonStorage(tempFile);
 
-            var loaded = InvestmentLoader.LoadSync(storage, serializer);
+            var loaded = InvestmentLoader.LoadSync(storage, serializer, TestClock.At());
 
             var loadedAsset = loaded.ActiveBrokers.Single().Portfolios.Single().Assets.Single();
             loadedAsset.DisposalRecords.Should().ContainSingle();

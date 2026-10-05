@@ -48,7 +48,7 @@ public class AssetTests
     public void UpdateIdentity_DoesNotDisturbTransactionsOrQuantity()
     {
         var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
-        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 10, 5m, 0m));
+        asset.AddTransaction(Transaction.Create(TestClock.Today.ToDateTime(TimeOnly.MinValue), Transaction.TransactionType.Buy, 10, 5m, 0m));
 
         asset.UpdateIdentity("Asset B", "ISIN456", "LSE", "BBB", CountryCode.UK, "Stock", GlobalAssetClass.Equity);
 
@@ -843,7 +843,7 @@ public class AssetTests
     {
         var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
         var classification = TaxClassification.CreateForCredit(
-            Guid.NewGuid(), Jurisdiction.BR, "2026", EventCategory.Dividend, 100m, 0m, 100m, CalculationStatus.Incomplete, null);
+            Guid.NewGuid(), Jurisdiction.BR, "2026", EventCategory.Dividend, 100m, 0m, 100m, CalculationStatus.Incomplete, null, TestClock.Default);
 
         asset.AppendTaxClassification(classification);
 
@@ -856,7 +856,7 @@ public class AssetTests
         var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
         var sourceId = Guid.NewGuid();
         var classification = TaxClassification.CreateForCredit(
-            sourceId, Jurisdiction.BR, "2026", EventCategory.Dividend, 100m, 0m, 100m, CalculationStatus.Incomplete, null);
+            sourceId, Jurisdiction.BR, "2026", EventCategory.Dividend, 100m, 0m, 100m, CalculationStatus.Incomplete, null, TestClock.Default);
         asset.AppendTaxClassification(classification);
 
         var found = asset.FindTaxClassificationBySource(SourceType.Credit, sourceId);
@@ -880,7 +880,7 @@ public class AssetTests
         var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
         var sourceId = Guid.NewGuid();
         var classification = TaxClassification.CreateForCredit(
-            sourceId, Jurisdiction.BR, "2026", EventCategory.Dividend, 100m, 0m, 100m, CalculationStatus.Incomplete, null);
+            sourceId, Jurisdiction.BR, "2026", EventCategory.Dividend, 100m, 0m, 100m, CalculationStatus.Incomplete, null, TestClock.Default);
         asset.AppendTaxClassification(classification);
         var replacementId = Guid.NewGuid();
 
@@ -909,7 +909,7 @@ public class AssetTests
         var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
         var sourceId = Guid.NewGuid();
         asset.AppendTaxClassification(TaxClassification.CreateForCredit(
-            sourceId, Jurisdiction.BR, "2026", EventCategory.Dividend, 100m, 0m, 100m, CalculationStatus.Incomplete, null));
+            sourceId, Jurisdiction.BR, "2026", EventCategory.Dividend, 100m, 0m, 100m, CalculationStatus.Incomplete, null, TestClock.Default));
 
         var removed = asset.RemoveTaxClassificationBySource(SourceType.Credit, sourceId);
 

@@ -14,8 +14,13 @@ namespace Financial.Investment.Application.Services;
 /// </summary>
 public sealed class XirrCalculationService : IXirrCalculationService
 {
+    private readonly TimeProvider _timeProvider;
+
+    public XirrCalculationService(TimeProvider timeProvider) =>
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
+
     public decimal? Calculate(IReadOnlyList<AssetCashFlowDTO> cashFlows, decimal terminalValue) =>
-        Calculate(cashFlows, terminalValue, DateTime.Today);
+        Calculate(cashFlows, terminalValue, _timeProvider.GetLocalNow().Date);
 
     public decimal? Calculate(IReadOnlyList<AssetCashFlowDTO> cashFlows, decimal terminalValue, DateTime asOf)
     {

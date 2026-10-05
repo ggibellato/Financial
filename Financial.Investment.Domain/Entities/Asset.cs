@@ -79,7 +79,7 @@ public class Asset
         _credits.Clear();
         foreach (var credit in data)
         {
-            AddCredit(credit);
+            AddCreditWithoutClassification(credit);
         }
     }
 
@@ -177,6 +177,7 @@ public class Asset
 
     public void RecordTransaction(
         Transaction transaction,
+        DateTimeOffset createdAt,
         CostBasisMethod method = CostBasisMethod.AverageCost,
         IReadOnlyList<SpecificLotAllocation>? allocation = null,
         Investments? investments = null)
@@ -188,7 +189,7 @@ public class Asset
             AddTransaction(transaction);
             try
             {
-                DisposalRecordRegenerator.RegenerateAsset(this, method, transaction.Date, transaction.Id, allocation, investments);
+                DisposalRecordRegenerator.RegenerateAsset(this, method, transaction.Date, createdAt, transaction.Id, allocation, investments);
             }
             catch
             {
@@ -204,11 +205,11 @@ public class Asset
         {
             var precedingCorporateActions = _corporateActions.Where(ca => ca.EffectiveDate <= transaction.Date);
             var disposalRecord = DisposalRecordCalculator.Calculate(
-                transaction, Transactions, method, transaction.Currency.ToString(), allocation, precedingCorporateActions);
+                transaction, Transactions, method, transaction.Currency.ToString(), createdAt, allocation, precedingCorporateActions);
             _disposalRecords.Add(disposalRecord);
             if (investments is not null)
             {
-                AppendTaxClassification(TaxClassificationCalculator.CalculateForDisposal(disposalRecord, investments));
+                AppendTaxClassification(TaxClassificationCalculator.CalculateForDisposal(disposalRecord, investments, createdAt));
             }
         }
 
@@ -254,7 +255,7 @@ public class Asset
     internal void RefreshRealizedCapitalGain() =>
         Transactions.SetRealizedCapitalGain(_disposalRecords.Where(r => r.Status == DisposalRecordStatus.Active).Sum(r => r.GainLoss));
 
-    public bool ReviseTransaction(Transaction updatedTransaction, CostBasisMethod method = CostBasisMethod.AverageCost, Investments? investments = null)
+    public bool ReviseTransaction(Transaction updatedTransaction, DateTimeOffset createdAt, CostBasisMethod method = CostBasisMethod.AverageCost, Investments? investments = null)
     {
         var previous = Transactions.FirstOrDefault(t => t.Id == updatedTransaction.Id);
         if (previous is null)
@@ -275,7 +276,7 @@ public class Asset
         {
             try
             {
-                DisposalRecordRegenerator.RegenerateAsset(this, method, anchor, investments: investments);
+                DisposalRecordRegenerator.RegenerateAsset(this, method, anchor, createdAt, investments: investments);
             }
             catch
             {
@@ -287,7 +288,7 @@ public class Asset
         return true;
     }
 
-    public bool RetractTransaction(Guid transactionId, CostBasisMethod method = CostBasisMethod.AverageCost, Investments? investments = null)
+    public bool RetractTransaction(Guid transactionId, DateTimeOffset createdAt, CostBasisMethod method = CostBasisMethod.AverageCost, Investments? investments = null)
     {
         var removed = Transactions.FirstOrDefault(t => t.Id == transactionId);
         if (removed is null)
@@ -307,7 +308,7 @@ public class Asset
         {
             try
             {
-                DisposalRecordRegenerator.RegenerateAsset(this, method, removed.Date, investments: investments);
+                DisposalRecordRegenerator.RegenerateAsset(this, method, removed.Date, createdAt, investments: investments);
             }
             catch
             {
@@ -337,6 +338,7 @@ public class Asset
 
     public void RecordCorporateAction(
         CorporateAction corporateAction,
+        DateTimeOffset createdAt,
         CostBasisMethod method = CostBasisMethod.AverageCost,
         Investments? investments = null,
         Currency? brokerCurrency = null)
@@ -353,8 +355,8 @@ public class Asset
 
         try
         {
-            DisposalRecordRegenerator.RegenerateAsset(this, method, corporateAction.EffectiveDate, investments: investments);
-            AppendCorporateActionTaxClassification(corporateAction, investments, brokerCurrency);
+            DisposalRecordRegenerator.RegenerateAsset(this, method, corporateAction.EffectiveDate, createdAt, investments: investments);
+            AppendCorporateActionTaxClassification(corporateAction, createdAt, investments, brokerCurrency);
         }
         catch
         {
@@ -366,6 +368,7 @@ public class Asset
 
     public bool ReviseCorporateAction(
         CorporateAction updatedCorporateAction,
+        DateTimeOffset createdAt,
         CostBasisMethod method = CostBasisMethod.AverageCost,
         Investments? investments = null,
         Currency? brokerCurrency = null)
@@ -392,8 +395,8 @@ public class Asset
 
         try
         {
-            DisposalRecordRegenerator.RegenerateAsset(this, method, anchor, investments: investments);
-            ReviseCorporateActionTaxClassification(updatedCorporateAction, investments, brokerCurrency);
+            DisposalRecordRegenerator.RegenerateAsset(this, method, anchor, createdAt, investments: investments);
+            ReviseCorporateActionTaxClassification(updatedCorporateAction, createdAt, investments, brokerCurrency);
         }
         catch
         {
@@ -405,7 +408,7 @@ public class Asset
         return true;
     }
 
-    public bool RetractCorporateAction(Guid corporateActionId, CostBasisMethod method = CostBasisMethod.AverageCost, Investments? investments = null)
+    public bool RetractCorporateAction(Guid corporateActionId, DateTimeOffset createdAt, CostBasisMethod method = CostBasisMethod.AverageCost, Investments? investments = null)
     {
         var index = _corporateActions.FindIndex(ca => ca.Id == corporateActionId);
         if (index < 0)
@@ -419,7 +422,7 @@ public class Asset
 
         try
         {
-            DisposalRecordRegenerator.RegenerateAsset(this, method, removed.EffectiveDate, investments: investments);
+            DisposalRecordRegenerator.RegenerateAsset(this, method, removed.EffectiveDate, createdAt, investments: investments);
             SupersedeCorporateActionTaxClassification(removed);
         }
         catch (Exception ex)
@@ -451,24 +454,24 @@ public class Asset
     private static bool CanClassifyCorporateAction(CorporateAction corporateAction, Investments? investments, Currency? brokerCurrency) =>
         investments is not null && brokerCurrency is not null && corporateAction.IsReceivingRole;
 
-    private void AppendCorporateActionTaxClassification(CorporateAction corporateAction, Investments? investments, Currency? brokerCurrency)
+    private void AppendCorporateActionTaxClassification(CorporateAction corporateAction, DateTimeOffset createdAt, Investments? investments, Currency? brokerCurrency)
     {
         if (!CanClassifyCorporateAction(corporateAction, investments, brokerCurrency))
         {
             return;
         }
 
-        AppendTaxClassification(TaxClassificationCalculator.CalculateForCorporateAction(corporateAction, brokerCurrency!.Value, investments!));
+        AppendTaxClassification(TaxClassificationCalculator.CalculateForCorporateAction(corporateAction, brokerCurrency!.Value, investments!, createdAt));
     }
 
-    private void ReviseCorporateActionTaxClassification(CorporateAction updatedCorporateAction, Investments? investments, Currency? brokerCurrency)
+    private void ReviseCorporateActionTaxClassification(CorporateAction updatedCorporateAction, DateTimeOffset createdAt, Investments? investments, Currency? brokerCurrency)
     {
         if (!CanClassifyCorporateAction(updatedCorporateAction, investments, brokerCurrency))
         {
             return;
         }
 
-        var newClassification = TaxClassificationCalculator.CalculateForCorporateAction(updatedCorporateAction, brokerCurrency!.Value, investments!);
+        var newClassification = TaxClassificationCalculator.CalculateForCorporateAction(updatedCorporateAction, brokerCurrency!.Value, investments!, createdAt);
         SupersedeTaxClassificationBySource(SourceType.CorporateAction, updatedCorporateAction.Id, newClassification.Id);
         AppendTaxClassification(newClassification);
     }
@@ -506,22 +509,17 @@ public class Asset
         }
     }
 
-    public void AddCredit(Credit credit, Investments? investments = null)
+    public void AddCredit(Credit credit, DateTimeOffset createdAt, Investments? investments = null)
     {
-        if (credit == null)
-        {
-            throw new ArgumentNullException(nameof(credit));
-        }
-
-        _credits.Add(credit);
+        AddCreditWithoutClassification(credit);
 
         if (investments is not null)
         {
-            AppendTaxClassification(TaxClassificationCalculator.CalculateForCredit(credit, investments));
+            AppendTaxClassification(TaxClassificationCalculator.CalculateForCredit(credit, investments, createdAt));
         }
     }
 
-    public bool UpdateCredit(Credit updatedCredit, Investments? investments = null)
+    public bool UpdateCredit(Credit updatedCredit, DateTimeOffset createdAt, Investments? investments = null)
     {
         if (updatedCredit == null)
         {
@@ -541,7 +539,7 @@ public class Asset
         RemoveTaxClassificationBySource(SourceType.Credit, updatedCredit.Id);
         if (investments is not null)
         {
-            AppendTaxClassification(TaxClassificationCalculator.CalculateForCredit(updatedCredit, investments));
+            AppendTaxClassification(TaxClassificationCalculator.CalculateForCredit(updatedCredit, investments, createdAt));
         }
 
         return true;
@@ -565,27 +563,27 @@ public class Asset
     {
         foreach (var credit in credits)
         {
-            AddCredit(credit);
+            AddCreditWithoutClassification(credit);
         }
+    }
+
+    private void AddCreditWithoutClassification(Credit credit)
+    {
+        if (credit == null)
+        {
+            throw new ArgumentNullException(nameof(credit));
+        }
+
+        _credits.Add(credit);
     }
 
     public void SetValuationMethod(ValuationMethod valuationMethod) => ValuationMethod = valuationMethod;
 
     public void SetIncomePolicy(IncomePolicy incomePolicy) => IncomePolicy = incomePolicy;
 
-    /// <summary>
-    /// Simple path: maps <paramref name="isManual"/> onto <see cref="PriceSource.Manual"/>/
-    /// <see cref="PriceSource.Unknown"/>, and defaults the rest of a snapshot's provenance (no
-    /// currency known, retrieved now, no source reference). This is the overload every existing
-    /// caller (mostly test fixtures with no interest in provenance) keeps using unchanged; a caller
-    /// that actually knows a snapshot's full provenance uses the overload below instead.
-    /// </summary>
-    public void SetPrice(DateOnly date, decimal price, bool isManual) =>
-        SetPrice(date, price, isManual ? PriceSource.Manual : PriceSource.Unknown, currency: string.Empty, sourceReference: null, DateTimeOffset.UtcNow);
-
-    public void SetPrice(DateOnly date, decimal price, PriceSource source, string currency, string? sourceReference, DateTimeOffset retrievedAt)
+    public void SetPrice(DateOnly date, decimal price, PriceSource source, string currency, string? sourceReference, DateTimeOffset retrievedAt, DateOnly today)
     {
-        var entry = AssetPriceSnapshot.Create(date, price, ValuationMethod, source, currency, sourceReference, retrievedAt);
+        var entry = AssetPriceSnapshot.Create(date, price, ValuationMethod, source, currency, sourceReference, retrievedAt, today);
         UpsertPriceEntry(entry);
     }
 

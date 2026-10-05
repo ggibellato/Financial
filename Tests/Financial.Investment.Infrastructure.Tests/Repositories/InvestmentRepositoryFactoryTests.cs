@@ -21,11 +21,11 @@ public class InvestmentRepositoryFactoryTests
     public InvestmentRepositoryFactoryTests()
     {
         _stubbedFactory = new InvestmentRepositoryFactory(
-            new InvestmentSerializerAdapter(), new JsonStorageFactory(new StubRemoteFileClientFactory(), NoOpTelemetryTracer.Instance));
+            new InvestmentSerializerAdapter(), new JsonStorageFactory(new StubRemoteFileClientFactory(), NoOpTelemetryTracer.Instance), TestClock.At());
     }
 
     private static readonly InvestmentRepositoryFactory Factory =
-        new(new InvestmentSerializerAdapter(), new JsonStorageFactory(new GoogleFileClientFactory(), NoOpTelemetryTracer.Instance));
+        new(new InvestmentSerializerAdapter(), new JsonStorageFactory(new GoogleFileClientFactory(), NoOpTelemetryTracer.Instance), TestClock.At());
 
     [Fact]
     public void Create_WithNullOptions_Throws()
@@ -115,7 +115,7 @@ public class InvestmentRepositoryFactoryTests
     public void Create_WithGoogleDriveProvider_NoRemoteFileClientFactoryRegistered_ThrowsInvalidOperationException()
     {
         var factoryWithoutRemoteFileClient = new InvestmentRepositoryFactory(
-            new InvestmentSerializerAdapter(), new JsonStorageFactory(null, NoOpTelemetryTracer.Instance));
+            new InvestmentSerializerAdapter(), new JsonStorageFactory(null, NoOpTelemetryTracer.Instance), TestClock.At());
         var options = new InvestmentRepositorySelectionOptions(
             InvestmentRepositoryProvider.GoogleDriveJson,
             null,
@@ -185,7 +185,7 @@ public class InvestmentRepositoryFactoryTests
     {
         var remoteFileClient = new RecordingRemoteFileClient();
         var factory = new InvestmentRepositoryFactory(
-            new InvestmentSerializerAdapter(), new JsonStorageFactory(new RecordingRemoteFileClientFactory(remoteFileClient), NoOpTelemetryTracer.Instance));
+            new InvestmentSerializerAdapter(), new JsonStorageFactory(new RecordingRemoteFileClientFactory(remoteFileClient), NoOpTelemetryTracer.Instance), TestClock.At());
         var options = new InvestmentRepositorySelectionOptions(
             InvestmentRepositoryProvider.GoogleDriveJson,
             null,
@@ -237,7 +237,7 @@ public class InvestmentRepositoryFactoryTests
         var remoteFileClient = new RecordingRemoteFileClient();
         var tracer = new RecordingTelemetryTracer();
         var factory = new InvestmentRepositoryFactory(
-            new InvestmentSerializerAdapter(), new JsonStorageFactory(new RecordingRemoteFileClientFactory(remoteFileClient), tracer));
+            new InvestmentSerializerAdapter(), new JsonStorageFactory(new RecordingRemoteFileClientFactory(remoteFileClient), tracer), TestClock.At());
         var options = new InvestmentRepositorySelectionOptions(
             InvestmentRepositoryProvider.GoogleDriveJson,
             null,

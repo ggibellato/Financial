@@ -13,6 +13,7 @@ public static class DisposalRecordCalculator
         IEnumerable<Transaction> precedingTransactions,
         CostBasisMethod method,
         string brokerCurrency,
+        DateTimeOffset createdAt,
         IReadOnlyList<SpecificLotAllocation>? allocation = null,
         IEnumerable<CorporateAction>? precedingCorporateActions = null)
     {
@@ -37,7 +38,8 @@ public static class DisposalRecordCalculator
             disposingTransaction.Quantity,
             disposingTransaction.NetCash,
             disposingTransaction.Currency,
-            taxYear);
+            taxYear,
+            createdAt);
     }
 
     private static IReadOnlyList<DisposalLotConsumption> BuildAverageCostLot(

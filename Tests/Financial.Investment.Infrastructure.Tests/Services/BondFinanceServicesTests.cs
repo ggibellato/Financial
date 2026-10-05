@@ -33,7 +33,7 @@ public class BondFinanceServicesTests
     public void GetAssetValue_ValidName_DelegatesToLookup(
         string provider, Func<Func<string, AssetValueSnapshot>?, IFinanceService> create, string name, decimal price)
     {
-        var snapshot = new AssetValueSnapshot(name, name, price, DateTimeOffset.UtcNow);
+        var snapshot = new AssetValueSnapshot(name, name, price, TestClock.Default);
         var service = create(requested => requested == name ? snapshot : throw new InvalidOperationException());
 
         var result = service.GetAssetValue(new AssetValueRequestDTO { Name = name });

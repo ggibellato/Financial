@@ -19,7 +19,7 @@ public class AssetSnapshotSourceAdapterTests
     [Fact]
     public void GetSnapshot_DelegatesToLookupWithExchangeAndTicker()
     {
-        var snapshot = new AssetValueSnapshot("BCIA11", "Some ETF", 10.5m, DateTimeOffset.UtcNow);
+        var snapshot = new AssetValueSnapshot("BCIA11", "Some ETF", 10.5m, TestClock.Default);
         var adapter = new AssetSnapshotSourceAdapter(
             (exchange, ticker) => exchange == "BVMF" && ticker == "BCIA11" ? snapshot : throw new InvalidOperationException());
 

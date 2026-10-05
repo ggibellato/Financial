@@ -39,7 +39,7 @@ public class DividendAttributionCalculatorTests
     {
         var credit = Credit.Create(new DateTime(2024, 6, 1), Credit.CreditType.SecuritiesLendingIncome, 0.09m);
         var transactions = new[] { Buy(new DateTime(2024, 1, 1), 1000m, 9m) };
-        var price = AssetPriceSnapshot.Create(new DateOnly(2024, 6, 1), 5000m, ValuationMethod.ProviderValue, PriceSource.Unknown, string.Empty, null, DateTimeOffset.UtcNow);
+        var price = AssetPriceSnapshot.Create(new DateOnly(2024, 6, 1), 5000m, ValuationMethod.ProviderValue, PriceSource.Unknown, string.Empty, null, TestClock.Default, TestClock.Today);
 
         var result = DividendAttributionCalculator.Calculate(credit, transactions, price);
 
@@ -81,7 +81,7 @@ public class DividendAttributionCalculatorTests
     {
         var credit = Credit.Create(new DateTime(2024, 6, 1), Credit.CreditType.Dividend, 400m, sharesForDividend: 800m);
         var transactions = new[] { Buy(new DateTime(2024, 1, 1), 1000m, 9m) };
-        var price = AssetPriceSnapshot.Create(new DateOnly(2024, 6, 1), 10m, ValuationMethod.MarketPrice, PriceSource.Unknown, string.Empty, null, DateTimeOffset.UtcNow);
+        var price = AssetPriceSnapshot.Create(new DateOnly(2024, 6, 1), 10m, ValuationMethod.MarketPrice, PriceSource.Unknown, string.Empty, null, TestClock.Default, TestClock.Today);
 
         var result = DividendAttributionCalculator.Calculate(credit, transactions, price);
 
@@ -108,7 +108,7 @@ public class DividendAttributionCalculatorTests
     {
         var credit = Credit.Create(new DateTime(2024, 6, 1), Credit.CreditType.Dividend, 400m, sharesForDividend: 800m);
         var transactions = new[] { Buy(new DateTime(2024, 1, 1), 1000m, 9m) };
-        var price = AssetPriceSnapshot.Create(new DateOnly(2024, 6, 1), 5000m, ValuationMethod.ProviderValue, PriceSource.Unknown, string.Empty, null, DateTimeOffset.UtcNow);
+        var price = AssetPriceSnapshot.Create(new DateOnly(2024, 6, 1), 5000m, ValuationMethod.ProviderValue, PriceSource.Unknown, string.Empty, null, TestClock.Default, TestClock.Today);
 
         var result = DividendAttributionCalculator.Calculate(credit, transactions, price);
 
@@ -120,7 +120,7 @@ public class DividendAttributionCalculatorTests
     {
         var credit = Credit.Create(new DateTime(2024, 6, 1), Credit.CreditType.Dividend, 400m, sharesForDividend: 1000m);
         var transactions = new[] { Buy(new DateTime(2024, 1, 1), 1000m, 9m) };
-        var price = AssetPriceSnapshot.Create(new DateOnly(2024, 6, 1), 5000m, ValuationMethod.ProviderValue, PriceSource.Unknown, string.Empty, null, DateTimeOffset.UtcNow);
+        var price = AssetPriceSnapshot.Create(new DateOnly(2024, 6, 1), 5000m, ValuationMethod.ProviderValue, PriceSource.Unknown, string.Empty, null, TestClock.Default, TestClock.Today);
 
         var result = DividendAttributionCalculator.Calculate(credit, transactions, price);
 

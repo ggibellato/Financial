@@ -9,7 +9,7 @@ public sealed record TaxClassificationBackfillFailure(Guid SourceId, string Mess
 
 public static class TaxClassificationBackfill
 {
-    public static IReadOnlyList<TaxClassificationBackfillFailure> Apply(Investments investments)
+    public static IReadOnlyList<TaxClassificationBackfillFailure> Apply(Investments investments, DateTimeOffset createdAt)
     {
         var failures = new List<TaxClassificationBackfillFailure>();
 
@@ -19,7 +19,7 @@ public static class TaxClassificationBackfill
             {
                 foreach (var asset in portfolio.Assets)
                 {
-                    ApplyToAsset(asset, investments, failures);
+                    ApplyToAsset(asset, investments, createdAt, failures);
                 }
             }
         }
@@ -27,7 +27,7 @@ public static class TaxClassificationBackfill
         return failures;
     }
 
-    private static void ApplyToAsset(Asset asset, Investments investments, List<TaxClassificationBackfillFailure> failures)
+    private static void ApplyToAsset(Asset asset, Investments investments, DateTimeOffset createdAt, List<TaxClassificationBackfillFailure> failures)
     {
         var classifiedDisposalIds = asset.TaxClassifications
             .Where(c => c.SourceType == SourceType.Disposal)
@@ -43,7 +43,7 @@ public static class TaxClassificationBackfill
 
             try
             {
-                asset.AppendTaxClassification(TaxClassificationCalculator.CalculateForDisposal(record, investments));
+                asset.AppendTaxClassification(TaxClassificationCalculator.CalculateForDisposal(record, investments, createdAt));
             }
             catch (Exception ex)
             {
@@ -65,7 +65,7 @@ public static class TaxClassificationBackfill
 
             try
             {
-                asset.AppendTaxClassification(TaxClassificationCalculator.CalculateForCredit(credit, investments));
+                asset.AppendTaxClassification(TaxClassificationCalculator.CalculateForCredit(credit, investments, createdAt));
             }
             catch (Exception ex)
             {

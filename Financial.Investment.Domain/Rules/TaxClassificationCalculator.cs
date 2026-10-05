@@ -6,17 +6,17 @@ namespace Financial.Investment.Domain.Rules;
 
 public static class TaxClassificationCalculator
 {
-    public static TaxClassification CalculateForDisposal(DisposalRecord record, Investments investments)
+    public static TaxClassification CalculateForDisposal(DisposalRecord record, Investments investments, DateTimeOffset createdAt)
     {
         var jurisdiction = ForCurrency(record.Currency);
         var rule = investments.FindApplicableTaxRule(jurisdiction, EventCategory.CapitalGain, DateOnly.FromDateTime(record.Date));
         var status = rule is not null ? CalculationStatus.Final : CalculationStatus.Incomplete;
 
         return TaxClassification.CreateForDisposal(
-            record.Id, jurisdiction, record.TaxYear, record.Proceeds, record.CostBasis, record.GainLoss, status, rule?.Id);
+            record.Id, jurisdiction, record.TaxYear, record.Proceeds, record.CostBasis, record.GainLoss, status, rule?.Id, createdAt);
     }
 
-    public static TaxClassification CalculateForCredit(Credit credit, Investments investments)
+    public static TaxClassification CalculateForCredit(Credit credit, Investments investments, DateTimeOffset createdAt)
     {
         var jurisdiction = ForCurrency(credit.Currency);
         var taxYear = TaxYearCalculator.Calculate(credit.Date, credit.Currency.ToString());
@@ -26,7 +26,7 @@ public static class TaxClassificationCalculator
         {
             return TaxClassification.CreateForCredit(
                 credit.Id, jurisdiction, taxYear, EventCategory.Unrecognized,
-                credit.Value, credit.Withheld, credit.NetAmount, CalculationStatus.RequiresReview, null);
+                credit.Value, credit.Withheld, credit.NetAmount, CalculationStatus.RequiresReview, null, createdAt);
         }
 
         var rule = investments.FindApplicableTaxRule(jurisdiction, category.Value, DateOnly.FromDateTime(credit.Date));
@@ -34,10 +34,10 @@ public static class TaxClassificationCalculator
 
         return TaxClassification.CreateForCredit(
             credit.Id, jurisdiction, taxYear, category.Value,
-            credit.Value, credit.Withheld, credit.NetAmount, status, rule?.Id);
+            credit.Value, credit.Withheld, credit.NetAmount, status, rule?.Id, createdAt);
     }
 
-    public static TaxClassification CalculateForCorporateAction(CorporateAction record, Currency currency, Investments investments)
+    public static TaxClassification CalculateForCorporateAction(CorporateAction record, Currency currency, Investments investments, DateTimeOffset createdAt)
     {
         if (!record.IsReceivingRole)
         {
@@ -53,7 +53,7 @@ public static class TaxClassificationCalculator
         var status = rule is not null ? CalculationStatus.Final : CalculationStatus.RequiresReview;
 
         return TaxClassification.CreateForCorporateAction(
-            record.Id, jurisdiction, taxYear, record.CarriedCostBasis!.Value, status, rule?.Id);
+            record.Id, jurisdiction, taxYear, record.CarriedCostBasis!.Value, status, rule?.Id, createdAt);
     }
 
     private static Jurisdiction ForCurrency(Currency currency) =>

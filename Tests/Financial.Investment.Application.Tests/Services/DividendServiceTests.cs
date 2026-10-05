@@ -112,7 +112,7 @@ public class DividendServiceTests
     public void GetDividendSummary_MapsSnapshotFields()
     {
         _dataSource.Dividends = [];
-        _snapshotSource.Snapshot = new AssetValueSnapshot("TICK", "Asset Name", 50m, DateTimeOffset.UtcNow);
+        _snapshotSource.Snapshot = new AssetValueSnapshot("TICK", "Asset Name", 50m, TestClock.Default);
         var service = CreateService();
 
         var result = service.GetDividendSummary(MakeRequest("NYSE", "TICK"));
@@ -152,7 +152,7 @@ public class DividendServiceTests
         [
             new DividendValue(DividendType.Dividend, new DateTime(2020, 1, 1), 6.0m),
         ];
-        _snapshotSource.Snapshot = new AssetValueSnapshot("TICK", "Name", 80m, DateTimeOffset.UtcNow);
+        _snapshotSource.Snapshot = new AssetValueSnapshot("TICK", "Name", 80m, TestClock.Default);
         var service = CreateService();
 
         var result = service.GetDividendSummary(MakeRequest());
@@ -171,7 +171,7 @@ public class DividendServiceTests
         // Only current-year dividend — should be excluded → average and priceMax stay zero
         _dataSource.Dividends =
         [
-            new DividendValue(DividendType.Dividend, new DateTime(DateTime.Today.Year, 1, 1), 12.0m),
+            new DividendValue(DividendType.Dividend, new DateTime(TestClock.LocalToday.Year, 1, 1), 12.0m),
         ];
         var service = CreateService();
 
@@ -224,7 +224,7 @@ public class DividendServiceTests
         }
     }
 
-    private DividendService CreateService() => new(_dataSource, _snapshotSource, Tracer, NullLogger<DividendService>.Instance);
+    private DividendService CreateService() => new(_dataSource, _snapshotSource, TestClock.At(), Tracer, NullLogger<DividendService>.Instance);
 
     private static DividendLookupRequestDTO MakeRequest(string exchange = "NYSE", string ticker = "TICK") =>
         new() { Exchange = exchange, Ticker = ticker };
@@ -245,7 +245,7 @@ public class DividendServiceTests
     private sealed class StubSnapshotSource : IAssetSnapshotSource
     {
         public AssetValueSnapshot Snapshot { get; set; } =
-            new AssetValueSnapshot("DEFAULT", "Default Asset", 0m, DateTimeOffset.UtcNow);
+            new AssetValueSnapshot("DEFAULT", "Default Asset", 0m, TestClock.Default);
 
         public AssetValueSnapshot GetSnapshot(string exchange, string ticker) => Snapshot;
     }

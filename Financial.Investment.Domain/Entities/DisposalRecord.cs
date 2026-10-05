@@ -72,8 +72,9 @@ public sealed class DisposalRecord
         decimal quantityDisposed,
         decimal proceeds,
         Currency currency,
-        string taxYear) =>
-        new(Guid.NewGuid(), transactionId, date, method, lotsConsumed, quantityDisposed, proceeds, currency, taxYear, DateTimeOffset.UtcNow);
+        string taxYear,
+        DateTimeOffset createdAt) =>
+        new(Guid.NewGuid(), transactionId, date, method, lotsConsumed, quantityDisposed, proceeds, currency, taxYear, createdAt);
 
     public void Supersede(Guid? supersededByRecordId)
     {

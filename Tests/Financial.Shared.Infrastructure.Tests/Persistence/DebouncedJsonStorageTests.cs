@@ -51,7 +51,7 @@ public class DebouncedJsonStorageTests
     [Fact]
     public async Task WriteDuringDebounceWindow_ResetsWait_OnlyLatestJsonUploaded()
     {
-        var clock = new ObservableFakeClock(TestClock.Midsummer);
+        var clock = new ObservableFakeClock(TestClock.Default);
         var storage = new DebouncedJsonStorage(_inner, TimeSpan.FromMilliseconds(150), clock);
 
         await storage.WriteAsync("{\"a\":1}");
@@ -98,7 +98,7 @@ public class DebouncedJsonStorageTests
     [Fact]
     public async Task RetriesExhausted_StatusBecomesFailed_LastSuccessfulSaveUtcPreserved()
     {
-        var clock = new ObservableFakeClock(TestClock.Midsummer);
+        var clock = new ObservableFakeClock(TestClock.Default);
         var storage = new DebouncedJsonStorage(
             _inner, TimeSpan.FromMilliseconds(20), clock, maxRetries: 0, flushTimeout: TimeSpan.FromSeconds(8));
 
@@ -122,7 +122,7 @@ public class DebouncedJsonStorageTests
     [Fact]
     public async Task SaveFailure_DoesNotAutoStartFollowUpCycle()
     {
-        var clock = new ObservableFakeClock(TestClock.Midsummer);
+        var clock = new ObservableFakeClock(TestClock.Default);
         _inner.HoldWritesUntilReleased();
         _inner.FailNextWrites(1);
         var storage = new DebouncedJsonStorage(
@@ -146,7 +146,7 @@ public class DebouncedJsonStorageTests
     [Fact]
     public async Task SuccessfulSave_StatusBecomesIdle_LastSuccessfulSaveUtcUpdates()
     {
-        var clock = new ObservableFakeClock(TestClock.Midsummer);
+        var clock = new ObservableFakeClock(TestClock.Default);
         var storage = new DebouncedJsonStorage(_inner, TimeSpan.FromMilliseconds(20), clock);
 
         await storage.WriteAsync("{\"a\":1}");
@@ -160,7 +160,7 @@ public class DebouncedJsonStorageTests
     [Fact]
     public async Task SuccessfulSave_WhenStillDirtyFromANewerWrite_StatusBecomesPendingNotIdle()
     {
-        var clock = new ObservableFakeClock(TestClock.Midsummer);
+        var clock = new ObservableFakeClock(TestClock.Default);
         _inner.HoldWritesUntilReleased();
         var storage = new DebouncedJsonStorage(_inner, TimeSpan.FromMilliseconds(300), clock);
 
@@ -291,7 +291,7 @@ public class DebouncedJsonStorageTests
     [Fact]
     public async Task TransientWriteFailure_LogsAWarningForTheRetry_ThenSucceedsWithoutAnError()
     {
-        var clock = new ObservableFakeClock(TestClock.Midsummer);
+        var clock = new ObservableFakeClock(TestClock.Default);
         _inner.FailNextWrites(1);
         var logger = new RecordingLogger<DebouncedJsonStorage>();
         var storage = new DebouncedJsonStorage(

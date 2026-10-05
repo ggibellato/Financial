@@ -67,10 +67,11 @@ public sealed class TaxClassification
         decimal costBasis,
         decimal gainLoss,
         CalculationStatus calculationStatus,
-        Guid? taxRuleId) =>
+        Guid? taxRuleId,
+        DateTimeOffset createdAt) =>
         new(
             Guid.NewGuid(), SourceType.Disposal, disposalRecordId, jurisdiction, taxYear, EventCategory.CapitalGain,
-            proceeds, costBasis, gainLoss, null, null, null, calculationStatus, taxRuleId, DateTimeOffset.UtcNow);
+            proceeds, costBasis, gainLoss, null, null, null, calculationStatus, taxRuleId, createdAt);
 
     public static TaxClassification CreateForCredit(
         Guid creditId,
@@ -81,10 +82,11 @@ public sealed class TaxClassification
         decimal withheldAmount,
         decimal netAmount,
         CalculationStatus calculationStatus,
-        Guid? taxRuleId) =>
+        Guid? taxRuleId,
+        DateTimeOffset createdAt) =>
         new(
             Guid.NewGuid(), SourceType.Credit, creditId, jurisdiction, taxYear, eventCategory,
-            null, null, null, grossAmount, withheldAmount, netAmount, calculationStatus, taxRuleId, DateTimeOffset.UtcNow);
+            null, null, null, grossAmount, withheldAmount, netAmount, calculationStatus, taxRuleId, createdAt);
 
     public static TaxClassification CreateForCorporateAction(
         Guid corporateActionId,
@@ -92,10 +94,11 @@ public sealed class TaxClassification
         string taxYear,
         decimal costBasis,
         CalculationStatus calculationStatus,
-        Guid? taxRuleId) =>
+        Guid? taxRuleId,
+        DateTimeOffset createdAt) =>
         new(
             Guid.NewGuid(), SourceType.CorporateAction, corporateActionId, jurisdiction, taxYear, EventCategory.CorporateAction,
-            null, costBasis, null, null, null, null, calculationStatus, taxRuleId, DateTimeOffset.UtcNow);
+            null, costBasis, null, null, null, null, calculationStatus, taxRuleId, createdAt);
 
     public void Supersede(Guid? supersededByClassificationId)
     {

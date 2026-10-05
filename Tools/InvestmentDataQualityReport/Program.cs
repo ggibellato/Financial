@@ -19,11 +19,11 @@ if (!File.Exists(dataFilePath))
 
 var serializer = new InvestmentSerializerAdapter();
 var storage = new LocalJsonStorage(dataFilePath);
-var investments = InvestmentLoader.LoadSync(storage, serializer);
+var investments = InvestmentLoader.LoadSync(storage, serializer, TimeProvider.System);
 var repository = new InvestmentJsonRepository(investments, storage, serializer);
 
 var holdingValuationService = new HoldingValuationService(
-    new XirrCalculationService(), NoOpTelemetryTracer.Instance, NullLogger<HoldingValuationService>.Instance);
+    new XirrCalculationService(TimeProvider.System), NoOpTelemetryTracer.Instance, NullLogger<HoldingValuationService>.Instance);
 
 IDataQualityReportService service = new DataQualityReportService(
     repository, NoOpTelemetryTracer.Instance, NullLogger<DataQualityReportService>.Instance, holdingValuationService);

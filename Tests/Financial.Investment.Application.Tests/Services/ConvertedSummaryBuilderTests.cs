@@ -12,7 +12,7 @@ namespace Financial.Investment.Application.Tests.Services;
 public class ConvertedSummaryBuilderTests
 {
     private static readonly DateTime AsOf = new(2026, 8, 14);
-    private static readonly IXirrCalculationService Xirr = new XirrCalculationService();
+    private static readonly IXirrCalculationService Xirr = new XirrCalculationService(TestClock.At());
 
     private static Asset MakeAsset(string name = "TEST", string ticker = "TEST") =>
         Asset.Create(name, "ISIN", "BVMF", ticker);

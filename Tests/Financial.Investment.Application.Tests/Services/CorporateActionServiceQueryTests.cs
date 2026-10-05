@@ -119,7 +119,7 @@ public class CorporateActionServiceQueryTests
         result.Should().ContainSingle().Which.CalculationStatus.Should().BeNull("a split never has a linked TaxClassification");
     }
 
-    private CorporateActionService CreateService() => new(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance), Tracer, NullLogger<CorporateActionService>.Instance);
+    private CorporateActionService CreateService() => new(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), Tracer, NullLogger<NavigationService>.Instance), TestClock.At(), Tracer, NullLogger<CorporateActionService>.Instance);
 
     private static Asset MakeAssetWithSplit(string name)
     {

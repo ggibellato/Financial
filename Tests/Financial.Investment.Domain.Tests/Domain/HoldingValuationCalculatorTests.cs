@@ -215,5 +215,5 @@ public class HoldingValuationCalculatorTests
     }
 
     private static AssetPriceSnapshot CreatePrice(DateOnly date, decimal price, ValuationMethod valuationMethod = ValuationMethod.MarketPrice) =>
-        AssetPriceSnapshot.Create(date, price, valuationMethod, PriceSource.Unknown, currency: string.Empty, sourceReference: null, DateTimeOffset.UtcNow);
+        AssetPriceSnapshot.Create(date, price, valuationMethod, PriceSource.Unknown, currency: string.Empty, sourceReference: null, TestClock.Default, date);
 }

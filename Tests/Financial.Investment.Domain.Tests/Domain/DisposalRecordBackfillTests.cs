@@ -19,7 +19,7 @@ public class DisposalRecordBackfillTests
         broker.AddPortfolio("Default").AddAsset(asset);
         investments.AddActiveBroker(broker);
 
-        var failures = DisposalRecordBackfill.Apply(investments);
+        var failures = DisposalRecordBackfill.Apply(investments, TestClock.Default);
 
         failures.Should().BeEmpty();
         asset.DisposalRecords.Should().ContainSingle();
@@ -40,8 +40,8 @@ public class DisposalRecordBackfillTests
         broker.AddPortfolio("Default").AddAsset(asset);
         investments.AddActiveBroker(broker);
 
-        DisposalRecordBackfill.Apply(investments);
-        DisposalRecordBackfill.Apply(investments);
+        DisposalRecordBackfill.Apply(investments, TestClock.Default);
+        DisposalRecordBackfill.Apply(investments, TestClock.Default);
 
         asset.DisposalRecords.Should().ContainSingle();
     }
@@ -58,7 +58,7 @@ public class DisposalRecordBackfillTests
         investments.AddActiveBroker(broker);
         var existingRecord = asset.DisposalRecords.Single();
 
-        var failures = DisposalRecordBackfill.Apply(investments);
+        var failures = DisposalRecordBackfill.Apply(investments, TestClock.Default);
 
         failures.Should().BeEmpty();
         asset.DisposalRecords.Should().ContainSingle();
@@ -76,7 +76,7 @@ public class DisposalRecordBackfillTests
         broker.AddPortfolio("Default").AddAsset(asset);
         investments.AddActiveBroker(broker);
 
-        var failures = DisposalRecordBackfill.Apply(investments);
+        var failures = DisposalRecordBackfill.Apply(investments, TestClock.Default);
 
         failures.Should().BeEmpty();
         asset.DisposalRecords.Should().BeEmpty();
@@ -101,7 +101,7 @@ public class DisposalRecordBackfillTests
         historicBroker.AddPortfolio("Closed").AddAsset(historicAsset);
         investments.AddHistoricBroker(historicBroker);
 
-        var failures = DisposalRecordBackfill.Apply(investments);
+        var failures = DisposalRecordBackfill.Apply(investments, TestClock.Default);
 
         failures.Should().BeEmpty();
         activeAsset.DisposalRecords.Should().ContainSingle();

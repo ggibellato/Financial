@@ -77,7 +77,7 @@ public class StandardAssetPriceFetcherTests
     [Fact]
     public void GetSnapshot_ValidExchange_DelegatesToFinanceService()
     {
-        var snapshot = new AssetValueSnapshot("BCIA11", "Some ETF", 10.5m, DateTimeOffset.UtcNow);
+        var snapshot = new AssetValueSnapshot("BCIA11", "Some ETF", 10.5m, TestClock.Default);
         var fetcher = new StandardAssetPriceFetcher(new StubFinanceService(snapshot));
         var request = new AssetPriceRequestDTO { Exchange = "BVMF", Ticker = "BCIA11" };
 

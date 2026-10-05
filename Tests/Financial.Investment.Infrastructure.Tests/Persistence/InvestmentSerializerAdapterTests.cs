@@ -127,7 +127,7 @@ public class InvestmentSerializerAdapterTests
         asset.AddCredit(Credit.Create(new DateTime(2026, 6, 1), Credit.CreditType.Dividend, 100m, 10m, Currency.BRL));
         broker.AddPortfolio("Default").AddAsset(asset);
         investments.AddActiveBroker(broker);
-        TaxClassificationBackfill.Apply(investments);
+        TaxClassificationBackfill.Apply(investments, TestClock.Default);
         var disposalClassification = asset.TaxClassifications.Single(c => c.SourceType == SourceType.Disposal);
         var creditClassification = asset.TaxClassifications.Single(c => c.SourceType == SourceType.Credit);
         creditClassification.Supersede(disposalClassification.Id);

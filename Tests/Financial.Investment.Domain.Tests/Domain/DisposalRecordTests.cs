@@ -18,7 +18,7 @@ public class DisposalRecordTests
         };
 
         var record = DisposalRecord.Create(
-            Guid.NewGuid(), new DateTime(2026, 5, 1), CostBasisMethod.FIFO, lots, 10m, 130m, Currency.GBP, "2026/27");
+            Guid.NewGuid(), new DateTime(2026, 5, 1), CostBasisMethod.FIFO, lots, 10m, 130m, Currency.GBP, "2026/27", TestClock.Default);
 
         record.CostBasis.Should().Be(4m * 10m + 6m * 12m);
     }
@@ -29,7 +29,7 @@ public class DisposalRecordTests
         var lots = new List<DisposalLotConsumption> { new(null, 10m, 8m) };
 
         var record = DisposalRecord.Create(
-            Guid.NewGuid(), new DateTime(2026, 5, 1), CostBasisMethod.AverageCost, lots, 10m, 95m, Currency.GBP, "2026/27");
+            Guid.NewGuid(), new DateTime(2026, 5, 1), CostBasisMethod.AverageCost, lots, 10m, 95m, Currency.GBP, "2026/27", TestClock.Default);
 
         record.GainLoss.Should().Be(95m - 80m);
     }
@@ -40,7 +40,7 @@ public class DisposalRecordTests
         var lots = new List<DisposalLotConsumption> { new(null, 10m, 8m) };
 
         var record = DisposalRecord.Create(
-            Guid.NewGuid(), new DateTime(2026, 5, 1), CostBasisMethod.AverageCost, lots, 10m, 95m, Currency.GBP, "2026/27");
+            Guid.NewGuid(), new DateTime(2026, 5, 1), CostBasisMethod.AverageCost, lots, 10m, 95m, Currency.GBP, "2026/27", TestClock.Default);
 
         record.Status.Should().Be(DisposalRecordStatus.Active);
         record.SupersededByRecordId.Should().BeNull();
@@ -51,7 +51,7 @@ public class DisposalRecordTests
     {
         Action act = () => DisposalRecord.Create(
             Guid.NewGuid(), new DateTime(2026, 5, 1), CostBasisMethod.AverageCost,
-            Array.Empty<DisposalLotConsumption>(), 10m, 95m, Currency.GBP, "2026/27");
+            Array.Empty<DisposalLotConsumption>(), 10m, 95m, Currency.GBP, "2026/27", TestClock.Default);
 
         act.Should().Throw<ArgumentException>();
     }
@@ -108,6 +108,6 @@ public class DisposalRecordTests
     {
         var lots = new List<DisposalLotConsumption> { new(null, 10m, 8m) };
         return DisposalRecord.Create(
-            Guid.NewGuid(), new DateTime(2026, 5, 1), CostBasisMethod.AverageCost, lots, 10m, 95m, Currency.GBP, "2026/27");
+            Guid.NewGuid(), new DateTime(2026, 5, 1), CostBasisMethod.AverageCost, lots, 10m, 95m, Currency.GBP, "2026/27", TestClock.Default);
     }
 }

@@ -38,7 +38,7 @@ public class GoogleFinanceServiceTests
     [Fact]
     public void GetAssetValue_ExchangeProvided_DelegatesToExchangeLookup()
     {
-        var snapshot = new AssetValueSnapshot("BCIA11", "Some ETF", 10.5m, DateTimeOffset.UtcNow);
+        var snapshot = new AssetValueSnapshot("BCIA11", "Some ETF", 10.5m, TestClock.Default);
         var service = new GoogleFinanceService(
             (exchange, ticker) => exchange == "BVMF" && ticker == "BCIA11" ? snapshot : throw new InvalidOperationException(),
             (_, _) => throw new InvalidOperationException("crypto lookup should not be called"));
@@ -52,7 +52,7 @@ public class GoogleFinanceServiceTests
     [Fact]
     public void GetAssetValue_CurrencyProvidedWithoutExchange_DelegatesToCryptoLookup()
     {
-        var snapshot = new AssetValueSnapshot("BTC", "Bitcoin", 50000m, DateTimeOffset.UtcNow);
+        var snapshot = new AssetValueSnapshot("BTC", "Bitcoin", 50000m, TestClock.Default);
         var service = new GoogleFinanceService(
             (_, _) => throw new InvalidOperationException("exchange lookup should not be called"),
             (currency, ticker) => currency == "GBP" && ticker == "BTC" ? snapshot : throw new InvalidOperationException());

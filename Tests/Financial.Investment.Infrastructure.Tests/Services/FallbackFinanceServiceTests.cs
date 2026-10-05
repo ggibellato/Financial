@@ -29,7 +29,7 @@ public class FallbackFinanceServiceTests
     [Fact]
     public void GetAssetValue_PrimarySucceeds_ReturnsPrimarySnapshot_AndNeverCallsFallback()
     {
-        var snapshot = new AssetValueSnapshot("BBAS3", "Banco do Brasil", 19.17m, DateTimeOffset.UtcNow);
+        var snapshot = new AssetValueSnapshot("BBAS3", "Banco do Brasil", 19.17m, TestClock.Default);
         var primary = new FakeFinanceService(_ => snapshot);
         var fallback = UnreachableFallback();
         var service = CreateService(primary, fallback);
@@ -43,7 +43,7 @@ public class FallbackFinanceServiceTests
     [Fact]
     public void GetAssetValue_PrimaryFailsForStockLookup_FallsBackAndReturnsFallbackSnapshot()
     {
-        var snapshot = new AssetValueSnapshot("BBAS3F", "Banco do Brasil", 21.18m, DateTimeOffset.UtcNow);
+        var snapshot = new AssetValueSnapshot("BBAS3F", "Banco do Brasil", 21.18m, TestClock.Default);
         var primary = new FakeFinanceService(_ => throw new InvalidOperationException("Google Finance main data node not found."));
         var fallback = new FakeFinanceService(_ => snapshot);
         var service = CreateService(primary, fallback);
@@ -99,7 +99,7 @@ public class FallbackFinanceServiceTests
     [Fact]
     public void GetAssetValue_FallbackEngages_LogsWarningWithTickerAndErrorType_NotTheMessage()
     {
-        var snapshot = new AssetValueSnapshot("BBAS3F", "Banco do Brasil", 21.18m, DateTimeOffset.UtcNow);
+        var snapshot = new AssetValueSnapshot("BBAS3F", "Banco do Brasil", 21.18m, TestClock.Default);
         var primary = new FakeFinanceService(_ => throw new InvalidOperationException("Google Finance main data node not found."));
         var fallback = new FakeFinanceService(_ => snapshot);
         var service = CreateService(primary, fallback);
@@ -116,7 +116,7 @@ public class FallbackFinanceServiceTests
     [Fact]
     public void GetAssetValue_PrimarySucceeds_LogsNothing()
     {
-        var snapshot = new AssetValueSnapshot("BBAS3", "Banco do Brasil", 19.17m, DateTimeOffset.UtcNow);
+        var snapshot = new AssetValueSnapshot("BBAS3", "Banco do Brasil", 19.17m, TestClock.Default);
         var primary = new FakeFinanceService(_ => snapshot);
         var fallback = UnreachableFallback();
         var service = CreateService(primary, fallback);

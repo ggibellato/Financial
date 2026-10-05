@@ -178,7 +178,7 @@ public class TransactionServiceTests
 
         var storage = new LocalJsonStorage(tempFile);
         var serializer = new InvestmentSerializerAdapter();
-        var repository = new InvestmentJsonRepository(InvestmentLoader.LoadSync(storage, serializer), storage, serializer);
+        var repository = new InvestmentJsonRepository(InvestmentLoader.LoadSync(storage, serializer, TestClock.At()), storage, serializer);
         var tracer = new RecordingTelemetryTracer();
         var navigationService = new NavigationService(repository, TestHoldingValuationService.Create(), tracer, NullLogger<NavigationService>.Instance);
         IExchangeRateProvider exchangeRateProvider = new StubExchangeRateProvider(0.15m);

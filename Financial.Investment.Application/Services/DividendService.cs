@@ -13,13 +13,15 @@ public sealed class DividendService : IDividendService
 
     private readonly IDividendDataSource _dividendDataSource;
     private readonly IAssetSnapshotSource _snapshotSource;
+    private readonly TimeProvider _timeProvider;
     private readonly ITelemetryTracer _tracer;
     private readonly ILogger<DividendService> _logger;
 
-    public DividendService(IDividendDataSource dividendDataSource, IAssetSnapshotSource snapshotSource, ITelemetryTracer tracer, ILogger<DividendService> logger)
+    public DividendService(IDividendDataSource dividendDataSource, IAssetSnapshotSource snapshotSource, TimeProvider timeProvider, ITelemetryTracer tracer, ILogger<DividendService> logger)
     {
         _dividendDataSource = dividendDataSource ?? throw new ArgumentNullException(nameof(dividendDataSource));
         _snapshotSource = snapshotSource ?? throw new ArgumentNullException(nameof(snapshotSource));
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -64,7 +66,7 @@ public sealed class DividendService : IDividendService
                 .ToList();
 
             var averageDividend = yearTotals
-                .Where(total => total.Year < DateTime.Today.Year)
+                .Where(total => total.Year < _timeProvider.GetLocalNow().Year)
                 .OrderByDescending(total => total.Year)
                 .Take(DividendValuationRules.DividendYearsLookback)
                 .Select(total => total.Total)

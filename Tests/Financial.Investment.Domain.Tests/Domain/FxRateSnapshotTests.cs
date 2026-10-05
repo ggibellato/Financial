@@ -25,7 +25,7 @@ public class FxRateSnapshotTests
     [Fact]
     public void Create_WithZeroRate_Throws()
     {
-        Action act = () => FxRateSnapshot.Create(Currency.GBP, 0m, FxRateSource.Frankfurter, DateTimeOffset.UtcNow);
+        Action act = () => FxRateSnapshot.Create(Currency.GBP, 0m, FxRateSource.Frankfurter, TestClock.Default);
 
         act.Should().Throw<ArgumentException>().WithMessage("Rate must be greater than zero.*");
     }
@@ -33,7 +33,7 @@ public class FxRateSnapshotTests
     [Fact]
     public void Create_WithNegativeRate_Throws()
     {
-        Action act = () => FxRateSnapshot.Create(Currency.GBP, -0.1m, FxRateSource.Frankfurter, DateTimeOffset.UtcNow);
+        Action act = () => FxRateSnapshot.Create(Currency.GBP, -0.1m, FxRateSource.Frankfurter, TestClock.Default);
 
         act.Should().Throw<ArgumentException>().WithMessage("Rate must be greater than zero.*");
     }

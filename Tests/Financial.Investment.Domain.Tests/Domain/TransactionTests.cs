@@ -43,7 +43,7 @@ public class TransactionTests
     public void CreateWithId_AssignsCurrencyAndFxRateSnapshot()
     {
         var id = Guid.NewGuid();
-        var snapshot = FxRateSnapshot.Create(Currency.USD, 1.27m, FxRateSource.Frankfurter, DateTimeOffset.UtcNow);
+        var snapshot = FxRateSnapshot.Create(Currency.USD, 1.27m, FxRateSource.Frankfurter, TestClock.Default);
 
         var transaction = Transaction.CreateWithId(id, new DateTime(2024, 1, 1), Transaction.TransactionType.Sell, 1m, 5m, 0m, currency: Currency.GBP, fxRateSnapshot: snapshot);
 

@@ -74,7 +74,7 @@ public class YahooFinanceServiceTests
         var result = service.GetAssetValue(request);
 
         result.Name.Should().Be("AAPL");
-        result.AsOf.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromMinutes(1));
+        result.AsOf.Should().BeCloseTo(TestClock.Default, TimeSpan.FromMinutes(1));
     }
 
     [Fact]
@@ -130,7 +130,7 @@ public class YahooFinanceServiceTests
     private static YahooFinanceService CreateService(Func<HttpRequestMessage, HttpResponseMessage> responder)
     {
         var handler = new FakeHttpMessageHandler(responder);
-        return new YahooFinanceService(new HttpClient(handler));
+        return new YahooFinanceService(new HttpClient(handler), TestClock.At());
     }
 
 }

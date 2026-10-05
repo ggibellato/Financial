@@ -14,12 +14,14 @@ public sealed class BrokerService : IBrokerService
     private const string EntityType = "Broker";
 
     private readonly IInvestmentRepository _repository;
+    private readonly TimeProvider _timeProvider;
     private readonly ITelemetryTracer _tracer;
     private readonly ILogger<BrokerService> _logger;
 
-    public BrokerService(IInvestmentRepository repository, ITelemetryTracer tracer, ILogger<BrokerService> logger)
+    public BrokerService(IInvestmentRepository repository, TimeProvider timeProvider, ITelemetryTracer tracer, ILogger<BrokerService> logger)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -152,7 +154,7 @@ public sealed class BrokerService : IBrokerService
                 updated.SetCostBasisMethod(method);
                 try
                 {
-                    DisposalRecordRegenerator.RegenerateBroker(updated, investments);
+                    DisposalRecordRegenerator.RegenerateBroker(updated, _timeProvider.GetUtcNow(), investments);
                 }
                 catch
                 {

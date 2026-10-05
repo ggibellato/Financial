@@ -284,5 +284,5 @@ public class BrokerServiceTests
         result.Should().ContainSingle().Which.CostBasisMethod.Should().Be(CostBasisMethod.SpecificId);
     }
 
-    private BrokerService CreateService() => new(_repository, _tracer, _logger);
+    private BrokerService CreateService() => new(_repository, TestClock.At(), _tracer, _logger);
 }

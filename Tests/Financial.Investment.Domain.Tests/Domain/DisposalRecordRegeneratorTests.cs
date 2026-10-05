@@ -19,7 +19,7 @@ public class DisposalRecordRegeneratorTests
         original.CostBasis.Should().Be(500m);
 
         asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 50m, 0m));
-        DisposalRecordRegenerator.RegenerateAsset(asset, CostBasisMethod.AverageCost, new DateTime(2021, 1, 1));
+        DisposalRecordRegenerator.RegenerateAsset(asset, CostBasisMethod.AverageCost, new DateTime(2021, 1, 1), TestClock.Default);
 
         original.Status.Should().Be(DisposalRecordStatus.Superseded);
         var replacement = asset.DisposalRecords.Single(r => r.Status == DisposalRecordStatus.Active);
@@ -35,7 +35,7 @@ public class DisposalRecordRegeneratorTests
         asset.RecordTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 110m, 0m));
         var original = asset.DisposalRecords.Single();
 
-        DisposalRecordRegenerator.RegenerateAsset(asset, CostBasisMethod.AverageCost, new DateTime(2023, 1, 1));
+        DisposalRecordRegenerator.RegenerateAsset(asset, CostBasisMethod.AverageCost, new DateTime(2023, 1, 1), TestClock.Default);
 
         asset.DisposalRecords.Should().ContainSingle();
         original.Status.Should().Be(DisposalRecordStatus.Active);
@@ -55,7 +55,7 @@ public class DisposalRecordRegeneratorTests
         original.CostBasis.Should().Be(750m);
 
         broker.SetCostBasisMethod(CostBasisMethod.FIFO);
-        DisposalRecordRegenerator.RegenerateBroker(broker);
+        DisposalRecordRegenerator.RegenerateBroker(broker, TestClock.Default);
 
         original.Status.Should().Be(DisposalRecordStatus.Superseded);
         var replacement = asset.DisposalRecords.Single(r => r.Status == DisposalRecordStatus.Active);
@@ -70,10 +70,10 @@ public class DisposalRecordRegeneratorTests
         asset.RecordTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 100m, 0m));
         var first = asset.DisposalRecords.Single();
 
-        DisposalRecordRegenerator.RegenerateAsset(asset, CostBasisMethod.FIFO, new DateTime(2021, 1, 1));
+        DisposalRecordRegenerator.RegenerateAsset(asset, CostBasisMethod.FIFO, new DateTime(2021, 1, 1), TestClock.Default);
         var second = asset.DisposalRecords.Single(r => r.Status == DisposalRecordStatus.Active);
 
-        DisposalRecordRegenerator.RegenerateAsset(asset, CostBasisMethod.AverageCost, new DateTime(2021, 1, 1));
+        DisposalRecordRegenerator.RegenerateAsset(asset, CostBasisMethod.AverageCost, new DateTime(2021, 1, 1), TestClock.Default);
         var third = asset.DisposalRecords.Single(r => r.Status == DisposalRecordStatus.Active);
 
         first.Status.Should().Be(DisposalRecordStatus.Superseded);
@@ -91,7 +91,7 @@ public class DisposalRecordRegeneratorTests
         asset.RecordTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 10m, 100m, 0m));
 
         asset.AddTransaction(Transaction.Create(new DateTime(2020, 1, 1), Transaction.TransactionType.Buy, 10m, 10m, 0m));
-        DisposalRecordRegenerator.RegenerateAsset(asset, CostBasisMethod.AverageCost, new DateTime(2020, 1, 1));
+        DisposalRecordRegenerator.RegenerateAsset(asset, CostBasisMethod.AverageCost, new DateTime(2020, 1, 1), TestClock.Default);
 
         var active = asset.DisposalRecords.Single(r => r.Status == DisposalRecordStatus.Active);
         asset.RealizedGainLoss.Should().Be(active.GainLoss);
@@ -110,7 +110,7 @@ public class DisposalRecordRegeneratorTests
         asset.DisposalRecords.Single().CostBasis.Should().Be(500m);
 
         asset.AddTransaction(Transaction.Create(new DateTime(2020, 1, 1), Transaction.TransactionType.Buy, 1m, 10m, 0m));
-        DisposalRecordRegenerator.RegenerateAsset(asset, CostBasisMethod.SpecificId, new DateTime(2020, 1, 1));
+        DisposalRecordRegenerator.RegenerateAsset(asset, CostBasisMethod.SpecificId, new DateTime(2020, 1, 1), TestClock.Default);
 
         var replacement = asset.DisposalRecords.Single(r => r.Status == DisposalRecordStatus.Active);
         replacement.LotsConsumed.Should().ContainSingle(l => l.SourceTransactionId == buy2.Id);
@@ -131,7 +131,7 @@ public class DisposalRecordRegeneratorTests
             buy.Id, buy.Date, buy.Type, 3m, buy.UnitPrice, buy.Fees, buy.Withheld, buy.Currency, buy.FxRateSnapshot);
         asset.UpdateTransaction(shrunkBuy);
 
-        Action act = () => DisposalRecordRegenerator.RegenerateAsset(asset, CostBasisMethod.SpecificId, buy.Date);
+        Action act = () => DisposalRecordRegenerator.RegenerateAsset(asset, CostBasisMethod.SpecificId, buy.Date, TestClock.Default);
 
         act.Should().Throw<InvestmentRuleViolationException>();
         original.Status.Should().Be(DisposalRecordStatus.Active);
@@ -148,7 +148,7 @@ public class DisposalRecordRegeneratorTests
         var original = asset.DisposalRecords.Single();
 
         asset.RemoveTransaction(sell.Id);
-        DisposalRecordRegenerator.RegenerateAsset(asset, CostBasisMethod.AverageCost, sell.Date);
+        DisposalRecordRegenerator.RegenerateAsset(asset, CostBasisMethod.AverageCost, sell.Date, TestClock.Default);
 
         original.Status.Should().Be(DisposalRecordStatus.Superseded);
         original.SupersededByRecordId.Should().BeNull();
@@ -166,7 +166,7 @@ public class DisposalRecordRegeneratorTests
         var originalClassification = asset.TaxClassifications.Single();
 
         asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 50m, 0m));
-        DisposalRecordRegenerator.RegenerateAsset(asset, CostBasisMethod.AverageCost, new DateTime(2021, 1, 1), investments: investments);
+        DisposalRecordRegenerator.RegenerateAsset(asset, CostBasisMethod.AverageCost, new DateTime(2021, 1, 1), TestClock.Default, investments: investments);
 
         var replacementRecord = asset.DisposalRecords.Single(r => r.Status == DisposalRecordStatus.Active);
         var activeClassification = asset.TaxClassifications.Single(c => c.Status == TaxClassificationStatus.Active);
@@ -191,7 +191,7 @@ public class DisposalRecordRegeneratorTests
         var originalClassification = asset.TaxClassifications.Single();
 
         asset.RemoveTransaction(sell.Id);
-        DisposalRecordRegenerator.RegenerateAsset(asset, CostBasisMethod.AverageCost, sell.Date, investments: investments);
+        DisposalRecordRegenerator.RegenerateAsset(asset, CostBasisMethod.AverageCost, sell.Date, TestClock.Default, investments: investments);
 
         originalClassification.Status.Should().Be(TaxClassificationStatus.Superseded);
         originalClassification.SupersededByClassificationId.Should().BeNull();
@@ -212,7 +212,7 @@ public class DisposalRecordRegeneratorTests
         var originalClassification = asset.TaxClassifications.Single();
 
         broker.SetCostBasisMethod(CostBasisMethod.FIFO);
-        DisposalRecordRegenerator.RegenerateBroker(broker, investments);
+        DisposalRecordRegenerator.RegenerateBroker(broker, TestClock.Default, investments);
 
         originalClassification.Status.Should().Be(TaxClassificationStatus.Superseded);
         asset.TaxClassifications.Should().ContainSingle(c => c.Status == TaxClassificationStatus.Active);
@@ -226,7 +226,7 @@ public class DisposalRecordRegeneratorTests
         asset.RecordTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 110m, 0m));
 
         asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 50m, 0m));
-        DisposalRecordRegenerator.RegenerateAsset(asset, CostBasisMethod.AverageCost, new DateTime(2021, 1, 1));
+        DisposalRecordRegenerator.RegenerateAsset(asset, CostBasisMethod.AverageCost, new DateTime(2021, 1, 1), TestClock.Default);
 
         asset.TaxClassifications.Should().BeEmpty();
     }

@@ -20,9 +20,9 @@ public class BrokerBreakdownServiceTests
     public void GetBrokerBreakdown_ReturnsAssetsWithinPortfolio(InvestmentScope scope)
     {
         var asset1 = MakeAsset("AAAA", "AAAA");
-        asset1.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 10m, 10m, 0m));
+        asset1.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 10m, 10m, 0m));
         var asset2 = MakeAsset("BBBB", "BBBB");
-        asset2.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 20m, 10m, 0m));
+        asset2.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 20m, 10m, 0m));
         _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", asset1, asset2)];
 
         var result = CreateService().GetBrokerBreakdown("XPI", scope);
@@ -37,8 +37,8 @@ public class BrokerBreakdownServiceTests
     public void GetBrokerBreakdown_ActiveScope_UsesCostOfUnitsHeld_NotBoughtMinusSold()
     {
         var asset = MakeAsset("AAAA", "AAAA");
-        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 20m, 10m, 0m));
-        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 5m, 40m, 0m));
+        asset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 20m, 10m, 0m));
+        asset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Sell, 5m, 40m, 0m));
         _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", asset)];
 
         var result = CreateService().GetBrokerBreakdown("XPI", InvestmentScope.Active);
@@ -52,8 +52,8 @@ public class BrokerBreakdownServiceTests
     public void GetBrokerBreakdown_HistoricScope_UsesTotalBought()
     {
         var asset = MakeAsset("AAAA", "AAAA");
-        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 20m, 10m, 0m));
-        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 20m, 40m, 0m));
+        asset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 20m, 10m, 0m));
+        asset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Sell, 20m, 40m, 0m));
         _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", asset)];
 
         var result = CreateService().GetBrokerBreakdown("XPI", InvestmentScope.Historic);
@@ -69,7 +69,7 @@ public class BrokerBreakdownServiceTests
     {
         var neverBoughtAsset = MakeAsset("NOBUY", "NOBUY");
         var boughtAsset = MakeAsset("BOUGHT", "BOUGHT");
-        boughtAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 10m, 10m, 0m));
+        boughtAsset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 10m, 10m, 0m));
         _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", neverBoughtAsset, boughtAsset)];
 
         var result = CreateService().GetBrokerBreakdown("XPI", scope);
@@ -83,9 +83,9 @@ public class BrokerBreakdownServiceTests
     public void GetBrokerBreakdown_SortsPortfoliosAlphabetically(InvestmentScope scope)
     {
         var zetaAsset = MakeAsset("ZETA-A", "ZETA-A");
-        zetaAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 10m, 10m, 0m));
+        zetaAsset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 10m, 10m, 0m));
         var alphaAsset = MakeAsset("ALPHA-A", "ALPHA-A");
-        alphaAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 10m, 10m, 0m));
+        alphaAsset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 10m, 10m, 0m));
 
         var broker = Broker.Create("XPI", "BRL");
         broker.AddPortfolio("Zeta").AddAsset(zetaAsset);
@@ -147,8 +147,8 @@ public class BrokerBreakdownServiceTests
     public void GetBrokerBreakdown_ActiveScope_UsesNetInvestedAsSelectedAmount()
     {
         var asset = MakeAsset();
-        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 50m, 10m, 0m));
-        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 10m, 10m, 0m));
+        asset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 50m, 10m, 0m));
+        asset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Sell, 10m, 10m, 0m));
         _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", asset)];
 
         var result = CreateService().GetBrokerBreakdown("XPI", InvestmentScope.Active);
@@ -160,10 +160,10 @@ public class BrokerBreakdownServiceTests
     public void GetBrokerBreakdown_ActiveScope_ExcludesAssetsWithNegativeNetInvested()
     {
         var positiveAsset = MakeAsset("POS", "POS");
-        positiveAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 10m, 10m, 0m));
+        positiveAsset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 10m, 10m, 0m));
         var negativeAsset = MakeAsset("NEG", "NEG");
-        negativeAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 5m, 10m, 0m));
-        negativeAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 5m, 100m, 0m));
+        negativeAsset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 5m, 10m, 0m));
+        negativeAsset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Sell, 5m, 100m, 0m));
         _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", positiveAsset, negativeAsset)];
 
         var result = CreateService().GetBrokerBreakdown("XPI", InvestmentScope.Active);
@@ -175,7 +175,7 @@ public class BrokerBreakdownServiceTests
     public void GetBrokerBreakdown_ActiveScope_ExcludesInactiveAssets()
     {
         var activeAsset = MakeAsset("ACTIVE", "ACTIVE");
-        activeAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 10m, 10m, 0m));
+        activeAsset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 10m, 10m, 0m));
         var inactiveAsset = MakeZeroQuantityAsset();
         _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", activeAsset, inactiveAsset)];
 
@@ -188,8 +188,8 @@ public class BrokerBreakdownServiceTests
     public void GetBrokerBreakdown_HistoricScope_UsesGrossTotalBoughtAsSelectedAmount()
     {
         var asset = MakeAsset();
-        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 50m, 10m, 0m));
-        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 10m, 10m, 0m));
+        asset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 50m, 10m, 0m));
+        asset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Sell, 10m, 10m, 0m));
         _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", asset)];
 
         var result = CreateService().GetBrokerBreakdown("XPI", InvestmentScope.Historic);
@@ -201,8 +201,8 @@ public class BrokerBreakdownServiceTests
     public void GetBrokerBreakdown_HistoricScope_IncludesFullyClosedPositionWithNonZeroTotalBought()
     {
         var closedAsset = MakeAsset("CLOSEDASSET", "CLOSEDASSET");
-        closedAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 5m, 60m, 0m));
-        closedAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 5m, 50m, 0m));
+        closedAsset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 5m, 60m, 0m));
+        closedAsset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Sell, 5m, 50m, 0m));
         _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", closedAsset)];
 
         var result = CreateService().GetBrokerBreakdown("XPI", InvestmentScope.Historic);
@@ -214,9 +214,9 @@ public class BrokerBreakdownServiceTests
     public void GetBrokerBreakdown_DoesNotFilterByPortfolioName_ScopePurityComesFromRepository()
     {
         var defaultAsset = MakeAsset("DEFAULT", "DEF");
-        defaultAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 10m, 10m, 0m));
+        defaultAsset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 10m, 10m, 0m));
         var otherAsset = MakeAsset("OTHER", "OTH");
-        otherAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 100m, 5m, 0m));
+        otherAsset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 100m, 5m, 0m));
 
         var broker = Broker.Create("XPI", "BRL");
         broker.AddPortfolio("Default").AddAsset(defaultAsset);
@@ -233,7 +233,7 @@ public class BrokerBreakdownServiceTests
     public void GetBrokerBreakdown_OmitsPortfolioWithNoQualifyingAssets()
     {
         var qualifyingAsset = MakeAsset("QUAL", "QUAL");
-        qualifyingAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 10m, 10m, 0m));
+        qualifyingAsset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 10m, 10m, 0m));
         var inactiveAsset = MakeZeroQuantityAsset();
 
         var broker = Broker.Create("XPI", "BRL");
@@ -263,9 +263,9 @@ public class BrokerBreakdownServiceTests
     public void GetBrokerBreakdown_SortsAssetsAlphabeticallyWithinPortfolio()
     {
         var zzzz = MakeAsset("ZZZZ3", "ZZZZ3");
-        zzzz.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 10m, 10m, 0m));
+        zzzz.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 10m, 10m, 0m));
         var aaaa = MakeAsset("AAAA3", "AAAA3");
-        aaaa.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 10m, 10m, 0m));
+        aaaa.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 10m, 10m, 0m));
         _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", zzzz, aaaa)];
 
         var result = CreateService().GetBrokerBreakdown("XPI");
@@ -281,8 +281,8 @@ public class BrokerBreakdownServiceTests
     private static Asset MakeZeroQuantityAsset()
     {
         var asset = Asset.Create("INACTIVE", "ISIN2", "BVMF", "INACT");
-        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 5m, 10m, 0m));
-        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 5m, 10m, 0m));
+        asset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 5m, 10m, 0m));
+        asset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Sell, 5m, 10m, 0m));
         return asset;
     }
 
