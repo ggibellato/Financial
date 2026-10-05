@@ -2,13 +2,13 @@
 
 # E2E Environment
 
-Decided in Phase 3 (2026-09-06): **the CI `smoke` job is the E2E environment.** It is the only
+Decided in Phase 3 (2026-09-06): **the CI `web-e2e` job is the E2E environment.** It is the only
 place more than one deployed process runs — the published `Financial.Api.dll` (serving the
 built SPA from `wwwroot`) and Playwright's Chromium — over real HTTP against real JSON files.
 
 ## What is real
 
-| Piece | In the smoke job |
+| Piece | In the web-e2e job |
 |---|---|
 | API | `dotnet publish Financial.Api/Financial.Api.csproj --configuration Release --output publish`, then `dotnet Financial.Api.dll` with `ASPNETCORE_URLS=http://localhost:8080` |
 | SPA | `npm run build` with `.env` = `API_BASE_URL=/api/v1/financial`, copied into `publish/wwwroot/` |
@@ -113,4 +113,4 @@ turns unreliable moves the job to the nightly pipeline (`docs/ci-affected-pipeli
 
 - `ApiEndpointTests` / `WebApplicationFactory<Program>` — one process, Integration.
 - `docker-compose up` — the deployment shape, and a fine manual check after a merge, but CI
-  does not run tests against it; the smoke job's published-process layout is equivalent.
+  does not run tests against it; the web-e2e job's published-process layout is equivalent.

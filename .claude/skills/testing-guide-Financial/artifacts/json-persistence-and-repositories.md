@@ -40,7 +40,7 @@
 - `RemoteJsonStorage` is tested at **Integration with the Google client faked** via its
   delegate constructor (`new RemoteJsonStorage(download, upload, remotePath)`) — Google Drive is
   an external provider (`../references/external-providers.md`).
-- No E2E of its own; the smoke job's seeded JSON files exercise the real path end to end.
+- No E2E of its own; the web-e2e job's seeded JSON files exercise the real path end to end.
 
 ## Setup pattern
 

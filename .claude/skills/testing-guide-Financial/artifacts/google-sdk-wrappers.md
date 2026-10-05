@@ -31,7 +31,7 @@
   `coverlet.runsettings` already excludes `[Financial.Integrations.GoogleSheets]*` from the
   coverage gate for this reason. Google Drive/Sheets are external providers; everything above
   them is tested with the abstraction faked (`../references/external-providers.md`).
-- No E2E: the smoke job runs with `Repository:Provider=LocalJson`.
+- No E2E: the web-e2e job runs with `Repository:Provider=LocalJson`.
 
 ## Setup pattern
 

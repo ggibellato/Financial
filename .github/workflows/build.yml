@@ -28,8 +28,9 @@ jobs:
     outputs:
       backend: ${{ steps.detect.outputs.backend }}
       wpf: ${{ steps.detect.outputs.wpf }}
+      wpf_e2e: ${{ steps.detect.outputs.wpf_e2e }}
       web: ${{ steps.detect.outputs.web }}
-      smoke: ${{ steps.detect.outputs.smoke }}
+      web_e2e: ${{ steps.detect.outputs.web_e2e }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
@@ -185,13 +186,13 @@ jobs:
         path: CoverageReport
 
   # Drives the real Financial.App through UI Automation (FlaUI/UIA3) on a hosted Windows runner's
-  # interactive desktop. Runs whenever `wpf` runs; per-test screenshots and the app log are
+  # interactive desktop. Runs whenever `wpf_e2e` is set; per-test screenshots and the app log are
   # uploaded on failure. See docs/ci-affected-pipeline.md for the nightly fallback rule.
   wpf-e2e:
     needs: [ changes, wpf ]
     if: >-
       always()
-      && needs.changes.outputs.wpf == 'true'
+      && needs.changes.outputs.wpf_e2e == 'true'
       && !contains(needs.*.result, 'failure')
       && !contains(needs.*.result, 'cancelled')
     runs-on: windows-latest
@@ -207,7 +208,7 @@ jobs:
     - name: Build WPF app and E2E tests
       run: dotnet build Tests/Financial.App.E2ETests/Financial.App.E2ETests.csproj --configuration Release
 
-    - name: Run WPF smoke
+    - name: Run WPF E2E smoke
       run: dotnet test Tests/Financial.App.E2ETests --configuration Release --no-build --verbosity normal --filter "Category=Smoke"
 
     - name: Upload E2E artifacts
@@ -348,11 +349,11 @@ jobs:
 
   # Boots the published API with the built SPA and drives it with Playwright. Runs whenever either
   # side of the HTTP boundary changed; waits for backend/web but tolerates them being skipped.
-  smoke:
+  web-e2e:
     needs: [ changes, backend, web ]
     if: >-
       always()
-      && needs.changes.outputs.smoke == 'true'
+      && needs.changes.outputs.web_e2e == 'true'
       && !contains(needs.*.result, 'failure')
       && !contains(needs.*.result, 'cancelled')
     runs-on: ubuntu-latest
@@ -392,17 +393,17 @@ jobs:
         mkdir -p publish/wwwroot
         cp -r Financial.Web/dist/. publish/wwwroot/
 
-    - name: Prepare smoke test data
+    - name: Prepare web E2E test data
       run: |
-        cp Tests/Financial.Api.Tests/TestData/data.test.json /tmp/data.smoke-test.json
-        cp Tests/Financial.Api.Tests/TestData/data-cashflow.test.json /tmp/data-cashflow.smoke-test.json
+        cp Tests/Financial.Api.Tests/TestData/data.test.json /tmp/data.web-e2e.json
+        cp Tests/Financial.Api.Tests/TestData/data-cashflow.test.json /tmp/data-cashflow.web-e2e.json
 
-    - name: Run browser smoke test
+    - name: Run web E2E smoke
       env:
         Investment__Repository__Provider: LocalJson
-        Investment__DataJsonFile: /tmp/data.smoke-test.json
+        Investment__DataJsonFile: /tmp/data.web-e2e.json
         CashFlow__Repository__Provider: LocalJson
-        CashFlow__DataJsonFile: /tmp/data-cashflow.smoke-test.json
+        CashFlow__DataJsonFile: /tmp/data-cashflow.web-e2e.json
         ASPNETCORE_URLS: http://localhost:8080
         SMOKE_APP_URL: http://localhost:8080
       run: |
@@ -424,15 +425,15 @@ jobs:
           exit 1
         fi
         (cd Financial.Web && npm run smoke-test)
-        SMOKE_EXIT=$?
+        E2E_EXIT=$?
         kill $API_PID
-        exit $SMOKE_EXIT
+        exit $E2E_EXIT
 
-    - name: Upload Playwright report
+    - name: Upload web E2E artifacts
       if: failure()
       uses: actions/upload-artifact@v4
       with:
-        name: playwright-report
+        name: web-e2e-artifacts
         path: |
           Financial.Web/playwright-report/
           Financial.Web/test-results/
@@ -441,7 +442,7 @@ jobs:
   # The one status check branch protection requires. Always runs; passes when every job either
   # succeeded or was legitimately skipped by `changes`, fails otherwise.
   ci-status:
-    needs: [ changes, backend, wpf, wpf-e2e, web, smoke ]
+    needs: [ changes, backend, wpf, wpf-e2e, web, web-e2e ]
     if: always()
     runs-on: ubuntu-latest
     steps:

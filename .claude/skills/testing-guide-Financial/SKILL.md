@@ -51,7 +51,7 @@ This revision replaces the previous guide, which called the in-process `WebAppli
   tagged `[Trait("AC", "P42-F01-payments-due-aggregation-backend-08")]` posts through the real
   host and asserts overdue payments are excluded. Same base class, temp files and fakes; only
   the tag and the assertion differ.
-- **The E2E environment.** The CI `smoke` job in `.github/workflows/build.yml` publishes the API,
+- **The E2E environment.** The CI `web-e2e` job in `.github/workflows/build.yml` publishes the API,
   embeds the built SPA in `wwwroot`, seeds `Tests/Financial.Api.Tests/TestData/*.test.json`,
   starts `dotnet Financial.Api.dll` on port 8080 and runs the `Financial.Web/tests/e2e` Playwright suite (`npm run smoke-test`)
   in Chromium. Two real processes, real HTTP, real JSON files — that is E2E here. Reproduce the
@@ -68,8 +68,9 @@ This revision replaces the previous guide, which called the in-process `WebAppli
 - **Negative paths, concretely.** Unit: `ExpenseServiceTests.AddExpenseAsync_WithZeroValue_RecordsFailedSpanWithException`.
   Integration, provider failure: `FrankfurterExchangeRateProviderTests.GetHistoricalRateAsync_WhenHttpRequestThrows_ReturnsNull`.
   Integration, rejected write: `CashFlowJsonRepositoryTests.ApplyAndSaveAsync_WhenWriteFails_PropagatesException`.
-  E2E: the smoke script has no failure journey yet; the next journey added must be a rejected
-  submission surfaced in the UI — see `references/negative-path-testing.md`.
+  E2E: `Financial.Web/tests/e2e/add-expense.spec.ts` (blank value rejected inline, forced 500 shown)
+  and `Tests/Financial.App.E2ETests` `AddExpense_BlankValue_ShowsFieldErrorAndAddsNothing` — see
+  `references/negative-path-testing.md`.
 - **Binding rules from `docs/rules/implementation.md` §Tests.** Shared doubles live only in
   `Tests/Financial.TestUtilities` (`StubCashFlowRepository`, `StubInvestmentRepository`,
   `RecordingTelemetryTracer`, `RecordingLogger<T>`, `FakeTimeProvider`, `TestDataPaths`) — never a
@@ -146,7 +147,7 @@ AC-tracing Integration row; every artifact you create or modify gets its own row
 | React page | Integration (frontend): full state matrix with the API faked | `artifacts/react-pages.md` |
 | `financialApiClient.ts` method | Unit: URL/method/body + `ApiError` on non-2xx | `artifacts/web-api-client.md` |
 | Web util / context / navigation | Unit; route ↔ sidebar agreement test | `artifacts/web-utils-context-navigation.md` |
-| Cross-process journey (Web ↔ API) | E2E: extend the smoke script incl. one rejected journey | `references/e2e-environment.md` |
+| Cross-process journey (Web ↔ API) | E2E: add a spec under `Financial.Web/tests/e2e` incl. one rejected journey | `references/e2e-environment.md` |
 
 **How to use:** after implementing a feature, first add its AC-tracing Integration row, then
 walk every artifact row for anything you created or modified — for each row, confirm both the
@@ -222,8 +223,9 @@ This guide uses a three-layer model — Unit, Integration (intra-domain), E2E
 guides. What most guides call "integration" or "e2e" for an in-process test
 through the real HTTP stack (`ApiEndpointTests` over `WebApplicationFactory<Program>`) is
 **Integration** here — real wiring, one process, no cross-service deployment.
-**E2E** is reserved for tests that run more than one deployed process: the CI `smoke`
-job's published `Financial.Api.dll` plus Playwright's Chromium driving the built SPA.
+**E2E** is reserved for tests that run more than one deployed process: the CI `web-e2e`
+job's published `Financial.Api.dll` plus Playwright's Chromium driving the built SPA, and the
+`wpf-e2e` job's built `Financial.App` driven through UI Automation.
 Acceptance-criteria coverage does not get its own layer either: it's a mandatory,
 explicitly-tagged subset of Integration tests (see `references/feature-traceability.md`)
 — same setup and mock boundary as any other Integration test, distinguished only by
@@ -284,6 +286,7 @@ to spot drift — layers losing coverage, or AC-tracing tests not keeping pace w
 | CashFlowSpreadsheetImport + InvestmentSpreadsheetImport Tests | 184 + 48 in 32 files | Unit: ~160, Integration (temp JSON/backup): ~72 | No |
 | Presentation.Tests (WPF) | 1102 in 108 files | Unit: ~1098, Integration (DI): 2 classes, contract (XAML binding): 1 class | No |
 | Financial.Web (vitest) | 1468 in 119 files | Unit (hooks/components/utils/client): ~1100, Integration (pages, App, freshness): ~370 | No |
-| Playwright smoke | 1 script | E2E: 1 journey, 0 failure journeys | No |
+| `web-e2e` (`Financial.Web/tests/e2e`) | 6 specs | E2E: 6 `@smoke` journeys, 2 failure journeys | No |
+| `wpf-e2e` (`Tests/Financial.App.E2ETests`) | 5 tests | E2E: 5 `Category=Smoke` journeys, 1 failure journey | No |
 
-Total: 3404 .NET tests across 325 files, 1468 web tests across 119 files, 1 E2E script, as of 2026-09-06.
+Total: 3404 .NET tests across 325 files, 1468 web tests across 119 files, as of 2026-09-06 (E2E rows updated 2026-10-05: 6 web specs, 5 WPF tests).

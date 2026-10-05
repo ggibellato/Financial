@@ -61,7 +61,7 @@ pattern or an explicit "not applicable".
   icon-only button (`Financial.App` uses `AutomationProperties.Name` 178 times, `HelpText` 35,
   `LiveSetting` 12). Those names are what a future UI-automation harness would drive.
 - **E2E**: no keyboard-only completion of a critical workflow — required by the fundamentals;
-  add to the smoke script (Tab/Enter through "add expense") alongside the failure journey.
+  add to the `web-e2e` specs (Tab/Enter through "add expense").
 - jsdom limits: focus order and visible focus rings are not trustworthy — assert handlers and
   names in tests, check focus visually per `docs/rules/ui.md` "Completion requirement".
 

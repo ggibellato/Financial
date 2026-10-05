@@ -2,7 +2,7 @@
 # Classifies the files changed between BASE_SHA and HEAD_SHA into the CI jobs that must run.
 #
 # Usage: detect-changes.sh <base-sha> <head-sha>
-# Writes backend/wpf/web/smoke (true|false) to $GITHUB_OUTPUT (stdout when unset) and a
+# Writes backend/wpf/wpf_e2e/web/web_e2e (true|false) to $GITHUB_OUTPUT (stdout when unset) and a
 # per-file explanation to $GITHUB_STEP_SUMMARY.
 #
 # Rules are evaluated top to bottom; the first pattern that matches a file decides its jobs.
@@ -13,11 +13,11 @@ set -u
 BASE_SHA="${1:-}"
 HEAD_SHA="${2:-HEAD}"
 
-backend=false; wpf=false; web=false; smoke=false
+backend=false; wpf=false; wpf_e2e=false; web=false; web_e2e=false
 reasons=()
 
 run_everything() {
-  backend=true; wpf=true; web=true; smoke=true
+  backend=true; wpf=true; wpf_e2e=true; web=true; web_e2e=true
   reasons+=("everything: $1")
 }
 
@@ -30,23 +30,23 @@ classify() {
 
     # API surface the web SPA is compiled against (controllers, OpenAPI snapshot).
     Financial.Api/*|Tests/Financial.Api.Tests/*)
-      backend=true; web=true; smoke=true
+      backend=true; web=true; web_e2e=true
       reasons+=("contract: $path") ;;
 
     # Application DTOs are the wire format AND are linked into the WPF app in-process.
     Financial.*.Application/DTOs/*)
-      backend=true; wpf=true; web=true; smoke=true
+      backend=true; wpf=true; wpf_e2e=true; web=true; web_e2e=true
       reasons+=("contract+backend: $path") ;;
 
-    # Hand-written TypeScript mirror of the contract: end-to-end smoke proves it still matches.
+    # Hand-written TypeScript mirror of the contract: web E2E proves it still matches.
     Financial.Web/src/api/*)
-      web=true; smoke=true
+      web=true; web_e2e=true
       reasons+=("contract (web side): $path") ;;
 
     # Financial.Architecture.Tests (backend job) pin Financial.App's references.
     Financial.App/*)
-      wpf=true; backend=true
-      reasons+=("wpf+backend: $path") ;;
+      wpf=true; wpf_e2e=true; backend=true
+      reasons+=("wpf+wpf-e2e+backend: $path") ;;
 
     Tests/Financial.Presentation.Tests/*)
       wpf=true
@@ -54,16 +54,16 @@ classify() {
 
     # Drives the built Financial.App through UI Automation and nothing else.
     Tests/Financial.App.E2ETests/*)
-      wpf=true
+      wpf_e2e=true
       reasons+=("wpf-e2e: $path") ;;
 
     Financial.Web/*)
-      web=true; smoke=true
+      web=true; web_e2e=true
       reasons+=("web: $path") ;;
 
-    # Backend core. Financial.App references these projects directly, so WPF rebuilds too.
+    # Backend core. Financial.App references these projects directly, so WPF and its E2E rebuild too.
     Financial.*.Domain/*|Financial.*.Application/*|Financial.*.Infrastructure/*|Financial.Shared.*/*|Integrations/*|Tools/*|Tests/*|coverlet.runsettings)
-      backend=true; wpf=true; smoke=true
+      backend=true; wpf=true; wpf_e2e=true; web_e2e=true
       reasons+=("backend: $path") ;;
 
     # Markdown inside a source directory matched a rule above; only the rest is documentation.
@@ -98,16 +98,17 @@ fi
 {
   echo "backend=$backend"
   echo "wpf=$wpf"
+  echo "wpf_e2e=$wpf_e2e"
   echo "web=$web"
-  echo "smoke=$smoke"
+  echo "web_e2e=$web_e2e"
 } >> "${GITHUB_OUTPUT:-/dev/stdout}"
 
 {
   echo "### Affected jobs"
   echo
-  echo "| backend | wpf | web | smoke |"
-  echo "|---|---|---|---|"
-  echo "| $backend | $wpf | $web | $smoke |"
+  echo "| backend | wpf | wpf-e2e | web | web-e2e |"
+  echo "|---|---|---|---|---|"
+  echo "| $backend | $wpf | $wpf_e2e | $web | $web_e2e |"
   echo
   echo "<details><summary>Why</summary>"
   echo

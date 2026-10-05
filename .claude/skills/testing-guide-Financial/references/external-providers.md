@@ -28,7 +28,7 @@ and "Third-party file storage" rows).
 | `CashFlowJsonRepository`, `InvestmentJsonRepository`, serializers, reference converters | Infrastructure we own | Real in every Infrastructure and Api test. `StubCashFlowRepository` / `StubInvestmentRepository` exist for the **Unit** layer only. |
 | Application services of both contexts | Our code | Real inside the host and the WPF composition; stubbed (`Stub*Service` in `Financial.Presentation.Tests`) only in ViewModel **Unit** tests. |
 | DI container (`Program.cs`, `App.xaml.cs`, `Add*` extensions) | Our composition | Real `ServiceCollection` / `WebApplicationFactory<Program>`. |
-| The published `Financial.Api` process + built SPA | Our single deployable | Started for real by the CI `smoke` job (`../references/e2e-environment.md`). |
+| The published `Financial.Api` process + built SPA | Our single deployable | Started for real by the CI `web-e2e` job (`../references/e2e-environment.md`). |
 | Time (`TimeProvider`) | Not a provider — non-determinism | Controlled, not faked away: `FakeTimeProvider(DateTimeOffset)` (TestUtilities) or `Microsoft.Extensions.Time.Testing.FakeTimeProvider` wrapped by `ObservableFakeClock`. |
 
 ## The frontend's view of the backend
