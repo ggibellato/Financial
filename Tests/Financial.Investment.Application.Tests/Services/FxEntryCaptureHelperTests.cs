@@ -2,6 +2,7 @@ using Financial.Investment.Application.Services;
 using Financial.Investment.Domain.Entities;
 using Financial.Shared.Abstractions.Currencies;
 using Financial.TestUtilities;
+using Microsoft.Extensions.Time.Testing;
 using FluentAssertions;
 
 namespace Financial.Investment.Application.Tests.Services;

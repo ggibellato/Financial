@@ -3,7 +3,7 @@ using Microsoft.Extensions.Time.Testing;
 namespace Financial.Shared.Infrastructure.Tests.Persistence;
 
 /// <summary>
-/// A steppable clock that also reports when a timer has been armed on it.
+/// A <see cref="FakeTimeProvider"/> that also reports when a timer has been armed on it.
 /// <para>
 /// <see cref="Persistence.DebouncedJsonStorage"/> queues each debounce cycle onto the thread pool,
 /// so the cycle's timer is not registered by the time <c>WriteAsync</c> returns. Advancing before
@@ -16,31 +16,25 @@ namespace Financial.Shared.Infrastructure.Tests.Persistence;
 /// than sampling a state that can move on between the check and the assertion.
 /// </para>
 /// </summary>
-internal sealed class ObservableFakeClock : TimeProvider
+internal sealed class ObservableFakeClock : FakeTimeProvider
 {
-    private readonly FakeTimeProvider _inner;
     private int _timersArmed;
 
-    internal ObservableFakeClock(DateTimeOffset start) => _inner = new FakeTimeProvider(start);
+    internal ObservableFakeClock(DateTimeOffset start) : base(start)
+    {
+    }
 
     /// <summary>How many timers have been created on this clock since it was constructed.</summary>
     internal int TimersArmed => Volatile.Read(ref _timersArmed);
 
-    public override long TimestampFrequency => _inner.TimestampFrequency;
-
-    public override TimeZoneInfo LocalTimeZone => _inner.LocalTimeZone;
-
-    internal void Advance(TimeSpan delta) => _inner.Advance(delta);
-
-    public override DateTimeOffset GetUtcNow() => _inner.GetUtcNow();
-
-    public override long GetTimestamp() => _inner.GetTimestamp();
+    /// <summary>How many of those timers the test has already stepped past.</summary>
+    internal int TimersFired { get; set; }
 
     public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period)
     {
         // Counted after the timer exists: nothing on a fake clock can fire until Advance is called,
         // so a test that sees the count has necessarily seen an armed timer.
-        var timer = _inner.CreateTimer(callback, state, dueTime, period);
+        var timer = base.CreateTimer(callback, state, dueTime, period);
         Interlocked.Increment(ref _timersArmed);
         return timer;
     }

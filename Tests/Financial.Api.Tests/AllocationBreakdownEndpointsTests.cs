@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using Financial.Investment.Application.DTOs;
 using Financial.TestUtilities;
+using Microsoft.Extensions.Time.Testing;
 using FluentAssertions;
 using FluentAssertions.Execution;
 

@@ -3,6 +3,7 @@ using Financial.Investment.Application.Services;
 using Financial.Shared.Abstractions.Currencies;
 using Financial.Shared.Abstractions.Observability;
 using Financial.TestUtilities;
+using Microsoft.Extensions.Time.Testing;
 using Financial.Investment.Domain.Entities;
 using FluentAssertions;
 using FluentAssertions.Execution;

@@ -2,6 +2,7 @@ using Financial.CashFlow.Application.Models;
 using Financial.CashFlow.Application.Services;
 using Financial.CashFlow.Domain.Entities;
 using Financial.TestUtilities;
+using Microsoft.Extensions.Time.Testing;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -16,7 +17,7 @@ public class CreditCardCalendarSyncServiceTests
     private readonly FakeCalendarIntegrationService _calendarIntegrationService;
     private readonly StubCashFlowRepository _repository;
     private readonly CardStatementService _cardStatementService;
-    private readonly CreditCardCalendarSyncStatusStore _statusStore;
+    private readonly SignallingCalendarSyncStatusStore _statusStore;
     private readonly FakeTimeProvider _timeProvider;
     private readonly CreditCardCalendarSyncService _sut;
 
@@ -27,7 +28,7 @@ public class CreditCardCalendarSyncServiceTests
         _calendarIntegrationService = new FakeCalendarIntegrationService();
         _repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true);
         _cardStatementService = new CardStatementService(_repository, NullLogger<CardStatementService>.Instance, new RecordingTelemetryTracer());
-        _statusStore = new CreditCardCalendarSyncStatusStore();
+        _statusStore = new SignallingCalendarSyncStatusStore();
         _timeProvider = new FakeTimeProvider(Now);
         _sut = new CreditCardCalendarSyncService(
             _provider,
@@ -55,23 +56,6 @@ public class CreditCardCalendarSyncServiceTests
         var expense = Expense.Create(date, "Charge", value, Category.Create("Mercado"), null, card, invoiceDate);
         repository.Expenses.Add(expense);
         return expense;
-    }
-
-    private async Task<CreditCardCalendarSyncState?> WaitForResolvedStateAsync(Guid creditCardId, TimeSpan? timeout = null)
-    {
-        var deadline = DateTime.UtcNow + (timeout ?? TimeSpan.FromSeconds(2));
-        while (DateTime.UtcNow < deadline)
-        {
-            var status = _statusStore.GetStatus(creditCardId);
-            if (status is not null && status.State != CreditCardCalendarSyncState.Pending)
-            {
-                return status.State;
-            }
-
-            await Task.Delay(10);
-        }
-
-        return _statusStore.GetStatus(creditCardId)?.State;
     }
 
     [Fact]
@@ -215,7 +199,7 @@ public class CreditCardCalendarSyncServiceTests
         _repository.CreditCards.RemoveAll(c => c.Id == cardId);
 
         _sut.TriggerSync(cardId);
-        await WaitForResolvedStateAsync(cardId);
+        await _statusStore.ResolvedStateAsync(cardId);
 
         _provider.DeletedEvents.Should().ContainSingle(e => e.EventId == _provider.CreatedEventId);
     }
@@ -247,7 +231,7 @@ public class CreditCardCalendarSyncServiceTests
 
         _sut.TriggerSync(card.Id);
         var immediateState = _statusStore.GetStatus(card.Id)?.State;
-        var resolvedState = await WaitForResolvedStateAsync(card.Id);
+        var resolvedState = await _statusStore.ResolvedStateAsync(card.Id);
 
         immediateState.Should().Be(CreditCardCalendarSyncState.Pending);
         resolvedState.Should().Be(CreditCardCalendarSyncState.Synced);
@@ -381,7 +365,7 @@ public class CreditCardCalendarSyncServiceTests
         _calendarIntegrationService.Throws = true;
 
         _sut.TriggerSync(card.Id);
-        var resolvedState = await WaitForResolvedStateAsync(card.Id);
+        var resolvedState = await _statusStore.ResolvedStateAsync(card.Id);
 
         resolvedState.Should().Be(CreditCardCalendarSyncState.Error);
         _statusStore.GetStatus(card.Id)!.LastError.Should().Be("Unexpected sync failure.");

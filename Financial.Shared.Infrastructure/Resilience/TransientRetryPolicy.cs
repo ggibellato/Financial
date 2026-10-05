@@ -6,8 +6,9 @@ namespace Financial.Shared.Infrastructure.Resilience;
 
 internal static class TransientRetryPolicy
 {
-    internal static Task<T> ExecuteWithRetryAsync<T>(Func<Task<T>> action, int maxRetries = 5, Action<string>? logger = null) =>
-        RetryPolicy.ExecuteWithRetryAsync(action, IsRetryable, maxRetries, logger);
+    internal static Task<T> ExecuteWithRetryAsync<T>(
+        Func<Task<T>> action, int maxRetries = 5, Action<string>? logger = null, Func<TimeSpan, CancellationToken, Task>? delay = null) =>
+        RetryPolicy.ExecuteWithRetryAsync(action, IsRetryable, maxRetries, logger, delay);
 
     private static bool IsRetryable(Exception ex) => ex switch
     {
