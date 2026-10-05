@@ -92,10 +92,7 @@ public class TransferServiceTests
         var act = async () => await _sut.AddTransferAsync(request);
 
         await act.Should().ThrowAsync<ArgumentException>();
-        var span = _tracer.Spans.Should().ContainSingle().Which;
-        span.Name.Should().Be("CashFlow.TransferService.AddTransfer");
-        span.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Failed);
-        span.RecordedException.Should().BeOfType<ArgumentException>();
+        _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.TransferService.AddTransfer");
     }
 
     [Fact]
