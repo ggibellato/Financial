@@ -408,16 +408,16 @@ Both work in small, single-feature PRs (target ≤ 8 non-test code files) on a b
 - New xUnit project `Tests/Financial.App.E2ETests` (`net10.0-windows`) referencing `FlaUI.Core` and `FlaUI.UIA3`, and not referencing `Financial.App` code. It launches the built exe from a configurable path.
 - Launch fixture:
   1. Copies `Tests/Financial.Api.Tests/TestData/*.json` to a per-test temp directory.
-  2. Starts the exe with environment overrides (`Investment__Repository__Provider=LocalJson`, `Investment__DataJsonFile`, the `CashFlow__*` equivalents, observability disabled, and the deterministic FX source if the app supports one).
+  2. Starts the exe with environment overrides (`Investment__Repository__Provider=LocalJson`, `Investment__DataJsonFile`, the `CashFlow__*` and `FxRates__*` equivalents, observability disabled; the app has no deterministic FX source, so no journey asserts a converted value).
   3. Waits up to 30 s for the main window through UIA, with a retry-until condition and no sleeps.
-  4. On dispose: `Close()`, then kill the process tree after 5 s, then delete the temp directory.
-  5. A collection fixture forces sequential execution (`[CollectionDefinition(DisableParallelization = true)]`).
+  4. On dispose: kill the process tree and delete the temp directory (the data is disposable, so there is no graceful close).
+  5. Sequential execution is forced at assembly level (`[assembly: CollectionBehavior(DisableTestParallelization = true)]`).
 - AutomationIds: `AutomationProperties.AutomationId` is added to every control the smoke uses: main window regions, the navigation tree, expense form fields, Save/Cancel, the validation message, the asset summary panel and the error banner. Naming convention: `<screen>-<element>[-<qualifier>]` in kebab-case, for example `expense-form-value`, `expense-form-save` and `dashboard-tree`. IDs are unique per window/dialog and documented in `docs/ui/` (or `testing-guide-Financial`) as part of the UI contract.
 - Smoke specs, 5 in total (≤ 8 min in CI):
   1. App starts and the main window and dashboard tree are visible.
   2. Open an investment asset and see its summary.
   3. Add an expense and see it in the monthly list.
-  4. Blank value → the validation message is visible and Save is disabled.
+  4. Blank value → the validation message is visible and nothing is added (the Save command is disabled only while saving; validation runs on submit).
   5. Navigate to the CashFlow monthly view and see the totals displayed.
 - Rules: locate by AutomationId, use names only where the label is the contract, and never use coordinates, visual-tree position or `Thread.Sleep`. All waits use `Retry.WhileNull/WhileFalse` with timeouts.
 - CI: a new `wpf-e2e` job (`windows-latest`) runs when `wpf` runs. It builds `Financial.App` in Release, runs `dotnet test Tests/Financial.App.E2ETests --filter Category=Smoke`, and feeds `ci-status`. On failure it uploads per-test screenshots (FlaUI `Capture.Screen`), the app log, and the exit code/crash info. The project is excluded from the `backend` and `wpf` unit runs and from coverage.
@@ -429,7 +429,7 @@ Both work in small, single-feature PRs (target ≤ 8 non-test code files) on a b
 - Main window doesn't appear within 30 s → the test fails with `Financial.App did not show its main window`, the process is killed, and the screenshot and app log are attached.
 - An AutomationId isn't found → the failure names the ID and the window it searched. There is no fallback to coordinates.
 - An app crash mid-test → the fixture records the exit code and the crash log, and the remaining tests in the collection relaunch a fresh process.
-- Orphan process from a previous aborted run → fixture setup kills any `Financial.App` process whose start-info data path points into the E2E temp root.
+- Orphan process from a previous aborted run → fixture setup kills any process recorded (pid + start time) in an E2E temp folder older than 10 minutes and deletes that folder; the app's command line carries no data path to match on.
 
 ### F14. Nightly Quality Pipeline
 
