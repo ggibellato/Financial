@@ -29,5 +29,38 @@ internal static class UiaExtensions
         return found ?? throw new InvalidOperationException($"{controlType} named '{namePrefix}...' not found in window '{root.Name}'.");
     }
 
+    public static AutomationElement FindByName(this AutomationElement root, string name, TimeSpan? timeout = null)
+    {
+        var found = Retry.WhileNull(
+            () => root.FindFirstDescendant(root.ConditionFactory.ByName(name)),
+            timeout ?? DefaultTimeout,
+            ignoreException: true).Result;
+
+        return found ?? throw new InvalidOperationException($"Element named '{name}' not found in window '{root.Name}'.");
+    }
+
+    public static bool ContainsName(this AutomationElement root, string name, TimeSpan? timeout = null)
+    {
+        var found = Retry.WhileNull(
+            () => root.FindFirstDescendant(root.ConditionFactory.ByName(name)),
+            timeout ?? TimeSpan.FromSeconds(2),
+            throwOnTimeout: false,
+            ignoreException: true).Result;
+
+        return found is not null;
+    }
+
+    public static void SelectTab(this AutomationElement root, string header)
+    {
+        root.FindByName(header).AsTabItem().Select();
+    }
+
+    public static AutomationElement ExpandTreeItem(this AutomationElement root, string namePrefix)
+    {
+        var item = root.FindByNameStartingWith(ControlType.TreeItem, namePrefix);
+        item.Patterns.ExpandCollapse.Pattern.Expand();
+        return item;
+    }
+
     public static void Press(this AutomationElement element) => element.AsButton().Invoke();
 }

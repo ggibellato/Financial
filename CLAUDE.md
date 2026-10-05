@@ -35,6 +35,7 @@ dotnet restore
 dotnet build --configuration Release
 dotnet test                                    # run all test projects
 dotnet test Tests/Financial.CashFlow.Domain.Tests   # run a single test project
+dotnet test Tests/Financial.App.E2ETests --filter "Category=Smoke"   # WPF UI-automation smoke: launches the built app on a Windows desktop
 dotnet test --filter "FullyQualifiedName~ExpenseTests.Should_Reject_Negative_Value"  # single test
 ```
 
@@ -149,7 +150,7 @@ Builds the React SPA and the API into a single image (`Dockerfile`), API serves 
 
 `.github/workflows/build.yml` runs only the jobs a change can affect: a `changes` job classifies the
 diff with `.github/scripts/detect-changes.sh`, then `backend` (Windows, API build + all non-WPF tests
-with coverage), `wpf` (Windows), `web` (Ubuntu lint+test+build) and `smoke` (publishes the full app
+with coverage), `wpf` (Windows), `wpf-e2e` (`windows-latest`; launches the built WPF app and drives it with FlaUI), `web` (Ubuntu lint+test+build) and `smoke` (publishes the full app
 against seeded test JSON and runs the Playwright smoke test) run conditionally. Docs-only changes run
 nothing; unknown paths or a missing base commit run everything, and every push to `main` always runs the
 full pipeline. On pull requests `changes` also scans the added lines for test-hygiene violations

@@ -81,10 +81,33 @@ Still missing: one keyboard-only completion of a critical workflow
 
 ## WPF
 
-No E2E harness exists for `Financial.App` (no FlaUI/WinAppDriver). WPF's top automated layer is
-Integration (real services in-process); the manual launch-and-look required by
-`docs/rules/ui.md` "Completion requirement" is the substitute. If a harness is added, drive it by
-`AutomationProperties.Name` + `GetClickablePoint()`.
+`Tests/Financial.App.E2ETests` (xUnit, FlaUI.Core/UIA3, `net10.0-windows`) drives the real
+`Financial.App` executable. The CI `wpf-e2e` job (`windows-latest`, feeds `ci-status`) builds it
+and runs `--filter Category=Smoke`.
+
+| Piece | How |
+|---|---|
+| Process | One fresh app per test (`AppSession.Run`), found at `Financial.App/bin/<Debug\|Release>/net10.0-windows/Financial.Presentation.App.exe` or `FINANCIAL_APP_EXE` |
+| Data | Copies of `data.test.json` / `data-cashflow.test.json` in `%TEMP%/financial-app-e2e/<guid>`; env overrides select `LocalJson` for Investment, CashFlow and FxRates and turn observability off; the fixture refuses any data path outside that folder |
+| Cleanup | Close, kill the process tree after 5 s, delete the folder; a run first reaps processes and folders left by an aborted run (recorded pid + start time) |
+| Lookup | `FindById(AutomationId)`; names only where the label is the contract (tree items such as `XPI (BRL)`, tab headers, combo items). No coordinates, no fixed sleeps: waits are `Retry.WhileNull` with timeouts |
+| On failure | `TestResults/e2e-artifacts/<test>/` gets `screen.png`, the latest `app-*.log` and `process.txt`; CI uploads it as `wpf-e2e-artifacts` |
+| Serial | one `E2E` xUnit collection with parallelisation disabled |
+
+Journeys: app starts and the investment tree lists `XPI`; an asset opens with its summary
+(`asset-summary-name`); an expense is added and listed; a blank value shows `Value must be a
+non-zero number.` and adds nothing; the Monthly summary shows `Category total 0.00` and the
+`Barclays` bank row. The app has no deterministic FX source, so nothing asserts a converted value.
+
+Run it locally on a machine with a desktop (it opens and closes the app visibly, so do not use
+the machine meanwhile):
+
+```powershell
+dotnet test Tests/Financial.App.E2ETests --filter "Category=Smoke"
+```
+
+Not a Playwright-style test: a failing run leaves artifacts, not a trace. A UIA-hosted runner that
+turns unreliable moves the job to the nightly pipeline (`docs/ci-affected-pipeline.md`).
 
 ## Not the E2E environment
 

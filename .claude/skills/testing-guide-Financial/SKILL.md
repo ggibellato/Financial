@@ -55,7 +55,7 @@ This revision replaces the previous guide, which called the in-process `WebAppli
   embeds the built SPA in `wwwroot`, seeds `Tests/Financial.Api.Tests/TestData/*.test.json`,
   starts `dotnet Financial.Api.dll` on port 8080 and runs the `Financial.Web/tests/e2e` Playwright suite (`npm run smoke-test`)
   in Chromium. Two real processes, real HTTP, real JSON files — that is E2E here. Reproduce the
-  same steps locally on a free port. WPF has no E2E harness. See `references/e2e-environment.md`.
+  same steps locally on a free port. WPF's E2E is `Tests/Financial.App.E2ETests`, run by the `wpf-e2e` job. See `references/e2e-environment.md`.
 - **Why DI tests exist, and where.** `AddFinancialCashFlowInfrastructure`, `AddFinancialInfrastructure`,
   `AddObservability` and `AddGoogleDriveFileClient` register into a real `ServiceCollection`; a
   missing registration or an unsupported `CashFlow:Repository:Provider` only fails at
