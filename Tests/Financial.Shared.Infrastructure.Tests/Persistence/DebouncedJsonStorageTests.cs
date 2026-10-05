@@ -51,16 +51,14 @@ public class DebouncedJsonStorageTests
     [Fact]
     public async Task WriteDuringDebounceWindow_ResetsWait_OnlyLatestJsonUploaded()
     {
-        var clock = new ObservableFakeClock(new DateTimeOffset(2026, 8, 13, 10, 0, 0, TimeSpan.Zero));
+        var clock = new ObservableFakeClock(TestClock.Midsummer);
         var storage = new DebouncedJsonStorage(_inner, TimeSpan.FromMilliseconds(150), clock);
 
         await storage.WriteAsync("{\"a\":1}");
-        await WaitForAsync(() => clock.TimersArmed == 1);
-        clock.Advance(TimeSpan.FromMilliseconds(100));
+        await FireNextTimerAsync(clock, TimeSpan.FromMilliseconds(100));
 
         await storage.WriteAsync("{\"a\":2}");
-        await WaitForAsync(() => clock.TimersArmed == 2);
-        clock.Advance(TimeSpan.FromMilliseconds(100));
+        await FireNextTimerAsync(clock, TimeSpan.FromMilliseconds(100));
 
         // 200ms have now passed since the first write, so its 150ms window would have elapsed had
         // the second write not restarted it.
@@ -100,21 +98,19 @@ public class DebouncedJsonStorageTests
     [Fact]
     public async Task RetriesExhausted_StatusBecomesFailed_LastSuccessfulSaveUtcPreserved()
     {
-        var clock = new ObservableFakeClock(new DateTimeOffset(2026, 8, 13, 10, 0, 0, TimeSpan.Zero));
+        var clock = new ObservableFakeClock(TestClock.Midsummer);
         var storage = new DebouncedJsonStorage(
             _inner, TimeSpan.FromMilliseconds(20), clock, maxRetries: 0, flushTimeout: TimeSpan.FromSeconds(8));
 
         await storage.WriteAsync("{\"a\":1}");
-        await WaitForAsync(() => clock.TimersArmed == 1);
-        clock.Advance(TimeSpan.FromMilliseconds(20));
+        await FireNextTimerAsync(clock, TimeSpan.FromMilliseconds(20));
         await WaitForAsync(() => storage.GetStatus().State == SyncState.Idle);
         var successTimestamp = storage.GetStatus().LastSuccessfulSaveUtc;
         successTimestamp.Should().NotBeNull();
 
         _inner.FailNextWrites(1);
         await storage.WriteAsync("{\"a\":2}");
-        await WaitForAsync(() => clock.TimersArmed == 2);
-        clock.Advance(TimeSpan.FromMilliseconds(20));
+        await FireNextTimerAsync(clock, TimeSpan.FromMilliseconds(20));
 
         await WaitForAsync(() => storage.GetStatus().State == SyncState.Failed);
 
@@ -126,15 +122,14 @@ public class DebouncedJsonStorageTests
     [Fact]
     public async Task SaveFailure_DoesNotAutoStartFollowUpCycle()
     {
-        var clock = new ObservableFakeClock(new DateTimeOffset(2026, 8, 13, 10, 0, 0, TimeSpan.Zero));
+        var clock = new ObservableFakeClock(TestClock.Midsummer);
         _inner.HoldWritesUntilReleased();
         _inner.FailNextWrites(1);
         var storage = new DebouncedJsonStorage(
             _inner, TimeSpan.FromMilliseconds(20), clock, maxRetries: 0, flushTimeout: TimeSpan.FromSeconds(8));
 
         await storage.WriteAsync("{\"a\":1}");
-        await WaitForAsync(() => clock.TimersArmed == 1);
-        clock.Advance(TimeSpan.FromMilliseconds(20));
+        await FireNextTimerAsync(clock, TimeSpan.FromMilliseconds(20));
         await WaitForAsync(() => storage.GetStatus().State == SyncState.Saving);
 
         await storage.WriteAsync("{\"a\":2}");
@@ -151,12 +146,11 @@ public class DebouncedJsonStorageTests
     [Fact]
     public async Task SuccessfulSave_StatusBecomesIdle_LastSuccessfulSaveUtcUpdates()
     {
-        var clock = new ObservableFakeClock(new DateTimeOffset(2026, 8, 13, 12, 0, 0, TimeSpan.Zero));
+        var clock = new ObservableFakeClock(TestClock.Midsummer);
         var storage = new DebouncedJsonStorage(_inner, TimeSpan.FromMilliseconds(20), clock);
 
         await storage.WriteAsync("{\"a\":1}");
-        await WaitForAsync(() => clock.TimersArmed == 1);
-        clock.Advance(TimeSpan.FromMilliseconds(20));
+        await FireNextTimerAsync(clock, TimeSpan.FromMilliseconds(20));
 
         await WaitForAsync(() => storage.GetStatus().State == SyncState.Idle);
 
@@ -166,13 +160,12 @@ public class DebouncedJsonStorageTests
     [Fact]
     public async Task SuccessfulSave_WhenStillDirtyFromANewerWrite_StatusBecomesPendingNotIdle()
     {
-        var clock = new ObservableFakeClock(new DateTimeOffset(2026, 8, 13, 10, 0, 0, TimeSpan.Zero));
+        var clock = new ObservableFakeClock(TestClock.Midsummer);
         _inner.HoldWritesUntilReleased();
         var storage = new DebouncedJsonStorage(_inner, TimeSpan.FromMilliseconds(300), clock);
 
         await storage.WriteAsync("{\"a\":1}");
-        await WaitForAsync(() => clock.TimersArmed == 1);
-        clock.Advance(TimeSpan.FromMilliseconds(300));
+        await FireNextTimerAsync(clock, TimeSpan.FromMilliseconds(300));
         await WaitForAsync(() => storage.GetStatus().State == SyncState.Saving);
 
         // Dirties the document again while the first save is still blocked on the gate.
@@ -188,8 +181,7 @@ public class DebouncedJsonStorageTests
 
         // Then drive the rest of the sequence to prove Pending meant "a newer document is still
         // queued", rather than the save cycle having quietly stalled.
-        await WaitForAsync(() => clock.TimersArmed == 2);
-        clock.Advance(TimeSpan.FromMilliseconds(300));
+        await FireNextTimerAsync(clock, TimeSpan.FromMilliseconds(300));
         await WaitForAsync(() => _inner.WrittenJson.Count == 2);
         await WaitForAsync(() => storage.GetStatus().State == SyncState.Idle);
 
@@ -299,17 +291,15 @@ public class DebouncedJsonStorageTests
     [Fact]
     public async Task TransientWriteFailure_LogsAWarningForTheRetry_ThenSucceedsWithoutAnError()
     {
-        var clock = new ObservableFakeClock(new DateTimeOffset(2026, 8, 13, 10, 0, 0, TimeSpan.Zero));
+        var clock = new ObservableFakeClock(TestClock.Midsummer);
         _inner.FailNextWrites(1);
         var logger = new RecordingLogger<DebouncedJsonStorage>();
         var storage = new DebouncedJsonStorage(
             _inner, TimeSpan.FromMilliseconds(20), clock, maxRetries: 5, flushTimeout: TimeSpan.FromSeconds(8), logger: logger);
 
         await storage.WriteAsync("{\"a\":1}");
-        await WaitForAsync(() => clock.TimersArmed == 1);
-        clock.Advance(TimeSpan.FromMilliseconds(20));
-        await WaitForAsync(() => clock.TimersArmed == 2);
-        clock.Advance(TimeSpan.FromSeconds(2));
+        await FireNextTimerAsync(clock, TimeSpan.FromMilliseconds(20));
+        await FireNextTimerAsync(clock, TimeSpan.FromSeconds(2));
         await WaitForAsync(() => storage.GetStatus().State == SyncState.Idle);
 
         var warning = logger.Entries.Should().ContainSingle(e => e.Level == Microsoft.Extensions.Logging.LogLevel.Warning).Which;
@@ -333,6 +323,13 @@ public class DebouncedJsonStorageTests
         var error = logger.Entries.Should().ContainSingle(e => e.Level == Microsoft.Extensions.Logging.LogLevel.Error).Which;
         error.Message.Should().Contain(nameof(TransientStorageException));
         error.Message.Should().NotContain("{\"a\":1}", "document content must never reach the log stream");
+    }
+
+    private static async Task FireNextTimerAsync(ObservableFakeClock clock, TimeSpan span)
+    {
+        var expected = ++clock.TimersFired;
+        await WaitForAsync(() => clock.TimersArmed >= expected);
+        clock.Advance(span);
     }
 
     private static async Task WaitForAsync(Func<bool> condition, TimeSpan? timeout = null)
