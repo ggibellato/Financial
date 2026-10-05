@@ -6,7 +6,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace Financial.Shared.Infrastructure.Tests.Currencies.FxRates;
+namespace Financial.Shared.Abstractions.Tests.Currencies.FxRates;
 
 [Trait("Category", "Unit")]
 public class UsdBasedExchangeRateProviderTests

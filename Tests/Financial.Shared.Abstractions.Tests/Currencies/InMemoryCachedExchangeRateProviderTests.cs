@@ -1,7 +1,7 @@
 using Financial.Shared.Abstractions.Currencies;
 using FluentAssertions;
 
-namespace Financial.Shared.Infrastructure.Tests.Currencies;
+namespace Financial.Shared.Abstractions.Tests.Currencies;
 
 [Trait("Category", "Unit")]
 public class InMemoryCachedExchangeRateProviderTests
