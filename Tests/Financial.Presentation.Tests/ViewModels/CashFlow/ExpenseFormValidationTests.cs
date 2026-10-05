@@ -5,7 +5,7 @@ namespace Financial.Presentation.Tests.ViewModels.CashFlow;
 
 public class ExpenseFormValidationTests
 {
-    private static readonly DateTime ValidDate = DateTime.Today;
+    private static readonly DateTime ValidDate = TestClock.LocalToday;
     private static readonly Guid DefaultCategoryId = Guid.NewGuid();
 
     private static string Validate(

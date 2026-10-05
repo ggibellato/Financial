@@ -74,6 +74,8 @@ public class MensaisViewModel : ViewModelBase
 
     public RelayCommand RetryCommand { get; }
 
+    private readonly TimeProvider _timeProvider;
+
     public MensaisViewModel(
         IMensaisService mensaisService,
         IExpenseService expenseService,
@@ -81,8 +83,10 @@ public class MensaisViewModel : ViewModelBase
         ICategoryService categoryService,
         IDialogService dialogService,
         Func<string, bool> confirm,
+        TimeProvider timeProvider,
         ILogger<MensaisViewModel> logger)
     {
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _mensaisService = mensaisService ?? throw new ArgumentNullException(nameof(mensaisService));
         _expenseService = expenseService ?? throw new ArgumentNullException(nameof(expenseService));
         _bankService = bankService ?? throw new ArgumentNullException(nameof(bankService));
@@ -91,7 +95,7 @@ public class MensaisViewModel : ViewModelBase
         _confirm = confirm ?? throw new ArgumentNullException(nameof(confirm));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        var today = DateTime.Today;
+        var today = _timeProvider.GetLocalNow().Date;
         _displayYear = today.Year;
         _displayMonth = today.Month;
 
@@ -488,7 +492,7 @@ public class MensaisViewModel : ViewModelBase
 
     private async Task ChangeStatusViaUkExpensePromptAsync(RecurringBillDTO bill)
     {
-        var dialog = new UkExpensePromptDialogViewModel(bill, _bankService.GetBanks(), _categoryService.GetCategories());
+        var dialog = new UkExpensePromptDialogViewModel(bill, _bankService.GetBanks(), _categoryService.GetCategories(), _timeProvider);
 
         if (!_dialogService.ShowUkExpensePromptDialog(dialog))
         {

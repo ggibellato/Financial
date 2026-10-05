@@ -92,6 +92,7 @@ namespace Financial.Presentation.App
                         sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.ICreditCardService>(),
                         sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.ICategoryService>(),
                         confirm,
+                        sp.GetRequiredService<TimeProvider>(),
                         sp.GetRequiredService<ITelemetryTracer>()));
                     services.AddTransient<MonthlyView>();
                     services.AddTransient<ReservaViewModel>(sp => new ReservaViewModel(
@@ -100,6 +101,7 @@ namespace Financial.Presentation.App
                         sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.IBankService>(),
                         sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.ICategoryService>(),
                         confirm,
+                        sp.GetRequiredService<TimeProvider>(),
                         sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<ReservaViewModel>>()));
                     services.AddTransient<ReservaView>();
                     services.AddTransient<MensaisViewModel>(sp => new MensaisViewModel(
@@ -109,11 +111,13 @@ namespace Financial.Presentation.App
                         sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.ICategoryService>(),
                         sp.GetRequiredService<Financial.Presentation.App.Services.IDialogService>(),
                         confirm,
+                        sp.GetRequiredService<TimeProvider>(),
                         sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<MensaisViewModel>>()));
                     services.AddTransient<MensaisView>();
                     services.AddTransient<ControleMaeViewModel>(sp => new ControleMaeViewModel(
                         sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.IControleMaeService>(),
                         confirm,
+                        sp.GetRequiredService<TimeProvider>(),
                         sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<ControleMaeViewModel>>()));
                     services.AddTransient<ControleMaeView>();
                     services.AddTransient<InvestmentSnapshotsViewModel>();

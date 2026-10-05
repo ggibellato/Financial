@@ -153,6 +153,8 @@ public class MonthlyViewModel : ViewModelBase
 
     private readonly Func<string, bool> _confirm;
 
+    private readonly TimeProvider _timeProvider;
+
     public MonthlyViewModel(
         IExpenseService expenseService,
         IIncomeService incomeService,
@@ -165,8 +167,10 @@ public class MonthlyViewModel : ViewModelBase
         ICreditCardService creditCardService,
         ICategoryService categoryService,
         Func<string, bool> confirm,
+        TimeProvider timeProvider,
         ITelemetryTracer tracer)
     {
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _expenseService = expenseService ?? throw new ArgumentNullException(nameof(expenseService));
         _incomeService = incomeService ?? throw new ArgumentNullException(nameof(incomeService));
         _bankService = bankService ?? throw new ArgumentNullException(nameof(bankService));
@@ -179,15 +183,15 @@ public class MonthlyViewModel : ViewModelBase
         _categoryService = categoryService ?? throw new ArgumentNullException(nameof(categoryService));
         _confirm = confirm ?? throw new ArgumentNullException(nameof(confirm));
 
-        var today = DateTime.Today;
+        var today = _timeProvider.GetLocalNow().Date;
         _year = today.Year;
         _month = today.Month;
 
         RetryCommand = new RelayCommand(async () => await RefreshAsync());
-        Income = new IncomeWorkflowViewModel(incomeService, confirm, RefreshAsync);
-        Expense = new ExpenseWorkflowViewModel(expenseService, Categories, Banks, CreditCards, confirm, tracer, RefreshAsync);
+        Income = new IncomeWorkflowViewModel(incomeService, confirm, timeProvider, RefreshAsync);
+        Expense = new ExpenseWorkflowViewModel(expenseService, Categories, Banks, CreditCards, confirm, timeProvider, tracer, RefreshAsync);
         Cards = new CardsWorkflowViewModel(cardStatementService, creditCardService, Banks, CreditCards, RefreshAsync);
-        BankOperations = new BankOperationsWorkflowViewModel(transferService, balanceAdjustmentService, Banks, BankTotals, confirm, RefreshAsync);
+        BankOperations = new BankOperationsWorkflowViewModel(transferService, balanceAdjustmentService, Banks, BankTotals, confirm, timeProvider, RefreshAsync);
 
         BankFilter = new ColumnFilterViewModel<BankTotalRow>("Bank", row => [row.Bank], ApplyBankFilter);
         CategoryFilter = new ColumnFilterViewModel<CategoryTotalDTO>("Category", c => [c.Category], ApplyCategoryFilter);

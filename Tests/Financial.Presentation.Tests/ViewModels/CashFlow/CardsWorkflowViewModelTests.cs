@@ -32,7 +32,7 @@ public class CardsWorkflowViewModelTests
     {
         var cardStatementService = new StubCardStatementService();
         var creditCardService = new StubCreditCardService();
-        var banks = new ObservableCollection<BankDTO> { new() { Id = BarclaysId, Name = "Barclays", RoundUpEnabled = true, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today), HasReferences = false } };
+        var banks = new ObservableCollection<BankDTO> { new() { Id = BarclaysId, Name = "Barclays", RoundUpEnabled = true, OpeningBalance = 0, OpeningBalanceDate = TestClock.Today, HasReferences = false } };
         var creditCards = new ObservableCollection<CreditCardDTO>();
         var viewModel = new CardsWorkflowViewModel(cardStatementService, creditCardService, banks, creditCards, refresh ?? (() => Task.CompletedTask));
         return (viewModel, cardStatementService, creditCardService, banks, creditCards);
@@ -45,7 +45,7 @@ public class CardsWorkflowViewModelTests
         creditCards.Add(new() { Id = BaAmexId, Name = "BaAmex", IsActive = true, NextInvoiceDueDate = new DateOnly(2026, 9, 5), HasReferences = false });
         creditCards.Add(new() { Id = ChaseId, Name = "ChaseMaster4023", IsActive = true, NextInvoiceDueDate = null, HasReferences = false });
         creditCards.Add(new() { Id = PaypalId, Name = "PaypalCredit", IsActive = false, NextInvoiceDueDate = null, HasReferences = false });
-        viewModel.ApplyRefresh([new CardStatementDTO { Id = Guid.NewGuid(), CreditCardId = BaAmexId, CreditCardName = "BaAmex", Year = DateTime.Today.Year, Month = DateTime.Today.Month, IsPaid = false, OutstandingTotal = 100m, AccumulatedOutstandingTotal = 100m }]);
+        viewModel.ApplyRefresh([new CardStatementDTO { Id = Guid.NewGuid(), CreditCardId = BaAmexId, CreditCardName = "BaAmex", Year = TestClock.LocalToday.Year, Month = TestClock.LocalToday.Month, IsPaid = false, OutstandingTotal = 100m, AccumulatedOutstandingTotal = 100m }]);
 
         viewModel.CreditCardManagementRows.Should().HaveCount(3);
         viewModel.CreditCardManagementRows.Select(r => r.CreditCardName).Should().Contain(["BaAmex", "ChaseMaster4023", "PaypalCredit"]);
@@ -70,7 +70,7 @@ public class CardsWorkflowViewModelTests
     {
         var (viewModel, _, _, _, creditCards) = CreateViewModel();
         creditCards.Add(new() { Id = ChaseId, Name = "ChaseMaster4023", IsActive = true, NextInvoiceDueDate = null, HasReferences = false });
-        viewModel.ApplyRefresh([new CardStatementDTO { Id = Guid.NewGuid(), CreditCardId = ChaseId, CreditCardName = "ChaseMaster4023", Year = DateTime.Today.Year, Month = DateTime.Today.Month, IsPaid = true, OutstandingTotal = 42.5m, AccumulatedOutstandingTotal = 142.5m }]);
+        viewModel.ApplyRefresh([new CardStatementDTO { Id = Guid.NewGuid(), CreditCardId = ChaseId, CreditCardName = "ChaseMaster4023", Year = TestClock.LocalToday.Year, Month = TestClock.LocalToday.Month, IsPaid = true, OutstandingTotal = 42.5m, AccumulatedOutstandingTotal = 142.5m }]);
 
         var chaseRow = viewModel.CreditCardManagementRows.Single(r => r.CreditCardName == "ChaseMaster4023");
         chaseRow.HasStatement.Should().BeTrue();
@@ -127,8 +127,8 @@ public class CardsWorkflowViewModelTests
         var (viewModel, _, _, _, _) = CreateViewModel();
 
         viewModel.ApplyRefresh([
-            new CardStatementDTO { Id = Guid.NewGuid(), CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex", Year = DateTime.Today.Year, Month = DateTime.Today.Month, IsPaid = false, OutstandingTotal = 100m, AccumulatedOutstandingTotal = 100m },
-            new CardStatementDTO { Id = Guid.NewGuid(), CreditCardId = Guid.NewGuid(), CreditCardName = "ChaseMaster4023", Year = DateTime.Today.Year, Month = DateTime.Today.Month, IsPaid = false, OutstandingTotal = 50m, AccumulatedOutstandingTotal = 50m },
+            new CardStatementDTO { Id = Guid.NewGuid(), CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex", Year = TestClock.LocalToday.Year, Month = TestClock.LocalToday.Month, IsPaid = false, OutstandingTotal = 100m, AccumulatedOutstandingTotal = 100m },
+            new CardStatementDTO { Id = Guid.NewGuid(), CreditCardId = Guid.NewGuid(), CreditCardName = "ChaseMaster4023", Year = TestClock.LocalToday.Year, Month = TestClock.LocalToday.Month, IsPaid = false, OutstandingTotal = 50m, AccumulatedOutstandingTotal = 50m },
         ]);
 
         viewModel.AdjustmentTotal.Should().Be(150m);
@@ -138,7 +138,7 @@ public class CardsWorkflowViewModelTests
     public async Task MarkCardStatementPaid_RequiresBankSelected_ThenCallsService()
     {
         var (viewModel, cardStatementService, _, _, _) = CreateViewModel();
-        var statement = new CardStatementDTO { Id = Guid.NewGuid(), CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex", Year = DateTime.Today.Year, Month = DateTime.Today.Month, IsPaid = false, OutstandingTotal = 100m, AccumulatedOutstandingTotal = 100m };
+        var statement = new CardStatementDTO { Id = Guid.NewGuid(), CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex", Year = TestClock.LocalToday.Year, Month = TestClock.LocalToday.Month, IsPaid = false, OutstandingTotal = 100m, AccumulatedOutstandingTotal = 100m };
         cardStatementService.Statements = [statement];
         viewModel.ApplyRefresh([statement]);
 
@@ -162,7 +162,7 @@ public class CardsWorkflowViewModelTests
     public async Task MarkCardStatementPaid_WhenTheServerWarnsNothingChanged_SurfacesItSeparatelyFromErrors()
     {
         var (viewModel, cardStatementService, _, _, _) = CreateViewModel();
-        var statement = new CardStatementDTO { Id = Guid.NewGuid(), CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex", Year = DateTime.Today.Year, Month = DateTime.Today.Month, IsPaid = true, OutstandingTotal = 0m, AccumulatedOutstandingTotal = 0m };
+        var statement = new CardStatementDTO { Id = Guid.NewGuid(), CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex", Year = TestClock.LocalToday.Year, Month = TestClock.LocalToday.Month, IsPaid = true, OutstandingTotal = 0m, AccumulatedOutstandingTotal = 0m };
         cardStatementService.Statements = [statement];
         cardStatementService.NextWarning = "This statement was already marked paid; nothing changed.";
         viewModel.SetMarkPaidSource(statement.Id, BarclaysId);
@@ -177,7 +177,7 @@ public class CardsWorkflowViewModelTests
     public async Task UnmarkCardStatementPaid_WhenTheServerWarnsNothingChanged_SurfacesTheWarning()
     {
         var (viewModel, cardStatementService, _, _, _) = CreateViewModel();
-        var statement = new CardStatementDTO { Id = Guid.NewGuid(), CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex", Year = DateTime.Today.Year, Month = DateTime.Today.Month, IsPaid = false, OutstandingTotal = 0m, AccumulatedOutstandingTotal = 0m };
+        var statement = new CardStatementDTO { Id = Guid.NewGuid(), CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex", Year = TestClock.LocalToday.Year, Month = TestClock.LocalToday.Month, IsPaid = false, OutstandingTotal = 0m, AccumulatedOutstandingTotal = 0m };
         cardStatementService.Statements = [statement];
         cardStatementService.NextWarning = "This statement was not marked paid; nothing changed.";
 
@@ -190,7 +190,7 @@ public class CardsWorkflowViewModelTests
     public async Task MarkCardStatementPaid_WhenTheServerReportsNoWarning_LeavesTheWarningClear()
     {
         var (viewModel, cardStatementService, _, _, _) = CreateViewModel();
-        var statement = new CardStatementDTO { Id = Guid.NewGuid(), CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex", Year = DateTime.Today.Year, Month = DateTime.Today.Month, IsPaid = false, OutstandingTotal = 100m, AccumulatedOutstandingTotal = 100m };
+        var statement = new CardStatementDTO { Id = Guid.NewGuid(), CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex", Year = TestClock.LocalToday.Year, Month = TestClock.LocalToday.Month, IsPaid = false, OutstandingTotal = 100m, AccumulatedOutstandingTotal = 100m };
         cardStatementService.Statements = [statement];
         viewModel.SetMarkPaidSource(statement.Id, BarclaysId);
 
@@ -203,7 +203,7 @@ public class CardsWorkflowViewModelTests
     public async Task UnmarkCardStatementPaid_CallsService()
     {
         var (viewModel, cardStatementService, _, _, _) = CreateViewModel();
-        var statement = new CardStatementDTO { Id = Guid.NewGuid(), CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex", Year = DateTime.Today.Year, Month = DateTime.Today.Month, IsPaid = true, OutstandingTotal = 0m, AccumulatedOutstandingTotal = 0m };
+        var statement = new CardStatementDTO { Id = Guid.NewGuid(), CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex", Year = TestClock.LocalToday.Year, Month = TestClock.LocalToday.Month, IsPaid = true, OutstandingTotal = 0m, AccumulatedOutstandingTotal = 0m };
         cardStatementService.Statements = [statement];
 
         await viewModel.UnmarkStatementPaidAsync(statement);

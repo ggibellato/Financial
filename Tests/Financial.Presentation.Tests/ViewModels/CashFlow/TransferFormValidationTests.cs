@@ -5,7 +5,7 @@ namespace Financial.Presentation.Tests.ViewModels.CashFlow;
 
 public class TransferFormValidationTests
 {
-    private static readonly DateTime ValidDate = DateTime.Today;
+    private static readonly DateTime ValidDate = TestClock.LocalToday;
 
     private static string Validate(
         DateTime? date, Guid? sourceBank = null, Guid? destinationBank = null, string amount = "100") =>

@@ -5,7 +5,7 @@ namespace Financial.Presentation.Tests.ViewModels.CashFlow;
 
 public class IncomeSplitFormValidationTests
 {
-    private static readonly DateTime ValidDate = DateTime.Today;
+    private static readonly DateTime ValidDate = TestClock.LocalToday;
 
     private static string Validate(DateTime? date, string amount = "100", string description = "Salary") =>
         IncomeSplitFormValidation.BuildValidationMessage(date, amount, description);

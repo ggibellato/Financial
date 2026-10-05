@@ -13,9 +13,9 @@ public class AdjustmentWorkflowViewModelTests
     private static (AdjustmentWorkflowViewModel ViewModel, StubBalanceAdjustmentService Service, ObservableCollection<BankTotalRow> BankTotals) CreateViewModel(Func<Task>? refresh = null)
     {
         var adjustmentService = new StubBalanceAdjustmentService();
-        var banks = new ObservableCollection<BankDTO> { new() { Id = BarclaysId, Name = "Barclays", RoundUpEnabled = true, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today), HasReferences = false } };
+        var banks = new ObservableCollection<BankDTO> { new() { Id = BarclaysId, Name = "Barclays", RoundUpEnabled = true, OpeningBalance = 0, OpeningBalanceDate = TestClock.Today, HasReferences = false } };
         var bankTotals = new ObservableCollection<BankTotalRow>();
-        var viewModel = new AdjustmentWorkflowViewModel(adjustmentService, banks, bankTotals, refresh ?? (() => Task.CompletedTask));
+        var viewModel = new AdjustmentWorkflowViewModel(adjustmentService, banks, bankTotals, TestClock.At(), refresh ?? (() => Task.CompletedTask));
         return (viewModel, adjustmentService, bankTotals);
     }
 
@@ -28,7 +28,7 @@ public class AdjustmentWorkflowViewModelTests
         viewModel.ShowCorrectBalanceFormCommand.Execute(null);
         viewModel.AdjustmentFormBankName = BarclaysId;
         viewModel.AdjustmentFormCurrentBalance.Should().Be(42.5m);
-        viewModel.AdjustmentFormDate = DateTime.Today;
+        viewModel.AdjustmentFormDate = TestClock.LocalToday;
         viewModel.AdjustmentFormTargetBalance = "50";
 
         await viewModel.SaveAdjustmentAsync();
@@ -43,7 +43,7 @@ public class AdjustmentWorkflowViewModelTests
     public async Task EditAdjustment_ValidForm_CallsUpdateServiceWithCorrectBankAndId()
     {
         var (viewModel, adjustments, _) = CreateViewModel();
-        var adjustment = new BalanceAdjustmentDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), BankId = BarclaysId, BankName = "Barclays", TargetBalance = 100m, Delta = 5m };
+        var adjustment = new BalanceAdjustmentDTO { Id = Guid.NewGuid(), Date = TestClock.Today, BankId = BarclaysId, BankName = "Barclays", TargetBalance = 100m, Delta = 5m };
 
         viewModel.EditAdjustmentCommand.Execute(adjustment);
         viewModel.AdjustmentFormTargetBalance = "120";
@@ -79,7 +79,7 @@ public class AdjustmentWorkflowViewModelTests
 
         viewModel.IsAdjustmentBankSelected.Should().BeTrue();
         viewModel.AdjustmentFormCurrentBalance.Should().Be(88m);
-        viewModel.AdjustmentFormDate = DateTime.Today;
+        viewModel.AdjustmentFormDate = TestClock.LocalToday;
         viewModel.AdjustmentFormTargetBalance = "90";
         viewModel.SaveAdjustmentCommand.CanExecute(null).Should().BeTrue();
     }
@@ -88,7 +88,7 @@ public class AdjustmentWorkflowViewModelTests
     public void CorrectBalanceForm_EditingExistingAdjustment_LocksBankSelection()
     {
         var (viewModel, _, _) = CreateViewModel();
-        var adjustment = new BalanceAdjustmentDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), BankId = BarclaysId, BankName = "Barclays", TargetBalance = 100m, Delta = 5m };
+        var adjustment = new BalanceAdjustmentDTO { Id = Guid.NewGuid(), Date = TestClock.Today, BankId = BarclaysId, BankName = "Barclays", TargetBalance = 100m, Delta = 5m };
 
         viewModel.EditAdjustmentCommand.Execute(adjustment);
 
@@ -113,7 +113,7 @@ public class AdjustmentWorkflowViewModelTests
         bankTotals.Add(new BankTotalRow { BankId = BarclaysId, Bank = "Barclays", Balance = 42.5m, RoundUpTotal = 0m });
         viewModel.ShowCorrectBalanceFormCommand.Execute(null);
         viewModel.AdjustmentFormBankName = BarclaysId;
-        viewModel.AdjustmentFormDate = DateTime.Today;
+        viewModel.AdjustmentFormDate = TestClock.LocalToday;
         viewModel.AdjustmentFormTargetBalance = "-5";
 
         await viewModel.SaveAdjustmentAsync();
@@ -129,7 +129,7 @@ public class AdjustmentWorkflowViewModelTests
         bankTotals.Add(new BankTotalRow { BankId = BarclaysId, Bank = "Barclays", Balance = 42.5m, RoundUpTotal = 0m });
         viewModel.ShowCorrectBalanceFormCommand.Execute(null);
         viewModel.AdjustmentFormBankName = BarclaysId;
-        viewModel.AdjustmentFormDate = DateTime.Today;
+        viewModel.AdjustmentFormDate = TestClock.LocalToday;
         viewModel.AdjustmentFormTargetBalance = "-5";
         await viewModel.SaveAdjustmentAsync();
         viewModel.TargetBalanceFieldError.Should().NotBeNull();
@@ -146,7 +146,7 @@ public class AdjustmentWorkflowViewModelTests
         var (viewModel, _, bankTotals) = CreateViewModel();
         bankTotals.Add(new BankTotalRow { BankId = BarclaysId, Bank = "Barclays", Balance = 42.5m, RoundUpTotal = 0m });
         viewModel.ShowCorrectBalanceFormCommand.Execute(null);
-        var usedDate = DateTime.Today.AddDays(-1);
+        var usedDate = TestClock.LocalToday.AddDays(-1);
         viewModel.AdjustmentFormBankName = BarclaysId;
         viewModel.AdjustmentFormDate = usedDate;
         viewModel.AdjustmentFormTargetBalance = "50";
@@ -166,7 +166,7 @@ public class AdjustmentWorkflowViewModelTests
         bankTotals.Add(new BankTotalRow { BankId = BarclaysId, Bank = "Barclays", Balance = 42.5m, RoundUpTotal = 0m });
         viewModel.ShowCorrectBalanceFormCommand.Execute(null);
         viewModel.AdjustmentFormBankName = BarclaysId;
-        viewModel.AdjustmentFormDate = DateTime.Today;
+        viewModel.AdjustmentFormDate = TestClock.LocalToday;
         viewModel.AdjustmentFormTargetBalance = "50";
         viewModel.AdjustmentFormNote = "Matched statement";
 

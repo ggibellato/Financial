@@ -141,12 +141,16 @@ public class AdjustmentWorkflowViewModel : ViewModelBase
     public RelayCommand SaveAdjustmentCommand { get; }
     public RelayCommand DismissAdjustmentResultCommand { get; }
 
+    private readonly TimeProvider _timeProvider;
+
     public AdjustmentWorkflowViewModel(
         IBalanceAdjustmentService balanceAdjustmentService,
         ObservableCollection<BankDTO> banks,
         ObservableCollection<BankTotalRow> bankTotals,
+        TimeProvider timeProvider,
         Func<Task> refresh)
     {
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _balanceAdjustmentService = balanceAdjustmentService ?? throw new ArgumentNullException(nameof(balanceAdjustmentService));
         Banks = banks ?? throw new ArgumentNullException(nameof(banks));
         _bankTotals = bankTotals ?? throw new ArgumentNullException(nameof(bankTotals));
@@ -163,7 +167,7 @@ public class AdjustmentWorkflowViewModel : ViewModelBase
     {
         _editingAdjustmentBank = null;
         _editingAdjustmentId = null;
-        AdjustmentFormDate = _lastUsedAdjustmentDate ?? DateTime.Today;
+        AdjustmentFormDate = _lastUsedAdjustmentDate ?? _timeProvider.GetLocalNow().Date;
         AdjustmentFormTargetBalance = string.Empty;
         AdjustmentFormNote = string.Empty;
         AdjustmentSaveError = null;

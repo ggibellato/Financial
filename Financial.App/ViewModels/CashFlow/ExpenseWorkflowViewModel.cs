@@ -312,15 +312,19 @@ public class ExpenseWorkflowViewModel : ViewModelBase
     public RelayCommand<ExpenseDTO> EditExpenseCommand { get; }
     public RelayCommand<ExpenseDTO> DeleteExpenseCommand { get; }
 
+    private readonly TimeProvider _timeProvider;
+
     public ExpenseWorkflowViewModel(
         IExpenseService expenseService,
         ObservableCollection<CategoryDTO> categories,
         ObservableCollection<BankDTO> banks,
         ObservableCollection<CreditCardDTO> creditCards,
         Func<string, bool> confirm,
+        TimeProvider timeProvider,
         ITelemetryTracer tracer,
         Func<Task> refresh)
     {
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _expenseService = expenseService ?? throw new ArgumentNullException(nameof(expenseService));
         _categories = categories ?? throw new ArgumentNullException(nameof(categories));
         Banks = banks ?? throw new ArgumentNullException(nameof(banks));
@@ -376,7 +380,7 @@ public class ExpenseWorkflowViewModel : ViewModelBase
     private void ShowCreateExpenseForm(string? mode)
     {
         _editingExpenseId = null;
-        ExpenseFormDate = _lastUsedExpenseDate ?? DateTime.Today;
+        ExpenseFormDate = _lastUsedExpenseDate ?? _timeProvider.GetLocalNow().Date;
         ExpenseFormDescription = string.Empty;
         ExpenseFormCategoryId = _lastUsedExpenseCategoryId is { } lastCategoryId && _categories.Any(c => c.Id == lastCategoryId)
             ? lastCategoryId

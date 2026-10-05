@@ -9,7 +9,7 @@ public class IncomeSplitViewModelTests
     private static (IncomeSplitViewModel ViewModel, StubReserveService Service) CreateViewModel()
     {
         var service = new StubReserveService();
-        var viewModel = new IncomeSplitViewModel(service, closeOtherForms: () => { }, refresh: () => Task.CompletedTask);
+        var viewModel = new IncomeSplitViewModel(service, closeOtherForms: () => { }, TestClock.At(), refresh: () => Task.CompletedTask);
         return (viewModel, service);
     }
 
@@ -18,7 +18,7 @@ public class IncomeSplitViewModelTests
     {
         var (viewModel, service) = CreateViewModel();
         viewModel.ShowSplitFormCommand.Execute(null);
-        viewModel.SplitDate = DateTime.Today;
+        viewModel.SplitDate = TestClock.LocalToday;
         viewModel.SplitAmount = "100";
         viewModel.SplitDescription = "Salary";
 
@@ -114,7 +114,7 @@ public class IncomeSplitViewModelTests
     {
         var (viewModel, _) = CreateViewModel();
         viewModel.ShowSplitFormCommand.Execute(null);
-        var usedDate = DateTime.Today.AddDays(-2);
+        var usedDate = TestClock.LocalToday.AddDays(-2);
         viewModel.SplitDate = usedDate;
         viewModel.SplitAmount = "100";
         viewModel.SplitDescription = "Salary";

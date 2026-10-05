@@ -5,7 +5,7 @@ namespace Financial.Presentation.Tests.ViewModels.CashFlow;
 
 public class BalanceAdjustmentFormValidationTests
 {
-    private static readonly DateTime ValidDate = DateTime.Today;
+    private static readonly DateTime ValidDate = TestClock.LocalToday;
 
     private static string Validate(DateTime? date, string targetBalance = "100") =>
         BalanceAdjustmentFormValidation.BuildValidationMessage(date, targetBalance);

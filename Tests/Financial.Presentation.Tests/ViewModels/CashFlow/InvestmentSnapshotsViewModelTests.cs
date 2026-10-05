@@ -9,7 +9,7 @@ public class InvestmentSnapshotsViewModelTests
     private static (InvestmentSnapshotsViewModel ViewModel, StubInvestmentSnapshotService Service) CreateViewModel()
     {
         var service = new StubInvestmentSnapshotService();
-        var viewModel = new InvestmentSnapshotsViewModel(service);
+        var viewModel = new InvestmentSnapshotsViewModel(service, TestClock.At());
         return (viewModel, service);
     }
 
@@ -19,10 +19,19 @@ public class InvestmentSnapshotsViewModelTests
     };
 
     [Fact]
+    public void YearAndMonth_DefaultToTheLocalMonth_JustAfterMidnightOnTheFirstOfJuly()
+    {
+        var viewModel = new InvestmentSnapshotsViewModel(new StubInvestmentSnapshotService(), TestClock.At(TestClock.FirstOfJulyJustAfterMidnight));
+
+        viewModel.Year.Should().Be(2026);
+        viewModel.Month.Should().Be(7);
+    }
+
+    [Fact]
     public async Task RefreshAsync_LoadsSnapshotsForSelectedYearMonth()
     {
         var (viewModel, service) = CreateViewModel();
-        var today = DateTime.Today;
+        var today = TestClock.LocalToday;
         var previousMonth = today.AddMonths(-1);
         service.Snapshots =
         [
@@ -135,8 +144,8 @@ public class InvestmentSnapshotsViewModelTests
         viewModel.SuggestValuesCommand.Execute(null);
 
         viewModel.ApplySuggestionsCommand.Execute(null);
-        var deadline = DateTime.UtcNow.AddSeconds(5);
-        while (viewModel.IsApplyingSuggestions && DateTime.UtcNow < deadline)
+        var deadline = TestClock.Default.UtcDateTime.AddSeconds(5);
+        while (viewModel.IsApplyingSuggestions && TestClock.Default.UtcDateTime < deadline)
             await Task.Delay(25);
 
         service.UpdateRequests.Should().BeEmpty();
@@ -166,7 +175,7 @@ public class InvestmentSnapshotsViewModelTests
     public async Task SnapshotRow_LiabilityAccount_ShowsSuffixedLabel()
     {
         var (viewModel, service) = CreateViewModel();
-        var today = DateTime.Today;
+        var today = TestClock.LocalToday;
         service.Snapshots =
         [
             CreateSnapshot(today.Year, today.Month, "ISA", false, 1000m),
@@ -183,7 +192,7 @@ public class InvestmentSnapshotsViewModelTests
     public async Task NetTotal_SubtractsLiabilityValues()
     {
         var (viewModel, service) = CreateViewModel();
-        var today = DateTime.Today;
+        var today = TestClock.LocalToday;
         service.Snapshots =
         [
             CreateSnapshot(today.Year, today.Month, "ISA", false, 1000m),
@@ -200,7 +209,7 @@ public class InvestmentSnapshotsViewModelTests
     public async Task EditSnapshot_OpensFormShowingAccountLabel()
     {
         var (viewModel, service) = CreateViewModel();
-        var today = DateTime.Today;
+        var today = TestClock.LocalToday;
         service.Snapshots = [CreateSnapshot(today.Year, today.Month, "Mortgage", true, 1000m)];
         await viewModel.RefreshAsync();
 
@@ -213,7 +222,7 @@ public class InvestmentSnapshotsViewModelTests
     public async Task EditSnapshot_ValidForm_CallsUpdateServiceAndClosesForm()
     {
         var (viewModel, service) = CreateViewModel();
-        var today = DateTime.Today;
+        var today = TestClock.LocalToday;
         var snapshot = CreateSnapshot(today.Year, today.Month, "ISA", false, 1000m);
         service.Snapshots = [snapshot];
         await viewModel.RefreshAsync();
@@ -237,7 +246,7 @@ public class InvestmentSnapshotsViewModelTests
     public async Task EditSnapshot_InvalidForm_BlocksSaveWithoutServiceCall(string value)
     {
         var (viewModel, service) = CreateViewModel();
-        var today = DateTime.Today;
+        var today = TestClock.LocalToday;
         var snapshot = CreateSnapshot(today.Year, today.Month, "ISA", false, 1000m);
         viewModel.EditSnapshotCommand.Execute(SnapshotRow.FromDto(snapshot));
         viewModel.EditValue = value;
@@ -252,7 +261,7 @@ public class InvestmentSnapshotsViewModelTests
     public async Task EditSnapshot_BackendRejects_KeepsFormOpenWithValueIntactAndShowsServerError()
     {
         var (viewModel, service) = CreateViewModel();
-        var today = DateTime.Today;
+        var today = TestClock.LocalToday;
         var snapshot = CreateSnapshot(today.Year, today.Month, "ISA", false, 1000m);
         service.ThrowOnUpdate = new InvalidOperationException("Value must not be negative.");
         viewModel.EditSnapshotCommand.Execute(SnapshotRow.FromDto(snapshot));
@@ -324,7 +333,7 @@ public class InvestmentSnapshotsViewModelTests
         var (viewModel, service) = CreateViewModel();
         var included = Guid.NewGuid();
         var excluded = Guid.NewGuid();
-        var today = DateTime.Today;
+        var today = TestClock.LocalToday;
         service.Snapshots =
         [
             CreateSnapshot(today.Year, today.Month, "PlatinumVisa8003", true, 0m, id: included),
@@ -354,7 +363,7 @@ public class InvestmentSnapshotsViewModelTests
         var (viewModel, service) = CreateViewModel();
         var willFail = Guid.NewGuid();
         var willSucceed = Guid.NewGuid();
-        var today = DateTime.Today;
+        var today = TestClock.LocalToday;
         service.Snapshots =
         [
             CreateSnapshot(today.Year, today.Month, "PlatinumVisa8003", true, 0m, id: willFail),
@@ -386,7 +395,7 @@ public class InvestmentSnapshotsViewModelTests
     {
         var (viewModel, service) = CreateViewModel();
         var willFailThenSucceed = Guid.NewGuid();
-        var today = DateTime.Today;
+        var today = TestClock.LocalToday;
         service.Snapshots = [CreateSnapshot(today.Year, today.Month, "PlatinumVisa8003", true, 0m, id: willFailThenSucceed)];
         service.Suggestions = new InvestmentSnapshotSuggestionsDTO
         {
@@ -412,7 +421,7 @@ public class InvestmentSnapshotsViewModelTests
     public async Task SuggestValuesCommand_ClosesOpenEditForm_AndViceVersa()
     {
         var (viewModel, service) = CreateViewModel();
-        var today = DateTime.Today;
+        var today = TestClock.LocalToday;
         var snapshot = CreateSnapshot(today.Year, today.Month, "ISA", false, 1000m);
         service.Snapshots = [snapshot];
         await viewModel.RefreshAsync();

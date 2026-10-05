@@ -35,15 +35,15 @@ public class IncomeWorkflowViewModelTests
 
     private static readonly List<BankDTO> DefaultBanks =
     [
-        new() { Id = BarclaysId, Name = "Barclays", RoundUpEnabled = true, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today), HasReferences = false },
-        new() { Id = ChaseId, Name = "Chase", RoundUpEnabled = false, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today), HasReferences = false },
+        new() { Id = BarclaysId, Name = "Barclays", RoundUpEnabled = true, OpeningBalance = 0, OpeningBalanceDate = TestClock.Today, HasReferences = false },
+        new() { Id = ChaseId, Name = "Chase", RoundUpEnabled = false, OpeningBalance = 0, OpeningBalanceDate = TestClock.Today, HasReferences = false },
     ];
 
     private static (IncomeWorkflowViewModel ViewModel, StubIncomeService Service) CreateViewModel(
         bool confirmDeletes = true, Func<Task>? refresh = null)
     {
         var incomeService = new StubIncomeService();
-        var viewModel = new IncomeWorkflowViewModel(incomeService, confirm: _ => confirmDeletes, refresh ?? (() => Task.CompletedTask));
+        var viewModel = new IncomeWorkflowViewModel(incomeService, confirm: _ => confirmDeletes, TestClock.At(), refresh ?? (() => Task.CompletedTask));
         return (viewModel, incomeService);
     }
 
@@ -128,7 +128,7 @@ public class IncomeWorkflowViewModelTests
         var (viewModel, incomes) = CreateViewModel();
         viewModel.ApplyRefresh([], DefaultIncomeSources, DefaultBanks);
         viewModel.ShowCreateIncomeFormCommand.Execute(null);
-        viewModel.IncomeFormDate = DateTime.Today;
+        viewModel.IncomeFormDate = TestClock.LocalToday;
         viewModel.IncomeFormSource = LotterySourceId;
         viewModel.IncomeFormNetValue = "50";
         viewModel.IncomeFormBank = BarclaysId;
@@ -147,7 +147,7 @@ public class IncomeWorkflowViewModelTests
         var (viewModel, incomes) = CreateViewModel();
         viewModel.ApplyRefresh([], DefaultIncomeSources, DefaultBanks);
         viewModel.ShowCreateIncomeFormCommand.Execute(null);
-        viewModel.IncomeFormDate = DateTime.Today;
+        viewModel.IncomeFormDate = TestClock.LocalToday;
         viewModel.IncomeFormSource = LotterySourceId;
         viewModel.IncomeFormNetValue = "50";
         viewModel.IncomeFormBank = BarclaysId;
@@ -165,7 +165,7 @@ public class IncomeWorkflowViewModelTests
         var (viewModel, _) = CreateViewModel();
         var income = new IncomeDTO
         {
-            Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSourceId = Guid.NewGuid(), IncomeSourceName = "Lottery",
+            Id = Guid.NewGuid(), Date = TestClock.Today, IncomeSourceId = Guid.NewGuid(), IncomeSourceName = "Lottery",
             NetValue = 50m, BankId = BarclaysId, BankName = "Barclays", Description = "Chip ISA dividend",
             SplitToReserve = false,
         };
@@ -243,7 +243,7 @@ public class IncomeWorkflowViewModelTests
         var (viewModel, _) = CreateViewModel();
         var income = new IncomeDTO
         {
-            Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSourceId = ArianaSourceId, IncomeSourceName = "Ariana",
+            Id = Guid.NewGuid(), Date = TestClock.Today, IncomeSourceId = ArianaSourceId, IncomeSourceName = "Ariana",
             NetValue = 2450m, BankId = BarclaysId, BankName = "Barclays", Description = null,
             SplitToReserve = true,
         };
@@ -260,7 +260,7 @@ public class IncomeWorkflowViewModelTests
         var (viewModel, incomes) = CreateViewModel();
         viewModel.ApplyRefresh([], DefaultIncomeSources, DefaultBanks);
         viewModel.ShowCreateIncomeFormCommand.Execute(null);
-        viewModel.IncomeFormDate = DateTime.Today;
+        viewModel.IncomeFormDate = TestClock.LocalToday;
         viewModel.IncomeFormSource = ArianaSourceId;
         viewModel.IncomeFormNetValue = "2450";
         viewModel.IncomeFormBank = BarclaysId;
@@ -277,7 +277,7 @@ public class IncomeWorkflowViewModelTests
         var (viewModel, _) = CreateViewModel();
         viewModel.ApplyRefresh([], DefaultIncomeSources, DefaultBanks);
         viewModel.ShowCreateIncomeFormCommand.Execute(null);
-        viewModel.IncomeFormDate = DateTime.Today;
+        viewModel.IncomeFormDate = TestClock.LocalToday;
         viewModel.IncomeFormSource = ArianaSourceId;
         viewModel.IncomeFormNetValue = "2450";
         viewModel.IncomeFormBank = BarclaysId;
@@ -298,7 +298,7 @@ public class IncomeWorkflowViewModelTests
         var (viewModel, incomes) = CreateViewModel();
         viewModel.ApplyRefresh([], DefaultIncomeSources, DefaultBanks);
         viewModel.ShowCreateIncomeFormCommand.Execute(null);
-        viewModel.IncomeFormDate = DateTime.Today;
+        viewModel.IncomeFormDate = TestClock.LocalToday;
         viewModel.IncomeFormSource = LotterySourceId;
         viewModel.IncomeFormNetValue = "50";
         viewModel.IncomeFormBank = BarclaysId;
@@ -315,7 +315,7 @@ public class IncomeWorkflowViewModelTests
         var (viewModel, _) = CreateViewModel();
         viewModel.ApplyRefresh([], DefaultIncomeSources, DefaultBanks);
         viewModel.ShowCreateIncomeFormCommand.Execute(null);
-        var usedDate = DateTime.Today.AddDays(-3);
+        var usedDate = TestClock.LocalToday.AddDays(-3);
         viewModel.IncomeFormDate = usedDate;
         viewModel.IncomeFormSource = ArianaSourceId;
         viewModel.IncomeFormNetValue = "2450";
@@ -336,7 +336,7 @@ public class IncomeWorkflowViewModelTests
         var (viewModel, _) = CreateViewModel();
         viewModel.ApplyRefresh([], DefaultIncomeSources, DefaultBanks);
         viewModel.ShowCreateIncomeFormCommand.Execute(null);
-        viewModel.IncomeFormDate = DateTime.Today;
+        viewModel.IncomeFormDate = TestClock.LocalToday;
         viewModel.IncomeFormSource = LotterySourceId;
         viewModel.IncomeFormNetValue = "50";
         viewModel.IncomeFormBank = BarclaysId;
@@ -357,7 +357,7 @@ public class IncomeWorkflowViewModelTests
         var (viewModel, incomes) = CreateViewModel();
         var income = new IncomeDTO
         {
-            Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSourceId = Guid.NewGuid(), IncomeSourceName = "Lottery",
+            Id = Guid.NewGuid(), Date = TestClock.Today, IncomeSourceId = Guid.NewGuid(), IncomeSourceName = "Lottery",
             NetValue = 50m, BankId = BarclaysId, BankName = "Barclays",
             SplitToReserve = false,
         };
@@ -378,7 +378,7 @@ public class IncomeWorkflowViewModelTests
     public async Task DeleteIncome_CallsServiceAndRefreshes()
     {
         var (viewModel, incomes) = CreateViewModel();
-        var income = new IncomeDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSourceId = Guid.NewGuid(), IncomeSourceName = "Lottery", NetValue = 10m, BankId = BarclaysId, BankName = "Barclays", SplitToReserve = false };
+        var income = new IncomeDTO { Id = Guid.NewGuid(), Date = TestClock.Today, IncomeSourceId = Guid.NewGuid(), IncomeSourceName = "Lottery", NetValue = 10m, BankId = BarclaysId, BankName = "Barclays", SplitToReserve = false };
 
         await viewModel.DeleteIncomeAsync(income);
 
@@ -389,7 +389,7 @@ public class IncomeWorkflowViewModelTests
     public async Task DeleteIncome_ConfirmationDeclined_DoesNotCallService()
     {
         var (viewModel, incomes) = CreateViewModel(confirmDeletes: false);
-        var income = new IncomeDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSourceId = Guid.NewGuid(), IncomeSourceName = "Lottery", NetValue = 10m, BankId = BarclaysId, BankName = "Barclays", SplitToReserve = false };
+        var income = new IncomeDTO { Id = Guid.NewGuid(), Date = TestClock.Today, IncomeSourceId = Guid.NewGuid(), IncomeSourceName = "Lottery", NetValue = 10m, BankId = BarclaysId, BankName = "Barclays", SplitToReserve = false };
 
         await viewModel.DeleteIncomeAsync(income);
 
@@ -402,7 +402,7 @@ public class IncomeWorkflowViewModelTests
         var (viewModel, incomes) = CreateViewModel();
         viewModel.ApplyRefresh([], DefaultIncomeSources, DefaultBanks);
         viewModel.ShowCreateIncomeFormCommand.Execute(null);
-        viewModel.IncomeFormDate = DateTime.Today;
+        viewModel.IncomeFormDate = TestClock.LocalToday;
         viewModel.IncomeFormSource = LotterySourceId;
         viewModel.IncomeFormNetValue = "50";
         viewModel.IncomeFormBank = null;
@@ -462,7 +462,7 @@ public class IncomeWorkflowViewModelTests
         var (viewModel, incomes) = CreateViewModel();
         viewModel.ApplyRefresh([], DefaultIncomeSources, DefaultBanks);
         viewModel.ShowCreateIncomeFormCommand.Execute(null);
-        viewModel.IncomeFormDate = DateTime.Today;
+        viewModel.IncomeFormDate = TestClock.LocalToday;
         viewModel.IncomeFormSource = null;
         viewModel.IncomeFormNetValue = "50";
 
@@ -478,7 +478,7 @@ public class IncomeWorkflowViewModelTests
         var (viewModel, incomes) = CreateViewModel();
         viewModel.ApplyRefresh([], DefaultIncomeSources, DefaultBanks);
         viewModel.ShowCreateIncomeFormCommand.Execute(null);
-        viewModel.IncomeFormDate = DateTime.Today;
+        viewModel.IncomeFormDate = TestClock.LocalToday;
         viewModel.IncomeFormSource = LotterySourceId;
         viewModel.IncomeFormNetValue = "abc";
 
@@ -500,7 +500,7 @@ public class IncomeWorkflowViewModelTests
         await viewModel.SaveIncomeAsync();
         viewModel.DateFieldError.Should().NotBeNull();
 
-        viewModel.IncomeFormDate = DateTime.Today;
+        viewModel.IncomeFormDate = TestClock.LocalToday;
         await viewModel.SaveIncomeAsync();
 
         viewModel.DateFieldError.Should().BeNull();
@@ -509,7 +509,7 @@ public class IncomeWorkflowViewModelTests
     private static IncomeDTO MakeIncome(string description, string? bankName) => new()
     {
         Id = Guid.NewGuid(),
-        Date = DateOnly.FromDateTime(DateTime.Today),
+        Date = TestClock.Today,
         IncomeSourceId = Guid.NewGuid(),
         IncomeSourceName = "Lottery",
         NetValue = 10m,

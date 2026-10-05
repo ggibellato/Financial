@@ -17,11 +17,11 @@ public class BankOperationsWorkflowViewModelTests
 
     private static readonly List<BankDTO> DefaultBanks =
     [
-        new() { Id = BarclaysId, Name = "Barclays", RoundUpEnabled = true, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today), HasReferences = false },
-        new() { Id = ChaseId, Name = "Chase", RoundUpEnabled = false, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today), HasReferences = false },
+        new() { Id = BarclaysId, Name = "Barclays", RoundUpEnabled = true, OpeningBalance = 0, OpeningBalanceDate = TestClock.Today, HasReferences = false },
+        new() { Id = ChaseId, Name = "Chase", RoundUpEnabled = false, OpeningBalance = 0, OpeningBalanceDate = TestClock.Today, HasReferences = false },
     ];
 
-    private static DateOnly Today => DateOnly.FromDateTime(DateTime.Today);
+    private static DateOnly Today => TestClock.Today;
 
     /// <summary>Unchecks every filter option except the given values, mirroring how a user would
     /// narrow the header checklist down to a single bank.</summary>
@@ -43,6 +43,7 @@ public class BankOperationsWorkflowViewModelTests
         var viewModel = new BankOperationsWorkflowViewModel(
             transferService, adjustmentService, banks, bankTotals,
             confirm: _ => confirmDeletes,
+            TestClock.At(),
             refresh: () => { refreshCount++; return Task.CompletedTask; });
         return (viewModel, transferService, adjustmentService, () => refreshCount);
     }

@@ -182,8 +182,11 @@ public class IncomeWorkflowViewModel : ViewModelBase
     public RelayCommand<IncomeDTO> EditIncomeCommand { get; }
     public RelayCommand<IncomeDTO> DeleteIncomeCommand { get; }
 
-    public IncomeWorkflowViewModel(IIncomeService incomeService, Func<string, bool> confirm, Func<Task> refresh)
+    private readonly TimeProvider _timeProvider;
+
+    public IncomeWorkflowViewModel(IIncomeService incomeService, Func<string, bool> confirm, TimeProvider timeProvider, Func<Task> refresh)
     {
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _incomeService = incomeService ?? throw new ArgumentNullException(nameof(incomeService));
         _confirm = confirm ?? throw new ArgumentNullException(nameof(confirm));
         _refresh = refresh ?? throw new ArgumentNullException(nameof(refresh));
@@ -226,7 +229,7 @@ public class IncomeWorkflowViewModel : ViewModelBase
     private void ShowCreateIncomeForm()
     {
         _editingIncomeId = null;
-        IncomeFormDate = _lastUsedIncomeDate ?? DateTime.Today;
+        IncomeFormDate = _lastUsedIncomeDate ?? _timeProvider.GetLocalNow().Date;
         IncomeFormSource = _lastUsedIncomeSource is { } lastSource && IncomeSourceOptions.Any(s => s.Id == lastSource)
             ? lastSource
             : (IncomeSourceOptions.Count > 0 ? IncomeSourceOptions[0].Id : null);

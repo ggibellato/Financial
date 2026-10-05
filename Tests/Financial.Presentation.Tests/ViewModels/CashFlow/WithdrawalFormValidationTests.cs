@@ -5,7 +5,7 @@ namespace Financial.Presentation.Tests.ViewModels.CashFlow;
 
 public class WithdrawalFormValidationTests
 {
-    private static readonly DateTime ValidDate = DateTime.Today;
+    private static readonly DateTime ValidDate = TestClock.LocalToday;
     private static readonly Guid ValidBucketId = Guid.NewGuid();
 
     private static string Validate(Guid? bucketId, string amount, DateTime? date, string description) =>

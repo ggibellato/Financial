@@ -92,16 +92,19 @@ public class AnnualSummaryViewModel : ViewModelBase
 
     public RelayCommand RetryCommand { get; }
 
+    private readonly TimeProvider _timeProvider;
+
     public AnnualSummaryViewModel(
         ICategorySummaryService categorySummaryService,
         IInvestmentAnnualResultService investmentAnnualResultService,
-        IHistoricAverageService historicAverageService)
+        IHistoricAverageService historicAverageService, TimeProvider timeProvider)
     {
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _categorySummaryService = categorySummaryService ?? throw new ArgumentNullException(nameof(categorySummaryService));
         _investmentAnnualResultService = investmentAnnualResultService ?? throw new ArgumentNullException(nameof(investmentAnnualResultService));
         _historicAverageService = historicAverageService ?? throw new ArgumentNullException(nameof(historicAverageService));
 
-        _year = DateTime.Today.Year;
+        _year = _timeProvider.GetLocalNow().Year;
 
         CategoryTotalsFilter = new ColumnFilterViewModel<AnnualSummaryRow>(
             "Category", row => [row.Label], ApplyCategoryTotalsFilter);

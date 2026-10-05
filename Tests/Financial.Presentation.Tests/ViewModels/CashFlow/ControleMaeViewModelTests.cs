@@ -13,7 +13,7 @@ public class ControleMaeViewModelTests
     private static (ControleMaeViewModel ViewModel, StubControleMaeService Service) CreateViewModel(Func<string, bool> confirm, RecordingLogger<ControleMaeViewModel>? logger = null)
     {
         var service = new StubControleMaeService();
-        var viewModel = new ControleMaeViewModel(service, confirm, logger ?? new RecordingLogger<ControleMaeViewModel>());
+        var viewModel = new ControleMaeViewModel(service, confirm, TestClock.At(), logger ?? new RecordingLogger<ControleMaeViewModel>());
         return (viewModel, service);
     }
 
@@ -24,16 +24,25 @@ public class ControleMaeViewModelTests
     };
 
     [Fact]
+    public void FromDate_DefaultsToStartOfPreviousYear_OnTheLastDayOfJanuary()
+    {
+        var viewModel = new ControleMaeViewModel(
+            new StubControleMaeService(), _ => true, TestClock.At(TestClock.EndOfJanuary), new RecordingLogger<ControleMaeViewModel>());
+
+        viewModel.FromDate.Should().Be(new DateTime(2025, 1, 1));
+    }
+
+    [Fact]
     public async Task RefreshEntriesAsync_LoadsEntriesFromDate()
     {
         var (viewModel, service) = CreateViewModel();
-        var today = DateOnly.FromDateTime(DateTime.Today);
+        var today = TestClock.Today;
         service.Entries = [CreateEntry(today), CreateEntry(today.AddDays(-400))];
         viewModel.FromDate = today.AddDays(-1).ToDateTime(TimeOnly.MinValue);
 
         await viewModel.RefreshEntriesAsync();
 
-        service.LastFromDate.Should().Be(today.AddDays(-1));
+        service.RequestedFromDates.Should().Contain(new DateOnly(2026, 10, 4));
         viewModel.Entries.Should().ContainSingle();
     }
 
@@ -46,7 +55,7 @@ public class ControleMaeViewModelTests
         var totalsCallsBefore = service.GetTotalsCallCount;
         var entriesCallsBefore = service.GetEntriesFromDateCallCount;
 
-        viewModel.FromDate = DateTime.Today.AddDays(-30);
+        viewModel.FromDate = TestClock.LocalToday.AddDays(-30);
         await viewModel.RefreshEntriesAsync();
 
         service.GetEntriesFromDateCallCount.Should().BeGreaterThan(entriesCallsBefore);
@@ -58,7 +67,7 @@ public class ControleMaeViewModelTests
     {
         var (viewModel, service) = CreateViewModel();
         viewModel.ShowCreateFormCommand.Execute(null);
-        viewModel.CreateDate = DateTime.Today;
+        viewModel.CreateDate = TestClock.LocalToday;
         viewModel.CreateDescription = "Salary";
         viewModel.CreateCurrency = "BRL";
         viewModel.CreateValue = "500";
@@ -76,7 +85,7 @@ public class ControleMaeViewModelTests
     {
         var (viewModel, service) = CreateViewModel();
         viewModel.ShowCreateFormCommand.Execute(null);
-        viewModel.CreateDate = DateTime.Today;
+        viewModel.CreateDate = TestClock.LocalToday;
         viewModel.CreateDescription = "Salary";
         viewModel.CreateCurrency = "GBP";
         viewModel.CreateValue = "100";
@@ -91,7 +100,7 @@ public class ControleMaeViewModelTests
     {
         var (viewModel, _) = CreateViewModel();
         viewModel.ShowCreateFormCommand.Execute(null);
-        var usedDate = DateTime.Today.AddDays(-1);
+        var usedDate = TestClock.LocalToday.AddDays(-1);
         viewModel.CreateDate = usedDate;
         viewModel.CreateDescription = "Salary";
         viewModel.CreateCurrency = "GBP";
@@ -131,7 +140,7 @@ public class ControleMaeViewModelTests
     public async Task EditEntry_ValidFormBothValues_CallsUpdateServiceWithParsedValues()
     {
         var (viewModel, service) = CreateViewModel();
-        var entry = CreateEntry(DateOnly.FromDateTime(DateTime.Today));
+        var entry = CreateEntry(TestClock.Today);
         service.Entries = [entry];
         await viewModel.RefreshEntriesAsync();
 
@@ -152,7 +161,7 @@ public class ControleMaeViewModelTests
     public async Task EditEntry_BlankField_MapsToNull()
     {
         var (viewModel, service) = CreateViewModel();
-        var entry = CreateEntry(DateOnly.FromDateTime(DateTime.Today));
+        var entry = CreateEntry(TestClock.Today);
         viewModel.EditEntryCommand.Execute(entry);
         viewModel.EditBrlValue = "150";
         viewModel.EditGbpValue = "";
@@ -166,7 +175,7 @@ public class ControleMaeViewModelTests
     public async Task EditEntry_InvalidForm_BlocksSaveWithoutServiceCall()
     {
         var (viewModel, service) = CreateViewModel();
-        var entry = CreateEntry(DateOnly.FromDateTime(DateTime.Today));
+        var entry = CreateEntry(TestClock.Today);
         viewModel.EditEntryCommand.Execute(entry);
         viewModel.EditBrlValue = "not-a-number";
 
@@ -182,7 +191,7 @@ public class ControleMaeViewModelTests
     public async Task DeleteEntry_ConfirmedAndDeclined_CallsOrSkipsService(bool confirmed)
     {
         var (viewModel, service) = CreateViewModel(confirmed);
-        var entry = CreateEntry(DateOnly.FromDateTime(DateTime.Today));
+        var entry = CreateEntry(TestClock.Today);
 
         await viewModel.DeleteEntryAsync(entry);
 
@@ -238,7 +247,7 @@ public class ControleMaeViewModelTests
     {
         var (viewModel, _) = CreateViewModel();
         viewModel.ShowCreateFormCommand.Execute(null);
-        viewModel.CreateDate = DateTime.Today;
+        viewModel.CreateDate = TestClock.LocalToday;
         viewModel.CreateDescription = "";
         viewModel.CreateValue = "100";
 
@@ -253,7 +262,7 @@ public class ControleMaeViewModelTests
     public async Task EditEntry_InvalidBrlValue_AttributesErrorToBrlFieldOnly()
     {
         var (viewModel, _) = CreateViewModel();
-        var entry = CreateEntry(DateOnly.FromDateTime(DateTime.Today));
+        var entry = CreateEntry(TestClock.Today);
         viewModel.EditEntryCommand.Execute(entry);
         viewModel.EditBrlValue = "not-a-number";
         viewModel.EditGbpValue = "30";
@@ -269,7 +278,7 @@ public class ControleMaeViewModelTests
     public async Task EditEntry_InvalidGbpValue_AttributesErrorToGbpFieldOnly()
     {
         var (viewModel, _) = CreateViewModel();
-        var entry = CreateEntry(DateOnly.FromDateTime(DateTime.Today));
+        var entry = CreateEntry(TestClock.Today);
         viewModel.EditEntryCommand.Execute(entry);
         viewModel.EditBrlValue = "150";
         viewModel.EditGbpValue = "not-a-number";
@@ -314,7 +323,7 @@ public class ControleMaeViewModelTests
     public async Task DeleteEntryAsync_ServiceThrows_SetsDeleteError()
     {
         var (viewModel, service) = CreateViewModel();
-        var entry = CreateEntry(DateOnly.FromDateTime(DateTime.Today));
+        var entry = CreateEntry(TestClock.Today);
         service.ThrowOnDelete = new InvalidOperationException("Delete failed.");
 
         await viewModel.DeleteEntryAsync(entry);

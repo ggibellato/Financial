@@ -36,21 +36,25 @@ public class BankOperationsWorkflowViewModel : ViewModelBase
 
     public RelayCommand<BankOperationRow> DeleteBankOperationCommand { get; }
 
+    private readonly TimeProvider _timeProvider;
+
     public BankOperationsWorkflowViewModel(
         ITransferService transferService,
         IBalanceAdjustmentService balanceAdjustmentService,
         ObservableCollection<BankDTO> banks,
         ObservableCollection<BankTotalRow> bankTotals,
         Func<string, bool> confirm,
+        TimeProvider timeProvider,
         Func<Task> refresh)
     {
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _transferService = transferService ?? throw new ArgumentNullException(nameof(transferService));
         _balanceAdjustmentService = balanceAdjustmentService ?? throw new ArgumentNullException(nameof(balanceAdjustmentService));
         _confirm = confirm ?? throw new ArgumentNullException(nameof(confirm));
         _refresh = refresh ?? throw new ArgumentNullException(nameof(refresh));
 
-        Transfer = new TransferWorkflowViewModel(transferService, banks, refresh);
-        Adjustment = new AdjustmentWorkflowViewModel(balanceAdjustmentService, banks, bankTotals, refresh);
+        Transfer = new TransferWorkflowViewModel(transferService, banks, timeProvider, refresh);
+        Adjustment = new AdjustmentWorkflowViewModel(balanceAdjustmentService, banks, bankTotals, timeProvider, refresh);
         BankFilter = new ColumnFilterViewModel<BankOperationRow>(
             "Bank",
             row => [row.SourceBank, row.DestinationBank, row.Bank],
