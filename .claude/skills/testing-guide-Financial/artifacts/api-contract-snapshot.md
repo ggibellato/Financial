@@ -30,7 +30,7 @@ change. Three tests plus one build step keep the two sides honest.
 - The `tsc -b` step is a build gate, not a test — it runs in the `web` CI job and locally via
   `npm run build` (`feedback_typescript_build_validation` in project memory: vitest alone does
   not catch type errors).
-- **E2E**: the smoke job is the only place runtime drift is caught.
+- **E2E**: the web-e2e job is the only place runtime drift is caught.
 
 ## Setup pattern
 
@@ -59,4 +59,4 @@ Hand-written frontend types with no backend counterpart (`SelectedNode`, `NodeTy
 
 - `Tests/Financial.Api.Tests/OpenApiContractTests.cs` — Integration; snapshot + numeric hygiene.
 - `Financial.Web/src/api/generated/__tests__/openapiFreshness.test.ts` — Integration; generator round-trip.
-- `.github/scripts/detect-changes.sh` — routes `types.ts`/snapshot changes to `web` + `smoke` jobs.
+- `.github/scripts/detect-changes.sh` — routes `types.ts`/snapshot changes to `web` + `web-e2e` jobs.

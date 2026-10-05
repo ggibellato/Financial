@@ -150,8 +150,8 @@ Builds the React SPA and the API into a single image (`Dockerfile`), API serves 
 
 `.github/workflows/build.yml` runs only the jobs a change can affect: a `changes` job classifies the
 diff with `.github/scripts/detect-changes.sh`, then `backend` (Windows, API build + all non-WPF tests
-with coverage), `wpf` (Windows), `wpf-e2e` (`windows-latest`; launches the built WPF app and drives it with FlaUI), `web` (Ubuntu lint+test+build) and `smoke` (publishes the full app
-against seeded test JSON and runs the Playwright smoke test) run conditionally. Docs-only changes run
+with coverage), `wpf` (Windows), `wpf-e2e` (`windows-latest`; launches the built WPF app and drives it with FlaUI), `web` (Ubuntu lint+test+build) and `web-e2e` (publishes the full app
+against seeded test JSON and runs the Playwright smoke specs) run conditionally. Docs-only changes run
 nothing; unknown paths or a missing base commit run everything, and every push to `main` always runs the
 full pipeline. On pull requests `changes` also scans the added lines for test-hygiene violations
 (`.github/scripts/test-hygiene.sh`: wall-clock reads, fixed delays, skipped or focused tests; exempt a line with

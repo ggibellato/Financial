@@ -25,27 +25,28 @@ checks them (first match wins):
 
 ## Affected rules
 
-| Change in… | backend | wpf | web | smoke |
-|---|:-:|:-:|:-:|:-:|
-| Docs | – | – | – | – |
-| Contract (server side) | ✔ | – | ✔ | ✔ |
-| Contract (DTOs) | ✔ | ✔ | ✔ | ✔ |
-| Contract (client side) | – | – | ✔ | ✔ |
-| WPF (`Financial.App/`) | ✔ | ✔ | – | – |
-| WPF tests (`Tests/Financial.Presentation.Tests/`) | – | ✔ | – | – |
-| Web | – | – | ✔ | ✔ |
-| Backend core | ✔ | ✔ | – | ✔ |
-| Infra / unclassified / no base commit / diff failure | ✔ | ✔ | ✔ | ✔ |
-| Any push to `main` | ✔ | ✔ | ✔ | ✔ |
+| Change in… | backend | wpf | wpf-e2e | web | web-e2e |
+|---|:-:|:-:|:-:|:-:|:-:|
+| Docs | – | – | – | – | – |
+| Contract (server side) | ✔ | – | – | ✔ | ✔ |
+| Contract (DTOs) | ✔ | ✔ | ✔ | ✔ | ✔ |
+| Contract (client side) | – | – | – | ✔ | ✔ |
+| WPF (`Financial.App/`) | ✔ | ✔ | ✔ | – | – |
+| WPF tests (`Tests/Financial.Presentation.Tests/`) | – | ✔ | – | – | – |
+| WPF E2E tests (`Tests/Financial.App.E2ETests/`) | – | – | ✔ | – | – |
+| Web | – | – | – | ✔ | ✔ |
+| Backend core | ✔ | ✔ | ✔ | – | ✔ |
+| Infra / unclassified / no base commit / diff failure | ✔ | ✔ | ✔ | ✔ | ✔ |
+| Any push to `main` | ✔ | ✔ | ✔ | ✔ | ✔ |
 
 Jobs:
 
 - **backend** (Windows) — builds `Financial.Api` and runs every `Tests/*.Tests.csproj` listed in `Financial.slnx` except the two WPF ones, `Financial.Presentation.Tests` and `Financial.App.E2ETests` (so `Financial.Architecture.Tests` run here, and only here), with coverage and a blocking 90% coverage gate (see `CLAUDE.md`).
 - **wpf** (Windows) — builds `Financial.App` and runs `Financial.Presentation.Tests`, with coverage (scoped to `Financial.Presentation.App` only) and the same blocking coverage gate as `backend`.
-- **wpf-e2e** (`windows-latest`) — runs whenever `wpf` runs: builds `Financial.App` and `Tests/Financial.App.E2ETests` (Release) and runs `--filter Category=Smoke`. The suite launches the built exe once per test against throwaway copies of the test data and drives it through UI Automation (FlaUI/UIA3); it needs the runner's interactive desktop. On failure it uploads `TestResults/e2e-artifacts` (a screenshot, the app log and the exit state per failed test) as `wpf-e2e-artifacts`. It is in `ci-status`'s `needs`, is excluded from `backend`'s `dotnet test` by the `Category!=E2E` filter (so it never runs under coverage), and `Tests/Financial.App.E2ETests/*` changes run `wpf` only. **Fallback rule:** if the hosted desktop proves unreliable (more than 2 infrastructure failures, not test failures, in its first 20 runs), move the job to the nightly workflow and drop it from `ci-status`'s `needs` in a PR that records the decision here.
+- **wpf-e2e** (`windows-latest`) — runs whenever the `wpf_e2e` flag is set (changes to `Financial.App/`, the backend it composes, or the E2E tests themselves): builds `Financial.App` and `Tests/Financial.App.E2ETests` (Release) and runs `--filter Category=Smoke`. The suite launches the built exe once per test against throwaway copies of the test data and drives it through UI Automation (FlaUI/UIA3); it needs the runner's interactive desktop. On failure it uploads `TestResults/e2e-artifacts` (a screenshot, the app log and the exit state per failed test) as `wpf-e2e-artifacts`. It is in `ci-status`'s `needs`, is excluded from `backend`'s `dotnet test` by the `Category!=E2E` filter (so it never runs under coverage), and `Tests/Financial.App.E2ETests/*` changes run `wpf` only. **Fallback rule:** if the hosted desktop proves unreliable (more than 2 infrastructure failures, not test failures, in its first 20 runs), move the job to the nightly workflow and drop it from `ci-status`'s `needs` in a PR that records the decision here.
 - **web** (Ubuntu) — `npm run lint`, `npm run test:coverage`, `npm run build`, with the same blocking coverage gate as `backend`/`wpf`.
 - **coverage-comment** (Ubuntu) — posts one combined sticky PR comment with backend/wpf/web's coverage %, gate verdict, and a link to the run's coverage-report artifacts. Not in `ci-status`'s `needs`, so a failure here (e.g. the comment action itself erroring) never blocks merge.
-- **smoke** (Ubuntu) — publishes the API with the built SPA and runs the `@playwright/test` `@smoke` specs (`npm run smoke-test`; `playwright-report/` and `test-results/` are uploaded as an artifact on failure). The suite refuses to start unless `SMOKE_APP_URL` is set and the app reports the `E2E-TEST-DATA` sentinel category. Runs whenever either side of the HTTP boundary changed, even when a backend/web job was skipped.
+- **web-e2e** (Ubuntu) — publishes the API with the built SPA and runs the `@playwright/test` `@smoke` specs (`npm run smoke-test`; `playwright-report/` and `test-results/` are uploaded as `web-e2e-artifacts` on failure). The suite refuses to start unless `SMOKE_APP_URL` is set and the app reports the `E2E-TEST-DATA` sentinel category. Runs whenever either side of the HTTP boundary changed, even when a backend/web job was skipped.
 - **ci-status** — always runs; the only check branch protection should require. Passes when every job succeeded or was skipped by `changes`; fails if change detection failed or any job failed/was cancelled — including a red coverage gate, since that now fails its job.
 
 Security-relevant configuration (`Financial.Api/appsettings*.json`, `Program.cs`, auth/CORS setup) sits under `Financial.Api/` and therefore hits the Contract rule; `Dockerfile`, compose files and anything under `deploy/` hit Infra and run everything.

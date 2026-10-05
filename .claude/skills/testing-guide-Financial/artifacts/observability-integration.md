@@ -32,7 +32,7 @@
 - **Unit** for `OtlpExporterSettingsResolver`, extension helpers, `NoOpTelemetryTracer`.
 - Architecture rule: `ObservabilityIsolationRuleTests` pins that only composition roots and
   `Financial.Shared.Abstractions` consumers touch OpenTelemetry (`architecture-rule-tests.md`).
-- No E2E; the smoke job runs with observability disabled.
+- No E2E; the web-e2e job runs with observability disabled.
 
 ## Setup pattern
 
