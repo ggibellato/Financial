@@ -380,10 +380,11 @@ describe('usePriceHistory', () => {
   })
 
   it('filteredTransactions_excludes_transactions_outside_the_selected_window', async () => {
+    pinDate('2026-07-15T12:00:00+01:00')
     const recentTransaction: TransactionDto = {
       ...BUY_TRANSACTION,
       id: 'tx-recent',
-      date: new Date().toISOString(),
+      date: '2026-07-15T12:00:00',
     }
     const oldTransaction: TransactionDto = { ...BUY_TRANSACTION, id: 'tx-old', date: '2020-01-01T00:00:00' }
     getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, transactions: [recentTransaction, oldTransaction] })

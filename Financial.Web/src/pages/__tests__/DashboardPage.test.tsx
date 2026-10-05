@@ -3,7 +3,7 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen, waitFor } from '../../test/renderWithFluent'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import { pinDate } from '../../test-utils/pinDate'
+import { PINNED_NOW, inDays, pinDate } from '../../test-utils/pinDate'
 import type {
   AllocationBreakdownDto,
   DataQualityReportDto,
@@ -128,14 +128,6 @@ function makeTree(brokerName: string, portfolioName: string, assetName: string):
   }
 }
 
-const NOW = '2026-09-17T12:00:00+01:00'
-
-function inDays(days: number): string {
-  const date = new Date(NOW)
-  date.setDate(date.getDate() + days)
-  return date.toISOString()
-}
-
 const UPCOMING_INCOME: UpcomingIncomeDto[] = [
   {
     assetName: 'VHYL',
@@ -179,7 +171,7 @@ const renderDashboardRoute = () =>
 
 describe('DashboardPage', () => {
   beforeEach(() => {
-    pinDate(NOW)
+    pinDate(PINNED_NOW)
     getDashboardMock.mockReset()
     getDashboardMock.mockResolvedValue(SUMMARY)
     getAllocationBreakdownMock.mockReset()

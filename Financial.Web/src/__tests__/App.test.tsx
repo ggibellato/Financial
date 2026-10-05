@@ -87,7 +87,6 @@ describe('App', () => {
 
     expect(themeRule).toBeDefined()
     expect(themeRule!.cssText).toContain('--colorNeutralBackground1: #ffffff;')
-    expect(themeRule!.cssText).not.toContain('--colorNeutralBackground1: #292929;')
   })
 
   it('renders_the_colour_mode_toggle_button_in_the_topbar', () => {

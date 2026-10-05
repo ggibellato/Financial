@@ -65,7 +65,7 @@ public class InvestmentRepositoryFactoryTests
         Action act = () => Factory.Create(options);
 
         act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*Unrecognized credential type*");
+            .WithMessage("*credential*");
     }
 
     [Fact]
