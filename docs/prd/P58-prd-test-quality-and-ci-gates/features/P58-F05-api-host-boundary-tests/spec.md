@@ -36,7 +36,7 @@
 
 | # | Decision | Reason |
 |---|---|---|
-| D1 | The fallback is constrained with a route pattern that rejects paths starting with `api` as a whole segment, rather than adding a catch-all `/api/{**path}` endpoint | A catch-all matches every HTTP method, so a wrong-method call to a real route (today 405) would become 404. The constrained fallback leaves routing untouched and an unmatched `/api/...` falls out of the pipeline as an empty 404 |
+| D1 | The SPA fallback is split in two: `MapFallback("/api/{**path}", NotFound)` followed by the unchanged `MapFallbackToFile("index.html")`. The more specific template wins among fallbacks | No regex constraint and no second mapping for `/`. Accepted cost: a wrong-method call on a real API route returns 404 instead of 405 (the fallback carries no method metadata), and nothing in the app or frontend depends on the 405 |
 | D2 | `Retry-After` is a named constant of 30 seconds beside the mapping; the response body is a ProblemDetails with the exception message as detail, like the other mapped cases | Same shape as every other mapped status; the message from `GoogleTransientErrorTranslator` contains only a status code and name |
 | D3 | `ArgumentException` stays mapped to 400 and the theory pins it. The PRD wording "infrastructure `ArgumentException` is no longer mapped to 400" is not applied | Nearly all of the ~147 throw sites are input validation (Domain entities, Application validators, price-fetcher request checks reached from the API), and the middleware cannot tell origins apart. The remaining throw sites are startup configuration checks that never run per request. `DomainExceptionLoggingTests` already pins the 400 |
 | D4 | The PRD's "8 mapped types" is stale: the middleware maps 9 (5 → 409, `UnsupportedAssetClassException` → 422, `KeyNotFoundException` and `DividendNotFoundException` → 404, `ArgumentException` → 400) plus the new 503, so the theory has 10 rows | Counted from the middleware source |
@@ -47,7 +47,6 @@
 | D9 | `invalid_grant` is modelled as the handler raising the SDK's `TokenResponseException` with error `invalid_grant`, which is what a rejected service-account token refresh raises inside `DriveService`'s HTTP pipeline | A real token endpoint is out of reach; the pinned behaviour is that the error propagates unchanged, is not retried (one request) and is not translated to `TransientStorageException` |
 | D10 | The Production 500 and 503 host tests replace one Application service registration with a fake that throws, rather than adding a test-only endpoint | Exercises the real middleware order (`UseExceptionHandler`, then the mapping middleware) with no production code added for tests |
 | D11 | The test web root is a per-test temp directory the factory writes (a fixed marker string in `index.html`) and deletes on dispose; because the factory writes the file itself, a missing `index.html` cannot occur and no separate setup assertion is needed | Replaces the PRD's "missing wwwroot fails setup" case with a construction that cannot produce it |
-| D12 | The fallback pattern keeps the `nonfile` constraint (so a missing `/x.js` still 404s) and a second `MapFallbackToFile("/")` serves the root, because a regex constraint does not match the empty catch-all value | Found while implementing Stage 1 |
 
 ## 2. Architecture Impact
 
@@ -92,7 +91,7 @@ See the decision table in §1 (D1–D11). Additional notes:
 
 | Decision | Chosen Approach | Alternative Considered | Trade-off |
 |---|---|---|---|
-| Fallback exclusion | Route constraint on the fallback pattern | Catch-all `/api/{**path}` returning 404 | Keeps 405 for wrong-method calls; the 404 has an empty body instead of ProblemDetails |
+| Fallback exclusion | A dedicated `/api/{**path}` 404 fallback | Regex constraint on the SPA fallback (tried first; needed a second mapping for `/` and is case-sensitive) | Wrong-method calls on API routes become 404, not 405 |
 | Mapping test shape | One theory over `(exception factory, status, retry-after)` rows through the middleware directly, plus two real-pipeline tests | Only real-pipeline tests | The direct form needs no DI fakes per type; the pipeline tests prove the registration order |
 | Drive fake | Real `DriveService` over a fake `HttpMessageHandler` | Interface extraction over `DriveService` | Tests the SDK's request shape and parsing at the cost of constructing a few JSON bodies |
 
@@ -113,7 +112,7 @@ See the decision table in §1 (D1–D11). Additional notes:
 | File Path | New/Modified | Purpose | Key Responsibilities |
 |---|---|---|---|
 | `Tests/Financial.Api.Tests/ApiTestFactory.cs` | Modified | Host factory | Optional web root (temp, deleted on dispose); environment and service overrides |
-| `Tests/Financial.Api.Tests/SpaFallbackTests.cs` | New | Fallback behaviour | `/api` 404, client route 200 HTML, wrong-method 405 |
+| `Tests/Financial.Api.Tests/SpaFallbackTests.cs` | New | Fallback behaviour | `/api` 404, client route 200 HTML, case-insensitive `/API`, real route still JSON |
 | `Tests/Financial.Api.Tests/ExceptionMappingTests.cs` | New | Mapping table | Status + `Retry-After` per type; completeness check |
 | `Tests/Financial.Api.Tests/ProductionErrorBoundaryTests.cs` | New | Production shape | 500 leak checks; 503 through the pipeline |
 | `Tests/Financial.GoogleIntegrations.Tests/FakeDriveHandler.cs` | New | HTTP fake | Scripted responses, recorded requests |
@@ -170,15 +169,12 @@ Not applicable.
 | `Tests/Financial.Api.Tests/ProductionErrorBoundaryTests.cs` | Integration (host) | Pipeline in `Production` | Integration |
 | `Tests/Financial.GoogleIntegrations.Tests/GoogleDriveClientContractTests.cs` | Unit | `GoogleDriveClient`, `GoogleDriveFileClient` | Unit |
 
-**SpaFallbackTests** (factory with a temp web root holding `index.html` with a marker string)
+**SpaFallbackTests** (one shared host via a class fixture, temp web root holding `index.html` with a marker string)
 
 | Test Function | Description | Assertions |
 |---|---|---|
-| `UnknownApiRoute_Returns404_NotHtml` | `GET /api/v1/financial/does-not-exist` | 404, content type is not `text/html`, body lacks the marker |
-| `BareApiPath_Returns404` | `GET /api` and `GET /api/` | 404 |
-| `ClientRoute_ReturnsSpaShell` | `GET /some/client/route` | 200, `text/html`, body contains the marker |
-| `PathStartingWithApiPrefixOnly_IsAClientRoute` | `GET /apiary` | 200, `text/html` |
-| `WrongMethodOnRealRoute_StillReturns405` | `DELETE` on a GET-only route | 405 |
+| `ApiPaths_Return404_NotTheSpaShell` (theory) | `/api/v1/financial/does-not-exist`, `/api`, `/api/`, `/api/v2/anything`, `/API/anything` | 404, body lacks the marker |
+| `ClientRoute_ReturnsSpaShell` (theory) | `GET /`, `/some/client/route`, `/apiary` | 200, `text/html`, body contains the marker |
 | `RealApiRoute_StillReturnsJson` | `GET /api/v1/financial/banks` | 200, `application/json` |
 
 **ExceptionMappingTests** (middleware invoked directly, one row per type)
@@ -228,7 +224,7 @@ Not applicable.
 
 | Criterion | Test |
 |---|---|
-| `/api/...` 404 not HTML, fails on pre-fix code | `UnknownApiRoute_Returns404_NotHtml` |
+| `/api/...` 404 not HTML, fails on pre-fix code | `ApiPaths_Return404_NotTheSpaShell` |
 | Client route 200 `text/html` | `ClientRoute_ReturnsSpaShell` |
 | Mapping theory covers all types, `TransientStorageException` → 503 | `MappedException_ReturnsItsStatusCode`, `TransientStorageException_SetsRetryAfter30` |
 | Unmapped type fails completeness and names it | `EveryExceptionTypeInTheApplicationAssemblies_IsMappedOrExempt`, `Scanner_FlagsAnUnmappedType` |

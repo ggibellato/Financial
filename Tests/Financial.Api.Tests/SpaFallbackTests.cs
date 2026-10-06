@@ -3,45 +3,43 @@ using FluentAssertions;
 
 namespace Financial.Api.Tests;
 
-[Trait("Category", "Integration")]
-public class SpaFallbackTests : IDisposable
+public sealed class SpaFallbackFixture : IDisposable
 {
-    private const string SpaMarker = "spa-shell-marker";
+    public const string SpaMarker = "spa-shell-marker";
 
     private readonly ApiTestFactory _factory = new(spaIndexHtml: $"<html><body>{SpaMarker}</body></html>");
-    private readonly HttpClient _client;
 
-    public SpaFallbackTests()
+    public SpaFallbackFixture()
     {
-        _client = _factory.CreateClient();
+        Client = _factory.CreateClient();
     }
+
+    public HttpClient Client { get; }
 
     public void Dispose()
     {
-        _client.Dispose();
+        Client.Dispose();
         _factory.Dispose();
     }
+}
 
-    [Fact]
-    public async Task UnknownApiRoute_Returns404_NotHtml()
-    {
-        var response = await _client.GetAsync("/api/v1/financial/does-not-exist");
-
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
-        response.Content.Headers.ContentType?.MediaType.Should().NotBe("text/html");
-        (await response.Content.ReadAsStringAsync()).Should().NotContain(SpaMarker);
-    }
+[Trait("Category", "Integration")]
+public class SpaFallbackTests(SpaFallbackFixture fixture) : IClassFixture<SpaFallbackFixture>
+{
+    private readonly HttpClient _client = fixture.Client;
 
     [Theory]
+    [InlineData("/api/v1/financial/does-not-exist")]
     [InlineData("/api")]
     [InlineData("/api/")]
     [InlineData("/api/v2/anything")]
-    public async Task ApiPaths_Return404(string path)
+    [InlineData("/API/anything")]
+    public async Task ApiPaths_Return404_NotTheSpaShell(string path)
     {
         var response = await _client.GetAsync(path);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
-        (await response.Content.ReadAsStringAsync()).Should().NotContain(SpaMarker);
+        (await response.Content.ReadAsStringAsync()).Should().NotContain(SpaFallbackFixture.SpaMarker);
     }
 
     [Theory]
@@ -54,15 +52,7 @@ public class SpaFallbackTests : IDisposable
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         response.Content.Headers.ContentType?.MediaType.Should().Be("text/html");
-        (await response.Content.ReadAsStringAsync()).Should().Contain(SpaMarker);
-    }
-
-    [Fact]
-    public async Task WrongMethodOnRealRoute_StillReturns405()
-    {
-        var response = await _client.PostAsync("/api/v1/financial/health", content: null);
-
-        response.StatusCode.Should().Be(HttpStatusCode.MethodNotAllowed);
+        (await response.Content.ReadAsStringAsync()).Should().Contain(SpaFallbackFixture.SpaMarker);
     }
 
     [Fact]

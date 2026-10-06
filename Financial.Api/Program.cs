@@ -139,8 +139,8 @@ app.UseStaticFiles();
 var api = app.MapGroup($"/api/v{{version:apiVersion}}/{ApiRouteSegment}");
 api.MapControllers();
 
-app.MapFallbackToFile("{*path:nonfile:regex(^(?!api(/|$)).*$)}", "index.html");
-app.MapFallbackToFile("/", "index.html");
+app.MapFallback("/api/{**path}", () => Results.NotFound());
+app.MapFallbackToFile("index.html");
 
 app.Run();
 
