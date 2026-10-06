@@ -52,6 +52,9 @@ jobs:
     - name: Self-test the diff coverage script
       run: pwsh .github/scripts/diff-coverage.test.ps1
 
+    - name: Self-test the coverage exclusion guard
+      run: pwsh .github/scripts/coverage-exclusions.test.ps1
+
     - name: Resolve the diff base
       id: base
       env:
@@ -343,9 +346,16 @@ jobs:
       shell: pwsh
       run: ./.github/scripts/diff-coverage.ps1 -Label Web -CoberturaPath coverage-reports/coverage-report-web/Cobertura.xml -MergeBase '${{ needs.changes.outputs.merge_base }}' -Head '${{ needs.changes.outputs.head }}' -PathPrefix Financial.Web/ -Blocking:($env:DIFF_COVERAGE_BLOCKING -eq 'true')
 
+    - name: Coverage exclusions added by the PR
+      id: exclusions
+      if: always()
+      shell: pwsh
+      run: ./.github/scripts/coverage-exclusions.ps1 -MergeBase '${{ needs.changes.outputs.merge_base }}' -Head '${{ needs.changes.outputs.head }}'
+
     - name: Build combined coverage comment
       if: always()
       env:
+        EXCLUSIONS_ADDED: ${{ steps.exclusions.outputs.exclusions }}
         BACKEND_DIFF_LINE: ${{ steps.diff-backend.outputs.diff-line }}
         BACKEND_DIFF_BRANCH: ${{ steps.diff-backend.outputs.diff-branch }}
         BACKEND_DIFF_BELOW: ${{ steps.diff-backend.outputs.diff-below }}
@@ -412,6 +422,10 @@ jobs:
           if [ -n "$MERGE_BASE" ] && [ -n "$HEAD_SHA" ] && ! git diff --quiet "$MERGE_BASE" "$HEAD_SHA" -- coverage-baseline.json; then
             echo
             echo "⚠ \`coverage-baseline.json\` is changed in this PR, so the deltas above are measured against the PR's own baseline. Check that the new figures are justified."
+          fi
+          if [ -n "$EXCLUSIONS_ADDED" ]; then
+            echo
+            echo "⚠ Coverage exclusions added: $EXCLUSIONS_ADDED. Untested code behind an exclusion is invisible to the numbers above; check each one is justified."
           fi
           echo
           echo "[Full coverage reports (artifacts)]($RUN_URL)"
