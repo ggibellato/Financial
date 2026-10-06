@@ -55,6 +55,9 @@ jobs:
     - name: Self-test the coverage exclusion guard
       run: pwsh .github/scripts/coverage-exclusions.test.ps1
 
+    - name: Self-test the baseline reminder
+      run: pwsh .github/scripts/baseline-reminder.test.ps1
+
     - name: Resolve the diff base
       id: base
       env:
@@ -530,6 +533,31 @@ jobs:
           Financial.Web/test-results/
         retention-days: 14
 
+  # After a merge to main, tells the author when coverage has risen well above coverage-baseline.json
+  # so the ratchet does not keep guarding a stale number. Comment only: never fails and is not in
+  # ci-status's needs.
+  baseline-reminder:
+    needs: [ backend, wpf, web ]
+    if: always() && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Remind about a stale baseline
+      env:
+        GH_TOKEN: ${{ github.token }}
+        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        BACKEND_DELTAS: ${{ needs.backend.outputs.line-delta }}|${{ needs.backend.outputs.branch-delta }}
+        WPF_DELTAS: ${{ needs.wpf.outputs.line-delta }}|${{ needs.wpf.outputs.branch-delta }}
+        WEB_DELTAS: ${{ needs.web.outputs.line-delta }}|${{ needs.web.outputs.branch-delta }}
+      shell: pwsh
+      run: |
+        $message = ./.github/scripts/baseline-reminder.ps1 -Backend $env:BACKEND_DELTAS -Wpf $env:WPF_DELTAS -Web $env:WEB_DELTAS -RunUrl $env:RUN_URL
+        if (-not $message) { Write-Host 'Baseline is current'; exit 0 }
+        $pull = gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/pulls" --jq '.[0].number'
+        if (-not $pull) { Write-Host $message; exit 0 }
+        $message | gh pr comment $pull --body-file -
   # The one status check branch protection requires. Always runs; passes when every job either
   # succeeded or was legitimately skipped by `changes`, fails otherwise.
   ci-status:
