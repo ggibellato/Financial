@@ -95,4 +95,62 @@ public class ReportingCurrencyViewModelTests
         viewModel.SaveError.Should().Be("Save failed");
         viewModel.IsEnabled.Should().BeTrue();
     }
+
+    [Theory]
+    [InlineData(Currency.GBP, Currency.BRL)]
+    [InlineData(Currency.BRL, Currency.USD)]
+    [InlineData(Currency.USD, Currency.GBP)]
+    public void SelectingACurrencyOption_PersistsThatCurrencyAndMovesTheSelection(Currency initial, Currency chosen)
+    {
+        var (viewModel, provider) = CreateViewModel(initial);
+
+        switch (chosen)
+        {
+            case Currency.GBP: viewModel.IsGbpSelected = true; break;
+            case Currency.BRL: viewModel.IsBrlSelected = true; break;
+            default: viewModel.IsUsdSelected = true; break;
+        }
+
+        provider.GetReportingCurrency().Should().Be(chosen);
+        (chosen == Currency.GBP ? viewModel.IsGbpSelected : chosen == Currency.BRL ? viewModel.IsBrlSelected : viewModel.IsUsdSelected)
+            .Should().BeTrue();
+        viewModel.SaveError.Should().BeNull();
+    }
+
+    [Fact]
+    public void DeselectingACurrencyOption_DoesNotCallTheProvider()
+    {
+        var (viewModel, provider) = CreateViewModel(Currency.GBP);
+        provider.ThrowOnSetReportingCurrencyAsync = new InvalidOperationException("must not be called");
+
+        viewModel.IsGbpSelected = false;
+        viewModel.IsBrlSelected = false;
+        viewModel.IsUsdSelected = false;
+
+        viewModel.SaveError.Should().BeNull();
+        viewModel.IsGbpSelected.Should().BeTrue();
+    }
+
+    [Fact]
+    public void SettingIsEnabledThroughTheProperty_PersistsTheChange()
+    {
+        var (viewModel, provider) = CreateViewModel(enabled: true);
+
+        viewModel.IsEnabled = false;
+
+        provider.IsReportingCurrencyEnabled().Should().BeFalse();
+        viewModel.IsEnabled.Should().BeFalse();
+    }
+
+    [Fact]
+    public void SettingIsEnabledToItsCurrentValue_DoesNotCallTheProvider()
+    {
+        var (viewModel, provider) = CreateViewModel(enabled: true);
+        provider.ThrowOnSetReportingCurrencyEnabledAsync = new InvalidOperationException("must not be called");
+
+        viewModel.IsEnabled = true;
+
+        viewModel.SaveError.Should().BeNull();
+        viewModel.IsEnabled.Should().BeTrue();
+    }
 }
