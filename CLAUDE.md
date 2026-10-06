@@ -57,8 +57,11 @@ dotnet test --settings coverlet.runsettings --results-directory TestResults
 All three jobs share one step, `.github/actions/coverage-gate` (a local composite action): it
 reads a `reportgenerator` `Summary.json`'s `summary.linecoverage` and `summary.branchcoverage`
 and shows each behind the same traffic-light icon (green ≥90%, yellow ≥85%, amber ≥80%, red
-below); the icon is only a visual cue. The step fails when line coverage is below 90%, and
-branch coverage never fails it. `web` runs
+below); the icon is only a visual cue. The step fails when line coverage is below 90%, and when
+line **or** branch coverage drops more than 0.5 points below the job's entry in
+`coverage-baseline.json` (a missing baseline, entry or branch figure fails closed). The baseline is
+refreshed with `.github/scripts/coverage-baseline.ps1` from a green `main` run's reports, never by
+hand; see `docs/ci-affected-pipeline.md`. `web` runs
 `reportgenerator` against the `lcov` report vitest's `coverage.reporter` also produces
 (`Financial.Web/vite.config.ts`), so all three jobs' gates read the identical report shape.
 `coverage.exclude` there also drops the test-support folders `src/test/**` and `src/test-utils/**`,
