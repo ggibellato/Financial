@@ -1,8 +1,17 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ReactNode } from 'react'
-import type { TransactionMonthBucket, TransactionsData } from '../../hooks/useTransactions'
-import type { TransactionDto } from '../../api/types'
+import type { FinancialApiClient } from '../../api/financialApiClient'
+import type {
+  AssetDetailsDto,
+  OpenLotDto,
+  SelectedNode,
+  TransactionDto,
+  TransactionSummaryItemDto,
+  TransactionTypeEffectDto,
+} from '../../api/types'
+import { pinDate } from '../../test-utils/pinDate'
+import { renderWithSelectedNode } from '../../test-utils/renderWithSelectedNode'
 import TransactionsTab from '../TransactionsTab'
 
 vi.mock('recharts', () => ({
@@ -20,14 +29,52 @@ vi.mock('recharts', () => ({
   ),
 }))
 
-const mockShowNewForm = vi.fn()
-const mockShowEditForm = vi.fn()
-const mockCancelForm = vi.fn()
-const mockSetFormField = vi.fn()
-const mockSetLotAllocation = vi.fn()
-const mockSaveForm = vi.fn()
-const mockDeleteTransaction = vi.fn()
-const mockRetry = vi.fn()
+const {
+  getAssetDetailsMock,
+  getTransactionsByBrokerMock,
+  getTransactionsByPortfolioMock,
+  getTransactionTypeEffectsMock,
+  getOpenLotsMock,
+  addTransactionMock,
+  updateTransactionMock,
+  deleteTransactionMock,
+} = vi.hoisted(() => ({
+  getAssetDetailsMock: vi.fn<FinancialApiClient['getAssetDetails']>(),
+  getTransactionsByBrokerMock: vi.fn<FinancialApiClient['getTransactionsByBroker']>(),
+  getTransactionsByPortfolioMock: vi.fn<FinancialApiClient['getTransactionsByPortfolio']>(),
+  getTransactionTypeEffectsMock: vi.fn<FinancialApiClient['getTransactionTypeEffects']>(),
+  getOpenLotsMock: vi.fn<FinancialApiClient['getOpenLots']>(),
+  addTransactionMock: vi.fn<FinancialApiClient['addTransaction']>(),
+  updateTransactionMock: vi.fn<FinancialApiClient['updateTransaction']>(),
+  deleteTransactionMock: vi.fn<FinancialApiClient['deleteTransaction']>(),
+}))
+
+vi.mock('../../api/financialApiClient', () => ({
+  apiClient: {
+    getAssetDetails: getAssetDetailsMock,
+    getTransactionsByBroker: getTransactionsByBrokerMock,
+    getTransactionsByPortfolio: getTransactionsByPortfolioMock,
+    getTransactionTypeEffects: getTransactionTypeEffectsMock,
+    getOpenLots: getOpenLotsMock,
+    addTransaction: addTransactionMock,
+    updateTransaction: updateTransactionMock,
+    deleteTransaction: deleteTransactionMock,
+  } as Partial<FinancialApiClient>,
+}))
+
+const ASSET_NODE: SelectedNode = {
+  nodeType: 'Asset',
+  brokerName: 'XPI',
+  portfolioName: 'Acoes',
+  assetName: 'KLBN4',
+  ticker: 'KLBN4',
+  exchange: 'BVMF',
+  positionType: 'Long',
+}
+
+const BROKER_NODE: SelectedNode = { nodeType: 'Broker', brokerName: 'XPI' }
+
+const PORTFOLIO_NODE: SelectedNode = { nodeType: 'Portfolio', brokerName: 'XPI', portfolioName: 'Acoes' }
 
 const TRANSACTION_BUY: TransactionDto = {
   id: 'aaa',
@@ -55,231 +102,284 @@ const TRANSACTION_SELL: TransactionDto = {
   fxRateSnapshot: null,
 }
 
-const CHART_DATA: TransactionMonthBucket[] = [
-  { month: 'Jan 2024', netInvested: 0 },
-  { month: 'Feb 2024', netInvested: 169.5 },
+const TRANSACTION_NEW: TransactionDto = {
+  id: 'ccc',
+  date: '2024-05-01T00:00:00',
+  type: 'Sell',
+  quantity: 10,
+  unitPrice: 4.5,
+  fees: 0.1,
+  withheld: 0,
+  netCash: 44.9,
+  currency: 'GBP',
+  fxRateSnapshot: null,
+}
+
+const TYPE_EFFECTS: TransactionTypeEffectDto[] = [
+  { type: 'Buy', quantityEffect: 'Increase', cashEffect: 'Outflow' },
+  { type: 'Sell', quantityEffect: 'Decrease', cashEffect: 'Inflow' },
+  { type: 'Fee', quantityEffect: 'None', cashEffect: 'Outflow' },
 ]
 
-const mockSetFilter = vi.fn()
-const mockSetChartMode = vi.fn()
-
-const DEFAULT_HOOK: TransactionsData = {
-  asset: null,
-  isLoading: false,
-  error: null,
-  retry: mockRetry,
-  transactions: [],
-  chartData: [],
-  selectedFilter: 'last-12-months',
-  selectedChartMode: 'Bar',
-  setFilter: mockSetFilter,
-  setChartMode: mockSetChartMode,
-  isFormVisible: false,
-  editingId: null,
-  formDate: '',
-  formType: 'Buy',
-  formQuantity: '',
-  formUnitPrice: '',
-  formFees: '',
-  formWithheld: '',
-  formLotAllocations: {},
-  formTypeHasQuantityEffect: true,
-  requiresLotAllocation: false,
-  isSaving: false,
-  saveError: null,
-  saveErrorFields: {},
-  deleteError: null,
-  nodeType: 'Asset',
-  showNewForm: mockShowNewForm,
-  showEditForm: mockShowEditForm,
-  cancelForm: mockCancelForm,
-  setFormField: mockSetFormField,
-  setLotAllocation: mockSetLotAllocation,
-  saveForm: mockSaveForm,
-  deleteTransaction: mockDeleteTransaction,
+const OPEN_LOT: OpenLotDto = {
+  sourceTransactionId: 'lot-a',
+  date: '2024-06-01T00:00:00',
+  remainingQuantity: 15,
+  unitCost: 12.5,
 }
 
-let mockHookValue: TransactionsData = { ...DEFAULT_HOOK }
+const SUMMARY_ITEMS: TransactionSummaryItemDto[] = [
+  { assetName: 'KLBN4', date: '2024-02-10T00:00:00', netCash: -169.5, type: 'Buy' },
+]
 
-vi.mock('../../hooks/useTransactions', () => ({
-  useTransactions: () => mockHookValue,
-}))
-
-interface OpenLotsMockValue {
-  openLots: import('../../api/types').OpenLotDto[]
-  isLoading: boolean
-  error: string | null
-  retry: () => void
+function assetWith(
+  transactions: TransactionDto[],
+  costBasisMethod: AssetDetailsDto['costBasisMethod'] = 'AverageCost',
+): AssetDetailsDto {
+  return {
+    name: 'KLBN4',
+    brokerName: 'XPI',
+    portfolioName: 'Acoes',
+    ticker: 'KLBN4',
+    isin: 'BRKLBN',
+    exchange: 'BVMF',
+    country: 'BR',
+    localTypeCode: 'ON',
+    class: 'Equity',
+    valuationMethod: 'Unspecified',
+    incomePolicy: 'Unknown',
+    quantity: 100,
+    averagePrice: 20,
+    averageSellPrice: null,
+    positionType: 'Long',
+    totalBought: 2000,
+    totalSold: 0,
+    totalCredits: 0,
+    realizedGainLoss: 0,
+    realizedGainLossSharesOnly: 0,
+    marketValue: null,
+    costOfUnitsHeld: 2000,
+    unrealisedGain: null,
+    priceAsOfDate: null,
+    marketStatus: 'Current',
+    priceOnlyReturn: null,
+    totalReturn: null,
+    transactions,
+    credits: [],
+    priceSnapshots: [],
+    cashFlowsWithCredits: [],
+    cashFlowsWithoutCredits: [],
+    disposalRecords: [],
+    corporateActions: [],
+    costBasisMethod,
+    taxJurisdictions: [],
+  }
 }
 
-const mockRetryOpenLots = vi.fn()
-const DEFAULT_OPEN_LOTS: OpenLotsMockValue = { openLots: [], isLoading: false, error: null, retry: mockRetryOpenLots }
-let mockOpenLotsValue: OpenLotsMockValue = { ...DEFAULT_OPEN_LOTS }
-
-vi.mock('../../hooks/useOpenLots', () => ({
-  useOpenLots: () => mockOpenLotsValue,
-}))
-
-function setMock(overrides: Partial<TransactionsData>) {
-  mockHookValue = { ...DEFAULT_HOOK, ...overrides }
+async function renderAssetTab(transactions: TransactionDto[] = [TRANSACTION_BUY], costBasisMethod?: AssetDetailsDto['costBasisMethod']) {
+  getAssetDetailsMock.mockResolvedValue(assetWith(transactions, costBasisMethod))
+  renderWithSelectedNode(<TransactionsTab />, ASSET_NODE)
+  await screen.findByRole('table')
 }
 
-function setOpenLotsMock(overrides: Partial<OpenLotsMockValue>) {
-  mockOpenLotsValue = { ...DEFAULT_OPEN_LOTS, ...overrides }
+async function openNewForm() {
+  fireEvent.click(screen.getByRole('button', { name: 'New transaction' }))
+  await screen.findByRole('heading', { name: 'New transaction' })
+}
+
+function fillValidSale() {
+  fireEvent.change(screen.getByLabelText(/^Date/), { target: { value: '2024-05-01' } })
+  fireEvent.change(screen.getByLabelText('Type'), { target: { value: 'Sell' } })
+  fireEvent.change(screen.getByLabelText(/^Quantity/), { target: { value: '10' } })
+  fireEvent.change(screen.getByLabelText(/^Unit Price/), { target: { value: '4.5' } })
+  fireEvent.change(screen.getByLabelText('Fees'), { target: { value: '0.1' } })
+}
+
+function dataRows() {
+  return within(screen.getByRole('table')).getAllByRole('row').slice(1)
+}
+
+function rowTypes() {
+  return dataRows().map((row) => (within(row).queryByText('Buy') ? 'Buy' : 'Sell'))
 }
 
 describe('TransactionsTab', () => {
   beforeEach(() => {
-  // Confirmation moved out of the data hooks and into their callers, so the stub belongs here
-  // now. Default to accepting; the cancel path gets its own test.
+    pinDate('2024-06-01T12:00:00+01:00')
+    sessionStorage.clear()
     vi.spyOn(window, 'confirm').mockReturnValue(true)
-    mockShowNewForm.mockReset()
-    mockShowEditForm.mockReset()
-    mockCancelForm.mockReset()
-    mockSetFormField.mockReset()
-    mockSetLotAllocation.mockReset()
-    mockSaveForm.mockReset()
-    mockDeleteTransaction.mockReset()
-    mockRetry.mockReset()
-    mockHookValue = { ...DEFAULT_HOOK }
-    mockOpenLotsValue = { ...DEFAULT_OPEN_LOTS }
-    mockRetryOpenLots.mockReset()
+    getAssetDetailsMock.mockReset()
+    getTransactionsByBrokerMock.mockReset()
+    getTransactionsByPortfolioMock.mockReset()
+    getTransactionTypeEffectsMock.mockReset().mockResolvedValue(TYPE_EFFECTS)
+    getOpenLotsMock.mockReset().mockResolvedValue([])
+    addTransactionMock.mockReset()
+    updateTransactionMock.mockReset()
+    deleteTransactionMock.mockReset()
   })
 
-  it('renders_loading_state', () => {
-    setMock({ isLoading: true })
-    render(<TransactionsTab />)
-    expect(screen.getByText('Loading...')).toBeInTheDocument()
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.restoreAllMocks()
   })
 
-  it('renders_error_state_with_retry', () => {
-    setMock({ error: 'Network error' })
-    render(<TransactionsTab />)
-    expect(screen.getByText('Network error')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument()
+  it('renders_loading_state', async () => {
+    getAssetDetailsMock.mockReturnValue(new Promise(() => {}))
+    renderWithSelectedNode(<TransactionsTab />, ASSET_NODE)
+    expect(await screen.findByText('Loading...')).toBeInTheDocument()
   })
 
-  it('renders_chart_only_for_broker_node_selection', () => {
-    setMock({ nodeType: 'Broker', chartData: CHART_DATA })
-    render(<TransactionsTab />)
-    expect(screen.getByText('Net Invested by Month')).toBeInTheDocument()
+  it('renders_error_state_with_retry_and_refetches_on_try_again', async () => {
+    getAssetDetailsMock.mockRejectedValueOnce(new Error('Network error'))
+    getAssetDetailsMock.mockResolvedValue(assetWith([TRANSACTION_BUY]))
+    renderWithSelectedNode(<TransactionsTab />, ASSET_NODE)
+
+    expect(await screen.findByText('Network error')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
+
+    expect(await screen.findByText('15/03/2024')).toBeInTheDocument()
+    expect(getAssetDetailsMock).toHaveBeenCalledTimes(2)
+    expect(screen.queryByText('Network error')).not.toBeInTheDocument()
+  })
+
+  it.each([
+    ['Broker', BROKER_NODE, getTransactionsByBrokerMock],
+    ['Portfolio', PORTFOLIO_NODE, getTransactionsByPortfolioMock],
+  ])('renders_chart_only_for_%s_node_selection', async (_name, node, mock) => {
+    mock.mockResolvedValue(SUMMARY_ITEMS)
+    renderWithSelectedNode(<TransactionsTab />, node)
+    await waitFor(() => expect(mock).toHaveBeenCalled())
+
+    expect(await screen.findByText('Net Invested by Month')).toBeInTheDocument()
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'New transaction' })).not.toBeInTheDocument()
   })
 
-  it('renders_chart_above_table_for_asset_node_selection', () => {
-    setMock({ nodeType: 'Asset', chartData: CHART_DATA, transactions: [TRANSACTION_BUY] })
-    render(<TransactionsTab />)
+  it.each([
+    ['Broker', BROKER_NODE, getTransactionsByBrokerMock],
+    ['Portfolio', PORTFOLIO_NODE, getTransactionsByPortfolioMock],
+  ])('renders_error_state_with_retry_on_%s_fetch_failure', async (_name, node, mock) => {
+    mock.mockRejectedValueOnce(new Error('Unable to load transactions'))
+    mock.mockResolvedValue(SUMMARY_ITEMS)
+    renderWithSelectedNode(<TransactionsTab />, node)
+
+    expect(await screen.findByText('Unable to load transactions')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
+
+    expect(await screen.findByText('Net Invested by Month')).toBeInTheDocument()
+    expect(mock).toHaveBeenCalledTimes(2)
+  })
+
+  it('renders_chart_above_table_for_asset_node_selection', async () => {
+    await renderAssetTab()
     expect(screen.getByText('Net Invested by Month')).toBeInTheDocument()
     expect(screen.getByRole('table')).toBeInTheDocument()
     expect(screen.getByText('15/03/2024')).toBeInTheDocument()
   })
 
-  it('renders_six_period_filter_buttons', () => {
-    render(<TransactionsTab />)
-    expect(screen.getByRole('tab', { name: 'This month' })).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: 'Last 3 months' })).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: 'Last 6 months' })).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: 'Last 12 months' })).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: 'YTD' })).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: 'All time' })).toBeInTheDocument()
+  it('renders_six_period_filter_buttons', async () => {
+    await renderAssetTab()
+    for (const name of ['This month', 'Last 3 months', 'Last 6 months', 'Last 12 months', 'YTD', 'All time']) {
+      expect(screen.getByRole('tab', { name })).toBeInTheDocument()
+    }
   })
 
-  it('renders_bar_line_toggle_defaulting_to_bar', () => {
-    render(<TransactionsTab />)
+  it('renders_bar_line_toggle_defaulting_to_bar', async () => {
+    await renderAssetTab()
     expect(screen.getByRole('tab', { name: 'Bar' })).toHaveAttribute('aria-selected', 'true')
     expect(screen.getByRole('tab', { name: 'Line' })).toHaveAttribute('aria-selected', 'false')
+    expect(screen.getByTestId('bar-chart')).toBeInTheDocument()
   })
 
-  it('clicking_line_toggle_calls_setChartMode', () => {
-    render(<TransactionsTab />)
+  it('clicking_line_toggle_selects_line_chart', async () => {
+    await renderAssetTab()
     fireEvent.click(screen.getByRole('tab', { name: 'Line' }))
-    expect(mockSetChartMode).toHaveBeenCalledWith('Line')
+    expect(screen.getByRole('tab', { name: 'Line' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tab', { name: 'Bar' })).toHaveAttribute('aria-selected', 'false')
+    expect(screen.getByTestId('line-chart')).toBeInTheDocument()
   })
 
-  it('clicking_filter_button_calls_setFilter', () => {
-    render(<TransactionsTab />)
+  it('clicking_filter_button_selects_that_period', async () => {
+    await renderAssetTab()
+    expect(screen.getByRole('tab', { name: 'Last 12 months' })).toHaveAttribute('aria-selected', 'true')
     fireEvent.click(screen.getByRole('tab', { name: 'YTD' }))
-    expect(mockSetFilter).toHaveBeenCalledWith('ytd')
+    expect(screen.getByRole('tab', { name: 'YTD' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tab', { name: 'Last 12 months' })).toHaveAttribute('aria-selected', 'false')
   })
 
-  it('renders_error_state_with_retry_on_broker_portfolio_fetch_failure', () => {
-    setMock({ nodeType: 'Broker', error: 'Unable to load transactions' })
-    render(<TransactionsTab />)
-    expect(screen.getByText('Unable to load transactions')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument()
+  it('renders_table_with_correct_columns', async () => {
+    await renderAssetTab()
+    for (const header of ['Date', 'Type', 'Quantity', 'Unit Price', 'Fees', 'Withheld', 'Net']) {
+      expect(screen.getByText(header)).toBeInTheDocument()
+    }
   })
 
-  it('renders_table_with_correct_columns', () => {
-    setMock({ transactions: [TRANSACTION_BUY] })
-    render(<TransactionsTab />)
-    expect(screen.getByText('Date')).toBeInTheDocument()
-    expect(screen.getByText('Type')).toBeInTheDocument()
-    expect(screen.getByText('Quantity')).toBeInTheDocument()
-    expect(screen.getByText('Unit Price')).toBeInTheDocument()
-    expect(screen.getByText('Fees')).toBeInTheDocument()
-    expect(screen.getByText('Withheld')).toBeInTheDocument()
-    expect(screen.getByText('Net')).toBeInTheDocument()
-  })
-
-  it('renders_date_in_dd_MM_yyyy_format', () => {
-    setMock({ transactions: [TRANSACTION_BUY] })
-    render(<TransactionsTab />)
+  it('renders_date_in_dd_MM_yyyy_format', async () => {
+    await renderAssetTab()
     expect(screen.getByText('15/03/2024')).toBeInTheDocument()
   })
 
   it.each([
     [TRANSACTION_BUY, 'Buy', 'transactions-tab__type--buy'],
     [TRANSACTION_SELL, 'Sell', 'transactions-tab__type--sell'],
-  ])('renders_%#_transaction_type_%s_with_its_class', (transaction, label, typeClass) => {
-    setMock({ transactions: [transaction] })
-    render(<TransactionsTab />)
+  ])('renders_%#_transaction_type_%s_with_its_class', async (transaction, label, typeClass) => {
+    await renderAssetTab([transaction])
     expect(screen.getByText(label)).toHaveClass(typeClass)
   })
 
-  it('renders_quantity_with_8_decimal_places', () => {
-    setMock({ transactions: [TRANSACTION_BUY] })
-    render(<TransactionsTab />)
+  it('renders_quantity_with_8_decimal_places', async () => {
+    await renderAssetTab()
     expect(screen.getByText('100.00000000')).toBeInTheDocument()
   })
 
-  it('renders_total_in_bold', () => {
-    setMock({ transactions: [TRANSACTION_BUY] })
-    render(<TransactionsTab />)
-    const totalCell = screen.getByText('-420.50')
-    expect(totalCell).toHaveClass('transactions-tab__total')
+  it('renders_total_in_bold', async () => {
+    await renderAssetTab()
+    expect(screen.getByText('-420.50')).toHaveClass('transactions-tab__total')
   })
 
-  it('new_button_calls_show_new_form', () => {
-    render(<TransactionsTab />)
-    fireEvent.click(screen.getByRole('button', { name: 'New transaction' }))
-    expect(mockShowNewForm).toHaveBeenCalledTimes(1)
+  it('empty_table_renders_no_rows', async () => {
+    await renderAssetTab([])
+    expect(dataRows()).toHaveLength(0)
   })
 
-  it('renders_form_when_form_visible', () => {
-    setMock({ isFormVisible: true, editingId: null })
-    render(<TransactionsTab />)
-    expect(screen.getByRole('heading', { name: 'New transaction' })).toBeInTheDocument()
+  it('new_button_shows_the_new_transaction_form', async () => {
+    await renderAssetTab()
+    expect(screen.queryByRole('heading', { name: 'New transaction' })).not.toBeInTheDocument()
+    await openNewForm()
+  })
+
+  it('renders_form_fields_when_form_visible', async () => {
+    await renderAssetTab()
+    await openNewForm()
     expect(screen.getByLabelText(/^Date/)).toBeInTheDocument()
     expect(screen.getByLabelText('Type')).toBeInTheDocument()
     expect(screen.getByLabelText(/^Quantity/)).toBeInTheDocument()
     expect(screen.getByLabelText(/^Unit Price/)).toBeInTheDocument()
     expect(screen.getByLabelText('Fees')).toBeInTheDocument()
     expect(screen.getByLabelText('Withheld')).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Date/)).toHaveValue('2024-06-01')
   })
 
-  it('hides_quantity_and_unit_price_when_type_has_no_quantity_effect', () => {
-    setMock({ isFormVisible: true, formTypeHasQuantityEffect: false })
-    render(<TransactionsTab />)
-    expect(screen.queryByLabelText(/^Quantity/)).not.toBeInTheDocument()
+  it('cancel_hides_the_form', async () => {
+    await renderAssetTab()
+    await openNewForm()
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+    expect(screen.queryByRole('heading', { name: 'New transaction' })).not.toBeInTheDocument()
+  })
+
+  it('hides_quantity_and_unit_price_when_type_has_no_quantity_effect', async () => {
+    await renderAssetTab()
+    await openNewForm()
+    fireEvent.change(screen.getByLabelText('Type'), { target: { value: 'Fee' } })
+    await waitFor(() => expect(screen.queryByLabelText(/^Quantity/)).not.toBeInTheDocument())
     expect(screen.queryByLabelText(/^Unit Price/)).not.toBeInTheDocument()
   })
 
-  it('type_select_includes_every_new_transaction_type', () => {
-    setMock({ isFormVisible: true })
-    render(<TransactionsTab />)
+  it('type_select_includes_every_new_transaction_type', async () => {
+    await renderAssetTab()
+    await openNewForm()
     const select = screen.getByLabelText('Type') as HTMLSelectElement
-    const optionValues = Array.from(select.options).map((o) => o.value)
-    expect(optionValues).toEqual([
+    expect(Array.from(select.options).map((o) => o.value)).toEqual([
       'Buy',
       'Sell',
       'Fee',
@@ -291,235 +391,315 @@ describe('TransactionsTab', () => {
     ])
   })
 
-  it('renders_edit_transaction_title_when_editing', () => {
-    setMock({ isFormVisible: true, editingId: 'aaa' })
-    render(<TransactionsTab />)
-    expect(screen.getByText('Edit transaction')).toBeInTheDocument()
+  it('editing_each_form_field_changes_its_displayed_value', async () => {
+    await renderAssetTab()
+    await openNewForm()
+
+    const fields: [RegExp | string, string, string | number][] = [
+      [/^Date/, '2024-05-01', '2024-05-01'],
+      ['Type', 'Sell', 'Sell'],
+      [/^Quantity/, '10', 10],
+      [/^Unit Price/, '4.5', 4.5],
+      ['Fees', '0.1', 0.1],
+      ['Withheld', '0.2', 0.2],
+    ]
+    for (const [label, typed, displayed] of fields) {
+      fireEvent.change(screen.getByLabelText(label), { target: { value: typed } })
+      expect(screen.getByLabelText(label)).toHaveValue(displayed)
+    }
   })
 
-  it('save_button_disabled_while_saving', () => {
-    setMock({ isFormVisible: true, isSaving: true })
-    render(<TransactionsTab />)
-    const saveBtn = screen.getByRole('button', { name: 'Saving...' })
-    expect(saveBtn).toBeDisabled()
+  it('edit_icon_opens_the_edit_form_prefilled_with_the_transaction', async () => {
+    await renderAssetTab()
+    fireEvent.click(screen.getByRole('button', { name: 'Edit transaction' }))
+
+    expect(await screen.findByRole('heading', { name: 'Edit transaction' })).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Date/)).toHaveValue('2024-03-15')
+    expect(screen.getByLabelText('Type')).toHaveValue('Buy')
+    expect(screen.getByLabelText(/^Quantity/)).toHaveValue(100)
+    expect(screen.getByLabelText(/^Unit Price/)).toHaveValue(4.2)
+    expect(screen.getByLabelText('Fees')).toHaveValue(0.5)
+    expect(screen.getByLabelText('Withheld')).toHaveValue(0)
+    expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument()
   })
 
-  it('does not show the lot allocation picker when requiresLotAllocation is false', () => {
-    setMock({ isFormVisible: true, requiresLotAllocation: false })
-    render(<TransactionsTab />)
-    expect(screen.queryByText(/Allocated/)).not.toBeInTheDocument()
+  it('save_adds_the_transaction_and_shows_the_new_row_after_reload', async () => {
+    addTransactionMock.mockResolvedValue(assetWith([TRANSACTION_BUY, TRANSACTION_NEW]))
+    await renderAssetTab()
+    await openNewForm()
+    fillValidSale()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add transaction' }))
+
+    expect(await screen.findByText('01/05/2024')).toBeInTheDocument()
+    expect(addTransactionMock).toHaveBeenCalledWith({
+      brokerName: 'XPI',
+      portfolioName: 'Acoes',
+      assetName: 'KLBN4',
+      date: '2024-05-01',
+      type: 'Sell',
+      quantity: 10,
+      unitPrice: 4.5,
+      fees: 0.1,
+      withheld: 0,
+      specificLotAllocations: null,
+    })
+    expect(screen.queryByRole('heading', { name: 'New transaction' })).not.toBeInTheDocument()
   })
 
-  it('shows the lot allocation picker when requiresLotAllocation is true', () => {
-    setOpenLotsMock({
-      openLots: [{ sourceTransactionId: 'lot-a', date: '2024-06-01T00:00:00', remainingQuantity: 15, unitCost: 12.5 }],
+  it('save_in_edit_mode_updates_the_transaction', async () => {
+    updateTransactionMock.mockResolvedValue(assetWith([{ ...TRANSACTION_BUY, quantity: 120 }]))
+    await renderAssetTab()
+    fireEvent.click(screen.getByRole('button', { name: 'Edit transaction' }))
+    await screen.findByRole('heading', { name: 'Edit transaction' })
+    fireEvent.change(screen.getByLabelText(/^Quantity/), { target: { value: '120' } })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    expect(await screen.findByText('120.00000000')).toBeInTheDocument()
+    expect(updateTransactionMock).toHaveBeenCalledWith({
+      brokerName: 'XPI',
+      portfolioName: 'Acoes',
+      assetName: 'KLBN4',
+      id: 'aaa',
+      date: '2024-03-15',
+      type: 'Buy',
+      quantity: 120,
+      unitPrice: 4.2,
+      fees: 0.5,
+      withheld: 0,
     })
-    setMock({ isFormVisible: true, requiresLotAllocation: true, formType: 'Sell', formQuantity: '10' })
-    render(<TransactionsTab />)
-    expect(screen.getByText('15.00000000')).toBeInTheDocument()
-    expect(screen.getByText(/Allocated 0.00000000 of 10.00000000/)).toBeInTheDocument()
+    expect(addTransactionMock).not.toHaveBeenCalled()
   })
 
-  it('editing a lot allocation input calls setLotAllocation', () => {
-    setOpenLotsMock({
-      openLots: [{ sourceTransactionId: 'lot-a', date: '2024-06-01T00:00:00', remainingQuantity: 15, unitCost: 12.5 }],
-    })
-    setMock({ isFormVisible: true, requiresLotAllocation: true, formType: 'Sell', formQuantity: '10' })
-    render(<TransactionsTab />)
-    fireEvent.change(screen.getByRole('spinbutton', { name: /Allocate quantity/ }), { target: { value: '10' } })
-    expect(mockSetLotAllocation).toHaveBeenCalledWith('lot-a', '10')
+  it('save_without_quantity_and_unit_price_shows_validation_messages_and_does_not_call_the_api', async () => {
+    await renderAssetTab()
+    await openNewForm()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add transaction' }))
+
+    expect(await screen.findByText('Quantity must be a positive number')).toBeInTheDocument()
+    expect(screen.getByText('Unit Price must be a positive number')).toBeInTheDocument()
+    expect(addTransactionMock).not.toHaveBeenCalled()
   })
 
-  it('disables Save until the allocation exactly matches the sale quantity', () => {
-    setOpenLotsMock({
-      openLots: [{ sourceTransactionId: 'lot-a', date: '2024-06-01T00:00:00', remainingQuantity: 15, unitCost: 12.5 }],
-    })
-    setMock({
-      isFormVisible: true,
-      requiresLotAllocation: true,
-      formType: 'Sell',
-      formQuantity: '10',
-      formLotAllocations: { 'lot-a': '4' },
-    })
-    render(<TransactionsTab />)
-    expect(screen.getByRole('button', { name: 'Add transaction' })).toBeDisabled()
+  it('save_without_a_date_shows_the_date_validation_message', async () => {
+    await renderAssetTab()
+    await openNewForm()
+    fireEvent.change(screen.getByLabelText(/^Date/), { target: { value: '' } })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add transaction' }))
+
+    expect(await screen.findByText('Date is required')).toBeInTheDocument()
+    expect(addTransactionMock).not.toHaveBeenCalled()
   })
 
-  it('enables Save once the allocation exactly matches the sale quantity', () => {
-    setOpenLotsMock({
-      openLots: [{ sourceTransactionId: 'lot-a', date: '2024-06-01T00:00:00', remainingQuantity: 15, unitCost: 12.5 }],
-    })
-    setMock({
-      isFormVisible: true,
-      requiresLotAllocation: true,
-      formType: 'Sell',
-      formQuantity: '10',
-      formLotAllocations: { 'lot-a': '10' },
-    })
-    render(<TransactionsTab />)
+  it('save_button_disabled_while_saving', async () => {
+    addTransactionMock.mockReturnValue(new Promise(() => {}))
+    await renderAssetTab()
+    await openNewForm()
+    fillValidSale()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add transaction' }))
+
+    expect(await screen.findByRole('button', { name: 'Saving...' })).toBeDisabled()
+  })
+
+  it('renders_save_error_below_form', async () => {
+    addTransactionMock.mockRejectedValue(new Error('Failed to save'))
+    await renderAssetTab()
+    await openNewForm()
+    fillValidSale()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add transaction' }))
+
+    expect(await screen.findByText('Failed to save')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'New transaction' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Add transaction' })).not.toBeDisabled()
   })
 
-  it('edit_icon_calls_show_edit_form', () => {
-    setMock({ transactions: [TRANSACTION_BUY] })
-    render(<TransactionsTab />)
-    fireEvent.click(screen.getByRole('button', { name: 'Edit transaction' }))
-    expect(mockShowEditForm).toHaveBeenCalledWith(TRANSACTION_BUY)
+  it('delete_icon_deletes_the_transaction_after_the_user_confirms', async () => {
+    deleteTransactionMock.mockResolvedValue(assetWith([TRANSACTION_SELL]))
+    await renderAssetTab([TRANSACTION_BUY, TRANSACTION_SELL])
+
+    fireEvent.click(within(dataRows()[0]).getByRole('button', { name: 'Delete transaction' }))
+
+    await waitFor(() => expect(screen.queryByText('15/03/2024')).not.toBeInTheDocument())
+    expect(screen.getByText('10/01/2024')).toBeInTheDocument()
+    expect(deleteTransactionMock).toHaveBeenCalledWith({
+      brokerName: 'XPI',
+      portfolioName: 'Acoes',
+      assetName: 'KLBN4',
+      id: 'aaa',
+    })
   })
 
-  it('delete_icon_calls_delete_transaction', () => {
-    setMock({ transactions: [TRANSACTION_BUY] })
-    render(<TransactionsTab />)
-    fireEvent.click(screen.getByRole('button', { name: 'Delete transaction' }))
-    expect(mockDeleteTransaction).toHaveBeenCalledWith('aaa')
-  })
-
-  it('delete_icon_calls_delete_transaction_only_after_the_user_confirms', () => {
+  it('delete_icon_does_not_delete_when_the_user_cancels_the_confirmation', async () => {
     vi.spyOn(window, 'confirm').mockReturnValue(false)
-    setMock({ transactions: [TRANSACTION_BUY] })
-    render(<TransactionsTab />)
+    await renderAssetTab()
+
     fireEvent.click(screen.getByRole('button', { name: 'Delete transaction' }))
-    expect(mockDeleteTransaction).not.toHaveBeenCalled()
+
+    expect(deleteTransactionMock).not.toHaveBeenCalled()
+    expect(screen.getByText('15/03/2024')).toBeInTheDocument()
   })
 
-  it('renders_save_error_below_form', () => {
-    setMock({ isFormVisible: true, saveError: 'Failed to save' })
-    render(<TransactionsTab />)
-    expect(screen.getByText('Failed to save')).toBeInTheDocument()
+  it('renders_delete_error_below_table', async () => {
+    deleteTransactionMock.mockRejectedValue(new Error('Failed to delete'))
+    await renderAssetTab()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete transaction' }))
+
+    expect(await screen.findByText('Failed to delete')).toBeInTheDocument()
+    expect(screen.getByText('15/03/2024')).toBeInTheDocument()
   })
 
-  it('renders_delete_error_below_table', () => {
-    setMock({ deleteError: 'Failed to delete' })
-    render(<TransactionsTab />)
-    expect(screen.getByText('Failed to delete')).toBeInTheDocument()
+  it('does_not_show_the_lot_allocation_picker_for_a_sale_on_a_non_specific_id_asset', async () => {
+    await renderAssetTab([TRANSACTION_BUY], 'AverageCost')
+    await openNewForm()
+    fireEvent.change(screen.getByLabelText('Type'), { target: { value: 'Sell' } })
+
+    expect(screen.queryByText(/Allocated/)).not.toBeInTheDocument()
+    expect(getOpenLotsMock).not.toHaveBeenCalled()
   })
 
-  it('empty_table_renders_no_rows', () => {
-    setMock({ transactions: [] })
-    render(<TransactionsTab />)
-    const rows = within(screen.getByRole('table')).getAllByRole('row')
-    expect(rows).toHaveLength(1)
+  it('shows_the_lot_allocation_picker_for_a_sale_on_a_specific_id_asset', async () => {
+    getOpenLotsMock.mockResolvedValue([OPEN_LOT])
+    await renderAssetTab([TRANSACTION_BUY], 'SpecificId')
+    await openNewForm()
+    fireEvent.change(screen.getByLabelText('Type'), { target: { value: 'Sell' } })
+    fireEvent.change(screen.getByLabelText(/^Quantity/), { target: { value: '10' } })
+
+    expect(await screen.findByText('15.00000000')).toBeInTheDocument()
+    expect(screen.getByText(/Allocated 0.00000000 of 10.00000000/)).toBeInTheDocument()
+    expect(getOpenLotsMock).toHaveBeenCalledWith('XPI', 'Acoes', 'KLBN4', 'active')
   })
 
-  it('clicking_total_header_sorts_rows_ascending_then_descending', () => {
-    setMock({ transactions: [TRANSACTION_BUY, TRANSACTION_SELL] })
-    render(<TransactionsTab />)
+  it('does_not_show_the_lot_allocation_picker_when_editing_a_specific_id_sale', async () => {
+    await renderAssetTab([TRANSACTION_SELL], 'SpecificId')
+    fireEvent.click(screen.getByRole('button', { name: 'Edit transaction' }))
+    await screen.findByRole('heading', { name: 'Edit transaction' })
+
+    expect(screen.queryByText(/Allocated/)).not.toBeInTheDocument()
+    expect(getOpenLotsMock).not.toHaveBeenCalled()
+  })
+
+  async function openSpecificIdSaleForm() {
+    getOpenLotsMock.mockResolvedValue([OPEN_LOT])
+    await renderAssetTab([TRANSACTION_BUY], 'SpecificId')
+    await openNewForm()
+    fireEvent.change(screen.getByLabelText(/^Date/), { target: { value: '2024-05-01' } })
+    fireEvent.change(screen.getByLabelText('Type'), { target: { value: 'Sell' } })
+    fireEvent.change(screen.getByLabelText(/^Quantity/), { target: { value: '10' } })
+    fireEvent.change(screen.getByLabelText(/^Unit Price/), { target: { value: '4.5' } })
+    return screen.findByRole('spinbutton', { name: /Allocate quantity/ })
+  }
+
+  it('editing_a_lot_allocation_input_changes_its_value_and_the_allocated_summary', async () => {
+    const allocationInput = await openSpecificIdSaleForm()
+
+    fireEvent.change(allocationInput, { target: { value: '4' } })
+
+    expect(screen.getByRole('spinbutton', { name: /Allocate quantity/ })).toHaveValue(4)
+    expect(screen.getByText(/Allocated 4.00000000 of 10.00000000/)).toBeInTheDocument()
+  })
+
+  it('disables_Save_until_the_allocation_exactly_matches_the_sale_quantity', async () => {
+    const allocationInput = await openSpecificIdSaleForm()
+
+    fireEvent.change(allocationInput, { target: { value: '4' } })
+
+    expect(screen.getByRole('button', { name: 'Add transaction' })).toBeDisabled()
+  })
+
+  it('enables_Save_once_the_allocation_exactly_matches_the_sale_quantity_and_sends_it', async () => {
+    addTransactionMock.mockResolvedValue(assetWith([TRANSACTION_BUY, TRANSACTION_NEW], 'SpecificId'))
+    const allocationInput = await openSpecificIdSaleForm()
+
+    fireEvent.change(allocationInput, { target: { value: '10' } })
+
+    const saveButton = screen.getByRole('button', { name: 'Add transaction' })
+    expect(saveButton).not.toBeDisabled()
+    fireEvent.click(saveButton)
+
+    expect(await screen.findByText('01/05/2024')).toBeInTheDocument()
+    expect(addTransactionMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'Sell',
+        quantity: 10,
+        specificLotAllocations: [{ sourceTransactionId: 'lot-a', quantity: 10 }],
+      }),
+    )
+  })
+
+  it('clicking_total_header_sorts_rows_ascending_then_descending', async () => {
+    await renderAssetTab([TRANSACTION_BUY, TRANSACTION_SELL])
     const table = screen.getByRole('table')
 
     fireEvent.click(screen.getByRole('button', { name: 'Net' }))
-    let dataRows = within(table).getAllByRole('row').slice(1)
-    expect(within(dataRows[0]).getByText('-420.50')).toBeInTheDocument()
-    expect(within(dataRows[1]).getByText('251.00')).toBeInTheDocument()
+    let rows = dataRows()
+    expect(within(rows[0]).getByText('-420.50')).toBeInTheDocument()
+    expect(within(rows[1]).getByText('251.00')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Net' }))
-    dataRows = within(table).getAllByRole('row').slice(1)
-    expect(within(dataRows[0]).getByText('251.00')).toBeInTheDocument()
-    expect(within(dataRows[1]).getByText('-420.50')).toBeInTheDocument()
+    rows = within(table).getAllByRole('row').slice(1)
+    expect(within(rows[0]).getByText('251.00')).toBeInTheDocument()
+    expect(within(rows[1]).getByText('-420.50')).toBeInTheDocument()
   })
 
-  it('clicking_date_header_sorts_rows_by_date', () => {
-    setMock({ transactions: [TRANSACTION_BUY, TRANSACTION_SELL] })
-    render(<TransactionsTab />)
-    fireEvent.click(screen.getByRole('button', { name: 'Date' }))
-    const dataRows = within(screen.getByRole('table')).getAllByRole('row').slice(1)
-    expect(dataRows).toHaveLength(2)
-  })
-
-  it('defaults to sorting by date descending, with the header showing the active sort', () => {
-    setMock({ transactions: [TRANSACTION_SELL, TRANSACTION_BUY] })
-    render(<TransactionsTab />)
+  it('defaults_to_sorting_by_date_descending_with_the_header_showing_the_active_sort', async () => {
+    await renderAssetTab([TRANSACTION_SELL, TRANSACTION_BUY])
     const table = screen.getByRole('table')
     const dateHeaderButton = within(table).getByRole('button', { name: 'Date' })
     const dateHeader = dateHeaderButton.closest('th')
 
     expect(dateHeader).toHaveAttribute('aria-sort', 'descending')
-    let dataRows = within(table).getAllByRole('row').slice(1)
-    expect(within(dataRows[0]).getByText('15/03/2024')).toBeInTheDocument()
-    expect(within(dataRows[1]).getByText('10/01/2024')).toBeInTheDocument()
+    let rows = dataRows()
+    expect(within(rows[0]).getByText('15/03/2024')).toBeInTheDocument()
+    expect(within(rows[1]).getByText('10/01/2024')).toBeInTheDocument()
 
     fireEvent.click(dateHeaderButton)
     expect(dateHeader).toHaveAttribute('aria-sort', 'none')
 
     fireEvent.click(dateHeaderButton)
     expect(dateHeader).toHaveAttribute('aria-sort', 'ascending')
-    dataRows = within(table).getAllByRole('row').slice(1)
-    expect(within(dataRows[0]).getByText('10/01/2024')).toBeInTheDocument()
-    expect(within(dataRows[1]).getByText('15/03/2024')).toBeInTheDocument()
+    rows = dataRows()
+    expect(within(rows[0]).getByText('10/01/2024')).toBeInTheDocument()
+    expect(within(rows[1]).getByText('15/03/2024')).toBeInTheDocument()
 
     fireEvent.click(dateHeaderButton)
     expect(dateHeader).toHaveAttribute('aria-sort', 'descending')
   })
 
-  it('clicking_type_header_sorts_rows_by_type', () => {
-    setMock({ transactions: [TRANSACTION_BUY, TRANSACTION_SELL] })
-    render(<TransactionsTab />)
-    fireEvent.click(screen.getByRole('button', { name: 'Type' }))
-    const dataRows = within(screen.getByRole('table')).getAllByRole('row').slice(1)
-    expect(dataRows).toHaveLength(2)
+  it.each([
+    ['Type', ['Buy', 'Sell']],
+    ['Quantity', ['Sell', 'Buy']],
+    ['Unit Price', ['Buy', 'Sell']],
+    ['Fees', ['Buy', 'Sell']],
+  ])('clicking_%s_header_sorts_rows_ascending_then_descending', async (header, ascendingTypes) => {
+    await renderAssetTab([TRANSACTION_BUY, TRANSACTION_SELL])
+
+    fireEvent.click(screen.getByRole('button', { name: header }))
+    expect(rowTypes()).toEqual(ascendingTypes)
+
+    fireEvent.click(screen.getByRole('button', { name: header }))
+    expect(rowTypes()).toEqual([...ascendingTypes].reverse())
   })
 
-  it('clicking_quantity_header_sorts_rows_by_quantity', () => {
-    setMock({ transactions: [TRANSACTION_BUY, TRANSACTION_SELL] })
-    render(<TransactionsTab />)
-    fireEvent.click(screen.getByRole('button', { name: 'Quantity' }))
-    const dataRows = within(screen.getByRole('table')).getAllByRole('row').slice(1)
-    expect(dataRows).toHaveLength(2)
-  })
-
-  it('clicking_unit_price_header_sorts_rows_by_unit_price', () => {
-    setMock({ transactions: [TRANSACTION_BUY, TRANSACTION_SELL] })
-    render(<TransactionsTab />)
-    fireEvent.click(screen.getByRole('button', { name: 'Unit Price' }))
-    const dataRows = within(screen.getByRole('table')).getAllByRole('row').slice(1)
-    expect(dataRows).toHaveLength(2)
-  })
-
-  it('clicking_fees_header_sorts_rows_by_fees', () => {
-    setMock({ transactions: [TRANSACTION_BUY, TRANSACTION_SELL] })
-    render(<TransactionsTab />)
-    fireEvent.click(screen.getByRole('button', { name: 'Fees' }))
-    const dataRows = within(screen.getByRole('table')).getAllByRole('row').slice(1)
-    expect(dataRows).toHaveLength(2)
-  })
-
-  it('editing_each_form_field_calls_setFormField', () => {
-    setMock({ isFormVisible: true })
-    render(<TransactionsTab />)
-
-    fireEvent.change(screen.getByLabelText(/^Date/), { target: { value: '2024-05-01' } })
-    expect(mockSetFormField).toHaveBeenCalledWith('formDate', '2024-05-01')
-
-    fireEvent.change(screen.getByLabelText('Type'), { target: { value: 'Sell' } })
-    expect(mockSetFormField).toHaveBeenCalledWith('formType', 'Sell')
-
-    fireEvent.change(screen.getByLabelText(/^Quantity/), { target: { value: '10' } })
-    expect(mockSetFormField).toHaveBeenCalledWith('formQuantity', '10')
-
-    fireEvent.change(screen.getByLabelText(/^Unit Price/), { target: { value: '4.5' } })
-    expect(mockSetFormField).toHaveBeenCalledWith('formUnitPrice', '4.5')
-
-    fireEvent.change(screen.getByLabelText('Fees'), { target: { value: '0.1' } })
-    expect(mockSetFormField).toHaveBeenCalledWith('formFees', '0.1')
-  })
-
-  it('shows_the_fx_provenance_affordance_for_a_transaction_with_a_captured_snapshot', () => {
-    setMock({
-      transactions: [
-        {
-          ...TRANSACTION_BUY,
-          currency: 'BRL',
-          fxRateSnapshot: { toCurrency: 'GBP', rate: 0.146, source: 'Frankfurter', retrievedAt: '2026-07-01T08:00:00Z' },
-        },
-      ],
-    })
-    render(<TransactionsTab />)
+  it('shows_the_fx_provenance_affordance_for_a_transaction_with_a_captured_snapshot', async () => {
+    await renderAssetTab([
+      {
+        ...TRANSACTION_BUY,
+        currency: 'BRL',
+        fxRateSnapshot: { toCurrency: 'GBP', rate: 0.146, source: 'Frankfurter', retrievedAt: '2026-07-01T08:00:00Z' },
+      },
+    ])
 
     expect(screen.getByRole('button', { name: 'FX conversion details' })).toBeInTheDocument()
   })
 
-  it('does_not_show_the_fx_provenance_affordance_for_a_transaction_without_a_captured_snapshot', () => {
-    setMock({ transactions: [{ ...TRANSACTION_BUY, currency: 'GBP', fxRateSnapshot: null }] })
-    render(<TransactionsTab />)
+  it('does_not_show_the_fx_provenance_affordance_for_a_transaction_without_a_captured_snapshot', async () => {
+    await renderAssetTab([{ ...TRANSACTION_BUY, currency: 'GBP', fxRateSnapshot: null }])
 
     expect(screen.queryByRole('button', { name: 'FX conversion details' })).not.toBeInTheDocument()
   })
