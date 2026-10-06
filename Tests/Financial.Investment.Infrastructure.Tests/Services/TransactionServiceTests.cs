@@ -1,190 +1,109 @@
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Services;
 using Financial.Investment.Domain.Entities;
-using Financial.Investment.Infrastructure.Persistence;
 using Financial.Shared.Abstractions.Currencies;
-using Financial.Shared.Abstractions.Observability;
-using Financial.Shared.Infrastructure.Persistence;
-using Financial.Investment.Infrastructure.Repositories;
 using Financial.TestUtilities;
 using FluentAssertions;
-using System.IO;
-using System.Linq;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Financial.Investment.Infrastructure.Tests.Services;
 
 [Trait("Category", "Integration")]
-public class TransactionServiceTests
+public class TransactionServiceTests : IDisposable
 {
-    [Fact]
-    public async Task AddTransaction_WithValidRequest_ReturnsDetailsWithNewTransaction()
+    private readonly PersistedInvestmentFile _file = new();
+    private readonly TransactionService _service;
+
+    public TransactionServiceTests()
     {
-        var (service, tempFile) = CreateService();
-        try
-        {
-            var request = new TransactionCreateDTO
-            {
-                BrokerName = "XPI",
-                PortfolioName = "Default",
-                AssetName = "BCIA11",
-                Date = new DateTime(2024, 1, 2),
-                Type = "Buy",
-                Quantity = 1.5m,
-                UnitPrice = 100.25m,
-                Fees = 2.5m
-            };
-
-            var result = await service.AddTransactionAsync(request);
-
-            result.Should().NotBeNull();
-            result!.Transactions.Should().ContainSingle(t =>
-                t.Date == request.Date &&
-                t.Type == request.Type &&
-                t.Quantity == request.Quantity &&
-                t.UnitPrice == request.UnitPrice &&
-                t.Fees == request.Fees &&
-                t.Id != Guid.Empty);
-        }
-        finally
-        {
-            File.Delete(tempFile);
-        }
-    }
-
-    [Fact]
-    public async Task UpdateTransaction_WithValidRequest_UpdatesTransaction()
-    {
-        var (service, tempFile) = CreateService();
-        try
-        {
-            var created = await service.AddTransactionAsync(new TransactionCreateDTO
-            {
-                BrokerName = "XPI",
-                PortfolioName = "Default",
-                AssetName = "BCIA11",
-                Date = new DateTime(2024, 1, 3),
-                Type = "Buy",
-                Quantity = 2m,
-                UnitPrice = 50m,
-                Fees = 1m
-            });
-
-            var transactionId = created!.Transactions.First(t => t.Date == new DateTime(2024, 1, 3)).Id;
-
-            var updated = await service.UpdateTransactionAsync(new TransactionUpdateDTO
-            {
-                BrokerName = "XPI",
-                PortfolioName = "Default",
-                AssetName = "BCIA11",
-                Id = transactionId,
-                Date = new DateTime(2024, 1, 3),
-                Type = "Buy",
-                Quantity = 3m,
-                UnitPrice = 55m,
-                Fees = 1.5m
-            });
-
-            updated.Should().NotBeNull();
-            var updatedTransaction = updated!.Transactions.Single(t => t.Id == transactionId);
-            updatedTransaction.Quantity.Should().Be(3m);
-            updatedTransaction.UnitPrice.Should().Be(55m);
-            updatedTransaction.Fees.Should().Be(1.5m);
-        }
-        finally
-        {
-            File.Delete(tempFile);
-        }
-    }
-
-    [Fact]
-    public async Task DeleteTransaction_WithValidRequest_RemovesTransaction()
-    {
-        var (service, tempFile) = CreateService();
-        try
-        {
-            var created = await service.AddTransactionAsync(new TransactionCreateDTO
-            {
-                BrokerName = "XPI",
-                PortfolioName = "Default",
-                AssetName = "BCIA11",
-                Date = new DateTime(2024, 1, 4),
-                Type = "Sell",
-                Quantity = 1m,
-                UnitPrice = 120m,
-                Fees = 0m
-            });
-
-            var transactionId = created!.Transactions.First(t => t.Date == new DateTime(2024, 1, 4)).Id;
-
-            var updated = await service.DeleteTransactionAsync(new TransactionDeleteDTO
-            {
-                BrokerName = "XPI",
-                PortfolioName = "Default",
-                AssetName = "BCIA11",
-                Id = transactionId
-            });
-
-            updated.Should().NotBeNull();
-            updated!.Transactions.Should().NotContain(t => t.Id == transactionId);
-        }
-        finally
-        {
-            File.Delete(tempFile);
-        }
-    }
-
-    [Fact]
-    public async Task AddTransaction_Sell_ResolvesBrokersCostBasisMethod_AndCreatesDisposalRecord()
-    {
-        var (service, repository, tempFile) = CreateServiceWithRepository();
-        try
-        {
-            var result = await service.AddTransactionAsync(new TransactionCreateDTO
-            {
-                BrokerName = "XPI",
-                PortfolioName = "Default",
-                AssetName = "BCIA11",
-                Date = new DateTime(2024, 1, 6),
-                Type = "Sell",
-                Quantity = 1m,
-                UnitPrice = 120m,
-                Fees = 0m
-            });
-
-            result.Should().NotBeNull();
-            var asset = repository.GetInvestments().ActiveBrokers
-                .Single(b => b.Name == "XPI").Portfolios
-                .Single(p => p.Name == "Default").Assets
-                .Single(a => a.Name == "BCIA11");
-
-            asset.DisposalRecords.Should().Contain(record => record.Method == CostBasisMethod.AverageCost);
-        }
-        finally
-        {
-            File.Delete(tempFile);
-        }
-    }
-
-    private static (TransactionService Service, string TempFile) CreateService()
-    {
-        var (service, _, tempFile) = CreateServiceWithRepository();
-        return (service, tempFile);
-    }
-
-    private static (TransactionService Service, InvestmentJsonRepository Repository, string TempFile) CreateServiceWithRepository()
-    {
-        var tempFile = Path.Combine(Path.GetTempPath(), $"data.test.{Guid.NewGuid():N}.json");
-        File.Copy(TestDataPaths.DataJsonFile, tempFile, true);
-
-        var storage = new LocalJsonStorage(tempFile);
-        var serializer = new InvestmentSerializerAdapter();
-        var repository = new InvestmentJsonRepository(InvestmentLoader.LoadSync(storage, serializer, TestClock.At()), storage, serializer);
+        var repository = _file.OpenRepository();
         var tracer = new RecordingTelemetryTracer();
         var navigationService = new NavigationService(repository, TestHoldingValuationService.Create(), tracer, NullLogger<NavigationService>.Instance);
         IExchangeRateProvider exchangeRateProvider = new StubExchangeRateProvider(0.15m);
-        var service = new TransactionService(repository, navigationService, exchangeRateProvider, new StubReportingCurrencyProvider(), TimeProvider.System, tracer, NullLogger<TransactionService>.Instance);
+        _service = new TransactionService(repository, navigationService, exchangeRateProvider, new StubReportingCurrencyProvider(), TestClock.At(), tracer, NullLogger<TransactionService>.Instance);
+    }
 
-        return (service, repository, tempFile);
+    public void Dispose() => _file.Dispose();
+
+    private static TransactionCreateDTO NewTransaction(DateTime date, string type, decimal quantity, decimal unitPrice, decimal fees) => new()
+    {
+        BrokerName = "XPI",
+        PortfolioName = "Default",
+        AssetName = "BCIA11",
+        Date = date,
+        Type = type,
+        Quantity = quantity,
+        UnitPrice = unitPrice,
+        Fees = fees
+    };
+
+    private Asset PersistedAsset() => _file.ReloadAsset("XPI", "Default", "BCIA11");
+
+    [Fact]
+    public async Task AddTransaction_PersistsTheTransactionToDisk()
+    {
+        var result = await _service.AddTransactionAsync(NewTransaction(new DateTime(2024, 1, 2), "Buy", 1.5m, 100.25m, 2.5m));
+
+        var transactionId = result!.Transactions.Single(t => t.Date == new DateTime(2024, 1, 2)).Id;
+        var persisted = PersistedAsset().Transactions.Single(t => t.Id == transactionId);
+        persisted.Type.Should().Be(Transaction.TransactionType.Buy);
+        persisted.Quantity.Should().Be(1.5m);
+        persisted.UnitPrice.Should().Be(100.25m);
+        persisted.Fees.Should().Be(2.5m);
+    }
+
+    [Fact]
+    public async Task UpdateTransaction_PersistsTheChangedFieldsToDisk()
+    {
+        var created = await _service.AddTransactionAsync(NewTransaction(new DateTime(2024, 1, 3), "Buy", 2m, 50m, 1m));
+        var transactionId = created!.Transactions.Single(t => t.Date == new DateTime(2024, 1, 3)).Id;
+
+        await _service.UpdateTransactionAsync(new TransactionUpdateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "BCIA11",
+            Id = transactionId,
+            Date = new DateTime(2024, 1, 3),
+            Type = "Buy",
+            Quantity = 3m,
+            UnitPrice = 55m,
+            Fees = 1.5m
+        });
+
+        var persisted = PersistedAsset().Transactions.Single(t => t.Id == transactionId);
+        persisted.Quantity.Should().Be(3m);
+        persisted.UnitPrice.Should().Be(55m);
+        persisted.Fees.Should().Be(1.5m);
+    }
+
+    [Fact]
+    public async Task DeleteTransaction_RemovesTheTransactionFromDisk()
+    {
+        var created = await _service.AddTransactionAsync(NewTransaction(new DateTime(2024, 1, 4), "Sell", 1m, 120m, 0m));
+        var transactionId = created!.Transactions.Single(t => t.Date == new DateTime(2024, 1, 4)).Id;
+        PersistedAsset().Transactions.Should().Contain(t => t.Id == transactionId);
+
+        await _service.DeleteTransactionAsync(new TransactionDeleteDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "BCIA11",
+            Id = transactionId
+        });
+
+        PersistedAsset().Transactions.Should().NotContain(t => t.Id == transactionId);
+    }
+
+    [Fact]
+    public async Task AddTransaction_Sell_PersistsADisposalRecordUsingTheBrokersCostBasisMethod()
+    {
+        var disposalsBefore = PersistedAsset().DisposalRecords.Count;
+
+        await _service.AddTransactionAsync(NewTransaction(new DateTime(2024, 1, 6), "Sell", 1m, 120m, 0m));
+
+        var disposals = PersistedAsset().DisposalRecords;
+        disposals.Should().HaveCountGreaterThan(disposalsBefore);
+        disposals.Should().OnlyContain(record => record.Method == CostBasisMethod.AverageCost);
     }
 }
