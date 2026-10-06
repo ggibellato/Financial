@@ -21,14 +21,23 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
     private readonly IExchangeRateProvider? _exchangeRateProvider;
     private readonly TimeProvider _timeProvider;
     private readonly ICalendarProvider? _calendarProviderOverride;
+    private readonly string? _webRootPath;
     private bool _disposed;
 
     public ApiTestFactory(
         IExchangeRateProvider? exchangeRateProviderOverride = null,
         TimeProvider? timeProviderOverride = null,
         ICalendarProvider? calendarProviderOverride = null,
-        bool useRealExchangeRates = false)
+        bool useRealExchangeRates = false,
+        string? spaIndexHtml = null)
     {
+        if (spaIndexHtml is not null)
+        {
+            _webRootPath = Path.Combine(Path.GetTempPath(), $"financial-api-webroot-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(_webRootPath);
+            File.WriteAllText(Path.Combine(_webRootPath, "index.html"), spaIndexHtml);
+        }
+
         _dataFilePath = CreateTempDataFile();
         _cashFlowDataFilePath = CreateTempCashFlowDataFilePath();
         _fxRatesDataFilePath = Path.Combine(Path.GetTempPath(), $"financial-api-fxrates-{Guid.NewGuid():N}.json");
@@ -42,6 +51,11 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        if (_webRootPath is not null)
+        {
+            builder.UseWebRoot(_webRootPath);
+        }
+
         builder.ConfigureAppConfiguration((context, config) =>
         {
             var settings = new Dictionary<string, string?>
@@ -93,6 +107,7 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
             TryDeleteTempFile(_cashFlowDataFilePath);
             TryDeleteTempFile(_fxRatesDataFilePath);
             TryDeleteTempFile(_calendarCredentialsPath);
+            TryDeleteWebRoot();
         }
     }
 
@@ -172,6 +187,23 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
           ]
         }
         """;
+
+    private void TryDeleteWebRoot()
+    {
+        if (_webRootPath is null)
+        {
+            return;
+        }
+
+        try
+        {
+            Directory.Delete(_webRootPath, true);
+        }
+        catch (IOException ex)
+        {
+            Console.Error.WriteLine($"Failed to delete temp web root '{_webRootPath}': {ex.Message}");
+        }
+    }
 
     private static void TryDeleteTempFile(string path)
     {
