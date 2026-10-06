@@ -447,7 +447,6 @@ internal sealed class StubReserveService : IReserveService
     public Exception? ThrowOnDeleteMovement { get; set; }
     public Exception? ThrowOnUpdateMovement { get; set; }
     public Exception? ThrowOnGetBalances { get; set; }
-
     public Exception? ThrowOnPostIncomeSplit { get; set; }
 
     public Task<IncomeSplitResultDTO> PostIncomeSplitAsync(IncomeSplitRequestDTO request)
@@ -482,8 +481,15 @@ internal sealed class StubReserveService : IReserveService
         });
     }
 
-    public IReadOnlyList<ReserveBucketBalanceDTO> GetBucketBalances() =>
-        ThrowOnGetBalances is not null ? throw ThrowOnGetBalances : Balances;
+    public IReadOnlyList<ReserveBucketBalanceDTO> GetBucketBalances()
+    {
+        if (ThrowOnGetBalances is not null)
+        {
+            throw ThrowOnGetBalances;
+        }
+
+        return Balances;
+    }
 
     public IReadOnlyList<ReserveMovementDTO> GetMovementHistory() => Movements;
 

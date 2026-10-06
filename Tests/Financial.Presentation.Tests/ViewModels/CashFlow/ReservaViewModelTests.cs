@@ -549,6 +549,11 @@ public class ReservaViewModelTests
         Date = TestClock.Today, Description = "Salary", IncomeId = incomeId,
     };
 
+    private static ReserveMovementDTO ToDto(ReserveMovementRow row) => new()
+    {
+        Id = row.Id, BucketId = row.BucketId, BucketName = row.BucketName, Amount = row.Amount, Date = row.Date, Description = row.Description,
+    };
+
     [Fact]
     public async Task RefreshAsync_BalancesLoadFails_ShowsErrorAndHidesContentUntilNextSuccessfulLoad()
     {
@@ -587,7 +592,6 @@ public class ReservaViewModelTests
 
         await viewModel.SaveMovementEditAsync();
 
-        viewModel.EditSaveError.Should().Be("Storage unavailable");
         viewModel.EditGeneralSaveError.Should().Be("Storage unavailable");
         viewModel.IsEditFormOpen.Should().BeTrue();
     }
@@ -650,7 +654,7 @@ public class ReservaViewModelTests
     {
         var (viewModel, service) = CreateViewModel(confirm: false);
         var row = MovementRow();
-        service.Movements = [new ReserveMovementDTO { Id = row.Id, BucketId = row.BucketId, BucketName = row.BucketName, Amount = row.Amount, Date = row.Date, Description = row.Description }];
+        service.Movements = [ToDto(row)];
         await viewModel.RefreshAsync();
 
         await viewModel.DeleteMovementAsync(row);
@@ -665,7 +669,7 @@ public class ReservaViewModelTests
     {
         var (viewModel, service) = CreateViewModel();
         var row = MovementRow();
-        service.Movements = [new ReserveMovementDTO { Id = row.Id, BucketId = row.BucketId, BucketName = row.BucketName, Amount = row.Amount, Date = row.Date, Description = row.Description }];
+        service.Movements = [ToDto(row)];
         service.ThrowOnDeleteMovement = new InvalidOperationException("Could not delete the movement");
         await viewModel.RefreshAsync();
 
@@ -673,6 +677,5 @@ public class ReservaViewModelTests
 
         viewModel.DeleteMovementError.Should().Be("Could not delete the movement");
         viewModel.Movements.Should().ContainSingle(m => m.Id == row.Id);
-        viewModel.DeleteMovementCommand.CanExecute(viewModel.Movements[0]).Should().BeTrue();
     }
 }

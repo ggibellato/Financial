@@ -129,15 +129,20 @@ public class IncomeSplitViewModelTests
         viewModel.SplitDescription.Should().BeEmpty();
     }
 
+    private static void FillValidSplit(IncomeSplitViewModel viewModel)
+    {
+        viewModel.ShowSplitFormCommand.Execute(null);
+        viewModel.SplitDate = TestClock.LocalToday;
+        viewModel.SplitAmount = "100";
+        viewModel.SplitDescription = "Salary";
+    }
+
     [Fact]
     public async Task SplitGeneralSaveError_ServiceFails_ShowsTheMessageAsAGeneralError()
     {
         var (viewModel, service) = CreateViewModel();
         service.ThrowOnPostIncomeSplit = new InvalidOperationException("Storage unavailable");
-        viewModel.ShowSplitFormCommand.Execute(null);
-        viewModel.SplitDate = TestClock.LocalToday;
-        viewModel.SplitAmount = "100";
-        viewModel.SplitDescription = "Salary";
+        FillValidSplit(viewModel);
 
         await viewModel.SubmitSplitAsync();
 

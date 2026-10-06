@@ -96,6 +96,23 @@ public class ReportingCurrencyViewModelTests
         viewModel.IsEnabled.Should().BeTrue();
     }
 
+    private static void Select(ReportingCurrencyViewModel viewModel, Currency currency)
+    {
+        switch (currency)
+        {
+            case Currency.GBP: viewModel.IsGbpSelected = true; break;
+            case Currency.BRL: viewModel.IsBrlSelected = true; break;
+            default: viewModel.IsUsdSelected = true; break;
+        }
+    }
+
+    private static bool IsSelected(ReportingCurrencyViewModel viewModel, Currency currency) => currency switch
+    {
+        Currency.GBP => viewModel.IsGbpSelected,
+        Currency.BRL => viewModel.IsBrlSelected,
+        _ => viewModel.IsUsdSelected,
+    };
+
     [Theory]
     [InlineData(Currency.GBP, Currency.BRL)]
     [InlineData(Currency.BRL, Currency.USD)]
@@ -104,16 +121,10 @@ public class ReportingCurrencyViewModelTests
     {
         var (viewModel, provider) = CreateViewModel(initial);
 
-        switch (chosen)
-        {
-            case Currency.GBP: viewModel.IsGbpSelected = true; break;
-            case Currency.BRL: viewModel.IsBrlSelected = true; break;
-            default: viewModel.IsUsdSelected = true; break;
-        }
+        Select(viewModel, chosen);
 
         provider.GetReportingCurrency().Should().Be(chosen);
-        (chosen == Currency.GBP ? viewModel.IsGbpSelected : chosen == Currency.BRL ? viewModel.IsBrlSelected : viewModel.IsUsdSelected)
-            .Should().BeTrue();
+        IsSelected(viewModel, chosen).Should().BeTrue();
         viewModel.SaveError.Should().BeNull();
     }
 
