@@ -113,11 +113,9 @@ internal sealed class GoogleDriveClient
         }, logger: _retryLog, delay: _delay);
     }
 
-    private DriveService GetReadOnlyService() => _readOnlyService ??= CreateService(ReadOnlyScopes);
+    private DriveService GetReadOnlyService() => _readOnlyService ??= _serviceFactory(ReadOnlyScopes);
 
-    private DriveService GetReadWriteService() => _readWriteService ??= CreateService(ReadWriteScopes);
-
-    private DriveService CreateService(string[] scopes) => _serviceFactory(scopes);
+    private DriveService GetReadWriteService() => _readWriteService ??= _serviceFactory(ReadWriteScopes);
 
     private string ResolveFileId(DriveService service, string drivePath)
     {

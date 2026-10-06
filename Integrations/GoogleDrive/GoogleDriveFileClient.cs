@@ -17,18 +17,14 @@ public sealed class GoogleDriveFileClient : IRemoteFileClient, IGoogleDriveFileS
 {
     private readonly GoogleDriveClient _driveClient;
 
-    public string CredentialsPath { get; }
-
     public GoogleDriveFileClient(string credentialsPath, ILogger? logger = null)
         : this(new GoogleDriveClient(new GoogleCredentialFactory(credentialsPath), logger))
     {
-        CredentialsPath = credentialsPath;
     }
 
     internal GoogleDriveFileClient(GoogleDriveClient driveClient)
     {
         _driveClient = driveClient;
-        CredentialsPath = string.Empty;
     }
 
     public Task<List<SpreadSheetDTO>> GetFilesAsync() => _driveClient.GetFilesAsync();

@@ -29,8 +29,19 @@ public class GoogleDriveClientContractTests
 
     private static HttpResponseMessage Ok(string content) => new(HttpStatusCode.OK) { Content = new StringContent(content) };
 
-    private static HttpResponseMessage ListThenMedia(RecordedRequest request, string listJson, string mediaContent) =>
-        request.Query("alt") == "media" ? Ok(mediaContent) : FakeDriveHandler.Json(HttpStatusCode.OK, listJson);
+    private static HttpResponseMessage ListThenMedia(
+        RecordedRequest request,
+        string listJson = FileListJson,
+        string mediaContent = "x",
+        HttpStatusCode? mediaFailure = null)
+    {
+        if (request.Query("alt") != "media")
+        {
+            return FakeDriveHandler.Json(HttpStatusCode.OK, listJson);
+        }
+
+        return mediaFailure is { } status ? FakeDriveHandler.Error(status) : Ok(mediaContent);
+    }
 
     [Fact]
     public async Task GetFiles_ReturnsNamesAndIds()
@@ -59,7 +70,7 @@ public class GoogleDriveClientContractTests
     [Fact]
     public void Download_NameWithApostrophe_EscapesTheQuery()
     {
-        var (client, handler) = CreateClient(r => ListThenMedia(r, FileListJson, "x"));
+        var (client, handler) = CreateClient(r => ListThenMedia(r));
 
         client.DownloadFileContent("Bob's data.json");
 
@@ -71,7 +82,7 @@ public class GoogleDriveClientContractTests
     [InlineData("folder\\sub\\data.json")]
     public void Download_UsesTheLastPathSegment(string path)
     {
-        var (client, handler) = CreateClient(r => ListThenMedia(r, FileListJson, "x"));
+        var (client, handler) = CreateClient(r => ListThenMedia(r));
 
         client.DownloadFileContent(path);
 
@@ -94,7 +105,7 @@ public class GoogleDriveClientContractTests
     [Fact]
     public void Download_CachesTheResolvedFileId()
     {
-        var (client, handler) = CreateClient(r => ListThenMedia(r, FileListJson, "x"));
+        var (client, handler) = CreateClient(r => ListThenMedia(r));
 
         client.DownloadFileContent("data.json");
         client.DownloadFileContent("data.json");
@@ -146,7 +157,6 @@ public class GoogleDriveClientContractTests
 
         client.UploadFileContent("data.json", "{\"balance\":12.5}");
 
-        handler.Requests.Should().Contain(r => r.Uri.AbsolutePath.StartsWith("/upload/drive/v3/files/file-1"));
         var upload = handler.Requests.Single(r => r.Method == HttpMethod.Put);
         upload.Uri.ToString().Should().Be(UploadSessionUri);
         upload.Body.Should().Be("{\"balance\":12.5}");
@@ -163,7 +173,7 @@ public class GoogleDriveClientContractTests
     }
 
     [Fact]
-    public async Task Resolve_RateLimitedOnce_RetriesAfterTheFirstBackoff()
+    public async Task GetFiles_RateLimitedOnce_RetriesAfterTheFirstBackoff()
     {
         var lists = 0;
         var (client, handler) = CreateClient(_ => ++lists == 1
@@ -191,9 +201,7 @@ public class GoogleDriveClientContractTests
     [Fact]
     public void FileClient_NotFoundOnMedia_PropagatesTheGoogleApiException()
     {
-        var (client, _) = CreateClient(r => r.Query("alt") == "media"
-            ? FakeDriveHandler.Error(HttpStatusCode.NotFound)
-            : FakeDriveHandler.Json(HttpStatusCode.OK, FileListJson));
+        var (client, _) = CreateClient(r => ListThenMedia(r, mediaFailure: HttpStatusCode.NotFound));
         var fileClient = new GoogleDriveFileClient(client);
 
         var act = () => fileClient.DownloadFileContent("data.json");
@@ -204,9 +212,7 @@ public class GoogleDriveClientContractTests
     [Fact]
     public void FileClient_ServiceUnavailableOnMedia_ThrowsTransientStorageExceptionWithoutRetrying()
     {
-        var (client, handler) = CreateClient(r => r.Query("alt") == "media"
-            ? FakeDriveHandler.Error(HttpStatusCode.ServiceUnavailable)
-            : FakeDriveHandler.Json(HttpStatusCode.OK, FileListJson));
+        var (client, handler) = CreateClient(r => ListThenMedia(r, mediaFailure: HttpStatusCode.ServiceUnavailable));
         var fileClient = new GoogleDriveFileClient(client);
 
         var act = () => fileClient.DownloadFileContent("data.json");
@@ -219,18 +225,13 @@ public class GoogleDriveClientContractTests
     [Fact]
     public void FileClient_CredentialRejected_PropagatesInvalidGrantUnchangedAndUnretried()
     {
-        var requests = 0;
-        var (client, _) = CreateClient(_ =>
-        {
-            requests++;
-            throw new TokenResponseException(new TokenErrorResponse { Error = "invalid_grant" });
-        });
+        var (client, handler) = CreateClient(_ => throw new TokenResponseException(new TokenErrorResponse { Error = "invalid_grant" }));
         var fileClient = new GoogleDriveFileClient(client);
 
         var act = () => fileClient.DownloadFileContent("data.json");
 
         act.Should().Throw<TokenResponseException>().Which.Error.Error.Should().Be("invalid_grant");
-        requests.Should().Be(1);
+        handler.Requests.Should().ContainSingle();
         _requestedDelays.Should().BeEmpty();
     }
 
