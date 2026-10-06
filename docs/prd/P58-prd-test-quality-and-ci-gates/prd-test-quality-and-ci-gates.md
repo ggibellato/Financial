@@ -605,14 +605,14 @@ graph TD
 - [x] No `waitFor` in web tests uses a timeout above the default.
 
 ### F09. Coverage Gate v2
-- [ ] `coverage-baseline.json` exists with line and branch values for all 3 jobs, taken after F06–F08 merged.
-- [ ] Lowering branch coverage by 0.6 points in any job fails that job's gate.
-- [ ] A drop of 0.4 points passes.
-- [ ] A missing baseline file fails the gate closed.
-- [ ] Web coverage excludes `src/test/**` and `src/test-utils/**`.
-- [ ] Every PR comment shows Line, Branch, Δ vs baseline, Diff line and Diff branch per job.
+- [x] `coverage-baseline.json` exists with line and branch values for all 3 jobs, taken after F06–F08 merged.
+- [x] Lowering branch coverage by 0.6 points in any job fails that job's gate.
+- [x] A drop of 0.4 points passes.
+- [x] A missing baseline file fails the gate closed.
+- [x] Web coverage excludes `src/test/**` and `src/test-utils/**`.
+- [x] Every PR comment shows Line, Branch, Δ vs baseline, Diff line and Diff branch per job.
 - [ ] Diff coverage is advisory for its first 2–4 weeks. The switch to blocking is a separate PR citing the false-positive rate over ≥ 20 PRs.
-- [ ] A PR touching coverage exclusions shows the ⚠ exclusion line in the comment.
+- [x] A PR touching coverage exclusions shows the ⚠ exclusion line in the comment.
 
 ### F10. High-Risk Branch Coverage
 - [ ] `ReservaViewModel` branch coverage is ≥ 85%. A failed delete leaves the movement listed and shows the error message.
