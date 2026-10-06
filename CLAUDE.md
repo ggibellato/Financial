@@ -46,7 +46,7 @@ Coverage is collected on every CI run; `backend`, `wpf`, and `web` each publish 
 coverage table to the workflow run's step summary (`.github/workflows/build.yml`, each job's
 `Publish coverage summary` step) and post one combined sticky PR comment (the
 `coverage-comment` job) — a row per project with its line and branch coverage %, each behind a
-traffic-light icon, plus a link to the run's coverage-report artifacts. `coverlet.runsettings` declares the `XPlat code
+traffic-light icon, its delta against `coverage-baseline.json` and the job verdict, plus a link to the run's coverage-report artifacts. `coverlet.runsettings` declares the `XPlat code
 coverage` collector; passing `--settings` is what turns collection on, so there is no
 `--collect` argument anywhere. To reproduce it locally:
 
