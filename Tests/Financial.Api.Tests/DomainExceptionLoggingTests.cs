@@ -1,6 +1,7 @@
 using Financial.Api.Middleware;
 using Financial.CashFlow.Application.Exceptions;
 using Financial.Investment.Domain.Exceptions;
+using Financial.Shared.Abstractions.Resilience;
 using Financial.TestUtilities;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
@@ -110,6 +111,23 @@ public class DomainExceptionLoggingTests
         var body = await ReadResponseBodyAsync(context);
         body.Should().Contain("VUSA");
         body.Should().Contain("ETF ISA");
+    }
+
+    [Fact]
+    public async Task TransientStorage_Returns503WithRetryAfter_AndLogsTheTypeWithoutTheMessage()
+    {
+        var exception = new TransientStorageException(
+            "Drive request failed for Ariana 654.27",
+            new InvalidOperationException());
+
+        var (logger, context) = await InvokeWithAsync(exception, "PUT", "/api/v1/financial/expenses/x");
+
+        context.Response.StatusCode.Should().Be(StatusCodes.Status503ServiceUnavailable);
+        context.Response.Headers.RetryAfter.ToString().Should().Be("30");
+        var entry = logger.Entries.Should().ContainSingle().Which;
+        entry.Level.Should().Be(LogLevel.Warning);
+        entry.Message.Should().Contain(nameof(TransientStorageException)).And.Contain("503");
+        entry.Message.Should().NotContain("Ariana").And.NotContain("654.27");
     }
 
     [Fact]

@@ -165,7 +165,7 @@ Not applicable.
 | Test File | Test Type | Target | Category |
 |---|---|---|---|
 | `Tests/Financial.Api.Tests/SpaFallbackTests.cs` | Integration (host) | `Program.cs` routing | Integration |
-| `Tests/Financial.Api.Tests/ExceptionMappingTests.cs` | Unit + completeness scan | `DomainExceptionMappingMiddleware` | Unit |
+| `Tests/Financial.Api.Tests/ExceptionMappingTests.cs` | Integration (host) + completeness scan | `DomainExceptionMappingMiddleware` | Integration |
 | `Tests/Financial.Api.Tests/ProductionErrorBoundaryTests.cs` | Integration (host) | Pipeline in `Production` | Integration |
 | `Tests/Financial.GoogleIntegrations.Tests/GoogleDriveClientContractTests.cs` | Unit | `GoogleDriveClient`, `GoogleDriveFileClient` | Unit |
 
@@ -177,13 +177,13 @@ Not applicable.
 | `ClientRoute_ReturnsSpaShell` (theory) | `GET /`, `/some/client/route`, `/apiary` | 200, `text/html`, body contains the marker |
 | `RealApiRoute_StillReturnsJson` | `GET /api/v1/financial/banks` | 200, `application/json` |
 
-**ExceptionMappingTests** (middleware invoked directly, one row per type)
+**ExceptionMappingTests** (real host; `IBankService` replaced by a fake that throws the row's exception on `GET /banks`)
 
 | Test Function | Description | Assertions |
 |---|---|---|
-| `MappedException_ReturnsItsStatusCode` (theory, 10 rows) | Each type through the middleware | Status equals the table value |
-| `TransientStorageException_SetsRetryAfter30` | 503 case | `Retry-After` header is `30`; other rows carry no `Retry-After` |
-| `TransientStorageException_LogsTheTypeOnly` | 503 case | Single warning with the type name and 503; message text absent from the log |
+| `MappedException_ReturnsItsStatusCode` (theory, 10 rows) | Each type through the host | Status equals the table value; `Retry-After` is 30 s for 503 and absent otherwise |
+| `Scanner_AcceptsMappedAndExemptTypes` | Self-test of the completeness helper | No findings for mapped or exempt types |
+| (in `DomainExceptionLoggingTests`) `TransientStorage_Returns503WithRetryAfter_AndLogsTheTypeWithoutTheMessage` | 503 case through the middleware harness | `Retry-After` 30, single warning with the type name and 503, message text absent. Lives with the other middleware logging tests because the host's Serilog setup ignores providers added through DI |
 | `EveryExceptionTypeInTheApplicationAssemblies_IsMappedOrExempt` | Reflection over the five assemblies in D5 | Each exception type is a theory row or on the service-layer allowlist; failure message names the type |
 | `Scanner_FlagsAnUnmappedType` | Self-test of the completeness helper with a synthetic type | Names the synthetic type |
 
@@ -194,7 +194,6 @@ Not applicable.
 | `UnmappedException_Returns500ProblemDetails` | Fake throws `InvalidOperationException` | 500, `application/problem+json`, `status` 500 |
 | `UnmappedException_LeaksNothing` | Message contains `Ariana`, `1234.56` and the exception type name | Body contains none of them, no `at Financial.` frame, no `exception`/`stackTrace` field |
 | `TransientStorageException_Returns503WithRetryAfter` | Fake throws it | 503, `Retry-After: 30`, ProblemDetails body |
-| `HostTests_UseTheStubExchangeRateProvider` | Cross-feature (F01) | The default factory resolves `StubExchangeRateProvider`, so no outbound HTTP |
 
 **GoogleDriveClientContractTests** (`FakeDriveHandler` scripts responses and records requests; delay recorded, never waited)
 
@@ -218,7 +217,7 @@ Not applicable.
 | `CredentialRejected_InvalidGrant_PropagatesUnchangedAndUnretried` | Handler raises `TokenResponseException` with `invalid_grant` | The same exception type reaches the caller, one request made, not a `TransientStorageException` |
 
 **Cross-Feature Integration (PRD Section 9):**
-- F05 host tests use F01's default `ApiTestFactory` and make no outbound HTTP calls → `HostTests_UseTheStubExchangeRateProvider`, plus the factory-level guard that already exists.
+- F05 host tests use F01's default `ApiTestFactory` and make no outbound HTTP calls → every F05 host test builds the default factory (stub FX provider), guarded by the existing `ApiTestFactoryExchangeRateTests.DefaultFactory_ResolvesTheStubExchangeRateProvider`.
 
 **Acceptance mapping (PRD Section 9, F05):**
 
@@ -226,7 +225,7 @@ Not applicable.
 |---|---|
 | `/api/...` 404 not HTML, fails on pre-fix code | `ApiPaths_Return404_NotTheSpaShell` |
 | Client route 200 `text/html` | `ClientRoute_ReturnsSpaShell` |
-| Mapping theory covers all types, `TransientStorageException` → 503 | `MappedException_ReturnsItsStatusCode`, `TransientStorageException_SetsRetryAfter30` |
+| Mapping theory covers all types, `TransientStorageException` → 503 | `MappedException_ReturnsItsStatusCode`, `TransientStorage_Returns503WithRetryAfter_AndLogsTheTypeWithoutTheMessage` |
 | Unmapped type fails completeness and names it | `EveryExceptionTypeInTheApplicationAssemblies_IsMappedOrExempt`, `Scanner_FlagsAnUnmappedType` |
 | Production 500 leaks nothing | `UnmappedException_LeaksNothing` |
 | Drive upload, download, 404, 429/503 retry, `invalid_grant` each covered | the Drive contract tests above |

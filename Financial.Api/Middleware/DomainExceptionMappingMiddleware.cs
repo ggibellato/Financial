@@ -1,6 +1,7 @@
 using Financial.CashFlow.Application.Exceptions;
 using Financial.Investment.Application.Exceptions;
 using Financial.Investment.Domain.Exceptions;
+using Financial.Shared.Abstractions.Resilience;
 using Microsoft.AspNetCore.Http;
 
 namespace Financial.Api.Middleware;
@@ -15,6 +16,8 @@ namespace Financial.Api.Middleware;
 /// </summary>
 internal sealed class DomainExceptionMappingMiddleware
 {
+    private const string TransientRetryAfterSeconds = "30";
+
     private readonly RequestDelegate _next;
     private readonly ILogger<DomainExceptionMappingMiddleware> _logger;
 
@@ -62,6 +65,11 @@ internal sealed class DomainExceptionMappingMiddleware
         catch (ArgumentException ex)
         {
             await HandleAsync(context, ex, StatusCodes.Status400BadRequest);
+        }
+        catch (TransientStorageException ex)
+        {
+            context.Response.Headers.RetryAfter = TransientRetryAfterSeconds;
+            await HandleAsync(context, ex, StatusCodes.Status503ServiceUnavailable);
         }
     }
 
