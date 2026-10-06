@@ -1,193 +1,113 @@
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Services;
-using Financial.Investment.Infrastructure.Persistence;
+using Financial.Investment.Domain.Entities;
 using Financial.Shared.Abstractions.Currencies;
-using Financial.Shared.Abstractions.Observability;
-using Financial.Shared.Infrastructure.Persistence;
-using Financial.Investment.Infrastructure.Repositories;
 using Financial.TestUtilities;
 using FluentAssertions;
-using System.IO;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Financial.Investment.Infrastructure.Tests.Services;
 
 [Trait("Category", "Integration")]
-public class CreditServiceTests
+public class CreditServiceTests : IDisposable
 {
-    [Fact]
-    public async Task AddCredit_WithValidRequest_ReturnsDetailsWithNewCredit()
+    private readonly PersistedInvestmentFile _file = new();
+    private readonly CreditService _service;
+
+    public CreditServiceTests()
     {
-        var (service, tempFile) = CreateService();
-        try
-        {
-            var request = new CreditCreateDTO
-            {
-                BrokerName = "XPI",
-                PortfolioName = "Default",
-                AssetName = "BCIA11",
-                Date = new DateTime(2024, 2, 1),
-                Type = "Dividend",
-                Value = 12.5m
-            };
+        var repository = _file.OpenRepository();
+        var tracer = new RecordingTelemetryTracer();
+        var navigationService = new NavigationService(repository, TestHoldingValuationService.Create(), tracer, NullLogger<NavigationService>.Instance);
+        IExchangeRateProvider exchangeRateProvider = new StubExchangeRateProvider(0.15m);
+        _service = new CreditService(repository, navigationService, exchangeRateProvider, new StubReportingCurrencyProvider(), TestClock.At(), tracer, NullLogger<CreditService>.Instance);
+    }
 
-            var result = await service.AddCreditAsync(request);
+    public void Dispose() => _file.Dispose();
 
-            result.Should().NotBeNull();
-            result!.Credits.Should().ContainSingle(credit =>
-                credit.Date == request.Date &&
-                credit.Type == request.Type &&
-                credit.Value == request.Value &&
-                credit.Id != Guid.Empty);
-        }
-        finally
-        {
-            File.Delete(tempFile);
-        }
+    private static CreditCreateDTO NewCredit(DateTime date, string type, decimal value, decimal withheld = 0m) => new()
+    {
+        BrokerName = "XPI",
+        PortfolioName = "Default",
+        AssetName = "BCIA11",
+        Date = date,
+        Type = type,
+        Value = value,
+        Withheld = withheld
+    };
+
+    private IReadOnlyCollection<Credit> PersistedCredits() => _file.ReloadAsset("XPI", "Default", "BCIA11").Credits;
+
+    [Fact]
+    public async Task AddCredit_PersistsTheCreditToDisk()
+    {
+        var existingIds = PersistedCredits().Select(credit => credit.Id).ToHashSet();
+
+        var result = await _service.AddCreditAsync(NewCredit(new DateTime(2024, 2, 1), "Dividend", 12.5m));
+
+        var persisted = PersistedCredits().Single(credit => !existingIds.Contains(credit.Id));
+        persisted.Date.Should().Be(new DateTime(2024, 2, 1));
+        persisted.Type.Should().Be(Credit.CreditType.Dividend);
+        persisted.Value.Should().Be(12.5m);
+        result!.Credits.Should().Contain(credit => credit.Id == persisted.Id);
     }
 
     [Fact]
-    public async Task UpdateCredit_WithValidRequest_UpdatesCredit()
+    public async Task UpdateCredit_PersistsTheChangedFieldsToDisk()
     {
-        var (service, tempFile) = CreateService();
-        try
+        var created = await _service.AddCreditAsync(NewCredit(new DateTime(2024, 2, 2), "Dividend", 5m));
+        var creditId = created!.Credits.Single(credit => credit.Date == new DateTime(2024, 2, 2)).Id;
+
+        await _service.UpdateCreditAsync(new CreditUpdateDTO
         {
-            var created = await service.AddCreditAsync(new CreditCreateDTO
-            {
-                BrokerName = "XPI",
-                PortfolioName = "Default",
-                AssetName = "BCIA11",
-                Date = new DateTime(2024, 2, 2),
-                Type = "Dividend",
-                Value = 5m
-            });
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "BCIA11",
+            Id = creditId,
+            Date = new DateTime(2024, 2, 2),
+            Type = "SecuritiesLendingIncome",
+            Value = 8.75m
+        });
 
-            var creditId = created!.Credits.First(credit => credit.Date == new DateTime(2024, 2, 2)).Id;
-
-            var updated = await service.UpdateCreditAsync(new CreditUpdateDTO
-            {
-                BrokerName = "XPI",
-                PortfolioName = "Default",
-                AssetName = "BCIA11",
-                Id = creditId,
-                Date = new DateTime(2024, 2, 2),
-                Type = "SecuritiesLendingIncome",
-                Value = 8.75m
-            });
-
-            updated.Should().NotBeNull();
-            var updatedCredit = updated!.Credits.Single(credit => credit.Id == creditId);
-            updatedCredit.Type.Should().Be("SecuritiesLendingIncome");
-            updatedCredit.Value.Should().Be(8.75m);
-        }
-        finally
-        {
-            File.Delete(tempFile);
-        }
+        var persisted = PersistedCredits().Single(credit => credit.Id == creditId);
+        persisted.Type.Should().Be(Credit.CreditType.SecuritiesLendingIncome);
+        persisted.Value.Should().Be(8.75m);
     }
 
     [Fact]
-    public async Task DeleteCredit_WithValidRequest_RemovesCredit()
+    public async Task DeleteCredit_RemovesTheCreditFromDisk()
     {
-        var (service, tempFile) = CreateService();
-        try
+        var created = await _service.AddCreditAsync(NewCredit(new DateTime(2024, 2, 3), "Dividend", 4m));
+        var creditId = created!.Credits.Single(credit => credit.Date == new DateTime(2024, 2, 3)).Id;
+        PersistedCredits().Should().Contain(credit => credit.Id == creditId);
+
+        await _service.DeleteCreditAsync(new CreditDeleteDTO
         {
-            var created = await service.AddCreditAsync(new CreditCreateDTO
-            {
-                BrokerName = "XPI",
-                PortfolioName = "Default",
-                AssetName = "BCIA11",
-                Date = new DateTime(2024, 2, 3),
-                Type = "Dividend",
-                Value = 4m
-            });
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "BCIA11",
+            Id = creditId
+        });
 
-            var creditId = created!.Credits.First(credit => credit.Date == new DateTime(2024, 2, 3)).Id;
-
-            var updated = await service.DeleteCreditAsync(new CreditDeleteDTO
-            {
-                BrokerName = "XPI",
-                PortfolioName = "Default",
-                AssetName = "BCIA11",
-                Id = creditId
-            });
-
-            updated.Should().NotBeNull();
-            updated!.Credits.Should().NotContain(credit => credit.Id == creditId);
-        }
-        finally
-        {
-            File.Delete(tempFile);
-        }
+        PersistedCredits().Should().NotContain(credit => credit.Id == creditId);
     }
 
     [Fact]
-    public async Task AddCredit_CouponWithWithheld_PersistsAndRoundTripsNetAmount()
+    public async Task AddCredit_CouponWithWithheld_PersistsWithheldAndNetAmount()
     {
-        var (service, tempFile) = CreateService();
-        try
-        {
-            var result = await service.AddCreditAsync(new CreditCreateDTO
-            {
-                BrokerName = "XPI",
-                PortfolioName = "Default",
-                AssetName = "BCIA11",
-                Date = new DateTime(2024, 2, 4),
-                Type = "Coupon",
-                Value = 100m,
-                Withheld = 15m
-            });
+        await _service.AddCreditAsync(NewCredit(new DateTime(2024, 2, 4), "Coupon", 100m, withheld: 15m));
 
-            result.Should().NotBeNull();
-            var credit = result!.Credits.Single(c => c.Date == new DateTime(2024, 2, 4));
-            credit.Type.Should().Be("Coupon");
-            credit.Withheld.Should().Be(15m);
-            credit.NetAmount.Should().Be(85m);
-        }
-        finally
-        {
-            File.Delete(tempFile);
-        }
+        var persisted = PersistedCredits().Single(credit => credit.Date == new DateTime(2024, 2, 4));
+        persisted.Type.Should().Be(Credit.CreditType.Coupon);
+        persisted.Withheld.Should().Be(15m);
+        persisted.NetAmount.Should().Be(85m);
     }
 
     [Fact]
     public async Task AddCredit_NegativeValue_PersistsAsACorrection()
     {
-        var (service, tempFile) = CreateService();
-        try
-        {
-            var result = await service.AddCreditAsync(new CreditCreateDTO
-            {
-                BrokerName = "XPI",
-                PortfolioName = "Default",
-                AssetName = "BCIA11",
-                Date = new DateTime(2024, 2, 5),
-                Type = "Dividend",
-                Value = -20m
-            });
+        await _service.AddCreditAsync(NewCredit(new DateTime(2024, 2, 5), "Dividend", -20m));
 
-            result.Should().NotBeNull();
-            result!.Credits.Should().Contain(c => c.Date == new DateTime(2024, 2, 5) && c.Value == -20m);
-        }
-        finally
-        {
-            File.Delete(tempFile);
-        }
-    }
-
-    private static (CreditService Service, string TempFile) CreateService()
-    {
-        var tempFile = Path.Combine(Path.GetTempPath(), $"data.test.{Guid.NewGuid():N}.json");
-        File.Copy(TestDataPaths.DataJsonFile, tempFile, true);
-
-        var storage = new LocalJsonStorage(tempFile);
-        var serializer = new InvestmentSerializerAdapter();
-        var repository = new InvestmentJsonRepository(InvestmentLoader.LoadSync(storage, serializer, TestClock.At()), storage, serializer);
-        var tracer = new RecordingTelemetryTracer();
-        var navigationService = new NavigationService(repository, TestHoldingValuationService.Create(), tracer, NullLogger<NavigationService>.Instance);
-        IExchangeRateProvider exchangeRateProvider = new StubExchangeRateProvider(0.15m);
-        var service = new CreditService(repository, navigationService, exchangeRateProvider, new StubReportingCurrencyProvider(), TimeProvider.System, tracer, NullLogger<CreditService>.Instance);
-
-        return (service, tempFile);
+        PersistedCredits().Should().Contain(credit => credit.Date == new DateTime(2024, 2, 5) && credit.Value == -20m);
     }
 }
