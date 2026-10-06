@@ -10,18 +10,17 @@ namespace Financial.Investment.Infrastructure.Tests.Services;
 internal sealed class PersistedInvestmentFile : IDisposable
 {
     private readonly InvestmentSerializerAdapter _serializer = new();
+    private readonly string _path;
 
     public PersistedInvestmentFile()
     {
-        Path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"data.test.{Guid.NewGuid():N}.json");
-        File.Copy(TestDataPaths.DataJsonFile, Path, true);
+        _path = Path.Combine(Path.GetTempPath(), $"data.test.{Guid.NewGuid():N}.json");
+        File.Copy(TestDataPaths.DataJsonFile, _path, true);
     }
-
-    public string Path { get; }
 
     public InvestmentJsonRepository OpenRepository()
     {
-        var storage = new LocalJsonStorage(Path);
+        var storage = new LocalJsonStorage(_path);
         return new InvestmentJsonRepository(InvestmentLoader.LoadSync(storage, _serializer, TestClock.At()), storage, _serializer);
     }
 
@@ -31,5 +30,5 @@ internal sealed class PersistedInvestmentFile : IDisposable
             .Single(p => p.Name == portfolio).Assets
             .Single(a => a.Name == asset);
 
-    public void Dispose() => File.Delete(Path);
+    public void Dispose() => File.Delete(_path);
 }
