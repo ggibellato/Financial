@@ -20,9 +20,15 @@ public sealed class GoogleDriveFileClient : IRemoteFileClient, IGoogleDriveFileS
     public string CredentialsPath { get; }
 
     public GoogleDriveFileClient(string credentialsPath, ILogger? logger = null)
+        : this(new GoogleDriveClient(new GoogleCredentialFactory(credentialsPath), logger))
     {
         CredentialsPath = credentialsPath;
-        _driveClient = new GoogleDriveClient(new GoogleCredentialFactory(credentialsPath), logger);
+    }
+
+    internal GoogleDriveFileClient(GoogleDriveClient driveClient)
+    {
+        _driveClient = driveClient;
+        CredentialsPath = string.Empty;
     }
 
     public Task<List<SpreadSheetDTO>> GetFilesAsync() => _driveClient.GetFilesAsync();
