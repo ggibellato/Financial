@@ -23,7 +23,14 @@ export default defineConfig(({ mode }) => {
         provider: 'v8',
         all: true,
         reporter: ['text', 'json-summary', 'lcov'],
-        exclude: [...coverageConfigDefaults.exclude, 'src/api/generated/**', 'src/main.tsx', 'src/setupTests.ts'],
+        exclude: [
+          ...coverageConfigDefaults.exclude,
+          'src/api/generated/**',
+          'src/main.tsx',
+          'src/setupTests.ts',
+          'src/test/**',
+          'src/test-utils/**',
+        ],
       },
     },
   }

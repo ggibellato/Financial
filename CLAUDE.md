@@ -61,6 +61,8 @@ below); the icon is only a visual cue. The step fails when line coverage is belo
 branch coverage never fails it. `web` runs
 `reportgenerator` against the `lcov` report vitest's `coverage.reporter` also produces
 (`Financial.Web/vite.config.ts`), so all three jobs' gates read the identical report shape.
+`coverage.exclude` there also drops the test-support folders `src/test/**` and `src/test-utils/**`,
+so the web number measures product code only.
 **The 90% line tripwire is enforced**: a red line result fails its job, which fails `ci-status` — the sole
 required check — and blocks merge.
 
