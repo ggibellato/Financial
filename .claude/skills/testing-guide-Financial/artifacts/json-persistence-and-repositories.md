@@ -96,6 +96,8 @@ counter (`clock.TimersArmed`, `_inner.WrittenJson.Count`) before `clock.Advance(
 
 ## Examples from project
 
+- Service tests over a JSON repository assert on a fresh load, not on the returned DTO: `Tests/Financial.Investment.Infrastructure.Tests/Services/PersistedInvestmentFile.cs` (temp copy of the test data, `OpenRepository()`, `ReloadAsset(...)`) used by `CreditServiceTests` and `TransactionServiceTests`.
+
 - `Tests/Financial.CashFlow.Infrastructure.Tests/Repositories/CashFlowJsonRepositoryTests.cs` — Integration; round-trip, rejected write, no-change short-circuit.
 - `Tests/Financial.Investment.Infrastructure.Tests/Repositories/InvestmentJsonRepositoryTests.cs` — Integration over `TestDataPaths.DataJsonFile` (read-only) and temp copies for mutations.
 - `Tests/Financial.Shared.Infrastructure.Tests/Persistence/DebouncedJsonStorageTests.cs` + `ObservableFakeClock.cs` + `ControllableJsonStorage.cs` — Integration; fake-clock debounce and retry.

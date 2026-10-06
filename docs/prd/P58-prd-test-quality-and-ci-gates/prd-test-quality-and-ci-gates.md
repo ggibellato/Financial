@@ -584,14 +584,14 @@ graph TD
 - [x] Each removal PR lists the retained test covering every removed group.
 
 ### F07. Test Rewrites and Re-Layering
-- [ ] Deleting the `catch` in any service makes that service's failed-span test fail.
-- [ ] Every .NET test class has a `Category` trait, and an architecture-style test asserts none is missing.
-- [ ] The `backend` job excludes `Category=Live`.
+- [x] Deleting the `catch` in any service makes that service's failed-span test fail.
+- [x] Every .NET test class has a `Category` trait, and an architecture-style test asserts none is missing.
+- [x] The `backend` job excludes `Category=Live`.
 - [ ] The 9 live verifications no longer use `Skip=` and pass with `--filter Category=Live` against live sites when available.
-- [ ] `Financial.Shared.Abstractions.Tests` exists, is in `Financial.slnx`, and covers `CompensatingSaveHelper` directly.
-- [ ] Investment.Infrastructure CRUD tests reload from disk and assert persisted state, or are removed.
-- [ ] The rewritten `TransactionsTab`, `CreditsTab` and `PriceHistoryTab` tests do not mock their own hook.
-- [ ] `testing-guide-Financial` and `docs/rules/implementation.md` document the layer split, traits, literal expectations and the no-null-guard rule.
+- [x] `Financial.Shared.Abstractions.Tests` exists, is in `Financial.slnx`, and covers `CompensatingSaveHelper` directly.
+- [x] Investment.Infrastructure CRUD tests reload from disk and assert persisted state, or are removed.
+- [x] The rewritten `TransactionsTab`, `CreditsTab` and `PriceHistoryTab` tests do not mock their own hook.
+- [x] `testing-guide-Financial` and `docs/rules/implementation.md` document the layer split, traits, literal expectations and the no-null-guard rule.
 
 ### F08. Time and Culture Determinism
 - [x] `ProductionClockReadsTests` finds 0 `DateTime(Offset).Now/Today/UtcNow` reads in `Financial.*` production code and allows `TimeProvider.System` only in the `DependencyInjection` registrations, `MonthYearPicker` and `DebouncedJsonStorage` (`Integrations/` and `Tools/` are out of scope).
@@ -663,7 +663,7 @@ graph TD
 ### Cross-Feature Integration
 - [ ] F05's host tests use F01's default `ApiTestFactory` and make no outbound HTTP calls.
 - [ ] F08's pinned-clock and culture tests run under F01's pinned `TZ`/`LANG`, and pass when the host timezone differs.
-- [ ] F07 rewrites touch only tests that survived F06. No rewritten test is one F06 marked for removal.
+- [x] F07 rewrites touch only tests that survived F06. No rewritten test is one F06 marked for removal.
 - [ ] F09's baseline is taken from a `main` run that includes F06's consolidation, F07's trait filtering (Live excluded) and F08's determinism. Two consecutive runs on that commit produce identical line and branch percentages.
 - [ ] F10's date-dependent tests use the `TimeProvider` and delay seams introduced by F08.
 - [ ] F14's live-check step selects exactly the tests F07 tagged `Category=Live`.

@@ -75,7 +75,7 @@ its `../artifacts/*.md` guide), "out of scope — reason", or "resolved in Phase
 
 | Folder | Classification | Notes |
 |---|---|---|
-| `Shared.Abstractions/Persistence/`, `Sync/`, `Resilience/`, `Configuration/` | JSON persistence & repositories | interfaces + `RetryPolicy`, `SyncStatus`, `RepositoryProviderResolver`; tested via `Shared.Infrastructure.Tests` (`SyncStatusTests`, `TransientRetryPolicyTests`) |
+| `Shared.Abstractions/Persistence/`, `Sync/`, `Resilience/`, `Configuration/` | JSON persistence & repositories | interfaces + `RetryPolicy`, `SyncStatus`, `RepositoryProviderResolver`; tested via `Shared.Abstractions.Tests` (`RetryPolicyTests`, `CompensatingSaveHelperTests`, the FX providers) and `Shared.Infrastructure.Tests` (`SyncStatusTests`, `TransientRetryPolicyTests`) |
 | `Shared.Abstractions/Observability/` | Observability (`../artifacts/observability-integration.md`) | span helpers, `TelemetryAttributeKeys`, `NoOpTelemetryTracer` |
 | `Shared.Infrastructure/Persistence/`, `Resilience/`, `Hosting/` | JSON persistence & repositories | `LocalJsonStorage`, `DebouncedJsonStorage`, `RemoteJsonStorage`, factories, `TransientRetryPolicy`, `ShutdownFlushHostedService` |
 

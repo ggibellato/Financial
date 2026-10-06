@@ -125,7 +125,13 @@ Before adding a test class, check whether the setup you need already exists. Reu
 
 8. **Pin the clock; never wait on it.** Tests build their dates from `Financial.TestUtilities.TestClock` (named pinned instants) or the `Microsoft.Extensions.Time.Testing.FakeTimeProvider` (`TestClock.At(...)` returns one with the London local zone; timers fire on `Advance`) instead of reading the wall clock. Retry and backoff code takes an injectable delay (`RetryPolicy`/`GoogleRetryPolicy`): pass a recording fake and assert the requested delays rather than waiting. To run a suite under another culture set `TEST_CULTURE` (for example `TEST_CULTURE=pt-BR dotnet test`); it is unset on CI, which keeps the OS culture (`en-GB`); a test class that asserts culture-formatted text or typed user input pins it with `[UseCulture("en-GB")]`. Production reads time only through an injected, required `TimeProvider` (Domain takes an as-of argument instead) — `ProductionClockReadsTests` fails the build otherwise — and machine-format values (sheet cells, scraped prices, JSON) parse with `CultureInfo.InvariantCulture`; user-typed input stays culture-aware.
 
-What to test, and at which layer, is the `testing-guide-Financial` skill's job. This section is only about how the test class is wired.
+9. **Every .NET test class declares its level:** `[Trait("Category", "Unit"|"Integration"|"Live")]` (`E2E`/`Smoke` are for `Financial.App.E2ETests`). `Live` hits real external sites, never uses `Skip=`, and is filtered out of the `backend` job. `CategoryTraitCoverageTests` enforces it.
+10. **Assert literals, not the production computation.** A test that recomputes its expected value with the code under test passes when that code is wrong.
+11. **Prove a failure through the span, not only the exception.** A bare `Throw<T>()` passes with the `catch` deleted; add `_tracer.ShouldHaveFailedSpan<T>("<Context>.<Service>.<Operation>")`.
+12. **Prove persistence from disk.** A service test over a JSON repository reloads a fresh repository from the same file (`PersistedInvestmentFile.ReloadAsset`) and asserts on that, not on the returned DTO.
+13. **A web tab that owns a form or mutation workflow renders its real hook** (`renderWithSelectedNode`) and mocks only `apiClient`.
+
+What to test, and at which layer (Unit, Integration, E2E; put each assertion at the lowest layer that can fail for the right reason), is the `testing-guide-Financial` skill's job. This section is only about how the test class is wired.
 
 ## Comments
 

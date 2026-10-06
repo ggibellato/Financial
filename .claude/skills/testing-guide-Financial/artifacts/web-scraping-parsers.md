@@ -27,9 +27,10 @@ string/number parsing is split out (`GoogleFinanceParsing`, `StatusInvest.Derive
   string into the parsing path (the page is an external provider —
   `../references/external-providers.md`). Today only `DadosMercadoDividendTests` does this
   with inline fragments; new selectors should ship with a fixture.
-- **Manual, skipped in CI**: `GoogleFinanceVerificationTests` and `StatusInvestVerificationTests`
-  carry `[Fact(Skip = "Manual verification test - requires internet connection")]` and hit the
-  live pages. Run them by hand when a selector changes; never remove the `Skip`.
+- **Live, not run on PRs**: the `*VerificationTests` classes (Google Finance, StatusInvest,
+  Redentia, Dicionário do Investidor) carry `[Trait("Category", "Live")]` and hit the live
+  pages. Run them with `dotnet test --filter Category=Live` when a selector changes; never add
+  `Skip`.
 - No E2E.
 
 ## Setup pattern

@@ -9,6 +9,7 @@
 ```
 Financial.Investment.{Domain,Application,Infrastructure}.Tests
 Financial.CashFlow.{Domain,Application,Infrastructure}.Tests
+Financial.Shared.Abstractions.Tests              ← FX providers, CompensatingSaveHelper, RetryPolicy (Unit)
 Financial.Shared.Infrastructure.Tests            ← LocalJsonStorage, DebouncedJsonStorage, RemoteJsonStorage, retry, hosting
 Financial.Api.Tests                              ← endpoint Integration tests, Contract/, Controllers/ guard clauses, TestData/
 Financial.Presentation.Tests                     ← WPF (net10.0-windows, UseWPF); run by the `wpf` CI job
@@ -38,7 +39,9 @@ project (`Services/`, `Persistence/`, `Repositories/`, `DependencyInjection/`, `
 | Host factory | `ApiTestFactory : WebApplicationFactory<Program>`; tests derive from `ApiEndpointTests` | — |
 | Temp data | `Path.Combine(Path.GetTempPath(), $"{area}-{Guid.NewGuid()}.json")`, deleted in `finally` | `cashflow-repo-{guid}.json`, `financial-api-{guid:N}.json` |
 
-### Layer by location (no attribute needed)
+### Layer by location (a guide only - the `Category` trait is the authority)
+
+The `Category` trait on each class is what CI and `--filter` use (`docs/rules/implementation.md` §Tests #9); the list below says which level is normal where.
 
 - Unit: `*.Domain.Tests`, `*.Application.Tests`, `Presentation.Tests/{ViewModels,Converters,Behaviors,Helpers,Input,Navigation}`, `WebPageParser.Tests`, parsing/resolver folders of the import tools.
 - Integration: `Api.Tests` (except `Controllers/`), `*.Infrastructure.Tests/{Repositories,Persistence,DependencyInjection}`, `Shared.Infrastructure.Tests`, `Architecture.Tests`, `Observability.Tests`, `Presentation.Tests/{DependencyInjection,Views,Acceptance}`, import-tool `SheetImporters/` and `Migrations/`.
