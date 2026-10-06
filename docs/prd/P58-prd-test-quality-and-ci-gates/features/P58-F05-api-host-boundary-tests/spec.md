@@ -46,7 +46,8 @@
 | D8 | `GoogleDriveFileClient` gets an `internal` constructor taking a `GoogleDriveClient`, so the 429/5xx → `TransientStorageException` translation is tested through the real wrapper | The public constructor builds its own client from a credentials path |
 | D9 | `invalid_grant` is modelled as the handler raising the SDK's `TokenResponseException` with error `invalid_grant`, which is what a rejected service-account token refresh raises inside `DriveService`'s HTTP pipeline | A real token endpoint is out of reach; the pinned behaviour is that the error propagates unchanged, is not retried (one request) and is not translated to `TransientStorageException` |
 | D10 | The Production 500 and 503 host tests replace one Application service registration with a fake that throws, rather than adding a test-only endpoint | Exercises the real middleware order (`UseExceptionHandler`, then the mapping middleware) with no production code added for tests |
-| D11 | The test web root is a per-test temp directory the factory deletes on dispose, written by the test with a fixed marker string in `index.html`; setup asserts the file exists so a missing web root fails with an explicit message rather than passing vacuously | PRD Error Handling for F05 |
+| D11 | The test web root is a per-test temp directory the factory writes (a fixed marker string in `index.html`) and deletes on dispose; because the factory writes the file itself, a missing `index.html` cannot occur and no separate setup assertion is needed | Replaces the PRD's "missing wwwroot fails setup" case with a construction that cannot produce it |
+| D12 | The fallback pattern keeps the `nonfile` constraint (so a missing `/x.js` still 404s) and a second `MapFallbackToFile("/")` serves the root, because a regex constraint does not match the empty catch-all value | Found while implementing Stage 1 |
 
 ## 2. Architecture Impact
 
@@ -173,7 +174,6 @@ Not applicable.
 
 | Test Function | Description | Assertions |
 |---|---|---|
-| `Setup_WebRootWithoutIndex_FailsWithExplicitMessage` | The factory refuses a web root with no `index.html` | Throws naming the missing file |
 | `UnknownApiRoute_Returns404_NotHtml` | `GET /api/v1/financial/does-not-exist` | 404, content type is not `text/html`, body lacks the marker |
 | `BareApiPath_Returns404` | `GET /api` and `GET /api/` | 404 |
 | `ClientRoute_ReturnsSpaShell` | `GET /some/client/route` | 200, `text/html`, body contains the marker |
