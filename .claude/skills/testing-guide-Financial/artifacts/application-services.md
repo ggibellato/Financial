@@ -83,7 +83,7 @@ public class ExpenseServiceTests
         var act = async () => await _sut.AddExpenseAsync(request);
 
         await act.Should().ThrowAsync<ArgumentException>();
-        _tracer.Spans.Should().ContainSingle().Which.RecordedException.Should().BeOfType<ArgumentException>();
+        _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.ExpenseService.AddExpense");
     }
 }
 ```

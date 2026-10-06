@@ -37,6 +37,7 @@ dotnet test                                    # run all test projects
 dotnet test Tests/Financial.CashFlow.Domain.Tests   # run a single test project
 dotnet test Tests/Financial.App.E2ETests --filter "Category=Smoke"   # WPF UI-automation smoke: launches the built app on a Windows desktop
 dotnet test --filter "FullyQualifiedName~ExpenseTests.Should_Reject_Negative_Value"  # single test
+dotnet test --filter "Category=Unit"           # by level: Unit | Integration | Live (Live hits real sites and never runs on a PR)
 ```
 
 Tests use **xUnit** + **FluentAssertions**.

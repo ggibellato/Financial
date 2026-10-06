@@ -27,6 +27,7 @@ public async Task AddExpenseAsync_WithZeroValue_RecordsFailedSpanWithException()
     var act = async () => await _sut.AddExpenseAsync(request);
 
     await act.Should().ThrowAsync<ArgumentException>();
+    _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.ExpenseService.AddExpense");
 }
 ```
 

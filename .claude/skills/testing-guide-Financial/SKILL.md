@@ -232,6 +232,12 @@ explicitly-tagged subset of Integration tests (see `references/feature-traceabil
 — same setup and mock boundary as any other Integration test, distinguished only by
 what it asserts and how it's tagged.
 
+The level is declared, not inferred from the folder: every .NET test class carries
+`[Trait("Category", "Unit"|"Integration"|"Live")]` (`E2E`/`Smoke` for
+`Financial.App.E2ETests`), enforced by `CategoryTraitCoverageTests`. `Live` tests hit real
+external sites, never run on a PR, and replace the old `Skip = "Manual"` pattern; run them
+with `dotnet test --filter Category=Live`.
+
 ## 7. References
 
 | Topic | File |
@@ -283,6 +289,7 @@ to spot drift — layers losing coverage, or AC-tracing tests not keeping pace w
 | Investment.Application.Tests | 259 in 17 files | Unit: 259 | No |
 | Investment.Infrastructure.Tests | 184 in 22 files | Unit (fetchers/adapters): ~120, Integration (repo, DI, Yahoo, example): ~64 | No |
 | Shared.Infrastructure.Tests | 48 in 7 files | Integration: 48 | No |
+| Shared.Abstractions.Tests | `UsdBasedExchangeRateProvider`, `InMemoryCachedExchangeRateProvider`, `CompensatingSaveHelper`, `RetryPolicy`, constructor guards | Unit | No |
 | GoogleIntegrations + Observability + WebPageParser Tests | 17 + 23 + 25 in 14 files | Unit: ~50, Integration (DI/config): ~15, manual-skipped live: 2 files | No |
 | CashFlowSpreadsheetImport + InvestmentSpreadsheetImport Tests | 184 + 48 in 32 files | Unit: ~160, Integration (temp JSON/backup): ~72 | No |
 | Presentation.Tests (WPF) | 1102 in 108 files | Unit: ~1098, Integration (DI): 2 classes, contract (XAML binding): 1 class | No |

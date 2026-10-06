@@ -35,7 +35,10 @@ pieces (`Sidebar`, `Breadcrumb`, `SplitPanel`, `SyncStatusBanner`, `PaymentDueBa
   component uses `@fluentui/react-components`, which needs a `FluentProvider` to resolve
   styles and `useId` labels) with props/callbacks as `vi.fn()`. A component that consumes a
   hook may mock the hook module (`vi.mock('../../hooks/usePaymentsDue', …)`) so the component
-  test controls the state matrix directly — the page test covers the real hook.
+  test controls the state matrix directly — the page test covers the real hook. A tab that
+  owns a form/mutation workflow (`TransactionsTab`, `CreditsTab`, `PriceHistoryTab`) does not:
+  it renders the real hook through `renderWithSelectedNode` and mocks only `apiClient`, so a
+  hook-to-client wiring break fails the test.
 - **Integration (frontend)** at the page level (`react-pages.md`).
 - **E2E**: only through the smoke journey (`../references/e2e-environment.md`); no
   component-level Playwright.
