@@ -21,6 +21,7 @@ permissions:
 env:
   TZ: Europe/London
   LANG: en-GB
+  DIFF_COVERAGE_BLOCKING: 'false'
 
 jobs:
   changes:
@@ -47,6 +48,9 @@ jobs:
 
     - name: Self-test the coverage gate
       run: pwsh .github/scripts/coverage-gate.test.ps1
+
+    - name: Self-test the diff coverage script
+      run: pwsh .github/scripts/diff-coverage.test.ps1
 
     - name: Resolve the diff base
       id: base
@@ -315,8 +319,42 @@ jobs:
       with:
         fetch-depth: 0
 
+    - name: Download coverage reports
+      uses: actions/download-artifact@v4
+      with:
+        pattern: coverage-report-*
+        path: coverage-reports
+
+    - name: Diff coverage (Backend)
+      id: diff-backend
+      if: always() && needs.backend.result != 'skipped'
+      shell: pwsh
+      run: ./.github/scripts/diff-coverage.ps1 -Label Backend -CoberturaPath coverage-reports/coverage-report-backend/Cobertura.xml -MergeBase '${{ needs.changes.outputs.merge_base }}' -Head '${{ needs.changes.outputs.head }}' -Blocking:($env:DIFF_COVERAGE_BLOCKING -eq 'true')
+
+    - name: Diff coverage (WPF)
+      id: diff-wpf
+      if: always() && needs.wpf.result != 'skipped'
+      shell: pwsh
+      run: ./.github/scripts/diff-coverage.ps1 -Label WPF -CoberturaPath coverage-reports/coverage-report-wpf/Cobertura.xml -MergeBase '${{ needs.changes.outputs.merge_base }}' -Head '${{ needs.changes.outputs.head }}' -Blocking:($env:DIFF_COVERAGE_BLOCKING -eq 'true')
+
+    - name: Diff coverage (Web)
+      id: diff-web
+      if: always() && needs.web.result != 'skipped'
+      shell: pwsh
+      run: ./.github/scripts/diff-coverage.ps1 -Label Web -CoberturaPath coverage-reports/coverage-report-web/Cobertura.xml -MergeBase '${{ needs.changes.outputs.merge_base }}' -Head '${{ needs.changes.outputs.head }}' -PathPrefix Financial.Web/ -Blocking:($env:DIFF_COVERAGE_BLOCKING -eq 'true')
+
     - name: Build combined coverage comment
+      if: always()
       env:
+        BACKEND_DIFF_LINE: ${{ steps.diff-backend.outputs.diff-line }}
+        BACKEND_DIFF_BRANCH: ${{ steps.diff-backend.outputs.diff-branch }}
+        BACKEND_DIFF_BELOW: ${{ steps.diff-backend.outputs.diff-below }}
+        WPF_DIFF_LINE: ${{ steps.diff-wpf.outputs.diff-line }}
+        WPF_DIFF_BRANCH: ${{ steps.diff-wpf.outputs.diff-branch }}
+        WPF_DIFF_BELOW: ${{ steps.diff-wpf.outputs.diff-below }}
+        WEB_DIFF_LINE: ${{ steps.diff-web.outputs.diff-line }}
+        WEB_DIFF_BRANCH: ${{ steps.diff-web.outputs.diff-branch }}
+        WEB_DIFF_BELOW: ${{ steps.diff-web.outputs.diff-below }}
         MERGE_BASE: ${{ needs.changes.outputs.merge_base }}
         HEAD_SHA: ${{ needs.changes.outputs.head }}
         BACKEND_RESULT: ${{ needs.backend.result }}
@@ -347,29 +385,30 @@ jobs:
         # job still reports its figures (the gate writes them before it fails), so the verdict comes
         # from the job result.
         row() {
-          local name="$1" result="$2" coverage="$3" emoji="$4" branch="$5" branch_emoji="$6" line_delta="$7" branch_delta="$8"
+          local name="$1" result="$2" coverage="$3" emoji="$4" branch="$5" branch_emoji="$6" line_delta="$7" branch_delta="$8" diff_line="$9" diff_branch="${10}" diff_below="${11}"
           if [ "$result" = "skipped" ]; then
-            echo "| $name | ⚪ not run | ⚪ not run | ⚪ not run | ⚪ not run |"
+            echo "| $name | ⚪ not run | ⚪ not run | ⚪ not run | ⚪ not run | ⚪ not run | ⚪ not run |"
             return
           fi
           if [ -z "$coverage" ]; then
-            echo "| $name | ⚠️ unavailable | ⚠️ unavailable | ⚠️ unavailable | ⚠️ unavailable |"
+            echo "| $name | ⚠️ unavailable | ⚠️ unavailable | ⚠️ unavailable | ⚠️ unavailable | ⚠️ unavailable | ⚠️ unavailable |"
             return
           fi
           local verdict="✔ pass"
           [ "$result" = "success" ] || verdict="✖ fail"
           local branch_cell="⚪ n/a"
           [ -z "$branch" ] || branch_cell="$branch_emoji ${branch}%"
-          echo "| $name | $emoji ${coverage}% | $branch_cell | ${line_delta:-n/a} / ${branch_delta:-n/a} | $verdict |"
+          [ "$diff_below" != "true" ] || verdict="$verdict (diff below threshold, advisory)"
+          echo "| $name | $emoji ${coverage}% | $branch_cell | ${line_delta:-n/a} / ${branch_delta:-n/a} | ${diff_line:-n/a} | ${diff_branch:-n/a} | $verdict |"
         }
         {
           echo "### Coverage summary"
           echo
-          echo "| Project | Line coverage | Branch coverage | Δ vs baseline (line / branch) | Verdict |"
-          echo "|:---|---:|---:|---:|:---|"
-          row "Backend (.NET)" "$BACKEND_RESULT" "$BACKEND_COVERAGE" "$BACKEND_EMOJI" "$BACKEND_BRANCH" "$BACKEND_BRANCH_EMOJI" "$BACKEND_LINE_DELTA" "$BACKEND_BRANCH_DELTA"
-          row "WPF (Financial.App)" "$WPF_RESULT" "$WPF_COVERAGE" "$WPF_EMOJI" "$WPF_BRANCH" "$WPF_BRANCH_EMOJI" "$WPF_LINE_DELTA" "$WPF_BRANCH_DELTA"
-          row "Web (Financial.Web)" "$WEB_RESULT" "$WEB_COVERAGE" "$WEB_EMOJI" "$WEB_BRANCH" "$WEB_BRANCH_EMOJI" "$WEB_LINE_DELTA" "$WEB_BRANCH_DELTA"
+          echo "| Project | Line coverage | Branch coverage | Δ vs baseline (line / branch) | Diff line | Diff branch | Verdict |"
+          echo "|:---|---:|---:|---:|---:|---:|:---|"
+          row "Backend (.NET)" "$BACKEND_RESULT" "$BACKEND_COVERAGE" "$BACKEND_EMOJI" "$BACKEND_BRANCH" "$BACKEND_BRANCH_EMOJI" "$BACKEND_LINE_DELTA" "$BACKEND_BRANCH_DELTA" "$BACKEND_DIFF_LINE" "$BACKEND_DIFF_BRANCH" "$BACKEND_DIFF_BELOW"
+          row "WPF (Financial.App)" "$WPF_RESULT" "$WPF_COVERAGE" "$WPF_EMOJI" "$WPF_BRANCH" "$WPF_BRANCH_EMOJI" "$WPF_LINE_DELTA" "$WPF_BRANCH_DELTA" "$WPF_DIFF_LINE" "$WPF_DIFF_BRANCH" "$WPF_DIFF_BELOW"
+          row "Web (Financial.Web)" "$WEB_RESULT" "$WEB_COVERAGE" "$WEB_EMOJI" "$WEB_BRANCH" "$WEB_BRANCH_EMOJI" "$WEB_LINE_DELTA" "$WEB_BRANCH_DELTA" "$WEB_DIFF_LINE" "$WEB_DIFF_BRANCH" "$WEB_DIFF_BELOW"
           if [ -n "$MERGE_BASE" ] && [ -n "$HEAD_SHA" ] && ! git diff --quiet "$MERGE_BASE" "$HEAD_SHA" -- coverage-baseline.json; then
             echo
             echo "⚠ \`coverage-baseline.json\` is changed in this PR, so the deltas above are measured against the PR's own baseline. Check that the new figures are justified."
@@ -379,6 +418,7 @@ jobs:
         } > coverage-comment.md
 
     - name: Comment coverage on PR
+      if: always()
       uses: marocchino/sticky-pull-request-comment@v2
       with:
         header: coverage-summary
