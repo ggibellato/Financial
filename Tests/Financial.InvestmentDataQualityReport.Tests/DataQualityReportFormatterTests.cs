@@ -40,10 +40,7 @@ public class DataQualityReportFormatterTests
         var output = DataQualityReportFormatter.Format(report);
 
         output.Should().Contain("Holdings selling more than they hold (1)");
-        output.Should().Contain("XPI / Default / OVERSOLD");
-        output.Should().Contain("2021-06-01");
-        output.Should().Contain("3");
-        output.Should().Contain("5");
+        output.Should().Contain("  XPI / Default / OVERSOLD: sale on 2021-06-01 left 3 short of the 5 held at that point.");
     }
 
     [Fact]

@@ -3,6 +3,7 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen, waitFor } from '../../test/renderWithFluent'
 import type { FinancialApiClient } from '../../api/financialApiClient'
+import { PINNED_NOW, inDays, pinDate } from '../../test-utils/pinDate'
 import type {
   AllocationBreakdownDto,
   DataQualityReportDto,
@@ -127,12 +128,6 @@ function makeTree(brokerName: string, portfolioName: string, assetName: string):
   }
 }
 
-function inDays(days: number): string {
-  const date = new Date()
-  date.setDate(date.getDate() + days)
-  return date.toISOString()
-}
-
 const UPCOMING_INCOME: UpcomingIncomeDto[] = [
   {
     assetName: 'VHYL',
@@ -176,6 +171,7 @@ const renderDashboardRoute = () =>
 
 describe('DashboardPage', () => {
   beforeEach(() => {
+    pinDate(PINNED_NOW)
     getDashboardMock.mockReset()
     getDashboardMock.mockResolvedValue(SUMMARY)
     getAllocationBreakdownMock.mockReset()
@@ -192,6 +188,7 @@ describe('DashboardPage', () => {
   })
 
   afterEach(() => {
+    vi.useRealTimers()
     localStorage.clear()
   })
 

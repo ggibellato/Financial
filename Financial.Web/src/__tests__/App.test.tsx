@@ -2,7 +2,6 @@ import { fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import App from '../App'
-import { financialLightTheme } from '../theme/fluentTheme'
 import { mockMatchMedia } from '../test/mockMatchMedia'
 
 const AppWithRoutes = ({ initialEntry = '/investments/active-investments' }: { initialEntry?: string }) => (
@@ -76,15 +75,18 @@ describe('App', () => {
     render(<AppWithRoutes />)
 
     const provider = document.querySelector('.fui-FluentProvider') as HTMLElement
-    const instanceClass = Array.from(provider.classList).find((c) => /^fui-FluentProvider_r_\d+_$/.test(c))
+    const providerClasses = Array.from(provider.classList).map((c) => `.${c}`)
     const themeRule = Array.from(document.styleSheets)
       .flatMap((sheet) => Array.from(sheet.cssRules))
-      .find((rule) => 'selectorText' in rule && (rule as CSSStyleRule).selectorText === `.${instanceClass}`) as
-      | CSSStyleRule
-      | undefined
+      .find(
+        (rule) =>
+          'selectorText' in rule &&
+          providerClasses.includes((rule as CSSStyleRule).selectorText) &&
+          (rule as CSSStyleRule).cssText.includes('--colorNeutralBackground1:'),
+      ) as CSSStyleRule | undefined
 
     expect(themeRule).toBeDefined()
-    expect(themeRule!.cssText).toContain(`--colorNeutralBackground1: ${financialLightTheme.colorNeutralBackground1};`)
+    expect(themeRule!.cssText).toContain('--colorNeutralBackground1: #ffffff;')
   })
 
   it('renders_the_colour_mode_toggle_button_in_the_topbar', () => {

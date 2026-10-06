@@ -1,13 +1,8 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen, within } from '../../../test/renderWithFluent'
 import type { UpcomingIncomeDto } from '../../../api/types'
 import UpcomingIncomePanel from '../UpcomingIncomePanel'
-
-function inDays(days: number): string {
-  const date = new Date()
-  date.setDate(date.getDate() + days)
-  return date.toISOString()
-}
+import { PINNED_NOW, inDays, pinDate } from '../../../test-utils/pinDate'
 
 function entry(assetName: string, days: number, projectedAmount: number): UpcomingIncomeDto {
   return {
@@ -36,6 +31,14 @@ function visibleAssets(): string[] {
 }
 
 describe('UpcomingIncomePanel', () => {
+  beforeEach(() => {
+    pinDate(PINNED_NOW)
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   it('defaults_to_the_ninety_day_window', () => {
     renderPanel()
 

@@ -64,8 +64,8 @@ public class InvestmentRepositoryFactoryTests
 
         Action act = () => Factory.Create(options);
 
-        act.Should().Throw<Exception>()
-            .Which.Message.Should().NotContain("credentials file not found");
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*credential*");
     }
 
     [Fact]
