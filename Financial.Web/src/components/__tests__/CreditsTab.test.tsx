@@ -174,12 +174,6 @@ describe('CreditsTab', () => {
     expect(screen.queryByRole('button', { name: 'New credit' })).not.toBeInTheDocument()
   })
 
-  it('renders_table_and_chart_for_asset_node', async () => {
-    await renderAssetTab([CREDIT_DIVIDEND])
-    expect(screen.getByRole('table')).toBeInTheDocument()
-    expect(screen.getByTestId('responsive-container')).toBeInTheDocument()
-  })
-
   it('renders_chart_above_the_grid_for_asset_node_matching_transactions_tab_layout', async () => {
     const { container } = await renderAssetTab([CREDIT_DIVIDEND])
     const chartPanel = container.querySelector('.credits-tab__chart-panel')
@@ -214,16 +208,6 @@ describe('CreditsTab', () => {
     await renderAssetTab([CREDIT_DIVIDEND])
     const [valueCell] = screen.getAllByText('120.50')
     expect(valueCell).toHaveClass('credits-tab__value')
-  })
-
-  it('new_button_present_for_asset_only', async () => {
-    await renderAssetTab()
-    expect(screen.getByRole('button', { name: 'New credit' })).toBeInTheDocument()
-  })
-
-  it('new_button_not_present_for_broker', async () => {
-    await renderBrokerTab()
-    expect(screen.queryByRole('button', { name: 'New credit' })).not.toBeInTheDocument()
   })
 
   it('new_button_shows_the_new_credit_form', async () => {

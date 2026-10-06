@@ -588,10 +588,7 @@ describe('TransactionsTab', () => {
     getOpenLotsMock.mockResolvedValue([OPEN_LOT])
     await renderAssetTab([TRANSACTION_BUY], 'SpecificId')
     await openNewForm()
-    fireEvent.change(screen.getByLabelText(/^Date/), { target: { value: '2024-05-01' } })
-    fireEvent.change(screen.getByLabelText('Type'), { target: { value: 'Sell' } })
-    fireEvent.change(screen.getByLabelText(/^Quantity/), { target: { value: '10' } })
-    fireEvent.change(screen.getByLabelText(/^Unit Price/), { target: { value: '4.5' } })
+    fillValidSale()
     return screen.findByRole('spinbutton', { name: /Allocate quantity/ })
   }
 
@@ -634,7 +631,6 @@ describe('TransactionsTab', () => {
 
   it('clicking_total_header_sorts_rows_ascending_then_descending', async () => {
     await renderAssetTab([TRANSACTION_BUY, TRANSACTION_SELL])
-    const table = screen.getByRole('table')
 
     fireEvent.click(screen.getByRole('button', { name: 'Net' }))
     let rows = dataRows()
@@ -642,7 +638,7 @@ describe('TransactionsTab', () => {
     expect(within(rows[1]).getByText('251.00')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Net' }))
-    rows = within(table).getAllByRole('row').slice(1)
+    rows = dataRows()
     expect(within(rows[0]).getByText('251.00')).toBeInTheDocument()
     expect(within(rows[1]).getByText('-420.50')).toBeInTheDocument()
   })
