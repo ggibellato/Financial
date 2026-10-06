@@ -1,0 +1,14 @@
+{
+  "backend": {
+    "line": 96.4,
+    "branch": 91.0
+  },
+  "wpf": {
+    "line": 94.5,
+    "branch": 83.0
+  },
+  "web": {
+    "line": 94.8,
+    "branch": 87.7
+  }
+}

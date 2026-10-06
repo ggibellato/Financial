@@ -43,6 +43,9 @@ jobs:
     - name: Self-test the test-hygiene scanner
       run: bash .github/scripts/test-hygiene.test.sh
 
+    - name: Self-test the coverage gate
+      run: pwsh .github/scripts/coverage-gate.test.ps1
+
     - name: Resolve the diff base
       id: base
       env:
@@ -75,6 +78,8 @@ jobs:
       emoji: ${{ steps.gate.outputs.emoji }}
       branch: ${{ steps.gate.outputs.branch }}
       branch-emoji: ${{ steps.gate.outputs.branch-emoji }}
+      line-delta: ${{ steps.gate.outputs.line-delta }}
+      branch-delta: ${{ steps.gate.outputs.branch-delta }}
     steps:
     - name: Pin timezone and culture
       shell: pwsh
@@ -122,6 +127,7 @@ jobs:
       uses: ./.github/actions/coverage-gate
       with:
         label: Backend
+        baseline-key: backend
 
     - name: Upload coverage report artifact
       if: always()
@@ -139,6 +145,8 @@ jobs:
       emoji: ${{ steps.gate.outputs.emoji }}
       branch: ${{ steps.gate.outputs.branch }}
       branch-emoji: ${{ steps.gate.outputs.branch-emoji }}
+      line-delta: ${{ steps.gate.outputs.line-delta }}
+      branch-delta: ${{ steps.gate.outputs.branch-delta }}
     steps:
     - name: Pin timezone and culture
       shell: pwsh
@@ -177,6 +185,7 @@ jobs:
       uses: ./.github/actions/coverage-gate
       with:
         label: WPF
+        baseline-key: wpf
 
     - name: Upload coverage report artifact
       if: always()
@@ -228,6 +237,8 @@ jobs:
       emoji: ${{ steps.gate.outputs.emoji }}
       branch: ${{ steps.gate.outputs.branch }}
       branch-emoji: ${{ steps.gate.outputs.branch-emoji }}
+      line-delta: ${{ steps.gate.outputs.line-delta }}
+      branch-delta: ${{ steps.gate.outputs.branch-delta }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
@@ -274,6 +285,7 @@ jobs:
       uses: ./.github/actions/coverage-gate
       with:
         label: Web
+        baseline-key: web
         summary-path: Financial.Web/CoverageReport/Summary.json
 
     - name: Upload coverage report artifact

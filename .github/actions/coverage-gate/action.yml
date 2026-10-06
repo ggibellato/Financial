@@ -1,5 +1,5 @@
 name: Coverage gate
-description: Fails below the 90% line-coverage tripwire and exposes line and branch coverage with a traffic-light emoji each, from a reportgenerator Summary.json.
+description: Fails below the 90% line-coverage tripwire or when line or branch coverage drops more than 0.5 points below coverage-baseline.json, and exposes line and branch coverage with a traffic-light emoji and the delta against the baseline, from a reportgenerator Summary.json.
 inputs:
   label:
     description: Human-readable project label for step-summary/error messages (e.g. "Backend", "WPF")
@@ -8,6 +8,13 @@ inputs:
     description: Path to reportgenerator's Summary.json
     required: false
     default: CoverageReport/Summary.json
+  baseline-key:
+    description: Entry of coverage-baseline.json this job is held to (backend, wpf or web)
+    required: true
+  baseline-path:
+    description: Path to the committed baseline file
+    required: false
+    default: coverage-baseline.json
 outputs:
   coverage:
     description: Line coverage percentage, rounded to 2 decimals
@@ -21,42 +28,21 @@ outputs:
   branch-emoji:
     description: Traffic-light emoji for the branch coverage (same bands as the line emoji)
     value: ${{ steps.gate.outputs.branch-emoji }}
+  line-delta:
+    description: Signed line coverage change against the baseline, 2 decimals (empty when the baseline could not be read)
+    value: ${{ steps.gate.outputs.line-delta }}
+  branch-delta:
+    description: Signed branch coverage change against the baseline, 2 decimals (empty when the baseline or the branch figure is missing)
+    value: ${{ steps.gate.outputs.branch-delta }}
 runs:
   using: composite
   steps:
     - id: gate
       shell: pwsh
       run: |
-        $summary = Get-Content '${{ inputs.summary-path }}' -Raw | ConvertFrom-Json
-        $lineCoverage = $summary.summary.linecoverage
-        if ($null -eq $lineCoverage) {
-          Write-Host "::error::Could not read summary.linecoverage from ${{ inputs.summary-path }}"
-          "🔴 Coverage gate: could not read line coverage from the report" | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
-          exit 1
-        }
-        function Get-CoverageEmoji([double]$value) {
-          if ($value -ge 90) { return '🟢' }
-          elseif ($value -ge 85) { return '🟡' }
-          elseif ($value -ge 80) { return '🟠' }
-          else { return '🔴' }
-        }
-        $lineCoverage = [math]::Round([double]$lineCoverage, 2)
-        $emoji = Get-CoverageEmoji $lineCoverage
-        $branchCoverage = $summary.summary.branchcoverage
-        $branch = ''
-        $branchEmoji = '⚪'
-        if ($null -ne $branchCoverage) {
-          $branchCoverage = [math]::Round([double]$branchCoverage, 2)
-          $branch = "$branchCoverage"
-          $branchEmoji = Get-CoverageEmoji $branchCoverage
-        }
-        $branchText = if ($branch) { "$branch%" } else { 'n/a' }
-        "$emoji ${{ inputs.label }} line coverage: $lineCoverage%, $branchEmoji branch coverage: $branchText" | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
-        "coverage=$lineCoverage" | Out-File -Append -Encoding utf8 $env:GITHUB_OUTPUT
-        "emoji=$emoji" | Out-File -Append -Encoding utf8 $env:GITHUB_OUTPUT
-        "branch=$branch" | Out-File -Append -Encoding utf8 $env:GITHUB_OUTPUT
-        "branch-emoji=$branchEmoji" | Out-File -Append -Encoding utf8 $env:GITHUB_OUTPUT
-        if ($lineCoverage -lt 90) {
-          Write-Host "::error::${{ inputs.label }} line coverage $lineCoverage% is below the 90% floor"
-          exit 1
-        }
+        & "${{ github.action_path }}/../../scripts/coverage-gate.ps1" `
+          -Label '${{ inputs.label }}' `
+          -SummaryPath '${{ inputs.summary-path }}' `
+          -BaselineKey '${{ inputs.baseline-key }}' `
+          -BaselinePath '${{ inputs.baseline-path }}'
+        exit $LASTEXITCODE
