@@ -398,7 +398,7 @@ jobs:
           [ "$result" = "success" ] || verdict="✖ fail"
           local branch_cell="⚪ n/a"
           [ -z "$branch" ] || branch_cell="$branch_emoji ${branch}%"
-          [ "$diff_below" != "true" ] || verdict="$verdict (diff below threshold, advisory)"
+          [ "$diff_below" != "true" ] || verdict="$verdict (diff below threshold)"
           echo "| $name | $emoji ${coverage}% | $branch_cell | ${line_delta:-n/a} / ${branch_delta:-n/a} | ${diff_line:-n/a} | ${diff_branch:-n/a} | $verdict |"
         }
         {

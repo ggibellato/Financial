@@ -32,23 +32,23 @@ function Format-Ratio([int]$covered, [int]$total) {
     return "$($percent.ToString([cultureinfo]::InvariantCulture))% ($covered/$total)"
 }
 
-function Complete([string]$line, [string]$branch, [bool]$fail, [string]$reason) {
+function Complete([string]$line, [string]$branch, [string]$reason) {
     Add-Output 'diff-line' $line
     Add-Output 'diff-branch' $branch
     Add-Output 'diff-below' $(if ($reason) { 'true' } else { 'false' })
     Add-StepSummary "$Label diff coverage: line $line, branch $branch"
     if ($reason) { Add-StepSummary $reason }
-    if ($fail) {
+    if ($reason -and $Blocking) {
         Write-Host "::error::$reason"
         exit 1
     }
     exit 0
 }
 
-if (-not $MergeBase -or -not (Test-Path $CoberturaPath)) { Complete 'not computed' 'not computed' $false '' }
+if (-not $MergeBase -or -not (Test-Path $CoberturaPath)) { Complete 'not computed' 'not computed' '' }
 
-$diff = & git diff -U0 --no-color $MergeBase $Head 2>$null
-if ($LASTEXITCODE -ne 0) { Complete 'not computed' 'not computed' $false '' }
+$diff = & git diff -U0 --no-color $MergeBase $Head -- '*.cs' '*.ts' '*.tsx' 2>$null
+if ($LASTEXITCODE -ne 0) { Complete 'not computed' 'not computed' '' }
 
 $changed = @{}
 $file = $null
@@ -65,7 +65,7 @@ foreach ($row in $diff) {
     }
 }
 
-if ($changed.Count -eq 0) { Complete 'n/a' 'n/a' $false '' }
+if ($changed.Count -eq 0) { Complete 'n/a' 'n/a' '' }
 
 [xml]$report = Get-Content $CoberturaPath -Raw
 $sources = @($report.coverage.sources.source | Where-Object { $_ } | ForEach-Object { ($_ -replace '\\', '/').TrimEnd('/') + '/' })
@@ -110,4 +110,4 @@ if ($branchTotal -gt 0 -and $branchCovered * 100 -lt $branchThreshold * $branchT
 }
 
 $reason = $failures -join '; '
-Complete (Format-Ratio $lineCovered $lineTotal) (Format-Ratio $branchCovered $branchTotal) ($Blocking.IsPresent -and $failures.Count -gt 0) $reason
+Complete (Format-Ratio $lineCovered $lineTotal) (Format-Ratio $branchCovered $branchTotal) $reason

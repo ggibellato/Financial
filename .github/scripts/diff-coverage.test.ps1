@@ -51,6 +51,8 @@ function Line([int]$number, [int]$hits, [string]$condition = '') {
     return "<line number=`"$number`" hits=`"$hits`" branch=`"false`"/>"
 }
 
+$buildRoot = 'D:\a\r\r\'
+$apiFile = 'D:\a\r\r\Financial.Api\Controllers\Foo.cs'
 Invoke-Git init -q
 Write-Source 'Financial.Api/Controllers/Foo.cs' 5
 Write-Source 'Financial.Api/Other/Skip.txt' 3
@@ -66,33 +68,33 @@ Invoke-Git add -A
 Invoke-Git commit -q -m change
 
 $linesAllCovered = (6..15 | ForEach-Object { Line $_ 3 }) -join ''
-Write-Cobertura 'D:\a\r\r\' 'D:\a\r\r\Financial.Api\Controllers\Foo.cs' $linesAllCovered
+Write-Cobertura $buildRoot $apiFile $linesAllCovered
 $result = Invoke-Script $base
 Check 'all changed lines covered, Windows paths mapped' ($result.Exit -eq 0 -and $result.Outputs -match 'diff-line=100% \(10/10\)' -and $result.Outputs -match 'diff-branch=n/a') $result
 
 $oneUncovered = ((6..14 | ForEach-Object { Line $_ 3 }) + (Line 15 0)) -join ''
-Write-Cobertura 'D:\a\r\r\' 'D:\a\r\r\Financial.Api\Controllers\Foo.cs' $oneUncovered
+Write-Cobertura $buildRoot $apiFile $oneUncovered
 $result = Invoke-Script $base
 Check 'one uncovered line gives 9/10' ($result.Exit -eq 0 -and $result.Outputs -match 'diff-line=90% \(9/10\)') $result
 
 $branches = ((6..13 | ForEach-Object { Line $_ 3 }) + (Line 14 3 '50% (1/2)') + (Line 15 3 '100% (2/2)')) -join ''
-Write-Cobertura 'D:\a\r\r\' 'D:\a\r\r\Financial.Api\Controllers\Foo.cs' $branches
+Write-Cobertura $buildRoot $apiFile $branches
 $result = Invoke-Script $base
 Check 'condition-coverage 50% (1/2) counts one of two branches' ($result.Outputs -match 'diff-branch=75% \(3/4\)') $result
 
 $unchangedLinesOnly = (1..5 | ForEach-Object { Line $_ 0 }) -join ''
-Write-Cobertura 'D:\a\r\r\' 'D:\a\r\r\Financial.Api\Controllers\Foo.cs' $unchangedLinesOnly
+Write-Cobertura $buildRoot $apiFile $unchangedLinesOnly
 $result = Invoke-Script $base
 Check 'report lines outside the diff are ignored' ($result.Outputs -match 'diff-line=n/a') $result
 
 $result = Invoke-Script ''
 Check 'empty merge base is not computed and does not block' ($result.Exit -eq 0 -and $result.Outputs -match 'diff-line=not computed') $result
 
-Write-Cobertura 'D:\a\r\r\' 'D:\a\r\r\Financial.Api\Controllers\Foo.cs' $linesAllCovered
+Write-Cobertura $buildRoot $apiFile $linesAllCovered
 Remove-Item (Join-Path $work 'Cobertura.xml')
 $result = Invoke-Script $base
 Check 'missing report is not computed' ($result.Exit -eq 0 -and $result.Outputs -match 'diff-line=not computed') $result
-Write-Cobertura 'D:\a\r\r\' 'D:\a\r\r\Financial.Api\Controllers\Foo.cs' $linesAllCovered
+Write-Cobertura $buildRoot $apiFile $linesAllCovered
 Write-Source 'Financial.Api/Other/Skip.txt' 9
 Invoke-Git add -A
 Invoke-Git commit -q -m docs-only
@@ -114,7 +116,7 @@ foreach ($row in @(
         $rows += Line $n $hits
     }
     $rows[0] = Line 6 1 "$([math]::Round(100 * $row.BranchCovered / 10))% ($($row.BranchCovered)/10)"
-    Write-Cobertura 'D:\a\r\r\' 'D:\a\r\r\Financial.Api\Controllers\Foo.cs' ($rows -join '')
+    Write-Cobertura $buildRoot $apiFile ($rows -join '')
     $result = Invoke-Script $base -Blocking:$row.Blocking
     Check $row.Name ($result.Exit -eq $row.Exit -and $result.Outputs -match "diff-below=$($row.Below)") $result
 }
