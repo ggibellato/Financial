@@ -269,15 +269,21 @@ public class CardsWorkflowViewModelTests
         Month = TestClock.LocalToday.Month, IsPaid = isPaid, OutstandingTotal = 100m, AccumulatedOutstandingTotal = 100m,
     };
 
-    [Fact]
-    public async Task MarkStatementPaid_NoStatementOrNoPaymentSource_DoesNotCallTheServiceOrRefresh()
+    private static (CardsWorkflowViewModel ViewModel, StubCardStatementService Service, Func<int> Refreshes) CreateCountingViewModel()
     {
         var refreshes = 0;
-        var (viewModel, cardStatementService, _, _, _) = CreateViewModel(() =>
+        var (viewModel, service, _, _, _) = CreateViewModel(() =>
         {
             refreshes++;
             return Task.CompletedTask;
         });
+        return (viewModel, service, () => refreshes);
+    }
+
+    [Fact]
+    public async Task MarkStatementPaid_NoStatementOrNoPaymentSource_DoesNotCallTheServiceOrRefresh()
+    {
+        var (viewModel, cardStatementService, refreshes) = CreateCountingViewModel();
         var statementWithoutSource = Statement(isPaid: false);
         cardStatementService.Statements = [statementWithoutSource];
 
@@ -286,7 +292,7 @@ public class CardsWorkflowViewModelTests
         await viewModel.MarkStatementPaidAsync(statementWithoutSource);
 
         cardStatementService.LastMarkPaidRequest.Should().BeNull();
-        refreshes.Should().Be(0);
+        refreshes().Should().Be(0);
         viewModel.CardStatementError.Should().BeNull();
         viewModel.CardStatementWarning.Should().BeNull();
     }
@@ -294,12 +300,7 @@ public class CardsWorkflowViewModelTests
     [Fact]
     public async Task MarkStatementPaid_ServiceFails_ShowsTheErrorKeepsThePaymentSourceAndDoesNotRefresh()
     {
-        var refreshes = 0;
-        var (viewModel, cardStatementService, _, _, _) = CreateViewModel(() =>
-        {
-            refreshes++;
-            return Task.CompletedTask;
-        });
+        var (viewModel, cardStatementService, refreshes) = CreateCountingViewModel();
         var statement = Statement(isPaid: false);
         cardStatementService.Statements = [statement];
         cardStatementService.ThrowOnMarkPaid = new InvalidOperationException("Bank not found.");
@@ -309,34 +310,24 @@ public class CardsWorkflowViewModelTests
 
         viewModel.CardStatementError.Should().Be("Bank not found.");
         viewModel.MarkStatementPaidCommand.CanExecute(statement).Should().BeTrue();
-        refreshes.Should().Be(0);
+        refreshes().Should().Be(0);
     }
 
     [Fact]
     public async Task UnmarkStatementPaid_NoStatement_DoesNotCallTheServiceOrRefresh()
     {
-        var refreshes = 0;
-        var (viewModel, cardStatementService, _, _, _) = CreateViewModel(() =>
-        {
-            refreshes++;
-            return Task.CompletedTask;
-        });
+        var (viewModel, cardStatementService, refreshes) = CreateCountingViewModel();
 
         await viewModel.UnmarkStatementPaidAsync(null);
 
         cardStatementService.LastUnmarkedId.Should().BeNull();
-        refreshes.Should().Be(0);
+        refreshes().Should().Be(0);
     }
 
     [Fact]
     public async Task UnmarkStatementPaid_ServiceFails_ShowsTheErrorAndDoesNotRefresh()
     {
-        var refreshes = 0;
-        var (viewModel, cardStatementService, _, _, _) = CreateViewModel(() =>
-        {
-            refreshes++;
-            return Task.CompletedTask;
-        });
+        var (viewModel, cardStatementService, refreshes) = CreateCountingViewModel();
         var statement = Statement(isPaid: true);
         cardStatementService.Statements = [statement];
         cardStatementService.ThrowOnUnmark = new InvalidOperationException("Statement not found.");
@@ -344,7 +335,7 @@ public class CardsWorkflowViewModelTests
         await viewModel.UnmarkStatementPaidAsync(statement);
 
         viewModel.CardStatementError.Should().Be("Statement not found.");
-        refreshes.Should().Be(0);
+        refreshes().Should().Be(0);
     }
 
     [Fact]
@@ -363,7 +354,7 @@ public class CardsWorkflowViewModelTests
     [InlineData(true, "2026-09-05", true, "2026-10-05")]
     [InlineData(true, "2026-09-05", true, null)]
     [InlineData(true, null, true, "2026-09-05")]
-    public async Task UpdateCreditCardAsync_OnlyOneFieldChanged_StillCallsTheService(bool isActive, string? currentDue, bool newIsActive, string? newDue)
+    public async Task UpdateCreditCardAsync_DueDateOrActiveFlagDiffers_StillCallsTheService(bool isActive, string? currentDue, bool newIsActive, string? newDue)
     {
         var (viewModel, _, creditCardService, _, creditCards) = CreateViewModel();
         var card = new CreditCardDTO { Id = BaAmexId, Name = "BaAmex", IsActive = isActive, NextInvoiceDueDate = currentDue is null ? null : DateOnly.Parse(currentDue), HasReferences = false };

@@ -679,15 +679,45 @@ public class CorporateActionsTabViewModelTests
         spy.AppliedDetails.Should().BeNull();
     }
 
-    [Fact]
-    public async Task Add_ServiceThrowsUnexpectedException_ShowsTheGenericWarningAndAppliesNothing()
+    private static string GenericMessageFor(string operation) => operation switch
+    {
+        "add" => GenericAddMessage,
+        "update" => GenericUpdateMessage,
+        _ => GenericDeleteMessage,
+    };
+
+    private static Task RunOperation(CorporateActionsTabViewModel viewModel, string operation, CorporateActionRowViewModel row) => operation switch
+    {
+        "add" => viewModel.Add(() => AsForm(ValidFormData())),
+        "update" => viewModel.Update(row, () => AsForm(ValidFormData(row.Id))),
+        _ => viewModel.Delete(row, () => true),
+    };
+
+    [Theory]
+    [InlineData("add")]
+    [InlineData("update")]
+    [InlineData("delete")]
+    public async Task Operation_ServiceThrowsUnexpectedException_ShowsTheGenericWarningAndAppliesNothing(string operation)
     {
         var service = new StubCorporateActionService { ExceptionToThrow = new InvalidOperationException("database is down") };
         var (viewModel, _, spy) = Build(service: service);
 
-        await viewModel.Add(() => AsForm(ValidFormData()));
+        await RunOperation(viewModel, operation, LoadedRow(viewModel));
 
-        spy.Messages.Should().ContainSingle(m => m.Image == MessageBoxImage.Warning && m.Message == GenericAddMessage);
+        spy.Messages.Should().ContainSingle(m => m.Image == MessageBoxImage.Warning && m.Message == GenericMessageFor(operation));
+        spy.AppliedDetails.Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData("update")]
+    [InlineData("delete")]
+    public async Task UpdateOrDelete_ServiceReturnsNothing_ShowsTheGenericWarningAndAppliesNothing(string operation)
+    {
+        var (viewModel, _, spy) = Build();
+
+        await RunOperation(viewModel, operation, LoadedRow(viewModel));
+
+        spy.Messages.Should().ContainSingle(m => m.Image == MessageBoxImage.Warning && m.Message == GenericMessageFor(operation));
         spy.AppliedDetails.Should().BeNull();
     }
 
@@ -773,56 +803,6 @@ public class CorporateActionsTabViewModelTests
     }
 
     [Fact]
-    public async Task Update_ServiceThrowsUnexpectedException_ShowsTheGenericWarning()
-    {
-        var service = new StubCorporateActionService { ExceptionToThrow = new InvalidOperationException("database is down") };
-        var (viewModel, _, spy) = Build(service: service);
-        var row = LoadedRow(viewModel);
-
-        await viewModel.Update(row, () => AsForm(ValidFormData(row.Id)));
-
-        spy.Messages.Should().ContainSingle(m => m.Message == GenericUpdateMessage);
-        spy.AppliedDetails.Should().BeNull();
-    }
-
-    [Fact]
-    public async Task Update_ServiceReturnsNothing_ShowsTheGenericWarning()
-    {
-        var (viewModel, _, spy) = Build();
-        var row = LoadedRow(viewModel);
-
-        await viewModel.Update(row, () => AsForm(ValidFormData(row.Id)));
-
-        spy.Messages.Should().ContainSingle(m => m.Message == GenericUpdateMessage);
-        spy.AppliedDetails.Should().BeNull();
-    }
-
-    [Fact]
-    public async Task Delete_ServiceThrowsUnexpectedException_ShowsTheGenericWarning()
-    {
-        var service = new StubCorporateActionService { ExceptionToThrow = new InvalidOperationException("database is down") };
-        var (viewModel, _, spy) = Build(service: service);
-        var row = LoadedRow(viewModel);
-
-        await viewModel.Delete(row, () => true);
-
-        spy.Messages.Should().ContainSingle(m => m.Image == MessageBoxImage.Warning && m.Message == GenericDeleteMessage);
-        spy.AppliedDetails.Should().BeNull();
-    }
-
-    [Fact]
-    public async Task Delete_ServiceReturnsNothing_ShowsTheGenericWarning()
-    {
-        var (viewModel, _, spy) = Build();
-        var row = LoadedRow(viewModel);
-
-        await viewModel.Delete(row, () => true);
-
-        spy.Messages.Should().ContainSingle(m => m.Message == GenericDeleteMessage);
-        spy.AppliedDetails.Should().BeNull();
-    }
-
-    [Fact]
     public void UpdateAndDeleteCommand_CanExecute_FalseWithoutContextOrWithoutASelection()
     {
         var (withoutContext, _, _) = Build(hasContext: false);
@@ -881,8 +861,8 @@ public class CorporateActionsTabViewModelTests
         viewModel.AddCommand.Execute(null);
         await AsyncWait.UntilAsync(() => viewModel.FormViewModel != null);
         viewModel.FormViewModel!.CancelCommand.Execute(null);
-        await AsyncWait.UntilAsync(() => !viewModel.IsFormOpen);
 
+        viewModel.IsFormOpen.Should().BeFalse();
         viewModel.FormViewModel.Should().BeNull();
         service.AddCallCount.Should().Be(0);
     }
@@ -902,7 +882,6 @@ public class CorporateActionsTabViewModelTests
         viewModel.FormViewModel!.RatioNumerator.Should().Be((decimal)expectedNumerator);
         viewModel.FormViewModel.RatioDenominator.Should().Be((decimal)expectedDenominator);
         viewModel.FormViewModel.CancelCommand.Execute(null);
-        await AsyncWait.UntilAsync(() => !viewModel.IsFormOpen);
     }
 
     private sealed class Spy

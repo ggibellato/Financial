@@ -306,12 +306,8 @@ public class TransferWorkflowViewModelTests
     {
         var (viewModel, transfers, banks) = CreateViewModel();
         transfers.ThrowOnAdd = "Storage unavailable";
-        viewModel.ShowMoveMoneyFormCommand.Execute(banks[0].Id);
-        viewModel.TransferFormDate = TestClock.LocalToday;
-        viewModel.TransferFormDestinationBank = banks[1].Id;
-        viewModel.TransferFormAmount = "75";
 
-        await viewModel.SaveTransferAsync();
+        await SaveTransferBetween(viewModel, banks[0].Id, banks[1].Id);
 
         viewModel.TransferGeneralSaveError.Should().Be("Storage unavailable");
     }
