@@ -45,7 +45,7 @@
 | D7 | The Drive seam is an `internal` constructor taking a `Func<string[], DriveService>` and an optional delay function. The existing constructor keeps its signature and builds the credential-based factory. The tests build a real `DriveService` over the SDK's `HttpClientFactory` initializer option, so the SDK's own request building and response parsing are exercised | A `DriveService` over a fake handler is the contract boundary (HTTP); faking `DriveService` members is not possible and would test nothing |
 | D8 | `GoogleDriveFileClient` gets an `internal` constructor taking a `GoogleDriveClient`, so the 429/5xx → `TransientStorageException` translation is tested through the real wrapper | The public constructor builds its own client from a credentials path |
 | D9 | `invalid_grant` is modelled as the handler raising the SDK's `TokenResponseException` with error `invalid_grant`, which is what a rejected service-account token refresh raises inside `DriveService`'s HTTP pipeline | A real token endpoint is out of reach; the pinned behaviour is that the error propagates unchanged, is not retried (one request) and is not translated to `TransientStorageException` |
-| D10 | The Production 500 and 503 host tests replace one Application service registration with a fake that throws, rather than adding a test-only endpoint | Exercises the real middleware order (`UseExceptionHandler`, then the mapping middleware) with no production code added for tests |
+| D10 | The Production 500 and the mapping host tests replace one Application service registration with a fake that throws, rather than adding a test-only endpoint | Exercises the real middleware order (`UseExceptionHandler`, then the mapping middleware) with no production code added for tests |
 | D11 | The test web root is a per-test temp directory the factory writes (a fixed marker string in `index.html`) and deletes on dispose; because the factory writes the file itself, a missing `index.html` cannot occur and no separate setup assertion is needed | Replaces the PRD's "missing wwwroot fails setup" case with a construction that cannot produce it |
 
 ## 2. Architecture Impact
@@ -177,23 +177,21 @@ Not applicable.
 | `ClientRoute_ReturnsSpaShell` (theory) | `GET /`, `/some/client/route`, `/apiary` | 200, `text/html`, body contains the marker |
 | `RealApiRoute_StillReturnsJson` | `GET /api/v1/financial/banks` | 200, `application/json` |
 
-**ExceptionMappingTests** (real host; `IBankService` replaced by a fake that throws the row's exception on `GET /banks`)
+**ExceptionMappingTests** (one shared host per class; `IBankService` replaced by a fake whose failure each test sets; the fake throws on `GET /banks`)
 
 | Test Function | Description | Assertions |
 |---|---|---|
 | `MappedException_ReturnsItsStatusCode` (theory, 10 rows) | Each type through the host | Status equals the table value; `Retry-After` is 30 s for 503 and absent otherwise |
-| `Scanner_AcceptsMappedAndExemptTypes` | Self-test of the completeness helper | No findings for mapped or exempt types |
+| `Scanner_AcceptsASubclassOfAMappedType` | Self-test: the middleware catches base types, so a subclass of a mapped type is mapped | No findings |
 | (in `DomainExceptionLoggingTests`) `TransientStorage_Returns503WithRetryAfter_AndLogsTheTypeWithoutTheMessage` | 503 case through the middleware harness | `Retry-After` 30, single warning with the type name and 503, message text absent. Lives with the other middleware logging tests because the host's Serilog setup ignores providers added through DI |
 | `EveryExceptionTypeInTheApplicationAssemblies_IsMappedOrExempt` | Reflection over the five assemblies in D5 | Each exception type is a theory row or on the service-layer allowlist; failure message names the type |
-| `Scanner_FlagsAnUnmappedType` | Self-test of the completeness helper with a synthetic type | Names the synthetic type |
+| `Scanner_FlagsUnmappedTypes_AndAcceptsMappedOrExemptOnes` | Self-test of the completeness helper with synthetic types | Names only the unmapped synthetic type |
 
-**ProductionErrorBoundaryTests** (`Production` environment, default `ApiTestFactory`, one Application service replaced by a throwing fake)
+**ProductionErrorBoundaryTests** (`Production` environment, shared host, default factory stubs, one Application service replaced by a throwing fake)
 
 | Test Function | Description | Assertions |
 |---|---|---|
-| `UnmappedException_Returns500ProblemDetails` | Fake throws `InvalidOperationException` | 500, `application/problem+json`, `status` 500 |
-| `UnmappedException_LeaksNothing` | Message contains `Ariana`, `1234.56` and the exception type name | Body contains none of them, no `at Financial.` frame, no `exception`/`stackTrace` field |
-| `TransientStorageException_Returns503WithRetryAfter` | Fake throws it | 503, `Retry-After: 30`, ProblemDetails body |
+| `UnmappedException_Returns500ProblemDetailsThatLeaksNothing` | Fake throws `InvalidOperationException` whose message contains `Ariana` and `1234.56` | 500, `application/problem+json`, `status` 500; body has no message, type name, `Financial.` frame, stack trace or `exception` field |
 
 **GoogleDriveClientContractTests** (`FakeDriveHandler` scripts responses and records requests; delay recorded, never waited)
 
@@ -227,7 +225,7 @@ Not applicable.
 | Client route 200 `text/html` | `ClientRoute_ReturnsSpaShell` |
 | Mapping theory covers all types, `TransientStorageException` → 503 | `MappedException_ReturnsItsStatusCode`, `TransientStorage_Returns503WithRetryAfter_AndLogsTheTypeWithoutTheMessage` |
 | Unmapped type fails completeness and names it | `EveryExceptionTypeInTheApplicationAssemblies_IsMappedOrExempt`, `Scanner_FlagsAnUnmappedType` |
-| Production 500 leaks nothing | `UnmappedException_LeaksNothing` |
+| Production 500 leaks nothing | `UnmappedException_Returns500ProblemDetailsThatLeaksNothing` |
 | Drive upload, download, 404, 429/503 retry, `invalid_grant` each covered | the Drive contract tests above |
 
 **Mutation checks to run in the PR:** restore `MapFallbackToFile("index.html")` and the unknown-route test fails; delete the 503 catch and the 503 tests fail; remove `ResolveShortcutTargetId`'s shortcut branch and the shortcut test fails; stop passing the delay to the retry calls and the backoff test fails.

@@ -22,8 +22,6 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
     private readonly TimeProvider _timeProvider;
     private readonly ICalendarProvider? _calendarProviderOverride;
     private readonly string? _webRootPath;
-    private readonly string? _environment;
-    private readonly Action<IServiceCollection>? _configureServices;
     private bool _disposed;
 
     public ApiTestFactory(
@@ -31,12 +29,8 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
         TimeProvider? timeProviderOverride = null,
         ICalendarProvider? calendarProviderOverride = null,
         bool useRealExchangeRates = false,
-        string? spaIndexHtml = null,
-        string? environment = null,
-        Action<IServiceCollection>? configureServices = null)
+        string? spaIndexHtml = null)
     {
-        _environment = environment;
-        _configureServices = configureServices;
         if (spaIndexHtml is not null)
         {
             _webRootPath = Path.Combine(Path.GetTempPath(), $"financial-api-webroot-{Guid.NewGuid():N}");
@@ -60,16 +54,6 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
         if (_webRootPath is not null)
         {
             builder.UseWebRoot(_webRootPath);
-        }
-
-        if (_environment is not null)
-        {
-            builder.UseEnvironment(_environment);
-        }
-
-        if (_configureServices is not null)
-        {
-            builder.ConfigureTestServices(_configureServices);
         }
 
         builder.ConfigureAppConfiguration((context, config) =>

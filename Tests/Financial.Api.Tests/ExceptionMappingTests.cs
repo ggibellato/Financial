@@ -9,22 +9,20 @@ using FluentAssertions;
 namespace Financial.Api.Tests;
 
 [Trait("Category", "Integration")]
-public class ExceptionMappingTests
+public class ExceptionMappingTests(ThrowingApiHost host) : IClassFixture<ThrowingApiHost>
 {
-    private const string BanksPath = "/api/v1/financial/banks";
-
-    private static readonly (Func<Exception> Create, HttpStatusCode Status)[] MappedExceptions =
+    private static readonly (Exception Exception, HttpStatusCode Status)[] MappedExceptions =
     [
-        (() => new OverdraftConfirmationRequiredException("overdraft"), HttpStatusCode.Conflict),
-        (() => new ReserveMovementLinkedToIncomeException("linked"), HttpStatusCode.Conflict),
-        (() => new EntityInUseException("in use"), HttpStatusCode.Conflict),
-        (() => new DuplicateNameException("duplicate"), HttpStatusCode.Conflict),
-        (() => new InvestmentRuleViolationException("rule"), HttpStatusCode.Conflict),
-        (() => new UnsupportedAssetClassException("unsupported"), HttpStatusCode.UnprocessableEntity),
-        (() => new KeyNotFoundException("missing"), HttpStatusCode.NotFound),
-        (() => new DividendNotFoundException("missing"), HttpStatusCode.NotFound),
-        (() => new ArgumentException("invalid"), HttpStatusCode.BadRequest),
-        (() => new TransientStorageException("transient", new InvalidOperationException()), HttpStatusCode.ServiceUnavailable)
+        (new OverdraftConfirmationRequiredException("overdraft"), HttpStatusCode.Conflict),
+        (new ReserveMovementLinkedToIncomeException("linked"), HttpStatusCode.Conflict),
+        (new EntityInUseException("in use"), HttpStatusCode.Conflict),
+        (new DuplicateNameException("duplicate"), HttpStatusCode.Conflict),
+        (new InvestmentRuleViolationException("rule"), HttpStatusCode.Conflict),
+        (new UnsupportedAssetClassException("unsupported"), HttpStatusCode.UnprocessableEntity),
+        (new KeyNotFoundException("missing"), HttpStatusCode.NotFound),
+        (new DividendNotFoundException("missing"), HttpStatusCode.NotFound),
+        (new ArgumentException("invalid"), HttpStatusCode.BadRequest),
+        (new TransientStorageException("transient", new InvalidOperationException()), HttpStatusCode.ServiceUnavailable)
     ];
 
     private static readonly Type[] HandledInTheServiceLayer =
@@ -48,13 +46,11 @@ public class ExceptionMappingTests
     [MemberData(nameof(MappedExceptionIndexes))]
     public async Task MappedException_ReturnsItsStatusCode(int index)
     {
-        var (create, status) = MappedExceptions[index];
-        await using var factory = new ApiTestFactory(configureServices: ThrowingBankService.Registering(create));
-        using var client = factory.CreateClient();
+        var (exception, status) = MappedExceptions[index];
 
-        var response = await client.GetAsync(BanksPath);
+        var response = await host.GetBanksFailingWith(exception);
 
-        response.StatusCode.Should().Be(status, because: create().GetType().Name);
+        response.StatusCode.Should().Be(status, because: exception.GetType().Name);
         var retryAfter = response.Headers.RetryAfter?.Delta;
         retryAfter.Should().Be(status == HttpStatusCode.ServiceUnavailable ? TimeSpan.FromSeconds(30) : null);
     }
@@ -64,40 +60,48 @@ public class ExceptionMappingTests
     {
         var candidates = ScannedAssemblies
             .Select(name => Assembly.Load(new AssemblyName(name)))
-            .SelectMany(assembly => assembly.GetTypes());
-        var mapped = MappedExceptions.Select(row => row.Create().GetType()).ToList();
+            .SelectMany(assembly => assembly.GetTypes())
+            .ToList();
+        var mapped = MappedExceptions.Select(row => row.Exception.GetType());
 
         var unmapped = FindUnmappedExceptionTypes(candidates, mapped, HandledInTheServiceLayer);
 
+        candidates.Should().Contain(typeof(DuplicateNameException));
         unmapped.Should().BeEmpty(
             "every exception that can reach HTTP must be mapped by DomainExceptionMappingMiddleware and listed in MappedExceptions, or be handled in the service layer");
     }
 
     [Fact]
-    public void Scanner_FlagsAnUnmappedExceptionType()
+    public void Scanner_FlagsUnmappedTypes_AndAcceptsMappedOrExemptOnes()
     {
-        var unmapped = FindUnmappedExceptionTypes([typeof(SyntheticUnmappedException), typeof(string)], new HashSet<Type>(), Array.Empty<Type>());
+        Type[] candidates = [typeof(SyntheticUnmappedException), typeof(SyntheticMappedException), typeof(CalendarNotFoundException), typeof(string)];
+
+        var unmapped = FindUnmappedExceptionTypes(candidates, [typeof(SyntheticMappedException)], [typeof(CalendarNotFoundException)]);
 
         unmapped.Should().ContainSingle().Which.Should().Contain(nameof(SyntheticUnmappedException));
     }
 
     [Fact]
-    public void Scanner_AcceptsMappedAndExemptTypes()
+    public void Scanner_AcceptsASubclassOfAMappedType()
     {
-        var unmapped = FindUnmappedExceptionTypes(
-            [typeof(SyntheticUnmappedException), typeof(CalendarNotFoundException)],
-            new[] { typeof(SyntheticUnmappedException) },
-            new[] { typeof(CalendarNotFoundException) });
+        var unmapped = FindUnmappedExceptionTypes([typeof(SyntheticMappedSubclass)], [typeof(SyntheticMappedException)], []);
 
         unmapped.Should().BeEmpty();
     }
 
-    private static List<string> FindUnmappedExceptionTypes(IEnumerable<Type> candidates, IReadOnlyCollection<Type> mapped, IEnumerable<Type> exempt) =>
-        candidates
+    private static List<string> FindUnmappedExceptionTypes(IEnumerable<Type> candidates, IEnumerable<Type> mapped, IEnumerable<Type> exempt)
+    {
+        var handled = mapped.Concat(exempt).ToList();
+        return candidates
             .Where(type => typeof(Exception).IsAssignableFrom(type) && !type.IsAbstract)
-            .Where(type => !mapped.Contains(type) && !exempt.Contains(type))
+            .Where(type => !handled.Any(handledType => handledType.IsAssignableFrom(type)))
             .Select(type => type.FullName ?? type.Name)
             .ToList();
+    }
+
+    private class SyntheticMappedException : Exception;
+
+    private sealed class SyntheticMappedSubclass : SyntheticMappedException;
 
     private sealed class SyntheticUnmappedException : Exception;
 }
