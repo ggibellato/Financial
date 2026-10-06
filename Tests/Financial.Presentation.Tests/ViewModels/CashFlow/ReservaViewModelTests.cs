@@ -542,4 +542,140 @@ public class ReservaViewModelTests
 
         banks.GetBanksCallCount.Should().Be(callCountAfterInitialLoad);
     }
+
+    private static ReserveMovementRow MovementRow(Guid? incomeId = null) => new()
+    {
+        Id = Guid.NewGuid(), BucketId = InvestimentoId, BucketName = "Investimento", Amount = 10m,
+        Date = TestClock.Today, Description = "Salary", IncomeId = incomeId,
+    };
+
+    private static ReserveMovementDTO ToDto(ReserveMovementRow row) => new()
+    {
+        Id = row.Id, BucketId = row.BucketId, BucketName = row.BucketName, Amount = row.Amount, Date = row.Date, Description = row.Description,
+    };
+
+    [Fact]
+    public async Task RefreshAsync_BalancesLoadFails_ShowsErrorAndHidesContentUntilNextSuccessfulLoad()
+    {
+        var (viewModel, service) = CreateViewModel();
+        service.ThrowOnGetBalances = new InvalidOperationException("Reserve unavailable");
+
+        await viewModel.RefreshAsync();
+
+        viewModel.Error.Should().Be("Reserve unavailable");
+        viewModel.HasError.Should().BeTrue();
+        viewModel.ShowContent.Should().BeFalse();
+
+        service.ThrowOnGetBalances = null;
+        await viewModel.RefreshAsync();
+
+        viewModel.Error.Should().BeNull();
+        viewModel.ShowContent.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task SplitPercentageWarning_NoBucketsLoaded_IsEmpty()
+    {
+        var (viewModel, _) = CreateViewModel(_ => true, new StubReserveBucketService { ReserveBuckets = [] });
+
+        await viewModel.RefreshAsync();
+
+        viewModel.SplitPercentageWarning.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task EditGeneralSaveError_ServiceFails_ShowsTheMessageAsAGeneralError()
+    {
+        var (viewModel, service) = CreateViewModel();
+        service.ThrowOnUpdateMovement = new InvalidOperationException("Storage unavailable");
+        viewModel.EditMovementCommand.Execute(MovementRow());
+
+        await viewModel.SaveMovementEditAsync();
+
+        viewModel.EditGeneralSaveError.Should().Be("Storage unavailable");
+        viewModel.IsEditFormOpen.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task EditGeneralSaveError_FieldValidationFails_IsNotShownAsAGeneralError()
+    {
+        var (viewModel, _) = CreateViewModel();
+        viewModel.EditMovementCommand.Execute(MovementRow());
+        viewModel.EditDescription = "";
+
+        await viewModel.SaveMovementEditAsync();
+
+        viewModel.EditDescriptionFieldError.Should().NotBeNull();
+        viewModel.EditGeneralSaveError.Should().BeNull();
+    }
+
+    [Fact]
+    public void MovementCommands_NoRowSupplied_AreExecutableAndEditLeavesTheFormClosed()
+    {
+        var (viewModel, _) = CreateViewModel();
+
+        viewModel.EditMovementCommand.CanExecute(null).Should().BeTrue();
+        viewModel.DeleteMovementCommand.CanExecute(null).Should().BeTrue();
+
+        viewModel.EditMovementCommand.Execute(null);
+
+        viewModel.IsEditFormOpen.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task SaveMovementEdit_NoMovementBeingEdited_DoesNothing()
+    {
+        var (viewModel, service) = CreateViewModel();
+
+        await viewModel.SaveMovementEditAsync();
+
+        service.LastUpdateRequest.Should().BeNull();
+        viewModel.EditSaveError.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task DeleteMovement_NoRowSupplied_NeitherAsksForConfirmationNorCallsTheService()
+    {
+        var confirmations = 0;
+        var (viewModel, service) = CreateViewModel(_ =>
+        {
+            confirmations++;
+            return true;
+        });
+
+        await viewModel.DeleteMovementAsync(null);
+
+        confirmations.Should().Be(0);
+        service.LastDeletedId.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task DeleteMovement_ConfirmationDeclined_KeepsTheMovementAndShowsNoError()
+    {
+        var (viewModel, service) = CreateViewModel(confirm: false);
+        var row = MovementRow();
+        service.Movements = [ToDto(row)];
+        await viewModel.RefreshAsync();
+
+        await viewModel.DeleteMovementAsync(row);
+
+        service.LastDeletedId.Should().BeNull();
+        viewModel.Movements.Should().ContainSingle(m => m.Id == row.Id);
+        viewModel.DeleteMovementError.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task DeleteMovement_ServiceFails_KeepsTheMovementListedAndShowsTheErrorMessage()
+    {
+        var (viewModel, service) = CreateViewModel();
+        var row = MovementRow();
+        service.Movements = [ToDto(row)];
+        service.ThrowOnDeleteMovement = new InvalidOperationException("Could not delete the movement");
+        await viewModel.RefreshAsync();
+
+        await viewModel.DeleteMovementAsync(row);
+
+        viewModel.DeleteMovementError.Should().Be("Could not delete the movement");
+        viewModel.Movements.Should().ContainSingle(m => m.Id == row.Id);
+    }
 }

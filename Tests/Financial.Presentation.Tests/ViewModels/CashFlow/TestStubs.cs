@@ -445,9 +445,17 @@ internal sealed class StubReserveService : IReserveService
     public (Guid Id, ReserveMovementUpdateDTO Request)? LastUpdateRequest { get; private set; }
     public Guid? LastDeletedId { get; private set; }
     public Exception? ThrowOnDeleteMovement { get; set; }
+    public Exception? ThrowOnUpdateMovement { get; set; }
+    public Exception? ThrowOnGetBalances { get; set; }
+    public Exception? ThrowOnPostIncomeSplit { get; set; }
 
     public Task<IncomeSplitResultDTO> PostIncomeSplitAsync(IncomeSplitRequestDTO request)
     {
+        if (ThrowOnPostIncomeSplit is not null)
+        {
+            throw ThrowOnPostIncomeSplit;
+        }
+
         LastSplitRequest = request;
         return Task.FromResult(SplitResult);
     }
@@ -473,12 +481,25 @@ internal sealed class StubReserveService : IReserveService
         });
     }
 
-    public IReadOnlyList<ReserveBucketBalanceDTO> GetBucketBalances() => Balances;
+    public IReadOnlyList<ReserveBucketBalanceDTO> GetBucketBalances()
+    {
+        if (ThrowOnGetBalances is not null)
+        {
+            throw ThrowOnGetBalances;
+        }
+
+        return Balances;
+    }
 
     public IReadOnlyList<ReserveMovementDTO> GetMovementHistory() => Movements;
 
     public Task<ReserveMovementDTO> UpdateMovementAsync(Guid id, ReserveMovementUpdateDTO request)
     {
+        if (ThrowOnUpdateMovement is not null)
+        {
+            throw ThrowOnUpdateMovement;
+        }
+
         LastUpdateRequest = (id, request);
         return Task.FromResult(new ReserveMovementDTO
         {
