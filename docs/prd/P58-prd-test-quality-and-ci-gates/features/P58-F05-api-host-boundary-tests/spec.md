@@ -45,6 +45,7 @@
 | D7 | The Drive seam is an `internal` constructor taking a `Func<string[], DriveService>` and an optional delay function. The existing constructor keeps its signature and builds the credential-based factory. The tests build a real `DriveService` over the SDK's `HttpClientFactory` initializer option, so the SDK's own request building and response parsing are exercised | A `DriveService` over a fake handler is the contract boundary (HTTP); faking `DriveService` members is not possible and would test nothing |
 | D8 | `GoogleDriveFileClient` gets an `internal` constructor taking a `GoogleDriveClient`, so the 429/5xx → `TransientStorageException` translation is tested through the real wrapper | The public constructor builds its own client from a credentials path |
 | D9 | `invalid_grant` is modelled as the handler raising the SDK's `TokenResponseException` with error `invalid_grant`, which is what a rejected service-account token refresh raises inside `DriveService`'s HTTP pipeline | A real token endpoint is out of reach; the pinned behaviour is that the error propagates unchanged, is not retried (one request) and is not translated to `TransientStorageException` |
+| D13 | Found in Stage 3: the SDK reports a failed media download on the download's progress result instead of throwing, and `DownloadFileContent` ignored it, so a 404 or 503 returned an empty string to storage. The client now throws the progress exception (or an `InvalidOperationException` naming the path), which also lets the 429 retry and the 503 translation apply to downloads | A silent empty read on the production storage path; the fix is the one-line status check the PRD's "404 → the documented exception" criterion presupposes |
 | D10 | The Production 500 and the mapping host tests replace one Application service registration with a fake that throws, rather than adding a test-only endpoint | Exercises the real middleware order (`UseExceptionHandler`, then the mapping middleware) with no production code added for tests |
 | D11 | The test web root is a per-test temp directory the factory writes (a fixed marker string in `index.html`) and deletes on dispose; because the factory writes the file itself, a missing `index.html` cannot occur and no separate setup assertion is needed | Replaces the PRD's "missing wwwroot fails setup" case with a construction that cannot produce it |
 
@@ -197,22 +198,22 @@ Not applicable.
 
 | Test Function | Description | Assertions |
 |---|---|---|
-| `GetFiles_ReturnsNamesAndIds` | List response with two files | Two DTOs with the expected name and id; page size 100 requested |
+| `GetFiles_ReturnsNamesAndIds` | List response with two files | Two DTOs with the expected name and id; the `fields` projection is requested |
 | `Download_ResolvesByNameThenReadsContent` | List by name, then media GET | Query contains the escaped name and `trashed = false`; returns the body text |
 | `Download_NameWithApostrophe_EscapesTheQuery` | `Bob's file.json` | Query contains `Bob\'s file.json` |
-| `Download_UsesLastPathSegment` | Path `a/b/data.json` | Query names `data.json` only |
-| `Download_ResolvesShortcutToTargetId` | Shortcut mime type with a target id | Media request goes to the target id |
-| `Download_CachesTheResolvedId` | Two downloads of one path | One list request, two media requests |
+| `Download_UsesTheLastPathSegment` (theory, `/` and ``) | Path `a/b/data.json` | Query names `data.json` only |
+| `Download_ShortcutResolvesToItsTarget` | Shortcut mime type with a target id | Media request goes to the target id |
+| `Download_CachesTheResolvedFileId` | Two downloads of one path | One list request, two media requests |
 | `Download_NoMatch_ThrowsFileNotFound` | Empty list | `FileNotFoundException` naming the segment |
 | `Download_MultipleMatches_ThrowsInvalidOperation` | Two matches | `InvalidOperationException` |
-| `Download_BlankPath_ThrowsArgumentException` | `""` and whitespace | `ArgumentException` |
-| `Upload_SendsContentAsJsonToTheResolvedFile` | Resolve then upload | Update request targets the id, media type `application/json`, body equals the content |
-| `Upload_IncompleteStatus_ThrowsInvalidOperation` | Upload response fails non-retryably | `InvalidOperationException` naming the path |
-| `Resolve_429ThenSuccess_RetriesWithBackoff` | First list is 429 | Succeeds; recorded delays start at 2 s; two list requests |
-| `Resolve_429Exhausted_ThrowsRateLimitMessage` | 429 on every attempt | `HttpRequestException` with the rate-limit message; delays recorded, none awaited |
-| `Download_404OnMedia_PropagatesGoogleApiException` | Media GET returns 404 | `GoogleApiException` with 404 through `GoogleDriveFileClient`, not translated |
-| `FileClient_503_ThrowsTransientStorageException` | Media GET returns 503 | `TransientStorageException` wrapping the original; exactly one media request |
-| `CredentialRejected_InvalidGrant_PropagatesUnchangedAndUnretried` | Handler raises `TokenResponseException` with `invalid_grant` | The same exception type reaches the caller, one request made, not a `TransientStorageException` |
+| `DownloadAndUpload_BlankPath_ThrowArgumentException` (theory) | `""` and whitespace, download and upload | `ArgumentException`, no request sent |
+| `Upload_SendsTheContentToTheResolvedFile` | Resolve then upload | Resumable session opened on the resolved id, the `PUT` body equals the content |
+| `Upload_RejectedByDrive_ThrowsInvalidOperationNamingThePath` | The upload `PUT` answers 400 | `InvalidOperationException` naming the path |
+| `Resolve_RateLimitedOnce_RetriesAfterTheFirstBackoff` | First list is 429 | Succeeds; recorded delays start at 2 s; two list requests |
+| `Resolve_RateLimitedEveryTime_ThrowsTheRateLimitMessageWithoutWaiting` | 429 on every attempt | `HttpRequestException` with the rate-limit message; delays recorded, none awaited |
+| `FileClient_NotFoundOnMedia_PropagatesTheGoogleApiException` | Media GET returns 404 | `GoogleApiException` with 404 through `GoogleDriveFileClient`, not translated |
+| `FileClient_ServiceUnavailableOnMedia_ThrowsTransientStorageExceptionWithoutRetrying` | Media GET returns 503 | `TransientStorageException` wrapping the original; exactly one media request |
+| `FileClient_CredentialRejected_PropagatesInvalidGrantUnchangedAndUnretried` | Handler raises `TokenResponseException` with `invalid_grant` | The same exception type reaches the caller, one request made, not a `TransientStorageException` |
 
 **Cross-Feature Integration (PRD Section 9):**
 - F05 host tests use F01's default `ApiTestFactory` and make no outbound HTTP calls → every F05 host test builds the default factory (stub FX provider), guarded by the existing `ApiTestFactoryExchangeRateTests.DefaultFactory_ResolvesTheStubExchangeRateProvider`.

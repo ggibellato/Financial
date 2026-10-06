@@ -79,6 +79,25 @@ and in `YahooFinanceServiceTests.cs` (line 135). `docs/rules/implementation.md` 
 shared doubles in `Tests/Financial.TestUtilities`; the next HTTP-backed provider should move it
 there rather than add a third copy.
 
+## Google SDK clients over a fake handler
+
+`GoogleDriveClient` (`Integrations/GoogleDrive`) is tested through a real `DriveService` whose
+`HttpClientFactory` hands the SDK a fake `HttpMessageHandler`, so the SDK's own request building
+and response parsing run and only the network is faked. The client's `internal` constructor takes
+the service factory and the retry delay; never fake `DriveService` members.
+
+- `Tests/Financial.GoogleIntegrations.Tests/FakeDriveHandler.cs` records each request (method,
+  URI, body) and answers from a `Func<RecordedRequest, HttpResponseMessage>`; `Error(status)`
+  builds the JSON error body the SDK needs to raise a `GoogleApiException` with that status.
+- Pass a recording delay function so the 2 s / 4 s backoff is asserted, never waited.
+- A failed media download does not throw from the SDK; it is reported on the download's progress
+  result. `GoogleDriveClient.DownloadFileContent` checks it and throws, so a 404 or 503 never
+  reaches storage as empty content. A new SDK call that streams content needs the same check.
+- Resumable uploads are two requests: the first answers with a `Location` header, the second
+  (a `PUT` to that location) carries the content and decides the result.
+- `GoogleDriveFileClient` has an `internal` constructor over a `GoogleDriveClient` so the
+  429/5xx to `TransientStorageException` translation is tested through the real wrapper.
+
 ## When to skip
 
 - `WebPageParserMappers` beyond its own branching — it is a DTO mapper; one test per branch.
