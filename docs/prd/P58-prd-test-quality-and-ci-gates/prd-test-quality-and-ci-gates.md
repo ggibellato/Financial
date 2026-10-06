@@ -567,12 +567,12 @@ graph TD
 - [ ] (Full Scope) The reserve-split tolerance rule exists only in the Application service, and both front ends show the server's single message.
 
 ### F05. API Host Boundary Tests
-- [ ] With `wwwroot/index.html` present, `GET /api/v1/financial/does-not-exist` returns 404 and not `text/html`. This fails on the pre-fix code.
-- [ ] With `wwwroot/index.html` present, a client route returns 200 `text/html`.
-- [ ] The exception-mapping theory covers all mapped types, and `TransientStorageException` → 503.
-- [ ] An unmapped exception type in Domain makes the completeness assertion fail and name the type.
-- [ ] A Production-environment 500 body contains no stack trace, exception message or decimal value.
-- [ ] `GoogleDriveClient` upload, download, 404, 429/503 retry and `invalid_grant` are each covered by a test, or the client is explicitly excluded with a documented reason.
+- [x] With `wwwroot/index.html` present, `GET /api/v1/financial/does-not-exist` returns 404 and not `text/html`. This fails on the pre-fix code.
+- [x] With `wwwroot/index.html` present, a client route returns 200 `text/html`.
+- [x] The exception-mapping theory covers all mapped types, and `TransientStorageException` → 503.
+- [x] An unmapped exception type in Domain makes the completeness assertion fail and name the type.
+- [x] A Production-environment 500 body contains no stack trace, exception message or decimal value.
+- [x] `GoogleDriveClient` upload, download, 404, 429/503 retry and `invalid_grant` are each covered by a test, or the client is explicitly excluded with a documented reason.
 
 ### F06. Low-Value Test Removal and Consolidation
 - [x] Total .NET + web declared tests (`[Fact]`/`[Theory]` and `it`/`it.each`) drop by ≥ 400, comparing the counts on `main` before and after (measured 7,509 → 7,086, −423). The original ≥ 550 target needed behaviour-bearing tests removed; F07's rewrites absorb further reductions.
@@ -661,7 +661,7 @@ graph TD
 - [ ] A nightly failure opens or updates one `nightly-failure` issue.
 
 ### Cross-Feature Integration
-- [ ] F05's host tests use F01's default `ApiTestFactory` and make no outbound HTTP calls.
+- [x] F05's host tests use F01's default `ApiTestFactory` and make no outbound HTTP calls.
 - [ ] F08's pinned-clock and culture tests run under F01's pinned `TZ`/`LANG`, and pass when the host timezone differs.
 - [x] F07 rewrites touch only tests that survived F06. No rewritten test is one F06 marked for removal.
 - [ ] F09's baseline is taken from a `main` run that includes F06's consolidation, F07's trait filtering (Live excluded) and F08's determinism. Two consecutive runs on that commit produce identical line and branch percentages.
