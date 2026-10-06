@@ -31,6 +31,8 @@ jobs:
       wpf_e2e: ${{ steps.detect.outputs.wpf_e2e }}
       web: ${{ steps.detect.outputs.web }}
       web_e2e: ${{ steps.detect.outputs.web_e2e }}
+      merge_base: ${{ steps.base.outputs.merge_base }}
+      head: ${{ steps.base.outputs.head }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
@@ -117,7 +119,7 @@ jobs:
     - name: Publish coverage summary
       run: |
         dotnet tool install dotnet-reportgenerator-globaltool --tool-path .tools
-        ./.tools/reportgenerator.exe "-reports:TestResults/**/coverage.cobertura.xml" "-targetdir:CoverageReport" "-reporttypes:MarkdownSummaryGithub;JsonSummary;Html" "-assemblyfilters:+*;-Financial.Presentation.App"
+        ./.tools/reportgenerator.exe "-reports:TestResults/**/coverage.cobertura.xml" "-targetdir:CoverageReport" "-reporttypes:MarkdownSummaryGithub;JsonSummary;Cobertura;Html" "-assemblyfilters:+*;-Financial.Presentation.App"
         Get-Content CoverageReport/SummaryGithub.md | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
 
     # Graded, blocking signal: green (100%) / yellow (95-99.99%) / amber (90-94.99%) /
@@ -175,7 +177,7 @@ jobs:
     - name: Publish coverage summary
       run: |
         dotnet tool install dotnet-reportgenerator-globaltool --tool-path .tools
-        ./.tools/reportgenerator.exe "-reports:TestResults/**/coverage.cobertura.xml" "-targetdir:CoverageReport" "-reporttypes:MarkdownSummaryGithub;JsonSummary;Html" "-assemblyfilters:+Financial.Presentation.App"
+        ./.tools/reportgenerator.exe "-reports:TestResults/**/coverage.cobertura.xml" "-targetdir:CoverageReport" "-reporttypes:MarkdownSummaryGithub;JsonSummary;Cobertura;Html" "-assemblyfilters:+Financial.Presentation.App"
         Get-Content CoverageReport/SummaryGithub.md | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
 
     # Graded, blocking signal: green (100%) / yellow (95-99.99%) / amber (90-94.99%) /
@@ -273,7 +275,7 @@ jobs:
       working-directory: Financial.Web
       run: |
         dotnet tool install dotnet-reportgenerator-globaltool --tool-path ../.tools
-        ../.tools/reportgenerator "-reports:coverage/lcov.info" "-targetdir:CoverageReport" "-reporttypes:MarkdownSummaryGithub;JsonSummary;Html"
+        ../.tools/reportgenerator "-reports:coverage/lcov.info" "-targetdir:CoverageReport" "-reporttypes:MarkdownSummaryGithub;JsonSummary;Cobertura;Html"
         cat CoverageReport/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY"
 
     # Graded, blocking signal: green (100%) / yellow (95-99.99%) / amber (90-94.99%) /
@@ -308,47 +310,70 @@ jobs:
     if: always() && github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 0
+
     - name: Build combined coverage comment
       env:
+        MERGE_BASE: ${{ needs.changes.outputs.merge_base }}
+        HEAD_SHA: ${{ needs.changes.outputs.head }}
         BACKEND_RESULT: ${{ needs.backend.result }}
         BACKEND_COVERAGE: ${{ needs.backend.outputs.coverage }}
         BACKEND_EMOJI: ${{ needs.backend.outputs.emoji }}
         BACKEND_BRANCH: ${{ needs.backend.outputs.branch }}
         BACKEND_BRANCH_EMOJI: ${{ needs.backend.outputs.branch-emoji }}
+        BACKEND_LINE_DELTA: ${{ needs.backend.outputs.line-delta }}
+        BACKEND_BRANCH_DELTA: ${{ needs.backend.outputs.branch-delta }}
         WPF_RESULT: ${{ needs.wpf.result }}
         WPF_COVERAGE: ${{ needs.wpf.outputs.coverage }}
         WPF_EMOJI: ${{ needs.wpf.outputs.emoji }}
         WPF_BRANCH: ${{ needs.wpf.outputs.branch }}
         WPF_BRANCH_EMOJI: ${{ needs.wpf.outputs.branch-emoji }}
+        WPF_LINE_DELTA: ${{ needs.wpf.outputs.line-delta }}
+        WPF_BRANCH_DELTA: ${{ needs.wpf.outputs.branch-delta }}
         WEB_RESULT: ${{ needs.web.result }}
         WEB_COVERAGE: ${{ needs.web.outputs.coverage }}
         WEB_EMOJI: ${{ needs.web.outputs.emoji }}
         WEB_BRANCH: ${{ needs.web.outputs.branch }}
         WEB_BRANCH_EMOJI: ${{ needs.web.outputs.branch-emoji }}
+        WEB_LINE_DELTA: ${{ needs.web.outputs.line-delta }}
+        WEB_BRANCH_DELTA: ${{ needs.web.outputs.branch-delta }}
         RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
       run: |
-        # The emojis are already computed by each job's own coverage-gate step; this just lays out
-        # the row, plus a fallback for a job that didn't run or produced nothing.
+        # The emojis and deltas are already computed by each job's own coverage-gate step; this just
+        # lays out the row, plus a fallback for a job that didn't run or produced nothing. A failed
+        # job still reports its figures (the gate writes them before it fails), so the verdict comes
+        # from the job result.
         row() {
-          local name="$1" result="$2" coverage="$3" emoji="$4" branch="$5" branch_emoji="$6"
+          local name="$1" result="$2" coverage="$3" emoji="$4" branch="$5" branch_emoji="$6" line_delta="$7" branch_delta="$8"
           if [ "$result" = "skipped" ]; then
-            echo "| $name | ⚪ not run | ⚪ not run |"
-          elif [ "$result" != "success" ] || [ -z "$coverage" ]; then
-            echo "| $name | ⚠️ unavailable | ⚠️ unavailable |"
-          elif [ -z "$branch" ]; then
-            echo "| $name | $emoji ${coverage}% | ⚪ n/a |"
-          else
-            echo "| $name | $emoji ${coverage}% | $branch_emoji ${branch}% |"
+            echo "| $name | ⚪ not run | ⚪ not run | ⚪ not run | ⚪ not run |"
+            return
           fi
+          if [ -z "$coverage" ]; then
+            echo "| $name | ⚠️ unavailable | ⚠️ unavailable | ⚠️ unavailable | ⚠️ unavailable |"
+            return
+          fi
+          local verdict="✔ pass"
+          [ "$result" = "success" ] || verdict="✖ fail"
+          local branch_cell="⚪ n/a"
+          [ -z "$branch" ] || branch_cell="$branch_emoji ${branch}%"
+          echo "| $name | $emoji ${coverage}% | $branch_cell | ${line_delta:-n/a} / ${branch_delta:-n/a} | $verdict |"
         }
         {
           echo "### Coverage summary"
           echo
-          echo "| Project | Line coverage | Branch coverage |"
-          echo "|:---|---:|---:|"
-          row "Backend (.NET)" "$BACKEND_RESULT" "$BACKEND_COVERAGE" "$BACKEND_EMOJI" "$BACKEND_BRANCH" "$BACKEND_BRANCH_EMOJI"
-          row "WPF (Financial.App)" "$WPF_RESULT" "$WPF_COVERAGE" "$WPF_EMOJI" "$WPF_BRANCH" "$WPF_BRANCH_EMOJI"
-          row "Web (Financial.Web)" "$WEB_RESULT" "$WEB_COVERAGE" "$WEB_EMOJI" "$WEB_BRANCH" "$WEB_BRANCH_EMOJI"
+          echo "| Project | Line coverage | Branch coverage | Δ vs baseline (line / branch) | Verdict |"
+          echo "|:---|---:|---:|---:|:---|"
+          row "Backend (.NET)" "$BACKEND_RESULT" "$BACKEND_COVERAGE" "$BACKEND_EMOJI" "$BACKEND_BRANCH" "$BACKEND_BRANCH_EMOJI" "$BACKEND_LINE_DELTA" "$BACKEND_BRANCH_DELTA"
+          row "WPF (Financial.App)" "$WPF_RESULT" "$WPF_COVERAGE" "$WPF_EMOJI" "$WPF_BRANCH" "$WPF_BRANCH_EMOJI" "$WPF_LINE_DELTA" "$WPF_BRANCH_DELTA"
+          row "Web (Financial.Web)" "$WEB_RESULT" "$WEB_COVERAGE" "$WEB_EMOJI" "$WEB_BRANCH" "$WEB_BRANCH_EMOJI" "$WEB_LINE_DELTA" "$WEB_BRANCH_DELTA"
+          if [ -n "$MERGE_BASE" ] && [ -n "$HEAD_SHA" ] && ! git diff --quiet "$MERGE_BASE" "$HEAD_SHA" -- coverage-baseline.json; then
+            echo
+            echo "⚠ \`coverage-baseline.json\` is changed in this PR, so the deltas above are measured against the PR's own baseline. Check that the new figures are justified."
+          fi
           echo
           echo "[Full coverage reports (artifacts)]($RUN_URL)"
         } > coverage-comment.md
