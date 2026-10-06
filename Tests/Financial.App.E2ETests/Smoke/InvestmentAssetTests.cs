@@ -20,7 +20,7 @@ public class InvestmentAssetTests
             window.ExpandTreeItem("Default");
             window.FindByNameStartingWith(ControlType.TreeItem, "BCIA11").Patterns.SelectionItem.Pattern.Select();
 
-            window.FindById("asset-summary-name").Name.Should().Be("BCIA11");
+            window.FindByIdNamed("asset-summary-name", "BCIA11").Name.Should().Be("BCIA11");
         });
     }
 }

@@ -11,6 +11,14 @@ internal static class UiaExtensions
     public static AutomationElement FindById(this AutomationElement root, string automationId) =>
         Find(root, () => root.FindFirstDescendant(root.ConditionFactory.ByAutomationId(automationId)), $"AutomationId '{automationId}'");
 
+    public static AutomationElement FindByIdNamed(this AutomationElement root, string automationId, string name) =>
+        Find(
+            root,
+            () => root.FindFirstDescendant(root.ConditionFactory.ByAutomationId(automationId)) is { } element && element.Name == name
+                ? element
+                : null,
+            $"AutomationId '{automationId}' named '{name}'");
+
     public static AutomationElement FindByName(this AutomationElement root, string name) =>
         Find(root, () => root.FindFirstDescendant(root.ConditionFactory.ByName(name)), $"element named '{name}'");
 
