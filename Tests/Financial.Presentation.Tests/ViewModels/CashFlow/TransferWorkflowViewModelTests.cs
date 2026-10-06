@@ -269,4 +269,115 @@ public class TransferWorkflowViewModelTests
         viewModel.IsEditingTransfer.Should().BeTrue();
         viewModel.TransferFormAmount.Should().Be("33");
     }
+
+    private static async Task SaveTransferBetween(TransferWorkflowViewModel viewModel, Guid source, Guid destination)
+    {
+        viewModel.ShowMoveMoneyFormCommand.Execute(source);
+        viewModel.TransferFormDate = TestClock.LocalToday;
+        viewModel.TransferFormDestinationBank = destination;
+        viewModel.TransferFormAmount = "75";
+        await viewModel.SaveTransferAsync();
+    }
+
+    [Fact]
+    public void IsSameBankTransfer_IsTrueOnlyWhenBothBanksAreSetAndEqual()
+    {
+        var (viewModel, _, _) = CreateViewModel();
+        viewModel.ShowMoveMoneyFormCommand.Execute(BarclaysId);
+
+        viewModel.IsSameBankTransfer.Should().BeFalse("only the source is set");
+        viewModel.SameBankTransferError.Should().BeEmpty();
+
+        viewModel.TransferFormDestinationBank = BarclaysId;
+        viewModel.IsSameBankTransfer.Should().BeTrue();
+        viewModel.SameBankTransferError.Should().Be("Source and destination must be different banks.");
+        viewModel.SaveTransferCommand.CanExecute(null).Should().BeFalse();
+
+        viewModel.TransferFormDestinationBank = ChaseId;
+        viewModel.IsSameBankTransfer.Should().BeFalse();
+        viewModel.SaveTransferCommand.CanExecute(null).Should().BeTrue();
+
+        viewModel.TransferFormSourceBank = null;
+        viewModel.IsSameBankTransfer.Should().BeFalse("only the destination is set");
+    }
+
+    [Fact]
+    public async Task TransferGeneralSaveError_BackendRejects_ShowsTheMessageAsAGeneralError()
+    {
+        var (viewModel, transfers, banks) = CreateViewModel();
+        transfers.ThrowOnAdd = "Storage unavailable";
+        viewModel.ShowMoveMoneyFormCommand.Execute(banks[0].Id);
+        viewModel.TransferFormDate = TestClock.LocalToday;
+        viewModel.TransferFormDestinationBank = banks[1].Id;
+        viewModel.TransferFormAmount = "75";
+
+        await viewModel.SaveTransferAsync();
+
+        viewModel.TransferGeneralSaveError.Should().Be("Storage unavailable");
+    }
+
+    [Fact]
+    public async Task TransferGeneralSaveError_FieldValidationFails_IsNotShownAsAGeneralError()
+    {
+        var (viewModel, _, banks) = CreateViewModel();
+        viewModel.ShowMoveMoneyFormCommand.Execute(banks[0].Id);
+        viewModel.TransferFormDate = null;
+        viewModel.TransferFormDestinationBank = banks[1].Id;
+        viewModel.TransferFormAmount = "75";
+
+        await viewModel.SaveTransferAsync();
+
+        viewModel.DateFieldError.Should().NotBeNull();
+        viewModel.TransferGeneralSaveError.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ShowCreateTransferForm_LastUsedSourceBankWasRemoved_FallsBackToTheFirstBankAndClearsTheDestination()
+    {
+        var (viewModel, _, banks) = CreateViewModel();
+        await SaveTransferBetween(viewModel, ChaseId, BarclaysId);
+        banks.Remove(banks.Single(b => b.Id == ChaseId));
+
+        viewModel.ShowMoveMoneyFormCommand.Execute(null);
+
+        viewModel.TransferFormSourceBank.Should().Be(BarclaysId);
+        viewModel.TransferFormDestinationBank.Should().BeNull("the last destination now equals the source");
+    }
+
+    [Fact]
+    public async Task ShowCreateTransferForm_LastUsedDestinationBankWasRemoved_LeavesTheDestinationEmpty()
+    {
+        var (viewModel, _, banks) = CreateViewModel();
+        await SaveTransferBetween(viewModel, BarclaysId, ChaseId);
+        banks.Remove(banks.Single(b => b.Id == ChaseId));
+
+        viewModel.ShowMoveMoneyFormCommand.Execute(null);
+
+        viewModel.TransferFormSourceBank.Should().Be(BarclaysId);
+        viewModel.TransferFormDestinationBank.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ShowCreateTransferForm_NoBanksAvailable_LeavesBothBanksEmpty()
+    {
+        var (viewModel, _, banks) = CreateViewModel();
+        await SaveTransferBetween(viewModel, BarclaysId, ChaseId);
+        banks.Clear();
+
+        viewModel.ShowMoveMoneyFormCommand.Execute(null);
+
+        viewModel.TransferFormSourceBank.Should().BeNull();
+        viewModel.TransferFormDestinationBank.Should().BeNull();
+    }
+
+    [Fact]
+    public void EditTransferCommand_NoTransferSupplied_LeavesTheFormClosed()
+    {
+        var (viewModel, _, _) = CreateViewModel();
+
+        viewModel.EditTransferCommand.Execute(null);
+
+        viewModel.IsTransferFormOpen.Should().BeFalse();
+        viewModel.IsEditingTransfer.Should().BeFalse();
+    }
 }
