@@ -41,7 +41,7 @@ project (`Services/`, `Persistence/`, `Repositories/`, `DependencyInjection/`, `
 
 ### Layer by location (a guide only - the `Category` trait is the authority)
 
-Every test class declares `[Trait("Category", "Unit"|"Integration"|"Live")]`; the folder list below says which one is normal, the trait is what CI and `--filter` use. Real-site checks are `Live` (never `Skip`).
+The `Category` trait on each class is what CI and `--filter` use (`docs/rules/implementation.md` §Tests #9); the list below says which level is normal where.
 
 - Unit: `*.Domain.Tests`, `*.Application.Tests`, `Presentation.Tests/{ViewModels,Converters,Behaviors,Helpers,Input,Navigation}`, `WebPageParser.Tests`, parsing/resolver folders of the import tools.
 - Integration: `Api.Tests` (except `Controllers/`), `*.Infrastructure.Tests/{Repositories,Persistence,DependencyInjection}`, `Shared.Infrastructure.Tests`, `Architecture.Tests`, `Observability.Tests`, `Presentation.Tests/{DependencyInjection,Views,Acceptance}`, import-tool `SheetImporters/` and `Migrations/`.

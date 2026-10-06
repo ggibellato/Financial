@@ -11,14 +11,10 @@ from the happy path passing. Track it per artifact row in `../SKILL.md` §3.
 **Guard clauses and invalid input (C#)** — one test per `throw`, asserting the type and the
 parameter name where there is one:
 
-```csharp
-[Fact]
-public void Constructor_WithNullRepository_Throws()
-{
-    Action act = () => new ExpenseService(null!, _tracer, Logger);
-    act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
-}
+Constructor null guards are not written per class: each project's `ConstructorGuardTests` covers them
+(`docs/rules/implementation.md` §Tests #7).
 
+```csharp
 [Fact]
 public async Task AddExpenseAsync_WithZeroValue_RecordsFailedSpanWithException()
 {

@@ -83,7 +83,7 @@ there rather than add a third copy.
 
 - `WebPageParserMappers` beyond its own branching — it is a DTO mapper; one test per branch.
 - Retrying the same JSON fixture with cosmetic variations (variant repetition).
-- Anything requiring a live network call — those belong in the `Skip = "Manual"` verification
+- Anything requiring a live network call — those belong in the `Category=Live` verification
   tests, never in the default run.
 
 ## Examples from project

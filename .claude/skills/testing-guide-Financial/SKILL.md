@@ -113,7 +113,7 @@ NOT worth testing here:
 - Controllers' business behaviour in isolation — only constructor/`[FromBody]` null guards
   (`ControllerGuardClauseTests`); everything else goes through the host.
 - Raw Google SDK clients (accepted gap, `artifacts/google-sdk-wrappers.md`); live CSS selectors
-  in `GoogleFinance.cs` / `StatusInvest.cs` (manual `[Fact(Skip = …)]` runs).
+  in `GoogleFinance.cs` / `StatusInvest.cs` (`Category=Live` verification runs).
 - DTO shape by hand (the OpenAPI snapshot pins it); `Tools/ImportGoogleSpreadSheets` (one-off
   importer, out of scope by decision); framework behaviour (WPF binding engine, react-router,
   ASP.NET model binding, `System.Text.Json`).
@@ -232,11 +232,8 @@ explicitly-tagged subset of Integration tests (see `references/feature-traceabil
 — same setup and mock boundary as any other Integration test, distinguished only by
 what it asserts and how it's tagged.
 
-The level is declared, not inferred from the folder: every .NET test class carries
-`[Trait("Category", "Unit"|"Integration"|"Live")]` (`E2E`/`Smoke` for
-`Financial.App.E2ETests`), enforced by `CategoryTraitCoverageTests`. `Live` tests hit real
-external sites, never run on a PR, and replace the old `Skip = "Manual"` pattern; run them
-with `dotnet test --filter Category=Live`.
+The level is the `Category` trait, not the folder (`docs/rules/implementation.md` §Tests #9).
+Live checks run with `dotnet test --filter Category=Live`.
 
 ## 7. References
 
@@ -289,8 +286,8 @@ to spot drift — layers losing coverage, or AC-tracing tests not keeping pace w
 | Investment.Application.Tests | 259 in 17 files | Unit: 259 | No |
 | Investment.Infrastructure.Tests | 184 in 22 files | Unit (fetchers/adapters): ~120, Integration (repo, DI, Yahoo, example): ~64 | No |
 | Shared.Infrastructure.Tests | 48 in 7 files | Integration: 48 | No |
-| Shared.Abstractions.Tests | `UsdBasedExchangeRateProvider`, `InMemoryCachedExchangeRateProvider`, `CompensatingSaveHelper`, `RetryPolicy`, constructor guards | Unit | No |
-| GoogleIntegrations + Observability + WebPageParser Tests | 17 + 23 + 25 in 14 files | Unit: ~50, Integration (DI/config): ~15, manual-skipped live: 2 files | No |
+| Shared.Abstractions.Tests | 31 in 5 files | Unit: 31 | No |
+| GoogleIntegrations + Observability + WebPageParser Tests | 17 + 23 + 25 in 14 files | Unit: ~50, Integration (DI/config): ~15, Live (real sites): 4 files | No |
 | CashFlowSpreadsheetImport + InvestmentSpreadsheetImport Tests | 184 + 48 in 32 files | Unit: ~160, Integration (temp JSON/backup): ~72 | No |
 | Presentation.Tests (WPF) | 1102 in 108 files | Unit: ~1098, Integration (DI): 2 classes, contract (XAML binding): 1 class | No |
 | Financial.Web (vitest) | 1468 in 119 files | Unit (hooks/components/utils/client): ~1100, Integration (pages, App, freshness): ~370 | No |
