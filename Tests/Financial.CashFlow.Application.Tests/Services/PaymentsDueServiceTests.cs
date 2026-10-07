@@ -103,6 +103,18 @@ public class PaymentsDueServiceTests
     }
 
     [Fact]
+    public void GetPaymentsDue_DueDayEarlierInTheMonthOnThe29th_IsNotIncludedBecauseDueDatesAreResolvedInTheCurrentMonth()
+    {
+        var twentyNinth = new DateTimeOffset(2026, 6, 29, 0, 0, 0, TimeSpan.Zero);
+        var service = CreateService(timeProvider: new FakeTimeProvider(twentyNinth));
+        _repository.AddRecurringBill(CreateBill(2, "Early Bill"));
+        _repository.AddRecurringBill(CreateBill(30, "Month End Bill"));
+
+        var result = service.GetPaymentsDue();
+
+        result.Should().ContainSingle().Which.Name.Should().Be("Month End Bill");
+    }
+    [Fact]
     public void GetPaymentsDue_CreditCardWithNextInvoiceDueDateInWindow_IsIncluded()
     {
         _repository.AddCreditCard(CreateCard("Nubank", PinnedToday.AddDays(3)));

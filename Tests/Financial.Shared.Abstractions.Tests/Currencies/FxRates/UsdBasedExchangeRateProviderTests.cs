@@ -104,6 +104,20 @@ public class UsdBasedExchangeRateProviderTests
     }
 
     [Fact]
+    public async Task GetHistoricalRateAsync_FutureDate_ReturnsLiveRateAndNeverPersists()
+    {
+        var store = new FakeFxRateStore();
+        var fetcher = new FakeUsdRateFetcher { NextResult = new UsdRateFetchResult(5.0m, 0.8m) };
+        var provider = CreateProvider(store, fetcher);
+        var tomorrow = TestClock.Today.AddDays(1);
+
+        var rate = await provider.GetHistoricalRateAsync(tomorrow, Currency.USD, Currency.BRL);
+
+        rate.Should().Be(5.0m);
+        store.SetRateCallCount.Should().Be(0);
+        store.TryGetRate(tomorrow).Should().BeNull();
+    }
+    [Fact]
     public async Task GetHistoricalRateAsync_AllSixPairsForSameDate_AreMathematicallyConsistent()
     {
         var store = new FakeFxRateStore();

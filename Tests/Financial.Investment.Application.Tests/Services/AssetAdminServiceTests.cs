@@ -345,5 +345,80 @@ public class AssetAdminServiceTests
         }
     }
 
+    [Fact]
+    public async Task CreateAssetAsync_ActiveBrokerWithoutThePortfolio_ThrowsNotFoundAndWritesNothing()
+    {
+        _repository.Investments = Investments.Create();
+        _repository.Investments.AddActiveBroker(Broker.Create("XPI", "BRL"));
+
+        var act = async () => await CreateService().CreateAssetAsync(new AssetAdminCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Missing",
+            Name = "AAAA"
+        });
+
+        await act.Should().ThrowAsync<KeyNotFoundException>().WithMessage("*Portfolio*Missing*");
+        _repository.WriteCallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task UpdateAssetAsync_HistoricScopeButTheBrokerIsOnlyActive_UpdatesTheActiveAsset()
+    {
+        _repository.Investments = Investments.Create();
+        var broker = Broker.Create("XPI", "BRL");
+        broker.CreatePortfolio("Default").RegisterAsset(Asset.Create("AAAA", "ISIN123", "NYSE", "AAA"));
+        _repository.Investments.AddActiveBroker(broker);
+
+        var result = await CreateService().UpdateAssetAsync("XPI", "Default", "AAAA", new AssetAdminUpdateDTO { Name = "AAAB" }, InvestmentScope.Historic);
+
+        using (new AssertionScope())
+        {
+            result.Name.Should().Be("AAAB");
+            result.BrokerStatus.Should().Be("Active");
+        }
+    }
+
+    [Fact]
+    public async Task UpdateAssetAsync_ActiveScopeButTheBrokerIsOnlyHistoric_UpdatesTheHistoricAsset()
+    {
+        _repository.Investments = Investments.Create();
+        var broker = Broker.Create("XPI", "BRL");
+        broker.CreatePortfolio("Default").RegisterAsset(Asset.Create("AAAA", "ISIN123", "NYSE", "AAA"));
+        _repository.Investments.AddHistoricBroker(broker);
+
+        var result = await CreateService().UpdateAssetAsync("XPI", "Default", "AAAA", new AssetAdminUpdateDTO { Name = "AAAB" }, InvestmentScope.Active);
+
+        using (new AssertionScope())
+        {
+            result.Name.Should().Be("AAAB");
+            result.BrokerStatus.Should().Be("Historic");
+        }
+    }
+
+    [Theory]
+    [InlineData(InvestmentScope.Active)]
+    [InlineData(InvestmentScope.Historic)]
+    public async Task UpdateAssetAsync_UnknownBroker_ThrowsNotFoundAndWritesNothing(InvestmentScope scope)
+    {
+        _repository.Investments = Investments.Create();
+
+        var act = async () => await CreateService().UpdateAssetAsync("Nobody", "Default", "AAAA", new AssetAdminUpdateDTO { Name = "AAAA" }, scope);
+
+        await act.Should().ThrowAsync<KeyNotFoundException>().WithMessage("*Broker*Nobody*");
+        _repository.WriteCallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task UpdateAssetAsync_BrokerWithoutThePortfolio_ThrowsNotFoundAndWritesNothing()
+    {
+        _repository.Investments = Investments.Create();
+        _repository.Investments.AddActiveBroker(Broker.Create("XPI", "BRL"));
+
+        var act = async () => await CreateService().UpdateAssetAsync("XPI", "Missing", "AAAA", new AssetAdminUpdateDTO { Name = "AAAA" });
+
+        await act.Should().ThrowAsync<KeyNotFoundException>().WithMessage("*Portfolio*Missing*");
+        _repository.WriteCallCount.Should().Be(0);
+    }
     private AssetAdminService CreateService() => new(_repository, _tracer, _logger);
 }

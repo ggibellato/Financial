@@ -268,4 +268,58 @@ public class CorporateActionReplayTests
         quantity.Should().Be(5m);
         averagePrice.Should().Be(30m);
     }
+
+    private static CorporateAction MergerSource() =>
+        CorporateAction.CreateMergerSource(new DateTime(2026, 4, 1), 0.5m, null, null, Guid.NewGuid(), "XCORP", 40m, 1000m);
+
+    private static CorporateAction SpinOffParent() =>
+        CorporateAction.CreateSpinOffParent(new DateTime(2026, 4, 1), 15m, null, Guid.NewGuid(), "SPINCO", 5m, 150m);
+
+    [Fact]
+    public void RequireRatioFactor_ActionWithoutARatioFactor_ThrowsNamingTheActionAndItsType()
+    {
+        var merger = MergerSource();
+
+        var act = () => CorporateActionReplay.RequireRatioFactor(merger);
+
+        act.Should().Throw<InvalidOperationException>().WithMessage($"*{merger.Id}*Merger*no ratio factor*");
+    }
+
+    [Fact]
+    public void RescalePosition_ActionWithoutARatioFactor_Throws()
+    {
+        var act = () => CorporateActionReplay.RescalePosition(10m, 5m, MergerSource());
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*no ratio factor*");
+    }
+
+    [Fact]
+    public void RequireRetainedFraction_ActionWithoutAnAllocationPercentage_ThrowsNamingTheActionAndItsType()
+    {
+        var merger = MergerSource();
+
+        var act = () => CorporateActionReplay.RequireRetainedFraction(merger);
+
+        act.Should().Throw<InvalidOperationException>().WithMessage($"*{merger.Id}*Merger*no allocation percentage*");
+    }
+
+    [Theory]
+    [InlineData("MergerSourceAsParent")]
+    [InlineData("SpinOffParentAsSource")]
+    [InlineData("MergerSourceWithoutARole")]
+    public void ApplyToPosition_UnsupportedTypeAndRoleCombination_ThrowsNamingTheActionParameter(string scenario)
+    {
+        var action = scenario == "SpinOffParentAsSource" ? SpinOffParent() : MergerSource();
+        var role = scenario switch
+        {
+            "MergerSourceAsParent" => CorporateAction.CorporateActionRole.Parent,
+            "SpinOffParentAsSource" => CorporateAction.CorporateActionRole.Source,
+            _ => (CorporateAction.CorporateActionRole?)null,
+        };
+        typeof(CorporateAction).GetProperty(nameof(CorporateAction.Role))!.SetValue(action, role);
+
+        var act = () => CorporateActionReplay.ApplyToPosition(10m, 5m, action);
+
+        act.Should().Throw<ArgumentOutOfRangeException>().WithParameterName("action");
+    }
 }
