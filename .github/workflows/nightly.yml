@@ -54,3 +54,47 @@ jobs:
         name: stryker-dotnet-${{ matrix.name }}
         path: TestResults/stryker/${{ matrix.name }}/reports
         retention-days: 14
+
+  stryker-js:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: Financial.Web
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Setup Node
+      uses: actions/setup-node@v6
+      with:
+        node-version: 24.13.0
+        cache: npm
+        cache-dependency-path: Financial.Web/package-lock.json
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Restore incremental cache
+      uses: actions/cache@v4
+      with:
+        path: Financial.Web/reports/stryker-incremental.json
+        key: stryker-js-${{ github.run_id }}
+        restore-keys: stryker-js-
+
+    - name: Run StrykerJS
+      run: npm run test:mutation
+
+    - name: Publish mutation score
+      if: always()
+      shell: pwsh
+      working-directory: .
+      run: ./.github/scripts/mutation-score.ps1 -Report Financial.Web/reports/mutation/mutation-report.json -Name Web.Logic
+
+    - name: Upload mutation report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: stryker-js
+        path: Financial.Web/reports/mutation
+        retention-days: 14

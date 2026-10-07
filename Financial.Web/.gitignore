@@ -27,3 +27,7 @@ test-results
 *.njsproj
 *.sln
 *.sw?
+
+# mutation testing output
+reports
+.stryker-tmp

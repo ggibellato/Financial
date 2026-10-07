@@ -17,5 +17,5 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["vite.config.ts", "playwright.config.ts", "tests/e2e"]
+  "include": ["vite.config.ts", "vitest.mutation.config.ts", "playwright.config.ts", "tests/e2e"]
 }
