@@ -61,10 +61,9 @@ runs:
       SMOKE_APP_URL: http://localhost:8080
       E2E_COMMAND: ${{ inputs.command }}
     run: |
-      cd publish
-      dotnet Financial.Api.dll &
+      (cd publish && exec dotnet Financial.Api.dll) &
       API_PID=$!
-      cd ..
+      trap 'kill $API_PID' EXIT
       ready=0
       for i in $(seq 1 30); do
         if curl -sf http://localhost:8080/api/v1/financial/health > /dev/null; then
@@ -75,10 +74,7 @@ runs:
       done
       if [ "$ready" -ne 1 ]; then
         echo "API did not become healthy in time"
-        kill $API_PID
         exit 1
       fi
-      E2E_EXIT=0
-      (cd Financial.Web && bash -c "$E2E_COMMAND") || E2E_EXIT=$?
-      kill $API_PID
-      exit $E2E_EXIT
+      cd Financial.Web
+      bash -c "$E2E_COMMAND"

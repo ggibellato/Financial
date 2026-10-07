@@ -160,12 +160,10 @@ jobs:
         dotnet-version: 10.0.x
 
     - name: Run live verifications
-      id: live
       continue-on-error: true
       run: dotnet test Financial.slnx --configuration Release --filter "Category=Live" --logger "trx;LogFilePrefix=live" --results-directory TestResults/live
 
     - name: Publish live results
-      if: always()
       shell: pwsh
       run: |
         ./.github/scripts/test-results-summary.ps1 -Trx 'TestResults/live/*.trx' -Name Live
