@@ -17,13 +17,23 @@ import TransactionsTab from '../TransactionsTab'
 vi.mock('recharts', () => ({
   BarChart: ({ children }: { children: ReactNode }) => <div data-testid="bar-chart">{children}</div>,
   LineChart: ({ children }: { children: ReactNode }) => <div data-testid="line-chart">{children}</div>,
-  Bar: () => null,
+  Bar: ({ children }: { children?: ReactNode }) => <div data-testid="bar">{children}</div>,
   Line: () => null,
-  LabelList: () => null,
+  LabelList: ({ formatter }: { formatter: (value: unknown) => string }) => (
+    <div
+      data-testid="label"
+      data-positive={formatter(7)}
+      data-negative={formatter(-7)}
+      data-zero={formatter(0)}
+      data-text={formatter('n/a')}
+    />
+  ),
   XAxis: () => null,
   YAxis: () => null,
   CartesianGrid: () => null,
-  Tooltip: () => null,
+  Tooltip: ({ formatter }: { formatter: (value: unknown) => unknown }) => (
+    <div data-testid="tooltip" data-number={String(formatter(12.5))} data-text={String(formatter('n/a'))} />
+  ),
   ResponsiveContainer: ({ children }: { children: ReactNode }) => (
     <div data-testid="responsive-container">{children}</div>
   ),
@@ -325,6 +335,39 @@ describe('TransactionsTab', () => {
   ])('renders_%#_transaction_type_%s_with_its_class', async (transaction, label, typeClass) => {
     await renderAssetTab([transaction])
     expect(screen.getByText(label)).toHaveClass(typeClass)
+  })
+
+  it.each([
+    ['Redemption', 'Redemption', 'transactions-tab__type--sell'],
+    ['ReturnOfCapital', 'Return of Capital', 'transactions-tab__type--sell'],
+    ['Fee', 'Fee', 'transactions-tab__type--buy'],
+    ['TransferIn', 'Transfer In', 'transactions-tab__type--neutral'],
+    ['Bonus', 'Bonus', 'transactions-tab__type--neutral'],
+  ])('renders_a_%s_transaction_as_%s_with_the_%s_style', async (type, label, typeClass) => {
+    await renderAssetTab([{ ...TRANSACTION_BUY, type }])
+    expect(screen.getByText(label)).toHaveClass(typeClass)
+  })
+
+  it('chart_tooltip_formats_numbers_to_two_decimals_and_leaves_other_values_untouched', async () => {
+    await renderAssetTab()
+    const tooltip = screen.getByTestId('tooltip')
+    expect(tooltip).toHaveAttribute('data-number', '12.50')
+    expect(tooltip).toHaveAttribute('data-text', 'n/a')
+  })
+
+  it('bar_labels_show_non_zero_amounts_and_hide_zero_and_non_numeric_values', async () => {
+    await renderAssetTab()
+    const label = screen.getByTestId('label')
+    expect(label).toHaveAttribute('data-positive', '7.00')
+    expect(label).toHaveAttribute('data-negative', '-7.00')
+    expect(label).toHaveAttribute('data-zero', '')
+    expect(label).toHaveAttribute('data-text', '')
+  })
+
+  it('line_chart_tooltip_formats_numbers_to_two_decimals', async () => {
+    await renderAssetTab()
+    fireEvent.click(screen.getByRole('tab', { name: 'Line' }))
+    expect(screen.getByTestId('tooltip')).toHaveAttribute('data-number', '12.50')
   })
 
   it('renders_quantity_with_8_decimal_places', async () => {

@@ -29,21 +29,52 @@ vi.mock('recharts', () => ({
   BarChart: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="bar-chart">{children}</div>
   ),
-  Bar: () => null,
+  Bar: ({ name, dataKey, children }: { name?: string; dataKey: BucketReader; children?: React.ReactNode }) => (
+    <div
+      data-testid="bar"
+      data-name={name}
+      data-own={String(dataKey(bucketWith(name)))}
+      data-other={String(dataKey(bucketWith(undefined)))}
+    >
+      {children}
+    </div>
+  ),
   LineChart: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="line-chart">{children}</div>
   ),
-  Line: ({ name }: { name?: string }) => <div data-testid="line" data-name={name} />,
+  Line: ({ name, dataKey }: { name?: string; dataKey: BucketReader | string }) => (
+    <div
+      data-testid="line"
+      data-name={name}
+      data-own={typeof dataKey === 'function' ? String(dataKey(bucketWith(name))) : dataKey}
+    />
+  ),
   XAxis: () => null,
   YAxis: () => null,
   CartesianGrid: () => null,
-  Tooltip: () => null,
+  Tooltip: ({ formatter }: { formatter: (value: unknown) => unknown }) => (
+    <div data-testid="tooltip" data-number={String(formatter(12.5))} data-text={String(formatter('n/a'))} />
+  ),
   Legend: () => null,
   ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="responsive-container">{children}</div>
   ),
-  LabelList: () => null,
+  LabelList: ({ formatter, dataKey }: { formatter: (value: unknown) => string; dataKey: BucketReader }) => (
+    <div
+      data-testid="label"
+      data-positive={formatter(7)}
+      data-zero={formatter(0)}
+      data-text={formatter('n/a')}
+      data-own={String(dataKey(bucketWith('Dividend')))}
+    />
+  ),
 }))
+
+type BucketReader = (bucket: { byType: Record<string, number> }) => number
+
+function bucketWith(type: string | undefined) {
+  return { byType: type ? { [type]: 7 } : {} }
+}
 
 const ASSET_NODE: SelectedNode = {
   nodeType: 'Asset',
@@ -574,5 +605,78 @@ describe('CreditsTab', () => {
   it('does_not_show_the_fx_provenance_affordance_for_a_credit_without_a_captured_snapshot', async () => {
     await renderAssetTab([{ ...CREDIT_DIVIDEND, currency: 'GBP', fxRateSnapshot: null }])
     expect(screen.queryByRole('button', { name: 'FX conversion details' })).not.toBeInTheDocument()
+  })
+
+  it.each([
+    ['Yield (Bought)', 'yieldOnInvested'],
+    ['Yield (Current)', 'yieldOnMarket'],
+  ] as const)('sorting_by_%s_ranks_credits_without_a_yield_below_those_with_one', async (header, field) => {
+    const withYield: CreditDto = { ...CREDIT_DIVIDEND, id: 'y1', [field]: 5 }
+    const withoutYield: CreditDto = { ...CREDIT_JCP, id: 'y2', [field]: null }
+    const lowYield: CreditDto = { ...CREDIT_SECURITIES_LENDING_INCOME, id: 'y3', [field]: 1 }
+    await renderAssetTab([withYield, withoutYield, lowYield])
+
+    fireEvent.click(screen.getByRole('button', { name: header }))
+
+    expect(dataRows().map((row) => row.textContent?.match(/JCP|Securities Lending Income|Dividend/)?.[0])).toEqual([
+      'JCP',
+      'Securities Lending Income',
+      'Dividend',
+    ])
+  })
+
+  it.each(['Withheld', 'Intermediation fee', 'Net', 'Yield (Bought)', 'Yield (Current)'])(
+    'clicking_the_%s_header_marks_it_as_the_active_sort',
+    async (header) => {
+      await renderAssetTab([CREDIT_DIVIDEND])
+
+      fireEvent.click(screen.getByRole('button', { name: header }))
+
+      expect(screen.getByRole('button', { name: header }).closest('th')).toHaveAttribute('aria-sort', 'ascending')
+    },
+  )
+
+  it('shows_an_unknown_credit_type_as_its_raw_text_with_the_dividend_style', async () => {
+    await renderAssetTab([{ ...CREDIT_DIVIDEND, type: 'Bonus' }])
+
+    expect(screen.getByText('Bonus')).toHaveClass('credits-tab__type--dividend')
+  })
+
+  it('chart_tooltip_formats_numbers_to_two_decimals_and_leaves_other_values_untouched', async () => {
+    await renderBrokerTab([CREDIT_DIVIDEND])
+
+    const tooltip = screen.getByTestId('tooltip')
+    expect(tooltip).toHaveAttribute('data-number', '12.50')
+    expect(tooltip).toHaveAttribute('data-text', 'n/a')
+  })
+
+  it('each_bar_series_reads_its_own_type_from_the_month_bucket_and_zero_for_other_types', async () => {
+    await renderBrokerTab([CREDIT_DIVIDEND, CREDIT_JCP])
+
+    const bars = screen.getAllByTestId('bar')
+    expect(bars.map((b) => b.getAttribute('data-name'))).toEqual(['Dividend', 'JCP'])
+    for (const bar of bars) {
+      expect(bar).toHaveAttribute('data-own', '7')
+      expect(bar).toHaveAttribute('data-other', '0')
+    }
+  })
+
+  it('bar_labels_show_positive_amounts_and_hide_zero_and_non_numeric_values', async () => {
+    await renderBrokerTab([CREDIT_DIVIDEND])
+
+    const label = screen.getByTestId('label')
+    expect(label).toHaveAttribute('data-positive', '7.00')
+    expect(label).toHaveAttribute('data-zero', '')
+    expect(label).toHaveAttribute('data-text', '')
+    expect(label).toHaveAttribute('data-own', '7')
+  })
+
+  it('stacked_line_series_read_their_own_type_and_the_grouped_line_reads_the_total', async () => {
+    await renderBrokerTab([CREDIT_DIVIDEND])
+    fireEvent.click(screen.getByRole('tab', { name: 'Line' }))
+    expect(screen.getByTestId('line')).toHaveAttribute('data-own', '7')
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Grouped' }))
+    expect(screen.getByTestId('line')).toHaveAttribute('data-own', 'total')
   })
 })

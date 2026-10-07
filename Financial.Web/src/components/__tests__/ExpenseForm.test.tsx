@@ -235,6 +235,89 @@ describe('ExpenseForm', () => {
     expect(onFieldChange).toHaveBeenCalledWith('countsAsTithe', 'false')
   })
 
+  it('reports checking the counts-toward-tithe checkbox', () => {
+    const onFieldChange = vi.fn()
+    render(
+      <ExpenseForm
+        {...baseProps}
+        categoryId="category-dizimo"
+        countsAsTithe={false}
+        onFieldChange={onFieldChange}
+      />,
+    )
+
+    fireEvent.click(screen.getByLabelText('Counts toward tithe'))
+
+    expect(onFieldChange).toHaveBeenCalledWith('countsAsTithe', 'true')
+  })
+
+  it('shows each bank-mode field its own validation message', () => {
+    render(
+      <ExpenseForm
+        {...baseProps}
+        paymentSource="bank-trading212"
+        saveErrorFields={{
+          date: 'Date is required',
+          description: 'Description is required',
+          paymentSource: 'Choose a payment source',
+          value: 'Value is required',
+          roundUpAmount: 'Round-up is too large',
+        }}
+      />,
+    )
+
+    for (const message of [
+      'Date is required',
+      'Description is required',
+      'Choose a payment source',
+      'Value is required',
+      'Round-up is too large',
+    ]) {
+      expect(screen.getByText(message)).toBeInTheDocument()
+    }
+  })
+
+  it('shows the card field its validation message in card mode', () => {
+    render(<ExpenseForm {...baseProps} paymentMode="card" saveErrorFields={{ creditCardId: 'Choose a card' }} />)
+
+    expect(screen.getByText('Choose a card')).toBeInTheDocument()
+  })
+
+  it('shows the save error below the form only when no field carries its own error', () => {
+    const { rerender } = render(<ExpenseForm {...baseProps} saveError="Could not save" />)
+    expect(screen.getByText('Could not save')).toBeInTheDocument()
+
+    rerender(<ExpenseForm {...baseProps} saveError="Could not save" saveErrorFields={{ value: 'Value is required' }} />)
+    expect(screen.queryByText('Could not save')).not.toBeInTheDocument()
+  })
+
+  it('labels the primary button by state: add, save when editing, saving while in flight', () => {
+    const { rerender } = render(<ExpenseForm {...baseProps} />)
+    expect(screen.getByRole('button', { name: 'Add Expense' })).toBeEnabled()
+
+    rerender(<ExpenseForm {...baseProps} isEditing />)
+    expect(screen.getByText('Edit Expense')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Save' })).toBeEnabled()
+
+    rerender(<ExpenseForm {...baseProps} isEditing isSaving />)
+    expect(screen.getByRole('button', { name: 'Saving...' })).toBeDisabled()
+  })
+
+  it('names the raw payment source and card id in the settlement note when no name is known', () => {
+    render(
+      <ExpenseForm
+        {...baseProps}
+        isEditing
+        isSettled
+        paymentSource="bank-unknown"
+        creditCardId="card-unknown"
+        creditCardName=""
+      />,
+    )
+
+    expect(screen.getByText(/Paid by bank-unknown via card card-unknown/)).toBeInTheDocument()
+  })
+
   it('calls onSave and onCancel', () => {
     const onSave = vi.fn()
     const onCancel = vi.fn()
