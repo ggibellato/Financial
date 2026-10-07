@@ -295,6 +295,8 @@ internal sealed class StubCardStatementService : ICardStatementService
     public List<CardStatementDTO> Statements { get; set; } = [];
     public (Guid Id, MarkCardStatementPaidDTO Request)? LastMarkPaidRequest { get; private set; }
     public Guid? LastUnmarkedId { get; private set; }
+    public Exception? ThrowOnMarkPaid { get; set; }
+    public Exception? ThrowOnUnmark { get; set; }
 
     /// <summary>Server-supplied warning to hand back from the next mark/unmark call.</summary>
     public string? NextWarning { get; set; }
@@ -304,6 +306,11 @@ internal sealed class StubCardStatementService : ICardStatementService
 
     public Task<CardStatementDTO> MarkStatementPaidAsync(Guid id, MarkCardStatementPaidDTO request)
     {
+        if (ThrowOnMarkPaid is not null)
+        {
+            throw ThrowOnMarkPaid;
+        }
+
         LastMarkPaidRequest = (id, request);
         var existing = Statements.First(s => s.Id == id);
         return Task.FromResult(new CardStatementDTO
@@ -317,6 +324,11 @@ internal sealed class StubCardStatementService : ICardStatementService
 
     public Task<CardStatementDTO> UnmarkStatementPaidAsync(Guid id)
     {
+        if (ThrowOnUnmark is not null)
+        {
+            throw ThrowOnUnmark;
+        }
+
         LastUnmarkedId = id;
         var existing = Statements.First(s => s.Id == id);
         return Task.FromResult(new CardStatementDTO

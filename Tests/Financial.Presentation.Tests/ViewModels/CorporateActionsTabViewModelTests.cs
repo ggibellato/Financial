@@ -19,12 +19,13 @@ public class CorporateActionsTabViewModelTests
     private static (CorporateActionsTabViewModel ViewModel, StubCorporateActionService Service, Spy Spy) Build(
         bool hasContext = true,
         ICorporateActionService? service = null,
-        IAssetAdminService? assetAdminService = null)
+        IAssetAdminService? assetAdminService = null,
+        bool withService = true)
     {
         var stubService = service as StubCorporateActionService ?? new StubCorporateActionService();
         var spy = new Spy();
         var viewModel = new CorporateActionsTabViewModel(
-            stubService,
+            withService ? stubService : null,
             () => hasContext,
             () => BrokerName,
             () => PortfolioName,
@@ -639,6 +640,248 @@ public class CorporateActionsTabViewModelTests
         formVm.AllocationPercentage.Should().Be(25m);
         spy.AppliedDetails.Should().BeNull();
         spy.Messages.Should().BeEmpty();
+    }
+
+    private const string GenericAddMessage = "Corporate action could not be added. Check the values and try again.";
+    private const string GenericUpdateMessage = "Corporate action could not be updated. Check the values and try again.";
+    private const string GenericDeleteMessage = "Corporate action could not be deleted. Check the values and try again.";
+
+    private static AssetDetailsDTO Details(string name) => new() { Name = name, BrokerName = BrokerName, PortfolioName = PortfolioName, Ticker = "T" };
+
+    private static CorporateActionRowViewModel LoadedRow(CorporateActionsTabViewModel viewModel, decimal? ratioFactor = 2m)
+    {
+        viewModel.Load("ctx", [new CorporateActionDTO { Id = Guid.NewGuid(), Type = CorporateAction.CorporateActionType.Split, EffectiveDate = TestClock.LocalToday, RatioFactor = ratioFactor }], AssetName);
+        return viewModel.CorporateActions.Single();
+    }
+
+    [Fact]
+    public async Task AddAndDelete_NoServiceConfigured_DoNothing()
+    {
+        var (viewModel, _, spy) = Build(withService: false);
+        var formRequests = 0;
+        var confirmations = 0;
+        var row = LoadedRow(viewModel);
+
+        await viewModel.Add(() =>
+        {
+            formRequests++;
+            return AsForm(ValidFormData());
+        });
+        await viewModel.Delete(row, () =>
+        {
+            confirmations++;
+            return true;
+        });
+
+        formRequests.Should().Be(0);
+        confirmations.Should().Be(0);
+        spy.Messages.Should().BeEmpty();
+        spy.AppliedDetails.Should().BeNull();
+    }
+
+    private static string GenericMessageFor(string operation) => operation switch
+    {
+        "add" => GenericAddMessage,
+        "update" => GenericUpdateMessage,
+        _ => GenericDeleteMessage,
+    };
+
+    private static Task RunOperation(CorporateActionsTabViewModel viewModel, string operation, CorporateActionRowViewModel row) => operation switch
+    {
+        "add" => viewModel.Add(() => AsForm(ValidFormData())),
+        "update" => viewModel.Update(row, () => AsForm(ValidFormData(row.Id))),
+        _ => viewModel.Delete(row, () => true),
+    };
+
+    [Theory]
+    [InlineData("add")]
+    [InlineData("update")]
+    [InlineData("delete")]
+    public async Task Operation_ServiceThrowsUnexpectedException_ShowsTheGenericWarningAndAppliesNothing(string operation)
+    {
+        var service = new StubCorporateActionService { ExceptionToThrow = new InvalidOperationException("database is down") };
+        var (viewModel, _, spy) = Build(service: service);
+
+        await RunOperation(viewModel, operation, LoadedRow(viewModel));
+
+        spy.Messages.Should().ContainSingle(m => m.Image == MessageBoxImage.Warning && m.Message == GenericMessageFor(operation));
+        spy.AppliedDetails.Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData("update")]
+    [InlineData("delete")]
+    public async Task UpdateOrDelete_ServiceReturnsNothing_ShowsTheGenericWarningAndAppliesNothing(string operation)
+    {
+        var (viewModel, _, spy) = Build();
+
+        await RunOperation(viewModel, operation, LoadedRow(viewModel));
+
+        spy.Messages.Should().ContainSingle(m => m.Image == MessageBoxImage.Warning && m.Message == GenericMessageFor(operation));
+        spy.AppliedDetails.Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData("Split")]
+    [InlineData("Merger")]
+    [InlineData("SpinOff")]
+    public async Task Add_ServiceReturnsNothing_ShowsTheGenericWarningAndAppliesNothing(string type)
+    {
+        var (viewModel, _, spy) = Build();
+        var form = type switch
+        {
+            "Merger" => MergerFormData(),
+            "SpinOff" => SpinOffFormData(),
+            _ => ValidFormData(),
+        };
+
+        await viewModel.Add(() => AsForm(form));
+
+        spy.Messages.Should().ContainSingle(m => m.Message == GenericAddMessage);
+        spy.AppliedDetails.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Add_SplitWithZeroDenominator_SendsAZeroRatioFactor()
+    {
+        var service = new StubCorporateActionService { AddSplitResult = Details(AssetName) };
+        var (viewModel, _, _) = Build(service: service);
+
+        await viewModel.Add(() => AsForm(ValidFormData() with { RatioNumerator = 3m, RatioDenominator = 0m }));
+
+        service.LastAddSplitRequest!.RatioFactor.Should().Be(0m);
+    }
+
+    [Fact]
+    public async Task Add_MergerResultNamesNeitherSideAsTheCurrentAsset_AppliesTheSourceSide()
+    {
+        var source = Details("Other A");
+        var target = Details("Other B");
+        var service = new StubCorporateActionService { AddMergerResult = new CorporateActionMergerResultDTO { Source = source, Target = target } };
+        var (viewModel, _, spy) = Build(service: service);
+
+        await viewModel.Add(() => AsForm(MergerFormData()));
+
+        spy.AppliedDetails.Should().Be(source);
+    }
+
+    [Fact]
+    public async Task Add_SpinOffResultWithoutAParentSide_AppliesTheNewSide()
+    {
+        var created = Details("Other Co");
+        var service = new StubCorporateActionService { AddSpinOffResult = new CorporateActionSpinOffResultDTO { Parent = null, New = created } };
+        var (viewModel, _, spy) = Build(service: service);
+
+        await viewModel.Add(() => AsForm(SpinOffFormData()));
+
+        spy.AppliedDetails.Should().Be(created);
+    }
+
+    [Fact]
+    public async Task Update_DialogCancelled_DoesNotCallServiceOrApplyDetails()
+    {
+        var (viewModel, service, spy) = Build();
+        var row = LoadedRow(viewModel);
+
+        await viewModel.Update(row, () => AsForm(null));
+
+        service.UpdateCallCount.Should().Be(0);
+        spy.AppliedDetails.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Update_ServiceThrowsInvestmentRuleViolation_ShowsTheDomainMessage()
+    {
+        var service = new StubCorporateActionService { ExceptionToThrow = new InvestmentRuleViolationException("A later corporate action depends on this one.") };
+        var (viewModel, _, spy) = Build(service: service);
+        var row = LoadedRow(viewModel);
+
+        await viewModel.Update(row, () => AsForm(ValidFormData(row.Id)));
+
+        spy.Messages.Should().ContainSingle(m => m.Image == MessageBoxImage.Warning && m.Message == "A later corporate action depends on this one.");
+        spy.AppliedDetails.Should().BeNull();
+    }
+
+    [Fact]
+    public void UpdateAndDeleteCommand_CanExecute_FalseWithoutContextOrWithoutASelection()
+    {
+        var (withoutContext, _, _) = Build(hasContext: false);
+        var row = LoadedRow(withoutContext);
+        var (withoutSelection, _, _) = Build();
+
+        withoutContext.UpdateCommand.CanExecute(row).Should().BeFalse();
+        withoutContext.DeleteCommand.CanExecute(row).Should().BeFalse();
+        withoutSelection.UpdateCommand.CanExecute(null).Should().BeFalse();
+        withoutSelection.DeleteCommand.CanExecute(null).Should().BeFalse();
+    }
+
+    [Fact]
+    public void UpdateAndDeleteCommand_CanExecute_TrueForTheSelectedRowWithoutAParameter()
+    {
+        var (viewModel, _, _) = Build();
+        viewModel.SelectedCorporateAction = LoadedRow(viewModel);
+
+        viewModel.UpdateCommand.CanExecute(null).Should().BeTrue();
+        viewModel.DeleteCommand.CanExecute(null).Should().BeTrue();
+    }
+
+    [Fact]
+    public void UpdateCommand_WithEmptyIdParameter_SelectsTheRowAndShowsAWarningWithoutOpeningAForm()
+    {
+        var (viewModel, svc, spy) = Build();
+        var row = new CorporateActionRowViewModel(
+            new CorporateActionDTO { Id = Guid.Empty, Type = CorporateAction.CorporateActionType.Split, EffectiveDate = TestClock.LocalToday, RatioFactor = 2m },
+            AssetName);
+
+        viewModel.UpdateCommand.Execute(row);
+
+        viewModel.SelectedCorporateAction.Should().Be(row);
+        svc.UpdateCallCount.Should().Be(0);
+        viewModel.IsFormOpen.Should().BeFalse();
+        spy.Messages.Should().ContainSingle(m => m.Image == MessageBoxImage.Warning);
+    }
+
+    [Fact]
+    public void FocusCorporateAction_NoSubscriber_StillSelectsTheRow()
+    {
+        var (viewModel, _, _) = Build();
+        var row = LoadedRow(viewModel);
+
+        var act = () => viewModel.FocusCorporateAction(row.Id);
+
+        act.Should().NotThrow();
+        viewModel.SelectedCorporateAction!.Id.Should().Be(row.Id);
+    }
+
+    [Fact]
+    public async Task AddCommand_FormCancelled_ClosesTheFormWithoutCallingTheService()
+    {
+        var (viewModel, service, _) = Build();
+
+        viewModel.AddCommand.Execute(null);
+        await AsyncWait.UntilAsync(() => viewModel.FormViewModel != null);
+        viewModel.FormViewModel!.CancelCommand.Execute(null);
+
+        viewModel.IsFormOpen.Should().BeFalse();
+        viewModel.FormViewModel.Should().BeNull();
+        service.AddCallCount.Should().Be(0);
+    }
+
+    [Theory]
+    [InlineData(3.0, 3.0, 1.0)]
+    [InlineData(0.1, 1.0, 10.0)]
+    [InlineData(null, 0.0, 1.0)]
+    public async Task UpdateCommand_OpensTheFormWithTheStoredRatioShownAsAFraction(double? ratioFactor, double expectedNumerator, double expectedDenominator)
+    {
+        var (viewModel, _, _) = Build();
+        var row = LoadedRow(viewModel, ratioFactor is null ? null : (decimal)ratioFactor);
+
+        viewModel.UpdateCommand.Execute(row);
+        await AsyncWait.UntilAsync(() => viewModel.FormViewModel != null);
+
+        viewModel.FormViewModel!.RatioNumerator.Should().Be((decimal)expectedNumerator);
+        viewModel.FormViewModel.RatioDenominator.Should().Be((decimal)expectedDenominator);
+        viewModel.FormViewModel.CancelCommand.Execute(null);
     }
 
     private sealed class Spy

@@ -262,4 +262,110 @@ public class CardsWorkflowViewModelTests
 
         creditCardService.LastUpdateRequest.Should().BeNull();
     }
+
+    private static CardStatementDTO Statement(bool isPaid) => new()
+    {
+        Id = Guid.NewGuid(), CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex", Year = TestClock.LocalToday.Year,
+        Month = TestClock.LocalToday.Month, IsPaid = isPaid, OutstandingTotal = 100m, AccumulatedOutstandingTotal = 100m,
+    };
+
+    private static (CardsWorkflowViewModel ViewModel, StubCardStatementService Service, Func<int> Refreshes) CreateCountingViewModel()
+    {
+        var refreshes = 0;
+        var (viewModel, service, _, _, _) = CreateViewModel(() =>
+        {
+            refreshes++;
+            return Task.CompletedTask;
+        });
+        return (viewModel, service, () => refreshes);
+    }
+
+    [Fact]
+    public async Task MarkStatementPaid_NoStatementOrNoPaymentSource_DoesNotCallTheServiceOrRefresh()
+    {
+        var (viewModel, cardStatementService, refreshes) = CreateCountingViewModel();
+        var statementWithoutSource = Statement(isPaid: false);
+        cardStatementService.Statements = [statementWithoutSource];
+
+        viewModel.MarkStatementPaidCommand.CanExecute(null).Should().BeFalse();
+        await viewModel.MarkStatementPaidAsync(null);
+        await viewModel.MarkStatementPaidAsync(statementWithoutSource);
+
+        cardStatementService.LastMarkPaidRequest.Should().BeNull();
+        refreshes().Should().Be(0);
+        viewModel.CardStatementError.Should().BeNull();
+        viewModel.CardStatementWarning.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task MarkStatementPaid_ServiceFails_ShowsTheErrorKeepsThePaymentSourceAndDoesNotRefresh()
+    {
+        var (viewModel, cardStatementService, refreshes) = CreateCountingViewModel();
+        var statement = Statement(isPaid: false);
+        cardStatementService.Statements = [statement];
+        cardStatementService.ThrowOnMarkPaid = new InvalidOperationException("Bank not found.");
+        viewModel.SetMarkPaidSource(statement.Id, BarclaysId);
+
+        await viewModel.MarkStatementPaidAsync(statement);
+
+        viewModel.CardStatementError.Should().Be("Bank not found.");
+        viewModel.MarkStatementPaidCommand.CanExecute(statement).Should().BeTrue();
+        refreshes().Should().Be(0);
+    }
+
+    [Fact]
+    public async Task UnmarkStatementPaid_NoStatement_DoesNotCallTheServiceOrRefresh()
+    {
+        var (viewModel, cardStatementService, refreshes) = CreateCountingViewModel();
+
+        await viewModel.UnmarkStatementPaidAsync(null);
+
+        cardStatementService.LastUnmarkedId.Should().BeNull();
+        refreshes().Should().Be(0);
+    }
+
+    [Fact]
+    public async Task UnmarkStatementPaid_ServiceFails_ShowsTheErrorAndDoesNotRefresh()
+    {
+        var (viewModel, cardStatementService, refreshes) = CreateCountingViewModel();
+        var statement = Statement(isPaid: true);
+        cardStatementService.Statements = [statement];
+        cardStatementService.ThrowOnUnmark = new InvalidOperationException("Statement not found.");
+
+        await viewModel.UnmarkStatementPaidAsync(statement);
+
+        viewModel.CardStatementError.Should().Be("Statement not found.");
+        refreshes().Should().Be(0);
+    }
+
+    [Fact]
+    public async Task UpdateCreditCardAsync_NoCard_DoesNotCallTheService()
+    {
+        var (viewModel, _, creditCardService, _, _) = CreateViewModel();
+
+        await viewModel.UpdateCreditCardAsync(null, new DateOnly(2026, 9, 5), isActive: true);
+
+        creditCardService.LastUpdateRequest.Should().BeNull();
+        viewModel.CreditCardUpdateError.Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData(true, "2026-09-05", false, "2026-09-05")]
+    [InlineData(true, "2026-09-05", true, "2026-10-05")]
+    [InlineData(true, "2026-09-05", true, null)]
+    [InlineData(true, null, true, "2026-09-05")]
+    public async Task UpdateCreditCardAsync_DueDateOrActiveFlagDiffers_StillCallsTheService(bool isActive, string? currentDue, bool newIsActive, string? newDue)
+    {
+        var (viewModel, _, creditCardService, _, creditCards) = CreateViewModel();
+        var card = new CreditCardDTO { Id = BaAmexId, Name = "BaAmex", IsActive = isActive, NextInvoiceDueDate = currentDue is null ? null : DateOnly.Parse(currentDue), HasReferences = false };
+        creditCards.Add(card);
+        creditCardService.CreditCards = [card];
+        var requestedDue = newDue is null ? (DateOnly?)null : DateOnly.Parse(newDue);
+
+        await viewModel.UpdateCreditCardAsync(card, requestedDue, newIsActive);
+
+        creditCardService.LastUpdateRequest.Should().NotBeNull();
+        creditCardService.LastUpdateRequest!.Value.Request.NextInvoiceDueDate.Should().Be(requestedDue);
+        creditCardService.LastUpdateRequest.Value.Request.IsActive.Should().Be(newIsActive);
+    }
 }

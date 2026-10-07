@@ -246,6 +246,35 @@ public class DashboardKpiTilesViewModelTests
     }
 
     [Fact]
+    public void BeforeAnySummaryArrives_EveryTileIsEmptyAndNoNoticeIsShown()
+    {
+        var (vm, _) = CreateViewModel();
+
+        new decimal?[]
+        {
+            vm.MarketValue, vm.Invested, vm.UnrealisedGainLoss, vm.RealisedGainLoss, vm.IncomeYtd, vm.IncomeLifetime, vm.GrossXirr, vm.NetXirr,
+            vm.ConvertedMarketValue, vm.ConvertedInvested, vm.ConvertedUnrealisedGainLoss, vm.ConvertedRealisedGainLoss,
+            vm.ConvertedIncomeYtd, vm.ConvertedIncomeLifetime, vm.ConvertedGrossXirr, vm.ConvertedNetXirr,
+        }.Should().AllSatisfy(value => value.Should().BeNull());
+        vm.ReportingCurrency.Should().BeEmpty();
+        vm.IsReportingCurrencyEnabled.Should().BeFalse();
+        vm.ShowConvertedTotals.Should().BeFalse();
+        vm.IsPartial.Should().BeFalse();
+        vm.UnvaluedHoldingCount.Should().Be(0);
+        vm.ShowPartialNotice.Should().BeFalse();
+    }
+
+    [Fact]
+    public void ViewMissingPriceHoldingsCommand_NoSubscriber_DoesNothing()
+    {
+        var (vm, _) = CreateViewModel();
+
+        var act = () => vm.ViewMissingPriceHoldingsCommand.Execute(null);
+
+        act.Should().NotThrow();
+    }
+
+    [Fact]
     public async Task LoadAsync_WithoutArguments_PreservesExistingNoParamBehavior()
     {
         var service = new StubPortfolioDashboardService { Dashboard = Summary() };
