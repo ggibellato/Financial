@@ -64,6 +64,12 @@ jobs:
     - name: Self-test the test results summary script
       run: pwsh .github/scripts/test-results-summary.test.ps1
 
+    - name: Self-test the AC traceability script
+      run: pwsh .github/scripts/ac-traceability.test.ps1
+
+    - name: Self-test the nightly issue script
+      run: pwsh .github/scripts/nightly-issue.test.ps1
+
     - name: Resolve the diff base
       id: base
       env:
