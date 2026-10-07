@@ -39,6 +39,67 @@ public class ReserveBucketServiceTests
     }
 
     [Fact]
+    public void GetSplitStatus_NoBuckets_HasNoWarning()
+    {
+        var service = new ReserveBucketService(new StubCashFlowRepository(), _tracer, Logger);
+
+        var result = service.GetSplitStatus();
+
+        using (new AssertionScope())
+        {
+            result.ActiveTotal.Should().Be(0m);
+            result.Warning.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public void GetSplitStatus_ActiveBucketsSumTo100_HasNoWarning()
+    {
+        var repository = new StubCashFlowRepository();
+        repository.ReserveBuckets.Add(ReserveBucket.Create("A", 60m));
+        repository.ReserveBuckets.Add(ReserveBucket.Create("B", 40m));
+        var service = new ReserveBucketService(repository, _tracer, Logger);
+
+        var result = service.GetSplitStatus();
+
+        using (new AssertionScope())
+        {
+            result.ActiveTotal.Should().Be(100m);
+            result.Warning.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public void GetSplitStatus_ActiveBucketsDoNotSumTo100_NamesTheTotal_AndIgnoresInactiveBuckets()
+    {
+        var repository = new StubCashFlowRepository();
+        repository.ReserveBuckets.Add(ReserveBucket.Create("A", 60m));
+        repository.ReserveBuckets.Add(ReserveBucket.Create("B", 30m));
+        repository.ReserveBuckets.Add(ReserveBucket.Create("Retired", 10m, isActive: false));
+        var service = new ReserveBucketService(repository, _tracer, Logger);
+
+        var result = service.GetSplitStatus();
+
+        using (new AssertionScope())
+        {
+            result.ActiveTotal.Should().Be(90m);
+            result.Warning.Should().Be("Active buckets currently sum to 90% — review your split percentages");
+        }
+    }
+
+    [Fact]
+    public async Task CreateReserveBucketAsync_Warning_IsTheSameTextAsTheSplitStatus()
+    {
+        var repository = new StubCashFlowRepository();
+        repository.ReserveBuckets.Add(ReserveBucket.Create("A", 60m));
+        var service = new ReserveBucketService(repository, _tracer, Logger);
+
+        var created = await service.CreateReserveBucketAsync(new ReserveBucketCreateDTO { Name = "B", SplitPercentage = 10m, IsActive = true });
+
+        created.Warning.Should().Be(service.GetSplitStatus().Warning).And.NotBeNull();
+    }
+
+    [Fact]
     public void GetReserveBuckets_DoesNotFilterByIsActive()
     {
         var repository = new StubCashFlowRepository();

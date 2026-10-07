@@ -10,7 +10,6 @@ namespace Financial.CashFlow.Application.Services;
 public sealed class ReserveBucketService : IReserveBucketService
 {
     private const string EntityType = "ReserveBucket";
-    private const decimal SplitPercentageTolerance = 0.01m;
 
     private readonly ICashFlowRepository _repository;
     private readonly ITelemetryTracer _tracer;
@@ -32,6 +31,30 @@ public sealed class ReserveBucketService : IReserveBucketService
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetReserveBuckets");
+            return result;
+        }
+        catch (Exception ex)
+        {
+            span.MarkFailed(ex);
+            throw;
+        }
+    }
+
+    public ReserveSplitStatusDTO GetSplitStatus()
+    {
+        using var span = StartSpan("GetSplitStatus");
+        try
+        {
+            var buckets = _repository.GetReserveBuckets().ToList();
+            var total = ActiveSplitTotal(buckets);
+            var result = new ReserveSplitStatusDTO
+            {
+                ActiveTotal = total,
+                Warning = buckets.Count == 0 ? null : WarningFor(total),
+            };
+
+            span.MarkSuccess();
+            _logger.LogInformation("{Operation} completed", "GetSplitStatus");
             return result;
         }
         catch (Exception ex)
@@ -112,19 +135,11 @@ public sealed class ReserveBucketService : IReserveBucketService
         }
     }
 
-    /// <summary>Sums SplitPercentage across every currently-active bucket (including the one just
-    /// saved, since the repository already reflects it) and returns a non-blocking warning naming
-    /// the actual total when it falls outside a ±0.01 tolerance of 100.</summary>
-    private string? ComputeActiveSplitWarning()
-    {
-        var total = _repository.GetReserveBuckets().Where(b => b.IsActive).Sum(b => b.SplitPercentage);
-        if (Math.Abs(total - 100m) <= SplitPercentageTolerance)
-        {
-            return null;
-        }
+    private static decimal ActiveSplitTotal(IEnumerable<ReserveBucket> buckets) => buckets.Where(b => b.IsActive).Sum(b => b.SplitPercentage);
 
-        return $"Active buckets currently sum to {total.ToString("0.##")}% — review your split percentages";
-    }
+    private static string? WarningFor(decimal total) => ReserveSplitRule.IsBalanced(total) ? null : ReserveSplitRule.BuildWarning(total);
+
+    private string? ComputeActiveSplitWarning() => WarningFor(ActiveSplitTotal(_repository.GetReserveBuckets()));
 
     private ITelemetrySpan StartSpan(string operationName)
     {

@@ -292,7 +292,11 @@ internal sealed class StubReserveBucketService : IReserveBucketService
     public Exception? ThrowOnUpdate { get; set; }
     public string? WarningToReturn { get; set; }
 
+    public ReserveSplitStatusDTO SplitStatus { get; set; } = new() { ActiveTotal = 100m };
+
     public IReadOnlyList<ReserveBucketDTO> GetReserveBuckets() => ReserveBuckets;
+
+    public ReserveSplitStatusDTO GetSplitStatus() => SplitStatus;
 
     public Task<ReserveBucketDTO> CreateReserveBucketAsync(ReserveBucketCreateDTO request)
     {

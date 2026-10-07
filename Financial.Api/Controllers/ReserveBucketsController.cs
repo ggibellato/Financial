@@ -28,6 +28,15 @@ public sealed class ReserveBucketsController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>Reports whether the active buckets' split percentages sum to 100%.</summary>
+    /// <returns>200 OK with the active total and a warning that is null when the total is within 0.01 of 100 or there are no buckets.</returns>
+    [HttpGet("split-status")]
+    [ProducesResponseType(typeof(ReserveSplitStatusDTO), StatusCodes.Status200OK)]
+    public ActionResult<ReserveSplitStatusDTO> GetSplitStatus()
+    {
+        return Ok(_reserveBucketService.GetSplitStatus());
+    }
+
     /// <summary>Creates a new reserve bucket.</summary>
     /// <param name="request">The bucket's name, split percentage, and active flag.</param>
     /// <returns>200 OK with the created bucket (whose Warning is non-null when active buckets don't sum to ~100%), or 400 Bad Request if the request is invalid.</returns>

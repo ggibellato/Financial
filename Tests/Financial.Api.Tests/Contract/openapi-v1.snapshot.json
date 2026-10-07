@@ -4604,6 +4604,24 @@
         ],
         "type": "object"
       },
+      "ReserveSplitStatusDTO": {
+        "properties": {
+          "activeTotal": {
+            "format": "double",
+            "type": "number"
+          },
+          "warning": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "required": [
+          "activeTotal"
+        ],
+        "type": "object"
+      },
       "SalesExceedPurchasesFinding": {
         "properties": {
           "assetName": {
@@ -11858,6 +11876,26 @@
           }
         },
         "summary": "Creates a new reserve bucket.",
+        "tags": [
+          "ReserveBuckets"
+        ]
+      }
+    },
+    "/reserve-buckets/split-status": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReserveSplitStatusDTO"
+                }
+              }
+            },
+            "description": "200 OK with the active total and a warning that is null when the total is within 0.01 of 100 or there are no buckets."
+          }
+        },
+        "summary": "Reports whether the active buckets\u0027 split percentages sum to 100%.",
         "tags": [
           "ReserveBuckets"
         ]
