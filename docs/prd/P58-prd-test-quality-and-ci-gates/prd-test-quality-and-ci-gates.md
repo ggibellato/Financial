@@ -615,12 +615,12 @@ graph TD
 - [x] A PR touching coverage exclusions shows the ⚠ exclusion line in the comment.
 
 ### F10. High-Risk Branch Coverage
-- [ ] `ReservaViewModel` branch coverage is ≥ 85%. A failed delete leaves the movement listed and shows the error message.
-- [ ] WPF job branch coverage is ≥ 85%.
-- [ ] `AssetAdminService`, `CorporateActionReplay`, `SummaryController` and `AssetPriceHistoryService` are each ≥ 90% branch.
-- [ ] `CreditsTab.tsx`, `EditMovementForm.tsx`, `ExpenseForm.tsx` and `TransactionsTab.tsx` are each ≥ 85% branch.
-- [ ] The payments-due rollover test pins the 29th with `DueDay=2`. Its expected value is cited from the P42 PRD.
-- [ ] `AnnualAverageMonthsCalculator` January and 2017 cases have direct tests.
+- [x] `ReservaViewModel` branch coverage is ≥ 85%. A failed delete leaves the movement listed and shows the error message.
+- [x] WPF job branch coverage is ≥ 85%.
+- [x] `AssetAdminService`, `CorporateActionReplay`, `SummaryController` and `AssetPriceHistoryService` are each ≥ 90% branch.
+- [x] `CreditsTab.tsx`, `EditMovementForm.tsx`, `ExpenseForm.tsx` and `TransactionsTab.tsx` are each ≥ 85% branch.
+- [x] The payments-due rollover test pins the 29th with `DueDay=2`. Its expected value is cited from the P42 PRD.
+- [x] `AnnualAverageMonthsCalculator` January and 2017 cases have direct tests.
 
 ### F11. Test Hygiene Gate
 - [x] Adding `Task.Delay(` to a test file fails the `changes` job with a file:line message.
@@ -665,6 +665,6 @@ graph TD
 - [ ] F08's pinned-clock and culture tests run under F01's pinned `TZ`/`LANG`, and pass when the host timezone differs.
 - [x] F07 rewrites touch only tests that survived F06. No rewritten test is one F06 marked for removal.
 - [ ] F09's baseline is taken from a `main` run that includes F06's consolidation, F07's trait filtering (Live excluded) and F08's determinism. Two consecutive runs on that commit produce identical line and branch percentages.
-- [ ] F10's date-dependent tests use the `TimeProvider` and delay seams introduced by F08.
+- [x] F10's date-dependent tests use the `TimeProvider` and delay seams introduced by F08.
 - [ ] F14's live-check step selects exactly the tests F07 tagged `Category=Live`.
 - [ ] F14's nightly E2E step runs F12's full spec set (not only `@smoke`) and F13's full `Category=E2E` set, and uploads the same artifact types as the PR jobs.
