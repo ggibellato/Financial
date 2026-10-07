@@ -1,6 +1,6 @@
 # Technical Specification: Cross-Front-End Correctness Fixes
 
-**Complexity:** simple (three small fixes across Domain, a WPF view model and the Web app; no API, schema or persistence changes)
+**Complexity:** medium (three small fixes across Domain, a WPF view model and the Web app, plus, in Full Scope, one new read-only API endpoint consumed by both front ends; no schema or persistence changes)
 
 ## 1. Technical Overview
 
@@ -21,14 +21,19 @@
 - `todayIsoDate()` returns the local date, and the 11 web tests that recompute it use pinned-time literal expectations.
 - `config.ts` fails loudly on an unset or empty `API_BASE_URL`; the test that pins `''` is replaced.
 
-**Deferred (Full Scope):** consolidating the four reserve-split ±0.01 tolerance checks (`reserveBucketSplit.ts`, `ReservaViewModel.cs:70`, `ReserveBucketsViewModel.cs:71`, `ReserveBucketService.cs:118`) into the Application service. Scope choice: Core only. The matching Section 9 box stays unticked.
+**Included (Full Scope):** consolidating the reserve-split ±0.01 tolerance checks (`reserveBucketSplit.ts`, `ReservaViewModel.cs:70`, `ReserveBucketsViewModel.cs:71`, `ReserveBucketService.cs:118`, and the import tool's `ReserveBucketMigrationSummary`) into one Application rule, with the front ends displaying the server's result:
+- `ReserveSplitRule` (public static, `Financial.CashFlow.Application/Services`): `IsBalanced(decimal activeTotal)` (within 0.01 of 100) and `BuildWarning(decimal activeTotal)`, the single message `Active buckets currently sum to {total:0.##}% — review your split percentages`. `ReserveBucketService` uses it for the Create/Update `Warning` and for the new status; the import tool uses `IsBalanced`.
+- `IReserveBucketService.GetSplitStatus()` returning `ReserveSplitStatusDTO { ActiveTotal, Warning }` (`Warning` is null when balanced or when there are no buckets), exposed as `GET /api/v1/financial/reserve-buckets/split-status`.
+- React (`useReserva`, `useReserveBuckets`) and WPF (`ReservaViewModel`, `ReserveBucketsViewModel`) fetch the status with the bucket list and after each bucket change, and show `Warning` as is. `utils/reserveBucketSplit.ts` and both view models' tolerance constants and message texts are deleted.
+
+**Scope choice:** Core + Full. Decisions taken with the owner: a new GET endpoint rather than a changed list response (additive, the existing response keeps its shape), and the server's existing wording as the one message.
 
 **Output contracts (Provides):** none. **Input contracts (Consumes):** none (the date tests rely on the pinned `TZ=Europe/London` delivered by F01).
 
 **Excluded:**
 - Money parsing and formatting culture (pt-BR) — owned by F08.
 - The WPF `DateTime.Today` / `DateTime.Now` clock reads — owned by F08.
-- Any change to the OpenAPI snapshot: `ExpenseDTO.SuggestedRoundUpAmount` keeps its type; only values with more than 2 decimal places change (now rounded).
+- Any change to the OpenAPI snapshot in Core Scope: `ExpenseDTO.SuggestedRoundUpAmount` keeps its type; only values with more than 2 decimal places change (now rounded). Full Scope adds exactly one path and one schema (`ReserveSplitStatusDTO`); the snapshot is regenerated and its diff reviewed.
 
 ## 2. Architecture Impact
 
@@ -36,6 +41,7 @@ Affected components:
 - `Financial.CashFlow.Domain/Entities/Expense.cs` — the rule.
 - `Financial.App/ViewModels/CashFlow/ExpenseWorkflowViewModel.cs` — consumes the rule. WPF already references `Expense` (`MinRoundUpAmount`/`MaxRoundUpAmount` in `ExpenseFormValidation.cs`), so there is no new layer dependency.
 - `Financial.Web/src/hooks/useExpenseForm.ts`, `src/utils/formatters.ts`, `src/api/config.ts`.
+- Full Scope: `Financial.CashFlow.Application/Services/ReserveSplitRule.cs` (new), `ReserveBucketService.cs`, `Interfaces/IReserveBucketService.cs`, `DTOs/ReserveSplitStatusDTO.cs` (new), `Financial.Api/Controllers/ReserveBucketsController.cs`, `Tests/Financial.Api.Tests/Contract/openapi-v1.snapshot.json`, `Financial.Web/src/api/{financialApiClient,types}.ts` and regenerated `generated/openapi.ts`, `hooks/useReserva.ts`, `hooks/useReserveBuckets.ts`, `Financial.App/ViewModels/CashFlow/ReservaViewModel.cs`, `Financial.App/ViewModels/Admin/ReserveBucketsViewModel.cs`, `Tools/CashFlowSpreadsheetImport/Migrations/ReserveBuckets/ReserveBucketMigrationSummary.cs`.
 - `Tests/Financial.CashFlow.Domain.Tests/TestData/round-up-suggestion-cases.json` — shared literal table read by the Domain tests and by vitest (the same pattern `openapiFreshness.test.ts` uses to read the committed OpenAPI snapshot from `Tests/`).
 
 ```mermaid
@@ -145,4 +151,12 @@ Skipped: nothing persisted changes.
 | `todayIsoDate()` at `2026-07-01T00:30+01:00` returns `2026-07-01` | `formatters.test.ts` |
 | No web test computes an expected date with `toISOString().slice(0,10)` | the date-test rewrites plus a grep |
 | No test asserts an empty `API_BASE_URL` as valid | `config.test.ts` |
-| (Full Scope) reserve-split tolerance only in the Application service | deferred; stays unticked |
+| (Full Scope) reserve-split tolerance only in the Application service, and both front ends show the server's single message | `ReserveSplitRuleTests`, `ReserveBucketServiceTests` (status and Create/Update warning share the text), `ReserveBucketsControllerTests` and the OpenAPI snapshot, the hook tests for both pages, the view model tests for both pages, and a grep that finds `0.01` and `SplitPercentageTolerance` only in `ReserveSplitRule` |
+
+### Full Scope tests
+- `ReserveSplitRuleTests`: totals 100, 99.99, 100.01 balanced; 99.98, 100.02, 60, 0 not balanced; `BuildWarning(60)` is the literal `Active buckets currently sum to 60% — review your split percentages`.
+- `ReserveBucketServiceTests`: no buckets gives a null warning; active buckets 60 + 30 give total 90 and the literal warning; an inactive bucket is not counted; Create and Update return the same text as `GetSplitStatus`.
+- `ReserveBucketsControllerTests`: `GET /reserve-buckets/split-status` returns 200 with the DTO; the OpenAPI contract test pins the new path and schema.
+- Web hook tests: both hooks call `getReserveSplitStatus` with the list and after each change and expose the server warning; no test computes a sum.
+- WPF view model tests: both view models show the service's warning, refresh it after a change, and show nothing when it is null; no test arranges buckets to make the view model compute a sum.
+- Import tool: the existing summary test keeps its 99.99 and 100.02 cases, now through `ReserveSplitRule`.
