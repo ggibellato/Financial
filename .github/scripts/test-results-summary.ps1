@@ -6,16 +6,20 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-if (-not (Test-Path $Trx)) {
+$files = @(Get-ChildItem -Path $Trx -File -ErrorAction SilentlyContinue)
+if ($files.Count -eq 0) {
     Write-Host "test-results-summary: trx not found: $Trx"
     exit 1
 }
 
-try {
-    $results = @(([xml](Get-Content $Trx -Raw)).TestRun.Results.UnitTestResult)
-} catch {
-    Write-Host "test-results-summary: not a trx file: $Trx ($($_.Exception.Message))"
-    exit 1
+$results = @()
+foreach ($file in $files) {
+    try {
+        $results += @(([xml](Get-Content $file.FullName -Raw)).TestRun.Results.UnitTestResult)
+    } catch {
+        Write-Host "test-results-summary: not a trx file: $($file.FullName) ($($_.Exception.Message))"
+        exit 1
+    }
 }
 
 $passed = @($results | Where-Object { $_.outcome -eq 'Passed' }).Count

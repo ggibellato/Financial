@@ -61,6 +61,14 @@ Check 'an unparsable trx fails' ($result.Exit -eq 1 -and $result.Text -match 'no
 $result = Invoke-Summary (New-Trx @(@{ Name = 'A'; Outcome = 'Failed' }))
 Check 'a run with failures still exits 0' ($result.Exit -eq 0) $result
 
+$many = Join-Path $work 'many'
+New-Item -ItemType Directory -Path $many | Out-Null
+Copy-Item (New-Trx @(@{ Name = 'A'; Outcome = 'Passed' }, @{ Name = 'B'; Outcome = 'Failed'; Message = 'boom' })) (Join-Path $many 'one.trx')
+Copy-Item (New-Trx @()) (Join-Path $many 'empty.trx')
+Copy-Item (New-Trx @(@{ Name = 'C'; Outcome = 'Passed' })) (Join-Path $many 'two.trx')
+$result = Invoke-Summary (Join-Path $many '*.trx')
+Check 'every trx matching a wildcard is combined' ($result.Summary -match '\| Live \| 2 \| 1 \| 0 \|' -and $result.Summary -match '- `B`: boom') $result
+
 Remove-Item -Recurse -Force $work
 Write-Host "test-results-summary.test.ps1: $cases cases, $failures failures"
 if ($failures -gt 0) { exit 1 }

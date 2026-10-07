@@ -167,12 +167,10 @@ jobs:
     - name: Run live verifications
       id: live
       continue-on-error: true
-      run: dotnet test Financial.slnx --configuration Release --filter "Category=Live" --logger "trx;LogFileName=live.trx" --results-directory TestResults/live
+      run: dotnet test Financial.slnx --configuration Release --filter "Category=Live" --logger "trx;LogFilePrefix=live" --results-directory TestResults/live
 
     - name: Publish live results
       if: always()
       shell: pwsh
       run: |
-        $trx = Get-ChildItem TestResults/live -Filter live.trx -Recurse | Select-Object -First 1
-        if (-not $trx) { throw 'no live.trx was produced' }
-        ./.github/scripts/test-results-summary.ps1 -Trx $trx.FullName -Name Live
+        ./.github/scripts/test-results-summary.ps1 -Trx 'TestResults/live/*.trx' -Name Live
