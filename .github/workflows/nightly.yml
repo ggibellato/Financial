@@ -25,10 +25,10 @@ jobs:
         include:
           - name: CashFlow.Domain
             project: Financial.CashFlow.Domain.csproj
-            tests: Tests/Financial.CashFlow.Domain.Tests/Financial.CashFlow.Domain.Tests.csproj
+            tests: Tests/Financial.CashFlow.Domain.Tests
           - name: Investment.Domain
             project: Financial.Investment.Domain.csproj
-            tests: Tests/Financial.Investment.Domain.Tests/Financial.Investment.Domain.Tests.csproj
+            tests: Tests/Financial.Investment.Domain.Tests
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
@@ -42,7 +42,8 @@ jobs:
       run: dotnet tool restore
 
     - name: Run Stryker.NET
-      run: dotnet stryker --config-file .config/stryker-config.json --project ${{ matrix.project }} --test-project ${{ matrix.tests }} --output TestResults/stryker/${{ matrix.name }}
+      working-directory: ${{ matrix.tests }}
+      run: dotnet stryker --config-file ../../.config/stryker-config.json --project ${{ matrix.project }} --output ../../TestResults/stryker/${{ matrix.name }}
 
     - name: Publish mutation score
       if: always()
