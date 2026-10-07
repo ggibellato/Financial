@@ -1,0 +1,11 @@
+{
+  "stryker-config": {
+    "reporters": ["html", "json", "progress"],
+    "thresholds": {
+      "high": 80,
+      "low": 60,
+      "break": 0
+    },
+    "test-case-filter": "Category!=Live&Category!=E2E"
+  }
+}

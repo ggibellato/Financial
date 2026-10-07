@@ -87,6 +87,14 @@ override is the escape hatch for an emergency (for example, a broken `ci-status`
 fix). Any administrator merge on a red build must be followed by a fix PR that restores green; do
 not leave `main` red.
 
+## Nightly pipeline
+
+`.github/workflows/nightly.yml` runs on a cron (02:00 UTC) and on `workflow_dispatch`. It is **not** a required check and is not in `ci-status`'s `needs`; it only reports. Scheduled workflows run from the default branch, so use `workflow_dispatch` on a branch to try a change.
+
+- **stryker-dotnet** (`windows-latest`, one matrix entry per Domain project) — runs Stryker.NET (`.config/dotnet-tools.json`, config `.config/stryker-config.json`) over `Financial.CashFlow.Domain` and `Financial.Investment.Domain` against their own test project only (run from that project's folder: from the repository root Stryker scans `Financial.slnx` and tests every mutant against every test project that references the Domain assembly, about 15 times slower), excluding `Category=Live` and `Category=E2E`. `.github/scripts/mutation-score.ps1` turns the JSON report into a score (Killed + Timeout over Killed + Timeout + Survived + NoCoverage; Ignored, CompileError and RuntimeError are excluded) in the step summary, and the HTML and JSON reports are uploaded as `stryker-dotnet-<name>`. Reproduce locally with `dotnet tool restore`, then in `Tests/Financial.CashFlow.Domain.Tests`: `dotnet stryker --config-file ../../.config/stryker-config.json --project Financial.CashFlow.Domain.csproj`.
+- **Running it locally.** `pwsh scripts/stryker.ps1` runs both Domain projects, prints the same score line and opens the HTML reports; `-Target CashFlow|Investment` picks one, `-Mutate "**/Entities/Expense.cs"` re-runs a single file in seconds after adding tests, `-NoOpen` skips the browser. Read the report's Survived and No coverage mutants: each is a change no test noticed.
+- **Break threshold.** `thresholds.break` is 0 until three scheduled runs exist; then a PR sets it to the lowest of those three scores minus 5, per tool.
+
 ## Extending
 
 - **New shared library** (e.g. `Financial.Shared.Something/`): already covered by the `Financial.Shared.*/` pattern.
