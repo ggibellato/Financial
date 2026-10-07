@@ -5045,6 +5045,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/reserve-buckets/split-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Reports whether the active buckets' split percentages sum to 100%. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description 200 OK with the active total and a warning that is null when the total is within 0.01 of 100 or there are no buckets. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ReserveSplitStatusDTO"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/reserve-buckets/{id}": {
         parameters: {
             query?: never;
@@ -7984,6 +8020,11 @@ export interface components {
             /** Format: date */
             date: string;
             description: string;
+        };
+        ReserveSplitStatusDTO: {
+            /** Format: double */
+            activeTotal: number;
+            warning?: null | string;
         };
         SalesExceedPurchasesFinding: {
             assetName: string;

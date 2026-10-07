@@ -1,4 +1,5 @@
 using System.Text;
+using Financial.CashFlow.Application.Services;
 using Financial.CashFlow.Domain.Entities;
 
 namespace Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.ReserveBuckets;
@@ -10,9 +11,6 @@ namespace Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migr
 /// </summary>
 public sealed class ReserveBucketMigrationSummary : MigrationSummaryBase
 {
-    private const decimal ExpectedActiveSplitPercentageSum = 100m;
-    private const decimal SplitPercentageTolerance = 0.01m;
-
     private readonly List<ReserveMovement> _unresolvedMovements = new();
 
     public int BucketsSeededCount => SeededCount;
@@ -20,8 +18,7 @@ public sealed class ReserveBucketMigrationSummary : MigrationSummaryBase
     public int MovementsResolvedCount { get; private set; }
     public decimal ActiveSplitPercentageSum { get; private set; }
 
-    public bool ActiveSplitPercentageIsBalanced =>
-        Math.Abs(ActiveSplitPercentageSum - ExpectedActiveSplitPercentageSum) <= SplitPercentageTolerance;
+    public bool ActiveSplitPercentageIsBalanced => ReserveSplitRule.IsBalanced(ActiveSplitPercentageSum);
 
     public IReadOnlyList<ReserveMovement> UnresolvedMovements => _unresolvedMovements;
 

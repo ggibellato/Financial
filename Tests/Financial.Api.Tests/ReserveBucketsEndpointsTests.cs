@@ -23,6 +23,17 @@ public class ReserveBucketsEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
+    public async Task GetSplitStatus_ForTheSeededBuckets_ReportsTheTotalWithoutAWarning()
+    {
+        var response = await Client.GetAsync("/api/v1/financial/reserve-buckets/split-status");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var status = await response.Content.ReadFromJsonAsync<ReserveSplitStatusDTO>();
+        status!.ActiveTotal.Should().Be(100m);
+        status.Warning.Should().BeNull();
+    }
+
+    [Fact]
     public async Task GetReserveBuckets_RequiresNoParameters_AndReturnsFullUnfilteredList()
     {
         var response = await Client.GetAsync("/api/v1/financial/reserve-buckets");

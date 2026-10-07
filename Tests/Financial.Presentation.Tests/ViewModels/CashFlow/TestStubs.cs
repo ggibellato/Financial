@@ -551,6 +551,10 @@ internal sealed class StubReserveBucketService : IReserveBucketService
         return ReserveBuckets;
     }
 
+    public ReserveSplitStatusDTO SplitStatus { get; set; } = new() { ActiveTotal = 100m };
+
+    public ReserveSplitStatusDTO GetSplitStatus() => SplitStatus;
+
     public Task<ReserveBucketDTO> CreateReserveBucketAsync(ReserveBucketCreateDTO request) => throw new NotSupportedException();
 
     public Task<ReserveBucketDTO> UpdateReserveBucketAsync(Guid id, ReserveBucketUpdateDTO request) => throw new NotSupportedException();
