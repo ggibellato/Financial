@@ -245,15 +245,36 @@ workflow visible in either front end.
    color-only meaning, support zoom/text scaling, and provide accessible
    equivalents for important charts and status information.
 
-## Code comments policy (strict)
-- The default rule is: NO COMMENTS.
-- Do not add comments that explain what the code does, how it works, or restate the logic.
-- Comments are allowed ONLY for:
-  - Non-obvious exceptions to the normal rules.
-  - Important gotchas, pitfalls, or surprising behaviour that cannot be inferred from the code alone.
-- If a piece of logic needs explanation, prefer refactoring the code (better names, smaller functions, clearer structure) instead of adding a comment.
-- Any comment that merely describes the code must be removed.
-- When in doubt, assume: no comment is better than a descriptive comment.
+## Code comments policy (strict, high priority)
+
+- Default rule: DO NOT ADD CODE COMMENTS.
+- Allowed comments ONLY when ALL of these are true:
+  - The comment explains a non-obvious WHY (hidden constraint, subtle invariant, workaround for a specific bug, behaviour that would surprise a reader).
+  - The reason cannot be made obvious by renaming, extracting a method, or improving types.
+- Forbidden comments:
+  - Any comment that restates what the code does or how it works.
+  - “Explain the logic” comments above or inside methods.
+  - TODO/FIXME that just describes the current task (use commits/PRs instead).
+- If logic needs explanation, refactor instead of commenting:
+  - Better names
+  - Smaller functions
+  - Clearer structure and types
+- When in doubt: NO COMMENT.
+- This rule applies to:
+  - All C#, TypeScript, XAML, SQL, config, and script files.
+  - Inline comments, block comments, and XML/doc comments.
+- Violating this rule will cause the code to be rejected in review. Comply strictly.
+
+## Writing code (anti-bloat)
+
+- Don’t add features, refactor, or introduce abstractions beyond what the task requires.
+- Default to writing no comments. Only add one when the WHY is non-obvious:
+  - a hidden constraint
+  - a subtle invariant
+  - a workaround for a specific bug
+  - behaviour that would surprise a reader
+- Don’t explain WHAT the code does. Well-named identifiers already do that.
+- Don’t reference the current task, fix, or callers in comments; those belong in the PR description.
 
 ## Behaviour
 When working in automatic mode on tasks that create pull requests, always check whether the current GitHub account has permission to merge PRs before proceeding. If you detect that you cannot merge (for example, due to branch protection rules, missing write/merge permissions, or a failed permission check), stop the automation immediately, explain clearly that the PR cannot be merged with the current account, and wait for the user to confirm that the PR has been merged (or to switch to an account with merge rights) before creating any follow-up PRs or continuing with dependent work.
