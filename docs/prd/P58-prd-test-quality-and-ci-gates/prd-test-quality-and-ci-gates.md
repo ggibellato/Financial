@@ -649,16 +649,16 @@ graph TD
 - [x] The `wpf-e2e` job is in `ci-status` needs, or, if the fallback rule triggered, the move to nightly is documented in `docs/ci-affected-pipeline.md`.
 
 ### F14. Nightly Quality Pipeline
-- [ ] `nightly.yml` runs on cron and on manual dispatch, and is not a required check.
-- [ ] The Stryker report and score for both Domain projects appear in the job summary.
-- [ ] The StrykerJS report and score for `Financial.Web` utils/hooks/validators appear in the job summary.
-- [ ] StrykerJS never mutates `.tsx` components, generated code or test helpers.
-- [ ] A second StrykerJS run with no source changes reuses the incremental cache and finishes in ≤ 10 min.
+- [x] `nightly.yml` runs on cron and on manual dispatch, and is not a required check.
+- [x] The Stryker report and score for both Domain projects appear in the job summary.
+- [x] The StrykerJS report and score for `Financial.Web` utils/hooks/validators appear in the job summary.
+- [x] StrykerJS never mutates `.tsx` components, generated code or test helpers.
+- [x] A second StrykerJS run with no source changes reuses the incremental cache and finishes in ≤ 10 min.
 - [ ] Neither Stryker run has a break threshold until 3 runs exist. Each threshold PR sets it to that tool's lowest score − 5.
-- [ ] The full Playwright and FlaUI suites run, and their artifacts upload on failure.
-- [ ] `Category=Live` failures are reported but do not fail the workflow.
-- [ ] The AC-traceability table lists every PRD Section 9 criterion with no traced test.
-- [ ] A nightly failure opens or updates one `nightly-failure` issue.
+- [x] The full Playwright and FlaUI suites run, and their artifacts upload on failure.
+- [x] `Category=Live` failures are reported but do not fail the workflow.
+- [x] The AC-traceability table lists every PRD Section 9 criterion with no traced test.
+- [x] A nightly failure opens or updates one `nightly-failure` issue.
 
 ### Cross-Feature Integration
 - [x] F05's host tests use F01's default `ApiTestFactory` and make no outbound HTTP calls.
@@ -666,5 +666,5 @@ graph TD
 - [x] F07 rewrites touch only tests that survived F06. No rewritten test is one F06 marked for removal.
 - [ ] F09's baseline is taken from a `main` run that includes F06's consolidation, F07's trait filtering (Live excluded) and F08's determinism. Two consecutive runs on that commit produce identical line and branch percentages.
 - [x] F10's date-dependent tests use the `TimeProvider` and delay seams introduced by F08.
-- [ ] F14's live-check step selects exactly the tests F07 tagged `Category=Live`.
-- [ ] F14's nightly E2E step runs F12's full spec set (not only `@smoke`) and F13's full `Category=E2E` set, and uploads the same artifact types as the PR jobs.
+- [x] F14's live-check step selects exactly the tests F07 tagged `Category=Live`.
+- [x] F14's nightly E2E step runs F12's full spec set (not only `@smoke`) and F13's full `Category=E2E` set, and uploads the same artifact types as the PR jobs.
