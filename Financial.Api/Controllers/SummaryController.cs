@@ -69,9 +69,6 @@ public sealed class SummaryController : ControllerBase
         string portfolioName,
         [FromQuery] string? scope)
     {
-        if (string.IsNullOrWhiteSpace(brokerName) || string.IsNullOrWhiteSpace(portfolioName))
-            return BadRequest();
-
         var result = _portfolioAssetSummaryService.GetPortfolioAssetsSummary(brokerName, portfolioName, InvestmentScopeParser.ParseOrDefault(scope));
         return Ok(result);
     }
@@ -85,9 +82,6 @@ public sealed class SummaryController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public ActionResult<IReadOnlyList<PortfolioBreakdownItemDTO>> GetBrokerBreakdown(string brokerName, [FromQuery] string? scope)
     {
-        if (string.IsNullOrWhiteSpace(brokerName))
-            return BadRequest();
-
         var result = _brokerBreakdownService.GetBrokerBreakdown(brokerName, InvestmentScopeParser.ParseOrDefault(scope));
         return Ok(result);
     }
