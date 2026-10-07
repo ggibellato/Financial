@@ -304,22 +304,27 @@ public class CorporateActionReplayTests
     }
 
     [Theory]
-    [InlineData("MergerSourceAsParent")]
-    [InlineData("SpinOffParentAsSource")]
-    [InlineData("MergerSourceWithoutARole")]
-    public void ApplyToPosition_UnsupportedTypeAndRoleCombination_ThrowsNamingTheActionParameter(string scenario)
+    [InlineData(CorporateAction.CorporateActionRole.Parent)]
+    [InlineData(CorporateAction.CorporateActionRole.New)]
+    [InlineData(null)]
+    public void ApplyToPosition_MergerWithAnUnsupportedRole_ThrowsNamingTheActionParameter(CorporateAction.CorporateActionRole? role)
     {
-        var action = scenario == "SpinOffParentAsSource" ? SpinOffParent() : MergerSource();
-        var role = scenario switch
-        {
-            "MergerSourceAsParent" => CorporateAction.CorporateActionRole.Parent,
-            "SpinOffParentAsSource" => CorporateAction.CorporateActionRole.Source,
-            _ => (CorporateAction.CorporateActionRole?)null,
-        };
-        typeof(CorporateAction).GetProperty(nameof(CorporateAction.Role))!.SetValue(action, role);
-
-        var act = () => CorporateActionReplay.ApplyToPosition(10m, 5m, action);
+        var act = () => CorporateActionReplay.ApplyToPosition(10m, 5m, WithRole(MergerSource(), role));
 
         act.Should().Throw<ArgumentOutOfRangeException>().WithParameterName("action");
+    }
+
+    [Fact]
+    public void ApplyToPosition_SpinOffWithAnUnsupportedRole_ThrowsNamingTheActionParameter()
+    {
+        var act = () => CorporateActionReplay.ApplyToPosition(10m, 5m, WithRole(SpinOffParent(), CorporateAction.CorporateActionRole.Source));
+
+        act.Should().Throw<ArgumentOutOfRangeException>().WithParameterName("action");
+    }
+
+    private static CorporateAction WithRole(CorporateAction action, CorporateAction.CorporateActionRole? role)
+    {
+        typeof(CorporateAction).GetProperty(nameof(CorporateAction.Role))!.SetValue(action, role);
+        return action;
     }
 }

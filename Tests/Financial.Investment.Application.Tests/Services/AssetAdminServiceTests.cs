@@ -362,40 +362,31 @@ public class AssetAdminServiceTests
         _repository.WriteCallCount.Should().Be(0);
     }
 
-    [Fact]
-    public async Task UpdateAssetAsync_HistoricScopeButTheBrokerIsOnlyActive_UpdatesTheActiveAsset()
+    [Theory]
+    [InlineData(InvestmentScope.Historic, false, "Active")]
+    [InlineData(InvestmentScope.Active, true, "Historic")]
+    public async Task UpdateAssetAsync_BrokerExistsOnlyInTheOtherScope_UpdatesTheAssetThere(InvestmentScope scope, bool brokerIsHistoric, string expectedStatus)
     {
         _repository.Investments = Investments.Create();
         var broker = Broker.Create("XPI", "BRL");
         broker.CreatePortfolio("Default").RegisterAsset(Asset.Create("AAAA", "ISIN123", "NYSE", "AAA"));
-        _repository.Investments.AddActiveBroker(broker);
+        if (brokerIsHistoric)
+        {
+            _repository.Investments.AddHistoricBroker(broker);
+        }
+        else
+        {
+            _repository.Investments.AddActiveBroker(broker);
+        }
 
-        var result = await CreateService().UpdateAssetAsync("XPI", "Default", "AAAA", new AssetAdminUpdateDTO { Name = "AAAB" }, InvestmentScope.Historic);
+        var result = await CreateService().UpdateAssetAsync("XPI", "Default", "AAAA", new AssetAdminUpdateDTO { Name = "AAAB" }, scope);
 
         using (new AssertionScope())
         {
             result.Name.Should().Be("AAAB");
-            result.BrokerStatus.Should().Be("Active");
+            result.BrokerStatus.Should().Be(expectedStatus);
         }
     }
-
-    [Fact]
-    public async Task UpdateAssetAsync_ActiveScopeButTheBrokerIsOnlyHistoric_UpdatesTheHistoricAsset()
-    {
-        _repository.Investments = Investments.Create();
-        var broker = Broker.Create("XPI", "BRL");
-        broker.CreatePortfolio("Default").RegisterAsset(Asset.Create("AAAA", "ISIN123", "NYSE", "AAA"));
-        _repository.Investments.AddHistoricBroker(broker);
-
-        var result = await CreateService().UpdateAssetAsync("XPI", "Default", "AAAA", new AssetAdminUpdateDTO { Name = "AAAB" }, InvestmentScope.Active);
-
-        using (new AssertionScope())
-        {
-            result.Name.Should().Be("AAAB");
-            result.BrokerStatus.Should().Be("Historic");
-        }
-    }
-
     [Theory]
     [InlineData(InvestmentScope.Active)]
     [InlineData(InvestmentScope.Historic)]
@@ -420,5 +411,6 @@ public class AssetAdminServiceTests
         await act.Should().ThrowAsync<KeyNotFoundException>().WithMessage("*Portfolio*Missing*");
         _repository.WriteCallCount.Should().Be(0);
     }
+
     private AssetAdminService CreateService() => new(_repository, _tracer, _logger);
 }

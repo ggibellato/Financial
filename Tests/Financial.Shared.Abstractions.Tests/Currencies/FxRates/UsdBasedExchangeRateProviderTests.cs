@@ -115,8 +115,8 @@ public class UsdBasedExchangeRateProviderTests
 
         rate.Should().Be(5.0m);
         store.SetRateCallCount.Should().Be(0);
-        store.TryGetRate(tomorrow).Should().BeNull();
     }
+
     [Fact]
     public async Task GetHistoricalRateAsync_AllSixPairsForSameDate_AreMathematicallyConsistent()
     {

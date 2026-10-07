@@ -6,35 +6,16 @@ namespace Financial.CashFlow.Domain.Tests.Rules;
 [Trait("Category", "Unit")]
 public class AnnualAverageMonthsCalculatorTests
 {
-    [Fact]
-    public void NumberOfMonthsForAverage_CurrentYearInJanuary_ReturnsZero()
+    [Theory]
+    [InlineData(2026, 1, 15, 2026, 0)]
+    [InlineData(2026, 10, 7, 2026, 9)]
+    [InlineData(2026, 10, 7, 2017, 11)]
+    [InlineData(2026, 10, 7, 2024, 12)]
+    public void NumberOfMonthsForAverage_ReturnsTheCompletedMonthsForTheCurrentYearAndTheFixedCountsForPastYears(
+        int nowYear, int nowMonth, int nowDay, int year, int expectedMonths)
     {
-        var now = new DateTimeOffset(2026, 1, 15, 0, 0, 0, TimeSpan.Zero);
+        var now = new DateTimeOffset(nowYear, nowMonth, nowDay, 0, 0, 0, TimeSpan.Zero);
 
-        AnnualAverageMonthsCalculator.NumberOfMonthsForAverage(now, 2026).Should().Be(0);
-    }
-
-    [Fact]
-    public void NumberOfMonthsForAverage_CurrentYearInOctober_ReturnsTheNineCompletedMonths()
-    {
-        var now = new DateTimeOffset(2026, 10, 7, 0, 0, 0, TimeSpan.Zero);
-
-        AnnualAverageMonthsCalculator.NumberOfMonthsForAverage(now, 2026).Should().Be(9);
-    }
-
-    [Fact]
-    public void NumberOfMonthsForAverage_Year2017_ReturnsElevenMonths()
-    {
-        var now = new DateTimeOffset(2026, 10, 7, 0, 0, 0, TimeSpan.Zero);
-
-        AnnualAverageMonthsCalculator.NumberOfMonthsForAverage(now, 2017).Should().Be(11);
-    }
-
-    [Fact]
-    public void NumberOfMonthsForAverage_OtherPastYear_ReturnsTwelveMonths()
-    {
-        var now = new DateTimeOffset(2026, 10, 7, 0, 0, 0, TimeSpan.Zero);
-
-        AnnualAverageMonthsCalculator.NumberOfMonthsForAverage(now, 2024).Should().Be(12);
+        AnnualAverageMonthsCalculator.NumberOfMonthsForAverage(now, year).Should().Be(expectedMonths);
     }
 }
