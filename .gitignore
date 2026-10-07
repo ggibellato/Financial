@@ -35,3 +35,4 @@ test-skill-validation
 .gitignore.bak
 data-investment.json
 
+StrykerOutput/

@@ -1,0 +1,55 @@
+name: Financial nightly
+
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  TZ: Europe/London
+  LANG: en-GB
+
+jobs:
+  stryker-dotnet:
+    name: stryker-dotnet (${{ matrix.name }})
+    runs-on: windows-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: CashFlow.Domain
+            project: Financial.CashFlow.Domain.csproj
+            tests: Tests/Financial.CashFlow.Domain.Tests/Financial.CashFlow.Domain.Tests.csproj
+          - name: Investment.Domain
+            project: Financial.Investment.Domain.csproj
+            tests: Tests/Financial.Investment.Domain.Tests/Financial.Investment.Domain.Tests.csproj
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v6
+      with:
+        dotnet-version: 10.0.x
+
+    - name: Restore tools
+      run: dotnet tool restore
+
+    - name: Run Stryker.NET
+      run: dotnet stryker --config-file .config/stryker-config.json --project ${{ matrix.project }} --test-project ${{ matrix.tests }} --output TestResults/stryker/${{ matrix.name }}
+
+    - name: Publish mutation score
+      if: always()
+      run: pwsh .github/scripts/mutation-score.ps1 -Report TestResults/stryker/${{ matrix.name }}/reports/mutation-report.json -Name ${{ matrix.name }}
+
+    - name: Upload mutation report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: stryker-dotnet-${{ matrix.name }}
+        path: TestResults/stryker/${{ matrix.name }}/reports
+        retention-days: 14

@@ -58,6 +58,9 @@ jobs:
     - name: Self-test the baseline reminder
       run: pwsh .github/scripts/baseline-reminder.test.ps1
 
+    - name: Self-test the mutation score script
+      run: pwsh .github/scripts/mutation-score.test.ps1
+
     - name: Resolve the diff base
       id: base
       env:
