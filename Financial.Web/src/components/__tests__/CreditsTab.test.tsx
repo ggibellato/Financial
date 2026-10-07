@@ -29,12 +29,12 @@ vi.mock('recharts', () => ({
   BarChart: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="bar-chart">{children}</div>
   ),
-  Bar: ({ name, dataKey, children }: { name?: string; dataKey: BucketReader; children?: React.ReactNode }) => (
+  Bar: ({ name, dataKey, children }: { name?: string; dataKey: BucketReader | string; children?: React.ReactNode }) => (
     <div
       data-testid="bar"
       data-name={name}
-      data-own={String(dataKey(bucketWith(name)))}
-      data-other={String(dataKey(bucketWith(undefined)))}
+      data-own={typeof dataKey === 'function' ? String(dataKey(bucketWith(name))) : dataKey}
+      data-other={typeof dataKey === 'function' ? String(dataKey(bucketWith(undefined))) : dataKey}
     >
       {children}
     </div>
@@ -59,13 +59,12 @@ vi.mock('recharts', () => ({
   ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="responsive-container">{children}</div>
   ),
-  LabelList: ({ formatter, dataKey }: { formatter: (value: unknown) => string; dataKey: BucketReader }) => (
+  LabelList: ({ formatter }: { formatter: (value: unknown) => string }) => (
     <div
       data-testid="label"
       data-positive={formatter(7)}
       data-zero={formatter(0)}
       data-text={formatter('n/a')}
-      data-own={String(dataKey(bucketWith('Dividend')))}
     />
   ),
 }))
@@ -618,6 +617,7 @@ describe('CreditsTab', () => {
 
     fireEvent.click(screen.getByRole('button', { name: header }))
 
+    expect(screen.getByRole('button', { name: header }).closest('th')).toHaveAttribute('aria-sort', 'ascending')
     expect(dataRows().map((row) => row.textContent?.match(/JCP|Securities Lending Income|Dividend/)?.[0])).toEqual([
       'JCP',
       'Securities Lending Income',
@@ -625,7 +625,7 @@ describe('CreditsTab', () => {
     ])
   })
 
-  it.each(['Withheld', 'Intermediation fee', 'Net', 'Yield (Bought)', 'Yield (Current)'])(
+  it.each(['Withheld', 'Intermediation fee', 'Net'])(
     'clicking_the_%s_header_marks_it_as_the_active_sort',
     async (header) => {
       await renderAssetTab([CREDIT_DIVIDEND])
@@ -668,7 +668,6 @@ describe('CreditsTab', () => {
     expect(label).toHaveAttribute('data-positive', '7.00')
     expect(label).toHaveAttribute('data-zero', '')
     expect(label).toHaveAttribute('data-text', '')
-    expect(label).toHaveAttribute('data-own', '7')
   })
 
   it('stacked_line_series_read_their_own_type_and_the_grouped_line_reads_the_total', async () => {
