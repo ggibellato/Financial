@@ -587,7 +587,7 @@ graph TD
 - [x] Deleting the `catch` in any service makes that service's failed-span test fail.
 - [x] Every .NET test class has a `Category` trait, and an architecture-style test asserts none is missing.
 - [x] The `backend` job excludes `Category=Live`.
-- [ ] The 9 live verifications no longer use `Skip=` and pass with `--filter Category=Live` against live sites when available.
+- [x] The 9 live verifications no longer use `Skip=` and pass with `--filter Category=Live` against live sites when available.
 - [x] `Financial.Shared.Abstractions.Tests` exists, is in `Financial.slnx`, and covers `CompensatingSaveHelper` directly.
 - [x] Investment.Infrastructure CRUD tests reload from disk and assert persisted state, or are removed.
 - [x] The rewritten `TransactionsTab`, `CreditsTab` and `PriceHistoryTab` tests do not mock their own hook.
