@@ -45,13 +45,7 @@ public sealed class ReserveBucketService : IReserveBucketService
         using var span = StartSpan("GetSplitStatus");
         try
         {
-            var buckets = _repository.GetReserveBuckets().ToList();
-            var total = ActiveSplitTotal(buckets);
-            var result = new ReserveSplitStatusDTO
-            {
-                ActiveTotal = total,
-                Warning = buckets.Count == 0 ? null : WarningFor(total),
-            };
+            var result = BuildSplitStatus();
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetSplitStatus");
@@ -89,7 +83,7 @@ public sealed class ReserveBucketService : IReserveBucketService
             span.SetAttribute(TelemetryAttributeKeys.EntityId, bucket.Id.ToString());
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "CreateReserveBucket");
-            return ToDto(bucket, ComputeActiveSplitWarning());
+            return ToDto(bucket, BuildSplitStatus().Warning);
         }
         catch (Exception ex)
         {
@@ -126,7 +120,7 @@ public sealed class ReserveBucketService : IReserveBucketService
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UpdateReserveBucket");
-            return ToDto(bucket, ComputeActiveSplitWarning());
+            return ToDto(bucket, BuildSplitStatus().Warning);
         }
         catch (Exception ex)
         {
@@ -135,11 +129,16 @@ public sealed class ReserveBucketService : IReserveBucketService
         }
     }
 
-    private static decimal ActiveSplitTotal(IEnumerable<ReserveBucket> buckets) => buckets.Where(b => b.IsActive).Sum(b => b.SplitPercentage);
-
-    private static string? WarningFor(decimal total) => ReserveSplitRule.IsBalanced(total) ? null : ReserveSplitRule.BuildWarning(total);
-
-    private string? ComputeActiveSplitWarning() => WarningFor(ActiveSplitTotal(_repository.GetReserveBuckets()));
+    private ReserveSplitStatusDTO BuildSplitStatus()
+    {
+        var buckets = _repository.GetReserveBuckets();
+        var total = buckets.Where(b => b.IsActive).Sum(b => b.SplitPercentage);
+        return new ReserveSplitStatusDTO
+        {
+            ActiveTotal = total,
+            Warning = !buckets.Any() || ReserveSplitRule.IsBalanced(total) ? null : ReserveSplitRule.BuildWarning(total),
+        };
+    }
 
     private ITelemetrySpan StartSpan(string operationName)
     {
