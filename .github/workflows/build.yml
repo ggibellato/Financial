@@ -61,6 +61,9 @@ jobs:
     - name: Self-test the mutation score script
       run: pwsh .github/scripts/mutation-score.test.ps1
 
+    - name: Self-test the test results summary script
+      run: pwsh .github/scripts/test-results-summary.test.ps1
+
     - name: Resolve the diff base
       id: base
       env:
@@ -458,73 +461,10 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v6
 
-    - name: Setup Node
-      uses: actions/setup-node@v6
-      with:
-        node-version: 24.13.0
-
-    - name: Install web dependencies
-      working-directory: Financial.Web
-      run: npm install
-
-    - name: Install Playwright browser
-      working-directory: Financial.Web
-      run: npx playwright install --with-deps chromium
-
-    - name: Build web frontend
-      working-directory: Financial.Web
-      run: |
-        echo "API_BASE_URL=/api/v1/financial" > .env
-        npm run build
-
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v6
-      with:
-        dotnet-version: 10.0.x
-
-    - name: Publish API
-      run: dotnet publish Financial.Api/Financial.Api.csproj --configuration Release --output publish
-
-    - name: Embed web build into API wwwroot
-      run: |
-        mkdir -p publish/wwwroot
-        cp -r Financial.Web/dist/. publish/wwwroot/
-
-    - name: Prepare web E2E test data
-      run: |
-        cp Tests/Financial.Api.Tests/TestData/data.test.json /tmp/data.web-e2e.json
-        cp Tests/Financial.Api.Tests/TestData/data-cashflow.test.json /tmp/data-cashflow.web-e2e.json
-
     - name: Run web E2E smoke
-      env:
-        Investment__Repository__Provider: LocalJson
-        Investment__DataJsonFile: /tmp/data.web-e2e.json
-        CashFlow__Repository__Provider: LocalJson
-        CashFlow__DataJsonFile: /tmp/data-cashflow.web-e2e.json
-        ASPNETCORE_URLS: http://localhost:8080
-        SMOKE_APP_URL: http://localhost:8080
-      run: |
-        cd publish
-        dotnet Financial.Api.dll &
-        API_PID=$!
-        cd ..
-        ready=0
-        for i in $(seq 1 30); do
-          if curl -sf http://localhost:8080/api/v1/financial/health > /dev/null; then
-            ready=1
-            break
-          fi
-          sleep 1
-        done
-        if [ "$ready" -ne 1 ]; then
-          echo "API did not become healthy in time"
-          kill $API_PID
-          exit 1
-        fi
-        (cd Financial.Web && npm run smoke-test)
-        E2E_EXIT=$?
-        kill $API_PID
-        exit $E2E_EXIT
+      uses: ./.github/actions/web-e2e
+      with:
+        command: npm run smoke-test
 
     - name: Upload web E2E artifacts
       if: failure()

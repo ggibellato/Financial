@@ -98,3 +98,72 @@ jobs:
         name: stryker-js
         path: Financial.Web/reports/mutation
         retention-days: 14
+
+  e2e-web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Run full web E2E
+      uses: ./.github/actions/web-e2e
+      with:
+        command: npm run test:e2e
+
+    - name: Upload web E2E artifacts
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: web-e2e-artifacts
+        path: |
+          Financial.Web/playwright-report/
+          Financial.Web/test-results/
+        retention-days: 14
+
+  e2e-wpf:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v6
+      with:
+        dotnet-version: 10.0.x
+
+    - name: Build WPF app and E2E tests
+      run: dotnet build Tests/Financial.App.E2ETests/Financial.App.E2ETests.csproj --configuration Release
+
+    - name: Run full WPF E2E
+      run: dotnet test Tests/Financial.App.E2ETests --configuration Release --no-build --verbosity normal --filter "Category=E2E"
+
+    - name: Upload E2E artifacts
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: wpf-e2e-artifacts
+        path: TestResults/e2e-artifacts
+        retention-days: 14
+
+  live:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v6
+      with:
+        dotnet-version: 10.0.x
+
+    - name: Run live verifications
+      continue-on-error: true
+      run: dotnet test Financial.slnx --configuration Release --filter "Category=Live" --logger "trx;LogFilePrefix=live" --results-directory TestResults/live
+
+    - name: Publish live results
+      shell: pwsh
+      run: |
+        ./.github/scripts/test-results-summary.ps1 -Trx 'TestResults/live/*.trx' -Name Live
