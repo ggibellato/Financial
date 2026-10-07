@@ -28,7 +28,7 @@ public class GoogleFinanceVerificationTests
         {
             ("BBAS3", "BVMF", "Banco do Brasil"),
             ("KLBN4", "BVMF", "Klabin"),
-            ("KLBN11", "BVMF", "Klabin Unit"),
+            ("KLBN11", "BVMF", "Klabin SA Unit"),
         };
 
         foreach (var (ticker, exchange, expectedNamePart) in stocks)
