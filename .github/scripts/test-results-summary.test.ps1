@@ -19,7 +19,8 @@ function New-Trx([hashtable[]]$results) {
 
 function Invoke-Summary([string]$trx) {
     $summary = Join-Path $work "$([guid]::NewGuid()).md"
-    $text = & pwsh -NoProfile -File $script -Trx $trx -Name 'Live' -SummaryPath $summary 2>&1 | Out-String
+    $global:LASTEXITCODE = 0
+    $text = & $script -Trx $trx -Name 'Live' -SummaryPath $summary 6>&1 2>&1 | Out-String
     return [pscustomobject]@{
         Exit    = $LASTEXITCODE
         Text    = $text.Trim()
