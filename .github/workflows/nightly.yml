@@ -4,8 +4,6 @@ on:
   schedule:
     - cron: '0 2 * * *'
   workflow_dispatch:
-  pull_request:
-    paths: [.github/workflows/nightly.yml]
 
 permissions:
   contents: read
