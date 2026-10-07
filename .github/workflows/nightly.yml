@@ -167,3 +167,33 @@ jobs:
       shell: pwsh
       run: |
         ./.github/scripts/test-results-summary.ps1 -Trx 'TestResults/live/*.trx' -Name Live
+
+  ac-traceability:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Report untraced acceptance criteria
+      shell: pwsh
+      run: ./.github/scripts/ac-traceability.ps1
+
+  report:
+    needs: [ stryker-dotnet, stryker-js, e2e-web, e2e-wpf, ac-traceability ]
+    if: always() && (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Open or update the failure issue
+      shell: pwsh
+      env:
+        GH_TOKEN: ${{ github.token }}
+        NEEDS: ${{ toJSON(needs) }}
+      run: ./.github/scripts/nightly-issue.ps1 -NeedsJson $env:NEEDS -RunUrl "$env:GITHUB_SERVER_URL/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID"

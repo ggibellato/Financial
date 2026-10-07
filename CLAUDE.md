@@ -163,7 +163,9 @@ full pipeline. On pull requests `changes` also scans the added lines for test-hy
 (`.github/scripts/test-hygiene.sh`: wall-clock reads, fixed delays, skipped or focused tests; exempt a line with
 `// hygiene-allow: <reason>`). `ci-status` is the single required
 check and passes when every job succeeded or was skipped. Rules and extension steps are in
-`docs/ci-affected-pipeline.md`. PR titles are enforced as Conventional Commits
+`docs/ci-affected-pipeline.md`. A separate scheduled `nightly.yml` (never part of `ci-status`) runs mutation testing,
+the full E2E suites, the live verifications and an acceptance-criteria traceability report, and opens one
+`nightly-failure` issue when a blocking-class job fails; see the same document. PR titles are enforced as Conventional Commits
 (`feat|fix|docs|chore|refactor|test|perf|ci|build`) by `semantic-pr.yml`.
 
 ## GIT Policy
