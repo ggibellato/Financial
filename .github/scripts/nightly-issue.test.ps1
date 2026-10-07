@@ -15,14 +15,13 @@ if ($args[0] -eq 'issue' -and $args[1] -eq 'list') { Write-Output $env:FAKE_OPEN
 exit 0
 '@
 
-function Invoke-Issue([string]$failedJobs, [string]$openIssue = '', [switch]$DryRun, [string]$failOn = '') {
+function Invoke-Issue([hashtable]$needs, [string]$openIssue = '', [string]$failOn = '') {
     $env:FAKE_GH_LOG = Join-Path $work "$([guid]::NewGuid()).log"
     $env:FAKE_OPEN_ISSUE = $openIssue
     $env:FAKE_GH_FAIL = $failOn
     $global:LASTEXITCODE = 0
-    $arguments = @{ FailedJobs = $failedJobs; RunUrl = 'https://example.test/run/1'; Gh = $fake }
-    if ($DryRun) { $arguments.DryRun = $true }
-    $text = & $script @arguments 6>&1 2>&1 | Out-String
+    $needsJson = $needs.GetEnumerator() | ForEach-Object -Begin { $map = [ordered]@{} } -Process { $map[$_.Key] = @{ result = $_.Value } } -End { $map | ConvertTo-Json -Compress }
+    $text = & $script -NeedsJson $needsJson -RunUrl 'https://example.test/run/1' -Gh $fake 6>&1 2>&1 | Out-String
     return [pscustomobject]@{
         Exit  = $LASTEXITCODE
         Text  = $text.Trim()
@@ -38,30 +37,25 @@ function Check([string]$name, [bool]$condition, $result) {
     }
 }
 
-$result = Invoke-Issue ''
+$result = Invoke-Issue @{ 'stryker-js' = 'success'; 'e2e-web' = 'skipped' }
 Check 'no failed job does nothing' ($result.Exit -eq 0 -and $result.Calls.Count -eq 0) $result
 
-$result = Invoke-Issue 'stryker-js, e2e-web'
-Check 'no open issue creates one with the label, the jobs and the run url' (
+$result = Invoke-Issue @{ 'stryker-js' = 'failure'; 'e2e-web' = 'failure'; 'e2e-wpf' = 'success' }
+Check 'no open issue creates one with the label, the failed jobs and the run url' (
     $result.Exit -eq 0 -and
-    @($result.Calls | Where-Object { $_ -match '^issue create .*--label nightly-failure' -and $_ -match 'stryker-js, e2e-web' -and $_ -match 'https://example.test/run/1' }).Count -eq 1 -and
+    @($result.Calls | Where-Object { $_ -match '^issue create .*--label nightly-failure' -and $_ -match 'stryker-js' -and $_ -match 'e2e-web' -and $_ -notmatch 'e2e-wpf' -and $_ -match 'https://example.test/run/1' }).Count -eq 1 -and
     @($result.Calls | Where-Object { $_ -match '^issue comment' }).Count -eq 0) $result
-Check 'the label is created once with force' (@($result.Calls | Where-Object { $_ -match '^label create nightly-failure --force' }).Count -eq 1) $result
+Check 'the label is created once with force before the issue' (@($result.Calls | Where-Object { $_ -match '^label create nightly-failure --force' }).Count -eq 1) $result
 
-$result = Invoke-Issue 'e2e-wpf' '42'
-Check 'an open issue gets a comment and no second issue' (
+$result = Invoke-Issue @{ 'e2e-wpf' = 'cancelled' }
+Check 'a cancelled job, which is how a timeout ends, counts as failed' (@($result.Calls | Where-Object { $_ -match '^issue create .*e2e-wpf' }).Count -eq 1) $result
+
+$result = Invoke-Issue @{ 'e2e-wpf' = 'failure' } '42'
+Check 'an open issue gets a comment and no second issue or label call' (
     @($result.Calls | Where-Object { $_ -match '^issue comment 42 .*e2e-wpf' }).Count -eq 1 -and
-    @($result.Calls | Where-Object { $_ -match '^issue create' }).Count -eq 0) $result
+    @($result.Calls | Where-Object { $_ -match '^(issue create|label create)' }).Count -eq 0) $result
 
-$result = Invoke-Issue 'e2e-wpf' '' -DryRun
-Check 'a dry run writes nothing and names the decision' (
-    $result.Text -match 'would create an issue' -and
-    @($result.Calls | Where-Object { $_ -match '^(issue create|issue comment|label create)' }).Count -eq 0) $result
-
-$result = Invoke-Issue 'e2e-wpf' '7' -DryRun
-Check 'a dry run with an open issue names the comment' ($result.Text -match 'would comment on #7') $result
-
-$result = Invoke-Issue 'e2e-wpf' '' -failOn '^issue create'
+$result = Invoke-Issue @{ 'e2e-wpf' = 'failure' } '' '^issue create'
 Check 'a failing gh call exits 1' ($result.Exit -eq 1 -and $result.Text -match 'failed') $result
 
 Remove-Item -Recurse -Force $work

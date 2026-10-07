@@ -181,7 +181,7 @@ jobs:
 
   report:
     needs: [ stryker-dotnet, stryker-js, e2e-web, e2e-wpf, ac-traceability ]
-    if: always()
+    if: always() && (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled'))
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -196,8 +196,4 @@ jobs:
       env:
         GH_TOKEN: ${{ github.token }}
         NEEDS: ${{ toJSON(needs) }}
-      run: |
-        $failed = ($env:NEEDS | ConvertFrom-Json).PSObject.Properties |
-          Where-Object { $_.Value.result -eq 'failure' } |
-          ForEach-Object { $_.Name }
-        ./.github/scripts/nightly-issue.ps1 -FailedJobs ($failed -join ',') -RunUrl "$env:GITHUB_SERVER_URL/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID"
+      run: ./.github/scripts/nightly-issue.ps1 -NeedsJson $env:NEEDS -RunUrl "$env:GITHUB_SERVER_URL/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID"
