@@ -10,7 +10,11 @@ public sealed class FakeCreditCardCalendarSyncService : ICreditCardCalendarSyncS
 {
     public List<Guid> TriggeredCreditCardIds { get; } = new();
 
+    public List<(Guid CreditCardId, DateOnly InvoiceDate)> InvoiceChecks { get; } = new();
+
     public void TriggerSync(Guid creditCardId) => TriggeredCreditCardIds.Add(creditCardId);
+
+    public void TriggerSyncIfInvoiceSynced(Guid creditCardId, DateOnly invoiceDate) => InvoiceChecks.Add((creditCardId, invoiceDate));
 
     public Task<CreditCardCalendarSyncStatusDTO> ResyncAsync(Guid creditCardId, CancellationToken cancellationToken = default) =>
         throw new NotSupportedException();

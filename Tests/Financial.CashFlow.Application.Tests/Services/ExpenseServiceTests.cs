@@ -23,6 +23,7 @@ public class ExpenseServiceTests
 
     private readonly StubCashFlowRepository _repository;
     private readonly RecordingTelemetryTracer _tracer;
+    private readonly FakeCreditCardCalendarSyncService _calendarSyncTrigger = new();
     private readonly ExpenseService _sut;
 
     public ExpenseServiceTests()
@@ -39,7 +40,63 @@ public class ExpenseServiceTests
     private ExpenseService CreateService(
         StubCashFlowRepository? repository = null,
         Microsoft.Extensions.Logging.ILogger<ExpenseService>? logger = null) =>
-        new(repository ?? _repository, _tracer, logger ?? Logger);
+        new(repository ?? _repository, _tracer, logger ?? Logger, _calendarSyncTrigger);
+
+    [Fact]
+    public async Task AddExpenseAsync_CardExpense_ChecksItsInvoiceForCalendarSync()
+    {
+        var card = _repository.CreditCards.Single(c => c.Name == "BaAmex");
+
+        await _sut.AddExpenseAsync(ToCreateDto(_repository, CardExpenseRequest(new DateOnly(2026, 9, 1))));
+
+        _calendarSyncTrigger.InvoiceChecks.Should().Equal((card.Id, new DateOnly(2026, 9, 1)));
+    }
+
+    [Fact]
+    public async Task AddExpenseAsync_BankExpense_DoesNotCheckCalendarSync()
+    {
+        await _sut.AddExpenseAsync(ToCreateDto(_repository, ValidCreateRequest()));
+
+        _calendarSyncTrigger.InvoiceChecks.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task UpdateExpenseAsync_SameInvoice_ChecksCalendarSyncOnce()
+    {
+        var added = await _sut.AddExpenseAsync(ToCreateDto(_repository, CardExpenseRequest(new DateOnly(2026, 9, 1))));
+        _calendarSyncTrigger.InvoiceChecks.Clear();
+
+        await _sut.UpdateExpenseAsync(added.Id, ToUpdateDto(_repository, CardExpenseRequest(new DateOnly(2026, 9, 1)) with { Value = added.Value + 10m }));
+
+        _calendarSyncTrigger.InvoiceChecks.Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task UpdateExpenseAsync_InvoiceMoved_ChecksBothOldAndNewInvoice()
+    {
+        var card = _repository.CreditCards.Single(c => c.Name == "BaAmex");
+        var added = await _sut.AddExpenseAsync(ToCreateDto(_repository, CardExpenseRequest(new DateOnly(2026, 9, 1))));
+        _calendarSyncTrigger.InvoiceChecks.Clear();
+
+        await _sut.UpdateExpenseAsync(added.Id, ToUpdateDto(_repository, CardExpenseRequest(new DateOnly(2026, 10, 1))));
+
+        _calendarSyncTrigger.InvoiceChecks.Should().Equal((card.Id, new DateOnly(2026, 9, 1)), (card.Id, new DateOnly(2026, 10, 1)));
+    }
+
+    [Fact]
+    public async Task DeleteExpenseAsync_CardExpense_ChecksItsInvoiceForCalendarSync()
+    {
+        var card = _repository.CreditCards.Single(c => c.Name == "BaAmex");
+        var added = await _sut.AddExpenseAsync(ToCreateDto(_repository, CardExpenseRequest(new DateOnly(2026, 9, 1))));
+        _calendarSyncTrigger.InvoiceChecks.Clear();
+
+        await _sut.DeleteExpenseAsync(added.Id);
+
+        _calendarSyncTrigger.InvoiceChecks.Should().Equal((card.Id, new DateOnly(2026, 9, 1)));
+    }
+
+    private static ExpenseCreateRequest CardExpenseRequest(DateOnly invoiceDate) =>
+        ValidCreateRequest() with { PaymentSource = null, CardTag = "BaAmex", InvoiceDate = invoiceDate };
 
     [Fact]
     public async Task AddExpenseAsync_WithValidRequest_RecordsSuccessfulSpan()

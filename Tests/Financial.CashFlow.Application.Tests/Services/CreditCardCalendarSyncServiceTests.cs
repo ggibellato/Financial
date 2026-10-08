@@ -239,6 +239,42 @@ public class CreditCardCalendarSyncServiceTests
     }
 
     [Fact]
+    public async Task TriggerSyncIfInvoiceSynced_WhenInvoiceIsInDueDateMonth_Syncs()
+    {
+        Connect();
+        var card = Card("BarclaysPlatinumVisa8003");
+        card.Update(card.Name, isActive: true, new DateOnly(2026, 9, 10));
+
+        _sut.TriggerSyncIfInvoiceSynced(card.Id, new DateOnly(2026, 9, 1));
+        var resolvedState = await _statusStore.ResolvedStateAsync(card.Id);
+
+        resolvedState.Should().Be(CreditCardCalendarSyncState.Synced);
+    }
+
+    [Fact]
+    public void TriggerSyncIfInvoiceSynced_WhenInvoiceIsInOpenMonth_DoesNothing()
+    {
+        Connect();
+        var card = Card("BarclaysPlatinumVisa8003");
+        card.Update(card.Name, isActive: true, new DateOnly(2026, 9, 10));
+
+        _sut.TriggerSyncIfInvoiceSynced(card.Id, new DateOnly(2026, 10, 1));
+
+        _statusStore.GetStatus(card.Id).Should().BeNull();
+    }
+
+    [Fact]
+    public void TriggerSyncIfInvoiceSynced_WhenCardHasNoDueDate_DoesNothing()
+    {
+        Connect();
+        var card = Card("BarclaysPlatinumVisa8003");
+
+        _sut.TriggerSyncIfInvoiceSynced(card.Id, new DateOnly(2026, 9, 1));
+
+        _statusStore.GetStatus(card.Id).Should().BeNull();
+    }
+
+    [Fact]
     public void TriggerSync_WhenNotConnected_DoesNothing()
     {
         var card = Card("BarclaysPlatinumVisa8003");
