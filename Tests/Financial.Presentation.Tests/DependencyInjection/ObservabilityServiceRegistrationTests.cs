@@ -3,6 +3,7 @@ using Financial.CashFlow.Application.DependencyInjection;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Infrastructure.DependencyInjection;
 using Financial.Integrations.Observability;
+using Financial.Integrations.GoogleCalendar;
 using Financial.Shared.Abstractions.Observability;
 using Financial.Shared.Abstractions.Persistence;
 using Financial.Shared.Infrastructure.Persistence;
@@ -52,6 +53,7 @@ public class ObservabilityServiceRegistrationTests
         services.AddObservability(configuration, serviceName: "Financial.App");
         services.AddSingleton<IJsonStorageFactory, JsonStorageFactory>();
         services.AddFinancialCashFlowApplication();
+        services.AddGoogleCalendarOAuthClient();
         services.AddFinancialCashFlowInfrastructure(configuration);
 
         return services.BuildServiceProvider();

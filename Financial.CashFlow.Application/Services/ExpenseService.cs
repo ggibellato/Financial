@@ -16,12 +16,14 @@ public sealed class ExpenseService : IExpenseService
     private readonly ICashFlowRepository _repository;
     private readonly ITelemetryTracer _tracer;
     private readonly ILogger<ExpenseService> _logger;
+    private readonly ICreditCardCalendarSyncService _calendarSync;
 
-    public ExpenseService(ICashFlowRepository repository, ITelemetryTracer tracer, ILogger<ExpenseService> logger)
+    public ExpenseService(ICashFlowRepository repository, ITelemetryTracer tracer, ILogger<ExpenseService> logger, ICreditCardCalendarSyncService calendarSync)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _calendarSync = calendarSync ?? throw new ArgumentNullException(nameof(calendarSync));
     }
 
     public async Task<ExpenseDTO> AddExpenseAsync(ExpenseCreateDTO request)
@@ -41,6 +43,8 @@ public sealed class ExpenseService : IExpenseService
                 _repository.AddExpense(expense);
                 return true;
             }).ConfigureAwait(false);
+
+            NotifyInvoiceChanged(expense.CreditCard?.Id, expense.InvoiceDate);
 
             span.SetAttribute(TelemetryAttributeKeys.EntityId, expense.Id.ToString());
             span.MarkSuccess();
@@ -66,6 +70,8 @@ public sealed class ExpenseService : IExpenseService
 
             var (category, paymentSource, creditCard) = ValidateFields(
                 request.Description, request.CategoryId, request.PaymentSourceBankId, request.CreditCardId);
+            var previousCardId = expense.CreditCard?.Id;
+            var previousInvoiceDate = expense.InvoiceDate;
 
             await _repository.ApplyAndSaveAsync(() =>
             {
@@ -79,6 +85,12 @@ public sealed class ExpenseService : IExpenseService
 
                 return true;
             }).ConfigureAwait(false);
+
+            NotifyInvoiceChanged(previousCardId, previousInvoiceDate);
+            if (previousCardId != expense.CreditCard?.Id || previousInvoiceDate != expense.InvoiceDate)
+            {
+                NotifyInvoiceChanged(expense.CreditCard?.Id, expense.InvoiceDate);
+            }
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UpdateExpense");
@@ -97,13 +109,17 @@ public sealed class ExpenseService : IExpenseService
         span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());
         try
         {
-            FindExpenseOrThrow(id);
+            var expense = FindExpenseOrThrow(id);
+            var cardId = expense.CreditCard?.Id;
+            var invoiceDate = expense.InvoiceDate;
 
             await _repository.ApplyAndSaveAsync(() =>
             {
                 _repository.DeleteExpense(id);
                 return true;
             }).ConfigureAwait(false);
+
+            NotifyInvoiceChanged(cardId, invoiceDate);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "DeleteExpense");
@@ -187,6 +203,14 @@ public sealed class ExpenseService : IExpenseService
         {
             span.MarkFailed(ex);
             throw;
+        }
+    }
+
+    private void NotifyInvoiceChanged(Guid? creditCardId, DateOnly? invoiceDate)
+    {
+        if (creditCardId is not null && invoiceDate is not null)
+        {
+            _calendarSync.TriggerSyncIfInvoiceSynced(creditCardId.Value, invoiceDate.Value);
         }
     }
 

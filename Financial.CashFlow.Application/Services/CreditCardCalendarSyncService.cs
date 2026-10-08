@@ -78,6 +78,15 @@ public sealed class CreditCardCalendarSyncService : ICreditCardCalendarSyncServi
         });
     }
 
+    public void TriggerSyncIfInvoiceSynced(Guid creditCardId, DateOnly invoiceDate)
+    {
+        var dueDate = _repository.GetCreditCards().FirstOrDefault(c => c.Id == creditCardId)?.NextInvoiceDueDate;
+        if (dueDate is not null && dueDate.Value.Year == invoiceDate.Year && dueDate.Value.Month == invoiceDate.Month)
+        {
+            TriggerSync(creditCardId);
+        }
+    }
+
     public async Task<CreditCardCalendarSyncStatusDTO> ResyncAsync(Guid creditCardId, CancellationToken cancellationToken = default)
     {
         if (!_repository.GetCreditCards().Any(c => c.Id == creditCardId))

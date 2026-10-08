@@ -69,6 +69,10 @@ internal sealed class StubCreditCardCalendarSyncService : ICreditCardCalendarSyn
     {
     }
 
+    public void TriggerSyncIfInvoiceSynced(Guid creditCardId, DateOnly invoiceDate)
+    {
+    }
+
     public Task<CreditCardCalendarSyncStatusDTO> ResyncAsync(Guid creditCardId, CancellationToken cancellationToken = default)
     {
         LastResyncedCardId = creditCardId;
