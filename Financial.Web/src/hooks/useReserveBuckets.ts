@@ -2,10 +2,10 @@ import { useCallback, useEffect, useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { ReserveBucketCreateDto, ReserveBucketDto, ReserveBucketUpdateDto } from '../api/types'
 import { getErrorMessage } from '../utils/formatters'
-import { computeActiveSplitPercentage, isActiveSplitBalanced } from '../utils/reserveBucketSplit'
 
 interface ReserveBucketsState {
   reserveBuckets: ReserveBucketDto[]
+  activeSplitWarning: string | null
   isLoading: boolean
   error: string | null
   retryCount: number
@@ -15,7 +15,7 @@ interface ReserveBucketsState {
 
 type ReserveBucketsAction =
   | { type: 'FETCH_START' }
-  | { type: 'FETCH_SUCCESS'; payload: ReserveBucketDto[] }
+  | { type: 'FETCH_SUCCESS'; payload: { reserveBuckets: ReserveBucketDto[]; activeSplitWarning: string | null } }
   | { type: 'FETCH_ERROR'; payload: string }
   | { type: 'RETRY' }
   | { type: 'SAVE_START'; payload: string }
@@ -24,6 +24,7 @@ type ReserveBucketsAction =
 
 const INITIAL_STATE: ReserveBucketsState = {
   reserveBuckets: [],
+  activeSplitWarning: null,
   isLoading: true,
   error: null,
   retryCount: 0,
@@ -36,7 +37,7 @@ function reducer(state: ReserveBucketsState, action: ReserveBucketsAction): Rese
     case 'FETCH_START':
       return { ...state, isLoading: true, error: null }
     case 'FETCH_SUCCESS':
-      return { ...state, isLoading: false, reserveBuckets: action.payload }
+      return { ...state, isLoading: false, ...action.payload }
     case 'FETCH_ERROR':
       return { ...state, isLoading: false, error: action.payload }
     case 'RETRY':
@@ -70,9 +71,13 @@ export function useReserveBuckets(): ReserveBucketsData {
 
   useEffect(() => {
     dispatch({ type: 'FETCH_START' })
-    void apiClient
-      .getReserveBuckets()
-      .then((reserveBuckets) => dispatch({ type: 'FETCH_SUCCESS', payload: reserveBuckets }))
+    void Promise.all([
+      apiClient.getReserveBuckets(),
+      apiClient.getReserveSplitStatus().then((status) => status.warning ?? null).catch(() => null),
+    ])
+      .then(([reserveBuckets, activeSplitWarning]) =>
+        dispatch({ type: 'FETCH_SUCCESS', payload: { reserveBuckets, activeSplitWarning } }),
+      )
       .catch((err: unknown) => {
         dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, 'Unable to load reserve buckets') })
       })
@@ -106,12 +111,6 @@ export function useReserveBuckets(): ReserveBucketsData {
       })
   }, [])
 
-  const activeSplitTotal = computeActiveSplitPercentage(state.reserveBuckets)
-  const activeSplitWarning =
-    state.reserveBuckets.length === 0 || isActiveSplitBalanced(activeSplitTotal)
-      ? null
-      : `Active buckets currently sum to ${activeSplitTotal.toFixed(2)}% — review your split percentages`
-
   return {
     reserveBuckets: state.reserveBuckets,
     isLoading: state.isLoading,
@@ -122,6 +121,6 @@ export function useReserveBuckets(): ReserveBucketsData {
     savingId: state.savingId,
     saveError: state.saveError,
     deactivateReserveBucket,
-    activeSplitWarning,
+    activeSplitWarning: state.activeSplitWarning,
   }
 }

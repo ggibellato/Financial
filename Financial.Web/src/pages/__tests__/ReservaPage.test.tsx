@@ -9,6 +9,7 @@ const {
   getReserveBalancesMock,
   getReserveMovementsMock,
   getReserveBucketsMock,
+  getReserveSplitStatusMock,
   getBanksMock,
   getCategoriesMock,
   postIncomeSplitMock,
@@ -19,6 +20,7 @@ const {
   getReserveBalancesMock: vi.fn<FinancialApiClient['getReserveBalances']>(),
   getReserveMovementsMock: vi.fn<FinancialApiClient['getReserveMovements']>(),
   getReserveBucketsMock: vi.fn<FinancialApiClient['getReserveBuckets']>(),
+  getReserveSplitStatusMock: vi.fn<FinancialApiClient['getReserveSplitStatus']>(),
   getBanksMock: vi.fn<FinancialApiClient['getBanks']>(),
   getCategoriesMock: vi.fn<FinancialApiClient['getCategories']>(),
   postIncomeSplitMock: vi.fn<FinancialApiClient['postIncomeSplit']>(),
@@ -32,6 +34,7 @@ vi.mock('../../api/financialApiClient', () => ({
     getReserveBalances: getReserveBalancesMock,
     getReserveMovements: getReserveMovementsMock,
     getReserveBuckets: getReserveBucketsMock,
+    getReserveSplitStatus: getReserveSplitStatusMock,
     getBanks: getBanksMock,
     getCategories: getCategoriesMock,
     postIncomeSplit: postIncomeSplitMock,
@@ -79,6 +82,7 @@ describe('ReservaPage', () => {
     getReserveBalancesMock.mockReset()
     getReserveMovementsMock.mockReset()
     getReserveBucketsMock.mockReset()
+    getReserveSplitStatusMock.mockReset()
     getBanksMock.mockReset()
     getCategoriesMock.mockReset()
     postIncomeSplitMock.mockReset()
@@ -88,6 +92,7 @@ describe('ReservaPage', () => {
     getReserveBalancesMock.mockResolvedValue(BALANCES)
     getReserveMovementsMock.mockResolvedValue(MOVEMENTS)
     getReserveBucketsMock.mockResolvedValue(BUCKETS)
+    getReserveSplitStatusMock.mockResolvedValue({ activeTotal: 100, warning: null })
     getBanksMock.mockResolvedValue(BANKS)
     getCategoriesMock.mockResolvedValue(CATEGORIES)
     sessionStorage.clear()
@@ -546,22 +551,22 @@ describe('ReservaPage', () => {
     expect(within(resultPanel).queryByText('Ariana')).not.toBeInTheDocument()
   })
 
-  it('shows a warning banner when active bucket percentages do not sum to 100%', async () => {
-    getReserveBucketsMock.mockResolvedValue([
-      { id: 'b1', name: 'Investimento', isActive: true, splitPercentage: 50, warning: null },
-      { id: 'b2', name: 'HouseTreats', isActive: true, splitPercentage: 48.5, warning: null },
-    ])
+  it("shows the server's warning banner when the active bucket percentages do not sum to 100%", async () => {
+    getReserveSplitStatusMock.mockResolvedValue({
+      activeTotal: 98.5,
+      warning: 'Active buckets currently sum to 98.5% — review your split percentages',
+    })
     render(<ReservaPage />)
 
     await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument())
-    expect(screen.getByText('Active bucket percentages sum to 98.50%, not 100%')).toBeInTheDocument()
+    expect(screen.getByText('Active buckets currently sum to 98.5% — review your split percentages')).toBeInTheDocument()
   })
 
   it('does not show a warning banner when active bucket percentages sum to 100%', async () => {
     render(<ReservaPage />)
 
     await waitFor(() => expect(screen.getAllByText('Ramsay').length).toBe(4))
-    expect(screen.queryByText(/Active bucket percentages sum to/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Active buckets currently sum to/)).not.toBeInTheDocument()
   })
 
   it('shows a lock icon and disables Edit/Delete for a movement linked to an income', async () => {

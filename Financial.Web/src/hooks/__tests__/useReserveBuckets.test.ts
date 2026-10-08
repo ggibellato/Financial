@@ -4,8 +4,9 @@ import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { ReserveBucketDto } from '../../api/types'
 import { useReserveBuckets } from '../useReserveBuckets'
 
-const { getReserveBucketsMock, createReserveBucketMock, updateReserveBucketMock } = vi.hoisted(() => ({
+const { getReserveBucketsMock, getReserveSplitStatusMock, createReserveBucketMock, updateReserveBucketMock } = vi.hoisted(() => ({
   getReserveBucketsMock: vi.fn<FinancialApiClient['getReserveBuckets']>(),
+  getReserveSplitStatusMock: vi.fn<FinancialApiClient['getReserveSplitStatus']>(),
   createReserveBucketMock: vi.fn<FinancialApiClient['createReserveBucket']>(),
   updateReserveBucketMock: vi.fn<FinancialApiClient['updateReserveBucket']>(),
 }))
@@ -13,6 +14,7 @@ const { getReserveBucketsMock, createReserveBucketMock, updateReserveBucketMock 
 vi.mock('../../api/financialApiClient', () => ({
   apiClient: {
     getReserveBuckets: getReserveBucketsMock,
+    getReserveSplitStatus: getReserveSplitStatusMock,
     createReserveBucket: createReserveBucketMock,
     updateReserveBucket: updateReserveBucketMock,
   } as Partial<FinancialApiClient>,
@@ -26,9 +28,11 @@ const BUCKETS: ReserveBucketDto[] = [
 describe('useReserveBuckets', () => {
   beforeEach(() => {
     getReserveBucketsMock.mockReset()
+    getReserveSplitStatusMock.mockReset()
     createReserveBucketMock.mockReset()
     updateReserveBucketMock.mockReset()
     getReserveBucketsMock.mockResolvedValue(BUCKETS)
+    getReserveSplitStatusMock.mockResolvedValue({ activeTotal: 100, warning: null })
   })
 
   it('fetches the reserve bucket list once on mount', async () => {
@@ -66,15 +70,45 @@ describe('useReserveBuckets', () => {
     expect(result.current.activeSplitWarning).toBeNull()
   })
 
-  it('reports a warning when active buckets do not sum to 100', async () => {
-    getReserveBucketsMock.mockResolvedValue([
-      { id: 'b1', name: 'Investimento', isActive: true, splitPercentage: 60, warning: null },
-    ])
+  it('shows the warning the server reports for the active split', async () => {
+    getReserveSplitStatusMock.mockResolvedValue({
+      activeTotal: 60,
+      warning: 'Active buckets currently sum to 60% — review your split percentages',
+    })
     const { result } = renderHook(() => useReserveBuckets())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
-    expect(result.current.activeSplitWarning).toContain('60')
-    expect(result.current.activeSplitWarning).toContain('review your split percentages')
+    expect(result.current.activeSplitWarning).toBe('Active buckets currently sum to 60% — review your split percentages')
+  })
+
+  it('shows no warning, and still lists the buckets, when the split status cannot be loaded', async () => {
+    getReserveSplitStatusMock.mockRejectedValue(new Error('Status unavailable'))
+    const { result } = renderHook(() => useReserveBuckets())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    expect(result.current.error).toBeNull()
+    expect(result.current.reserveBuckets).toEqual(BUCKETS)
+    expect(result.current.activeSplitWarning).toBeNull()
+  })
+
+  it('reads the split status again after a bucket is created', async () => {
+    createReserveBucketMock.mockResolvedValue({ id: 'b3', name: 'Emergencia', isActive: true, splitPercentage: 10, warning: null })
+    const { result } = renderHook(() => useReserveBuckets())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    expect(getReserveSplitStatusMock).toHaveBeenCalledTimes(1)
+    getReserveSplitStatusMock.mockResolvedValue({
+      activeTotal: 110,
+      warning: 'Active buckets currently sum to 110% — review your split percentages',
+    })
+
+    await act(async () => {
+      await result.current.createReserveBucket({ name: 'Emergencia', splitPercentage: 10, isActive: true })
+    })
+
+    await waitFor(() =>
+      expect(result.current.activeSplitWarning).toBe('Active buckets currently sum to 110% — review your split percentages'),
+    )
+    expect(getReserveSplitStatusMock).toHaveBeenCalledTimes(2)
   })
 
   it('createReserveBucket calls the API and re-fetches the list', async () => {

@@ -586,6 +586,17 @@ describe('financialApiClient', () => {
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/reserve-buckets`)
   })
 
+  it('gets the reserve split status', async () => {
+    const responseBody = { activeTotal: 90, warning: 'Active buckets currently sum to 90% — review your split percentages' }
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify(responseBody), { status: 200 }))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.getReserveSplitStatus()
+
+    expect(result).toEqual(responseBody)
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/reserve-buckets/split-status`)
+  })
+
   it('posts an income split request', async () => {
     const requestBody: IncomeSplitRequestDto = {
       date: '2026-07-01',
