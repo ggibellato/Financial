@@ -296,7 +296,9 @@ internal sealed class StubReserveBucketService : IReserveBucketService
 
     public IReadOnlyList<ReserveBucketDTO> GetReserveBuckets() => ReserveBuckets;
 
-    public ReserveSplitStatusDTO GetSplitStatus() => SplitStatus;
+    public Exception? ThrowOnGetSplitStatus { get; set; }
+
+    public ReserveSplitStatusDTO GetSplitStatus() => ThrowOnGetSplitStatus is null ? SplitStatus : throw ThrowOnGetSplitStatus;
 
     public Task<ReserveBucketDTO> CreateReserveBucketAsync(ReserveBucketCreateDTO request)
     {

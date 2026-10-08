@@ -48,14 +48,28 @@ public class ReserveBucketsViewModelTests
     }
 
     [Fact]
-    public async Task RefreshAsync_SplitWarningWhenActiveBucketsDoNotSumTo100()
+    public async Task RefreshAsync_ShowsTheWarningTheServerReports()
     {
         var (viewModel, service, _) = CreateViewModel();
-        service.ReserveBuckets = [Bucket(Guid.NewGuid(), "Investimento", 60m)];
+        service.SplitStatus = new ReserveSplitStatusDTO { ActiveTotal = 60m, Warning = "Active buckets currently sum to 60% — review your split percentages" };
 
         await viewModel.RefreshAsync();
 
-        viewModel.SplitPercentageWarning.Should().Contain("60").And.Contain("review your split percentages");
+        viewModel.SplitPercentageWarning.Should().Be("Active buckets currently sum to 60% — review your split percentages");
+    }
+
+    [Fact]
+    public async Task RefreshAsync_SplitStatusFails_ShowsTheBucketsWithoutAWarning()
+    {
+        var (viewModel, service, _) = CreateViewModel();
+        service.ReserveBuckets = [Bucket(Guid.NewGuid(), "Investimento", 60m)];
+        service.ThrowOnGetSplitStatus = new InvalidOperationException("status down");
+
+        await viewModel.RefreshAsync();
+
+        viewModel.ReserveBuckets.Should().ContainSingle();
+        viewModel.HasError.Should().BeFalse();
+        viewModel.SplitPercentageWarning.Should().BeEmpty();
     }
 
     [Fact]

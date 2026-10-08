@@ -553,7 +553,9 @@ internal sealed class StubReserveBucketService : IReserveBucketService
 
     public ReserveSplitStatusDTO SplitStatus { get; set; } = new() { ActiveTotal = 100m };
 
-    public ReserveSplitStatusDTO GetSplitStatus() => SplitStatus;
+    public Exception? ThrowOnGetSplitStatus { get; set; }
+
+    public ReserveSplitStatusDTO GetSplitStatus() => ThrowOnGetSplitStatus is null ? SplitStatus : throw ThrowOnGetSplitStatus;
 
     public Task<ReserveBucketDTO> CreateReserveBucketAsync(ReserveBucketCreateDTO request) => throw new NotSupportedException();
 

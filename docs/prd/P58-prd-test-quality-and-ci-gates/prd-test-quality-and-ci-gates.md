@@ -564,7 +564,7 @@ graph TD
 - [x] `todayIsoDate()` at `2026-07-01T00:30+01:00` returns `'2026-07-01'`. The test fails on the pre-fix code.
 - [x] No web test computes an expected date with `toISOString().slice(0,10)`.
 - [x] No test asserts an empty `API_BASE_URL` as valid.
-- [ ] (Full Scope) The reserve-split tolerance rule exists only in the Application service, and both front ends show the server's single message.
+- [x] (Full Scope) The reserve-split tolerance rule exists only in the Application service, and both front ends show the server's single message.
 
 ### F05. API Host Boundary Tests
 - [x] With `wwwroot/index.html` present, `GET /api/v1/financial/does-not-exist` returns 404 and not `text/html`. This fails on the pre-fix code.

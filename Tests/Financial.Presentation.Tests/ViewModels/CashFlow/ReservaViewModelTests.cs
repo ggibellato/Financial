@@ -303,21 +303,29 @@ public class ReservaViewModelTests
     }
 
     [Fact]
-    public async Task SplitPercentageWarning_SetWhenActiveBucketsDoNotSumTo100Percent()
+    public async Task SplitPercentageWarning_ShowsTheWarningTheServerReports()
     {
         var bucketService = new StubReserveBucketService
         {
-            ReserveBuckets =
-            [
-                new ReserveBucketDTO { Id = Guid.NewGuid(), Name = "Investimento", IsActive = true, SplitPercentage = 50m },
-                new ReserveBucketDTO { Id = Guid.NewGuid(), Name = "HouseTreats", IsActive = true, SplitPercentage = 48.5m },
-            ],
+            SplitStatus = new ReserveSplitStatusDTO { ActiveTotal = 98.5m, Warning = "Active buckets currently sum to 98.5% — review your split percentages" },
         };
         var (viewModel, _) = CreateViewModel(_ => true, bucketService);
 
         await viewModel.RefreshAsync();
 
-        viewModel.SplitPercentageWarning.Should().Be("Active bucket percentages sum to 98.50%, not 100%");
+        viewModel.SplitPercentageWarning.Should().Be("Active buckets currently sum to 98.5% — review your split percentages");
+    }
+
+    [Fact]
+    public async Task SplitPercentageWarning_StatusLookupFails_IsEmptyAndThePageStillLoads()
+    {
+        var bucketService = new StubReserveBucketService { ThrowOnGetSplitStatus = new InvalidOperationException("status down") };
+        var (viewModel, _) = CreateViewModel(_ => true, bucketService);
+
+        await viewModel.RefreshAsync();
+
+        viewModel.SplitPercentageWarning.Should().BeEmpty();
+        viewModel.Error.Should().BeNull();
     }
 
     [Fact]

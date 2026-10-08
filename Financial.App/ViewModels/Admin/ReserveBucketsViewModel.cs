@@ -9,8 +9,6 @@ namespace Financial.Presentation.App.ViewModels.Admin;
 
 public class ReserveBucketsViewModel : ViewModelBase
 {
-    private const decimal SplitPercentageTolerance = 0.01m;
-
     private readonly IReserveBucketService _reserveBucketService;
     private readonly IDialogService _dialogService;
     private readonly ILogger<ReserveBucketsViewModel> _logger;
@@ -18,6 +16,7 @@ public class ReserveBucketsViewModel : ViewModelBase
     private bool _isLoading = true;
     private string? _error;
     private string? _actionError;
+    private string _splitPercentageWarning = string.Empty;
 
     public bool IsLoading
     {
@@ -56,26 +55,10 @@ public class ReserveBucketsViewModel : ViewModelBase
 
     public ObservableCollection<ReserveBucketDTO> ReserveBuckets { get; } = [];
 
-    /// <summary>Non-blocking, computed live from the fetched list - mirrors <see
-    /// cref="Financial.Presentation.App.ViewModels.CashFlow.ReservaViewModel"/>'s own independent
-    /// computation, per this feature's Technical Decisions.</summary>
     public string SplitPercentageWarning
     {
-        get
-        {
-            if (ReserveBuckets.Count == 0)
-            {
-                return string.Empty;
-            }
-
-            var activeSum = ReserveBuckets.Where(b => b.IsActive).Sum(b => b.SplitPercentage);
-            if (Math.Abs(activeSum - 100m) <= SplitPercentageTolerance)
-            {
-                return string.Empty;
-            }
-
-            return $"Active buckets currently sum to {activeSum:0.##}% — review your split percentages";
-        }
+        get => _splitPercentageWarning;
+        private set => SetProperty(ref _splitPercentageWarning, value);
     }
 
     public RelayCommand RetryCommand { get; }
@@ -109,17 +92,32 @@ public class ReserveBucketsViewModel : ViewModelBase
         error => Error = error,
         async isCurrent =>
         {
-            var buckets = await Task.Run(() => _reserveBucketService.GetReserveBuckets());
+            var bucketsTask = Task.Run(() => _reserveBucketService.GetReserveBuckets());
+            var warningTask = Task.Run(GetSplitWarning);
+            await Task.WhenAll(bucketsTask, warningTask);
 
             if (!isCurrent())
             {
                 return;
             }
 
-            ReplaceAll(ReserveBuckets, buckets);
-            OnPropertyChanged(nameof(SplitPercentageWarning));
+            ReplaceAll(ReserveBuckets, bucketsTask.Result);
+            SplitPercentageWarning = warningTask.Result;
         },
         ex => _logger.LogError("Reserve buckets refresh failed with {ErrorType}", ex.GetType().Name));
+
+    private string GetSplitWarning()
+    {
+        try
+        {
+            return _reserveBucketService.GetSplitStatus().Warning ?? string.Empty;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning("Reserve split status lookup failed with {ErrorType}; continuing without a warning", ex.GetType().Name);
+            return string.Empty;
+        }
+    }
 
     internal async Task CreateReserveBucketAsync()
     {
