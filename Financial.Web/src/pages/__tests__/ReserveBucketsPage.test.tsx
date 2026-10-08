@@ -4,8 +4,9 @@ import ReserveBucketsPage from '../ReserveBucketsPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { ReserveBucketDto } from '../../api/types'
 
-const { getReserveBucketsMock, createReserveBucketMock, updateReserveBucketMock } = vi.hoisted(() => ({
+const { getReserveBucketsMock, getReserveSplitStatusMock, createReserveBucketMock, updateReserveBucketMock } = vi.hoisted(() => ({
   getReserveBucketsMock: vi.fn<FinancialApiClient['getReserveBuckets']>(),
+  getReserveSplitStatusMock: vi.fn<FinancialApiClient['getReserveSplitStatus']>(),
   createReserveBucketMock: vi.fn<FinancialApiClient['createReserveBucket']>(),
   updateReserveBucketMock: vi.fn<FinancialApiClient['updateReserveBucket']>(),
 }))
@@ -13,6 +14,7 @@ const { getReserveBucketsMock, createReserveBucketMock, updateReserveBucketMock 
 vi.mock('../../api/financialApiClient', () => ({
   apiClient: {
     getReserveBuckets: getReserveBucketsMock,
+    getReserveSplitStatus: getReserveSplitStatusMock,
     createReserveBucket: createReserveBucketMock,
     updateReserveBucket: updateReserveBucketMock,
   } as Partial<FinancialApiClient>,
@@ -26,9 +28,11 @@ const BUCKETS: ReserveBucketDto[] = [
 describe('ReserveBucketsPage', () => {
   beforeEach(() => {
     getReserveBucketsMock.mockReset()
+    getReserveSplitStatusMock.mockReset()
     createReserveBucketMock.mockReset()
     updateReserveBucketMock.mockReset()
     getReserveBucketsMock.mockResolvedValue(BUCKETS)
+    getReserveSplitStatusMock.mockResolvedValue({ activeTotal: 100, warning: null })
   })
 
   it('renders every reserve bucket', async () => {
@@ -53,13 +57,14 @@ describe('ReserveBucketsPage', () => {
   })
 
   it('shows a persistent warning banner when active buckets do not sum to 100', async () => {
-    getReserveBucketsMock.mockResolvedValue([
-      { id: 'b1', name: 'Investimento', isActive: true, splitPercentage: 60, warning: null },
-    ])
+    getReserveSplitStatusMock.mockResolvedValue({
+      activeTotal: 60,
+      warning: 'Active buckets currently sum to 60% — review your split percentages',
+    })
     render(<ReserveBucketsPage />)
 
     await waitFor(() => expect(screen.getByText('Investimento')).toBeInTheDocument())
-    expect(screen.getByText(/Active buckets currently sum to 60/)).toBeInTheDocument()
+    expect(screen.getByText('Active buckets currently sum to 60% — review your split percentages')).toBeInTheDocument()
   })
 
   it('does not show a warning banner when active buckets sum to 100', async () => {

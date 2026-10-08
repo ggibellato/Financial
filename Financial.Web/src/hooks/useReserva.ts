@@ -11,7 +11,6 @@ import type {
 } from '../api/types'
 import { getErrorMessage, todayIsoDate } from '../utils/formatters'
 import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
-import { computeActiveSplitPercentage, isActiveSplitBalanced } from '../utils/reserveBucketSplit'
 import { defaultExpenseCategoryId, eligibleWithdrawalCategories } from '../utils/withdrawalExpenseCategories'
 const BUCKET_REQUIRED_ERROR = 'Bucket is required'
 const EXPENSE_CATEGORY_REQUIRED_ERROR = 'Category is required when a bank is selected.'
@@ -52,6 +51,7 @@ interface ReservaState {
   balances: ReserveBucketBalanceDto[]
   movements: ReserveMovementDto[]
   buckets: ReserveBucketDto[]
+  splitPercentageWarning: string | null
   banks: BankDto[]
   categories: CategoryDto[]
   isLoading: boolean
@@ -95,6 +95,7 @@ type ReservaAction =
         balances: ReserveBucketBalanceDto[]
         movements: ReserveMovementDto[]
         buckets?: ReserveBucketDto[]
+        splitPercentageWarning?: string | null
         banks?: BankDto[]
         categories?: CategoryDto[]
       }
@@ -142,6 +143,7 @@ const INITIAL_STATE: ReservaState = {
   balances: [],
   movements: [],
   buckets: [],
+  splitPercentageWarning: null,
   banks: [],
   categories: [],
   isLoading: true,
@@ -183,6 +185,8 @@ function reducer(state: ReservaState, action: ReservaAction): ReservaState {
         balances: action.payload.balances,
         movements: action.payload.movements,
         buckets,
+        splitPercentageWarning:
+          action.payload.splitPercentageWarning === undefined ? state.splitPercentageWarning : action.payload.splitPercentageWarning,
         banks: action.payload.banks ?? state.banks,
         categories: action.payload.categories ?? state.categories,
         withdrawalBucketId: state.withdrawalBucketId || defaultBucketId(buckets),
@@ -388,16 +392,6 @@ function buildMovementRows(movements: ReserveMovementDto[]): ReserveMovementRow[
   })
 }
 
-function computeSplitPercentageWarning(buckets: ReserveBucketDto[]): string | null {
-  if (buckets.length === 0) return null
-
-  const activeSum = computeActiveSplitPercentage(buckets)
-
-  if (isActiveSplitBalanced(activeSum)) return null
-
-  return `Active bucket percentages sum to ${activeSum.toFixed(2)}%, not 100%`
-}
-
 function defaultBucketId(buckets: ReserveBucketDto[]): string {
   const stored = getStoredDefault(WITHDRAWAL_BUCKET_KEY)
   if (stored && buckets.some((b) => b.id === stored)) {
@@ -418,11 +412,15 @@ export function useReserva(): ReservaData {
       apiClient.getReserveBalances(),
       apiClient.getReserveMovements(),
       includeReferenceData ? apiClient.getReserveBuckets().catch(() => []) : Promise.resolve(undefined),
+      includeReferenceData ? apiClient.getReserveSplitStatus().then((s) => s.warning ?? null).catch(() => null) : Promise.resolve(undefined),
       includeReferenceData ? apiClient.getBanks().catch(() => []) : Promise.resolve(undefined),
       includeReferenceData ? apiClient.getCategories().catch(() => []) : Promise.resolve(undefined),
     ])
-      .then(([balances, movements, buckets, banks, categories]) =>
-        dispatch({ type: 'FETCH_SUCCESS', payload: { balances, movements, buckets, banks, categories } }),
+      .then(([balances, movements, buckets, splitPercentageWarning, banks, categories]) =>
+        dispatch({
+          type: 'FETCH_SUCCESS',
+          payload: { balances, movements, buckets, splitPercentageWarning, banks, categories },
+        }),
       )
       .catch((err: unknown) => {
         dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, 'Unable to load Reserva data') })
@@ -440,8 +438,6 @@ export function useReserva(): ReservaData {
   )
 
   const movementRows = useMemo(() => buildMovementRows(state.movements), [state.movements])
-
-  const splitPercentageWarning = useMemo(() => computeSplitPercentageWarning(state.buckets), [state.buckets])
 
   const withdrawalCategoryOptions = useMemo(() => eligibleWithdrawalCategories(state.categories), [state.categories])
 
@@ -670,7 +666,7 @@ export function useReserva(): ReservaData {
     movements: state.movements,
     movementRows,
     buckets: state.buckets,
-    splitPercentageWarning,
+    splitPercentageWarning: state.splitPercentageWarning,
     isLoading: state.isLoading,
     error: state.error,
     retry,

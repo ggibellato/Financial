@@ -10,6 +10,7 @@ const {
   getReserveBalancesMock,
   getReserveMovementsMock,
   getReserveBucketsMock,
+  getReserveSplitStatusMock,
   getBanksMock,
   getCategoriesMock,
   postIncomeSplitMock,
@@ -20,6 +21,7 @@ const {
   getReserveBalancesMock: vi.fn<FinancialApiClient['getReserveBalances']>(),
   getReserveMovementsMock: vi.fn<FinancialApiClient['getReserveMovements']>(),
   getReserveBucketsMock: vi.fn<FinancialApiClient['getReserveBuckets']>(),
+  getReserveSplitStatusMock: vi.fn<FinancialApiClient['getReserveSplitStatus']>(),
   getBanksMock: vi.fn<FinancialApiClient['getBanks']>(),
   getCategoriesMock: vi.fn<FinancialApiClient['getCategories']>(),
   postIncomeSplitMock: vi.fn<FinancialApiClient['postIncomeSplit']>(),
@@ -33,6 +35,7 @@ vi.mock('../../api/financialApiClient', () => ({
     getReserveBalances: getReserveBalancesMock,
     getReserveMovements: getReserveMovementsMock,
     getReserveBuckets: getReserveBucketsMock,
+    getReserveSplitStatus: getReserveSplitStatusMock,
     getBanks: getBanksMock,
     getCategories: getCategoriesMock,
     postIncomeSplit: postIncomeSplitMock,
@@ -91,6 +94,7 @@ describe('useReserva', () => {
     getReserveBalancesMock.mockReset()
     getReserveMovementsMock.mockReset()
     getReserveBucketsMock.mockReset()
+    getReserveSplitStatusMock.mockReset()
     getBanksMock.mockReset()
     getCategoriesMock.mockReset()
     postIncomeSplitMock.mockReset()
@@ -100,6 +104,7 @@ describe('useReserva', () => {
     getReserveBalancesMock.mockResolvedValue(BALANCES)
     getReserveMovementsMock.mockResolvedValue(MOVEMENTS)
     getReserveBucketsMock.mockResolvedValue(BUCKETS)
+    getReserveSplitStatusMock.mockResolvedValue({ activeTotal: 100, warning: null })
     getBanksMock.mockResolvedValue(BANKS)
     getCategoriesMock.mockResolvedValue(CATEGORIES)
     sessionStorage.clear()
@@ -467,6 +472,7 @@ describe('useReserva', () => {
 
     await waitFor(() => expect(getReserveBalancesMock).toHaveBeenCalledTimes(2))
     expect(getReserveBucketsMock).toHaveBeenCalledTimes(1)
+    expect(getReserveSplitStatusMock).toHaveBeenCalledTimes(1)
     expect(result.current.buckets).toEqual(BUCKETS)
   })
 
@@ -477,17 +483,25 @@ describe('useReserva', () => {
     expect(result.current.splitPercentageWarning).toBeNull()
   })
 
-  it('reports a split-percentage warning when active buckets do not sum to 100%', async () => {
-    getReserveBucketsMock.mockResolvedValue([
-      { id: 'b1', name: 'Investimento', isActive: true, splitPercentage: 33.33, warning: null },
-      { id: 'b2', name: 'HouseTreats', isActive: true, splitPercentage: 33.33, warning: null },
-      { id: 'b3', name: 'Ariana', isActive: true, splitPercentage: 16.67, warning: null },
-      { id: 'b4', name: 'Gleison', isActive: false, splitPercentage: 16.67, warning: null },
-    ])
+  it('shows the split-percentage warning the server reports', async () => {
+    getReserveSplitStatusMock.mockResolvedValue({
+      activeTotal: 83.33,
+      warning: 'Active buckets currently sum to 83.33% — review your split percentages',
+    })
     const { result } = renderHook(() => useReserva())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
-    expect(result.current.splitPercentageWarning).toBe('Active bucket percentages sum to 83.33%, not 100%')
+    expect(result.current.splitPercentageWarning).toBe('Active buckets currently sum to 83.33% — review your split percentages')
+  })
+
+  it('shows no split-percentage warning, and no page-level error, when only the split status fetch fails', async () => {
+    getReserveSplitStatusMock.mockRejectedValue(new Error('Status unavailable'))
+    const { result } = renderHook(() => useReserva())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    expect(result.current.error).toBeNull()
+    expect(result.current.splitPercentageWarning).toBeNull()
+    expect(result.current.balances).toEqual(BALANCES)
   })
 
   it('degrades to an empty bucket list without a page-level error when only the buckets fetch fails', async () => {

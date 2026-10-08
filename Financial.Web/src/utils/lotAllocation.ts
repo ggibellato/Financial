@@ -3,8 +3,7 @@ import { parseValidatedNumber } from './formatters'
 
 // Quantities go to 8 decimal places (formatN8, step="0.0001"), so splitting one sale across
 // multiple lots can hit ordinary floating-point drift (0.1 + 0.2 !== 0.3) - compare with a
-// tolerance well below the smallest representable unit instead of exact equality, the same
-// pattern reserveBucketSplit.ts already uses for "parts must sum to the whole".
+// tolerance well below the smallest representable unit instead of exact equality.
 const QUANTITY_TOLERANCE = 0.000000001
 
 export function sumAllocations(allocations: Record<string, string>): number {
