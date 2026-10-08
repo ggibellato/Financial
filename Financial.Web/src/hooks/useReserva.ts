@@ -412,7 +412,7 @@ export function useReserva(): ReservaData {
       apiClient.getReserveBalances(),
       apiClient.getReserveMovements(),
       includeReferenceData ? apiClient.getReserveBuckets().catch(() => []) : Promise.resolve(undefined),
-      includeReferenceData ? apiClient.getReserveSplitStatus().then((s) => s.warning ?? null).catch(() => null) : Promise.resolve(undefined),
+      includeReferenceData ? apiClient.getReserveSplitStatus().then((status) => status.warning ?? null).catch(() => null) : Promise.resolve(undefined),
       includeReferenceData ? apiClient.getBanks().catch(() => []) : Promise.resolve(undefined),
       includeReferenceData ? apiClient.getCategories().catch(() => []) : Promise.resolve(undefined),
     ])

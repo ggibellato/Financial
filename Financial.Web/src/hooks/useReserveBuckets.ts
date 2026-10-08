@@ -71,9 +71,12 @@ export function useReserveBuckets(): ReserveBucketsData {
 
   useEffect(() => {
     dispatch({ type: 'FETCH_START' })
-    void Promise.all([apiClient.getReserveBuckets(), apiClient.getReserveSplitStatus().catch(() => null)])
-      .then(([reserveBuckets, splitStatus]) =>
-        dispatch({ type: 'FETCH_SUCCESS', payload: { reserveBuckets, activeSplitWarning: splitStatus?.warning ?? null } }),
+    void Promise.all([
+      apiClient.getReserveBuckets(),
+      apiClient.getReserveSplitStatus().then((status) => status.warning ?? null).catch(() => null),
+    ])
+      .then(([reserveBuckets, activeSplitWarning]) =>
+        dispatch({ type: 'FETCH_SUCCESS', payload: { reserveBuckets, activeSplitWarning } }),
       )
       .catch((err: unknown) => {
         dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, 'Unable to load reserve buckets') })
