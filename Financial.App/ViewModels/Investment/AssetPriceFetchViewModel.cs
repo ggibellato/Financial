@@ -12,11 +12,12 @@ public class AssetPriceFetchViewModel : ViewModelBase
     private readonly IAssetPriceLookupService _priceService;
     private readonly IReadOnlyList<PortfolioReferenceDTO> _portfolios;
     private readonly Action<string> _showError;
+    private readonly TimeProvider _timeProvider;
     private bool _isFetching;
     private string _progressMessage = string.Empty;
     private double _progressPercent;
 
-    private const int ProgressHideDelayMs = 2000;
+    private static readonly TimeSpan ProgressHideDelay = TimeSpan.FromSeconds(2);
 
     public bool IsFetching
     {
@@ -44,11 +45,13 @@ public class AssetPriceFetchViewModel : ViewModelBase
         INavigationService navigationService,
         IAssetPriceLookupService priceService,
         IOptions<AssetPriceFetchOptions> options,
-        Action<string> showError)
+        Action<string> showError,
+        TimeProvider timeProvider)
     {
         _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
         _priceService = priceService ?? throw new ArgumentNullException(nameof(priceService));
         _showError = showError ?? throw new ArgumentNullException(nameof(showError));
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _portfolios = (options?.Value.Portfolios ?? new List<PortfolioReferenceDTO>()).AsReadOnly();
         FetchCommand = new RelayCommand(async () => await FetchAsync(), () => !IsFetching);
     }
@@ -109,7 +112,7 @@ public class AssetPriceFetchViewModel : ViewModelBase
         }
         finally
         {
-            await Task.Delay(ProgressHideDelayMs);
+            await Task.Delay(ProgressHideDelay, _timeProvider);
             IsFetching = false;
             ProgressPercent = 0;
             FetchCommand.RaiseCanExecuteChanged();
