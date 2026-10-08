@@ -662,7 +662,7 @@ graph TD
 
 ### Cross-Feature Integration
 - [x] F05's host tests use F01's default `ApiTestFactory` and make no outbound HTTP calls.
-- [ ] F08's pinned-clock and culture tests run under F01's pinned `TZ`/`LANG`, and pass when the host timezone differs.
+- [x] F08's pinned-clock and culture tests run under F01's pinned `TZ`/`LANG`, and pass when the host timezone differs.
 - [x] F07 rewrites touch only tests that survived F06. No rewritten test is one F06 marked for removal.
 - [x] F09's baseline is taken from a `main` run that includes F06's consolidation, F07's trait filtering (Live excluded) and F08's determinism. Two consecutive runs on that commit produce identical line and branch percentages.
 - [x] F10's date-dependent tests use the `TimeProvider` and delay seams introduced by F08.
