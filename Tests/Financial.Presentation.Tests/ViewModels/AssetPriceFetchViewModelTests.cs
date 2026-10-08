@@ -1,3 +1,5 @@
+using Financial.TestUtilities;
+using Microsoft.Extensions.Time.Testing;
 using Financial.Investment.Application.Configuration;
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Enums;
@@ -16,6 +18,7 @@ public class AssetPriceFetchViewModelTests
 {
     private readonly StubNavigationService _navigationService;
     private readonly StubPriceService _priceService;
+    private readonly FakeTimeProvider _clock = TestClock.At();
 
     public AssetPriceFetchViewModelTests()
     {
@@ -31,7 +34,8 @@ public class AssetPriceFetchViewModelTests
             {
                 Portfolios = [new PortfolioReferenceDTO { BrokerName = brokerName, PortfolioName = portfolioName }]
             }),
-            _ => { });
+            _ => { },
+            _clock);
 
     [Fact]
     public async Task FetchAsync_CoinbaseCryptocurrencyAsset_PassesAssetClassAndBrokerName()
@@ -55,6 +59,31 @@ public class AssetPriceFetchViewModelTests
         request.Exchange.Should().Be("");
         request.AssetClass.Should().Be(GlobalAssetClass.Cryptocurrency);
         request.BrokerName.Should().Be("Coinbase");
+    }
+
+    [Fact]
+    public async Task FetchAsync_AfterTheProgressDelay_HidesProgressAndRaisesFetchCompleted()
+    {
+        _navigationService.AssetsByBrokerPortfolio[("XPI", "Acoes")] =
+        [
+            new AssetNodeDTO { Name = "Asset 1", Ticker = "AAA1", Exchange = "BVMF", Class = GlobalAssetClass.Equity },
+        ];
+        var vm = CreateViewModel("XPI", "Acoes");
+        var completed = new TaskCompletionSource();
+        vm.FetchCompleted += (_, _) => completed.TrySetResult();
+
+        vm.FetchCommand.Execute(null);
+        await WaitForResultsAsync(vm, expectedCount: 1, TimeSpan.FromSeconds(5));
+        vm.IsFetching.Should().BeTrue();
+
+        while (!completed.Task.IsCompleted)
+        {
+            _clock.Advance(TimeSpan.FromSeconds(2));
+            await Task.Yield();
+        }
+
+        vm.IsFetching.Should().BeFalse();
+        vm.ProgressPercent.Should().Be(0);
     }
 
     [Fact]

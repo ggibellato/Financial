@@ -73,7 +73,8 @@ namespace Financial.Presentation.App
                         sp.GetRequiredService<Financial.Investment.Application.Interfaces.INavigationService>(),
                         sp.GetRequiredService<Financial.Investment.Application.Interfaces.IAssetPriceLookupService>(),
                         sp.GetRequiredService<IOptions<AssetPriceFetchOptions>>(),
-                        msg => MessageBox.Show(msg, "Error", MessageBoxButton.OK, MessageBoxImage.Error)));
+                        msg => MessageBox.Show(msg, "Error", MessageBoxButton.OK, MessageBoxImage.Error),
+                        sp.GetRequiredService<TimeProvider>()));
                     services.AddTransient<DividendCheckView>();
                     services.AddTransient<AssetPriceView>();
 
