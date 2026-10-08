@@ -8,8 +8,6 @@ namespace Financial.Presentation.App.ViewModels.CashFlow;
 
 public class ReservaViewModel : ViewModelBase
 {
-    private const decimal SplitPercentageTolerance = 0.01m;
-
     private readonly IReserveService _reserveService;
     private readonly IReserveBucketService _reserveBucketService;
     private readonly IBankService _bankService;
@@ -19,6 +17,7 @@ public class ReservaViewModel : ViewModelBase
 
     private bool _isLoading = true;
     private string? _error;
+    private string _splitPercentageWarning = string.Empty;
 
     public bool IsLoading
     {
@@ -55,26 +54,10 @@ public class ReservaViewModel : ViewModelBase
 
     public decimal TotalBalance => Balances.Sum(b => b.Balance);
 
-    private IEnumerable<ReserveBucketDTO> ActiveBuckets => Buckets.Where(b => b.IsActive);
-
-    /// <summary>Empty when active buckets' percentages sum within 99.99-100.01, a warning message otherwise.</summary>
     public string SplitPercentageWarning
     {
-        get
-        {
-            if (Buckets.Count == 0)
-            {
-                return string.Empty;
-            }
-
-            var activeSum = ActiveBuckets.Sum(b => b.SplitPercentage);
-            if (Math.Abs(activeSum - 100m) <= SplitPercentageTolerance)
-            {
-                return string.Empty;
-            }
-
-            return $"Active bucket percentages sum to {activeSum:N2}%, not 100%";
-        }
+        get => _splitPercentageWarning;
+        private set => SetProperty(ref _splitPercentageWarning, value);
     }
 
     public IncomeSplitViewModel Split { get; }
@@ -152,9 +135,9 @@ public class ReservaViewModel : ViewModelBase
 
             if (referenceDataTask is not null)
             {
-                var (buckets, banks, categories) = referenceDataTask.Result;
+                var (buckets, banks, categories, splitWarning) = referenceDataTask.Result;
                 ReplaceAll(Buckets, buckets);
-                OnPropertyChanged(nameof(SplitPercentageWarning));
+                SplitPercentageWarning = splitWarning;
                 Withdrawal.LoadReferenceData(banks, categories);
                 if (Withdrawal.WithdrawalBucketId is null)
                 {
@@ -165,10 +148,24 @@ public class ReservaViewModel : ViewModelBase
         // error.type only - the message may embed bucket names/balances (FR-014).
         ex => _logger.LogError("Reserva refresh failed with {ErrorType}", ex.GetType().Name));
 
-    private (IReadOnlyList<ReserveBucketDTO> Buckets, IReadOnlyList<BankDTO> Banks, IReadOnlyList<CategoryDTO> Categories) LoadReferenceData() =>
+    private (IReadOnlyList<ReserveBucketDTO> Buckets, IReadOnlyList<BankDTO> Banks, IReadOnlyList<CategoryDTO> Categories, string SplitWarning) LoadReferenceData() =>
         (TryGetLookup("Reserve buckets", _reserveBucketService.GetReserveBuckets),
          TryGetLookup("Banks", _bankService.GetBanks),
-         TryGetLookup("Categories", _categoryService.GetCategories));
+         TryGetLookup("Categories", _categoryService.GetCategories),
+         TryGetSplitWarning());
+
+    private string TryGetSplitWarning()
+    {
+        try
+        {
+            return _reserveBucketService.GetSplitStatus().Warning ?? string.Empty;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning("Reserve split status lookup failed with {ErrorType}; continuing without a warning", ex.GetType().Name);
+            return string.Empty;
+        }
+    }
 
     /// <summary>Lookup data is optional display data: a failure here degrades to an empty list instead of failing the whole refresh.</summary>
     private IReadOnlyList<T> TryGetLookup<T>(string lookupName, Func<IReadOnlyList<T>> fetch)
