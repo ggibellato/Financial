@@ -30,14 +30,10 @@ function renderDialog(overrides: Partial<React.ComponentProps<typeof UkExpensePr
       bill={BILL}
       banks={BANKS}
       categories={CATEGORIES}
-      isCreatingExpense={false}
-      isUpdatingStatus={false}
-      expenseCreateError={null}
-      statusUpdateError={null}
-      isRetryOnly={false}
+      isSaving={false}
+      error={null}
       onConfirm={vi.fn()}
       onSkip={vi.fn()}
-      onRetry={vi.fn()}
       onCancel={vi.fn()}
       {...overrides}
     />,
@@ -108,31 +104,18 @@ describe('UkExpensePromptDialog', () => {
     expect(onCancel).toHaveBeenCalled()
   })
 
-  it('shows the expense creation error inline', () => {
-    renderDialog({ expenseCreateError: 'Category is required.' })
+  it('shows the error inline and keeps the form editable for another attempt', () => {
+    renderDialog({ error: 'Category is required.' })
 
     expect(screen.getByText('Category is required.')).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Bank/)).toBeEnabled()
   })
 
-  it('retry-only mode hides the form and shows a single retry action', () => {
-    renderDialog({ isRetryOnly: true, statusUpdateError: 'Recurring bill not found.' })
+  it('disables every action while saving', () => {
+    renderDialog({ isSaving: true })
 
-    expect(screen.queryByLabelText(/^Bank/)).not.toBeInTheDocument()
-    expect(screen.queryByLabelText(/^Category/)).not.toBeInTheDocument()
-    expect(screen.queryByLabelText(/^Description/)).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Confirm' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Skip' })).not.toBeInTheDocument()
-    expect(screen.getByText(/Recurring bill not found\./)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Retry marking as Paid' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Close' })).toBeInTheDocument()
-  })
-
-  it('calls onRetry when the retry-only action is clicked', () => {
-    const onRetry = vi.fn()
-    renderDialog({ isRetryOnly: true, statusUpdateError: 'Recurring bill not found.', onRetry })
-
-    fireEvent.click(screen.getByRole('button', { name: 'Retry marking as Paid' }))
-
-    expect(onRetry).toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: 'Saving...' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Skip' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled()
   })
 })

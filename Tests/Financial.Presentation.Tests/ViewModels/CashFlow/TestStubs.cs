@@ -569,6 +569,9 @@ internal sealed class StubMensaisService : IMensaisService
     public (Guid Id, RecurringBillUpdateDTO Request)? LastUpdateRequest { get; private set; }
     public (Guid Id, RecurringBillStatusUpdateDTO Request)? LastStatusChangeRequest { get; private set; }
     public Exception? ThrowOnUpdateStatus { get; set; }
+    public (Guid Id, RecurringBillMarkPaidDTO Request)? LastMarkPaidRequest { get; private set; }
+    public int MarkPaidCallCount { get; private set; }
+    public Exception? ThrowOnMarkPaid { get; set; }
     public Guid? LastDeletedId { get; private set; }
     public int ResetAllToUnsetCallCount { get; private set; }
 
@@ -632,6 +635,26 @@ internal sealed class StubMensaisService : IMensaisService
             Id = id, DueDay = existing.DueDay, Description = existing.Description,
             Value = existing.Value, Area = existing.Area, Note = existing.Note,
             NitNumber = existing.NitNumber, MinimumWageValue = existing.MinimumWageValue, Status = request.Status,
+        };
+        Bills[Bills.IndexOf(existing)] = updated;
+        return Task.FromResult(updated);
+    }
+
+    public Task<RecurringBillDTO> MarkBillPaidAsync(Guid id, RecurringBillMarkPaidDTO request)
+    {
+        MarkPaidCallCount++;
+        LastMarkPaidRequest = (id, request);
+        if (ThrowOnMarkPaid is not null)
+        {
+            throw ThrowOnMarkPaid;
+        }
+
+        var existing = Bills.First(b => b.Id == id);
+        var updated = new RecurringBillDTO
+        {
+            Id = id, DueDay = existing.DueDay, Description = existing.Description,
+            Value = existing.Value, Area = existing.Area, Note = existing.Note,
+            NitNumber = existing.NitNumber, MinimumWageValue = existing.MinimumWageValue, Status = "Paid",
         };
         Bills[Bills.IndexOf(existing)] = updated;
         return Task.FromResult(updated);

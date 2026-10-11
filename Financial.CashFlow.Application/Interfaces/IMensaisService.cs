@@ -9,5 +9,6 @@ public interface IMensaisService
     IReadOnlyList<RecurringBillDTO> GetBills();
     Task<RecurringBillDTO> UpdateBillAsync(Guid id, RecurringBillUpdateDTO request);
     Task<RecurringBillDTO> UpdateBillStatusAsync(Guid id, RecurringBillStatusUpdateDTO request);
+    Task<RecurringBillDTO> MarkBillPaidAsync(Guid id, RecurringBillMarkPaidDTO request);
     Task<IReadOnlyList<RecurringBillDTO>> ResetAllToUnsetAsync();
 }

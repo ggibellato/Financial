@@ -43,14 +43,10 @@ interface UkExpensePromptDialogProps {
   bill: RecurringBillDto
   banks: BankDto[]
   categories: CategoryDto[]
-  isCreatingExpense: boolean
-  isUpdatingStatus: boolean
-  expenseCreateError: string | null
-  statusUpdateError: string | null
-  isRetryOnly: boolean
+  isSaving: boolean
+  error: string | null
   onConfirm: (values: ExpensePromptValues) => void
   onSkip: () => void
-  onRetry: () => void
   onCancel: () => void
 }
 
@@ -58,14 +54,10 @@ export default function UkExpensePromptDialog({
   bill,
   banks,
   categories,
-  isCreatingExpense,
-  isUpdatingStatus,
-  expenseCreateError,
-  statusUpdateError,
-  isRetryOnly,
+  isSaving,
+  error,
   onConfirm,
   onSkip,
-  onRetry,
   onCancel,
 }: UkExpensePromptDialogProps) {
   const styles = useFormPanelStyles()
@@ -76,7 +68,6 @@ export default function UkExpensePromptDialog({
   const [bankId, setBankId] = useState('')
   const [categoryId, setCategoryId] = useState('')
 
-  const isBusy = isCreatingExpense || isUpdatingStatus
   const parsedValue = Number(value)
   const canConfirm =
     description.trim().length > 0 &&
@@ -84,7 +75,7 @@ export default function UkExpensePromptDialog({
     parsedValue > 0 &&
     bankId !== '' &&
     categoryId !== '' &&
-    !isBusy
+    !isSaving
 
   const handleConfirm = () => {
     if (!canConfirm) return
@@ -97,93 +88,70 @@ export default function UkExpensePromptDialog({
         <DialogBody>
           <DialogTitle>Generate expense for this payment?</DialogTitle>
           <DialogContent>
-            {isRetryOnly ? (
-              <>
-                <MessageBar intent="error">
-                  <MessageBarBody>
-                    The expense was created, but the status could not be updated: {statusUpdateError}
-                  </MessageBarBody>
-                </MessageBar>
-              </>
-            ) : (
-              <div className={dialogStyles.grid}>
-                <Field label="Date" required>
-                  <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} disabled={isBusy} />
-                </Field>
+            <div className={dialogStyles.grid}>
+              <Field label="Date" required>
+                <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} disabled={isSaving} />
+              </Field>
 
-                <Field label="Description" required className={styles.spanTwo}>
-                  <Input
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    disabled={isBusy}
-                  />
-                </Field>
+              <Field label="Description" required className={styles.spanTwo}>
+                <Input
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  disabled={isSaving}
+                />
+              </Field>
 
-                <Field label="Value" required>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={value}
-                    onChange={(e) => setValue(e.target.value)}
-                    disabled={isBusy}
-                  />
-                </Field>
+              <Field label="Value" required>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={value}
+                  onChange={(e) => setValue(e.target.value)}
+                  disabled={isSaving}
+                />
+              </Field>
 
-                <Field label="Bank" required>
-                  <Select value={bankId} onChange={(e) => setBankId(e.target.value)} disabled={isBusy}>
-                    <option value="">Select bank…</option>
-                    {banks.map((b) => (
-                      <option key={b.id} value={b.id}>
-                        {b.name}
-                      </option>
-                    ))}
-                  </Select>
-                </Field>
+              <Field label="Bank" required>
+                <Select value={bankId} onChange={(e) => setBankId(e.target.value)} disabled={isSaving}>
+                  <option value="">Select bank…</option>
+                  {banks.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
 
-                <Field label="Category" required>
-                  <Select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} disabled={isBusy}>
-                    <option value="">Select category…</option>
-                    {categories.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </Select>
-                </Field>
+              <Field label="Category" required>
+                <Select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} disabled={isSaving}>
+                  <option value="">Select category…</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
 
-                {expenseCreateError && (
-                  <div className={styles.spanTwo}>
-                    <MessageBar intent="error">
-                      <MessageBarBody>{expenseCreateError}</MessageBarBody>
-                    </MessageBar>
-                  </div>
-                )}
-              </div>
-            )}
+              {error && (
+                <div className={styles.spanTwo}>
+                  <MessageBar intent="error">
+                    <MessageBarBody>{error}</MessageBarBody>
+                  </MessageBar>
+                </div>
+              )}
+            </div>
           </DialogContent>
           <div className={styles.actions}>
-            {isRetryOnly ? (
-              <>
-                <Button appearance="primary" onClick={onRetry} disabled={isBusy}>
-                  {isUpdatingStatus ? 'Retrying...' : 'Retry marking as Paid'}
-                </Button>
-                <Button appearance="secondary" onClick={onCancel} disabled={isBusy}>
-                  Close
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button appearance="primary" onClick={handleConfirm} disabled={!canConfirm}>
-                  {isCreatingExpense ? 'Creating...' : 'Confirm'}
-                </Button>
-                <Button appearance="secondary" onClick={onSkip} disabled={isBusy}>
-                  {isUpdatingStatus ? 'Marking as Paid...' : 'Skip'}
-                </Button>
-                <Button appearance="subtle" onClick={onCancel} disabled={isBusy}>
-                  Cancel
-                </Button>
-              </>
-            )}
+            <Button appearance="primary" onClick={handleConfirm} disabled={!canConfirm}>
+              {isSaving ? 'Saving...' : 'Confirm'}
+            </Button>
+            <Button appearance="secondary" onClick={onSkip} disabled={isSaving}>
+              Skip
+            </Button>
+            <Button appearance="subtle" onClick={onCancel} disabled={isSaving}>
+              Cancel
+            </Button>
           </div>
         </DialogBody>
       </DialogSurface>

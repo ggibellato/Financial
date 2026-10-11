@@ -172,6 +172,39 @@ public sealed class MensaisService : IMensaisService
         }
     }
 
+    public async Task<RecurringBillDTO> MarkBillPaidAsync(Guid id, RecurringBillMarkPaidDTO request)
+    {
+        using var span = StartSpan("MarkBillPaid");
+        span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());
+        try
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            var bill = _repository.GetRecurringBills().FirstOrThrow(b => b.Id == id, "Recurring bill", id);
+            var expense = request.Expense is null ? null : BuildPaymentExpense(bill, request.Expense);
+
+            await _repository.ApplyAndSaveAsync(() =>
+            {
+                if (expense is not null)
+                {
+                    _repository.AddExpense(expense);
+                }
+
+                bill.SetStatus(BillStatus.Paid);
+                return true;
+            }).ConfigureAwait(false);
+
+            span.MarkSuccess();
+            _logger.LogInformation("{Operation} completed", "MarkBillPaid");
+            return ToDto(bill);
+        }
+        catch (Exception ex)
+        {
+            span.MarkFailed(ex);
+            throw;
+        }
+    }
+
     public async Task<IReadOnlyList<RecurringBillDTO>> ResetAllToUnsetAsync()
     {
         using var span = StartSpan("ResetAllToUnset");
@@ -197,6 +230,26 @@ public sealed class MensaisService : IMensaisService
             span.MarkFailed(ex);
             throw;
         }
+    }
+
+    private Expense BuildPaymentExpense(RecurringBill bill, RecurringBillPaymentExpenseDTO request)
+    {
+        if (bill.Area != Area.UK)
+        {
+            throw new ArgumentException("Only a UK bill can record a payment expense.");
+        }
+
+        if (bill.Status == BillStatus.Paid)
+        {
+            throw new ArgumentException("The bill is already Paid; recording another payment expense would duplicate it.");
+        }
+
+        DescriptionValidator.EnsureWithinLimit(request.Description);
+
+        var category = CashFlowReferenceResolver.ResolveActiveCategory(_repository.GetCategories(), request.CategoryId);
+        var bank = CashFlowReferenceResolver.ResolvePaymentSource(_repository.GetBanks(), request.PaymentSourceBankId);
+
+        return Expense.Create(request.Date, request.Description, request.Value, category, bank, creditCard: null);
     }
 
     private ITelemetrySpan StartSpan(string operationName)

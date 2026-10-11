@@ -107,7 +107,6 @@ namespace Financial.Presentation.App
                     services.AddTransient<ReservaView>();
                     services.AddTransient<MensaisViewModel>(sp => new MensaisViewModel(
                         sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.IMensaisService>(),
-                        sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.IExpenseService>(),
                         sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.IBankService>(),
                         sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.ICategoryService>(),
                         sp.GetRequiredService<Financial.Presentation.App.Services.IDialogService>(),

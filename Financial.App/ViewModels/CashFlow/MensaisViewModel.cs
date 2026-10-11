@@ -17,7 +17,6 @@ namespace Financial.Presentation.App.ViewModels.CashFlow;
 public class MensaisViewModel : ViewModelBase
 {
     private readonly IMensaisService _mensaisService;
-    private readonly IExpenseService _expenseService;
     private readonly IBankService _bankService;
     private readonly ICategoryService _categoryService;
     private readonly IDialogService _dialogService;
@@ -79,7 +78,6 @@ public class MensaisViewModel : ViewModelBase
 
     public MensaisViewModel(
         IMensaisService mensaisService,
-        IExpenseService expenseService,
         IBankService bankService,
         ICategoryService categoryService,
         IDialogService dialogService,
@@ -89,7 +87,6 @@ public class MensaisViewModel : ViewModelBase
     {
         _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _mensaisService = mensaisService ?? throw new ArgumentNullException(nameof(mensaisService));
-        _expenseService = expenseService ?? throw new ArgumentNullException(nameof(expenseService));
         _bankService = bankService ?? throw new ArgumentNullException(nameof(bankService));
         _categoryService = categoryService ?? throw new ArgumentNullException(nameof(categoryService));
         _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
@@ -476,7 +473,7 @@ public class MensaisViewModel : ViewModelBase
 
         if (bill.Area == "UK" && request.NewStatus == "Paid" && bill.Status != "Paid")
         {
-            await ChangeStatusViaUkExpensePromptAsync(bill);
+            await MarkUkBillPaidViaExpensePromptAsync(bill);
             return;
         }
 
@@ -491,7 +488,7 @@ public class MensaisViewModel : ViewModelBase
         }
     }
 
-    private async Task ChangeStatusViaUkExpensePromptAsync(RecurringBillDTO bill)
+    private async Task MarkUkBillPaidViaExpensePromptAsync(RecurringBillDTO bill)
     {
         var dialog = new UkExpensePromptDialogViewModel(bill, _bankService.GetBanks(), _categoryService.GetCategories(), _timeProvider);
 
@@ -500,63 +497,40 @@ public class MensaisViewModel : ViewModelBase
             return;
         }
 
-        if (dialog.Decision == UkExpensePromptDecision.Skip)
+        var request = new RecurringBillMarkPaidDTO
         {
-            try
-            {
-                await CommitStatusAsync(bill, "Paid");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError("Mensais change-status failed with {ErrorType}", ex.GetType().Name);
-                StatusChangeError = ex.Message;
-            }
-
-            return;
-        }
+            Expense = dialog.Decision == UkExpensePromptDecision.Skip
+                ? null
+                : new RecurringBillPaymentExpenseDTO
+                {
+                    Date = DateOnly.FromDateTime(dialog.Date),
+                    Description = dialog.Description,
+                    Value = decimal.Parse(dialog.Value),
+                    CategoryId = dialog.CategoryId!.Value,
+                    PaymentSourceBankId = dialog.BankId!.Value,
+                },
+        };
 
         try
         {
-            await _expenseService.AddExpenseAsync(new ExpenseCreateDTO
-            {
-                Date = DateOnly.FromDateTime(dialog.Date),
-                Description = dialog.Description,
-                Value = decimal.Parse(dialog.Value),
-                CategoryId = dialog.CategoryId!.Value,
-                PaymentSourceBankId = dialog.BankId!.Value,
-            });
+            var updated = await _mensaisService.MarkBillPaidAsync(bill.Id, request);
+            ReplaceBill(bill, updated);
         }
         catch (Exception ex)
         {
-            _logger.LogError("Mensais UK expense creation failed with {ErrorType}", ex.GetType().Name);
+            _logger.LogError("Mensais mark-paid failed with {ErrorType}", ex.GetType().Name);
             StatusChangeError = ex.Message;
-            return;
-        }
-
-        while (true)
-        {
-            try
-            {
-                await CommitStatusAsync(bill, "Paid");
-                return;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError("Mensais change-status failed with {ErrorType}", ex.GetType().Name);
-
-                if (!_confirm($"Updating the bill status failed: {ex.Message}. Retry?"))
-                {
-                    StatusChangeError = ex.Message;
-                    return;
-                }
-            }
         }
     }
 
     private async Task CommitStatusAsync(RecurringBillDTO bill, string newStatus)
     {
         var updated = await _mensaisService.UpdateBillStatusAsync(bill.Id, new RecurringBillStatusUpdateDTO { Status = newStatus });
+        ReplaceBill(bill, updated);
+    }
 
+    private void ReplaceBill(RecurringBillDTO bill, RecurringBillDTO updated)
+    {
         var brasilIndex = BrasilBills.IndexOf(bill);
         if (brasilIndex >= 0)
         {

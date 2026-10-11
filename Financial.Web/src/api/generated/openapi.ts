@@ -4303,6 +4303,69 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/mensais/{id}/paid": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Marks a recurring bill Paid, optionally recording its payment expense in the same save. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The bill's identifier. */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/*+json": null | components["schemas"]["RecurringBillMarkPaidDTO"];
+                    "application/json": null | components["schemas"]["RecurringBillMarkPaidDTO"];
+                    "text/json": null | components["schemas"]["RecurringBillMarkPaidDTO"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RecurringBillDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/mensais/{id}/status": {
         parameters: {
             query?: never;
@@ -7947,6 +8010,20 @@ export interface components {
             nitNumber?: null | string;
             note: string;
             status: string;
+            /** Format: double */
+            value: number;
+        };
+        RecurringBillMarkPaidDTO: {
+            expense: null | components["schemas"]["RecurringBillPaymentExpenseDTO"];
+        };
+        RecurringBillPaymentExpenseDTO: {
+            /** Format: uuid */
+            categoryId: string;
+            /** Format: date */
+            date: string;
+            description: string;
+            /** Format: uuid */
+            paymentSourceBankId: string;
             /** Format: double */
             value: number;
         };

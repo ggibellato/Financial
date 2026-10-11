@@ -8,6 +8,9 @@ namespace Financial.Api.Tests;
 [Trait("Category", "Integration")]
 public class MensaisEndpointsTests : ApiEndpointTests
 {
+    private static readonly Guid BarclaysId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000001");
+    private static readonly Guid CasaId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-600000000003");
+
     [Fact]
     public async Task CreateBill_ValidRequest_ReturnsOk()
     {
@@ -179,6 +182,67 @@ public class MensaisEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
+    public async Task MarkBillPaid_UkBillWithExpense_SetsPaidAndRecordsTheExpense()
+    {
+        var bill = await CreateUkBillAsync();
+
+        var response = await Client.PostAsJsonAsync(
+            $"/api/v1/financial/mensais/{bill.Id}/paid", new RecurringBillMarkPaidDTO { Expense = PaymentExpense() });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var updated = await response.Content.ReadFromJsonAsync<RecurringBillDTO>();
+        updated!.Status.Should().Be("Paid");
+        var expenses = await (await Client.GetAsync("/api/v1/financial/expenses/month/2026/7"))
+            .Content.ReadFromJsonAsync<List<ExpenseDTO>>();
+        expenses.Should().ContainSingle(e => e.Description == "Council Tax" && e.Value == 120m && e.PaymentSourceBankId == BarclaysId);
+    }
+
+    [Fact]
+    public async Task MarkBillPaid_WithoutExpense_SetsPaidAndRecordsNoExpense()
+    {
+        var bill = await CreateUkBillAsync();
+
+        var response = await Client.PostAsJsonAsync(
+            $"/api/v1/financial/mensais/{bill.Id}/paid", new RecurringBillMarkPaidDTO());
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        (await response.Content.ReadFromJsonAsync<RecurringBillDTO>())!.Status.Should().Be("Paid");
+        var expenses = await (await Client.GetAsync("/api/v1/financial/expenses/month/2026/7"))
+            .Content.ReadFromJsonAsync<List<ExpenseDTO>>();
+        expenses.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task MarkBillPaid_ExpenseWithUnknownCategory_ReturnsBadRequestAndLeavesBillUnpaid()
+    {
+        var bill = await CreateUkBillAsync();
+        var expense = new RecurringBillPaymentExpenseDTO
+        {
+            Date = new DateOnly(2026, 7, 10),
+            Description = "Council Tax",
+            Value = 120m,
+            CategoryId = Guid.NewGuid(),
+            PaymentSourceBankId = BarclaysId
+        };
+
+        var response = await Client.PostAsJsonAsync(
+            $"/api/v1/financial/mensais/{bill.Id}/paid", new RecurringBillMarkPaidDTO { Expense = expense });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var bills = await (await Client.GetAsync("/api/v1/financial/mensais")).Content.ReadFromJsonAsync<List<RecurringBillDTO>>();
+        bills.Should().ContainSingle().Which.Status.Should().Be("Unset");
+    }
+
+    [Fact]
+    public async Task MarkBillPaid_UnknownId_ReturnsNotFound()
+    {
+        var response = await Client.PostAsJsonAsync(
+            $"/api/v1/financial/mensais/{Guid.NewGuid()}/paid", new RecurringBillMarkPaidDTO());
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
     public async Task UpdateBillStatus_UnknownId_ReturnsNotFound()
     {
         var response = await Client.PostAsJsonAsync(
@@ -215,6 +279,28 @@ public class MensaisEndpointsTests : ApiEndpointTests
         var bills = await response.Content.ReadFromJsonAsync<List<RecurringBillDTO>>();
         bills.Should().ContainSingle().Which.Status.Should().Be("Unset");
     }
+
+    private async Task<RecurringBillDTO> CreateUkBillAsync()
+    {
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/mensais", new RecurringBillCreateDTO
+        {
+            DueDay = 15,
+            Description = "Council Tax",
+            Value = 120m,
+            Area = "UK",
+            Note = string.Empty
+        });
+        return (await response.Content.ReadFromJsonAsync<RecurringBillDTO>())!;
+    }
+
+    private static RecurringBillPaymentExpenseDTO PaymentExpense() => new()
+    {
+        Date = new DateOnly(2026, 7, 10),
+        Description = "Council Tax",
+        Value = 120m,
+        CategoryId = CasaId,
+        PaymentSourceBankId = BarclaysId
+    };
 
     private static RecurringBillCreateDTO ValidBrasilBillRequest() => new()
     {

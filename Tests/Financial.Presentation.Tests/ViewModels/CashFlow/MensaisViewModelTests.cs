@@ -12,13 +12,12 @@ namespace Financial.Presentation.Tests.ViewModels.CashFlow;
 [Trait("Category", "Unit")]
 public class MensaisViewModelTests
 {
-    private static (MensaisViewModel ViewModel, StubMensaisService Service, StubExpenseService ExpenseService, StubBankService BankService, StubCategoryService CategoryService, StubDialogService DialogService) CreateViewModel(bool confirm = true) =>
+    private static (MensaisViewModel ViewModel, StubMensaisService Service, StubBankService BankService, StubCategoryService CategoryService, StubDialogService DialogService) CreateViewModel(bool confirm = true) =>
         CreateViewModel(_ => confirm);
 
-    private static (MensaisViewModel ViewModel, StubMensaisService Service, StubExpenseService ExpenseService, StubBankService BankService, StubCategoryService CategoryService, StubDialogService DialogService) CreateViewModel(Func<string, bool> confirm, RecordingLogger<MensaisViewModel>? logger = null)
+    private static (MensaisViewModel ViewModel, StubMensaisService Service, StubBankService BankService, StubCategoryService CategoryService, StubDialogService DialogService) CreateViewModel(Func<string, bool> confirm, RecordingLogger<MensaisViewModel>? logger = null)
     {
         var service = new StubMensaisService();
-        var expenseService = new StubExpenseService();
         var bankService = new StubBankService();
         var categoryService = new StubCategoryService();
         var dialogService = new StubDialogService
@@ -28,9 +27,9 @@ public class MensaisViewModelTests
             OnShowUkExpensePromptDialog = vm => vm.SkipCommand.Execute(null),
         };
         var viewModel = new MensaisViewModel(
-            service, expenseService, bankService, categoryService, dialogService,
+            service, bankService, categoryService, dialogService,
             confirm, TestClock.At(), logger ?? new RecordingLogger<MensaisViewModel>());
-        return (viewModel, service, expenseService, bankService, categoryService, dialogService);
+        return (viewModel, service, bankService, categoryService, dialogService);
     }
 
     private static RecurringBillDTO CreateBill(string area, string status = "Unset", string description = "Rent") => new()
@@ -43,7 +42,7 @@ public class MensaisViewModelTests
     [Fact]
     public async Task RefreshAsync_SplitsBillsIntoBrasilAndUkByArea()
     {
-        var (viewModel, service, _, _, _, _) = CreateViewModel();
+        var (viewModel, service, _, _, _) = CreateViewModel();
         service.Bills = [CreateBill("Brasil"), CreateBill("Brasil"), CreateBill("UK")];
 
         await viewModel.RefreshAsync();
@@ -57,7 +56,7 @@ public class MensaisViewModelTests
     [InlineData("UK")]
     public async Task AddBill_ValidForm_CallsServiceWithCorrectAreaAndClosesForm(string area)
     {
-        var (viewModel, service, _, _, _, _) = CreateViewModel();
+        var (viewModel, service, _, _, _) = CreateViewModel();
         viewModel.ShowAddFormCommand.Execute(null);
         viewModel.NewDescription = "Electricity";
         viewModel.NewDueDay = "15";
@@ -77,7 +76,7 @@ public class MensaisViewModelTests
     [Fact]
     public async Task ShowAddForm_AfterSuccessfulAdd_PersistsAreaButNotOtherFields()
     {
-        var (viewModel, _, _, _, _, _) = CreateViewModel();
+        var (viewModel, _, _, _, _) = CreateViewModel();
         viewModel.ShowAddFormCommand.Execute(null);
         viewModel.NewDescription = "Council Tax";
         viewModel.NewDueDay = "15";
@@ -103,7 +102,7 @@ public class MensaisViewModelTests
     [InlineData("Electricity", "15", "abc")]
     public async Task AddBill_InvalidForm_BlocksSaveWithoutServiceCall(string description, string dueDay, string value)
     {
-        var (viewModel, service, _, _, _, _) = CreateViewModel();
+        var (viewModel, service, _, _, _) = CreateViewModel();
         viewModel.ShowAddFormCommand.Execute(null);
         viewModel.NewDescription = description;
         viewModel.NewDueDay = dueDay;
@@ -118,7 +117,7 @@ public class MensaisViewModelTests
     [Fact]
     public async Task AddBill_InvalidDescription_AttributesErrorToDescriptionFieldOnly()
     {
-        var (viewModel, _, _, _, _, _) = CreateViewModel();
+        var (viewModel, _, _, _, _) = CreateViewModel();
         viewModel.ShowAddFormCommand.Execute(null);
         viewModel.NewDescription = "";
         viewModel.NewDueDay = "15";
@@ -135,7 +134,7 @@ public class MensaisViewModelTests
     [Fact]
     public async Task AddBill_InvalidDueDay_AttributesErrorToDueDayFieldOnly()
     {
-        var (viewModel, _, _, _, _, _) = CreateViewModel();
+        var (viewModel, _, _, _, _) = CreateViewModel();
         viewModel.ShowAddFormCommand.Execute(null);
         viewModel.NewDescription = "Electricity";
         viewModel.NewDueDay = "0";
@@ -151,7 +150,7 @@ public class MensaisViewModelTests
     [Fact]
     public async Task AddBill_InvalidValue_AttributesErrorToValueFieldOnly()
     {
-        var (viewModel, _, _, _, _, _) = CreateViewModel();
+        var (viewModel, _, _, _, _) = CreateViewModel();
         viewModel.ShowAddFormCommand.Execute(null);
         viewModel.NewDescription = "Electricity";
         viewModel.NewDueDay = "15";
@@ -167,7 +166,7 @@ public class MensaisViewModelTests
     [Fact]
     public void DisplayYearAndDisplayMonth_CanBeSetAndRead()
     {
-        var (viewModel, _, _, _, _, _) = CreateViewModel();
+        var (viewModel, _, _, _, _) = CreateViewModel();
 
         viewModel.DisplayYear = 2026;
         viewModel.DisplayMonth = 6;
@@ -179,7 +178,7 @@ public class MensaisViewModelTests
     [Fact]
     public void RetryCommand_IsExposedAndCanExecute()
     {
-        var (viewModel, _, _, _, _, _) = CreateViewModel();
+        var (viewModel, _, _, _, _) = CreateViewModel();
 
         viewModel.RetryCommand.Should().NotBeNull();
         viewModel.RetryCommand.CanExecute(null).Should().BeTrue();
@@ -188,7 +187,7 @@ public class MensaisViewModelTests
     [Fact]
     public async Task EditBill_ValidForm_CallsUpdateServiceWithCorrectId()
     {
-        var (viewModel, service, _, _, _, _) = CreateViewModel();
+        var (viewModel, service, _, _, _) = CreateViewModel();
         var bill = CreateBill("Brasil");
         service.Bills = [bill];
         await viewModel.RefreshAsync();
@@ -212,7 +211,7 @@ public class MensaisViewModelTests
     [Fact]
     public async Task EditBill_InvalidForm_BlocksSaveWithoutServiceCall()
     {
-        var (viewModel, service, _, _, _, _) = CreateViewModel();
+        var (viewModel, service, _, _, _) = CreateViewModel();
         var bill = CreateBill("Brasil");
         viewModel.EditBillCommand.Execute(bill);
         viewModel.EditValue = "not-a-number";
@@ -228,7 +227,7 @@ public class MensaisViewModelTests
     [InlineData(false)]
     public async Task DeleteBill_ConfirmedAndDeclined_CallsOrSkipsService(bool confirmed)
     {
-        var (viewModel, service, _, _, _, _) = CreateViewModel(confirmed);
+        var (viewModel, service, _, _, _) = CreateViewModel(confirmed);
         var bill = CreateBill("Brasil");
 
         await viewModel.DeleteBillAsync(bill);
@@ -246,7 +245,7 @@ public class MensaisViewModelTests
     [Fact]
     public async Task ResetAllToUnset_Confirmed_CallsServiceAndRefreshesBills()
     {
-        var (viewModel, service, _, _, _, _) = CreateViewModel(confirm: true);
+        var (viewModel, service, _, _, _) = CreateViewModel(confirm: true);
         service.Bills = [CreateBill("Brasil", status: "Paid"), CreateBill("UK", status: "Scheduled")];
         await viewModel.RefreshAsync();
 
@@ -260,23 +259,19 @@ public class MensaisViewModelTests
     [Fact]
     public async Task ResetAllToUnset_Declined_DoesNotCallService()
     {
-        var (viewModel, service, _, _, _, _) = CreateViewModel(confirm: false);
+        var (viewModel, service, _, _, _) = CreateViewModel(confirm: false);
 
         await viewModel.ResetAllToUnsetAsync();
 
         service.ResetAllToUnsetCallCount.Should().Be(0);
     }
 
-    [Theory]
-    [InlineData("Brasil")]
-    [InlineData("UK")]
-    public async Task ChangeStatusAsync_ValidRequest_UpdatesTheMatchingBillInPlace(string area)
+    [Fact]
+    public async Task ChangeStatusAsync_ValidRequest_UpdatesTheMatchingBillInPlace()
     {
-        // A UK bill still triggers the F05 prompt on Unset->Paid; the shared default stub
-        // (Skip) lets this test assert F03's original direct-commit outcome either way.
-        var (viewModel, service, expenseService, _, _, _) = CreateViewModel();
-        var bill = CreateBill(area);
-        var otherBill = CreateBill(area, description: "Other");
+        var (viewModel, service, _, _, _) = CreateViewModel();
+        var bill = CreateBill("Brasil");
+        var otherBill = CreateBill("Brasil", description: "Other");
         service.Bills = [bill, otherBill];
         await viewModel.RefreshAsync();
 
@@ -285,17 +280,16 @@ public class MensaisViewModelTests
         service.LastStatusChangeRequest.Should().NotBeNull();
         service.LastStatusChangeRequest!.Value.Id.Should().Be(bill.Id);
         service.LastStatusChangeRequest.Value.Request.Status.Should().Be("Paid");
-        expenseService.AddExpenseCallCount.Should().Be(0);
-        var collection = area == "Brasil" ? viewModel.BrasilBills : viewModel.UkBills;
-        collection.Should().ContainSingle(b => b.Id == bill.Id && b.Status == "Paid");
-        collection.Should().ContainSingle(b => b.Id == otherBill.Id && b.Status == "Unset");
+        service.LastMarkPaidRequest.Should().BeNull();
+        viewModel.BrasilBills.Should().ContainSingle(b => b.Id == bill.Id && b.Status == "Paid");
+        viewModel.BrasilBills.Should().ContainSingle(b => b.Id == otherBill.Id && b.Status == "Unset");
     }
 
     [Fact]
     public async Task ChangeStatusAsync_ServiceThrows_SetsErrorAndLeavesCollectionsUntouched()
     {
-        var (viewModel, service, _, _, _, _) = CreateViewModel();
-        var bill = CreateBill("UK");
+        var (viewModel, service, _, _, _) = CreateViewModel();
+        var bill = CreateBill("Brasil");
         service.Bills = [bill];
         await viewModel.RefreshAsync();
         service.ThrowOnUpdateStatus = new InvalidOperationException("Recurring bill not found.");
@@ -303,13 +297,13 @@ public class MensaisViewModelTests
         await viewModel.ChangeStatusAsync(new StatusChangeRequest(bill, "Paid"));
 
         viewModel.StatusChangeError.Should().Be("Recurring bill not found.");
-        viewModel.UkBills.Should().ContainSingle(b => b.Id == bill.Id && b.Status == "Unset");
+        viewModel.BrasilBills.Should().ContainSingle(b => b.Id == bill.Id && b.Status == "Unset");
     }
 
     [Fact]
     public async Task ChangeStatusAsync_RequestWithoutARecurringBill_DoesNothing()
     {
-        var (viewModel, service, _, _, _, _) = CreateViewModel();
+        var (viewModel, service, _, _, _) = CreateViewModel();
 
         await viewModel.ChangeStatusAsync(new StatusChangeRequest("not a bill", "Paid"));
 
@@ -320,7 +314,7 @@ public class MensaisViewModelTests
     public async Task RefreshAsync_ServiceFails_LogsAnErrorWithTheErrorTypeOnly()
     {
         var logger = new RecordingLogger<MensaisViewModel>();
-        var (viewModel, service, _, _, _, _) = CreateViewModel(_ => true, logger);
+        var (viewModel, service, _, _, _) = CreateViewModel(_ => true, logger);
         service.ThrowOnGetBills = new InvalidOperationException("bill Rent value 1234.56");
 
         await viewModel.RefreshAsync();
@@ -362,7 +356,7 @@ public class MensaisViewModelTests
     [InlineData("Scheduled")]
     public async Task ChangeStatusAsync_UkBillTransitionToPaid_ShowsThePromptInsteadOfCallingApiDirectly(string priorStatus)
     {
-        var (viewModel, service, _, _, _, dialogService) = CreateViewModel();
+        var (viewModel, service, _, _, dialogService) = CreateViewModel();
         var bill = CreateBill("UK", status: priorStatus, description: "Council Tax");
         service.Bills = [bill];
         await viewModel.RefreshAsync();
@@ -382,7 +376,7 @@ public class MensaisViewModelTests
     [InlineData("UK", "Paid")]
     public async Task ChangeStatusAsync_BrasilBillOrAlreadyPaid_UpdatesDirectlyWithoutShowingThePrompt(string area, string priorStatus)
     {
-        var (viewModel, service, _, _, _, dialogService) = CreateViewModel();
+        var (viewModel, service, _, _, dialogService) = CreateViewModel();
         var bill = CreateBill(area, status: priorStatus);
         service.Bills = [bill];
         await viewModel.RefreshAsync();
@@ -395,9 +389,9 @@ public class MensaisViewModelTests
     }
 
     [Fact]
-    public async Task ChangeStatusAsync_Confirmed_CreatesExpenseThenCommitsStatus()
+    public async Task ChangeStatusAsync_Confirmed_MarksPaidWithTheExpenseInOneCall()
     {
-        var (viewModel, service, expenseService, _, _, dialogService) = CreateViewModel();
+        var (viewModel, service, _, _, dialogService) = CreateViewModel();
         var bill = CreateBill("UK", description: "Council Tax");
         service.Bills = [bill];
         await viewModel.RefreshAsync();
@@ -405,83 +399,57 @@ public class MensaisViewModelTests
 
         await viewModel.ChangeStatusAsync(new StatusChangeRequest(bill, "Paid"));
 
-        expenseService.AddExpenseCallCount.Should().Be(1);
-        expenseService.LastCreateRequest.Should().NotBeNull();
-        expenseService.LastCreateRequest!.PaymentSourceBankId.Should().Be(bankId);
-        expenseService.LastCreateRequest.CreditCardId.Should().BeNull();
-        expenseService.LastCreateRequest.CategoryId.Should().Be(categoryId);
-        expenseService.LastCreateRequest.Description.Should().Be("Council Tax");
-        service.LastStatusChangeRequest.Should().NotBeNull();
-        service.LastStatusChangeRequest!.Value.Request.Status.Should().Be("Paid");
-        viewModel.UkBills.Should().ContainSingle(b => b.Id == bill.Id && b.Status == "Paid");
-    }
-
-    [Fact]
-    public async Task ChangeStatusAsync_ExpenseCreationFails_DoesNotCommitStatus()
-    {
-        var (viewModel, service, expenseService, _, _, dialogService) = CreateViewModel();
-        var bill = CreateBill("UK");
-        service.Bills = [bill];
-        await viewModel.RefreshAsync();
-        SetUpDialogToConfirm(dialogService);
-        expenseService.ThrowOnAdd = "Category is inactive.";
-
-        await viewModel.ChangeStatusAsync(new StatusChangeRequest(bill, "Paid"));
-
-        viewModel.StatusChangeError.Should().Be("Category is inactive.");
+        service.MarkPaidCallCount.Should().Be(1);
+        service.LastMarkPaidRequest.Should().NotBeNull();
+        service.LastMarkPaidRequest!.Value.Id.Should().Be(bill.Id);
+        var expense = service.LastMarkPaidRequest.Value.Request.Expense;
+        expense.Should().NotBeNull();
+        expense!.PaymentSourceBankId.Should().Be(bankId);
+        expense.CategoryId.Should().Be(categoryId);
+        expense.Description.Should().Be("Council Tax");
         service.LastStatusChangeRequest.Should().BeNull();
-        viewModel.UkBills.Should().ContainSingle(b => b.Id == bill.Id && b.Status == "Unset");
-    }
-
-    [Fact]
-    public async Task ChangeStatusAsync_StatusCommitFailsAfterExpenseCreated_RetriesViaConfirmWithoutRecreatingExpense()
-    {
-        var confirmCallCount = 0;
-        StubMensaisService? serviceRef = null;
-        var (viewModel, service, expenseService, _, _, dialogService) = CreateViewModel(_ =>
-        {
-            confirmCallCount++;
-            // The retry loop only calls UpdateBillStatusAsync again - clear the stubbed failure
-            // here so the retried attempt succeeds, proving AddExpenseAsync is never called twice.
-            serviceRef!.ThrowOnUpdateStatus = null;
-            return true;
-        });
-        serviceRef = service;
-        var bill = CreateBill("UK");
-        service.Bills = [bill];
-        await viewModel.RefreshAsync();
-        SetUpDialogToConfirm(dialogService);
-        service.ThrowOnUpdateStatus = new InvalidOperationException("Recurring bill not found.");
-
-        await viewModel.ChangeStatusAsync(new StatusChangeRequest(bill, "Paid"));
-
-        confirmCallCount.Should().Be(1);
-        expenseService.AddExpenseCallCount.Should().Be(1);
         viewModel.StatusChangeError.Should().BeNull();
         viewModel.UkBills.Should().ContainSingle(b => b.Id == bill.Id && b.Status == "Paid");
     }
 
     [Fact]
-    public async Task ChangeStatusAsync_DeclinesRetry_LeavesStatusChangeErrorSetAndBillUnchanged()
+    public async Task ChangeStatusAsync_MarkPaidFails_SetsErrorAndLeavesBillUnchanged()
     {
-        var (viewModel, service, expenseService, _, _, dialogService) = CreateViewModel(_ => false);
+        var (viewModel, service, _, _, dialogService) = CreateViewModel();
         var bill = CreateBill("UK");
         service.Bills = [bill];
         await viewModel.RefreshAsync();
         SetUpDialogToConfirm(dialogService);
-        service.ThrowOnUpdateStatus = new InvalidOperationException("Recurring bill not found.");
+        service.ThrowOnMarkPaid = new InvalidOperationException("Category is inactive.");
 
         await viewModel.ChangeStatusAsync(new StatusChangeRequest(bill, "Paid"));
 
-        expenseService.AddExpenseCallCount.Should().Be(1);
-        viewModel.StatusChangeError.Should().Be("Recurring bill not found.");
+        viewModel.StatusChangeError.Should().Be("Category is inactive.");
         viewModel.UkBills.Should().ContainSingle(b => b.Id == bill.Id && b.Status == "Unset");
     }
 
     [Fact]
-    public async Task ChangeStatusAsync_Skipped_CommitsStatusWithoutCreatingExpense()
+    public async Task ChangeStatusAsync_MarkPaidFails_LogsOnlyTheErrorType()
     {
-        var (viewModel, service, expenseService, _, _, dialogService) = CreateViewModel();
+        var logger = new RecordingLogger<MensaisViewModel>();
+        var (viewModel, service, _, _, dialogService) = CreateViewModel(_ => true, logger);
+        var bill = CreateBill("UK");
+        service.Bills = [bill];
+        await viewModel.RefreshAsync();
+        SetUpDialogToConfirm(dialogService);
+        service.ThrowOnMarkPaid = new InvalidOperationException("bill Rent value 1234.56");
+
+        await viewModel.ChangeStatusAsync(new StatusChangeRequest(bill, "Paid"));
+
+        var errors = logger.Entries.Where(e => e.Level == Microsoft.Extensions.Logging.LogLevel.Error).ToList();
+        errors.Should().ContainSingle(e => e.Message.Contains("mark-paid"));
+        errors.Should().AllSatisfy(e => e.Message.Should().NotContain("1234.56"));
+    }
+
+    [Fact]
+    public async Task ChangeStatusAsync_Skipped_MarksPaidWithoutAnExpense()
+    {
+        var (viewModel, service, _, _, dialogService) = CreateViewModel();
         var bill = CreateBill("UK");
         service.Bills = [bill];
         await viewModel.RefreshAsync();
@@ -489,16 +457,16 @@ public class MensaisViewModelTests
 
         await viewModel.ChangeStatusAsync(new StatusChangeRequest(bill, "Paid"));
 
-        expenseService.AddExpenseCallCount.Should().Be(0);
-        service.LastStatusChangeRequest.Should().NotBeNull();
-        service.LastStatusChangeRequest!.Value.Request.Status.Should().Be("Paid");
+        service.MarkPaidCallCount.Should().Be(1);
+        service.LastMarkPaidRequest!.Value.Request.Expense.Should().BeNull();
+        service.LastStatusChangeRequest.Should().BeNull();
         viewModel.UkBills.Should().ContainSingle(b => b.Id == bill.Id && b.Status == "Paid");
     }
 
     [Fact]
     public async Task ChangeStatusAsync_Cancelled_MakesNoServiceCalls()
     {
-        var (viewModel, service, expenseService, _, _, dialogService) = CreateViewModel();
+        var (viewModel, service, _, _, dialogService) = CreateViewModel();
         var bill = CreateBill("UK");
         service.Bills = [bill];
         await viewModel.RefreshAsync();
@@ -506,7 +474,7 @@ public class MensaisViewModelTests
 
         await viewModel.ChangeStatusAsync(new StatusChangeRequest(bill, "Paid"));
 
-        expenseService.AddExpenseCallCount.Should().Be(0);
+        service.MarkPaidCallCount.Should().Be(0);
         service.LastStatusChangeRequest.Should().BeNull();
         viewModel.UkBills.Should().ContainSingle(b => b.Id == bill.Id && b.Status == "Unset");
     }
@@ -514,7 +482,7 @@ public class MensaisViewModelTests
     [Fact]
     public async Task SaveEditAsync_MarkingAUkBillPaidViaTheEditFormDrawer_NeverOpensThePrompt()
     {
-        var (viewModel, service, expenseService, _, _, dialogService) = CreateViewModel();
+        var (viewModel, service, _, _, dialogService) = CreateViewModel();
         var bill = CreateBill("UK");
         service.Bills = [bill];
         await viewModel.RefreshAsync();
@@ -526,7 +494,7 @@ public class MensaisViewModelTests
         await viewModel.SaveEditAsync();
 
         dialogService.LastUkExpensePromptDialog.Should().BeNull();
-        expenseService.AddExpenseCallCount.Should().Be(0);
+        service.MarkPaidCallCount.Should().Be(0);
         service.LastUpdateRequest.Should().NotBeNull();
         service.LastUpdateRequest!.Value.Request.Status.Should().Be("Paid");
     }

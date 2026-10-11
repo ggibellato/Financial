@@ -118,6 +118,7 @@ import type {
   MaeLedgerEntryValuesUpdateDto,
   RecurringBillUpdateDto,
   RecurringBillStatusUpdateDto,
+  RecurringBillMarkPaidDto,
   ReserveMovementUpdateDto,
   UpcomingIncomeDto,
   WatchlistItemDto,
@@ -209,6 +210,7 @@ export interface FinancialApiClient {
   createMensaisBill: (request: RecurringBillCreateDto) => Promise<RecurringBillDto>
   updateMensaisBill: (id: string, request: RecurringBillUpdateDto) => Promise<RecurringBillDto>
   updateMensaisBillStatus: (id: string, request: RecurringBillStatusUpdateDto) => Promise<RecurringBillDto>
+  markMensaisBillPaid: (id: string, request: RecurringBillMarkPaidDto) => Promise<RecurringBillDto>
   deleteMensaisBill: (id: string) => Promise<void>
   resetMensaisToUnset: () => Promise<RecurringBillDto[]>
   createMaeLedgerEntry: (request: MaeLedgerEntryCreateDto) => Promise<MaeLedgerEntryDto>
@@ -604,6 +606,11 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       }),
     updateMensaisBillStatus: (id, requestBody) =>
       request<RecurringBillDto>(`/mensais/${encodeURIComponent(id)}/status`, {
+        method: 'POST',
+        body: JSON.stringify(requestBody),
+      }),
+    markMensaisBillPaid: (id, requestBody) =>
+      request<RecurringBillDto>(`/mensais/${encodeURIComponent(id)}/paid`, {
         method: 'POST',
         body: JSON.stringify(requestBody),
       }),

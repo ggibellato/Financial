@@ -254,11 +254,8 @@ export default function MensaisPage() {
     banks,
     categories,
     expensePromptBill,
-    isCreatingExpense,
-    expenseCreateError,
-    expenseCreatedForRetry,
     confirmExpensePrompt,
-    skipOrRetryExpensePrompt,
+    skipExpensePrompt,
     closeExpensePrompt,
   } = useMensais()
 
@@ -460,14 +457,10 @@ export default function MensaisPage() {
           bill={expensePromptBill}
           banks={banks}
           categories={categories}
-          isCreatingExpense={isCreatingExpense}
-          isUpdatingStatus={updatingStatusBillId === expensePromptBill.id}
-          expenseCreateError={expenseCreateError}
-          statusUpdateError={statusUpdateError}
-          isRetryOnly={expenseCreatedForRetry}
+          isSaving={updatingStatusBillId === expensePromptBill.id}
+          error={statusUpdateError}
           onConfirm={confirmExpensePrompt}
-          onSkip={skipOrRetryExpensePrompt}
-          onRetry={skipOrRetryExpensePrompt}
+          onSkip={skipExpensePrompt}
           onCancel={closeExpensePrompt}
         />
       )}
