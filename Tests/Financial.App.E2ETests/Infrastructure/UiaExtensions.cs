@@ -39,6 +39,9 @@ internal static class UiaExtensions
     public static void ExpandTreeItem(this AutomationElement root, string namePrefix) =>
         root.FindByNameStartingWith(ControlType.TreeItem, namePrefix).Patterns.ExpandCollapse.Pattern.Expand();
 
+    public static void SelectTreeItem(this AutomationElement root, string namePrefix) =>
+        root.FindByNameStartingWith(ControlType.TreeItem, namePrefix).Patterns.SelectionItem.Pattern.Select();
+
     public static void Press(this AutomationElement element) => element.AsButton().Invoke();
 
     private static AutomationElement? LookupByIdNamed(AutomationElement root, string automationId, string name) =>

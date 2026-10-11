@@ -1,6 +1,5 @@
 using Financial.App.E2ETests.Infrastructure;
 using FlaUI.Core.AutomationElements;
-using FlaUI.Core.Definitions;
 using FluentAssertions;
 
 namespace Financial.App.E2ETests.Smoke;
@@ -32,7 +31,7 @@ public class InvestmentAssetTests
         {
             window.ExpandTreeItem("XPI");
             window.ExpandTreeItem("Default");
-            window.FindByNameStartingWith(ControlType.TreeItem, assetName).Patterns.SelectionItem.Pattern.Select();
+            window.SelectTreeItem(assetName);
 
             if (window.WaitForIdNamed("asset-summary-name", assetName, SummaryWaitPerAttempt))
             {
