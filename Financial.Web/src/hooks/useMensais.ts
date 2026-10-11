@@ -437,17 +437,17 @@ export function useMensais(): MensaisData {
       })
   }
 
-  function performStatusUpdate(id: string, status: string) {
-    dispatch({ type: 'UPDATE_STATUS_START', payload: id })
+  function runStatusUpdate(
+    billId: string,
+    call: () => Promise<RecurringBillDto>,
+    failureMessage: string,
+  ) {
+    dispatch({ type: 'UPDATE_STATUS_START', payload: billId })
 
-    void apiClient
-      .updateMensaisBillStatus(id, { status })
+    void call()
       .then((bill) => dispatch({ type: 'UPDATE_STATUS_SUCCESS', payload: bill }))
       .catch((err: unknown) => {
-        dispatch({
-          type: 'UPDATE_STATUS_ERROR',
-          payload: getErrorMessage(err, 'Failed to update status'),
-        })
+        dispatch({ type: 'UPDATE_STATUS_ERROR', payload: getErrorMessage(err, failureMessage) })
       })
   }
 
@@ -460,29 +460,18 @@ export function useMensais(): MensaisData {
       return
     }
 
-    performStatusUpdate(id, status)
+    runStatusUpdate(id, () => apiClient.updateMensaisBillStatus(id, { status }), 'Failed to update status')
   }
 
   function markBillPaid(billId: string, values: ExpensePromptValues | null) {
-    dispatch({ type: 'UPDATE_STATUS_START', payload: billId })
-
-    void apiClient
-      .markMensaisBillPaid(billId, {
-        expense: values && {
-          date: values.date,
-          description: values.description,
-          value: values.value,
-          categoryId: values.categoryId,
-          paymentSourceBankId: values.bankId,
-        },
-      })
-      .then((bill) => dispatch({ type: 'UPDATE_STATUS_SUCCESS', payload: bill }))
-      .catch((err: unknown) => {
-        dispatch({
-          type: 'UPDATE_STATUS_ERROR',
-          payload: getErrorMessage(err, 'Failed to mark the bill as Paid'),
-        })
-      })
+    const expense = values && {
+      date: values.date,
+      description: values.description,
+      value: values.value,
+      categoryId: values.categoryId,
+      paymentSourceBankId: values.bankId,
+    }
+    runStatusUpdate(billId, () => apiClient.markMensaisBillPaid(billId, { expense }), 'Failed to mark the bill as Paid')
   }
 
   function confirmExpensePrompt(values: ExpensePromptValues) {
