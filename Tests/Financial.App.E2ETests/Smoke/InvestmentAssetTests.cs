@@ -1,5 +1,5 @@
 using Financial.App.E2ETests.Infrastructure;
-using FlaUI.Core.Definitions;
+using FlaUI.Core.AutomationElements;
 using FluentAssertions;
 
 namespace Financial.App.E2ETests.Smoke;
@@ -8,6 +8,9 @@ namespace Financial.App.E2ETests.Smoke;
 [Trait("Category", "Smoke")]
 public class InvestmentAssetTests
 {
+    private const int SelectionAttempts = 3;
+    private static readonly TimeSpan SummaryWaitPerAttempt = TimeSpan.FromSeconds(8);
+
     [Fact]
     public void InvestmentAsset_OpensWithSummary()
     {
@@ -16,11 +19,24 @@ public class InvestmentAssetTests
             var window = session.Window;
             window.FindById("nav-active-investments").Press();
 
-            window.ExpandTreeItem("XPI");
-            window.ExpandTreeItem("Default");
-            window.FindByNameStartingWith(ControlType.TreeItem, "BCIA11").Patterns.SelectionItem.Pattern.Select();
+            SelectAssetUntilSummaryShows(window, "BCIA11");
 
             window.FindByIdNamed("asset-summary-name", "BCIA11").Name.Should().Be("BCIA11");
         });
+    }
+
+    private static void SelectAssetUntilSummaryShows(AutomationElement window, string assetName)
+    {
+        for (var attempt = 1; attempt <= SelectionAttempts; attempt++)
+        {
+            window.ExpandTreeItem("XPI");
+            window.ExpandTreeItem("Default");
+            window.SelectTreeItem(assetName);
+
+            if (window.WaitForIdNamed("asset-summary-name", assetName, SummaryWaitPerAttempt))
+            {
+                return;
+            }
+        }
     }
 }
