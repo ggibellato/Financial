@@ -294,6 +294,141 @@ public class MensaisServiceTests
     }
 
     [Fact]
+    public async Task MarkBillPaidAsync_WithExpense_CreatesExpenseAndSetsPaidInOneSave()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCategories: true);
+        var sut = CreateService(repository);
+        var bill = AddUkBill(repository);
+
+        var result = await sut.MarkBillPaidAsync(bill.Id, new RecurringBillMarkPaidDTO { Expense = PaymentExpense(repository) });
+
+        using (new AssertionScope())
+        {
+            result.Status.Should().Be("Paid");
+            repository.RecurringBills.Should().ContainSingle().Which.Status.Should().Be(BillStatus.Paid);
+            var expense = repository.Expenses.Should().ContainSingle().Subject;
+            expense.Description.Should().Be("Council Tax");
+            expense.Value.Should().Be(120m);
+            expense.Date.Should().Be(new DateOnly(2026, 10, 10));
+            expense.Category.Name.Should().Be("Casa");
+            expense.PaymentSourceBank!.Name.Should().Be("Barclays");
+            expense.CreditCard.Should().BeNull();
+            repository.SaveChangesCallCount.Should().Be(1);
+        }
+    }
+
+    [Fact]
+    public async Task MarkBillPaidAsync_WithoutExpense_SetsPaidAndCreatesNoExpense()
+    {
+        var bill = AddUkBill(_repository);
+
+        var result = await _sut.MarkBillPaidAsync(bill.Id, new RecurringBillMarkPaidDTO());
+
+        using (new AssertionScope())
+        {
+            result.Status.Should().Be("Paid");
+            _repository.Expenses.Should().BeEmpty();
+            _repository.SaveChangesCallCount.Should().Be(1);
+        }
+    }
+
+    [Fact]
+    public async Task MarkBillPaidAsync_WithUnknownId_ThrowsKeyNotFoundException()
+    {
+        var act = async () => await _sut.MarkBillPaidAsync(Guid.NewGuid(), new RecurringBillMarkPaidDTO());
+
+        await act.Should().ThrowAsync<KeyNotFoundException>();
+    }
+
+    [Fact]
+    public async Task MarkBillPaidAsync_WithExpenseOnBrasilBill_ThrowsAndChangesNothing()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCategories: true);
+        var sut = CreateService(repository);
+        var bill = RecurringBill.Create(10, "INSS", 850m, Area.Brasil, string.Empty, null, null);
+        repository.RecurringBills.Add(bill);
+
+        var act = async () => await sut.MarkBillPaidAsync(bill.Id, new RecurringBillMarkPaidDTO { Expense = PaymentExpense(repository) });
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*UK bill*");
+        using (new AssertionScope())
+        {
+            bill.Status.Should().Be(BillStatus.Unset);
+            repository.Expenses.Should().BeEmpty();
+            repository.SaveChangesCallCount.Should().Be(0);
+        }
+    }
+
+    [Fact]
+    public async Task MarkBillPaidAsync_WithExpenseOnAlreadyPaidBill_ThrowsAndCreatesNoSecondExpense()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCategories: true);
+        var sut = CreateService(repository);
+        var bill = AddUkBill(repository);
+        bill.SetStatus(BillStatus.Paid);
+
+        var act = async () => await sut.MarkBillPaidAsync(bill.Id, new RecurringBillMarkPaidDTO { Expense = PaymentExpense(repository) });
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*already Paid*");
+        repository.Expenses.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task MarkBillPaidAsync_WithUnknownBank_ThrowsAndLeavesBillUnpaid()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCategories: true);
+        var sut = CreateService(repository);
+        var bill = AddUkBill(repository);
+        var expense = new RecurringBillPaymentExpenseDTO
+        {
+            Date = new DateOnly(2026, 10, 10),
+            Description = "Council Tax",
+            Value = 120m,
+            CategoryId = repository.Categories.First().Id,
+            PaymentSourceBankId = Guid.NewGuid()
+        };
+
+        var act = async () => await sut.MarkBillPaidAsync(bill.Id, new RecurringBillMarkPaidDTO { Expense = expense });
+
+        await act.Should().ThrowAsync<ArgumentException>();
+        using (new AssertionScope())
+        {
+            bill.Status.Should().Be(BillStatus.Unset);
+            repository.Expenses.Should().BeEmpty();
+        }
+    }
+
+    [Fact]
+    public async Task MarkBillPaidAsync_WhenSaveFails_RecordsFailedSpanAndRethrows()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCategories: true);
+        var sut = CreateService(repository);
+        var bill = AddUkBill(repository);
+        repository.ThrowOnNextSave = true;
+
+        var act = async () => await sut.MarkBillPaidAsync(bill.Id, new RecurringBillMarkPaidDTO { Expense = PaymentExpense(repository) });
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.MensaisService.MarkBillPaid");
+    }
+
+    private static RecurringBill AddUkBill(StubCashFlowRepository repository)
+    {
+        var bill = RecurringBill.Create(10, "Council Tax", 120m, Area.UK, string.Empty, null, null);
+        repository.RecurringBills.Add(bill);
+        return bill;
+    }
+
+    private static RecurringBillPaymentExpenseDTO PaymentExpense(StubCashFlowRepository repository) => new()
+    {
+        Date = new DateOnly(2026, 10, 10),
+        Description = "Council Tax",
+        Value = 120m,
+        CategoryId = repository.Categories.Single(c => c.Name == "Casa").Id,
+        PaymentSourceBankId = repository.Banks.Single(b => b.Name == "Barclays").Id
+    };
+
+    [Fact]
     public async Task ResetAllToUnsetAsync_SetsEveryBillStatusBackToUnset()
     {
         var paidBill = RecurringBill.Create(10, "INSS", 850m, Area.Brasil, string.Empty, null, null);

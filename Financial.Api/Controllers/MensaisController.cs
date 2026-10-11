@@ -94,6 +94,25 @@ public sealed class MensaisController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>Marks a recurring bill Paid, optionally recording its payment expense in the same save.</summary>
+    /// <param name="id">The bill's identifier.</param>
+    /// <param name="request">The optional payment expense. Omit it to mark the bill Paid without an expense.</param>
+    /// <returns>200 OK with the updated bill, 400 Bad Request if the request is invalid, or 404 Not Found if the bill doesn't exist.</returns>
+    [HttpPost("{id:guid}/paid")]
+    [ProducesResponseType(typeof(RecurringBillDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<RecurringBillDTO>> MarkBillPaid(Guid id, [FromBody] RecurringBillMarkPaidDTO? request)
+    {
+        if (request is null)
+        {
+            return BadRequest();
+        }
+
+        var result = await _mensaisService.MarkBillPaidAsync(id, request);
+        return Ok(result);
+    }
+
     /// <summary>Resets every recurring bill's paid state back to unset, typically at the start of a new month.</summary>
     /// <returns>200 OK with the reset bills.</returns>
     [HttpPost("reset")]

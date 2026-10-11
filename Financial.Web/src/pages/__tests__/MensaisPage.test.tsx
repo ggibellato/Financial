@@ -13,7 +13,7 @@ const {
   resetMensaisToUnsetMock,
   getBanksMock,
   getCategoriesMock,
-  createExpenseMock,
+  markMensaisBillPaidMock,
 } = vi.hoisted(() => ({
   getMensaisBillsMock: vi.fn<FinancialApiClient['getMensaisBills']>(),
   createMensaisBillMock: vi.fn<FinancialApiClient['createMensaisBill']>(),
@@ -23,7 +23,7 @@ const {
   resetMensaisToUnsetMock: vi.fn<FinancialApiClient['resetMensaisToUnset']>(),
   getBanksMock: vi.fn<FinancialApiClient['getBanks']>(),
   getCategoriesMock: vi.fn<FinancialApiClient['getCategories']>(),
-  createExpenseMock: vi.fn<FinancialApiClient['createExpense']>(),
+  markMensaisBillPaidMock: vi.fn<FinancialApiClient['markMensaisBillPaid']>(),
 }))
 
 vi.mock('../../api/financialApiClient', () => ({
@@ -36,7 +36,7 @@ vi.mock('../../api/financialApiClient', () => ({
     resetMensaisToUnset: resetMensaisToUnsetMock,
     getBanks: getBanksMock,
     getCategories: getCategoriesMock,
-    createExpense: createExpenseMock,
+    markMensaisBillPaid: markMensaisBillPaidMock,
   } as Partial<FinancialApiClient>,
 }))
 
@@ -89,7 +89,7 @@ describe('MensaisPage', () => {
     deleteMensaisBillMock.mockReset()
     getBanksMock.mockReset()
     getCategoriesMock.mockReset()
-    createExpenseMock.mockReset()
+    markMensaisBillPaidMock.mockReset()
     getBanksMock.mockResolvedValue(BANKS)
     getCategoriesMock.mockResolvedValue(CATEGORIES)
     resetMensaisToUnsetMock.mockReset()
@@ -199,14 +199,8 @@ describe('MensaisPage', () => {
     expect(screen.queryByRole('heading', { name: 'Generate expense for this payment?' })).not.toBeInTheDocument()
   })
 
-  it('confirming the expense prompt creates the expense, marks the bill Paid, and closes the prompt', async () => {
-    createExpenseMock.mockResolvedValue({
-      id: 'exp-1', date: '2026-09-01', description: 'Council Tax', value: 120,
-      categoryId: 'cat-1', categoryName: 'Bills', paymentSourceBankId: 'bank-1', paymentSourceBankName: 'Barclays',
-      creditCardId: null, creditCardName: null, chargeDate: null, invoiceDate: null,
-      paymentStatus: 'ImmediatePayment', roundUpAmount: null, suggestedRoundUpAmount: null, countsAsTithe: true,
-    })
-    updateMensaisBillStatusMock.mockResolvedValue({ ...BILLS[1], status: 'Paid' })
+  it('confirming the expense prompt marks the bill Paid with its expense in one call and closes the prompt', async () => {
+    markMensaisBillPaidMock.mockResolvedValue({ ...BILLS[1], status: 'Paid' })
     render(<MensaisPage />)
 
     await waitFor(() => expect(screen.getByText('Council Tax')).toBeInTheDocument())
@@ -219,8 +213,14 @@ describe('MensaisPage', () => {
     fireEvent.change(screen.getByLabelText(/^Category/), { target: { value: 'cat-1' } })
     fireEvent.click(screen.getByRole('button', { name: 'Confirm' }))
 
-    await waitFor(() => expect(createExpenseMock).toHaveBeenCalledTimes(1))
-    await waitFor(() => expect(updateMensaisBillStatusMock).toHaveBeenCalledWith('b2', { status: 'Paid' }))
+    await waitFor(() => expect(markMensaisBillPaidMock).toHaveBeenCalledTimes(1))
+    expect(markMensaisBillPaidMock).toHaveBeenCalledWith(
+      'b2',
+      expect.objectContaining({
+        expense: expect.objectContaining({ categoryId: 'cat-1', paymentSourceBankId: 'bank-1', value: 120 }),
+      }),
+    )
+    expect(updateMensaisBillStatusMock).not.toHaveBeenCalled()
     await waitFor(() =>
       expect(screen.queryByRole('heading', { name: 'Generate expense for this payment?' })).not.toBeInTheDocument(),
     )
@@ -238,7 +238,7 @@ describe('MensaisPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
 
     expect(screen.queryByRole('heading', { name: 'Generate expense for this payment?' })).not.toBeInTheDocument()
-    expect(createExpenseMock).not.toHaveBeenCalled()
+    expect(markMensaisBillPaidMock).not.toHaveBeenCalled()
     expect(updateMensaisBillStatusMock).not.toHaveBeenCalled()
   })
 

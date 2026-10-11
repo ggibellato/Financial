@@ -4373,6 +4373,52 @@
         ],
         "type": "object"
       },
+      "RecurringBillMarkPaidDTO": {
+        "properties": {
+          "expense": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RecurringBillPaymentExpenseDTO"
+              }
+            ]
+          }
+        },
+        "type": "object"
+      },
+      "RecurringBillPaymentExpenseDTO": {
+        "properties": {
+          "categoryId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "date": {
+            "format": "date",
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "paymentSourceBankId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "value": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "date",
+          "description",
+          "value",
+          "categoryId",
+          "paymentSourceBankId"
+        ],
+        "type": "object"
+      },
       "RecurringBillStatusUpdateDTO": {
         "properties": {
           "status": {
@@ -10917,6 +10963,98 @@
           }
         },
         "summary": "Updates every field of an existing recurring bill, including marking it paid for the current period.",
+        "tags": [
+          "Mensais"
+        ]
+      }
+    },
+    "/mensais/{id}/paid": {
+      "post": {
+        "parameters": [
+          {
+            "description": "The bill\u0027s identifier.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/*\u002Bjson": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/RecurringBillMarkPaidDTO"
+                  }
+                ]
+              }
+            },
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/RecurringBillMarkPaidDTO"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/RecurringBillMarkPaidDTO"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecurringBillDTO"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "summary": "Marks a recurring bill Paid, optionally recording its payment expense in the same save.",
         "tags": [
           "Mensais"
         ]

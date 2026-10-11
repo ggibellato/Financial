@@ -67,9 +67,6 @@ interface MensaisState {
   updatingStatusBillId: string | null
   statusUpdateError: string | null
   expensePromptBill: RecurringBillDto | null
-  isCreatingExpense: boolean
-  expenseCreateError: string | null
-  expenseCreatedForRetry: boolean
 }
 
 type MensaisAction =
@@ -101,9 +98,6 @@ type MensaisAction =
   | { type: 'UPDATE_STATUS_ERROR'; payload: string }
   | { type: 'OPEN_EXPENSE_PROMPT'; payload: RecurringBillDto }
   | { type: 'CLOSE_EXPENSE_PROMPT' }
-  | { type: 'EXPENSE_CREATE_START' }
-  | { type: 'EXPENSE_CREATE_SUCCESS' }
-  | { type: 'EXPENSE_CREATE_ERROR'; payload: string }
 
 const { year: DEFAULT_YEAR, month: DEFAULT_MONTH } = currentYearMonth()
 
@@ -135,9 +129,6 @@ const INITIAL_STATE: MensaisState = {
   updatingStatusBillId: null,
   statusUpdateError: null,
   expensePromptBill: null,
-  isCreatingExpense: false,
-  expenseCreateError: null,
-  expenseCreatedForRetry: false,
 }
 
 function reducer(state: MensaisState, action: MensaisAction): MensaisState {
@@ -208,35 +199,14 @@ function reducer(state: MensaisState, action: MensaisAction): MensaisState {
         ...state,
         updatingStatusBillId: null,
         bills: state.bills.map((b) => (b.id === action.payload.id ? action.payload : b)),
-        ...(state.expensePromptBill?.id === action.payload.id
-          ? { expensePromptBill: null, isCreatingExpense: false, expenseCreateError: null, expenseCreatedForRetry: false }
-          : null),
+        ...(state.expensePromptBill?.id === action.payload.id ? { expensePromptBill: null } : null),
       }
     case 'UPDATE_STATUS_ERROR':
       return { ...state, updatingStatusBillId: null, statusUpdateError: action.payload }
     case 'OPEN_EXPENSE_PROMPT':
-      return {
-        ...state,
-        expensePromptBill: action.payload,
-        expenseCreateError: null,
-        statusUpdateError: null,
-        expenseCreatedForRetry: false,
-      }
+      return { ...state, expensePromptBill: action.payload, statusUpdateError: null }
     case 'CLOSE_EXPENSE_PROMPT':
-      return {
-        ...state,
-        expensePromptBill: null,
-        isCreatingExpense: false,
-        expenseCreateError: null,
-        expenseCreatedForRetry: false,
-        statusUpdateError: null,
-      }
-    case 'EXPENSE_CREATE_START':
-      return { ...state, isCreatingExpense: true, expenseCreateError: null }
-    case 'EXPENSE_CREATE_SUCCESS':
-      return { ...state, isCreatingExpense: false, expenseCreatedForRetry: true }
-    case 'EXPENSE_CREATE_ERROR':
-      return { ...state, isCreatingExpense: false, expenseCreateError: action.payload }
+      return { ...state, expensePromptBill: null, statusUpdateError: null }
     default:
       return state
   }
@@ -285,11 +255,8 @@ export interface MensaisData {
   banks: BankDto[]
   categories: CategoryDto[]
   expensePromptBill: RecurringBillDto | null
-  isCreatingExpense: boolean
-  expenseCreateError: string | null
-  expenseCreatedForRetry: boolean
   confirmExpensePrompt: (values: ExpensePromptValues) => void
-  skipOrRetryExpensePrompt: () => void
+  skipExpensePrompt: () => void
   closeExpensePrompt: () => void
 }
 
@@ -470,20 +437,17 @@ export function useMensais(): MensaisData {
       })
   }
 
-  function performStatusUpdate(id: string, status: string) {
-    dispatch({ type: 'UPDATE_STATUS_START', payload: id })
+  function runStatusUpdate(
+    billId: string,
+    call: () => Promise<RecurringBillDto>,
+    failureMessage: string,
+  ) {
+    dispatch({ type: 'UPDATE_STATUS_START', payload: billId })
 
-    return apiClient
-      .updateMensaisBillStatus(id, { status })
-      .then((bill) => {
-        dispatch({ type: 'UPDATE_STATUS_SUCCESS', payload: bill })
-      })
+    void call()
+      .then((bill) => dispatch({ type: 'UPDATE_STATUS_SUCCESS', payload: bill }))
       .catch((err: unknown) => {
-        dispatch({
-          type: 'UPDATE_STATUS_ERROR',
-          payload: getErrorMessage(err, 'Failed to update status'),
-        })
-        throw err
+        dispatch({ type: 'UPDATE_STATUS_ERROR', payload: getErrorMessage(err, failureMessage) })
       })
   }
 
@@ -496,53 +460,28 @@ export function useMensais(): MensaisData {
       return
     }
 
-    void performStatusUpdate(id, status).catch(() => {
-      // Error already recorded in statusUpdateError via performStatusUpdate's own dispatch.
-    })
+    runStatusUpdate(id, () => apiClient.updateMensaisBillStatus(id, { status }), 'Failed to update status')
+  }
+
+  function markBillPaid(billId: string, values: ExpensePromptValues | null) {
+    const expense = values && {
+      date: values.date,
+      description: values.description,
+      value: values.value,
+      categoryId: values.categoryId,
+      paymentSourceBankId: values.bankId,
+    }
+    runStatusUpdate(billId, () => apiClient.markMensaisBillPaid(billId, { expense }), 'Failed to mark the bill as Paid')
   }
 
   function confirmExpensePrompt(values: ExpensePromptValues) {
-    const bill = state.expensePromptBill
-    if (!bill) return
-
-    dispatch({ type: 'EXPENSE_CREATE_START' })
-
-    void apiClient
-      .createExpense({
-        date: values.date,
-        description: values.description,
-        value: values.value,
-        categoryId: values.categoryId,
-        paymentSourceBankId: values.bankId,
-        creditCardId: null,
-        invoiceDate: null,
-        roundUpAmount: null,
-        countsAsTithe: true,
-      })
-      .then(async () => {
-        dispatch({ type: 'EXPENSE_CREATE_SUCCESS' })
-        try {
-          await performStatusUpdate(bill.id, 'Paid')
-        } catch {
-          // Error already recorded in statusUpdateError; the prompt switches to retry-only mode
-          // because expenseCreatedForRetry is now true, and must not create a second Expense.
-        }
-      })
-      .catch((err: unknown) => {
-        dispatch({
-          type: 'EXPENSE_CREATE_ERROR',
-          payload: getErrorMessage(err, 'Failed to create the expense'),
-        })
-      })
+    if (!state.expensePromptBill) return
+    markBillPaid(state.expensePromptBill.id, values)
   }
 
-  function skipOrRetryExpensePrompt() {
-    const bill = state.expensePromptBill
-    if (!bill) return
-
-    void performStatusUpdate(bill.id, 'Paid').catch(() => {
-      // Error already recorded in statusUpdateError; the prompt stays open for another attempt.
-    })
+  function skipExpensePrompt() {
+    if (!state.expensePromptBill) return
+    markBillPaid(state.expensePromptBill.id, null)
   }
 
   const closeExpensePrompt = useCallback(() => dispatch({ type: 'CLOSE_EXPENSE_PROMPT' }), [])
@@ -593,11 +532,8 @@ export function useMensais(): MensaisData {
     banks: state.banks,
     categories: state.categories,
     expensePromptBill: state.expensePromptBill,
-    isCreatingExpense: state.isCreatingExpense,
-    expenseCreateError: state.expenseCreateError,
-    expenseCreatedForRetry: state.expenseCreatedForRetry,
     confirmExpensePrompt,
-    skipOrRetryExpensePrompt,
+    skipExpensePrompt,
     closeExpensePrompt,
   }
 }

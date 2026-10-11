@@ -21,7 +21,7 @@ const {
   resetMensaisToUnsetMock,
   getBanksMock,
   getCategoriesMock,
-  createExpenseMock,
+  markMensaisBillPaidMock,
 } = vi.hoisted(() => ({
   getMensaisBillsMock: vi.fn<FinancialApiClient['getMensaisBills']>(),
   createMensaisBillMock: vi.fn<FinancialApiClient['createMensaisBill']>(),
@@ -31,7 +31,7 @@ const {
   resetMensaisToUnsetMock: vi.fn<FinancialApiClient['resetMensaisToUnset']>(),
   getBanksMock: vi.fn<FinancialApiClient['getBanks']>(),
   getCategoriesMock: vi.fn<FinancialApiClient['getCategories']>(),
-  createExpenseMock: vi.fn<FinancialApiClient['createExpense']>(),
+  markMensaisBillPaidMock: vi.fn<FinancialApiClient['markMensaisBillPaid']>(),
 }))
 
 vi.mock('../../api/financialApiClient', () => ({
@@ -44,7 +44,7 @@ vi.mock('../../api/financialApiClient', () => ({
     resetMensaisToUnset: resetMensaisToUnsetMock,
     getBanks: getBanksMock,
     getCategories: getCategoriesMock,
-    createExpense: createExpenseMock,
+    markMensaisBillPaid: markMensaisBillPaidMock,
   } as Partial<FinancialApiClient>,
 }))
 
@@ -98,7 +98,7 @@ describe('useMensais', () => {
     resetMensaisToUnsetMock.mockReset()
     getBanksMock.mockReset()
     getCategoriesMock.mockReset()
-    createExpenseMock.mockReset()
+    markMensaisBillPaidMock.mockReset()
     getMensaisBillsMock.mockResolvedValue(BILLS)
     getBanksMock.mockResolvedValue(BANKS)
     getCategoriesMock.mockResolvedValue(CATEGORIES)
@@ -450,14 +450,8 @@ describe('useMensais', () => {
       await waitFor(() => expect(updateMensaisBillStatusMock).toHaveBeenCalledWith(paidUkBill.id, { status: 'Unset' }))
     })
 
-    it('confirming the prompt creates the expense, then updates the status, and closes the prompt', async () => {
-      createExpenseMock.mockResolvedValue({
-        id: 'exp-1', date: '2026-09-01', description: 'Council Tax', value: 120,
-        categoryId: 'cat-1', categoryName: 'Bills', paymentSourceBankId: 'bank-1', paymentSourceBankName: 'Barclays',
-        creditCardId: null, creditCardName: null, chargeDate: null, invoiceDate: null,
-        paymentStatus: 'ImmediatePayment', roundUpAmount: null, suggestedRoundUpAmount: null, countsAsTithe: true,
-      })
-      updateMensaisBillStatusMock.mockResolvedValue({ ...ukBill, status: 'Paid' })
+    it('confirming the prompt marks the bill Paid with its expense in one call and closes the prompt', async () => {
+      markMensaisBillPaidMock.mockResolvedValue({ ...ukBill, status: 'Paid' })
       const { result } = renderHook(() => useMensais())
       await waitFor(() => expect(result.current.isLoading).toBe(false))
       act(() => result.current.updateBillStatus(ukBill.id, 'Paid'))
@@ -473,80 +467,53 @@ describe('useMensais', () => {
       )
 
       await waitFor(() =>
-        expect(createExpenseMock).toHaveBeenCalledWith(
-          expect.objectContaining({
+        expect(markMensaisBillPaidMock).toHaveBeenCalledWith(ukBill.id, {
+          expense: {
             description: 'Council Tax',
             value: 120,
             date: '2026-09-01',
             categoryId: 'cat-1',
             paymentSourceBankId: 'bank-1',
-            creditCardId: null,
-          }),
-        ),
-      )
-      await waitFor(() => expect(updateMensaisBillStatusMock).toHaveBeenCalledWith(ukBill.id, { status: 'Paid' }))
-      await waitFor(() => expect(result.current.expensePromptBill).toBeNull())
-      expect(result.current.ukBills.find((b) => b.id === ukBill.id)?.status).toBe('Paid')
-    })
-
-    it('keeps the prompt open with an error when expense creation fails', async () => {
-      createExpenseMock.mockRejectedValue(new Error('Category is required.'))
-      const { result } = renderHook(() => useMensais())
-      await waitFor(() => expect(result.current.isLoading).toBe(false))
-      act(() => result.current.updateBillStatus(ukBill.id, 'Paid'))
-
-      act(() =>
-        result.current.confirmExpensePrompt({
-          description: 'Council Tax', value: 120, date: '2026-09-01', bankId: 'bank-1', categoryId: '',
+          },
         }),
       )
-
-      await waitFor(() => expect(result.current.expenseCreateError).toBe('Category is required.'))
-      expect(result.current.expensePromptBill?.id).toBe(ukBill.id)
+      await waitFor(() => expect(result.current.expensePromptBill).toBeNull())
+      expect(result.current.ukBills.find((b) => b.id === ukBill.id)?.status).toBe('Paid')
       expect(updateMensaisBillStatusMock).not.toHaveBeenCalled()
     })
 
-    it('enters retry-only mode without creating a second expense when the status update fails after a successful expense', async () => {
-      createExpenseMock.mockResolvedValue({
-        id: 'exp-1', date: '2026-09-01', description: 'Council Tax', value: 120,
-        categoryId: 'cat-1', categoryName: 'Bills', paymentSourceBankId: 'bank-1', paymentSourceBankName: 'Barclays',
-        creditCardId: null, creditCardName: null, chargeDate: null, invoiceDate: null,
-        paymentStatus: 'ImmediatePayment', roundUpAmount: null, suggestedRoundUpAmount: null, countsAsTithe: true,
-      })
-      updateMensaisBillStatusMock.mockRejectedValue(new Error('Recurring bill not found.'))
+    it('keeps the prompt open with the error when marking Paid fails, and a second confirm sends the same single call', async () => {
+      markMensaisBillPaidMock.mockRejectedValueOnce(new Error('Category is required.'))
+      markMensaisBillPaidMock.mockResolvedValue({ ...ukBill, status: 'Paid' })
       const { result } = renderHook(() => useMensais())
       await waitFor(() => expect(result.current.isLoading).toBe(false))
       act(() => result.current.updateBillStatus(ukBill.id, 'Paid'))
+      const values = { description: 'Council Tax', value: 120, date: '2026-09-01', bankId: 'bank-1', categoryId: 'cat-1' }
 
-      act(() =>
-        result.current.confirmExpensePrompt({
-          description: 'Council Tax', value: 120, date: '2026-09-01', bankId: 'bank-1', categoryId: 'cat-1',
-        }),
-      )
+      act(() => result.current.confirmExpensePrompt(values))
 
-      await waitFor(() => expect(result.current.expenseCreatedForRetry).toBe(true))
-      await waitFor(() => expect(result.current.statusUpdateError).toBe('Recurring bill not found.'))
-      expect(createExpenseMock).toHaveBeenCalledTimes(1)
+      await waitFor(() => expect(result.current.statusUpdateError).toBe('Category is required.'))
+      expect(result.current.expensePromptBill?.id).toBe(ukBill.id)
+      expect(result.current.ukBills.find((b) => b.id === ukBill.id)?.status).toBe('Unset')
 
-      updateMensaisBillStatusMock.mockResolvedValue({ ...ukBill, status: 'Paid' })
-      act(() => result.current.skipOrRetryExpensePrompt())
+      act(() => result.current.confirmExpensePrompt(values))
 
       await waitFor(() => expect(result.current.expensePromptBill).toBeNull())
-      expect(createExpenseMock).toHaveBeenCalledTimes(1)
-      expect(updateMensaisBillStatusMock).toHaveBeenCalledTimes(2)
+      expect(markMensaisBillPaidMock).toHaveBeenCalledTimes(2)
+      expect(result.current.statusUpdateError).toBeNull()
     })
 
-    it('skipping the prompt updates the status without creating an expense', async () => {
-      updateMensaisBillStatusMock.mockResolvedValue({ ...ukBill, status: 'Paid' })
+    it('skipping the prompt marks the bill Paid with no expense', async () => {
+      markMensaisBillPaidMock.mockResolvedValue({ ...ukBill, status: 'Paid' })
       const { result } = renderHook(() => useMensais())
       await waitFor(() => expect(result.current.isLoading).toBe(false))
       act(() => result.current.updateBillStatus(ukBill.id, 'Paid'))
 
-      act(() => result.current.skipOrRetryExpensePrompt())
+      act(() => result.current.skipExpensePrompt())
 
       await waitFor(() => expect(result.current.expensePromptBill).toBeNull())
-      expect(createExpenseMock).not.toHaveBeenCalled()
-      expect(updateMensaisBillStatusMock).toHaveBeenCalledWith(ukBill.id, { status: 'Paid' })
+      expect(markMensaisBillPaidMock).toHaveBeenCalledWith(ukBill.id, { expense: null })
+      expect(updateMensaisBillStatusMock).not.toHaveBeenCalled()
     })
 
     it('canceling the prompt makes no API calls and clears the prompt', async () => {
@@ -557,7 +524,7 @@ describe('useMensais', () => {
       act(() => result.current.closeExpensePrompt())
 
       expect(result.current.expensePromptBill).toBeNull()
-      expect(createExpenseMock).not.toHaveBeenCalled()
+      expect(markMensaisBillPaidMock).not.toHaveBeenCalled()
       expect(updateMensaisBillStatusMock).not.toHaveBeenCalled()
     })
 
@@ -572,7 +539,7 @@ describe('useMensais', () => {
 
       expect(result.current.expensePromptBill).toBeNull()
       await waitFor(() => expect(updateMensaisBillStatusMock).toHaveBeenCalledWith(paidUkBill.id, { status: 'Unset' }))
-      expect(createExpenseMock).not.toHaveBeenCalled()
+      expect(markMensaisBillPaidMock).not.toHaveBeenCalled()
     })
   })
 })

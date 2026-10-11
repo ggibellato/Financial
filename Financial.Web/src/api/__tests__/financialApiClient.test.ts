@@ -895,6 +895,39 @@ describe('financialApiClient', () => {
     expect(JSON.parse(init?.body as string)).toEqual(requestBody)
   })
 
+  it('posts a mensais bill paid request with its expense', async () => {
+    const requestBody = {
+      expense: {
+        date: '2026-10-10',
+        description: 'Council Tax',
+        value: 120,
+        categoryId: 'cat-1',
+        paymentSourceBankId: 'bank-1',
+      },
+    }
+    const responseBody: RecurringBillDto = {
+      id: 'b2',
+      dueDay: 15,
+      description: 'Council Tax',
+      area: 'UK',
+      note: '',
+      nitNumber: null,
+      minimumWageValue: null,
+      value: 120,
+      status: 'Paid',
+    }
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.markMensaisBillPaid('b2', requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/mensais/b2/paid`)
+    expect(init?.method).toBe('POST')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
   it('deletes a mensais bill', async () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(undefined))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
