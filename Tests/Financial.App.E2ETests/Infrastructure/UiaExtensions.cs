@@ -12,12 +12,10 @@ internal static class UiaExtensions
         Find(root, () => root.FindFirstDescendant(root.ConditionFactory.ByAutomationId(automationId)), $"AutomationId '{automationId}'");
 
     public static AutomationElement FindByIdNamed(this AutomationElement root, string automationId, string name) =>
-        Find(
-            root,
-            () => root.FindFirstDescendant(root.ConditionFactory.ByAutomationId(automationId)) is { } element && element.Name == name
-                ? element
-                : null,
-            $"AutomationId '{automationId}' named '{name}'");
+        Find(root, () => LookupByIdNamed(root, automationId, name), $"AutomationId '{automationId}' named '{name}'");
+
+    public static bool WaitForIdNamed(this AutomationElement root, string automationId, string name, TimeSpan timeout) =>
+        Retry.WhileNull(() => LookupByIdNamed(root, automationId, name), timeout, ignoreException: true).Result is not null;
 
     public static AutomationElement FindByName(this AutomationElement root, string name) =>
         Find(root, () => root.FindFirstDescendant(root.ConditionFactory.ByName(name)), $"element named '{name}'");
@@ -42,6 +40,11 @@ internal static class UiaExtensions
         root.FindByNameStartingWith(ControlType.TreeItem, namePrefix).Patterns.ExpandCollapse.Pattern.Expand();
 
     public static void Press(this AutomationElement element) => element.AsButton().Invoke();
+
+    private static AutomationElement? LookupByIdNamed(AutomationElement root, string automationId, string name) =>
+        root.FindFirstDescendant(root.ConditionFactory.ByAutomationId(automationId)) is { } element && element.Name == name
+            ? element
+            : null;
 
     private static AutomationElement Find(AutomationElement root, Func<AutomationElement?> lookup, string description) =>
         Retry.WhileNull(lookup, DefaultTimeout, ignoreException: true).Result
