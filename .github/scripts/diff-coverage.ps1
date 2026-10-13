@@ -17,6 +17,7 @@ $scope = @(
     '^Financial\.Web/src/(hooks|utils|components|pages)/'
 )
 $sourceExtensions = '\.(cs|ts|tsx)$'
+$constDeclaration = '^\s*(?:(?:public|private|protected|internal)\s+)*const\s'
 
 function Add-Output([string]$name, [string]$value) {
     if ($env:GITHUB_OUTPUT) { "$name=$value" | Out-File -Append -Encoding utf8 $env:GITHUB_OUTPUT }
@@ -62,6 +63,14 @@ foreach ($row in $diff) {
         $start = [int]$Matches[1]
         $count = if ($Matches[2] -ne $null -and $Matches[2] -ne '') { [int]$Matches[2] } else { 1 }
         for ($n = $start; $n -lt $start + $count; $n++) { [void]$changed[$file].Add($n) }
+    }
+}
+
+foreach ($path in @($changed.Keys | Where-Object { $_ -like '*.cs' })) {
+    $source = @(& git show "${Head}:$path" 2>$null)
+    if ($LASTEXITCODE -ne 0) { continue }
+    foreach ($number in @($changed[$path])) {
+        if ($number -le $source.Count -and $source[$number - 1] -match $constDeclaration) { [void]$changed[$path].Remove($number) }
     }
 }
 

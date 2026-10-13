@@ -87,7 +87,8 @@ public static class ConstructorGuardAssertions
     }
 
     private static bool IsInjectedCollaborator(Type type) =>
-        type.IsInterface && !typeof(System.Collections.IEnumerable).IsAssignableFrom(type);
+        type == typeof(TimeProvider)
+        || (type.IsInterface && !typeof(System.Collections.IEnumerable).IsAssignableFrom(type));
 
     private static object? CreateArgument(Type type, int depth)
     {

@@ -129,6 +129,15 @@ Write-Cobertura '' 'src/utils/money.ts' ((1..6 | ForEach-Object { Line $_ 2 }) -
 $result = Invoke-Script $webBase 'Financial.Web/'
 Check 'web report paths gain the Financial.Web prefix' ($result.Outputs -match 'diff-line=100% \(6/6\)') $result
 
+$constSource = @('class Foo', '{', '    private const string A = "a";', '    public const int B = 2;', '    int c = 3;', '}')
+$constSource | Out-File -Encoding utf8 (Join-Path $repo 'Financial.Api/Controllers/Foo.cs')
+Invoke-Git add -A
+Invoke-Git commit -q -m const
+$constBase = (& git -C $repo rev-parse HEAD~1).Trim()
+Write-Cobertura $buildRoot $apiFile ((Line 1 1) + (Line 2 1) + (Line 3 0) + (Line 4 0) + (Line 5 1) + (Line 6 1))
+$result = Invoke-Script $constBase
+Check 'const declaration lines are not counted as uncovered' ($result.Outputs -match 'diff-line=100% \(4/4\)') $result
+
 Remove-Item $work -Recurse -Force
 Write-Host "diff-coverage.test.ps1: $cases cases, $failures failures"
 if ($failures -gt 0) { exit 1 }
