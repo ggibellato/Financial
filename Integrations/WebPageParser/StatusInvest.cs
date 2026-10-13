@@ -40,7 +40,7 @@ public static class StatusInvest
     private static HtmlDocument LoadWithRetry(string bondTitle, string url)
     {
         var htmlWeb = new HtmlWeb { UserAgent = UserAgent, UseCookies = true };
-        InvalidOperationException? lastBlockedResponse = null;
+        StatusInvestBlockedException? lastBlockedResponse = null;
 
         for (var attempt = 1; attempt <= MaxLoadAttempts; attempt++)
         {
@@ -59,8 +59,9 @@ public static class StatusInvest
                 return htmlDoc;
             }
 
-            lastBlockedResponse = new InvalidOperationException(
-                $"Status Invest returned {(int)htmlWeb.StatusCode} for '{bondTitle}' ({url}); the request was likely blocked rather than the page structure changing.");
+            lastBlockedResponse = new StatusInvestBlockedException(
+                $"Status Invest returned {(int)htmlWeb.StatusCode} for '{bondTitle}' ({url}); the request was likely blocked rather than the page structure changing.",
+                htmlWeb.StatusCode);
 
             if (attempt < MaxLoadAttempts)
             {
