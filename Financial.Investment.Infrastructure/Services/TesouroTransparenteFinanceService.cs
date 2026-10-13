@@ -6,16 +6,16 @@ using Financial.Investment.Infrastructure.Interfaces;
 
 namespace Financial.Investment.Infrastructure.Services;
 
-public sealed class DicionarioDoInvestidorFinanceService : IFinanceService
+public sealed class TesouroTransparenteFinanceService : IFinanceService
 {
     private readonly Func<string, AssetValueSnapshot> _lookup;
 
-    public DicionarioDoInvestidorFinanceService()
-        : this(name => WebPageParserMappers.ToAssetValueSnapshot(DicionarioDoInvestidor.GetSellValue(name), PriceSource.DicionarioDoInvestidor))
+    public TesouroTransparenteFinanceService()
+        : this(name => WebPageParserMappers.ToAssetValueSnapshot(TesouroTransparente.GetSellValue(name), PriceSource.TesouroTransparente))
     {
     }
 
-    internal DicionarioDoInvestidorFinanceService(Func<string, AssetValueSnapshot> lookup)
+    internal TesouroTransparenteFinanceService(Func<string, AssetValueSnapshot> lookup)
     {
         _lookup = lookup ?? throw new ArgumentNullException(nameof(lookup));
     }

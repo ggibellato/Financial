@@ -5,14 +5,10 @@ using HtmlAgilityPack;
 namespace Financial.Integrations.WebPageParser;
 
 /// <summary>
-/// Parses redentia.com.br's per-bond page as a second fallback source, for when both Status
-/// Invest and dicionariodoinvestidor.com fail. Its "Compra" card - "Quanto custa investir neste
-/// titulo hoje, pelo preco unitario do Tesouro Nacional" - reports the same market value Status
-/// Invest exposes as "Valor de Venda" (confirmed against concurrent fetches; see
-/// DicionarioDoInvestidor for the same cross-site labeling note - both dicionariodoinvestidor.com
-/// and this site call it "Compra" where Status Invest calls it "Venda").
-/// Unlike dicionariodoinvestidor.com, this site lists every Tesouro Direto series including
-/// matured/no-longer-offered ones, and uses the same URL slug shape as Status Invest.
+/// Parses redentia.com.br's per-bond page as a last fallback source, for when Status Invest and
+/// the Tesouro Transparente price list both fail. Its "Compra" card reports the same market value
+/// Status Invest exposes as "Valor de Venda" - the two sites label buy and sell from opposite
+/// perspectives (confirmed against concurrent fetches).
 /// </summary>
 public static class Redentia
 {

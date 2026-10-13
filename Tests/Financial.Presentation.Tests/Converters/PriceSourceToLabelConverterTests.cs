@@ -18,6 +18,7 @@ public class PriceSourceToLabelConverterTests
     [InlineData(PriceSource.Yahoo, "Yahoo")]
     [InlineData(PriceSource.StatusInvest, "StatusInvest")]
     [InlineData(PriceSource.DicionarioDoInvestidor, "Dicionario do Investidor")]
+    [InlineData(PriceSource.TesouroTransparente, "Tesouro Transparente")]
     [InlineData(PriceSource.Redentia, "Redentia")]
     public void Convert_EachPriceSource_ReturnsTheSameLabelFinancialWebUses(PriceSource source, string expectedLabel)
     {

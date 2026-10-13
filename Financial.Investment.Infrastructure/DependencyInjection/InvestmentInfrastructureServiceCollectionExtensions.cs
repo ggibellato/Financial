@@ -40,7 +40,7 @@ public static class InvestmentInfrastructureServiceCollectionExtensions
             sp.GetRequiredService<YahooFinanceService>(),
             sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<FallbackFinanceService>>()));
         services.AddSingleton<StatusInvestFinanceService>();
-        services.AddSingleton<DicionarioDoInvestidorFinanceService>();
+        services.AddSingleton<TesouroTransparenteFinanceService>();
         services.AddSingleton<RedentiaFinanceService>();
         services.AddSingleton<IAssetPriceFetcher, StandardAssetPriceFetcher>();
         services.AddSingleton<IAssetPriceFetcher, CryptocurrencyAssetPriceFetcher>();
@@ -48,11 +48,8 @@ public static class InvestmentInfrastructureServiceCollectionExtensions
         {
             var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<FallbackFinanceService>>();
 
-            // dicionariodoinvestidor.com only lists bonds Tesouro Direto currently offers for new
-            // purchase, so redentia.com.br - which covers every series, matured or not - sits behind
-            // it as a second fallback rather than a replacement.
             var secondFallback = new FallbackFinanceService(
-                sp.GetRequiredService<DicionarioDoInvestidorFinanceService>(),
+                sp.GetRequiredService<TesouroTransparenteFinanceService>(),
                 sp.GetRequiredService<RedentiaFinanceService>(),
                 logger);
 

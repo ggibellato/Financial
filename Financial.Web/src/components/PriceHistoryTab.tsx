@@ -50,6 +50,7 @@ const SOURCE_LABELS: Record<AssetPriceSnapshotDto['source'], string> = {
   StatusInvest: 'StatusInvest',
   DicionarioDoInvestidor: 'Dicionario do Investidor',
   Redentia: 'Redentia',
+  TesouroTransparente: 'Tesouro Transparente',
 }
 
 const SORT_ACCESSORS: Record<string, SortAccessor<AssetPriceSnapshotDto>> = {

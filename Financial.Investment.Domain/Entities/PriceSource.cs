@@ -9,5 +9,6 @@ public enum PriceSource
     Yahoo,
     StatusInvest,
     DicionarioDoInvestidor,
-    Redentia
+    Redentia,
+    TesouroTransparente
 }
