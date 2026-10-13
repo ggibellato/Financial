@@ -1,3 +1,4 @@
+using System.Net;
 using Financial.Integrations.WebPageParser;
 using Xunit.Abstractions;
 
@@ -13,6 +14,8 @@ namespace Financial.WebPageParser.Tests;
 [Trait("Category", "Live")]
 public class StatusInvestVerificationTests
 {
+    private const string ForbiddenReason = "Status Invest answers 403 to this network (cloud runner IPs are blocked); run the Live tests from a normal connection.";
+
     private readonly ITestOutputHelper _output;
 
     public StatusInvestVerificationTests(ITestOutputHelper output)
@@ -20,7 +23,7 @@ public class StatusInvestVerificationTests
         _output = output;
     }
 
-    [Fact]
+    [SkippableFact]
     public void VerifySelectors_WithKnownBonds()
     {
         _output.WriteLine("Testing Status Invest sell-price scraping with live data...");
@@ -37,7 +40,7 @@ public class StatusInvestVerificationTests
         {
             _output.WriteLine($"Testing '{bondTitle}'...");
 
-            var snapshot = StatusInvest.GetSellValue(bondTitle);
+            var snapshot = SkipWhenForbidden(() => StatusInvest.GetSellValue(bondTitle));
 
             Assert.True(snapshot.Price > 0, $"Price should be positive, got {snapshot.Price}");
 
@@ -48,7 +51,7 @@ public class StatusInvestVerificationTests
         }
     }
 
-    [Fact]
+    [SkippableFact]
     public void VerifySelectors_UnknownBond_ThrowsInvalidOperationException()
     {
         _output.WriteLine("Testing a bond title that should not resolve to a valid page...");
@@ -56,7 +59,20 @@ public class StatusInvestVerificationTests
         Action act = () => StatusInvest.GetSellValue("TESOURO NAOEXISTE 2099");
 
         var ex = Record.Exception(act);
+        Skip.If(ex is StatusInvestBlockedException { StatusCode: HttpStatusCode.Forbidden }, ForbiddenReason);
         Assert.IsType<InvalidOperationException>(ex);
         _output.WriteLine($"  ✓ Correctly threw InvalidOperationException: {ex!.Message}");
+    }
+
+    private static T SkipWhenForbidden<T>(Func<T> lookup)
+    {
+        try
+        {
+            return lookup();
+        }
+        catch (StatusInvestBlockedException ex) when (ex.StatusCode == HttpStatusCode.Forbidden)
+        {
+            throw new SkipException(ForbiddenReason);
+        }
     }
 }
