@@ -19,6 +19,7 @@ public class PriceSourceToLabelConverter : IValueConverter
                 PriceSource.StatusInvest => "StatusInvest",
                 PriceSource.DicionarioDoInvestidor => "Dicionario do Investidor",
                 PriceSource.Redentia => "Redentia",
+                PriceSource.TesouroTransparente => "Tesouro Transparente",
                 _ => source.ToString()
             }
             : string.Empty;

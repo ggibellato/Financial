@@ -7980,7 +7980,7 @@ export interface components {
         /** @enum {unknown} */
         PositionType: "Long" | "Flat" | "Short";
         /** @enum {unknown} */
-        PriceSource: "Unknown" | "Manual" | "ProviderValuation" | "Google" | "Yahoo" | "StatusInvest" | "DicionarioDoInvestidor" | "Redentia";
+        PriceSource: "Unknown" | "Manual" | "ProviderValuation" | "Google" | "Yahoo" | "StatusInvest" | "DicionarioDoInvestidor" | "Redentia" | "TesouroTransparente";
         ProblemDetails: {
             detail: null | string;
             instance: null | string;

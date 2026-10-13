@@ -13,7 +13,7 @@ public class BondFinanceServicesTests
     {
         { "Redentia", lookup => lookup is null ? new RedentiaFinanceService() : new RedentiaFinanceService(lookup), "TESOURO PREFIXADO 2027", 955.15m },
         { "StatusInvest", lookup => lookup is null ? new StatusInvestFinanceService() : new StatusInvestFinanceService(lookup), "TESOURO IPCA+ 2029", 1234.56m },
-        { "DicionarioDoInvestidor", lookup => lookup is null ? new DicionarioDoInvestidorFinanceService() : new DicionarioDoInvestidorFinanceService(lookup), "TESOURO IPCA+ 2040", 1755.91m },
+        { "TesouroTransparente", lookup => lookup is null ? new TesouroTransparenteFinanceService() : new TesouroTransparenteFinanceService(lookup), "TESOURO IPCA+ 2040", 1966.48m },
     };
 
     [Theory]
