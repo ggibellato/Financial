@@ -654,7 +654,7 @@ graph TD
 - [x] The StrykerJS report and score for `Financial.Web` utils/hooks/validators appear in the job summary.
 - [x] StrykerJS never mutates `.tsx` components, generated code or test helpers.
 - [x] A second StrykerJS run with no source changes reuses the incremental cache and finishes in ≤ 10 min.
-- [ ] Neither Stryker run has a break threshold until 3 runs exist. Each threshold PR sets it to that tool's lowest score − 5.
+- [x] Neither Stryker run has a break threshold until 3 runs exist. Each threshold PR sets it to that tool's lowest score − 5.
 - [x] The full Playwright and FlaUI suites run, and their artifacts upload on failure.
 - [x] `Category=Live` failures are reported but do not fail the workflow.
 - [x] The AC-traceability table lists every PRD Section 9 criterion with no traced test.
