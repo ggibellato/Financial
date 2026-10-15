@@ -340,6 +340,8 @@ Unrelated to the earlier-known "Value−RoundUp backwards" bug in Investment-dom
 
 **Usage clarified (Clarification #22):** `ResetAllToUnsetAsync` is a documentation gap, not a defect — the product owner confirms it's **intended to be run once a month, at the beginning of the month, to reset all bills to unset** before that month's payment tracking begins. Should be documented as such going forward.
 
+**Mark Paid with payment expense (PR #1014):** `MensaisService.MarkBillPaidAsync` (`POST {id}/paid`, body `RecurringBillMarkPaidDTO` with an optional `Expense`) records the bank expense and sets the bill to Paid in one save. An expense is only accepted for a UK bill that is not already Paid. Both front ends only decide whether to show the expense prompt and send one call; skipping the prompt sends no expense.
+
 **Application service:** `MensaisService`. **API:** `MensaisController`. **WPF:** `AddBillFormView.xaml`, `BillTableView.xaml`. **Web:** `useMensais.ts`.
 
 ---
