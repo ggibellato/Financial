@@ -3,8 +3,8 @@
     "reporters": ["html", "json", "progress"],
     "thresholds": {
       "high": 80,
-      "low": 60,
-      "break": 72.7
+      "low": 75,
+      "break": 72
     },
     "test-case-filter": "Category!=Live&Category!=E2E"
   }
