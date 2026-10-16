@@ -161,8 +161,8 @@ public static class XirrCalculator
     private static bool IsUsable(double value) => !double.IsNaN(value) && !double.IsInfinity(value);
 
     /// <summary>
-    /// The result is read from WPF data-binding getters, where an OverflowException cannot be
-    /// recovered from, so an out-of-range rate is reported as "no rate" instead of thrown.
+    /// The result feeds valuation and summary responses, where an OverflowException would fail the
+    /// whole request, so an out-of-range rate is reported as "no rate" instead of thrown.
     /// </summary>
     private static decimal? ToDecimalOrNull(double rate)
     {

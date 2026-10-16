@@ -225,7 +225,7 @@ describe('PortfolioHoldingsTab', () => {
     expect(weightCell).toHaveTextContent('—')
   })
 
-  it('renders_portfolio_weight_at_rounding_boundary_matching_wpf_f2', () => {
+  it('renders_portfolio_weight_at_rounding_boundary_to_two_decimals', () => {
     const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, portfolioWeight: 23.995 }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [IDLE_ROW_PRICE] })

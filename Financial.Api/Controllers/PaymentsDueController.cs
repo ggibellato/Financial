@@ -6,7 +6,7 @@ namespace Financial.Api.Controllers;
 
 /// <summary>
 /// Exposes the aggregated list of Mensais bills and credit card invoices due within the next 5 days,
-/// for the Web and WPF startup payment-due banners.
+/// for the Web startup payment-due banner.
 /// </summary>
 [ApiController]
 [Route("payments-due")]
