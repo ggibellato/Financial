@@ -47,65 +47,29 @@ internal static class PortfolioDashboardConvertedBuilder
 
         foreach (var holding in holdings)
         {
-            await AddTransactionsAsync(totals, holding, context).ConfigureAwait(false);
-            await AddCreditsAsync(totals, holding, context, yearStart).ConfigureAwait(false);
+            var flows = await ConvertedAssetFlows.ConvertAsync(holding.Asset, context).ConfigureAwait(false);
+            AddAssetFlows(totals, flows, holding.IsActive, yearStart);
             await AddDisposalsAsync(totals, holding, context).ConfigureAwait(false);
         }
 
         await AddTerminalValueAsync(totals, holdings, context, asOf).ConfigureAwait(false);
     }
 
-    private static async Task AddTransactionsAsync(ConvertedTotals totals, PortfolioHolding holding, CurrencyConversionContext context)
+    private static void AddAssetFlows(ConvertedTotals totals, ConvertedAssetFlows flows, bool countsTowardsInvested, DateTime yearStart)
     {
-        foreach (var transaction in holding.Asset.Transactions)
+        totals.GrossFlows.AddRange(flows.GrossFlows);
+        totals.NetOfTaxFlows.AddRange(flows.NetOfTaxFlows);
+
+        if (countsTowardsInvested)
         {
-            var converted = await context.ConvertAsync(transaction.NetCash, DateOnly.FromDateTime(transaction.Date)).ConfigureAwait(false);
-            if (converted is not decimal amount)
-            {
-                continue;
-            }
-
-            totals.GrossFlows.Add((transaction.Date, amount));
-            totals.NetOfTaxFlows.Add((transaction.Date, amount));
-
-            if (!holding.IsActive)
-            {
-                continue;
-            }
-
-            switch (TransactionTypeEffects.For(transaction.Type).Cash)
-            {
-                case CashEffect.Out:
-                    totals.Bought += -amount;
-                    break;
-                case CashEffect.In:
-                    totals.Sold += amount;
-                    break;
-            }
+            totals.Bought += flows.Bought;
+            totals.Sold += flows.Sold;
         }
-    }
 
-    private static async Task AddCreditsAsync(ConvertedTotals totals, PortfolioHolding holding, CurrencyConversionContext context, DateTime yearStart)
-    {
-        foreach (var credit in holding.Asset.Credits)
+        foreach (var (date, netAmount) in flows.NetCredits)
         {
-            var date = DateOnly.FromDateTime(credit.Date);
-            var convertedValue = await context.ConvertAsync(credit.Value, date).ConfigureAwait(false);
-            var convertedNetAmount = await context.ConvertAsync(credit.NetAmount, date).ConfigureAwait(false);
-
-            if (convertedValue is decimal grossAmount)
-            {
-                totals.GrossFlows.Add((credit.Date, grossAmount));
-            }
-
-            if (convertedNetAmount is not decimal netAmount)
-            {
-                continue;
-            }
-
-            totals.NetOfTaxFlows.Add((credit.Date, netAmount));
             totals.IncomeLifetime += netAmount;
-            if (credit.Date >= yearStart)
+            if (date >= yearStart)
             {
                 totals.IncomeYtd += netAmount;
             }
