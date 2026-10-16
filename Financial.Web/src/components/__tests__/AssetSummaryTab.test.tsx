@@ -58,6 +58,8 @@ const ASSET: AssetDetailsDto = {
   marketValue: null,
   costOfUnitsHeld: 2000,
   unrealisedGain: null,
+  resultPercent: null,
+  resultWithCreditsPercent: null,
   priceAsOfDate: null,
   marketStatus: 'Current',
   priceOnlyReturn: null,
@@ -379,7 +381,7 @@ describe('AssetSummaryTab', () => {
 
   it('renders_positive_result_percent_in_green', () => {
     setMock({
-      asset: { ...ASSET, marketValue: 2500, unrealisedGain: 500 },
+      asset: { ...ASSET, marketValue: 2500, unrealisedGain: 500, resultPercent: 25, resultWithCreditsPercent: 30 },
       price: PRICE,
       showCurrentSection: true,
     })
@@ -387,11 +389,13 @@ describe('AssetSummaryTab', () => {
     const resultLabel = screen.getByText('Result %')
     const valueEl = resultLabel.nextElementSibling
     expect(valueEl).toHaveClass('asset-summary__value--green')
+    expect(valueEl?.textContent).toMatch(/^25[.,]00\s?%$/)
+    expect(screen.getByText('Result % with Credits').nextElementSibling?.textContent).toMatch(/^30[.,]00\s?%$/)
   })
 
   it('renders_negative_result_percent_in_red', () => {
     setMock({
-      asset: { ...ASSET, marketValue: 1500, unrealisedGain: -500 },
+      asset: { ...ASSET, marketValue: 1500, unrealisedGain: -500, resultPercent: -25, resultWithCreditsPercent: -20 },
       price: PRICE,
       showCurrentSection: true,
     })

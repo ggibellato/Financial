@@ -81,6 +81,8 @@ const ITEM_1: PortfolioAssetSummaryItemDto = {
   marketValue: null,
   costOfUnitsHeld: 2500,
   unrealisedGain: null,
+  resultPercent: null,
+  resultWithCreditsPercent: null,
   priceAsOfDate: null,
   marketStatus: 'Current',
   priceOnlyReturn: null,
@@ -308,33 +310,14 @@ describe('PortfolioHoldingsTab', () => {
     expect(cell.textContent?.replace('Sold Price:', '')).toBe('—')
   })
 
-  it('computes_historic_profit_percent_from_realized_gain_loss_excluding_credits', () => {
-    // capital-gain-only % = (realizedGainLoss - totalCredits) / totalBought x 100
-    // = (280 - 30) / 2500 x 100 = 10.00%
-    const item: PortfolioAssetSummaryItemDto = {
-      ...ITEM_1,
-      totalBought: 2500,
-      totalCredits: 30,
-      realizedGainLoss: 280,
-    }
+  it('renders_the_server_computed_historic_profit_percents', () => {
+    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, resultPercent: 10, resultWithCreditsPercent: 11.2 }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [IDLE_ROW_PRICE] })
     renderComponent('historic')
-    expect(within(screen.getByRole('table')).getByText(/10[.,]00%/)).toBeInTheDocument()
-  })
-
-  it('computes_historic_profit_with_credits_percent_from_full_realized_gain_loss', () => {
-    // w/ credits % = realizedGainLoss / totalBought x 100 = 280 / 2500 x 100 = 11.20%
-    const item: PortfolioAssetSummaryItemDto = {
-      ...ITEM_1,
-      totalBought: 2500,
-      totalCredits: 30,
-      realizedGainLoss: 280,
-    }
-    setAggregatedMock({ summary: SUMMARY })
-    setPortfolioMock({ items: [item], rowPrices: [IDLE_ROW_PRICE] })
-    renderComponent('historic')
-    expect(screen.getByText(/11[.,]20%/)).toBeInTheDocument()
+    const table = within(screen.getByRole('table'))
+    expect(table.getByText(/10[.,]00%/)).toBeInTheDocument()
+    expect(table.getByText(/11[.,]20%/)).toBeInTheDocument()
   })
 
   it('renders_dash_for_historic_profit_when_total_bought_is_zero', () => {
@@ -475,43 +458,15 @@ describe('PortfolioHoldingsTab', () => {
     expect(dashes.length).toBeGreaterThanOrEqual(5)
   })
 
-  it('renders_correct_profit_percent', () => {
-    // costOfUnitsHeld = 250; unrealisedGain = currentValue(262.50) - costOfUnitsHeld = 12.50
-    const item: PortfolioAssetSummaryItemDto = {
-      ...ITEM_1,
-      currentQuantity: 25,
-      averagePrice: 10,
-      totalInvested: 250,
-      costOfUnitsHeld: 250,
-      unrealisedGain: 12.5,
-    }
+  it('renders_the_server_computed_profit_percents', () => {
+    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, resultPercent: 5, resultWithCreditsPercent: 10 }
     const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false, isManual: false }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [rowPrice] })
     renderComponent()
-    // Both % Profit and % Profit w/ Credits show 5.00% when totalCredits is 0
-    const profitElements = screen.getAllByText(/5[.,]00%/)
-    expect(profitElements.length).toBeGreaterThanOrEqual(1)
-    expect(profitElements[0]).toHaveClass('portfolio-holdings__profit--green')
-  })
-
-  it('renders_correct_profit_with_credits_percent', () => {
-    // unrealisedGain = currentValue(262.50) - costOfUnitsHeld(250) = 12.50
-    // profitWithCredits% = (12.50 + 12.50) / 250 * 100 = 10.00%
-    const item: PortfolioAssetSummaryItemDto = {
-      ...ITEM_1,
-      currentQuantity: 25,
-      averagePrice: 10,
-      totalInvested: 250,
-      costOfUnitsHeld: 250,
-      unrealisedGain: 12.5,
-      totalCredits: 12.5,
-    }
-    const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false, isManual: false }
-    setAggregatedMock({ summary: SUMMARY })
-    setPortfolioMock({ items: [item], rowPrices: [rowPrice] })
-    renderComponent()
-    expect(within(screen.getByRole('table')).getByText(/10[.,]00%/)).toBeInTheDocument()
+    const table = within(screen.getByRole('table'))
+    expect(table.getByText(/^5[.,]00%$/)).toHaveClass('portfolio-holdings__profit--green')
+    expect(table.getByText(/10[.,]00%/)).toBeInTheDocument()
   })
 
   it('renders_xirr_when_the_row_rate_resolves', () => {
@@ -540,20 +495,15 @@ describe('PortfolioHoldingsTab', () => {
     expect(dashes.length).toBeGreaterThanOrEqual(5)
   })
 
-  it('renders_dash_in_profit_when_total_invested_is_zero', () => {
-    const item: PortfolioAssetSummaryItemDto = {
-      ...ITEM_1,
-      averagePrice: 0,
-      totalInvested: 0,
-      costOfUnitsHeld: 0,
-      marketValue: 262.5,
-    }
+  it('renders_dash_in_profit_when_the_server_reports_no_result', () => {
+    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, marketValue: 262.5, resultPercent: null, resultWithCreditsPercent: null }
     const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false, isManual: false }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [rowPrice] })
     renderComponent()
-    const dashes = screen.getAllByText('—')
-    expect(dashes.length).toBeGreaterThanOrEqual(2) // % Profit and % Profit w/ Credits
+    const cells = within(screen.getAllByRole('row')[2]).getAllByRole('cell')
+    expect(cells[9].textContent?.replace('Profit %:', '')).toBe('—')
+    expect(cells[10].textContent?.replace('Profit % w/ Credits:', '')).toBe('—')
     expect(screen.getByText(/262[.,]50/)).toBeInTheDocument()
   })
 
@@ -569,25 +519,13 @@ describe('PortfolioHoldingsTab', () => {
   const PROFIT_CLASS_CASES: {
     name: string
     setup: () => void
-    // computed via the same profit formula the component uses, not the component's own code
     expectedPercent: number
     expectedClass: 'portfolio-holdings__profit--green' | 'portfolio-holdings__profit--red'
   }[] = [
     {
       name: 'positive profit',
-      // costOfUnitsHeld = 25 x 8 = 200; currentValue = 10.5 x 25 = 262.50; unrealisedGain = 62.50
-      // totalCredits is non-zero so "Profit %" and "Profit % w/ Credits" render different text
-      // (both would otherwise show 31.25% and make getByText ambiguous).
       setup: () => {
-        const item: PortfolioAssetSummaryItemDto = {
-          ...ITEM_1,
-          currentQuantity: 25,
-          averagePrice: 8,
-          totalInvested: 200,
-          totalCredits: 10,
-          costOfUnitsHeld: 200,
-          unrealisedGain: 62.5,
-        }
+        const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, resultPercent: 31.25, resultWithCreditsPercent: 36.25 }
         setPortfolioMock({ items: [item], rowPrices: [{ isLoading: false, currentPrice: 10.5, fetchFailed: false, isManual: false }] })
       },
       expectedPercent: 31.25,
@@ -595,18 +533,8 @@ describe('PortfolioHoldingsTab', () => {
     },
     {
       name: 'negative profit',
-      // costOfUnitsHeld = 25 x 12 = 300; currentValue = 262.50; unrealisedGain = -37.50
-      // totalCredits is non-zero for the same reason as the "positive profit" case above.
       setup: () => {
-        const item: PortfolioAssetSummaryItemDto = {
-          ...ITEM_1,
-          currentQuantity: 25,
-          averagePrice: 12,
-          totalInvested: 300,
-          totalCredits: 10,
-          costOfUnitsHeld: 300,
-          unrealisedGain: -37.5,
-        }
+        const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, resultPercent: -12.5, resultWithCreditsPercent: -9.17 }
         setPortfolioMock({ items: [item], rowPrices: [{ isLoading: false, currentPrice: 10.5, fetchFailed: false, isManual: false }] })
       },
       expectedPercent: -12.5,
@@ -614,39 +542,20 @@ describe('PortfolioHoldingsTab', () => {
     },
     {
       name: 'positive profit with credits',
-      // costOfUnitsHeld = 25 x 12 = 300; currentValue = 262.50; unrealisedGain = -37.50; totalCredits = 50
-      // profitWithCredits% = (-37.50 + 50) / 300 * 100
       setup: () => {
-        const item: PortfolioAssetSummaryItemDto = {
-          ...ITEM_1,
-          currentQuantity: 25,
-          averagePrice: 12,
-          totalInvested: 300,
-          totalCredits: 50,
-          costOfUnitsHeld: 300,
-          unrealisedGain: -37.5,
-        }
+        const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, resultPercent: -12.5, resultWithCreditsPercent: 4.17 }
         setPortfolioMock({ items: [item], rowPrices: [{ isLoading: false, currentPrice: 10.5, fetchFailed: false, isManual: false }] })
       },
-      expectedPercent: (262.5 + 50 - 300) / 300 * 100,
+      expectedPercent: 4.17,
       expectedClass: 'portfolio-holdings__profit--green',
     },
     {
       name: 'negative profit with credits',
-      // averagePrice is NOT overridden here, so costOfUnitsHeld uses ITEM_1's default (2500), not totalInvested:
-      // currentValue = 262.50; unrealisedGain = 262.50 - 2500 = -2237.50; totalCredits = 10
-      // profitWithCredits% = (-2237.50 + 10) / 2500 * 100
       setup: () => {
-        const item: PortfolioAssetSummaryItemDto = {
-          ...ITEM_1,
-          currentQuantity: 25,
-          totalInvested: 400,
-          totalCredits: 10,
-          unrealisedGain: -2237.5,
-        }
+        const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, resultPercent: -89.5, resultWithCreditsPercent: -89.1 }
         setPortfolioMock({ items: [item], rowPrices: [{ isLoading: false, currentPrice: 10.5, fetchFailed: false, isManual: false }] })
       },
-      expectedPercent: (262.5 + 10 - 2500) / 2500 * 100,
+      expectedPercent: -89.1,
       expectedClass: 'portfolio-holdings__profit--red',
     },
     {

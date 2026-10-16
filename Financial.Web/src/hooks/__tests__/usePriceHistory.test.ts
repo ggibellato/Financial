@@ -86,6 +86,8 @@ const ASSET_DETAILS: AssetDetailsDto = {
   marketValue: null,
   costOfUnitsHeld: 2000,
   unrealisedGain: null,
+  resultPercent: null,
+  resultWithCreditsPercent: null,
   priceAsOfDate: null,
   marketStatus: 'Current',
   priceOnlyReturn: null,

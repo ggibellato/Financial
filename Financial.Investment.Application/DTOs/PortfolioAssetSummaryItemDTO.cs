@@ -24,6 +24,8 @@ public sealed class PortfolioAssetSummaryItemDTO
     public decimal? MarketValue { get; init; }
     public decimal CostOfUnitsHeld { get; init; }
     public decimal? UnrealisedGain { get; init; }
+    public decimal? ResultPercent { get; init; }
+    public decimal? ResultWithCreditsPercent { get; init; }
     public DateOnly? PriceAsOfDate { get; init; }
 
     [JsonConverter(typeof(JsonStringEnumConverter))]
