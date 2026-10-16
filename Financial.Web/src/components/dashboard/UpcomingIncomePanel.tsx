@@ -13,6 +13,7 @@ import {
 import type { UpcomingIncomeWindowDays } from '../../utils/upcomingIncomeWindow'
 import type { UpcomingIncomeDto } from '../../api/types'
 import './UpcomingIncomePanel.css'
+import TruncatedText from '../TruncatedText'
 
 interface UpcomingIncomePanelProps {
   entries: UpcomingIncomeDto[] | null
@@ -63,8 +64,8 @@ export default function UpcomingIncomePanel({ entries, isLoading, error, retry }
             <TableBody>
               {visibleEntries.map((entry) => (
                 <TableRow key={`${entry.brokerName}-${entry.assetName}-${entry.projectedNextDate}`}>
-                  <DataTableCell label="Asset">{entry.assetName}</DataTableCell>
-                  <DataTableCell label="Broker">{entry.brokerName}</DataTableCell>
+                  <DataTableCell label="Asset"><TruncatedText text={entry.assetName} /></DataTableCell>
+                  <DataTableCell label="Broker"><TruncatedText text={entry.brokerName} /></DataTableCell>
                   <DataTableCell label="Projected Date">{formatShortDate(entry.projectedNextDate)}</DataTableCell>
                   <DataTableCell label="Projected Amount" className="data-table__col--numeric">
                     {formatN2(entry.projectedAmount)}

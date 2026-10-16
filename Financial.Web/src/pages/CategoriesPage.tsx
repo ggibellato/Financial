@@ -25,6 +25,7 @@ import { useFormPanelStyles } from '../components/formPanelStyles'
 import { useCategories } from '../hooks/useCategories'
 import type { CategoryDto } from '../api/types'
 import './CategoriesPage.css'
+import TruncatedText from '../components/TruncatedText'
 
 export default function CategoriesPage() {
   const styles = useFormPanelStyles()
@@ -111,7 +112,7 @@ export default function CategoriesPage() {
           <TableBody>
             {visibleCategories.map((category) => (
               <TableRow key={category.id}>
-                <DataTableCell label="Name">{category.name}</DataTableCell>
+                <DataTableCell label="Name"><TruncatedText text={category.name} /></DataTableCell>
                 <DataTableCell label="Active">{category.active ? 'Yes' : 'No'}</DataTableCell>
                 <DataTableCell label="Investment">{category.isInvestment ? 'Yes' : 'No'}</DataTableCell>
                 <DataTableCell label="Tithe">{category.isTithe ? 'Yes' : 'No'}</DataTableCell>

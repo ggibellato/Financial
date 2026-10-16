@@ -195,8 +195,8 @@ export default function AssetsPage() {
                     <TruncatedText text={asset.name} />
                   </DataTableCell>
                   <DataTableCell label="Ticker">{asset.ticker}</DataTableCell>
-                  <DataTableCell label="Broker">{asset.brokerName}</DataTableCell>
-                  <DataTableCell label="Portfolio">{asset.portfolioName}</DataTableCell>
+                  <DataTableCell label="Broker"><TruncatedText text={asset.brokerName} /></DataTableCell>
+                  <DataTableCell label="Portfolio"><TruncatedText text={asset.portfolioName} /></DataTableCell>
                   <DataTableCell label="Class">{asset.class}</DataTableCell>
                   <DataTableCell label="Quantity">{asset.quantity}</DataTableCell>
                   <TableCell className="data-table__col--action">

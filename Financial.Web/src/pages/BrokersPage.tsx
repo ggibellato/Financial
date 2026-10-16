@@ -25,6 +25,7 @@ import { useBrokers } from '../hooks/useBrokers'
 import type { BrokerDto, CostBasisMethod } from '../api/types'
 import { getErrorMessage } from '../utils/formatters'
 import './BrokersPage.css'
+import TruncatedText from '../components/TruncatedText'
 
 export default function BrokersPage() {
   const styles = useFormPanelStyles()
@@ -120,7 +121,7 @@ export default function BrokersPage() {
           <TableBody>
             {brokers.map((broker) => (
               <TableRow key={broker.name}>
-                <DataTableCell label="Name">{broker.name}</DataTableCell>
+                <DataTableCell label="Name"><TruncatedText text={broker.name} /></DataTableCell>
                 <DataTableCell label="Currency">{broker.currency}</DataTableCell>
                 <DataTableCell label="Status">{broker.status}</DataTableCell>
                 <DataTableCell label="Portfolios">{broker.portfolioCount}</DataTableCell>

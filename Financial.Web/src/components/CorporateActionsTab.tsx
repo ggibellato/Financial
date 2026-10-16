@@ -14,6 +14,7 @@ import { confirmThenRun } from '../utils/confirmThenRun'
 import { corporateActionTypeLabel } from '../utils/corporateActionTypeLabel'
 import { formatN2, formatShortDate } from '../utils/formatters'
 import './CorporateActionsTab.css'
+import TruncatedText from './TruncatedText'
 
 function formatRatioFactor(factor: number): string {
   return `×${factor.toFixed(4).replace(/\.?0+$/, '')}`
@@ -70,7 +71,7 @@ function CorporateActionRow({ record, affectedAssetName, isHighlighted, onEdit, 
     >
       <DataTableCell label="Date">{formatShortDate(record.effectiveDate)}</DataTableCell>
       <DataTableCell label="Type">{corporateActionTypeLabel(record.type)}</DataTableCell>
-      <DataTableCell label="Affected/Linked Asset">{record.linkedAssetName ?? affectedAssetName}</DataTableCell>
+      <DataTableCell label="Affected/Linked Asset"><TruncatedText text={record.linkedAssetName ?? affectedAssetName} /></DataTableCell>
       <DataTableCell label="Resulting Change">{resultingChange(record)}</DataTableCell>
       <DataTableCell label="Tax Status">
         {record.calculationStatus ? <StatusBadge status={record.calculationStatus} /> : '—'}

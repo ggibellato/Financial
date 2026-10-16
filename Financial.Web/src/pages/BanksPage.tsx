@@ -24,6 +24,7 @@ import { useFormPanelStyles } from '../components/formPanelStyles'
 import { useBanks } from '../hooks/useBanks'
 import type { BankDto } from '../api/types'
 import './BanksPage.css'
+import TruncatedText from '../components/TruncatedText'
 
 export default function BanksPage() {
   const styles = useFormPanelStyles()
@@ -88,7 +89,7 @@ export default function BanksPage() {
           <TableBody>
             {banks.map((bank) => (
               <TableRow key={bank.id}>
-                <DataTableCell label="Name">{bank.name}</DataTableCell>
+                <DataTableCell label="Name"><TruncatedText text={bank.name} /></DataTableCell>
                 <DataTableCell label="Round-up">{bank.roundUpEnabled ? 'Enabled' : 'Disabled'}</DataTableCell>
                 <DataTableCell label="Opening Balance">{bank.openingBalance}</DataTableCell>
                 <TableCell className="data-table__col--action">

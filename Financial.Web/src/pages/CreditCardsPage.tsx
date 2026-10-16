@@ -24,6 +24,7 @@ import { useFormPanelStyles } from '../components/formPanelStyles'
 import { useCreditCards } from '../hooks/useCreditCards'
 import type { CreditCardDto } from '../api/types'
 import './CreditCardsPage.css'
+import TruncatedText from '../components/TruncatedText'
 
 export default function CreditCardsPage() {
   const styles = useFormPanelStyles()
@@ -86,7 +87,7 @@ export default function CreditCardsPage() {
           <TableBody>
             {creditCards.map((creditCard) => (
               <TableRow key={creditCard.id}>
-                <DataTableCell label="Name">{creditCard.name}</DataTableCell>
+                <DataTableCell label="Name"><TruncatedText text={creditCard.name} /></DataTableCell>
                 <DataTableCell label="Active">{creditCard.isActive ? 'Active' : 'Inactive'}</DataTableCell>
                 <DataTableCell label="Next Invoice Due Date">{creditCard.nextInvoiceDueDate ?? '—'}</DataTableCell>
                 <TableCell className="data-table__col--action">

@@ -25,6 +25,7 @@ import { useInvestmentAccounts } from '../hooks/useInvestmentAccounts'
 import { useCreditCards } from '../hooks/useCreditCards'
 import type { InvestmentAccountDto } from '../api/types'
 import './InvestmentAccountsPage.css'
+import TruncatedText from '../components/TruncatedText'
 
 function sourceDisplay(account: InvestmentAccountDto, creditCards: { id: string; name: string }[]): string {
   if (account.source === 'CreditCard') {
@@ -135,7 +136,7 @@ export default function InvestmentAccountsPage() {
           <TableBody>
             {investmentAccounts.map((account) => (
               <TableRow key={account.id}>
-                <DataTableCell label="Name">{account.name}</DataTableCell>
+                <DataTableCell label="Name"><TruncatedText text={account.name} /></DataTableCell>
                 <DataTableCell label="Active">{account.isActive ? 'Yes' : 'No'}</DataTableCell>
                 <DataTableCell label="Liability">{account.isLiability ? 'Yes' : 'No'}</DataTableCell>
                 <DataTableCell label="Source">{sourceDisplay(account, creditCards)}</DataTableCell>

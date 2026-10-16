@@ -42,12 +42,12 @@ function ExpenseRow({ expense, onEdit, onDelete }: ExpenseRowProps) {
       <DataTableCell label="Description">
         <TruncatedText text={expense.description} />
       </DataTableCell>
-      <DataTableCell label="Category">{expense.categoryName}</DataTableCell>
+      <DataTableCell label="Category"><TruncatedText text={expense.categoryName} /></DataTableCell>
       <DataTableCell label="Value" className="data-table__col--numeric">
         {formatN2(expense.value)}
       </DataTableCell>
-      <DataTableCell label="Bank">{expense.paymentSourceBankName}</DataTableCell>
-      <DataTableCell label="Card">{expense.creditCardName ?? '—'}</DataTableCell>
+      <DataTableCell label="Bank"><TruncatedText text={expense.paymentSourceBankName} /></DataTableCell>
+      <DataTableCell label="Card"><TruncatedText text={expense.creditCardName ?? '—'} /></DataTableCell>
       <TableCell className="data-table__col--action">
         <div className="data-table__actions-cell">
           <Button
