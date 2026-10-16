@@ -89,16 +89,13 @@ public sealed class CategoryService : ICategoryService
                 throw new ArgumentException("Category name is required.", nameof(request));
             }
 
-            if (!EntityIdResolver.TryResolve(id, _repository.GetCategories(), c => c.Id, out var category))
-            {
-                throw new KeyNotFoundException($"Category '{id}' was not found.");
-            }
+            var category = _repository.GetCategories().FirstOrThrow(c => c.Id == id, "Category", id);
 
             _repository.GetCategories().EnsureNameIsUnique(request.Name, id, c => c.Name, c => c.Id, "A category");
 
             await _repository.ApplyAndSaveAsync(() =>
             {
-                category!.Update(request.Name, request.Active, request.IsInvestment, request.IsTithe);
+                category.Update(request.Name, request.Active, request.IsInvestment, request.IsTithe);
                 return true;
             }).ConfigureAwait(false);
 
@@ -119,10 +116,7 @@ public sealed class CategoryService : ICategoryService
         span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());
         try
         {
-            if (!EntityIdResolver.TryResolve(id, _repository.GetCategories(), c => c.Id, out _))
-            {
-                throw new KeyNotFoundException($"Category '{id}' was not found.");
-            }
+            _ = _repository.GetCategories().FirstOrThrow(c => c.Id == id, "Category", id);
 
             EnsureNotReferenced(id);
 

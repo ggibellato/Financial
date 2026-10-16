@@ -108,16 +108,13 @@ public sealed class CreditCardService : ICreditCardService
                 throw new ArgumentException("Credit card name is required.", nameof(request));
             }
 
-            if (!EntityIdResolver.TryResolve(id, _repository.GetCreditCards(), c => c.Id, out var creditCard))
-            {
-                throw new KeyNotFoundException($"Credit card '{id}' was not found.");
-            }
+            var creditCard = _repository.GetCreditCards().FirstOrThrow(c => c.Id == id, "Credit card", id);
 
             _repository.GetCreditCards().EnsureNameIsUnique(request.Name, id, c => c.Name, c => c.Id, "A credit card");
 
             await _repository.ApplyAndSaveAsync(() =>
             {
-                creditCard!.Update(request.Name, request.IsActive, request.NextInvoiceDueDate);
+                creditCard.Update(request.Name, request.IsActive, request.NextInvoiceDueDate);
                 return true;
             }).ConfigureAwait(false);
 
@@ -140,10 +137,7 @@ public sealed class CreditCardService : ICreditCardService
         span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());
         try
         {
-            if (!EntityIdResolver.TryResolve(id, _repository.GetCreditCards(), c => c.Id, out _))
-            {
-                throw new KeyNotFoundException($"Credit card '{id}' was not found.");
-            }
+            _ = _repository.GetCreditCards().FirstOrThrow(c => c.Id == id, "Credit card", id);
 
             EnsureNotReferenced(id);
 
