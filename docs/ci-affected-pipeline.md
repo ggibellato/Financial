@@ -17,7 +17,6 @@ checks them (first match wins):
 | Contract (server side) | `Financial.Api/`, `Tests/Financial.Api.Tests/` (includes the OpenAPI snapshot) | The HTTP surface `Financial.Web` is compiled against |
 | Contract (DTOs) | `Financial.*.Application/DTOs/` | Wire format the SPA is compiled against |
 | Contract (client side) | `Financial.Web/src/api/` | Hand-written TypeScript mirror of the DTOs (`types.ts`, client) |
-| WPF | `Financial.App/`, `Tests/Financial.Presentation.Tests/`, `Tests/Financial.App.E2ETests/` | Desktop front end being removed (ADR-002). CI no longer runs its tests, but these paths still run `backend`: its solution build compiles them and `Financial.Architecture.Tests` pin `Financial.App`'s references |
 | Web | `Financial.Web/` | React SPA; nothing else depends on it |
 | Backend core | `Financial.*.Domain/`, `Financial.*.Application/`, `Financial.*.Infrastructure/`, `Financial.Shared.*/`, `Integrations/`, `Tools/`, `Tests/`, `coverlet.runsettings` | Shared libraries the API hosts |
 | Infra | `.github/`, `Dockerfile*`, `docker-compose*`, `Financial.slnx`, `global.json`, `nuget.config`, `Directory.*`, `scripts/`, `deploy/`, `data/` | Build/deploy plumbing and data templates; can affect anything |
@@ -31,7 +30,6 @@ checks them (first match wins):
 | Contract (server side) | ✔ | ✔ | ✔ |
 | Contract (DTOs) | ✔ | ✔ | ✔ |
 | Contract (client side) | – | ✔ | ✔ |
-| WPF | ✔ | – | – |
 | Web | – | ✔ | ✔ |
 | Backend core | ✔ | – | ✔ |
 | Infra / unclassified / no base commit / diff failure | ✔ | ✔ | ✔ |
@@ -39,7 +37,7 @@ checks them (first match wins):
 
 Jobs:
 
-- **backend** (Windows) — builds `Financial.Api` and runs every `Tests/*.Tests.csproj` listed in `Financial.slnx` except the two WPF ones, `Financial.Presentation.Tests` and `Financial.App.E2ETests`, which CI no longer runs (so `Financial.Architecture.Tests` run here, and only here), with coverage and a blocking 90% coverage gate (see `CLAUDE.md`). The run filters out `Category=E2E` and `Category=Live`: every test class declares a `Category` trait (`Unit`, `Integration`, `Live`, `E2E`, `Smoke`), enforced by `CategoryTraitCoverageTests`, and `Live` tests (real web-parser sites) never run on a PR.
+- **backend** (Windows) — builds `Financial.Api` and runs every `Tests/*.Tests.csproj` listed in `Financial.slnx` (so `Financial.Architecture.Tests` run here, and only here), with coverage and a blocking 90% coverage gate (see `CLAUDE.md`). The run filters out `Category=E2E` and `Category=Live`: every test class declares a `Category` trait (`Unit`, `Integration`, `Live`, `E2E`, `Smoke`), enforced by `CategoryTraitCoverageTests`, and `Live` tests (real web-parser sites) never run on a PR.
 - **web** (Ubuntu) — `npm run lint`, `npm run test:coverage`, `npm run build`, with the same blocking coverage gate as `backend`.
 - **coverage-comment** (Ubuntu) — posts one combined sticky PR comment: per project the line and branch coverage, the delta against `coverage-baseline.json`, the diff coverage, the job verdict, a warning when the PR changes the baseline file, and a link to the run's coverage-report artifacts. Each job's reports include a Cobertura file (`coverage-report-*` artifacts) for the diff-coverage stage. Not in `ci-status`'s `needs`, so a failure here (e.g. the comment action itself erroring) never blocks merge.
 - **web-e2e** (Ubuntu) — publishes the API with the built SPA and runs the `@playwright/test` `@smoke` specs (`npm run smoke-test`; `playwright-report/` and `test-results/` are uploaded as `web-e2e-artifacts` on failure). The suite refuses to start unless `SMOKE_APP_URL` is set and the app reports the `E2E-TEST-DATA` sentinel category. Runs whenever either side of the HTTP boundary changed, even when a backend/web job was skipped.

@@ -33,6 +33,6 @@ public class SharedInfrastructureIsolationRuleTests
 
         referencedAssemblyNames.Should().NotContain(
             "Financial.Shared.Infrastructure",
-            "only the composition roots (Financial.Api, Financial.App) may reference the concrete shared implementation - everything else depends on Financial.Shared.Abstractions alone");
+            "only the composition roots (Financial.Api) may reference the concrete shared implementation - everything else depends on Financial.Shared.Abstractions alone");
     }
 }

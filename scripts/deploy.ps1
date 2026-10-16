@@ -1,25 +1,22 @@
 <#
 .SYNOPSIS
-    Publishes the current local state of Financial.App (WPF) and Financial.Web (API + SPA)
-    to the local `deploy/` folder. Manual, local-only tooling - not part of CI/CD.
+    Publishes the current local state of Financial.Web (API + SPA) to the local `deploy/`
+    folder. Manual, local-only tooling - not part of CI/CD.
 
 .DESCRIPTION
     Re-run any time to refresh the deployed copies with whatever is currently on disk.
     Log level (Debug) and the Google Drive data source are fixed via the checked-in
-    appsettings.Production.json files, so nothing needs to be reconfigured between runs.
+    appsettings.Production.json file, so nothing needs to be reconfigured between runs.
     GoogleDrive:CredentialsPath, and the Google Calendar integration's ClientId/ClientSecret/
     RedirectUri/CredentialsPath, are machine-specific (the latter three doubling as real
     secrets) and NOT committed to source control - they're read from scripts/deploy.local.json
     (gitignored, created from scripts/deploy.local.example.json on first run) and stamped into
-    the deployed appsettings.Production.json files after each publish. Leaving the Google
+    the deployed appsettings.Production.json after each publish. Leaving the Google
     Calendar values blank in deploy.local.json keeps that integration disabled, same as an
     unconfigured Docker/dev deployment.
 
-    Financial.App (WPF) hosts its own OAuth loopback listener rather than depending on
-    Financial.Api's callback controller, so it needs its own RedirectUri distinct from Api's -
-    GoogleCalendarAppRedirectUri in deploy.local.json (default http://localhost:8082/), stamped
-    only into the deployed Financial.App's appsettings.Production.json. Both URIs must be
-    registered as authorized redirect URIs on the same Google Cloud Console OAuth client.
+    Earlier deploys also published the WPF desktop app (removed by ADR-002); its folder and
+    launchers are deleted from `deploy/` on every run so no stale copy is left behind.
 #>
 [CmdletBinding()]
 param(
@@ -30,10 +27,14 @@ $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $deployRoot = Join-Path $repoRoot 'deploy'
-$appDeployDir = Join-Path $deployRoot 'Financial.App'
 $webDeployDir = Join-Path $deployRoot 'Financial.Web'
 $templatesDir = Join-Path $PSScriptRoot 'deploy-templates'
 $localSettingsPath = Join-Path $PSScriptRoot 'deploy.local.json'
+$removedDesktopAppPaths = @(
+    (Join-Path $deployRoot 'Financial.App'),
+    (Join-Path $deployRoot 'start-app.ps1'),
+    (Join-Path $deployRoot 'start-all.ps1')
+)
 
 Write-Host "== Financial local deploy ==" -ForegroundColor Cyan
 Write-Host "Repo root:   $repoRoot"
@@ -55,44 +56,38 @@ Get-Process -Name 'Financial.Presentation.App', 'Financial.Api' -ErrorAction Sil
         Stop-Process -Id $_.Id -Force
     }
 
-# 3. Clean + recreate the two app output folders.
-foreach ($dir in @($appDeployDir, $webDeployDir)) {
-    if (Test-Path $dir) {
-        Remove-Item -Path $dir -Recurse -Force
+# 3. Clean + recreate the web output folder, and delete what earlier deploys left of the desktop app.
+foreach ($path in $removedDesktopAppPaths) {
+    if (Test-Path $path) {
+        Write-Host "Removing $path"
+        Remove-Item -Path $path -Recurse -Force
     }
-    New-Item -ItemType Directory -Path $dir -Force | Out-Null
 }
+if (Test-Path $webDeployDir) {
+    Remove-Item -Path $webDeployDir -Recurse -Force
+}
+New-Item -ItemType Directory -Path $webDeployDir -Force | Out-Null
 
-# 4. Publish the WPF desktop app (framework-dependent - build machine == run machine).
-Write-Host "`n-- Publishing Financial.App (WPF) --"
-dotnet publish (Join-Path $repoRoot 'Financial.App\Financial.App.csproj') -c $Configuration -o $appDeployDir
-if ($LASTEXITCODE -ne 0) { throw 'Publish of Financial.App failed.' }
-
-# 5. Publish the API host.
+# 4. Publish the API host (framework-dependent - build machine == run machine).
 Write-Host "`n-- Publishing Financial.Api --"
 dotnet publish (Join-Path $repoRoot 'Financial.Api\Financial.Api.csproj') -c $Configuration -o $webDeployDir
 if ($LASTEXITCODE -ne 0) { throw 'Publish of Financial.Api failed.' }
 
-# 6. Deploy appsettings.Production.json ourselves - it's excluded from `dotnet publish`
+# 5. Deploy appsettings.Production.json ourselves - it's excluded from `dotnet publish`
 #    output (CopyToPublishDirectory=Never, same treatment as appsettings.Development.json)
 #    so this script is the only thing that puts it in the deploy folder, then stamps in
 #    the machine-local Google Drive credentials path.
-foreach ($pair in @(
-        @{ Source = (Join-Path $repoRoot 'Financial.App\appsettings.Production.json'); Target = (Join-Path $appDeployDir 'appsettings.Production.json'); RedirectUri = $localSettings.GoogleCalendarAppRedirectUri },
-        @{ Source = (Join-Path $repoRoot 'Financial.Api\appsettings.Production.json'); Target = (Join-Path $webDeployDir 'appsettings.Production.json'); RedirectUri = $localSettings.GoogleCalendarRedirectUri }
-    )) {
-    $settings = Get-Content $pair.Source -Raw | ConvertFrom-Json
-    $settings.Investment.GoogleDrive.CredentialsPath = $localSettings.GoogleDriveCredentialsPath
-    $settings.FxRates.GoogleDrive.CredentialsPath = $localSettings.GoogleDriveCredentialsPath
-    $settings.CashFlow.GoogleDrive.CredentialsPath = $localSettings.GoogleDriveCredentialsPath
-    $settings.CashFlow.GoogleCalendar.ClientId = $localSettings.GoogleCalendarClientId
-    $settings.CashFlow.GoogleCalendar.ClientSecret = $localSettings.GoogleCalendarClientSecret
-    $settings.CashFlow.GoogleCalendar.RedirectUri = $pair.RedirectUri
-    $settings.CashFlow.GoogleCalendar.CredentialsPath = $localSettings.GoogleCalendarCredentialsPath
-    $settings | ConvertTo-Json -Depth 10 | Set-Content -Path $pair.Target -Encoding utf8
-}
+$settings = Get-Content (Join-Path $repoRoot 'Financial.Api\appsettings.Production.json') -Raw | ConvertFrom-Json
+$settings.Investment.GoogleDrive.CredentialsPath = $localSettings.GoogleDriveCredentialsPath
+$settings.FxRates.GoogleDrive.CredentialsPath = $localSettings.GoogleDriveCredentialsPath
+$settings.CashFlow.GoogleDrive.CredentialsPath = $localSettings.GoogleDriveCredentialsPath
+$settings.CashFlow.GoogleCalendar.ClientId = $localSettings.GoogleCalendarClientId
+$settings.CashFlow.GoogleCalendar.ClientSecret = $localSettings.GoogleCalendarClientSecret
+$settings.CashFlow.GoogleCalendar.RedirectUri = $localSettings.GoogleCalendarRedirectUri
+$settings.CashFlow.GoogleCalendar.CredentialsPath = $localSettings.GoogleCalendarCredentialsPath
+$settings | ConvertTo-Json -Depth 10 | Set-Content -Path (Join-Path $webDeployDir 'appsettings.Production.json') -Encoding utf8
 
-# 7. Build the React SPA (same API_BASE_URL convention as the Docker image) and drop it into wwwroot.
+# 6. Build the React SPA (same API_BASE_URL convention as the Docker image) and drop it into wwwroot.
 Write-Host "`n-- Building Financial.Web (SPA) --"
 $webSrcDir = Join-Path $repoRoot 'Financial.Web'
 Push-Location $webSrcDir
@@ -111,10 +106,10 @@ $wwwrootDir = Join-Path $webDeployDir 'wwwroot'
 New-Item -ItemType Directory -Path $wwwrootDir -Force | Out-Null
 Copy-Item -Path (Join-Path $webSrcDir 'dist\*') -Destination $wwwrootDir -Recurse -Force
 
-# 8. Refresh the launcher scripts.
+# 7. Refresh the launcher scripts.
 Copy-Item -Path (Join-Path $templatesDir '*.ps1') -Destination $deployRoot -Force
 
-# 9. Record what was deployed.
+# 8. Record what was deployed.
 Push-Location $repoRoot
 try {
     $branch = (git branch --show-current 2>$null)
@@ -129,9 +124,8 @@ Branch:   $branch
 Commit:   $commit
 "@ | Set-Content -Path (Join-Path $deployRoot 'deploy-info.txt') -Encoding utf8
 
-# 10. Summary.
+# 9. Summary.
 Write-Host "`n== Deploy complete ==" -ForegroundColor Green
-Write-Host "Financial.App -> $appDeployDir"
 Write-Host "Financial.Web -> $webDeployDir"
 
 $credentialsPath = $localSettings.GoogleDriveCredentialsPath
@@ -139,4 +133,4 @@ if ([string]::IsNullOrWhiteSpace($credentialsPath) -or -not (Test-Path $credenti
     Write-Warning "Google Drive credentials not found at '$credentialsPath'. Edit GoogleDriveCredentialsPath in $localSettingsPath, then re-run this script."
 }
 
-Write-Host "Start everything with: $deployRoot\start-all.ps1"
+Write-Host "Start with: $deployRoot\start-web.ps1"
