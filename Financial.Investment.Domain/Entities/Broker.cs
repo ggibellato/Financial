@@ -88,8 +88,7 @@ public class Broker
     /// <exception cref="InvestmentRuleViolationException">The new name is already in use by another portfolio.</exception>
     public Portfolio RenamePortfolio(string currentName, string newName)
     {
-        var portfolio = FindPortfolio(currentName)
-            ?? throw new KeyNotFoundException($"Portfolio \"{currentName}\" was not found under broker \"{Name}\".");
+        var portfolio = GetPortfolio(currentName);
 
         var trimmed = string.IsNullOrWhiteSpace(newName)
             ? throw new ArgumentException("A portfolio name is required.", nameof(newName))
@@ -107,6 +106,9 @@ public class Broker
 
     /// <summary>Matches by name ordinally, the same way <see cref="AddPortfolio"/> resolves one.</summary>
     public Portfolio? FindPortfolio(string name) => _portfolios.FirstOrDefault(p => p.Name == name);
+
+    public Portfolio GetPortfolio(string name) =>
+        FindPortfolio(name) ?? throw new KeyNotFoundException($"Portfolio \"{name}\" was not found under broker \"{Name}\".");
 
     /// <summary>
     /// Moves an asset between two of this broker's portfolios, creating the destination when the
@@ -127,8 +129,7 @@ public class Broker
     {
         var destinationName = NormalizeDestinationName(destinationPortfolioName);
 
-        var source = FindPortfolio(sourcePortfolioName)
-            ?? throw new KeyNotFoundException($"Portfolio \"{sourcePortfolioName}\" was not found under broker \"{Name}\".");
+        var source = GetPortfolio(sourcePortfolioName);
 
         var asset = source.FindAsset(assetName)
             ?? throw new KeyNotFoundException($"Asset \"{assetName}\" was not found in portfolio \"{sourcePortfolioName}\".");
@@ -157,8 +158,7 @@ public class Broker
     /// <exception cref="InvestmentRuleViolationException">The portfolio still holds assets.</exception>
     public bool RemoveEmptyPortfolio(string name)
     {
-        var portfolio = FindPortfolio(name)
-            ?? throw new KeyNotFoundException($"Portfolio \"{name}\" was not found under broker \"{Name}\".");
+        var portfolio = GetPortfolio(name);
 
         if (!portfolio.IsEmpty)
         {

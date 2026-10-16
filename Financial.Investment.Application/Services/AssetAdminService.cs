@@ -66,10 +66,8 @@ public sealed class AssetAdminService : IAssetAdminService
             Asset? created = null;
             await _repository.ApplyAndSaveAsync(() =>
             {
-                broker = _repository.GetBrokerList(InvestmentScope.Active).FirstOrDefault(candidate => candidate.Name == brokerName)
-                    ?? throw new KeyNotFoundException($"Active broker \"{brokerName}\" was not found.");
-                portfolio = broker.FindPortfolio(portfolioName)
-                    ?? throw new KeyNotFoundException($"Portfolio \"{portfolioName}\" was not found under broker \"{brokerName}\".");
+                broker = AssetMutationHelper.ResolveActiveBroker(_repository, brokerName);
+                portfolio = broker.GetPortfolio(portfolioName);
 
                 created = Asset.Create(name, request.ISIN, request.Exchange, request.Ticker, request.Country, request.LocalTypeCode, assetClass);
                 created.SetValuationMethod(request.ValuationMethod ?? ValuationMethod.Unspecified);
@@ -107,16 +105,8 @@ public sealed class AssetAdminService : IAssetAdminService
             Asset? updated = null;
             await _repository.ApplyAndSaveAsync(() =>
             {
-                var investments = _repository.GetInvestments();
-                // The same broker name can have both an Active and a Historic record; resolving the
-                // requested scope first is what lets editing a Historic asset under a broker that is
-                // also Active find the record that actually holds this asset.
-                broker = (scope == InvestmentScope.Historic
-                    ? investments.FindHistoricBroker(requiredBrokerName) ?? investments.FindActiveBroker(requiredBrokerName)
-                    : investments.FindActiveBroker(requiredBrokerName) ?? investments.FindHistoricBroker(requiredBrokerName))
-                    ?? throw new KeyNotFoundException($"Broker \"{requiredBrokerName}\" was not found.");
-                portfolio = broker.FindPortfolio(requiredPortfolioName)
-                    ?? throw new KeyNotFoundException($"Portfolio \"{requiredPortfolioName}\" was not found under broker \"{requiredBrokerName}\".");
+                broker = _repository.GetInvestments().GetBroker(requiredBrokerName, preferHistoric: scope == InvestmentScope.Historic);
+                portfolio = broker.GetPortfolio(requiredPortfolioName);
 
                 updated = portfolio.UpdateAssetIdentity(
                     currentName, newName, request.ISIN, request.Exchange, request.Ticker,
@@ -126,9 +116,7 @@ public sealed class AssetAdminService : IAssetAdminService
                 return true;
             }).ConfigureAwait(false);
 
-            // Reference equality, not name: the same broker name can have both an Active and a
-            // Historic record, so matching by name alone would always report "Active".
-            var status = _repository.GetBrokerList(InvestmentScope.Active).Any(b => ReferenceEquals(b, broker)) ? "Active" : "Historic";
+            var status = AssetMutationHelper.BrokerStatus(_repository.GetInvestments(), broker!);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UpdateAsset");
