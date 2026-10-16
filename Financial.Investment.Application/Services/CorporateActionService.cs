@@ -120,8 +120,8 @@ public sealed class CorporateActionService : ICorporateActionService, ICorporate
 
             await _repository.ApplyAndSaveAsync(() =>
             {
-                var broker = ResolveActiveBroker(request.BrokerName);
-                var portfolio = ResolvePortfolio(broker, request.PortfolioName);
+                var broker = AssetMutationHelper.ResolveActiveBroker(_repository, request.BrokerName);
+                var portfolio = broker.GetPortfolio(request.PortfolioName);
                 sourceAsset = portfolio.FindAsset(request.SourceAssetName)
                     ?? throw new KeyNotFoundException($"Asset \"{request.SourceAssetName}\" was not found in portfolio \"{request.PortfolioName}\".");
 
@@ -203,8 +203,8 @@ public sealed class CorporateActionService : ICorporateActionService, ICorporate
 
             await _repository.ApplyAndSaveAsync(() =>
             {
-                var broker = ResolveActiveBroker(request.BrokerName);
-                var portfolio = ResolvePortfolio(broker, request.PortfolioName);
+                var broker = AssetMutationHelper.ResolveActiveBroker(_repository, request.BrokerName);
+                var portfolio = broker.GetPortfolio(request.PortfolioName);
                 sourceAsset = portfolio.FindAsset(request.SourceAssetName)
                     ?? throw new KeyNotFoundException($"Asset \"{request.SourceAssetName}\" was not found in portfolio \"{request.PortfolioName}\".");
 
@@ -306,8 +306,8 @@ public sealed class CorporateActionService : ICorporateActionService, ICorporate
 
             await _repository.ApplyAndSaveAsync(() =>
             {
-                var broker = ResolveActiveBroker(request.BrokerName);
-                var portfolio = ResolvePortfolio(broker, request.PortfolioName);
+                var broker = AssetMutationHelper.ResolveActiveBroker(_repository, request.BrokerName);
+                var portfolio = broker.GetPortfolio(request.PortfolioName);
                 parentAsset = portfolio.FindAsset(request.ParentAssetName)
                     ?? throw new KeyNotFoundException($"Asset \"{request.ParentAssetName}\" was not found in portfolio \"{request.PortfolioName}\".");
 
@@ -385,8 +385,8 @@ public sealed class CorporateActionService : ICorporateActionService, ICorporate
 
             await _repository.ApplyAndSaveAsync(() =>
             {
-                var broker = ResolveActiveBroker(request.BrokerName);
-                var portfolio = ResolvePortfolio(broker, request.PortfolioName);
+                var broker = AssetMutationHelper.ResolveActiveBroker(_repository, request.BrokerName);
+                var portfolio = broker.GetPortfolio(request.PortfolioName);
                 parentAsset = portfolio.FindAsset(request.ParentAssetName)
                     ?? throw new KeyNotFoundException($"Asset \"{request.ParentAssetName}\" was not found in portfolio \"{request.PortfolioName}\".");
 
@@ -583,14 +583,6 @@ public sealed class CorporateActionService : ICorporateActionService, ICorporate
         return true;
     }
 
-    private Broker ResolveActiveBroker(string brokerName) =>
-        _repository.GetBrokerList(InvestmentScope.Active).FirstOrDefault(b => string.Equals(b.Name, brokerName, StringComparison.Ordinal))
-            ?? throw new KeyNotFoundException($"Active broker \"{brokerName}\" was not found.");
-
-    private static Portfolio ResolvePortfolio(Broker broker, string portfolioName) =>
-        broker.FindPortfolio(portfolioName)
-            ?? throw new KeyNotFoundException($"Portfolio \"{portfolioName}\" was not found under broker \"{broker.Name}\".");
-
     private static Asset ResolveOrCreateLinkedAsset(
         Portfolio portfolio,
         string assetName,
@@ -644,7 +636,7 @@ public sealed class CorporateActionService : ICorporateActionService, ICorporate
         return currency;
     }
 
-    private Currency ResolveBrokerCurrency(string brokerName) => ParseBrokerCurrency(ResolveActiveBroker(brokerName));
+    private Currency ResolveBrokerCurrency(string brokerName) => ParseBrokerCurrency(AssetMutationHelper.ResolveActiveBroker(_repository, brokerName));
 
     private CostBasisMethod ResolveCostBasisMethod(string brokerName) =>
         AssetMutationHelper.ResolveCostBasisMethod(_repository, brokerName);

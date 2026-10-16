@@ -11,8 +11,17 @@ internal static class AssetMutationHelper
     public delegate bool TryParseDelegate<TEnum>(string? value, out TEnum parsed);
 
     public static CostBasisMethod ResolveCostBasisMethod(IInvestmentRepository repository, string brokerName) =>
-        repository.GetBrokerList(InvestmentScope.Active).FirstOrDefault(b => string.Equals(b.Name, brokerName, StringComparison.Ordinal))?.CostBasisMethod
-        ?? CostBasisMethod.AverageCost;
+        FindBroker(repository, InvestmentScope.Active, brokerName)?.CostBasisMethod ?? CostBasisMethod.AverageCost;
+
+    public static Broker? FindBroker(IInvestmentRepository repository, InvestmentScope scope, string brokerName) =>
+        repository.GetBrokerList(scope).FirstOrDefault(b => string.Equals(b.Name, brokerName, StringComparison.Ordinal));
+
+    public static Broker ResolveActiveBroker(IInvestmentRepository repository, string brokerName) =>
+        FindBroker(repository, InvestmentScope.Active, brokerName)
+            ?? throw new KeyNotFoundException($"Active broker \"{brokerName}\" was not found.");
+
+    public static string BrokerStatus(Investments investments, Broker broker) =>
+        investments.IsActiveBroker(broker) ? "Active" : "Historic";
 
     public static async Task<AssetDetailsDTO?> ExecuteParsedMutationAsync<TEnum>(
         IInvestmentRepository repository,

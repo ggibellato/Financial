@@ -55,6 +55,21 @@ public class Investments
 
     public Broker? FindHistoricBroker(string name) => _historicBrokers.FirstOrDefault(broker => broker.Name == name);
 
+    public Broker GetBroker(string name, bool preferHistoric)
+    {
+        var broker = preferHistoric
+            ? FindHistoricBroker(name) ?? FindActiveBroker(name)
+            : FindActiveBroker(name) ?? FindHistoricBroker(name);
+        return broker ?? throw new KeyNotFoundException($"Broker \"{name}\" was not found.");
+    }
+
+    public bool IsActiveBroker(Broker broker)
+    {
+        // Reference equality, not name: the same broker name can have both an Active and a
+        // Historic record, so matching by name alone would always report "Active".
+        return _activeBrokers.Any(active => ReferenceEquals(active, broker));
+    }
+
     /// <summary>
     /// Registers a brand-new Active broker.
     /// </summary>
@@ -85,10 +100,7 @@ public class Investments
     /// </exception>
     public Broker RenameBroker(string currentName, string newName, string newCurrency, bool preferHistoric = false)
     {
-        var broker = (preferHistoric
-            ? FindHistoricBroker(currentName) ?? FindActiveBroker(currentName)
-            : FindActiveBroker(currentName) ?? FindHistoricBroker(currentName))
-            ?? throw new KeyNotFoundException($"Broker \"{currentName}\" was not found.");
+        var broker = GetBroker(currentName, preferHistoric);
 
         if (newName != currentName)
         {
@@ -175,8 +187,7 @@ public class Investments
         var activeBroker = FindActiveBroker(brokerName)
             ?? throw new KeyNotFoundException($"Broker \"{brokerName}\" was not found in Active Investments.");
 
-        var source = activeBroker.FindPortfolio(sourcePortfolioName)
-            ?? throw new KeyNotFoundException($"Portfolio \"{sourcePortfolioName}\" was not found under broker \"{brokerName}\".");
+        var source = activeBroker.GetPortfolio(sourcePortfolioName);
 
         var asset = source.FindAsset(assetName)
             ?? throw new KeyNotFoundException($"Asset \"{assetName}\" was not found in portfolio \"{sourcePortfolioName}\".");

@@ -291,6 +291,26 @@ public class BrokerTests
     }
 
     [Fact]
+    public void GetPortfolio_ExistingName_ReturnsThatPortfolio()
+    {
+        var broker = Broker.Create("Broker A", "USD");
+        var portfolio = broker.AddPortfolio("Default");
+
+        broker.GetPortfolio("Default").Should().BeSameAs(portfolio);
+    }
+
+    [Fact]
+    public void GetPortfolio_UnknownName_ThrowsNotFoundNamingPortfolioAndBroker()
+    {
+        var broker = Broker.Create("Broker A", "USD");
+
+        var act = () => broker.GetPortfolio("Nope");
+
+        act.Should().Throw<KeyNotFoundException>()
+            .WithMessage("Portfolio \"Nope\" was not found under broker \"Broker A\".");
+    }
+
+    [Fact]
     public void RenamePortfolio_ToAnUnusedName_RenamesIt()
     {
         var broker = Broker.Create("Broker A", "USD");
