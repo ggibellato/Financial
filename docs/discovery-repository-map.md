@@ -58,7 +58,7 @@ The four orphaned test folders corresponding to the removed migration tools (`Fi
 - `.github/workflows/build.yml` — three CI jobs: .NET build+test (Windows), web lint+test+build (Ubuntu/Node 24), Playwright browser smoke test.
 - `.github/workflows/semantic-pr.yml` — enforces Conventional Commit PR titles.
 - `scripts/deploy.ps1` + `deploy/` — manual, local-only, non-CI publish tooling to a git-ignored `deploy/` folder, targeting `GoogleDrive` storage.
-- `.vscode/tasks.json`, `scripts/hooks`, `scripts/update-main.ps1`, `scripts/delete-branches.ps1` — local dev-workflow helper scripts.
+- `.vscode/tasks.json`, `scripts/hooks`, `scripts/delete-branches.ps1` — local dev-workflow helper scripts.
 
 ## Documentation
 

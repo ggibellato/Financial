@@ -4,7 +4,7 @@
 
 `GoogleFinance`, `StatusInvest` and `DadosMercadoDividend` fetch third-party HTML with
 HtmlAgilityPack and pick values out with CSS selectors (`GoogleFinanceSelectors`). The pure
-string/number parsing is split out (`GoogleFinanceParsing`, `StatusInvest.DeriveSlug`,
+string/number parsing is split out (`GoogleFinanceParsing`, `TesouroDiretoSlug.Derive`,
 `GoogleFinanceVerifier`) precisely so it can be tested without the page.
 
 ## What to test
@@ -12,7 +12,7 @@ string/number parsing is split out (`GoogleFinanceParsing`, `StatusInvest.Derive
 - `GoogleFinanceParsing.ParsePriceValue("R$ 100")`, `"GBX100"` scaling, thousands separators,
   `TryParseAsOf(null)` → `null`, UTC-offset strings — every accepted format and every
   rejected/unparseable input.
-- `StatusInvest.DeriveSlug` for each bond family (`Selic`, `IPCA+`, `Juros Semestrais`) and the
+- `TesouroDiretoSlug.Derive` for each bond family (`Selic`, `IPCA+`, `Juros Semestrais`) and the
   accent/`+` stripping rules.
 - Cryptocurrency URL building (`GoogleFinanceCryptocurrencyUrlTests`).
 - `DadosMercadoDividend` row parsing from a saved HTML fragment: a dividend row, a row with a
@@ -75,7 +75,7 @@ parsed `WebAssetQuote` / `WebDividendRecord`.
 ## Examples from project
 
 - `Tests/Financial.WebPageParser.Tests/GoogleFinanceParsingTests.cs` — Unit.
-- `Tests/Financial.WebPageParser.Tests/StatusInvestTests.cs` — Unit; `DeriveSlug` families.
+- `Tests/Financial.WebPageParser.Tests/TesouroDiretoSlugTests.cs` — Unit; slug families.
 - `Tests/Financial.WebPageParser.Tests/GoogleFinanceCryptocurrencyUrlTests.cs` — Unit.
 - `Tests/Financial.WebPageParser.Tests/DadosMercadoDividendTests.cs` — Integration (site faked by inline HTML).
 - `Tests/Financial.WebPageParser.Tests/GoogleFinanceVerificationTests.cs`, `StatusInvestVerificationTests.cs` — manual, `Skip`ped.

@@ -44,7 +44,7 @@ public class StatusInvestVerificationTests
 
             Assert.True(snapshot.Price > 0, $"Price should be positive, got {snapshot.Price}");
 
-            _output.WriteLine($"  ✓ Slug: {StatusInvest.DeriveSlug(bondTitle)}");
+            _output.WriteLine($"  ✓ Slug: {TesouroDiretoSlug.Derive(bondTitle)}");
             _output.WriteLine($"  ✓ Price (Valor de Venda): {snapshot.Price:C}");
             _output.WriteLine($"  ✓ AsOf: {snapshot.AsOf}");
             _output.WriteLine("");
