@@ -312,7 +312,7 @@ graph TD
 - [x] `coverlet.runsettings` has no `Financial.Presentation.App` exclusion
 - [x] The backend job's test filter has no `Financial.Presentation.Tests` clause and its `-assemblyfilters` is `+*`
 - [x] `detect-changes.sh` has no WPF rule and `detect-changes.test.sh` passes
-- [ ] `scripts/deploy.ps1` runs on a machine with an old `deploy/Financial.App` folder and leaves `deploy/` without `Financial.App`, `start-app.ps1` or `start-all.ps1`, with the web app published
+- [x] `scripts/deploy.ps1` runs on a machine with an old `deploy/Financial.App` folder and leaves `deploy/` without `Financial.App`, `start-app.ps1` or `start-all.ps1`, with the web app published
 - [x] `scripts/deploy-templates/start-app.ps1` and `start-all.ps1` no longer exist, and `deploy.ps1` removes stale copies of both from `deploy/`
 - [x] `deploy.local.example.json` has no `GoogleCalendarAppRedirectUri`
 - [x] `.vscode/tasks.json` has no `Financial.App` entry
