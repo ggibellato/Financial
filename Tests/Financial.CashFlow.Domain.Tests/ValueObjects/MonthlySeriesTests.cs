@@ -32,6 +32,22 @@ public class MonthlySeriesTests
     }
 
     [Fact]
+    public void FromMonths_CallsFactoryForMonthsOneToTwelveInOrder()
+    {
+        var series = MonthlySeries.FromMonths(month => month * 10m);
+
+        series.ToArray().Should().Equal(TwelveMonths);
+    }
+
+    [Fact]
+    public void FromMonths_WithNull_ThrowsArgumentNullException()
+    {
+        var act = () => MonthlySeries.FromMonths(null!);
+
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
     public void Zero_AllTwelveMonthsAreZero()
     {
         var series = MonthlySeries.Zero();
