@@ -306,16 +306,16 @@ graph TD
 ### F02. Delete the WPF App
 - [ ] The PR body contains the parity table and the user has commented the sign-off before merge
 - [ ] A named parity gap blocks merge until it is closed and the table re-signed
-- [ ] `git ls-files Financial.App Tests/Financial.Presentation.Tests Tests/Financial.App.E2ETests` returns nothing
-- [ ] `Financial.slnx` has no entry for those three projects, and `dotnet build --configuration Release` succeeds
-- [ ] `Financial.Architecture.Tests` has no reference to `Financial.App`, and all its tests pass
-- [ ] `coverlet.runsettings` has no `Financial.Presentation.App` exclusion
-- [ ] The backend job's test filter has no `Financial.Presentation.Tests` clause and its `-assemblyfilters` is `+*`
-- [ ] `detect-changes.sh` has no WPF rule and `detect-changes.test.sh` passes
+- [x] `git ls-files Financial.App Tests/Financial.Presentation.Tests Tests/Financial.App.E2ETests` returns nothing
+- [x] `Financial.slnx` has no entry for those three projects, and `dotnet build --configuration Release` succeeds
+- [x] `Financial.Architecture.Tests` has no reference to `Financial.App`, and all its tests pass
+- [x] `coverlet.runsettings` has no `Financial.Presentation.App` exclusion
+- [x] The backend job's test filter has no `Financial.Presentation.Tests` clause and its `-assemblyfilters` is `+*`
+- [x] `detect-changes.sh` has no WPF rule and `detect-changes.test.sh` passes
 - [ ] `scripts/deploy.ps1` runs on a machine with an old `deploy/Financial.App` folder and leaves `deploy/` without `Financial.App`, `start-app.ps1` or `start-all.ps1`, with the web app published
-- [ ] `scripts/deploy-templates/start-app.ps1` and `start-all.ps1` no longer exist, and `deploy.ps1` removes stale copies of both from `deploy/`
-- [ ] `deploy.local.example.json` has no `GoogleCalendarAppRedirectUri`
-- [ ] `.vscode/tasks.json` has no `Financial.App` entry
+- [x] `scripts/deploy-templates/start-app.ps1` and `start-all.ps1` no longer exist, and `deploy.ps1` removes stale copies of both from `deploy/`
+- [x] `deploy.local.example.json` has no `GoogleCalendarAppRedirectUri`
+- [x] `.vscode/tasks.json` has no `Financial.App` entry
 - [ ] After deploy, Google Calendar shows as connected on the Integrations page without reconnecting
 - [ ] `docker-compose up` starts and the SPA loads both Investment and CashFlow pages
 - [ ] `ci-status` is green on the PR and on the `main` run after merge
