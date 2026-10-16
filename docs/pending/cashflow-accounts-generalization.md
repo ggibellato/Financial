@@ -76,21 +76,20 @@ A template is the *kind* of account; the user's accounts are named instances of 
 |---|---|---|---|
 | **Bank** | Opening balance, income, categories, transfers in/out, reconciliation, round-up, pays recurring bills | `HasOpeningBalance`, `ReceivesIncome`, `HasCategories`, `CanSendTransfers`, `CanReceiveTransfers`, `CanReconcile`, `CanPayBills`, `SupportsRoundUp` | Opening balance, income, expenses (+ round-up), transfers in/out, card payments out, reconciliation adjustments, Reserva deposit/withdrawal expenses, recurring-bill payments |
 | **Credit card** | Statements, due date, future statement (move a charge to a later statement), categories, payment from a bank | `HasStatements`, `HasCategories`, `CanPayBills`, `ReceivesPayments` | Charges (negative), statement payments from a bank (positive) |
-| **Pots** | Contains pots with split percentages; receives deposits (from an income split or manual); withdrawals (optionally via a bank); no categories. Several Pots accounts allowed | `HasPots`, `ReceivesIncomeSplit`, `CanWithdraw` | Per pot: deposits (split), withdrawals |
+| **Pots** | Contains pots with split percentages; receives deposits (from an income split or manual); withdrawals (optionally via a bank); no category on pot transactions, but the account has a category setting for the bank expenses its deposits and withdrawals write. Several Pots accounts allowed | `HasPots`, `ReceivesIncomeSplit`, `CanWithdraw` | Per pot: deposits (split), withdrawals |
 | **Settlement** | Participants; each entry records who paid, value and currency; the zero-out (whenever it happens; no fixed period) is a settle entry; no categories, no bank link. Each account lists its currencies: Mãe = BRL + GBP; son = GBP only | `HasParticipants`, `MultiCurrency`, `CanSettle` | Entries (paid by a participant), settle entries |
 
 ### Model
 
-- `Account` aggregate: `Id`, `Name`, `Template`, `Currency` (Settlement: its currencies), `IsActive`, optional parent (pots under a Pots account).
+- `Account` aggregate: `Id`, `Name`, `Template`, `Currency` (Settlement: its currencies), `Category` (Pots accounts only: the category of the bank expenses their deposits and withdrawals write), `IsActive`, optional parent (pots under a Pots account).
 - **Capabilities are the only thing code checks.** Services, validation and the allowed-actions API ask "does this account have `CanPayBills`?", never "is this a Bank?".
 - **Templates are defined in code**: a named, fixed capability set. Templates decide which operations may post transactions to an account, never how its balance is computed (see [One balance model](#one-balance-model)).
-- An account records its template, and its capabilities come from the template **live**, so a template change reaches existing accounts. Per-account settings stay limited to the ones already agreed: Settlement participants and currencies, bank round-up, active.
-- A capability cannot be removed from an account that has history using it.
+- An account stores which template it was made from, not its own list of capabilities: what it can do is read from the template every time. Templates change only in code, so a template change (a code change and a deploy) applies at once to every account made from it. Adding a capability makes it available on all those accounts; removing one stops new operations of that kind but keeps their past transactions and the balance.
 - Capability-specific data lives in small value objects (card terms, opening balance, pot split), **not** an inheritance tree or one class with type switches.
 - **Account groups**: named, ordered, chosen member accounts, backed by **one server-side summary query** (replacing the ~10 client calls and browser-side totals). A group total only sums accounts in the same currency; other currencies (e.g. Mãe BRL) show separately, never silently converted.
 - **Generic account-to-account transfer** (introduced in F01): any account on either side, amount in each account's currency, optional FX rate. A transfer is two linked transactions with no category. Replaces today's bank-only transfer.
-- **Reserva deposits stay as a "Reserva"-category expense** on the sending bank (money leaving CashFlow; keeps Reserva in category totals and historic averages), now **linked** to the pot credits (see [Pots](#pots)). Converting it to a transfer was rejected: it would remove Reserva from category totals.
-- **"Reserva" becomes a flag on the category** (like `IsTithe` / `IsInvestment`) instead of a name lookup.
+- **Pots deposits stay as an expense on the sending bank, in the Pots account's configured category** (money leaving CashFlow; keeps the deposits in category totals and historic averages), now **linked** to the pot credits (see [Pots](#pots)). Converting it to a transfer was rejected: it would remove the deposits from category totals.
+- **The category is a setting on each Pots account** (like its currency) instead of the code looking up "Reserva" by name. Reserva's is set to "Reserva" by the migration.
 - Tithe stays a derived amount owed, not an account. Investment accounts, income sources, categories and recurring bills stay outside the account model.
 
 ### One balance model
@@ -135,14 +134,15 @@ R$140 and £20 are the same debt in two currencies (approximately equal because 
 ### Pots
 
 - A **Pots** account (the user's is "Reserva") contains pots as sub-accounts. Pot balance = sum of its transactions (same numbers as today); the Pots account balance = sum of its pots. No category on pot transactions; a pot goes negative only with confirmation; split percentages total 100 within each Pots account.
-- **Withdrawal through a bank keeps today's records**, now written and linked as one operation: pot −X; bank expense −X in "Reserva"; bank expense +X in the real category. The bank nets to zero and the Reserva category total stays deposits − withdrawals. (Corrects an earlier idea of a pot → bank transfer, which would have stopped withdrawals reducing the Reserva category total.)
-- **Deposit is linked (new):** one operation writes the bank "Reserva" expense(s) and the pot credits, split once across pots by percentage, in one save.
+- **Each Pots account has a category setting** (Reserva: "Reserva"). Deposits and withdrawals through a bank write their bank expenses in the category the account has at that moment, whichever pot they touch. The user can change it at any time; the change applies from the next deposit or withdrawal, and past expenses keep the category they were recorded with.
+- **Withdrawal through a bank keeps today's records**, now written and linked as one operation: pot −X; bank expense −X in the Pots account's category; bank expense +X in the real category. The bank nets to zero and the Pots account's category total stays deposits − withdrawals. (Corrects an earlier idea of a pot → bank transfer, which would have stopped withdrawals reducing the category total.)
+- **Deposit is linked (new):** one operation writes the bank expense(s) in the Pots account's category and the pot credits, split once across pots by percentage, in one save.
   - From an income marked split-to-reserve: amount is always 90% of net and the date is always the income's date; neither is editable.
   - Funded from one or more banks: by default one line from the income's bank for the full amount; the user can split it (e.g. Barclays £85 + Trading 212 cash £5). The lines must add up to the deposit amount. Splitting the pots once (not per funding line) avoids per-pot rounding differences.
   - The income itself always lands in one bank. A bank is required for an income that splits to the reserve; an income without a split keeps the bank optional, as today.
   - Editing the income recalculates the deposit, its pot split and its funding lines; if hand-split lines no longer add up, the user is asked to adjust them. Deleting the income removes everything linked to it.
-  - A manual deposit (no income behind it) works the same way, with the user choosing amount and date. It may also have **no funding lines at all**, for money that comes from outside CashFlow (e.g. moved from an investment straight into the pots): the pots are credited and no bank or "Reserva" expense is touched, so it does not count in the Reserva category total.
-- The user no longer records the "Reserva" expense by hand; the deposit creates it.
+  - A manual deposit (no income behind it) works the same way, with the user choosing amount and date. It may also have **no funding lines at all**, for money that comes from outside CashFlow (e.g. moved from an investment straight into the pots): the pots are credited and no bank expense is written, so it does not count in the Pots account's category total.
+- The user no longer records the deposit expense by hand; the deposit creates it.
 
 ### Testing capabilities
 
@@ -200,7 +200,7 @@ F00 removed WPF. From F01 the account screen is built in React and grows with ea
 | **F00** | **Done** (ADR-002, P59: #1025, #1026, #1028). Removed `Financial.App` (WPF), its tests, CI and nightly jobs, coverage entries and WPF-specific rules/docs; React is the only front end |
 | **F01** | `Account` + capabilities + built-in templates (Bank first) + account groups + server-side summary query + generic account-to-account transfer; Bank migrated. **UI:** account list, account screen (header, transactions, actions from the API) for banks, including pay recurring bill; group summary |
 | **F02** | Credit card template added and cards migrated (incl. PayPal); statement payment becomes a real bank → card transfer, uncategorised and linked to its statement (instead of re-pointing/re-dating each charge), with charges' categories still counting on the payment date; de-duplicate the card/period charge filter. **UI:** card actions on the account screen (statements, pay statement, move charge to a later statement) |
-| **F03** | Pots template added and Reserva migrated; linked withdrawal via bank (today's records, written as one operation); linked deposit funded from one or more banks or none (automatic from a split-to-reserve income, or manual); "Reserva" category flag. **UI:** Pots on the account screen (pots, deposit, withdraw) |
+| **F03** | Pots template added and Reserva migrated; linked withdrawal via bank (today's records, written as one operation); linked deposit funded from one or more banks or none (automatic from a split-to-reserve income, or manual); category setting per Pots account, replacing the "Reserva" name lookup. **UI:** Pots on the account screen (pots, deposit, withdraw) |
 | **F04** | Settlement template added with participants, explicit "paid by" and per-account currencies; Mãe migrated (BRL + GBP); the son's account becomes a create-only operation (GBP). **UI:** Settlement on the account screen (entries, balance in each currency, settle at any time) |
 | **F05** | Consolidated navigation: the account list + overview screens become the CashFlow entry point; retire the per-type pages (Reserva, Controle Mãe, card/bank parts of Monthly); update E2E journeys and docs |
 
