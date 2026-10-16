@@ -159,8 +159,6 @@ public sealed class NavigationService : INavigationService
                 DisposalRecords = disposalRecords,
                 CorporateActions = corporateActions,
                 CostBasisMethod = costBasisMethod,
-                CashFlowsWithCredits = AssetCashFlowBuilder.BuildWithCredits(asset),
-                CashFlowsWithoutCredits = AssetCashFlowBuilder.BuildWithoutCredits(asset),
                 TaxJurisdictions = taxJurisdictions
             };
         }

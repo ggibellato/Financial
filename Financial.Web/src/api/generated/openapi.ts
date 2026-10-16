@@ -6745,12 +6745,6 @@ export interface components {
             /** Format: double */
             totalInvested: number;
         };
-        AssetCashFlowDTO: {
-            /** Format: double */
-            amount: number;
-            /** Format: date-time */
-            date: string;
-        };
         AssetClassAllocationEntryDTO: {
             class: components["schemas"]["GlobalAssetClass"];
             /** Format: double */
@@ -6764,8 +6758,6 @@ export interface components {
             /** Format: double */
             averageSellPrice?: null | number;
             brokerName: string;
-            cashFlowsWithCredits?: components["schemas"]["AssetCashFlowDTO"][];
-            cashFlowsWithoutCredits?: components["schemas"]["AssetCashFlowDTO"][];
             class?: components["schemas"]["GlobalAssetClass"];
             corporateActions?: components["schemas"]["CorporateActionDTO"][];
             costBasisMethod?: components["schemas"]["CostBasisMethod"];
@@ -7803,7 +7795,6 @@ export interface components {
             averagePrice: number;
             /** Format: double */
             averageSellPrice: null | number;
-            cashFlows: components["schemas"]["AssetCashFlowDTO"][];
             class: components["schemas"]["GlobalAssetClass"];
             /** Format: double */
             costOfUnitsHeld: number;

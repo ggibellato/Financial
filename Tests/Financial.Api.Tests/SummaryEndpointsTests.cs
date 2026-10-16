@@ -25,11 +25,9 @@ public class SummaryEndpointsTests : ApiEndpointTests
             i.TotalBought.Should().BeGreaterThanOrEqualTo(0m);
             if (i.PortfolioWeight.HasValue) i.PortfolioWeight.Value.Should().BeGreaterThanOrEqualTo(0m);
             i.TotalCredits.Should().BeGreaterThanOrEqualTo(0m);
-            i.CashFlows.Should().NotBeNull();
             i.LastMonthCredits.Should().BeGreaterThanOrEqualTo(0m);
             i.CurrentMonthCredits.Should().BeGreaterThanOrEqualTo(0m);
         });
-        items.Should().Contain(i => i.CashFlows.Count > 0);
         items.Where(i => i.LastCreditMonth != null && i.TotalInvested > 0)
             .Should().AllSatisfy(i => i.LastMonthCreditsPercent.Should().NotBeNull());
         items.Where(i => i.CreditFrequencyPerYear != null)
