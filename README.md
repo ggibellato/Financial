@@ -139,7 +139,7 @@ Open `http://localhost:8080` in your browser.
 docker compose up --build
 ```
 
-This mounts `./data` into the container and wires the environment variables (including the CashFlow ones above) automatically. Subsequent starts without code changes:
+This mounts `./data` into the container and wires the environment variables (including the CashFlow ones above) automatically. The calendar integration is switched off here: the compose file blanks the Google Calendar client id, secret and redirect URI (overriding any in `.env`), so a container running on local test data can never connect and write test values into your real calendar. Use `scripts/deploy.ps1` for a calendar-connected install. Subsequent starts without code changes:
 
 ```bash
 docker compose up
