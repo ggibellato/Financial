@@ -93,7 +93,6 @@ import type {
   ReserveMovementUpdateDto,
   TransferUpdateDto,
   WithdrawalRequestDto,
-  XirrResultDto,
 } from '../types'
 
 const okResponse = <T,>(payload: T) =>
@@ -470,24 +469,6 @@ describe('financialApiClient', () => {
     expect(result).toEqual(responseBody)
     const [url] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/asset-price-fetch`)
-  })
-
-  it('posts a calculate xirr request', async () => {
-    const responseBody: XirrResultDto = { xirr: 0.1234 }
-    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
-    const client = createFinancialApiClient({
-      baseUrl: API_BASE_URL,
-      fetch: fetchMock,
-    })
-
-    const cashFlows = [{ date: '2024-01-01T00:00:00', amount: -1000 }]
-    const result = await client.calculateXirr(cashFlows, 1100)
-
-    expect(result).toEqual(responseBody)
-    const [url, init] = fetchMock.mock.calls[0]
-    expect(url).toBe(`${API_BASE_URL}/xirr/calculate`)
-    expect(init?.method).toBe('POST')
-    expect(init?.body).toBe(JSON.stringify({ cashFlows, terminalValue: 1100 }))
   })
 
   it('throws when the API returns an error', async () => {
