@@ -1,4 +1,5 @@
-using Financial.Shared.Abstractions.Configuration;
+using Financial.Integrations.Frankfurter;
+using Financial.Shared.Abstractions.Currencies;
 using Financial.Shared.Abstractions.Currencies.FxRates;
 using Financial.Shared.Abstractions.Persistence;
 using Financial.Shared.Infrastructure.Configuration;
@@ -7,6 +8,7 @@ using Financial.Shared.Infrastructure.Repositories.FxRates;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Financial.Shared.Infrastructure.DependencyInjection;
@@ -18,35 +20,25 @@ public static class FxRateInfrastructureServiceCollectionExtensions
         IConfiguration configuration)
     {
         services.Configure<FxRateRepositorySettingsOptions>(options =>
-        {
-            options.Provider = configuration[FxRateRepositoryConfigurationKeys.Provider];
-            options.DataJsonFile = configuration[FxRateRepositoryConfigurationKeys.LocalJsonDataFile];
-            options.GoogleDriveCredentialsPath = configuration[FxRateRepositoryConfigurationKeys.GoogleDriveCredentialsPath];
-            options.GoogleDriveFilePath = configuration[FxRateRepositoryConfigurationKeys.GoogleDriveFilePath];
-        });
+            options.Load(FxRateRepositorySettingsOptions.ConfigurationKeys, key => configuration[key]));
         services.TryAddSingleton(TimeProvider.System);
         services.AddSingleton<IFxRateSerializer, FxRateSerializerAdapter>();
         services.AddSingleton<IFxRateStore>(sp =>
         {
-            var settings = sp.GetRequiredService<IOptions<FxRateRepositorySettingsOptions>>().Value;
-            var options = BuildRepositoryOptions(settings);
+            var options = sp.GetRequiredService<IOptions<FxRateRepositorySettingsOptions>>().Value.ToSelection();
             return new FxRateStoreFactory(
                 sp.GetRequiredService<IFxRateSerializer>(),
                 sp.GetRequiredService<IJsonStorageFactory>(),
                 sp.GetRequiredService<TimeProvider>()).Create(options);
         });
+        services.AddHttpClient<FrankfurterExchangeRateProvider>();
+        services.AddSingleton<IExchangeRateProvider>(sp =>
+            new InMemoryCachedExchangeRateProvider(() => new UsdBasedExchangeRateProvider(
+                sp.GetRequiredService<IFxRateStore>(),
+                sp.GetRequiredService<FrankfurterExchangeRateProvider>(),
+                sp.GetRequiredService<TimeProvider>(),
+                sp.GetRequiredService<ILogger<UsdBasedExchangeRateProvider>>())));
 
         return services;
-    }
-
-    private static FxRateRepositorySelectionOptions BuildRepositoryOptions(FxRateRepositorySettingsOptions settings)
-    {
-        var provider = RepositoryProviderResolver.Resolve(settings.Provider, FxRateRepositoryProvider.LocalJson);
-
-        return new FxRateRepositorySelectionOptions(
-            provider,
-            settings.DataJsonFile,
-            settings.GoogleDriveCredentialsPath,
-            settings.GoogleDriveFilePath);
     }
 }

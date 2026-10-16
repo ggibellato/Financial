@@ -1,9 +1,8 @@
+using Financial.Shared.Abstractions.Configuration;
+
 namespace Financial.CashFlow.Application.Configuration;
 
-public sealed class CashFlowRepositorySettingsOptions
+public sealed class CashFlowRepositorySettingsOptions : JsonRepositorySettings
 {
-    public string? Provider { get; set; }
-    public string? DataJsonFile { get; set; }
-    public string? GoogleDriveCredentialsPath { get; set; }
-    public string? GoogleDriveFilePath { get; set; }
+    public static readonly JsonRepositoryConfigurationKeys ConfigurationKeys = new("CashFlow");
 }

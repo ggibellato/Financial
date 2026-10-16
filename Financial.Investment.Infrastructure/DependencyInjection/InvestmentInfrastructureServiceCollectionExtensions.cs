@@ -1,14 +1,9 @@
 using Financial.Investment.Application.Configuration;
 using Financial.Investment.Application.Interfaces;
-using Financial.Investment.Infrastructure.Configuration;
 using Financial.Investment.Infrastructure.Interfaces;
 using Financial.Investment.Infrastructure.Persistence;
 using Financial.Investment.Infrastructure.Repositories;
 using Financial.Investment.Infrastructure.Services;
-using Financial.Integrations.Frankfurter;
-using Financial.Shared.Abstractions.Configuration;
-using Financial.Shared.Abstractions.Currencies;
-using Financial.Shared.Abstractions.Currencies.FxRates;
 using Financial.Shared.Abstractions.Persistence;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,12 +19,7 @@ public static class InvestmentInfrastructureServiceCollectionExtensions
         IConfiguration configuration)
     {
         services.Configure<InvestmentRepositorySettingsOptions>(options =>
-        {
-            options.Provider = configuration[InvestmentRepositoryConfigurationKeys.Provider];
-            options.DataJsonFile = configuration[InvestmentRepositoryConfigurationKeys.LocalJsonDataFile];
-            options.GoogleDriveCredentialsPath = configuration[InvestmentRepositoryConfigurationKeys.GoogleDriveCredentialsPath];
-            options.GoogleDriveFilePath = configuration[InvestmentRepositoryConfigurationKeys.GoogleDriveFilePath];
-        });
+            options.Load(InvestmentRepositorySettingsOptions.ConfigurationKeys, key => configuration[key]));
         services.AddSingleton<IInvestmentSerializer, InvestmentSerializerAdapter>();
         services.AddSingleton<IDividendDataSource, DividendDataSourceAdapter>();
         services.AddSingleton<IAssetSnapshotSource, AssetSnapshotSourceAdapter>();
@@ -61,36 +51,14 @@ public static class InvestmentInfrastructureServiceCollectionExtensions
         services.TryAddSingleton(TimeProvider.System);
         services.AddSingleton<IInvestmentRepository>(sp =>
         {
-            var settings = sp.GetRequiredService<IOptions<InvestmentRepositorySettingsOptions>>().Value;
-            var options = BuildRepositoryOptions(settings);
+            var options = sp.GetRequiredService<IOptions<InvestmentRepositorySettingsOptions>>().Value.ToSelection();
             return new InvestmentRepositoryFactory(
                 sp.GetRequiredService<IInvestmentSerializer>(),
                 sp.GetRequiredService<IJsonStorageFactory>(),
                 sp.GetRequiredService<TimeProvider>()).Create(options);
         });
         services.AddSingleton<IAssetPriceService, AssetPriceService>();
-        services.AddHttpClient<FrankfurterExchangeRateProvider>();
-        // TryAdd: CashFlow's own AddFinancialCashFlowInfrastructure registers the same shared
-        // IExchangeRateProvider - both bounded contexts are composed together in the same process,
-        // so only the first registration to run should win, keeping a single shared cache instance.
-        services.TryAddSingleton<IExchangeRateProvider>(sp =>
-            new InMemoryCachedExchangeRateProvider(() => new UsdBasedExchangeRateProvider(
-                sp.GetRequiredService<IFxRateStore>(),
-                sp.GetRequiredService<FrankfurterExchangeRateProvider>(),
-                sp.GetRequiredService<TimeProvider>(),
-                sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<UsdBasedExchangeRateProvider>>())));
 
         return services;
-    }
-
-    private static InvestmentRepositorySelectionOptions BuildRepositoryOptions(InvestmentRepositorySettingsOptions settings)
-    {
-        var provider = RepositoryProviderResolver.Resolve(settings.Provider, InvestmentRepositoryProvider.LocalJson);
-
-        return new InvestmentRepositorySelectionOptions(
-            provider,
-            settings.DataJsonFile,
-            settings.GoogleDriveCredentialsPath,
-            settings.GoogleDriveFilePath);
     }
 }

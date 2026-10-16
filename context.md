@@ -93,8 +93,8 @@ Persistence uses JSON files. Two storage backends are implemented and selectable
 
 **The Investment and CashFlow domains each select their storage backend independently**, with their own nested configuration element and their own JSON file — never floating at the config root:
 
-* Investment: `Investment:Repository:Provider` (`InvestmentRepositoryConfigurationKeys` in `Financial.Investment.Infrastructure`) → `data-investment.json`.
-* CashFlow: `CashFlow:Repository:Provider` (`CashFlowRepositoryConfigurationKeys`) → `data-cashflow.json`.
+* Investment: `Investment:Repository:Provider` (`InvestmentRepositorySettingsOptions.ConfigurationKeys`, a shared `JsonRepositoryConfigurationKeys` from `Financial.Shared.Abstractions`) → `data-investment.json`.
+* CashFlow: `CashFlow:Repository:Provider` (`CashFlowRepositorySettingsOptions.ConfigurationKeys`) → `data-cashflow.json`.
 
 The persistence layer is abstracted behind a repository interface per domain so that storage implementations can be replaced with minimal impact on the rest of the application.
 

@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Infrastructure.Persistence;
 using Financial.CashFlow.Infrastructure.Repositories;
+using Financial.Shared.Abstractions.Configuration;
 using Financial.Shared.Abstractions.Observability;
 using Financial.Shared.Abstractions.Persistence;
 using Financial.Shared.Abstractions.Sync;
@@ -28,8 +29,8 @@ public class CashFlowRepositoryFactoryTests
     public void Create_WithLocalJsonProvider_ReturnsCashFlowJsonRepository()
     {
         var missingPath = Path.Combine(Path.GetTempPath(), $"cashflow-factory-{Guid.NewGuid()}.json");
-        var options = new CashFlowRepositorySelectionOptions(
-            CashFlowRepositoryProvider.LocalJson,
+        var options = new JsonRepositorySelection(
+            JsonRepositoryProvider.LocalJson,
             missingPath,
             null,
             null);
@@ -43,8 +44,8 @@ public class CashFlowRepositoryFactoryTests
     public void Create_WithLocalJsonProvider_ResultReportsIdleStatus()
     {
         var missingPath = Path.Combine(Path.GetTempPath(), $"cashflow-factory-{Guid.NewGuid()}.json");
-        var options = new CashFlowRepositorySelectionOptions(
-            CashFlowRepositoryProvider.LocalJson,
+        var options = new JsonRepositorySelection(
+            JsonRepositoryProvider.LocalJson,
             missingPath,
             null,
             null);
@@ -58,8 +59,8 @@ public class CashFlowRepositoryFactoryTests
     [Fact]
     public void Create_WithGoogleDriveProvider_WithoutCredentials_ThrowsFileNotFoundException()
     {
-        var options = new CashFlowRepositorySelectionOptions(
-            CashFlowRepositoryProvider.GoogleDriveJson,
+        var options = new JsonRepositorySelection(
+            JsonRepositoryProvider.GoogleDriveJson,
             null,
             null,
             "Pessoais/Gleison/Financeiros");
@@ -73,8 +74,8 @@ public class CashFlowRepositoryFactoryTests
     [Fact]
     public void Create_WithUnsupportedProvider_ThrowsArgumentOutOfRangeException()
     {
-        var options = new CashFlowRepositorySelectionOptions(
-            (CashFlowRepositoryProvider)999,
+        var options = new JsonRepositorySelection(
+            (JsonRepositoryProvider)999,
             null,
             null,
             null);
@@ -93,8 +94,8 @@ public class CashFlowRepositoryFactoryTests
         {
             var factoryWithoutRemoteFileClient = new CashFlowRepositoryFactory(
                 new CashFlowSerializerAdapter(), new JsonStorageFactory(null, NoOpTelemetryTracer.Instance));
-            var options = new CashFlowRepositorySelectionOptions(
-                CashFlowRepositoryProvider.GoogleDriveJson,
+            var options = new JsonRepositorySelection(
+                JsonRepositoryProvider.GoogleDriveJson,
                 null,
                 credentialsPath,
                 "Pessoais/Gleison/Financeiros");
@@ -116,8 +117,8 @@ public class CashFlowRepositoryFactoryTests
         var credentialsPath = Path.GetTempFileName();
         try
         {
-            var options = new CashFlowRepositorySelectionOptions(
-                CashFlowRepositoryProvider.GoogleDriveJson,
+            var options = new JsonRepositorySelection(
+                JsonRepositoryProvider.GoogleDriveJson,
                 null,
                 credentialsPath,
                 "Pessoais/Gleison/Financeiros");
@@ -140,8 +141,8 @@ public class CashFlowRepositoryFactoryTests
         File.WriteAllText(absolutePath, "{}");
         try
         {
-            var options = new CashFlowRepositorySelectionOptions(
-                CashFlowRepositoryProvider.GoogleDriveJson,
+            var options = new JsonRepositorySelection(
+                JsonRepositoryProvider.GoogleDriveJson,
                 null,
                 fileName,
                 "Pessoais/Gleison/Financeiros");
@@ -164,8 +165,8 @@ public class CashFlowRepositoryFactoryTests
         {
             var factory = new CashFlowRepositoryFactory(
                 new CashFlowSerializerAdapter(), new JsonStorageFactory(new StubRemoteFileClientFactory(), NoOpTelemetryTracer.Instance));
-            var options = new CashFlowRepositorySelectionOptions(
-                CashFlowRepositoryProvider.GoogleDriveJson,
+            var options = new JsonRepositorySelection(
+                JsonRepositoryProvider.GoogleDriveJson,
                 null,
                 credentialsPath,
                 "Pessoais/Gleison/Financeiros");
@@ -197,8 +198,8 @@ public class CashFlowRepositoryFactoryTests
         {
             var factory = new CashFlowRepositoryFactory(
                 new CashFlowSerializerAdapter(), new JsonStorageFactory(new StubRemoteFileClientFactory(), NoOpTelemetryTracer.Instance));
-            var options = new CashFlowRepositorySelectionOptions(
-                CashFlowRepositoryProvider.GoogleDriveJson,
+            var options = new JsonRepositorySelection(
+                JsonRepositoryProvider.GoogleDriveJson,
                 null,
                 credentialsPath,
                 "Pessoais/Gleison/Financeiros");
@@ -226,8 +227,8 @@ public class CashFlowRepositoryFactoryTests
             var remoteFileClient = new RecordingRemoteFileClient();
             var factory = new CashFlowRepositoryFactory(
                 new CashFlowSerializerAdapter(), new JsonStorageFactory(new RecordingRemoteFileClientFactory(remoteFileClient), NoOpTelemetryTracer.Instance));
-            var options = new CashFlowRepositorySelectionOptions(
-                CashFlowRepositoryProvider.GoogleDriveJson,
+            var options = new JsonRepositorySelection(
+                JsonRepositoryProvider.GoogleDriveJson,
                 null,
                 credentialsPath,
                 "Pessoais/Gleison/Financeiros");
@@ -268,8 +269,8 @@ public class CashFlowRepositoryFactoryTests
             var tracer = new RecordingTelemetryTracer();
             var factory = new CashFlowRepositoryFactory(
                 new CashFlowSerializerAdapter(), new JsonStorageFactory(new RecordingRemoteFileClientFactory(remoteFileClient), tracer));
-            var options = new CashFlowRepositorySelectionOptions(
-                CashFlowRepositoryProvider.GoogleDriveJson,
+            var options = new JsonRepositorySelection(
+                JsonRepositoryProvider.GoogleDriveJson,
                 null,
                 credentialsPath,
                 "Pessoais/Gleison/Financeiros");
@@ -295,8 +296,8 @@ public class CashFlowRepositoryFactoryTests
     public void Create_WithGoogleDriveProvider_CredentialsFileDoesNotExist_ThrowsFileNotFoundException()
     {
         var missingCredentialsPath = Path.Combine(Path.GetTempPath(), $"cashflow-credentials-{Guid.NewGuid()}.json");
-        var options = new CashFlowRepositorySelectionOptions(
-            CashFlowRepositoryProvider.GoogleDriveJson,
+        var options = new JsonRepositorySelection(
+            JsonRepositoryProvider.GoogleDriveJson,
             null,
             missingCredentialsPath,
             "Pessoais/Gleison/Financeiros");
