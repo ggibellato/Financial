@@ -2,6 +2,7 @@ using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
 using Financial.Shared.Abstractions.Observability;
+using Financial.Shared.Abstractions.Time;
 using Microsoft.Extensions.Logging;
 
 namespace Financial.Investment.Application.Services;
@@ -50,7 +51,7 @@ public sealed class PortfolioAssetSummaryService : IPortfolioAssetSummaryService
                 return [];
             }
 
-            var result = PortfolioAssetSummaryBuilder.Build(assets, _timeProvider.GetLocalNow().Date, scope, _holdingValuationService);
+            var result = PortfolioAssetSummaryBuilder.Build(assets, _timeProvider.GetLocalDate(), scope, _holdingValuationService);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetPortfolioAssetsSummary");

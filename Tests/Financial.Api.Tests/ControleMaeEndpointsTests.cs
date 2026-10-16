@@ -1,5 +1,4 @@
 using Financial.CashFlow.Application.DTOs;
-using Financial.Shared.Abstractions.Currencies;
 using FluentAssertions;
 using System.Net;
 using System.Net.Http.Json;
@@ -203,18 +202,5 @@ public class ControleMaeEndpointsTests() : ApiEndpointTests(new StubExchangeRate
         var response = await Client.DeleteAsync($"/api/v1/financial/controle-mae/entries/{Guid.NewGuid()}");
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
-    }
-
-    private sealed class StubExchangeRateProvider : IExchangeRateProvider
-    {
-        private readonly decimal? _rate;
-
-        public StubExchangeRateProvider(decimal? rate)
-        {
-            _rate = rate;
-        }
-
-        public Task<decimal?> GetHistoricalRateAsync(DateOnly date, Currency from, Currency to) =>
-            Task.FromResult(_rate);
     }
 }
