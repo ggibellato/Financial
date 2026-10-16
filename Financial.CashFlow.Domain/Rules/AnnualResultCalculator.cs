@@ -1,4 +1,3 @@
-using System.Linq;
 using Financial.CashFlow.Domain.ValueObjects;
 
 namespace Financial.CashFlow.Domain.Rules;
@@ -14,7 +13,6 @@ public static class AnnualResultCalculator
         salaryAfterTaxes - totalDespesas + investimentoCategoryValue;
 
     public static MonthlySeries ComputeResultado(MonthlySeries salaryAfterTaxes, MonthlySeries totalDespesas, MonthlySeries investimento) =>
-        MonthlySeries.FromMonthlyValues(Enumerable.Range(0, MonthlySeries.MonthsInYear)
-            .Select(month => ComputeResultado(salaryAfterTaxes[month], totalDespesas[month], investimento[month]))
-            .ToArray());
+        MonthlySeries.FromMonths(month =>
+            ComputeResultado(salaryAfterTaxes[month - 1], totalDespesas[month - 1], investimento[month - 1]));
 }

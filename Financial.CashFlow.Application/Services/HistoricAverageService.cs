@@ -14,7 +14,6 @@ namespace Financial.CashFlow.Application.Services;
 
 public sealed class HistoricAverageService : IHistoricAverageService
 {
-    private const int MonthsInYear = 12;
     public const int AverageDecimalPlaces = 2;
     private const string EntityType = "AnnualSummary";
 
@@ -240,12 +239,8 @@ public sealed class HistoricAverageService : IHistoricAverageService
 
                 return yearGroup.Value.Select(group =>
                 {
-                    var grossSeries = MonthlySeries.FromMonthlyValues(Enumerable.Range(1, MonthsInYear)
-                        .Select(month => sumsByYearMonthGroup.GetValueOrDefault((yearGroup.Key, month, group)).Gross)
-                        .ToArray());
-                    var netSeries = MonthlySeries.FromMonthlyValues(Enumerable.Range(1, MonthsInYear)
-                        .Select(month => sumsByYearMonthGroup.GetValueOrDefault((yearGroup.Key, month, group)).Net)
-                        .ToArray());
+                    var grossSeries = MonthlySeries.FromMonths(month => sumsByYearMonthGroup.GetValueOrDefault((yearGroup.Key, month, group)).Gross);
+                    var netSeries = MonthlySeries.FromMonths(month => sumsByYearMonthGroup.GetValueOrDefault((yearGroup.Key, month, group)).Net);
 
                     return new IncomeGroupValueDTO
                     {
@@ -283,9 +278,7 @@ public sealed class HistoricAverageService : IHistoricAverageService
 
             var annualAverages = yearGroup.Value.Select(categoryId =>
             {
-                var series = MonthlySeries.FromMonthlyValues(Enumerable.Range(1, MonthsInYear)
-                    .Select(month => sumByYearMonthCategory.GetValueOrDefault((yearGroup.Key, month, categoryId)))
-                    .ToArray());
+                var series = MonthlySeries.FromMonths(month => sumByYearMonthCategory.GetValueOrDefault((yearGroup.Key, month, categoryId)));
 
                 return new CategoryAverageDTO
                 {
