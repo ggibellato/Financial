@@ -29,10 +29,7 @@ This file reflects the corrected state after human review — see "Corrections a
 **CONFIRMED**:
 
 - `Financial.Api` — ASP.NET Core, serves REST API under `/api/v1/financial` and hosts the built React SPA (`MapFallbackToFile`) — single deployed process in Docker.
-- `Financial.App` — WPF desktop client, and a **client for both bounded contexts**, not Investment-only. `Financial.App/Views/CashFlow/` and `Financial.App/ViewModels/CashFlow/` contain a full parallel implementation (banks, cards, reserve, controle mãe, annual summary, bills, income splits, transfers, etc.), alongside the Investment-side UI.
-- `Financial.Web` — React + TypeScript SPA (Vite), not part of the `.slnx`. Has both Investment pages (`ActiveInvestmentsPage`, `AnnualSummaryPage`, `PortfolioSummaryTab`, etc.) and CashFlow-only pages (`MonthlyPage`, `ReservaPage`, `ControleMaePage`, `MensaisPage`).
-
-Note: `context.md` previously stated CashFlow was "Implemented as React pages only... not available in the WPF app." That line was stale/incorrect — contradicted directly by the repository — and has since been removed from `context.md`.
+- `Financial.Web` — React + TypeScript SPA (Vite), not part of the `.slnx`, and the only front end (ADR-002 removed the desktop client). Has both Investment pages (`ActiveInvestmentsPage`, `AnnualSummaryPage`, `PortfolioSummaryTab`, etc.) and CashFlow-only pages (`MonthlyPage`, `ReservaPage`, `ControleMaePage`, `MensaisPage`).
 
 ## Integrations & Tools
 
@@ -45,7 +42,7 @@ A set of orphaned directories was found during this pass and has since been remo
 
 ## Tests
 
-**CONFIRMED** — One test project per layer per context (`Financial.CashFlow.Domain.Tests`, `.Application.Tests`, `.Infrastructure.Tests`, same for Investment), plus `Financial.Api.Tests`, `Financial.Presentation.Tests`, `Financial.Architecture.Tests` (layer-boundary enforcement), `Financial.Shared.Infrastructure.Tests`, `Financial.CashFlowSpreadsheetImport.Tests`, and a shared `Financial.TestUtilities` project.
+**CONFIRMED** — One test project per layer per context (`Financial.CashFlow.Domain.Tests`, `.Application.Tests`, `.Infrastructure.Tests`, same for Investment), plus `Financial.Api.Tests`, `Financial.Architecture.Tests` (layer-boundary enforcement), `Financial.Shared.Infrastructure.Tests`, `Financial.CashFlowSpreadsheetImport.Tests`, and a shared `Financial.TestUtilities` project.
 
 The four orphaned test folders corresponding to the removed migration tools (`Financial.CashFlowBankMigration.Tests`, `.CashFlowBankOpeningBalanceMigration.Tests`, `.CashFlowIncomeMigration.Tests`, `.CashFlowPaymentStateMigration.Tests`) were likewise not referenced in `.slnx` and have since been removed.
 
@@ -65,7 +62,7 @@ The four orphaned test folders corresponding to the removed migration tools (`Fi
 
 ## Documentation
 
-**CONFIRMED** — `context.md` (domain/feature narrative source of truth), `README.md` (setup/config), `docs/prd/P01`–`P33` (33 sequential PRD folders, one per shipped feature — evidence of an existing informal spec-driven history predating this SDD initiative), `docs/rules/` (design + implementation rules), `dev-util/ai/level-web-front-end.md` (WPF-as-source-of-truth parity doc) + `wpf-screenshots`.
+**CONFIRMED** — `context.md` (domain/feature narrative source of truth), `README.md` (setup/config), `docs/prd/P01`–`P33` (33 sequential PRD folders, one per shipped feature — evidence of an existing informal spec-driven history predating this SDD initiative), `docs/rules/` (design + implementation rules).
 
 ## SDD scaffolding already present
 

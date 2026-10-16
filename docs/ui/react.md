@@ -2,7 +2,7 @@
 
 ## React UX authority
 
-`Financial.Web` is the UX source of truth for cross-platform workflows.
+`Financial.Web` is the only front end and the UX source of truth.
 
 React defines the intended:
 
@@ -20,7 +20,7 @@ React defines the intended:
 Before changing a React workflow, verify it against product/domain rules,
 accessibility requirements, Fluent 2 principles, and the UX principles in this
 directory. Current React behavior is not automatically correct merely because it
-is the reference.
+exists.
 
 ## Component system
 
@@ -103,7 +103,7 @@ grid; do not opt one column into wrapping to "fit more."
 
 ### Mobile scrolling
 
-`Financial.Web` pages are designed against the WPF desktop experience first,
+`Financial.Web` pages are designed for a wide desktop viewport first,
 so on a small screen — including landscape phone widths — not everything
 fits without scrolling. That is expected, not a bug to design away:
 

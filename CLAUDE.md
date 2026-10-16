@@ -11,16 +11,15 @@ Financial.Investment.{Domain,Application,Infrastructure}   Investment bounded co
 Financial.CashFlow.{Domain,Application,Infrastructure}     CashFlow bounded context
 Financial.Shared.Infrastructure                             JSON/Google Drive storage primitives shared by both contexts
 Financial.Api                                                ASP.NET Core, serves REST API + hosts the built SPA
-Financial.App                                                WPF desktop client
 Financial.Web                                                React + TypeScript SPA, separate from the .slnx
 Integrations/       GoogleCore, GoogleDrive, GoogleSheets, Observability, WebPageParser (vendor SDKs, no bounded-context types)
 Tools/              CashFlowSpreadsheetImport, ImportGoogleSpreadSheets, InvestmentSpreadsheetImport
 Tests/              One test project per Domain/Application/Infrastructure/Presentation project
 ```
 
-Dependency direction is strict: Domain has no dependencies; Application depends on Domain; Infrastructure depends on Application; Presentation (Api/App) composes both bounded contexts' Application + Infrastructure. Each layer registers itself into DI via an `Add<Context><Layer>()` extension method (e.g. `AddFinancialCashFlowApplication`, `AddFinancialInfrastructure`) called from `Financial.Api/Program.cs`. The `.claude/agents/architecture-reviewer.md` agent enforces Clean Architecture/DDD/SOLID on every change — expect layer-violation pushback if a Domain or Application project reaches into Infrastructure.
+Dependency direction is strict: Domain has no dependencies; Application depends on Domain; Infrastructure depends on Application; Presentation (Api) composes both bounded contexts' Application + Infrastructure. Each layer registers itself into DI via an `Add<Context><Layer>()` extension method (e.g. `AddFinancialCashFlowApplication`, `AddFinancialInfrastructure`) called from `Financial.Api/Program.cs`. The `.claude/agents/architecture-reviewer.md` agent enforces Clean Architecture/DDD/SOLID on every change — expect layer-violation pushback if a Domain or Application project reaches into Infrastructure.
 
-`Financial.Api` both serves the JSON API under `/api/v1/financial` and hosts the compiled React SPA from `wwwroot` (`MapFallbackToFile("index.html")`), so in production there is a single deployed process. `Financial.App` (WPF) and `Financial.Web` (React) are two independent front ends built against the same API and are expected to stay at feature parity — the WPF app is treated as the UX source of truth (see `dev-util/ai/level-web-front-end.md`).
+`Financial.Api` both serves the JSON API under `/api/v1/financial` and hosts the compiled React SPA from `wwwroot` (`MapFallbackToFile("index.html")`), so in production there is a single deployed process. `Financial.Web` (React) is the only front end and talks to the backend solely through this API.
 
 ## Persistence model
 
@@ -28,21 +27,20 @@ Both bounded contexts read/write a single JSON document each (`data-investment.j
 
 ## Common commands
 
-### .NET (API, WPF app, Integrations, all tests)
+### .NET (API, Integrations, Tools, all tests)
 
 ```
 dotnet restore
 dotnet build --configuration Release
 dotnet test                                    # run all test projects
 dotnet test Tests/Financial.CashFlow.Domain.Tests   # run a single test project
-dotnet test Tests/Financial.App.E2ETests --filter "Category=Smoke"   # WPF UI-automation smoke: launches the built app on a Windows desktop
 dotnet test --filter "FullyQualifiedName~ExpenseTests.Should_Reject_Negative_Value"  # single test
 dotnet test --filter "Category=Unit"           # by level: Unit | Integration | Live (Live hits real sites and never runs on a PR)
 ```
 
 Tests use **xUnit** + **FluentAssertions**.
 
-Coverage is collected on every CI run; `backend`, `wpf`, and `web` each publish their own
+Coverage is collected on every CI run; `backend` and `web` each publish their own
 coverage table to the workflow run's step summary (`.github/workflows/build.yml`, each job's
 `Publish coverage summary` step) and post one combined sticky PR comment (the
 `coverage-comment` job) — a row per project with its line and branch coverage %, each behind a
@@ -54,7 +52,7 @@ coverage` collector; passing `--settings` is what turns collection on, so there 
 dotnet test --settings coverlet.runsettings --results-directory TestResults
 ```
 
-All three jobs share one step, `.github/actions/coverage-gate` (a local composite action): it
+Both jobs share one step, `.github/actions/coverage-gate` (a local composite action): it
 reads a `reportgenerator` `Summary.json`'s `summary.linecoverage` and `summary.branchcoverage`
 and shows each behind the same traffic-light icon (green ≥90%, yellow ≥85%, amber ≥80%, red
 below); the icon is only a visual cue. The step fails when line coverage is below 90%, and when
@@ -63,29 +61,16 @@ line **or** branch coverage drops more than 0.5 points below the job's entry in
 refreshed with `.github/scripts/coverage-baseline.ps1` from a green `main` run's reports, never by
 hand; see `docs/ci-affected-pipeline.md`. `web` runs
 `reportgenerator` against the `lcov` report vitest's `coverage.reporter` also produces
-(`Financial.Web/vite.config.ts`), so all three jobs' gates read the identical report shape.
+(`Financial.Web/vite.config.ts`), so both jobs' gates read the identical report shape.
 `coverage.exclude` there also drops the test-support folders `src/test/**` and `src/test-utils/**`,
 so the web number measures product code only.
 **The 90% line tripwire is enforced**: a red line result fails its job, which fails `ci-status` — the sole
 required check — and blocks merge.
 
-`coverlet.runsettings`' `<Exclude>` is what keeps the % meaningful: besides non-app assemblies
-(test fixtures, vendor wrappers, rarely-run migration tools), it excludes
-`Financial.Presentation.App`'s XAML view/component/control code-behind and a handful of thin
-visual-tree/dialog classes the `testing-guide-Financial` skill already documents as tested via
-contract + manual verification, never unit tests — see the file's own comments for the full
-list and rationale.
-
-`backend`'s and `wpf`'s reports are assembly-filtered so each measures only its own code:
-`Financial.Architecture.Tests` project-references `Financial.App` (to check its dependency
-rules) and `Financial.Presentation.Tests` loads the backend assemblies `Financial.App`
-composes, so without filtering, each job's Cobertura output would include the other's
-assemblies at whatever near-zero % incidental (non-behavioral) loading leaves them at,
-silently distorting both numbers. `backend`'s `Publish coverage summary` step passes
-`-assemblyfilters:+*;-Financial.Presentation.App` (exclude the WPF assembly, keep
-everything else); `wpf`'s passes `-assemblyfilters:+Financial.Presentation.App` (keep only
-the WPF assembly). Neither touches `coverlet.runsettings` — collection is unchanged;
-only each job's own report aggregation is scoped.
+`coverlet.runsettings`' `<Exclude>` is what keeps the % meaningful: it excludes non-app
+assemblies (test fixtures, vendor wrappers, rarely-run migration and diagnostic tools) — see
+the file's own comments for the full list and rationale. `backend`'s `Publish coverage summary`
+step aggregates every remaining assembly (`-assemblyfilters:+*`).
 
 The public API's shape is pinned by a committed OpenAPI snapshot
 (`Tests/Financial.Api.Tests/Contract/openapi-v1.snapshot.json`, asserted by `OpenApiContractTests`).
@@ -118,8 +103,7 @@ hand-written above the aliases. `src/api/generated/__tests__/openapiFreshness.te
 `npm test`) fails if the committed generated file drifts from the snapshot, so forgetting this step is
 caught in the same PR rather than at runtime. From there, `tsc -b` (part of `npm run build`, already in
 the `web` CI job) is what actually tells you what to fix in the app: renaming or removing a field is a
-type error at every call site that reads it, naming file:line, the same way the C# compiler does for
-`Financial.App`.
+type error at every call site that reads it, naming file:line.
 
 Run the API locally (serves API only, expects the SPA dev server separately):
 ```
@@ -155,8 +139,8 @@ Builds the React SPA and the API into a single image (`Dockerfile`), API serves 
 ## CI
 
 `.github/workflows/build.yml` runs only the jobs a change can affect: a `changes` job classifies the
-diff with `.github/scripts/detect-changes.sh`, then `backend` (Windows, API build + all non-WPF tests
-with coverage), `wpf` (Windows), `wpf-e2e` (`windows-latest`; launches the built WPF app and drives it with FlaUI), `web` (Ubuntu lint+test+build) and `web-e2e` (publishes the full app
+diff with `.github/scripts/detect-changes.sh`, then `backend` (Windows, API build + all non-E2E, non-Live
+tests with coverage), `web` (Ubuntu lint+test+build) and `web-e2e` (publishes the full app
 against seeded test JSON and runs the Playwright smoke specs) run conditionally. Docs-only changes run
 nothing; unknown paths or a missing base commit run everything, and every push to `main` always runs the
 full pipeline. On pull requests `changes` also scans the added lines for test-hygiene violations
@@ -209,17 +193,14 @@ These bind at every stage — discovery, design, implementation, review. Everyth
 
 ## UI / UX invariants
 
-These bind whenever a change affects `Financial.Web`, `Financial.App`, shared
-presentation components, user-facing API error/validation contracts, or a
-workflow visible in either front end.
+These bind whenever a change affects `Financial.Web`, shared presentation
+components, user-facing API error/validation contracts, or a user-visible
+workflow.
 
-1. **React-led UX with equivalent WPF outcomes.** `Financial.Web` (React) is
-   the UX source of truth. Define, validate, and improve intended user workflows
-   in React first. `Financial.App` (WPF) must provide equivalent user tasks,
-   terminology, information hierarchy, field order, validation, action priority,
-   status meaning, financial formatting, and outcomes. Equivalent does not mean
-   identical controls, markup, or desktop interaction mechanics. Platform-native
-   adaptation is allowed only when it preserves workflow meaning and usability.
+1. **One React front end.** `Financial.Web` (React) is the only front end
+   (ADR-002, `docs/decisions/ADR-002-remove-wpf-front-end.md`). Define,
+   validate, and improve every user workflow there; do not plan or build a
+   second client.
 
 2. **Standards stack.** Use Microsoft Fluent 2 as the primary visual and
    component design system; WCAG 2.2 AA as the accessibility baseline where
@@ -233,9 +214,9 @@ workflow visible in either front end.
    loss, make loading/saving/errors visible, keep financial values and totals
    unambiguous, and support dense data views without sacrificing readability.
 
-4. **No competing UI systems.** Reuse established React and WPF components,
-   themes, tokens, and resource systems. Do not add Material, Bootstrap, Ant
-   Design, Carbon, another WPF UI framework, or another styling system without
+4. **No competing UI systems.** Reuse established React components, themes,
+   tokens, and resource systems. Do not add Material, Bootstrap, Ant
+   Design, Carbon, another UI framework, or another styling system without
    explicit approval and an ADR.
 
 5. **Mandatory state design.** Every applicable user-facing change defines

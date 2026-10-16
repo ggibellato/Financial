@@ -29,9 +29,8 @@
   `StubInvestmentRepository` (in-memory lists, no I/O) + `RecordingTelemetryTracer` +
   `NullLogger<T>` or `RecordingLogger<T>`. The stub repository is a hand-written owned double
   used only because the real one is file-bound — that is the Unit layer's job.
-- **Integration**: the same service wired for real inside the API host (`ApiEndpointTests`) or
-  the WPF composition (`AddFinancialCashFlowApplication` + `AddFinancialCashFlowInfrastructure`
-  on a temp file). Every feature's AC-tracing tests live here
+- **Integration**: the same service wired for real inside the API host (`ApiEndpointTests`).
+  Every feature's AC-tracing tests live here
   (`../references/feature-traceability.md`); a service change that alters a §9 criterion needs
   that test updated, not just the Unit suite.
 - **No E2E of its own**; a critical journey through the SPA is covered in

@@ -155,7 +155,6 @@ export default function MoveAssetDialog({
 
       onMoved(moved, archiveToHistoric)
     } catch (err: unknown) {
-      // The reason comes from the domain, so this reads the same as the desktop app.
       setError(getErrorMessage(err, 'The asset could not be moved.'))
       setIsSaving(false)
     }

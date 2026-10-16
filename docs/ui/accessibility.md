@@ -4,9 +4,6 @@
 
 Meet WCAG 2.2 AA where applicable.
 
-Apply equivalent accessibility outcomes in React and WPF even where their
-technical mechanisms differ.
-
 ## Keyboard and focus
 
 All interactive UI must be keyboard operable.
@@ -23,21 +20,11 @@ Required behavior:
 
 ## Semantics and accessible names
 
-### React
-
 - Use native semantic HTML first.
 - Associate labels with inputs.
 - Use logical heading levels.
 - Use ARIA only where native semantics are insufficient.
 - Announce relevant asynchronous status changes.
-
-### WPF
-
-- Preserve UI Automation support.
-- Use `AutomationProperties.Name`, help text, and related properties where
-  control purpose is not evident.
-- Ensure logical tab navigation.
-- Ensure validation state and messages are discoverable by assistive technology.
 
 ## Visual accessibility
 
@@ -57,13 +44,6 @@ Web must remain usable at:
 - 200% text scaling
 - 400% browser zoom
 - 320px effective viewport width
-
-WPF must remain usable with:
-
-- High DPI
-- Increased system text scaling
-- Narrower application windows
-- High-contrast settings where supported
 
 ## Forms and errors
 

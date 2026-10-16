@@ -1,24 +1,23 @@
 <!--
 Sync Impact Report
-- Version change: 1.0.0 → 1.1.0
-- Rationale: MINOR because two new principles were added (materially expanded governance)
-  without removing or redefining any existing principle.
-- Modified principles: none
-- Added principles:
-  - VII. Incremental Vertical Delivery
-  - VIII. Production Deployability After Every Merge
-- Added sections: none (existing "Development Workflow & Definition of Done" section updated in
-  place to cross-reference the two new principles, not added as a new section)
+- Version change: 1.1.0 → 2.0.0
+- Rationale: MAJOR because Principle III is redefined: ADR-002 removed the WPF front end, so
+  WPF/Web feature parity becomes a single React front end.
+- Modified principles:
+  - III. WPF/Web Feature Parity, WPF as UX Source of Truth → III. Single React Front End
+- Added principles: none
+- Added sections: none
 - Removed sections: none
+- Other edits: references to the removed desktop client dropped from Principle I (Presentation), Principle V (test
+  examples), Principles VI/VII (slice order is now Domain → Application → Infrastructure → API →
+  Web → tests) and Technology & Persistence Constraints (stack, write coordination).
 - Templates requiring updates:
   - .specify/templates/plan-template.md — ✅ verified: its "Constitution Check" section is a
-    generic placeholder (`[Gates determined based on constitution file]`), filled in dynamically
-    per plan from whatever this file currently says. Does not hardcode principle names; no
-    update needed.
+    generic placeholder, filled in per plan from this file; no principle names hardcoded.
   - .specify/templates/spec-template.md — ✅ verified: no reference to the constitution at all.
   - .specify/templates/tasks-template.md — ✅ verified: no reference to the constitution at all.
-  - CLAUDE.md — ✅ updated in the same change to add matching Incremental Vertical Delivery and
-    Production Deployability rules, so runtime AI guidance stays consistent with this document.
+  - CLAUDE.md — ✅ updated in the same change (UI / UX invariant 1 rewritten for one React
+    front end).
 - Follow-up TODOs: none.
 -->
 
@@ -39,7 +38,7 @@ Presentation composing both. Dependency direction is one-way and non-negotiable:
   for persistence primitives). It contains repository implementations, external API clients, and
   file-system access, and MUST depend on abstractions defined by Domain/Application, not the
   reverse.
-- Presentation (`Financial.Api`, `Financial.App`) composes Application + Infrastructure for both
+- Presentation (`Financial.Api`) composes Application + Infrastructure for both
   bounded contexts and MUST NOT contain business logic.
 
 This ordering is mechanically checked by `Financial.Architecture.Tests` for the inward edges
@@ -71,24 +70,20 @@ capability of its own).
 an accident of folder layout. It keeps each domain's rules simple and prevents one context's
 migrations, storage provider, or schema changes from ever forcing a change in the other.
 
-### III. WPF/Web Feature Parity, WPF as UX Source of Truth
+### III. Single React Front End
 
-`Financial.App` (WPF) is the UX source of truth. `Financial.Web` (React) is expected to reach
-and maintain feature parity with it for both bounded contexts. A feature is not "done" if it
-ships in only one of the two front ends without an explicit, recorded reason (e.g. a confirmed,
-scoped gap — see `docs/discovery-development-status.md`'s Credits Analysis WPF gap as the
-canonical example of what an *unresolved* parity gap looks like, not a template to repeat).
+`Financial.Web` (React) is the only front end, for both bounded contexts (ADR-002,
+`docs/decisions/ADR-002-remove-wpf-front-end.md`). It reaches the backend only through
+`Financial.Api`. A feature is not "done" until its workflow is usable in `Financial.Web`, and
+contributors MUST NOT add a second client without a new ADR.
 
-`Financial.App` hosts both contexts' Application/Infrastructure layers in-process; it is not an
-HTTP client of `Financial.Api`. Changes to Application-layer contracts MUST be evaluated for
-impact on both the API surface consumed by `Financial.Web` and the direct in-process usage in
-`Financial.App`.
+Changes to Application-layer contracts MUST be evaluated for impact on the API surface consumed
+by `Financial.Web`, because Application DTOs are the wire format (see Technology & Persistence
+Constraints).
 
 **Rationale**: this project exists to replace a personal spreadsheet workflow end to end; a
-feature the user can only reach from one client isn't finished, and the architectural asymmetry
-between the two front ends (documented in `docs/baseline/04-wpf-app.md` and
-`docs/baseline/02-architecture.md`) is easy to forget mid-implementation if it isn't stated as a
-governing rule.
+feature the user cannot reach from the browser isn't finished. One front end means every UI
+change is built, tested and reviewed once.
 
 ### IV. Right-Sized Engineering for a Single-User Tool
 
@@ -111,7 +106,7 @@ responsibility and YAGNI spirit, not an exception to it.
 ### V. Test-Backed Changes
 
 No feature is complete without tests. Every new feature MUST include unit tests, and integration
-tests where applicable (API round-trip tests via `WebApplicationFactory`, WPF ViewModel tests,
+tests where applicable (API round-trip tests via `WebApplicationFactory`,
 Web component/hook tests as appropriate to the layer touched). Existing test conventions MUST be
 followed rather than introduced ad hoc:
 
@@ -142,7 +137,7 @@ already established in `docs/baseline/` and `docs/discovery-*.md`.
 
 New features SHOULD be preceded by a PRD/spec (`docs/prd/P<NN>-...`) before implementation,
 following the vertical-slice-per-PR pattern already in use (Domain → Application →
-Infrastructure → API → WPF → Web → tests, one PR per slice). Acceptance-criteria checkboxes in a
+Infrastructure → API → Web → tests, one PR per slice). Acceptance-criteria checkboxes in a
 PRD MUST be checked off as their corresponding work lands, not left permanently unchecked or
 batch-checked after the fact without verification.
 
@@ -168,7 +163,7 @@ MUST identify the scope, dependencies, acceptance criteria, and review boundary 
 increment before work on it begins.
 
 **Rationale**: this formalizes the vertical-slice-per-PR pattern already named in Principle VI
-(Domain → Application → Infrastructure → API → WPF → Web → tests, one PR per slice) as a hard
+(Domain → Application → Infrastructure → API → Web → tests, one PR per slice) as a hard
 requirement rather than a stated preference. Scaffolding-only or disconnected-infrastructure PRs
 are hard to review meaningfully and hard to verify — a reviewer can't exercise code that isn't
 wired up, so defects hide until a later PR "connects" several unverified increments at once.
@@ -203,14 +198,13 @@ visible in the PR rather than assumed from "CI is green."
 
 ## Technology & Persistence Constraints
 
-- **Stack**: .NET 10 (API, WPF app, Integrations/Tools, all backend tests — xUnit +
+- **Stack**: .NET 10 (API, Integrations/Tools, all backend tests — xUnit +
   FluentAssertions), React + TypeScript + Vite (`Financial.Web`).
 - **Persistence**: no relational database. Each bounded context persists to exactly one JSON
   document, loaded once at process startup and held in memory for the process lifetime. Any
   change to a data file (migration, manual edit) requires restarting every process that reads it
   — restarting alone never runs a migration. Writes are full-document rewrites; there is no
-  file locking or cross-process write coordination between `Financial.Api` and `Financial.App`
-  today, so changes that assume otherwise MUST NOT be made without first addressing that gap
+  file locking or cross-process write coordination, so changes that assume otherwise MUST NOT be made without first addressing that gap
   explicitly.
 - **Storage providers**: `LocalJson` (default) or `GoogleDrive`, selected independently per
   bounded context. Never run import/migration tools against the live data file — verify against a
@@ -270,4 +264,4 @@ directly hand-editing this file outside that workflow.
 every change and MUST be treated as the automated first pass of that review, not a substitute for
 human judgment on scope (Principle IV) or spec fidelity (Principle VI).
 
-**Version**: 1.1.0 | **Ratified**: 2026-08-17 | **Last Amended**: 2026-08-17
+**Version**: 2.0.0 | **Ratified**: 2026-08-17 | **Last Amended**: 2026-10-16

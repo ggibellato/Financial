@@ -92,7 +92,7 @@
 }
 
 /* Outcome of a mark/unmark action, shown above the cards grid so it sits next to the buttons that
-   produced it - the same placement CardsGridView.xaml uses in the WPF app. */
+   produced it. */
 .monthly-page__action-error {
   margin: 0 0 8px;
   padding: 8px 12px;

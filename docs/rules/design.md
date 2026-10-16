@@ -20,7 +20,7 @@ Every feature is a sequence of small, independently reviewable increments.
 - Each increment delivers a complete working slice, or a working compatibility boundary — never scaffolding, placeholders, disconnected infrastructure, or code that cannot be exercised or verified on its own.
 - Each increment carries its own implementation, configuration, tests and documentation, so it is usable and reviewable by itself.
 - Identify the scope, dependencies, acceptance criteria and review boundary of every increment **before** implementation starts.
-- The established shape is one vertical slice per PR, in this order: Domain → Application → Infrastructure → API → WPF → Web → tests.
+- The established shape is one vertical slice per PR, in this order: Domain → Application → Infrastructure → API → Web → tests.
 
 This is a hard requirement, not a preference.
 

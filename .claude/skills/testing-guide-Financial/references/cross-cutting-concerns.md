@@ -11,7 +11,7 @@ pattern or an explicit "not applicable".
   `CategorySummaryService`, `HistoricAverageService`, `IncomeSummaryService`,
   `InvestmentAnnualResultService`, and `DebouncedJsonStorage(IJsonStorage inner, TimeSpan debounceWindow, TimeProvider? timeProvider = null, …)`;
   registered in `CashFlowApplicationServiceCollectionExtensions`. Web: the banner auto-dismiss
-  timer in `usePaymentsDue`; WPF: `TodayInfoTracker`.
+  timer in `usePaymentsDue`.
 - **Unit**: `new FakeTimeProvider(new DateTimeOffset(2026, 9, 10, 9, 0, 0, TimeSpan.Zero))` or
   `TestClock.At(TestClock.EndOfJanuary)` (`Tests/Financial.TestUtilities/TestClock.cs`, London zone) — assert the exact
   fire boundary (due in 5 days included, 6 excluded; clamped `DueDay` in February).
@@ -22,7 +22,7 @@ pattern or an explicit "not applicable".
   `TimeProvider` via `RemoveAll<TimeProvider>()`.
 - **Web**: `vi.useFakeTimers({ shouldAdvanceTime: true })` + `vi.advanceTimersByTimeAsync(PAYMENT_DUE_BANNER_DISMISS_MS)`
   (`usePaymentsDue.test.ts`); `vi.setSystemTime` for `currentYearMonth` in `formatters.test.ts`.
-- **Concurrency**: `ThreadPoolWarmup.cs` for WPF fire-and-forget; `DebouncedJsonStorage`'s
+- **Concurrency**: `DebouncedJsonStorage`'s
   in-flight/follow-up cycle is the one real concurrent-writer scenario and is tested with
   `ControllableJsonStorage.HoldWritesUntilReleased()`. Never `Task.Delay`/`Thread.Sleep` in a
   test; poll a monotonic counter.
@@ -40,8 +40,6 @@ pattern or an explicit "not applicable".
 - **Web, Integration (page)**: `MonthlyPage.test.tsx` (`shows a loading state before data arrives`,
   `shows an error state with retry when the fetch fails`, `closes an open create form when switching tabs away and back`,
   `does not unmark a paid statement when the user cancels the confirmation`), `BanksPage.test.tsx`.
-- **WPF, Unit**: ViewModel `IsSaving`/`IsLoading`/error properties and `*FormValidation`
-  classes; parity with the React matrix is the acceptance bar (`docs/rules/ui.md` §1).
 - **E2E**: no full state-transition journey yet — add with the smoke failure journey
   (`negative-path-testing.md`).
 - **Rule for new views**: one test per applicable state, named for the state, before the
@@ -50,16 +48,12 @@ pattern or an explicit "not applicable".
 ## 3. Accessibility — covered at Unit; E2E keyboard journey missing
 
 - **Standard**: `docs/ui/accessibility.md` (WCAG 2.2 AA; keyboard operable; visible focus;
-  accessible names for icon-only controls; no colour-only status; WPF `AutomationProperties`).
+  accessible names for icon-only controls; no colour-only status).
 - **Web, Unit/component**: query by role and accessible name (`getByRole('navigation', { name: 'Main' })`,
   `getByRole('button', { name: 'Collapse sidebar' })`, `getByLabelText(/Due today.*urgent/)`);
   keyboard operability (`PaymentDueBanner.test.tsx: close_button_is_keyboard_operable` —
   `await user.tab(); await user.keyboard('{Enter}')`); `toHaveFocus` used once. Colour-only
   meaning is refuted by asserting the text/icon label alongside the tier.
-- **WPF**: no automated `AutomationProperties` assertions today; the XAML-parsing pattern in
-  `../artifacts/wpf-views-and-xaml.md` can assert `AutomationProperties.Name` presence per
-  icon-only button (`Financial.App` uses `AutomationProperties.Name` 178 times, `HelpText` 35,
-  `LiveSetting` 12). Those names are what a future UI-automation harness would drive.
 - **E2E**: no keyboard-only completion of a critical workflow — required by the fundamentals;
   add to the `web-e2e` specs (Tab/Enter through "add expense").
 - jsdom limits: focus order and visible focus rings are not trustworthy — assert handlers and
@@ -87,7 +81,6 @@ pattern or an explicit "not applicable".
   `SharedInfrastructureIsolationRuleTests`, `ObservabilityIsolationRuleTests` — reflection over
   the real compiled assemblies through `Infrastructure/ProjectAssembly.cs`.
 - Web structural agreement: `src/navigation/__tests__/routes.test.ts` (sidebar ↔ router).
-- WPF: `ExpenseGridBindingTests` (XAML ↔ DTO) is a structural rule over the source tree.
 - Layer: Integration. Recipe and the "make it fail once" rule: `../artifacts/architecture-rule-tests.md`.
 
 ## 6. Test-data contract tests — covered
@@ -105,5 +98,4 @@ pattern or an explicit "not applicable".
 
 `Financial.Web`'s hook/component/page tests replace `financialApiClient` with `vi.mock`; its
 client tests replace `fetch`. This is the fundamentals' exception for a separate deployable
-reached over HTTP, not a boundary violation — see `mock-health-rules.md`. `Financial.App`
-does not qualify (in-process composition).
+reached over HTTP, not a boundary violation — see `mock-health-rules.md`.

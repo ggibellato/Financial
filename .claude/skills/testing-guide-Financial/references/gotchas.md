@@ -25,14 +25,10 @@
   when `WriteAsync` returns. Advancing `FakeTimeProvider` before that moves the clock past a
   timer that does not exist yet and the test hangs. Wait on `ObservableFakeClock.TimersArmed`
   (a monotonic counter) before `Advance` — the reason that class exists.
-- **2-core CI runners starve fire-and-forget `Task.Run` tests**: `ThreadPoolWarmup.cs`
-  (`[ModuleInitializer]`) raises `ThreadPool.SetMinThreads` to 32 in `Financial.Presentation.Tests`.
-  Do not add `Thread.Sleep`/`Task.Delay` to "fix" a timeout; wait on a condition.
-- **`Financial.Architecture.Tests` and `Financial.Presentation.Tests` are `net10.0-windows`** —
-  they do not run on the Ubuntu jobs; `backend` filters `FullyQualifiedName!~Financial.Presentation.Tests`
-  and the `wpf` job runs both.
+- **2-core CI runners starve fire-and-forget `Task.Run` tests** — do not add
+  `Thread.Sleep`/`Task.Delay` to "fix" a timeout; wait on a condition.
 - **`InternalsVisibleTo`**: `Financial.Api` exposes internals to `Financial.Api.Tests`,
-  `Financial.App` to `Financial.Presentation.Tests` — a new test project name must be added to
+  `Observability` to `Financial.Observability.Tests` — a new test project name must be added to
   the csproj or internal classes (`ApiTestFactory`, middleware) will not compile.
 - **`[MemberData("Name")]` strings break silently on rename** — always `nameof(...)`
   (`SharedInfrastructureIsolationRuleTests.IsolatedProjects`).
@@ -48,12 +44,6 @@
   branching, capture the `HttpRequestMessage` in the responder and assert it.
 - **`UnsupportedAssetClassException` first-chance noise** in the debugger for two unpriceable
   holdings is known and handled (maps to 422); not a test failure.
-- **WPF `Run.Text` bindings** default to TwoWay and crash on private setters — never
-  `<Run Text="{Binding …}"/>`; use `TextBlock` + `StringFormat`. A regex test over `Views/**`
-  is the cheap guard.
-- **Select through `TreeNodeViewModel.IsSelected`, not `SelectedNode = …`** — a directly
-  assigned selection bypassed command re-evaluation and shipped a permanently disabled button
-  through 743 green tests.
 - **`rg` is not on PATH on this machine** (the `rtk` hook reports "Binary 'rg' not found") —
   audit commands in this guide use `grep -rnE`.
 

@@ -4,7 +4,7 @@
 
 `CashFlowSpreadsheetImport` is the one consolidated migration/import command (five earlier
 tools merged, `project_cashflow_migrations_consolidated`); `InvestmentSpreadsheetImport`
-reads asset metadata from Google Sheets. `Tools/ImportGoogleSpreadSheets` (WPF GUI) is out of
+reads asset metadata from Google Sheets. `Tools/ImportGoogleSpreadSheets` (legacy WPF GUI) is out of
 scope by decision (2026-09-06). Both tested tools are excluded from the coverage gate in
 `coverlet.runsettings`, but not from the requirement to be tested.
 

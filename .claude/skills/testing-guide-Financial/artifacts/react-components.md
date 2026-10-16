@@ -23,8 +23,7 @@ pieces (`Sidebar`, `Breadcrumb`, `SplitPanel`, `SyncStatusBanner`, `PaymentDueBa
 - **Interactions**: `userEvent` clicks/typing, keyboard operability
   (`close_button_is_keyboard_operable`: `await user.tab(); await user.keyboard('{Enter}')`),
   callbacks called with the right payload (`calls onSave and onCancel`).
-- **Form rules mirrored in WPF**: required markers, field order, same-bank rejection,
-  pre-filled defaults — these are the parity contract `Financial.App` must match.
+- **Form rules**: required markers, field order, same-bank rejection, pre-filled defaults.
 - **Financial formatting**: right-aligned numbers, `formatN2`, signs, totals distinct from rows.
 - Negative: invalid input shows a specific message; a rejected `onSave` promise keeps the
   entered values; an unknown status renders the neutral fallback.

@@ -24,7 +24,7 @@ workflow.
 
 Use WCAG 2.2 AA as the accessibility baseline where applicable.
 
-Apply equivalent outcomes to both React and WPF:
+Apply it to:
 
 - Keyboard operation
 - Visible focus
@@ -68,7 +68,6 @@ Repository documentation and approved UI decisions are authoritative for:
 - Chart content
 - Warning and error meaning
 - Inline/dialog/drawer decisions
-- React-to-WPF workflow equivalence
 
 ## Conflict resolution
 
@@ -77,15 +76,14 @@ When sources conflict:
 1. Accessibility, privacy, security, and safety requirements win.
 2. Confirmed financial/domain workflow requirements win over generic guidance.
 3. Approved repository decisions win over new stylistic preferences.
-4. React defines the intended cross-platform user experience.
+4. React defines the intended user experience.
 5. Fluent 2 defines the preferred visual language.
 6. Screenshots are references, not specifications.
 
 ## Prohibited design-system mixing
 
 Do not introduce Material, Bootstrap, Ant Design, Carbon, a second styling
-system, or another WPF UI framework without explicit approval and an ADR.
+system without explicit approval and an ADR.
 
-A platform may use native controls where required, but terminology, information
-hierarchy, spacing rhythm, state meanings, and user outcomes must remain
-consistent with the repository UI system.
+Terminology, information hierarchy, spacing rhythm, state meanings, and user
+outcomes must remain consistent with the repository UI system.

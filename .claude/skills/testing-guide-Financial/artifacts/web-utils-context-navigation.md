@@ -9,7 +9,7 @@
   `vi.setSystemTime` for date-dependent helpers) — each branch and boundary (negative, zero,
   rounding half-way values, invalid input).
 - **Period filtering** (`utils/periodFilter.ts`): inclusive boundaries, year rollover, empty
-  range — mirrored by WPF `PeriodFilterHelper`.
+  range.
 - **Storage helpers** (`domainStorage.ts`, `sidebarStorage.ts`, `colourModeStorage.ts`):
   default when nothing stored, round-trip, corrupt value → default (never throws).
 - **`confirmThenRun`**: runs on confirm, skips on cancel.
@@ -17,8 +17,7 @@
 - **Contexts** (`SelectedNodeContext`, `ColourModeContext`): default value, setter, toggle,
   persistence to `localStorage`, `prefers-color-scheme` fallback (P43).
 - **Navigation** (`navTree.ts`, `routes.tsx`): every sidebar destination has a declared route,
-  every route is reachable from the sidebar, no duplicate paths (`routes.test.ts`); ids match
-  WPF `NavTree` (parity).
+  every route is reachable from the sidebar, no duplicate paths (`routes.test.ts`).
 - Negative: invalid dates, `NaN`, unknown colour mode string.
 
 ## Layer assignment

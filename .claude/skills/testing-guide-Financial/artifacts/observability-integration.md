@@ -73,4 +73,3 @@ so a real local Jaeger cannot make the test pass by accident.
 - `Tests/Financial.Observability.Tests/ObservabilityServiceCollectionExtensionsTests.cs`, `BackendConfigurationTests.cs`, `OtlpExporterSettingsResolverTests.cs`, `SerilogObservabilityExtensionsTests.cs` — Integration/Unit.
 - `Tests/Financial.Api.Tests/ObservabilityDisabledTests.cs`, `ObservabilityBackendUnreachableTests.cs` — Integration through the host.
 - `Tests/Financial.Api.Tests/EndToEndTraceTests.cs` — Integration (single process; the class name predates this vocabulary).
-- `Tests/Financial.Presentation.Tests/DependencyInjection/ObservabilityServiceRegistrationTests.cs` — Integration; WPF composition root.

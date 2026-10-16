@@ -65,10 +65,7 @@ fails the save itself. `POST .../integrations/calendar/credit-cards/{id}/resync`
 .../integrations/calendar/credit-cards/sync-status` reports each card's current sync state.
 
 Connect, disconnect, and monitor per-card sync status from **Settings > Integrations** -
-(`/settings/integrations`) in `Financial.Web`, or the equivalent "Settings > Integrations"
-view in `Financial.App` (WPF). The WPF view calls the same `ICalendarIntegrationService`/
-`ICreditCardCalendarSyncService` in-process rather than over HTTP, and opens the OAuth
-consent URL in the OS default browser.
+(`/settings/integrations`) in `Financial.Web`.
 
 ### Application configuration
 
@@ -109,14 +106,6 @@ npm run dev
 ```
 
 Listens on `http://localhost:5173`. Copy `Financial.Web/.env.example` to `Financial.Web/.env` and set `API_BASE_URL` to point at the API.
-
-### Desktop (Financial.App)
-
-```bash
-dotnet run --project Financial.App
-```
-
-`dotnet run` and Visual Studio set `DOTNET_ENVIRONMENT=Development` automatically via `launchSettings.json`, which loads `Financial.App/appsettings.Development.json` with a relative path to the shared `data/data-investment.json`. Running the compiled `.exe` directly requires setting `DOTNET_ENVIRONMENT=Development` in your system environment variables.
 
 ## Docker
 
@@ -164,7 +153,7 @@ docker compose down
 
 ## Observability
 
-Distributed tracing (OpenTelemetry) is built in but **off by default** — a normal `docker compose up` or `dotnet run` needs no observability backend and exports nothing. When enabled, every API request and WPF save command produces a correlated trace spanning controller → Application service → JSON storage save, with Serilog log entries carrying the same trace id. Span attributes are restricted to an allow-list (bounded context, entity type, entity GUID, operation name/result, error type) — never financial values, account names, or exception messages.
+Distributed tracing (OpenTelemetry) is built in but **off by default** — a normal `docker compose up` or `dotnet run` needs no observability backend and exports nothing. When enabled, every API request produces a correlated trace spanning controller → Application service → JSON storage save, with Serilog log entries carrying the same trace id. Span attributes are restricted to an allow-list (bounded context, entity type, entity GUID, operation name/result, error type) — never financial values, account names, or exception messages.
 
 Configuration (`appsettings.json` or `Observability__*` environment variables):
 
@@ -244,7 +233,7 @@ Legacy WPF desktop utility for a one-time import of Investment portfolio data fr
 
 ## Local deploy tooling
 
-`scripts/deploy.ps1` publishes the current local state of `Financial.App` (WPF) and `Financial.Api` (API + SPA) to a local `deploy/` folder. Manual, local-only tooling — not part of CI/CD, and `deploy/` itself is git-ignored.
+`scripts/deploy.ps1` publishes the current local state of `Financial.Api` (API + SPA) to a local `deploy/` folder. Manual, local-only tooling — not part of CI/CD, and `deploy/` itself is git-ignored.
 
 ```powershell
 ./scripts/deploy.ps1
@@ -253,12 +242,13 @@ Legacy WPF desktop utility for a one-time import of Investment portfolio data fr
 Re-run any time to refresh the deployed copies with whatever is currently on disk. On each run it:
 
 - Stops any currently running instances launched from `deploy/`.
-- Publishes `Financial.App` and `Financial.Api` (framework-dependent — the build machine must match the run machine) into `deploy/Financial.App` and `deploy/Financial.Web`.
-- Deploys each project's `appsettings.Production.json` (excluded from `dotnet publish` output) and stamps in the machine-local Google Drive credentials path.
+- Deletes the `deploy/Financial.App` folder and the `start-app.ps1`/`start-all.ps1` launchers that deploys from before ADR-002 left behind.
+- Publishes `Financial.Api` (framework-dependent — the build machine must match the run machine) into `deploy/Financial.Web`.
+- Deploys its `appsettings.Production.json` (excluded from `dotnet publish` output) and stamps in the machine-local Google Drive credentials path and Google Calendar settings.
 - Builds the React SPA and copies it into `deploy/Financial.Web/wwwroot`.
 - Copies the launcher scripts from `scripts/deploy-templates/` into `deploy/`.
 - Writes `deploy/deploy-info.txt` with the deployed branch and commit.
 
-First run creates `scripts/deploy.local.json` from `scripts/deploy.local.example.json` (both git-ignored except the example) — edit it to set `GoogleDriveCredentialsPath` to your service-account credentials file before starting the deployed apps. Both deployed apps run against `GoogleDriveJson` storage, fixed via the checked-in `appsettings.Production.json` files.
+First run creates `scripts/deploy.local.json` from `scripts/deploy.local.example.json` (both git-ignored except the example) — edit it to set `GoogleDriveCredentialsPath` to your service-account credentials file before starting the deployed app. It runs against `GoogleDriveJson` storage, fixed via the checked-in `appsettings.Production.json`.
 
-After deploying, start everything with `deploy/start-all.ps1` (or `start-app.ps1`/`start-web.ps1` individually).
+After deploying, start it with `deploy/start-web.ps1`.

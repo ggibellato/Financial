@@ -35,10 +35,6 @@ and, for swallowed exceptions, `logger.Entries.Should().ContainSingle(e => e.Lev
 `0.99m`: test `0.99m` accepted and `1.00m` rejected; `PaymentsDueService` window: due in 5 days
 included, 6 days excluded; overdue excluded).
 
-**WPF ViewModels** — the stub service throws (`StubExpenseService` with a configured
-exception) → error text set, `IsSaving` back to false, entered values preserved, span
-recorded as failed, no `refresh` call.
-
 **React hooks/components** — `getBanksMock.mockRejectedValue(new Error('Network down'))` →
 `result.current.error` set, `data` null; a component given `onSave` that rejects keeps its
 field values and shows the error under the named field
@@ -109,6 +105,6 @@ frontend's own error state for that is covered at the page layer.
 
 ## Examples from the project
 
-- Unit: `ExpenseServiceTests`, `YahooFinanceServiceTests.GetAssetValue_UnsupportedExchange_ThrowsInvalidOperationException_WithoutCallingHttp`, `PaymentDueBannerViewModelTests.Constructor_WithEmptyResponse_IsVisibleIsFalse`.
+- Unit: `ExpenseServiceTests`, `YahooFinanceServiceTests.GetAssetValue_UnsupportedExchange_ThrowsInvalidOperationException_WithoutCallingHttp`.
 - Integration: `FrankfurterExchangeRateProviderTests` (all four modes), `CashFlowJsonRepositoryTests.ApplyAndSaveAsync_WhenWriteFails_PropagatesException`, `ControleMaeEndpointsTests.CreateEntry_WhenRateLookupFails_ReturnsOkWithOnlyEnteredCurrency`, `DomainExceptionLoggingTests`, `ObservabilityBackendUnreachableTests`, `BanksPage.test.tsx`.
 - E2E: none yet — the first failure journey added should follow the options above.
