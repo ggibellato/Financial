@@ -4,7 +4,6 @@ using Financial.CashFlow.Infrastructure.Configuration;
 using Financial.CashFlow.Infrastructure.Persistence;
 using Financial.CashFlow.Infrastructure.Repositories;
 using Financial.CashFlow.Infrastructure.Services;
-using Financial.Shared.Abstractions.Configuration;
 using Financial.Shared.Abstractions.Persistence;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,18 +19,12 @@ public static class CashFlowInfrastructureServiceCollectionExtensions
         IConfiguration configuration)
     {
         services.Configure<CashFlowRepositorySettingsOptions>(options =>
-        {
-            options.Provider = configuration[CashFlowRepositoryConfigurationKeys.Provider];
-            options.DataJsonFile = configuration[CashFlowRepositoryConfigurationKeys.LocalJsonDataFile];
-            options.GoogleDriveCredentialsPath = configuration[CashFlowRepositoryConfigurationKeys.GoogleDriveCredentialsPath];
-            options.GoogleDriveFilePath = configuration[CashFlowRepositoryConfigurationKeys.GoogleDriveFilePath];
-        });
+            options.Load(CashFlowRepositorySettingsOptions.ConfigurationKeys, key => configuration[key]));
         services.TryAddSingleton(TimeProvider.System);
         services.AddSingleton<ICashFlowSerializer, CashFlowSerializerAdapter>();
         services.AddSingleton<ICashFlowRepository>(sp =>
         {
-            var settings = sp.GetRequiredService<IOptions<CashFlowRepositorySettingsOptions>>().Value;
-            var options = BuildRepositoryOptions(settings);
+            var options = sp.GetRequiredService<IOptions<CashFlowRepositorySettingsOptions>>().Value.ToSelection();
             return new CashFlowRepositoryFactory(
                 sp.GetRequiredService<ICashFlowSerializer>(),
                 sp.GetRequiredService<IJsonStorageFactory>()).Create(options);
@@ -52,16 +45,5 @@ public static class CashFlowInfrastructureServiceCollectionExtensions
         services.AddSingleton<ICalendarProvider, GoogleCalendarProviderAdapter>();
 
         return services;
-    }
-
-    private static CashFlowRepositorySelectionOptions BuildRepositoryOptions(CashFlowRepositorySettingsOptions settings)
-    {
-        var provider = RepositoryProviderResolver.Resolve(settings.Provider, CashFlowRepositoryProvider.LocalJson);
-
-        return new CashFlowRepositorySelectionOptions(
-            provider,
-            settings.DataJsonFile,
-            settings.GoogleDriveCredentialsPath,
-            settings.GoogleDriveFilePath);
     }
 }

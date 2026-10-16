@@ -1,11 +1,9 @@
 using Financial.Investment.Application.Configuration;
 using Financial.Investment.Application.Interfaces;
-using Financial.Investment.Infrastructure.Configuration;
 using Financial.Investment.Infrastructure.Interfaces;
 using Financial.Investment.Infrastructure.Persistence;
 using Financial.Investment.Infrastructure.Repositories;
 using Financial.Investment.Infrastructure.Services;
-using Financial.Shared.Abstractions.Configuration;
 using Financial.Shared.Abstractions.Persistence;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,12 +19,7 @@ public static class InvestmentInfrastructureServiceCollectionExtensions
         IConfiguration configuration)
     {
         services.Configure<InvestmentRepositorySettingsOptions>(options =>
-        {
-            options.Provider = configuration[InvestmentRepositoryConfigurationKeys.Provider];
-            options.DataJsonFile = configuration[InvestmentRepositoryConfigurationKeys.LocalJsonDataFile];
-            options.GoogleDriveCredentialsPath = configuration[InvestmentRepositoryConfigurationKeys.GoogleDriveCredentialsPath];
-            options.GoogleDriveFilePath = configuration[InvestmentRepositoryConfigurationKeys.GoogleDriveFilePath];
-        });
+            options.Load(InvestmentRepositorySettingsOptions.ConfigurationKeys, key => configuration[key]));
         services.AddSingleton<IInvestmentSerializer, InvestmentSerializerAdapter>();
         services.AddSingleton<IDividendDataSource, DividendDataSourceAdapter>();
         services.AddSingleton<IAssetSnapshotSource, AssetSnapshotSourceAdapter>();
@@ -58,8 +51,7 @@ public static class InvestmentInfrastructureServiceCollectionExtensions
         services.TryAddSingleton(TimeProvider.System);
         services.AddSingleton<IInvestmentRepository>(sp =>
         {
-            var settings = sp.GetRequiredService<IOptions<InvestmentRepositorySettingsOptions>>().Value;
-            var options = BuildRepositoryOptions(settings);
+            var options = sp.GetRequiredService<IOptions<InvestmentRepositorySettingsOptions>>().Value.ToSelection();
             return new InvestmentRepositoryFactory(
                 sp.GetRequiredService<IInvestmentSerializer>(),
                 sp.GetRequiredService<IJsonStorageFactory>(),
@@ -68,16 +60,5 @@ public static class InvestmentInfrastructureServiceCollectionExtensions
         services.AddSingleton<IAssetPriceService, AssetPriceService>();
 
         return services;
-    }
-
-    private static InvestmentRepositorySelectionOptions BuildRepositoryOptions(InvestmentRepositorySettingsOptions settings)
-    {
-        var provider = RepositoryProviderResolver.Resolve(settings.Provider, InvestmentRepositoryProvider.LocalJson);
-
-        return new InvestmentRepositorySelectionOptions(
-            provider,
-            settings.DataJsonFile,
-            settings.GoogleDriveCredentialsPath,
-            settings.GoogleDriveFilePath);
     }
 }

@@ -1,3 +1,4 @@
+using Financial.Shared.Abstractions.Configuration;
 using Financial.Shared.Abstractions.Currencies.FxRates;
 using Financial.Shared.Abstractions.Persistence;
 using Financial.Shared.Infrastructure.Configuration;
@@ -20,27 +21,12 @@ public sealed class FxRateStoreFactory
         _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
     }
 
-    public IFxRateStore Create(FxRateRepositorySelectionOptions options)
+    public IFxRateStore Create(JsonRepositorySelection options)
     {
         ArgumentNullException.ThrowIfNull(options);
 
-        var storage = CreateStorage(options);
+        var storage = _storageFactory.Create(options, DefaultDataFileName, FxRateRepositorySettingsOptions.ConfigurationKeys);
         var ratesByDate = FxRateLoader.LoadSync(storage, _serializer);
         return new FxRateJsonStore(ratesByDate, storage, _serializer, _timeProvider);
     }
-
-    private IJsonStorage CreateStorage(FxRateRepositorySelectionOptions options) =>
-        options.Provider switch
-        {
-            FxRateRepositoryProvider.LocalJson =>
-                _storageFactory.CreateLocal(options.LocalDataPath, DefaultDataFileName),
-            FxRateRepositoryProvider.GoogleDriveJson =>
-                _storageFactory.CreateRemote(
-                    options.GoogleDriveCredentialsPath,
-                    options.GoogleDriveFilePath,
-                    FxRateRepositoryConfigurationKeys.GoogleDriveCredentialsPath,
-                    nameof(FxRateRepositoryProvider.GoogleDriveJson)),
-            _ => throw new ArgumentOutOfRangeException(
-                    nameof(options.Provider), options.Provider, "Unsupported repository provider.")
-        };
 }
