@@ -318,17 +318,17 @@ graph TD
 - [x] `.vscode/tasks.json` has no `Financial.App` entry
 - [ ] After deploy, Google Calendar shows as connected on the Integrations page without reconnecting. Not met on 2026-10-16, for a reason that predates F02: the first status check after the deploy returned in 1 ms with no call to Google, so the shared token file was already missing or marked revoked before the deploy. F02 does not touch that file or its path. After reconnecting, the connection works.
 - [x] `docker-compose up` starts and the SPA loads both Investment and CashFlow pages
-- [ ] `ci-status` is green on the PR and on the `main` run after merge
+- [x] `ci-status` is green on the PR and on the `main` run after merge
 
 ### F03. Rules and Docs Become React-Only
-- [ ] grep for `WPF`, `Financial.App` or `Presentation.App` in `CLAUDE.md`, `docs/rules/`, living `docs/ui/` files, `.claude/agents/` and `.claude/skills/` returns only references to ADR-002 or `Tools/ImportGoogleSpreadSheets`
-- [ ] `CLAUDE.md` UI / UX invariant 1 describes React as the only front end and cites ADR-002
-- [ ] `docs/rules/design.md` slice order has no WPF step
-- [ ] `docs/ui/wpf.md` and `.claude/skills/testing-guide-Financial/artifacts/wpf-*.md` no longer exist
-- [ ] `README.md` has no "Desktop (Financial.App)" section, and its local-deploy text describes only the web app
-- [ ] Historical PRDs, specs, audits and UI ADRs are unchanged in the diff
-- [ ] The final PR body includes the reminder to remove the `http://localhost:8082/` redirect URI from the Google Cloud OAuth client
+- [x] grep for `WPF`, `Financial.App` or `Presentation.App` in `CLAUDE.md`, `docs/rules/`, living `docs/ui/` files, `.claude/agents/` and `.claude/skills/` returns only references to ADR-002 or `Tools/ImportGoogleSpreadSheets`
+- [x] `CLAUDE.md` UI / UX invariant 1 describes React as the only front end and cites ADR-002
+- [x] `docs/rules/design.md` slice order has no WPF step
+- [x] `docs/ui/wpf.md` and `.claude/skills/testing-guide-Financial/artifacts/wpf-*.md` no longer exist
+- [x] `README.md` has no "Desktop (Financial.App)" section, and its local-deploy text describes only the web app
+- [x] Historical PRDs, specs, audits and UI ADRs are unchanged in the diff
+- [x] The final PR body includes the reminder to remove the `http://localhost:8082/` redirect URI from the Google Cloud OAuth client
 
 ### Cross-Feature Integration
-- [ ] After F01, the F02 PR that deletes `Financial.App` triggers no WPF job and `ci-status` is green (F01 → F02)
-- [ ] After F02, every path F03 removes from the docs (`Financial.App`, the two WPF test projects, `start-app.ps1`, the `wpf` CI jobs) is absent from the repo (F02 → F03)
+- [x] After F01, the F02 PR that deletes `Financial.App` triggers no WPF job and `ci-status` is green (F01 → F02)
+- [x] After F02, every path F03 removes from the docs (`Financial.App`, the two WPF test projects, `start-app.ps1`, the `wpf` CI jobs) is absent from the repo (F02 → F03)
