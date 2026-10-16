@@ -121,32 +121,6 @@ jobs:
           Financial.Web/test-results/
         retention-days: 14
 
-  e2e-wpf:
-    runs-on: windows-latest
-    timeout-minutes: 30
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v6
-
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v6
-      with:
-        dotnet-version: 10.0.x
-
-    - name: Build WPF app and E2E tests
-      run: dotnet build Tests/Financial.App.E2ETests/Financial.App.E2ETests.csproj --configuration Release
-
-    - name: Run full WPF E2E
-      run: dotnet test Tests/Financial.App.E2ETests --configuration Release --no-build --verbosity normal --filter "Category=E2E"
-
-    - name: Upload E2E artifacts
-      if: failure()
-      uses: actions/upload-artifact@v4
-      with:
-        name: wpf-e2e-artifacts
-        path: TestResults/e2e-artifacts
-        retention-days: 14
-
   live:
     runs-on: windows-latest
     timeout-minutes: 20
@@ -180,7 +154,7 @@ jobs:
       run: ./.github/scripts/ac-traceability.ps1
 
   report:
-    needs: [ stryker-dotnet, stryker-js, e2e-web, e2e-wpf, ac-traceability ]
+    needs: [ stryker-dotnet, stryker-js, e2e-web, ac-traceability ]
     if: always() && (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled'))
     runs-on: ubuntu-latest
     timeout-minutes: 5

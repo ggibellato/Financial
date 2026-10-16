@@ -40,22 +40,22 @@ function Check([string]$name, [bool]$condition, $result) {
 $result = Invoke-Issue @{ 'stryker-js' = 'success'; 'e2e-web' = 'skipped' }
 Check 'no failed job does nothing' ($result.Exit -eq 0 -and $result.Calls.Count -eq 0) $result
 
-$result = Invoke-Issue @{ 'stryker-js' = 'failure'; 'e2e-web' = 'failure'; 'e2e-wpf' = 'success' }
+$result = Invoke-Issue @{ 'stryker-js' = 'failure'; 'e2e-web' = 'failure'; 'ac-traceability' = 'success' }
 Check 'no open issue creates one with the label, the failed jobs and the run url' (
     $result.Exit -eq 0 -and
-    @($result.Calls | Where-Object { $_ -match '^issue create .*--label nightly-failure' -and $_ -match 'stryker-js' -and $_ -match 'e2e-web' -and $_ -notmatch 'e2e-wpf' -and $_ -match 'https://example.test/run/1' }).Count -eq 1 -and
+    @($result.Calls | Where-Object { $_ -match '^issue create .*--label nightly-failure' -and $_ -match 'stryker-js' -and $_ -match 'e2e-web' -and $_ -notmatch 'ac-traceability' -and $_ -match 'https://example.test/run/1' }).Count -eq 1 -and
     @($result.Calls | Where-Object { $_ -match '^issue comment' }).Count -eq 0) $result
 Check 'the label is created once with force before the issue' (@($result.Calls | Where-Object { $_ -match '^label create nightly-failure --force' }).Count -eq 1) $result
 
-$result = Invoke-Issue @{ 'e2e-wpf' = 'cancelled' }
-Check 'a cancelled job, which is how a timeout ends, counts as failed' (@($result.Calls | Where-Object { $_ -match '^issue create .*e2e-wpf' }).Count -eq 1) $result
+$result = Invoke-Issue @{ 'stryker-dotnet' = 'cancelled' }
+Check 'a cancelled job, which is how a timeout ends, counts as failed' (@($result.Calls | Where-Object { $_ -match '^issue create .*stryker-dotnet' }).Count -eq 1) $result
 
-$result = Invoke-Issue @{ 'e2e-wpf' = 'failure' } '42'
+$result = Invoke-Issue @{ 'stryker-dotnet' = 'failure' } '42'
 Check 'an open issue gets a comment and no second issue or label call' (
-    @($result.Calls | Where-Object { $_ -match '^issue comment 42 .*e2e-wpf' }).Count -eq 1 -and
+    @($result.Calls | Where-Object { $_ -match '^issue comment 42 .*stryker-dotnet' }).Count -eq 1 -and
     @($result.Calls | Where-Object { $_ -match '^(issue create|label create)' }).Count -eq 0) $result
 
-$result = Invoke-Issue @{ 'e2e-wpf' = 'failure' } '' '^issue create'
+$result = Invoke-Issue @{ 'stryker-dotnet' = 'failure' } '' '^issue create'
 Check 'a failing gh call exits 1' ($result.Exit -eq 1 -and $result.Text -match 'failed') $result
 
 Remove-Item -Recurse -Force $work
