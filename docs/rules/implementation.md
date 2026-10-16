@@ -15,7 +15,7 @@ Mandatory, not advisory.
 ## Property formatting
 
 - A simple auto-property stays on one line: `public string Name { get; private set; } = string.Empty;`
-- A property with an expression-bodied getter and/or setter — whatever the body (backing-field access, `EntityGuard`/`AsReadOnly` calls, `SetProperty(ref _field, value)`, guard clauses, etc.) — is broken across lines once the full declaration line exceeds **140 characters**. This applies uniformly, including to the common WPF MVVM `{ get => _field; private set => SetProperty(ref _field, value); }` shape — length decides, not the property's role. Under 140 characters, keep it on one line even with expression bodies.
+- A property with an expression-bodied getter and/or setter — whatever the body (backing-field access, `EntityGuard`/`AsReadOnly` calls, `SetProperty(ref _field, value)`, guard clauses, etc.) — is broken across lines once the full declaration line exceeds **140 characters**. This applies uniformly, including to the `{ get => _field; private set => SetProperty(ref _field, value); }` shape — length decides, not the property's role. Under 140 characters, keep it on one line even with expression bodies.
 
   ```csharp
   public IReadOnlyCollection<DisposalRecord> DisposalRecords
@@ -43,10 +43,10 @@ Mandatory, not advisory.
 
 A rule belongs on the entity that owns it. Extract it into `Domain/Rules/` only when one of these is true:
 
-- **Two or more call sites need it.** `YearScopedInvestmentAccountResolver` (used by `AnnualSummaryService` and `InvestmentSnapshotService`) and `DividendValuationRules` (used by `DividendService` and `DividendCheckViewModel`) qualify.
-- **It is a stateless algorithm with its own Domain test class.** `XirrCalculator`, `ProfitCalculator`, `CreditFrequencyAnalyzer` and `AnnualResultCalculator` qualify on this ground.
+- **Two or more call sites need it.** `YearScopedInvestmentAccountResolver` (used by `AnnualSummaryService` and `InvestmentSnapshotService`) qualifies.
+- **It is a stateless algorithm with its own Domain test class.** `XirrCalculator`, `ProfitCalculator`, `CreditFrequencyAnalyzer`, `AnnualResultCalculator` and `DividendValuationRules` qualify on this ground.
 
-Otherwise keep it on the entity: constants as `public const` on the entity, enforcement in the setter or factory that could violate it. The reference shape is `Expense.MinRoundUpAmount` / `Expense.MaxRoundUpAmount` (`Financial.CashFlow.Domain/Entities/Expense.cs:8-9`), enforced in `SetRoundUpAmount` (`Expense.cs:187-190`), read directly by its one caller (`Financial.App/ViewModels/CashFlow/ExpenseFormValidation.cs:55-58`).
+Otherwise keep it on the entity: constants as `public const` on the entity, enforcement in the setter or factory that could violate it. The reference shape is `Expense.MinRoundUpAmount` / `Expense.MaxRoundUpAmount` (`Financial.CashFlow.Domain/Entities/Expense.cs:8-9`), enforced in `SetRoundUpAmount` (`Expense.cs:231-235`).
 
 A class that only re-exports another type's constants is indirection, not design. That is why `ExpenseValidationRules` was deleted in #496 — it "carried no rule of its own, so the indirection bought nothing".
 
@@ -125,7 +125,7 @@ Before adding a test class, check whether the setup you need already exists. Reu
 
 8. **Pin the clock; never wait on it.** Tests build their dates from `Financial.TestUtilities.TestClock` (named pinned instants) or the `Microsoft.Extensions.Time.Testing.FakeTimeProvider` (`TestClock.At(...)` returns one with the London local zone; timers fire on `Advance`) instead of reading the wall clock. Retry and backoff code takes an injectable delay (`RetryPolicy`/`GoogleRetryPolicy`): pass a recording fake and assert the requested delays rather than waiting. To run a suite under another culture set `TEST_CULTURE` (for example `TEST_CULTURE=pt-BR dotnet test`); it is unset on CI, which keeps the OS culture (`en-GB`); a test class that asserts culture-formatted text or typed user input pins it with `[UseCulture("en-GB")]`. Production reads time only through an injected, required `TimeProvider` (Domain takes an as-of argument instead) — `ProductionClockReadsTests` fails the build otherwise — and machine-format values (sheet cells, scraped prices, JSON) parse with `CultureInfo.InvariantCulture`; user-typed input stays culture-aware.
 
-9. **Every .NET test class declares its level:** `[Trait("Category", "Unit"|"Integration"|"Live")]` (`E2E`/`Smoke` are for `Financial.App.E2ETests`). `Live` hits real external sites, never uses `Skip=`, and is filtered out of the `backend` job. `CategoryTraitCoverageTests` enforces it.
+9. **Every .NET test class declares its level:** `[Trait("Category", "Unit"|"Integration"|"Live")]` (`E2E`/`Smoke` are reserved for end-to-end suites). `Live` hits real external sites, never uses `Skip=`, and is filtered out of the `backend` job. `CategoryTraitCoverageTests` enforces it.
 10. **Assert literals, not the production computation.** A test that recomputes its expected value with the code under test passes when that code is wrong.
 11. **Prove a failure through the span, not only the exception.** A bare `Throw<T>()` passes with the `catch` deleted; add `_tracer.ShouldHaveFailedSpan<T>("<Context>.<Service>.<Operation>")`.
 12. **Prove persistence from disk.** A service test over a JSON repository reloads a fresh repository from the same file (`PersistedInvestmentFile.ReloadAsset`) and asserts on that, not on the returned DTO.

@@ -26,8 +26,8 @@ and "Third-party file storage" rows).
 |---|---|---|
 | JSON data files (`data-investment.json`, `data-cashflow.json`) through `LocalJsonStorage`, `DebouncedJsonStorage`, `CashFlowLoader` / `InvestmentLoader` | The project's only persistence; deployed with the app (`docker-compose.yml` mounts `./data`) | `Guid`-named temp file under `Path.GetTempPath()`, copied from `TestDataPaths.DataJsonFile` or seeded from `ApiTestFactory.SeededBanksJson`; deleted in `finally` / `Dispose`. `RecordingJsonStorage` / `ControllableJsonStorage` are in-memory `IJsonStorage` implementations used only when the assertion is about *when* a write happens — still our own code, not a provider fake. |
 | `CashFlowJsonRepository`, `InvestmentJsonRepository`, serializers, reference converters | Infrastructure we own | Real in every Infrastructure and Api test. `StubCashFlowRepository` / `StubInvestmentRepository` exist for the **Unit** layer only. |
-| Application services of both contexts | Our code | Real inside the host and the WPF composition; stubbed (`Stub*Service` in `Financial.Presentation.Tests`) only in ViewModel **Unit** tests. |
-| DI container (`Program.cs`, `App.xaml.cs`, `Add*` extensions) | Our composition | Real `ServiceCollection` / `WebApplicationFactory<Program>`. |
+| Application services of both contexts | Our code | Real inside the host. |
+| DI container (`Program.cs`, `Add*` extensions) | Our composition | Real `ServiceCollection` / `WebApplicationFactory<Program>`. |
 | The published `Financial.Api` process + built SPA | Our single deployable | Started for real by the CI `web-e2e` job (`../references/e2e-environment.md`). |
 | Time (`TimeProvider`) | Not a provider — non-determinism | Controlled, not faked away: `FakeTimeProvider(DateTimeOffset)` (TestUtilities) or `Microsoft.Extensions.Time.Testing.FakeTimeProvider` wrapped by `ObservableFakeClock`. |
 
@@ -37,8 +37,6 @@ From `Financial.Web`'s tests, `Financial.Api` is a separate deployable reached o
 own Integration tests therefore fake the API at `financialApiClient` (module-level `vi.mock`)
 or at `fetch` (client tests) — the sanctioned exception described in `mock-health-rules.md`.
 This is not the backend being "external"; it is the single-process boundary of the SPA's test.
-`Financial.App` (WPF) composes the backend in-process, so its Integration tests do **not** get
-this exception — they wire the real services.
 
 ## Ambiguities resolved
 

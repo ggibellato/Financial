@@ -132,5 +132,5 @@ they preserve context and reduce cognitive load.
 A screenshot reflects the current implementation, not the final required design.
 
 Improve a screenshot-derived design whenever Fluent principles, accessibility,
-responsiveness, workflow clarity, financial accuracy, or React/WPF consistency
+responsiveness, workflow clarity, financial accuracy, or consistency across views
 indicate a better solution.

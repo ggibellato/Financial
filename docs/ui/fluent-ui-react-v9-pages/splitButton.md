@@ -72,10 +72,3 @@ library:
   to dismiss without changing anything.
 - Never rely on the Badge color alone to convey the status — the text label
   inside the Badge is mandatory, not decorative.
-
-## WPF equivalent
-
-See `.claude/skills/fluent-ui/references/cross-platform-mapping.md` — the
-mapped WPF-UI control is `SplitButton`, since WPF-UI does not ship a bare
-`MenuButton`-equivalent; the same current-value checked/disabled treatment and
-2-click change must hold there too.

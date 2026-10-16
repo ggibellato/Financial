@@ -3,31 +3,20 @@
 This file is mandatory for any change that affects a user-facing workflow in:
 
 - `Financial.Web`
-- `Financial.App`
 - Shared presentation components
 - User-facing validation, warnings, errors, confirmations, or notifications
-- API contracts whose changes alter visible Web or WPF behavior
+- API contracts whose changes alter visible Web behavior
 - User-facing financial calculations, totals, formatting, grids, charts, filters,
   tree views, navigation, or page layout
 
-## React is the UX source of truth
+## React is the only front end
 
-`Financial.Web` is the UX source of truth.
+`Financial.Web` (React) is the only front end. Define, validate, and improve
+user workflows there, and improve an existing workflow when it conflicts with
+product requirements, accessibility, financial clarity, or the UI standards.
 
-For workflows available in both front ends:
-
-1. Define and validate the intended user experience in React first.
-2. Improve the React workflow first if it conflicts with product requirements,
-   accessibility, financial clarity, or the UI standards.
-3. Implement an equivalent WPF desktop experience.
-4. Adapt controls and interaction mechanics only where WPF conventions,
-   accessibility, keyboard efficiency, or window behavior require it.
-5. Do not change workflow meaning, terminology, field order, action priority,
-   validation meaning, data formatting, or expected outcomes without a documented
-   decision.
-
-React being the reference does not make existing React behavior automatically
-correct. It must still comply with the rules in this repository.
+Existing React behavior is not automatically correct. It must still comply with
+the rules in this repository.
 
 ## Required reading
 
@@ -40,9 +29,7 @@ read:
 4. `docs/ui/design-tokens.md`
 5. `docs/ui/forms-data-and-visualisations.md`
 6. `docs/ui/accessibility.md`
-7. Relevant platform guidance:
-   - React: `docs/ui/react.md`
-   - WPF: `docs/ui/wpf.md`
+7. React guidance: `docs/ui/react.md`
 8. Relevant decision records in `docs/ui/decisions/`
 9. `docs/ui/review-checklist.md` before declaring work complete
 
@@ -71,14 +58,13 @@ below.
 
 Before implementation:
 
-1. Inspect the existing React and WPF version of the affected workflow.
-2. Inspect existing shared UI components, styling/theme infrastructure, WPF
-   ResourceDictionaries, validation patterns, commands, API DTOs, and tests.
+1. Inspect the existing React version of the affected workflow.
+2. Inspect existing shared UI components, styling/theme infrastructure,
+   validation patterns, API DTOs, and tests.
 3. Identify the user task, financial/domain context, current context, primary
    action, and secondary actions.
 4. Assess whether the React implementation meets the target standard.
-5. Identify WPF parity gaps against the intended React experience.
-6. Define all applicable states:
+5. Define all applicable states:
    - Initial
    - Loading
    - Empty
@@ -88,13 +74,13 @@ Before implementation:
    - Success
    - Disabled
    - Unsaved changes
-7. Define responsive/adaptive layout behavior.
-8. Define keyboard, focus, accessible-name, zoom/text-scaling, theme, and
+6. Define responsive/adaptive layout behavior.
+7. Define keyboard, focus, accessible-name, zoom/text-scaling, theme, and
    high-contrast behavior.
-9. Reuse existing components, tokens, resources, and patterns before creating
+8. Reuse existing components, tokens, resources, and patterns before creating
    new ones.
-10. Identify API contract implications. If an API-visible DTO changes, follow
-    the root `CLAUDE.md` OpenAPI snapshot and `types.ts` requirements.
+9. Identify API contract implications. If an API-visible DTO changes, follow
+   the root `CLAUDE.md` OpenAPI snapshot and `types.ts` requirements.
 
 ## Required design output
 
@@ -103,7 +89,6 @@ Before coding a significant UI change, provide:
 - User task
 - Financial/domain context
 - Current React behavior and target React behavior
-- Current WPF behavior and parity gaps
 - Information hierarchy
 - Primary and secondary actions
 - Field order and grouping
@@ -111,7 +96,6 @@ Before coding a significant UI change, provide:
 - Required states
 - Responsive/adaptive layout behavior
 - Accessibility and focus behavior
-- WPF-native adaptations and why they preserve the React-defined outcome
 - Files to change
 - Tests to add or execute
 - Assumptions requiring confirmation
@@ -124,14 +108,11 @@ Do not call UI work complete until:
   touched view or component — not only the items related to the rule that
   motivated the change (see "Scope of compliance" above).
 - `.claude/agents/ui-reviewer.md` has reviewed the change.
-- React and/or WPF builds and relevant tests have run.
-- The affected view has actually been run and looked at on each platform it
-  changed (Web: dev server in a browser; WPF: the built app launched) — a
-  clean build and green tests do not guarantee the UI renders correctly; see
+- React builds and relevant tests have run.
+- The affected view has actually been run and looked at in a browser (dev
+  server) — a clean build and green tests do not guarantee the UI renders correctly; see
   `docs/ui/current-state-audit.md`'s pilot notes for a concrete case where
   they didn't.
 - React behavior has been checked against the UI standards.
-- Equivalent WPF behavior has been verified, or an intentional difference is
-  documented and justified.
 - User-facing API contract changes are reflected in the OpenAPI snapshot,
   `Financial.Web/src/api/types.ts`, and tests where relevant.

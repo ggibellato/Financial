@@ -65,13 +65,6 @@ arrives with the right test rather than a new convention.
   (`feedback_never_smoke_test_against_live_port`). Each new journey is E2E and needs one failure
   journey (`../references/negative-path-testing.md`).
 
-## WPF UI automation (FlaUI / WinAppDriver)
-
-- Would be the WPF E2E layer. Locate elements by `AutomationProperties.Name` (already required
-  by `docs/ui/accessibility.md` and used 178 times in `Financial.App`), click via
-  `GetClickablePoint()`, never by screenshot coordinates. Until it exists, the manual run in `docs/rules/ui.md` is the WPF E2E
-  substitute.
-
 ## Database/EF Core migrations
 
 - Not applicable while persistence is JSON. If a relational store ever arrives it is owned

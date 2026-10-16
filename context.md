@@ -104,7 +104,7 @@ All data is loaded into memory during application startup. Each write operation 
 
 ## Implemented Features (Investment Domain)
 
-The following features are currently built and available in both the React web app and the WPF desktop app unless noted. (For CashFlow domain features, see [Implemented Features (CashFlow Domain)](#implemented-features-cashflow-domain) below — that domain is React-only.)
+The following features are currently built and available in the React web app. (For CashFlow domain features, see [Implemented Features (CashFlow Domain)](#implemented-features-cashflow-domain) below.)
 
 * **Portfolio Navigator** — hierarchical tree (Broker → Portfolio → Asset) with per-asset detail tabs: summary (average price, quantity, current value), transactions (buy/sell CRUD), and credits (dividend/rent CRUD).
 * **Dividend Check** — enter a ticker to fetch 5-year average dividend history from Google Finance, compute the maximum buy price at a 6% required yield target, and display the current discount against the live price. Supports a configured watchlist of tickers as a quick-select combobox.
@@ -117,7 +117,7 @@ The following features are currently built and available in both the React web a
 
 ## Implemented Features (CashFlow Domain)
 
-The following features are built as React pages only — the CashFlow domain has no WPF equivalent.
+The following features are built as React pages.
 
 * **Monthly (Mensais)** — primary month-by-month view of income vs. expenses, with a category totals grid, gross/net income breakdown, and a dynamic credit-card-area scope.
 * **Banks & Cards** — tracks bank account balances and credit card statement balances per month.
@@ -132,11 +132,7 @@ The following features are built as React pages only — the CashFlow domain has
 
 ## User Interfaces
 
-The project supports two front ends, with different domain coverage:
-
-### WPF Application
-
-A desktop application built using WPF. Covers the **Investment domain only**.
+The project has a single front end.
 
 ### React Application
 
@@ -144,9 +140,7 @@ A web application built using React. Covers **both the Investment and CashFlow d
 
 Because the React application requires server-side communication, the solution must include an API layer.
 
-The WPF application should use the same application services and business logic as the API, ensuring that business rules are implemented only once.
-
-Business logic must never reside in either UI project.
+Business logic must never reside in the UI project.
 
 ---
 
@@ -206,6 +200,5 @@ When generating code for this project:
 * Keep the domain model independent of infrastructure concerns.
 * Design interfaces around business needs rather than technical implementation details.
 * Keep the Investment and CashFlow domains isolated — no cross-domain references; each persists to its own JSON file.
-* Ensure new Investment-domain features remain compatible with both the WPF and React front ends; CashFlow-domain features are React-only by design.
 * Remove unused dependencies and unnecessary abstractions.
 * Generate unit tests for all business-critical functionality.
