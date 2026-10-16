@@ -355,7 +355,7 @@ public class CreditCardCalendarSyncServiceTests
     [Fact]
     public void GetSyncStatuses_CardHasAPersistedEventButNoInMemoryStatus_IsReportedAsSynced()
     {
-        // Simulates a fresh process (e.g. after restarting Financial.App): the in-memory status
+        // Simulates a fresh process (e.g. after restarting the API): the in-memory status
         // store starts empty, but the card's event already exists from a previous process's sync.
         var card = Card("BaAmex");
         Connect();

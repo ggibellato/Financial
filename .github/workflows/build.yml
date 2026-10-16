@@ -120,25 +120,17 @@ jobs:
     - name: Build
       run: dotnet build --configuration Release
 
-    # Every test project in the solution except the WPF ones: the WPF front end is being removed
-    # (ADR-002) and CI no longer runs its view-model or UI-automation tests.
     - name: Run tests
-      run: dotnet test --configuration Release --no-build --verbosity normal --filter "FullyQualifiedName!~Financial.Presentation.Tests&Category!=E2E&Category!=Live" --settings coverlet.runsettings --results-directory TestResults
+      run: dotnet test --configuration Release --no-build --verbosity normal --filter "Category!=E2E&Category!=Live" --settings coverlet.runsettings --results-directory TestResults
 
     # coverlet.runsettings declares the XPlat collector itself, so --settings is enough to turn
     # collection on - no --collect argument, and so no "XPlat Code Coverage" quoting to get wrong
     # on the PowerShell-hosted Windows runner. The file is the single source of truth for what is
     # excluded (generated obj/** code).
-    # Financial.Architecture.Tests project-references Financial.App (to check its dependency
-    # rules), which pulls Financial.Presentation.App into this job's test process - coverlet
-    # then instruments it here too, at whatever near-zero % incidental reflection leaves it at,
-    # even though nothing in this job behaviorally exercises it. Filtering it out of backend's own
-    # report (not its collection - coverlet.runsettings is unchanged) is what keeps this number
-    # honest as "backend" coverage instead of misattributing an untested WPF assembly to it.
     - name: Publish coverage summary
       run: |
         dotnet tool install dotnet-reportgenerator-globaltool --tool-path .tools
-        ./.tools/reportgenerator.exe "-reports:TestResults/**/coverage.cobertura.xml" "-targetdir:CoverageReport" "-reporttypes:MarkdownSummaryGithub;JsonSummary;Cobertura;Html" "-assemblyfilters:+*;-Financial.Presentation.App"
+        ./.tools/reportgenerator.exe "-reports:TestResults/**/coverage.cobertura.xml" "-targetdir:CoverageReport" "-reporttypes:MarkdownSummaryGithub;JsonSummary;Cobertura;Html" "-assemblyfilters:+*"
         Get-Content CoverageReport/SummaryGithub.md | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
 
     # Graded, blocking signal: green (100%) / yellow (95-99.99%) / amber (90-94.99%) /

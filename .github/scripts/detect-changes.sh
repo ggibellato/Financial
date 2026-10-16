@@ -43,12 +43,6 @@ classify() {
       web=true; web_e2e=true
       reasons+=("contract (web side): $path") ;;
 
-    # WPF front end, being removed (ADR-002): CI no longer tests it, but the backend job's
-    # solution build still compiles it and Financial.Architecture.Tests pin Financial.App's references.
-    Financial.App/*|Tests/Financial.Presentation.Tests/*|Tests/Financial.App.E2ETests/*)
-      backend=true
-      reasons+=("backend (wpf build): $path") ;;
-
     Financial.Web/*)
       web=true; web_e2e=true
       reasons+=("web: $path") ;;

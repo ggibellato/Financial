@@ -19,7 +19,7 @@ public static class RemoteStorageFactory
         {
             throw new InvalidOperationException(
                 $"Repository provider '{providerName}' requires an {nameof(IRemoteFileClientFactory)} " +
-                "to be registered by the composition root (Financial.Api / Financial.App).");
+                "to be registered by the composition root (Financial.Api).");
         }
 
         var client = remoteFileClientFactory.Create(resolvedCredentialsPath);

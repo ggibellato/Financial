@@ -8,11 +8,10 @@ namespace Financial.Architecture.Tests;
 [Trait("Category", "Unit")]
 public partial class ProductionClockReadsTests
 {
-    // Composition roots register the system clock; a control with no composition root reads it directly.
+    // Composition roots register the system clock.
     private static readonly string[] SystemClockAllowedPathFragments =
     [
         "/DependencyInjection/",
-        "/Components/MonthYearPicker.xaml.cs",
         "/Persistence/DebouncedJsonStorage.cs",
     ];
 
@@ -49,7 +48,6 @@ public partial class ProductionClockReadsTests
     [Theory]
     [InlineData("Financial.X/Services/Foo.cs", "var t = timeProvider ?? TimeProvider.System;", true)]
     [InlineData("Financial.X/DependencyInjection/Ext.cs", "services.TryAddSingleton(TimeProvider.System);", false)]
-    [InlineData("Financial.App/Components/MonthYearPicker.xaml.cs", "TimeProvider.System.GetLocalNow()", false)]
     public void Scanner_Allows_The_System_Clock_Only_At_The_Composition_Roots(string path, string line, bool flagged)
     {
         FindViolations(path, line).Any().Should().Be(flagged);

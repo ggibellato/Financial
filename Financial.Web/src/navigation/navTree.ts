@@ -35,8 +35,6 @@ export const NAV_TREE: NavCategory[] = [
   {
     id: 'cashflow',
     label: 'CashFlow',
-    // Order matches Financial.App/Navigation/NavTree.cs — WPF had the correct
-    // order (docs/ui/react.md); Web's used to differ.
     children: [
       { id: 'monthly', label: 'Monthly', route: '/cashflow/monthly' },
       { id: 'reserva', label: 'Reserva', route: '/cashflow/reserva' },
