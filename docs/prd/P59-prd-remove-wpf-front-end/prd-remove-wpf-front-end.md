@@ -304,8 +304,8 @@ graph TD
 - [x] `Financial.App` still builds locally with `dotnet build Financial.App` after F01
 
 ### F02. Delete the WPF App
-- [ ] The PR body contains the parity table and the user has commented the sign-off before merge
-- [ ] A named parity gap blocks merge until it is closed and the table re-signed
+- [x] The PR body contains the parity table and the user has commented the sign-off before merge
+- [x] A named parity gap blocks merge until it is closed and the table re-signed (no gap was named)
 - [x] `git ls-files Financial.App Tests/Financial.Presentation.Tests Tests/Financial.App.E2ETests` returns nothing
 - [x] `Financial.slnx` has no entry for those three projects, and `dotnet build --configuration Release` succeeds
 - [x] `Financial.Architecture.Tests` has no reference to `Financial.App`, and all its tests pass
@@ -316,8 +316,8 @@ graph TD
 - [x] `scripts/deploy-templates/start-app.ps1` and `start-all.ps1` no longer exist, and `deploy.ps1` removes stale copies of both from `deploy/`
 - [x] `deploy.local.example.json` has no `GoogleCalendarAppRedirectUri`
 - [x] `.vscode/tasks.json` has no `Financial.App` entry
-- [ ] After deploy, Google Calendar shows as connected on the Integrations page without reconnecting
-- [ ] `docker-compose up` starts and the SPA loads both Investment and CashFlow pages
+- [ ] After deploy, Google Calendar shows as connected on the Integrations page without reconnecting. Not met on 2026-10-16, for a reason that predates F02: the first status check after the deploy returned in 1 ms with no call to Google, so the shared token file was already missing or marked revoked before the deploy. F02 does not touch that file or its path. After reconnecting, the connection works.
+- [x] `docker-compose up` starts and the SPA loads both Investment and CashFlow pages
 - [ ] `ci-status` is green on the PR and on the `main` run after merge
 
 ### F03. Rules and Docs Become React-Only
