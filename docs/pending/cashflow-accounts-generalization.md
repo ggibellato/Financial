@@ -1,7 +1,7 @@
 # CashFlow accounts generalization — discussion summary
 
-Status: **design agreed, PRD not started.** Next step: write the WPF-removal ADR, then run `prd-writer` for the features below.
-Scope: **CashFlow becomes account-centred, and the WPF front end is removed** from the whole application (F00). Everything else raised during the discussion is listed under [Future features](#future-features-not-in-this-project). Discussion date: 2026-10-08 to 2026-10-15.
+Status: **design agreed; F00 (WPF removal) done, PRD for F01–F05 not started.** Next step: run `prd-writer` for F01–F05.
+Scope: **CashFlow becomes account-centred, and the WPF front end is removed** from the whole application (F00, done 2026-10-16). Everything else raised during the discussion is listed under [Future features](#future-features-not-in-this-project). Discussion date: 2026-10-08 to 2026-10-15.
 
 Terminology: a **transaction** is anything that touched an account (expense, income, transfer, card charge, card payment, pot deposit or withdrawal, settlement entry). When one action writes transactions on several accounts, they are **linked transactions**.
 
@@ -180,28 +180,24 @@ Rules:
 
 **Decision (2026-10-13): the application stops supporting two front ends. `Financial.App` (WPF) is removed from the whole application** (CashFlow and Investment), and `Financial.Web` (React) becomes the only front end. Reason: the account-centred UI is a large UX redesign; building and keeping it at parity in two front ends would roughly double the UI work for a single-user tool.
 
-- **An ADR is required** before work starts, in `docs/decisions/` (next number: ADR-002). It records the decision, the reason, the consequences below, and supersedes the "React-led UX with equivalent WPF outcomes" invariant.
-- **Removed first, as F00**, so F01–F05 never build WPF screens that would be deleted. Recommended order; the PRD confirms it.
-- **What F00 touches** (inventory to confirm in the PRD):
-  - projects: `Financial.App`, its test projects (`Financial.Presentation.Tests`, `Financial.App.E2ETests`) and the `Financial.Architecture.Tests` rules that reference it; entries in `Financial.slnx`;
-  - CI: the `wpf` and `wpf-e2e` jobs, `detect-changes.sh` classification, the `wpf` entry in `coverage-baseline.json`, the `wpf` row of the coverage comment, the WPF exclusions in `coverlet.runsettings` and the backend job's `-assemblyfilters`;
-  - nightly: the `e2e-wpf` job in `nightly.yml`, its entry in the failure-issue job's `needs`, and its case in `.github/scripts/nightly-issue.test.ps1`. Mutation testing has no WPF target (`scripts/stryker.ps1` covers only the two Domain projects; `Financial.Web/stryker.config.json` covers the SPA), so nothing changes there;
-  - coverage tooling that knows the `wpf` job: `.github/actions/coverage-gate/action.yml`, `.github/scripts/coverage-baseline.ps1`, `baseline-reminder.ps1` and their tests (`coverage-gate.test.ps1`, `baseline-reminder.test.ps1`, `detect-changes.test.sh`);
-  - local deploy: `scripts/deploy.ps1` stops publishing `Financial.App` (publish step, process stop, `appsettings.Production.json` stamping, summary lines), `scripts/deploy-templates/start-app.ps1` is deleted and `start-all.ps1` starts only the web server, `GoogleCalendarAppRedirectUri` leaves `deploy.local.example.json` (the WPF OAuth loopback on port 8082 goes away; its redirect URI can then be removed from the Google Cloud OAuth client). The script also deletes a stale `deploy/Financial.App` folder and `deploy/start-app.ps1` left by earlier runs, since it only cleans the folders it knows;
-  - dev tooling: the `Financial.App` build entry in `.vscode/tasks.json`;
-  - `Tools/ImportGoogleSpreadSheets` is a separate legacy WPF utility (one-time import, run from Visual Studio). Whether it goes too is decided in the PRD;
-  - rules and docs: CLAUDE.md (solution layout, WPF commands, UI invariant 1, `Financial.App` mentions), `Financial.App/CLAUDE.md`, `docs/rules/ui.md`, `docs/ui/wpf.md` and WPF items in `docs/ui/review-checklist.md`, the `fluent-ui` and `testing-guide-Financial` skills, the `ui-reviewer` agent, `README.md`, `context.md`;
-  - memory notes about WPF patterns become obsolete.
-- **Until F00 merges, the current rules still apply**: any change made before then keeps WPF parity. CLAUDE.md and the rule files are changed by F00 itself, not in advance.
-- **Investment is affected too**: its WPF screens go with `Financial.App`. Every Investment workflow must already exist in React before WPF is deleted (confirm in the PRD).
+**Done (F00, 2026-10-16).** Recorded in `docs/decisions/ADR-002-remove-wpf-front-end.md` and delivered by PRD P59 (`docs/prd/P59-prd-remove-wpf-front-end/`):
+
+- #1025: CI and nightly stop building and testing WPF; coverage tooling and baseline lose the `wpf` entry.
+- #1026: `Financial.App`, `Financial.Presentation.Tests` and `Financial.App.E2ETests` deleted; `scripts/deploy.ps1` publishes only the API and SPA, and `start-app.ps1` and `start-all.ps1` are gone (`start-web.ps1` is the launcher). The user signed off that every Investment and CashFlow workflow exists in React before the delete.
+- #1028: CLAUDE.md UI invariant 1 is now "One React front end"; rules, UI docs, skills and agents are React-only.
+- `Tools/ImportGoogleSpreadSheets` (legacy one-time WPF import utility) stays as it is.
+- Follow-ups also merged: #1029 removed backend code only WPF used; #1031 moved the Result % calculation to the server.
+- Left to the user: remove the WPF loopback redirect URI `http://localhost:8082/` from the Google Cloud OAuth client.
+
+From F01 on, every UI change is React-only; there is no WPF parity to keep.
 
 ### Features (slices — each ships with its own data migration tested on a temp copy of the data file)
 
-F00 removes WPF. From F01 the account screen is built in React and grows with each template, so every slice ends with the user doing that template's tasks from the account screen.
+F00 removed WPF. From F01 the account screen is built in React and grows with each template, so every slice ends with the user doing that template's tasks from the account screen.
 
 | Feature | Content |
 |---|---|
-| **F00** | ADR + remove `Financial.App` (WPF), its tests, CI and nightly jobs, coverage entries and WPF-specific rules/docs; React becomes the only front end |
+| **F00** | **Done** (ADR-002, P59: #1025, #1026, #1028). Removed `Financial.App` (WPF), its tests, CI and nightly jobs, coverage entries and WPF-specific rules/docs; React is the only front end |
 | **F01** | `Account` + capabilities + built-in templates (Bank first) + account groups + server-side summary query + generic account-to-account transfer; Bank migrated. **UI:** account list, account screen (header, transactions, actions from the API) for banks, including pay recurring bill; group summary |
 | **F02** | Credit card template added and cards migrated (incl. PayPal); statement payment becomes a real bank → card transfer, uncategorised and linked to its statement (instead of re-pointing/re-dating each charge), with charges' categories still counting on the payment date; de-duplicate the card/period charge filter. **UI:** card actions on the account screen (statements, pay statement, move charge to a later statement) |
 | **F03** | Pots template added and Reserva migrated; linked withdrawal via bank (today's records, written as one operation); linked deposit funded from one or more banks or none (automatic from a split-to-reserve income, or manual); "Reserva" category flag. **UI:** Pots on the account screen (pots, deposit, withdraw) |
@@ -226,7 +222,7 @@ The user chose the full refactor over a lighter two-feature route (Settlement su
 
 ### Code size (honest expectation)
 
-Excluding F00, roughly the same amount of code overall, possibly slightly more during F01–F04 while old and new screens coexist. Removed: four separate balance calculations (replaced by one), name-string joins, fixed-name Reserva lookup, duplicated card filter, client-side summary maths, single-instance Mãe/Reserva code, and (in F05) the per-type pages. Added: `Account`, groups, summary query, capabilities and built-in templates, allowed-actions API, four migrations, OpenAPI changes, the account screen in React. F00 removes the whole WPF app, its tests and CI jobs: a large net reduction, and every later slice is about half the UI work. Per-capability behaviour (statements, splits, FX) stays: it is real domain complexity, now organised in one place per capability.
+Excluding F00, roughly the same amount of code overall, possibly slightly more during F01–F04 while old and new screens coexist. Removed: four separate balance calculations (replaced by one), name-string joins, fixed-name Reserva lookup, duplicated card filter, client-side summary maths, single-instance Mãe/Reserva code, and (in F05) the per-type pages. Added: `Account`, groups, summary query, capabilities and built-in templates, allowed-actions API, four migrations, OpenAPI changes, the account screen in React. F00 removed the whole WPF app, its tests and CI jobs: a large net reduction, and every later slice is about half the UI work. Per-capability behaviour (statements, splits, FX) stays: it is real domain complexity, now organised in one place per capability.
 
 ## Future features (not in this project)
 
@@ -239,14 +235,13 @@ Excluding F00, roughly the same amount of code overall, possibly slightly more d
 
 - How groups are managed (create/edit/reorder screens) and whether a default group reproduces today's main page.
 - Account screen UX: layout of header/transactions/actions, how capability-specific panels (card statements, pots, balances in two currencies) sit inside the common shape.
-- F00: confirm every Investment and CashFlow workflow exists in React before `Financial.App` is deleted, and the full list of files, CI jobs and docs to change.
-- **Web UI telemetry is needed.** Today only WPF has client-side telemetry (Serilog file log and OpenTelemetry spans under the service `Financial.App`); `Financial.Web` has none, and F00 removes WPF's without replacing it (P59 keeps F00 to removal only). The account-centred UI should be observable from the browser: at least unhandled errors and failed API calls, ideally user actions correlated with the API's existing traces. The PRD decides the scope and whether it is its own slice after F00 or part of F01. Note for that design: the browser cannot send OTLP gRPC to `jaeger:4317`, so it needs OTLP over HTTP with CORS or a relay through the API, and `docker-compose.observability.yml` (today it only configures the API container) changes with it.
+- **Web UI telemetry is needed.** WPF's client-side telemetry (Serilog file log and OpenTelemetry spans under the service `Financial.App`) went with it in F00, and `Financial.Web` has none, so today only the API is observable. The account-centred UI should be observable from the browser: at least unhandled errors and failed API calls, ideally user actions correlated with the API's existing traces. The PRD decides the scope and whether it is its own slice before F01 or part of F01. Note for that design: the browser cannot send OTLP gRPC to `jaeger:4317`, so it needs OTLP over HTTP with CORS or a relay through the API, and `docker-compose.observability.yml` (today it only configures the API container) changes with it.
 - Where actions that span accounts start (e.g. adding income with a split to pots: from the bank, from the Pots account, or both).
 - Whether old pages stay reachable during F01–F04 (coexistence) and the exact retirement list for F05.
 - **Decided:** an income without a reserve split keeps the bank optional, as today. A manual deposit into the pots may have no bank (money from outside CashFlow, e.g. an investment).
 - **Decided: migrations are forward-only.** Each migration makes the data correct for the new model from now on; past records keep working as they are today and are not rebuilt (e.g. paid card charges stay as bank expenses on their payment date; old Reserva deposits, withdrawal pairs and transfers stay unlinked; existing Mãe entries get "paid by" derived from their sign, and the migration must leave the Mãe BRL and GBP totals exactly as they are today, currently zero).
-- **Resolved (PR #1014): Mensais "UK bill paid → expense" moved to the back end.** `MensaisService.MarkBillPaidAsync(id, RecurringBillMarkPaidDTO)` (`POST {id}/paid`) builds the bank expense and sets the bill to Paid inside one `ApplyAndSaveAsync`, so a half-done result is no longer possible and both UIs' retry paths are gone. The service rejects an expense for a non-UK bill or a bill already Paid. Both front ends (`MensaisViewModel.MarkUkBillPaidViaExpensePromptAsync`, `useMensais.markBillPaid`) now only collect the prompt values and make one call; skip sends no expense.
-  - Still in both front ends, by design: the UI decision to *open* the prompt (`Area == "UK"` and moving to Paid), a string compare on the area. It is presentation flow, and the server enforces the rule. After F00 only the React copy remains.
+- **Resolved (PR #1014): Mensais "UK bill paid → expense" moved to the back end.** `MensaisService.MarkBillPaidAsync(id, RecurringBillMarkPaidDTO)` (`POST {id}/paid`) builds the bank expense and sets the bill to Paid inside one `ApplyAndSaveAsync`, so a half-done result is no longer possible and the UI retry paths are gone. The service rejects an expense for a non-UK bill or a bill already Paid. The front end (`useMensais.markBillPaid`) now only collects the prompt values and make one call; skip sends no expense.
+  - Still in the front end, by design: the UI decision to *open* the prompt (`Area == "UK"` and moving to Paid), a string compare on the area. It is presentation flow, and the server enforces the rule.
   - Still open: `POST {id}/status` with `Paid` sets a UK bill Paid without going through `/paid`. Harmless today (equivalent to skip), but the PRD can decide whether `/status` should refuse Paid.
   - For F01: the expense's `PaymentSourceBankId` in `RecurringBillPaymentExpenseDTO` becomes the account reference when banks move to `Account`; the bank screen's "pay recurring bill" action reuses this endpoint.
 - `context.md` and `data/data-cashflow.example.json` are stale (fixed 5 buckets; missing collections) and should be updated by the slices that touch them.
