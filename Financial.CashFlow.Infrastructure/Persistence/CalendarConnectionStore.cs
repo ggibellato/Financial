@@ -24,6 +24,10 @@ public sealed class CalendarConnectionStore : ICalendarConnectionStore
 
     private readonly string _filePath;
 
+    // Save replaces the file by renaming over it, which Windows refuses while a reader has it open,
+    // and the sync-status poll reads it while background syncs save; one gate per store serialises them.
+    private readonly object _fileGate = new();
+
     public CalendarConnectionStore(string? filePath)
     {
         var resolvedPath = string.IsNullOrWhiteSpace(filePath) ? DefaultRelativePath : filePath;
@@ -32,13 +36,16 @@ public sealed class CalendarConnectionStore : ICalendarConnectionStore
 
     public CalendarConnection? Load()
     {
-        if (!File.Exists(_filePath))
+        lock (_fileGate)
         {
-            return null;
-        }
+            if (!File.Exists(_filePath))
+            {
+                return null;
+            }
 
-        var json = File.ReadAllText(_filePath);
-        return JsonSerializer.Deserialize<CalendarConnection>(json, SerializerOptions);
+            var json = File.ReadAllText(_filePath);
+            return JsonSerializer.Deserialize<CalendarConnection>(json, SerializerOptions);
+        }
     }
 
     public void Save(CalendarConnection connection)
@@ -53,15 +60,21 @@ public sealed class CalendarConnectionStore : ICalendarConnectionStore
 
         var json = JsonSerializer.Serialize(connection, SerializerOptions);
         var stagedPath = _filePath + TemporaryFileSuffix;
-        File.WriteAllText(stagedPath, json);
-        File.Move(stagedPath, _filePath, overwrite: true);
+        lock (_fileGate)
+        {
+            File.WriteAllText(stagedPath, json);
+            File.Move(stagedPath, _filePath, overwrite: true);
+        }
     }
 
     public void Delete()
     {
-        if (File.Exists(_filePath))
+        lock (_fileGate)
         {
-            File.Delete(_filePath);
+            if (File.Exists(_filePath))
+            {
+                File.Delete(_filePath);
+            }
         }
     }
 
