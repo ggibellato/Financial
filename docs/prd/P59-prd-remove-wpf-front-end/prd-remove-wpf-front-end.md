@@ -159,13 +159,16 @@ It works in three pull requests. F01 stops CI and the nightly run from building,
 - **Solution and tests:**
   - remove their entries from `Financial.slnx`;
   - remove the `Financial.App` project reference from `Tests/Financial.Architecture.Tests/Financial.Architecture.Tests.csproj`, along with the WPF rules in `PresentationDependencyRuleTests.cs`; the API rules stay;
+  - retarget `Financial.Architecture.Tests` from `net10.0-windows` with `UseWPF` to plain `net10.0`, since nothing it references needs Windows any more;
+  - drop the `MonthYearPicker` system-clock allowance in `ProductionClockReadsTests.cs`, and `Financial.App` from the composition-root wording in `ObservabilityIsolationRuleTests.cs` and `SharedInfrastructureIsolationRuleTests.cs`;
   - remove the `Financial.Presentation.Tests` clause from the backend job's test filter and the `-Financial.Presentation.App` term from its `-assemblyfilters` in `build.yml`, along with the comment explaining that term;
   - remove the WPF rule from `.github/scripts/detect-changes.sh` and its cases from `detect-changes.test.sh`, and the WPF row from `docs/ci-affected-pipeline.md`.
 - **Coverage settings:** remove the `Financial.Presentation.App` exclusions and their explaining comments from `coverlet.runsettings`.
+- **Source mentions:** remove `Financial.App` from the composition-root message in `RemoteStorageFactory.cs`, the ordering comment in `Financial.Web/src/navigation/navTree.ts` (it pointed at the deleted WPF nav tree) and a test comment in `CreditCardCalendarSyncServiceTests.cs`.
 - **Local deploy:**
   - `scripts/deploy.ps1` stops publishing `Financial.App`. It removes the WPF publish step, `Financial.Presentation.App` from the process stop, the WPF `appsettings.Production.json` stamping and the WPF summary line, and the synopsis drops the WPF paragraphs.
   - On every run, the script deletes `deploy/Financial.App/` and `deploy/start-app.ps1` if they exist, because step 3 only cleans the folders it knows.
-  - Delete `scripts/deploy-templates/start-app.ps1`. `start-all.ps1` starts only the web server.
+  - Delete `scripts/deploy-templates/start-app.ps1` and `start-all.ps1` (it would only wrap `start-web.ps1`); the deploy also removes stale `deploy/start-all.ps1`, and its closing message points at `start-web.ps1`.
   - Remove `GoogleCalendarAppRedirectUri` from `scripts/deploy.local.example.json`.
 - **Editor:** remove the `Financial.App/Financial.App.csproj` build entry from `.vscode/tasks.json`.
 - **Unchanged:**
@@ -178,7 +181,7 @@ It works in three pull requests. F01 stops CI and the nightly run from building,
 **Experience:**
 - The user reads the parity table in the PR and comments "parity signed off" (or names a gap). The PR is merged only after that comment.
 - After merge, the user runs `scripts/deploy.ps1` once. Output lists only `Financial.Web -> …\deploy\Financial.Web`, and `deploy/` no longer contains `Financial.App` or `start-app.ps1`.
-- `start-all.ps1` starts the web server only. The user opens `http://localhost:8080`.
+- `start-web.ps1` starts the web server. The user opens `http://localhost:8080`.
 - Optional manual step, listed in the PR body: remove `http://localhost:8082/` from the Google Cloud OAuth client's authorized redirect URIs, and keep the API callback URIs.
 
 **Error Handling:**
@@ -186,7 +189,6 @@ It works in three pull requests. F01 stops CI and the nightly run from building,
 - A test project still references `Financial.App`: `dotnet build` fails in the `backend` job with a missing project. Remove the reference in the same PR.
 - An architecture test still loads `Financial.Presentation.App`: the test fails with a type-load error. Remove that rule.
 - An old `deploy/Financial.App` folder is locked by a running process: the deploy stops the process first (the existing stop step keeps matching `Financial.Presentation.App` for that cleanup run), then deletes the folder. If deletion still fails, the script throws with the folder path.
-- `start-all.ps1` still calls `start-app.ps1`: the launcher fails with "not found". Update `start-all.ps1` in the same PR.
 
 ### F03. Rules and Docs Become React-Only
 
@@ -310,8 +312,8 @@ graph TD
 - [ ] `coverlet.runsettings` has no `Financial.Presentation.App` exclusion
 - [ ] The backend job's test filter has no `Financial.Presentation.Tests` clause and its `-assemblyfilters` is `+*`
 - [ ] `detect-changes.sh` has no WPF rule and `detect-changes.test.sh` passes
-- [ ] `scripts/deploy.ps1` runs on a machine with an old `deploy/Financial.App` folder and leaves `deploy/` without `Financial.App` or `start-app.ps1`, with the web app published
-- [ ] `scripts/deploy-templates/start-app.ps1` no longer exists; `start-all.ps1` starts only the web server
+- [ ] `scripts/deploy.ps1` runs on a machine with an old `deploy/Financial.App` folder and leaves `deploy/` without `Financial.App`, `start-app.ps1` or `start-all.ps1`, with the web app published
+- [ ] `scripts/deploy-templates/start-app.ps1` and `start-all.ps1` no longer exist, and `deploy.ps1` removes stale copies of both from `deploy/`
 - [ ] `deploy.local.example.json` has no `GoogleCalendarAppRedirectUri`
 - [ ] `.vscode/tasks.json` has no `Financial.App` entry
 - [ ] After deploy, Google Calendar shows as connected on the Integrations page without reconnecting
