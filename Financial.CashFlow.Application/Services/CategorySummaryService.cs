@@ -37,25 +37,6 @@ public sealed class CategorySummaryService : ICategorySummaryService
         _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
     }
 
-    public IReadOnlyList<CategoryAnnualTotalDTO> GetCategoryTotalsForYear(int year)
-    {
-        using var span = StartSpan("GetCategoryTotalsForYear");
-        try
-        {
-            var monthsElapsed = AnnualAverageMonthsCalculator.NumberOfMonthsForAverage(_timeProvider.GetUtcNow(), year);
-
-            var result = BuildCategoryTotalDtos(BuildAllCategorySeriesForYear(year), monthsElapsed);
-            span.MarkSuccess();
-            _logger.LogInformation("{Operation} completed", "GetCategoryTotalsForYear");
-            return result;
-        }
-        catch (Exception ex)
-        {
-            span.MarkFailed(ex);
-            throw;
-        }
-    }
-
     public CategoryTotalsAnnualDTO GetCategoryTotalsAnnualForYear(int year)
     {
         using var span = StartSpan("GetCategoryTotalsAnnualForYear");

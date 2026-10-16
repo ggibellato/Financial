@@ -43,8 +43,7 @@ This revision replaces the previous guide, which called the in-process `WebAppli
   `new CashFlowJsonRepository(data, new LocalJsonStorage(tempPath), new CashFlowSerializerAdapter())`
   with no stub in sight. `Financial.Web` is a separate deployable reached over HTTP, so its own
   Integration tests fake the API with `vi.mock('../../api/financialApiClient')` — the sanctioned
-  exception in `references/mock-health-rules.md`. `Financial.App` (WPF) composes the backend
-  in-process in `App.xaml.cs`, so WPF Integration tests wire real services, not a fake API.
+  exception in `references/mock-health-rules.md`.
 - **Integration's dual role.** Contract-proving: `CashFlowJsonRepositoryTests.ApplyAndSaveAsync_WritesSerializedDataThroughStorage`
   proves repository ↔ `LocalJsonStorage` ↔ `CashFlowSerializerAdapter` round-trip. AC-tracing
   (none yet — the first follows this shape): a test under `Tests/Financial.Api.Tests/Acceptance/`
@@ -55,7 +54,7 @@ This revision replaces the previous guide, which called the in-process `WebAppli
   embeds the built SPA in `wwwroot`, seeds `Tests/Financial.Api.Tests/TestData/*.test.json`,
   starts `dotnet Financial.Api.dll` on port 8080 and runs the `Financial.Web/tests/e2e` Playwright suite (`npm run smoke-test`)
   in Chromium. Two real processes, real HTTP, real JSON files — that is E2E here. Reproduce the
-  same steps locally on a free port. WPF's E2E is `Tests/Financial.App.E2ETests`, run by the `wpf-e2e` job. See `references/e2e-environment.md`.
+  same steps locally on a free port. See `references/e2e-environment.md`.
 - **Why DI tests exist, and where.** `AddFinancialCashFlowInfrastructure`, `AddFinancialInfrastructure`,
   `AddObservability` and `AddGoogleDriveFileClient` register into a real `ServiceCollection`; a
   missing registration or an unsupported `CashFlow:Repository:Provider` only fails at
@@ -64,13 +63,12 @@ This revision replaces the previous guide, which called the in-process `WebAppli
   `AC~` on traits and `--list-tests` dry-runs a filter. Vitest 4.1's `--tagsFilter` refuses any
   tag not declared in `test.tags`, which is why Web AC tags live in the test name. Fluent UI v9
   under Vitest needs the two `vi.mock` shims already in `src/setupTests.ts`; tabster focus is
-  unreliable in jsdom. WPF ViewModels run on MTA xUnit threads with no `Dispatcher`.
+  unreliable in jsdom.
 - **Negative paths, concretely.** Unit: `ExpenseServiceTests.AddExpenseAsync_WithZeroValue_RecordsFailedSpanWithException`.
   Integration, provider failure: `FrankfurterExchangeRateProviderTests.GetHistoricalRateAsync_WhenHttpRequestThrows_ReturnsNull`.
   Integration, rejected write: `CashFlowJsonRepositoryTests.ApplyAndSaveAsync_WhenWriteFails_PropagatesException`.
   E2E: `Financial.Web/tests/e2e/add-expense.spec.ts` (blank value rejected inline, forced 500 shown)
-  and `Tests/Financial.App.E2ETests` `AddExpense_BlankValue_ShowsFieldErrorAndAddsNothing` — see
-  `references/negative-path-testing.md`.
+  — see `references/negative-path-testing.md`.
 - **Binding rules from `docs/rules/implementation.md` §Tests.** Shared doubles live only in
   `Tests/Financial.TestUtilities` (`StubCashFlowRepository`, `StubInvestmentRepository`,
   `RecordingTelemetryTracer`, `RecordingLogger<T>`, `FakeTimeProvider`, `TestDataPaths`) — never a
@@ -104,8 +102,6 @@ Worth testing in this codebase:
   `openapiFreshness.test.ts`) → Integration.
 - Dependency-direction rules (`Tests/Financial.Architecture.Tests`) and example data files
   (`ExampleDataFileTests`) → Integration.
-- WPF ViewModel state, commands, validation and span recording → Unit; XAML column bindings
-  against DTO properties → contract test.
 - React hooks' loading/error/retry states, components' roles and keyboard handlers, pages' full
   state matrix with the API client faked.
 
@@ -115,7 +111,7 @@ NOT worth testing here:
 - Raw Google SDK clients (accepted gap, `artifacts/google-sdk-wrappers.md`); live CSS selectors
   in `GoogleFinance.cs` / `StatusInvest.cs` (`Category=Live` verification runs).
 - DTO shape by hand (the OpenAPI snapshot pins it); `Tools/ImportGoogleSpreadSheets` (one-off
-  importer, out of scope by decision); framework behaviour (WPF binding engine, react-router,
+  importer, out of scope by decision); framework behaviour (react-router,
   ASP.NET model binding, `System.Text.Json`).
 
 ## 3. Feature Implementation Checklist
@@ -127,7 +123,7 @@ AC-tracing Integration row; every artifact you create or modify gets its own row
 |---|---|---|
 | A feature (new or changed AC) | Integration (AC-tracing): one tagged test per §9 bullet incl. negative ones, real host/graph, providers faked | `references/feature-traceability.md` |
 | Domain entity / value object / `Rules/` calculator | Unit: each invariant, each rejected input, boundary values | `artifacts/domain-entities-and-rules.md` |
-| Application service (`*Service.cs`) | Unit: each branch + failed-span/log assertion (stub repo); Integration: through the API host or WPF graph | `artifacts/application-services.md` |
+| Application service (`*Service.cs`) | Unit: each branch + failed-span/log assertion (stub repo); Integration: through the API host | `artifacts/application-services.md` |
 | Parser / validator (`Validation/`) | Unit: every accepted form and every malformed input | `artifacts/application-parsers-validators.md` |
 | `Add*` DI extension or composition-root registration | Integration: real container resolves, unsupported config throws | `artifacts/dependency-injection-modules.md` |
 | Repository, serializer, converter, storage | Integration: temp-file round-trip + rejected write + fake-clock timing | `artifacts/json-persistence-and-repositories.md` |
@@ -139,9 +135,6 @@ AC-tracing Integration row; every artifact you create or modify gets its own row
 | Any DTO or endpoint shape change | Integration: regenerate snapshot + `npm run generate-api-types` + `tsc -b` | `artifacts/api-contract-snapshot.md` |
 | New project or cross-context reference | Integration: architecture rule test | `artifacts/architecture-rule-tests.md` |
 | `data/*.example.json` or `TestData/*.test.json` | Integration: real loader still parses | `artifacts/example-and-seed-data.md` |
-| WPF ViewModel / `*FormValidation` | Unit: state, commands, validation, span; select via `TreeNodeViewModel.IsSelected` | `artifacts/wpf-viewmodels.md` |
-| WPF converter / behavior / helper | Unit: each branch incl. null/unset input | `artifacts/wpf-converters-behaviors-helpers.md` |
-| WPF view / XAML / component | Binding-contract test for grids; manual run per `docs/rules/ui.md` | `artifacts/wpf-views-and-xaml.md` |
 | Spreadsheet import / migration tool | Unit for resolvers; Integration on temp JSON + in-memory workbook | `artifacts/spreadsheet-import-tools.md` |
 | React hook | Unit: loading, success, error, retry with `apiClient` faked | `artifacts/react-hooks.md` |
 | React component | Unit: roles, labels, keyboard, each visual state | `artifacts/react-components.md` |
@@ -165,7 +158,7 @@ corresponding guide for the complete recipe.
 | Domain entities, value objects, rules | `Financial.*.Domain/{Entities,ValueObjects,Rules}/*.cs` | Unit | `artifacts/domain-entities-and-rules.md` |
 | Application services | `Financial.*.Application/Services/*Service.cs` | Unit + Integration | `artifacts/application-services.md` |
 | Parsers / validators | `Financial.*.Application/Validation/*.cs` | Unit | `artifacts/application-parsers-validators.md` |
-| DI modules | `*/DependencyInjection/*ServiceCollectionExtensions.cs`, `Program.cs`, `App.xaml.cs` | Integration | `artifacts/dependency-injection-modules.md` |
+| DI modules | `*/DependencyInjection/*ServiceCollectionExtensions.cs`, `Program.cs` | Integration | `artifacts/dependency-injection-modules.md` |
 | JSON persistence & repositories | `*/Persistence/*.cs`, `*/Repositories/*.cs`, `Financial.Shared.Infrastructure/Persistence/*.cs` | Integration (+ Unit for converters) | `artifacts/json-persistence-and-repositories.md` |
 | External HTTP services & fetchers | `Financial.*.Infrastructure/Services/*.cs` | Integration (fake handler) + Unit | `artifacts/external-http-services.md` |
 | Web scraping parsers | `Integrations/WebPageParser/*.cs` | Unit (+ manual live) | `artifacts/web-scraping-parsers.md` |
@@ -175,9 +168,6 @@ corresponding guide for the complete recipe.
 | API contract snapshot & generated types | `Tests/Financial.Api.Tests/Contract/openapi-v1.snapshot.json`, `Financial.Web/src/api/generated/openapi.ts` | Integration | `artifacts/api-contract-snapshot.md` |
 | Architecture rules | `Tests/Financial.Architecture.Tests/*RuleTests.cs` | Integration | `artifacts/architecture-rule-tests.md` |
 | Example & seed data | `data/*.example.json`, `Tests/**/TestData/*.test.json` | Integration | `artifacts/example-and-seed-data.md` |
-| WPF ViewModels | `Financial.App/ViewModels/**/*.cs` | Unit (+ Integration for AC) | `artifacts/wpf-viewmodels.md` |
-| WPF converters, behaviors, helpers | `Financial.App/{Converters,Behaviors,Helpers,Input,Navigation}/*.cs` | Unit | `artifacts/wpf-converters-behaviors-helpers.md` |
-| WPF views, components, controls | `Financial.App/{Views,Components,Controls}/**/*.xaml` | Contract (binding) + manual | `artifacts/wpf-views-and-xaml.md` |
 | Spreadsheet import tools | `Tools/{CashFlowSpreadsheetImport,InvestmentSpreadsheetImport}/**/*.cs` | Unit + Integration | `artifacts/spreadsheet-import-tools.md` |
 | React hooks | `Financial.Web/src/hooks/use*.ts` | Unit | `artifacts/react-hooks.md` |
 | React components | `Financial.Web/src/components/**/*.tsx` | Unit | `artifacts/react-components.md` |
@@ -208,8 +198,6 @@ corresponding guide for the complete recipe.
   type name via `RecordingLogger<T>` (`docs/rules/implementation.md`)
 - ❌ **Construct `ApiTestFactory` inside a test class, or copy a stub locally** — derive from
   `ApiEndpointTests`; add doubles to `Tests/Financial.TestUtilities`
-- ❌ **Assign `SelectedNode` directly in a WPF ViewModel test** — select through
-  `TreeNodeViewModel.IsSelected` (`artifacts/wpf-viewmodels.md`)
 - ❌ **Mock individual `fetch` calls or add a second `ResizeObserver` / Fluent shim** — mock
   `financialApiClient` at module level; `setupTests.ts` already shims (`references/gotchas.md`)
 - ❌ **Change a DTO or endpoint without regenerating the snapshot and `openapi.ts`**
@@ -225,8 +213,7 @@ guides. What most guides call "integration" or "e2e" for an in-process test
 through the real HTTP stack (`ApiEndpointTests` over `WebApplicationFactory<Program>`) is
 **Integration** here — real wiring, one process, no cross-service deployment.
 **E2E** is reserved for tests that run more than one deployed process: the CI `web-e2e`
-job's published `Financial.Api.dll` plus Playwright's Chromium driving the built SPA, and the
-`wpf-e2e` job's built `Financial.App` driven through UI Automation.
+job's published `Financial.Api.dll` plus Playwright's Chromium driving the built SPA.
 Acceptance-criteria coverage does not get its own layer either: it's a mandatory,
 explicitly-tagged subset of Integration tests (see `references/feature-traceability.md`)
 — same setup and mock boundary as any other Integration test, distinguished only by
@@ -289,9 +276,7 @@ to spot drift — layers losing coverage, or AC-tracing tests not keeping pace w
 | Shared.Abstractions.Tests | 31 in 5 files | Unit: 31 | No |
 | GoogleIntegrations + Observability + WebPageParser Tests | 17 + 23 + 25 in 14 files | Unit: ~50, Integration (DI/config): ~15, Live (real sites): 4 files | No |
 | CashFlowSpreadsheetImport + InvestmentSpreadsheetImport Tests | 184 + 48 in 32 files | Unit: ~160, Integration (temp JSON/backup): ~72 | No |
-| Presentation.Tests (WPF) | 1102 in 108 files | Unit: ~1098, Integration (DI): 2 classes, contract (XAML binding): 1 class | No |
 | Financial.Web (vitest) | 1468 in 119 files | Unit (hooks/components/utils/client): ~1100, Integration (pages, App, freshness): ~370 | No |
 | `web-e2e` (`Financial.Web/tests/e2e`) | 6 specs | E2E: 6 `@smoke` journeys, 2 failure journeys | No |
-| `wpf-e2e` (`Tests/Financial.App.E2ETests`) | 5 tests | E2E: 5 `Category=Smoke` journeys, 1 failure journey | No |
 
-Total: 3404 .NET tests across 325 files, 1468 web tests across 119 files, as of 2026-09-06 (E2E rows updated 2026-10-05: 6 web specs, 5 WPF tests).
+Total: 2302 .NET tests across 217 files, 1468 web tests across 119 files, as of 2026-09-06 (E2E row updated 2026-10-05: 6 web specs; the .NET total excludes the test projects removed by ADR-002).

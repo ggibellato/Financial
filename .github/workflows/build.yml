@@ -8,7 +8,7 @@ on:
     types: [opened, synchronize, reopened]
 
 # pull-requests: write lets the coverage-comment job post one combined sticky PR comment for
-# backend/wpf/web; contents: read is needed alongside it because declaring `permissions:` at all
+# backend/web; contents: read is needed alongside it because declaring `permissions:` at all
 # replaces the GITHUB_TOKEN's default grants with exactly this set.
 permissions:
   contents: read
@@ -28,8 +28,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       backend: ${{ steps.detect.outputs.backend }}
-      wpf: ${{ steps.detect.outputs.wpf }}
-      wpf_e2e: ${{ steps.detect.outputs.wpf_e2e }}
       web: ${{ steps.detect.outputs.web }}
       web_e2e: ${{ steps.detect.outputs.web_e2e }}
       merge_base: ${{ steps.base.outputs.merge_base }}
@@ -122,26 +120,17 @@ jobs:
     - name: Build
       run: dotnet build --configuration Release
 
-    # Every test project in the solution except the WPF ones: `wpf` owns the view-model tests and
-    # `wpf-e2e` the UI-automation suite, which needs an interactive desktop and the built exe.
     - name: Run tests
-      run: dotnet test --configuration Release --no-build --verbosity normal --filter "FullyQualifiedName!~Financial.Presentation.Tests&Category!=E2E&Category!=Live" --settings coverlet.runsettings --results-directory TestResults
+      run: dotnet test --configuration Release --no-build --verbosity normal --filter "Category!=E2E&Category!=Live" --settings coverlet.runsettings --results-directory TestResults
 
     # coverlet.runsettings declares the XPlat collector itself, so --settings is enough to turn
     # collection on - no --collect argument, and so no "XPlat Code Coverage" quoting to get wrong
     # on the PowerShell-hosted Windows runner. The file is the single source of truth for what is
     # excluded (generated obj/** code).
-    # Financial.Architecture.Tests project-references Financial.App (to check its dependency
-    # rules), which pulls Financial.Presentation.App into this job's test process - coverlet
-    # then instruments it here too, at whatever near-zero % incidental reflection leaves it at,
-    # even though nothing in this job behaviorally exercises it. Its real coverage is measured
-    # by the wpf job below, from Financial.Presentation.Tests; filtering it out of backend's own
-    # report (not its collection - coverlet.runsettings is unchanged) is what keeps this number
-    # honest as "backend" coverage instead of misattributing an untested-here WPF assembly to it.
     - name: Publish coverage summary
       run: |
         dotnet tool install dotnet-reportgenerator-globaltool --tool-path .tools
-        ./.tools/reportgenerator.exe "-reports:TestResults/**/coverage.cobertura.xml" "-targetdir:CoverageReport" "-reporttypes:MarkdownSummaryGithub;JsonSummary;Cobertura;Html" "-assemblyfilters:+*;-Financial.Presentation.App"
+        ./.tools/reportgenerator.exe "-reports:TestResults/**/coverage.cobertura.xml" "-targetdir:CoverageReport" "-reporttypes:MarkdownSummaryGithub;JsonSummary;Cobertura;Html" "-assemblyfilters:+*"
         Get-Content CoverageReport/SummaryGithub.md | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
 
     # Graded, blocking signal: green (100%) / yellow (95-99.99%) / amber (90-94.99%) /
@@ -159,98 +148,6 @@ jobs:
       with:
         name: coverage-report-backend
         path: CoverageReport
-
-  wpf:
-    needs: changes
-    if: needs.changes.outputs.wpf == 'true'
-    runs-on: windows-latest
-    outputs:
-      coverage: ${{ steps.gate.outputs.coverage }}
-      emoji: ${{ steps.gate.outputs.emoji }}
-      branch: ${{ steps.gate.outputs.branch }}
-      branch-emoji: ${{ steps.gate.outputs.branch-emoji }}
-      line-delta: ${{ steps.gate.outputs.line-delta }}
-      branch-delta: ${{ steps.gate.outputs.branch-delta }}
-    steps:
-    - name: Pin timezone and culture
-      shell: pwsh
-      run: |
-        Set-TimeZone -Id "GMT Standard Time"
-        Set-Culture en-GB
-
-    - name: Checkout code
-      uses: actions/checkout@v6
-
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v6
-      with:
-        dotnet-version: 10.0.x
-
-    - name: Build WPF app
-      run: dotnet build Financial.App/Financial.App.csproj --configuration Release
-
-    - name: Run tests
-      run: dotnet test Tests/Financial.Presentation.Tests --configuration Release --verbosity normal --settings coverlet.runsettings --results-directory TestResults
-
-    # Financial.Presentation.Tests loads its dependencies' assemblies too (backend
-    # projects Financial.App composes), so this filters the report down to Financial.Presentation.App
-    # itself - the counterpart to backend's, which deliberately excludes this same assembly to
-    # avoid double-attributing it.
-    - name: Publish coverage summary
-      run: |
-        dotnet tool install dotnet-reportgenerator-globaltool --tool-path .tools
-        ./.tools/reportgenerator.exe "-reports:TestResults/**/coverage.cobertura.xml" "-targetdir:CoverageReport" "-reporttypes:MarkdownSummaryGithub;JsonSummary;Cobertura;Html" "-assemblyfilters:+Financial.Presentation.App"
-        Get-Content CoverageReport/SummaryGithub.md | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
-
-    # Graded, blocking signal: green (100%) / yellow (95-99.99%) / amber (90-94.99%) /
-    # red (<90%, step fails, which fails this job and ci-status - see docs/ci-affected-pipeline.md).
-    - name: Check coverage threshold
-      id: gate
-      uses: ./.github/actions/coverage-gate
-      with:
-        label: WPF
-        baseline-key: wpf
-
-    - name: Upload coverage report artifact
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: coverage-report-wpf
-        path: CoverageReport
-
-  # Drives the real Financial.App through UI Automation (FlaUI/UIA3) on a hosted Windows runner's
-  # interactive desktop. Runs whenever `wpf_e2e` is set; per-test screenshots and the app log are
-  # uploaded on failure. See docs/ci-affected-pipeline.md for the nightly fallback rule.
-  wpf-e2e:
-    needs: [ changes, wpf ]
-    if: >-
-      always()
-      && needs.changes.outputs.wpf_e2e == 'true'
-      && !contains(needs.*.result, 'failure')
-      && !contains(needs.*.result, 'cancelled')
-    runs-on: windows-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v6
-
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v6
-      with:
-        dotnet-version: 10.0.x
-
-    - name: Build WPF app and E2E tests
-      run: dotnet build Tests/Financial.App.E2ETests/Financial.App.E2ETests.csproj --configuration Release
-
-    - name: Run WPF E2E smoke
-      run: dotnet test Tests/Financial.App.E2ETests --configuration Release --no-build --verbosity normal --filter "Category=Smoke"
-
-    - name: Upload E2E artifacts
-      if: failure()
-      uses: actions/upload-artifact@v4
-      with:
-        name: wpf-e2e-artifacts
-        path: TestResults/e2e-artifacts
-        retention-days: 14
 
   web:
     needs: changes
@@ -289,7 +186,7 @@ jobs:
       working-directory: Financial.Web
       run: npm run test:coverage
 
-    # Mirrors backend/wpf's own "Publish coverage summary" step: reportgenerator reads the lcov
+    # Mirrors backend's own "Publish coverage summary" step: reportgenerator reads the lcov
     # report vitest's coverage.reporter also produces (vite.config.ts) and renders the same
     # per-file/per-module Markdown table format used by the other two jobs, so all three jobs
     # share one reporting mechanism instead of a bespoke jq-only summary.
@@ -302,7 +199,7 @@ jobs:
 
     # Graded, blocking signal: green (100%) / yellow (95-99.99%) / amber (90-94.99%) /
     # red (<90%, step fails, which fails this job and ci-status - see docs/ci-affected-pipeline.md).
-    # Same gate as backend/wpf, reading the Summary.json "Publish coverage summary" just produced
+    # Same gate as backend, reading the Summary.json "Publish coverage summary" just produced
     # from lcov.info - pwsh runs fine on ubuntu-latest too.
     - name: Check coverage threshold
       id: gate
@@ -323,12 +220,12 @@ jobs:
       working-directory: Financial.Web
       run: npm run build
 
-  # One combined sticky PR comment for backend/wpf/web instead of three separate ones - a
+  # One combined sticky PR comment for backend/web instead of separate ones - a
   # skipped job shows as "not run this time" rather than a stale leftover comment. The detailed
   # per-class breakdown stays only in each job's own GITHUB_STEP_SUMMARY; this comment is just
   # the gate verdict per project plus a link to the full reports.
   coverage-comment:
-    needs: [ changes, backend, wpf, web ]
+    needs: [ changes, backend, web ]
     if: always() && github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
@@ -349,12 +246,6 @@ jobs:
       shell: pwsh
       run: ./.github/scripts/diff-coverage.ps1 -Label Backend -CoberturaPath coverage-reports/coverage-report-backend/Cobertura.xml -MergeBase '${{ needs.changes.outputs.merge_base }}' -Head '${{ needs.changes.outputs.head }}' -Blocking:($env:DIFF_COVERAGE_BLOCKING -eq 'true')
 
-    - name: Diff coverage (WPF)
-      id: diff-wpf
-      if: always() && needs.wpf.result != 'skipped'
-      shell: pwsh
-      run: ./.github/scripts/diff-coverage.ps1 -Label WPF -CoberturaPath coverage-reports/coverage-report-wpf/Cobertura.xml -MergeBase '${{ needs.changes.outputs.merge_base }}' -Head '${{ needs.changes.outputs.head }}' -Blocking:($env:DIFF_COVERAGE_BLOCKING -eq 'true')
-
     - name: Diff coverage (Web)
       id: diff-web
       if: always() && needs.web.result != 'skipped'
@@ -374,9 +265,6 @@ jobs:
         BACKEND_DIFF_LINE: ${{ steps.diff-backend.outputs.diff-line }}
         BACKEND_DIFF_BRANCH: ${{ steps.diff-backend.outputs.diff-branch }}
         BACKEND_DIFF_BELOW: ${{ steps.diff-backend.outputs.diff-below }}
-        WPF_DIFF_LINE: ${{ steps.diff-wpf.outputs.diff-line }}
-        WPF_DIFF_BRANCH: ${{ steps.diff-wpf.outputs.diff-branch }}
-        WPF_DIFF_BELOW: ${{ steps.diff-wpf.outputs.diff-below }}
         WEB_DIFF_LINE: ${{ steps.diff-web.outputs.diff-line }}
         WEB_DIFF_BRANCH: ${{ steps.diff-web.outputs.diff-branch }}
         WEB_DIFF_BELOW: ${{ steps.diff-web.outputs.diff-below }}
@@ -389,13 +277,6 @@ jobs:
         BACKEND_BRANCH_EMOJI: ${{ needs.backend.outputs.branch-emoji }}
         BACKEND_LINE_DELTA: ${{ needs.backend.outputs.line-delta }}
         BACKEND_BRANCH_DELTA: ${{ needs.backend.outputs.branch-delta }}
-        WPF_RESULT: ${{ needs.wpf.result }}
-        WPF_COVERAGE: ${{ needs.wpf.outputs.coverage }}
-        WPF_EMOJI: ${{ needs.wpf.outputs.emoji }}
-        WPF_BRANCH: ${{ needs.wpf.outputs.branch }}
-        WPF_BRANCH_EMOJI: ${{ needs.wpf.outputs.branch-emoji }}
-        WPF_LINE_DELTA: ${{ needs.wpf.outputs.line-delta }}
-        WPF_BRANCH_DELTA: ${{ needs.wpf.outputs.branch-delta }}
         WEB_RESULT: ${{ needs.web.result }}
         WEB_COVERAGE: ${{ needs.web.outputs.coverage }}
         WEB_EMOJI: ${{ needs.web.outputs.emoji }}
@@ -432,7 +313,6 @@ jobs:
           echo "| Project | Line coverage | Branch coverage | Δ vs baseline (line / branch) | Diff line | Diff branch | Verdict |"
           echo "|:---|---:|---:|---:|---:|---:|:---|"
           row "Backend (.NET)" "$BACKEND_RESULT" "$BACKEND_COVERAGE" "$BACKEND_EMOJI" "$BACKEND_BRANCH" "$BACKEND_BRANCH_EMOJI" "$BACKEND_LINE_DELTA" "$BACKEND_BRANCH_DELTA" "$BACKEND_DIFF_LINE" "$BACKEND_DIFF_BRANCH" "$BACKEND_DIFF_BELOW"
-          row "WPF (Financial.App)" "$WPF_RESULT" "$WPF_COVERAGE" "$WPF_EMOJI" "$WPF_BRANCH" "$WPF_BRANCH_EMOJI" "$WPF_LINE_DELTA" "$WPF_BRANCH_DELTA" "$WPF_DIFF_LINE" "$WPF_DIFF_BRANCH" "$WPF_DIFF_BELOW"
           row "Web (Financial.Web)" "$WEB_RESULT" "$WEB_COVERAGE" "$WEB_EMOJI" "$WEB_BRANCH" "$WEB_BRANCH_EMOJI" "$WEB_LINE_DELTA" "$WEB_BRANCH_DELTA" "$WEB_DIFF_LINE" "$WEB_DIFF_BRANCH" "$WEB_DIFF_BELOW"
           if [ -n "$MERGE_BASE" ] && [ -n "$HEAD_SHA" ] && ! git diff --quiet "$MERGE_BASE" "$HEAD_SHA" -- coverage-baseline.json; then
             echo
@@ -486,7 +366,7 @@ jobs:
   # so the ratchet does not keep guarding a stale number. Comment only: never fails and is not in
   # ci-status's needs.
   baseline-reminder:
-    needs: [ backend, wpf, web ]
+    needs: [ backend, web ]
     if: always() && github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
@@ -498,11 +378,10 @@ jobs:
         GH_TOKEN: ${{ github.token }}
         RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         BACKEND_DELTAS: ${{ needs.backend.outputs.line-delta }}|${{ needs.backend.outputs.branch-delta }}
-        WPF_DELTAS: ${{ needs.wpf.outputs.line-delta }}|${{ needs.wpf.outputs.branch-delta }}
         WEB_DELTAS: ${{ needs.web.outputs.line-delta }}|${{ needs.web.outputs.branch-delta }}
       shell: pwsh
       run: |
-        $message = ./.github/scripts/baseline-reminder.ps1 -Backend $env:BACKEND_DELTAS -Wpf $env:WPF_DELTAS -Web $env:WEB_DELTAS -RunUrl $env:RUN_URL
+        $message = ./.github/scripts/baseline-reminder.ps1 -Backend $env:BACKEND_DELTAS -Web $env:WEB_DELTAS -RunUrl $env:RUN_URL
         if (-not $message) { Write-Host 'Baseline is current'; exit 0 }
         $pull = gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/pulls" --jq '.[0].number'
         if (-not $pull) { Write-Host $message; exit 0 }
@@ -510,7 +389,7 @@ jobs:
   # The one status check branch protection requires. Always runs; passes when every job either
   # succeeded or was legitimately skipped by `changes`, fails otherwise.
   ci-status:
-    needs: [ changes, backend, wpf, wpf-e2e, web, web-e2e ]
+    needs: [ changes, backend, web, web-e2e ]
     if: always()
     runs-on: ubuntu-latest
     steps:

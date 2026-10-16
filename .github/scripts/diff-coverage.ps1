@@ -13,7 +13,6 @@ $branchThreshold = 70
 $scope = @(
     '^Financial\.[^/]+\.(Domain|Application)/',
     '^Financial\.Api/',
-    '^Financial\.App/ViewModels/',
     '^Financial\.Web/src/(hooks|utils|components|pages)/'
 )
 $sourceExtensions = '\.(cs|ts|tsx)$'

@@ -2,14 +2,14 @@ name: Coverage gate
 description: Fails below the 90% line-coverage tripwire or when line or branch coverage drops more than 0.5 points below coverage-baseline.json, and exposes line and branch coverage with a traffic-light emoji and the delta against the baseline, from a reportgenerator Summary.json.
 inputs:
   label:
-    description: Human-readable project label for step-summary/error messages (e.g. "Backend", "WPF")
+    description: Human-readable project label for step-summary/error messages (e.g. "Backend", "Web")
     required: true
   summary-path:
     description: Path to reportgenerator's Summary.json
     required: false
     default: CoverageReport/Summary.json
   baseline-key:
-    description: Entry of coverage-baseline.json this job is held to (backend, wpf or web)
+    description: Entry of coverage-baseline.json this job is held to (backend or web)
     required: true
   baseline-path:
     description: Path to the committed baseline file

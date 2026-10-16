@@ -187,7 +187,7 @@ Never report `success` when any of the checks above has an unresolved failure, e
 
 If Step 6.5 determined status `success`: edit the PRD to check off (`- [ ]` → `- [x]`) every acceptance-criterion checkbox for this feature that was confirmed ✓ in Step 6.3. Match the PRD's existing checkbox list format exactly — flip the marker only, do not add new sections, prose, dates, or reformat surrounding content.
 
-A cross-feature integration checkbox often names more than one feature (e.g. "...renders correctly in both the Web (F08) and WPF (F10)..."). Check it off only when *every* feature it names is already implemented (its own PRD boxes checked or its `docs/<feature>/` spec confirmed shipped) — not just the one this run completed. If other named features aren't done yet, leave that box unchecked even though this run's half is verified true.
+A cross-feature integration checkbox often names more than one feature (e.g. "...the API (F07) returns it and the Web (F08) renders it correctly..."). Check it off only when *every* feature it names is already implemented (its own PRD boxes checked or its `docs/<feature>/` spec confirmed shipped) — not just the one this run completed. If other named features aren't done yet, leave that box unchecked even though this run's half is verified true.
 
 Stage only the PRD file and commit it separately from the phase commits, e.g. `docs(F<ID>): mark acceptance criteria complete`. This is the durable counterpart to the chat report's AC checklist — the chat report disappears with the session, but the checked boxes stay in the repo as a versioned record of what has actually shipped.
 

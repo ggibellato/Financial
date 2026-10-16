@@ -14,7 +14,7 @@ its `../artifacts/*.md` guide), "out of scope — reason", or "resolved in Phase
 | `.github/` | root | out of scope — CI config | `workflows/build.yml` and `scripts/detect-changes.sh` are referenced by `e2e-environment.md`; the shell script itself is untested |
 | `.specify/` | root | out of scope — speckit templates/scripts | |
 | `data/` | root | Example & seed data (`../artifacts/example-and-seed-data.md`) | only `*.example.json` tracked; live files gitignored and never touched by tests |
-| `deploy/` | root | out of scope — gitignored local deployment output | `Financial.App/`, `Financial.Web/` binaries, `start-*.ps1` |
+| `deploy/` | root | out of scope — gitignored local deployment output | `Financial.Web/` binaries, `start-*.ps1` |
 | `docs/` | root | out of scope — documentation | `docs/prd/**` §9 is the AC source (`feature-traceability.md`); `docs/rules/*.md`, `docs/ui/*.md` are the binding standards |
 | `scripts/` | root | out of scope — PowerShell deploy tooling, git hooks | |
 | `specs/` | root | out of scope — speckit feature specs | secondary AC source (Given/When/Then), noted in `feature-traceability.md` |
@@ -35,24 +35,6 @@ its `../artifacts/*.md` guide), "out of scope — reason", or "resolved in Phase
 | `DTOs/` | API contract snapshot (`../artifacts/api-contract-snapshot.md`) | 3 API-only DTOs; shape pinned by the snapshot |
 | `Properties/` | out of scope — launch settings | |
 | `Program.cs` (file) | DI modules (`../artifacts/dependency-injection-modules.md`) | composition root |
-
-## Financial.App (WPF)
-
-| Folder | Classification | Notes |
-|---|---|---|
-| `ViewModels/` | WPF ViewModels (`../artifacts/wpf-viewmodels.md`) | 108 files incl. `Admin/`, `CashFlow/`, `Investment/`, `Settings/` |
-| `Converters/` | WPF converters, behaviors, helpers (`../artifacts/wpf-converters-behaviors-helpers.md`) | 18 |
-| `Behaviors/` | same | 5 — no suffix; classified by reading |
-| `Helpers/` | same | 4 |
-| `Input/` | same | `DecimalInputHelper` |
-| `Navigation/` | same | `NavTree` |
-| `Views/` | WPF views, components, controls (`../artifacts/wpf-views-and-xaml.md`) | 133 XAML + code-behind |
-| `Components/` | same | 14 |
-| `Controls/` | same | 6 |
-| `Services/` | resolved in Phase 1 — `IDialogService`/`DialogService` WPF-shell wrapper, stubbed in ViewModel tests, itself untested by design | noted in `wpf-views-and-xaml.md` |
-| `Properties/` | out of scope — assembly/settings | |
-| `tools/` | out of scope — `create-app-ico.ps1` build script | |
-| `App.xaml.cs`, `MainWindow.xaml.cs` (files) | DI modules / views | composition root; `MainWindow` code-behind is view wiring |
 
 ## Financial.CashFlow.* and Financial.Investment.*
 
@@ -100,7 +82,7 @@ its `../artifacts/*.md` guide), "out of scope — reason", or "resolved in Phase
 
 | Folder | Classification | Notes |
 |---|---|---|
-| `Financial.*.Tests/` (15 projects) | test projects; layer per `file-conventions.md` | |
+| `Financial.*.Tests/` (17 projects) | test projects; layer per `file-conventions.md` | |
 | `Financial.TestUtilities/` | shared doubles + seed data | not a test project; excluded from coverage |
 | `Financial.Api.Tests/Contract/`, `TestData/` | API contract snapshot; Example & seed data | |
 | `Financial.Architecture.Tests/Infrastructure/` | Architecture rules (`../artifacts/architecture-rule-tests.md`) | `ProjectAssembly` helper |

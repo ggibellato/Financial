@@ -16,10 +16,10 @@ Read-only pass, building on the architecture/domain baseline established in `doc
 | Performance Analytics (XIRR, Profit) | Complete (with a known duplication risk) |
 | Portfolio/Asset Summary (P02) | Complete |
 | Broker-Level View (P04) | Mostly complete — unverified |
-| Credits Analysis (P03) | Partially implemented (Web done, WPF not) |
+| Credits Analysis (P03) | Complete in Web (WPF-only ACs dropped by ADR-002) |
 | Cryptocurrency Handling (P07) | Mostly complete — unverified |
 | Investment Price History (P32) | Complete |
-| WPF/Web DataGrid Visual Consistency (P05/P06) | Mostly complete — unverified |
+| DataGrid Visual Consistency (P05/P06) | Mostly complete — unverified |
 | Bank Entity & Balance Management | Complete |
 | Bank Round-Up (P13) | Complete |
 | Bank Transfers & Balance Reconciliation (P20) | Complete |
@@ -36,7 +36,6 @@ Read-only pass, building on the architecture/domain baseline established in `doc
 | Annual Summary (P15/P16/P17/P19) | Complete |
 | Async Persistence (P31) | Complete |
 | Sidebar Navigation Redesign (P23) | Complete |
-| WPF CashFlow Parity (P21) | Mostly complete — 5 ACs likely superseded by P23 |
 
 ---
 
@@ -82,7 +81,7 @@ Read-only pass, building on the architecture/domain baseline established in `doc
 
 ### Performance Analytics (XIRR, Profit)
 - **Status:** Complete (backend and a separate frontend implementation both exist and are in active use).
-- **Tests:** `XirrCalculatorTests`, `ProfitCalculatorTests`, `XirrCalculationServiceTests` (backend). Frontend `xirr.ts` has its own `xirr.test.ts`.
+- **Tests:** `XirrCalculatorTests`, `XirrCalculationServiceTests` (backend). Frontend `xirr.ts` has its own `xirr.test.ts`.
 - **Docs/spec:** No dedicated PRD identified — foundational.
 - **Known risk (not a completeness gap, but worth tracking):** Two independent XIRR implementations (backend `XirrCalculator`, frontend `xirr.ts`, actively used by `PortfolioSummaryTab.tsx`) — confirmed live duplication, divergence risk if either changes without the other.
 - **Uncertainty:** Whether the two implementations currently agree on every edge case (e.g., <2 cash flows) was not independently re-verified in this pass.
@@ -98,10 +97,9 @@ Read-only pass, building on the architecture/domain baseline established in `doc
 - **Uncertainty — real, not just a documentation lag:** Because literally none of P04's 73 specific ACs are checked (unlike P07/P08 where the class/test *names* line up closely with the PRD's stated design), this pass cannot positively confirm the exact behaviors P04 specifies (e.g., "Broker-level totals exclude all transactions and credits from assets in the Encerradas portfolio," "A broker with zero eligible portfolios returns all totals as 0, not an error") were actually implemented as described, only that a broker-breakdown feature of some form exists. Recommend direct verification before relying on this PRD's specific ACs.
 
 ### Credits Analysis (P03 portfolio-credits-analysis)
-- **Status:** Partially implemented. **Docs/spec:** 29/42 checked, with all 13 unchecked items concentrated on WPF-specific behavior (5 new DataGrid columns, footer panel layout/values).
-- **Verified directly this pass:** grepped `Financial.App` for the P03-specific field names (`LastMonthCredits`, `EstAnnualCredits`, etc.) — **zero matches**. The Web side (`CreditsTab.tsx`, `useCredits.ts`, backend `CreditFrequencyAnalyzer`) is confirmed implemented and tested.
-- **Obvious incomplete implementation — confirmed:** The WPF-side DataGrid columns and footer panel described in P03 F02/F03 do not exist in the WPF codebase. A genuine, concrete gap, not a documentation lag — it directly matches the WPF/Web feature-parity expectation stated in `CLAUDE.md`.
-- **Uncertainty:** None on the core finding; **UNKNOWN** whether this WPF work is scheduled/in-progress elsewhere (no branch/PR evidence checked beyond `main`'s history).
+- **Status:** Complete in Web. **Docs/spec:** 29/42 checked; all 13 unchecked items described WPF-only behavior (5 new DataGrid columns, footer panel layout/values) that was never built and no longer applies since ADR-002 removed the WPF front end.
+- **Code evidence:** The Web side (`CreditsTab.tsx`, `useCredits.ts`, backend `CreditFrequencyAnalyzer`) is confirmed implemented and tested.
+- **Uncertainty:** None.
 
 ### Cryptocurrency Handling (P07)
 - **Status:** Mostly complete — unverified at the AC level. **Docs/spec:** 0/29 checked (created 2026-07-11, predates checkbox convention).
@@ -111,12 +109,12 @@ Read-only pass, building on the architecture/domain baseline established in `doc
 ### Investment Price History (P32)
 - **Status:** Complete, and very recently shipped. **Docs/spec:** fully checked.
 - **Git evidence:** 7 consecutive, tightly-staged commits (#427–#433) ending "completing F02," immediately preceding the current HEAD's unrelated refactor/tithe commits — a strong, concrete signal of a feature that was actively built and finished right before this discovery pass began.
-- **Web:** `PriceHistoryTab.tsx` confirmed. **WPF:** price commands/tab wired per commit `77ee748`.
+- **Web:** `PriceHistoryTab.tsx` confirmed.
 - **Uncertainty:** None significant.
 
-### WPF/Web DataGrid Visual Consistency (P05/P06)
+### DataGrid Visual Consistency (P05/P06)
 - **Status:** Mostly complete — unverified. **Docs/spec:** 0/11 and 0/10 checked respectively (both created 2026-07-10, predates checkbox convention; both have a single confirmed merged PR each — #130, #131).
-- **Code evidence:** `App.xaml` (WPF) contains `DataGrid`-related resources, consistent with a shared style having been added; Web's global `styles/data-table.css` (confirmed in prior discovery) is consistent with P06's intent.
+- **Code evidence:** Web's global `styles/data-table.css` (confirmed in prior discovery) is consistent with P06's intent.
 - **Uncertainty:** Whether every specific visual-consistency criterion in these PRDs was fully realized was not independently checked pixel-by-pixel or component-by-component.
 
 ---
@@ -128,7 +126,7 @@ Read-only pass, building on the architecture/domain baseline established in `doc
 - **Uncertainty:** None significant.
 
 ### Bank Round-Up (P13)
-- **Status:** Complete. **Docs/spec:** 24/24 checked. Round-up math verified consistent across Domain, WPF, and Web in the domain-discovery pass.
+- **Status:** Complete. **Docs/spec:** 24/24 checked. Round-up math verified consistent across Domain and Web in the domain-discovery pass.
 - **Uncertainty:** None.
 
 ### Bank Transfers & Balance Reconciliation (P20)
@@ -191,16 +189,11 @@ Read-only pass, building on the architecture/domain baseline established in `doc
 
 ### Async Persistence (P31)
 - **Status:** Complete, cross-cutting infrastructure. **Docs/spec:** 54/54 checked, wired symmetrically into both bounded contexts (separate parallel F04/F05 features per the PRD).
-- **Uncertainty:** None on completion status. A separate, unrelated architectural risk (no cross-process write coordination between `Financial.Api` and `Financial.App`) is a design characteristic, not an incomplete-implementation signal — already documented in `docs/baseline/02-architecture.md`.
+- **Uncertainty:** None on completion status.
 
 ### Sidebar Navigation Redesign (P23)
-- **Status:** Complete. **Docs/spec:** 42/42 checked. Matches the confirmed current WPF navigation model (single collapsible sidebar, per `NavTree.cs`).
+- **Status:** Complete. **Docs/spec:** 42/42 checked. Matches the current Web navigation model (single collapsible sidebar, per `Sidebar.tsx` and `navigation/navTree.ts`).
 - **Uncertainty:** None.
-
-### WPF CashFlow Parity (P21)
-- **Status:** Mostly complete. **Docs/spec:** 53/58 checked; the 5 unchecked items all describe a **top-level tab-strip** navigation model ("MainWindow's top-level tab strip shows 'Investments' and 'Cash Flow' as two peer domain tabs...").
-- **Cross-referenced finding (moderate confidence, not fully verified):** This tab-strip design is inconsistent with the confirmed *current* WPF navigation model — a sidebar, per P23 (`Sidebar Navigation Redesign`, fully checked, created after P21 based on PRD numbering and typical chronological ordering). This strongly suggests P21's 5 unchecked items describe an earlier navigation design that was **superseded by P23**, not a feature that was left unbuilt.
-- **Uncertainty — flagged, not resolved:** This supersession theory was not confirmed by directly diffing P21 against P23's text or by checking whether P21 was ever explicitly marked "superseded." Treat P21's unchecked items as likely-stale rather than confirmed-obsolete until verified directly.
 
 ---
 

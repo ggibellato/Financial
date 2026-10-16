@@ -508,6 +508,20 @@
             "format": "double",
             "type": "number"
           },
+          "resultPercent": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "resultWithCreditsPercent": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
           "taxJurisdictions": {
             "items": {
               "type": "string"
@@ -3974,6 +3988,20 @@
           "realizedGainLossSharesOnly": {
             "format": "double",
             "type": "number"
+          },
+          "resultPercent": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "resultWithCreditsPercent": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
           },
           "ticker": {
             "type": "string"

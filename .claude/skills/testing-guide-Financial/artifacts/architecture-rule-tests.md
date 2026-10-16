@@ -18,7 +18,7 @@ and none is needed at assembly granularity.
   Infrastructure/Integrations/Tools projects reference `Financial.Shared.Abstractions` only,
   never `Financial.Shared.Infrastructure` (`SharedInfrastructureIsolationRuleTests`,
   `SharedAbstractionsDependencyRuleTests`, `SharedInfrastructureDependencyRuleTests`).
-- **Presentation rules**: `Financial.Api` / `Financial.App` may reference Application +
+- **Presentation rules**: `Financial.Api` may reference Application +
   Infrastructure; nothing references Presentation (`PresentationDependencyRuleTests`).
 - **Vendor SDK isolation**: only `Financial.Integrations.Observability` references
   OpenTelemetry packages (`ObservabilityIsolationRuleTests`) — the pattern from project memory
@@ -30,8 +30,7 @@ and none is needed at assembly granularity.
 ## Layer assignment
 
 - **Integration** — real compiled assemblies, no mocks (the fundamentals' fitness-function
-  row). The project targets `net10.0-windows` with `UseWPF` because it references
-  `Financial.App`; it runs in both the `backend` and `wpf` CI jobs (the latter without coverage).
+  row). The project targets `net10.0` and runs in the `backend` CI job.
 - No Unit, no E2E.
 
 ## Setup pattern

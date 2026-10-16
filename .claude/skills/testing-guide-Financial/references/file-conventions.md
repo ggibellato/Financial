@@ -12,10 +12,9 @@ Financial.CashFlow.{Domain,Application,Infrastructure}.Tests
 Financial.Shared.Abstractions.Tests              ← FX providers, CompensatingSaveHelper, RetryPolicy (Unit)
 Financial.Shared.Infrastructure.Tests            ← LocalJsonStorage, DebouncedJsonStorage, RemoteJsonStorage, retry, hosting
 Financial.Api.Tests                              ← endpoint Integration tests, Contract/, Controllers/ guard clauses, TestData/
-Financial.Presentation.Tests                     ← WPF (net10.0-windows, UseWPF); run by the `wpf` CI job
-Financial.Architecture.Tests                     ← fitness functions (references every project incl. Financial.App)
-Financial.GoogleIntegrations.Tests, Financial.Observability.Tests, Financial.WebPageParser.Tests
-Financial.CashFlowSpreadsheetImport.Tests, Financial.InvestmentSpreadsheetImport.Tests
+Financial.Architecture.Tests                     ← fitness functions (references every project)
+Financial.GoogleIntegrations.Tests, Financial.Observability.Tests, Financial.WebPageParser.Tests, Financial.Frankfurter.Tests
+Financial.CashFlowSpreadsheetImport.Tests, Financial.InvestmentSpreadsheetImport.Tests, Financial.InvestmentDataQualityReport.Tests
 Financial.TestUtilities                          ← shared doubles + TestData/data.test.json (not a test project)
 ```
 
@@ -23,19 +22,18 @@ Every test csproj declares `xunit` 2.9.3, `xunit.runner.visualstudio` 3.1.4,
 `Microsoft.NET.Test.Sdk` 17.14.1, `FluentAssertions` 6.12.0, `coverlet.collector` 6.0.4 and
 `<Using Include="Xunit" />` (so no `using Xunit;` in files; `FluentAssertions` is imported
 explicitly). No central package management. Folders inside a test project mirror the source
-project (`Services/`, `Persistence/`, `Repositories/`, `DependencyInjection/`, `Validation/`,
-`ViewModels/CashFlow/`, …).
+project (`Services/`, `Persistence/`, `Repositories/`, `DependencyInjection/`, `Validation/`, …).
 
 ### Naming
 
 | Element | Convention | Example |
 |---|---|---|
-| Test file / class | `{Subject}Tests.cs` / `{Subject}Tests`; split by concern when large | `ExpenseServiceTests`, `TransactionServiceMutationTests` + `TransactionServiceQueryTests`, `MonthlyViewModelBanksCardsTests` |
+| Test file / class | `{Subject}Tests.cs` / `{Subject}Tests`; split by concern when large | `ExpenseServiceTests`, `TransactionServiceMutationTests` + `TransactionServiceQueryTests` |
 | Test method | `{Method}_{Scenario}_{Outcome}` | `GetHistoricalRateAsync_WhenHttpRequestThrows_ReturnsNull`; architecture tests use `Domain_Should_Not_Reference_Infrastructure` |
 | AC-tracing class / file | `{FeatureName}AcceptanceTests` under `Acceptance/` - no `P{NN}F{NN}` prefix, the AC id already carries that in its `[Trait]`/title | `Tests/Financial.Api.Tests/Acceptance/GoogleCalendarAccountConnectionAcceptanceTests.cs` |
 | AC-tracing method | `[Trait("AC", "<id>")]` + `{Scenario}_{Outcome}` | see `feature-traceability.md` |
 | Shared doubles | `Stub{Interface}`, `Recording{Thing}`, `Fake{Thing}` in `Tests/Financial.TestUtilities` | `StubCashFlowRepository`, `RecordingLogger<T>`, `FakeTimeProvider` |
-| Local doubles (single consumer) | same prefixes, `private sealed class` at the bottom of the test file, or `TestStubs.cs` / `TestDoubles/` per test project | `FakeHttpMessageHandler`, `Financial.Presentation.Tests/ViewModels/CashFlow/TestStubs.cs`, `Financial.Investment.Infrastructure.Tests/TestDoubles/StubFinanceService.cs` |
+| Local doubles (single consumer) | same prefixes, `private sealed class` at the bottom of the test file, or `TestStubs.cs` / `TestDoubles/` per test project | `FakeHttpMessageHandler`, `Financial.Investment.Infrastructure.Tests/TestDoubles/StubFinanceService.cs` |
 | Host factory | `ApiTestFactory : WebApplicationFactory<Program>`; tests derive from `ApiEndpointTests` | — |
 | Temp data | `Path.Combine(Path.GetTempPath(), $"{area}-{Guid.NewGuid()}.json")`, deleted in `finally` | `cashflow-repo-{guid}.json`, `financial-api-{guid:N}.json` |
 
@@ -43,15 +41,15 @@ project (`Services/`, `Persistence/`, `Repositories/`, `DependencyInjection/`, `
 
 The `Category` trait on each class is what CI and `--filter` use (`docs/rules/implementation.md` §Tests #9); the list below says which level is normal where.
 
-- Unit: `*.Domain.Tests`, `*.Application.Tests`, `Presentation.Tests/{ViewModels,Converters,Behaviors,Helpers,Input,Navigation}`, `WebPageParser.Tests`, parsing/resolver folders of the import tools.
-- Integration: `Api.Tests` (except `Controllers/`), `*.Infrastructure.Tests/{Repositories,Persistence,DependencyInjection}`, `Shared.Infrastructure.Tests`, `Architecture.Tests`, `Observability.Tests`, `Presentation.Tests/{DependencyInjection,Views,Acceptance}`, import-tool `SheetImporters/` and `Migrations/`.
+- Unit: `*.Domain.Tests`, `*.Application.Tests`, `WebPageParser.Tests`, parsing/resolver folders of the import tools.
+- Integration: `Api.Tests` (except `Controllers/`), `*.Infrastructure.Tests/{Repositories,Persistence,DependencyInjection}`, `Shared.Infrastructure.Tests`, `Architecture.Tests`, `Observability.Tests`, import-tool `SheetImporters/` and `Migrations/`.
 - AC-tracing: `Acceptance/` folders + the `AC` trait.
 - E2E: nothing in `Tests/` — `Financial.Web/tests/e2e/*.spec.ts` (`@playwright/test`).
 
 ### Commands
 
 ```
-dotnet test                                                            # everything (Presentation.Tests needs Windows)
+dotnet test                                                            # everything
 dotnet test Tests/Financial.CashFlow.Domain.Tests                      # one project
 dotnet test --filter "FullyQualifiedName~ExpenseTests.Should_Reject_Negative_Value"
 dotnet test --filter "AC~P42-F01" --list-tests                         # AC audit (see feature-traceability.md)
@@ -104,8 +102,8 @@ npm run smoke-test        # Playwright @smoke specs, needs the published API on 
 
 ## Coverage philosophy — thorough, CI bands as targets
 
-Decided 2026-09-06. The CI coverage step (`Check coverage threshold` in each of the `backend`,
-`wpf`, `web` jobs) shows line and branch coverage behind the same traffic-light icon; the PR
+Decided 2026-09-06. The CI coverage step (`Check coverage threshold` in each of the `backend`
+and `web` jobs) shows line and branch coverage behind the same traffic-light icon; the PR
 comment repeats them. A line result below 90% fails the step; branch coverage never does.
 
 | Icon | Coverage (line or branch) | Meaning |
@@ -115,8 +113,7 @@ comment repeats them. A line result below 90% fails the step; branch coverage ne
 | 🟠 amber | 80–84.99% | fix before the next feature on that area |
 | 🔴 red | < 80% | treat as a defect to fix in the same PR |
 
-Measured whole-repo per job: `backend` = every .NET assembly except `Financial.Presentation.App`
-(`-assemblyfilters:+*;-Financial.Presentation.App`), `wpf` = `Financial.Presentation.App` only,
+Measured whole-repo per job: `backend` = every .NET assembly (`-assemblyfilters:+*`),
 `web` = `coverage/coverage-summary.json` `total.lines.pct`. `coverlet.runsettings` excludes
 generated `obj/**` code and the assemblies `Financial.TestUtilities`,
 `Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport`,
@@ -125,7 +122,7 @@ generated `obj/**` code and the assemblies `Financial.TestUtilities`,
 Concrete rules that follow:
 
 - A new class ships with tests that cover 100% of its own lines except documented
-  exclusions (Google SDK clients, `Tools/ImportGoogleSpreadSheets`, WPF code-behind).
+  exclusions (Google SDK clients, `Tools/ImportGoogleSpreadSheets`).
 - Every branch has both directions tested (`negative-path-testing.md`); coverage alone does
   not satisfy this — a 100%-covered branch with only its success assertion is still incomplete.
 - Every §9 acceptance criterion has a tagged Integration test (`feature-traceability.md`).

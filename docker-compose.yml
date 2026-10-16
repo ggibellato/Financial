@@ -13,5 +13,8 @@ services:
       CashFlow__Repository__Provider: LocalJson
       FxRates__DataJsonFile: /app/data/data-fx-rates.json
       FxRates__Repository__Provider: LocalJson
+      CashFlow__GoogleCalendar__ClientId: ""
+      CashFlow__GoogleCalendar__ClientSecret: ""
+      CashFlow__GoogleCalendar__RedirectUri: ""
     volumes:
       - ./data:/app/data

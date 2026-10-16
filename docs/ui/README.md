@@ -3,14 +3,12 @@
 ## Purpose
 
 This directory is the canonical source for Financial user experience, visual
-design, accessibility, responsive/adaptive behavior, and cross-platform
-consistency.
+design, accessibility, and responsive/adaptive behavior.
 
 It applies to:
 
-- `Financial.Web` — React + TypeScript SPA
-- `Financial.App` — WPF desktop client
-- API, validation, error, formatting, and calculation changes that affect either
+- `Financial.Web` — React + TypeScript SPA, the only front end
+- API, validation, error, formatting, and calculation changes that affect the
   front end
 
 ## Product context
@@ -31,16 +29,13 @@ This product is not multi-tenant SaaS. Do not add enterprise-scale complexity,
 onboarding, roles, collaboration, approvals, or configuration surfaces without
 a confirmed product requirement.
 
-## React-led cross-platform rule
+## React front end
 
-`Financial.Web` is the UX source of truth.
+`Financial.Web` is the only front end. The WPF desktop client and its parity
+requirement were removed by `docs/decisions/ADR-002-remove-wpf-front-end.md`.
 
-Define, validate, and improve intended user workflows in React first.
-`Financial.App` must provide an equivalent WPF desktop experience while using
-appropriate native controls, MVVM patterns, keyboard behavior, window layout,
-and accessibility mechanisms.
-
-React is authoritative for:
+Define, validate, and improve intended user workflows in React. It is
+authoritative for:
 
 - User task sequence
 - Information hierarchy
@@ -53,12 +48,8 @@ React is authoritative for:
 - Totals behavior
 - Responsive information prioritization
 
-WPF must preserve the same user outcomes. It may adapt presentation details where
-desktop conventions, keyboard efficiency, window sizing, or native control
-behavior require it.
-
-Existing React UI is not automatically correct merely because it is the
-reference. Improve React first when it conflicts with product requirements,
+Existing React UI is not automatically correct merely because it exists.
+Improve it when it conflicts with product requirements,
 accessibility, financial clarity, or the standards in this directory.
 
 ## Authority order
@@ -82,11 +73,10 @@ When guidance conflicts, use this order:
 | `ux-principles.md` | Product workflow and interaction decisions |
 | `design-tokens.md` | Shared visual language and semantic tokens |
 | `forms-data-and-visualisations.md` | Forms, grids, trees, charts, totals, and financial data |
-| `accessibility.md` | WCAG-aligned Web and WPF accessibility requirements |
+| `accessibility.md` | WCAG-aligned Web accessibility requirements |
 | `react.md` | React implementation rules |
-| `wpf.md` | WPF implementation rules |
 | `review-checklist.md` | Required final review |
-| `current-state-audit.md` | What's actually implemented today (colors, spacing, components, accessibility) on both platforms, used to ground decisions and scope the refactor |
+| `current-state-audit.md` | Dated record of what was implemented (colors, spacing, components, accessibility) on both former front ends, used to ground decisions and scope the refactor |
 | `decisions/` | Approved product-specific UX decisions, including the concrete component libraries (`ADR-004`) and brand/status colors (`ADR-005`) |
 
 ## Claude Code

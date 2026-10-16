@@ -6,7 +6,6 @@ namespace Financial.CashFlow.Infrastructure.Persistence;
 public static class CashFlowLoader
 {
     // Intentionally synchronous: called from DI factory at startup before the app's async loop begins.
-    // ConfigureAwait(false) avoids SynchronizationContext deadlock in WPF startup context.
     public static CashFlowData LoadSync(IJsonStorage storage, ICashFlowSerializer serializer)
     {
         string json;

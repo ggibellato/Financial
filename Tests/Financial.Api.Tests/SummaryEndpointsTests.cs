@@ -167,7 +167,7 @@ public class SummaryEndpointsTests : ApiEndpointTests
     public async Task GetPortfolioAssetsSummary_ScopeHistoric_ResponseHasNoCurrentPriceOrXirrField()
     {
         // PRD F06: "No current price fetch or XIRR field is present in the historic summary
-        // response" - price/XIRR are computed entirely Client-side (Web/WPF), never returned
+        // response" - price/XIRR are computed entirely Client-side (Web), never returned
         // by this endpoint for any scope; this guards against that ever regressing.
 
         var response = await Client.GetAsync("/api/v1/financial/summary/portfolio/XPI/Uncategorized/assets?scope=historic");

@@ -2,9 +2,7 @@
 
 ## Rule
 
-React and WPF may expose tokens differently, but both must use equivalent
-semantic concepts. Actual token values belong in the React theme and WPF
-ResourceDictionaries built on the libraries adopted in
+Actual token values belong in the React theme built on the library adopted in
 `decisions/ADR-004-fluent-component-library-adoption.md`. The brand and status
 color values specifically are decided in
 `decisions/ADR-005-brand-and-status-colors.md`; this file defines the
@@ -53,8 +51,6 @@ drawer and data grids switch from tabular layout to stacked cards (see
 | `layout.breakpoints.wide` | ≥1024px | Desktop |
 | `layout.breakpoints.medium` | 600–1023px | Tablet |
 | `layout.breakpoints.narrow` | ≤599px | Phone. Literal value lives in `Financial.Web/src/styles/breakpoints.ts` (`MOBILE_MEDIA_QUERY`) for JS/React use and is duplicated as `@media (max-width: 599px)` in CSS — keep both in sync if this changes. |
-
-`Financial.App` (WPF) has no phone form factor to match, so this breakpoint and its behavior are React-only by design — not a parity gap under the UI invariants' "equivalent outcomes" rule.
 
 ## Typography
 

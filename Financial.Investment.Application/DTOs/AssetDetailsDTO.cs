@@ -49,6 +49,8 @@ public class AssetDetailsDTO
     public decimal? MarketValue { get; set; }
     public decimal CostOfUnitsHeld { get; set; }
     public decimal? UnrealisedGain { get; set; }
+    public decimal? ResultPercent { get; set; }
+    public decimal? ResultWithCreditsPercent { get; set; }
     public DateOnly? PriceAsOfDate { get; set; }
 
     [JsonConverter(typeof(JsonStringEnumConverter))]

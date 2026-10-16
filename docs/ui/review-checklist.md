@@ -54,17 +54,14 @@
       with the shared truncate+tooltip pattern instead of wrapping — row
       heights stay uniform across the whole grid.
 - [ ] Every grid uses Fluent's `Table`/`TableHeader`/`TableBody`/`TableRow`/
-      `TableCell` (Web) with the `.data-table` class present, or every
-      `DataGridTextColumn` has an `ElementStyle` (WPF) — matching the app's
-      ~32px baseline row height, not a taller Fluent default or an unstyled
-      WPF column.
+      `TableCell` with the `.data-table` class present — matching the app's
+      ~32px baseline row height, not a taller Fluent default.
 
 ## Responsive and adaptive behavior
 
 - [ ] Web layout works at wide, medium, and narrow widths.
 - [ ] Web forms reflow without unusable controls.
 - [ ] Web remains usable at required zoom/text scale.
-- [ ] WPF works at narrow window sizes, high DPI, and increased text scale.
 - [ ] Essential information/actions are not removed without an alternative.
 - [ ] On mobile, the page is allowed to grow taller than the viewport and
       scroll vertically — no `height: 100vh`/`100%` chain or `overflow: hidden`
@@ -82,16 +79,3 @@
 - [ ] Contrast is sufficient.
 - [ ] Errors are clear, accessible, and recoverable.
 - [ ] High contrast is considered where supported.
-
-## React-led WPF parity
-
-- [ ] React behavior was reviewed against repository UI standards.
-- [ ] WPF preserves the React-defined user task and information hierarchy.
-- [ ] WPF terminology matches React.
-- [ ] WPF field order matches React unless a documented desktop exception exists.
-- [ ] WPF action labels and priority match React.
-- [ ] WPF validation wording and meaning match React.
-- [ ] WPF financial formatting and totals behavior match React.
-- [ ] WPF loading, empty, saving, success, and error outcomes match React.
-- [ ] WPF keyboard and focus behavior is equivalent or better for desktop use.
-- [ ] Intentional WPF differences are documented and justified by desktop convention, accessibility, or better usability.

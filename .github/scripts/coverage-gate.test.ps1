@@ -37,7 +37,7 @@ function Check([string]$name, [bool]$condition, $result) {
     }
 }
 
-$standardBaseline = '{ "backend": { "line": 95.0, "branch": 90.0 }, "wpf": { "line": 94.0, "branch": 80.0 } }'
+$standardBaseline = '{ "backend": { "line": 95.0, "branch": 90.0 }, "web": { "line": 94.0, "branch": 80.0 } }'
 
 Write-Baseline $standardBaseline
 Write-Summary 'Summary.json' 95.0 90.0
@@ -79,7 +79,7 @@ Write-Baseline '{ not json'
 $result = Invoke-Gate
 Check 'baseline unparsable fails closed' ($result.Exit -eq 1 -and $result.Text -match 'coverage-baseline\.json missing or invalid') $result
 
-Write-Baseline '{ "wpf": { "line": 94.0, "branch": 80.0 } }'
+Write-Baseline '{ "web": { "line": 94.0, "branch": 80.0 } }'
 $result = Invoke-Gate
 Check 'baseline key missing fails closed and names the key' ($result.Exit -eq 1 -and $result.Text -match "no entry for 'backend'") $result
 
@@ -88,14 +88,14 @@ Write-Summary 'Summary.json' 95.0 $null
 $result = Invoke-Gate
 Check 'branch figure missing fails closed' ($result.Exit -eq 1 -and $result.Text -match 'no branch coverage; the ratchet fails closed') $result
 
-foreach ($name in 'backend', 'wpf', 'web') {
+foreach ($name in 'backend', 'web') {
     Write-Summary "$name-summary.json" 95.123 90.987
 }
-& pwsh -NoProfile -File $writer -Backend (Join-Path $work 'backend-summary.json') -Wpf (Join-Path $work 'wpf-summary.json') `
-    -Web (Join-Path $work 'web-summary.json') -Path (Join-Path $work 'written.json')
+& pwsh -NoProfile -File $writer -Backend (Join-Path $work 'backend-summary.json') -Web (Join-Path $work 'web-summary.json') `
+    -Path (Join-Path $work 'written.json')
 $written = Get-Content (Join-Path $work 'written.json') -Raw | ConvertFrom-Json
 $script:cases++
-if (-not ($written.backend.line -eq 95.12 -and $written.backend.branch -eq 90.99 -and $written.web.line -eq 95.12 -and $written.wpf.branch -eq 90.99)) {
+if (-not ($written.backend.line -eq 95.12 -and $written.backend.branch -eq 90.99 -and $written.web.line -eq 95.12 -and $written.web.branch -eq 90.99 -and @($written.PSObject.Properties.Name).Count -eq 2)) {
     $script:failures++
     Write-Host "FAIL baseline writer: $($written | ConvertTo-Json -Compress)"
 }

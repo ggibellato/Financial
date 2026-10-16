@@ -34,7 +34,7 @@ public class ObservabilityIsolationRuleTests
 
         referencedAssemblyNames.Should().NotContain(
             name => name.StartsWith("Financial.Integrations.Observability", StringComparison.Ordinal),
-            "only the composition roots (Financial.Api, Financial.App) may compose the concrete observability implementation");
+            "only the composition roots (Financial.Api) may compose the concrete observability implementation");
     }
 
     [Theory]

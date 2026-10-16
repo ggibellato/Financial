@@ -1,6 +1,5 @@
 param(
     [string]$Backend = '',
-    [string]$Wpf = '',
     [string]$Web = '',
     [string]$RunUrl = ''
 )
@@ -10,7 +9,7 @@ $tolerance = 0.5
 $culture = [cultureinfo]::InvariantCulture
 
 $stale = @()
-foreach ($entry in @(@('Backend', $Backend), @('WPF', $Wpf), @('Web', $Web))) {
+foreach ($entry in @(@('Backend', $Backend), @('Web', $Web))) {
     $label = $entry[0]
     $lineDelta, $branchDelta = $entry[1] -split '\|'
     $rises = @()
@@ -32,5 +31,5 @@ if ($stale.Count -eq 0) { exit 0 }
     ''
     $stale
     ''
-    'Until the baseline is raised, a later PR can lose that gain and still pass the ratchet. To raise it, download the three `coverage-report-*` artifacts of this run' + $(if ($RunUrl) { " ($RunUrl)" } else { '' }) + ', run `pwsh .github/scripts/coverage-baseline.ps1 -Backend <Summary.json> -Wpf <Summary.json> -Web <Summary.json>`, and commit the file in its own PR.'
+    'Until the baseline is raised, a later PR can lose that gain and still pass the ratchet. To raise it, download the two `coverage-report-*` artifacts of this run' + $(if ($RunUrl) { " ($RunUrl)" } else { '' }) + ', run `pwsh .github/scripts/coverage-baseline.ps1 -Backend <Summary.json> -Web <Summary.json>`, and commit the file in its own PR.'
 ) -join "`n"

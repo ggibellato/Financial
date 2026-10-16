@@ -36,8 +36,6 @@ No files were modified as part of the analysis itself.
 
 **APIs:** `AssetsController` (`/assets`), `NavigationController`, `SummaryController`.
 
-**WPF:** `MainNavigationViewModelBase` → `MainNavigationViewModel`/`MainNavigationViewModelHistoric` (parallel Active/Historic ViewModels), `AssetDetailsViewModel`.
-
 **Web:** `InvestmentTree.tsx`, `ActiveInvestmentsPage.tsx`, `HistoricInvestmentsPage.tsx`, `SelectedNodeContext.tsx`.
 
 **Tests:** `BrokerTests`, `PortfolioTests`, `AssetTests`, `InvestmentsTests` (Domain, pure unit); `NavigationServiceTests`, `PortfolioAssetSummaryServiceTests` (Application, stub-based).
@@ -65,8 +63,6 @@ No files were modified as part of the analysis itself.
 
 **APIs:** `TransactionsController` (`/transactions`).
 
-**WPF:** `TransactionDialog.xaml`, `TransactionDialogViewModel`.
-
 **Web:** `TransactionsTab.tsx`, `useTransactions.ts`.
 
 **Tests:** `TransactionTests`, `TransactionsTests` (Domain, thorough); `TransactionServiceMutationTests`, `TransactionServiceQueryTests` (Application).
@@ -88,8 +84,6 @@ No files were modified as part of the analysis itself.
 **Application services:** `CreditService` (via `AssetMutationHelper`), `CreditTypeParser`.
 
 **APIs:** `CreditsController` (`/credits`), full CRUD + by-broker/by-portfolio.
-
-**WPF:** `CreditDialog.xaml`, extensive charting support (`CreditsChartBuilder`, `CreditsViewState`, `CreditsFilterOptionViewModel`, `CreditsMonthTypeTotals`).
 
 **Web:** `CreditsTab.tsx`, `useCredits.ts`.
 
@@ -113,8 +107,6 @@ No files were modified as part of the analysis itself.
 Preconditions (Name for Bond, BrokerName for Crypto, Exchange for Standard) are hard-thrown `ArgumentException`s — **OBSERVED BEHAVIOR**.
 
 **APIs:** `AssetPricesController` (`/prices`), `AssetPriceFetchController` (`/asset-price-fetch`).
-
-**WPF:** `AssetPriceView.xaml`, `PriceDialogViewModel`, `AssetPriceFetchViewModel`.
 
 **Web:** `PriceHistoryTab.tsx`, `usePriceHistory.ts`.
 
@@ -142,8 +134,6 @@ Preconditions (Name for Bond, BrokerName for Crypto, Exchange for Standard) are 
 
 **APIs:** `DividendsController` (`/dividends`).
 
-**WPF:** `DividendCheckView.xaml`, `DividendCheckViewModel`.
-
 **Web:** `DividendCheckPage.tsx`.
 
 **Tests:** `DividendServiceTests`, `DividendValuationRulesTests`.
@@ -156,15 +146,14 @@ Preconditions (Name for Bond, BrokerName for Crypto, Exchange for Standard) are 
 
 **Business rules (standard financial formulas — OBSERVED BEHAVIOR, not project-specific policy):**
 - `XirrCalculator`: Newton-Raphson, 100 max iterations, `1e-7` tolerance, 10% initial guess, 365-day year; returns `null` with <2 cash flows or if derivative hits zero (no bisection fallback).
-- `ProfitCalculator.HasCostBasis` requires `averagePrice > 0 && quantity > 0`; `CalculateResultFraction` returns `0` with no cost basis while `CalculateProfitPercent` returns `null` — inconsistent null-vs-zero convention within the same class. **Confirmed as an implementation decision (Clarification #6)** — accepted as-is, not a defect requiring correction.
 
 **Frontend `xirr.ts` duplication — investigated during clarification (Clarification #5):** `Financial.Web/src/utils/xirr.ts` is **not** dead/forgotten code. It is actively imported by `Financial.Web/src/components/PortfolioSummaryTab.tsx` and used to compute XIRR **per table row, client-side**, from cash-flow arrays already present in the API response (`item.cashFlows` + a synthetic terminal-value entry) — avoiding a separate `/xirr` API round-trip per row in a potentially large table. This is a genuine, live, second independent implementation of the same algorithm as the backend `XirrCalculator` (Domain), not a leftover. The divergence risk remains real: if the two implementations' edge-case handling (e.g. the `<2 cash flows → null` guard, iteration/tolerance parameters) drift apart, the Portfolio Summary table and any backend-driven XIRR display could disagree. No action taken in this pass; flagged for whoever next touches XIRR logic on either side.
 
-**Application services:** `XirrCalculationService`, `ProfitCalculationService`, `AssetCashFlowBuilder`.
+**Application services:** `XirrCalculationService`, `AssetCashFlowBuilder`.
 
 **APIs:** `XirrController` (`/xirr`).
 
-**Tests:** `XirrCalculatorTests`, `ProfitCalculatorTests`, `XirrCalculationServiceTests`.
+**Tests:** `XirrCalculatorTests`, `XirrCalculationServiceTests`.
 
 ---
 
@@ -180,7 +169,7 @@ Preconditions (Name for Bond, BrokerName for Crypto, Exchange for Standard) are 
 
 **APIs:** `SummaryController`, `CreditsController`.
 
-**WPF/Web:** as listed under Credits above, plus `AssetSummaryTab.tsx`, `PortfolioSummaryTab.tsx`, `BrokerBreakdownCharts.tsx`.
+**Web:** as listed under Credits above, plus `AssetSummaryTab.tsx`, `PortfolioSummaryTab.tsx`, `BrokerBreakdownCharts.tsx`.
 
 **Tests:** `CreditServiceTests`, `PortfolioAssetSummaryServiceTests`, `SummaryServiceTests`, `CreditFrequencyAnalyzerTests`.
 
@@ -219,7 +208,7 @@ Unmapped/blank `LocalTypeCode` resolves to `Unknown` (fallback, not exception), 
 - Balance = `OpeningBalance + income − (expense + roundUp) + transferIn − transferOut + adjustments`, windowed to `[OpeningBalanceDate, asOfDate]` — **CONFIRMED REQUIREMENT** for round-up subtraction (P13 AC); overall formula **OBSERVED BEHAVIOR**.
 - Exactly 3 banks exist by design (Barclays, Trading212, Chase), seeded once, no in-app bank-creation screen — **CONFIRMED REQUIREMENT** (P13 §6, explicit "Out of Scope").
 
-**Application service:** `BankService`. **APIs:** `BanksController`. **WPF:** `MonthlyViewModel.BuildBankTotals`, `BanksGridView.xaml`. **Web:** `useBankOperations.ts`, `BanksGrid.tsx`. **Tests:** `BankTests` + Application/API tests. **External integrations:** None.
+**Application service:** `BankService`. **APIs:** `BanksController`. **Web:** `useBankOperations.ts`, `BanksGrid.tsx`. **Tests:** `BankTests` + Application/API tests. **External integrations:** None.
 
 ---
 
@@ -227,7 +216,7 @@ Unmapped/blank `LocalTypeCode` resolves to `Unknown` (fallback, not exception), 
 
 Unrelated to the earlier-known "Value−RoundUp backwards" bug in Investment-domain broker balances — this is an independent CashFlow `Bank`/`Expense` model that happens to reuse the same real-world institution names.
 
-**Business rules — verified consistent across Domain, WPF, and Web (no sign/direction bug currently present):**
+**Business rules — verified consistent across Domain and Web (no sign/direction bug currently present):**
 - Suggested round-up = `ceil(Value) − Value` — **CONFIRMED REQUIREMENT** (P13 AC).
 - Only settable on a positive-value, bank-paid expense where the bank has `RoundUpEnabled=true` — **CONFIRMED REQUIREMENT** (P13 §6 F02).
 - Range `£0.00`–`£0.99` inclusive — **CONFIRMED REQUIREMENT**.
@@ -248,7 +237,7 @@ Unrelated to the earlier-known "Value−RoundUp backwards" bug in Investment-dom
 
 **Notable gap:** No overdraft/negative-balance check on transfers, unlike Reserve withdrawals. **Confirmed acceptable for now (Clarification #11)** — the product owner is prioritizing reaching an MVP to retire the spreadsheet; this asymmetry is not a defect to fix at this stage.
 
-**Application service:** `TransferService`. **APIs:** `TransfersController`. **WPF:** `BankOperationRow.cs`. **Web:** `TransferForm.tsx`, `useTransferForm.ts`.
+**Application service:** `TransferService`. **APIs:** `TransfersController`. **Web:** `TransferForm.tsx`, `useTransferForm.ts`.
 
 ---
 
@@ -260,7 +249,7 @@ Unrelated to the earlier-known "Value−RoundUp backwards" bug in Investment-dom
 
 **Business rules:** `TargetBalance ≥ 0` — **CONFIRMED REQUIREMENT**. `Delta` computed server-side, can be negative — **OBSERVED BEHAVIOR**.
 
-**Application service:** `BalanceAdjustmentService`. **API:** nested under `BanksController`. **WPF:** `BalanceAdjustmentFormView.xaml`. **Web:** `BalanceAdjustmentForm.tsx`.
+**Application service:** `BalanceAdjustmentService`. **API:** nested under `BanksController`. **Web:** `BalanceAdjustmentForm.tsx`.
 
 ---
 
@@ -282,7 +271,7 @@ Unrelated to the earlier-known "Value−RoundUp backwards" bug in Investment-dom
 
 `OverdraftConfirmationRequiredException` belongs exclusively to Reserve-bucket withdrawals (§21), not this capability.
 
-**Application services:** `CardStatementService` (the one Application-layer class anywhere in the backend using `ILogger`). **APIs:** `CardStatementsController`, `CreditCardsController`. **WPF:** `CreditCardsGridView`, `CreditCardExpensesView.xaml`. **Web:** `CardsGrid.tsx`, `useCreditCards.ts`. **Tests:** `CardStatementTests`, `CardStatementServiceTests`, `CardStatementsEndpointsTests`.
+**Application services:** `CardStatementService` (the one Application-layer class anywhere in the backend using `ILogger`). **APIs:** `CardStatementsController`, `CreditCardsController`. **Web:** `CardsGrid.tsx`, `useCreditCards.ts`. **Tests:** `CardStatementTests`, `CardStatementServiceTests`, `CardStatementsEndpointsTests`.
 
 ---
 
@@ -306,7 +295,7 @@ Unrelated to the earlier-known "Value−RoundUp backwards" bug in Investment-dom
 - New/updated expenses may only reference an *active* Category — **CONFIRMED REQUIREMENT** (P30-F02).
 - `CountsAsTithe` defaults true, independently toggleable per-expense to exclude an offering from the tithe-paid total — **CONFIRMED REQUIREMENT** (P33-F02).
 
-**Application service:** `ExpenseService`. **APIs:** `ExpensesController`. **WPF:** `ExpenseFormView.xaml`. **Web:** `ExpensesSection.tsx`, `ExpenseForm.tsx`, `useExpenseForm.ts`. **Tests:** full-stack coverage confirmed.
+**Application service:** `ExpenseService`. **APIs:** `ExpensesController`. **Web:** `ExpensesSection.tsx`, `ExpenseForm.tsx`, `useExpenseForm.ts`. **Tests:** full-stack coverage confirmed.
 
 ---
 
@@ -324,7 +313,7 @@ Unrelated to the earlier-known "Value−RoundUp backwards" bug in Investment-dom
 
 **Reference storage pattern confirmed (Clarification #21):** P26's original text described `IncomeSource` as a plain string, not used as a foreign key. That design was **superseded** — the product owner confirms **all entity references in this codebase should work the same way: GUID stored in the JSON, full object reference when loaded in memory** — matching the `Category`/`Bank` reference-converter pattern. P26's PRD text describing a bare-string design is stale.
 
-**Application services:** `IncomeService` (full CRUD), `IncomeSourceService` (read-only). **APIs:** `IncomesController`, `IncomeSourcesController` (GET only). **WPF:** `IncomeSectionView`. **Web:** `IncomeSection.tsx`, `IncomeForm.tsx`. **Tests:** full coverage confirmed.
+**Application services:** `IncomeService` (full CRUD), `IncomeSourceService` (read-only). **APIs:** `IncomesController`, `IncomeSourcesController` (GET only). **Web:** `IncomeSection.tsx`, `IncomeForm.tsx`. **Tests:** full coverage confirmed.
 
 ---
 
@@ -340,9 +329,9 @@ Unrelated to the earlier-known "Value−RoundUp backwards" bug in Investment-dom
 
 **Usage clarified (Clarification #22):** `ResetAllToUnsetAsync` is a documentation gap, not a defect — the product owner confirms it's **intended to be run once a month, at the beginning of the month, to reset all bills to unset** before that month's payment tracking begins. Should be documented as such going forward.
 
-**Mark Paid with payment expense (PR #1014):** `MensaisService.MarkBillPaidAsync` (`POST {id}/paid`, body `RecurringBillMarkPaidDTO` with an optional `Expense`) records the bank expense and sets the bill to Paid in one save. An expense is only accepted for a UK bill that is not already Paid. Both front ends only decide whether to show the expense prompt and send one call; skipping the prompt sends no expense.
+**Mark Paid with payment expense (PR #1014):** `MensaisService.MarkBillPaidAsync` (`POST {id}/paid`, body `RecurringBillMarkPaidDTO` with an optional `Expense`) records the bank expense and sets the bill to Paid in one save. An expense is only accepted for a UK bill that is not already Paid. The front end only decides whether to show the expense prompt and sends one call; skipping the prompt sends no expense.
 
-**Application service:** `MensaisService`. **API:** `MensaisController`. **WPF:** `AddBillFormView.xaml`, `BillTableView.xaml`. **Web:** `useMensais.ts`.
+**Application service:** `MensaisService`. **API:** `MensaisController`. **Web:** `useMensais.ts`.
 
 ---
 
@@ -403,7 +392,7 @@ This second rule is about Reserve Bucket income-splitting (§21), not Tithe calc
 
 **`context.md`'s fixed 4-bucket description — accepted as-is (Clarification #14):** The product owner confirms the discrepancy between `context.md`'s fixed list (Investimento, HouseTreats, Ariana, Gleison) and P28's configurable-entity design is fine for now, since those bucket names come directly from the spreadsheet, where they are the same fixed set.
 
-**Application services:** `ReserveService`, `ReserveBucketService` (read-only). **APIs:** `POST /reserve/income-split`, `POST /reserve/withdrawals`, `GET /reserve/balances`, `GET /reserve/movements`, `GET /reserve-buckets`. **WPF:** `EditReserveMovementFormView.xaml`, `ReservaViewModel`. **Web:** `ReservaPage.tsx`, `useReserva.ts`. **Tests:** `ReserveBucketTests`, `ReserveMovementTests`, `ReserveServiceTests`, `ReserveBucketServiceTests`, `ReserveBucketNameResolverTests`, endpoint tests.
+**Application services:** `ReserveService`, `ReserveBucketService` (read-only). **APIs:** `POST /reserve/income-split`, `POST /reserve/withdrawals`, `GET /reserve/balances`, `GET /reserve/movements`, `GET /reserve-buckets`. **Web:** `ReservaPage.tsx`, `useReserva.ts`. **Tests:** `ReserveBucketTests`, `ReserveMovementTests`, `ReserveServiceTests`, `ReserveBucketServiceTests`, `ReserveBucketNameResolverTests`, endpoint tests.
 
 ---
 
@@ -422,7 +411,7 @@ This second rule is about Reserve Bucket income-splitting (§21), not Tithe calc
 
 **Sign convention now defined (Clarification #15):** Previously genuinely undefined in the repository. The product owner confirms: **a negative value means a debt from the user (Gleison) to his mother; a positive value means the opposite (a debt from his mother to the user)**. This is now a **CONFIRMED REQUIREMENT** and should be captured in any future spec touching this capability.
 
-**Application service:** `ControleMaeService` (depends on `IExchangeRateProvider`). **APIs:** `ControleMaeController`. **WPF:** `ControleMaeView.xaml`. **Web:** `ControleMaePage.tsx`, `useControleMae.ts`. **Tests:** `MaeLedgerEntryTests`, `ControleMaeServiceTests`, `ControleMaeEndpointsTests`, `ControleMaeViewModelTests`.
+**Application service:** `ControleMaeService` (depends on `IExchangeRateProvider`). **APIs:** `ControleMaeController`. **Web:** `ControleMaePage.tsx`, `useControleMae.ts`. **Tests:** `MaeLedgerEntryTests`, `ControleMaeServiceTests`, `ControleMaeEndpointsTests`.
 
 **External integrations:** `FrankfurterExchangeRateProvider` (historical FX lookup).
 
@@ -439,7 +428,7 @@ This second rule is about Reserve Bucket income-splitting (§21), not Tithe calc
 - Account scope for past years is derived purely from having ≥1 persisted snapshot that year, independent of current active/disabled status — **CONFIRMED REQUIREMENT** (explicit code comment tied to import behavior).
 - `IsLiability` accounts contribute negated to net position in Annual Summary — **OBSERVED BEHAVIOR**.
 
-**Application services:** `InvestmentSnapshotService`, `InvestmentAccountService`. **APIs:** `GET/PUT /investment-snapshots/{year}/{month}`, `InvestmentAccountsController`. **WPF:** `EditSnapshotValueFormView.xaml`, `InvestmentSnapshotsViewModel`. **Web:** `InvestmentSnapshotsPage.tsx`, `useInvestmentSnapshots.ts`. **Tests:** full coverage confirmed. **External integrations:** None — purely manual entry.
+**Application services:** `InvestmentSnapshotService`, `InvestmentAccountService`. **APIs:** `GET/PUT /investment-snapshots/{year}/{month}`, `InvestmentAccountsController`. **Web:** `InvestmentSnapshotsPage.tsx`, `useInvestmentSnapshots.ts`. **Tests:** full coverage confirmed. **External integrations:** None — purely manual entry.
 
 ---
 
@@ -447,7 +436,7 @@ This second rule is about Reserve Bucket income-splitting (§21), not Tithe calc
 
 **Purpose:** Single-month household cash-flow view.
 
-**Finding:** There is no `Monthly` Domain entity, no `MonthlyService`, no `/monthly` API endpoint. "Monthly" is a **UI-layer-only composition** — `useMonthly.ts` (Web) separately calls Expenses/Incomes/Banks/CardStatements/Categories/Tithe endpoints and assembles one page-level state; WPF's `MonthlyViewModel` composes the equivalent sub-views in-process directly against the same Application services. It inherits the business rules of whatever it composes; it has none of its own.
+**Finding:** There is no `Monthly` Domain entity, no `MonthlyService`, no `/monthly` API endpoint. "Monthly" is a **UI-layer-only composition** — `useMonthly.ts` (Web) separately calls Expenses/Incomes/Banks/CardStatements/Categories/Tithe endpoints and assembles one page-level state. It inherits the business rules of whatever it composes; it has none of its own.
 
 ---
 
@@ -465,7 +454,7 @@ This second rule is about Reserve Bucket income-splitting (§21), not Tithe calc
 
 **2017 special case resolved (Clarification #16):** `NumberOfMonthsForAverage` treats 2017 as an 11-month year. The product owner confirms this is a **known historical data artifact, not a bug**: **they moved to the UK that month, and all UK/GBP-denominated expense tracking starts from February 2017** — so 2017 genuinely only has 11 months of tracked data. Now **CONFIRMED REQUIREMENT** and should be documented as such in code/spec going forward.
 
-**Application service:** `AnnualSummaryService`. **APIs:** `GET /annual-summary/{year}/category-totals`, etc. **WPF:** `AnnualSummaryView.xaml`. **Web:** `AnnualSummaryPage.tsx`, `useAnnualSummary.ts`. **Tests:** `AnnualSummaryServiceTests`, `AnnualSummaryEndpointsTests`, `AnnualSummaryViewModelTests`.
+**Application service:** `AnnualSummaryService`. **APIs:** `GET /annual-summary/{year}/category-totals`, etc. **Web:** `AnnualSummaryPage.tsx`, `useAnnualSummary.ts`. **Tests:** `AnnualSummaryServiceTests`, `AnnualSummaryEndpointsTests`.
 
 ---
 
@@ -486,7 +475,7 @@ Answers provided directly by the product owner, resolving the open questions rai
 | 3 | Are the 1.5/3.5/5.0-month credit-frequency thresholds intentional? | **Business decision.** |
 | 4 | Is silently dropping the `exchange` param in `DividendDataSourceAdapter` intentional? | **Error** — the method should not accept an `exchange` parameter at all. Confirmed defect; not fixed in this pass. |
 | 5 | Is the frontend `xirr.ts` dead code that should have been removed? | **No — actively used and needed.** Investigated: imported by `PortfolioSummaryTab.tsx`, computes per-row XIRR client-side from already-fetched cash-flow data. Not dead code. Divergence risk from the backend implementation remains a live concern. |
-| 6 | Is `ProfitCalculator`'s null-vs-zero inconsistency intentional? | **Implementation decision** — accepted as-is. |
+| 6 | Is `ProfitCalculator`'s null-vs-zero inconsistency intentional? | **Implementation decision** — accepted as-is. `ProfitCalculator` was later deleted with the WPF app, its only consumer. |
 | 7 | Why does transaction replay use insertion order, not date order? | **To make `AveragePrice` recalculable** — confirmed intentional purpose of the rebuild mechanism. |
 | 8 | Is unconditional short-selling (no guard) intended? | **Fine as-is for now.** |
 | 9 | Why can only manually-entered price snapshots be removed? | **Business decision.** |

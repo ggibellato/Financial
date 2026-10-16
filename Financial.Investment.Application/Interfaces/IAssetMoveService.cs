@@ -8,9 +8,8 @@ namespace Financial.Investment.Application.Interfaces;
 /// <remarks>
 /// Unlike its neighbours, which return a nullable DTO and let the API collapse null into a 400,
 /// this method throws. A move can be refused for several distinct reasons and the user has to be
-/// told which one, in the same words whether they are in the web app or the desktop app. An
-/// exception carries that sentence from the domain to both front ends unchanged; a null return
-/// carries nothing.
+/// told which one, in the domain's own words. An exception carries that sentence from the domain
+/// to the web app unchanged; a null return carries nothing.
 /// </remarks>
 public interface IAssetMoveService
 {

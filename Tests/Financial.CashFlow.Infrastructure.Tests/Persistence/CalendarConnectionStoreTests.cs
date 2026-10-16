@@ -64,6 +64,41 @@ public class CalendarConnectionStoreTests
     }
 
     [Fact]
+    public async Task Save_WhileTheFileIsBeingLoadedConcurrently_NeverFails()
+    {
+        var path = CreateTempPath();
+        var store = new CalendarConnectionStore(path);
+        var connection = new CalendarConnection("user@gmail.com", "cal", "at", "rt", TestClock.Default, TestClock.Default, new Dictionary<Guid, string>());
+        store.Save(connection);
+
+        try
+        {
+            var loads = Task.Run(() =>
+            {
+                for (var i = 0; i < 300; i++)
+                {
+                    store.Load();
+                }
+            });
+            var saves = Task.Run(() =>
+            {
+                for (var i = 0; i < 300; i++)
+                {
+                    store.Save(connection);
+                }
+            });
+
+            Func<Task> loadAndSaveTogether = () => Task.WhenAll(loads, saves);
+
+            await loadAndSaveTogether.Should().NotThrowAsync();
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public void Delete_WhenNothingStored_DoesNotThrow()
     {
         var store = new CalendarConnectionStore(CreateTempPath());

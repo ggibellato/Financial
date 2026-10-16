@@ -1,12 +1,12 @@
 > Part of the `testing-guide-Financial` skill (see `../SKILL.md`).
 
-# Dependency-Injection Modules (`*/DependencyInjection/*ServiceCollectionExtensions.cs`, `Financial.Api/Program.cs`, `Financial.App/App.xaml.cs`)
+# Dependency-Injection Modules (`*/DependencyInjection/*ServiceCollectionExtensions.cs`, `Financial.Api/Program.cs`)
 
 ## What to test
 
 - `GetRequiredService<T>()` succeeds for every interface the module promises
-  (`CashFlowServiceRegistrationTests.ResolvesAllTwelveCashFlowServices` lists them one by one —
-  add a line when you add a service).
+  (`CashFlowInfrastructureServiceCollectionExtensionsTests.AddFinancialCashFlowInfrastructure_RegistersCachedExchangeRateProvider`
+  is the shape — add a test when you add a service).
 - **Provider selection branches**: `CashFlow:Repository:Provider` / `Investment:Repository:Provider`
   unset → `LocalJson`; `"GoogleDrive"` → remote storage; `"NotARealProvider"` →
   `InvalidOperationException` with `*is not supported*` on resolution, not on registration.
@@ -14,7 +14,7 @@
   sets `BaseAddress` to `https://api.frankfurter.dev/v2/`; `AddObservability` binds
   `ObservabilityOptions` defaults (`Enabled=false`, `Backend=Jaeger`, `Endpoint=http://localhost:4317`).
 - **Composition-root invariants**: `IJsonStorageFactory` and `ITelemetryTracer` are registered
-  by `Program.cs` / `App.xaml.cs` before the `Add*Infrastructure` calls; the DI test mirrors that
+  by `Program.cs` before the `Add*Infrastructure` calls; the DI test mirrors that
   (see the comment block in `CashFlowInfrastructureServiceCollectionExtensionsTests.BuildServiceProvider`).
 - Hosted services: `ShutdownFlushHostedService<ICashFlowRepository>` is registered
   (`ShutdownFlushHostedServiceRegistrationTests`).
@@ -26,7 +26,7 @@
   + `BuildServiceProvider()`; nothing faked except the data path (a temp file). This is the
   fundamentals' "module/DI wiring" row: compile-time cannot catch a missing registration.
 - The API-level version (the whole `Program`) is exercised by every `ApiEndpointTests`
-  subclass; the WPF version by `Tests/Financial.Presentation.Tests/DependencyInjection/`.
+  subclass.
 - No Unit layer (nothing to isolate), no E2E of its own.
 
 ## Setup pattern
@@ -77,6 +77,5 @@ Investment, which is read-only) — never at `data/`.
 
 - `Tests/Financial.CashFlow.Infrastructure.Tests/DependencyInjection/CashFlowInfrastructureServiceCollectionExtensionsTests.cs` — Integration; provider branches.
 - `Tests/Financial.Investment.Infrastructure.Tests/DependencyInjection/InvestmentInfrastructureServiceCollectionExtensionsTests.cs` — Integration; same shape for Investment.
-- `Tests/Financial.Presentation.Tests/DependencyInjection/CashFlowServiceRegistrationTests.cs` and `ObservabilityServiceRegistrationTests.cs` — Integration; the WPF composition root's promises.
 - `Tests/Financial.GoogleIntegrations.Tests/GoogleDriveServiceCollectionExtensionsTests.cs` — Integration; `AddGoogleDriveFileClient` registers `GoogleFileClientFactory` as `IRemoteFileClientFactory`.
 - `Tests/Financial.Api.Tests/ShutdownFlushHostedServiceRegistrationTests.cs` — Integration; hosted-service registration through the real host.

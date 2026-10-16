@@ -45,12 +45,15 @@ internal static class PortfolioAssetSummaryBuilder
 
         var cashFlows = AssetCashFlowBuilder.BuildWithCredits(asset);
         var creditsAnalysis = CreditsAnalysisCalculator.Calculate(asset.Credits, bases.IncomeYieldBasis, today);
+        var result = scope == InvestmentScope.Historic
+            ? PositionResultCalculator.ForClosedPosition(realizedGainLoss, totals.TotalCredits, totals.TotalBought)
+            : PositionResultCalculator.ForOpenPosition(valuation.UnrealisedGain, valuation.CostOfUnitsHeld, totals.TotalCredits);
 
         return new AssetComputedData(
             asset.Name, asset.Ticker, asset.Exchange, asset.Class,
             firstBuyDate, asset.Quantity, asset.AveragePrice, averageSellPrice,
             totals.TotalBought, totals.TotalSold, bases.InvestedAmount, realizedGainLoss, realizedGainLossSharesOnly, bases.WeightBasis,
-            totals.TotalCredits, cashFlows, valuation,
+            totals.TotalCredits, cashFlows, valuation, result,
             creditsAnalysis.LastMonthCredits, creditsAnalysis.LastCreditMonth,
             creditsAnalysis.LastMonthCreditsPercent, creditsAnalysis.CreditFrequencyPerYear,
             creditsAnalysis.EstimatedAnnualCredits, creditsAnalysis.EstimatedAnnualPercent,
@@ -77,6 +80,8 @@ internal static class PortfolioAssetSummaryBuilder
             MarketValue = c.Valuation.MarketValue,
             CostOfUnitsHeld = c.Valuation.CostOfUnitsHeld,
             UnrealisedGain = c.Valuation.UnrealisedGain,
+            ResultPercent = c.Result.ResultPercent,
+            ResultWithCreditsPercent = c.Result.ResultWithCreditsPercent,
             PriceAsOfDate = c.Valuation.PriceAsOfDate,
             MarketStatus = c.Valuation.MarketStatus,
             PriceOnlyReturn = c.Valuation.PriceOnlyReturn,
@@ -103,7 +108,7 @@ internal static class PortfolioAssetSummaryBuilder
         string AssetName, string Ticker, string Exchange, GlobalAssetClass Class,
         DateTime? FirstInvestmentDate, decimal CurrentQuantity, decimal AveragePrice, decimal? AverageSellPrice,
         decimal TotalBought, decimal TotalSold, decimal TotalInvested, decimal RealizedGainLoss, decimal RealizedGainLossSharesOnly, decimal? WeightBasis,
-        decimal TotalCredits, IReadOnlyList<AssetCashFlowDTO> CashFlows, HoldingValuation Valuation,
+        decimal TotalCredits, IReadOnlyList<AssetCashFlowDTO> CashFlows, HoldingValuation Valuation, PositionResult Result,
         decimal LastMonthCredits, string? LastCreditMonth, decimal? LastMonthCreditsPercent,
         int? CreditFrequencyPerYear, decimal? EstimatedAnnualCredits, decimal? EstimatedAnnualPercent,
         decimal CurrentMonthCredits);

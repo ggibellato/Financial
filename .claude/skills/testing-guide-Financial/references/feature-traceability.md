@@ -82,13 +82,6 @@ public class PaymentsDueAggregationAcceptanceTests : ApiEndpointTests
 `PaymentDueDTO` and `TimeProvider? timeProvider` are real names from
 `Financial.CashFlow.Application/DTOs` and `ApiEndpointTests`; the arrange step is illustrative.
 
-**WPF feature:** WPF composes Application + Infrastructure in-process (`Financial.App/App.xaml.cs`),
-so the real graph is `AddFinancialCashFlowApplication()` + `AddFinancialCashFlowInfrastructure(configuration)`
-over a temp `CashFlow:DataJsonFile`, exactly as `Tests/Financial.Presentation.Tests/DependencyInjection/CashFlowServiceRegistrationTests.cs`
-builds it — then resolve the real `I*Service` and hand it to the ViewModel under test. Only the
-`Func<string,bool> confirm` dialog callback and `IDialogService` are substituted (they are the
-WPF shell, not the feature).
-
 **Web feature:** the SPA's real graph is page + hooks + components + `financialApiClient`; the
 API is a separate deployable, so `vi.mock('../../api/financialApiClient')` is the fake and
 nothing else is (`references/mock-health-rules.md`). Render through
@@ -114,7 +107,6 @@ Both forms carry the same id grammar, so one grep answers both directions.
   filename is redundant (decided 2026-09-07, after the first real example shipped it that way
   and then dropped the prefix):
   - `Tests/Financial.Api.Tests/Acceptance/{FeatureName}AcceptanceTests.cs`
-  - `Tests/Financial.Presentation.Tests/Acceptance/{FeatureName}AcceptanceTests.cs`
   - `Financial.Web/src/acceptance/{feature-slug}.test.tsx`
 - The PR body's §9 checklist (see `feedback_pr_body_acceptance_criteria` in project memory)
   lists each id next to the test that proves it.
@@ -178,6 +170,5 @@ not the wired feature: a criterion is proven at Integration, through the host.
 Google Calendar account connection) is the first AC-tracing suite - 6 tests, one per §9
 criterion, `IExchangeRateProvider`'s external-provider role played here by a faked
 `ICalendarProvider` (`FakeCalendarProvider` in `Tests/Financial.TestUtilities`) while the real
-`ICalendarIntegrationService`/`ICalendarConnectionStore` graph runs through the host. No Web or
-WPF AC-tracing test exists yet; the P42 payment-due banner (three features, backend + Web + WPF,
-all criteria already ticked in the PRD) is the natural next pilot for those two stacks.
+`ICalendarIntegrationService`/`ICalendarConnectionStore` graph runs through the host. The Web
+form is `Financial.Web/src/acceptance/reporting-currency-react.test.tsx` (P49-F04, `[AC …]` titles).

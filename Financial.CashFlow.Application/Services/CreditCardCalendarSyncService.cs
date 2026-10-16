@@ -127,11 +127,10 @@ public sealed class CreditCardCalendarSyncService : ICreditCardCalendarSyncServi
             .ToList();
     }
 
-    /// <summary>The real store writes via temp-file-then-atomic-rename, but a concurrent read can
-    /// still occasionally race the rename on Windows and throw <see cref="IOException"/> - this
-    /// method is called on every status poll, far more often than the store was ever read before,
-    /// so treat that as "no derived data this call" rather than failing the whole status list; the
-    /// next call sees the settled file.</summary>
+    /// <summary>The real store serialises its own reads and writes, but another process (an editor,
+    /// a backup or sync tool) can still hold the file and make a read throw <see cref="IOException"/> -
+    /// this method is called on every status poll, so treat that as "no derived data this call"
+    /// rather than failing the whole status list; the next call sees the settled file.</summary>
     private IReadOnlyDictionary<Guid, string> TryLoadCardEventIds()
     {
         try

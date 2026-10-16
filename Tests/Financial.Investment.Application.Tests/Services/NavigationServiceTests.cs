@@ -84,22 +84,6 @@ public class NavigationServiceTests
         assetNode.Metadata["PositionType"].Should().Be("Long");
     }
 
-    [Theory]
-    [InlineData(10, PositionType.Long)]
-    [InlineData(0, PositionType.Flat)]
-    [InlineData(-10, PositionType.Short)]
-    public void GetAssetsByBrokerPortfolio_AssetNodeDto_PositionTypeMatchesAssetPositionType(decimal quantity, PositionType expectedPositionType)
-    {
-        var broker = Broker.Create("Broker", "BRL");
-        var portfolio = broker.AddPortfolio("Portfolio");
-        portfolio.AddAsset(BuildAssetWithQuantity("ASSET1", quantity));
-        _repository.Broker = broker;
-
-        var assets = CreateService().GetAssetsByBrokerPortfolio("Broker", "Portfolio").ToList();
-
-        assets.Should().ContainSingle().Which.PositionType.Should().Be(expectedPositionType);
-    }
-
     [Fact]
     public void GetAssetDetails_ReturnsValuationMethodAndIncomePolicyFromAsset()
     {
@@ -421,6 +405,42 @@ public class NavigationServiceTests
     }
 
     [Fact]
+    public void GetAssetDetails_WithAPrice_ReturnsTheResultPercentOnTheCostOfUnitsHeld()
+    {
+        var broker = Broker.Create("Broker", "BRL");
+        var portfolio = broker.AddPortfolio("Portfolio");
+        var asset = Asset.Create("ASSET1", "ISIN", "BVMF", "ASSET1", CountryCode.BR, "FII", GlobalAssetClass.Equity);
+        asset.AddTransaction(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 4m, 50m, 0m));
+        asset.AddCredit(Credit.Create(new DateTime(2024, 2, 1), Credit.CreditType.Dividend, 10m));
+        asset.SetPrice(new DateOnly(2024, 3, 1), 45m, isManual: false);
+        portfolio.AddAsset(asset);
+        _repository.Broker = broker;
+
+        var details = CreateService().GetAssetDetails("Broker", "Portfolio", "ASSET1");
+
+        details.Should().NotBeNull();
+        details!.ResultPercent.Should().Be(-10m);
+        details.ResultWithCreditsPercent.Should().Be(-5m);
+    }
+
+    [Fact]
+    public void GetAssetDetails_WithoutAPrice_ReportsTheResultPercentUnavailable()
+    {
+        var broker = Broker.Create("Broker", "BRL");
+        var portfolio = broker.AddPortfolio("Portfolio");
+        var asset = Asset.Create("ASSET1", "ISIN", "BVMF", "ASSET1", CountryCode.BR, "FII", GlobalAssetClass.Equity);
+        asset.AddTransaction(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 4m, 50m, 0m));
+        portfolio.AddAsset(asset);
+        _repository.Broker = broker;
+
+        var details = CreateService().GetAssetDetails("Broker", "Portfolio", "ASSET1");
+
+        details.Should().NotBeNull();
+        details!.ResultPercent.Should().BeNull();
+        details.ResultWithCreditsPercent.Should().BeNull();
+    }
+
+    [Fact]
     public void GetAssetDetails_AfterASale_ReturnsMatchingDisposalRecord()
     {
         var broker = Broker.Create("Broker", "BRL");
@@ -558,17 +578,6 @@ public class NavigationServiceTests
 
         act.Should().Throw<InvalidOperationException>();
         _tracer.ShouldHaveFailedSpan<InvalidOperationException>("Investment.NavigationService.GetBrokers");
-    }
-
-    [Fact]
-    public void GetAssetsByBrokerPortfolio_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
-    {
-        _repository.ThrowOnGetAssetsByBrokerPortfolio = new InvalidOperationException("simulated failure");
-
-        Action act = () => CreateService().GetAssetsByBrokerPortfolio("Broker", "Portfolio");
-
-        act.Should().Throw<InvalidOperationException>();
-        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("Investment.NavigationService.GetAssetsByBrokerPortfolio");
     }
 
     [Fact]

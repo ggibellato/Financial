@@ -54,14 +54,7 @@ export default function AssetSummaryTab() {
 
   const marketValue = asset.marketValue
   const totalCurrentPlusCredits = marketValue === null ? null : marketValue + asset.totalCredits
-  const resultPercent =
-    marketValue === null || asset.unrealisedGain === null || asset.costOfUnitsHeld === 0
-      ? null
-      : asset.unrealisedGain / asset.costOfUnitsHeld
-  const resultWithCreditsPercent =
-    marketValue === null || asset.unrealisedGain === null || asset.costOfUnitsHeld === 0
-      ? null
-      : (asset.unrealisedGain + asset.totalCredits) / asset.costOfUnitsHeld
+  const { resultPercent, resultWithCreditsPercent } = asset
   const xirr = asset.priceOnlyReturn
   const xirrWithCredits = asset.totalReturn
 
@@ -228,7 +221,7 @@ export default function AssetSummaryTab() {
                 <div className="asset-summary__field">
                   <span className="asset-summary__label">Result %</span>
                   <span className={`asset-summary__value ${resultClass}`}>
-                    {resultPercent === null ? '—' : formatPercentFraction(resultPercent)}
+                    {resultPercent === null ? '—' : formatPercentFraction(resultPercent / 100)}
                   </span>
                 </div>
 
@@ -241,7 +234,7 @@ export default function AssetSummaryTab() {
                 <div className="asset-summary__field">
                   <span className="asset-summary__label">Result % with Credits</span>
                   <span className={`asset-summary__value ${resultWithCreditsClass}`}>
-                    {resultWithCreditsPercent === null ? '—' : formatPercentFraction(resultWithCreditsPercent)}
+                    {resultWithCreditsPercent === null ? '—' : formatPercentFraction(resultWithCreditsPercent / 100)}
                   </span>
                 </div>
 
