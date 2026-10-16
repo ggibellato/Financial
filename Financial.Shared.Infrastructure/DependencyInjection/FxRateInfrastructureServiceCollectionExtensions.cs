@@ -1,4 +1,6 @@
+using Financial.Integrations.Frankfurter;
 using Financial.Shared.Abstractions.Configuration;
+using Financial.Shared.Abstractions.Currencies;
 using Financial.Shared.Abstractions.Currencies.FxRates;
 using Financial.Shared.Abstractions.Persistence;
 using Financial.Shared.Infrastructure.Configuration;
@@ -7,6 +9,7 @@ using Financial.Shared.Infrastructure.Repositories.FxRates;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Financial.Shared.Infrastructure.DependencyInjection;
@@ -35,6 +38,13 @@ public static class FxRateInfrastructureServiceCollectionExtensions
                 sp.GetRequiredService<IJsonStorageFactory>(),
                 sp.GetRequiredService<TimeProvider>()).Create(options);
         });
+        services.AddHttpClient<FrankfurterExchangeRateProvider>();
+        services.AddSingleton<IExchangeRateProvider>(sp =>
+            new InMemoryCachedExchangeRateProvider(() => new UsdBasedExchangeRateProvider(
+                sp.GetRequiredService<IFxRateStore>(),
+                sp.GetRequiredService<FrankfurterExchangeRateProvider>(),
+                sp.GetRequiredService<TimeProvider>(),
+                sp.GetRequiredService<ILogger<UsdBasedExchangeRateProvider>>())));
 
         return services;
     }
