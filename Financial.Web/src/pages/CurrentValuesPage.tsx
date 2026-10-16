@@ -10,6 +10,7 @@ import SortableColumnHeader from '../components/grid/SortableColumnHeader'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { formatN2, getErrorMessage } from '../utils/formatters'
 import './CurrentValuesPage.css'
+import TruncatedText from '../components/TruncatedText'
 
 interface PriceResult {
   ticker: string
@@ -200,7 +201,7 @@ export default function CurrentValuesPage() {
               {sortedRows.map((result) => (
                 <TableRow key={`${result.exchange}-${result.ticker}-${result.assetName}`}>
                   <DataTableCell label="Ticker">{result.ticker}</DataTableCell>
-                  <DataTableCell label="Name">{result.name}</DataTableCell>
+                  <DataTableCell label="Name"><TruncatedText text={result.name} /></DataTableCell>
                   <DataTableCell label="Price" className="current-values__col--price data-table__col--numeric">
                     {result.price === null ? '—' : formatN2(result.price)}
                   </DataTableCell>

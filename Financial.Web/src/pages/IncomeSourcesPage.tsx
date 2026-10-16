@@ -24,6 +24,7 @@ import { useFormPanelStyles } from '../components/formPanelStyles'
 import { useIncomeSources } from '../hooks/useIncomeSources'
 import type { IncomeSourceDto } from '../api/types'
 import './IncomeSourcesPage.css'
+import TruncatedText from '../components/TruncatedText'
 
 export default function IncomeSourcesPage() {
   const styles = useFormPanelStyles()
@@ -99,8 +100,8 @@ export default function IncomeSourcesPage() {
           <TableBody>
             {incomeSources.map((incomeSource) => (
               <TableRow key={incomeSource.id}>
-                <DataTableCell label="Name">{incomeSource.name}</DataTableCell>
-                <DataTableCell label="Group">{incomeSource.group}</DataTableCell>
+                <DataTableCell label="Name"><TruncatedText text={incomeSource.name} /></DataTableCell>
+                <DataTableCell label="Group"><TruncatedText text={incomeSource.group} /></DataTableCell>
                 <DataTableCell label="Active">{incomeSource.isActive ? 'Yes' : 'No'}</DataTableCell>
                 <DataTableCell label="Auto-split to reserve">
                   {incomeSource.autoSplitToReserve ? 'Yes' : 'No'}

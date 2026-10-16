@@ -9,6 +9,7 @@ import { useSortableRows, DATE_DESC_SORT, type SortAccessor } from '../hooks/use
 import { useColumnFilters } from '../hooks/useColumnFilters'
 import { formatN2, formatShortDate } from '../utils/formatters'
 import './BankOperationsSection.css'
+import TruncatedText from './TruncatedText'
 
 interface OperationRowProps {
   entry: BankOperationEntry
@@ -31,7 +32,7 @@ function OperationRow({ entry, onEditTransfer, onEditAdjustment, onDeleteTransfe
       <DataTableCell label="Amount/Delta" className="data-table__col--numeric">
         {formatN2(isTransfer ? entry.amount : entry.delta)}
       </DataTableCell>
-      <DataTableCell label="Note">{entry.note ?? ''}</DataTableCell>
+      <DataTableCell label="Note"><TruncatedText text={entry.note ?? ''} /></DataTableCell>
       <TableCell className="data-table__col--action">
         <div className="data-table__actions-cell">
           <Button

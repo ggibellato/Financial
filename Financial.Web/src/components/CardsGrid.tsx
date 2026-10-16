@@ -6,6 +6,7 @@ import ColumnFilterMenu from './grid/ColumnFilterMenu'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { useColumnFilters } from '../hooks/useColumnFilters'
 import { formatN2 } from '../utils/formatters'
+import TruncatedText from './TruncatedText'
 
 interface CardsGridProps {
   cardStatements: CardStatementDto[]
@@ -175,7 +176,7 @@ export default function CardsGrid({
             )}
             {sortedRows.map((row) => (
               <TableRow key={row.key}>
-                <DataTableCell label="Card">{row.creditCardName}</DataTableCell>
+                <DataTableCell label="Card"><TruncatedText text={row.creditCardName} /></DataTableCell>
                 <DataTableCell label="Outstanding (period)" className="data-table__col--numeric">
                   {row.statement ? formatN2(row.statement.outstandingTotal) : '—'}
                 </DataTableCell>
