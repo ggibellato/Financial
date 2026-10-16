@@ -118,6 +118,7 @@ public sealed class NavigationService : INavigationService
 
             var (totalBought, totalSold, totalCredits) = AssetTotalsCalculator.CalculateTotals(asset);
             var valuation = _holdingValuationService.GetValuation(asset, scope);
+            var result = PositionResultCalculator.ForOpenPosition(valuation.UnrealisedGain, valuation.CostOfUnitsHeld, totalCredits);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetAssetDetails");
@@ -146,6 +147,8 @@ public sealed class NavigationService : INavigationService
                 MarketValue = valuation.MarketValue,
                 CostOfUnitsHeld = valuation.CostOfUnitsHeld,
                 UnrealisedGain = valuation.UnrealisedGain,
+                ResultPercent = result.ResultPercent,
+                ResultWithCreditsPercent = result.ResultWithCreditsPercent,
                 PriceAsOfDate = valuation.PriceAsOfDate,
                 MarketStatus = valuation.MarketStatus,
                 PriceOnlyReturn = valuation.PriceOnlyReturn,

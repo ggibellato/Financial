@@ -31,27 +31,6 @@ function computeCurrentValue(item: PortfolioAssetSummaryItemDto, isHistoric: boo
   return isHistoric ? null : item.marketValue
 }
 
-// Historic positions are closed: "Profit %" reflects the realized capital gain alone
-// (credits excluded, matching the active-scope semantic where credits are a separate
-// "w/ Credits" column), while "Profit % w/ Credits" uses the full realized gain/loss.
-function computeProfitPercent(item: PortfolioAssetSummaryItemDto, isHistoric: boolean): number | null {
-  if (isHistoric) {
-    return item.totalBought !== 0 ? ((item.realizedGainLoss - item.totalCredits) / item.totalBought) * 100 : null
-  }
-  return item.unrealisedGain !== null && item.costOfUnitsHeld !== 0
-    ? (item.unrealisedGain / item.costOfUnitsHeld) * 100
-    : null
-}
-
-function computeProfitWithCreditsPercent(item: PortfolioAssetSummaryItemDto, isHistoric: boolean): number | null {
-  if (isHistoric) {
-    return item.totalBought !== 0 ? (item.realizedGainLoss / item.totalBought) * 100 : null
-  }
-  return item.unrealisedGain !== null && item.costOfUnitsHeld !== 0
-    ? ((item.unrealisedGain + item.totalCredits) / item.costOfUnitsHeld) * 100
-    : null
-}
-
 interface AssetTableRow {
   item: PortfolioAssetSummaryItemDto
   rowPrice: RowPriceState
@@ -83,8 +62,6 @@ interface AssetRowProps {
 
 function AssetRow({ item, rowPrice, isHistoric }: AssetRowProps) {
   const currentValue = computeCurrentValue(item, isHistoric)
-  const profitPercent = computeProfitPercent(item, isHistoric)
-  const profitWithCreditsPercent = computeProfitWithCreditsPercent(item, isHistoric)
   const xirrValue = item.priceOnlyReturn
 
   const priceValue = isHistoric ? item.averageSellPrice : rowPrice.currentPrice
@@ -146,12 +123,12 @@ function AssetRow({ item, rowPrice, isHistoric }: AssetRowProps) {
         )}
       </DataTableCell>
       <DataTableCell label="Profit %">
-        {renderGatedCell(cellLoading, cellUnavailable, profitPercent, v => (
+        {renderGatedCell(cellLoading, cellUnavailable, item.resultPercent, v => (
           <span className={getProfitClass(v)}>{formatN2(v)}%</span>
         ))}
       </DataTableCell>
       <DataTableCell label="Profit % w/ Credits">
-        {renderGatedCell(cellLoading, cellUnavailable, profitWithCreditsPercent, v => (
+        {renderGatedCell(cellLoading, cellUnavailable, item.resultWithCreditsPercent, v => (
           <span className={getProfitClass(v)}>{formatN2(v)}%</span>
         ))}
       </DataTableCell>
@@ -221,8 +198,8 @@ export default function PortfolioHoldingsTab() {
     totalCredits: (r) => r.item.totalCredits,
     averagePrice: (r) => r.item.averagePrice,
     price: (r) => (isHistoric ? r.item.averageSellPrice : r.rowPrice.currentPrice),
-    profitPercent: (r) => computeProfitPercent(r.item, isHistoric),
-    profitWithCreditsPercent: (r) => computeProfitWithCreditsPercent(r.item, isHistoric),
+    profitPercent: (r) => r.item.resultPercent,
+    profitWithCreditsPercent: (r) => r.item.resultWithCreditsPercent,
     xirr: (r) => r.item.priceOnlyReturn,
     lastMonthCredits: (r) => (r.item.lastCreditMonth === null ? null : r.item.lastMonthCredits),
     lastCreditMonth: (r) => (r.item.lastCreditMonth === null ? null : parseCreditMonth(r.item.lastCreditMonth)),

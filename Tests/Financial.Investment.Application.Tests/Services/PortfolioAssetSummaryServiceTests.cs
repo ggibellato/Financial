@@ -832,6 +832,38 @@ public class PortfolioAssetSummaryServiceTests
         result[0].LastMonthCreditsPercent.Should().Be(1m);
     }
 
+    [Fact]
+    public void GetPortfolioAssetsSummary_ActiveScope_ReturnsTheResultPercentOnTheCostOfUnitsHeld()
+    {
+        var asset = MakeAsset("OPEN", "OPN", "BVMF");
+        asset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 2m, 100m, 0m));
+        asset.AddCredit(Credit.Create(TestClock.LocalToday, Credit.CreditType.Dividend, 20m));
+        asset.SetPrice(TestClock.Today, 120m, isManual: false);
+        _repository.AssetsByBrokerPortfolio = [asset];
+
+        var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
+
+        using var _ = new AssertionScope();
+        result[0].ResultPercent.Should().Be(20m);
+        result[0].ResultWithCreditsPercent.Should().Be(30m);
+    }
+
+    [Fact]
+    public void GetPortfolioAssetsSummary_HistoricScope_ReturnsTheRealizedResultPercentOnTotalBought()
+    {
+        var asset = MakeAsset("CLOSEDASSET", "CLOSEDASSET", "BVMF");
+        asset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 4m, 100m, 0m));
+        asset.RecordTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Sell, 4m, 105m, 0m));
+        asset.AddCredit(Credit.Create(TestClock.LocalToday, Credit.CreditType.Dividend, 20m));
+        _repository.AssetsByBrokerPortfolio = [asset];
+
+        var result = CreateService().GetPortfolioAssetsSummary("XPI", "Uncategorized", InvestmentScope.Historic);
+
+        using var _ = new AssertionScope();
+        result[0].ResultPercent.Should().Be(5m);
+        result[0].ResultWithCreditsPercent.Should().Be(10m);
+    }
+
     private PortfolioAssetSummaryService CreateService() => new(_repository, TestHoldingValuationService.Create(), TestClock.At(), _tracer, NullLogger<PortfolioAssetSummaryService>.Instance);
 
     private static Asset MakeAsset(string name, string ticker, string exchange) =>
