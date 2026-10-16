@@ -1,6 +1,7 @@
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.Rules;
+using Financial.Shared.Abstractions.Time;
 
 namespace Financial.Investment.Application.Services;
 
@@ -20,7 +21,7 @@ public sealed class XirrCalculationService : IXirrCalculationService
         _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
 
     public decimal? Calculate(IReadOnlyList<AssetCashFlowDTO> cashFlows, decimal terminalValue) =>
-        Calculate(cashFlows, terminalValue, _timeProvider.GetLocalNow().Date);
+        Calculate(cashFlows, terminalValue, _timeProvider.GetLocalDate());
 
     public decimal? Calculate(IReadOnlyList<AssetCashFlowDTO> cashFlows, decimal terminalValue, DateTime asOf)
     {

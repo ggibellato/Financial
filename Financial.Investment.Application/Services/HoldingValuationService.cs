@@ -3,6 +3,7 @@ using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.Entities;
 using Financial.Investment.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
+using Financial.Shared.Abstractions.Time;
 using Microsoft.Extensions.Logging;
 
 namespace Financial.Investment.Application.Services;
@@ -35,7 +36,7 @@ public sealed class HoldingValuationService : IHoldingValuationService
         {
             ArgumentNullException.ThrowIfNull(asset);
 
-            var today = DateOnly.FromDateTime(_timeProvider.GetUtcNow().UtcDateTime);
+            var today = _timeProvider.GetUtcToday();
 
             var valuation = scope == InvestmentScope.Historic
                 ? HoldingValuationCalculator.NotMarkedToMarket(asset.Quantity, asset.AveragePrice)

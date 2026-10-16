@@ -6,4 +6,7 @@ public static class TimeProviderExtensions
 
     public static DateOnly GetLocalToday(this TimeProvider timeProvider) =>
         DateOnly.FromDateTime(timeProvider.GetLocalNow().DateTime);
+
+    public static DateOnly GetUtcToday(this TimeProvider timeProvider) =>
+        DateOnly.FromDateTime(timeProvider.GetUtcNow().UtcDateTime);
 }

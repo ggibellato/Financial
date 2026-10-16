@@ -3,6 +3,7 @@ using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.Entities;
 using Financial.Shared.Abstractions.Currencies;
 using Financial.Shared.Abstractions.Observability;
+using Financial.Shared.Abstractions.Time;
 using Microsoft.Extensions.Logging;
 
 namespace Financial.Investment.Application.Services;
@@ -42,7 +43,7 @@ public sealed class AllocationBreakdownService : IAllocationBreakdownService
         using var span = StartSpan(OperationName);
         try
         {
-            var asOf = DateOnly.FromDateTime(_timeProvider.GetUtcNow().UtcDateTime);
+            var asOf = _timeProvider.GetUtcToday();
             var holdings = CollectActiveHoldings(_repository.GetInvestments(), brokerCurrencyFilter);
             var result = await AllocationBreakdownBuilder
                 .BuildAsync(holdings, _holdingValuationService, displayCurrency, _exchangeRateProvider, asOf)
