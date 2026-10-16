@@ -1,6 +1,5 @@
 param(
     [Parameter(Mandatory)][string]$Backend,
-    [Parameter(Mandatory)][string]$Wpf,
     [Parameter(Mandatory)][string]$Web,
     [string]$Path = 'coverage-baseline.json'
 )
@@ -21,7 +20,6 @@ function Read-Figures([string]$summaryPath) {
 
 $baseline = [ordered]@{
     backend = Read-Figures $Backend
-    wpf     = Read-Figures $Wpf
     web     = Read-Figures $Web
 }
 

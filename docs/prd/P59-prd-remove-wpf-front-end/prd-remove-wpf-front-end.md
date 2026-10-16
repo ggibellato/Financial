@@ -102,20 +102,21 @@ It works in three pull requests. F01 stops CI and the nightly run from building,
   - remove the `wpf` and `wpf_e2e` outputs of the `changes` job;
   - remove the WPF diff-coverage step and the `WPF_*` inputs of the coverage comment;
   - remove `wpf` and `wpf-e2e` from every `needs` list (coverage comment, baseline reminder, `ci-status`);
-  - drop `;-Financial.Presentation.App` from the backend job's `-assemblyfilters`, keeping `+*`;
-  - remove the backend test filter's `FullyQualifiedName!~Financial.Presentation.Tests` clause only in F02, when that project is deleted. Until then it keeps WPF tests out of the backend job.
-- `.github/scripts/detect-changes.sh` stops emitting `wpf` and `wpf_e2e`. Until F02, `Financial.App/**` and `Tests/Financial.Presentation.Tests/**` paths classify as `backend`, because `Financial.Architecture.Tests` still references `Financial.App`. `detect-changes.test.sh` cases are updated to match.
+  - keep the backend test filter's `FullyQualifiedName!~Financial.Presentation.Tests` clause and the `-Financial.Presentation.App` term of its `-assemblyfilters` until F02. While `Financial.Architecture.Tests` references `Financial.App`, the filter keeps that near-zero WPF assembly out of the backend coverage figure, where it would pull the number under the 90% floor.
+- `.github/scripts/detect-changes.sh` stops emitting `wpf` and `wpf_e2e`. Until F02, `Financial.App/**`, `Tests/Financial.Presentation.Tests/**` and `Tests/Financial.App.E2ETests/**` paths classify as `backend`, because the backend job's solution build still compiles them and `Financial.Architecture.Tests` still references `Financial.App`. `detect-changes.test.sh` cases are updated to match.
 - `.github/workflows/nightly.yml`:
   - remove the `e2e-wpf` job;
   - remove `e2e-wpf` from the failure-issue job's `needs`;
-  - remove its case in `.github/scripts/nightly-issue.test.ps1`.
+  - replace `e2e-wpf` with real nightly job names in the sample inputs of `.github/scripts/nightly-issue.test.ps1`.
 - Coverage tooling:
   - remove the `-Wpf` parameter and the `wpf` key from `.github/scripts/coverage-baseline.ps1`;
   - remove the WPF entry from `.github/scripts/baseline-reminder.ps1` and its instruction text (`-Backend … -Web …` only);
   - update `baseline-reminder.test.ps1` and `coverage-gate.test.ps1`;
   - remove the WPF examples from the descriptions in `.github/actions/coverage-gate/action.yml`;
+  - remove `Financial.App/ViewModels` from the diff-coverage scope in `.github/scripts/diff-coverage.ps1`;
   - remove the `wpf` entry from `coverage-baseline.json`. The `backend` and `web` figures stay exactly as they are; the file is still refreshed only by the script after this change.
-- `Financial.App` still exists and still builds locally with `dotnet build`. CI simply stops building it.
+- `Financial.App` still exists. CI stops testing it; the backend job's solution build still compiles it until F02.
+- `docs/ci-affected-pipeline.md` is updated in the same PR, because it documents exactly these jobs, rules and scripts.
 - Mutation testing is unchanged: `scripts/stryker.ps1` and `Financial.Web/stryker.config.json` have no WPF target.
 
 **Experience:**
@@ -158,7 +159,8 @@ It works in three pull requests. F01 stops CI and the nightly run from building,
 - **Solution and tests:**
   - remove their entries from `Financial.slnx`;
   - remove the `Financial.App` project reference from `Tests/Financial.Architecture.Tests/Financial.Architecture.Tests.csproj`, along with the WPF rules in `PresentationDependencyRuleTests.cs`; the API rules stay;
-  - remove the `Financial.Presentation.Tests` clause from the backend job's test filter in `build.yml`.
+  - remove the `Financial.Presentation.Tests` clause from the backend job's test filter and the `-Financial.Presentation.App` term from its `-assemblyfilters` in `build.yml`, along with the comment explaining that term;
+  - remove the WPF rule from `.github/scripts/detect-changes.sh` and its cases from `detect-changes.test.sh`, and the WPF row from `docs/ci-affected-pipeline.md`.
 - **Coverage settings:** remove the `Financial.Presentation.App` exclusions and their explaining comments from `coverlet.runsettings`.
 - **Local deploy:**
   - `scripts/deploy.ps1` stops publishing `Financial.App`. It removes the WPF publish step, `Financial.Presentation.App` from the process stop, the WPF `appsettings.Production.json` stamping and the WPF summary line, and the synopsis drops the WPF paragraphs.
@@ -217,7 +219,6 @@ It works in three pull requests. F01 stops CI and the nightly run from building,
   - `README.md`: remove the "Desktop (Financial.App)" section and the WPF parts of the local-deploy and observability text;
   - `context.md`;
   - `Financial.Web/CLAUDE.md`;
-  - `docs/ci-affected-pipeline.md`;
   - the living discovery docs (`docs/discovery-*.md`): current-state statements only.
 - Left as written, because they are dated records:
   - PRDs under `docs/prd/` and `specs/`;
@@ -289,15 +290,16 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. CI Stops Building WPF
-- [ ] `build.yml` has no `wpf` or `wpf-e2e` job, no `wpf`/`wpf_e2e` output in `changes`, and no `wpf` in any `needs` list
-- [ ] The backend job's `-assemblyfilters` is `+*` with no `Financial.Presentation.App` term
-- [ ] `nightly.yml` has no `e2e-wpf` job and the failure-issue job's `needs` does not list it; `nightly-issue.test.ps1` passes
-- [ ] `detect-changes.sh` emits no `wpf` or `wpf_e2e` key, and `detect-changes.test.sh` passes
-- [ ] `coverage-baseline.json` contains only `backend` and `web`, with the same figures as before the PR
-- [ ] `coverage-baseline.ps1` has no `-Wpf` parameter, and `baseline-reminder.ps1` names only Backend and Web; `baseline-reminder.test.ps1` and `coverage-gate.test.ps1` pass
-- [ ] The F01 PR's run executes the full pipeline and `ci-status` is green
-- [ ] The coverage PR comment on the F01 PR shows exactly 2 project rows
-- [ ] `Financial.App` still builds locally with `dotnet build Financial.App` after F01
+- [x] `build.yml` has no `wpf` or `wpf-e2e` job, no `wpf`/`wpf_e2e` output in `changes`, and no `wpf` in any `needs` list
+- [x] The backend job still filters `Financial.Presentation.App` out of its coverage report, and its coverage stays within 0.5 points of the baseline
+- [x] `docs/ci-affected-pipeline.md` lists only the backend, web and web-e2e jobs and the two-job baseline command
+- [x] `nightly.yml` has no `e2e-wpf` job and the failure-issue job's `needs` does not list it; `nightly-issue.test.ps1` passes
+- [x] `detect-changes.sh` emits no `wpf` or `wpf_e2e` key, and `detect-changes.test.sh` passes
+- [x] `coverage-baseline.json` contains only `backend` and `web`, with the same figures as before the PR
+- [x] `coverage-baseline.ps1` has no `-Wpf` parameter, and `baseline-reminder.ps1` names only Backend and Web; `baseline-reminder.test.ps1` and `coverage-gate.test.ps1` pass
+- [x] The F01 PR's run executes the full pipeline and `ci-status` is green
+- [x] The coverage PR comment on the F01 PR shows exactly 2 project rows
+- [x] `Financial.App` still builds locally with `dotnet build Financial.App` after F01
 
 ### F02. Delete the WPF App
 - [ ] The PR body contains the parity table and the user has commented the sign-off before merge
@@ -306,7 +308,8 @@ graph TD
 - [ ] `Financial.slnx` has no entry for those three projects, and `dotnet build --configuration Release` succeeds
 - [ ] `Financial.Architecture.Tests` has no reference to `Financial.App`, and all its tests pass
 - [ ] `coverlet.runsettings` has no `Financial.Presentation.App` exclusion
-- [ ] The backend job's test filter has no `Financial.Presentation.Tests` clause
+- [ ] The backend job's test filter has no `Financial.Presentation.Tests` clause and its `-assemblyfilters` is `+*`
+- [ ] `detect-changes.sh` has no WPF rule and `detect-changes.test.sh` passes
 - [ ] `scripts/deploy.ps1` runs on a machine with an old `deploy/Financial.App` folder and leaves `deploy/` without `Financial.App` or `start-app.ps1`, with the web app published
 - [ ] `scripts/deploy-templates/start-app.ps1` no longer exists; `start-all.ps1` starts only the web server
 - [ ] `deploy.local.example.json` has no `GoogleCalendarAppRedirectUri`
