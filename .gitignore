@@ -1,5 +1,6 @@
 #folders in any place
 .vs
+*.user
 bin
 obj
 .vite

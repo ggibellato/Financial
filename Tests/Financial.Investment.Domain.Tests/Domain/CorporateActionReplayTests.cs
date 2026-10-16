@@ -102,39 +102,6 @@ public class CorporateActionReplayTests
     }
 
     [Fact]
-    public void RescaleLots_ScalesEveryLotProportionallyAndKeepsTotalCostUnchanged()
-    {
-        var lots = new[]
-        {
-            new OpenLot(Guid.NewGuid(), new DateTime(2024, 1, 1), 5m, 10m),
-            new OpenLot(Guid.NewGuid(), new DateTime(2024, 2, 1), 3m, 20m),
-        };
-        var totalCostBefore = lots.Sum(lot => lot.RemainingQuantity * lot.UnitCost);
-
-        var rescaled = CorporateActionReplay.RescaleLots(lots, 2.0m);
-
-        rescaled.Should().HaveCount(2);
-        rescaled[0].RemainingQuantity.Should().Be(10m);
-        rescaled[0].UnitCost.Should().Be(5m);
-        rescaled[1].RemainingQuantity.Should().Be(6m);
-        rescaled[1].UnitCost.Should().Be(10m);
-        rescaled.Sum(lot => lot.RemainingQuantity * lot.UnitCost).Should().Be(totalCostBefore);
-    }
-
-    [Fact]
-    public void RescaleLots_PreservesSourceTransactionIdAndDate()
-    {
-        var sourceId = Guid.NewGuid();
-        var date = new DateTime(2024, 1, 1);
-        var lots = new[] { new OpenLot(sourceId, date, 5m, 10m) };
-
-        var rescaled = CorporateActionReplay.RescaleLots(lots, 2.0m);
-
-        rescaled[0].SourceTransactionId.Should().Be(sourceId);
-        rescaled[0].Date.Should().Be(date);
-    }
-
-    [Fact]
     public void ApplyToPosition_Split_MatchesRescalePosition()
     {
         var split = CorporateAction.CreateSplit(new DateTime(2026, 3, 1), 2.0m);

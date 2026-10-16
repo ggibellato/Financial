@@ -23,7 +23,6 @@ COPY Financial.Shared.Infrastructure/Financial.Shared.Infrastructure.csproj Fina
 COPY Financial.Shared.Abstractions/Financial.Shared.Abstractions.csproj Financial.Shared.Abstractions/
 COPY Integrations/GoogleCore/GoogleCore.csproj Integrations/GoogleCore/
 COPY Integrations/GoogleDrive/GoogleDrive.csproj Integrations/GoogleDrive/
-COPY Integrations/GoogleSheets/GoogleSheets.csproj Integrations/GoogleSheets/
 COPY Integrations/GoogleCalendar/GoogleCalendar.csproj Integrations/GoogleCalendar/
 COPY Integrations/WebPageParser/WebPageParser.csproj Integrations/WebPageParser/
 COPY Integrations/Observability/Observability.csproj Integrations/Observability/
@@ -42,7 +41,6 @@ COPY Financial.Shared.Infrastructure/ Financial.Shared.Infrastructure/
 COPY Financial.Shared.Abstractions/ Financial.Shared.Abstractions/
 COPY Integrations/GoogleCore/ Integrations/GoogleCore/
 COPY Integrations/GoogleDrive/ Integrations/GoogleDrive/
-COPY Integrations/GoogleSheets/ Integrations/GoogleSheets/
 COPY Integrations/GoogleCalendar/ Integrations/GoogleCalendar/
 COPY Integrations/WebPageParser/ Integrations/WebPageParser/
 COPY Integrations/Observability/ Integrations/Observability/
