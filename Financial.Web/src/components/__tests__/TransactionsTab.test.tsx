@@ -179,8 +179,6 @@ function assetWith(
     transactions,
     credits: [],
     priceSnapshots: [],
-    cashFlowsWithCredits: [],
-    cashFlowsWithoutCredits: [],
     disposalRecords: [],
     corporateActions: [],
     costBasisMethod,

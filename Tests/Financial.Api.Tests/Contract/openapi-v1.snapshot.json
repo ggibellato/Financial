@@ -352,19 +352,6 @@
         },
         "type": "object"
       },
-      "AssetCashFlowDTO": {
-        "properties": {
-          "amount": {
-            "format": "double",
-            "type": "number"
-          },
-          "date": {
-            "format": "date-time",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
       "AssetClassAllocationEntryDTO": {
         "properties": {
           "class": {
@@ -401,18 +388,6 @@
           },
           "brokerName": {
             "type": "string"
-          },
-          "cashFlowsWithCredits": {
-            "items": {
-              "$ref": "#/components/schemas/AssetCashFlowDTO"
-            },
-            "type": "array"
-          },
-          "cashFlowsWithoutCredits": {
-            "items": {
-              "$ref": "#/components/schemas/AssetCashFlowDTO"
-            },
-            "type": "array"
           },
           "class": {
             "$ref": "#/components/schemas/GlobalAssetClass"
@@ -3865,12 +3840,6 @@
               "null",
               "number"
             ]
-          },
-          "cashFlows": {
-            "items": {
-              "$ref": "#/components/schemas/AssetCashFlowDTO"
-            },
-            "type": "array"
           },
           "class": {
             "$ref": "#/components/schemas/GlobalAssetClass"

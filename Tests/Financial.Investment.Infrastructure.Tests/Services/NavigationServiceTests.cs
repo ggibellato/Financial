@@ -199,32 +199,6 @@ public class NavigationServiceTests
     }
 
     [Fact]
-    public void GetAssetDetails_ShouldIncludeCashFlowsWithCredits()
-    {
-        const string brokerName = "XPI";
-        const string portfolioName = "Default";
-        const string assetName = "BCIA11";
-
-        var result = _sut.GetAssetDetails(brokerName, portfolioName, assetName);
-
-        result.Should().NotBeNull();
-        result!.CashFlowsWithCredits.Should().HaveCount(result.Transactions.Count + result.Credits.Count);
-    }
-
-    [Fact]
-    public void GetAssetDetails_ShouldIncludeCashFlowsWithoutCredits_ExcludingCredits()
-    {
-        const string brokerName = "XPI";
-        const string portfolioName = "Default";
-        const string assetName = "BCIA11";
-
-        var result = _sut.GetAssetDetails(brokerName, portfolioName, assetName);
-
-        result.Should().NotBeNull();
-        result!.CashFlowsWithoutCredits.Should().HaveCount(result.Transactions.Count);
-    }
-
-    [Fact]
     public void GetAssetDetails_ShouldIncludePriceSnapshots()
     {
         const string brokerName = "XPI";

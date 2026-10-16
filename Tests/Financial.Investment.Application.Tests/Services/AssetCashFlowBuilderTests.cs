@@ -1,6 +1,7 @@
 using Financial.Investment.Application.Services;
 using Financial.Investment.Domain.Entities;
 using FluentAssertions;
+using FluentAssertions.Execution;
 
 namespace Financial.Investment.Application.Tests.Services;
 
@@ -154,5 +155,110 @@ public class AssetCashFlowBuilderTests
 
         result.Should().Contain(cf => cf.Amount == 90m);
         result.Should().Contain(cf => cf.Amount == 50m);
+    }
+
+    [Fact]
+    public void BuildWithCredits_BuyEntriesAreNegative()
+    {
+        var asset = MakeAsset("TEST");
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 10m, 0m));
+
+        var cashFlows = AssetCashFlowBuilder.BuildWithCredits(asset);
+
+        using var _ = new AssertionScope();
+        cashFlows.Should().HaveCount(1);
+        cashFlows[0].Amount.Should().Be(-100m);
+    }
+
+    [Fact]
+    public void BuildWithCredits_SellEntriesArePositive()
+    {
+        var asset = MakeAsset("TEST");
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 10m, 0m));
+        asset.AddTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 10m, 0m));
+
+        var cashFlows = AssetCashFlowBuilder.BuildWithCredits(asset);
+
+        var sellFlow = cashFlows.First(f => f.Amount > 0 && f.Date.Year == 2022);
+        sellFlow.Amount.Should().Be(50m);
+    }
+
+    [Fact]
+    public void BuildWithCredits_SellEntriesAreNetOfFees()
+    {
+        var asset = MakeAsset("TEST");
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 10m, 0m));
+        asset.AddTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 10m, 2m));
+
+        var cashFlows = AssetCashFlowBuilder.BuildWithCredits(asset);
+
+        var sellFlow = cashFlows.First(f => f.Amount > 0 && f.Date.Year == 2022);
+        sellFlow.Amount.Should().Be(48m);
+    }
+
+    [Fact]
+    public void BuildWithCredits_CreditEntriesArePositive()
+    {
+        var asset = MakeAsset("TEST");
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 1m, 10m, 0m));
+        asset.AddCredit(Credit.Create(new DateTime(2023, 3, 1), Credit.CreditType.Dividend, 25m));
+
+        var cashFlows = AssetCashFlowBuilder.BuildWithCredits(asset);
+
+        var creditFlow = cashFlows.First(f => f.Date.Year == 2023);
+        creditFlow.Amount.Should().Be(25m);
+    }
+
+    [Fact]
+    public void BuildWithCredits_SortedAscendingByDate()
+    {
+        var asset = MakeAsset("TEST");
+        asset.AddTransaction(Transaction.Create(new DateTime(2022, 6, 1), Transaction.TransactionType.Buy, 1m, 10m, 0m));
+        asset.AddCredit(Credit.Create(new DateTime(2021, 9, 15), Credit.CreditType.Dividend, 5m));
+        asset.AddTransaction(Transaction.Create(new DateTime(2023, 1, 1), Transaction.TransactionType.Sell, 1m, 12m, 0m));
+
+        var cashFlows = AssetCashFlowBuilder.BuildWithCredits(asset);
+
+        var dates = cashFlows.Select(f => f.Date).ToList();
+        dates.Should().BeInAscendingOrder();
+        dates[0].Should().Be(new DateTime(2021, 9, 15));
+        dates[1].Should().Be(new DateTime(2022, 6, 1));
+        dates[2].Should().Be(new DateTime(2023, 1, 1));
+    }
+
+    [Fact]
+    public void BuildWithCredits_Empty_WhenNoTransactionsOrCredits()
+    {
+        var cashFlows = AssetCashFlowBuilder.BuildWithCredits(MakeAsset("TEST"));
+
+        cashFlows.Should().NotBeNull();
+        cashFlows.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void BuildWithCredits_ContainsAllThreeEventTypes()
+    {
+        var asset = MakeAsset("TEST");
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 5m, 10m, 0m));
+        asset.AddTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 2m, 12m, 0m));
+        asset.AddCredit(Credit.Create(new DateTime(2021, 6, 1), Credit.CreditType.Dividend, 8m));
+
+        var cashFlows = AssetCashFlowBuilder.BuildWithCredits(asset);
+
+        using var _ = new AssertionScope();
+        cashFlows.Should().HaveCount(3);
+        cashFlows.Count(f => f.Amount < 0).Should().Be(1);
+        cashFlows.Count(f => f.Amount > 0).Should().Be(2);
+    }
+
+    [Fact]
+    public void BuildWithCredits_BuyAmountMatchesTotalPrice()
+    {
+        var asset = MakeAsset("TEST");
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 15m, 5m));
+
+        var cashFlows = AssetCashFlowBuilder.BuildWithCredits(asset);
+
+        cashFlows[0].Amount.Should().Be(-155m);
     }
 }
