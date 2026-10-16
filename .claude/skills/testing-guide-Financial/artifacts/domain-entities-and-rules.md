@@ -14,7 +14,7 @@
 - **Rules/calculators**: `XirrCalculator.Calculate(IReadOnlyList<(DateTime Date, decimal Amount)>)`
   returns `null` for degenerate input and the known IRR for a fixture; `TitheRule.CalculateTithe`
   / `NetOfTithe` sum back to the original; `AnnualResultCalculator`,
-  `YearScopedInvestmentAccountResolver`, `CreditFrequencyAnalyzer`, `ProfitCalculator`,
+  `YearScopedInvestmentAccountResolver`, `CreditFrequencyAnalyzer`,
   `TransactionFeeCalculator`, `DividendValuationRules`, `GlobalAssetClassMapping`.
 - **Collections**: `IdCollection` / `ItemCollection` (`Entities/Collections/`) duplicate-id
   rejection and lookup misses.

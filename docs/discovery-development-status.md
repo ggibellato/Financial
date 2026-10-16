@@ -81,7 +81,7 @@ Read-only pass, building on the architecture/domain baseline established in `doc
 
 ### Performance Analytics (XIRR, Profit)
 - **Status:** Complete (backend and a separate frontend implementation both exist and are in active use).
-- **Tests:** `XirrCalculatorTests`, `ProfitCalculatorTests`, `XirrCalculationServiceTests` (backend). Frontend `xirr.ts` has its own `xirr.test.ts`.
+- **Tests:** `XirrCalculatorTests`, `XirrCalculationServiceTests` (backend). Frontend `xirr.ts` has its own `xirr.test.ts`.
 - **Docs/spec:** No dedicated PRD identified — foundational.
 - **Known risk (not a completeness gap, but worth tracking):** Two independent XIRR implementations (backend `XirrCalculator`, frontend `xirr.ts`, actively used by `PortfolioSummaryTab.tsx`) — confirmed live duplication, divergence risk if either changes without the other.
 - **Uncertainty:** Whether the two implementations currently agree on every edge case (e.g., <2 cash flows) was not independently re-verified in this pass.

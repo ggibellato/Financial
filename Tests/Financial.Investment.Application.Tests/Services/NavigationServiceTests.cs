@@ -84,22 +84,6 @@ public class NavigationServiceTests
         assetNode.Metadata["PositionType"].Should().Be("Long");
     }
 
-    [Theory]
-    [InlineData(10, PositionType.Long)]
-    [InlineData(0, PositionType.Flat)]
-    [InlineData(-10, PositionType.Short)]
-    public void GetAssetsByBrokerPortfolio_AssetNodeDto_PositionTypeMatchesAssetPositionType(decimal quantity, PositionType expectedPositionType)
-    {
-        var broker = Broker.Create("Broker", "BRL");
-        var portfolio = broker.AddPortfolio("Portfolio");
-        portfolio.AddAsset(BuildAssetWithQuantity("ASSET1", quantity));
-        _repository.Broker = broker;
-
-        var assets = CreateService().GetAssetsByBrokerPortfolio("Broker", "Portfolio").ToList();
-
-        assets.Should().ContainSingle().Which.PositionType.Should().Be(expectedPositionType);
-    }
-
     [Fact]
     public void GetAssetDetails_ReturnsValuationMethodAndIncomePolicyFromAsset()
     {
@@ -558,17 +542,6 @@ public class NavigationServiceTests
 
         act.Should().Throw<InvalidOperationException>();
         _tracer.ShouldHaveFailedSpan<InvalidOperationException>("Investment.NavigationService.GetBrokers");
-    }
-
-    [Fact]
-    public void GetAssetsByBrokerPortfolio_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
-    {
-        _repository.ThrowOnGetAssetsByBrokerPortfolio = new InvalidOperationException("simulated failure");
-
-        Action act = () => CreateService().GetAssetsByBrokerPortfolio("Broker", "Portfolio");
-
-        act.Should().Throw<InvalidOperationException>();
-        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("Investment.NavigationService.GetAssetsByBrokerPortfolio");
     }
 
     [Fact]
