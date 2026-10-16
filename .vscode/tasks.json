@@ -14,20 +14,6 @@
 				"$msCompile"
 			],
 			"group": "build"
-		},
-		{
-			"label": "build-finanacialtools",
-			"type": "shell",
-			"command": "dotnet",
-			"args": [
-				"build",
-				"Financial.App/Financial.App.csproj"
-			],
-			"isBackground": false,
-			"problemMatcher": [
-				"$msCompile"
-			],
-			"group": "build"
 		}
 	]
 }
