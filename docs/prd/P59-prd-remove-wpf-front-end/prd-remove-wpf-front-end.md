@@ -290,16 +290,16 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. CI Stops Building WPF
-- [ ] `build.yml` has no `wpf` or `wpf-e2e` job, no `wpf`/`wpf_e2e` output in `changes`, and no `wpf` in any `needs` list
-- [ ] The backend job still filters `Financial.Presentation.App` out of its coverage report, and its coverage stays within 0.5 points of the baseline
-- [ ] `docs/ci-affected-pipeline.md` lists only the backend, web and web-e2e jobs and the two-job baseline command
-- [ ] `nightly.yml` has no `e2e-wpf` job and the failure-issue job's `needs` does not list it; `nightly-issue.test.ps1` passes
-- [ ] `detect-changes.sh` emits no `wpf` or `wpf_e2e` key, and `detect-changes.test.sh` passes
-- [ ] `coverage-baseline.json` contains only `backend` and `web`, with the same figures as before the PR
-- [ ] `coverage-baseline.ps1` has no `-Wpf` parameter, and `baseline-reminder.ps1` names only Backend and Web; `baseline-reminder.test.ps1` and `coverage-gate.test.ps1` pass
-- [ ] The F01 PR's run executes the full pipeline and `ci-status` is green
-- [ ] The coverage PR comment on the F01 PR shows exactly 2 project rows
-- [ ] `Financial.App` still builds locally with `dotnet build Financial.App` after F01
+- [x] `build.yml` has no `wpf` or `wpf-e2e` job, no `wpf`/`wpf_e2e` output in `changes`, and no `wpf` in any `needs` list
+- [x] The backend job still filters `Financial.Presentation.App` out of its coverage report, and its coverage stays within 0.5 points of the baseline
+- [x] `docs/ci-affected-pipeline.md` lists only the backend, web and web-e2e jobs and the two-job baseline command
+- [x] `nightly.yml` has no `e2e-wpf` job and the failure-issue job's `needs` does not list it; `nightly-issue.test.ps1` passes
+- [x] `detect-changes.sh` emits no `wpf` or `wpf_e2e` key, and `detect-changes.test.sh` passes
+- [x] `coverage-baseline.json` contains only `backend` and `web`, with the same figures as before the PR
+- [x] `coverage-baseline.ps1` has no `-Wpf` parameter, and `baseline-reminder.ps1` names only Backend and Web; `baseline-reminder.test.ps1` and `coverage-gate.test.ps1` pass
+- [x] The F01 PR's run executes the full pipeline and `ci-status` is green
+- [x] The coverage PR comment on the F01 PR shows exactly 2 project rows
+- [x] `Financial.App` still builds locally with `dotnet build Financial.App` after F01
 
 ### F02. Delete the WPF App
 - [ ] The PR body contains the parity table and the user has commented the sign-off before merge
