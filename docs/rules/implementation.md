@@ -44,7 +44,7 @@ Mandatory, not advisory.
 A rule belongs on the entity that owns it. Extract it into `Domain/Rules/` only when one of these is true:
 
 - **Two or more call sites need it.** `YearScopedInvestmentAccountResolver` (used by `AnnualSummaryService` and `InvestmentSnapshotService`) qualifies.
-- **It is a stateless algorithm with its own Domain test class.** `XirrCalculator`, `ProfitCalculator`, `CreditFrequencyAnalyzer`, `AnnualResultCalculator` and `DividendValuationRules` qualify on this ground.
+- **It is a stateless algorithm with its own Domain test class.** `XirrCalculator`, `CreditFrequencyAnalyzer`, `AnnualResultCalculator` and `DividendValuationRules` qualify on this ground.
 
 Otherwise keep it on the entity: constants as `public const` on the entity, enforcement in the setter or factory that could violate it. The reference shape is `Expense.MinRoundUpAmount` / `Expense.MaxRoundUpAmount` (`Financial.CashFlow.Domain/Entities/Expense.cs:8-9`), enforced in `SetRoundUpAmount` (`Expense.cs:231-235`).
 

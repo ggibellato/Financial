@@ -146,15 +146,14 @@ Preconditions (Name for Bond, BrokerName for Crypto, Exchange for Standard) are 
 
 **Business rules (standard financial formulas — OBSERVED BEHAVIOR, not project-specific policy):**
 - `XirrCalculator`: Newton-Raphson, 100 max iterations, `1e-7` tolerance, 10% initial guess, 365-day year; returns `null` with <2 cash flows or if derivative hits zero (no bisection fallback).
-- `ProfitCalculator.HasCostBasis` requires `averagePrice > 0 && quantity > 0`; `CalculateResultFraction` returns `0` with no cost basis while `CalculateProfitPercent` returns `null` — inconsistent null-vs-zero convention within the same class. **Confirmed as an implementation decision (Clarification #6)** — accepted as-is, not a defect requiring correction.
 
 **Frontend `xirr.ts` duplication — investigated during clarification (Clarification #5):** `Financial.Web/src/utils/xirr.ts` is **not** dead/forgotten code. It is actively imported by `Financial.Web/src/components/PortfolioSummaryTab.tsx` and used to compute XIRR **per table row, client-side**, from cash-flow arrays already present in the API response (`item.cashFlows` + a synthetic terminal-value entry) — avoiding a separate `/xirr` API round-trip per row in a potentially large table. This is a genuine, live, second independent implementation of the same algorithm as the backend `XirrCalculator` (Domain), not a leftover. The divergence risk remains real: if the two implementations' edge-case handling (e.g. the `<2 cash flows → null` guard, iteration/tolerance parameters) drift apart, the Portfolio Summary table and any backend-driven XIRR display could disagree. No action taken in this pass; flagged for whoever next touches XIRR logic on either side.
 
-**Application services:** `XirrCalculationService`, `ProfitCalculationService`, `AssetCashFlowBuilder`.
+**Application services:** `XirrCalculationService`, `AssetCashFlowBuilder`.
 
 **APIs:** `XirrController` (`/xirr`).
 
-**Tests:** `XirrCalculatorTests`, `ProfitCalculatorTests`, `XirrCalculationServiceTests`.
+**Tests:** `XirrCalculatorTests`, `XirrCalculationServiceTests`.
 
 ---
 
@@ -474,7 +473,7 @@ Answers provided directly by the product owner, resolving the open questions rai
 | 3 | Are the 1.5/3.5/5.0-month credit-frequency thresholds intentional? | **Business decision.** |
 | 4 | Is silently dropping the `exchange` param in `DividendDataSourceAdapter` intentional? | **Error** — the method should not accept an `exchange` parameter at all. Confirmed defect; not fixed in this pass. |
 | 5 | Is the frontend `xirr.ts` dead code that should have been removed? | **No — actively used and needed.** Investigated: imported by `PortfolioSummaryTab.tsx`, computes per-row XIRR client-side from already-fetched cash-flow data. Not dead code. Divergence risk from the backend implementation remains a live concern. |
-| 6 | Is `ProfitCalculator`'s null-vs-zero inconsistency intentional? | **Implementation decision** — accepted as-is. |
+| 6 | Is `ProfitCalculator`'s null-vs-zero inconsistency intentional? | **Implementation decision** — accepted as-is. `ProfitCalculator` was later deleted with the WPF app, its only consumer. |
 | 7 | Why does transaction replay use insertion order, not date order? | **To make `AveragePrice` recalculable** — confirmed intentional purpose of the rebuild mechanism. |
 | 8 | Is unconditional short-selling (no guard) intended? | **Fine as-is for now.** |
 | 9 | Why can only manually-entered price snapshots be removed? | **Business decision.** |

@@ -187,26 +187,6 @@ public sealed class NavigationService : INavigationService
         }
     }
 
-    public IEnumerable<AssetNodeDTO> GetAssetsByBrokerPortfolio(string brokerName, string portfolioName)
-    {
-        using var span = StartSpan("GetAssetsByBrokerPortfolio");
-        try
-        {
-            var result = _repository.GetAssetsByBrokerPortfolio(brokerName, portfolioName)
-                .Select(asset => NavigationMapper.MapAsset(asset, InvestmentScope.Active))
-                .ToList();
-
-            span.MarkSuccess();
-            _logger.LogInformation("{Operation} completed", "GetAssetsByBrokerPortfolio");
-            return result;
-        }
-        catch (Exception ex)
-        {
-            span.MarkFailed(ex);
-            throw;
-        }
-    }
-
     public IReadOnlyList<OpenLotDTO>? GetOpenLots(string brokerName, string portfolioName, string assetName, InvestmentScope scope = InvestmentScope.Active)
     {
         using var span = StartSpan("GetOpenLots");

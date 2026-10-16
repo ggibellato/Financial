@@ -36,7 +36,6 @@ public static class InvestmentApplicationServiceCollectionExtensions
         services.AddSingleton<IAllocationBreakdownService, AllocationBreakdownService>();
         services.AddSingleton<IUpcomingIncomeService, UpcomingIncomeService>();
         services.AddSingleton<IXirrCalculationService, XirrCalculationService>();
-        services.AddSingleton<IProfitCalculationService, ProfitCalculationService>();
         services.AddSingleton<IDataQualityReportService, DataQualityReportService>();
         services.AddSingleton<ITaxRuleService, TaxRuleService>();
         services.AddSingleton<ITaxWorkbookService, TaxWorkbookService>();
