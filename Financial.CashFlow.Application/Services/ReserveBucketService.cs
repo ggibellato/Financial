@@ -105,16 +105,13 @@ public sealed class ReserveBucketService : IReserveBucketService
                 throw new ArgumentException("Reserve bucket name is required.", nameof(request));
             }
 
-            if (!EntityIdResolver.TryResolve(id, _repository.GetReserveBuckets(), b => b.Id, out var bucket))
-            {
-                throw new KeyNotFoundException($"Reserve bucket '{id}' was not found.");
-            }
+            var bucket = _repository.GetReserveBuckets().FirstOrThrow(b => b.Id == id, "Reserve bucket", id);
 
             _repository.GetReserveBuckets().EnsureNameIsUnique(request.Name, id, b => b.Name, b => b.Id, "A reserve bucket");
 
             await _repository.ApplyAndSaveAsync(() =>
             {
-                bucket!.Update(request.Name, request.SplitPercentage, request.IsActive);
+                bucket.Update(request.Name, request.SplitPercentage, request.IsActive);
                 return true;
             }).ConfigureAwait(false);
 
