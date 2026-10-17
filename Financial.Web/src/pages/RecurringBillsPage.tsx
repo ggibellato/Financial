@@ -1,35 +1,17 @@
 import { useState } from 'react'
-import {
-  Button,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogSurface,
-  DialogTitle,
-  MessageBar,
-  MessageBarBody,
-  Table,
-  TableBody,
-  TableCell,
-  TableHeader,
-  TableHeaderCell,
-  TableRow,
-} from '@fluentui/react-components'
-import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
+import { Table, TableBody, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
+import AdminEntityPage from '../components/AdminEntityPage'
+import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog'
 import RecurringBillFormDialog, { type RecurringBillFormValues } from '../components/RecurringBillFormDialog'
-import ErrorState from '../components/ErrorState'
-import LoadingState from '../components/LoadingState'
 import DataTableCell from '../components/grid/DataTableCell'
+import RowActionsCell from '../components/grid/RowActionsCell'
 import SortableColumnHeader from '../components/grid/SortableColumnHeader'
-import { useFormPanelStyles } from '../components/formPanelStyles'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { useRecurringBills } from '../hooks/useRecurringBills'
 import type { RecurringBillDto } from '../api/types'
 import { formatN2 } from '../utils/formatters'
-import './RecurringBillsPage.css'
 
 export default function RecurringBillsPage() {
-  const styles = useFormPanelStyles()
   const {
     recurringBills,
     isLoading,
@@ -92,123 +74,89 @@ export default function RecurringBillsPage() {
   }
 
   return (
-    <section className="recurring-bills-page">
-      <header className="recurring-bills-page__header">
-        <h2>Recurring Bills</h2>
-        <Button appearance="primary" icon={<AddRegular />} onClick={() => setIsCreating(true)}>
-          Create Recurring Bill
-        </Button>
-      </header>
-
-      {deleteError && (
-        <MessageBar intent="error">
-          <MessageBarBody>{deleteError}</MessageBarBody>
-        </MessageBar>
-      )}
-
-      {isLoading ? (
-        <LoadingState />
-      ) : error ? (
-        <ErrorState message={error} onRetry={retry} />
-      ) : recurringBills.length === 0 ? (
-        <p className="recurring-bills-page__empty">No recurring bills yet — create one to get started.</p>
-      ) : (
-        <Table className="data-table" aria-label="Recurring Bills">
-          <TableHeader>
-            <TableRow>
-              <SortableColumnHeader
-                label="Due Day"
-                columnKey="dueDay"
-                sortDirection={sortState?.columnKey === 'dueDay' ? sortState.direction : undefined}
-                onSort={requestSort}
+    <AdminEntityPage
+      title="Recurring Bills"
+      createLabel="Create Recurring Bill"
+      onCreate={() => setIsCreating(true)}
+      actionError={deleteError}
+      isLoading={isLoading}
+      loadError={error}
+      onRetry={retry}
+      isEmpty={recurringBills.length === 0}
+      emptyMessage="No recurring bills yet — create one to get started."
+      dialogs={
+        <>
+          {(isCreating || editingBill) && (
+            <RecurringBillFormDialog recurringBill={editingBill} onCancel={closeFormDialog} onSubmit={handleFormSubmit} />
+          )}
+          {confirmingDelete && (
+            <ConfirmDeleteDialog
+              entityLabel="Recurring Bill"
+              message={<>&ldquo;{confirmingDelete.description}&rdquo; will be permanently removed.</>}
+              onConfirm={handleConfirmDelete}
+              onCancel={() => setConfirmingDelete(null)}
+            />
+          )}
+        </>
+      }
+    >
+      <Table className="data-table" aria-label="Recurring Bills">
+        <TableHeader>
+          <TableRow>
+            <SortableColumnHeader
+              label="Due Day"
+              columnKey="dueDay"
+              sortDirection={sortState?.columnKey === 'dueDay' ? sortState.direction : undefined}
+              onSort={requestSort}
+            />
+            <SortableColumnHeader
+              label="Description"
+              columnKey="description"
+              sortDirection={sortState?.columnKey === 'description' ? sortState.direction : undefined}
+              onSort={requestSort}
+            />
+            <SortableColumnHeader
+              label="Value"
+              columnKey="value"
+              numeric
+              sortDirection={sortState?.columnKey === 'value' ? sortState.direction : undefined}
+              onSort={requestSort}
+            />
+            <SortableColumnHeader
+              label="Area"
+              columnKey="area"
+              sortDirection={sortState?.columnKey === 'area' ? sortState.direction : undefined}
+              onSort={requestSort}
+            />
+            <SortableColumnHeader
+              label="Status"
+              columnKey="status"
+              sortDirection={sortState?.columnKey === 'status' ? sortState.direction : undefined}
+              onSort={requestSort}
+            />
+            <TableHeaderCell className="data-table__col--action" />
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {sortedBills.map((bill) => (
+            <TableRow key={bill.id}>
+              <DataTableCell label="Due Day">{bill.dueDay}</DataTableCell>
+              <DataTableCell label="Description">{bill.description}</DataTableCell>
+              <DataTableCell label="Value" className="data-table__col--numeric">
+                {formatN2(bill.value)}
+              </DataTableCell>
+              <DataTableCell label="Area">{bill.area}</DataTableCell>
+              <DataTableCell label="Status">{bill.status}</DataTableCell>
+              <RowActionsCell
+                itemName={bill.description}
+                deleteDisabled={deletingId === bill.id}
+                onEdit={() => setEditingBill(bill)}
+                onDelete={() => setConfirmingDelete(bill)}
               />
-              <SortableColumnHeader
-                label="Description"
-                columnKey="description"
-                sortDirection={sortState?.columnKey === 'description' ? sortState.direction : undefined}
-                onSort={requestSort}
-              />
-              <SortableColumnHeader
-                label="Value"
-                columnKey="value"
-                numeric
-                sortDirection={sortState?.columnKey === 'value' ? sortState.direction : undefined}
-                onSort={requestSort}
-              />
-              <SortableColumnHeader
-                label="Area"
-                columnKey="area"
-                sortDirection={sortState?.columnKey === 'area' ? sortState.direction : undefined}
-                onSort={requestSort}
-              />
-              <SortableColumnHeader
-                label="Status"
-                columnKey="status"
-                sortDirection={sortState?.columnKey === 'status' ? sortState.direction : undefined}
-                onSort={requestSort}
-              />
-              <TableHeaderCell className="data-table__col--action" />
             </TableRow>
-          </TableHeader>
-          <TableBody>
-            {sortedBills.map((bill) => (
-              <TableRow key={bill.id}>
-                <DataTableCell label="Due Day">{bill.dueDay}</DataTableCell>
-                <DataTableCell label="Description">{bill.description}</DataTableCell>
-                <DataTableCell label="Value" className="data-table__col--numeric">
-                  {formatN2(bill.value)}
-                </DataTableCell>
-                <DataTableCell label="Area">{bill.area}</DataTableCell>
-                <DataTableCell label="Status">{bill.status}</DataTableCell>
-                <TableCell className="data-table__col--action">
-                  <div className="data-table__actions-cell">
-                    <Button
-                      appearance="subtle"
-                      size="small"
-                      icon={<EditRegular />}
-                      aria-label={`Edit ${bill.description}`}
-                      onClick={() => setEditingBill(bill)}
-                    />
-                    <Button
-                      appearance="subtle"
-                      size="small"
-                      icon={<DeleteRegular />}
-                      aria-label={`Delete ${bill.description}`}
-                      disabled={deletingId === bill.id}
-                      onClick={() => setConfirmingDelete(bill)}
-                    />
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      )}
-
-      {(isCreating || editingBill) && (
-        <RecurringBillFormDialog recurringBill={editingBill} onCancel={closeFormDialog} onSubmit={handleFormSubmit} />
-      )}
-
-      {confirmingDelete && (
-        <Dialog open onOpenChange={(_, data) => { if (!data.open) setConfirmingDelete(null) }}>
-          <DialogSurface aria-describedby={undefined}>
-            <DialogBody>
-              <DialogTitle>Delete Recurring Bill</DialogTitle>
-              <DialogContent>
-                <p>&ldquo;{confirmingDelete.description}&rdquo; will be permanently removed.</p>
-              </DialogContent>
-              <div className={styles.actions}>
-                <Button appearance="primary" onClick={handleConfirmDelete}>
-                  Delete
-                </Button>
-                <Button appearance="secondary" onClick={() => setConfirmingDelete(null)}>
-                  Cancel
-                </Button>
-              </div>
-            </DialogBody>
-          </DialogSurface>
-        </Dialog>
-      )}
-    </section>
+          ))}
+        </TableBody>
+      </Table>
+    </AdminEntityPage>
   )
 }
