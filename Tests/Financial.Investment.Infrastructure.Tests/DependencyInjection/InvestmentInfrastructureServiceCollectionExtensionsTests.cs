@@ -1,5 +1,7 @@
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Infrastructure.DependencyInjection;
+using Financial.Investment.Infrastructure.Interfaces;
+using Financial.Investment.Infrastructure.Services;
 using Financial.Shared.Abstractions.Persistence;
 using Financial.Shared.Infrastructure.DependencyInjection;
 using Financial.Shared.Infrastructure.Persistence;
@@ -39,6 +41,31 @@ public class InvestmentInfrastructureServiceCollectionExtensionsTests
         var repository = provider.GetRequiredService<IInvestmentRepository>();
 
         repository.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void AddFinancialInfrastructure_FinanceService_IsServedThroughQuoteCache()
+    {
+        var provider = BuildServiceProvider(new Dictionary<string, string?>
+        {
+            ["Investment:DataJsonFile"] = TestDataPaths.DataJsonFile
+        });
+
+        provider.GetRequiredService<IFinanceService>().Should().BeOfType<CachingFinanceService>();
+    }
+
+    [Fact]
+    public void AddFinancialInfrastructure_InvalidQuoteCacheDuration_ThrowsOnFinanceServiceResolution()
+    {
+        var provider = BuildServiceProvider(new Dictionary<string, string?>
+        {
+            ["Investment:DataJsonFile"] = TestDataPaths.DataJsonFile,
+            ["Investment:PriceQuotes:CacheDuration"] = "soon"
+        });
+
+        Action act = () => provider.GetRequiredService<IFinanceService>();
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*Investment:PriceQuotes:CacheDuration*");
     }
 
     private static IServiceProvider BuildServiceProvider(Dictionary<string, string?> settings)
