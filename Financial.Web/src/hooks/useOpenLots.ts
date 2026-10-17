@@ -2,6 +2,7 @@ import { useCallback, useEffect, useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { OpenLotDto } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
+import { isAssetSelection } from '../utils/assetSelection'
 import { getErrorMessage } from '../utils/formatters'
 
 interface OpenLotsState {
@@ -51,7 +52,7 @@ export function useOpenLots(enabled: boolean): OpenLotsData {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
   useEffect(() => {
-    if (!enabled || !selectedNode || selectedNode.nodeType !== 'Asset' || !selectedNode.portfolioName || !selectedNode.assetName) {
+    if (!enabled || !isAssetSelection(selectedNode)) {
       dispatch({ type: 'RESET' })
       return
     }

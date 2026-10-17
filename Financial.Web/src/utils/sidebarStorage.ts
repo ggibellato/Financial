@@ -1,17 +1,11 @@
+import { readStorage, writeStorage } from './safeStorage'
+
 const STORAGE_KEY = 'financial.sidebarCollapsed'
 
 export function getStoredSidebarCollapsed(): boolean {
-  try {
-    return localStorage.getItem(STORAGE_KEY) === 'true'
-  } catch {
-    return false
-  }
+  return readStorage('local', STORAGE_KEY) === 'true'
 }
 
 export function setStoredSidebarCollapsed(collapsed: boolean): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, String(collapsed))
-  } catch {
-    // localStorage unavailable (e.g. private browsing) - persistence is best-effort
-  }
+  writeStorage('local', STORAGE_KEY, String(collapsed))
 }

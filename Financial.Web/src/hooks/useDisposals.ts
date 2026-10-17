@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { DisposalRecordDto } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
+import { isAssetSelection } from '../utils/assetSelection'
 import { getErrorMessage } from '../utils/formatters'
 
 export const ALL_TAX_YEARS = 'All years'
@@ -86,12 +87,7 @@ export function useDisposals(): DisposalsData {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
   useEffect(() => {
-    if (
-      !selectedNode ||
-      selectedNode.nodeType !== 'Asset' ||
-      !selectedNode.portfolioName ||
-      !selectedNode.assetName
-    ) {
+    if (!isAssetSelection(selectedNode)) {
       dispatch({ type: 'RESET' })
       return
     }

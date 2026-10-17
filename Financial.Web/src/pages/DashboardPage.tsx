@@ -12,11 +12,8 @@ import { useDashboardSummary } from '../hooks/useDashboardSummary'
 import { useDataQualityReport } from '../hooks/useDataQualityReport'
 import { useReportingCurrency } from '../hooks/useReportingCurrency'
 import { useUpcomingIncome } from '../hooks/useUpcomingIncome'
+import { isCurrency } from '../utils/currency'
 import './DashboardPage.css'
-
-function isCurrency(value: string): value is Currency {
-  return value === 'BRL' || value === 'GBP' || value === 'USD'
-}
 
 export default function DashboardPage() {
   const reportingCurrency = useReportingCurrency()

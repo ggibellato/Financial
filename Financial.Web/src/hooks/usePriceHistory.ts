@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { AssetPriceSnapshotDto, TransactionDto } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
+import { isAssetSelection } from '../utils/assetSelection'
 import { buildSelectionKey } from './useCredits'
 import type { PeriodFilterOption } from '../utils/periodFilter'
 import { DEFAULT_FILTER, getPeriodFilterStartDate } from '../utils/periodFilter'
@@ -185,12 +186,7 @@ export function usePriceHistory(): PriceHistoryData {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
   useEffect(() => {
-    if (
-      !selectedNode ||
-      selectedNode.nodeType !== 'Asset' ||
-      !selectedNode.portfolioName ||
-      !selectedNode.assetName
-    ) {
+    if (!isAssetSelection(selectedNode)) {
       dispatch({ type: 'RESET' })
       return
     }
