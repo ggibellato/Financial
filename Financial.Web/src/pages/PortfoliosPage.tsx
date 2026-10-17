@@ -1,33 +1,15 @@
 import { useState } from 'react'
-import {
-  Button,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogSurface,
-  DialogTitle,
-  MessageBar,
-  MessageBarBody,
-  Table,
-  TableBody,
-  TableCell,
-  TableHeader,
-  TableHeaderCell,
-  TableRow,
-} from '@fluentui/react-components'
-import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
+import { Table, TableBody, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
+import AdminEntityPage from '../components/AdminEntityPage'
+import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog'
 import PortfolioFormDialog from '../components/PortfolioFormDialog'
-import ErrorState from '../components/ErrorState'
-import LoadingState from '../components/LoadingState'
 import DataTableCell from '../components/grid/DataTableCell'
-import { useFormPanelStyles } from '../components/formPanelStyles'
+import RowActionsCell from '../components/grid/RowActionsCell'
 import { useBrokers } from '../hooks/useBrokers'
 import { portfolioKey, usePortfolios } from '../hooks/usePortfolios'
 import type { PortfolioDto } from '../api/types'
-import './PortfoliosPage.css'
 
 export default function PortfoliosPage() {
-  const styles = useFormPanelStyles()
   const {
     portfolios,
     isLoading,
@@ -72,112 +54,77 @@ export default function PortfoliosPage() {
   }
 
   return (
-    <section className="portfolios-page">
-      <header className="portfolios-page__header">
-        <h2>Portfolios</h2>
-        <Button appearance="primary" icon={<AddRegular />} onClick={() => setIsCreating(true)}>
-          Create Portfolio
-        </Button>
-      </header>
-
-      {deleteError && (
-        <MessageBar intent="error">
-          <MessageBarBody>{deleteError}</MessageBarBody>
-        </MessageBar>
-      )}
-
-      {isLoading ? (
-        <LoadingState />
-      ) : error ? (
-        <ErrorState message={error} onRetry={retry} />
-      ) : portfolios.length === 0 ? (
-        <p className="portfolios-page__empty">No portfolios yet — create one to get started.</p>
-      ) : (
-        <Table aria-label="Portfolios" className="data-table">
-          <TableHeader>
-            <TableRow>
-              <TableHeaderCell>Name</TableHeaderCell>
-              <TableHeaderCell>Broker</TableHeaderCell>
-              <TableHeaderCell>Broker Status</TableHeaderCell>
-              <TableHeaderCell>Assets</TableHeaderCell>
-              <TableHeaderCell className="data-table__col--action" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {portfolios.map((portfolio) => {
-              const key = portfolioKey(portfolio.brokerName, portfolio.name)
-              return (
-                <TableRow key={key}>
-                  <DataTableCell label="Name">{portfolio.name}</DataTableCell>
-                  <DataTableCell label="Broker">{portfolio.brokerName}</DataTableCell>
-                  <DataTableCell label="Broker Status">{portfolio.brokerStatus}</DataTableCell>
-                  <DataTableCell label="Assets">{portfolio.assetCount}</DataTableCell>
-                  <TableCell className="data-table__col--action">
-                    <div className="data-table__actions-cell">
-                      <Button
-                        appearance="subtle"
-                        size="small"
-                        icon={<EditRegular />}
-                        aria-label={`Edit ${portfolio.name}`}
-                        onClick={() => setEditingPortfolio(portfolio)}
-                      />
-                      <Button
-                        appearance="subtle"
-                        size="small"
-                        icon={<DeleteRegular />}
-                        aria-label={`Delete ${portfolio.name}`}
-                        disabled={deletingKey === key}
-                        onClick={() => setConfirmingDelete(portfolio)}
-                      />
-                    </div>
-                  </TableCell>
-                </TableRow>
-              )
-            })}
-          </TableBody>
-        </Table>
-      )}
-
-      {(isCreating || editingPortfolio) && (
-        <PortfolioFormDialog
-          portfolio={editingPortfolio}
-          activeBrokers={activeBrokers}
-          onCancel={closeFormDialog}
-          onSubmit={handleFormSubmit}
-        />
-      )}
-
-      {confirmingDelete && (
-        <Dialog open onOpenChange={(_, data) => { if (!data.open) setConfirmingDelete(null) }}>
-          <DialogSurface aria-describedby={undefined}>
-            <DialogBody>
-              <DialogTitle>Delete Portfolio</DialogTitle>
-              <DialogContent>
-                {confirmingDelete.assetCount > 0 ? (
-                  <p>
+    <AdminEntityPage
+      title="Portfolios"
+      createLabel="Create Portfolio"
+      onCreate={() => setIsCreating(true)}
+      actionError={deleteError}
+      isLoading={isLoading}
+      loadError={error}
+      onRetry={retry}
+      isEmpty={portfolios.length === 0}
+      emptyMessage="No portfolios yet — create one to get started."
+      dialogs={
+        <>
+          {(isCreating || editingPortfolio) && (
+            <PortfolioFormDialog
+              portfolio={editingPortfolio}
+              activeBrokers={activeBrokers}
+              onCancel={closeFormDialog}
+              onSubmit={handleFormSubmit}
+            />
+          )}
+          {confirmingDelete && (
+            <ConfirmDeleteDialog
+              entityLabel="Portfolio"
+              message={
+                confirmingDelete.assetCount > 0 ? (
+                  <>
                     &ldquo;{confirmingDelete.name}&rdquo; still holds {confirmingDelete.assetCount} asset(s) and
                     cannot be deleted.
-                  </p>
+                  </>
                 ) : (
-                  <p>&ldquo;{confirmingDelete.name}&rdquo; holds no assets and will be permanently removed.</p>
-                )}
-              </DialogContent>
-              <div className={styles.actions}>
-                <Button
-                  appearance="primary"
-                  onClick={handleConfirmDelete}
-                  disabled={confirmingDelete.assetCount > 0}
-                >
-                  Delete
-                </Button>
-                <Button appearance="secondary" onClick={() => setConfirmingDelete(null)}>
-                  Cancel
-                </Button>
-              </div>
-            </DialogBody>
-          </DialogSurface>
-        </Dialog>
-      )}
-    </section>
+                  <>&ldquo;{confirmingDelete.name}&rdquo; holds no assets and will be permanently removed.</>
+                )
+              }
+              confirmDisabled={confirmingDelete.assetCount > 0}
+              onConfirm={handleConfirmDelete}
+              onCancel={() => setConfirmingDelete(null)}
+            />
+          )}
+        </>
+      }
+    >
+      <Table aria-label="Portfolios" className="data-table">
+        <TableHeader>
+          <TableRow>
+            <TableHeaderCell>Name</TableHeaderCell>
+            <TableHeaderCell>Broker</TableHeaderCell>
+            <TableHeaderCell>Broker Status</TableHeaderCell>
+            <TableHeaderCell>Assets</TableHeaderCell>
+            <TableHeaderCell className="data-table__col--action" />
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {portfolios.map((portfolio) => {
+            const key = portfolioKey(portfolio.brokerName, portfolio.name)
+            return (
+              <TableRow key={key}>
+                <DataTableCell label="Name">{portfolio.name}</DataTableCell>
+                <DataTableCell label="Broker">{portfolio.brokerName}</DataTableCell>
+                <DataTableCell label="Broker Status">{portfolio.brokerStatus}</DataTableCell>
+                <DataTableCell label="Assets">{portfolio.assetCount}</DataTableCell>
+                <RowActionsCell
+                  itemName={portfolio.name}
+                  deleteDisabled={deletingKey === key}
+                  onEdit={() => setEditingPortfolio(portfolio)}
+                  onDelete={() => setConfirmingDelete(portfolio)}
+                />
+              </TableRow>
+            )
+          })}
+        </TableBody>
+      </Table>
+    </AdminEntityPage>
   )
 }

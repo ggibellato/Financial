@@ -179,8 +179,6 @@ function assetWith(
     transactions,
     credits: [],
     priceSnapshots: [],
-    cashFlowsWithCredits: [],
-    cashFlowsWithoutCredits: [],
     disposalRecords: [],
     corporateActions: [],
     costBasisMethod,
@@ -418,6 +416,22 @@ describe('TransactionsTab', () => {
     fireEvent.change(screen.getByLabelText('Type'), { target: { value: 'Fee' } })
     await waitFor(() => expect(screen.queryByLabelText(/^Quantity/)).not.toBeInTheDocument())
     expect(screen.queryByLabelText(/^Unit Price/)).not.toBeInTheDocument()
+  })
+
+  it('form_shows_the_type_effects_error_with_retry_instead_of_fields_when_they_fail_to_load', async () => {
+    getTransactionTypeEffectsMock.mockReset().mockRejectedValueOnce(new Error('offline')).mockResolvedValue(TYPE_EFFECTS)
+    await renderAssetTab()
+    await openNewForm()
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('offline')
+    expect(screen.queryByLabelText(/^Date/)).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Add transaction' })).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
+
+    expect(await screen.findByLabelText(/^Date/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Add transaction' })).toBeEnabled()
+    expect(getTransactionTypeEffectsMock).toHaveBeenCalledTimes(2)
   })
 
   it('type_select_includes_every_new_transaction_type', async () => {

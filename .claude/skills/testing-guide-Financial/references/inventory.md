@@ -22,7 +22,6 @@ its `../artifacts/*.md` guide), "out of scope — reason", or "resolved in Phase
 | `Tests/` | root | test projects (see below) | |
 | `Tools/` | root | see per-project rows below | |
 | `Financial.*` project folders | root | see per-project rows below | |
-| `fix-tithe.js` (file) | root | out of scope — one-off script | |
 | `docker-compose*.yml`, `Dockerfile`, `coverlet.runsettings` (files) | root | out of scope — build/deploy config | `coverlet.runsettings` exclusions are quoted in `file-conventions.md` |
 
 ## Financial.Api

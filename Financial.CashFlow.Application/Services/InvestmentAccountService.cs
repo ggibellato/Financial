@@ -98,10 +98,7 @@ public sealed class InvestmentAccountService : IInvestmentAccountService
                 throw new ArgumentException("Investment account name is required.", nameof(request));
             }
 
-            if (!EntityIdResolver.TryResolve(id, _repository.GetInvestmentAccounts(), a => a.Id, out var account))
-            {
-                throw new KeyNotFoundException($"Investment account '{id}' was not found.");
-            }
+            var account = _repository.GetInvestmentAccounts().FirstOrThrow(a => a.Id == id, "Investment account", id);
 
             _repository.GetInvestmentAccounts().EnsureNameIsUnique(request.Name, id, a => a.Name, a => a.Id, "An investment account");
 
@@ -110,7 +107,7 @@ public sealed class InvestmentAccountService : IInvestmentAccountService
 
             await _repository.ApplyAndSaveAsync(() =>
             {
-                account!.Update(request.Name, request.IsActive, request.IsLiability, source, creditCard);
+                account.Update(request.Name, request.IsActive, request.IsLiability, source, creditCard);
                 return true;
             }).ConfigureAwait(false);
 
@@ -131,10 +128,7 @@ public sealed class InvestmentAccountService : IInvestmentAccountService
         span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());
         try
         {
-            if (!EntityIdResolver.TryResolve(id, _repository.GetInvestmentAccounts(), a => a.Id, out _))
-            {
-                throw new KeyNotFoundException($"Investment account '{id}' was not found.");
-            }
+            _ = _repository.GetInvestmentAccounts().FirstOrThrow(a => a.Id == id, "Investment account", id);
 
             EnsureNoNonZeroInvestmentSnapshotExists(id);
 

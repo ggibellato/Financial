@@ -13,7 +13,6 @@ namespace Financial.CashFlow.Application.Services;
 
 public sealed class CategorySummaryService : ICategorySummaryService
 {
-    private const int MonthsInYear = 12;
     public const int AverageDecimalPlaces = 2;
     private const string EntityType = "AnnualSummary";
 
@@ -117,12 +116,8 @@ public sealed class CategorySummaryService : ICategorySummaryService
         return _repository.GetCategories()
             .Select(category => (
                 category,
-                Display: MonthlySeries.FromMonthlyValues(Enumerable.Range(1, MonthsInYear)
-                    .Select(month => totalsByCategoryAndMonth.GetValueOrDefault((category.Id, month)))
-                    .ToArray()),
-                ForAverage: MonthlySeries.FromMonthlyValues(Enumerable.Range(1, MonthsInYear)
-                    .Select(month => totalsForAverageByCategoryAndMonth.GetValueOrDefault((category.Id, month)))
-                    .ToArray())))
+                Display: MonthlySeries.FromMonths(month => totalsByCategoryAndMonth.GetValueOrDefault((category.Id, month))),
+                ForAverage: MonthlySeries.FromMonths(month => totalsForAverageByCategoryAndMonth.GetValueOrDefault((category.Id, month)))))
             .ToList();
     }
 

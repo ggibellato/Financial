@@ -135,6 +135,9 @@ interface InlineFormProps {
   formWithheld: string
   formLotAllocations: Record<string, string>
   formTypeHasQuantityEffect: boolean
+  typeEffectsLoaded: boolean
+  typeEffectsError: string | null
+  onRetryTypeEffects: () => void
   requiresLotAllocation: boolean
   isSaving: boolean
   saveError: string | null
@@ -155,6 +158,9 @@ function InlineForm({
   formWithheld,
   formLotAllocations,
   formTypeHasQuantityEffect,
+  typeEffectsLoaded,
+  typeEffectsError,
+  onRetryTypeEffects,
   requiresLotAllocation,
   isSaving,
   saveError,
@@ -175,6 +181,22 @@ function InlineForm({
   const allocationSatisfied =
     !requiresLotAllocation ||
     (isAllocationExact(allocatedTotal, saleQuantity) && !hasOverAllocatedLot(openLots, formLotAllocations))
+
+  if (typeEffectsError) {
+    return (
+      <div className={styles.panel}>
+        <Text as="h2" weight="semibold" size={400}>
+          {title}
+        </Text>
+        <ErrorState message={typeEffectsError} onRetry={onRetryTypeEffects} />
+        <div className={styles.actions}>
+          <Button appearance="secondary" onClick={onCancel}>
+            Cancel
+          </Button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className={styles.panel}>
@@ -271,7 +293,7 @@ function InlineForm({
       )}
 
       <div className={styles.actions}>
-        <Button appearance="primary" disabled={isSaving || !allocationSatisfied} onClick={onSave}>
+        <Button appearance="primary" disabled={isSaving || !typeEffectsLoaded || !allocationSatisfied} onClick={onSave}>
           {isSaving ? 'Saving...' : editingId ? 'Save' : 'Add transaction'}
         </Button>
         <Button appearance="secondary" onClick={onCancel}>
@@ -379,6 +401,9 @@ export default function TransactionsTab() {
     formWithheld,
     formLotAllocations,
     formTypeHasQuantityEffect,
+    typeEffectsLoaded,
+    typeEffectsError,
+    retryTypeEffects,
     requiresLotAllocation,
     isSaving,
     saveError,
@@ -449,6 +474,9 @@ export default function TransactionsTab() {
           formWithheld={formWithheld}
           formLotAllocations={formLotAllocations}
           formTypeHasQuantityEffect={formTypeHasQuantityEffect}
+          typeEffectsLoaded={typeEffectsLoaded}
+          typeEffectsError={typeEffectsError}
+          onRetryTypeEffects={retryTypeEffects}
           requiresLotAllocation={requiresLotAllocation}
           isSaving={isSaving}
           saveError={saveError}

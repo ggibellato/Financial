@@ -18,8 +18,9 @@ import SortableColumnHeader from './grid/SortableColumnHeader'
 import ColumnFilterMenu from './grid/ColumnFilterMenu'
 import { useSortableRows, DATE_DESC_SORT, type SortAccessor } from '../hooks/useSortableRows'
 import { useColumnFilters } from '../hooks/useColumnFilters'
-import { formatN2, formatShortDate } from '../utils/formatters'
+import { formatN2, formatN2OrDash, formatShortDate } from '../utils/formatters'
 import './IncomeSection.css'
+import TruncatedText from './TruncatedText'
 
 // Grid create/new actions: left-aligned primary button with an add icon,
 // matching ExpensesSection.tsx (docs/ui/forms-data-and-visualisations.md).
@@ -42,15 +43,15 @@ function IncomeRow({ income, onEdit, onDelete }: IncomeRowProps) {
   return (
     <TableRow>
       <DataTableCell label="Date">{formatShortDate(income.date)}</DataTableCell>
-      <DataTableCell label="Source">{income.incomeSourceName}</DataTableCell>
+      <DataTableCell label="Source"><TruncatedText text={income.incomeSourceName} /></DataTableCell>
       <DataTableCell label="Gross" className="data-table__col--numeric">
-        {income.grossValue != null ? formatN2(income.grossValue) : '—'}
+        {formatN2OrDash(income.grossValue)}
       </DataTableCell>
       <DataTableCell label="Net" className="data-table__col--numeric">
         {formatN2(income.netValue)}
       </DataTableCell>
-      <DataTableCell label="Bank">{income.bankName ?? '—'}</DataTableCell>
-      <DataTableCell label="Description">{income.description ?? ''}</DataTableCell>
+      <DataTableCell label="Bank"><TruncatedText text={income.bankName ?? '—'} /></DataTableCell>
+      <DataTableCell label="Description"><TruncatedText text={income.description ?? ''} /></DataTableCell>
       <TableCell className="data-table__col--action">
         <div className="data-table__actions-cell">
           <Button

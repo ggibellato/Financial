@@ -1,57 +1,7 @@
-import { useCallback, useEffect, useReducer } from 'react'
+import { useCallback } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { ReserveBucketCreateDto, ReserveBucketDto, ReserveBucketUpdateDto } from '../api/types'
-import { getErrorMessage } from '../utils/formatters'
-
-interface ReserveBucketsState {
-  reserveBuckets: ReserveBucketDto[]
-  activeSplitWarning: string | null
-  isLoading: boolean
-  error: string | null
-  retryCount: number
-  savingId: string | null
-  saveError: string | null
-}
-
-type ReserveBucketsAction =
-  | { type: 'FETCH_START' }
-  | { type: 'FETCH_SUCCESS'; payload: { reserveBuckets: ReserveBucketDto[]; activeSplitWarning: string | null } }
-  | { type: 'FETCH_ERROR'; payload: string }
-  | { type: 'RETRY' }
-  | { type: 'SAVE_START'; payload: string }
-  | { type: 'SAVE_SUCCESS' }
-  | { type: 'SAVE_ERROR'; payload: string }
-
-const INITIAL_STATE: ReserveBucketsState = {
-  reserveBuckets: [],
-  activeSplitWarning: null,
-  isLoading: true,
-  error: null,
-  retryCount: 0,
-  savingId: null,
-  saveError: null,
-}
-
-function reducer(state: ReserveBucketsState, action: ReserveBucketsAction): ReserveBucketsState {
-  switch (action.type) {
-    case 'FETCH_START':
-      return { ...state, isLoading: true, error: null }
-    case 'FETCH_SUCCESS':
-      return { ...state, isLoading: false, ...action.payload }
-    case 'FETCH_ERROR':
-      return { ...state, isLoading: false, error: action.payload }
-    case 'RETRY':
-      return { ...state, retryCount: state.retryCount + 1 }
-    case 'SAVE_START':
-      return { ...state, savingId: action.payload, saveError: null }
-    case 'SAVE_SUCCESS':
-      return { ...state, savingId: null }
-    case 'SAVE_ERROR':
-      return { ...state, savingId: null, saveError: action.payload }
-    default:
-      return state
-  }
-}
+import { useCrudResource } from './useCrudResource'
 
 export interface ReserveBucketsData {
   reserveBuckets: ReserveBucketDto[]
@@ -66,61 +16,64 @@ export interface ReserveBucketsData {
   activeSplitWarning: string | null
 }
 
+interface ReserveBucketsSnapshot {
+  reserveBuckets: ReserveBucketDto[]
+  activeSplitWarning: string | null
+}
+
+const NO_RESERVE_BUCKETS: ReserveBucketsSnapshot = { reserveBuckets: [], activeSplitWarning: null }
+
+async function loadReserveBuckets(): Promise<ReserveBucketsSnapshot> {
+  const [reserveBuckets, activeSplitWarning] = await Promise.all([
+    apiClient.getReserveBuckets(),
+    apiClient.getReserveSplitStatus().then((status) => status.warning ?? null).catch(() => null),
+  ])
+  return { reserveBuckets, activeSplitWarning }
+}
+
 export function useReserveBuckets(): ReserveBucketsData {
-  const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
+  const resource = useCrudResource({
+    load: loadReserveBuckets,
+    initialData: NO_RESERVE_BUCKETS,
+    loadErrorMessage: 'Unable to load reserve buckets',
+  })
+  const { mutateAndRefresh, runPendingMutation } = resource
 
-  useEffect(() => {
-    dispatch({ type: 'FETCH_START' })
-    void Promise.all([
-      apiClient.getReserveBuckets(),
-      apiClient.getReserveSplitStatus().then((status) => status.warning ?? null).catch(() => null),
-    ])
-      .then(([reserveBuckets, activeSplitWarning]) =>
-        dispatch({ type: 'FETCH_SUCCESS', payload: { reserveBuckets, activeSplitWarning } }),
-      )
-      .catch((err: unknown) => {
-        dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, 'Unable to load reserve buckets') })
-      })
-  }, [state.retryCount])
+  const createReserveBucket = useCallback(
+    (request: ReserveBucketCreateDto) => mutateAndRefresh(() => apiClient.createReserveBucket(request)),
+    [mutateAndRefresh],
+  )
 
-  const retry = useCallback(() => dispatch({ type: 'RETRY' }), [])
+  const updateReserveBucket = useCallback(
+    (id: string, request: ReserveBucketUpdateDto) => mutateAndRefresh(() => apiClient.updateReserveBucket(id, request)),
+    [mutateAndRefresh],
+  )
 
-  const createReserveBucket = useCallback(async (request: ReserveBucketCreateDto) => {
-    const created = await apiClient.createReserveBucket(request)
-    dispatch({ type: 'RETRY' })
-    return created
-  }, [])
-
-  const updateReserveBucket = useCallback(async (id: string, request: ReserveBucketUpdateDto) => {
-    const updated = await apiClient.updateReserveBucket(id, request)
-    dispatch({ type: 'RETRY' })
-    return updated
-  }, [])
-
-  const deactivateReserveBucket = useCallback((bucket: ReserveBucketDto) => {
-    dispatch({ type: 'SAVE_START', payload: bucket.id })
-
-    void apiClient
-      .updateReserveBucket(bucket.id, { name: bucket.name, splitPercentage: bucket.splitPercentage, isActive: false })
-      .then(() => {
-        dispatch({ type: 'SAVE_SUCCESS' })
-        dispatch({ type: 'RETRY' })
-      })
-      .catch((err: unknown) => {
-        dispatch({ type: 'SAVE_ERROR', payload: getErrorMessage(err, 'Failed to deactivate reserve bucket') })
-      })
-  }, [])
+  const deactivateReserveBucket = useCallback(
+    (bucket: ReserveBucketDto) =>
+      runPendingMutation(
+        bucket.id,
+        () =>
+          apiClient.updateReserveBucket(bucket.id, {
+            name: bucket.name,
+            splitPercentage: bucket.splitPercentage,
+            isActive: false,
+          }),
+        'Failed to deactivate reserve bucket',
+      ),
+    [runPendingMutation],
+  )
 
   return {
-    reserveBuckets: state.reserveBuckets,
-    isLoading: state.isLoading,
-    error: state.error,
-    retry,
+    reserveBuckets: resource.data.reserveBuckets,
+    isLoading: resource.isLoading,
+    error: resource.error,
+    retry: resource.retry,
     createReserveBucket,
     updateReserveBucket,
-    savingId: state.savingId,
-    saveError: state.saveError,
+    savingId: resource.pendingId,
+    saveError: resource.pendingError,
     deactivateReserveBucket,
-    activeSplitWarning: state.activeSplitWarning,
+    activeSplitWarning: resource.data.activeSplitWarning,
   }
 }

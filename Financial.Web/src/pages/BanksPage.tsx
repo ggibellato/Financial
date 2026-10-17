@@ -1,32 +1,15 @@
 import { useState } from 'react'
-import {
-  Button,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogSurface,
-  DialogTitle,
-  MessageBar,
-  MessageBarBody,
-  Table,
-  TableBody,
-  TableCell,
-  TableHeader,
-  TableHeaderCell,
-  TableRow,
-} from '@fluentui/react-components'
-import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
+import { Table, TableBody, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
+import AdminEntityPage from '../components/AdminEntityPage'
 import BankFormDialog from '../components/BankFormDialog'
-import ErrorState from '../components/ErrorState'
-import LoadingState from '../components/LoadingState'
+import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog'
 import DataTableCell from '../components/grid/DataTableCell'
-import { useFormPanelStyles } from '../components/formPanelStyles'
+import RowActionsCell from '../components/grid/RowActionsCell'
 import { useBanks } from '../hooks/useBanks'
 import type { BankDto } from '../api/types'
-import './BanksPage.css'
+import TruncatedText from '../components/TruncatedText'
 
 export default function BanksPage() {
-  const styles = useFormPanelStyles()
   const { banks, isLoading, error, retry, createBank, updateBank, deletingId, deleteError, deleteBank } = useBanks()
   const [editingBank, setEditingBank] = useState<BankDto | null>(null)
   const [isCreating, setIsCreating] = useState(false)
@@ -55,102 +38,67 @@ export default function BanksPage() {
   }
 
   return (
-    <section className="banks-page">
-      <header className="banks-page__header">
-        <h2>Banks</h2>
-        <Button appearance="primary" icon={<AddRegular />} onClick={() => setIsCreating(true)}>
-          Create Bank
-        </Button>
-      </header>
-
-      {deleteError && (
-        <MessageBar intent="error">
-          <MessageBarBody>{deleteError}</MessageBarBody>
-        </MessageBar>
-      )}
-
-      {isLoading ? (
-        <LoadingState />
-      ) : error ? (
-        <ErrorState message={error} onRetry={retry} />
-      ) : banks.length === 0 ? (
-        <p className="banks-page__empty">No banks yet — create one to get started.</p>
-      ) : (
-        <Table aria-label="Banks" className="data-table">
-          <TableHeader>
-            <TableRow>
-              <TableHeaderCell>Name</TableHeaderCell>
-              <TableHeaderCell>Round-up</TableHeaderCell>
-              <TableHeaderCell>Opening Balance</TableHeaderCell>
-              <TableHeaderCell className="data-table__col--action" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {banks.map((bank) => (
-              <TableRow key={bank.id}>
-                <DataTableCell label="Name">{bank.name}</DataTableCell>
-                <DataTableCell label="Round-up">{bank.roundUpEnabled ? 'Enabled' : 'Disabled'}</DataTableCell>
-                <DataTableCell label="Opening Balance">{bank.openingBalance}</DataTableCell>
-                <TableCell className="data-table__col--action">
-                  <div className="data-table__actions-cell">
-                    <Button
-                      appearance="subtle"
-                      size="small"
-                      icon={<EditRegular />}
-                      aria-label={`Edit ${bank.name}`}
-                      onClick={() => setEditingBank(bank)}
-                    />
-                    <Button
-                      appearance="subtle"
-                      size="small"
-                      icon={<DeleteRegular />}
-                      aria-label={`Delete ${bank.name}`}
-                      disabled={deletingId === bank.id}
-                      onClick={() => setConfirmingDelete(bank)}
-                    />
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      )}
-
-      {(isCreating || editingBank) && (
-        <BankFormDialog bank={editingBank} onCancel={closeFormDialog} onSubmit={handleFormSubmit} />
-      )}
-
-      {confirmingDelete && (
-        <Dialog open onOpenChange={(_, data) => { if (!data.open) setConfirmingDelete(null) }}>
-          <DialogSurface aria-describedby={undefined}>
-            <DialogBody>
-              <DialogTitle>Delete Bank</DialogTitle>
-              <DialogContent>
-                {confirmingDelete.hasReferences ? (
-                  <p>
+    <AdminEntityPage
+      title="Banks"
+      createLabel="Create Bank"
+      onCreate={() => setIsCreating(true)}
+      actionError={deleteError}
+      isLoading={isLoading}
+      loadError={error}
+      onRetry={retry}
+      isEmpty={banks.length === 0}
+      emptyMessage="No banks yet — create one to get started."
+      dialogs={
+        <>
+          {(isCreating || editingBank) && (
+            <BankFormDialog bank={editingBank} onCancel={closeFormDialog} onSubmit={handleFormSubmit} />
+          )}
+          {confirmingDelete && (
+            <ConfirmDeleteDialog
+              entityLabel="Bank"
+              message={
+                confirmingDelete.hasReferences ? (
+                  <>
                     &ldquo;{confirmingDelete.name}&rdquo; still has balance history or transactions and cannot be
                     deleted.
-                  </p>
+                  </>
                 ) : (
-                  <p>&ldquo;{confirmingDelete.name}&rdquo; will be permanently removed.</p>
-                )}
-              </DialogContent>
-              <div className={styles.actions}>
-                <Button
-                  appearance="primary"
-                  onClick={handleConfirmDelete}
-                  disabled={confirmingDelete.hasReferences}
-                >
-                  Delete
-                </Button>
-                <Button appearance="secondary" onClick={() => setConfirmingDelete(null)}>
-                  Cancel
-                </Button>
-              </div>
-            </DialogBody>
-          </DialogSurface>
-        </Dialog>
-      )}
-    </section>
+                  <>&ldquo;{confirmingDelete.name}&rdquo; will be permanently removed.</>
+                )
+              }
+              confirmDisabled={confirmingDelete.hasReferences}
+              onConfirm={handleConfirmDelete}
+              onCancel={() => setConfirmingDelete(null)}
+            />
+          )}
+        </>
+      }
+    >
+      <Table aria-label="Banks" className="data-table">
+        <TableHeader>
+          <TableRow>
+            <TableHeaderCell>Name</TableHeaderCell>
+            <TableHeaderCell>Round-up</TableHeaderCell>
+            <TableHeaderCell>Opening Balance</TableHeaderCell>
+            <TableHeaderCell className="data-table__col--action" />
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {banks.map((bank) => (
+            <TableRow key={bank.id}>
+              <DataTableCell label="Name"><TruncatedText text={bank.name} /></DataTableCell>
+              <DataTableCell label="Round-up">{bank.roundUpEnabled ? 'Enabled' : 'Disabled'}</DataTableCell>
+              <DataTableCell label="Opening Balance">{bank.openingBalance}</DataTableCell>
+              <RowActionsCell
+                itemName={bank.name}
+                deleteDisabled={deletingId === bank.id}
+                onEdit={() => setEditingBank(bank)}
+                onDelete={() => setConfirmingDelete(bank)}
+              />
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </AdminEntityPage>
   )
 }

@@ -39,6 +39,13 @@ public sealed class MonthlySeries : IEquatable<MonthlySeries>
         return new MonthlySeries(values.ToArray());
     }
 
+    public static MonthlySeries FromMonths(Func<int, decimal> valueForMonth)
+    {
+        ArgumentNullException.ThrowIfNull(valueForMonth);
+
+        return new MonthlySeries(Enumerable.Range(1, MonthsInYear).Select(valueForMonth).ToArray());
+    }
+
     public decimal this[int monthIndex] => _values[monthIndex];
 
     public decimal Sum() => _values.Sum();

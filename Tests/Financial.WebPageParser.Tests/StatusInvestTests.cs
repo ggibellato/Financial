@@ -7,30 +7,6 @@ namespace Financial.WebPageParser.Tests;
 public class StatusInvestTests
 {
     [Fact]
-    public void DeriveSlug_Selic_ReturnsExpectedSlug()
-    {
-        var slug = StatusInvest.DeriveSlug("TESOURO SELIC 2029");
-
-        slug.Should().Be("tesouro-selic-2029");
-    }
-
-    [Fact]
-    public void DeriveSlug_WithPlusSign_ReturnsExpectedSlug()
-    {
-        var slug = StatusInvest.DeriveSlug("TESOURO IPCA+ 2029");
-
-        slug.Should().Be("tesouro-ipca-2029");
-    }
-
-    [Fact]
-    public void DeriveSlug_WithJurosSemestrais_ReturnsExpectedSlug()
-    {
-        var slug = StatusInvest.DeriveSlug("TESOURO IPCA+ COM JUROS SEMESTRAIS 2035");
-
-        slug.Should().Be("tesouro-ipca-com-juros-semestrais-2035");
-    }
-
-    [Fact]
     public void ExtractSellPrice_VendaBeforeCompra_ReturnsVendaPrice()
     {
         const string pageText = "VALOR DE VENDA Valor Unitário R$ 3.775,97 0,32% VALOR DE COMPRA Valor Unitário R$ 3.789,57 0,32%";

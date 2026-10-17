@@ -5,7 +5,6 @@ using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
-using Financial.Shared.Abstractions.Persistence;
 using Microsoft.Extensions.Logging;
 
 namespace Financial.CashFlow.Application.Services;
@@ -50,25 +49,15 @@ public sealed class ReserveService : IReserveService
 
             var movements = CreateSplitMovements(activeBuckets, request.Amount, request.Date, request.Description);
 
-            await CompensatingSaveHelper.ApplyWithCompensationAsync(
-                () => _repository.ApplyAndSaveAsync(() =>
+            await _repository.ApplyAndSaveAsync(() =>
+            {
+                foreach (var movement in movements)
                 {
-                    foreach (var movement in movements)
-                    {
-                        _repository.AddReserveMovement(movement);
-                    }
+                    _repository.AddReserveMovement(movement);
+                }
 
-                    return true;
-                }),
-                () => _repository.ApplyAndSaveAsync(() =>
-                {
-                    foreach (var movement in movements)
-                    {
-                        _repository.DeleteReserveMovement(movement.Id);
-                    }
-
-                    return false;
-                })).ConfigureAwait(false);
+                return true;
+            }).ConfigureAwait(false);
 
             var splitAmounts = movements
                 .Select(movement => new BucketSplitAmountDTO
@@ -127,27 +116,16 @@ public sealed class ReserveService : IReserveService
 
             var movement = ReserveMovement.Create(bucket!, -request.Amount, request.Date, request.Description);
 
-            await CompensatingSaveHelper.ApplyWithCompensationAsync(
-                () => _repository.ApplyAndSaveAsync(() =>
+            await _repository.ApplyAndSaveAsync(() =>
+            {
+                _repository.AddReserveMovement(movement);
+                foreach (var expense in bankExpenses)
                 {
-                    _repository.AddReserveMovement(movement);
-                    foreach (var expense in bankExpenses)
-                    {
-                        _repository.AddExpense(expense);
-                    }
+                    _repository.AddExpense(expense);
+                }
 
-                    return true;
-                }),
-                () => _repository.ApplyAndSaveAsync(() =>
-                {
-                    _repository.DeleteReserveMovement(movement.Id);
-                    foreach (var expense in bankExpenses)
-                    {
-                        _repository.DeleteExpense(expense.Id);
-                    }
-
-                    return false;
-                })).ConfigureAwait(false);
+                return true;
+            }).ConfigureAwait(false);
 
             span.SetAttribute(TelemetryAttributeKeys.EntityId, movement.Id.ToString());
             span.MarkSuccess();

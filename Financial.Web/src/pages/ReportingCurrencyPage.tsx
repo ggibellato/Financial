@@ -3,13 +3,8 @@ import type { RadioGroupOnChangeData } from '@fluentui/react-components'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
 import { useReportingCurrency } from '../hooks/useReportingCurrency'
+import { REPORTING_CURRENCIES } from '../utils/currency'
 import './ReportingCurrencyPage.css'
-
-const CURRENCY_OPTIONS = [
-  { value: 'GBP', label: 'GBP' },
-  { value: 'BRL', label: 'BRL' },
-  { value: 'USD', label: 'USD' },
-]
 
 export default function ReportingCurrencyPage() {
   const { currency, enabled, isLoading, error, retry, saveError, setCurrency, setEnabled } = useReportingCurrency()
@@ -39,8 +34,8 @@ export default function ReportingCurrencyPage() {
       <div className="reporting-currency-page__field">
         <span className="reporting-currency-page__label">Currency</span>
         <RadioGroup value={currency ?? undefined} onChange={handleChange} layout="horizontal" disabled={!enabled}>
-          {CURRENCY_OPTIONS.map((option) => (
-            <Radio key={option.value} value={option.value} label={option.label} />
+          {REPORTING_CURRENCIES.map((currency) => (
+            <Radio key={currency} value={currency} label={currency} />
           ))}
         </RadioGroup>
       </div>

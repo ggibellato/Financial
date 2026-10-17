@@ -25,8 +25,9 @@
   (`ShutdownFlushHostedService`).
 - **Remote storage** (`RemoteJsonStorage`): delegates to `IRemoteFileClient` download/upload with
   the configured path; blank path rejected; transient Google errors translated.
-- **Factories**: `JsonStorageFactory`, `CashFlowRepositoryFactory`, `InvestmentRepositoryFactory`
-  choose local vs remote from `*RepositorySelectionOptions`.
+- **Factories**: `JsonStorageFactory`, `CashFlowRepositoryFactory`, `InvestmentRepositoryFactory`,
+  `FxRateStoreFactory` choose local vs remote from the shared `JsonRepositorySelection` through
+  `JsonStorageFactoryExtensions.Create`.
 
 ## Layer assignment
 

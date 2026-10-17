@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import React from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { BrokerBreakdownData } from '../../hooks/useBrokerBreakdown'
@@ -21,7 +21,7 @@ vi.mock('../../hooks/useBrokerBreakdown', () => ({
 interface MockPieDatum {
   name: string
   value: number
-  percent: number
+  percentage: number
 }
 
 vi.mock('recharts', () => ({
@@ -31,7 +31,7 @@ vi.mock('recharts', () => ({
   Pie: ({ data, children }: { data: MockPieDatum[]; children?: React.ReactNode }) => (
     <div data-testid="pie">
       {data.map((d) => (
-        <span key={d.name} data-testid="pie-slice" data-percent={d.percent}>
+        <span key={d.name} data-testid="pie-slice" data-percentage={d.percentage}>
           {d.name}
         </span>
       ))}
@@ -44,20 +44,14 @@ vi.mock('recharts', () => ({
   }: {
     content?: (props: {
       active: boolean
-      payload: { name: string; value: number; payload: { name: string; value: number; percent: number } }[]
+      payload: { payload: MockPieDatum }[]
     }) => React.ReactNode
   }) => (
     <div data-testid="tooltip">
       {content
         ? content({
             active: true,
-            payload: [
-              {
-                name: 'Test Slice',
-                value: 1234.5,
-                payload: { name: 'Test Slice', value: 1234.5, percent: 0.256 },
-              },
-            ],
+            payload: [{ payload: { name: 'Test Slice', value: 1234.5, percentage: 25.6 } }],
           })
         : null}
     </div>
@@ -131,8 +125,8 @@ describe('BrokerBreakdownCharts', () => {
     const pies = screen.getAllByTestId('pie')
     const overviewSlices = pies[0].querySelectorAll('[data-testid="pie-slice"]')
     const total = 38639.49 + 20000
-    expect(Number(overviewSlices[0].getAttribute('data-percent'))).toBeCloseTo(38639.49 / total, 5)
-    expect(Number(overviewSlices[1].getAttribute('data-percent'))).toBeCloseTo(20000 / total, 5)
+    expect(Number(overviewSlices[0].getAttribute('data-percentage'))).toBeCloseTo((38639.49 / total) * 100, 5)
+    expect(Number(overviewSlices[1].getAttribute('data-percentage'))).toBeCloseTo((20000 / total) * 100, 5)
   })
 
   it('renders_one_additional_pie_per_portfolio', () => {
@@ -150,6 +144,42 @@ describe('BrokerBreakdownCharts', () => {
     expect(screen.getAllByText('Test Slice').length).toBeGreaterThan(0)
     expect(screen.getAllByText(/1,234\.50|1234[.,]50/).length).toBeGreaterThan(0)
     expect(screen.getAllByText('25.6%').length).toBeGreaterThan(0)
+  })
+
+  it('renders_an_accessible_table_equivalent_for_every_pie', () => {
+    setMock({ breakdown: BREAKDOWN })
+    render(<BrokerBreakdownCharts />)
+    expect(screen.getAllByRole('table')).toHaveLength(3)
+    expect(screen.getByRole('table', { name: 'Portfolio Breakdown' })).toBeInTheDocument()
+    expect(screen.getByRole('table', { name: 'Acoes' })).toBeInTheDocument()
+    expect(screen.getByRole('table', { name: 'FII' })).toBeInTheDocument()
+  })
+
+  it('lists_each_portfolio_with_total_invested_and_share_in_the_overview_table', () => {
+    setMock({ breakdown: BREAKDOWN })
+    render(<BrokerBreakdownCharts />)
+    const table = screen.getByRole('table', { name: 'Portfolio Breakdown' })
+    const headers = within(table).getAllByRole('columnheader').map((header) => header.textContent)
+    expect(headers).toEqual(['Label', 'Total Invested', 'Percentage'])
+    const rows = within(table).getAllByRole('row').slice(1)
+    expect(rows).toHaveLength(2)
+    expect(within(rows[0]).getByText('Acoes')).toBeInTheDocument()
+    expect(within(rows[0]).getByText(/38,639\.49|38639[.,]49/)).toBeInTheDocument()
+    expect(within(rows[0]).getByText('65.9%')).toBeInTheDocument()
+    expect(within(rows[1]).getByText('FII')).toBeInTheDocument()
+    expect(within(rows[1]).getByText('34.1%')).toBeInTheDocument()
+  })
+
+  it('lists_each_asset_of_a_portfolio_in_its_table', () => {
+    setMock({ breakdown: BREAKDOWN })
+    render(<BrokerBreakdownCharts />)
+    const table = screen.getByRole('table', { name: 'Acoes' })
+    const rows = within(table).getAllByRole('row').slice(1)
+    expect(rows).toHaveLength(2)
+    expect(within(rows[0]).getByText('BBAS3')).toBeInTheDocument()
+    expect(within(rows[1]).getByText('KLBN4')).toBeInTheDocument()
+    expect(within(rows[0]).getByText('72.5%')).toBeInTheDocument()
+    expect(within(rows[1]).getByText('27.5%')).toBeInTheDocument()
   })
 
   it('renders_nothing_extra_when_breakdown_is_null', () => {

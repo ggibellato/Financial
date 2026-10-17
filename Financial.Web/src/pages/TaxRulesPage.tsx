@@ -1,33 +1,15 @@
 import { useState } from 'react'
-import {
-  Button,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogSurface,
-  DialogTitle,
-  MessageBar,
-  MessageBarBody,
-  Table,
-  TableBody,
-  TableCell,
-  TableHeader,
-  TableHeaderCell,
-  TableRow,
-} from '@fluentui/react-components'
-import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
+import { Table, TableBody, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
+import AdminEntityPage from '../components/AdminEntityPage'
+import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog'
 import TaxRuleFormDialog from '../components/TaxRuleFormDialog'
-import ErrorState from '../components/ErrorState'
-import LoadingState from '../components/LoadingState'
 import TruncatedText from '../components/TruncatedText'
 import DataTableCell from '../components/grid/DataTableCell'
-import { useFormPanelStyles } from '../components/formPanelStyles'
+import RowActionsCell from '../components/grid/RowActionsCell'
 import { useTaxRules } from '../hooks/useTaxRules'
 import type { TaxRuleDto } from '../api/types'
-import './TaxRulesPage.css'
 
 export default function TaxRulesPage() {
-  const styles = useFormPanelStyles()
   const {
     taxRules,
     isLoading,
@@ -74,97 +56,63 @@ export default function TaxRulesPage() {
   }
 
   return (
-    <section className="tax-rules-page">
-      <header className="tax-rules-page__header">
-        <h2>Tax Rules</h2>
-        <Button appearance="primary" icon={<AddRegular />} onClick={() => setIsCreating(true)}>
-          Create Tax Rule
-        </Button>
-      </header>
-
-      {deleteError && (
-        <MessageBar intent="error">
-          <MessageBarBody>{deleteError}</MessageBarBody>
-        </MessageBar>
-      )}
-
-      {isLoading ? (
-        <LoadingState />
-      ) : error ? (
-        <ErrorState message={error} onRetry={retry} />
-      ) : taxRules.length === 0 ? (
-        <p className="tax-rules-page__empty">No tax rules configured yet — create one to get started.</p>
-      ) : (
-        <Table aria-label="Tax Rules" className="data-table">
-          <TableHeader>
-            <TableRow>
-              <TableHeaderCell>Jurisdiction</TableHeaderCell>
-              <TableHeaderCell>Event Category</TableHeaderCell>
-              <TableHeaderCell>Label</TableHeaderCell>
-              <TableHeaderCell>Effective From</TableHeaderCell>
-              <TableHeaderCell>Effective To</TableHeaderCell>
-              <TableHeaderCell className="data-table__col--action" />
+    <AdminEntityPage
+      title="Tax Rules"
+      createLabel="Create Tax Rule"
+      onCreate={() => setIsCreating(true)}
+      actionError={deleteError}
+      isLoading={isLoading}
+      loadError={error}
+      onRetry={retry}
+      isEmpty={taxRules.length === 0}
+      emptyMessage="No tax rules configured yet — create one to get started."
+      dialogs={
+        <>
+          {(isCreating || editingTaxRule) && (
+            <TaxRuleFormDialog taxRule={editingTaxRule} onCancel={closeFormDialog} onSubmit={handleSubmit} />
+          )}
+          {confirmingDelete && (
+            <ConfirmDeleteDialog
+              entityLabel="Tax Rule"
+              message={<>&ldquo;{confirmingDelete.label}&rdquo; will be permanently deleted.</>}
+              onConfirm={handleConfirmDelete}
+              onCancel={() => setConfirmingDelete(null)}
+            />
+          )}
+        </>
+      }
+    >
+      <Table aria-label="Tax Rules" className="data-table">
+        <TableHeader>
+          <TableRow>
+            <TableHeaderCell>Jurisdiction</TableHeaderCell>
+            <TableHeaderCell>Event Category</TableHeaderCell>
+            <TableHeaderCell>Label</TableHeaderCell>
+            <TableHeaderCell>Effective From</TableHeaderCell>
+            <TableHeaderCell>Effective To</TableHeaderCell>
+            <TableHeaderCell className="data-table__col--action" />
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {taxRules.map((rule) => (
+            <TableRow key={rule.id}>
+              <DataTableCell label="Jurisdiction">{rule.jurisdiction}</DataTableCell>
+              <DataTableCell label="Event Category">{rule.eventCategory}</DataTableCell>
+              <DataTableCell label="Label">
+                <TruncatedText text={rule.label} />
+              </DataTableCell>
+              <DataTableCell label="Effective From">{rule.effectiveFrom}</DataTableCell>
+              <DataTableCell label="Effective To">{rule.effectiveTo ?? '—'}</DataTableCell>
+              <RowActionsCell
+                itemName={rule.label}
+                deleteDisabled={deletingId === rule.id}
+                onEdit={() => setEditingTaxRule(rule)}
+                onDelete={() => setConfirmingDelete(rule)}
+              />
             </TableRow>
-          </TableHeader>
-          <TableBody>
-            {taxRules.map((rule) => (
-              <TableRow key={rule.id}>
-                <DataTableCell label="Jurisdiction">{rule.jurisdiction}</DataTableCell>
-                <DataTableCell label="Event Category">{rule.eventCategory}</DataTableCell>
-                <DataTableCell label="Label">
-                  <TruncatedText text={rule.label} />
-                </DataTableCell>
-                <DataTableCell label="Effective From">{rule.effectiveFrom}</DataTableCell>
-                <DataTableCell label="Effective To">{rule.effectiveTo ?? '—'}</DataTableCell>
-                <TableCell className="data-table__col--action">
-                  <div className="data-table__actions-cell">
-                    <Button
-                      appearance="subtle"
-                      size="small"
-                      icon={<EditRegular />}
-                      aria-label={`Edit ${rule.label}`}
-                      onClick={() => setEditingTaxRule(rule)}
-                    />
-                    <Button
-                      appearance="subtle"
-                      size="small"
-                      icon={<DeleteRegular />}
-                      aria-label={`Delete ${rule.label}`}
-                      disabled={deletingId === rule.id}
-                      onClick={() => setConfirmingDelete(rule)}
-                    />
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      )}
-
-      {(isCreating || editingTaxRule) && (
-        <TaxRuleFormDialog taxRule={editingTaxRule} onCancel={closeFormDialog} onSubmit={handleSubmit} />
-      )}
-
-      {confirmingDelete && (
-        <Dialog open onOpenChange={(_, data) => { if (!data.open) setConfirmingDelete(null) }}>
-          <DialogSurface aria-describedby={undefined}>
-            <DialogBody>
-              <DialogTitle>Delete Tax Rule</DialogTitle>
-              <DialogContent>
-                <p>&ldquo;{confirmingDelete.label}&rdquo; will be permanently deleted.</p>
-              </DialogContent>
-              <div className={styles.actions}>
-                <Button appearance="primary" onClick={handleConfirmDelete}>
-                  Delete
-                </Button>
-                <Button appearance="secondary" onClick={() => setConfirmingDelete(null)}>
-                  Cancel
-                </Button>
-              </div>
-            </DialogBody>
-          </DialogSurface>
-        </Dialog>
-      )}
-    </section>
+          ))}
+        </TableBody>
+      </Table>
+    </AdminEntityPage>
   )
 }

@@ -14,16 +14,17 @@ import MoveAssetDialog from './MoveAssetDialog'
 import LoadingState from './LoadingState'
 import './InvestmentTree.css'
 
-const ASSET_CLASS_OPTIONS: { value: number; label: string }[] = [
-  { value: 1, label: 'Equity' },
-  { value: 2, label: 'Real Estate' },
-  { value: 3, label: 'Bond' },
-  { value: 4, label: 'Fund' },
-  { value: 5, label: 'ETF' },
-  { value: 6, label: 'Cash' },
-  { value: 7, label: 'Pension' },
-  { value: 8, label: 'Other' },
-  { value: 9, label: 'Cryptocurrency' },
+const ASSET_CLASS_OPTIONS: { value: number; name: string; label: string }[] = [
+  { value: 1, name: 'Equity', label: 'Equity' },
+  { value: 2, name: 'RealEstate', label: 'Real Estate' },
+  { value: 3, name: 'Bond', label: 'Bond' },
+  { value: 4, name: 'Fund', label: 'Fund' },
+  { value: 5, name: 'ETF', label: 'ETF' },
+  { value: 6, name: 'Cash', label: 'Cash' },
+  { value: 7, name: 'Pension', label: 'Pension' },
+  { value: 8, name: 'Other', label: 'Other' },
+  { value: 9, name: 'Cryptocurrency', label: 'Cryptocurrency' },
+  { value: 10, name: 'PrivateCredit', label: 'Private Credit' },
 ]
 
 const ALL_CLASSES = 'all'
@@ -57,7 +58,7 @@ function buildAssetSelection(node: TreeNodeDto, brokerName: string, portfolioNam
     positionType: getMetaPositionType(node.metadata),
     // getMetaNumber yields -1 when absent, so a missing quantity never reads as a closed position.
     quantity: getMetaNumber(node.metadata, 'Quantity'),
-    assetClass: ASSET_CLASS_OPTIONS.find((o) => o.value === assetClass)?.label,
+    assetClass: ASSET_CLASS_OPTIONS.find((o) => o.value === assetClass)?.name,
   }
 }
 

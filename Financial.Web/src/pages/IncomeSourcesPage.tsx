@@ -1,32 +1,15 @@
 import { useState } from 'react'
-import {
-  Button,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogSurface,
-  DialogTitle,
-  MessageBar,
-  MessageBarBody,
-  Table,
-  TableBody,
-  TableCell,
-  TableHeader,
-  TableHeaderCell,
-  TableRow,
-} from '@fluentui/react-components'
-import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
+import { Table, TableBody, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
+import AdminEntityPage from '../components/AdminEntityPage'
+import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog'
 import IncomeSourceFormDialog from '../components/IncomeSourceFormDialog'
-import ErrorState from '../components/ErrorState'
-import LoadingState from '../components/LoadingState'
 import DataTableCell from '../components/grid/DataTableCell'
-import { useFormPanelStyles } from '../components/formPanelStyles'
+import RowActionsCell from '../components/grid/RowActionsCell'
 import { useIncomeSources } from '../hooks/useIncomeSources'
 import type { IncomeSourceDto } from '../api/types'
-import './IncomeSourcesPage.css'
+import TruncatedText from '../components/TruncatedText'
 
 export default function IncomeSourcesPage() {
-  const styles = useFormPanelStyles()
   const {
     incomeSources,
     isLoading,
@@ -65,107 +48,72 @@ export default function IncomeSourcesPage() {
   }
 
   return (
-    <section className="income-sources-page">
-      <header className="income-sources-page__header">
-        <h2>Income Sources</h2>
-        <Button appearance="primary" icon={<AddRegular />} onClick={() => setIsCreating(true)}>
-          Create Income Source
-        </Button>
-      </header>
-
-      {deleteError && (
-        <MessageBar intent="error">
-          <MessageBarBody>{deleteError}</MessageBarBody>
-        </MessageBar>
-      )}
-
-      {isLoading ? (
-        <LoadingState />
-      ) : error ? (
-        <ErrorState message={error} onRetry={retry} />
-      ) : incomeSources.length === 0 ? (
-        <p className="income-sources-page__empty">No income sources yet — create one to get started.</p>
-      ) : (
-        <Table aria-label="Income Sources" className="data-table">
-          <TableHeader>
-            <TableRow>
-              <TableHeaderCell>Name</TableHeaderCell>
-              <TableHeaderCell>Group</TableHeaderCell>
-              <TableHeaderCell>Active</TableHeaderCell>
-              <TableHeaderCell>Auto-split to reserve</TableHeaderCell>
-              <TableHeaderCell className="data-table__col--action" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {incomeSources.map((incomeSource) => (
-              <TableRow key={incomeSource.id}>
-                <DataTableCell label="Name">{incomeSource.name}</DataTableCell>
-                <DataTableCell label="Group">{incomeSource.group}</DataTableCell>
-                <DataTableCell label="Active">{incomeSource.isActive ? 'Yes' : 'No'}</DataTableCell>
-                <DataTableCell label="Auto-split to reserve">
-                  {incomeSource.autoSplitToReserve ? 'Yes' : 'No'}
-                </DataTableCell>
-                <TableCell className="data-table__col--action">
-                  <div className="data-table__actions-cell">
-                    <Button
-                      appearance="subtle"
-                      size="small"
-                      icon={<EditRegular />}
-                      aria-label={`Edit ${incomeSource.name}`}
-                      onClick={() => setEditingIncomeSource(incomeSource)}
-                    />
-                    <Button
-                      appearance="subtle"
-                      size="small"
-                      icon={<DeleteRegular />}
-                      aria-label={`Delete ${incomeSource.name}`}
-                      disabled={deletingId === incomeSource.id}
-                      onClick={() => setConfirmingDelete(incomeSource)}
-                    />
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      )}
-
-      {(isCreating || editingIncomeSource) && (
-        <IncomeSourceFormDialog
-          incomeSource={editingIncomeSource}
-          onCancel={closeFormDialog}
-          onSubmit={handleFormSubmit}
-        />
-      )}
-
-      {confirmingDelete && (
-        <Dialog open onOpenChange={(_, data) => { if (!data.open) setConfirmingDelete(null) }}>
-          <DialogSurface aria-describedby={undefined}>
-            <DialogBody>
-              <DialogTitle>Delete Income Source</DialogTitle>
-              <DialogContent>
-                {confirmingDelete.hasReferences ? (
-                  <p>&ldquo;{confirmingDelete.name}&rdquo; is still used by an income entry and cannot be deleted.</p>
+    <AdminEntityPage
+      title="Income Sources"
+      createLabel="Create Income Source"
+      onCreate={() => setIsCreating(true)}
+      actionError={deleteError}
+      isLoading={isLoading}
+      loadError={error}
+      onRetry={retry}
+      isEmpty={incomeSources.length === 0}
+      emptyMessage="No income sources yet — create one to get started."
+      dialogs={
+        <>
+          {(isCreating || editingIncomeSource) && (
+            <IncomeSourceFormDialog
+              incomeSource={editingIncomeSource}
+              onCancel={closeFormDialog}
+              onSubmit={handleFormSubmit}
+            />
+          )}
+          {confirmingDelete && (
+            <ConfirmDeleteDialog
+              entityLabel="Income Source"
+              message={
+                confirmingDelete.hasReferences ? (
+                  <>&ldquo;{confirmingDelete.name}&rdquo; is still used by an income entry and cannot be deleted.</>
                 ) : (
-                  <p>&ldquo;{confirmingDelete.name}&rdquo; will be permanently removed.</p>
-                )}
-              </DialogContent>
-              <div className={styles.actions}>
-                <Button
-                  appearance="primary"
-                  onClick={handleConfirmDelete}
-                  disabled={confirmingDelete.hasReferences}
-                >
-                  Delete
-                </Button>
-                <Button appearance="secondary" onClick={() => setConfirmingDelete(null)}>
-                  Cancel
-                </Button>
-              </div>
-            </DialogBody>
-          </DialogSurface>
-        </Dialog>
-      )}
-    </section>
+                  <>&ldquo;{confirmingDelete.name}&rdquo; will be permanently removed.</>
+                )
+              }
+              confirmDisabled={confirmingDelete.hasReferences}
+              onConfirm={handleConfirmDelete}
+              onCancel={() => setConfirmingDelete(null)}
+            />
+          )}
+        </>
+      }
+    >
+      <Table aria-label="Income Sources" className="data-table">
+        <TableHeader>
+          <TableRow>
+            <TableHeaderCell>Name</TableHeaderCell>
+            <TableHeaderCell>Group</TableHeaderCell>
+            <TableHeaderCell>Active</TableHeaderCell>
+            <TableHeaderCell>Auto-split to reserve</TableHeaderCell>
+            <TableHeaderCell className="data-table__col--action" />
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {incomeSources.map((incomeSource) => (
+            <TableRow key={incomeSource.id}>
+              <DataTableCell label="Name"><TruncatedText text={incomeSource.name} /></DataTableCell>
+              <DataTableCell label="Group"><TruncatedText text={incomeSource.group} /></DataTableCell>
+              <DataTableCell label="Active">{incomeSource.isActive ? 'Yes' : 'No'}</DataTableCell>
+              <DataTableCell label="Auto-split to reserve">
+                {incomeSource.autoSplitToReserve ? 'Yes' : 'No'}
+              </DataTableCell>
+              <RowActionsCell
+                itemName={incomeSource.name}
+                deleteDisabled={deletingId === incomeSource.id}
+                onEdit={() => setEditingIncomeSource(incomeSource)}
+                onDelete={() => setConfirmingDelete(incomeSource)}
+              />
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </AdminEntityPage>
   )
 }

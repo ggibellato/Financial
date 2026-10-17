@@ -57,8 +57,7 @@ public sealed class PortfolioService : IPortfolioService
             Portfolio? created = null;
             await _repository.ApplyAndSaveAsync(() =>
             {
-                broker = _repository.GetBrokerList(InvestmentScope.Active).FirstOrDefault(candidate => candidate.Name == brokerName)
-                    ?? throw new KeyNotFoundException($"Active broker \"{brokerName}\" was not found.");
+                broker = AssetMutationHelper.ResolveActiveBroker(_repository, brokerName);
                 created = broker.CreatePortfolio(name);
                 return true;
             }).ConfigureAwait(false);
@@ -88,21 +87,12 @@ public sealed class PortfolioService : IPortfolioService
             Portfolio? updated = null;
             await _repository.ApplyAndSaveAsync(() =>
             {
-                var investments = _repository.GetInvestments();
-                // The same broker name can have both an Active and a Historic record; resolving the
-                // requested scope first is what lets renaming a Historic portfolio under a broker that
-                // is also Active find the record that actually holds this portfolio.
-                broker = (scope == InvestmentScope.Historic
-                    ? investments.FindHistoricBroker(requiredBrokerName) ?? investments.FindActiveBroker(requiredBrokerName)
-                    : investments.FindActiveBroker(requiredBrokerName) ?? investments.FindHistoricBroker(requiredBrokerName))
-                    ?? throw new KeyNotFoundException($"Broker \"{requiredBrokerName}\" was not found.");
+                broker = _repository.GetInvestments().GetBroker(requiredBrokerName, preferHistoric: scope == InvestmentScope.Historic);
                 updated = broker.RenamePortfolio(currentName, newName);
                 return true;
             }).ConfigureAwait(false);
 
-            // Reference equality, not name: the same broker name can have both an Active and a
-            // Historic record, so matching by name alone would always report "Active".
-            var status = _repository.GetBrokerList(InvestmentScope.Active).Any(b => ReferenceEquals(b, broker)) ? "Active" : "Historic";
+            var status = AssetMutationHelper.BrokerStatus(_repository.GetInvestments(), broker!);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UpdatePortfolio");

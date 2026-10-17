@@ -126,8 +126,6 @@ const ASSET_DETAILS: AssetDetailsDto = {
   transactions: [],
   credits: [],
   priceSnapshots: [],
-  cashFlowsWithCredits: [],
-  cashFlowsWithoutCredits: [],
   disposalRecords: [],
   corporateActions: [SPLIT_RECORD],
   costBasisMethod: 'AverageCost',

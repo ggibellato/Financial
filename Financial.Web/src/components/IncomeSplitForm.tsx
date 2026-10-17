@@ -16,6 +16,7 @@ import { formatN2 } from '../utils/formatters'
 import { useFormPanelStyles } from './formPanelStyles'
 import DataTableCell from './grid/DataTableCell'
 import './IncomeSplitForm.css'
+import TruncatedText from './TruncatedText'
 
 interface IncomeSplitFormProps {
   date: string
@@ -62,7 +63,7 @@ export default function IncomeSplitForm({
           <TableBody>
             {lastResult.buckets.map((entry) => (
               <TableRow key={entry.bucketId}>
-                <DataTableCell label="Bucket">{entry.bucketName}</DataTableCell>
+                <DataTableCell label="Bucket"><TruncatedText text={entry.bucketName} /></DataTableCell>
                 <DataTableCell label="Amount" className="data-table__col--numeric">
                   {formatN2(entry.amount)}
                 </DataTableCell>

@@ -94,6 +94,60 @@ public class InvestmentsTests
         }
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void GetBroker_OnlyOneScopeHasTheName_ReturnsItWhicheverScopeIsPreferred(bool preferHistoric)
+    {
+        var investments = Investments.Create();
+        var historicBroker = Broker.Create("XPI", "BRL");
+        investments.AddHistoricBroker(historicBroker);
+
+        investments.GetBroker("XPI", preferHistoric).Should().BeSameAs(historicBroker);
+    }
+
+    [Fact]
+    public void GetBroker_SameNameActiveAndHistoric_ReturnsThePreferredScopesRecord()
+    {
+        var investments = Investments.Create();
+        var activeBroker = Broker.Create("XPI", "BRL");
+        investments.AddActiveBroker(activeBroker);
+        var historicBroker = Broker.Create("XPI", "BRL");
+        investments.AddHistoricBroker(historicBroker);
+
+        using (new AssertionScope())
+        {
+            investments.GetBroker("XPI", preferHistoric: false).Should().BeSameAs(activeBroker);
+            investments.GetBroker("XPI", preferHistoric: true).Should().BeSameAs(historicBroker);
+        }
+    }
+
+    [Fact]
+    public void GetBroker_UnknownBroker_ThrowsKeyNotFoundNamingIt()
+    {
+        var investments = Investments.Create();
+
+        var act = () => investments.GetBroker("Nope", preferHistoric: false);
+
+        act.Should().Throw<KeyNotFoundException>().WithMessage("Broker \"Nope\" was not found.");
+    }
+
+    [Fact]
+    public void IsActiveBroker_SameNameActiveAndHistoric_DistinguishesTheRecordsByIdentity()
+    {
+        var investments = Investments.Create();
+        var activeBroker = Broker.Create("XPI", "BRL");
+        investments.AddActiveBroker(activeBroker);
+        var historicBroker = Broker.Create("XPI", "BRL");
+        investments.AddHistoricBroker(historicBroker);
+
+        using (new AssertionScope())
+        {
+            investments.IsActiveBroker(activeBroker).Should().BeTrue();
+            investments.IsActiveBroker(historicBroker).Should().BeFalse();
+        }
+    }
+
     [Fact]
     public void ArchiveAsset_MovesAClosedAssetIntoAnExistingHistoricPortfolio()
     {

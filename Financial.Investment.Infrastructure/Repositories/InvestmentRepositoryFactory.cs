@@ -1,6 +1,7 @@
+using Financial.Investment.Application.Configuration;
 using Financial.Investment.Application.Interfaces;
-using Financial.Investment.Infrastructure.Configuration;
 using Financial.Investment.Infrastructure.Persistence;
+using Financial.Shared.Abstractions.Configuration;
 using Financial.Shared.Abstractions.Persistence;
 
 namespace Financial.Investment.Infrastructure.Repositories;
@@ -20,30 +21,12 @@ public sealed class InvestmentRepositoryFactory
         _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
     }
 
-    public IInvestmentRepository Create(InvestmentRepositorySelectionOptions options)
+    public IInvestmentRepository Create(JsonRepositorySelection options)
     {
-        if (options is null)
-        {
-            throw new ArgumentNullException(nameof(options));
-        }
+        ArgumentNullException.ThrowIfNull(options);
 
-        var storage = CreateStorage(options);
+        var storage = _storageFactory.Create(options, DefaultDataFileName, InvestmentRepositorySettingsOptions.ConfigurationKeys);
         var investments = InvestmentLoader.LoadSync(storage, _serializer, _timeProvider);
         return new InvestmentJsonRepository(investments, storage, _serializer);
     }
-
-    private IJsonStorage CreateStorage(InvestmentRepositorySelectionOptions options) =>
-        options.Provider switch
-        {
-            InvestmentRepositoryProvider.LocalJson =>
-                _storageFactory.CreateLocal(options.LocalDataPath, DefaultDataFileName),
-            InvestmentRepositoryProvider.GoogleDriveJson =>
-                _storageFactory.CreateRemote(
-                    options.GoogleDriveCredentialsPath,
-                    options.GoogleDriveFilePath,
-                    InvestmentRepositoryConfigurationKeys.GoogleDriveCredentialsPath,
-                    nameof(InvestmentRepositoryProvider.GoogleDriveJson)),
-            _ => throw new ArgumentOutOfRangeException(
-                    nameof(options.Provider), options.Provider, "Unsupported repository provider.")
-        };
 }

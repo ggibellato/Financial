@@ -7,7 +7,6 @@ import type {
   AssetAdminCreateDto,
   AssetAdminDto,
   AssetAdminUpdateDto,
-  AssetCashFlowDto,
   AssetDetailsDto,
   ArchiveAssetRequestDto,
   AssetPriceDto,
@@ -19,7 +18,6 @@ import type {
   BrokerDto,
   BrokerNodeDto,
   BrokerUpdateDto,
-  CalculateXirrRequestDto,
   CalendarConnectionStatusDto,
   Currency,
   CalendarDisconnectResultDto,
@@ -123,7 +121,6 @@ import type {
   UpcomingIncomeDto,
   WatchlistItemDto,
   WithdrawalRequestDto,
-  XirrResultDto,
 } from './types'
 
 export interface FinancialApiClient {
@@ -191,7 +188,6 @@ export interface FinancialApiClient {
   getWatchlist: () => Promise<WatchlistItemDto[]>
   getAssetPriceFetchScope: () => Promise<PortfolioReferenceDto[]>
   getPortfolioAssetsSummary: (brokerName: string, portfolioName: string, scope?: InvestmentScope) => Promise<PortfolioAssetSummaryItemDto[]>
-  calculateXirr: (cashFlows: AssetCashFlowDto[], terminalValue: number) => Promise<XirrResultDto>
   getDashboard: (displayCurrency?: Currency, brokerCurrency?: Currency) => Promise<PortfolioDashboardDto>
   getAllocationBreakdown: (displayCurrency?: Currency, brokerCurrency?: Currency) => Promise<AllocationBreakdownDto>
   getDataQualityReport: () => Promise<DataQualityReportDto>
@@ -555,11 +551,6 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       request<PortfolioAssetSummaryItemDto[]>(
         `/summary/portfolio/${encodeURIComponent(brokerName)}/${encodeURIComponent(portfolioName)}/assets${buildScopeQuery(scope)}`,
       ),
-    calculateXirr: (cashFlows, terminalValue) =>
-      request<XirrResultDto>('/xirr/calculate', {
-        method: 'POST',
-        body: JSON.stringify({ cashFlows, terminalValue } satisfies CalculateXirrRequestDto),
-      }),
     getDashboard: (displayCurrency, brokerCurrency) =>
       request<PortfolioDashboardDto>(`/dashboard${buildCurrencyQuery(displayCurrency, brokerCurrency)}`),
     getAllocationBreakdown: (displayCurrency, brokerCurrency) =>

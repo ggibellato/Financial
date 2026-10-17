@@ -6,6 +6,8 @@ import type { PeriodFilterOption } from '../utils/periodFilter'
 import { DEFAULT_FILTER, getPeriodFilterStartDate } from '../utils/periodFilter'
 import { formatMonthKey, getErrorMessage, parseValidatedNumber, toInputDate, todayIsoDate } from '../utils/formatters'
 import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
+import { openInlineForm, reduceInlineForm, type InlineFormAction } from './inlineFormSlice'
+import { createSelectionPrefsStore } from './selectionPrefsStore'
 
 export type ViewMode = 'Stacked' | 'Grouped'
 export type ChartType = 'Bar' | 'Line'
@@ -29,6 +31,12 @@ interface PersistedPrefs {
 
 const DEFAULT_MODE: ViewMode = 'Stacked'
 const DEFAULT_CHART_TYPE: ChartType = 'Bar'
+
+const prefsStore = createSelectionPrefsStore<PersistedPrefs>({
+  filter: DEFAULT_FILTER,
+  mode: DEFAULT_MODE,
+  chartType: DEFAULT_CHART_TYPE,
+})
 
 interface CreditsState {
   credits: CreditDto[]
@@ -64,11 +72,8 @@ type CreditsAction =
   | { type: 'SET_CHART_TYPE'; payload: { chartType: ChartType; key: string } }
   | { type: 'SHOW_NEW_FORM'; payload: { date: string; type: string } }
   | { type: 'SHOW_EDIT_FORM'; payload: CreditDto }
-  | { type: 'CANCEL_FORM' }
-  | { type: 'SET_FORM_FIELD'; payload: { field: CreditFormField; value: string } }
-  | { type: 'SAVE_START' }
+  | InlineFormAction<CreditFormField>
   | { type: 'SAVE_SUCCESS'; payload: CreditDto[] }
-  | { type: 'SAVE_ERROR'; payload: { message: string | null; fields: Partial<Record<CreditFormField, string>> } }
   | { type: 'DELETE_SUCCESS'; payload: CreditDto[] }
   | { type: 'DELETE_ERROR'; payload: string }
 
@@ -99,20 +104,31 @@ const INITIAL_STATE: CreditsState = {
   deleteError: null,
 }
 
+function rememberPrefs(state: CreditsState, key: string): CreditsState {
+  return {
+    ...state,
+    filterPersistence: prefsStore.remember(state.filterPersistence, key, {
+      filter: state.selectedFilter,
+      mode: state.selectedMode,
+      chartType: state.selectedChartType,
+    }),
+  }
+}
+
 function reducer(state: CreditsState, action: CreditsAction): CreditsState {
   switch (action.type) {
     case 'RESET':
       return { ...INITIAL_STATE, filterPersistence: state.filterPersistence }
     case 'FETCH_START': {
-      const prefs = state.filterPersistence.get(action.payload.key)
+      const prefs = prefsStore.restore(state.filterPersistence, action.payload.key)
       return {
         ...INITIAL_STATE,
         isLoading: true,
         retryCount: state.retryCount,
         filterPersistence: state.filterPersistence,
-        selectedFilter: prefs?.filter ?? DEFAULT_FILTER,
-        selectedMode: prefs?.mode ?? DEFAULT_MODE,
-        selectedChartType: prefs?.chartType ?? DEFAULT_CHART_TYPE,
+        selectedFilter: prefs.filter,
+        selectedMode: prefs.mode,
+        selectedChartType: prefs.chartType,
       }
     }
     case 'FETCH_SUCCESS':
@@ -121,37 +137,14 @@ function reducer(state: CreditsState, action: CreditsAction): CreditsState {
       return { ...state, isLoading: false, error: action.payload }
     case 'RETRY':
       return { ...state, retryCount: state.retryCount + 1, error: null }
-    case 'SET_FILTER': {
-      const newMap = new Map(state.filterPersistence)
-      newMap.set(action.payload.key, {
-        filter: action.payload.filter,
-        mode: state.selectedMode,
-        chartType: state.selectedChartType,
-      })
-      return { ...state, selectedFilter: action.payload.filter, filterPersistence: newMap }
-    }
-    case 'SET_MODE': {
-      const newMap = new Map(state.filterPersistence)
-      newMap.set(action.payload.key, {
-        filter: state.selectedFilter,
-        mode: action.payload.mode,
-        chartType: state.selectedChartType,
-      })
-      return { ...state, selectedMode: action.payload.mode, filterPersistence: newMap }
-    }
-    case 'SET_CHART_TYPE': {
-      const newMap = new Map(state.filterPersistence)
-      newMap.set(action.payload.key, {
-        filter: state.selectedFilter,
-        mode: state.selectedMode,
-        chartType: action.payload.chartType,
-      })
-      return { ...state, selectedChartType: action.payload.chartType, filterPersistence: newMap }
-    }
+    case 'SET_FILTER':
+      return rememberPrefs({ ...state, selectedFilter: action.payload.filter }, action.payload.key)
+    case 'SET_MODE':
+      return rememberPrefs({ ...state, selectedMode: action.payload.mode }, action.payload.key)
+    case 'SET_CHART_TYPE':
+      return rememberPrefs({ ...state, selectedChartType: action.payload.chartType }, action.payload.key)
     case 'SHOW_NEW_FORM':
-      return {
-        ...state,
-        isFormVisible: true,
+      return openInlineForm(state, {
         editingId: null,
         formDate: action.payload.date,
         formType: action.payload.type,
@@ -159,15 +152,10 @@ function reducer(state: CreditsState, action: CreditsAction): CreditsState {
         formWithheld: '',
         formIntermediationFee: '',
         formSharesForDividend: '',
-        saveError: null,
-        saveErrorFields: {},
-        isSaving: false,
-      }
+      })
     case 'SHOW_EDIT_FORM': {
       const c = action.payload
-      return {
-        ...state,
-        isFormVisible: true,
+      return openInlineForm(state, {
         editingId: c.id,
         formDate: toInputDate(c.date),
         formType: c.type,
@@ -175,21 +163,15 @@ function reducer(state: CreditsState, action: CreditsAction): CreditsState {
         formWithheld: String(c.withheld),
         formIntermediationFee: String(c.intermediationFee),
         formSharesForDividend: c.sharesForDividend == null ? '' : String(c.sharesForDividend),
-        saveError: null,
-        saveErrorFields: {},
-        isSaving: false,
-      }
+      })
     }
     case 'CANCEL_FORM':
-      return { ...state, ...BLANK_FORM }
     case 'SET_FORM_FIELD':
-      return { ...state, [action.payload.field]: action.payload.value }
     case 'SAVE_START':
-      return { ...state, isSaving: true, saveError: null, saveErrorFields: {} }
+    case 'SAVE_ERROR':
+      return reduceInlineForm(state, action, BLANK_FORM)
     case 'SAVE_SUCCESS':
       return { ...state, ...BLANK_FORM, credits: action.payload, deleteError: state.deleteError }
-    case 'SAVE_ERROR':
-      return { ...state, isSaving: false, saveError: action.payload.message, saveErrorFields: action.payload.fields }
     case 'DELETE_SUCCESS':
       return { ...state, credits: action.payload, deleteError: null }
     case 'DELETE_ERROR':

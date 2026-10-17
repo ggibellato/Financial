@@ -6645,57 +6645,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/xirr/calculate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Calculates the XIRR for the given cash flows and terminal value. */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/*+json": null | components["schemas"]["CalculateXirrRequestDTO"];
-                    "application/json": null | components["schemas"]["CalculateXirrRequestDTO"];
-                    "text/json": null | components["schemas"]["CalculateXirrRequestDTO"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["XirrResultDTO"];
-                    };
-                };
-                /** @description Bad Request */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -6796,12 +6745,6 @@ export interface components {
             /** Format: double */
             totalInvested: number;
         };
-        AssetCashFlowDTO: {
-            /** Format: double */
-            amount: number;
-            /** Format: date-time */
-            date: string;
-        };
         AssetClassAllocationEntryDTO: {
             class: components["schemas"]["GlobalAssetClass"];
             /** Format: double */
@@ -6815,8 +6758,6 @@ export interface components {
             /** Format: double */
             averageSellPrice?: null | number;
             brokerName: string;
-            cashFlowsWithCredits?: components["schemas"]["AssetCashFlowDTO"][];
-            cashFlowsWithoutCredits?: components["schemas"]["AssetCashFlowDTO"][];
             class?: components["schemas"]["GlobalAssetClass"];
             corporateActions?: components["schemas"]["CorporateActionDTO"][];
             costBasisMethod?: components["schemas"]["CostBasisMethod"];
@@ -7007,11 +6948,6 @@ export interface components {
             /** Format: uuid */
             bucketId: string;
             bucketName: string;
-        };
-        CalculateXirrRequestDTO: {
-            cashFlows: components["schemas"]["AssetCashFlowDTO"][];
-            /** Format: double */
-            terminalValue: number;
         };
         /** @enum {unknown} */
         CalculationStatus: "RequiresReview" | "Incomplete" | "Final" | null;
@@ -7859,7 +7795,6 @@ export interface components {
             averagePrice: number;
             /** Format: double */
             averageSellPrice: null | number;
-            cashFlows: components["schemas"]["AssetCashFlowDTO"][];
             class: components["schemas"]["GlobalAssetClass"];
             /** Format: double */
             costOfUnitsHeld: number;
@@ -8426,10 +8361,6 @@ export interface components {
             expenseCategoryId?: null | string;
             /** Format: uuid */
             paymentSourceBankId?: null | string;
-        };
-        XirrResultDTO: {
-            /** Format: double */
-            xirr: null | number;
         };
     };
     responses: never;

@@ -11,7 +11,8 @@ public sealed class InvestmentJsonRepository : IInvestmentRepository, ISyncStatu
 {
     private readonly IJsonStorage _storage;
     private readonly IInvestmentSerializer _serializer;
-    private readonly Investments _investiments;
+    private Investments _investiments;
+    private string _lastPersistedJson;
 
     /// <summary>Serializing the document walks every collection in the graph, so one writer at a
     /// time. A semaphore rather than a lock because the critical section awaits the storage.</summary>
@@ -22,6 +23,7 @@ public sealed class InvestmentJsonRepository : IInvestmentRepository, ISyncStatu
         _investiments = investments ?? throw new ArgumentNullException(nameof(investments));
         _storage = storage ?? throw new ArgumentNullException(nameof(storage));
         _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
+        _lastPersistedJson = _serializer.Serialize(_investiments);
     }
 
     public IEnumerable<Asset> GetAssetsByBroker(string name, InvestmentScope scope = InvestmentScope.Active) =>
@@ -64,7 +66,13 @@ public sealed class InvestmentJsonRepository : IInvestmentRepository, ISyncStatu
             // silently discarding the newer change with no error anywhere.
             var json = _serializer.Serialize(_investiments);
             await _storage.WriteAsync(json).ConfigureAwait(false);
+            _lastPersistedJson = json;
             return true;
+        }
+        catch
+        {
+            _investiments = _serializer.Deserialize(_lastPersistedJson);
+            throw;
         }
         finally
         {

@@ -19,6 +19,7 @@ import { useFormPanelStyles } from './formPanelStyles'
 import type { SuggestedValuesPhase, SuggestionRow } from '../hooks/useSuggestedValues'
 import type { InvestmentSnapshotSuggestionSkippedDto } from '../api/types'
 import { formatN2 } from '../utils/formatters'
+import TruncatedText from './TruncatedText'
 
 const useStyles = makeStyles({
   mutedValue: {
@@ -67,8 +68,8 @@ function NotUpdatedList({ notUpdated }: { notUpdated: InvestmentSnapshotSuggesti
         <TableBody>
           {notUpdated.map((item) => (
             <TableRow key={item.accountId}>
-              <DataTableCell label="Account">{item.accountName}</DataTableCell>
-              <DataTableCell label="Reason">{item.reason}</DataTableCell>
+              <DataTableCell label="Account"><TruncatedText text={item.accountName} /></DataTableCell>
+              <DataTableCell label="Reason"><TruncatedText text={item.reason} /></DataTableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -126,7 +127,7 @@ export default function SuggestedValuesPanel({
               <TableBody>
                 {rows.map((row) => (
                   <TableRow key={row.accountId}>
-                    <DataTableCell label="Account">{row.accountName}</DataTableCell>
+                    <DataTableCell label="Account"><TruncatedText text={row.accountName} /></DataTableCell>
                     <DataTableCell label="Current Value" className="data-table__col--numeric">
                       {row.included && row.currentValue !== 0 ? (
                         <span className={styles.mutedValue}>{formatN2(row.currentValue)}</span>
@@ -145,7 +146,7 @@ export default function SuggestedValuesPanel({
                         onChange={(e) => onSetValue(row.accountId, e.target.value)}
                       />
                     </DataTableCell>
-                    <DataTableCell label="Source">{row.sourceDescription}</DataTableCell>
+                    <DataTableCell label="Source"><TruncatedText text={row.sourceDescription} /></DataTableCell>
                     <DataTableCell label="Include">
                       <Checkbox
                         aria-label={`Include ${row.accountName}`}

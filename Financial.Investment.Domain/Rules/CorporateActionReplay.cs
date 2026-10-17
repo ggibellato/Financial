@@ -63,9 +63,6 @@ public static class CorporateActionReplay
         1 - (action.AllocationPercentage ?? throw new InvalidOperationException(
             $"Corporate action {action.Id} of type {action.Type} has no allocation percentage.")) / 100;
 
-    public static IReadOnlyList<OpenLot> RescaleLots(IReadOnlyList<OpenLot> lots, decimal factor) =>
-        lots.Select(lot => lot with { RemainingQuantity = lot.RemainingQuantity * factor, UnitCost = lot.UnitCost / factor }).ToList();
-
     public static decimal ApplyTransactionToQuantity(decimal quantity, Transaction transaction) =>
         TransactionTypeEffects.For(transaction.Type).Quantity switch
         {

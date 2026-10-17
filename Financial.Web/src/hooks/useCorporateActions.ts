@@ -15,7 +15,9 @@ import {
   type TargetAssetPickerValue,
 } from '../components/targetAssetPickerValue'
 import { useSelectedNode } from '../context/SelectedNodeContext'
+import { isAssetSelection } from '../utils/assetSelection'
 import { getErrorMessage, parseValidatedNumber, toInputDate, todayIsoDate } from '../utils/formatters'
+import { openInlineForm, reduceInlineForm, type InlineFormAction } from './inlineFormSlice'
 import { isAssetNameCollisionError } from './isAssetNameCollisionError'
 import { useAssetSearchOptions, type AssetSearchOptionsData } from './useAssetSearchOptions'
 
@@ -76,14 +78,11 @@ type CorporateActionsAction =
   | { type: 'RETRY' }
   | { type: 'SHOW_NEW_FORM' }
   | { type: 'SHOW_EDIT_FORM'; payload: CorporateActionDto }
-  | { type: 'CANCEL_FORM' }
-  | { type: 'SET_FORM_FIELD'; payload: { field: CorporateActionFormField; value: string } }
+  | InlineFormAction<CorporateActionFormField>
   | { type: 'SET_STEP'; payload: 'fields' | 'confirm' }
   | { type: 'SET_TARGET_ASSET'; payload: TargetAssetPickerValue }
   | { type: 'SET_NEW_ASSET'; payload: TargetAssetPickerValue }
-  | { type: 'SAVE_START' }
   | { type: 'SAVE_SUCCESS'; payload: AssetDetailsDto }
-  | { type: 'SAVE_ERROR'; payload: { message: string | null; fields: Partial<Record<CorporateActionFormField, string>> } }
   | { type: 'DELETE_SUCCESS'; payload: AssetDetailsDto }
   | { type: 'DELETE_ERROR'; payload: string }
 
@@ -142,9 +141,7 @@ function reducer(state: CorporateActionsState, action: CorporateActionsAction): 
     case 'RETRY':
       return { ...state, retryCount: state.retryCount + 1, error: null }
     case 'SHOW_NEW_FORM':
-      return {
-        ...state,
-        isFormVisible: true,
+      return openInlineForm(state, {
         editingId: null,
         formEffectiveDate: todayIsoDate(),
         formType: 'Split',
@@ -158,16 +155,11 @@ function reducer(state: CorporateActionsState, action: CorporateActionsAction): 
         formNewAsset: BLANK_TARGET_ASSET_PICKER_VALUE,
         formQuantityReceived: '',
         formAllocationPercentage: '',
-        saveError: null,
-        saveErrorFields: {},
-        isSaving: false,
-      }
+      })
     case 'SHOW_EDIT_FORM': {
       const a = action.payload
       const [formRatioNumerator, formRatioDenominator] = ratioFactorToFraction(a.ratioFactor)
-      return {
-        ...state,
-        isFormVisible: true,
+      return openInlineForm(state, {
         editingId: a.id,
         formEffectiveDate: toInputDate(a.effectiveDate),
         formType: a.type,
@@ -187,27 +179,21 @@ function reducer(state: CorporateActionsState, action: CorporateActionsAction): 
             : BLANK_TARGET_ASSET_PICKER_VALUE,
         formQuantityReceived: a.convertedQuantity !== null ? String(a.convertedQuantity) : '',
         formAllocationPercentage: a.allocationPercentage !== null ? String(a.allocationPercentage) : '',
-        saveError: null,
-        saveErrorFields: {},
-        isSaving: false,
-      }
+      })
     }
     case 'CANCEL_FORM':
-      return { ...state, ...BLANK_FORM }
     case 'SET_FORM_FIELD':
-      return { ...state, [action.payload.field]: action.payload.value }
+    case 'SAVE_START':
+    case 'SAVE_ERROR':
+      return reduceInlineForm(state, action, BLANK_FORM)
     case 'SET_STEP':
       return { ...state, formStep: action.payload, saveError: null, saveErrorFields: {} }
     case 'SET_TARGET_ASSET':
       return { ...state, formTargetAsset: action.payload }
     case 'SET_NEW_ASSET':
       return { ...state, formNewAsset: action.payload }
-    case 'SAVE_START':
-      return { ...state, isSaving: true, saveError: null, saveErrorFields: {} }
     case 'SAVE_SUCCESS':
       return { ...state, ...BLANK_FORM, asset: action.payload }
-    case 'SAVE_ERROR':
-      return { ...state, isSaving: false, saveError: action.payload.message, saveErrorFields: action.payload.fields }
     case 'DELETE_SUCCESS':
       return { ...state, asset: action.payload, deleteError: null }
     case 'DELETE_ERROR':
@@ -263,12 +249,7 @@ export function useCorporateActions(): CorporateActionsData {
   )
 
   useEffect(() => {
-    if (
-      !selectedNode ||
-      selectedNode.nodeType !== 'Asset' ||
-      !selectedNode.portfolioName ||
-      !selectedNode.assetName
-    ) {
+    if (!isAssetSelection(selectedNode)) {
       dispatch({ type: 'RESET' })
       return
     }

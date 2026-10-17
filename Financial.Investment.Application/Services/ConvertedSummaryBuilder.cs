@@ -1,7 +1,6 @@
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.Entities;
-using Financial.Investment.Domain.Rules;
 using Financial.Shared.Abstractions.Currencies;
 
 namespace Financial.Investment.Application.Services;
@@ -61,9 +60,9 @@ internal static class ConvertedSummaryBuilder
 
         foreach (var asset in assets)
         {
-            var converted = await ConvertAssetAsync(asset, context).ConfigureAwait(false);
-            grossFlows.AddRange(converted.GrossFlows);
-            netOfTaxFlows.AddRange(converted.NetOfTaxFlows);
+            var converted = await ConvertedAssetFlows.ConvertAsync(asset, context).ConfigureAwait(false);
+            grossFlows.AddRange(converted.GrossFlows.Select(ToCashFlowDto));
+            netOfTaxFlows.AddRange(converted.NetOfTaxFlows.Select(ToCashFlowDto));
             convertedTotalBought += converted.Bought;
             convertedTotalSold += converted.Sold;
         }
@@ -71,53 +70,8 @@ internal static class ConvertedSummaryBuilder
         return (convertedTotalBought - convertedTotalSold, grossFlows, netOfTaxFlows);
     }
 
-    private static async Task<AssetConversionResult> ConvertAssetAsync(Asset asset, CurrencyConversionContext context)
-    {
-        var grossFlows = new List<AssetCashFlowDTO>();
-        var netOfTaxFlows = new List<AssetCashFlowDTO>();
-        decimal bought = 0m, sold = 0m;
-
-        foreach (var transaction in asset.Transactions)
-        {
-            var convertedNetCash = await context.ConvertAsync(transaction.NetCash, DateOnly.FromDateTime(transaction.Date)).ConfigureAwait(false);
-            if (convertedNetCash is not decimal amount)
-            {
-                continue;
-            }
-
-            grossFlows.Add(new AssetCashFlowDTO { Date = transaction.Date, Amount = amount });
-            netOfTaxFlows.Add(new AssetCashFlowDTO { Date = transaction.Date, Amount = amount });
-
-            switch (TransactionTypeEffects.For(transaction.Type).Cash)
-            {
-                case CashEffect.Out:
-                    bought += -amount;
-                    break;
-                case CashEffect.In:
-                    sold += amount;
-                    break;
-            }
-        }
-
-        foreach (var credit in asset.Credits)
-        {
-            var date = DateOnly.FromDateTime(credit.Date);
-            var convertedValue = await context.ConvertAsync(credit.Value, date).ConfigureAwait(false);
-            var convertedNetAmount = await context.ConvertAsync(credit.NetAmount, date).ConfigureAwait(false);
-
-            if (convertedValue is decimal grossAmount)
-            {
-                grossFlows.Add(new AssetCashFlowDTO { Date = credit.Date, Amount = grossAmount });
-            }
-
-            if (convertedNetAmount is decimal netAmount)
-            {
-                netOfTaxFlows.Add(new AssetCashFlowDTO { Date = credit.Date, Amount = netAmount });
-            }
-        }
-
-        return new AssetConversionResult(grossFlows, netOfTaxFlows, bought, sold);
-    }
+    private static AssetCashFlowDTO ToCashFlowDto((DateTime Date, decimal Amount) flow) =>
+        new() { Date = flow.Date, Amount = flow.Amount };
 
     private static (decimal? TotalReturn, decimal? TotalReturnNetOfTax) ComputeConvertedReturns(
         decimal? convertedMarketValue,
@@ -162,10 +116,4 @@ internal static class ConvertedSummaryBuilder
             IsPartial: context.IsPartial,
             IsReportingCurrencyUnavailable: false);
     }
-
-    private readonly record struct AssetConversionResult(
-        List<AssetCashFlowDTO> GrossFlows,
-        List<AssetCashFlowDTO> NetOfTaxFlows,
-        decimal Bought,
-        decimal Sold);
 }

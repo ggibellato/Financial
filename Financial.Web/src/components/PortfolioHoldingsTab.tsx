@@ -11,7 +11,7 @@ import type { RowPriceState } from '../hooks/usePortfolioAssetSummary'
 import { useAggregatedSummary } from '../hooks/useAggregatedSummary'
 import type { PortfolioAssetSummaryItemDto } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
-import { formatMonthYear, formatN2, formatN8, formatShortDate, signClass } from '../utils/formatters'
+import { formatMonthYear, formatN2, formatN2OrDash, formatN8, formatShortDate, signClass } from '../utils/formatters'
 import './PortfolioHoldingsTab.css'
 
 function parseCreditMonth(yearMonth: string): Date {
@@ -147,7 +147,7 @@ function AssetRow({ item, rowPrice, isHistoric }: AssetRowProps) {
         {item.lastMonthCreditsPercent === null ? '—' : `${formatN2(item.lastMonthCreditsPercent)}%`}
       </DataTableCell>
       <DataTableCell label="Est. Annual Credits">
-        {item.estimatedAnnualCredits === null ? '—' : formatN2(item.estimatedAnnualCredits)}
+        {formatN2OrDash(item.estimatedAnnualCredits)}
       </DataTableCell>
       <DataTableCell label="Est. Annual %">
         {item.estimatedAnnualPercent === null ? '—' : `${formatN2(item.estimatedAnnualPercent)}%`}
@@ -321,7 +321,7 @@ export default function PortfolioHoldingsTab() {
           </div>
           <div className="portfolio-holdings__footer-item">
             <span className="portfolio-holdings__footer-label" data-label="Est. Annual Credits" />
-            <input type="text" readOnly className="portfolio-holdings__footer-value" value={footer.estAnnualCredits === null ? '—' : formatN2(footer.estAnnualCredits)} tabIndex={-1} />
+            <input type="text" readOnly className="portfolio-holdings__footer-value" value={formatN2OrDash(footer.estAnnualCredits)} tabIndex={-1} />
           </div>
         </div>
       )}

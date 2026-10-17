@@ -5,7 +5,8 @@ import SortableColumnHeader from './grid/SortableColumnHeader'
 import ColumnFilterMenu from './grid/ColumnFilterMenu'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { useColumnFilters } from '../hooks/useColumnFilters'
-import { formatN2 } from '../utils/formatters'
+import { formatN2, formatN2OrDash } from '../utils/formatters'
+import TruncatedText from './TruncatedText'
 
 interface CardsGridProps {
   cardStatements: CardStatementDto[]
@@ -175,12 +176,12 @@ export default function CardsGrid({
             )}
             {sortedRows.map((row) => (
               <TableRow key={row.key}>
-                <DataTableCell label="Card">{row.creditCardName}</DataTableCell>
+                <DataTableCell label="Card"><TruncatedText text={row.creditCardName} /></DataTableCell>
                 <DataTableCell label="Outstanding (period)" className="data-table__col--numeric">
-                  {row.statement ? formatN2(row.statement.outstandingTotal) : '—'}
+                  {formatN2OrDash(row.statement?.outstandingTotal)}
                 </DataTableCell>
                 <DataTableCell label="Accumulated outstanding" className="data-table__col--numeric">
-                  {row.statement ? formatN2(row.statement.accumulatedOutstandingTotal) : '—'}
+                  {formatN2OrDash(row.statement?.accumulatedOutstandingTotal)}
                 </DataTableCell>
                 <DataTableCell label="Status">
                   {row.statement ? (row.statement.isPaid ? 'Paid' : 'Unpaid') : '—'}

@@ -8,9 +8,7 @@
      colorBrandBackground2) — see docs/ui/decisions/ADR-005-brand-and-status-colors.md.
      Blue is the user's company color; do not revert to a purple accent. */
   --accent: #0f6cbd;
-  --accent-hover: #115ea3; /* ADR-005's colorBrandBackgroundHover */
   --accent-bg: #ebf3fc;
-  --accent-border: rgba(15, 108, 189, 0.5);
   --social-bg: rgba(244, 243, 236, 0.5);
   --shadow:
     rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
@@ -20,7 +18,6 @@
      every theme, which defeated dark mode wherever they were used. */
   --bg-subtle: #f9f9f9;
   --bg-hover: #f0f0f0;
-  --surface: #ffffff;
   --text-muted: #888;
   --success: #2e7d32;
   --danger: #c0392b;
@@ -63,16 +60,13 @@
   --code-bg: #1f2028;
   /* webDarkTheme.colorBrandForeground1 / colorBrandBackground2 */
   --accent: #479ef5;
-  --accent-hover: #6cb2f8;
   --accent-bg: #082338;
-  --accent-border: rgba(71, 158, 245, 0.5);
   --social-bg: rgba(47, 48, 58, 0.5);
   --shadow:
     rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
 
   --bg-subtle: #1f2028;
   --bg-hover: #262832;
-  --surface: #16171d;
   --text-muted: #6b7280;
   --success: #66bb6a;
   --danger: #ff7b72;
@@ -83,10 +77,6 @@
   --warning-bg: #3a2f0a;
   --warning-border: #6b5a1f;
   --drop-target: #1c3a52;
-}
-
-:root[data-theme='dark'] #social .button-icon {
-  filter: invert(1) brightness(2);
 }
 
 html,
@@ -149,15 +139,11 @@ p {
   margin: 0;
 }
 
-code,
-.counter {
+code {
   font-family: var(--mono);
   display: inline-flex;
   border-radius: 4px;
   color: var(--text-h);
-}
-
-code {
   font-size: 15px;
   line-height: 135%;
   padding: 4px 8px;

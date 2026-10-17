@@ -3,6 +3,7 @@ using Financial.Investment.Domain.Entities;
 using Financial.Integrations.GoogleDrive;
 using Financial.Investment.Infrastructure.Persistence;
 using Financial.Investment.Infrastructure.Repositories;
+using Financial.Shared.Abstractions.Configuration;
 using Financial.Shared.Abstractions.Observability;
 using Financial.Shared.Abstractions.Persistence;
 using Financial.Shared.Abstractions.Sync;
@@ -38,8 +39,8 @@ public class InvestmentRepositoryFactoryTests
     [Fact]
     public void Create_WithGoogleDriveProvider_CredentialsPathDoesNotExist_ThrowsFileNotFoundExceptionWithResolvedPath()
     {
-        var options = new InvestmentRepositorySelectionOptions(
-            InvestmentRepositoryProvider.GoogleDriveJson,
+        var options = new JsonRepositorySelection(
+            JsonRepositoryProvider.GoogleDriveJson,
             null,
             "nonexistent/credentials.json",
             "Pessoais/Gleison/Financeiros");
@@ -56,8 +57,8 @@ public class InvestmentRepositoryFactoryTests
         // The credentials file exists but isn't a valid Google service-account JSON, so this
         // exercises the successful path-resolution branch; the eventual credential-parsing
         // failure happens later and purely locally, no network call is made.
-        var options = new InvestmentRepositorySelectionOptions(
-            InvestmentRepositoryProvider.GoogleDriveJson,
+        var options = new JsonRepositorySelection(
+            JsonRepositoryProvider.GoogleDriveJson,
             null,
             TestDataPaths.DataJsonFile,
             "Pessoais/Gleison/Financeiros");
@@ -71,8 +72,8 @@ public class InvestmentRepositoryFactoryTests
     [Fact]
     public void Create_WithLocalJsonProvider_ReturnsJsonRepository()
     {
-        var options = new InvestmentRepositorySelectionOptions(
-            InvestmentRepositoryProvider.LocalJson,
+        var options = new JsonRepositorySelection(
+            JsonRepositoryProvider.LocalJson,
             TestDataPaths.DataJsonFile,
             null,
             null);
@@ -85,8 +86,8 @@ public class InvestmentRepositoryFactoryTests
     [Fact]
     public void Create_WithGoogleDriveProvider_WithoutCredentials_ThrowsFileNotFoundException()
     {
-        var options = new InvestmentRepositorySelectionOptions(
-            InvestmentRepositoryProvider.GoogleDriveJson,
+        var options = new JsonRepositorySelection(
+            JsonRepositoryProvider.GoogleDriveJson,
             null,
             null,
             "Pessoais/Gleison/Financeiros");
@@ -100,8 +101,8 @@ public class InvestmentRepositoryFactoryTests
     [Fact]
     public void Create_WithUnsupportedProvider_ThrowsArgumentOutOfRangeException()
     {
-        var options = new InvestmentRepositorySelectionOptions(
-            (InvestmentRepositoryProvider)999,
+        var options = new JsonRepositorySelection(
+            (JsonRepositoryProvider)999,
             null,
             null,
             null);
@@ -117,8 +118,8 @@ public class InvestmentRepositoryFactoryTests
     {
         var factoryWithoutRemoteFileClient = new InvestmentRepositoryFactory(
             new InvestmentSerializerAdapter(), new JsonStorageFactory(null, NoOpTelemetryTracer.Instance), TestClock.At());
-        var options = new InvestmentRepositorySelectionOptions(
-            InvestmentRepositoryProvider.GoogleDriveJson,
+        var options = new JsonRepositorySelection(
+            JsonRepositoryProvider.GoogleDriveJson,
             null,
             TestDataPaths.DataJsonFile,
             "Pessoais/Gleison/Financeiros");
@@ -132,8 +133,8 @@ public class InvestmentRepositoryFactoryTests
     [Fact]
     public async Task Create_WithGoogleDriveProvider_ApplyAndSaveAsync_ReturnsWithoutWaitingOnUpload()
     {
-        var options = new InvestmentRepositorySelectionOptions(
-            InvestmentRepositoryProvider.GoogleDriveJson,
+        var options = new JsonRepositorySelection(
+            JsonRepositoryProvider.GoogleDriveJson,
             null,
             TestDataPaths.DataJsonFile,
             "Pessoais/Gleison/Financeiros");
@@ -153,8 +154,8 @@ public class InvestmentRepositoryFactoryTests
     [Fact]
     public async Task Create_WithGoogleDriveProvider_ResultImplementsISyncStatusProvider_ReportingPendingAfterAWrite()
     {
-        var options = new InvestmentRepositorySelectionOptions(
-            InvestmentRepositoryProvider.GoogleDriveJson,
+        var options = new JsonRepositorySelection(
+            JsonRepositoryProvider.GoogleDriveJson,
             null,
             TestDataPaths.DataJsonFile,
             "Pessoais/Gleison/Financeiros");
@@ -169,8 +170,8 @@ public class InvestmentRepositoryFactoryTests
     [Fact]
     public void Create_WithLocalJsonProvider_ResultReportsIdleStatus()
     {
-        var options = new InvestmentRepositorySelectionOptions(
-            InvestmentRepositoryProvider.LocalJson,
+        var options = new JsonRepositorySelection(
+            JsonRepositoryProvider.LocalJson,
             TestDataPaths.DataJsonFile,
             null,
             null);
@@ -187,8 +188,8 @@ public class InvestmentRepositoryFactoryTests
         var remoteFileClient = new RecordingRemoteFileClient();
         var factory = new InvestmentRepositoryFactory(
             new InvestmentSerializerAdapter(), new JsonStorageFactory(new RecordingRemoteFileClientFactory(remoteFileClient), NoOpTelemetryTracer.Instance), TestClock.At());
-        var options = new InvestmentRepositorySelectionOptions(
-            InvestmentRepositoryProvider.GoogleDriveJson,
+        var options = new JsonRepositorySelection(
+            JsonRepositoryProvider.GoogleDriveJson,
             null,
             TestDataPaths.DataJsonFile,
             "Pessoais/Gleison/Financeiros");
@@ -215,8 +216,8 @@ public class InvestmentRepositoryFactoryTests
     [Fact]
     public async Task Create_WithGoogleDriveProvider_TwoInstancesFromSeparateCreateCalls_NeverShareStatus()
     {
-        var options = new InvestmentRepositorySelectionOptions(
-            InvestmentRepositoryProvider.GoogleDriveJson,
+        var options = new JsonRepositorySelection(
+            JsonRepositoryProvider.GoogleDriveJson,
             null,
             TestDataPaths.DataJsonFile,
             "Pessoais/Gleison/Financeiros");
@@ -239,8 +240,8 @@ public class InvestmentRepositoryFactoryTests
         var tracer = new RecordingTelemetryTracer();
         var factory = new InvestmentRepositoryFactory(
             new InvestmentSerializerAdapter(), new JsonStorageFactory(new RecordingRemoteFileClientFactory(remoteFileClient), tracer), TestClock.At());
-        var options = new InvestmentRepositorySelectionOptions(
-            InvestmentRepositoryProvider.GoogleDriveJson,
+        var options = new JsonRepositorySelection(
+            JsonRepositoryProvider.GoogleDriveJson,
             null,
             TestDataPaths.DataJsonFile,
             "Pessoais/Gleison/Financeiros");

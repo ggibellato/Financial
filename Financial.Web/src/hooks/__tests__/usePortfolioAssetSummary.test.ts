@@ -64,11 +64,6 @@ const ITEM_1: PortfolioAssetSummaryItemDto = {
   totalReturn: null,
   totalReturnNetOfTax: null,
   totalCredits: 125,
-  cashFlows: [
-    { date: '2021-03-01T00:00:00', amount: -2500 },
-    { date: '2021-09-15T00:00:00', amount: 50 },
-    { date: '2022-09-15T00:00:00', amount: 75 },
-  ],
   lastMonthCredits: 50,
   lastCreditMonth: '2022-09',
   lastMonthCreditsPercent: 2.0,
@@ -104,9 +99,6 @@ const ITEM_2: PortfolioAssetSummaryItemDto = {
   totalReturn: null,
   totalReturnNetOfTax: null,
   totalCredits: 0,
-  cashFlows: [
-    { date: '2021-05-15T00:00:00', amount: -1000 },
-  ],
   lastMonthCredits: 0,
   lastCreditMonth: null,
   lastMonthCreditsPercent: null,
@@ -200,7 +192,6 @@ describe('usePortfolioAssetSummary', () => {
     expect(result.current.items).toHaveLength(2)
     expect(result.current.items![0].assetName).toBe('ALZR11')
     expect(result.current.items![0].totalCredits).toBe(125)
-    expect(result.current.items![0].cashFlows).toHaveLength(3)
   })
 
   it('sets_error_on_fetch_failure', async () => {

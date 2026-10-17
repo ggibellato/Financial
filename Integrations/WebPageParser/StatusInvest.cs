@@ -72,8 +72,6 @@ public static class StatusInvest
         throw lastBlockedResponse!;
     }
 
-    internal static string DeriveSlug(string bondTitle) => TesouroDiretoSlug.Derive(bondTitle);
-
     internal static decimal? ExtractSellPrice(string pageText)
     {
         var sellIndex = pageText.IndexOf("venda", StringComparison.OrdinalIgnoreCase);

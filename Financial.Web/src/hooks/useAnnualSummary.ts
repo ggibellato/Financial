@@ -1,10 +1,9 @@
-import { useCallback, useEffect, useReducer } from 'react'
+import { useCallback, useState } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { CategoryAnnualAverageDto, CategoryAnnualTotalDto, IncomeAnnualSummaryDto, InvestmentAnnualResultDto } from '../api/types'
-import { getErrorMessage } from '../utils/formatters'
+import { useAsyncResource } from './useAsyncResource'
 
-interface AnnualSummaryState {
-  year: number
+interface AnnualSummaryFigures {
   categoryTotals: CategoryAnnualTotalDto[]
   incomeSummary: IncomeAnnualSummaryDto | null
   totalDespesasMonthly: number[]
@@ -15,34 +14,11 @@ interface AnnualSummaryState {
   resultadoAverage: number
   investmentAnnualResult: InvestmentAnnualResultDto | null
   historicSummaryAverage: CategoryAnnualAverageDto[]
-  isLoading: boolean
-  error: string | null
-  retryCount: number
 }
 
-type AnnualSummaryAction =
-  | { type: 'SET_YEAR'; payload: number }
-  | { type: 'FETCH_START' }
-  | {
-      type: 'FETCH_SUCCESS'
-      payload: {
-        categoryTotals: CategoryAnnualTotalDto[]
-        incomeSummary: IncomeAnnualSummaryDto
-        totalDespesasMonthly: number[]
-        totalDespesasAnnualTotal: number
-        totalDespesasAverage: number
-        resultadoMonthly: number[]
-        resultadoAnnualTotal: number
-        resultadoAverage: number
-        investmentAnnualResult: InvestmentAnnualResultDto
-        historicSummaryAverage: CategoryAnnualAverageDto[]
-      }
-    }
-  | { type: 'FETCH_ERROR'; payload: string }
-  | { type: 'RETRY' }
+const INITIAL_YEAR = new Date().getFullYear()
 
-const INITIAL_STATE: AnnualSummaryState = {
-  year: new Date().getFullYear(),
+const EMPTY_FIGURES: AnnualSummaryFigures = {
   categoryTotals: [],
   incomeSummary: null,
   totalDespesasMonthly: [],
@@ -53,116 +29,49 @@ const INITIAL_STATE: AnnualSummaryState = {
   resultadoAverage: 0,
   investmentAnnualResult: null,
   historicSummaryAverage: [],
-  isLoading: true,
-  error: null,
-  retryCount: 0,
 }
 
-function reducer(state: AnnualSummaryState, action: AnnualSummaryAction): AnnualSummaryState {
-  switch (action.type) {
-    case 'SET_YEAR':
-      return { ...state, year: action.payload }
-    case 'FETCH_START':
-      return { ...state, isLoading: true, error: null }
-    case 'FETCH_SUCCESS':
-      return {
-        ...state,
-        isLoading: false,
-        categoryTotals: action.payload.categoryTotals,
-        incomeSummary: action.payload.incomeSummary,
-        totalDespesasMonthly: action.payload.totalDespesasMonthly,
-        totalDespesasAnnualTotal: action.payload.totalDespesasAnnualTotal,
-        totalDespesasAverage: action.payload.totalDespesasAverage,
-        resultadoMonthly: action.payload.resultadoMonthly,
-        resultadoAnnualTotal: action.payload.resultadoAnnualTotal,
-        resultadoAverage: action.payload.resultadoAverage,
-        investmentAnnualResult: action.payload.investmentAnnualResult,
-        historicSummaryAverage: action.payload.historicSummaryAverage,
-      }
-    case 'FETCH_ERROR':
-      return { ...state, isLoading: false, error: action.payload }
-    case 'RETRY':
-      return { ...state, retryCount: state.retryCount + 1 }
-    default:
-      return state
-  }
+function fetchAnnualSummaryFigures(year: number): Promise<AnnualSummaryFigures> {
+  return Promise.all([
+    apiClient.getCategoryTotalsAnnualForYear(year),
+    apiClient.getInvestmentAnnualResultForYear(year),
+    apiClient.getHistoricSummaryAverageFromYear(year),
+  ]).then(([categoryTotalsAnnual, investmentAnnualResult, historicSummaryAverage]) => ({
+    categoryTotals: categoryTotalsAnnual.categoryTotals,
+    incomeSummary: categoryTotalsAnnual.incomeSummary,
+    totalDespesasMonthly: categoryTotalsAnnual.totalDespesasMonthly,
+    totalDespesasAnnualTotal: categoryTotalsAnnual.totalDespesasAnnualTotal,
+    totalDespesasAverage: categoryTotalsAnnual.totalDespesasAverage,
+    resultadoMonthly: categoryTotalsAnnual.resultadoMonthly,
+    resultadoAnnualTotal: categoryTotalsAnnual.resultadoAnnualTotal,
+    resultadoAverage: categoryTotalsAnnual.resultadoAverage,
+    investmentAnnualResult,
+    historicSummaryAverage,
+  }))
 }
 
-export interface AnnualSummaryData {
+export interface AnnualSummaryData extends AnnualSummaryFigures {
   year: number
   setYear: (year: number) => void
-  categoryTotals: CategoryAnnualTotalDto[]
-  incomeSummary: IncomeAnnualSummaryDto | null
-  totalDespesasMonthly: number[]
-  totalDespesasAnnualTotal: number
-  totalDespesasAverage: number
-  resultadoMonthly: number[]
-  resultadoAnnualTotal: number
-  resultadoAverage: number
-  investmentAnnualResult: InvestmentAnnualResultDto | null
-  historicSummaryAverage: CategoryAnnualAverageDto[]
   isLoading: boolean
   error: string | null
   retry: () => void
 }
 
 export function useAnnualSummary(): AnnualSummaryData {
-  const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
+  const [year, setValidYear] = useState(INITIAL_YEAR)
 
-  useEffect(() => {
-    dispatch({ type: 'FETCH_START' })
-    void Promise.all([
-      apiClient.getCategoryTotalsAnnualForYear(state.year),
-      apiClient.getInvestmentAnnualResultForYear(state.year),
-      apiClient.getHistoricSummaryAverageFromYear(state.year),
-    ])
-      .then(([categoryTotalsAnnual, investmentAnnualResult, historicSummaryAverage]) =>
-        dispatch({
-          type: 'FETCH_SUCCESS',
-          payload: {
-            categoryTotals: categoryTotalsAnnual.categoryTotals,
-            incomeSummary: categoryTotalsAnnual.incomeSummary,
-            totalDespesasMonthly: categoryTotalsAnnual.totalDespesasMonthly,
-            totalDespesasAnnualTotal: categoryTotalsAnnual.totalDespesasAnnualTotal,
-            totalDespesasAverage: categoryTotalsAnnual.totalDespesasAverage,
-            resultadoMonthly: categoryTotalsAnnual.resultadoMonthly,
-            resultadoAnnualTotal: categoryTotalsAnnual.resultadoAnnualTotal,
-            resultadoAverage: categoryTotalsAnnual.resultadoAverage,
-            investmentAnnualResult,
-            historicSummaryAverage,
-          },
-        }),
-      )
-      .catch((err: unknown) => {
-        dispatch({
-          type: 'FETCH_ERROR',
-          payload: getErrorMessage(err, 'Unable to load Annual Summary data'),
-        })
-      })
-  }, [state.year, state.retryCount])
+  const { data, isLoading, error, retry } = useAsyncResource<AnnualSummaryFigures>(
+    () => fetchAnnualSummaryFigures(year),
+    [year],
+    'Unable to load Annual Summary data',
+    { initialLoading: true, keepDataWhileLoading: true },
+  )
 
-  const setYear = useCallback((year: number) => {
-    if (!Number.isFinite(year)) return
-    dispatch({ type: 'SET_YEAR', payload: year })
+  const setYear = useCallback((nextYear: number) => {
+    if (!Number.isFinite(nextYear)) return
+    setValidYear(nextYear)
   }, [])
 
-  const retry = useCallback(() => dispatch({ type: 'RETRY' }), [])
-
-  return {
-    year: state.year,
-    setYear,
-    categoryTotals: state.categoryTotals,
-    incomeSummary: state.incomeSummary,
-    totalDespesasMonthly: state.totalDespesasMonthly,
-    totalDespesasAnnualTotal: state.totalDespesasAnnualTotal,
-    totalDespesasAverage: state.totalDespesasAverage,
-    resultadoMonthly: state.resultadoMonthly,
-    resultadoAnnualTotal: state.resultadoAnnualTotal,
-    resultadoAverage: state.resultadoAverage,
-    investmentAnnualResult: state.investmentAnnualResult,
-    historicSummaryAverage: state.historicSummaryAverage,
-    isLoading: state.isLoading,
-    error: state.error,
-    retry,
-  }
+  return { year, setYear, ...(data ?? EMPTY_FIGURES), isLoading, error, retry }
 }

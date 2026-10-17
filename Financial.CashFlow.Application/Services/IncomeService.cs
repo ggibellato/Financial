@@ -4,7 +4,6 @@ using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
-using Financial.Shared.Abstractions.Persistence;
 using Microsoft.Extensions.Logging;
 
 namespace Financial.CashFlow.Application.Services;
@@ -38,27 +37,16 @@ public sealed class IncomeService : IIncomeService
                 ? BuildSplitMovements(income, request.NetValue, request.Date, request.Description)
                 : [];
 
-            await CompensatingSaveHelper.ApplyWithCompensationAsync(
-                () => _repository.ApplyAndSaveAsync(() =>
+            await _repository.ApplyAndSaveAsync(() =>
+            {
+                _repository.AddIncome(income);
+                foreach (var movement in movements)
                 {
-                    _repository.AddIncome(income);
-                    foreach (var movement in movements)
-                    {
-                        _repository.AddReserveMovement(movement);
-                    }
+                    _repository.AddReserveMovement(movement);
+                }
 
-                    return true;
-                }),
-                () => _repository.ApplyAndSaveAsync(() =>
-                {
-                    _repository.DeleteIncome(income.Id);
-                    foreach (var movement in movements)
-                    {
-                        _repository.DeleteReserveMovement(movement.Id);
-                    }
-
-                    return false;
-                })).ConfigureAwait(false);
+                return true;
+            }).ConfigureAwait(false);
 
             span.SetAttribute(TelemetryAttributeKeys.EntityId, income.Id.ToString());
             span.MarkSuccess();
@@ -84,50 +72,27 @@ public sealed class IncomeService : IIncomeService
 
             var (incomeSource, bank) = ValidateFields(request.IncomeSourceId, request.BankId, request.Description, request.SplitToReserve);
 
-            var oldDate = income.Date;
-            var oldIncomeSource = income.IncomeSource;
-            var oldGrossValue = income.GrossValue;
-            var oldNetValue = income.NetValue;
-            var oldBank = income.Bank;
-            var oldDescription = income.Description;
-            var oldSplitToReserve = income.SplitToReserve;
             var oldLinkedMovements = GetLinkedMovements(income.Id);
 
             var newMovements = request.SplitToReserve
                 ? BuildSplitMovements(income, request.NetValue, request.Date, request.Description)
                 : [];
 
-            await CompensatingSaveHelper.ApplyWithCompensationAsync(
-                () => _repository.ApplyAndSaveAsync(() =>
+            await _repository.ApplyAndSaveAsync(() =>
+            {
+                income.UpdateDetails(request.Date, incomeSource, request.GrossValue, request.NetValue, bank, request.Description, request.SplitToReserve);
+                foreach (var movement in oldLinkedMovements)
                 {
-                    income.UpdateDetails(request.Date, incomeSource, request.GrossValue, request.NetValue, bank, request.Description, request.SplitToReserve);
-                    foreach (var movement in oldLinkedMovements)
-                    {
-                        _repository.DeleteReserveMovement(movement.Id);
-                    }
+                    _repository.DeleteReserveMovement(movement.Id);
+                }
 
-                    foreach (var movement in newMovements)
-                    {
-                        _repository.AddReserveMovement(movement);
-                    }
-
-                    return true;
-                }),
-                () => _repository.ApplyAndSaveAsync(() =>
+                foreach (var movement in newMovements)
                 {
-                    income.UpdateDetails(oldDate, oldIncomeSource, oldGrossValue, oldNetValue, oldBank, oldDescription, oldSplitToReserve);
-                    foreach (var movement in newMovements)
-                    {
-                        _repository.DeleteReserveMovement(movement.Id);
-                    }
+                    _repository.AddReserveMovement(movement);
+                }
 
-                    foreach (var movement in oldLinkedMovements)
-                    {
-                        _repository.AddReserveMovement(movement);
-                    }
-
-                    return false;
-                })).ConfigureAwait(false);
+                return true;
+            }).ConfigureAwait(false);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UpdateIncome");

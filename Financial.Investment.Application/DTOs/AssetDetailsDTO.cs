@@ -71,9 +71,6 @@ public class AssetDetailsDTO
     /// </summary>
     public List<AssetPriceSnapshotDTO> PriceSnapshots { get; set; } = new();
 
-    public IReadOnlyList<AssetCashFlowDTO> CashFlowsWithCredits { get; set; } = [];
-    public IReadOnlyList<AssetCashFlowDTO> CashFlowsWithoutCredits { get; set; } = [];
-
     public IReadOnlyList<string> TaxJurisdictions { get; set; } = [];
 }
 

@@ -99,16 +99,13 @@ public sealed class IncomeSourceService : IIncomeSourceService
                 throw new ArgumentException($"Income group '{request.Group}' is not recognized.", nameof(request));
             }
 
-            if (!EntityIdResolver.TryResolve(id, _repository.GetIncomeSources(), s => s.Id, out var incomeSource))
-            {
-                throw new KeyNotFoundException($"Income source '{id}' was not found.");
-            }
+            var incomeSource = _repository.GetIncomeSources().FirstOrThrow(s => s.Id == id, "Income source", id);
 
             _repository.GetIncomeSources().EnsureNameIsUnique(request.Name, id, s => s.Name, s => s.Id, "An income source");
 
             await _repository.ApplyAndSaveAsync(() =>
             {
-                incomeSource!.Update(request.Name, group, request.IsActive, request.AutoSplitToReserve);
+                incomeSource.Update(request.Name, group, request.IsActive, request.AutoSplitToReserve);
                 return true;
             }).ConfigureAwait(false);
 
@@ -129,10 +126,7 @@ public sealed class IncomeSourceService : IIncomeSourceService
         span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());
         try
         {
-            if (!EntityIdResolver.TryResolve(id, _repository.GetIncomeSources(), s => s.Id, out _))
-            {
-                throw new KeyNotFoundException($"Income source '{id}' was not found.");
-            }
+            _ = _repository.GetIncomeSources().FirstOrThrow(s => s.Id == id, "Income source", id);
 
             EnsureNotReferenced(id);
 

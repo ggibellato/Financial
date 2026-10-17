@@ -89,16 +89,13 @@ public sealed class BankService : IBankService
                 throw new ArgumentException("Bank name is required.", nameof(request));
             }
 
-            if (!EntityIdResolver.TryResolve(id, _repository.GetBanks(), b => b.Id, out var bank))
-            {
-                throw new KeyNotFoundException($"Bank '{id}' was not found.");
-            }
+            var bank = _repository.GetBanks().FirstOrThrow(b => b.Id == id, "Bank", id);
 
             _repository.GetBanks().EnsureNameIsUnique(request.Name, id, b => b.Name, b => b.Id, "A bank");
 
             await _repository.ApplyAndSaveAsync(() =>
             {
-                bank!.Update(request.Name, request.RoundUpEnabled);
+                bank.Update(request.Name, request.RoundUpEnabled);
                 return true;
             }).ConfigureAwait(false);
 
@@ -119,10 +116,7 @@ public sealed class BankService : IBankService
         span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());
         try
         {
-            if (!EntityIdResolver.TryResolve(id, _repository.GetBanks(), b => b.Id, out _))
-            {
-                throw new KeyNotFoundException($"Bank '{id}' was not found.");
-            }
+            _ = _repository.GetBanks().FirstOrThrow(b => b.Id == id, "Bank", id);
 
             EnsureNotReferenced(id);
 
@@ -150,14 +144,11 @@ public sealed class BankService : IBankService
         {
             ArgumentNullException.ThrowIfNull(request);
 
-            if (!EntityIdResolver.TryResolve(id, _repository.GetBanks(), b => b.Id, out var bank))
-            {
-                throw new KeyNotFoundException($"Bank '{id}' was not found.");
-            }
+            var bank = _repository.GetBanks().FirstOrThrow(b => b.Id == id, "Bank", id);
 
             await _repository.ApplyAndSaveAsync(() =>
             {
-                bank!.SetOpeningBalance(request.OpeningBalance, request.OpeningBalanceDate);
+                bank.SetOpeningBalance(request.OpeningBalance, request.OpeningBalanceDate);
                 return true;
             }).ConfigureAwait(false);
 
@@ -208,13 +199,10 @@ public sealed class BankService : IBankService
         span.SetAttribute(TelemetryAttributeKeys.EntityId, bankId.ToString());
         try
         {
-            if (!EntityIdResolver.TryResolve(bankId, _repository.GetBanks(), b => b.Id, out var bank))
-            {
-                throw new KeyNotFoundException($"Bank '{bankId}' was not found.");
-            }
+            var bank = _repository.GetBanks().FirstOrThrow(b => b.Id == bankId, "Bank", bankId);
 
             var result = ComputeBalance(
-                bank!,
+                bank,
                 asOfDate,
                 _repository.GetIncomes(),
                 _repository.GetExpenses(),

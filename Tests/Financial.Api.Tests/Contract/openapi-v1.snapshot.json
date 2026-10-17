@@ -352,19 +352,6 @@
         },
         "type": "object"
       },
-      "AssetCashFlowDTO": {
-        "properties": {
-          "amount": {
-            "format": "double",
-            "type": "number"
-          },
-          "date": {
-            "format": "date-time",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
       "AssetClassAllocationEntryDTO": {
         "properties": {
           "class": {
@@ -401,18 +388,6 @@
           },
           "brokerName": {
             "type": "string"
-          },
-          "cashFlowsWithCredits": {
-            "items": {
-              "$ref": "#/components/schemas/AssetCashFlowDTO"
-            },
-            "type": "array"
-          },
-          "cashFlowsWithoutCredits": {
-            "items": {
-              "$ref": "#/components/schemas/AssetCashFlowDTO"
-            },
-            "type": "array"
           },
           "class": {
             "$ref": "#/components/schemas/GlobalAssetClass"
@@ -1024,21 +999,6 @@
           "bucketName",
           "amount"
         ],
-        "type": "object"
-      },
-      "CalculateXirrRequestDTO": {
-        "properties": {
-          "cashFlows": {
-            "items": {
-              "$ref": "#/components/schemas/AssetCashFlowDTO"
-            },
-            "type": "array"
-          },
-          "terminalValue": {
-            "format": "double",
-            "type": "number"
-          }
-        },
         "type": "object"
       },
       "CalculationStatus": {
@@ -3881,12 +3841,6 @@
               "number"
             ]
           },
-          "cashFlows": {
-            "items": {
-              "$ref": "#/components/schemas/AssetCashFlowDTO"
-            },
-            "type": "array"
-          },
           "class": {
             "$ref": "#/components/schemas/GlobalAssetClass"
           },
@@ -5718,18 +5672,6 @@
           "date",
           "description"
         ],
-        "type": "object"
-      },
-      "XirrResultDTO": {
-        "properties": {
-          "xirr": {
-            "format": "double",
-            "type": [
-              "null",
-              "number"
-            ]
-          }
-        },
         "type": "object"
       }
     }
@@ -13830,76 +13772,6 @@
           "Watchlist"
         ]
       }
-    },
-    "/xirr/calculate": {
-      "post": {
-        "requestBody": {
-          "content": {
-            "application/*\u002Bjson": {
-              "schema": {
-                "oneOf": [
-                  {
-                    "type": "null"
-                  },
-                  {
-                    "$ref": "#/components/schemas/CalculateXirrRequestDTO"
-                  }
-                ]
-              }
-            },
-            "application/json": {
-              "schema": {
-                "oneOf": [
-                  {
-                    "type": "null"
-                  },
-                  {
-                    "$ref": "#/components/schemas/CalculateXirrRequestDTO"
-                  }
-                ]
-              }
-            },
-            "text/json": {
-              "schema": {
-                "oneOf": [
-                  {
-                    "type": "null"
-                  },
-                  {
-                    "$ref": "#/components/schemas/CalculateXirrRequestDTO"
-                  }
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/XirrResultDTO"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            },
-            "description": "Bad Request"
-          }
-        },
-        "summary": "Calculates the XIRR for the given cash flows and terminal value.",
-        "tags": [
-          "Xirr"
-        ]
-      }
     }
   },
   "servers": [
@@ -14024,9 +13896,6 @@
     },
     {
       "name": "Watchlist"
-    },
-    {
-      "name": "Xirr"
     }
   ]
 }

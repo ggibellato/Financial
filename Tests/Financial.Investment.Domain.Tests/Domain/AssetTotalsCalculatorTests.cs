@@ -121,4 +121,19 @@ public class AssetTotalsCalculatorTests
         totalBought.Should().Be(50m, "a Transfer's own principal is not money bought or sold");
         totalSold.Should().Be(0m);
     }
+
+    [Theory]
+    [InlineData(Transaction.TransactionType.Buy, -40, 40, 0)]
+    [InlineData(Transaction.TransactionType.CapitalCall, -12.5, 12.5, 0)]
+    [InlineData(Transaction.TransactionType.Sell, 30, 0, 30)]
+    [InlineData(Transaction.TransactionType.ReturnOfCapital, -5, 0, -5)]
+    [InlineData(Transaction.TransactionType.TransferIn, -2, 0, 0)]
+    public void ClassifyNetCash_BucketsTheGivenAmountByCashEffect(
+        Transaction.TransactionType type, double netCash, double expectedBought, double expectedSold)
+    {
+        var (bought, sold) = AssetTotalsCalculator.ClassifyNetCash(type, (decimal)netCash);
+
+        bought.Should().Be((decimal)expectedBought);
+        sold.Should().Be((decimal)expectedSold);
+    }
 }

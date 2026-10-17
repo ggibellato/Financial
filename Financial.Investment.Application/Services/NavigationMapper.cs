@@ -16,9 +16,7 @@ internal static class NavigationMapper
             Metadata = new Dictionary<string, object>
             {
                 [NavigationMetadataKeys.BrokerName] = broker.Name,
-                [NavigationMetadataKeys.Currency] = broker.Currency,
-                [NavigationMetadataKeys.PortfolioCount] = broker.PortfolioCount,
-                [NavigationMetadataKeys.TotalAssets] = broker.TotalAssets
+                [NavigationMetadataKeys.Currency] = broker.Currency
             }
         };
 
@@ -62,15 +60,9 @@ internal static class NavigationMapper
                 [NavigationMetadataKeys.AssetName] = asset.Name,
                 [NavigationMetadataKeys.Ticker] = asset.Ticker,
                 [NavigationMetadataKeys.Exchange] = asset.Exchange,
-                [NavigationMetadataKeys.ISIN] = asset.ISIN,
-                [NavigationMetadataKeys.Country] = asset.Country,
-                [NavigationMetadataKeys.LocalTypeCode] = asset.LocalTypeCode,
                 [NavigationMetadataKeys.GlobalAssetClass] = asset.Class,
                 [NavigationMetadataKeys.Quantity] = asset.Quantity,
-                [NavigationMetadataKeys.AveragePrice] = asset.AveragePrice,
-                [NavigationMetadataKeys.PositionType] = asset.PositionType.ToString(),
-                [NavigationMetadataKeys.TransactionCount] = asset.TransactionCount,
-                [NavigationMetadataKeys.CreditCount] = asset.CreditCount
+                [NavigationMetadataKeys.PositionType] = asset.PositionType.ToString()
             }
         };
     }

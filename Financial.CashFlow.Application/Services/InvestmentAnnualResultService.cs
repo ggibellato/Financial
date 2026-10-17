@@ -54,9 +54,8 @@ public sealed class InvestmentAnnualResultService : IInvestmentAnnualResultServi
                 })
                 .ToList();
 
-            var relevantDiffsSeries = MonthlySeries.FromMonthlyValues(Enumerable.Range(0, MonthsInYear)
-                .Select(month => month < series.LastRelevantMonth ? series.NetPositionDiffs[month] ?? 0m : 0m)
-                .ToArray());
+            var relevantDiffsSeries = MonthlySeries.FromMonths(month =>
+                month <= series.LastRelevantMonth ? series.NetPositionDiffs[month - 1] ?? 0m : 0m);
             var monthsElapsed = series.NetPositionDiffs.Take(series.LastRelevantMonth).Count(d => d.HasValue);
 
             var netPosition = new NetPositionAnnualDiffDTO
@@ -115,9 +114,7 @@ public sealed class InvestmentAnnualResultService : IInvestmentAnnualResultServi
         var accountSeries = scopedAccounts
             .Select(account =>
             {
-                var monthlyValues = MonthlySeries.FromMonthlyValues(Enumerable.Range(1, MonthsInYear)
-                    .Select(month => valueByAccountAndMonth.GetValueOrDefault((AccountId: account.Id, month)))
-                    .ToArray());
+                var monthlyValues = MonthlySeries.FromMonths(month => valueByAccountAndMonth.GetValueOrDefault((AccountId: account.Id, month)));
 
                 decimal? priorClosingValue = hasPriorYearData
                     ? priorYearDecemberByAccount.GetValueOrDefault(account.Id, 0m)

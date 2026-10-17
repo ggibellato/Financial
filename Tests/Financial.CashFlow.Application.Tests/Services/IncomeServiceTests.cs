@@ -379,7 +379,7 @@ public class IncomeServiceTests
     }
 
     [Fact]
-    public async Task AddIncomeAsync_WhenSaveFails_RollsBackIncomeAndAllMovements()
+    public async Task AddIncomeAsync_WhenSaveFails_RecordsFailedSpanAndRethrows()
     {
         var repository = CreateSplitCapableRepository();
         repository.ThrowOnNextSave = true;
@@ -388,8 +388,7 @@ public class IncomeServiceTests
         var act = async () => await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest()));
 
         await act.Should().ThrowAsync<InvalidOperationException>();
-        repository.Incomes.Should().BeEmpty();
-        repository.ReserveMovements.Should().BeEmpty();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.IncomeService.AddIncome");
     }
 
     [Fact]
@@ -448,22 +447,17 @@ public class IncomeServiceTests
     }
 
     [Fact]
-    public async Task UpdateIncomeAsync_WhenSaveFails_RestoresIncomeAndOriginalMovements()
+    public async Task UpdateIncomeAsync_WhenSaveFails_RecordsFailedSpanAndRethrows()
     {
         var repository = CreateSplitCapableRepository();
         var service = CreateService(repository);
         var added = await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest()));
-        var originalMovements = repository.ReserveMovements.ToList();
         repository.ThrowOnNextSave = true;
 
         var act = async () => await service.UpdateIncomeAsync(added.Id, ToUpdateDto(repository, ValidArianaSplitRequest() with { NetValue = 1000.00m }));
 
         await act.Should().ThrowAsync<InvalidOperationException>();
-        using (new AssertionScope())
-        {
-            repository.Incomes.Should().ContainSingle().Which.NetValue.Should().Be(2450.00m);
-            repository.ReserveMovements.Should().BeEquivalentTo(originalMovements);
-        }
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.IncomeService.UpdateIncome");
     }
 
     [Fact]

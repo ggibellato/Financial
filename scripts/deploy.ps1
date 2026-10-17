@@ -14,9 +14,6 @@
     the deployed appsettings.Production.json after each publish. Leaving the Google
     Calendar values blank in deploy.local.json keeps that integration disabled, same as an
     unconfigured Docker/dev deployment.
-
-    Earlier deploys also published the WPF desktop app (removed by ADR-002); its folder and
-    launchers are deleted from `deploy/` on every run so no stale copy is left behind.
 #>
 [CmdletBinding()]
 param(
@@ -30,11 +27,6 @@ $deployRoot = Join-Path $repoRoot 'deploy'
 $webDeployDir = Join-Path $deployRoot 'Financial.Web'
 $templatesDir = Join-Path $PSScriptRoot 'deploy-templates'
 $localSettingsPath = Join-Path $PSScriptRoot 'deploy.local.json'
-$removedDesktopAppPaths = @(
-    (Join-Path $deployRoot 'Financial.App'),
-    (Join-Path $deployRoot 'start-app.ps1'),
-    (Join-Path $deployRoot 'start-all.ps1')
-)
 
 Write-Host "== Financial local deploy ==" -ForegroundColor Cyan
 Write-Host "Repo root:   $repoRoot"
@@ -49,20 +41,14 @@ $localSettings = Get-Content $localSettingsPath -Raw | ConvertFrom-Json
 
 # 2. Stop any running deployed instances so publish doesn't hit locked files.
 Write-Host "`n-- Stopping any running deployed instances --"
-Get-Process -Name 'Financial.Presentation.App', 'Financial.Api' -ErrorAction SilentlyContinue |
+Get-Process -Name 'Financial.Api' -ErrorAction SilentlyContinue |
     Where-Object { $_.Path -and $_.Path.StartsWith($deployRoot, [System.StringComparison]::OrdinalIgnoreCase) } |
     ForEach-Object {
         Write-Host "Stopping $($_.ProcessName) (PID $($_.Id))"
         Stop-Process -Id $_.Id -Force
     }
 
-# 3. Clean + recreate the web output folder, and delete what earlier deploys left of the desktop app.
-foreach ($path in $removedDesktopAppPaths) {
-    if (Test-Path $path) {
-        Write-Host "Removing $path"
-        Remove-Item -Path $path -Recurse -Force
-    }
-}
+# 3. Clean + recreate the web output folder.
 if (Test-Path $webDeployDir) {
     Remove-Item -Path $webDeployDir -Recurse -Force
 }

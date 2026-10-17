@@ -89,7 +89,6 @@ const ITEM_1: PortfolioAssetSummaryItemDto = {
   totalReturn: null,
   totalReturnNetOfTax: null,
   totalCredits: 0,
-  cashFlows: [],
   lastMonthCredits: 0,
   lastCreditMonth: null,
   lastMonthCreditsPercent: null,

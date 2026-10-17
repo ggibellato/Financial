@@ -1,3 +1,4 @@
+using Financial.Shared.Abstractions.Configuration;
 using Financial.Shared.Abstractions.Currencies.FxRates;
 using Financial.Shared.Abstractions.Observability;
 using Financial.Shared.Infrastructure.Persistence;
@@ -30,7 +31,7 @@ public class FxRateStoreFactoryTests
     public void Create_WithLocalJsonProvider_MissingFile_ReturnsEmptyStore()
     {
         var missingPath = Path.Combine(Path.GetTempPath(), $"fxrates-factory-{Guid.NewGuid()}.json");
-        var options = new FxRateRepositorySelectionOptions(FxRateRepositoryProvider.LocalJson, missingPath, null, null);
+        var options = new JsonRepositorySelection(JsonRepositoryProvider.LocalJson, missingPath, null, null);
 
         var result = Factory.Create(options);
 
@@ -41,8 +42,8 @@ public class FxRateStoreFactoryTests
     [Fact]
     public void Create_WithGoogleDriveProvider_WithoutCredentials_ThrowsFileNotFoundException()
     {
-        var options = new FxRateRepositorySelectionOptions(
-            FxRateRepositoryProvider.GoogleDriveJson, null, null, "Pessoais/Gleison/Financeiros");
+        var options = new JsonRepositorySelection(
+            JsonRepositoryProvider.GoogleDriveJson, null, null, "Pessoais/Gleison/Financeiros");
 
         Action act = () => Factory.Create(options);
 
@@ -53,7 +54,7 @@ public class FxRateStoreFactoryTests
     [Fact]
     public void Create_WithUnsupportedProvider_ThrowsArgumentOutOfRangeException()
     {
-        var options = new FxRateRepositorySelectionOptions((FxRateRepositoryProvider)999, null, null, null);
+        var options = new JsonRepositorySelection((JsonRepositoryProvider)999, null, null, null);
 
         Action act = () => Factory.Create(options);
 
@@ -66,8 +67,8 @@ public class FxRateStoreFactoryTests
         var credentialsPath = Path.GetTempFileName();
         try
         {
-            var options = new FxRateRepositorySelectionOptions(
-                FxRateRepositoryProvider.GoogleDriveJson, null, credentialsPath, "Pessoais/Gleison/Financeiros");
+            var options = new JsonRepositorySelection(
+                JsonRepositoryProvider.GoogleDriveJson, null, credentialsPath, "Pessoais/Gleison/Financeiros");
 
             var result = Factory.Create(options);
 

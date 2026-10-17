@@ -118,7 +118,7 @@ public sealed class AssetMoveService : IAssetMoveService
     /// own, and is not offered here.
     /// </summary>
     private Broker FindBroker(string brokerName, InvestmentScope scope) =>
-        _repository.GetBrokerList(scope).FirstOrDefault(broker => broker.Name == brokerName)
+        AssetMutationHelper.FindBroker(_repository, scope, brokerName)
             ?? throw new KeyNotFoundException($"Broker \"{brokerName}\" was not found.");
 
     private static InvestmentScope ParseScope(string? value)

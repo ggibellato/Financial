@@ -91,9 +91,7 @@ public sealed class BrokerService : IBrokerService
             {
                 var investments = _repository.GetInvestments();
                 updated = investments.RenameBroker(currentName, newName, newCurrency, preferHistoric: scope == InvestmentScope.Historic);
-                // Reference equality, not name: the same broker name can have both an Active and a
-                // Historic record, so matching by name alone would always report "Active".
-                status = investments.ActiveBrokers.Any(b => ReferenceEquals(b, updated)) ? "Active" : "Historic";
+                status = AssetMutationHelper.BrokerStatus(investments, updated);
                 return true;
             }).ConfigureAwait(false);
 
@@ -143,13 +141,7 @@ public sealed class BrokerService : IBrokerService
             await _repository.ApplyAndSaveAsync(() =>
             {
                 var investments = _repository.GetInvestments();
-                // The same broker name can have both an Active and a Historic record; resolving the
-                // requested scope first is what lets targeting the Historic record find it instead
-                // of the Active one.
-                updated = (scope == InvestmentScope.Historic
-                    ? investments.FindHistoricBroker(required) ?? investments.FindActiveBroker(required)
-                    : investments.FindActiveBroker(required) ?? investments.FindHistoricBroker(required))
-                    ?? throw new KeyNotFoundException($"Broker \"{required}\" was not found.");
+                updated = investments.GetBroker(required, preferHistoric: scope == InvestmentScope.Historic);
                 var previousMethod = updated.CostBasisMethod;
                 updated.SetCostBasisMethod(method);
                 try
@@ -161,9 +153,7 @@ public sealed class BrokerService : IBrokerService
                     updated.SetCostBasisMethod(previousMethod);
                     throw;
                 }
-                // Reference equality, not name: the same broker name can have both an Active and a
-                // Historic record, so matching by name alone would always report "Active".
-                status = investments.ActiveBrokers.Any(b => ReferenceEquals(b, updated)) ? "Active" : "Historic";
+                status = AssetMutationHelper.BrokerStatus(investments, updated);
                 return true;
             }).ConfigureAwait(false);
 
