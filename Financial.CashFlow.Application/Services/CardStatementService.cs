@@ -5,7 +5,6 @@ using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using Financial.Shared.Abstractions.Observability;
 using Financial.Shared.Abstractions.Time;
-using Financial.Shared.Abstractions.Persistence;
 using Microsoft.Extensions.Logging;
 
 namespace Financial.CashFlow.Application.Services;
@@ -119,27 +118,16 @@ public sealed class CardStatementService : ICardStatementService
                 ? $"No credit card charges matched this statement's invoice period ({statement.Year:D4}-{statement.Month:D2}); marked paid with 0 linked charges."
                 : null;
 
-            await CompensatingSaveHelper.ApplyWithCompensationAsync(
-                () => _repository.ApplyAndSaveAsync(() =>
+            await _repository.ApplyAndSaveAsync(() =>
+            {
+                statement.MarkPaid();
+                foreach (var charge in charges)
                 {
-                    statement.MarkPaid();
-                    foreach (var charge in charges)
-                    {
-                        charge.Settle(bank!, settledAt);
-                    }
+                    charge.Settle(bank!, settledAt);
+                }
 
-                    return true;
-                }),
-                () => _repository.ApplyAndSaveAsync(() =>
-                {
-                    statement.MarkUnpaid();
-                    foreach (var charge in charges)
-                    {
-                        charge.Unsettle();
-                    }
-
-                    return false;
-                })).ConfigureAwait(false);
+                return true;
+            }).ConfigureAwait(false);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "MarkStatementPaid");
@@ -168,31 +156,17 @@ public sealed class CardStatementService : ICardStatementService
             }
 
             var settledExpenses = GetStatementExpenses(statement, ExpensePaymentStatus.CreditCardSettled);
-            var settlements = settledExpenses
-                .Select(e => (Expense: e, PaymentSourceBank: e.PaymentSourceBank!, PaymentDate: e.Date))
-                .ToList();
 
-            await CompensatingSaveHelper.ApplyWithCompensationAsync(
-                () => _repository.ApplyAndSaveAsync(() =>
+            await _repository.ApplyAndSaveAsync(() =>
+            {
+                statement.MarkUnpaid();
+                foreach (var expense in settledExpenses)
                 {
-                    statement.MarkUnpaid();
-                    foreach (var expense in settledExpenses)
-                    {
-                        expense.Unsettle();
-                    }
+                    expense.Unsettle();
+                }
 
-                    return true;
-                }),
-                () => _repository.ApplyAndSaveAsync(() =>
-                {
-                    statement.MarkPaid();
-                    foreach (var (expense, paymentSourceBank, paymentDate) in settlements)
-                    {
-                        expense.Settle(paymentSourceBank, paymentDate);
-                    }
-
-                    return false;
-                })).ConfigureAwait(false);
+                return true;
+            }).ConfigureAwait(false);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UnmarkStatementPaid");

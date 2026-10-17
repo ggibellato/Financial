@@ -7,6 +7,7 @@ using Financial.Shared.Infrastructure.Persistence;
 using Financial.Shared.Abstractions.Sync;
 using Financial.TestUtilities;
 using FluentAssertions;
+using FluentAssertions.Execution;
 
 namespace Financial.CashFlow.Infrastructure.Tests.Repositories;
 
@@ -72,10 +73,6 @@ public class CashFlowJsonRepositoryTests
         repository.GetInvestmentAccounts().Should().ContainSingle();
     }
 
-    /// <summary>
-    /// How an in-memory-only correction runs: a compensating rollback must undo the change under the
-    /// same exclusion, but must not write - the save it is undoing has already failed.
-    /// </summary>
     [Fact]
     public async Task ApplyAndSaveAsync_WhenApplyReportsNoChange_StillAppliesItButWritesNothing()
     {
@@ -133,8 +130,7 @@ public class CashFlowJsonRepositoryTests
 
     /// <summary>
     /// The repository is a singleton, so a gate left held by a failed write would hang every later
-    /// save for the lifetime of the process instead of throwing. This is what makes the compensating
-    /// rollbacks in CardStatementService able to acquire the gate after their save threw.
+    /// save for the lifetime of the process instead of throwing.
     /// </summary>
     [Fact]
     public async Task ApplyAndSaveAsync_WhenTheWriteThrows_LeavesTheGateAvailable()
@@ -149,6 +145,119 @@ public class CashFlowJsonRepositoryTests
 
         (await Task.WhenAny(next, Task.Delay(2000))).Should().BeSameAs(next, "the gate was released");
         (await next).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ApplyAndSaveAsync_WhenTheMutationThrowsPartWay_RestoresTheLastPersistedState()
+    {
+        var storage = new RecordingJsonStorage();
+        var repository = new CashFlowJsonRepository(CashFlowData.Create(), storage, new CashFlowSerializerAdapter());
+        await repository.ApplyAndSaveAsync(() =>
+        {
+            repository.AddInvestmentAccount(InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false));
+            return true;
+        });
+
+        var failing = async () => await repository.ApplyAndSaveAsync(() =>
+        {
+            repository.GetInvestmentAccounts().Single().Update("Renamed", isActive: false, isLiability: false);
+            repository.AddInvestmentAccount(InvestmentAccount.Create("Trading212", isActive: true, isLiability: false));
+            throw new ArgumentException("Rejected part way through the change.");
+        });
+
+        await failing.Should().ThrowAsync<ArgumentException>();
+        using (new AssertionScope())
+        {
+            var account = repository.GetInvestmentAccounts().Should().ContainSingle().Subject;
+            account.Name.Should().Be("ChaseSave");
+            account.IsActive.Should().BeTrue();
+            storage.WriteCount.Should().Be(1);
+        }
+    }
+
+    [Fact]
+    public async Task ApplyAndSaveAsync_WhenTheWriteFails_RestoresTheLastPersistedState()
+    {
+        var storage = new RecordingJsonStorage();
+        var repository = new CashFlowJsonRepository(CashFlowData.Create(), storage, new CashFlowSerializerAdapter());
+        await repository.ApplyAndSaveAsync(() =>
+        {
+            repository.AddInvestmentAccount(InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false));
+            return true;
+        });
+        storage.FailNextWrite = true;
+
+        var failing = async () => await repository.ApplyAndSaveAsync(() =>
+        {
+            repository.GetInvestmentAccounts().Single().Update("Renamed", isActive: false, isLiability: false);
+            repository.AddInvestmentAccount(InvestmentAccount.Create("Trading212", isActive: true, isLiability: false));
+            return true;
+        });
+
+        await failing.Should().ThrowAsync<IOException>();
+        using (new AssertionScope())
+        {
+            var account = repository.GetInvestmentAccounts().Should().ContainSingle().Subject;
+            account.Name.Should().Be("ChaseSave");
+            account.IsActive.Should().BeTrue();
+        }
+    }
+
+    [Fact]
+    public async Task ApplyAndSaveAsync_WhenTheFirstWriteFails_RestoresTheStateItWasConstructedWith()
+    {
+        var data = CashFlowData.Create();
+        data.AddInvestmentAccount(InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false));
+        var storage = new RecordingJsonStorage { FailNextWrite = true };
+        var repository = new CashFlowJsonRepository(data, storage, new CashFlowSerializerAdapter());
+
+        var failing = async () => await repository.ApplyAndSaveAsync(() =>
+        {
+            repository.AddInvestmentAccount(InvestmentAccount.Create("Trading212", isActive: true, isLiability: false));
+            return true;
+        });
+
+        await failing.Should().ThrowAsync<IOException>();
+        repository.GetInvestmentAccounts().Should().ContainSingle().Which.Name.Should().Be("ChaseSave");
+    }
+
+    [Fact]
+    public async Task ApplyAndSaveAsync_AfterAFailedWrite_TheNextSavePersistsItsOwnChangeWithoutTheFailedOne()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"cashflow-repo-{Guid.NewGuid()}.json");
+        var serializer = new CashFlowSerializerAdapter();
+        var storage = new FailOnceJsonStorage(new LocalJsonStorage(path));
+        var repository = new CashFlowJsonRepository(CashFlowData.Create(), storage, serializer);
+        try
+        {
+            await repository.ApplyAndSaveAsync(() =>
+            {
+                repository.AddInvestmentAccount(InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false));
+                return true;
+            });
+            storage.FailNextWrite = true;
+            var failing = async () => await repository.ApplyAndSaveAsync(() =>
+            {
+                repository.AddInvestmentAccount(InvestmentAccount.Create("Lost", isActive: true, isLiability: false));
+                return true;
+            });
+            await failing.Should().ThrowAsync<IOException>();
+
+            var saved = await repository.ApplyAndSaveAsync(() =>
+            {
+                repository.AddInvestmentAccount(InvestmentAccount.Create("Trading212", isActive: true, isLiability: false));
+                return true;
+            });
+
+            saved.Should().BeTrue();
+            var reloaded = serializer.Deserialize(await new LocalJsonStorage(path).ReadAsync());
+            reloaded.InvestmentAccounts.Select(a => a.Name).Should().BeEquivalentTo("ChaseSave", "Trading212");
+            repository.GetInvestmentAccounts().Select(a => a.Name).Should().BeEquivalentTo("ChaseSave", "Trading212");
+        }
+        finally
+        {
+            File.Delete(path);
+        }
     }
 
     private sealed class RecordingJsonStorage : IJsonStorage
@@ -169,6 +278,31 @@ public class CashFlowJsonRepositoryTests
 
             WriteCount++;
             return Task.CompletedTask;
+        }
+    }
+
+    private sealed class FailOnceJsonStorage : IJsonStorage
+    {
+        private readonly IJsonStorage _inner;
+
+        public FailOnceJsonStorage(IJsonStorage inner)
+        {
+            _inner = inner;
+        }
+
+        public bool FailNextWrite { get; set; }
+
+        public Task<string> ReadAsync() => _inner.ReadAsync();
+
+        public Task WriteAsync(string json)
+        {
+            if (FailNextWrite)
+            {
+                FailNextWrite = false;
+                throw new IOException("The process cannot access the file because it is being used by another process.");
+            }
+
+            return _inner.WriteAsync(json);
         }
     }
 
