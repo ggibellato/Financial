@@ -18,11 +18,7 @@ import type { BrokerDto, CostBasisMethod } from '../api/types'
 import { useFormPanelStyles } from './formPanelStyles'
 import { getErrorMessage } from '../utils/formatters'
 import { COST_BASIS_METHODS, COST_BASIS_METHOD_LABELS } from '../utils/costBasisMethod'
-
-/** The Investment bounded context has no shared currency enum (CashFlow's Currency is BRL/GBP only
- * and out of reach across the bounded-context boundary); these are the values already observed in
- * this codebase's broker fixtures. */
-const CURRENCIES = ['BRL', 'GBP', 'USD']
+import { CURRENCIES } from '../utils/currency'
 
 interface BrokerFormDialogProps {
   broker: BrokerDto | null
@@ -34,7 +30,7 @@ export default function BrokerFormDialog({ broker, onCancel, onSubmit }: BrokerF
   const styles = useFormPanelStyles()
   const isEditing = broker !== null
   const [name, setName] = useState(broker?.name ?? '')
-  const [currency, setCurrency] = useState(broker?.currency ?? CURRENCIES[0])
+  const [currency, setCurrency] = useState<string>(broker?.currency ?? CURRENCIES[0])
   const [costBasisMethod, setCostBasisMethod] = useState<CostBasisMethod>(broker?.costBasisMethod ?? 'AverageCost')
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)

@@ -15,6 +15,7 @@ import {
   type TargetAssetPickerValue,
 } from '../components/targetAssetPickerValue'
 import { useSelectedNode } from '../context/SelectedNodeContext'
+import { isAssetSelection } from '../utils/assetSelection'
 import { getErrorMessage, parseValidatedNumber, toInputDate, todayIsoDate } from '../utils/formatters'
 import { isAssetNameCollisionError } from './isAssetNameCollisionError'
 import { useAssetSearchOptions, type AssetSearchOptionsData } from './useAssetSearchOptions'
@@ -263,12 +264,7 @@ export function useCorporateActions(): CorporateActionsData {
   )
 
   useEffect(() => {
-    if (
-      !selectedNode ||
-      selectedNode.nodeType !== 'Asset' ||
-      !selectedNode.portfolioName ||
-      !selectedNode.assetName
-    ) {
+    if (!isAssetSelection(selectedNode)) {
       dispatch({ type: 'RESET' })
       return
     }
