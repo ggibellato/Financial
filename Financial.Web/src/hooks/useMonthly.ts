@@ -156,6 +156,8 @@ export interface MonthlyData {
 }
 
 export function useMonthly(): MonthlyData {
+  // Passed as a function so the default period is read at mount, not module load: it stays fresh
+  // in a long-running session and can be pinned with fake timers in tests.
   const { year, month, monthInputValue, setMonthInputValue } = useMonthSelection(currentYearMonth)
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
