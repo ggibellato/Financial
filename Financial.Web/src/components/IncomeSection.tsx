@@ -18,7 +18,7 @@ import SortableColumnHeader from './grid/SortableColumnHeader'
 import ColumnFilterMenu from './grid/ColumnFilterMenu'
 import { useSortableRows, DATE_DESC_SORT, type SortAccessor } from '../hooks/useSortableRows'
 import { useColumnFilters } from '../hooks/useColumnFilters'
-import { formatN2, formatShortDate } from '../utils/formatters'
+import { formatN2, formatN2OrDash, formatShortDate } from '../utils/formatters'
 import './IncomeSection.css'
 import TruncatedText from './TruncatedText'
 
@@ -45,7 +45,7 @@ function IncomeRow({ income, onEdit, onDelete }: IncomeRowProps) {
       <DataTableCell label="Date">{formatShortDate(income.date)}</DataTableCell>
       <DataTableCell label="Source"><TruncatedText text={income.incomeSourceName} /></DataTableCell>
       <DataTableCell label="Gross" className="data-table__col--numeric">
-        {income.grossValue != null ? formatN2(income.grossValue) : '—'}
+        {formatN2OrDash(income.grossValue)}
       </DataTableCell>
       <DataTableCell label="Net" className="data-table__col--numeric">
         {formatN2(income.netValue)}

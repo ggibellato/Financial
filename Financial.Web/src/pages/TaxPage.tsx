@@ -15,13 +15,13 @@ import StatusBadge from '../components/StatusBadge'
 import DataTableCell from '../components/grid/DataTableCell'
 import { useTaxWorkbook } from '../hooks/useTaxWorkbook'
 import type { TaxCategoryTotalDto, TaxWorkbookEntryDto } from '../api/types'
-import { formatN2, formatShortDateUtc } from '../utils/formatters'
+import { formatN2OrDash, formatShortDateUtc } from '../utils/formatters'
 import './TaxPage.css'
 
 function amountCell(label: string, value: number | null | undefined) {
   return (
     <DataTableCell label={label} className="data-table__col--numeric">
-      {value === null || value === undefined ? '—' : formatN2(value)}
+      {formatN2OrDash(value)}
     </DataTableCell>
   )
 }

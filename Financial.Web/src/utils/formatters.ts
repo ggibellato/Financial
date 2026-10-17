@@ -27,6 +27,24 @@ export function formatPercent1(value: number): string {
   return `${percent1Formatter.format(value)}%`
 }
 
+const MISSING_VALUE_PLACEHOLDER = '—'
+
+function formatOrDash(value: number | null | undefined, format: (value: number) => string): string {
+  return value == null ? MISSING_VALUE_PLACEHOLDER : format(value)
+}
+
+export function formatN2OrDash(value: number | null | undefined): string {
+  return formatOrDash(value, formatN2)
+}
+
+export function formatPercentFractionOrDash(value: number | null | undefined): string {
+  return formatOrDash(value, formatPercentFraction)
+}
+
+export function formatPercent1OrDash(value: number | null | undefined): string {
+  return formatOrDash(value, formatPercent1)
+}
+
 export function formatShortDate(isoString: string | null | undefined): string {
   if (!isoString) return ''
   const d = new Date(isoString)

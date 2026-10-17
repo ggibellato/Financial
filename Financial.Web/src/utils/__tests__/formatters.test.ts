@@ -4,9 +4,12 @@ import {
   formatDateTime,
   formatMonthInputValue,
   formatN2,
+  formatN2OrDash,
   formatN8,
   formatPercent1,
+  formatPercent1OrDash,
   formatPercentFraction,
+  formatPercentFractionOrDash,
   formatShortDate,
   pad,
   parseMonthInputValue,
@@ -47,6 +50,52 @@ describe('formatPercentFraction', () => {
 describe('formatPercent1', () => {
   it('formatPercent1_FormatsRawValueWithOneDecimalAndAppendsPercentSign', () => {
     expect(formatPercent1(12.345)).toBe('12.3%')
+  })
+})
+
+describe('formatN2OrDash', () => {
+  it('formatN2OrDash_Number_FormatsWithTwoDecimals', () => {
+    expect(formatN2OrDash(1234.5)).toBe('1,234.50')
+  })
+
+  it('formatN2OrDash_Zero_FormatsRatherThanDashes', () => {
+    expect(formatN2OrDash(0)).toBe('0.00')
+  })
+
+  it('formatN2OrDash_Null_ReturnsEmDash', () => {
+    expect(formatN2OrDash(null)).toBe('—')
+  })
+
+  it('formatN2OrDash_Undefined_ReturnsEmDash', () => {
+    expect(formatN2OrDash(undefined)).toBe('—')
+  })
+})
+
+describe('formatPercentFractionOrDash', () => {
+  it('formatPercentFractionOrDash_Number_FormatsAsPercent', () => {
+    expect(formatPercentFractionOrDash(0.1234)).toBe('12.34%')
+  })
+
+  it('formatPercentFractionOrDash_Null_ReturnsEmDash', () => {
+    expect(formatPercentFractionOrDash(null)).toBe('—')
+  })
+
+  it('formatPercentFractionOrDash_Undefined_ReturnsEmDash', () => {
+    expect(formatPercentFractionOrDash(undefined)).toBe('—')
+  })
+})
+
+describe('formatPercent1OrDash', () => {
+  it('formatPercent1OrDash_Number_FormatsWithOneDecimalAndPercentSign', () => {
+    expect(formatPercent1OrDash(12.345)).toBe('12.3%')
+  })
+
+  it('formatPercent1OrDash_Null_ReturnsEmDash', () => {
+    expect(formatPercent1OrDash(null)).toBe('—')
+  })
+
+  it('formatPercent1OrDash_Undefined_ReturnsEmDash', () => {
+    expect(formatPercent1OrDash(undefined)).toBe('—')
   })
 })
 

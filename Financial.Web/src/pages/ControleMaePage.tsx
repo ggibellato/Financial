@@ -25,7 +25,7 @@ import { useSortableRows, DATE_DESC_SORT, type SortAccessor } from '../hooks/use
 import { useFieldError } from '../hooks/useFieldError'
 import { useControleMae } from '../hooks/useControleMae'
 import { confirmThenRun } from '../utils/confirmThenRun'
-import { formatN2, formatShortDate } from '../utils/formatters'
+import { formatN2OrDash, formatShortDate } from '../utils/formatters'
 import './ControleMaePage.css'
 
 function LedgerColumns() {
@@ -59,10 +59,10 @@ function EntryRow({ entry, isDeleting, onEdit, onDelete }: EntryRowProps) {
         <TruncatedText text={entry.note} />
       </DataTableCell>
       <DataTableCell label="BRL" className="data-table__col--numeric">
-        {entry.brlValue !== null ? formatN2(entry.brlValue) : '—'}
+        {formatN2OrDash(entry.brlValue)}
       </DataTableCell>
       <DataTableCell label="GBP" className="data-table__col--numeric">
-        {entry.gbpValue !== null ? formatN2(entry.gbpValue) : '—'}
+        {formatN2OrDash(entry.gbpValue)}
       </DataTableCell>
       <TableCell>
         <div className="data-table__actions-cell">
@@ -339,10 +339,10 @@ export default function ControleMaePage() {
                 Total (all entries)
               </TableCell>
               <DataTableCell label="BRL" className="data-table__col--numeric">
-                {totals ? formatN2(totals.totalBrlValue) : '—'}
+                {formatN2OrDash(totals?.totalBrlValue)}
               </DataTableCell>
               <DataTableCell label="GBP" className="data-table__col--numeric">
-                {totals ? formatN2(totals.totalGbpValue) : '—'}
+                {formatN2OrDash(totals?.totalGbpValue)}
               </DataTableCell>
               <TableCell />
             </TableRow>
