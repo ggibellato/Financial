@@ -142,7 +142,7 @@ R$140 and £20 are the same debt in two currencies (approximately equal because 
   - The income itself always lands in one bank. A bank is required for an income that splits to the reserve; an income without a split keeps the bank optional, as today.
   - Editing the income recalculates the deposit, its pot split and its funding lines; if hand-split lines no longer add up, the user is asked to adjust them. Deleting the income removes everything linked to it.
   - A manual deposit (no income behind it) works the same way, with the user choosing amount and date. It may also have **no funding lines at all**, for money that comes from outside CashFlow (e.g. moved from an investment straight into the pots): the pots are credited and no bank expense is written, so it does not count in the Pots account's category total.
-- The user no longer records the deposit expense by hand; the deposit creates it.
+- Deposits no longer need a separate step: today, after the pots are credited, the "Reserva" expense on the sending bank is also added by hand; now the deposit writes that expense itself. Manual deposits (from banks or from outside CashFlow) and withdrawals stay available on the Pots account.
 
 ### Testing capabilities
 
@@ -167,7 +167,7 @@ One account screen, the same shape for every template:
 | Pots | Deposit into pots (from one or more banks, or none), withdraw from a pot (optionally via a bank), manage pots |
 | Settlement | Add entry (who paid, currency), settle (zero the balance, at any time) |
 
-**Pay recurring bill** (bank): lists unpaid UK recurring bills with this bank pre-selected and records the expense + Paid status through the existing `POST {id}/paid` (`MensaisService.MarkBillPaidAsync`). The Mensais overview screen keeps paying by due date too.
+**Pay recurring bill** (bank): lists **all** unpaid UK recurring bills (a bill has no fixed bank; the bank is chosen at each payment) and pays the chosen one **from this bank**, recording the expense + Paid status through the existing `POST {id}/paid` (`MensaisService.MarkBillPaidAsync`). The Mensais overview screen keeps paying by due date too, with the bank chosen there.
 
 Rules:
 
@@ -208,8 +208,8 @@ The user chose the full refactor over a lighter two-feature route (Settlement su
 
 ## Expected outcome
 
-- A new account from an existing template (bank, card, Pots, Settlement) needs **no code**; it appears in the account list and in any group it is added to.
-- New today: multiple Settlement and Pots accounts; custom groups with summaries.
+- A new account from an existing template (bank, card, Pots, Settlement) needs **no code**; it appears in the account list. A new bank or card also joins the default group automatically, as on today's main page; Pots and Settlement accounts do not.
+- New today: multiple Settlement and Pots accounts; account groups backed by one server-side summary (this project ships the default group; custom groups come with the future group screens).
 - Already possible today and unchanged: new banks and cards.
 - A new **template made only of existing capabilities** (e.g. a savings account = bank without categories) is one entry in the code's template table, with no new behaviour code; it could become user-defined later (see Future features).
 - A new **capability** (e.g. loan interest) needs code: the capability, its tests, and its screens. It only adds transactions, so the shared balance calculation, groups and summaries pick it up without touching other capabilities.
@@ -230,15 +230,22 @@ Excluding F00, roughly the same amount of code overall, possibly slightly more d
 - **Group settlements** (e.g. a family trip: 4 people, BRL + GBP + EUR): each expense shared among some participants, each person's balance kept **per currency without conversion**, and a final step suggesting the simplest set of payments to square everyone up. F04's explicit participants, "paid by" and currency are the foundation for it.
 - **Recurring-bill defaults**: when a bill is paid, store the bank and category used and pre-fill them next time; if the user changes either, the bill remembers the new choice.
 - **User-defined templates**: each account stores its own capability list, and the user creates and edits templates in the app. Not now, because it needs rules for which capability combinations are valid, a decision on template drift (do existing accounts follow template edits?), rules for changing capabilities on accounts with history, a combination test matrix, and roughly 1–2 extra features (template entity + editor). Upgrade path: move the template table from code into data and add a template editor; services do not change, because they already depend only on capabilities.
+- **Group management screens**: create, edit and reorder account groups, each with its own summary. This project ships only the default group that reproduces today's main page.
+- **Web UI telemetry**, as its own slice or PRD. WPF's client-side telemetry (Serilog file log and OpenTelemetry spans under the service `Financial.App`) went with it in F00, and `Financial.Web` has none, so today only the API is observable. The browser should report at least unhandled errors and failed API calls, ideally user actions correlated with the API's existing traces. Note for that design: the browser cannot send OTLP gRPC to `jaeger:4317`, so it needs OTLP over HTTP with CORS or a relay through the API, and `docker-compose.observability.yml` (today it only configures the API container) changes with it.
 - **Mobile version (investigate React Native).** Look at offering the app on a phone with React Native, reusing what it can from `Financial.Web` (API client and generated types, hooks, formatting) against the same API. To find out: how much of the React code can be shared, whether Fluent UI has a usable React Native option or the mobile UI needs its own component set (CLAUDE.md UI invariant 4 needs an ADR for another UI system), how the phone reaches the self-hosted API (it is only on the local machine today), and whether a responsive web app or PWA covers the need first. This would be a second client, so it needs an ADR revisiting ADR-002 ("do not plan or build a second client").
 
 ## Open points for the PRD
 
-- How groups are managed (create/edit/reorder screens) and whether a default group reproduces today's main page.
-- Account screen UX: layout of header/transactions/actions, how capability-specific panels (card statements, pots, balances in two currencies) sit inside the common shape.
-- **Web UI telemetry is needed.** WPF's client-side telemetry (Serilog file log and OpenTelemetry spans under the service `Financial.App`) went with it in F00, and `Financial.Web` has none, so today only the API is observable. The account-centred UI should be observable from the browser: at least unhandled errors and failed API calls, ideally user actions correlated with the API's existing traces. The PRD decides the scope and whether it is its own slice before F01 or part of F01. Note for that design: the browser cannot send OTLP gRPC to `jaeger:4317`, so it needs OTLP over HTTP with CORS or a relay through the API, and `docker-compose.observability.yml` (today it only configures the API container) changes with it.
-- Where actions that span accounts start (e.g. adding income with a split to pots: from the bank, from the Pots account, or both).
-- Whether old pages stay reachable during F01–F04 (coexistence) and the exact retirement list for F05.
+- **Decided: account screen layout.**
+  - **Choosing an account:** a picker on the account screen, so the user moves between accounts without leaving it.
+  - **Template-specific content:** tabs (e.g. Transactions | Statements for a card, Transactions | Pots for a Pots account); **Transactions** is the default tab.
+  - **How actions open:** still open. The app uses both inline forms and dialogs today; the PRD picks one for the account screen after evaluating both against the Fluent UI v9 guidance (`fluent-ui` skill, `docs/ui/`).
+  - **Transaction period:** one month at a time, as on Monthly today.
+  - **Narrow screens:** browser first. Keep it simple: the layout only has to meet the existing UI rules at narrow widths, with no mobile-specific design, since a mobile version may come later with React Native (see Future features).
+- **Decided: groups.** For now there is one default group that reproduces today's main page: banks and cards join it automatically, Pots and Settlement accounts do not. Screens to create, edit and reorder groups are a future feature.
+- **Decided: actions that span accounts start from both accounts.** For example, adding an income with a split to pots can be started from the bank or from the Pots account.
+- **Decided: old pages stay reachable until F05.** During F01–F04 the per-type pages and the account screen coexist; F05 retires them (the exact retirement list is fixed in the PRD).
+- **Decided: Web UI telemetry is not part of this project.** It is its own slice or PRD (see Future features).
 - **Decided:** an income without a reserve split keeps the bank optional, as today. A manual deposit into the pots may have no bank (money from outside CashFlow, e.g. an investment).
 - **Decided: migrations are forward-only.** Each migration makes the data correct for the new model from now on; past records keep working as they are today and are not rebuilt (e.g. paid card charges stay as bank expenses on their payment date; old Reserva deposits, withdrawal pairs and transfers stay unlinked; existing Mãe entries get "paid by" derived from their sign, and the migration must leave the Mãe BRL and GBP totals exactly as they are today, currently zero).
 - **Resolved (PR #1014): Mensais "UK bill paid → expense" moved to the back end.** `MensaisService.MarkBillPaidAsync(id, RecurringBillMarkPaidDTO)` (`POST {id}/paid`) builds the bank expense and sets the bill to Paid inside one `ApplyAndSaveAsync`, so a half-done result is no longer possible and the UI retry paths are gone. The service rejects an expense for a non-UK bill or a bill already Paid. The front end (`useMensais.markBillPaid`) now only collects the prompt values and make one call; skip sends no expense.
