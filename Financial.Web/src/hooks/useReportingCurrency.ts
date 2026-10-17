@@ -1,55 +1,30 @@
-import { useCallback, useEffect, useReducer } from 'react'
+import { useCallback, useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
+import type { ReportingCurrencySettingDto } from '../api/types'
 import { getErrorMessage } from '../utils/formatters'
+import { useAsyncResource } from './useAsyncResource'
 
-interface ReportingCurrencySetting {
-  currency: string
-  enabled: boolean
-}
-
-interface ReportingCurrencyState {
-  currency: string | null
-  enabled: boolean | null
-  isLoading: boolean
-  error: string | null
-  retryCount: number
+interface SaveState {
   isSaving: boolean
   saveError: string | null
 }
 
-type ReportingCurrencyAction =
-  | { type: 'FETCH_START' }
-  | { type: 'FETCH_SUCCESS'; payload: ReportingCurrencySetting }
-  | { type: 'FETCH_ERROR'; payload: string }
-  | { type: 'RETRY' }
+type SaveAction =
   | { type: 'SAVE_START' }
-  | { type: 'SAVE_SUCCESS'; payload: ReportingCurrencySetting }
+  | { type: 'SAVE_SUCCESS' }
   | { type: 'SAVE_ERROR'; payload: string }
 
-const INITIAL_STATE: ReportingCurrencyState = {
-  currency: null,
-  enabled: null,
-  isLoading: true,
-  error: null,
-  retryCount: 0,
+const INITIAL_SAVE_STATE: SaveState = {
   isSaving: false,
   saveError: null,
 }
 
-function reducer(state: ReportingCurrencyState, action: ReportingCurrencyAction): ReportingCurrencyState {
+function saveReducer(state: SaveState, action: SaveAction): SaveState {
   switch (action.type) {
-    case 'FETCH_START':
-      return { ...state, isLoading: true, error: null }
-    case 'FETCH_SUCCESS':
-      return { ...state, isLoading: false, currency: action.payload.currency, enabled: action.payload.enabled }
-    case 'FETCH_ERROR':
-      return { ...state, isLoading: false, error: action.payload }
-    case 'RETRY':
-      return { ...state, retryCount: state.retryCount + 1 }
     case 'SAVE_START':
       return { ...state, isSaving: true, saveError: null }
     case 'SAVE_SUCCESS':
-      return { ...state, isSaving: false, currency: action.payload.currency, enabled: action.payload.enabled }
+      return { ...state, isSaving: false }
     case 'SAVE_ERROR':
       return { ...state, isSaving: false, saveError: action.payload }
     default:
@@ -70,46 +45,49 @@ export interface ReportingCurrencyData {
 }
 
 export function useReportingCurrency(): ReportingCurrencyData {
-  const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
+  const [saveState, dispatch] = useReducer(saveReducer, INITIAL_SAVE_STATE)
 
-  useEffect(() => {
-    dispatch({ type: 'FETCH_START' })
-    apiClient
-      .getReportingCurrency()
-      .then((setting) => dispatch({ type: 'FETCH_SUCCESS', payload: setting }))
-      .catch((err: unknown) => dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, 'Unable to load the reporting currency setting') }))
-  }, [state.retryCount])
+  const { data: setting, isLoading, error, retry, setData } = useAsyncResource<ReportingCurrencySettingDto>(
+    () => apiClient.getReportingCurrency(),
+    [],
+    'Unable to load the reporting currency setting',
+    { initialLoading: true, keepDataWhileLoading: true },
+  )
 
-  const retry = useCallback(() => dispatch({ type: 'RETRY' }), [])
+  const enabled = setting?.enabled ?? null
 
-  const setCurrency = useCallback(async (currency: string) => {
-    dispatch({ type: 'SAVE_START' })
-    try {
-      const setting = await apiClient.setReportingCurrency({ currency, enabled: state.enabled ?? true })
-      dispatch({ type: 'SAVE_SUCCESS', payload: setting })
-    } catch (err: unknown) {
-      dispatch({ type: 'SAVE_ERROR', payload: getErrorMessage(err, 'Unable to save the reporting currency setting') })
-    }
-  }, [state.enabled])
+  const save = useCallback(
+    async (request: () => Promise<ReportingCurrencySettingDto>) => {
+      dispatch({ type: 'SAVE_START' })
+      try {
+        const saved = await request()
+        setData(() => saved)
+        dispatch({ type: 'SAVE_SUCCESS' })
+      } catch (err: unknown) {
+        dispatch({ type: 'SAVE_ERROR', payload: getErrorMessage(err, 'Unable to save the reporting currency setting') })
+      }
+    },
+    [setData],
+  )
 
-  const setEnabled = useCallback(async (enabled: boolean) => {
-    dispatch({ type: 'SAVE_START' })
-    try {
-      const setting = await apiClient.setReportingCurrencyEnabled({ enabled })
-      dispatch({ type: 'SAVE_SUCCESS', payload: setting })
-    } catch (err: unknown) {
-      dispatch({ type: 'SAVE_ERROR', payload: getErrorMessage(err, 'Unable to save the reporting currency setting') })
-    }
-  }, [])
+  const setCurrency = useCallback(
+    (currency: string) => save(() => apiClient.setReportingCurrency({ currency, enabled: enabled ?? true })),
+    [save, enabled],
+  )
+
+  const setEnabled = useCallback(
+    (nextEnabled: boolean) => save(() => apiClient.setReportingCurrencyEnabled({ enabled: nextEnabled })),
+    [save],
+  )
 
   return {
-    currency: state.currency,
-    enabled: state.enabled,
-    isLoading: state.isLoading,
-    error: state.error,
+    currency: setting?.currency ?? null,
+    enabled,
+    isLoading,
+    error,
     retry,
-    isSaving: state.isSaving,
-    saveError: state.saveError,
+    isSaving: saveState.isSaving,
+    saveError: saveState.saveError,
     setCurrency,
     setEnabled,
   }
