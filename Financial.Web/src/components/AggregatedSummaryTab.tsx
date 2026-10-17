@@ -3,7 +3,7 @@ import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
 import { useAggregatedSummary } from '../hooks/useAggregatedSummary'
 import { useSelectedNode } from '../context/SelectedNodeContext'
-import { formatN2, formatPercentFraction, signClass } from '../utils/formatters'
+import { formatN2, formatN2OrDash, formatPercentFractionOrDash, signClass } from '../utils/formatters'
 import type { AggregatedSummaryDto } from '../api/types'
 import './AggregatedSummaryTab.css'
 
@@ -12,14 +12,6 @@ function incompleteValuationMessage(summary: AggregatedSummaryDto): string | nul
   return summary.marketValue === null
     ? `None of the ${summary.holdingCount} holdings could be valued; returns are withheld.`
     : `${summary.unvaluedHoldingCount} of ${summary.holdingCount} holdings could not be valued; the total is incomplete and returns are withheld.`
-}
-
-function formatConvertedAmount(value: number | null): string {
-  return value === null ? '—' : formatN2(value)
-}
-
-function formatConvertedPercent(value: number | null): string {
-  return value === null ? '—' : formatPercentFraction(value)
 }
 
 export function AggregatedSummaryView({ summary, retry }: { summary: AggregatedSummaryDto; retry: () => void }) {
@@ -57,7 +49,7 @@ export function AggregatedSummaryView({ summary, retry }: { summary: AggregatedS
         <div className="aggregated-summary__field">
           <span className="aggregated-summary__label">Market Value</span>
           <span className="aggregated-summary__value">
-            {summary.marketValue === null ? '—' : formatN2(summary.marketValue)}
+            {formatN2OrDash(summary.marketValue)}
           </span>
         </div>
         <div className="aggregated-summary__field">
@@ -65,7 +57,7 @@ export function AggregatedSummaryView({ summary, retry }: { summary: AggregatedS
           <span
             className={`aggregated-summary__value ${summary.priceOnlyReturn === null ? '' : signClass(summary.priceOnlyReturn, 'aggregated-summary__value')}`}
           >
-            {summary.priceOnlyReturn === null ? '—' : formatPercentFraction(summary.priceOnlyReturn)}
+            {formatPercentFractionOrDash(summary.priceOnlyReturn)}
           </span>
         </div>
         <div className="aggregated-summary__field">
@@ -73,7 +65,7 @@ export function AggregatedSummaryView({ summary, retry }: { summary: AggregatedS
           <span
             className={`aggregated-summary__value ${summary.totalReturn === null ? '' : signClass(summary.totalReturn, 'aggregated-summary__value')}`}
           >
-            {summary.totalReturn === null ? '—' : formatPercentFraction(summary.totalReturn)}
+            {formatPercentFractionOrDash(summary.totalReturn)}
           </span>
         </div>
         <div className="aggregated-summary__field">
@@ -81,7 +73,7 @@ export function AggregatedSummaryView({ summary, retry }: { summary: AggregatedS
           <span
             className={`aggregated-summary__value ${summary.totalReturnNetOfTax === null ? '' : signClass(summary.totalReturnNetOfTax, 'aggregated-summary__value')}`}
           >
-            {summary.totalReturnNetOfTax === null ? '—' : formatPercentFraction(summary.totalReturnNetOfTax)}
+            {formatPercentFractionOrDash(summary.totalReturnNetOfTax)}
           </span>
         </div>
       </div>
@@ -106,14 +98,14 @@ export function AggregatedSummaryView({ summary, retry }: { summary: AggregatedS
           <div className="aggregated-summary__grid">
             <div className="aggregated-summary__field">
               <span className="aggregated-summary__label">Market Value (converted to {summary.reportingCurrency})</span>
-              <span className="aggregated-summary__value">{formatConvertedAmount(summary.convertedMarketValue)}</span>
+              <span className="aggregated-summary__value">{formatN2OrDash(summary.convertedMarketValue)}</span>
             </div>
             <div className="aggregated-summary__field">
               <span className="aggregated-summary__label">Invested (converted to {summary.reportingCurrency})</span>
               <span
                 className={`aggregated-summary__value ${summary.convertedInvested === null ? '' : signClass(summary.convertedInvested, 'aggregated-summary__value')}`}
               >
-                {formatConvertedAmount(summary.convertedInvested)}
+                {formatN2OrDash(summary.convertedInvested)}
               </span>
             </div>
             <div className="aggregated-summary__field">
@@ -121,7 +113,7 @@ export function AggregatedSummaryView({ summary, retry }: { summary: AggregatedS
               <span
                 className={`aggregated-summary__value ${summary.convertedUnrealisedGainLoss === null ? '' : signClass(summary.convertedUnrealisedGainLoss, 'aggregated-summary__value')}`}
               >
-                {formatConvertedAmount(summary.convertedUnrealisedGainLoss)}
+                {formatN2OrDash(summary.convertedUnrealisedGainLoss)}
               </span>
             </div>
             <div className="aggregated-summary__field">
@@ -129,7 +121,7 @@ export function AggregatedSummaryView({ summary, retry }: { summary: AggregatedS
               <span
                 className={`aggregated-summary__value ${summary.convertedTotalReturn === null ? '' : signClass(summary.convertedTotalReturn, 'aggregated-summary__value')}`}
               >
-                {formatConvertedPercent(summary.convertedTotalReturn)}
+                {formatPercentFractionOrDash(summary.convertedTotalReturn)}
               </span>
             </div>
             <div className="aggregated-summary__field">
@@ -137,7 +129,7 @@ export function AggregatedSummaryView({ summary, retry }: { summary: AggregatedS
               <span
                 className={`aggregated-summary__value ${summary.convertedTotalReturnNetOfTax === null ? '' : signClass(summary.convertedTotalReturnNetOfTax, 'aggregated-summary__value')}`}
               >
-                {formatConvertedPercent(summary.convertedTotalReturnNetOfTax)}
+                {formatPercentFractionOrDash(summary.convertedTotalReturnNetOfTax)}
               </span>
             </div>
           </div>

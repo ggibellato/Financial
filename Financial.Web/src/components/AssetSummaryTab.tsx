@@ -5,15 +5,17 @@ import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
 import { useAssetSummary } from '../hooks/useAssetSummary'
 import { useSelectedNode } from '../context/SelectedNodeContext'
-import { formatN2, formatN8, formatPercentFraction, formatShortDate, formatShortDateUtc, pad, signClass } from '../utils/formatters'
+import {
+  formatDateTime,
+  formatN2,
+  formatN2OrDash,
+  formatN8,
+  formatPercentFraction,
+  formatPercentFractionOrDash,
+  formatShortDateUtc,
+  signClass,
+} from '../utils/formatters'
 import './AssetSummaryTab.css'
-
-function formatDateTime(isoString: string | null): string {
-  if (!isoString) return '—'
-  const d = new Date(isoString)
-  if (Number.isNaN(d.getTime())) return isoString
-  return `${formatShortDate(isoString)} ${pad(d.getHours())}:${pad(d.getMinutes())}`
-}
 
 /** A live quote carries a time of day; a price read from Price History carries only a date, and
  * is read as UTC so the reader's time zone cannot shift it onto the previous day. */
@@ -149,13 +151,13 @@ export default function AssetSummaryTab() {
             <div className="asset-summary__field">
               <span className="asset-summary__label">XIRR</span>
               <span className={`asset-summary__value ${xirrWithCreditsClass}`}>
-                {xirrWithCredits === null ? '—' : formatPercentFraction(xirrWithCredits)}
+                {formatPercentFractionOrDash(xirrWithCredits)}
               </span>
             </div>
             <div className="asset-summary__field">
               <span className="asset-summary__label">XIRR (Shares only)</span>
               <span className={`asset-summary__value ${xirrClass}`}>
-                {xirr === null ? '—' : formatPercentFraction(xirr)}
+                {formatPercentFractionOrDash(xirr)}
               </span>
             </div>
             <div className="asset-summary__field">
@@ -216,7 +218,7 @@ export default function AssetSummaryTab() {
               <>
                 <div className="asset-summary__field">
                   <span className="asset-summary__label">Total Current Value</span>
-                  <span className="asset-summary__value">{marketValue === null ? '—' : formatN2(marketValue)}</span>
+                  <span className="asset-summary__value">{formatN2OrDash(marketValue)}</span>
                 </div>
                 <div className="asset-summary__field">
                   <span className="asset-summary__label">Result %</span>
@@ -228,7 +230,7 @@ export default function AssetSummaryTab() {
                 <div className="asset-summary__field">
                   <span className="asset-summary__label">Total Current + Credits</span>
                   <span className="asset-summary__value">
-                    {totalCurrentPlusCredits === null ? '—' : formatN2(totalCurrentPlusCredits)}
+                    {formatN2OrDash(totalCurrentPlusCredits)}
                   </span>
                 </div>
                 <div className="asset-summary__field">
@@ -241,13 +243,13 @@ export default function AssetSummaryTab() {
                 <div className="asset-summary__field">
                   <span className="asset-summary__label">XIRR</span>
                   <span className={`asset-summary__value ${xirrClass}`}>
-                    {xirr === null ? '—' : formatPercentFraction(xirr)}
+                    {formatPercentFractionOrDash(xirr)}
                   </span>
                 </div>
                 <div className="asset-summary__field">
                   <span className="asset-summary__label">XIRR w/ Credits</span>
                   <span className={`asset-summary__value ${xirrWithCreditsClass}`}>
-                    {xirrWithCredits === null ? '—' : formatPercentFraction(xirrWithCredits)}
+                    {formatPercentFractionOrDash(xirrWithCredits)}
                   </span>
                 </div>
               </>
