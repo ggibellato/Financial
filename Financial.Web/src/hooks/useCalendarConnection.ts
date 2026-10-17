@@ -2,22 +2,15 @@ import { useCallback, useEffect, useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { CalendarConnectionStatusDto } from '../api/types'
 import { getErrorMessage } from '../utils/formatters'
+import { useAsyncResource } from './useAsyncResource'
 
 interface CalendarConnectionState {
-  status: CalendarConnectionStatusDto | null
-  isLoading: boolean
-  error: string | null
-  retryCount: number
   isConnecting: boolean
   isDisconnecting: boolean
   disconnectError: string | null
 }
 
 type CalendarConnectionAction =
-  | { type: 'FETCH_START' }
-  | { type: 'FETCH_SUCCESS'; payload: CalendarConnectionStatusDto }
-  | { type: 'FETCH_ERROR'; payload: string }
-  | { type: 'RETRY' }
   | { type: 'CONNECT_START' }
   | { type: 'CONNECT_COMPLETE' }
   | { type: 'DISCONNECT_START' }
@@ -25,10 +18,6 @@ type CalendarConnectionAction =
   | { type: 'DISCONNECT_ERROR'; payload: string }
 
 const INITIAL_STATE: CalendarConnectionState = {
-  status: null,
-  isLoading: true,
-  error: null,
-  retryCount: 0,
   isConnecting: false,
   isDisconnecting: false,
   disconnectError: null,
@@ -36,14 +25,6 @@ const INITIAL_STATE: CalendarConnectionState = {
 
 function reducer(state: CalendarConnectionState, action: CalendarConnectionAction): CalendarConnectionState {
   switch (action.type) {
-    case 'FETCH_START':
-      return { ...state, isLoading: true, error: null }
-    case 'FETCH_SUCCESS':
-      return { ...state, isLoading: false, status: action.payload }
-    case 'FETCH_ERROR':
-      return { ...state, isLoading: false, error: action.payload }
-    case 'RETRY':
-      return { ...state, retryCount: state.retryCount + 1 }
     case 'CONNECT_START':
       return { ...state, isConnecting: true }
     case 'CONNECT_COMPLETE':
@@ -74,22 +55,19 @@ export interface CalendarConnectionData {
 export function useCalendarConnection(): CalendarConnectionData {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
-  const fetchStatus = useCallback(() => {
-    return apiClient
-      .getCalendarStatus()
-      .then((status) => dispatch({ type: 'FETCH_SUCCESS', payload: status }))
-      .catch((err: unknown) => {
-        dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, 'Unable to load calendar connection status') })
-      })
-  }, [])
-
-  useEffect(() => {
-    dispatch({ type: 'FETCH_START' })
-    void fetchStatus()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.retryCount])
-
-  const retry = useCallback(() => dispatch({ type: 'RETRY' }), [])
+  const {
+    data: status,
+    isLoading,
+    error,
+    retry,
+    refresh,
+    setData,
+  } = useAsyncResource<CalendarConnectionStatusDto>(
+    () => apiClient.getCalendarStatus(),
+    [],
+    'Unable to load calendar connection status',
+    { initialLoading: true, keepDataWhileLoading: true },
+  )
 
   const connect = useCallback(() => {
     window.open(apiClient.buildCalendarConnectUrl(), '_blank', 'noopener,noreferrer')
@@ -105,9 +83,9 @@ export function useCalendarConnection(): CalendarConnectionData {
     const onFocus = () => {
       void apiClient
         .getCalendarStatus()
-        .then((status) => {
-          dispatch({ type: 'FETCH_SUCCESS', payload: status })
-          if (status.connected || status.disconnectReason) {
+        .then((latestStatus) => {
+          setData(() => latestStatus)
+          if (latestStatus.connected || latestStatus.disconnectReason) {
             dispatch({ type: 'CONNECT_COMPLETE' })
           }
         })
@@ -118,7 +96,7 @@ export function useCalendarConnection(): CalendarConnectionData {
 
     window.addEventListener('focus', onFocus)
     return () => window.removeEventListener('focus', onFocus)
-  }, [state.isConnecting])
+  }, [state.isConnecting, setData])
 
   const disconnect = useCallback(async () => {
     dispatch({ type: 'DISCONNECT_START' })
@@ -126,17 +104,17 @@ export function useCalendarConnection(): CalendarConnectionData {
     try {
       await apiClient.disconnectCalendar()
       dispatch({ type: 'DISCONNECT_SUCCESS' })
-      await fetchStatus()
+      await refresh()
     } catch (err: unknown) {
       dispatch({ type: 'DISCONNECT_ERROR', payload: getErrorMessage(err, 'Failed to disconnect Google Calendar') })
       throw err
     }
-  }, [fetchStatus])
+  }, [refresh])
 
   return {
-    status: state.status,
-    isLoading: state.isLoading,
-    error: state.error,
+    status,
+    isLoading,
+    error,
     retry,
     isConnecting: state.isConnecting,
     connect,
