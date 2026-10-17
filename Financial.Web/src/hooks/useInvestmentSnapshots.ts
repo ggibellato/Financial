@@ -1,19 +1,12 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { InvestmentSnapshotDto } from '../api/types'
-import {
-  currentYearMonth,
-  formatMonthInputValue,
-  getErrorMessage,
-  parseMonthInputValue,
-  parseValidatedNumber,
-} from '../utils/formatters'
+import { currentYearMonth, getErrorMessage, parseValidatedNumber } from '../utils/formatters'
+import { useMonthSelection } from './useMonthSelection'
 
 export type SnapshotEditField = 'editValue'
 
 interface InvestmentSnapshotsState {
-  year: number
-  month: number
   snapshots: InvestmentSnapshotDto[]
   isLoading: boolean
   error: string | null
@@ -26,7 +19,6 @@ interface InvestmentSnapshotsState {
 }
 
 type InvestmentSnapshotsAction =
-  | { type: 'SET_MONTH'; payload: { year: number; month: number } }
   | { type: 'FETCH_START' }
   | { type: 'FETCH_SUCCESS'; payload: InvestmentSnapshotDto[] }
   | { type: 'FETCH_ERROR'; payload: string }
@@ -38,11 +30,9 @@ type InvestmentSnapshotsAction =
   | { type: 'SAVE_SUCCESS' }
   | { type: 'SAVE_ERROR'; payload: { message: string | null; fields: Partial<Record<SnapshotEditField, string>> } }
 
-const { year: DEFAULT_YEAR, month: DEFAULT_MONTH } = currentYearMonth()
+const DEFAULT_MONTH = currentYearMonth()
 
 const INITIAL_STATE: InvestmentSnapshotsState = {
-  year: DEFAULT_YEAR,
-  month: DEFAULT_MONTH,
   snapshots: [],
   isLoading: true,
   error: null,
@@ -56,8 +46,6 @@ const INITIAL_STATE: InvestmentSnapshotsState = {
 
 function reducer(state: InvestmentSnapshotsState, action: InvestmentSnapshotsAction): InvestmentSnapshotsState {
   switch (action.type) {
-    case 'SET_MONTH':
-      return { ...state, year: action.payload.year, month: action.payload.month }
     case 'FETCH_START':
       return { ...state, isLoading: true, error: null }
     case 'FETCH_SUCCESS':
@@ -112,6 +100,7 @@ export interface InvestmentSnapshotsData {
 }
 
 export function useInvestmentSnapshots(): InvestmentSnapshotsData {
+  const { year, month, monthInputValue, setMonthInputValue } = useMonthSelection(DEFAULT_MONTH)
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
   const fetchSnapshots = useCallback((year: number, month: number) => {
@@ -128,29 +117,21 @@ export function useInvestmentSnapshots(): InvestmentSnapshotsData {
 
   useEffect(() => {
     dispatch({ type: 'FETCH_START' })
-    void fetchSnapshots(state.year, state.month)
+    void fetchSnapshots(year, month)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.year, state.month, state.retryCount])
+  }, [year, month, state.retryCount])
 
   // Re-fetches after a mutation without flipping isLoading, so the table's own sort state
   // (owned by useSortableRows in the page component) survives the refresh.
   const refreshSilently = useCallback(
-    () => fetchSnapshots(state.year, state.month),
-    [fetchSnapshots, state.year, state.month],
+    () => fetchSnapshots(year, month),
+    [fetchSnapshots, year, month],
   )
 
   const totalValue = useMemo(
     () => state.snapshots.reduce((sum, s) => sum + (s.isLiability ? -s.value : s.value), 0),
     [state.snapshots],
   )
-
-  const monthInputValue = formatMonthInputValue(state.year, state.month)
-
-  const setMonthInputValue = useCallback((value: string) => {
-    const parsed = parseMonthInputValue(value)
-    if (!parsed) return
-    dispatch({ type: 'SET_MONTH', payload: parsed })
-  }, [])
 
   const retry = useCallback(() => dispatch({ type: 'RETRY' }), [])
 
@@ -195,8 +176,8 @@ export function useInvestmentSnapshots(): InvestmentSnapshotsData {
   }
 
   return {
-    year: state.year,
-    month: state.month,
+    year,
+    month,
     monthInputValue,
     setMonthInputValue,
     snapshots: state.snapshots,

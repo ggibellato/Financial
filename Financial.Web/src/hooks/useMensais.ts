@@ -1,14 +1,9 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { BankDto, CategoryDto, RecurringBillCreateDto, RecurringBillDto } from '../api/types'
-import {
-  currentYearMonth,
-  formatMonthInputValue,
-  getErrorMessage,
-  parseMonthInputValue,
-  parseValidatedNumber,
-} from '../utils/formatters'
+import { currentYearMonth, getErrorMessage, parseValidatedNumber } from '../utils/formatters'
 import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
+import { useMonthSelection } from './useMonthSelection'
 
 export type EditField = 'editStatus' | 'editValue'
 export type AddField = 'newDueDay' | 'newDescription' | 'newValue' | 'newArea' | 'newNote'
@@ -37,8 +32,6 @@ function defaultArea(): string {
 }
 
 interface MensaisState {
-  displayYear: number
-  displayMonth: number
   bills: RecurringBillDto[]
   banks: BankDto[]
   categories: CategoryDto[]
@@ -70,7 +63,6 @@ interface MensaisState {
 }
 
 type MensaisAction =
-  | { type: 'SET_DISPLAY_MONTH'; payload: { year: number; month: number } }
   | { type: 'FETCH_START' }
   | { type: 'FETCH_SUCCESS'; payload: { bills: RecurringBillDto[]; banks: BankDto[]; categories: CategoryDto[] } }
   | { type: 'FETCH_ERROR'; payload: string }
@@ -99,11 +91,9 @@ type MensaisAction =
   | { type: 'OPEN_EXPENSE_PROMPT'; payload: RecurringBillDto }
   | { type: 'CLOSE_EXPENSE_PROMPT' }
 
-const { year: DEFAULT_YEAR, month: DEFAULT_MONTH } = currentYearMonth()
+const DEFAULT_MONTH = currentYearMonth()
 
 const INITIAL_STATE: MensaisState = {
-  displayYear: DEFAULT_YEAR,
-  displayMonth: DEFAULT_MONTH,
   bills: [],
   banks: [],
   categories: [],
@@ -133,8 +123,6 @@ const INITIAL_STATE: MensaisState = {
 
 function reducer(state: MensaisState, action: MensaisAction): MensaisState {
   switch (action.type) {
-    case 'SET_DISPLAY_MONTH':
-      return { ...state, displayYear: action.payload.year, displayMonth: action.payload.month }
     case 'FETCH_START':
       return { ...state, isLoading: true, error: null }
     case 'FETCH_SUCCESS':
@@ -261,6 +249,7 @@ export interface MensaisData {
 }
 
 export function useMensais(): MensaisData {
+  const { monthInputValue, setMonthInputValue } = useMonthSelection(DEFAULT_MONTH)
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
   const fetchMensaisData = useCallback(() => {
@@ -280,14 +269,6 @@ export function useMensais(): MensaisData {
   // Re-fetches after a mutation without flipping isLoading, so the bills grid's own sort/filter
   // state survives the refresh.
   const refreshSilently = useCallback(() => fetchMensaisData(), [fetchMensaisData])
-
-  const monthInputValue = formatMonthInputValue(state.displayYear, state.displayMonth)
-
-  const setMonthInputValue = useCallback((value: string) => {
-    const parsed = parseMonthInputValue(value)
-    if (!parsed) return
-    dispatch({ type: 'SET_DISPLAY_MONTH', payload: parsed })
-  }, [])
 
   const retry = useCallback(() => dispatch({ type: 'RETRY' }), [])
 
