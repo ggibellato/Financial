@@ -1,55 +1,7 @@
-import { useCallback, useEffect, useReducer } from 'react'
+import { useCallback } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { RecurringBillCreateDto, RecurringBillDto, RecurringBillUpdateDto } from '../api/types'
-import { getErrorMessage } from '../utils/formatters'
-
-interface RecurringBillsState {
-  recurringBills: RecurringBillDto[]
-  isLoading: boolean
-  error: string | null
-  retryCount: number
-  deletingId: string | null
-  deleteError: string | null
-}
-
-type RecurringBillsAction =
-  | { type: 'FETCH_START' }
-  | { type: 'FETCH_SUCCESS'; payload: RecurringBillDto[] }
-  | { type: 'FETCH_ERROR'; payload: string }
-  | { type: 'RETRY' }
-  | { type: 'DELETE_START'; payload: string }
-  | { type: 'DELETE_SUCCESS' }
-  | { type: 'DELETE_ERROR'; payload: string }
-
-const INITIAL_STATE: RecurringBillsState = {
-  recurringBills: [],
-  isLoading: true,
-  error: null,
-  retryCount: 0,
-  deletingId: null,
-  deleteError: null,
-}
-
-function reducer(state: RecurringBillsState, action: RecurringBillsAction): RecurringBillsState {
-  switch (action.type) {
-    case 'FETCH_START':
-      return { ...state, isLoading: true, error: null }
-    case 'FETCH_SUCCESS':
-      return { ...state, isLoading: false, recurringBills: action.payload }
-    case 'FETCH_ERROR':
-      return { ...state, isLoading: false, error: action.payload }
-    case 'RETRY':
-      return { ...state, retryCount: state.retryCount + 1 }
-    case 'DELETE_START':
-      return { ...state, deletingId: action.payload, deleteError: null }
-    case 'DELETE_SUCCESS':
-      return { ...state, deletingId: null }
-    case 'DELETE_ERROR':
-      return { ...state, deletingId: null, deleteError: action.payload }
-    default:
-      return state
-  }
-}
+import { useCrudResource } from './useCrudResource'
 
 export interface RecurringBillsData {
   recurringBills: RecurringBillDto[]
@@ -63,56 +15,40 @@ export interface RecurringBillsData {
   deleteRecurringBill: (id: string) => void
 }
 
+const NO_RECURRING_BILLS: RecurringBillDto[] = []
+
 export function useRecurringBills(): RecurringBillsData {
-  const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
+  const resource = useCrudResource({
+    load: () => apiClient.getMensaisBills(),
+    initialData: NO_RECURRING_BILLS,
+    loadErrorMessage: 'Unable to load recurring bills',
+  })
+  const { mutateAndRefresh, runPendingMutation } = resource
 
-  useEffect(() => {
-    dispatch({ type: 'FETCH_START' })
-    void apiClient
-      .getMensaisBills()
-      .then((recurringBills) => dispatch({ type: 'FETCH_SUCCESS', payload: recurringBills }))
-      .catch((err: unknown) => {
-        dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, 'Unable to load recurring bills') })
-      })
-  }, [state.retryCount])
+  const createRecurringBill = useCallback(
+    (request: RecurringBillCreateDto) => mutateAndRefresh(() => apiClient.createMensaisBill(request)),
+    [mutateAndRefresh],
+  )
 
-  const retry = useCallback(() => dispatch({ type: 'RETRY' }), [])
+  const updateRecurringBill = useCallback(
+    (id: string, request: RecurringBillUpdateDto) => mutateAndRefresh(() => apiClient.updateMensaisBill(id, request)),
+    [mutateAndRefresh],
+  )
 
-  const createRecurringBill = useCallback(async (request: RecurringBillCreateDto) => {
-    const created = await apiClient.createMensaisBill(request)
-    dispatch({ type: 'RETRY' })
-    return created
-  }, [])
-
-  const updateRecurringBill = useCallback(async (id: string, request: RecurringBillUpdateDto) => {
-    const updated = await apiClient.updateMensaisBill(id, request)
-    dispatch({ type: 'RETRY' })
-    return updated
-  }, [])
-
-  const deleteRecurringBill = useCallback((id: string) => {
-    dispatch({ type: 'DELETE_START', payload: id })
-
-    void apiClient
-      .deleteMensaisBill(id)
-      .then(() => {
-        dispatch({ type: 'DELETE_SUCCESS' })
-        dispatch({ type: 'RETRY' })
-      })
-      .catch((err: unknown) => {
-        dispatch({ type: 'DELETE_ERROR', payload: getErrorMessage(err, 'Failed to delete recurring bill') })
-      })
-  }, [])
+  const deleteRecurringBill = useCallback(
+    (id: string) => runPendingMutation(id, () => apiClient.deleteMensaisBill(id), 'Failed to delete recurring bill'),
+    [runPendingMutation],
+  )
 
   return {
-    recurringBills: state.recurringBills,
-    isLoading: state.isLoading,
-    error: state.error,
-    retry,
+    recurringBills: resource.data,
+    isLoading: resource.isLoading,
+    error: resource.error,
+    retry: resource.retry,
     createRecurringBill,
     updateRecurringBill,
-    deletingId: state.deletingId,
-    deleteError: state.deleteError,
+    deletingId: resource.pendingId,
+    deleteError: resource.pendingError,
     deleteRecurringBill,
   }
 }
