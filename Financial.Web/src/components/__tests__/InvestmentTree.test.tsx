@@ -93,6 +93,7 @@ function SelectedNodeDisplay() {
       <div data-testid="selected">
         {selectedNode.nodeType}:{selectedNode.brokerName}:{selectedNode.portfolioName ?? ''}:{selectedNode.assetName ?? ''}
       </div>
+      <div data-testid="selected-asset-class">{selectedNode.assetClass ?? 'absent'}</div>
       <div data-testid="selected-quantity">{selectedNode.quantity ?? 'absent'}</div>
       <div data-testid="selected-asset-count">{selectedNode.assetCount ?? 'absent'}</div>
       <div data-testid="selected-pending-corporate-action-id">{selectedNode.pendingCorporateActionId ?? 'absent'}</div>
@@ -475,6 +476,29 @@ describe('InvestmentTree', () => {
     await screen.findByText('XPI (BRL)')
     const option = screen.getByRole('option', { name: 'Cryptocurrency' }) as HTMLOptionElement
     expect(option.value).toBe('9')
+  })
+
+  it('asset class filter shows Private Credit option', async () => {
+    renderTree()
+    await screen.findByText('XPI (BRL)')
+    const option = screen.getByRole('option', { name: 'Private Credit' }) as HTMLOptionElement
+    expect(option.value).toBe('10')
+  })
+
+  it.each([
+    [2, 'RealEstate'],
+    [10, 'PrivateCredit'],
+  ])('selecting an asset of class %i passes the server class name %s', async (assetClass, className) => {
+    renderTree({
+      nodeType: 'Investments',
+      displayName: 'Investments',
+      metadata: {},
+      children: [makeBroker('XPI', 'BRL', [makePortfolio('Mix', [makeAsset('HGLG11', true, assetClass)])])],
+    })
+    await screen.findByText('XPI (BRL)')
+    fireEvent.click(screen.getByText('Mix (1 assets)'))
+    fireEvent.click(screen.getByText('HGLG11'))
+    expect(screen.getByTestId('selected-asset-class').textContent).toBe(className)
   })
 
   it('asset class filter hides non-matching assets when Cryptocurrency selected', async () => {
