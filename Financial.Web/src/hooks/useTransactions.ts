@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
+import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type {
   AssetDetailsDto,
@@ -16,6 +16,7 @@ import { isAllocationExact } from '../utils/lotAllocation'
 import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
 import { openInlineForm, reduceInlineForm, type InlineFormAction } from './inlineFormSlice'
 import { createSelectionPrefsStore } from './selectionPrefsStore'
+import { useAsyncResource } from './useAsyncResource'
 
 export type TransactionFormField =
   | 'formDate'
@@ -277,6 +278,9 @@ export interface TransactionsData {
   nodeType: string | undefined
   /** Whether the selected form type has a quantity effect - when false, Quantity/UnitPrice are not required (FR-022). */
   formTypeHasQuantityEffect: boolean
+  typeEffectsLoaded: boolean
+  typeEffectsError: string | null
+  retryTypeEffects: () => void
   /** Whether a SpecificId lot picker must be shown and satisfied before this sale can be saved -
    * only true when entering (not editing) a Sell/Redemption against a SpecificId broker. */
   requiresLotAllocation: boolean
@@ -292,11 +296,15 @@ export interface TransactionsData {
 export function useTransactions(): TransactionsData {
   const { selectedNode, scope } = useSelectedNode()
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
-  const [typeEffects, setTypeEffects] = useState<TransactionTypeEffectDto[]>([])
-
-  useEffect(() => {
-    void apiClient.getTransactionTypeEffects().then(setTypeEffects).catch(() => setTypeEffects([]))
-  }, [])
+  const {
+    data: typeEffects,
+    error: typeEffectsError,
+    retry: retryTypeEffects,
+  } = useAsyncResource<TransactionTypeEffectDto[]>(
+    () => apiClient.getTransactionTypeEffects(),
+    [],
+    'Unable to load the transaction types',
+  )
 
   useEffect(() => {
     if (!selectedNode) {
@@ -397,7 +405,7 @@ export function useTransactions(): TransactionsData {
   }, [])
 
   const formTypeHasQuantityEffect = useMemo(
-    () => typeEffects.find((e) => e.type === state.formType)?.quantityEffect !== 'None',
+    () => typeEffects?.find((e) => e.type === state.formType)?.quantityEffect !== 'None',
     [typeEffects, state.formType],
   )
 
@@ -414,7 +422,7 @@ export function useTransactions(): TransactionsData {
   }, [])
 
   const saveForm = useCallback(() => {
-    if (!selectedNode?.portfolioName || !selectedNode.assetName) return
+    if (!selectedNode?.portfolioName || !selectedNode.assetName || !typeEffects) return
 
     const { formDate, formType, formQuantity, formUnitPrice, formFees, formWithheld, formLotAllocations, editingId } =
       state
@@ -548,6 +556,9 @@ export function useTransactions(): TransactionsData {
     saveErrorFields: state.saveErrorFields,
     deleteError: state.deleteError,
     formTypeHasQuantityEffect,
+    typeEffectsLoaded: typeEffects !== null,
+    typeEffectsError,
+    retryTypeEffects,
     requiresLotAllocation,
     nodeType: selectedNode?.nodeType,
     showNewForm,
