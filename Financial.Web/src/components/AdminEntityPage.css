@@ -1,4 +1,4 @@
-.banks-page {
+.admin-entity-page {
   padding: 20px;
   display: flex;
   flex-direction: column;
@@ -8,12 +8,18 @@
   overflow: auto;
 }
 
-.banks-page__header {
+.admin-entity-page__header {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.banks-page__empty {
+.admin-entity-page__filters {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.admin-entity-page__empty {
   color: var(--text, #333);
 }

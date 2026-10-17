@@ -150,7 +150,7 @@ public class ReserveServiceTests
     }
 
     [Fact]
-    public async Task PostIncomeSplitAsync_WhenSaveFails_RollsBackAllFourMovements()
+    public async Task PostIncomeSplitAsync_WhenSaveFails_RecordsFailedSpanAndRethrows()
     {
         var repository = new StubCashFlowRepository(seedDefaultReserveBuckets: true) { ThrowOnNextSave = true };
         var service = CreateService(repository);
@@ -158,7 +158,7 @@ public class ReserveServiceTests
         var act = async () => await service.PostIncomeSplitAsync(ValidIncomeSplitRequest());
 
         await act.Should().ThrowAsync<InvalidOperationException>();
-        repository.ReserveMovements.Should().BeEmpty();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.ReserveService.PostIncomeSplit");
     }
 
     [Fact]
@@ -492,7 +492,7 @@ public class ReserveServiceTests
     }
 
     [Fact]
-    public async Task PostWithdrawalAsync_WhenSaveFails_RollsBackTheMovement()
+    public async Task PostWithdrawalAsync_WhenSaveFails_RecordsFailedSpanAndRethrows()
     {
         _repository.Seed("Investimento", 100m);
         _repository.ThrowOnNextSave = true;
@@ -507,7 +507,7 @@ public class ReserveServiceTests
         });
 
         await act.Should().ThrowAsync<InvalidOperationException>();
-        _repository.ReserveMovements.Should().ContainSingle("the withdrawal itself was rolled back, leaving only the seed movement");
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.ReserveService.PostWithdrawal");
     }
 
     [Fact]
@@ -669,18 +669,6 @@ public class ReserveServiceTests
 
         await act.Should().ThrowAsync<ArgumentException>().WithMessage("*must not exceed*");
         AssertNothingSaved(repository);
-    }
-
-    [Fact]
-    public async Task PostWithdrawalAsync_BankPathSaveFails_RollsBackMovementAndBothExpenses()
-    {
-        var repository = CreateBankRepository();
-        repository.ThrowOnNextSave = true;
-
-        var act = async () => await CreateService(repository).PostWithdrawalAsync(BankWithdrawal(repository));
-
-        await act.Should().ThrowAsync<InvalidOperationException>();
-        AssertNothingSaved(repository, movements: 1);
     }
 
     [Fact]

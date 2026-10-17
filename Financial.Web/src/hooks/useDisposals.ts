@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { DisposalRecordDto } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
+import { isAssetSelection } from '../utils/assetSelection'
 import { useAsyncResource } from './useAsyncResource'
 
 export const ALL_TAX_YEARS = 'All years'
@@ -69,12 +70,7 @@ export function useDisposals(): DisposalsData {
 
   const { data, isLoading, error, retry: retryFetch } = useAsyncResource<DisposalRecordDto[]>(
     () => {
-      if (
-        !selectedNode ||
-        selectedNode.nodeType !== 'Asset' ||
-        !selectedNode.portfolioName ||
-        !selectedNode.assetName
-      ) {
+      if (!isAssetSelection(selectedNode)) {
         return null
       }
       return apiClient

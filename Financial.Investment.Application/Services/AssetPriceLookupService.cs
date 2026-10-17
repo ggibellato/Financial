@@ -5,7 +5,6 @@ using Financial.Investment.Domain.Entities;
 using Financial.Investment.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
 using Financial.Shared.Abstractions.Time;
-using Financial.Shared.Abstractions.Persistence;
 using Microsoft.Extensions.Logging;
 
 namespace Financial.Investment.Application.Services;
@@ -283,40 +282,25 @@ public sealed class AssetPriceLookupService : IAssetPriceLookupService
     private async Task RecordAutomaticPriceIfNeededAsync(Asset asset, decimal price, PriceSource source)
     {
         var today = _timeProvider.GetLocalToday();
-        AssetPriceSnapshot? displaced = null;
-        var wrote = false;
 
-        await CompensatingSaveHelper.ApplyWithCompensationAsync(
-            () => _repository.ApplyAndSaveAsync(() =>
+        await _repository.ApplyAndSaveAsync(() =>
+        {
+            var existing = asset.GetPriceForDate(today);
+
+            // A manual entry is never overwritten. GetCurrentPriceAsync returns before reaching this
+            // point when one exists, so this is the second line of defence rather than the first.
+            // Source is compared too: an entry recorded before this provenance fix shipped would
+            // otherwise sit at Unknown indefinitely whenever today's price hasn't moved since.
+            var needsWrite = existing is null || (!existing.IsManual && (existing.Price != price || existing.Source != source));
+            if (!needsWrite)
             {
-                var existing = asset.GetPriceForDate(today);
+                return false;
+            }
 
-                // A manual entry is never overwritten. GetCurrentPriceAsync returns before reaching this
-                // point when one exists, so this is the second line of defence rather than the first.
-                // Source is compared too: an entry recorded before this provenance fix shipped would
-                // otherwise sit at Unknown indefinitely whenever today's price hasn't moved since.
-                var needsWrite = existing is null || (!existing.IsManual && (existing.Price != price || existing.Source != source));
-                if (!needsWrite)
-                {
-                    return false;
-                }
-
-                displaced = existing;
-                wrote = true;
-                // The named provider that actually answered (research.md #2) - not the generic
-                // "automatic" the simple SetPrice(date, price, isManual) overload would stamp.
-                asset.SetPrice(today, price, source, currency: string.Empty, sourceReference: null, _timeProvider.GetUtcNow(), today);
-                return true;
-            }),
-            // Only undo when the write actually happened - a failure before that point (e.g. inside
-            // GetPriceForDate) never touched the graph, so restoring "no previous entry" here would
-            // wrongly delete an existing manual entry at today that this call never displaced.
-            () => wrote
-                ? _repository.ApplyAndSaveAsync(() =>
-                {
-                    asset.RestorePrice(today, displaced);
-                    return false;
-                })
-                : Task.FromResult(false)).ConfigureAwait(false);
+            // The named provider that actually answered (research.md #2) - not the generic
+            // "automatic" the simple SetPrice(date, price, isManual) overload would stamp.
+            asset.SetPrice(today, price, source, currency: string.Empty, sourceReference: null, _timeProvider.GetUtcNow(), today);
+            return true;
+        }).ConfigureAwait(false);
     }
 }

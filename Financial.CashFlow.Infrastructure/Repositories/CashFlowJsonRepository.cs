@@ -10,7 +10,8 @@ public sealed class CashFlowJsonRepository : ICashFlowRepository, ISyncStatusPro
 {
     private readonly IJsonStorage _storage;
     private readonly ICashFlowSerializer _serializer;
-    private readonly CashFlowData _data;
+    private CashFlowData _data;
+    private string _lastPersistedJson;
 
     /// <summary>Serializing the document walks every collection in the graph, so one writer at a
     /// time. A semaphore rather than a lock because the critical section awaits the storage.</summary>
@@ -21,6 +22,7 @@ public sealed class CashFlowJsonRepository : ICashFlowRepository, ISyncStatusPro
         _data = data ?? throw new ArgumentNullException(nameof(data));
         _storage = storage ?? throw new ArgumentNullException(nameof(storage));
         _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
+        _lastPersistedJson = _serializer.Serialize(_data);
     }
 
     public IEnumerable<Expense> GetExpenses() => _data.Expenses;
@@ -104,7 +106,13 @@ public sealed class CashFlowJsonRepository : ICashFlowRepository, ISyncStatusPro
             // discarding the newer change with no error anywhere.
             var json = _serializer.Serialize(_data);
             await _storage.WriteAsync(json).ConfigureAwait(false);
+            _lastPersistedJson = json;
             return true;
+        }
+        catch
+        {
+            _data = _serializer.Deserialize(_lastPersistedJson);
+            throw;
         }
         finally
         {

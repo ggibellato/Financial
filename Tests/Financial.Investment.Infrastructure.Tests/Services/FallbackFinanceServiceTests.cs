@@ -21,7 +21,7 @@ public class FallbackFinanceServiceTests
     /// <summary>Wires the SUT over the shared recording logger; the two providers' behaviour is what
     /// each test varies.</summary>
     private FallbackFinanceService CreateService(IFinanceService primary, IFinanceService fallback) =>
-        new(primary, fallback, _logger);
+        new(primary, fallback, TestClock.At(), TimeSpan.FromMinutes(30), _logger);
 
     /// <summary>A fallback provider that fails the test if the SUT reaches it at all.</summary>
     private static FakeFinanceService UnreachableFallback() =>

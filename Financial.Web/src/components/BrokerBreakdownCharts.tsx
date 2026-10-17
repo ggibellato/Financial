@@ -1,95 +1,25 @@
-import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts'
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
+import AllocationPieChart, { type AllocationChartEntry } from './dashboard/AllocationPieChart'
 import { useBrokerBreakdown } from '../hooks/useBrokerBreakdown'
-import { formatN2, formatPercent1 } from '../utils/formatters'
 import './BrokerBreakdownCharts.css'
 
-// Validated categorical palette (fixed hue order, CVD-safe adjacency).
-const CATEGORICAL_PALETTE = [
-  '#2a78d6',
-  '#1baf7a',
-  '#eda100',
-  '#008300',
-  '#4a3aa7',
-  '#e34948',
-  '#e87ba4',
-  '#eb6834',
-]
-
-interface PieSliceDatum {
-  name: string
-  value: number
-  percent: number
-}
-
-function buildPieSliceData(items: { name: string; value: number }[]): PieSliceDatum[] {
+function buildChartEntries(items: { name: string; value: number }[]): AllocationChartEntry[] {
   const total = items.reduce((sum, item) => sum + item.value, 0)
   return items.map((item) => ({
-    ...item,
-    percent: total > 0 ? item.value / total : 0,
+    label: item.name,
+    marketValue: item.value,
+    percentage: total > 0 ? (item.value / total) * 100 : 0,
   }))
-}
-
-interface PieTooltipContentProps {
-  name: string
-  value: number
-  percent: number
-}
-
-function PieTooltipContent({ name, value, percent }: PieTooltipContentProps) {
-  return (
-    <div className="broker-breakdown__tooltip">
-      <div className="broker-breakdown__tooltip-name">{name}</div>
-      <div className="broker-breakdown__tooltip-value">{formatN2(value)}</div>
-      <div className="broker-breakdown__tooltip-percent">{formatPercent1(percent * 100)}</div>
-    </div>
-  )
-}
-
-// recharts' Pie tooltip payload entry doesn't carry `percent` itself (that's
-// only attached to the internal sector geometry, not the tooltip payload) —
-// but it does carry the original data object under `.payload`, which is where
-// our own pre-computed `percent` (see buildPieSliceData) actually surfaces.
-function readPieTooltipEntry(entry: unknown): PieTooltipContentProps {
-  const record = entry as { payload?: { name?: unknown; value?: unknown; percent?: unknown } }
-  const source = record.payload ?? {}
-  return {
-    name: typeof source.name === 'string' ? source.name : '',
-    value: typeof source.value === 'number' ? source.value : 0,
-    percent: typeof source.percent === 'number' ? source.percent : 0,
-  }
 }
 
 interface BreakdownPieProps {
   title: string
-  data: PieSliceDatum[]
+  entries: AllocationChartEntry[]
 }
 
-function BreakdownPie({ title, data }: BreakdownPieProps) {
-  return (
-    <div className="broker-breakdown__chart">
-      <h3 className="broker-breakdown__chart-title">{title}</h3>
-      <ResponsiveContainer width="100%" height={280}>
-        <PieChart>
-          <Pie data={data} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90}>
-            {data.map((entry, index) => (
-              <Cell key={entry.name} fill={CATEGORICAL_PALETTE[index % CATEGORICAL_PALETTE.length]} />
-            ))}
-          </Pie>
-          <Tooltip
-            content={({ active, payload }) => {
-              if (!active || !payload || payload.length === 0) {
-                return null
-              }
-              return <PieTooltipContent {...readPieTooltipEntry(payload[0])} />
-            }}
-          />
-          <Legend />
-        </PieChart>
-      </ResponsiveContainer>
-    </div>
-  )
+function BreakdownPie({ title, entries }: BreakdownPieProps) {
+  return <AllocationPieChart title={title} entries={entries} headingLevel="h3" valueLabel="Total Invested" />
 }
 
 export default function BrokerBreakdownCharts() {
@@ -111,19 +41,19 @@ export default function BrokerBreakdownCharts() {
     return <p className="broker-breakdown__empty">No active portfolios to display</p>
   }
 
-  const portfolioData = buildPieSliceData(
+  const portfolioEntries = buildChartEntries(
     breakdown.map((portfolio) => ({ name: portfolio.portfolioName, value: portfolio.totalInvested })),
   )
 
   return (
     <div className="broker-breakdown">
-      <BreakdownPie title="Portfolio Breakdown" data={portfolioData} />
+      <BreakdownPie title="Portfolio Breakdown" entries={portfolioEntries} />
       <div className="broker-breakdown__grid">
         {breakdown.map((portfolio) => (
           <BreakdownPie
             key={portfolio.portfolioName}
             title={portfolio.portfolioName}
-            data={buildPieSliceData(
+            entries={buildChartEntries(
               portfolio.assets.map((asset) => ({ name: asset.assetName, value: asset.totalInvested })),
             )}
           />

@@ -12,7 +12,8 @@ import type {
   TitheCarryForwardUpdateDto,
   TitheSummaryDto,
 } from '../api/types'
-import { currentYearMonth, formatMonthInputValue, getErrorMessage, parseMonthInputValue } from '../utils/formatters'
+import { currentYearMonth, getErrorMessage } from '../utils/formatters'
+import { useMonthSelection } from './useMonthSelection'
 
 export interface BankTotal {
   bankId: string
@@ -28,8 +29,6 @@ export interface IncomeTotal {
 }
 
 interface MonthlyState {
-  year: number
-  month: number
   expenses: ExpenseDto[]
   unpaidCardCharges: ExpenseDto[]
   categoryTotals: CategoryTotalDto[]
@@ -50,7 +49,6 @@ interface MonthlyState {
 }
 
 type MonthlyAction =
-  | { type: 'SET_MONTH'; payload: { year: number; month: number } }
   | { type: 'FETCH_START' }
   | {
       type: 'FETCH_SUCCESS'
@@ -75,7 +73,7 @@ type MonthlyAction =
   | { type: 'CARRY_FORWARD_UPDATE_START' }
   | { type: 'CARRY_FORWARD_UPDATE_END' }
 
-const INITIAL_STATE_BASE: Omit<MonthlyState, 'year' | 'month'> = {
+const INITIAL_STATE: MonthlyState = {
   expenses: [],
   unpaidCardCharges: [],
   categoryTotals: [],
@@ -95,17 +93,8 @@ const INITIAL_STATE_BASE: Omit<MonthlyState, 'year' | 'month'> = {
   listActionWarning: null,
 }
 
-/** Reads the current year/month fresh at hook-mount time rather than at module-load time, so the
- * default period doesn't go stale in a long-running session and can be pinned via fake timers in tests. */
-function buildInitialState(): MonthlyState {
-  const { year, month } = currentYearMonth()
-  return { ...INITIAL_STATE_BASE, year, month }
-}
-
 function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
   switch (action.type) {
-    case 'SET_MONTH':
-      return { ...state, year: action.payload.year, month: action.payload.month }
     case 'FETCH_START':
       return { ...state, isLoading: true, error: null }
     case 'FETCH_SUCCESS':
@@ -167,7 +156,10 @@ export interface MonthlyData {
 }
 
 export function useMonthly(): MonthlyData {
-  const [state, dispatch] = useReducer(reducer, undefined, buildInitialState)
+  // Passed as a function so the default period is read at mount, not module load: it stays fresh
+  // in a long-running session and can be pinned with fake timers in tests.
+  const { year, month, monthInputValue, setMonthInputValue } = useMonthSelection(currentYearMonth)
+  const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
   const fetchMonthlyData = useCallback((year: number, month: number) => {
     return Promise.all([
@@ -218,25 +210,17 @@ export function useMonthly(): MonthlyData {
 
   useEffect(() => {
     dispatch({ type: 'FETCH_START' })
-    void fetchMonthlyData(state.year, state.month)
+    void fetchMonthlyData(year, month)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.year, state.month, state.retryCount])
+  }, [year, month, state.retryCount])
 
   // Re-fetches after a mutation (add/edit/delete) without flipping isLoading, so the grid stays
   // mounted and its sort/filter state (owned by the section components) survives the refresh -
   // unlike retry(), which is for recovering from a genuine fetch error and should show a reload.
   const refreshSilently = useCallback(
-    () => fetchMonthlyData(state.year, state.month),
-    [fetchMonthlyData, state.year, state.month],
+    () => fetchMonthlyData(year, month),
+    [fetchMonthlyData, year, month],
   )
-
-  const monthInputValue = formatMonthInputValue(state.year, state.month)
-
-  const setMonthInputValue = useCallback((value: string) => {
-    const parsed = parseMonthInputValue(value)
-    if (!parsed) return
-    dispatch({ type: 'SET_MONTH', payload: parsed })
-  }, [])
 
   const retry = useCallback(() => dispatch({ type: 'RETRY' }), [])
 
@@ -292,7 +276,7 @@ export function useMonthly(): MonthlyData {
       dispatch({ type: 'CARRY_FORWARD_UPDATE_START' })
       const requestBody: TitheCarryForwardUpdateDto = { included }
       void apiClient
-        .updateTitheCarryForward(state.year, state.month, requestBody)
+        .updateTitheCarryForward(year, month, requestBody)
         .then(() => {
           dispatch({ type: 'CARRY_FORWARD_UPDATE_END' })
           void refreshSilently()
@@ -302,7 +286,7 @@ export function useMonthly(): MonthlyData {
           dispatch({ type: 'LIST_ACTION_ERROR', payload: getErrorMessage(err, 'Failed to update carry-forward') })
         })
     },
-    [state.year, state.month, refreshSilently],
+    [year, month, refreshSilently],
   )
 
   const deleteIncome = useCallback(
@@ -351,8 +335,8 @@ export function useMonthly(): MonthlyData {
   const totalIncoming = incomeTotals.reduce((sum, i) => sum + i.netValue, 0)
 
   return {
-    year: state.year,
-    month: state.month,
+    year,
+    month,
     monthInputValue,
     setMonthInputValue,
     expenses: state.expenses,

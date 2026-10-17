@@ -1,20 +1,8 @@
 import { useState } from 'react'
-import {
-  Button,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogSurface,
-  DialogTitle,
-  Field,
-  Input,
-  MessageBar,
-  MessageBarBody,
-  Select,
-} from '@fluentui/react-components'
+import { Field, Input, Select } from '@fluentui/react-components'
 import type { AssetAdminDto, BrokerDto, PortfolioDto } from '../api/types'
-import { useFormPanelStyles } from './formPanelStyles'
-import { getErrorMessage } from '../utils/formatters'
+import EntityFormDialog from './EntityFormDialog'
+import { useDialogSubmit } from '../hooks/useDialogSubmit'
 import { isValidIsin } from '../utils/validators'
 
 const COUNTRY_OPTIONS = ['Unknown', 'BR', 'US', 'UK'] as const
@@ -53,7 +41,6 @@ interface AssetFormDialogProps {
 }
 
 export default function AssetFormDialog({ asset, activeBrokers, portfolios, onCancel, onSubmit }: AssetFormDialogProps) {
-  const styles = useFormPanelStyles()
   const isEditing = asset !== null
   const [brokerName, setBrokerName] = useState(asset?.brokerName ?? activeBrokers[0]?.name ?? '')
   const [portfolioName, setPortfolioName] = useState(asset?.portfolioName ?? '')
@@ -64,8 +51,7 @@ export default function AssetFormDialog({ asset, activeBrokers, portfolios, onCa
   const [country, setCountry] = useState<string>(asset?.country ?? 'Unknown')
   const [localTypeCode, setLocalTypeCode] = useState(asset?.localTypeCode ?? '')
   const [assetClass, setAssetClass] = useState<string>(asset?.class ?? 'Unknown')
-  const [isSaving, setIsSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const { isSaving, error, submit } = useDialogSubmit('The asset could not be saved.')
 
   const brokerPortfolios = portfolios.filter((p) => p.brokerName === brokerName)
 
@@ -90,13 +76,10 @@ export default function AssetFormDialog({ asset, activeBrokers, portfolios, onCa
     isinValidationMessage.length === 0 &&
     !isSaving
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!canSubmit) return
-
-    setIsSaving(true)
-    setError(null)
-    try {
-      await onSubmit({
+    void submit(() =>
+      onSubmit({
         brokerName,
         portfolioName,
         name: trimmedName,
@@ -106,131 +89,114 @@ export default function AssetFormDialog({ asset, activeBrokers, portfolios, onCa
         country,
         localTypeCode: localTypeCode.trim(),
         assetClass,
-      })
-    } catch (err: unknown) {
-      setError(getErrorMessage(err, 'The asset could not be saved.'))
-      setIsSaving(false)
-    }
+      }),
+    )
   }
 
   return (
-    <Dialog open onOpenChange={(_, data) => { if (!data.open) onCancel() }}>
-      <DialogSurface aria-describedby={undefined}>
-        <DialogBody>
-          <DialogTitle>{isEditing ? 'Edit Asset' : 'Create Asset'}</DialogTitle>
-          <DialogContent>
-            {isEditing ? (
-              <>
-                <Field label="Broker">
-                  <Input value={asset.brokerName} disabled readOnly />
-                </Field>
-                <Field label="Portfolio">
-                  <Input value={asset.portfolioName} disabled readOnly />
-                </Field>
-              </>
-            ) : (
-              <>
-                <Field
-                  label="Broker"
-                  required
-                  validationState={brokerValidationMessage ? 'error' : 'none'}
-                  validationMessage={brokerValidationMessage}
-                >
-                  <Select value={brokerName} onChange={(e) => handleBrokerChange(e.target.value)} disabled={isSaving}>
-                    {activeBrokers.length === 0 && <option value="">No active brokers available</option>}
-                    {activeBrokers.map((b) => (
-                      <option key={b.name} value={b.name}>
-                        {b.name}
-                      </option>
-                    ))}
-                  </Select>
-                </Field>
+    <EntityFormDialog
+      title={isEditing ? 'Edit Asset' : 'Create Asset'}
+      error={error}
+      isSaving={isSaving}
+      canSave={canSubmit}
+      onSave={handleSubmit}
+      onCancel={onCancel}
+    >
+      {isEditing ? (
+        <>
+          <Field label="Broker">
+            <Input value={asset.brokerName} disabled readOnly />
+          </Field>
+          <Field label="Portfolio">
+            <Input value={asset.portfolioName} disabled readOnly />
+          </Field>
+        </>
+      ) : (
+        <>
+          <Field
+            label="Broker"
+            required
+            validationState={brokerValidationMessage ? 'error' : 'none'}
+            validationMessage={brokerValidationMessage}
+          >
+            <Select value={brokerName} onChange={(e) => handleBrokerChange(e.target.value)} disabled={isSaving}>
+              {activeBrokers.length === 0 && <option value="">No active brokers available</option>}
+              {activeBrokers.map((b) => (
+                <option key={b.name} value={b.name}>
+                  {b.name}
+                </option>
+              ))}
+            </Select>
+          </Field>
 
-                <Field
-                  label="Portfolio"
-                  required
-                  validationState={portfolioValidationMessage ? 'error' : 'none'}
-                  validationMessage={portfolioValidationMessage}
-                >
-                  <Select value={portfolioName} onChange={(e) => setPortfolioName(e.target.value)} disabled={isSaving || brokerPortfolios.length === 0}>
-                    <option value="">
-                      {brokerPortfolios.length === 0 ? 'No portfolios under this broker' : 'Select a portfolio'}
-                    </option>
-                    {brokerPortfolios.map((p) => (
-                      <option key={p.name} value={p.name}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </Select>
-                </Field>
-              </>
-            )}
+          <Field
+            label="Portfolio"
+            required
+            validationState={portfolioValidationMessage ? 'error' : 'none'}
+            validationMessage={portfolioValidationMessage}
+          >
+            <Select value={portfolioName} onChange={(e) => setPortfolioName(e.target.value)} disabled={isSaving || brokerPortfolios.length === 0}>
+              <option value="">
+                {brokerPortfolios.length === 0 ? 'No portfolios under this broker' : 'Select a portfolio'}
+              </option>
+              {brokerPortfolios.map((p) => (
+                <option key={p.name} value={p.name}>
+                  {p.name}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        </>
+      )}
 
-            <Field
-              label="Name"
-              required
-              validationState={nameValidationMessage ? 'error' : 'none'}
-              validationMessage={nameValidationMessage}
-            >
-              <Input value={name} onChange={(e) => setName(e.target.value)} disabled={isSaving} autoFocus />
-            </Field>
+      <Field
+        label="Name"
+        required
+        validationState={nameValidationMessage ? 'error' : 'none'}
+        validationMessage={nameValidationMessage}
+      >
+        <Input value={name} onChange={(e) => setName(e.target.value)} disabled={isSaving} autoFocus />
+      </Field>
 
-            <Field
-              label="ISIN"
-              validationState={isinValidationMessage ? 'error' : 'none'}
-              validationMessage={isinValidationMessage}
-            >
-              <Input value={isin} onChange={(e) => setIsin(e.target.value)} disabled={isSaving} />
-            </Field>
+      <Field
+        label="ISIN"
+        validationState={isinValidationMessage ? 'error' : 'none'}
+        validationMessage={isinValidationMessage}
+      >
+        <Input value={isin} onChange={(e) => setIsin(e.target.value)} disabled={isSaving} />
+      </Field>
 
-            <Field label="Exchange">
-              <Input value={exchange} onChange={(e) => setExchange(e.target.value)} disabled={isSaving} />
-            </Field>
+      <Field label="Exchange">
+        <Input value={exchange} onChange={(e) => setExchange(e.target.value)} disabled={isSaving} />
+      </Field>
 
-            <Field label="Ticker">
-              <Input value={ticker} onChange={(e) => setTicker(e.target.value)} disabled={isSaving} />
-            </Field>
+      <Field label="Ticker">
+        <Input value={ticker} onChange={(e) => setTicker(e.target.value)} disabled={isSaving} />
+      </Field>
 
-            <Field label="Country">
-              <Select value={country} onChange={(e) => setCountry(e.target.value)} disabled={isSaving}>
-                {COUNTRY_OPTIONS.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </Select>
-            </Field>
+      <Field label="Country">
+        <Select value={country} onChange={(e) => setCountry(e.target.value)} disabled={isSaving}>
+          {COUNTRY_OPTIONS.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </Select>
+      </Field>
 
-            <Field label="Local Type Code">
-              <Input value={localTypeCode} onChange={(e) => setLocalTypeCode(e.target.value)} disabled={isSaving} />
-            </Field>
+      <Field label="Local Type Code">
+        <Input value={localTypeCode} onChange={(e) => setLocalTypeCode(e.target.value)} disabled={isSaving} />
+      </Field>
 
-            <Field label="Class">
-              <Select value={assetClass} onChange={(e) => setAssetClass(e.target.value)} disabled={isSaving}>
-                {CLASS_OPTIONS.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-
-            {error && (
-              <MessageBar intent="error">
-                <MessageBarBody>{error}</MessageBarBody>
-              </MessageBar>
-            )}
-          </DialogContent>
-          <div className={styles.actions}>
-            <Button appearance="primary" onClick={() => void handleSubmit()} disabled={!canSubmit}>
-              Save
-            </Button>
-            <Button appearance="secondary" onClick={onCancel} disabled={isSaving}>
-              Cancel
-            </Button>
-          </div>
-        </DialogBody>
-      </DialogSurface>
-    </Dialog>
+      <Field label="Class">
+        <Select value={assetClass} onChange={(e) => setAssetClass(e.target.value)} disabled={isSaving}>
+          {CLASS_OPTIONS.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </Select>
+      </Field>
+    </EntityFormDialog>
   )
 }

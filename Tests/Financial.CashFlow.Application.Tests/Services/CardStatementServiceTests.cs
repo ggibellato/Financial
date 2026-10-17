@@ -356,23 +356,17 @@ public class CardStatementServiceTests
     }
 
     [Fact]
-    public async Task MarkStatementPaidAsync_WhenSaveFails_RollsBackStatementAndCascadedExpenses()
+    public async Task MarkStatementPaidAsync_WhenSaveFails_RecordsFailedSpanAndRethrows()
     {
-        var charge = AddCharge(_repository, new DateOnly(2026, 7, 10), 30m, Card(_repository, "BarclaysPlatinumVisa8003"));
+        AddCharge(_repository, new DateOnly(2026, 7, 10), 30m, Card(_repository, "BarclaysPlatinumVisa8003"));
         await _sut.GetStatementsForMonthAsync(2026, 7);
         var statement = _repository.CardStatements.Single(s => s.CreditCard.Name == "BarclaysPlatinumVisa8003");
         _repository.ThrowOnNextSave = true;
 
         var act = async () => await _sut.MarkStatementPaidAsync(statement.Id, PaidBy(_repository, "Barclays"));
 
-        using (new AssertionScope())
-        {
-            await act.Should().ThrowAsync<InvalidOperationException>();
-            statement.IsPaid.Should().BeFalse();
-            charge.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
-            charge.PaymentSourceBank.Should().BeNull();
-            charge.Date.Should().Be(charge.ChargeDate);
-        }
+        await act.Should().ThrowAsync<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.CardStatementService.MarkStatementPaid");
     }
 
     [Fact]
@@ -434,25 +428,18 @@ public class CardStatementServiceTests
     }
 
     [Fact]
-    public async Task UnmarkStatementPaidAsync_WhenSaveFails_RollsBackStatementAndCascadedExpenses()
+    public async Task UnmarkStatementPaidAsync_WhenSaveFails_RecordsFailedSpanAndRethrows()
     {
-        var charge = AddCharge(_repository, new DateOnly(2026, 7, 10), 30m, Card(_repository, "BarclaysPlatinumVisa8003"));
+        AddCharge(_repository, new DateOnly(2026, 7, 10), 30m, Card(_repository, "BarclaysPlatinumVisa8003"));
         await _sut.GetStatementsForMonthAsync(2026, 7);
         var statement = _repository.CardStatements.Single(s => s.CreditCard.Name == "BarclaysPlatinumVisa8003");
         await _sut.MarkStatementPaidAsync(statement.Id, PaidBy(_repository, "Trading212"));
-        var paymentDate = charge.Date;
         _repository.ThrowOnNextSave = true;
 
         var act = async () => await _sut.UnmarkStatementPaidAsync(statement.Id);
 
-        using (new AssertionScope())
-        {
-            await act.Should().ThrowAsync<InvalidOperationException>();
-            statement.IsPaid.Should().BeTrue();
-            charge.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardSettled);
-            charge.PaymentSourceBank!.Name.Should().Be("Trading212");
-            charge.Date.Should().Be(paymentDate);
-        }
+        await act.Should().ThrowAsync<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.CardStatementService.UnmarkStatementPaid");
     }
 
     [Fact]

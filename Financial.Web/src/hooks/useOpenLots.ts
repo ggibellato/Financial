@@ -1,6 +1,7 @@
 import { apiClient } from '../api/financialApiClient'
 import type { OpenLotDto } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
+import { isAssetSelection } from '../utils/assetSelection'
 import { useAsyncResource } from './useAsyncResource'
 
 const NO_OPEN_LOTS: OpenLotDto[] = []
@@ -19,7 +20,7 @@ export function useOpenLots(enabled: boolean): OpenLotsData {
 
   const { data, isLoading, error, retry } = useAsyncResource<OpenLotDto[]>(
     () => {
-      if (!enabled || !selectedNode || selectedNode.nodeType !== 'Asset' || !selectedNode.portfolioName || !selectedNode.assetName) {
+      if (!enabled || !isAssetSelection(selectedNode)) {
         return null
       }
       return apiClient.getOpenLots(selectedNode.brokerName, selectedNode.portfolioName, selectedNode.assetName, scope)

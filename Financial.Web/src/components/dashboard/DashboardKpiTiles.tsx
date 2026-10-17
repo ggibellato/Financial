@@ -1,7 +1,7 @@
 import { Link } from '@fluentui/react-components'
 import ErrorState from '../ErrorState'
 import KpiTileSkeleton from './KpiTileSkeleton'
-import { formatN2, formatPercentFraction, signClass } from '../../utils/formatters'
+import { formatN2OrDash, formatPercentFractionOrDash, signClass } from '../../utils/formatters'
 import type { PortfolioDashboardDto } from '../../api/types'
 import './DashboardKpiTiles.css'
 
@@ -66,8 +66,7 @@ const KPI_TILES: KpiTileDefinition[] = [
 ]
 
 function formatTileValue(value: number | null, isPercent: boolean): string {
-  if (value === null) return '—'
-  return isPercent ? formatPercentFraction(value) : formatN2(value)
+  return isPercent ? formatPercentFractionOrDash(value) : formatN2OrDash(value)
 }
 
 function tileValueClass(value: number | null, isSigned: boolean): string {

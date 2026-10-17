@@ -1,55 +1,7 @@
-import { useCallback, useEffect, useReducer } from 'react'
+import { useCallback } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { BrokerCreateDto, BrokerDto, BrokerUpdateDto, CostBasisMethod, InvestmentScope } from '../api/types'
-import { getErrorMessage } from '../utils/formatters'
-
-interface BrokersState {
-  brokers: BrokerDto[]
-  isLoading: boolean
-  error: string | null
-  retryCount: number
-  deletingName: string | null
-  deleteError: string | null
-}
-
-type BrokersAction =
-  | { type: 'FETCH_START' }
-  | { type: 'FETCH_SUCCESS'; payload: BrokerDto[] }
-  | { type: 'FETCH_ERROR'; payload: string }
-  | { type: 'RETRY' }
-  | { type: 'DELETE_START'; payload: string }
-  | { type: 'DELETE_SUCCESS' }
-  | { type: 'DELETE_ERROR'; payload: string }
-
-const INITIAL_STATE: BrokersState = {
-  brokers: [],
-  isLoading: true,
-  error: null,
-  retryCount: 0,
-  deletingName: null,
-  deleteError: null,
-}
-
-function reducer(state: BrokersState, action: BrokersAction): BrokersState {
-  switch (action.type) {
-    case 'FETCH_START':
-      return { ...state, isLoading: true, error: null }
-    case 'FETCH_SUCCESS':
-      return { ...state, isLoading: false, brokers: action.payload }
-    case 'FETCH_ERROR':
-      return { ...state, isLoading: false, error: action.payload }
-    case 'RETRY':
-      return { ...state, retryCount: state.retryCount + 1 }
-    case 'DELETE_START':
-      return { ...state, deletingName: action.payload, deleteError: null }
-    case 'DELETE_SUCCESS':
-      return { ...state, deletingName: null }
-    case 'DELETE_ERROR':
-      return { ...state, deletingName: null, deleteError: action.payload }
-    default:
-      return state
-  }
-}
+import { useCrudResource } from './useCrudResource'
 
 export interface BrokersData {
   brokers: BrokerDto[]
@@ -64,63 +16,48 @@ export interface BrokersData {
   deleteBroker: (name: string) => void
 }
 
+const NO_BROKERS: BrokerDto[] = []
+
 export function useBrokers(): BrokersData {
-  const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
+  const resource = useCrudResource({
+    load: () => apiClient.getAdminBrokers(),
+    initialData: NO_BROKERS,
+    loadErrorMessage: 'Unable to load brokers',
+  })
+  const { mutateAndRefresh, runPendingMutation } = resource
 
-  useEffect(() => {
-    dispatch({ type: 'FETCH_START' })
-    void apiClient
-      .getAdminBrokers()
-      .then((brokers) => dispatch({ type: 'FETCH_SUCCESS', payload: brokers }))
-      .catch((err: unknown) => {
-        dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, 'Unable to load brokers') })
-      })
-  }, [state.retryCount])
+  const createBroker = useCallback(
+    (request: BrokerCreateDto) => mutateAndRefresh(() => apiClient.createBroker(request)),
+    [mutateAndRefresh],
+  )
 
-  const retry = useCallback(() => dispatch({ type: 'RETRY' }), [])
+  const updateBroker = useCallback(
+    (currentName: string, request: BrokerUpdateDto, scope?: InvestmentScope) =>
+      mutateAndRefresh(() => apiClient.updateBroker(currentName, request, scope)),
+    [mutateAndRefresh],
+  )
 
-  const createBroker = useCallback(async (request: BrokerCreateDto) => {
-    const created = await apiClient.createBroker(request)
-    dispatch({ type: 'RETRY' })
-    return created
-  }, [])
+  const setCostBasisMethod = useCallback(
+    (name: string, method: CostBasisMethod, scope?: InvestmentScope) =>
+      mutateAndRefresh(() => apiClient.setCostBasisMethod(name, { method }, scope)),
+    [mutateAndRefresh],
+  )
 
-  const updateBroker = useCallback(async (currentName: string, request: BrokerUpdateDto, scope?: InvestmentScope) => {
-    const updated = await apiClient.updateBroker(currentName, request, scope)
-    dispatch({ type: 'RETRY' })
-    return updated
-  }, [])
-
-  const setCostBasisMethod = useCallback(async (name: string, method: CostBasisMethod, scope?: InvestmentScope) => {
-    const updated = await apiClient.setCostBasisMethod(name, { method }, scope)
-    dispatch({ type: 'RETRY' })
-    return updated
-  }, [])
-
-  const deleteBroker = useCallback((name: string) => {
-    dispatch({ type: 'DELETE_START', payload: name })
-
-    void apiClient
-      .deleteBroker(name)
-      .then(() => {
-        dispatch({ type: 'DELETE_SUCCESS' })
-        dispatch({ type: 'RETRY' })
-      })
-      .catch((err: unknown) => {
-        dispatch({ type: 'DELETE_ERROR', payload: getErrorMessage(err, 'Failed to delete broker') })
-      })
-  }, [])
+  const deleteBroker = useCallback(
+    (name: string) => runPendingMutation(name, () => apiClient.deleteBroker(name), 'Failed to delete broker'),
+    [runPendingMutation],
+  )
 
   return {
-    brokers: state.brokers,
-    isLoading: state.isLoading,
-    error: state.error,
-    retry,
+    brokers: resource.data,
+    isLoading: resource.isLoading,
+    error: resource.error,
+    retry: resource.retry,
     createBroker,
     updateBroker,
     setCostBasisMethod,
-    deletingName: state.deletingName,
-    deleteError: state.deleteError,
+    deletingName: resource.pendingId,
+    deleteError: resource.pendingError,
     deleteBroker,
   }
 }

@@ -28,7 +28,7 @@ import type { ChartType, CreditFormField, MonthBucket, ViewMode } from '../hooks
 import { useCredits } from '../hooks/useCredits'
 import { confirmThenRun } from '../utils/confirmThenRun'
 import { PERIOD_FILTER_OPTIONS } from '../utils/periodFilter'
-import { formatN2, formatPercent1, formatShortDate } from '../utils/formatters'
+import { formatN2, formatPercent1OrDash, formatShortDate } from '../utils/formatters'
 import './CreditsTab.css'
 
 const CHART_TYPE_OPTIONS: { value: ChartType; label: string }[] = [
@@ -75,10 +75,6 @@ const SORT_ACCESSORS: Record<string, SortAccessor<CreditDto>> = {
   yieldOnMarket: (c) => c.yieldOnMarket ?? -Infinity,
 }
 
-function formatYield(value: number | null | undefined): string {
-  return value == null ? '—' : formatPercent1(value)
-}
-
 interface CreditRowProps {
   credit: CreditDto
   onEdit: (c: CreditDto) => void
@@ -119,10 +115,10 @@ function CreditRow({ credit, onEdit, onDelete }: CreditRowProps) {
         {formatN2(credit.netAmount)}
       </DataTableCell>
       <DataTableCell label="Yield (Bought)" className="data-table__col--numeric">
-        {formatYield(credit.yieldOnInvested)}
+        {formatPercent1OrDash(credit.yieldOnInvested)}
       </DataTableCell>
       <DataTableCell label="Yield (Current)" className="data-table__col--numeric">
-        {formatYield(credit.yieldOnMarket)}
+        {formatPercent1OrDash(credit.yieldOnMarket)}
       </DataTableCell>
       <DataTableCell label="Yield details">
         <DividendYieldTooltip credit={credit} />

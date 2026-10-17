@@ -1,34 +1,15 @@
 import { useState } from 'react'
-import {
-  Button,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogSurface,
-  DialogTitle,
-  MessageBar,
-  MessageBarBody,
-  Switch,
-  Table,
-  TableBody,
-  TableCell,
-  TableHeader,
-  TableHeaderCell,
-  TableRow,
-} from '@fluentui/react-components'
-import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
+import { Switch, Table, TableBody, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
+import AdminEntityPage from '../components/AdminEntityPage'
 import CategoryFormDialog from '../components/CategoryFormDialog'
-import ErrorState from '../components/ErrorState'
-import LoadingState from '../components/LoadingState'
+import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog'
 import DataTableCell from '../components/grid/DataTableCell'
-import { useFormPanelStyles } from '../components/formPanelStyles'
+import RowActionsCell from '../components/grid/RowActionsCell'
 import { useCategories } from '../hooks/useCategories'
 import type { CategoryDto } from '../api/types'
-import './CategoriesPage.css'
 import TruncatedText from '../components/TruncatedText'
 
 export default function CategoriesPage() {
-  const styles = useFormPanelStyles()
   const {
     categories,
     isLoading,
@@ -70,109 +51,73 @@ export default function CategoriesPage() {
   }
 
   return (
-    <section className="categories-page">
-      <header className="categories-page__header">
-        <h2>Categories</h2>
-        <Button appearance="primary" icon={<AddRegular />} onClick={() => setIsCreating(true)}>
-          Create Category
-        </Button>
-      </header>
-
-      <Switch
-        label="Show inactive"
-        checked={showInactive}
-        onChange={(e) => setShowInactive(e.target.checked)}
-      />
-
-      {deleteError && (
-        <MessageBar intent="error">
-          <MessageBarBody>{deleteError}</MessageBarBody>
-        </MessageBar>
-      )}
-
-      {isLoading ? (
-        <LoadingState />
-      ) : error ? (
-        <ErrorState message={error} onRetry={retry} />
-      ) : visibleCategories.length === 0 ? (
-        <p className="categories-page__empty">
-          {categories.length === 0 ? 'No categories yet — create one to get started.' : 'No active categories.'}
-        </p>
-      ) : (
-        <Table aria-label="Categories" className="data-table">
-          <TableHeader>
-            <TableRow>
-              <TableHeaderCell>Name</TableHeaderCell>
-              <TableHeaderCell>Active</TableHeaderCell>
-              <TableHeaderCell>Investment</TableHeaderCell>
-              <TableHeaderCell>Tithe</TableHeaderCell>
-              <TableHeaderCell className="data-table__col--action" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {visibleCategories.map((category) => (
-              <TableRow key={category.id}>
-                <DataTableCell label="Name"><TruncatedText text={category.name} /></DataTableCell>
-                <DataTableCell label="Active">{category.active ? 'Yes' : 'No'}</DataTableCell>
-                <DataTableCell label="Investment">{category.isInvestment ? 'Yes' : 'No'}</DataTableCell>
-                <DataTableCell label="Tithe">{category.isTithe ? 'Yes' : 'No'}</DataTableCell>
-                <TableCell className="data-table__col--action">
-                  <div className="data-table__actions-cell">
-                    <Button
-                      appearance="subtle"
-                      size="small"
-                      icon={<EditRegular />}
-                      aria-label={`Edit ${category.name}`}
-                      onClick={() => setEditingCategory(category)}
-                    />
-                    <Button
-                      appearance="subtle"
-                      size="small"
-                      icon={<DeleteRegular />}
-                      aria-label={`Delete ${category.name}`}
-                      disabled={deletingId === category.id}
-                      onClick={() => setConfirmingDelete(category)}
-                    />
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      )}
-
-      {(isCreating || editingCategory) && (
-        <CategoryFormDialog category={editingCategory} onCancel={closeFormDialog} onSubmit={handleFormSubmit} />
-      )}
-
-      {confirmingDelete && (
-        <Dialog open onOpenChange={(_, data) => { if (!data.open) setConfirmingDelete(null) }}>
-          <DialogSurface aria-describedby={undefined}>
-            <DialogBody>
-              <DialogTitle>Delete Category</DialogTitle>
-              <DialogContent>
-                {confirmingDelete.hasReferences ? (
-                  <p>&ldquo;{confirmingDelete.name}&rdquo; is still used by a transaction and cannot be deleted.</p>
+    <AdminEntityPage
+      title="Categories"
+      createLabel="Create Category"
+      onCreate={() => setIsCreating(true)}
+      belowHeader={
+        <Switch
+          label="Show inactive"
+          checked={showInactive}
+          onChange={(e) => setShowInactive(e.target.checked)}
+        />
+      }
+      actionError={deleteError}
+      isLoading={isLoading}
+      loadError={error}
+      onRetry={retry}
+      isEmpty={visibleCategories.length === 0}
+      emptyMessage={categories.length === 0 ? 'No categories yet — create one to get started.' : 'No active categories.'}
+      dialogs={
+        <>
+          {(isCreating || editingCategory) && (
+            <CategoryFormDialog category={editingCategory} onCancel={closeFormDialog} onSubmit={handleFormSubmit} />
+          )}
+          {confirmingDelete && (
+            <ConfirmDeleteDialog
+              entityLabel="Category"
+              message={
+                confirmingDelete.hasReferences ? (
+                  <>&ldquo;{confirmingDelete.name}&rdquo; is still used by a transaction and cannot be deleted.</>
                 ) : (
-                  <p>&ldquo;{confirmingDelete.name}&rdquo; will be permanently removed.</p>
-                )}
-              </DialogContent>
-              <div className={styles.actions}>
-                <Button
-                  appearance="primary"
-                  onClick={handleConfirmDelete}
-                  disabled={confirmingDelete.hasReferences}
-                >
-                  Delete
-                </Button>
-                <Button appearance="secondary" onClick={() => setConfirmingDelete(null)}>
-                  Cancel
-                </Button>
-              </div>
-            </DialogBody>
-          </DialogSurface>
-        </Dialog>
-      )}
-    </section>
+                  <>&ldquo;{confirmingDelete.name}&rdquo; will be permanently removed.</>
+                )
+              }
+              confirmDisabled={confirmingDelete.hasReferences}
+              onConfirm={handleConfirmDelete}
+              onCancel={() => setConfirmingDelete(null)}
+            />
+          )}
+        </>
+      }
+    >
+      <Table aria-label="Categories" className="data-table">
+        <TableHeader>
+          <TableRow>
+            <TableHeaderCell>Name</TableHeaderCell>
+            <TableHeaderCell>Active</TableHeaderCell>
+            <TableHeaderCell>Investment</TableHeaderCell>
+            <TableHeaderCell>Tithe</TableHeaderCell>
+            <TableHeaderCell className="data-table__col--action" />
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {visibleCategories.map((category) => (
+            <TableRow key={category.id}>
+              <DataTableCell label="Name"><TruncatedText text={category.name} /></DataTableCell>
+              <DataTableCell label="Active">{category.active ? 'Yes' : 'No'}</DataTableCell>
+              <DataTableCell label="Investment">{category.isInvestment ? 'Yes' : 'No'}</DataTableCell>
+              <DataTableCell label="Tithe">{category.isTithe ? 'Yes' : 'No'}</DataTableCell>
+              <RowActionsCell
+                itemName={category.name}
+                deleteDisabled={deletingId === category.id}
+                onEdit={() => setEditingCategory(category)}
+                onDelete={() => setConfirmingDelete(category)}
+              />
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </AdminEntityPage>
   )
 }

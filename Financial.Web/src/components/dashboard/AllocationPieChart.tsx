@@ -53,9 +53,16 @@ function readAllocationTooltipEntry(entry: unknown): AllocationTooltipContentPro
 interface AllocationPieChartProps {
   title: string
   entries: AllocationChartEntry[]
+  headingLevel?: 'h3' | 'h4'
+  valueLabel?: string
 }
 
-export default function AllocationPieChart({ title, entries }: AllocationPieChartProps) {
+export default function AllocationPieChart({
+  title,
+  entries,
+  headingLevel: Heading = 'h4',
+  valueLabel = 'Market Value',
+}: AllocationPieChartProps) {
   const sliceData = entries.map((entry) => ({
     name: entry.label,
     value: entry.marketValue,
@@ -65,9 +72,9 @@ export default function AllocationPieChart({ title, entries }: AllocationPieChar
 
   return (
     <div className="allocation-chart">
-      <h4 id={titleId} className="allocation-chart__title">
+      <Heading id={titleId} className="allocation-chart__title">
         {title}
-      </h4>
+      </Heading>
       <div className="allocation-chart__grid">
         <div className="allocation-chart__graphic" role="img" aria-labelledby={titleId}>
           <ResponsiveContainer width="100%" height={280}>
@@ -93,7 +100,7 @@ export default function AllocationPieChart({ title, entries }: AllocationPieChar
           <TableHeader>
             <TableRow>
               <TableHeaderCell>Label</TableHeaderCell>
-              <TableHeaderCell className="data-table__col--numeric">Market Value</TableHeaderCell>
+              <TableHeaderCell className="data-table__col--numeric">{valueLabel}</TableHeaderCell>
               <TableHeaderCell className="data-table__col--numeric">Percentage</TableHeaderCell>
             </TableRow>
           </TableHeader>
@@ -101,7 +108,7 @@ export default function AllocationPieChart({ title, entries }: AllocationPieChar
             {entries.map((entry) => (
               <TableRow key={entry.label}>
                 <DataTableCell label="Label">{entry.label}</DataTableCell>
-                <DataTableCell label="Market Value" className="data-table__col--numeric">
+                <DataTableCell label={valueLabel} className="data-table__col--numeric">
                   {formatN2(entry.marketValue)}
                 </DataTableCell>
                 <DataTableCell label="Percentage" className="data-table__col--numeric">

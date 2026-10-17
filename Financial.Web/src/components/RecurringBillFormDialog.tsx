@@ -1,21 +1,8 @@
 import { useState } from 'react'
-import {
-  Button,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogSurface,
-  DialogTitle,
-  Field,
-  Input,
-  MessageBar,
-  MessageBarBody,
-  Select,
-  Textarea,
-} from '@fluentui/react-components'
+import { Field, Input, Select, Textarea } from '@fluentui/react-components'
 import type { RecurringBillDto } from '../api/types'
-import { useFormPanelStyles } from './formPanelStyles'
-import { getErrorMessage } from '../utils/formatters'
+import EntityFormDialog from './EntityFormDialog'
+import { useDialogSubmit } from '../hooks/useDialogSubmit'
 
 const AREA_OPTIONS = ['Brasil', 'UK']
 const STATUS_OPTIONS = ['Unset', 'Scheduled', 'Paid']
@@ -38,7 +25,6 @@ interface RecurringBillFormDialogProps {
 }
 
 export default function RecurringBillFormDialog({ recurringBill, onCancel, onSubmit }: RecurringBillFormDialogProps) {
-  const styles = useFormPanelStyles()
   const isEditing = recurringBill !== null
   const [dueDay, setDueDay] = useState(String(recurringBill?.dueDay ?? ''))
   const [description, setDescription] = useState(recurringBill?.description ?? '')
@@ -52,8 +38,7 @@ export default function RecurringBillFormDialog({ recurringBill, onCancel, onSub
       : '',
   )
   const [status, setStatus] = useState(recurringBill?.status ?? STATUS_OPTIONS[0])
-  const [isSaving, setIsSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const { isSaving, error, submit } = useDialogSubmit('The recurring bill could not be saved.')
 
   const parsedDueDay = Number(dueDay)
   const parsedValue = Number(value)
@@ -67,13 +52,10 @@ export default function RecurringBillFormDialog({ recurringBill, onCancel, onSub
 
   const canSubmit = !dueDayError && !descriptionError && !valueError && !isSaving
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!canSubmit) return
-
-    setIsSaving(true)
-    setError(null)
-    try {
-      await onSubmit({
+    void submit(() =>
+      onSubmit({
         dueDay: parsedDueDay,
         description: trimmedDescription,
         value: parsedValue,
@@ -82,101 +64,84 @@ export default function RecurringBillFormDialog({ recurringBill, onCancel, onSub
         nitNumber: nitNumber.trim().length === 0 ? null : nitNumber.trim(),
         minimumWageValue: minimumWageValue.trim().length === 0 ? null : Number(minimumWageValue),
         status,
-      })
-    } catch (err: unknown) {
-      setError(getErrorMessage(err, 'The recurring bill could not be saved.'))
-      setIsSaving(false)
-    }
+      }),
+    )
   }
 
   return (
-    <Dialog open onOpenChange={(_, data) => { if (!data.open) onCancel() }}>
-      <DialogSurface aria-describedby={undefined}>
-        <DialogBody>
-          <DialogTitle>{isEditing ? 'Edit Recurring Bill' : 'Create Recurring Bill'}</DialogTitle>
-          <DialogContent>
-            <Field
-              label="Due Day"
-              required
-              validationState={dueDayError ? 'error' : 'none'}
-              validationMessage={dueDayError}
-            >
-              <Input type="number" value={dueDay} onChange={(e) => setDueDay(e.target.value)} disabled={isSaving} autoFocus />
-            </Field>
+    <EntityFormDialog
+      title={isEditing ? 'Edit Recurring Bill' : 'Create Recurring Bill'}
+      error={error}
+      isSaving={isSaving}
+      canSave={canSubmit}
+      onSave={handleSubmit}
+      onCancel={onCancel}
+    >
+      <Field
+        label="Due Day"
+        required
+        validationState={dueDayError ? 'error' : 'none'}
+        validationMessage={dueDayError}
+      >
+        <Input type="number" value={dueDay} onChange={(e) => setDueDay(e.target.value)} disabled={isSaving} autoFocus />
+      </Field>
 
-            <Field
-              label="Description"
-              required
-              validationState={descriptionError ? 'error' : 'none'}
-              validationMessage={descriptionError}
-            >
-              <Input value={description} onChange={(e) => setDescription(e.target.value)} disabled={isSaving} />
-            </Field>
+      <Field
+        label="Description"
+        required
+        validationState={descriptionError ? 'error' : 'none'}
+        validationMessage={descriptionError}
+      >
+        <Input value={description} onChange={(e) => setDescription(e.target.value)} disabled={isSaving} />
+      </Field>
 
-            <Field
-              label="Value"
-              required
-              validationState={valueError ? 'error' : 'none'}
-              validationMessage={valueError}
-            >
-              <Input type="number" value={value} onChange={(e) => setValue(e.target.value)} disabled={isSaving} />
-            </Field>
+      <Field
+        label="Value"
+        required
+        validationState={valueError ? 'error' : 'none'}
+        validationMessage={valueError}
+      >
+        <Input type="number" value={value} onChange={(e) => setValue(e.target.value)} disabled={isSaving} />
+      </Field>
 
-            <Field label="Area">
-              <Select value={area} onChange={(e) => setArea(e.target.value)} disabled={isSaving}>
-                {AREA_OPTIONS.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </Select>
-            </Field>
+      <Field label="Area">
+        <Select value={area} onChange={(e) => setArea(e.target.value)} disabled={isSaving}>
+          {AREA_OPTIONS.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </Select>
+      </Field>
 
-            <Field label="Note">
-              <Textarea value={note} onChange={(e) => setNote(e.target.value)} disabled={isSaving} />
-            </Field>
+      <Field label="Note">
+        <Textarea value={note} onChange={(e) => setNote(e.target.value)} disabled={isSaving} />
+      </Field>
 
-            <Field label="NIT Number">
-              <Input value={nitNumber} onChange={(e) => setNitNumber(e.target.value)} disabled={isSaving} />
-            </Field>
+      <Field label="NIT Number">
+        <Input value={nitNumber} onChange={(e) => setNitNumber(e.target.value)} disabled={isSaving} />
+      </Field>
 
-            <Field label="Minimum Wage Value">
-              <Input
-                type="number"
-                value={minimumWageValue}
-                onChange={(e) => setMinimumWageValue(e.target.value)}
-                disabled={isSaving}
-              />
-            </Field>
+      <Field label="Minimum Wage Value">
+        <Input
+          type="number"
+          value={minimumWageValue}
+          onChange={(e) => setMinimumWageValue(e.target.value)}
+          disabled={isSaving}
+        />
+      </Field>
 
-            {isEditing && (
-              <Field label="Status">
-                <Select value={status} onChange={(e) => setStatus(e.target.value)} disabled={isSaving}>
-                  {STATUS_OPTIONS.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </Select>
-              </Field>
-            )}
-
-            {error && (
-              <MessageBar intent="error">
-                <MessageBarBody>{error}</MessageBarBody>
-              </MessageBar>
-            )}
-          </DialogContent>
-          <div className={styles.actions}>
-            <Button appearance="primary" onClick={() => void handleSubmit()} disabled={!canSubmit}>
-              Save
-            </Button>
-            <Button appearance="secondary" onClick={onCancel} disabled={isSaving}>
-              Cancel
-            </Button>
-          </div>
-        </DialogBody>
-      </DialogSurface>
-    </Dialog>
+      {isEditing && (
+        <Field label="Status">
+          <Select value={status} onChange={(e) => setStatus(e.target.value)} disabled={isSaving}>
+            {STATUS_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </Select>
+        </Field>
+      )}
+    </EntityFormDialog>
   )
 }
