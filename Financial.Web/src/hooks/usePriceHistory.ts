@@ -7,6 +7,8 @@ import type { PeriodFilterOption } from '../utils/periodFilter'
 import { DEFAULT_FILTER, getPeriodFilterStartDate } from '../utils/periodFilter'
 import { getErrorMessage, parseValidatedNumber, toInputDate, todayIsoDate } from '../utils/formatters'
 import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
+import { openInlineForm, reduceInlineForm, type InlineFormAction } from './inlineFormSlice'
+import { createSelectionPrefsStore } from './selectionPrefsStore'
 
 export type PriceHistoryFormField = 'formDate' | 'formPrice'
 
@@ -15,6 +17,8 @@ const DATE_KEY = 'priceHistory.date'
 interface PersistedPrefs {
   filter: PeriodFilterOption
 }
+
+const prefsStore = createSelectionPrefsStore<PersistedPrefs>({ filter: DEFAULT_FILTER })
 
 interface AssetPriceHistoryResult {
   priceHistory: AssetPriceSnapshotDto[]
@@ -48,11 +52,8 @@ type PriceHistoryAction =
   | { type: 'SET_FILTER'; payload: { filter: PeriodFilterOption; key: string } }
   | { type: 'SHOW_NEW_FORM'; payload: { date: string } }
   | { type: 'SHOW_EDIT_FORM'; payload: AssetPriceSnapshotDto }
-  | { type: 'CANCEL_FORM' }
-  | { type: 'SET_FORM_FIELD'; payload: { field: PriceHistoryFormField; value: string } }
-  | { type: 'SAVE_START' }
+  | InlineFormAction<PriceHistoryFormField>
   | { type: 'SAVE_SUCCESS'; payload: AssetPriceHistoryResult }
-  | { type: 'SAVE_ERROR'; payload: { message: string | null; fields: Partial<Record<PriceHistoryFormField, string>> } }
   | { type: 'DELETE_SUCCESS'; payload: AssetPriceHistoryResult }
   | { type: 'DELETE_ERROR'; payload: string }
 
@@ -83,13 +84,13 @@ function reducer(state: PriceHistoryState, action: PriceHistoryAction): PriceHis
     case 'RESET':
       return { ...INITIAL_STATE, filterPersistence: state.filterPersistence }
     case 'FETCH_START': {
-      const prefs = state.filterPersistence.get(action.payload.key)
+      const prefs = prefsStore.restore(state.filterPersistence, action.payload.key)
       return {
         ...INITIAL_STATE,
         isLoading: true,
         retryCount: state.retryCount,
         filterPersistence: state.filterPersistence,
-        selectedFilter: prefs?.filter ?? DEFAULT_FILTER,
+        selectedFilter: prefs.filter,
       }
     }
     case 'FETCH_SUCCESS':
@@ -98,41 +99,29 @@ function reducer(state: PriceHistoryState, action: PriceHistoryAction): PriceHis
       return { ...state, isLoading: false, error: action.payload }
     case 'RETRY':
       return { ...state, retryCount: state.retryCount + 1, error: null }
-    case 'SET_FILTER': {
-      const newMap = new Map(state.filterPersistence)
-      newMap.set(action.payload.key, { filter: action.payload.filter })
-      return { ...state, selectedFilter: action.payload.filter, filterPersistence: newMap }
-    }
-    case 'SHOW_NEW_FORM':
+    case 'SET_FILTER':
       return {
         ...state,
-        isFormVisible: true,
-        editingDate: null,
-        formDate: action.payload.date,
-        formPrice: '',
-        saveError: null,
-        saveErrorFields: {},
-        isSaving: false,
+        selectedFilter: action.payload.filter,
+        filterPersistence: prefsStore.remember(state.filterPersistence, action.payload.key, {
+          filter: action.payload.filter,
+        }),
       }
+    case 'SHOW_NEW_FORM':
+      return openInlineForm(state, { editingDate: null, formDate: action.payload.date, formPrice: '' })
     case 'SHOW_EDIT_FORM': {
       const entry = action.payload
-      return {
-        ...state,
-        isFormVisible: true,
+      return openInlineForm(state, {
         editingDate: entry.date,
         formDate: toInputDate(entry.date),
         formPrice: String(entry.price),
-        saveError: null,
-        saveErrorFields: {},
-        isSaving: false,
-      }
+      })
     }
     case 'CANCEL_FORM':
-      return { ...state, ...BLANK_FORM }
     case 'SET_FORM_FIELD':
-      return { ...state, [action.payload.field]: action.payload.value }
     case 'SAVE_START':
-      return { ...state, isSaving: true, saveError: null, saveErrorFields: {} }
+    case 'SAVE_ERROR':
+      return reduceInlineForm(state, action, BLANK_FORM)
     case 'SAVE_SUCCESS':
       return {
         ...state,
@@ -141,8 +130,6 @@ function reducer(state: PriceHistoryState, action: PriceHistoryAction): PriceHis
         transactions: action.payload.transactions,
         deleteError: state.deleteError,
       }
-    case 'SAVE_ERROR':
-      return { ...state, isSaving: false, saveError: action.payload.message, saveErrorFields: action.payload.fields }
     case 'DELETE_SUCCESS':
       return { ...state, entries: action.payload.priceHistory, transactions: action.payload.transactions, deleteError: null }
     case 'DELETE_ERROR':

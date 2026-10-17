@@ -14,6 +14,8 @@ import { DEFAULT_FILTER, getPeriodFilterStartDate } from '../utils/periodFilter'
 import { formatMonthInputValue, formatMonthKey, getErrorMessage, parseValidatedNumber, toInputDate, todayIsoDate } from '../utils/formatters'
 import { isAllocationExact } from '../utils/lotAllocation'
 import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
+import { openInlineForm, reduceInlineForm, type InlineFormAction } from './inlineFormSlice'
+import { createSelectionPrefsStore } from './selectionPrefsStore'
 
 export type TransactionFormField =
   | 'formDate'
@@ -46,6 +48,8 @@ interface PersistedChartPrefs {
 }
 
 const DEFAULT_CHART_MODE: ChartDisplayMode = 'Bar'
+
+const prefsStore = createSelectionPrefsStore<PersistedChartPrefs>({ filter: DEFAULT_FILTER, mode: DEFAULT_CHART_MODE })
 
 function startOfMonth(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), 1)
@@ -130,12 +134,9 @@ type TransactionsAction =
   | { type: 'SET_CHART_MODE'; payload: { mode: ChartDisplayMode; key: string } }
   | { type: 'SHOW_NEW_FORM'; payload: { date: string; type: string } }
   | { type: 'SHOW_EDIT_FORM'; payload: TransactionDto }
-  | { type: 'CANCEL_FORM' }
-  | { type: 'SET_FORM_FIELD'; payload: { field: TransactionFormField; value: string } }
+  | InlineFormAction<TransactionFormField>
   | { type: 'SET_LOT_ALLOCATION'; payload: { sourceTransactionId: string; value: string } }
-  | { type: 'SAVE_START' }
   | { type: 'SAVE_SUCCESS'; payload: AssetDetailsDto }
-  | { type: 'SAVE_ERROR'; payload: { message: string | null; fields: Partial<Record<TransactionFormField, string>> } }
   | { type: 'DELETE_SUCCESS'; payload: AssetDetailsDto }
   | { type: 'DELETE_ERROR'; payload: string }
 
@@ -167,19 +168,29 @@ const INITIAL_STATE: TransactionsState = {
   deleteError: null,
 }
 
+function rememberPrefs(state: TransactionsState, key: string): TransactionsState {
+  return {
+    ...state,
+    filterPersistence: prefsStore.remember(state.filterPersistence, key, {
+      filter: state.selectedFilter,
+      mode: state.selectedChartMode,
+    }),
+  }
+}
+
 function reducer(state: TransactionsState, action: TransactionsAction): TransactionsState {
   switch (action.type) {
     case 'RESET':
       return { ...INITIAL_STATE, filterPersistence: state.filterPersistence }
     case 'FETCH_START': {
-      const prefs = state.filterPersistence.get(action.payload.key)
+      const prefs = prefsStore.restore(state.filterPersistence, action.payload.key)
       return {
         ...INITIAL_STATE,
         isLoading: true,
         retryCount: state.retryCount,
         filterPersistence: state.filterPersistence,
-        selectedFilter: prefs?.filter ?? DEFAULT_FILTER,
-        selectedChartMode: prefs?.mode ?? DEFAULT_CHART_MODE,
+        selectedFilter: prefs.filter,
+        selectedChartMode: prefs.mode,
       }
     }
     case 'FETCH_SUCCESS':
@@ -190,20 +201,12 @@ function reducer(state: TransactionsState, action: TransactionsAction): Transact
       return { ...state, isLoading: false, error: action.payload }
     case 'RETRY':
       return { ...state, retryCount: state.retryCount + 1, error: null }
-    case 'SET_FILTER': {
-      const newMap = new Map(state.filterPersistence)
-      newMap.set(action.payload.key, { filter: action.payload.filter, mode: state.selectedChartMode })
-      return { ...state, selectedFilter: action.payload.filter, filterPersistence: newMap }
-    }
-    case 'SET_CHART_MODE': {
-      const newMap = new Map(state.filterPersistence)
-      newMap.set(action.payload.key, { filter: state.selectedFilter, mode: action.payload.mode })
-      return { ...state, selectedChartMode: action.payload.mode, filterPersistence: newMap }
-    }
+    case 'SET_FILTER':
+      return rememberPrefs({ ...state, selectedFilter: action.payload.filter }, action.payload.key)
+    case 'SET_CHART_MODE':
+      return rememberPrefs({ ...state, selectedChartMode: action.payload.mode }, action.payload.key)
     case 'SHOW_NEW_FORM':
-      return {
-        ...state,
-        isFormVisible: true,
+      return openInlineForm(state, {
         editingId: null,
         formDate: action.payload.date,
         formType: action.payload.type,
@@ -212,15 +215,10 @@ function reducer(state: TransactionsState, action: TransactionsAction): Transact
         formFees: '',
         formWithheld: '',
         formLotAllocations: {},
-        saveError: null,
-        saveErrorFields: {},
-        isSaving: false,
-      }
+      })
     case 'SHOW_EDIT_FORM': {
       const t = action.payload
-      return {
-        ...state,
-        isFormVisible: true,
+      return openInlineForm(state, {
         editingId: t.id,
         formDate: toInputDate(t.date),
         formType: t.type,
@@ -229,26 +227,20 @@ function reducer(state: TransactionsState, action: TransactionsAction): Transact
         formFees: String(t.fees),
         formWithheld: String(t.withheld),
         formLotAllocations: {},
-        saveError: null,
-        saveErrorFields: {},
-        isSaving: false,
-      }
+      })
     }
     case 'CANCEL_FORM':
-      return { ...state, ...BLANK_FORM }
     case 'SET_FORM_FIELD':
-      return { ...state, [action.payload.field]: action.payload.value }
+    case 'SAVE_START':
+    case 'SAVE_ERROR':
+      return reduceInlineForm(state, action, BLANK_FORM)
     case 'SET_LOT_ALLOCATION':
       return {
         ...state,
         formLotAllocations: { ...state.formLotAllocations, [action.payload.sourceTransactionId]: action.payload.value },
       }
-    case 'SAVE_START':
-      return { ...state, isSaving: true, saveError: null, saveErrorFields: {} }
     case 'SAVE_SUCCESS':
       return { ...state, ...BLANK_FORM, asset: action.payload, deleteError: state.deleteError }
-    case 'SAVE_ERROR':
-      return { ...state, isSaving: false, saveError: action.payload.message, saveErrorFields: action.payload.fields }
     case 'DELETE_SUCCESS':
       return { ...state, asset: action.payload, deleteError: null }
     case 'DELETE_ERROR':
