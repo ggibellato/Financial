@@ -1,20 +1,8 @@
 import { useState } from 'react'
-import {
-  Button,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogSurface,
-  DialogTitle,
-  Field,
-  Input,
-  MessageBar,
-  MessageBarBody,
-  Switch,
-} from '@fluentui/react-components'
+import { Field, Input, Switch } from '@fluentui/react-components'
 import type { ReserveBucketDto } from '../api/types'
-import { useFormPanelStyles } from './formPanelStyles'
-import { getErrorMessage } from '../utils/formatters'
+import EntityFormDialog from './EntityFormDialog'
+import { useDialogSubmit } from '../hooks/useDialogSubmit'
 
 interface ReserveBucketFormDialogProps {
   reserveBucket: ReserveBucketDto | null
@@ -23,13 +11,11 @@ interface ReserveBucketFormDialogProps {
 }
 
 export default function ReserveBucketFormDialog({ reserveBucket, onCancel, onSubmit }: ReserveBucketFormDialogProps) {
-  const styles = useFormPanelStyles()
   const isEditing = reserveBucket !== null
   const [name, setName] = useState(reserveBucket?.name ?? '')
   const [splitPercentage, setSplitPercentage] = useState(String(reserveBucket?.splitPercentage ?? ''))
   const [isActive, setIsActive] = useState(reserveBucket?.isActive ?? true)
-  const [isSaving, setIsSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const { isSaving, error, submit } = useDialogSubmit('The reserve bucket could not be saved.')
 
   const trimmedName = name.trim()
   const parsedSplit = Number(splitPercentage)
@@ -41,69 +27,49 @@ export default function ReserveBucketFormDialog({ reserveBucket, onCancel, onSub
 
   const canSubmit = !nameError && !splitError && !isSaving
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!canSubmit) return
-
-    setIsSaving(true)
-    setError(null)
-    try {
+    void submit(async () => {
       await onSubmit(trimmedName, parsedSplit, isActive)
       onCancel()
-    } catch (err: unknown) {
-      setError(getErrorMessage(err, 'The reserve bucket could not be saved.'))
-      setIsSaving(false)
-    }
+    })
   }
 
   return (
-    <Dialog open onOpenChange={(_, data) => { if (!data.open) onCancel() }}>
-      <DialogSurface aria-describedby={undefined}>
-        <DialogBody>
-          <DialogTitle>{isEditing ? 'Edit Reserve Bucket' : 'Create Reserve Bucket'}</DialogTitle>
-          <DialogContent>
-            <Field
-              label="Name"
-              required
-              validationState={nameError ? 'error' : 'none'}
-              validationMessage={nameError}
-            >
-              <Input value={name} onChange={(e) => setName(e.target.value)} disabled={isSaving} autoFocus />
-            </Field>
+    <EntityFormDialog
+      title={isEditing ? 'Edit Reserve Bucket' : 'Create Reserve Bucket'}
+      error={error}
+      isSaving={isSaving}
+      canSave={canSubmit}
+      onSave={handleSubmit}
+      onCancel={onCancel}
+    >
+      <Field
+        label="Name"
+        required
+        validationState={nameError ? 'error' : 'none'}
+        validationMessage={nameError}
+      >
+        <Input value={name} onChange={(e) => setName(e.target.value)} disabled={isSaving} autoFocus />
+      </Field>
 
-            <Field
-              label="Split Percentage"
-              required
-              validationState={splitError ? 'error' : 'none'}
-              validationMessage={splitError}
-            >
-              <Input
-                type="number"
-                value={splitPercentage}
-                onChange={(e) => setSplitPercentage(e.target.value)}
-                disabled={isSaving}
-              />
-            </Field>
+      <Field
+        label="Split Percentage"
+        required
+        validationState={splitError ? 'error' : 'none'}
+        validationMessage={splitError}
+      >
+        <Input
+          type="number"
+          value={splitPercentage}
+          onChange={(e) => setSplitPercentage(e.target.value)}
+          disabled={isSaving}
+        />
+      </Field>
 
-            <Field label="Active">
-              <Switch checked={isActive} onChange={(e) => setIsActive(e.target.checked)} disabled={isSaving} />
-            </Field>
-
-            {error && (
-              <MessageBar intent="error">
-                <MessageBarBody>{error}</MessageBarBody>
-              </MessageBar>
-            )}
-          </DialogContent>
-          <div className={styles.actions}>
-            <Button appearance="primary" onClick={() => void handleSubmit()} disabled={!canSubmit}>
-              Save
-            </Button>
-            <Button appearance="secondary" onClick={onCancel} disabled={isSaving}>
-              Cancel
-            </Button>
-          </div>
-        </DialogBody>
-      </DialogSurface>
-    </Dialog>
+      <Field label="Active">
+        <Switch checked={isActive} onChange={(e) => setIsActive(e.target.checked)} disabled={isSaving} />
+      </Field>
+    </EntityFormDialog>
   )
 }
