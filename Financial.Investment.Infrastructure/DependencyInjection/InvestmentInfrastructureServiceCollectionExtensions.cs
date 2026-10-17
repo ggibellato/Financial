@@ -1,5 +1,6 @@
 using Financial.Investment.Application.Configuration;
 using Financial.Investment.Application.Interfaces;
+using Financial.Investment.Infrastructure.Configuration;
 using Financial.Investment.Infrastructure.Interfaces;
 using Financial.Investment.Infrastructure.Persistence;
 using Financial.Investment.Infrastructure.Repositories;
@@ -8,6 +9,7 @@ using Financial.Shared.Abstractions.Persistence;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Financial.Investment.Infrastructure.DependencyInjection;
@@ -20,15 +22,16 @@ public static class InvestmentInfrastructureServiceCollectionExtensions
     {
         services.Configure<InvestmentRepositorySettingsOptions>(options =>
             options.Load(InvestmentRepositorySettingsOptions.ConfigurationKeys, key => configuration[key]));
+        services.Configure<PriceQuoteOptions>(options => options.Load(key => configuration[key]));
         services.AddSingleton<IInvestmentSerializer, InvestmentSerializerAdapter>();
         services.AddSingleton<IDividendDataSource, DividendDataSourceAdapter>();
         services.AddSingleton<IAssetSnapshotSource, AssetSnapshotSourceAdapter>();
         services.AddSingleton<GoogleFinanceService>();
         services.AddHttpClient<YahooFinanceService>();
-        services.AddSingleton<IFinanceService>(sp => new FallbackFinanceService(
+        services.AddSingleton<IFinanceService>(sp => CachedQuotes(sp, Fallback(
+            sp,
             sp.GetRequiredService<GoogleFinanceService>(),
-            sp.GetRequiredService<YahooFinanceService>(),
-            sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<FallbackFinanceService>>()));
+            sp.GetRequiredService<YahooFinanceService>())));
         services.AddSingleton<StatusInvestFinanceService>();
         services.AddSingleton<TesouroTransparenteFinanceService>();
         services.AddSingleton<RedentiaFinanceService>();
@@ -36,17 +39,15 @@ public static class InvestmentInfrastructureServiceCollectionExtensions
         services.AddSingleton<IAssetPriceFetcher, CryptocurrencyAssetPriceFetcher>();
         services.AddSingleton<IAssetPriceFetcher>(sp =>
         {
-            var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<FallbackFinanceService>>();
-
-            var secondFallback = new FallbackFinanceService(
+            var secondFallback = Fallback(
+                sp,
                 sp.GetRequiredService<TesouroTransparenteFinanceService>(),
-                sp.GetRequiredService<RedentiaFinanceService>(),
-                logger);
+                sp.GetRequiredService<RedentiaFinanceService>());
 
-            return new BondAssetPriceFetcher(new FallbackFinanceService(
+            return new BondAssetPriceFetcher(CachedQuotes(sp, Fallback(
+                sp,
                 sp.GetRequiredService<StatusInvestFinanceService>(),
-                secondFallback,
-                logger));
+                secondFallback)));
         });
         services.TryAddSingleton(TimeProvider.System);
         services.AddSingleton<IInvestmentRepository>(sp =>
@@ -61,4 +62,18 @@ public static class InvestmentInfrastructureServiceCollectionExtensions
 
         return services;
     }
+
+    private static FallbackFinanceService Fallback(IServiceProvider sp, IFinanceService primary, IFinanceService fallback) =>
+        new(
+            primary,
+            fallback,
+            sp.GetRequiredService<TimeProvider>(),
+            sp.GetRequiredService<IOptions<PriceQuoteOptions>>().Value.ProviderFailureCooldown,
+            sp.GetRequiredService<ILogger<FallbackFinanceService>>());
+
+    private static CachingFinanceService CachedQuotes(IServiceProvider sp, IFinanceService inner) =>
+        new(
+            inner,
+            sp.GetRequiredService<TimeProvider>(),
+            sp.GetRequiredService<IOptions<PriceQuoteOptions>>().Value.CacheDuration);
 }
