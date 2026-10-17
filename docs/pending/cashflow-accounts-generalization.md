@@ -152,6 +152,22 @@ R$140 and £20 are the same debt in two currencies (approximately equal because 
 - One combination test per built-in template (4 today) checks the template's capabilities together, including the transactions they post. Because templates are fixed in code, this stays one test per template, not a combination matrix.
 - An architecture test forbids code from checking the template name, so behaviour can only hang off capabilities.
 
+### Data parity at every step
+
+Every slice, with or without a migration, must leave the user's real figures unchanged: same balances, totals and summaries before and after. This is checked against the **real data**, not only test data.
+
+- **Nothing is deployed until F01–F05 are all done and validated.** The live system keeps running today's version and its data keeps changing, so the migrations are run again on each new copy of the live file the user brings. They must run as **one chain from today's format** (F01 → F02 → … → the current slice) on any current live file, not only on the copy they were first written against.
+- **Never on the live file:** the user provides a copy of the live `data-cashflow.json`; every run works on a temp copy of it, and the live file is never touched.
+- **Parity check, each time a new live copy arrives and at the end of every slice:**
+  1. **Before:** run today's released version (`main` at the start of the project) on the copy and export a figures report.
+  2. **Migrate:** run the migration chain up to the current slice on a second copy.
+  3. **After:** run the slice's build on the migrated copy and export the same report.
+  4. **Compare:** the two reports must match exactly; any difference is investigated and fixed before the slice is done.
+- **The figures report** covers, for every month in the data: each bank's balance, each card's balance and statement totals, each pot's balance and the Reserva total, the Mãe BRL and GBP totals, category totals, the monthly summary, tithe, the annual summary, historic averages and the investment snapshot suggestions. It reads them from the API, the same values the screens show. It is built in F01 and extended by each slice as new figures appear (e.g. group summaries).
+- **Screens:** after the report matches, a short check of the main screens on both versions confirms they show the same values (main page, Monthly, card statements, Reserva, Controle Mãe, and the new account screen for the migrated templates). It can be a manual checklist or a Playwright script; it does not have to be an automated test in CI.
+- **Tools:** a script or process run during implementation is enough; it does not have to be a CI test. It must be repeatable with one command per step, so it is cheap to run on every new live copy.
+- The final run, on the latest live copy with the full F01–F05 chain, is the go-ahead for the single deploy.
+
 ### Account-centred UI
 
 One account screen, the same shape for every template:
@@ -191,7 +207,7 @@ Rules:
 
 From F01 on, every UI change is React-only; there is no WPF parity to keep.
 
-### Features (slices — each ships with its own data migration tested on a temp copy of the data file)
+### Features (slices — each ships with its own data migration, tested on a temp copy of the live data file and passing the [data parity check](#data-parity-at-every-step))
 
 F00 removed WPF. From F01 the account screen is built in React and grows with each template, so every slice ends with the user doing that template's tasks from the account screen.
 
