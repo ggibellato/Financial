@@ -7,6 +7,7 @@ using Financial.Shared.Abstractions.Sync;
 using Financial.Investment.Infrastructure.Repositories;
 using Financial.TestUtilities;
 using FluentAssertions;
+using FluentAssertions.Execution;
 using System.IO;
 
 namespace Financial.Investment.Infrastructure.Tests.Repositories;
@@ -208,6 +209,89 @@ public class InvestmentJsonRepositoryTests
 
         (await Task.WhenAny(next, Task.Delay(2000))).Should().BeSameAs(next, "the gate was released");
         (await next).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ApplyAndSaveAsync_WhenTheMutationThrowsPartWay_RestoresTheLastPersistedState()
+    {
+        var storage = new RecordingJsonStorage();
+        var repository = new InvestmentJsonRepository(Investments.Create(), storage, Serializer);
+        await repository.ApplyAndSaveAsync(() =>
+        {
+            repository.GetInvestments().CreateActiveBroker("XPI", "BRL").AddPortfolio("Default").AddAsset(Asset.Create("PETR4", "ISIN1", "BVMF", "PETR4"));
+            return true;
+        });
+
+        var failing = async () => await repository.ApplyAndSaveAsync(() =>
+        {
+            repository.GetAsset("XPI", "Default", "PETR4")!.SetPrice(new DateOnly(2026, 8, 14), 37.5m, isManual: true);
+            repository.GetInvestments().CreateActiveBroker("Trading212", "GBP");
+            throw new ArgumentException("Rejected part way through the change.");
+        });
+
+        await failing.Should().ThrowAsync<ArgumentException>();
+        using (new AssertionScope())
+        {
+            repository.GetBrokerList().Should().ContainSingle().Which.Name.Should().Be("XPI");
+            repository.GetAsset("XPI", "Default", "PETR4")!.PriceSnapshots.Should().BeEmpty();
+            storage.WriteCount.Should().Be(1);
+        }
+    }
+
+    [Fact]
+    public async Task ApplyAndSaveAsync_WhenTheWriteFails_RestoresTheLastPersistedState()
+    {
+        var storage = new RecordingJsonStorage();
+        var repository = new InvestmentJsonRepository(Investments.Create(), storage, Serializer);
+        await repository.ApplyAndSaveAsync(() =>
+        {
+            repository.GetInvestments().CreateActiveBroker("XPI", "BRL").AddPortfolio("Default").AddAsset(Asset.Create("PETR4", "ISIN1", "BVMF", "PETR4"));
+            return true;
+        });
+        storage.FailNextWrite = true;
+
+        var failing = async () => await repository.ApplyAndSaveAsync(() =>
+        {
+            repository.GetAsset("XPI", "Default", "PETR4")!.SetPrice(new DateOnly(2026, 8, 14), 37.5m, isManual: true);
+            repository.GetInvestments().CreateActiveBroker("Trading212", "GBP");
+            return true;
+        });
+
+        await failing.Should().ThrowAsync<IOException>();
+        using (new AssertionScope())
+        {
+            repository.GetBrokerList().Should().ContainSingle().Which.Name.Should().Be("XPI");
+            repository.GetAsset("XPI", "Default", "PETR4")!.PriceSnapshots.Should().BeEmpty();
+        }
+    }
+
+    [Fact]
+    public async Task ApplyAndSaveAsync_AfterAFailedWrite_TheNextSavePersistsItsOwnChangeWithoutTheFailedOne()
+    {
+        var storage = new RecordingJsonStorage();
+        var repository = new InvestmentJsonRepository(Investments.Create(), storage, Serializer);
+        await repository.ApplyAndSaveAsync(() =>
+        {
+            repository.GetInvestments().CreateActiveBroker("XPI", "BRL");
+            return true;
+        });
+        storage.FailNextWrite = true;
+        var failing = async () => await repository.ApplyAndSaveAsync(() =>
+        {
+            repository.GetInvestments().CreateActiveBroker("Lost", "BRL");
+            return true;
+        });
+        await failing.Should().ThrowAsync<IOException>();
+
+        var saved = await repository.ApplyAndSaveAsync(() =>
+        {
+            repository.GetInvestments().CreateActiveBroker("Trading212", "GBP");
+            return true;
+        });
+
+        saved.Should().BeTrue();
+        Serializer.Deserialize(storage.LastJson!).ActiveBrokers.Select(b => b.Name).Should().BeEquivalentTo("XPI", "Trading212");
+        repository.GetBrokerList().Select(b => b.Name).Should().BeEquivalentTo("XPI", "Trading212");
     }
 
     /// <summary>

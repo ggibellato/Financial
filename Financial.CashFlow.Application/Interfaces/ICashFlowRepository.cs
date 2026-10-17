@@ -83,11 +83,16 @@ public interface ICashFlowRepository
     /// not reentrant, so a nested call deadlocks the process rather than throwing. Calling the
     /// plain mutators above from inside it is expected and safe - they are not gated themselves.
     /// </para>
+    /// <para>
+    /// If the delegate or the write throws, the in-memory document is replaced by a fresh copy of
+    /// the last one persisted before the exception propagates, so no half-applied or unsaved change
+    /// survives to be written by a later save. Entities read before the failure belong to the
+    /// discarded copy: read them again through this repository.
+    /// </para>
     /// </remarks>
     /// <param name="applyChanges">
     /// Applies the change and returns true when something changed and must be persisted. Returning
-    /// false leaves the document untouched, which is how an in-memory-only correction such as a
-    /// compensating rollback runs under the same exclusion without writing.
+    /// false means nothing changed: nothing is written.
     /// </param>
     /// <returns>What <paramref name="applyChanges"/> reported: true when the document was written.</returns>
     Task<bool> ApplyAndSaveAsync(Func<bool> applyChanges);
