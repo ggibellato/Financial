@@ -95,7 +95,7 @@ graph TD
 | `before\build.log`, `after\build.log` | Publish and npm output |
 | `before-report.json`, `after-report.json` | Figures reports |
 | `differences.txt` | Written only when Compare finds differences |
-| `inputs\data-investment.json`, `inputs\data-fx-rates.json` | Copies of the example files, used by both sides |
+| `before\data-investment.json`, `before\data-fx-rates.json` (same under `after\`) | Copies of the example files, one set per side, so the two APIs never share a file |
 
 ## 5. API Contracts
 
@@ -174,7 +174,7 @@ No database or data-file change. The toolkit writes three file formats.
 
 Compare rules: each after key is matched to a before key, either directly or through the first mapping that matches. The values must be equal; decimals use numeric equality, so `130.8` equals `130.80`, and other types must match exactly. A before key that no after key reaches, and an after key with no before key, both count as differences. A mapping only renames; it never makes a different value acceptable.
 
-**`run.json`:** `liveCopy` (full path), `liveCopySha256Start`, `liveCopySha256End`, `range` (`first`, `last` as `yyyy-MM`; `currentMonth`), `baseline` (`tag`, `commit`), `after` (`commit`, `dirty` true/false), `before.copyChangedDuringRead` and `after.copyChangedDuringRead`, `figures`, `differences`. Each step updates its own fields, which lets separate step runs share the range and the result.
+**`run.json`:** `liveCopy` (full path), `runDate` (`-Step After` refuses a folder whose Baseline ran on another day, because several figures read the API's current date), `liveCopySha256Start`, `liveCopySha256End`, `range` (`first`, `last` as `yyyy-MM`; `currentMonth`), `baseline` (`tag`, `commit`), `afterBuild` (`commit`, `dirty` true/false), `before`/`after` (`copyChangedDuringRead`, a hint only, and `figures`), `figures`, `differences`. Each step updates its own fields, which lets separate step runs share the range and the result.
 
 **Input copy (read-only, V1 shape) used for the month range:** `Expenses[].Date`, `ChargeDate`, `InvoiceDate`; `Incomes[].Date`; `ReserveMovements[].Date`; `MaeLedgerEntries[].Date`; `Transfers[].Date`; `BalanceAdjustments[].Date`; `InvestmentSnapshots[].Year/Month`; `CardStatements[].Year/Month`. On the 2026-10-18 copy this gives 2017-01 to 2027-02.
 

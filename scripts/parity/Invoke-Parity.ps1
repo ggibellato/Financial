@@ -16,6 +16,9 @@ $parityRoot = Join-Path ([IO.Path]::GetTempPath()) 'financial-parity'
 $startedProcesses = [System.Collections.Generic.List[System.Diagnostics.Process]]::new()
 $succeeded = $false
 $exitCode = 1
+$readinessTimeoutSeconds = 60
+$readinessPollMilliseconds = 500
+$runDate = (Get-Date).ToString('yyyy-MM-dd')
 
 function Read-RunInfo([string]$Folder) {
     $path = Join-Path $Folder 'run.json'
@@ -54,20 +57,23 @@ function Publish-ParityApi([string]$Side, [string]$SourceRoot, [string]$SideFold
     Invoke-Logged $log $failure { dotnet publish (Join-Path $SourceRoot 'Financial.Api/Financial.Api.csproj') --configuration Release --output $appFolder }
     if ($KeepRunning) {
         $webFolder = Join-Path $SourceRoot 'Financial.Web'
+        $callerApiBaseUrl = $env:API_BASE_URL
         $env:API_BASE_URL = '/api/v1/financial'
         Push-Location $webFolder
         try {
             if (-not (Test-Path -LiteralPath (Join-Path $webFolder 'node_modules'))) { Invoke-Logged $log $failure { npm ci } }
             Invoke-Logged $log $failure { npm run build }
         }
-        finally { Pop-Location }
+        finally {
+            Pop-Location
+            $env:API_BASE_URL = $callerApiBaseUrl
+        }
         $wwwroot = Join-Path $appFolder 'wwwroot'
         New-Item -ItemType Directory -Path $wwwroot -Force | Out-Null
         Copy-Item -Path (Join-Path $webFolder 'dist/*') -Destination $wwwroot -Recurse -Force
     }
     $appFolder
 }
-
 
 function Start-ParityApi([string]$Side, [string]$SideFolder, [string]$AppFolder, [int]$Port) {
     Copy-Item -LiteralPath (Join-Path $RepoRoot 'data/data-investment.example.json') -Destination (Join-Path $SideFolder 'data-investment.json') -Force
@@ -89,7 +95,7 @@ function Start-ParityApi([string]$Side, [string]$SideFolder, [string]$AppFolder,
     $startedProcesses.Add($process)
 
     $baseUrl = "http://localhost:$Port/api/v1/financial"
-    $deadline = (Get-Date).AddSeconds(60)
+    $deadline = (Get-Date).AddSeconds($readinessTimeoutSeconds)
     while ((Get-Date) -lt $deadline -and -not $process.HasExited) {
         try {
             $health = Invoke-RestMethod -Uri "$baseUrl/health" -TimeoutSec 5
@@ -98,7 +104,7 @@ function Start-ParityApi([string]$Side, [string]$SideFolder, [string]$AppFolder,
             }
             break
         }
-        catch { Start-Sleep -Milliseconds 500 }
+        catch { Start-Sleep -Milliseconds $readinessPollMilliseconds }
     }
     throw "$Side API on port $Port did not become ready (or is not LocalJson); see $log"
 }
@@ -165,6 +171,7 @@ function Invoke-AfterStep([string]$Folder, $RunInfo) {
     Write-Host '[3/4] After: building the working tree...'
     $sideFolder = Join-Path $Folder 'after'
     if (-not (Test-Path -LiteralPath (Join-Path $sideFolder 'data-cashflow.json'))) { throw "No migrated copy in $Folder. Run -Step Migrate first." }
+    if ($RunInfo.runDate -ne $runDate) { throw "The before report was taken on $($RunInfo.runDate) and the API reads today's date; rerun -Step All." }
     $RunInfo.afterBuild = [ordered]@{
         commit = (git -C $RepoRoot rev-parse HEAD)
         dirty  = [bool](git -C $RepoRoot status --porcelain)
@@ -191,7 +198,9 @@ function Invoke-CompareStep([string]$Folder, $RunInfo) {
 try {
     if ($Step -ne 'Compare') {
         if (-not $LiveCopy) { throw "-LiveCopy is required for -Step $Step." }
-        $liveCopyPath = Assert-ParityLiveCopy $LiveCopy $RepoRoot
+        $gitCommonDir = if (Get-Command git -ErrorAction SilentlyContinue) { git -C $RepoRoot rev-parse --path-format=absolute --git-common-dir 2> $null }
+        $repoRoots = @($RepoRoot) + @(if ($gitCommonDir) { Split-Path -Parent $gitCommonDir })
+        $liveCopyPath = Assert-ParityLiveCopy $LiveCopy $repoRoots
         Assert-ParityPorts @(switch ($Step) { 'All' { $BeforePort, $AfterPort } 'Baseline' { $BeforePort } 'After' { $AfterPort } })
         if ($Step -in 'All', 'Baseline') {
             git -C $RepoRoot rev-parse --verify --quiet "$BaselineTag^{commit}" *> $null
@@ -206,6 +215,7 @@ try {
     if ($Step -ne 'Compare') {
         if ($Step -in 'All', 'Baseline' -or -not $runInfo.Contains('range')) {
             $runInfo.liveCopy = $liveCopyPath
+            $runInfo.runDate = $runDate
             $runInfo.liveCopySha256Start = Get-ParitySha256 $liveCopyPath
             $range = Get-ParityMonthRange $liveCopyPath (Get-Date)
             $runInfo.range = [ordered]@{ first = $range.First; last = $range.Last; currentMonth = $range.CurrentMonth }

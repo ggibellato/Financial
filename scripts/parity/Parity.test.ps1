@@ -174,6 +174,21 @@ try {
     $output = & pwsh -NoProfile -File $entry -Step All -LiveCopy (Join-Path $repoRoot 'data/data-cashflow.json') -RepoRoot $repoRoot 2>&1 | Out-String
     Check 'entry script refuses the live data file before anything runs' ($LASTEXITCODE -eq 1 -and $output -match [regex]::Escape($expected) -and $output -notmatch '\[1/4\]') $output
 
+    git init --quiet $repoRoot
+    $copyPath = Join-Path $repoRoot 'data/copy.json'
+    $output = & pwsh -NoProfile -File $entry -Step Baseline -LiveCopy $copyPath -RepoRoot $repoRoot -BeforePort $freePort 2>&1 | Out-String
+    Check 'entry script refuses a missing baseline tag before anything runs' ($LASTEXITCODE -eq 1 -and $output -match [regex]::Escape('Tag p60-baseline not found. Create it on main before the first run.') -and $output -notmatch 'Work folder') $output
+
+    $output = & pwsh -NoProfile -File $entry -Step All -LiveCopy $copyPath -RepoRoot $repoRoot -BeforePort 8080 2>&1 | Out-String
+    Check 'entry script refuses port 8080 before anything runs' ($LASTEXITCODE -eq 1 -and $output -match [regex]::Escape('Port 8080 is in use (or is the live port 8080)') -and $output -notmatch 'Work folder') $output
+
+    $badMapPath = Join-Path $work 'bad-map.json'
+    Set-Content -LiteralPath $badMapPath -Value '{ "mappings": [ { "after": "{month}/x/*", "befor": "{month}/y/*" }, { "after": "{month}/x/*", "before": "{month}/y" } ] }'
+    $badMappings = Read-ParityFigureMap $badMapPath
+    $missingBefore = Get-Error { Compare-ParityReport (New-Report @{}) (New-Report @{}) @($badMappings[0]) }
+    $placeholderMismatch = Get-Error { Compare-ParityReport (New-Report @{}) (New-Report @{}) @($badMappings[1]) }
+    Check 'malformed figure-map entries are named' ($missingBefore -match '^Invalid figure-map entry' -and $placeholderMismatch -match '^Invalid figure-map entry') "$missingBefore / $placeholderMismatch"
+
     $readme = Get-Content -LiteralPath (Join-Path $here 'README.md') -Raw
     $undocumented = $figureFamilies + @('Baseline', 'Migrate', 'After', 'Compare', 'All', 'KeepRunning') | Where-Object { $readme -notmatch "\b$_\b" }
     Check 'readme documents every catalogue family and step' (@($undocumented).Count -eq 0 -and (Test-Path (Join-Path $here 'screen-checklist.md'))) ($undocumented -join ', ')

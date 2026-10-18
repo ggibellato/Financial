@@ -33,7 +33,7 @@ with **0 differences** on the latest copy of the live data.
 | Option | Default | Notes |
 |--------|---------|-------|
 | `-LiveCopy` | — | Required for every step except `Compare` |
-| `-WorkFolder` | `All` and `Baseline` create `%TEMP%\financial-parity\<yyyyMMdd-HHmmss>`; the other steps use the newest folder there | Lets you rerun one step, e.g. `-Step After` then `-Step Compare` while fixing a difference |
+| `-WorkFolder` | `All` and `Baseline` create `%TEMP%\financial-parity\<yyyyMMdd-HHmmss>`; the other steps use the newest folder there | Lets you rerun one step, e.g. `-Step After` then `-Step Compare` while fixing a difference. Several figures depend on the API's current date, so `-Step After` refuses a work folder whose Baseline ran on another day; rerun `-Step All` then. |
 | `-BeforePort`, `-AfterPort` | 5291, 5292 | 8080, a busy port and two equal ports are refused |
 | `-BaselineTag` | `p60-baseline` | Must exist locally |
 | `-KeepRunning` | off | Also builds each version's web app into its API and leaves the API(s) running. Use it for the [screen checklist](screen-checklist.md); the script prints the URLs and the `Stop-Process` line. The baseline worktree always runs `npm ci` (about 5 minutes). The working tree reuses its existing `node_modules` and runs `npm ci` only when the folder is missing. Run it straight from a terminal: piping its output (e.g. `\| Select-Object`) keeps the pipe open until the APIs are stopped. |
@@ -58,7 +58,7 @@ difference(s)` means exit 1, and the work folder is kept for inspection.
 
 | Path | Content |
 |------|---------|
-| `run.json` | Input path and hashes, month range, baseline tag and commit, after commit and dirty flag, figure and difference counts. `copyChangedDuringRead` notes that today's card-statement and tithe GETs write to the copy; both copies receive the same calls. |
+| `run.json` | Input path and hashes, month range, baseline tag and commit, after commit and dirty flag, figure and difference counts. `copyChangedDuringRead` is a hint only: today's card-statement and tithe GETs write to the copy (both copies receive the same calls), but the API may not have flushed those writes when the hash is taken. |
 | `before\`, `after\` | The data copies, the published `app\`, `build.log`, `api.log` and `api.err.log` |
 | `before-report.json`, `after-report.json` | Figures reports: one sorted JSON object, `key: value` |
 | `differences.txt` | Only when Compare fails |
@@ -68,7 +68,8 @@ difference(s)` means exit 1, and the work folder is kept for inspection.
 The month range runs from the first month with any record in the input to the later of the
 current month and the last month with any record, so future invoice months are included. It is
 computed once from the input, before migration, and both sides use it. Keys use display names.
-Two figures with the same key stop the run.
+Two figures with the same key stop the run. Names are assumed not to contain `/`, which separates
+key segments; none do in the live data.
 
 | Family | Endpoint (under `/api/v1/financial/`) | Keys |
 |--------|----------------------------------------|------|
@@ -87,8 +88,9 @@ Two figures with the same key stop the run.
 
 ## Extending it
 
-- **New figure:** add it to the report builder in `Parity.psm1` (`Add-ParityMonthFigures`,
-  `Add-ParityYearFigures` or `Get-ParityReport`), add the family to `$figureFamilies` in `Parity.test.ps1` and
+- **New figure:** add it to its family's function in `Parity.psm1` (`Add-ParityBankFigures`,
+  `Add-ParityCardFigures`, … or `Add-ParityYearFigures`), or add a new family function and call it
+  from `Add-ParityMonthFigures`, add the family to `$figureFamilies` in `Parity.test.ps1` and
   the table above, and add a case to `Parity.test.ps1`.
 - **Figure moved to a new source:** when a feature serves a figure from a new endpoint or key, add
   a mapping to `figure-map.json`. The compare then checks the new key against the old one:
