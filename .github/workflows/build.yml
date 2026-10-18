@@ -68,6 +68,9 @@ jobs:
     - name: Self-test the nightly issue script
       run: pwsh .github/scripts/nightly-issue.test.ps1
 
+    - name: Self-test the parity toolkit
+      run: pwsh scripts/parity/Parity.test.ps1
+
     - name: Resolve the diff base
       id: base
       env:

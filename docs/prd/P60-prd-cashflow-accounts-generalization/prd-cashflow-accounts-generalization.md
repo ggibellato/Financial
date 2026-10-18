@@ -655,15 +655,15 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Parity Toolkit
-- [ ] Tag `p60-baseline` exists on the `main` commit where F01 starts
-- [ ] `Invoke-Parity.ps1 -Step All -LiveCopy <copy>` runs Baseline, Migrate, After and Compare and ends with 0 differences when the working tree has no behaviour change
-- [ ] Changing one figure in the after copy by hand makes Compare print that figure's path, before and after values and exit with code 1
-- [ ] The report contains every figure family listed in F01 Capabilities for every month from the first month with a record to the later of the current month and the last month with a record
-- [ ] Passing `data/data-cashflow.json` as `-LiveCopy` is refused before anything runs
-- [ ] Port 8080 or a busy port is refused before anything runs
-- [ ] The live copy's SHA-256 is identical before and after a run
-- [ ] Both API processes are stopped and the temp worktree removed after success and after a failed build
-- [ ] `scripts/parity/README.md` and `screen-checklist.md` exist and describe every command and figure
+- [x] Tag `p60-baseline` exists on the `main` commit where F01 starts
+- [x] `Invoke-Parity.ps1 -Step All -LiveCopy <copy>` runs Baseline, Migrate, After and Compare and ends with 0 differences when the working tree has no behaviour change
+- [x] Changing one figure in the after copy by hand makes Compare print that figure's path, before and after values and exit with code 1
+- [x] The report contains every figure family listed in F01 Capabilities for every month from the first month with a record to the later of the current month and the last month with a record
+- [x] Passing `data/data-cashflow.json` as `-LiveCopy` is refused before anything runs
+- [x] Port 8080 or a busy port is refused before anything runs
+- [x] The live copy's SHA-256 is identical before and after a run
+- [x] Both API processes are stopped and the temp worktree removed after success and after a failed build
+- [x] `scripts/parity/README.md` and `screen-checklist.md` exist and describe every command and figure
 
 ### F02. Account Model and Bank Migration
 - [ ] `migrate` upgrades a V1 copy of the live data to V2: 3 bank accounts with the same Ids, names, opening balances, start dates and round-up settings; `Version` = 2
