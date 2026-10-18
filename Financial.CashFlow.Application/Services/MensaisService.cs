@@ -248,11 +248,8 @@ public sealed class MensaisService : IMensaisService
         DescriptionValidator.EnsureWithinLimit(request.Description);
 
         var category = CashFlowReferenceResolver.ResolveActiveCategory(_repository.GetCategories(), request.CategoryId);
-        var bank = CashFlowReferenceResolver.ResolvePaymentSource(_repository.GetAccounts(), request.PaymentSourceBankId);
-        if (!bank.Has(Capability.CanPayBills))
-        {
-            throw new ArgumentException($"Payment source '{request.PaymentSourceBankId}' is not recognized.");
-        }
+        var bank = CashFlowReferenceResolver.ResolvePaymentSource(
+            _repository.GetAccounts().Where(account => account.Has(Capability.CanPayBills)), request.PaymentSourceBankId);
 
         return Expense.Create(request.Date, request.Description, request.Value, category, bank, creditCard: null);
     }

@@ -18,6 +18,7 @@ public class Account
     public bool IsActive { get; private set; }
     public OpeningBalance? OpeningBalance { get; private set; }
     public RoundUpSetting? RoundUp { get; private set; }
+    public bool RoundsUp => RoundUp?.Enabled == true;
 
     private Account() { }
 

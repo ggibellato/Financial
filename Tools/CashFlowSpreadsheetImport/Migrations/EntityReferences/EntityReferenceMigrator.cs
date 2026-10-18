@@ -41,7 +41,7 @@ public static class EntityReferenceMigrator
         }
 
         var summary = new EntityReferenceMigrationSummary();
-        var elementOptions = CreateElementOptions();
+        var elementOptions = CashFlowElementOptions.Create();
 
         var banks = ReadLegacyBanks(root, summary);
         var banksByName = banks.ToDictionary(b => b.Name, b => b, StringComparer.OrdinalIgnoreCase);
@@ -65,7 +65,7 @@ public static class EntityReferenceMigrator
         var categories = ResolveCategories(root, elementOptions);
         var categoriesByName = categories.ToDictionary(c => c.Name, c => c, StringComparer.OrdinalIgnoreCase);
         var referenceContext = BuildContext([], [], [], reserveBuckets, creditCards, categories);
-        var resolvedOptions = CreateElementOptions(referenceContext);
+        var resolvedOptions = CashFlowElementOptions.Create(referenceContext);
 
         var data = CashFlowData.Create();
         AddBaseCollections(data, banks, incomeSources, investmentAccounts, reserveBuckets, creditCards, categories);

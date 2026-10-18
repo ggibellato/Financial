@@ -6,7 +6,7 @@ namespace Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migr
 
 /// <summary>
 /// Idempotently seeds the 3 tracked banks and audits every expense's payment source. Since
-/// Expense.PaymentSourceAccount is a real Bank reference (F01), an expense can no longer hold an
+/// Expense.PaymentSourceAccount is a real Account reference (F01), an expense can no longer hold an
 /// unresolvable bank tag - the audit only counts applicable (bank-paid) vs. not-applicable
 /// (credit-card charge) expenses.
 /// </summary>

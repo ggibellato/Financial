@@ -39,7 +39,7 @@ public class Expense : IAccountTransaction
         RoundUpAmount is not null
         || PaymentStatus != ExpensePaymentStatus.ImmediatePayment
         || Value <= 0
-        || !SupportsRoundUp(PaymentSourceAccount)
+        || PaymentSourceAccount?.RoundsUp != true
             ? null
             : RoundUpSuggestion;
 
@@ -219,7 +219,7 @@ public class Expense : IAccountTransaction
                 "Round-up only applies to an expense paid directly from a bank, not a credit-card charge.");
         }
 
-        if (!SupportsRoundUp(PaymentSourceAccount!))
+        if (!PaymentSourceAccount!.RoundsUp)
         {
             throw new ArgumentException($"Bank '{PaymentSourceAccount!.Name}' does not support round-up.");
         }
@@ -240,9 +240,6 @@ public class Expense : IAccountTransaction
 
     public decimal ContributionTo(Account account) =>
         PaymentSourceAccount?.Id == account.Id ? -(Value + (RoundUpAmount ?? 0)) : 0m;
-
-    private static bool SupportsRoundUp(Account? account) =>
-        account is not null && account.Has(Capability.SupportsRoundUp) && account.RoundUp?.Enabled == true;
 
     private static DateOnly FirstOfMonth(DateOnly date) => new(date.Year, date.Month, 1);
 

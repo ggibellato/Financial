@@ -1,4 +1,5 @@
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.CategoryReferences;
+using Financial.CashFlow.Domain.ValueObjects;
 using Financial.CashFlow.Infrastructure.Persistence;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -50,6 +51,34 @@ public class CategoryReferenceMigratorTests : FileMigratorContractTests
           "CardStatements": []
         }
         """;
+
+    [Fact]
+    public void Migrate_FileWithV1Banks_KeepsEachBanksRoundUpAndOpeningBalance()
+    {
+        var bankId = Guid.Parse("44444444-4444-4444-4444-444444444444");
+        var path = CreateTempFile(LegacyFixtureJson().Replace(
+            "\"Banks\": []",
+            $$"""
+            "Banks": [{ "Id": "{{bankId}}", "Name": "Chase", "RoundUpEnabled": true, "OpeningBalance": 1250.70, "OpeningBalanceDate": "2026-09-01" }]
+            """));
+
+        try
+        {
+            CategoryReferenceMigrator.Migrate(path);
+
+            var bank = new CashFlowSerializerAdapter().Deserialize(File.ReadAllText(path)).Accounts.Should().ContainSingle().Which;
+            using (new AssertionScope())
+            {
+                bank.Id.Should().Be(bankId);
+                bank.RoundsUp.Should().BeTrue();
+                bank.OpeningBalance.Should().Be(OpeningBalance.Create(1250.70m, new DateOnly(2026, 9, 1)));
+            }
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
 
     [Fact]
     public void Migrate_LegacyFileWithNoSeededCategories_BootstrapsTheCanonicalFourteenAndRewritesExpense()

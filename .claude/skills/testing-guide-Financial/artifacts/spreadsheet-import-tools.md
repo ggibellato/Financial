@@ -57,11 +57,11 @@ public class MonthlyExpenseSheetImporterTests : IDisposable
 
     public void Dispose() => _workbook.Dispose();
 
-    private static readonly IReadOnlyCollection<Bank> Banks =
+    private static readonly IReadOnlyCollection<Account> Banks =
     [
-        Bank.Create("Barclays", roundUpEnabled: false),
-        Bank.Create("Trading212", roundUpEnabled: true),
-        Bank.Create("Chase", roundUpEnabled: true)
+        TestAccounts.Bank("Barclays", roundUpEnabled: false),
+        TestAccounts.Bank("Trading212", roundUpEnabled: true),
+        TestAccounts.Bank("Chase", roundUpEnabled: true)
     ];
 }
 ```

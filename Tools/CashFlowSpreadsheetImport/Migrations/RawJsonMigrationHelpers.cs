@@ -1,7 +1,6 @@
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Infrastructure.Persistence;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations;
 
@@ -13,12 +12,6 @@ namespace Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migr
 /// </summary>
 internal static class RawJsonMigrationHelpers
 {
-    public static JsonSerializerOptions CreateElementOptions(ReferenceResolutionContext? context = null) => new()
-    {
-        Converters = { new JsonStringEnumConverter() },
-        TypeInfoResolver = new CashFlowTypeInfoResolver(context)
-    };
-
     public static List<T> DeserializeCollection<T>(JsonElement root, string propertyName, JsonSerializerOptions options)
     {
         if (!root.TryGetProperty(propertyName, out var element) || element.ValueKind != JsonValueKind.Array)
@@ -56,13 +49,13 @@ internal static class RawJsonMigrationHelpers
     /// for any collection a migrator doesn't have (e.g. one that predates it, or one it's itself
     /// migrating and resolves by name instead) - iterating an empty list is a no-op.</summary>
     public static ReferenceResolutionContext BuildContext(
-        IEnumerable<Account> banks, IEnumerable<IncomeSource> incomeSources, IEnumerable<InvestmentAccount> investmentAccounts,
+        IEnumerable<Account> accounts, IEnumerable<IncomeSource> incomeSources, IEnumerable<InvestmentAccount> investmentAccounts,
         IEnumerable<ReserveBucket> reserveBuckets, IEnumerable<CreditCard> creditCards, IEnumerable<Category> categories)
     {
         var context = new ReferenceResolutionContext();
-        foreach (var account in banks) context.Accounts[account.Id] = account;
+        foreach (var account in accounts) context.Accounts[account.Id] = account;
         foreach (var incomeSource in incomeSources) context.IncomeSources[incomeSource.Id] = incomeSource;
-        foreach (var account in investmentAccounts) context.InvestmentAccounts[account.Id] = account;
+        foreach (var investmentAccount in investmentAccounts) context.InvestmentAccounts[investmentAccount.Id] = investmentAccount;
         foreach (var bucket in reserveBuckets) context.ReserveBuckets[bucket.Id] = bucket;
         foreach (var card in creditCards) context.CreditCards[card.Id] = card;
         foreach (var category in categories) context.Categories[category.Id] = category;
@@ -73,12 +66,12 @@ internal static class RawJsonMigrationHelpers
     /// Same empty-list convention as <see cref="BuildContext"/>.</summary>
     public static void AddBaseCollections(
         CashFlowData data,
-        IEnumerable<Account> banks, IEnumerable<IncomeSource> incomeSources, IEnumerable<InvestmentAccount> investmentAccounts,
+        IEnumerable<Account> accounts, IEnumerable<IncomeSource> incomeSources, IEnumerable<InvestmentAccount> investmentAccounts,
         IEnumerable<ReserveBucket> reserveBuckets, IEnumerable<CreditCard> creditCards, IEnumerable<Category> categories)
     {
-        foreach (var account in banks) data.AddAccount(account);
+        foreach (var account in accounts) data.AddAccount(account);
         foreach (var incomeSource in incomeSources) data.AddIncomeSource(incomeSource);
-        foreach (var account in investmentAccounts) data.AddInvestmentAccount(account);
+        foreach (var investmentAccount in investmentAccounts) data.AddInvestmentAccount(investmentAccount);
         foreach (var bucket in reserveBuckets) data.AddReserveBucket(bucket);
         foreach (var card in creditCards) data.AddCreditCard(card);
         foreach (var category in categories) data.AddCategory(category);

@@ -16,7 +16,7 @@ namespace Financial.CashFlow.Infrastructure.Persistence;
 /// </summary>
 public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
 {
-    private static readonly JsonSerializerOptions UnresolvedOptions = CreateElementOptions(context: null);
+    private static readonly JsonSerializerOptions UnresolvedOptions = CashFlowElementOptions.Create(context: null);
 
     public override CashFlowData Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
@@ -43,7 +43,7 @@ public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
         // System.Text.Json resolves and caches each type's JsonTypeInfo on first use, and nothing
         // deserialized so far touches a type other than InvestmentAccount/CreditCard, so every
         // later type still resolves its reference converters against the fully-populated context.
-        var resolvedOptions = CreateElementOptions(context);
+        var resolvedOptions = CashFlowElementOptions.Create(context);
         var investmentAccounts = DeserializeCollection<InvestmentAccount>(root, "InvestmentAccounts", resolvedOptions);
         foreach (var investmentAccount in investmentAccounts) context.InvestmentAccounts[investmentAccount.Id] = investmentAccount;
 
@@ -115,12 +115,6 @@ public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
 
         writer.WriteEndObject();
     }
-
-    private static JsonSerializerOptions CreateElementOptions(ReferenceResolutionContext? context) => new()
-    {
-        Converters = { new JsonStringEnumConverter(), new AccountJsonConverter() },
-        TypeInfoResolver = new CashFlowTypeInfoResolver(context)
-    };
 
     private static List<T> DeserializeCollection<T>(JsonElement root, string propertyName, JsonSerializerOptions options)
     {

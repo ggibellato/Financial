@@ -232,11 +232,17 @@ public sealed class BankService : IBankService
 
     private void EnsureNotReferenced(Guid accountId)
     {
-        if (BuildReferencedAccountIds().Contains(accountId))
+        if (IsReferenced(accountId))
         {
             throw new EntityInUseException("Cannot delete a bank that still has balance history or transactions.");
         }
     }
+
+    private bool IsReferenced(Guid accountId) =>
+        _repository.GetBalanceAdjustments().Any(a => a.Account.Id == accountId) ||
+        _repository.GetIncomes().Any(i => i.Account?.Id == accountId) ||
+        _repository.GetExpenses().Any(e => e.PaymentSourceAccount?.Id == accountId) ||
+        _repository.GetTransfers().Any(t => t.SourceAccount.Id == accountId || t.DestinationAccount.Id == accountId);
 
     private HashSet<Guid> BuildReferencedAccountIds()
     {
@@ -258,15 +264,15 @@ public sealed class BankService : IBankService
         return _tracer.StartServiceSpan("CashFlow", nameof(BankService), operationName, EntityType);
     }
 
-    private BankDTO ToDto(Account bank) => ToDto(bank, BuildReferencedAccountIds().Contains(bank.Id));
+    private BankDTO ToDto(Account bank) => ToDto(bank, IsReferenced(bank.Id));
 
     private static BankDTO ToDto(Account bank, bool hasReferences) => new()
     {
         Id = bank.Id,
         Name = bank.Name,
-        RoundUpEnabled = bank.RoundUp!.Enabled,
-        OpeningBalance = bank.OpeningBalance!.Amount,
-        OpeningBalanceDate = bank.OpeningBalance.StartDate,
+        RoundUpEnabled = bank.RoundsUp,
+        OpeningBalance = bank.OpeningBalance?.Amount ?? 0m,
+        OpeningBalanceDate = bank.OpeningBalance?.StartDate ?? default,
         HasReferences = hasReferences
     };
 }

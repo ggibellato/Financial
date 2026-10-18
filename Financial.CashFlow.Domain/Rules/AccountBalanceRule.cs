@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Entities.Transactions;
-using Financial.CashFlow.Domain.Enums;
 
 namespace Financial.CashFlow.Domain.Rules;
 
@@ -14,7 +13,7 @@ public static class AccountBalanceRule
         ArgumentNullException.ThrowIfNull(account);
         ArgumentNullException.ThrowIfNull(records);
 
-        var openingBalance = account.Has(Capability.HasOpeningBalance) ? account.OpeningBalance : null;
+        var openingBalance = account.OpeningBalance;
         var windowStart = openingBalance?.StartDate ?? DateOnly.MinValue;
 
         return (openingBalance?.Amount ?? 0m)

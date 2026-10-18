@@ -41,7 +41,7 @@ public static class CreditCardReferenceMigrator
         }
 
         var summary = new CreditCardReferenceMigrationSummary();
-        var unresolvedOptions = CreateElementOptions(context: null);
+        var unresolvedOptions = CashFlowElementOptions.Create(context: null);
 
         var banks = DeserializeCollection<Account>(root, "Banks", unresolvedOptions);
         var incomeSources = DeserializeCollection<IncomeSource>(root, "IncomeSources", unresolvedOptions);
@@ -57,7 +57,7 @@ public static class CreditCardReferenceMigrator
 
         var context = BuildContext(banks, incomeSources, investmentAccounts, reserveBuckets, creditCards, categories);
 
-        var resolvedOptions = CreateElementOptions(context);
+        var resolvedOptions = CashFlowElementOptions.Create(context);
 
         var data = CashFlowData.Create();
         AddBaseCollections(data, banks, incomeSources, investmentAccounts, reserveBuckets, creditCards, categories);

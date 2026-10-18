@@ -40,7 +40,7 @@ public static class ReserveBucketReferenceMigrator
         }
 
         var summary = new ReserveBucketReferenceMigrationSummary();
-        var unresolvedOptions = CreateElementOptions(context: null);
+        var unresolvedOptions = CashFlowElementOptions.Create(context: null);
 
         var banks = DeserializeCollection<Account>(root, "Banks", unresolvedOptions);
         var incomeSources = DeserializeCollection<IncomeSource>(root, "IncomeSources", unresolvedOptions);
@@ -53,7 +53,7 @@ public static class ReserveBucketReferenceMigrator
 
         var context = BuildContext(banks, incomeSources, investmentAccounts, reserveBuckets, [], categories);
 
-        var resolvedOptions = CreateElementOptions(context);
+        var resolvedOptions = CashFlowElementOptions.Create(context);
 
         var data = CashFlowData.Create();
         AddBaseCollections(data, banks, incomeSources, investmentAccounts, reserveBuckets, [], categories);

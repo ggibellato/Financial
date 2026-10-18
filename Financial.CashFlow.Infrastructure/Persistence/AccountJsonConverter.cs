@@ -9,8 +9,6 @@ namespace Financial.CashFlow.Infrastructure.Persistence;
 
 public sealed class AccountJsonConverter : JsonConverter<Account>
 {
-    private static readonly JsonSerializerOptions BankRecordOptions = new();
-
     private static readonly JsonSerializerOptions AccountOptions = new()
     {
         Converters = { new JsonStringEnumConverter() },
@@ -19,7 +17,7 @@ public sealed class AccountJsonConverter : JsonConverter<Account>
 
     public override Account Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        var bank = JsonSerializer.Deserialize<BankRecord>(ref reader, BankRecordOptions)!;
+        var bank = JsonSerializer.Deserialize<BankRecord>(ref reader)!;
 
         var identity = new JsonObject
         {
@@ -45,7 +43,7 @@ public sealed class AccountJsonConverter : JsonConverter<Account>
             value.OpeningBalance?.Amount ?? 0m,
             value.OpeningBalance?.StartDate ?? default);
 
-        JsonSerializer.Serialize(writer, bank, BankRecordOptions);
+        JsonSerializer.Serialize(writer, bank);
     }
 
     private sealed record BankRecord(Guid Id, string Name, bool RoundUpEnabled, decimal OpeningBalance, DateOnly OpeningBalanceDate);
