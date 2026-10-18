@@ -58,7 +58,7 @@ graph TD
     A["Api: BanksController, TransfersController, ExpensesController (unchanged routes)"] --> B["Application: BankService (compatibility), Transfer/Expense/Income/BalanceAdjustment services"]
     B --> C["Domain: Account + AccountTemplates + Capability"]
     B --> D["Domain Rules: AccountBalanceRule"]
-    D --> E["Domain: IBalanceContribution on Expense, Income, Transfer, BalanceAdjustment"]
+    D --> E["Domain: IAccountTransaction on Expense, Income, Transfer, BalanceAdjustment"]
     B --> F["ICashFlowRepository"]
     F --> G["Infrastructure: CashFlowJsonRepository"]
     G --> H["CashFlowSerializerAdapter (version guard)"]
@@ -75,10 +75,11 @@ graph TD
 | **Template and capability representation** | `AccountTemplate` enum (`Bank`) and `Capability` enum, plus an `AccountTemplates` table mapping each template to a fixed `IReadOnlySet<Capability>`. `account.Has(c)` reads the table every time; the account stores only its template. | Capability list stored per account | Changing a template in code applies to every account at once. In exchange, an account can't hold a one-off capability, which the design doesn't want anyway. |
 | **What the architecture test forbids** | Calling the `Account.Template` getter outside an allow-list. Naming a template when *creating* an account is allowed anywhere. | Forbid any dependency on `AccountTemplate` | This targets exactly "checking the template", and the allow-list stays at 1–2 types instead of growing with every creation site. The trade-off: a check written through `Has` is the expected path, and the rule can't stop someone comparing capability sets, which is acceptable. |
 | **Architecture library** | `TngTech.ArchUnitNET` in `Tests/Financial.Architecture.Tests` only, behind `IArchitectureQuery` (one method) and a single adapter class. | Source-text scan; NetArchTest (eNhanced) | It reads compiled calls, and it's the best-maintained option. Replacing it means rewriting one adapter file. |
-| **Balance calculation** | A static pure `AccountBalanceRule` in `Domain/Rules`. Each record type implements `IBalanceContribution` (`Date` plus `ContributionTo(Account)`), and the rule sums contributions inside the account's window. | Keep one switch over the record types inside the rule | Each type owns its own sign (SRP), and a new record type only needs to implement the interface. The window rule lives in exactly one place. |
+| **Balance calculation** | A static pure `AccountBalanceRule` in `Domain/Rules`. Each record type implements `IAccountTransaction` (`Date` plus `ContributionTo(Account)`), and the rule sums contributions inside the account's window. | Keep one switch over the record types inside the rule | Each type owns its own sign (SRP), and a new record type only needs to implement the interface. The window rule lives in exactly one place. |
 | **Currency in the rule** | Not in F02: `Balance(account, asOf, records)`. | `Balance(account, currency, asOf, records)` now | No unused parameter. F11 adds the per-currency variant together with Settlement, its first caller. |
 | **Test-only minimal accounts** | `Account` has an `internal` factory that takes a capability set. The Domain test project already has `InternalsVisibleTo` (Domain/AssemblyInfo.cs). | A fake template in production code | This lets the PRD's "one unit test per capability on a minimal account" run without adding a test template to the table. |
-| **Which accounts `/banks` lists** | Accounts that have `HasOpeningBalance`. | Compare the template with Bank | The architecture rule forbids reading the template. `HasOpeningBalance` is exactly what `BankDTO` exposes, and none of the later templates (card, Pots, Settlement) has it. |
+| **Which accounts `/banks` lists** | Accounts made from the Bank template. `BankService` reads `Account.Template` and is on the architecture rule's allow-list, marked "removed in F13 with `/banks`". | Use a capability as a proxy (`HasOpeningBalance`) | `/banks` literally means "Bank-template accounts" and is a compatibility endpoint that F13 retires. Being honest about that costs one temporary allow-list entry; a capability proxy would read as if having an opening balance made something a bank. |
+| **Where the transactions live** | `Entities/Transactions/` holds `IAccountTransaction`, `Expense`, `Income`, `Transfer` and `BalanceAdjustment`, in namespace `Financial.CashFlow.Domain.Entities.Transactions`. Later pot movements and settlement entries join them. | Keep `Entities/` flat | It groups everything that moves money in or out of an account. The records *implement* a shared role and don't inherit from a base class, because they share almost no data. PR A already rewrites these four files, so the move costs nothing extra. |
 | **Compatibility service names** | Keep `IBankService`/`BankService`, `BanksController` and the bank DTOs, served from accounts, until F13. | Rename to Account services now | Every existing screen and test keeps working unchanged. F06 adds the account endpoints. |
 | **V2 file shape** | `Banks` becomes `Accounts`, with `Template`, `Currency`, `IsActive`, a nested `OpeningBalance` and a nested `RoundUp`. The reference keys are renamed: `PaymentSourceAccountId`, `AccountId`, `SourceAccountId`, `DestinationAccountId`. | Rename the collection only | The file matches the model, and later features won't carry "Bank" in keys that point at cards or pots. The DTO names stay as they are. |
 | **Migration mechanism** | An explicit `migrate` command. The V1→V2 step rewrites the raw JSON (the `JsonNode` style of `InvestmentDataMigrations`), then the result is loaded with the current serializer before anything is written. | Migrate on load, like Investment | Each version step must pass a parity run on a copy before the live file changes, and restarting the app never rewrites data. |
@@ -104,12 +105,12 @@ All paths are relative to the repo root. **A** and **B** mark the PR. Everything
 | `Rules/AccountTemplates.cs` | New | A | Template table | Template → fixed capability set; unknown template throws |
 | `ValueObjects/OpeningBalance.cs` | New | A | Opening balance | `Amount` ≥ 0 (otherwise `ArgumentException`, today's message), `StartDate`; immutable, value equality |
 | `ValueObjects/RoundUpSetting.cs` | New | A | Round-up setting | `Enabled`; immutable, value equality |
-| `Rules/IBalanceContribution.cs` | New | A | Contract for balance contributions | `Date`, `ContributionTo(Account)` |
+| `Entities/Transactions/IAccountTransaction.cs` | New | A | Role of every record that moves money in or out of an account | `Date`, `ContributionTo(Account)` |
 | `Rules/AccountBalanceRule.cs` | New | A | The one balance calculation | `Balance(account, asOf, records)`; see §6 Business rules |
-| `Entities/Expense.cs` | Modified | A | Reference rename plus contribution | `PaymentSourceBank` → `PaymentSourceAccount`. Round-up needs `Has(SupportsRoundUp)` and `RoundUp.Enabled`; a payment source needs `HasCategories`. Contribution: −(Value + RoundUp) on its payment source account. |
-| `Entities/Income.cs` | Modified | A | Same | `Bank` → `Account`; requires `ReceivesIncome`; contribution +Net |
-| `Entities/Transfer.cs` | Modified | A | Same | `SourceBank`/`DestinationBank` → `SourceAccount`/`DestinationAccount`. Requires `CanSendTransfers` and `CanReceiveTransfers`, and keeps today's messages. Contribution: −Amount on the source, +Amount on the destination. |
-| `Entities/BalanceAdjustment.cs` | Modified | A | Same | `Bank` → `Account`; requires `CanReconcile`; contribution +Delta |
+| `Entities/Transactions/Expense.cs` | Modified | A | Reference rename plus contribution | `PaymentSourceBank` → `PaymentSourceAccount`. Round-up needs `Has(SupportsRoundUp)` and `RoundUp.Enabled`; a payment source needs `HasCategories`. Contribution: −(Value + RoundUp) on its payment source account. |
+| `Entities/Transactions/Income.cs` | Modified | A | Same | `Bank` → `Account`; requires `ReceivesIncome`; contribution +Net |
+| `Entities/Transactions/Transfer.cs` | Modified | A | Same | `SourceBank`/`DestinationBank` → `SourceAccount`/`DestinationAccount`. Requires `CanSendTransfers` and `CanReceiveTransfers`, and keeps today's messages. Contribution: −Amount on the source, +Amount on the destination. |
+| `Entities/Transactions/BalanceAdjustment.cs` | Modified | A | Same | `Bank` → `Account`; requires `CanReconcile`; contribution +Delta |
 | `Entities/CashFlowData.cs` | Modified | A | Document root | `Banks`/`AddBank`/`RemoveBank` → `Accounts`/`AddAccount`/`RemoveAccount` |
 | `Entities/Bank.cs` | Deleted | A | — | Replaced by `Account` |
 
@@ -117,7 +118,7 @@ All paths are relative to the repo root. **A** and **B** mark the PR. Everything
 
 | File | New/Modified | PR | Purpose | Key responsibilities |
 |---|---|---|---|---|
-| `Services/BankService.cs` | Modified | A | `/banks` compatibility | Lists accounts that have `HasOpeningBalance`. Create builds a Bank-template account in GBP, then applies `SetRoundUp`. Balances come from `AccountBalanceRule`. The DTO shapes and every message stay the same. `ComputeBalance` is deleted. |
+| `Services/BankService.cs` | Modified | A | `/banks` compatibility | Lists accounts made from the Bank template (reads `Template`, allow-listed until F13). Create builds a Bank-template account in GBP, then applies `SetRoundUp`. Balances come from `AccountBalanceRule`. The DTO shapes and every message stay the same. `ComputeBalance` is deleted. |
 | `Services/BalanceAdjustmentService.cs` | Modified | A | Delta from the shared rule | Delta = target − `AccountBalanceRule` balance with the edited adjustment left out |
 | `Services/MensaisService.cs` | Modified | A | Pay a recurring bill | The payment source must have `CanPayBills`, otherwise the same 400 as an unknown bank |
 | `Validation/CashFlowReferenceResolver.cs` | Modified | A | Payment-source lookup | Returns an `Account` |
@@ -317,7 +318,7 @@ Following the `testing-guide-Financial` skill:
 | `RecordsBeforeStartDate_CountInCategoryTotalsNotInBalance` | AC 07 | Category total includes the expense; `/banks` balance doesn't |
 | `BanksTransfersExpenses_ShapesUnchanged` | AC 10 | OpenAPI snapshot identical; seeded responses equal the pre-F02 expected JSON |
 | `SeedAndExampleData_AreVersion2` | AC 11 | Both files load; `Version` 2 |
-| `Production_Should_Not_Read_The_Account_Template_Outside_The_Allow_List` | AC 09 | The query over Domain, Application, Infrastructure, Api and Tools returns only the allow-listed types (`Account`, and the account converter if it reads the getter) |
+| `Production_Should_Not_Read_The_Account_Template_Outside_The_Allow_List` | AC 09 | The query over Domain, Application, Infrastructure, Api and Tools returns only the allow-listed types: `Account`, `BankService` (marked "removed in F13 with `/banks`"), and the account converter if it reads the getter |
 | `TemplateReadQuery_FindsPlantedViolation` | AC 09, negative | A test-assembly type that reads `Template` is reported |
 | `OnlyTheAdapter_ReferencesArchUnitNet` | AC 09 | No type in the test assembly other than `ArchUnitArchitectureQuery` depends on `ArchUnitNET` |
 

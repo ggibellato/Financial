@@ -2,7 +2,7 @@
 
 **Prerequisites:**
 - .NET 10 SDK and PowerShell 7, as for F01.
-- `TngTech.ArchUnitNET`, latest stable on nuget.org at implementation time. At least 0.13.1 was available as of December 2025. Pin an exact version that is at least two weeks old.
+- `TngTech.ArchUnitNET` 0.13.4, pinned exactly, provided it was released at least two weeks before implementation; otherwise the newest version that was.
 - A fresh copy of the live `data-cashflow.json` downloaded from Google Drive, for the parity run at the end of each PR. The parity baseline is the `p60-baseline` tag.
 - Each PR is implemented on its own branch off an up-to-date `main`. PR B starts only after PR A is merged.
 
@@ -10,9 +10,9 @@
 
 **1. Account aggregate, templates and capabilities** - Add the `Account` aggregate, the template and capability enums, the template table with the Bank capability set, and the opening-balance and round-up value objects, following the existing entity conventions. See spec §4 Domain and §6 Business rules.
 
-**2. Shared balance calculation** - Add the balance-contribution contract and the balance rule, and make Expense, Income, Transfer and BalanceAdjustment declare their own contribution. The rule must reproduce today's bank balance exactly, start-date window included.
+**2. Shared balance calculation** - Add the account-transaction role and the balance rule, and make Expense, Income, Transfer and BalanceAdjustment implement the role by declaring their own contribution. The rule must reproduce today's bank balance exactly, start-date window included.
 
-**3. References become accounts across the model** - Replace `Bank` with `Account` in the CashFlow document root, the four record types and their capability guards, then delete the `Bank` entity. Keep every existing user-facing message unchanged.
+**3. References become accounts across the model** - Replace `Bank` with `Account` in the CashFlow document root, the four record types and their capability guards, moving the four record types into the transactions folder, then delete the `Bank` entity. Keep every existing user-facing message unchanged.
 
 **4. Application compatibility** - Serve `/banks`, balances, adjustments, transfers, expenses, incomes and recurring-bill payments from accounts through the existing services and DTOs, with balances from the shared rule. Remove the old balance calculation, and update the repository contract and the shared test stub.
 
