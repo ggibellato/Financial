@@ -6,7 +6,7 @@ param(
     [int]$AfterPort = 5292,
     [string]$BaselineTag = 'p60-baseline',
     [switch]$KeepRunning,
-    [string]$RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
+    [string]$RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 )
 
 $ErrorActionPreference = 'Stop'
@@ -58,7 +58,7 @@ function Publish-ParityApi([string]$Side, [string]$SourceRoot, [string]$SideFold
         $env:API_BASE_URL = '/api/v1/financial'
         Push-Location $webFolder
         try {
-            Invoke-Logged $log $failure { npm ci }
+            if (-not (Test-Path -LiteralPath (Join-Path $webFolder 'node_modules'))) { Invoke-Logged $log $failure { npm ci } }
             Invoke-Logged $log $failure { npm run build }
         }
         finally { Pop-Location }
