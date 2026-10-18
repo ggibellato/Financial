@@ -1,10 +1,12 @@
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Enums;
+using Financial.Shared.Abstractions.Currencies;
 
 namespace Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.Banks;
 
 /// <summary>
 /// Idempotently seeds the 3 tracked banks and audits every expense's payment source. Since
-/// Expense.PaymentSourceBank is a real Bank reference (F01), an expense can no longer hold an
+/// Expense.PaymentSourceAccount is a real Bank reference (F01), an expense can no longer hold an
 /// unresolvable bank tag - the audit only counts applicable (bank-paid) vs. not-applicable
 /// (credit-card charge) expenses.
 /// </summary>
@@ -33,13 +35,15 @@ public static class BankMigrator
     {
         foreach (var (name, roundUpEnabled) in SeededBanks)
         {
-            if (data.Banks.Any(b => string.Equals(b.Name, name, StringComparison.OrdinalIgnoreCase)))
+            if (data.Accounts.Any(b => string.Equals(b.Name, name, StringComparison.OrdinalIgnoreCase)))
             {
                 summary.CountBankAlreadyPresent();
                 continue;
             }
 
-            data.AddBank(Bank.Create(name, roundUpEnabled));
+            var bank = Account.Create(name, AccountTemplate.Bank, Currency.GBP);
+            bank.SetRoundUp(roundUpEnabled);
+            data.AddAccount(bank);
             summary.CountBankSeeded();
         }
     }
@@ -48,7 +52,7 @@ public static class BankMigrator
     {
         foreach (var expense in data.Expenses)
         {
-            if (expense.PaymentSourceBank is null)
+            if (expense.PaymentSourceAccount is null)
             {
                 summary.CountExpenseNotApplicable();
             }

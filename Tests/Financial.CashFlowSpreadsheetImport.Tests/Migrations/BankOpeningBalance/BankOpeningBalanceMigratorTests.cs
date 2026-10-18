@@ -1,5 +1,6 @@
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.BankOpeningBalance;
+using Financial.TestUtilities;
 using FluentAssertions;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.Migrations.BankOpeningBalance;
@@ -13,56 +14,56 @@ public class BankOpeningBalanceMigratorTests
     public void Migrate_BankWithUnsetDate_DefaultsToZeroAndRunDate()
     {
         var data = CashFlowData.Create();
-        data.AddBank(Bank.Create("Barclays", roundUpEnabled: false));
+        data.AddAccount(TestAccounts.Bank("Barclays", roundUpEnabled: false));
 
         var summary = BankOpeningBalanceMigrator.Migrate(data, RunDate);
 
         summary.BanksDefaultedCount.Should().Be(1);
         summary.BanksAlreadySetCount.Should().Be(0);
-        var bank = data.Banks.Should().ContainSingle().Which;
-        bank.OpeningBalance.Should().Be(0m);
-        bank.OpeningBalanceDate.Should().Be(RunDate);
+        var bank = data.Accounts.Should().ContainSingle().Which;
+        bank.OpeningBalance!.Amount.Should().Be(0m);
+        bank.OpeningBalance!.StartDate.Should().Be(RunDate);
     }
 
     [Fact]
     public void Migrate_BankWithAlreadySetDate_IsLeftUntouched()
     {
         var data = CashFlowData.Create();
-        var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        var bank = TestAccounts.Bank("Barclays", roundUpEnabled: false);
         bank.SetOpeningBalance(500m, new DateOnly(2026, 1, 1));
-        data.AddBank(bank);
+        data.AddAccount(bank);
 
         var summary = BankOpeningBalanceMigrator.Migrate(data, RunDate);
 
         summary.BanksDefaultedCount.Should().Be(0);
         summary.BanksAlreadySetCount.Should().Be(1);
-        bank.OpeningBalance.Should().Be(500m);
-        bank.OpeningBalanceDate.Should().Be(new DateOnly(2026, 1, 1));
+        bank.OpeningBalance!.Amount.Should().Be(500m);
+        bank.OpeningBalance!.StartDate.Should().Be(new DateOnly(2026, 1, 1));
     }
 
     [Fact]
     public void Migrate_CalledTwice_IsIdempotent()
     {
         var data = CashFlowData.Create();
-        data.AddBank(Bank.Create("Barclays", roundUpEnabled: false));
+        data.AddAccount(TestAccounts.Bank("Barclays", roundUpEnabled: false));
         BankOpeningBalanceMigrator.Migrate(data, RunDate);
 
         var secondSummary = BankOpeningBalanceMigrator.Migrate(data, RunDate.AddDays(1));
 
         secondSummary.BanksDefaultedCount.Should().Be(0);
         secondSummary.BanksAlreadySetCount.Should().Be(1);
-        data.Banks.Should().ContainSingle().Which.OpeningBalanceDate.Should().Be(RunDate);
+        data.Accounts.Should().ContainSingle().Which.OpeningBalance!.StartDate.Should().Be(RunDate);
     }
 
     [Fact]
     public void Migrate_WithMixOfSetAndUnsetBanks_OnlyDefaultsTheUnsetOnes()
     {
         var data = CashFlowData.Create();
-        var alreadySet = Bank.Create("Chase", roundUpEnabled: true);
+        var alreadySet = TestAccounts.Bank("Chase", roundUpEnabled: true);
         alreadySet.SetOpeningBalance(100m, new DateOnly(2026, 2, 1));
-        data.AddBank(alreadySet);
-        data.AddBank(Bank.Create("Barclays", roundUpEnabled: false));
-        data.AddBank(Bank.Create("Trading212", roundUpEnabled: true));
+        data.AddAccount(alreadySet);
+        data.AddAccount(TestAccounts.Bank("Barclays", roundUpEnabled: false));
+        data.AddAccount(TestAccounts.Bank("Trading212", roundUpEnabled: true));
 
         var summary = BankOpeningBalanceMigrator.Migrate(data, RunDate);
 

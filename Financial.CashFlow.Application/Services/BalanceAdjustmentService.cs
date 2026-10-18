@@ -2,6 +2,7 @@ using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.Logging;
 
@@ -116,7 +117,7 @@ public sealed class BalanceAdjustmentService : IBalanceAdjustmentService
         span.SetAttribute(TelemetryAttributeKeys.EntityId, bankId.ToString());
         try
         {
-            if (!EntityIdResolver.TryResolve(bankId, _repository.GetBanks(), b => b.Id, out var bank))
+            if (!EntityIdResolver.TryResolve(bankId, _repository.GetAccounts(), b => b.Id, out var bank))
             {
                 span.MarkSuccess();
                 _logger.LogInformation("{Operation} completed", "GetAdjustmentsByBank");
@@ -124,7 +125,7 @@ public sealed class BalanceAdjustmentService : IBalanceAdjustmentService
             }
 
             var result = _repository.GetBalanceAdjustments()
-                .Where(a => a.Bank.Id == bank!.Id)
+                .Where(a => a.Account.Id == bank!.Id)
                 .Select(ToDto)
                 .ToList();
 
@@ -145,19 +146,19 @@ public sealed class BalanceAdjustmentService : IBalanceAdjustmentService
         return _tracer.StartServiceSpan("CashFlow", nameof(BalanceAdjustmentService), operationName, EntityType);
     }
 
-    private Bank ResolveBank(Guid bankId) =>
-        _repository.GetBanks().FirstOrThrow(b => b.Id == bankId, "Bank", bankId);
+    private Account ResolveBank(Guid bankId) =>
+        _repository.GetAccounts().FirstOrThrow(b => b.Id == bankId, "Bank", bankId);
 
-    private BalanceAdjustment FindAdjustmentOrThrow(Bank bank, Guid id) =>
+    private BalanceAdjustment FindAdjustmentOrThrow(Account bank, Guid id) =>
         _repository.GetBalanceAdjustments()
-            .FirstOrThrow(a => a.Id == id && a.Bank.Id == bank.Id, "Balance adjustment", id);
+            .FirstOrThrow(a => a.Id == id && a.Account.Id == bank.Id, "Balance adjustment", id);
 
     private static BalanceAdjustmentDTO ToDto(BalanceAdjustment adjustment) => new()
     {
         Id = adjustment.Id,
         Date = adjustment.Date,
-        BankId = adjustment.Bank.Id,
-        BankName = adjustment.Bank.Name,
+        BankId = adjustment.Account.Id,
+        BankName = adjustment.Account.Name,
         TargetBalance = adjustment.TargetBalance,
         Delta = adjustment.Delta,
         Note = adjustment.Note

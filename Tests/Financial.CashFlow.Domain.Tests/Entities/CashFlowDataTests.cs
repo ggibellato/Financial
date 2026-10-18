@@ -1,6 +1,8 @@
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Domain.Enums;
 using Financial.Shared.Abstractions.Currencies;
+using Financial.TestUtilities;
 using FluentAssertions;
 using ReserveBucketEntity = Financial.CashFlow.Domain.Entities.ReserveBucket;
 
@@ -9,9 +11,9 @@ namespace Financial.CashFlow.Domain.Tests;
 [Trait("Category", "Unit")]
 public class CashFlowDataTests
 {
-    private static readonly Bank Chase = Bank.Create("Chase", roundUpEnabled: true);
-    private static readonly Bank Barclays = Bank.Create("Barclays", roundUpEnabled: false);
-    private static readonly Bank Trading212 = Bank.Create("Trading212", roundUpEnabled: true);
+    private static readonly Account Chase = TestAccounts.Bank("Chase", roundUpEnabled: true);
+    private static readonly Account Barclays = TestAccounts.Bank("Barclays", roundUpEnabled: false);
+    private static readonly Account Trading212 = TestAccounts.Bank("Trading212", roundUpEnabled: true);
     private static readonly IncomeSource Lottery = IncomeSource.Create("Lottery", IncomeGroup.NonReportable);
     private static readonly InvestmentAccount ChaseSaveAccount =
         InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false);
@@ -46,7 +48,7 @@ public class CashFlowDataTests
 
     private static readonly CollectionWiring[] AllWirings =
     [
-        Wiring("Banks", () => Bank.Create("Barclays", roundUpEnabled: false), (d, i) => d.AddBank(i), (d, id) => d.RemoveBank(id), d => d.Banks, i => i.Id),
+        Wiring("Banks", () => TestAccounts.Bank("Barclays", roundUpEnabled: false), (d, i) => d.AddAccount(i), (d, id) => d.RemoveAccount(id), d => d.Accounts, i => i.Id),
         Wiring("IncomeSources", () => IncomeSource.Create("Gleison", IncomeGroup.Salary), (d, i) => d.AddIncomeSource(i), (d, id) => d.RemoveIncomeSource(id), d => d.IncomeSources, i => i.Id),
         Wiring("ReserveBuckets", () => ReserveBucketEntity.Create("Investimento", 33.33m), (d, i) => d.AddReserveBucket(i), null, d => d.ReserveBuckets, i => i.Id),
         Wiring("CreditCards", () => Domain.Entities.CreditCard.Create("VISA 1", isActive: true), (d, i) => d.AddCreditCard(i), (d, id) => d.RemoveCreditCard(id), d => d.CreditCards, i => i.Id),

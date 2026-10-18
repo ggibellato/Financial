@@ -1,4 +1,5 @@
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
 
 namespace Financial.CashFlow.Infrastructure.Persistence;
 
@@ -8,7 +9,7 @@ namespace Financial.CashFlow.Infrastructure.Persistence;
 /// </summary>
 public sealed class ReferenceResolutionContext
 {
-    public Dictionary<Guid, Bank> Banks { get; } = new();
+    public Dictionary<Guid, Account> Accounts { get; } = new();
     public Dictionary<Guid, IncomeSource> IncomeSources { get; } = new();
     public Dictionary<Guid, InvestmentAccount> InvestmentAccounts { get; } = new();
     public Dictionary<Guid, ReserveBucket> ReserveBuckets { get; } = new();

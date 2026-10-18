@@ -1,12 +1,13 @@
 using System;
+using Financial.CashFlow.Domain.Enums;
 
-namespace Financial.CashFlow.Domain.Entities;
+namespace Financial.CashFlow.Domain.Entities.Transactions;
 
-public class BalanceAdjustment
+public class BalanceAdjustment : IAccountTransaction
 {
     public Guid Id { get; private set; }
     public DateOnly Date { get; private set; }
-    public Bank Bank { get; private set; } = null!;
+    public Account Account { get; private set; } = null!;
     public decimal TargetBalance { get; private set; }
     public decimal Delta { get; private set; }
     public string? Note { get; private set; }
@@ -15,19 +16,24 @@ public class BalanceAdjustment
 
     public static BalanceAdjustment Create(
         DateOnly date,
-        Bank bank,
+        Account account,
         decimal targetBalance,
         decimal delta,
         string? note)
     {
-        ArgumentNullException.ThrowIfNull(bank);
+        ArgumentNullException.ThrowIfNull(account);
         Validate(targetBalance);
+
+        if (!account.Has(Capability.CanReconcile))
+        {
+            throw new ArgumentException($"Account '{account.Name}' cannot be reconciled.");
+        }
 
         return new()
         {
             Id = Guid.NewGuid(),
             Date = date,
-            Bank = bank,
+            Account = account,
             TargetBalance = targetBalance,
             Delta = delta,
             Note = note
@@ -43,6 +49,8 @@ public class BalanceAdjustment
         Delta = delta;
         Note = note;
     }
+
+    public decimal ContributionTo(Account account) => Account.Id == account.Id ? Delta : 0m;
 
     private static void Validate(decimal targetBalance)
     {

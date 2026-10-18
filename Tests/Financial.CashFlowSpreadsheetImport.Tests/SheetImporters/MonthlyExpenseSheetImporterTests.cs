@@ -3,6 +3,7 @@ using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Reporting;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.SheetImporters;
+using Financial.TestUtilities;
 using FluentAssertions;
 using CreditCardEntity = Financial.CashFlow.Domain.Entities.CreditCard;
 
@@ -26,11 +27,11 @@ public class MonthlyExpenseSheetImporterTests : IDisposable
 
     private static readonly DateOnly Today = new(2026, 7, 15);
 
-    private static readonly IReadOnlyCollection<Bank> Banks =
+    private static readonly IReadOnlyCollection<Account> Banks =
     [
-        Bank.Create("Barclays", roundUpEnabled: false),
-        Bank.Create("Trading212", roundUpEnabled: true),
-        Bank.Create("Chase", roundUpEnabled: true)
+        TestAccounts.Bank("Barclays", roundUpEnabled: false),
+        TestAccounts.Bank("Trading212", roundUpEnabled: true),
+        TestAccounts.Bank("Chase", roundUpEnabled: true)
     ];
 
     private static readonly IReadOnlyCollection<CreditCardEntity> CreditCards =
@@ -77,11 +78,11 @@ public class MonthlyExpenseSheetImporterTests : IDisposable
         first.Category.Name.Should().Be("Mercado");
         first.Value.Should().Be(71.04m);
         first.Date.Should().Be(new DateOnly(2017, 2, 1));
-        first.PaymentSourceBank!.Name.Should().Be("Barclays");
+        first.PaymentSourceAccount!.Name.Should().Be("Barclays");
 
         var second = expenses.Single(e => e.Description == "Amazon Digital Video");
         second.Category.Name.Should().Be("Extras");
-        second.PaymentSourceBank!.Name.Should().Be("Trading212");
+        second.PaymentSourceAccount!.Name.Should().Be("Trading212");
         _report.RowIssues.Should().BeEmpty();
     }
 
@@ -107,7 +108,7 @@ public class MonthlyExpenseSheetImporterTests : IDisposable
         var expense = expenses.Single();
         expense.Description.Should().Be("Chartered Society");
         expense.Category.Name.Should().Be("Ariana");
-        expense.PaymentSourceBank!.Name.Should().Be("Chase");
+        expense.PaymentSourceAccount!.Name.Should().Be("Chase");
     }
 
     [Fact]
@@ -237,12 +238,12 @@ public class MonthlyExpenseSheetImporterTests : IDisposable
         if (expectedCardName is null)
         {
             expense.CreditCard.Should().BeNull();
-            expense.PaymentSourceBank!.Name.Should().Be("Barclays");
+            expense.PaymentSourceAccount!.Name.Should().Be("Barclays");
         }
         else
         {
             expense.CreditCard!.Name.Should().Be(expectedCardName);
-            expense.PaymentSourceBank.Should().BeNull();
+            expense.PaymentSourceAccount.Should().BeNull();
         }
     }
 
@@ -295,7 +296,7 @@ public class MonthlyExpenseSheetImporterTests : IDisposable
         var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2026, 8, Today, _report, Banks, CreditCards, Categories);
 
         var expense = expenses.Should().ContainSingle().Subject;
-        expense.PaymentSourceBank!.Name.Should().Be("Chase");
+        expense.PaymentSourceAccount!.Name.Should().Be("Chase");
         expense.CreditCard.Should().BeNull();
     }
 
@@ -313,7 +314,7 @@ public class MonthlyExpenseSheetImporterTests : IDisposable
         var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2026, 7, Today, _report, Banks, CreditCards, Categories);
 
         expenses.Should().HaveCount(6);
-        expenses.Should().NotContain(e => e.PaymentSourceBank != null && e.CreditCard != null);
+        expenses.Should().NotContain(e => e.PaymentSourceAccount != null && e.CreditCard != null);
         expenses.Should().OnlyContain(e =>
             e.PaymentStatus == ExpensePaymentStatus.ImmediatePayment
             || e.PaymentStatus == ExpensePaymentStatus.CreditCardCharge);
@@ -330,7 +331,7 @@ public class MonthlyExpenseSheetImporterTests : IDisposable
 
         var expense = expenses.Should().ContainSingle().Which;
         expense.CreditCard.Should().BeNull();
-        expense.PaymentSourceBank!.Name.Should().Be("Barclays");
+        expense.PaymentSourceAccount!.Name.Should().Be("Barclays");
     }
 
     [Fact]
@@ -343,7 +344,7 @@ public class MonthlyExpenseSheetImporterTests : IDisposable
 
         var expense = expenses.Should().ContainSingle().Which;
         expense.CreditCard!.Name.Should().Be("Platinum Visa 8003");
-        expense.PaymentSourceBank.Should().BeNull();
+        expense.PaymentSourceAccount.Should().BeNull();
     }
 
     [Theory]
@@ -359,7 +360,7 @@ public class MonthlyExpenseSheetImporterTests : IDisposable
 
         var expense = expenses.Should().ContainSingle().Which;
         expense.CreditCard!.Name.Should().Be("Platinum Visa 6007");
-        expense.PaymentSourceBank.Should().BeNull();
+        expense.PaymentSourceAccount.Should().BeNull();
         expense.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
         _report.RowIssues.Should().BeEmpty();
     }
@@ -376,7 +377,7 @@ public class MonthlyExpenseSheetImporterTests : IDisposable
 
         var expense = expenses.Should().ContainSingle().Which;
         expense.CreditCard.Should().BeNull();
-        expense.PaymentSourceBank!.Name.Should().Be("Barclays");
+        expense.PaymentSourceAccount!.Name.Should().Be("Barclays");
         _report.RowIssues.Should().BeEmpty();
     }
 
@@ -390,7 +391,7 @@ public class MonthlyExpenseSheetImporterTests : IDisposable
 
         var expense = expenses.Should().ContainSingle().Which;
         expense.CreditCard.Should().BeNull();
-        expense.PaymentSourceBank!.Name.Should().Be("Barclays");
+        expense.PaymentSourceAccount!.Name.Should().Be("Barclays");
         _report.RowIssues.Should().BeEmpty();
     }
 
@@ -404,7 +405,7 @@ public class MonthlyExpenseSheetImporterTests : IDisposable
 
         var expense = expenses.Should().ContainSingle().Which;
         expense.CreditCard!.Name.Should().Be("Platinum Visa 8003");
-        expense.PaymentSourceBank.Should().BeNull();
+        expense.PaymentSourceAccount.Should().BeNull();
         _report.RowIssues.Should().BeEmpty();
     }
 

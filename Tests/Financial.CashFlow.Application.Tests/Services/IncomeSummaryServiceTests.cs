@@ -1,6 +1,7 @@
 using Financial.CashFlow.Application.Services;
 using Financial.CashFlow.Application.Tests.TestHelpers;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Domain.Enums;
 using Financial.TestUtilities;
 using Microsoft.Extensions.Time.Testing;
@@ -16,9 +17,9 @@ public class IncomeSummaryServiceTests
     private static readonly int CurrentYear = TestClock.Today.Year;
     private static readonly Microsoft.Extensions.Logging.ILogger<IncomeSummaryService> Logger = NullLogger<IncomeSummaryService>.Instance;
 
-    private static readonly Bank Barclays = Bank.Create("Barclays", roundUpEnabled: false);
-    private static readonly Bank Trading212 = Bank.Create("Trading212", roundUpEnabled: true);
-    private static readonly Bank Chase = Bank.Create("Chase", roundUpEnabled: true);
+    private static readonly Account Barclays = TestAccounts.Bank("Barclays", roundUpEnabled: false);
+    private static readonly Account Trading212 = TestAccounts.Bank("Trading212", roundUpEnabled: true);
+    private static readonly Account Chase = TestAccounts.Bank("Chase", roundUpEnabled: true);
 
     private static IncomeSource Source(string name) => IncomeSource.Create(name, IncomeGroup.NonReportable);
 

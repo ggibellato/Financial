@@ -1,5 +1,6 @@
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Domain.Enums;
 
 namespace Financial.TestUtilities;
@@ -19,7 +20,7 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
     public List<MaeLedgerEntry> MaeLedgerEntries { get; } = new();
     public List<InvestmentSnapshot> InvestmentSnapshots { get; } = new();
     public List<InvestmentAccount> InvestmentAccounts { get; } = new();
-    public List<Bank> Banks { get; } = new();
+    public List<Account> Accounts { get; } = new();
     public List<IncomeSource> IncomeSources { get; } = new();
     public List<ReserveBucket> ReserveBuckets { get; } = new();
     public List<CreditCard> CreditCards { get; } = new();
@@ -69,7 +70,7 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
     {
         if (seedDefaultBanks)
         {
-            Banks.AddRange(DefaultBanks());
+            Accounts.AddRange(DefaultBanks());
         }
 
         if (seedDefaultIncomeSources)
@@ -94,11 +95,11 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
     }
 
     /// <summary>The 3 banks seeded in a real deployment by the CashFlowSpreadsheetImport migration tool.</summary>
-    public static IEnumerable<Bank> DefaultBanks() =>
+    public static IEnumerable<Account> DefaultBanks() =>
     [
-        Bank.Create("Barclays", roundUpEnabled: false),
-        Bank.Create("Trading212", roundUpEnabled: true),
-        Bank.Create("Chase", roundUpEnabled: true)
+        TestAccounts.Bank("Barclays", roundUpEnabled: false),
+        TestAccounts.Bank("Trading212", roundUpEnabled: true),
+        TestAccounts.Bank("Chase", roundUpEnabled: true)
     ];
 
     /// <summary>The 4 income sources seeded in a real deployment by the CashFlowSpreadsheetImport migration tool.</summary>
@@ -149,7 +150,7 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
     ];
 
     public void SetOpeningBalance(string bankName, decimal openingBalance, DateOnly openingBalanceDate) =>
-        Banks.First(b => b.Name == bankName).SetOpeningBalance(openingBalance, openingBalanceDate);
+        Accounts.First(b => b.Name == bankName).SetOpeningBalance(openingBalance, openingBalanceDate);
 
     public IEnumerable<Expense> GetExpenses() => CheckThrow(Expenses);
     public void AddExpense(Expense expense) => Expenses.Add(expense);
@@ -187,9 +188,9 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
     public void AddInvestmentAccount(InvestmentAccount account) => InvestmentAccounts.Add(account);
     public void DeleteInvestmentAccount(Guid id) => InvestmentAccounts.RemoveAll(a => a.Id == id);
 
-    public IEnumerable<Bank> GetBanks() => CheckThrow(Banks);
-    public void AddBank(Bank bank) => Banks.Add(bank);
-    public void DeleteBank(Guid id) => Banks.RemoveAll(b => b.Id == id);
+    public IEnumerable<Account> GetAccounts() => CheckThrow(Accounts);
+    public void AddAccount(Account account) => Accounts.Add(account);
+    public void DeleteAccount(Guid id) => Accounts.RemoveAll(a => a.Id == id);
 
     public IEnumerable<IncomeSource> GetIncomeSources() => CheckThrow(IncomeSources);
     public void AddIncomeSource(IncomeSource incomeSource) => IncomeSources.Add(incomeSource);

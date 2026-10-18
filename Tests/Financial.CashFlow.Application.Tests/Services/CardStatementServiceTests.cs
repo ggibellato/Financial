@@ -1,6 +1,7 @@
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Services;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.Shared.Abstractions.Observability;
 using Financial.TestUtilities;
 using Financial.CashFlow.Domain.Entities;
@@ -34,7 +35,7 @@ public class CardStatementServiceTests
         repository.CreditCards.First(c => c.Name == name);
 
     private static MarkCardStatementPaidDTO PaidBy(StubCashFlowRepository repository, string? bankName) =>
-        new() { PaymentSourceBankId = repository.Banks.FirstOrDefault(b => b.Name == bankName)?.Id };
+        new() { PaymentSourceBankId = repository.Accounts.FirstOrDefault(b => b.Name == bankName)?.Id };
 
     private static Expense AddCharge(
         StubCashFlowRepository repository, DateOnly date, decimal value, CreditCard card)
@@ -124,7 +125,7 @@ public class CardStatementServiceTests
     [Fact]
     public async Task GetStatementsForMonthAsync_ExcludesSettledAndImmediateExpensesFromOutstandingTotal()
     {
-        var barclays = _repository.Banks.First(b => b.Name == "Barclays");
+        var barclays = _repository.Accounts.First(b => b.Name == "Barclays");
         var settled = AddCharge(_repository, new DateOnly(2026, 7, 10), 30m, Card(_repository, "BarclaysPlatinumVisa8003"));
         settled.Settle(barclays, new DateOnly(2026, 7, 20));
         AddCharge(_repository, new DateOnly(2026, 7, 11), 20m, Card(_repository, "BarclaysPlatinumVisa8003"));
@@ -156,7 +157,7 @@ public class CardStatementServiceTests
     [Fact]
     public async Task GetStatementsForMonthAsync_AccumulatedOutstandingTotalExcludesSettledChargesAndOtherCards()
     {
-        var barclays = _repository.Banks.First(b => b.Name == "Barclays");
+        var barclays = _repository.Accounts.First(b => b.Name == "Barclays");
         var settled = AddCharge(_repository, new DateOnly(2026, 6, 5), 15m, Card(_repository, "BarclaysPlatinumVisa8003"));
         settled.Settle(barclays, new DateOnly(2026, 6, 20));
         AddCharge(_repository, new DateOnly(2026, 7, 10), 30m, Card(_repository, "BarclaysPlatinumVisa8003"));
@@ -187,7 +188,7 @@ public class CardStatementServiceTests
             foreach (var expense in new[] { first, second })
             {
                 expense.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardSettled);
-                expense.PaymentSourceBank!.Name.Should().Be("Trading212");
+                expense.PaymentSourceAccount!.Name.Should().Be("Trading212");
                 expense.Date.Should().Be(today);
             }
 
@@ -277,7 +278,7 @@ public class CardStatementServiceTests
         {
             result.IsPaid.Should().BeFalse();
             cutoffCharge.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
-            cutoffCharge.PaymentSourceBank.Should().BeNull();
+            cutoffCharge.PaymentSourceAccount.Should().BeNull();
             cutoffCharge.Date.Should().Be(cutoffCharge.ChargeDate);
         }
     }
@@ -395,7 +396,7 @@ public class CardStatementServiceTests
             foreach (var expense in new[] { first, second })
             {
                 expense.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
-                expense.PaymentSourceBank.Should().BeNull();
+                expense.PaymentSourceAccount.Should().BeNull();
                 expense.Date.Should().Be(expense.ChargeDate);
             }
         }

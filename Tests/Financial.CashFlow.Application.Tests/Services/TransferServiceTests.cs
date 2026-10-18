@@ -180,7 +180,7 @@ public class TransferServiceTests
         await _sut.AddTransferAsync(ToCreateDto(_repository, ValidCreateRequest() with { SourceBank = "Chase", DestinationBank = "Barclays" }));
         await _sut.AddTransferAsync(ToCreateDto(_repository, ValidCreateRequest() with { SourceBank = "Chase", DestinationBank = "Trading212" }));
 
-        var result = _sut.GetTransfersByBank(_repository.Banks.First(b => b.Name == "Barclays").Id);
+        var result = _sut.GetTransfersByBank(_repository.Accounts.First(b => b.Name == "Barclays").Id);
 
         result.Should().HaveCount(2);
     }
@@ -220,7 +220,7 @@ public class TransferServiceTests
 
     /// <summary>An unresolvable name maps to a random, never-seeded Guid so tests exercising an unrecognized reference still hit the "not found" path.</summary>
     private static Guid ResolveBankId(StubCashFlowRepository repository, string? bankName) =>
-        repository.Banks.FirstOrDefault(b => b.Name == bankName)?.Id ?? Guid.NewGuid();
+        repository.Accounts.FirstOrDefault(b => b.Name == bankName)?.Id ?? Guid.NewGuid();
 
     private sealed record TransferCreateRequest(
         DateOnly Date, string SourceBank, string DestinationBank, decimal Amount, string? Note);

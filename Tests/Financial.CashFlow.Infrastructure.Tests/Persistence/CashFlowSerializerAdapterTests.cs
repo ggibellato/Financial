@@ -1,4 +1,5 @@
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Domain.Enums;
 using Financial.Shared.Abstractions.Currencies;
 using Financial.CashFlow.Infrastructure.Persistence;
@@ -26,9 +27,9 @@ public class CashFlowSerializerAdapterTests
         var reserveBucket = ReserveBucket.Create("Investimento", 33.33m);
         var creditCard = CreditCard.Create("Barclays Platinum Visa 8003", isActive: true);
         var category = Category.Create("Investimento", isInvestment: true, isTithe: false, isActive: true);
-        var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        var bank = TestAccounts.Bank("Barclays", roundUpEnabled: false);
         bank.SetOpeningBalance(1250.75m, new DateOnly(2026, 7, 1));
-        var destinationBank = Bank.Create("Trading212", roundUpEnabled: true);
+        var destinationBank = TestAccounts.Bank("Trading212", roundUpEnabled: true);
         var investmentAccount = InvestmentAccount.Create(
             "PlatinumVisa8003", isActive: true, isLiability: true, InvestmentAccountSource.CreditCard, creditCard);
         var incomeSource = IncomeSource.Create("Ariana", IncomeGroup.Salary, autoSplitToReserve: true);
@@ -60,8 +61,8 @@ public class CashFlowSerializerAdapterTests
         original.AddMaeLedgerEntry(maeLedgerEntry);
         original.AddInvestmentSnapshot(investmentSnapshot);
         original.AddInvestmentAccount(investmentAccount);
-        original.AddBank(bank);
-        original.AddBank(destinationBank);
+        original.AddAccount(bank);
+        original.AddAccount(destinationBank);
         original.AddIncomeSource(incomeSource);
         original.AddIncome(income);
         original.AddTransfer(transfer);
@@ -107,12 +108,12 @@ public class CashFlowSerializerAdapterTests
             resultInvestmentAccount.IsActive.Should().Be(investmentAccount.IsActive);
             resultInvestmentAccount.IsLiability.Should().Be(investmentAccount.IsLiability);
             resultInvestmentAccount.Source.Should().Be(InvestmentAccountSource.CreditCard);
-            var resultBanks = result.Banks.Should().HaveCount(2).And.Subject;
+            var resultBanks = result.Accounts.Should().HaveCount(2).And.Subject;
             var resultBank = resultBanks.Should().ContainSingle(b => b.Id == bank.Id).Subject;
             resultBank.Name.Should().Be(bank.Name);
-            resultBank.RoundUpEnabled.Should().Be(bank.RoundUpEnabled);
+            resultBank.RoundUp!.Enabled.Should().Be(bank.RoundUp!.Enabled);
             resultBank.OpeningBalance.Should().Be(bank.OpeningBalance);
-            resultBank.OpeningBalanceDate.Should().Be(bank.OpeningBalanceDate);
+            resultBank.OpeningBalance!.StartDate.Should().Be(bank.OpeningBalance!.StartDate);
             var resultDestinationBank = resultBanks.Should().ContainSingle(b => b.Id == destinationBank.Id).Subject;
             var resultIncomeSource = result.IncomeSources.Should().ContainSingle().Which;
             resultIncomeSource.Id.Should().Be(incomeSource.Id);
@@ -155,12 +156,12 @@ public class CashFlowSerializerAdapterTests
 
             // Reference-equality: every reference-typed property must be the exact same instance
             // as the matching entry in its owning collection, not merely an equivalent copy.
-            resultExpense.PaymentSourceBank.Should().BeSameAs(resultBank);
+            resultExpense.PaymentSourceAccount.Should().BeSameAs(resultBank);
             resultIncome.IncomeSource.Should().BeSameAs(resultIncomeSource);
-            resultIncome.Bank.Should().BeSameAs(resultBank);
-            resultTransfer.SourceBank.Should().BeSameAs(resultBank);
-            resultTransfer.DestinationBank.Should().BeSameAs(resultDestinationBank);
-            resultBalanceAdjustment.Bank.Should().BeSameAs(resultBank);
+            resultIncome.Account.Should().BeSameAs(resultBank);
+            resultTransfer.SourceAccount.Should().BeSameAs(resultBank);
+            resultTransfer.DestinationAccount.Should().BeSameAs(resultDestinationBank);
+            resultBalanceAdjustment.Account.Should().BeSameAs(resultBank);
             resultSnapshot.Account.Should().BeSameAs(resultInvestmentAccount);
             resultExpense.CreditCard.Should().BeSameAs(resultCreditCard);
             resultCardStatement.CreditCard.Should().BeSameAs(resultCreditCard);
@@ -174,10 +175,10 @@ public class CashFlowSerializerAdapterTests
     public void Serialize_WritesOnlyIdsForReferenceTypedFields_NeverANestedObject()
     {
         var original = CashFlowData.Create();
-        var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        var bank = TestAccounts.Bank("Barclays", roundUpEnabled: false);
         var incomeSource = IncomeSource.Create("Gleison", IncomeGroup.Salary);
         var reserveBucket = Financial.CashFlow.Domain.Entities.ReserveBucket.Create("Investimento", 33.33m);
-        original.AddBank(bank);
+        original.AddAccount(bank);
         original.AddIncomeSource(incomeSource);
         original.AddReserveBucket(reserveBucket);
         original.AddIncome(Income.Create(new DateOnly(2026, 7, 1), incomeSource, 100m, 90m, bank));
@@ -203,8 +204,8 @@ public class CashFlowSerializerAdapterTests
     [Fact]
     public void Deserialize_RegardlessOfOwningCollectionPositionInJsonText_ResolvesTheSameReference()
     {
-        var bank = Bank.Create("Barclays", roundUpEnabled: false);
-        var bankJson = JsonSerializer.Serialize(new { bank.Id, bank.Name, bank.RoundUpEnabled, bank.OpeningBalance, bank.OpeningBalanceDate });
+        var bank = TestAccounts.Bank("Barclays", roundUpEnabled: false);
+        var bankJson = JsonSerializer.Serialize(new { bank.Id, bank.Name, RoundUpEnabled = false, OpeningBalance = 0m, OpeningBalanceDate = "0001-01-01" });
         // "Banks" appears AFTER "Incomes" in the text on purpose, to prove resolution doesn't
         // depend on encountering the owning collection first.
         var json = $$"""
@@ -220,7 +221,7 @@ public class CashFlowSerializerAdapterTests
 
         var result = _sut.Deserialize(json);
 
-        result.Incomes.Should().ContainSingle().Which.Bank!.Id.Should().Be(bank.Id);
+        result.Incomes.Should().ContainSingle().Which.Account!.Id.Should().Be(bank.Id);
     }
 
     private static readonly Guid IncomeSourceIdForFixture = Guid.NewGuid();
@@ -394,7 +395,7 @@ public class CashFlowSerializerAdapterTests
         result.MaeLedgerEntries.Should().BeEmpty();
         result.InvestmentSnapshots.Should().BeEmpty();
         result.InvestmentAccounts.Should().BeEmpty();
-        result.Banks.Should().BeEmpty();
+        result.Accounts.Should().BeEmpty();
         result.IncomeSources.Should().BeEmpty();
         result.ReserveBuckets.Should().BeEmpty();
         result.CreditCards.Should().BeEmpty();

@@ -1,4 +1,6 @@
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
+using Financial.TestUtilities;
 using FluentAssertions;
 using FluentAssertions.Execution;
 
@@ -7,9 +9,9 @@ namespace Financial.CashFlow.Domain.Tests;
 [Trait("Category", "Unit")]
 public class TransferTests
 {
-    private static readonly Bank Barclays = Bank.Create("Barclays", roundUpEnabled: false);
-    private static readonly Bank Trading212 = Bank.Create("Trading212", roundUpEnabled: true);
-    private static readonly Bank Chase = Bank.Create("Chase", roundUpEnabled: true);
+    private static readonly Account Barclays = TestAccounts.Bank("Barclays", roundUpEnabled: false);
+    private static readonly Account Trading212 = TestAccounts.Bank("Trading212", roundUpEnabled: true);
+    private static readonly Account Chase = TestAccounts.Bank("Chase", roundUpEnabled: true);
 
     private static Transfer CreateValidTransfer() =>
         Transfer.Create(new DateOnly(2026, 7, 25), Barclays, Trading212, 500m, "Round-up top-up");
@@ -25,8 +27,8 @@ public class TransferTests
         {
             transfer.Id.Should().NotBeEmpty();
             transfer.Date.Should().Be(date);
-            transfer.SourceBank.Should().Be(Barclays);
-            transfer.DestinationBank.Should().Be(Trading212);
+            transfer.SourceAccount.Should().Be(Barclays);
+            transfer.DestinationAccount.Should().Be(Trading212);
             transfer.Amount.Should().Be(500m);
             transfer.Note.Should().Be("Round-up top-up");
         }
@@ -78,8 +80,8 @@ public class TransferTests
         {
             transfer.Id.Should().Be(originalId);
             transfer.Date.Should().Be(newDate);
-            transfer.SourceBank.Should().Be(Chase);
-            transfer.DestinationBank.Should().Be(Trading212);
+            transfer.SourceAccount.Should().Be(Chase);
+            transfer.DestinationAccount.Should().Be(Trading212);
             transfer.Amount.Should().Be(250m);
             transfer.Note.Should().Be("Updated note");
         }

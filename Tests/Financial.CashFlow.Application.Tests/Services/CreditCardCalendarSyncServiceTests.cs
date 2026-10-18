@@ -1,6 +1,7 @@
 using Financial.CashFlow.Application.Models;
 using Financial.CashFlow.Application.Services;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.TestUtilities;
 using Microsoft.Extensions.Time.Testing;
 using FluentAssertions;

@@ -1,4 +1,5 @@
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Infrastructure.Persistence;
 using Financial.CashFlow.Infrastructure.Repositories;
@@ -25,9 +26,9 @@ public class CashFlowJsonRepositoryTests
 
         try
         {
-            var bank = Bank.Create("Chase", roundUpEnabled: true);
+            var bank = TestAccounts.Bank("Chase", roundUpEnabled: true);
             var category = Category.Create("Casa");
-            data.AddBank(bank);
+            data.AddAccount(bank);
             data.AddCategory(category);
             repository.AddExpense(Expense.Create(new DateOnly(2026, 7, 1), "Test expense", 10m, category, bank, null));
 
@@ -410,7 +411,7 @@ public class CashFlowJsonRepositoryTests
         {
             var data = CashFlowData.Create();
             var repository = new CashFlowJsonRepository(data, new LocalJsonStorage(path), new CashFlowSerializerAdapter());
-            var expense = Expense.Create(new DateOnly(2026, 7, 1), "Test expense", 10m, Category.Create("Casa"), Bank.Create("Chase", roundUpEnabled: true), null);
+            var expense = Expense.Create(new DateOnly(2026, 7, 1), "Test expense", 10m, Category.Create("Casa"), TestAccounts.Bank("Chase", roundUpEnabled: true), null);
 
             repository.AddExpense(expense);
 
@@ -430,7 +431,7 @@ public class CashFlowJsonRepositoryTests
         {
             var data = CashFlowData.Create();
             var repository = new CashFlowJsonRepository(data, new LocalJsonStorage(path), new CashFlowSerializerAdapter());
-            var expense = Expense.Create(new DateOnly(2026, 7, 1), "Test expense", 10m, Category.Create("Casa"), Bank.Create("Chase", roundUpEnabled: true), null);
+            var expense = Expense.Create(new DateOnly(2026, 7, 1), "Test expense", 10m, Category.Create("Casa"), TestAccounts.Bank("Chase", roundUpEnabled: true), null);
             repository.AddExpense(expense);
 
             repository.DeleteExpense(expense.Id);
@@ -471,10 +472,10 @@ public class CashFlowJsonRepositoryTests
         try
         {
             var data = CashFlowData.Create();
-            data.AddBank(Bank.Create("Barclays", roundUpEnabled: false));
+            data.AddAccount(TestAccounts.Bank("Barclays", roundUpEnabled: false));
             var repository = new CashFlowJsonRepository(data, new LocalJsonStorage(path), new CashFlowSerializerAdapter());
 
-            repository.GetBanks().Should().ContainSingle().Which.Name.Should().Be("Barclays");
+            repository.GetAccounts().Should().ContainSingle().Which.Name.Should().Be("Barclays");
         }
         finally
         {

@@ -2,6 +2,7 @@ using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.Logging;
 
@@ -130,7 +131,7 @@ public sealed class TransferService : ITransferService
         span.SetAttribute(TelemetryAttributeKeys.EntityId, bankId.ToString());
         try
         {
-            if (!EntityIdResolver.TryResolve(bankId, _repository.GetBanks(), b => b.Id, out var bank))
+            if (!EntityIdResolver.TryResolve(bankId, _repository.GetAccounts(), b => b.Id, out var bank))
             {
                 span.MarkSuccess();
                 _logger.LogInformation("{Operation} completed", "GetTransfersByBank");
@@ -138,7 +139,7 @@ public sealed class TransferService : ITransferService
             }
 
             var result = _repository.GetTransfers()
-                .Where(t => t.SourceBank.Id == bank!.Id || t.DestinationBank.Id == bank.Id)
+                .Where(t => t.SourceAccount.Id == bank!.Id || t.DestinationAccount.Id == bank.Id)
                 .Select(ToDto)
                 .ToList();
 
@@ -162,9 +163,9 @@ public sealed class TransferService : ITransferService
     private Transfer FindTransferOrThrow(Guid id) =>
         _repository.GetTransfers().FirstOrThrow(t => t.Id == id, "Transfer", id);
 
-    private (Bank SourceBank, Bank DestinationBank) ResolveBanks(Guid sourceBankId, Guid destinationBankId)
+    private (Account SourceAccount, Account DestinationAccount) ResolveBanks(Guid sourceBankId, Guid destinationBankId)
     {
-        var banks = _repository.GetBanks();
+        var banks = _repository.GetAccounts();
 
         if (!EntityIdResolver.TryResolve(sourceBankId, banks, b => b.Id, out var resolvedSource))
         {
@@ -183,10 +184,10 @@ public sealed class TransferService : ITransferService
     {
         Id = transfer.Id,
         Date = transfer.Date,
-        SourceBankId = transfer.SourceBank.Id,
-        SourceBankName = transfer.SourceBank.Name,
-        DestinationBankId = transfer.DestinationBank.Id,
-        DestinationBankName = transfer.DestinationBank.Name,
+        SourceBankId = transfer.SourceAccount.Id,
+        SourceBankName = transfer.SourceAccount.Name,
+        DestinationBankId = transfer.DestinationAccount.Id,
+        DestinationBankName = transfer.DestinationAccount.Name,
         Amount = transfer.Amount,
         Note = transfer.Note
     };

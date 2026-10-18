@@ -2,6 +2,7 @@ using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.Logging;
@@ -169,7 +170,7 @@ public sealed class IncomeService : IIncomeService
     private List<ReserveMovement> GetLinkedMovements(Guid incomeId) =>
         _repository.GetReserveMovements().Where(m => m.Income?.Id == incomeId).ToList();
 
-    private (IncomeSource IncomeSource, Bank? Bank) ValidateFields(Guid incomeSourceId, Guid? bankId, string? description, bool splitToReserve)
+    private (IncomeSource IncomeSource, Account? Account) ValidateFields(Guid incomeSourceId, Guid? bankId, string? description, bool splitToReserve)
     {
         if (!EntityIdResolver.TryResolve(incomeSourceId, _repository.GetIncomeSources(), s => s.Id, out var resolvedIncomeSource))
         {
@@ -183,10 +184,10 @@ public sealed class IncomeService : IIncomeService
 
         DescriptionValidator.EnsureWithinLimit(description);
 
-        Bank? resolvedBank = null;
+        Account? resolvedBank = null;
         if (bankId is not null)
         {
-            if (!EntityIdResolver.TryResolve(bankId, _repository.GetBanks(), b => b.Id, out var bank))
+            if (!EntityIdResolver.TryResolve(bankId, _repository.GetAccounts(), b => b.Id, out var bank))
             {
                 throw new ArgumentException($"Bank '{bankId}' is not recognized.");
             }
@@ -216,8 +217,8 @@ public sealed class IncomeService : IIncomeService
         IncomeSourceName = income.IncomeSource.Name,
         GrossValue = income.GrossValue,
         NetValue = income.NetValue,
-        BankId = income.Bank?.Id,
-        BankName = income.Bank?.Name,
+        BankId = income.Account?.Id,
+        BankName = income.Account?.Name,
         Description = income.Description,
         SplitToReserve = income.SplitToReserve
     };

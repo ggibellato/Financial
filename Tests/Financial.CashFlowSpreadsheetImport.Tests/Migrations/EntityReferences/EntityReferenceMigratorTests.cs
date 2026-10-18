@@ -85,30 +85,30 @@ public class EntityReferenceMigratorTests : FileMigratorContractTests
 
             using (new AssertionScope())
             {
-                var barclays = rewritten.Banks.Should().ContainSingle(b => b.Name == "Barclays").Subject;
+                var barclays = rewritten.Accounts.Should().ContainSingle(b => b.Name == "Barclays").Subject;
                 barclays.Id.Should().NotBeEmpty();
-                barclays.OpeningBalance.Should().Be(100.0m);
-                var trading212 = rewritten.Banks.Should().ContainSingle(b => b.Name == "Trading212").Subject;
+                barclays.OpeningBalance!.Amount.Should().Be(100.0m);
+                var trading212 = rewritten.Accounts.Should().ContainSingle(b => b.Name == "Trading212").Subject;
                 trading212.Id.Should().NotBeEmpty();
                 trading212.Id.Should().NotBe(barclays.Id);
 
                 var income = rewritten.Incomes.Should().ContainSingle().Which;
                 income.Id.Should().Be(IncomeId);
-                income.Bank!.Id.Should().Be(barclays.Id);
+                income.Account!.Id.Should().Be(barclays.Id);
                 income.IncomeSource.Id.Should().Be(IncomeSourceId);
 
                 var expense = rewritten.Expenses.Should().ContainSingle().Which;
                 expense.Id.Should().Be(ExpenseId);
-                expense.PaymentSourceBank!.Id.Should().Be(barclays.Id);
+                expense.PaymentSourceAccount!.Id.Should().Be(barclays.Id);
 
                 var transfer = rewritten.Transfers.Should().ContainSingle().Which;
                 transfer.Id.Should().Be(TransferId);
-                transfer.SourceBank.Id.Should().Be(barclays.Id);
-                transfer.DestinationBank.Id.Should().Be(trading212.Id);
+                transfer.SourceAccount.Id.Should().Be(barclays.Id);
+                transfer.DestinationAccount.Id.Should().Be(trading212.Id);
 
                 var adjustment = rewritten.BalanceAdjustments.Should().ContainSingle().Which;
                 adjustment.Id.Should().Be(BalanceAdjustmentId);
-                adjustment.Bank.Id.Should().Be(barclays.Id);
+                adjustment.Account.Id.Should().Be(barclays.Id);
 
                 var snapshot = rewritten.InvestmentSnapshots.Should().ContainSingle().Which;
                 snapshot.Id.Should().Be(InvestmentSnapshotId);

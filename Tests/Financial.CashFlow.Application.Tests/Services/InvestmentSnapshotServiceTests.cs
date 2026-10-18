@@ -3,6 +3,7 @@ using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Services;
 using Financial.CashFlow.Application.Tests.TestHelpers;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Domain.Enums;
 using Financial.Shared.Abstractions.Observability;
 using Financial.TestUtilities;
@@ -211,7 +212,7 @@ public class InvestmentSnapshotServiceTests
     public async Task GetSuggestionsForMonth_CreditCardWithSettledExpense_StillIncludesIt()
     {
         var (repository, service, card, creditCardAccount, _, _) = CreateSuggestionsFixture();
-        var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        var bank = TestAccounts.Bank("Barclays", roundUpEnabled: false);
         var expense = AddCharge(repository, new DateOnly(2026, 8, 5), 100m, card, new DateOnly(2026, 8, 1));
         expense.Settle(bank, new DateOnly(2026, 9, 1));
 

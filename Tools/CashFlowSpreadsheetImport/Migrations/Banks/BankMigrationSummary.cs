@@ -1,5 +1,6 @@
 using System.Text;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
 
 namespace Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.Banks;
 
@@ -29,7 +30,7 @@ public sealed class BankMigrationSummary : MigrationSummaryBase
 
         AppendUnresolvedSection(builder,
             "Expenses whose bank tag does not match any seeded bank (review manually):",
-            _unresolvedExpenses, expense => $"{expense.Id} {expense.Date:yyyy-MM-dd} '{expense.Description}' [{expense.PaymentSourceBank?.Name}]");
+            _unresolvedExpenses, expense => $"{expense.Id} {expense.Date:yyyy-MM-dd} '{expense.Description}' [{expense.PaymentSourceAccount?.Name}]");
 
         return builder.ToString();
     }

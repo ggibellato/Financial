@@ -3,6 +3,7 @@ using Financial.CashFlow.Application.Exceptions;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.Logging;
@@ -289,7 +290,7 @@ public sealed class ReserveService : IReserveService
 
         DescriptionValidator.EnsureWithinLimit(request.Description);
 
-        var bank = CashFlowReferenceResolver.ResolvePaymentSource(_repository.GetBanks(), request.PaymentSourceBankId.Value);
+        var bank = CashFlowReferenceResolver.ResolvePaymentSource(_repository.GetAccounts(), request.PaymentSourceBankId.Value);
 
         var categories = _repository.GetCategories().ToList();
         var reserva = categories.FirstOrDefault(c => string.Equals(c.Name, Category.ReservaName, StringComparison.OrdinalIgnoreCase))

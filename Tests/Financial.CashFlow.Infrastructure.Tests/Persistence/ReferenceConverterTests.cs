@@ -65,11 +65,11 @@ public abstract class ReferenceConverterTests<T> where T : class
     }
 }
 
-public class BankReferenceConverterTests : ReferenceConverterTests<Bank>
+public class AccountReferenceConverterTests : ReferenceConverterTests<Account>
 {
-    protected override Bank CreateEntity() => Bank.Create("Barclays", roundUpEnabled: false);
-    protected override Guid IdOf(Bank entity) => entity.Id;
-    protected override JsonConverter CreateConverter(Dictionary<Guid, Bank>? lookup) => new BankReferenceConverter(lookup);
+    protected override Account CreateEntity() => TestAccounts.Bank("Barclays", roundUpEnabled: false);
+    protected override Guid IdOf(Account entity) => entity.Id;
+    protected override JsonConverter CreateConverter(Dictionary<Guid, Account>? lookup) => new AccountReferenceConverter(lookup);
 }
 
 public class CreditCardReferenceConverterTests : ReferenceConverterTests<CreditCard>

@@ -310,7 +310,7 @@ public class IncomeServiceTests
 
     /// <summary>Null bank name means "no bank supplied"; an unresolvable non-null name maps to a random, never-seeded Guid so tests exercising an unrecognized reference still hit the "not found" path.</summary>
     private static Guid? ResolveBankId(StubCashFlowRepository repository, string? bankName) =>
-        bankName is null ? null : repository.Banks.FirstOrDefault(b => b.Name == bankName)?.Id ?? Guid.NewGuid();
+        bankName is null ? null : repository.Accounts.FirstOrDefault(b => b.Name == bankName)?.Id ?? Guid.NewGuid();
 
     private sealed record IncomeCreateRequest(
         DateOnly Date, string IncomeSource, decimal? GrossValue, decimal NetValue, string? Bank, string? Description, bool SplitToReserve = false);

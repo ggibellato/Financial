@@ -2,6 +2,7 @@ using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Exceptions;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Services;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.Shared.Abstractions.Observability;
 using Financial.TestUtilities;
 using Financial.CashFlow.Domain.Entities;
@@ -537,7 +538,7 @@ public class ReserveServiceTests
             repository.ReserveMovements.Should().ContainSingle(m => m.Amount == -request.Amount);
             repository.Expenses.Should().HaveCount(2);
             repository.Expenses.Should().OnlyContain(e =>
-                e.PaymentSourceBank!.Id == request.PaymentSourceBankId
+                e.PaymentSourceAccount!.Id == request.PaymentSourceBankId
                 && e.CreditCard == null
                 && e.Date == request.Date
                 && e.Description == request.Description);
@@ -710,7 +711,7 @@ public class ReserveServiceTests
             Date = new DateOnly(2026, 7, 1),
             Description = description,
             Confirmed = confirmed,
-            PaymentSourceBankId = withBank ? bankId ?? repository.Banks.First(b => b.Name == "Chase").Id : null,
+            PaymentSourceBankId = withBank ? bankId ?? repository.Accounts.First(b => b.Name == "Chase").Id : null,
             ExpenseCategoryId = withCategory ? categoryId ?? repository.Categories.First(c => c.Name == "Saude").Id : null
         };
 

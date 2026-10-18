@@ -2,6 +2,7 @@ using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Exceptions;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Services;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.Shared.Abstractions.Observability;
 using Financial.TestUtilities;
 using Financial.CashFlow.Domain.Entities;
@@ -36,8 +37,8 @@ public class BankServiceTests
     [Fact]
     public void GetBanks_MapsEveryRepositoryBankToADto()
     {
-        _repository.Banks.Add(Bank.Create("Barclays", roundUpEnabled: false));
-        _repository.Banks.Add(Bank.Create("Trading212", roundUpEnabled: true));
+        _repository.Accounts.Add(TestAccounts.Bank("Barclays", roundUpEnabled: false));
+        _repository.Accounts.Add(TestAccounts.Bank("Trading212", roundUpEnabled: true));
 
         var result = _sut.GetBanks();
 
@@ -68,7 +69,7 @@ public class BankServiceTests
         {
             result.Name.Should().Be("Barclays");
             result.RoundUpEnabled.Should().BeTrue();
-            _repository.Banks.Should().ContainSingle(b => b.Name == "Barclays");
+            _repository.Accounts.Should().ContainSingle(b => b.Name == "Barclays");
             _repository.SaveChangesCallCount.Should().Be(1);
         }
     }
@@ -93,7 +94,7 @@ public class BankServiceTests
     [Fact]
     public async Task CreateBankAsync_WithDuplicateName_ThrowsAndWritesNothing()
     {
-        _repository.Banks.Add(Bank.Create("Barclays", roundUpEnabled: false));
+        _repository.Accounts.Add(TestAccounts.Bank("Barclays", roundUpEnabled: false));
         var request = new BankCreateDTO { Name = "Barclays", RoundUpEnabled = true };
 
         var act = async () => await _sut.CreateBankAsync(request);
@@ -108,8 +109,8 @@ public class BankServiceTests
     [Fact]
     public async Task UpdateBankAsync_WithValidRequest_UpdatesAndSaves()
     {
-        var bank = Bank.Create("Barclays", roundUpEnabled: false);
-        _repository.Banks.Add(bank);
+        var bank = TestAccounts.Bank("Barclays", roundUpEnabled: false);
+        _repository.Accounts.Add(bank);
         var request = new BankUpdateDTO { Name = "Chase", RoundUpEnabled = true };
 
         var result = await _sut.UpdateBankAsync(bank.Id, request);
@@ -125,8 +126,8 @@ public class BankServiceTests
     [Fact]
     public async Task UpdateBankAsync_ToItsOwnCurrentName_Succeeds()
     {
-        var bank = Bank.Create("Barclays", roundUpEnabled: false);
-        _repository.Banks.Add(bank);
+        var bank = TestAccounts.Bank("Barclays", roundUpEnabled: false);
+        _repository.Accounts.Add(bank);
         var request = new BankUpdateDTO { Name = "Barclays", RoundUpEnabled = true };
 
         var result = await _sut.UpdateBankAsync(bank.Id, request);
@@ -147,10 +148,10 @@ public class BankServiceTests
     [Fact]
     public async Task UpdateBankAsync_WithDuplicateName_ThrowsAndWritesNothing()
     {
-        var barclays = Bank.Create("Barclays", roundUpEnabled: false);
-        var chase = Bank.Create("Chase", roundUpEnabled: true);
-        _repository.Banks.Add(barclays);
-        _repository.Banks.Add(chase);
+        var barclays = TestAccounts.Bank("Barclays", roundUpEnabled: false);
+        var chase = TestAccounts.Bank("Chase", roundUpEnabled: true);
+        _repository.Accounts.Add(barclays);
+        _repository.Accounts.Add(chase);
         var request = new BankUpdateDTO { Name = "Chase", RoundUpEnabled = false };
 
         var act = async () => await _sut.UpdateBankAsync(barclays.Id, request);
@@ -165,14 +166,14 @@ public class BankServiceTests
     [Fact]
     public async Task DeleteBankAsync_WithNoReferences_RemovesAndSaves()
     {
-        var bank = Bank.Create("Barclays", roundUpEnabled: false);
-        _repository.Banks.Add(bank);
+        var bank = TestAccounts.Bank("Barclays", roundUpEnabled: false);
+        _repository.Accounts.Add(bank);
 
         await _sut.DeleteBankAsync(bank.Id);
 
         using (new AssertionScope())
         {
-            _repository.Banks.Should().BeEmpty();
+            _repository.Accounts.Should().BeEmpty();
             _repository.SaveChangesCallCount.Should().Be(1);
         }
     }
@@ -188,8 +189,8 @@ public class BankServiceTests
     [Fact]
     public async Task DeleteBankAsync_ReferencedByBalanceAdjustment_ThrowsAndWritesNothing()
     {
-        var bank = Bank.Create("Barclays", roundUpEnabled: false);
-        _repository.Banks.Add(bank);
+        var bank = TestAccounts.Bank("Barclays", roundUpEnabled: false);
+        _repository.Accounts.Add(bank);
         _repository.BalanceAdjustments.Add(BalanceAdjustment.Create(new DateOnly(2026, 7, 1), bank, 100m, 0m, "Test adjustment"));
 
         var act = async () => await _sut.DeleteBankAsync(bank.Id);
@@ -197,7 +198,7 @@ public class BankServiceTests
         using (new AssertionScope())
         {
             await act.Should().ThrowAsync<EntityInUseException>();
-            _repository.Banks.Should().ContainSingle();
+            _repository.Accounts.Should().ContainSingle();
             _repository.SaveChangesCallCount.Should().Be(0);
         }
     }
@@ -205,8 +206,8 @@ public class BankServiceTests
     [Fact]
     public async Task DeleteBankAsync_ReferencedByIncome_ThrowsAndWritesNothing()
     {
-        var bank = Bank.Create("Barclays", roundUpEnabled: false);
-        _repository.Banks.Add(bank);
+        var bank = TestAccounts.Bank("Barclays", roundUpEnabled: false);
+        _repository.Accounts.Add(bank);
         _repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 1), Gleison, null, 500m, bank));
 
         var act = async () => await _sut.DeleteBankAsync(bank.Id);
@@ -217,8 +218,8 @@ public class BankServiceTests
     [Fact]
     public async Task DeleteBankAsync_ReferencedByExpensePaymentSource_ThrowsAndWritesNothing()
     {
-        var bank = Bank.Create("Barclays", roundUpEnabled: false);
-        _repository.Banks.Add(bank);
+        var bank = TestAccounts.Bank("Barclays", roundUpEnabled: false);
+        _repository.Accounts.Add(bank);
         _repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 5), "Groceries", 50m, Category.Create("Mercado"), bank, null));
 
         var act = async () => await _sut.DeleteBankAsync(bank.Id);
@@ -229,10 +230,10 @@ public class BankServiceTests
     [Fact]
     public async Task DeleteBankAsync_ReferencedByTransfer_ThrowsAndWritesNothing()
     {
-        var source = Bank.Create("Barclays", roundUpEnabled: false);
-        var destination = Bank.Create("Chase", roundUpEnabled: true);
-        _repository.Banks.Add(source);
-        _repository.Banks.Add(destination);
+        var source = TestAccounts.Bank("Barclays", roundUpEnabled: false);
+        var destination = TestAccounts.Bank("Chase", roundUpEnabled: true);
+        _repository.Accounts.Add(source);
+        _repository.Accounts.Add(destination);
         _repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 7, 1), source, destination, 50m, note: null));
 
         var act = async () => await _sut.DeleteBankAsync(source.Id);
@@ -247,8 +248,8 @@ public class BankServiceTests
     [Fact]
     public async Task UpdateOpeningBalanceAsync_WithValidRequest_UpdatesAndSaves()
     {
-        var bank = Bank.Create("Barclays", roundUpEnabled: false);
-        _repository.Banks.Add(bank);
+        var bank = TestAccounts.Bank("Barclays", roundUpEnabled: false);
+        _repository.Accounts.Add(bank);
         var request = new BankOpeningBalanceUpdateDTO { OpeningBalance = 1250.75m, OpeningBalanceDate = new DateOnly(2026, 7, 1) };
 
         var result = await _sut.UpdateOpeningBalanceAsync(bank.Id, request);
@@ -274,8 +275,8 @@ public class BankServiceTests
     [Fact]
     public async Task UpdateOpeningBalanceAsync_WithNegativeBalance_ThrowsArgumentException()
     {
-        var bank = Bank.Create("Barclays", roundUpEnabled: false);
-        _repository.Banks.Add(bank);
+        var bank = TestAccounts.Bank("Barclays", roundUpEnabled: false);
+        _repository.Accounts.Add(bank);
         var request = new BankOpeningBalanceUpdateDTO { OpeningBalance = -1m, OpeningBalanceDate = new DateOnly(2026, 7, 1) };
 
         var act = async () => await _sut.UpdateOpeningBalanceAsync(bank.Id, request);
@@ -286,9 +287,9 @@ public class BankServiceTests
     [Fact]
     public void GetBankBalancesByMonth_CombinesOpeningBalanceIncomeAndExpenses()
     {
-        var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        var bank = TestAccounts.Bank("Barclays", roundUpEnabled: false);
         bank.SetOpeningBalance(100m, new DateOnly(2026, 1, 1));
-        _repository.Banks.Add(bank);
+        _repository.Accounts.Add(bank);
         _repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 1), Gleison, null, 500m, bank));
         _repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 5), "Groceries", 50m, Category.Create("Mercado"), bank, null));
 
@@ -300,9 +301,9 @@ public class BankServiceTests
     [Fact]
     public void GetBankBalancesByMonth_AddsRoundUpAmountToExpenseValue()
     {
-        var bank = Bank.Create("Trading212", roundUpEnabled: true);
+        var bank = TestAccounts.Bank("Trading212", roundUpEnabled: true);
         bank.SetOpeningBalance(0m, new DateOnly(2026, 1, 1));
-        _repository.Banks.Add(bank);
+        _repository.Accounts.Add(bank);
         var expense = Expense.Create(new DateOnly(2026, 7, 5), "TfL", 9.40m, Category.Create("Extras"), bank, null);
         expense.SetRoundUpAmount(0.60m);
         _repository.Expenses.Add(expense);
@@ -315,9 +316,9 @@ public class BankServiceTests
     [Fact]
     public void GetBankBalancesByMonth_ExcludesActivityBeforeOpeningBalanceDate()
     {
-        var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        var bank = TestAccounts.Bank("Barclays", roundUpEnabled: false);
         bank.SetOpeningBalance(100m, new DateOnly(2026, 7, 1));
-        _repository.Banks.Add(bank);
+        _repository.Accounts.Add(bank);
         _repository.Incomes.Add(Income.Create(new DateOnly(2026, 6, 30), Gleison, null, 500m, bank));
         _repository.Expenses.Add(Expense.Create(new DateOnly(2026, 6, 30), "Groceries", 50m, Category.Create("Mercado"), bank, null));
 
@@ -329,9 +330,9 @@ public class BankServiceTests
     [Fact]
     public void GetBankBalancesByMonth_ExcludesActivityAfterSelectedMonth()
     {
-        var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        var bank = TestAccounts.Bank("Barclays", roundUpEnabled: false);
         bank.SetOpeningBalance(100m, new DateOnly(2026, 1, 1));
-        _repository.Banks.Add(bank);
+        _repository.Accounts.Add(bank);
         _repository.Incomes.Add(Income.Create(new DateOnly(2026, 8, 1), Gleison, null, 500m, bank));
 
         var result = _sut.GetBankBalancesByMonth(2026, 7);
@@ -342,9 +343,9 @@ public class BankServiceTests
     [Fact]
     public void GetBankBalancesByMonth_WithNoActivity_ReturnsOpeningBalance()
     {
-        var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        var bank = TestAccounts.Bank("Barclays", roundUpEnabled: false);
         bank.SetOpeningBalance(250m, new DateOnly(2026, 1, 1));
-        _repository.Banks.Add(bank);
+        _repository.Accounts.Add(bank);
 
         var result = _sut.GetBankBalancesByMonth(2026, 7);
 
@@ -354,10 +355,10 @@ public class BankServiceTests
     [Fact]
     public void GetBankBalancesByMonth_IgnoresActivityTaggedToADifferentBank()
     {
-        var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        var bank = TestAccounts.Bank("Barclays", roundUpEnabled: false);
         bank.SetOpeningBalance(0m, new DateOnly(2026, 1, 1));
-        _repository.Banks.Add(bank);
-        var chase = Bank.Create("Chase", roundUpEnabled: false);
+        _repository.Accounts.Add(bank);
+        var chase = TestAccounts.Bank("Chase", roundUpEnabled: false);
         _repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 1), Gleison, null, 500m, chase));
         _repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 5), "Groceries", 50m, Category.Create("Mercado"), chase, null));
 
@@ -369,12 +370,12 @@ public class BankServiceTests
     [Fact]
     public void GetBankBalancesByMonth_AddsTransferAmountToDestinationBank()
     {
-        var barclays = Bank.Create("Barclays", roundUpEnabled: false);
+        var barclays = TestAccounts.Bank("Barclays", roundUpEnabled: false);
         barclays.SetOpeningBalance(0m, new DateOnly(2026, 1, 1));
-        var trading212 = Bank.Create("Trading212", roundUpEnabled: false);
+        var trading212 = TestAccounts.Bank("Trading212", roundUpEnabled: false);
         trading212.SetOpeningBalance(0m, new DateOnly(2026, 1, 1));
-        _repository.Banks.Add(barclays);
-        _repository.Banks.Add(trading212);
+        _repository.Accounts.Add(barclays);
+        _repository.Accounts.Add(trading212);
         _repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 7, 5), barclays, trading212, 500m, null));
 
         var result = _sut.GetBankBalancesByMonth(2026, 7);
@@ -385,12 +386,12 @@ public class BankServiceTests
     [Fact]
     public void GetBankBalancesByMonth_SubtractsTransferAmountFromSourceBank()
     {
-        var barclays = Bank.Create("Barclays", roundUpEnabled: false);
+        var barclays = TestAccounts.Bank("Barclays", roundUpEnabled: false);
         barclays.SetOpeningBalance(1000m, new DateOnly(2026, 1, 1));
-        var trading212 = Bank.Create("Trading212", roundUpEnabled: false);
+        var trading212 = TestAccounts.Bank("Trading212", roundUpEnabled: false);
         trading212.SetOpeningBalance(0m, new DateOnly(2026, 1, 1));
-        _repository.Banks.Add(barclays);
-        _repository.Banks.Add(trading212);
+        _repository.Accounts.Add(barclays);
+        _repository.Accounts.Add(trading212);
         _repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 7, 5), barclays, trading212, 500m, null));
 
         var result = _sut.GetBankBalancesByMonth(2026, 7);
@@ -401,13 +402,13 @@ public class BankServiceTests
     [Fact]
     public void GetBankBalancesByMonth_IgnoresTransferTouchingNeitherRoleForTheBank()
     {
-        var barclays = Bank.Create("Barclays", roundUpEnabled: false);
+        var barclays = TestAccounts.Bank("Barclays", roundUpEnabled: false);
         barclays.SetOpeningBalance(100m, new DateOnly(2026, 1, 1));
-        var trading212 = Bank.Create("Trading212", roundUpEnabled: false);
-        var chase = Bank.Create("Chase", roundUpEnabled: false);
-        _repository.Banks.Add(barclays);
-        _repository.Banks.Add(trading212);
-        _repository.Banks.Add(chase);
+        var trading212 = TestAccounts.Bank("Trading212", roundUpEnabled: false);
+        var chase = TestAccounts.Bank("Chase", roundUpEnabled: false);
+        _repository.Accounts.Add(barclays);
+        _repository.Accounts.Add(trading212);
+        _repository.Accounts.Add(chase);
         _repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 7, 5), trading212, chase, 500m, null));
 
         var result = _sut.GetBankBalancesByMonth(2026, 7);
@@ -418,9 +419,9 @@ public class BankServiceTests
     [Fact]
     public void GetBankBalancesByMonth_AddsBalanceAdjustmentDelta()
     {
-        var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        var bank = TestAccounts.Bank("Barclays", roundUpEnabled: false);
         bank.SetOpeningBalance(100m, new DateOnly(2026, 1, 1));
-        _repository.Banks.Add(bank);
+        _repository.Accounts.Add(bank);
         _repository.BalanceAdjustments.Add(BalanceAdjustment.Create(new DateOnly(2026, 7, 5), bank, 150m, 50m, null));
 
         var result = _sut.GetBankBalancesByMonth(2026, 7);
@@ -431,11 +432,11 @@ public class BankServiceTests
     [Fact]
     public void GetBankBalancesByMonth_ExcludesTransferAndAdjustmentAfterTheAsOfDate()
     {
-        var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        var bank = TestAccounts.Bank("Barclays", roundUpEnabled: false);
         bank.SetOpeningBalance(100m, new DateOnly(2026, 1, 1));
-        var trading212 = Bank.Create("Trading212", roundUpEnabled: false);
-        _repository.Banks.Add(bank);
-        _repository.Banks.Add(trading212);
+        var trading212 = TestAccounts.Bank("Trading212", roundUpEnabled: false);
+        _repository.Accounts.Add(bank);
+        _repository.Accounts.Add(trading212);
         _repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 8, 1), bank, trading212, 500m, null));
         _repository.BalanceAdjustments.Add(BalanceAdjustment.Create(new DateOnly(2026, 8, 1), bank, 999m, 899m, null));
 
@@ -447,11 +448,11 @@ public class BankServiceTests
     [Fact]
     public void GetBankBalancesByMonth_ExcludesTransferAndAdjustmentBeforeOpeningBalanceDate()
     {
-        var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        var bank = TestAccounts.Bank("Barclays", roundUpEnabled: false);
         bank.SetOpeningBalance(100m, new DateOnly(2026, 7, 1));
-        var trading212 = Bank.Create("Trading212", roundUpEnabled: false);
-        _repository.Banks.Add(bank);
-        _repository.Banks.Add(trading212);
+        var trading212 = TestAccounts.Bank("Trading212", roundUpEnabled: false);
+        _repository.Accounts.Add(bank);
+        _repository.Accounts.Add(trading212);
         _repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 6, 30), bank, trading212, 500m, null));
         _repository.BalanceAdjustments.Add(BalanceAdjustment.Create(new DateOnly(2026, 6, 30), bank, 999m, 899m, null));
 
@@ -463,9 +464,9 @@ public class BankServiceTests
     [Fact]
     public void GetBankBalanceAsOf_ComputesBalanceForAnArbitraryDateIndependentOfMonthBoundaries()
     {
-        var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        var bank = TestAccounts.Bank("Barclays", roundUpEnabled: false);
         bank.SetOpeningBalance(100m, new DateOnly(2026, 1, 1));
-        _repository.Banks.Add(bank);
+        _repository.Accounts.Add(bank);
         _repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 10), Gleison, null, 200m, bank));
         _repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 20), Gleison, null, 300m, bank));
 
@@ -477,10 +478,10 @@ public class BankServiceTests
     [Fact]
     public void GetBankBalanceAsOf_WithExcludingAdjustmentId_OmitsOnlyThatAdjustment()
     {
-        var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        var bank = TestAccounts.Bank("Barclays", roundUpEnabled: false);
         bank.SetOpeningBalance(100m, new DateOnly(2026, 1, 1));
-        _repository.Banks.Add(bank);
-        var chase = Bank.Create("Chase", roundUpEnabled: false);
+        _repository.Accounts.Add(bank);
+        var chase = TestAccounts.Bank("Chase", roundUpEnabled: false);
         _repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 7, 1), bank, chase, 20m, null));
         var excluded = BalanceAdjustment.Create(new DateOnly(2026, 7, 1), bank, 500m, 400m, null);
         var included = BalanceAdjustment.Create(new DateOnly(2026, 7, 2), bank, 50m, -30m, null);
@@ -496,9 +497,9 @@ public class BankServiceTests
     [Fact]
     public void GetBankBalancesByMonth_ExcludesBankLessIncome()
     {
-        var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        var bank = TestAccounts.Bank("Barclays", roundUpEnabled: false);
         bank.SetOpeningBalance(100m, new DateOnly(2026, 1, 1));
-        _repository.Banks.Add(bank);
+        _repository.Accounts.Add(bank);
         _repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 1), Gleison, null, 500m, null));
 
         var result = _sut.GetBankBalancesByMonth(2026, 7);
@@ -528,8 +529,8 @@ public class BankServiceTests
     [Fact]
     public async Task UpdateBankAsync_WithBlankName_ThrowsArgumentException()
     {
-        var bank = Bank.Create("Barclays", roundUpEnabled: false);
-        _repository.Banks.Add(bank);
+        var bank = TestAccounts.Bank("Barclays", roundUpEnabled: false);
+        _repository.Accounts.Add(bank);
         var request = new BankUpdateDTO { Name = "   ", RoundUpEnabled = true };
 
         var act = async () => await _sut.UpdateBankAsync(bank.Id, request);
@@ -551,10 +552,10 @@ public class BankServiceTests
     [Fact]
     public void GetBanks_WithATransferReferencingABank_MarksItAsReferenced()
     {
-        var source = Bank.Create("Barclays", roundUpEnabled: false);
-        var destination = Bank.Create("Chase", roundUpEnabled: true);
-        _repository.Banks.Add(source);
-        _repository.Banks.Add(destination);
+        var source = TestAccounts.Bank("Barclays", roundUpEnabled: false);
+        var destination = TestAccounts.Bank("Chase", roundUpEnabled: true);
+        _repository.Accounts.Add(source);
+        _repository.Accounts.Add(destination);
         _repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 7, 1), source, destination, 50m, note: null));
 
         var result = _sut.GetBanks();

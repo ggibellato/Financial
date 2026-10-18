@@ -1,6 +1,7 @@
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Exceptions;
 using Financial.CashFlow.Application.Services;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.Shared.Abstractions.Observability;
 using Financial.TestUtilities;
 using Financial.CashFlow.Domain.Entities;
@@ -239,7 +240,7 @@ public class IncomeSourceServiceTests
     {
         var incomeSource = IncomeSource.Create("Gleison", IncomeGroup.Salary);
         _repository.IncomeSources.Add(incomeSource);
-        var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        var bank = TestAccounts.Bank("Barclays", roundUpEnabled: false);
         _repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 1), incomeSource, null, 500m, bank));
 
         var act = async () => await _sut.DeleteIncomeSourceAsync(incomeSource.Id);
@@ -257,7 +258,7 @@ public class IncomeSourceServiceTests
     {
         var incomeSource = IncomeSource.Create("Gleison", IncomeGroup.Salary);
         _repository.IncomeSources.Add(incomeSource);
-        var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        var bank = TestAccounts.Bank("Barclays", roundUpEnabled: false);
         _repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 1), incomeSource, null, 500m, bank));
 
         var result = _sut.GetIncomeSources();

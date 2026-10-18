@@ -1,6 +1,8 @@
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.IncomeSources;
+using Financial.TestUtilities;
 using FluentAssertions;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.Migrations.IncomeSources;
@@ -57,7 +59,7 @@ public class IncomeSourceMigratorTests
         var data = CashFlowData.Create();
         var gleison = IncomeSource.Create("Gleison", IncomeGroup.Salary);
         data.AddIncomeSource(gleison);
-        var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        var bank = TestAccounts.Bank("Barclays", roundUpEnabled: false);
         var income = Income.Create(new DateOnly(2026, 7, 1), gleison, 3200m, 2450m, bank);
         data.AddIncome(income);
 
@@ -73,7 +75,7 @@ public class IncomeSourceMigratorTests
     {
         var data = CashFlowData.Create();
         var notASource = IncomeSource.Create("NotASource", IncomeGroup.NonReportable);
-        var bank = Bank.Create("Chase", roundUpEnabled: true);
+        var bank = TestAccounts.Bank("Chase", roundUpEnabled: true);
         var income = Income.Create(new DateOnly(2026, 7, 1), notASource, null, 10m, bank);
         data.AddIncome(income);
 

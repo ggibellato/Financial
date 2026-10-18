@@ -2,6 +2,7 @@ using ClosedXML.Excel;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.Incomes;
+using Financial.TestUtilities;
 using FluentAssertions;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.Migrations.Incomes;
@@ -26,7 +27,7 @@ public class IncomeBackfillImporterTests : IDisposable
     private static CashFlowData SeededData()
     {
         var data = CashFlowData.Create();
-        data.AddBank(Bank.Create("Barclays", roundUpEnabled: false));
+        data.AddAccount(TestAccounts.Bank("Barclays", roundUpEnabled: false));
         data.AddIncomeSource(IncomeSource.Create("Gleison", IncomeGroup.Salary));
         data.AddIncomeSource(IncomeSource.Create("Ariana", IncomeGroup.Salary));
         data.AddIncomeSource(IncomeSource.Create("Lottery", IncomeGroup.NonReportable));
@@ -47,10 +48,10 @@ public class IncomeBackfillImporterTests : IDisposable
         data.Incomes.Should().HaveCount(2);
         data.Incomes.Should().Contain(i =>
             i.Date == new DateOnly(2026, 7, 1) && i.IncomeSource.Name == "Ariana" &&
-            i.GrossValue == 2595.39m && i.NetValue == 1878.74m && i.Bank!.Name == "Barclays");
+            i.GrossValue == 2595.39m && i.NetValue == 1878.74m && i.Account!.Name == "Barclays");
         data.Incomes.Should().Contain(i =>
             i.Date == new DateOnly(2026, 7, 1) && i.IncomeSource.Name == "DividendoJuros" &&
-            i.GrossValue == null && i.NetValue == 361.24m && i.Bank!.Name == "Barclays");
+            i.GrossValue == null && i.NetValue == 361.24m && i.Account!.Name == "Barclays");
     }
 
     [Fact]

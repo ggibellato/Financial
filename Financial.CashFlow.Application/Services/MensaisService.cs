@@ -2,6 +2,7 @@ using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Domain.Enums;
 using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.Logging;
@@ -247,7 +248,11 @@ public sealed class MensaisService : IMensaisService
         DescriptionValidator.EnsureWithinLimit(request.Description);
 
         var category = CashFlowReferenceResolver.ResolveActiveCategory(_repository.GetCategories(), request.CategoryId);
-        var bank = CashFlowReferenceResolver.ResolvePaymentSource(_repository.GetBanks(), request.PaymentSourceBankId);
+        var bank = CashFlowReferenceResolver.ResolvePaymentSource(_repository.GetAccounts(), request.PaymentSourceBankId);
+        if (!bank.Has(Capability.CanPayBills))
+        {
+            throw new ArgumentException($"Payment source '{request.PaymentSourceBankId}' is not recognized.");
+        }
 
         return Expense.Create(request.Date, request.Description, request.Value, category, bank, creditCard: null);
     }

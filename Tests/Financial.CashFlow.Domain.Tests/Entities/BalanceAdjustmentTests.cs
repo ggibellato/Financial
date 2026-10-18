@@ -1,4 +1,6 @@
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
+using Financial.TestUtilities;
 using FluentAssertions;
 using FluentAssertions.Execution;
 
@@ -7,7 +9,7 @@ namespace Financial.CashFlow.Domain.Tests;
 [Trait("Category", "Unit")]
 public class BalanceAdjustmentTests
 {
-    private static readonly Bank Barclays = Bank.Create("Barclays", roundUpEnabled: false);
+    private static readonly Account Barclays = TestAccounts.Bank("Barclays", roundUpEnabled: false);
 
     private static BalanceAdjustment CreateValidAdjustment() =>
         BalanceAdjustment.Create(new DateOnly(2026, 7, 25), Barclays, 2340.17m, -4.20m, "Matched against July statement");
@@ -23,7 +25,7 @@ public class BalanceAdjustmentTests
         {
             adjustment.Id.Should().NotBeEmpty();
             adjustment.Date.Should().Be(date);
-            adjustment.Bank.Should().Be(Barclays);
+            adjustment.Account.Should().Be(Barclays);
             adjustment.TargetBalance.Should().Be(2340.17m);
             adjustment.Delta.Should().Be(-4.20m);
             adjustment.Note.Should().Be("Matched against July statement");
@@ -75,7 +77,7 @@ public class BalanceAdjustmentTests
         using (new AssertionScope())
         {
             adjustment.Id.Should().Be(originalId);
-            adjustment.Bank.Should().Be(Barclays);
+            adjustment.Account.Should().Be(Barclays);
             adjustment.Date.Should().Be(newDate);
             adjustment.TargetBalance.Should().Be(500m);
             adjustment.Delta.Should().Be(10m);

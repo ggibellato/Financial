@@ -56,11 +56,11 @@ internal static class RawJsonMigrationHelpers
     /// for any collection a migrator doesn't have (e.g. one that predates it, or one it's itself
     /// migrating and resolves by name instead) - iterating an empty list is a no-op.</summary>
     public static ReferenceResolutionContext BuildContext(
-        IEnumerable<Bank> banks, IEnumerable<IncomeSource> incomeSources, IEnumerable<InvestmentAccount> investmentAccounts,
+        IEnumerable<Account> banks, IEnumerable<IncomeSource> incomeSources, IEnumerable<InvestmentAccount> investmentAccounts,
         IEnumerable<ReserveBucket> reserveBuckets, IEnumerable<CreditCard> creditCards, IEnumerable<Category> categories)
     {
         var context = new ReferenceResolutionContext();
-        foreach (var bank in banks) context.Banks[bank.Id] = bank;
+        foreach (var account in banks) context.Accounts[account.Id] = account;
         foreach (var incomeSource in incomeSources) context.IncomeSources[incomeSource.Id] = incomeSource;
         foreach (var account in investmentAccounts) context.InvestmentAccounts[account.Id] = account;
         foreach (var bucket in reserveBuckets) context.ReserveBuckets[bucket.Id] = bucket;
@@ -73,10 +73,10 @@ internal static class RawJsonMigrationHelpers
     /// Same empty-list convention as <see cref="BuildContext"/>.</summary>
     public static void AddBaseCollections(
         CashFlowData data,
-        IEnumerable<Bank> banks, IEnumerable<IncomeSource> incomeSources, IEnumerable<InvestmentAccount> investmentAccounts,
+        IEnumerable<Account> banks, IEnumerable<IncomeSource> incomeSources, IEnumerable<InvestmentAccount> investmentAccounts,
         IEnumerable<ReserveBucket> reserveBuckets, IEnumerable<CreditCard> creditCards, IEnumerable<Category> categories)
     {
-        foreach (var bank in banks) data.AddBank(bank);
+        foreach (var account in banks) data.AddAccount(account);
         foreach (var incomeSource in incomeSources) data.AddIncomeSource(incomeSource);
         foreach (var account in investmentAccounts) data.AddInvestmentAccount(account);
         foreach (var bucket in reserveBuckets) data.AddReserveBucket(bucket);

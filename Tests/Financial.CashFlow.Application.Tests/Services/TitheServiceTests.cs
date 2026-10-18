@@ -1,5 +1,6 @@
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Services;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.Shared.Abstractions.Observability;
 using Financial.TestUtilities;
 using Financial.CashFlow.Domain.Entities;
@@ -13,9 +14,9 @@ namespace Financial.CashFlow.Application.Tests.Services;
 public class TitheServiceTests
 {
     private static readonly Microsoft.Extensions.Logging.ILogger<TitheService> Logger = NullLogger<TitheService>.Instance;
-    private static readonly Bank Barclays = Bank.Create("Barclays", roundUpEnabled: false);
-    private static readonly Bank Trading212 = Bank.Create("Trading212", roundUpEnabled: true);
-    private static readonly Bank Chase = Bank.Create("Chase", roundUpEnabled: true);
+    private static readonly Account Barclays = TestAccounts.Bank("Barclays", roundUpEnabled: false);
+    private static readonly Account Trading212 = TestAccounts.Bank("Trading212", roundUpEnabled: true);
+    private static readonly Account Chase = TestAccounts.Bank("Chase", roundUpEnabled: true);
     private static readonly Category Dizimo = Category.Create("Dizimo", isTithe: true);
     private static readonly Category Mercado = Category.Create("Mercado");
 

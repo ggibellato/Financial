@@ -1,6 +1,7 @@
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Services;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.Shared.Abstractions.Observability;
 using Financial.TestUtilities;
 using Financial.CashFlow.Domain.Entities;
@@ -33,8 +34,8 @@ public class BalanceAdjustmentServiceTests
     private BalanceAdjustmentService CreateService(StubCashFlowRepository? repository = null, BankService? bankService = null) =>
         new(repository ?? _repository, bankService ?? new BankService(repository ?? _repository, _tracer, BankLogger), _tracer, Logger);
 
-    private static Bank BankOf(StubCashFlowRepository repository, string name) =>
-        repository.Banks.First(b => b.Name == name);
+    private static Account BankOf(StubCashFlowRepository repository, string name) =>
+        repository.Accounts.First(b => b.Name == name);
 
     private static Guid BankIdOf(StubCashFlowRepository repository, string name) =>
         BankOf(repository, name).Id;

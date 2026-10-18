@@ -1,6 +1,7 @@
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Services;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Infrastructure.Persistence;
 using Financial.CashFlow.Infrastructure.Repositories;
@@ -32,7 +33,7 @@ public class FailedSaveRollbackTests
         var data = CashFlowData.Create();
         foreach (var bank in StubCashFlowRepository.DefaultBanks())
         {
-            data.AddBank(bank);
+            data.AddAccount(bank);
         }
 
         foreach (var source in StubCashFlowRepository.DefaultIncomeSources())
@@ -65,7 +66,7 @@ public class FailedSaveRollbackTests
     private CardStatementService CreateCardStatementService() =>
         new(_repository, TestClock.At(), NullLogger<CardStatementService>.Instance, _tracer);
 
-    private Guid BankId(string name) => _repository.GetBanks().Single(b => b.Name == name).Id;
+    private Guid BankId(string name) => _repository.GetAccounts().Single(b => b.Name == name).Id;
 
     private IncomeCreateDTO ArianaSplitIncome() => new()
     {
@@ -178,7 +179,7 @@ public class FailedSaveRollbackTests
             _repository.GetCardStatements().Single(s => s.Id == statementId).IsPaid.Should().BeFalse();
             var charge = _repository.GetExpenses().Should().ContainSingle().Subject;
             charge.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
-            charge.PaymentSourceBank.Should().BeNull();
+            charge.PaymentSourceAccount.Should().BeNull();
         }
     }
 
@@ -198,7 +199,7 @@ public class FailedSaveRollbackTests
             _repository.GetCardStatements().Single(s => s.Id == statementId).IsPaid.Should().BeTrue();
             var charge = _repository.GetExpenses().Should().ContainSingle().Subject;
             charge.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardSettled);
-            charge.PaymentSourceBank!.Name.Should().Be("Trading212");
+            charge.PaymentSourceAccount!.Name.Should().Be("Trading212");
         }
     }
 

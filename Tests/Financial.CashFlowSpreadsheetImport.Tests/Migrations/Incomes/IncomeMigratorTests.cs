@@ -1,8 +1,10 @@
 using ClosedXML.Excel;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.Incomes;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.IncomeSources;
+using Financial.TestUtilities;
 using FluentAssertions;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.Migrations.Incomes;
@@ -10,8 +12,8 @@ namespace Financial.CashFlowSpreadsheetImport.Tests.Migrations.Incomes;
 [Trait("Category", "Unit")]
 public class IncomeMigratorTests
 {
-    private static readonly Bank Chase = Bank.Create("Chase", roundUpEnabled: true);
-    private static readonly Bank Barclays = Bank.Create("Barclays", roundUpEnabled: false);
+    private static readonly Account Chase = TestAccounts.Bank("Chase", roundUpEnabled: true);
+    private static readonly Account Barclays = TestAccounts.Bank("Barclays", roundUpEnabled: false);
     private static readonly IncomeSource Lottery = IncomeSource.Create("Lottery", IncomeGroup.NonReportable);
     private static readonly IncomeSource Ariana = IncomeSource.Create("Ariana", IncomeGroup.Salary);
 
@@ -60,14 +62,14 @@ public class IncomeMigratorTests
         sheet.Cell(3, 11).Value = 2595.39;
         sheet.Cell(3, 12).Value = 1878.74;
         var data = CashFlowData.Create();
-        data.AddBank(Bank.Create("Barclays", roundUpEnabled: false));
+        data.AddAccount(TestAccounts.Bank("Barclays", roundUpEnabled: false));
         data.AddIncomeSource(IncomeSource.Create("Ariana", IncomeGroup.Salary));
 
         var summary = IncomeMigrator.Migrate(data, workbook);
 
         summary.EntriesImportedCount.Should().Be(1);
         summary.IncomeCount.Should().Be(1);
-        data.Incomes.Should().ContainSingle(i => i.IncomeSource.Name == "Ariana" && i.Bank!.Name == "Barclays");
+        data.Incomes.Should().ContainSingle(i => i.IncomeSource.Name == "Ariana" && i.Account!.Name == "Barclays");
     }
 
     [Fact]
@@ -96,13 +98,13 @@ public class IncomeMigratorTests
         sheet.Cell(3, 11).Value = 2595.39;
         sheet.Cell(3, 12).Value = 1878.74;
         var data = CashFlowData.Create();
-        data.AddBank(Bank.Create("Barclays", roundUpEnabled: false));
+        data.AddAccount(TestAccounts.Bank("Barclays", roundUpEnabled: false));
 
         IncomeSourceMigrator.Migrate(data);
         var summary = IncomeMigrator.Migrate(data, workbook);
 
         summary.EntriesImportedCount.Should().Be(1);
-        data.Incomes.Should().ContainSingle(i => i.IncomeSource.Name == "Ariana" && i.Bank!.Name == "Barclays");
+        data.Incomes.Should().ContainSingle(i => i.IncomeSource.Name == "Ariana" && i.Account!.Name == "Barclays");
     }
 
     /// <summary>The bug this guards against: running IncomeMigrator before IncomeSourceMigrator on
@@ -116,7 +118,7 @@ public class IncomeMigratorTests
         sheet.Cell(3, 11).Value = 2595.39;
         sheet.Cell(3, 12).Value = 1878.74;
         var data = CashFlowData.Create();
-        data.AddBank(Bank.Create("Barclays", roundUpEnabled: false));
+        data.AddAccount(TestAccounts.Bank("Barclays", roundUpEnabled: false));
 
         var summary = IncomeMigrator.Migrate(data, workbook);
         IncomeSourceMigrator.Migrate(data);

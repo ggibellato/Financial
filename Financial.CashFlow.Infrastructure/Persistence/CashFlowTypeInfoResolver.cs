@@ -1,4 +1,5 @@
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.Shared.Abstractions.Persistence;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -18,7 +19,7 @@ public class CashFlowTypeInfoResolver : DefaultJsonTypeInfoResolver
         typeof(MaeLedgerEntry),
         typeof(InvestmentSnapshot),
         typeof(InvestmentAccount),
-        typeof(Bank),
+        typeof(Account),
         typeof(IncomeSource),
         typeof(ReserveBucket),
         typeof(CreditCard),
@@ -37,12 +38,12 @@ public class CashFlowTypeInfoResolver : DefaultJsonTypeInfoResolver
     // so an absent key must be tolerated (it just means "not linked") rather than rejected.
     private static readonly Dictionary<(Type OwningType, string PropertyName), (string WireName, bool IsRequired)> ReferenceProperties = new()
     {
-        [(typeof(Income), nameof(Income.Bank))] = ("BankId", true),
+        [(typeof(Income), nameof(Income.Account))] = ("BankId", true),
         [(typeof(Income), nameof(Income.IncomeSource))] = ("IncomeSourceId", true),
-        [(typeof(Expense), nameof(Expense.PaymentSourceBank))] = ("PaymentSourceBankId", true),
-        [(typeof(Transfer), nameof(Transfer.SourceBank))] = ("SourceBankId", true),
-        [(typeof(Transfer), nameof(Transfer.DestinationBank))] = ("DestinationBankId", true),
-        [(typeof(BalanceAdjustment), nameof(BalanceAdjustment.Bank))] = ("BankId", true),
+        [(typeof(Expense), nameof(Expense.PaymentSourceAccount))] = ("PaymentSourceBankId", true),
+        [(typeof(Transfer), nameof(Transfer.SourceAccount))] = ("SourceBankId", true),
+        [(typeof(Transfer), nameof(Transfer.DestinationAccount))] = ("DestinationBankId", true),
+        [(typeof(BalanceAdjustment), nameof(BalanceAdjustment.Account))] = ("BankId", true),
         [(typeof(InvestmentSnapshot), nameof(InvestmentSnapshot.Account))] = ("InvestmentAccountId", true),
         [(typeof(ReserveMovement), nameof(ReserveMovement.Bucket))] = ("BucketId", true),
         [(typeof(Expense), nameof(Expense.CreditCard))] = ("CreditCardId", true),
@@ -93,8 +94,8 @@ public class CashFlowTypeInfoResolver : DefaultJsonTypeInfoResolver
 
     private JsonConverter CreateReferenceConverter(Type propertyType)
     {
-        if (propertyType == typeof(Bank))
-            return new BankReferenceConverter(_context?.Banks);
+        if (propertyType == typeof(Account))
+            return new AccountReferenceConverter(_context?.Accounts);
 
         if (propertyType == typeof(IncomeSource))
             return new IncomeSourceReferenceConverter(_context?.IncomeSources);
