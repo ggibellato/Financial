@@ -78,7 +78,7 @@ The core value is one place per account, a new account from an existing template
 | Preserve figures | 0 differences at the end of each of the 13 features | Parity run on the latest live copy available when the feature finishes |
 | No-code accounts | 4 of 4 templates create a working account through Admin → Accounts with 0 code changes | Manual check after F11: create one account per template, see it in the account list and use one action on it |
 | Centralise tasks | 14 of 14 per-account tasks reachable from the account screen (bank: add expense, add income, transfer, pay recurring bill, reconcile; card: add charge, pay statement, move charge, unmark paid; Pots: deposit, withdraw, manage pots; Settlement: add entry, settle) | Task checklist ticked before F13 retires the old pages |
-| Unify | 4 old balance calculations deleted; 0 template-name checks in production code | Code review at F12; architecture source-scan test green |
+| Unify | 4 old balance calculations deleted; 0 template-name checks in production code | Code review at F12; architecture test green |
 | Unify | 0 name-string joins between balances, accounts and the Reserva category | Grep at F13 of `useMonthly.ts`, `withdrawalExpenseCategories.ts`, `Category.ReservaName` (all removed) |
 | Server summary | Monthly summary area served by 1 call; 0 browser-side sums of balances, outstanding, category totals or income totals | F04 code review and network panel check |
 
@@ -233,20 +233,20 @@ Rules that apply to every feature:
 - **Banks become accounts with the same Ids.** Expense (payment source), Income (bank), Transfer (source, destination) and BalanceAdjustment (bank) keep their own entities; their bank reference becomes an account reference. *Why:* a small migration (no record is rewritten except its reference), category reporting untouched, parity easy to keep. Rejected: one generic Transaction table (rewrites ~14,000 expenses; effectively double-entry, which the design rejected).
 - **One balance calculation (Domain rule, pure):** balance(account, currency, as of D) = opening amount + the sum of every record's signed contribution to that account dated from the balance start date up to D; an account without `HasOpeningBalance` counts every record up to D. Each record type declares its own contribution (expense −(value + round-up) on its payment-source account, income +net, transfer −amount on source / +amount on destination, adjustment +delta). *Why it keeps a start date (deviation from the design doc):* the doc said the opening balance becomes the first transaction and the date window disappears, but the live data has about 14,185 bank records dated before the banks' 2026-09-01 opening date (Barclays 10,375, Chase 2,457, Trading 212 1,353) that count in category totals and history but not in balances; dropping the window would change every bank balance. The window survives as one rule inside the one calculation, not as a bank special case.
 - `BankService.ComputeBalance` is replaced by the shared calculation; the other 3 calculations are replaced by F07, F09, F11.
-- **Linked transactions:** records written by one operation carry the same operation id; editing or deleting the operation edits or deletes all of them in one save (contract used by F08 and F10). A transfer is one record that contributes to two accounts.
 - **Migration step V1 → V2** (Infrastructure, in `Tools/CashFlowSpreadsheetImport`): `Banks` → `Accounts` with template Bank, currency GBP (all 3 banks are UK), `IsActive` true, opening balance and start date and round-up setting copied; record references hold the same Ids; `Version` becomes 2. Idempotent: a V2 file is left unchanged.
-- **`migrate` command:** `CashFlowSpreadsheetImport migrate --input <path> --output <path>` runs every step the file still needs, in order, with no spreadsheet; reuses `LiveDataFileGuard` (refuses `data/data-cashflow.json` unless `--allow-live` is passed at deploy) and `MigrationBackup`. *Why:* explicit and repeatable, reuses the existing guard, backup and `Version` field; restarting the app never migrates.
+- **`migrate` command:** `CashFlowSpreadsheetImport migrate --input <path> --output <path>` runs every step the file still needs, in order, with no spreadsheet, and always writes a separate output file; reuses `LiveDataFileGuard` (refuses `data/data-cashflow.json` as input or output, with no override) and `MigrationBackup`. *Why:* explicit and repeatable, reuses the existing guard, backup and `Version` field; restarting the app never migrates. *Why no migrate-on-load (unlike Investment's `InvestmentDataMigrations`):* these steps restructure the data, and each one must pass a parity run on a copy before the live file changes. *Why no live-file override:* production reads the file from Google Drive, so the deploy downloads it, migrates the download to a new file and uploads that; the repo's local file is never the migration target.
+- **Spreadsheet import keeps working:** the import (`CashFlowSpreadsheetImport` without `migrate`) builds the domain model and saves it through `CashFlowSerializerAdapter`, so it always writes the current version. Its bank step creates Bank-template accounts directly, and a fresh import loads under the version guard. *Why:* a day-one reset from the Google spreadsheet must stay possible; the V1 → V2 step is only for files written before F02.
 - **Version guard:** `CashFlowSerializerAdapter` knows the current version; loading a file with a lower `Version` stops the API at startup with `data-cashflow.json is version 1; this build needs version 2. Run the migrate command first.` A higher version is refused the same way.
 - **Compatibility boundary:** `/banks` (including `opening-balance`, `balances`, `adjustments`), `/transfers` and `/expenses` keep their routes and DTO shapes, served by Account-backed services, so Monthly, the Admin Banks page and every existing screen work unchanged until F13. `RecurringBillPaymentExpenseDTO.PaymentSourceBankId` now carries an account Id (same value).
 - **Test and example data:** `Tests/Financial.Api.Tests/TestData/data-cashflow.test.json` and `data/data-cashflow.example.json` are migrated to V2 in the same feature (the version guard would otherwise refuse them).
-- **Architecture test:** a source-scan test in `Tests/Financial.Architecture.Tests` reads production `.cs` files and fails if any uses a template member outside an allow-list (the template table, the migration steps, the DTO mapper that shows the template name). *Why:* the existing architecture tests only check project references; a source scan needs no new package. NetArchTest was rejected (new dependency; sees type dependencies, not comparisons).
+- **Architecture test:** a test in `Tests/Financial.Architecture.Tests` fails if any production type outside an allow-list (the template table, the migration steps, the DTO mapper that shows the template name) depends on the template type, which is its own type for this reason. It uses ArchUnitNET (`TngTech.ArchUnitNET`), referenced by the test project only; every library call sits in one adapter class behind a narrow interface, so replacing the library touches one file. *Why:* the existing architecture tests only check project references; reading compiled type dependencies is sturdier than scanning source text. ArchUnitNET over NetArchTest: NetArchTest.Rules has had no release since 2021 and its eNhancedEdition fork has a single maintainer, while ArchUnitNET is actively released.
 
 **Experience:**
 - No visible change: every screen shows the same values. The only new user-facing step is the `migrate` command, documented in `scripts/parity/README.md` and README's deploy section.
 
 **Error Handling:**
 - API started on a V1 file: startup fails with the version message above; nothing is read or written.
-- `migrate` on the live file without `--allow-live`: `Refusing to migrate the live data file. Pass a copy, or --allow-live at deploy time.` exit 1.
+- `migrate` given `data/data-cashflow.json` as input or output: `Refusing to migrate the live data file. Pass a copy.` exit 1, nothing written.
 - Migration failure mid-way: the output file is not written; the backup and input are untouched; exit 1 with the step name.
 - A record referencing an unknown bank Id during migration: migration stops with `Expense <id> references unknown bank <id>` and writes nothing.
 - Deleting a bank account that has records: 409 `EntityInUse`, as today.
@@ -383,6 +383,7 @@ Rules that apply to every feature:
 - Calendar due-date sync, the payments-due banner and the Admin Credit cards page keep working against card accounts (same Ids); `/credit-cards` endpoints keep their shapes until F13.
 - Admin → Accounts gains the Credit card template (fields: next invoice due date, active).
 - Test and example data migrated to V3.
+- The spreadsheet import creates the cards as Credit card accounts directly and its output loads under the version guard (the F02 import rule).
 
 **Experience:**
 - No visible change on existing screens; the Accounts page lists cards with their owed balance; card accounts open on the account screen with Transactions only until F08.
@@ -399,8 +400,10 @@ Rules that apply to every feature:
 
 **Provides:**
 - Statement payments as linked transfers, card payment transactions on banks, and the card screen (Statements tab, pay, move charge, unmark) (used by F13)
+- Linked transactions: the operation id and the edit/delete-all-in-one-save contract (used by F10)
 
 **Capabilities:**
+- **Linked transactions:** records written by one operation carry the same operation id; editing or deleting the operation edits or deletes all of them in one save. The statement payment is the first operation to use it; F10's deposits and withdrawals reuse it. *Why here and not in F02:* no F02 operation writes more than one record (a transfer is one record that contributes to two accounts), so the contract arrives with its first user.
 - **Paying a statement** = one transfer bank → card (new pair rule `CanPayBills`-holding bank → `ReceivesPayments` account, allowed only through this action) for the statement's total, with no category, linked to the statement; the statement becomes paid. Paid in full in one payment; no partial payments (as today).
 - Payment date defaults to today, editable, not in the future. Charges keep their own date, category and statement month.
 - **Category reporting unchanged:** an unpaid charge counts in its statement month; once paid it counts on the payment's date, read from the linked payment instead of rewriting the charge (`Expense.ReportingDate`). Category totals and tithe land in the same months as today.
@@ -442,6 +445,7 @@ Rules that apply to every feature:
 - Admin → Accounts gains the Pots template (fields: category). Pots themselves are managed from the Pots screen (F10).
 - `reserve` and `reserve-buckets` endpoints keep their shapes (against Reserva) until F13.
 - Test and example data migrated to V4.
+- The spreadsheet import creates the Reserva Pots account with its pots directly and its output loads under the version guard (the F02 import rule).
 
 **Experience:**
 - No visible change on Reserva or Monthly; the Accounts page lists "Reserva" under Other accounts with its total.
@@ -455,6 +459,7 @@ Rules that apply to every feature:
 
 **Consumes:**
 - F05: account screen shell
+- F08: linked transactions (operation id, edit/delete all in one save)
 - F09: Pots accounts, pots, split percentages, category setting
 
 **Provides:**
@@ -505,6 +510,7 @@ Rules that apply to every feature:
 - Admin → Accounts gains the Settlement template (fields: currencies, other participant's name).
 - `controle-mae` endpoints keep their shapes (against Mãe) until F13.
 - Test and example data migrated to V5.
+- The spreadsheet import creates the Mãe Settlement account with its entries directly and its output loads under the version guard (the F02 import rule).
 
 **Experience:**
 - No visible change on Controle Mãe; the Accounts page lists "Mãe" under Other accounts with "Mãe owes you R$167.88 / £7.94".
@@ -552,7 +558,7 @@ Rules that apply to every feature:
 - **Removed code (design doc's list):** the 4 old balance calculations (already replaced), name-string joins, the fixed-name Reserva lookups, the duplicated card filter, client-side summary maths, single-instance Mãe/Reserva code, and the per-type pages.
 - **E2E journeys** (Playwright, `Financial.Web/tests/e2e`): add-expense moves to the account screen; new smoke journeys: pay a card statement, deposit into pots from a manual deposit, settle a Settlement account. Test seed data contains one account per template.
 - **Docs:** `context.md`, README, `data/data-cashflow.example.json`, `docs/ui/` references to retired pages, and the design document's status updated.
-- **Final parity run** on the latest live copy with the full V1 → V5 chain is the go-ahead for the single deploy (`migrate --allow-live` on the live file after a backup, then `scripts/deploy.ps1`, run by the user).
+- **Final parity run** on the latest live copy with the full V1 → V5 chain is the go-ahead for the single deploy (download `data-cashflow.json` from Google Drive and keep it as the backup, `migrate --input <download> --output <new>`, upload `<new>` to Drive, then `scripts/deploy.ps1`, run by the user).
 
 **Experience:**
 - Opening CashFlow lands on Accounts; Monthly shows the overview with a link per account row to its account screen; bookmarks to retired pages land on the matching account screen.
@@ -590,7 +596,7 @@ Rules that apply to every feature:
 | F07 | Credit Card Template and Card Migration | 1 | F02, F04, F06 |
 | F08 | Statement Payment and Card Screen | 1 | F05, F07 |
 | F09 | Pots Template and Reserva Migration | 1 | F02, F06, F07 |
-| F10 | Linked Deposit, Withdrawal and Pots Screen | 1 | F05, F09 |
+| F10 | Linked Deposit, Withdrawal and Pots Screen | 1 | F05, F08, F09 |
 | F11 | Settlement Template and Mãe Migration | 1 | F02, F06, F09 |
 | F12 | Settlement Screen | 1 | F05, F11 |
 | F13 | Consolidated Navigation and Retirement | 1 | F08, F10, F12 |
@@ -641,6 +647,7 @@ graph TD
   F06 --> F09
   F07 --> F09
   F05 --> F10[F10 Pots screen]
+  F08 --> F10
   F09 --> F10
   F02 --> F11[F11 Settlement]
   F06 --> F11
@@ -668,12 +675,13 @@ graph TD
 ### F02. Account Model and Bank Migration
 - [ ] `migrate` upgrades a V1 copy of the live data to V2: 3 bank accounts with the same Ids, names, opening balances, start dates and round-up settings; `Version` = 2
 - [ ] Running `migrate` on a V2 file leaves it byte-for-byte unchanged
-- [ ] `migrate` refuses `data/data-cashflow.json` without `--allow-live` and writes nothing
+- [ ] `migrate` refuses `data/data-cashflow.json` as input or output and writes nothing
+- [ ] A fresh spreadsheet import writes the current version with the banks as Bank-template accounts (same names and opening balances as before F02), and the API starts on it
 - [ ] The API refuses to start on a V1 file with the version message; it starts on a V2 file
 - [ ] The shared balance calculation returns the same balance as today for every bank and month, including months before the 2026-09-01 start date (opening amount only)
 - [ ] Records dated before the balance start date still count in category totals and history
 - [ ] A Unit test per Bank capability runs against a minimal account with only that capability; one combination test covers the Bank template
-- [ ] The architecture source-scan test fails when a production file outside the allow-list compares a template, and passes on the feature's code
+- [ ] The architecture test fails when a production type outside the allow-list depends on the template type, and passes on the feature's code; only its adapter class references ArchUnitNET
 - [ ] `/banks`, `/transfers` and `/expenses` return the same shapes and values as before (OpenAPI diff limited to intended additions)
 - [ ] Test seed and example data are V2 and the full test suite passes
 - [ ] Parity run on the latest live copy: 0 differences; `/simplify` run; architecture-reviewer passed
@@ -732,6 +740,7 @@ graph TD
 - [ ] Calendar due-date sync and the payments-due banner work against card accounts
 - [ ] Creating a card in Admin → Accounts needs no code and adds it to the default group
 - [ ] `/credit-cards` and `/card-statements` return the same shapes and values
+- [ ] A fresh spreadsheet import writes the cards as Credit card accounts and the API starts on it
 - [ ] Parity: 0 differences (card balance mapped, negated, to accumulated outstanding); `/simplify` run; architecture-reviewer passed
 
 ### F08. Statement Payment and Card Screen
@@ -744,6 +753,7 @@ graph TD
 - [ ] Moving an unpaid charge to a later unpaid statement works; to a paid or earlier one returns 400
 - [ ] Card statement GETs write nothing to the data file
 - [ ] Card screen states, keyboard use and narrow layout pass the review checklist
+- [ ] Paying a statement writes the transfer and the statement status with one operation id; unmarking deletes everything with that id in one save
 - [ ] Parity: 0 differences and card screen checklist rows ticked; `/simplify` run; architecture-reviewer and ui-reviewer passed
 
 ### F09. Pots Template and Reserva Migration
@@ -752,6 +762,7 @@ graph TD
 - [ ] The snapshot source names the Reserva Pots account and its suggestions are identical
 - [ ] Renaming the "Reserva" category does not break deposits or withdrawals (no name lookup remains in server or web)
 - [ ] Creating a second Pots account in Admin → Accounts needs no code and does not change Reserva's figures or snapshot suggestions
+- [ ] A fresh spreadsheet import writes the Reserva Pots account with its pots and the API starts on it
 - [ ] Parity: 0 differences; `/simplify` run; architecture-reviewer passed
 
 ### F10. Linked Deposit, Withdrawal and Pots Screen
@@ -774,6 +785,7 @@ graph TD
 - [ ] A new entry stores who paid, the original amount and, on a 2-currency account, the converted value at the entry date's rate
 - [ ] Creating a GBP-only son account in Admin → Accounts needs no code and asks no currency per entry
 - [ ] `controle-mae` endpoints return the same shapes and values
+- [ ] A fresh spreadsheet import writes the Mãe Settlement account with its entries and the API starts on it
 - [ ] Parity: 0 differences; `/simplify` run; architecture-reviewer passed
 
 ### F12. Settlement Screen
@@ -803,12 +815,13 @@ graph TD
 - [ ] Records written by F03's transfer appear in F05's Transactions grid for both accounts and move both balances
 - [ ] The `migrate` command from F02 runs the F07, F09 and F11 steps in one chain from V1 on a fresh live copy, and refuses to skip a step
 - [ ] Card (F07), pot and Pots account (F09) and Settlement (F11) balances come from the F02 shared balance calculation; no other balance code remains
-- [ ] The F02 architecture source-scan test passes with the Credit card, Pots and Settlement templates added by F07, F09 and F11
+- [ ] The F02 architecture test passes with the Credit card, Pots and Settlement templates added by F07, F09 and F11
 - [ ] The default group from F04 appears on F05's Accounts page and includes F07's cards after migration
 - [ ] An account created through F06 appears in F05's picker and Accounts page; F07, F09 and F11 accounts are created through the same dialog
 - [ ] F05's account screen shell hosts F08's Statements tab, F10's Pots tab and F12's Settlement header with no change to the shell's allowed-actions rendering
 - [ ] F07's card accounts and charge filter give the statement totals F08 pays
 - [ ] F09's Pots account category is the category F10's deposit and withdrawal expenses are written in
+- [ ] F10's deposits and withdrawals use F08's operation id: editing or deleting one edits or deletes all its records in one save
 - [ ] The V4 → V5 step from F11 runs only after F09's V3 → V4 step, which runs only after F07's V2 → V3 step
 - [ ] F11's participants and currencies drive F12's paid-by choice, currency prompt and Settle pre-fill
 - [ ] After F13, every task that F08, F10 and F12 moved onto the account screen is no longer reachable from a retired page, and the old links redirect to it
