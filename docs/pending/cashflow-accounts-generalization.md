@@ -1,6 +1,6 @@
 # CashFlow accounts generalization — discussion summary
 
-Status: **design agreed; F00 (WPF removal) done, PRD for F01–F05 not started.** Next step: run `prd-writer` for F01–F05.
+Status: **design agreed; F00 (WPF removal) done; PRD written: `docs/prd/P60-prd-cashflow-accounts-generalization/` (13 features in 5 stages, one stage per slice F01–F05).** Where checking this design against the code and live data changed a statement, the PRD wins; those statements are corrected below and marked *(corrected by P60)*.
 Scope: **CashFlow becomes account-centred, and the WPF front end is removed** from the whole application (F00, done 2026-10-16). Everything else raised during the discussion is listed under [Future features](#future-features-not-in-this-project). Discussion date: 2026-10-08 to 2026-10-15.
 
 Terminology: a **transaction** is anything that touched an account (expense, income, transfer, card charge, card payment, pot deposit or withdrawal, settlement entry). When one action writes transactions on several accounts, they are **linked transactions**.
@@ -81,7 +81,7 @@ A template is the *kind* of account; the user's accounts are named instances of 
 
 ### Model
 
-- `Account` aggregate: `Id`, `Name`, `Template`, `Currency` (Settlement: its currencies), `Category` (Pots accounts only: the category of the bank expenses their deposits and withdrawals write), `IsActive`, optional parent (pots under a Pots account).
+- `Account` aggregate: `Id`, `Name`, `Template`, `Currency` (Settlement: its currencies), `Category` (Pots accounts only: the category of the bank expenses their deposits and withdrawals write), `IsActive`. Pots are entities inside their Pots account, not child accounts *(corrected by P60: the account guards the 100% split rule itself)*.
 - **Capabilities are the only thing code checks.** Services, validation and the allowed-actions API ask "does this account have `CanPayBills`?", never "is this a Bank?".
 - **Templates are defined in code**: a named, fixed capability set. Templates decide which operations may post transactions to an account, never how its balance is computed (see [One balance model](#one-balance-model)).
 - An account stores which template it was made from, not its own list of capabilities: what it can do is read from the template every time. Templates change only in code, so a template change (a code change and a deploy) applies at once to every account made from it. Adding a capability makes it available on all those accounts; removing one stops new operations of that kind but keeps their past transactions and the balance.
@@ -94,7 +94,7 @@ A template is the *kind* of account; the user's accounts are named instances of 
 
 ### One balance model
 
-- **Every account's balance = opening balance + sum of its transactions**, per currency, up to a date. The opening balance is the account's first transaction (removes today's `OpeningBalanceDate` window special case).
+- **Every account's balance = opening balance + sum of its transactions**, per currency, up to a date. An account with an opening balance counts only transactions from its balance start date *(corrected by P60: about 14,185 live bank records predate the banks' 2026-09-01 start date; dropping the window would change every bank balance, so it stays as one rule inside the one calculation)*.
 - One shared calculation replaces today's four: `BankService.ComputeBalance`, card outstanding in `CardStatementService`, the pot sums in `ReserveService` / `ReserveBucketAsOfDateResolver`, and `ControleMaeService.GetTotals`.
 - Amounts are signed. A card's balance is negative while money is owed and returns to zero when paid (its "transient" nature needs no special rule); the UI shows it as "owed".
 - **Category belongs to the transaction, not the account.** Bank and card expenses carry one; transfers, card payments, pot transactions and settlement entries do not.
@@ -133,7 +133,7 @@ R$140 and £20 are the same debt in two currencies (approximately equal because 
 
 ### Pots
 
-- A **Pots** account (the user's is "Reserva") contains pots as sub-accounts. Pot balance = sum of its transactions (same numbers as today); the Pots account balance = sum of its pots. No category on pot transactions; a pot goes negative only with confirmation; split percentages total 100 within each Pots account.
+- A **Pots** account (the user's is "Reserva") contains pots (entities inside the account; see P60). Pot balance = sum of its transactions (same numbers as today); the Pots account balance = sum of its pots. No category on pot transactions; a pot goes negative only with confirmation; split percentages total 100 within each Pots account.
 - **Each Pots account has a category setting** (Reserva: "Reserva"). Deposits and withdrawals through a bank write their bank expenses in the category the account has at that moment, whichever pot they touch. The user can change it at any time; the change applies from the next deposit or withdrawal, and past expenses keep the category they were recorded with.
 - **Withdrawal through a bank keeps today's records**, now written and linked as one operation: pot −X; bank expense −X in the Pots account's category; bank expense +X in the real category. The bank nets to zero and the Pots account's category total stays deposits − withdrawals. (Corrects an earlier idea of a pot → bank transfer, which would have stopped withdrawals reducing the category total.)
 - **Deposit is linked (new):** one operation writes the bank expense(s) in the Pots account's category and the pot credits, split once across pots by percentage, in one save.
@@ -255,7 +255,7 @@ Excluding F00, roughly the same amount of code overall, possibly slightly more d
 - **Decided: account screen layout.**
   - **Choosing an account:** a picker on the account screen, so the user moves between accounts without leaving it.
   - **Template-specific content:** tabs (e.g. Transactions | Statements for a card, Transactions | Pots for a Pots account); **Transactions** is the default tab.
-  - **How actions open:** still open. The app uses both inline forms and dialogs today; the PRD picks one for the account screen after evaluating both against the Fluent UI v9 guidance (`fluent-ui` skill, `docs/ui/`).
+  - **How actions open:** inline forms above the transactions grid; dialogs only for confirmations and Manage pots *(decided in P60: Fluent v9 says modal dialogs sparingly and never nested; ADR-003 and the forms rule put short, repeated entry inline)*.
   - **Transaction period:** one month at a time, as on Monthly today.
   - **Narrow screens:** browser first. Keep it simple: the layout only has to meet the existing UI rules at narrow widths, with no mobile-specific design, since a mobile version may come later with React Native (see Future features).
 - **Decided: groups.** For now there is one default group that reproduces today's main page: banks and cards join it automatically, Pots and Settlement accounts do not. Screens to create, edit and reorder groups are a future feature.
@@ -263,7 +263,7 @@ Excluding F00, roughly the same amount of code overall, possibly slightly more d
 - **Decided: old pages stay reachable until F05.** During F01–F04 the per-type pages and the account screen coexist; F05 retires them (the exact retirement list is fixed in the PRD).
 - **Decided: Web UI telemetry is not part of this project.** It is its own slice or PRD (see Future features).
 - **Decided:** an income without a reserve split keeps the bank optional, as today. A manual deposit into the pots may have no bank (money from outside CashFlow, e.g. an investment).
-- **Decided: migrations are forward-only.** Each migration makes the data correct for the new model from now on; past records keep working as they are today and are not rebuilt (e.g. paid card charges stay as bank expenses on their payment date; old Reserva deposits, withdrawal pairs and transfers stay unlinked; existing Mãe entries get "paid by" derived from their sign, and the migration must leave the Mãe BRL and GBP totals exactly as they are today, currently zero).
+- **Decided: migrations are forward-only.** Each migration makes the data correct for the new model from now on; past records keep working as they are today and are not rebuilt (e.g. paid card charges stay as bank expenses on their payment date; old Reserva deposits, withdrawal pairs and transfers stay unlinked; existing Mãe entries get "paid by" derived from their sign, and the migration must leave the Mãe BRL and GBP totals exactly as they are today; *corrected by P60:* they are R$167.88 / £7.94, not zero, positive entries mean the user paid for Mãe, and 22 of 36 entries have no converted value).
 - **Resolved (PR #1014): Mensais "UK bill paid → expense" moved to the back end.** `MensaisService.MarkBillPaidAsync(id, RecurringBillMarkPaidDTO)` (`POST {id}/paid`) builds the bank expense and sets the bill to Paid inside one `ApplyAndSaveAsync`, so a half-done result is no longer possible and the UI retry paths are gone. The service rejects an expense for a non-UK bill or a bill already Paid. The front end (`useMensais.markBillPaid`) now only collects the prompt values and make one call; skip sends no expense.
   - Still in the front end, by design: the UI decision to *open* the prompt (`Area == "UK"` and moving to Paid), a string compare on the area. It is presentation flow, and the server enforces the rule.
   - Still open: `POST {id}/status` with `Paid` sets a UK bill Paid without going through `/paid`. Harmless today (equivalent to skip), but the PRD can decide whether `/status` should refuse Paid.
