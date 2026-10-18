@@ -14,7 +14,6 @@ Import-Module (Join-Path $PSScriptRoot 'Parity.psm1') -Force
 
 $parityRoot = Join-Path ([IO.Path]::GetTempPath()) 'financial-parity'
 $startedProcesses = [System.Collections.Generic.List[System.Diagnostics.Process]]::new()
-$worktreePath = $null
 $succeeded = $false
 $exitCode = 1
 
@@ -69,20 +68,21 @@ function Publish-ParityApi([string]$Side, [string]$SourceRoot, [string]$SideFold
     $appFolder
 }
 
+
 function Start-ParityApi([string]$Side, [string]$SideFolder, [string]$AppFolder, [int]$Port) {
     Copy-Item -LiteralPath (Join-Path $RepoRoot 'data/data-investment.example.json') -Destination (Join-Path $SideFolder 'data-investment.json') -Force
     Copy-Item -LiteralPath (Join-Path $RepoRoot 'data/data-fx-rates.example.json') -Destination (Join-Path $SideFolder 'data-fx-rates.json') -Force
     $log = Join-Path $SideFolder 'api.log'
     $environment = @{
-        ASPNETCORE_ENVIRONMENT          = 'Parity'
-        ASPNETCORE_URLS                 = "http://localhost:$Port"
-        CashFlow__Repository__Provider  = 'LocalJson'
-        CashFlow__DataJsonFile          = Join-Path $SideFolder 'data-cashflow.json'
+        ASPNETCORE_ENVIRONMENT           = 'Parity'
+        ASPNETCORE_URLS                  = "http://localhost:$Port"
+        CashFlow__Repository__Provider   = 'LocalJson'
+        CashFlow__DataJsonFile           = Join-Path $SideFolder 'data-cashflow.json'
         Investment__Repository__Provider = 'LocalJson'
-        Investment__DataJsonFile        = Join-Path $SideFolder 'data-investment.json'
-        FxRates__Repository__Provider   = 'LocalJson'
-        FxRates__DataJsonFile           = Join-Path $SideFolder 'data-fx-rates.json'
-        Observability__Enabled          = 'false'
+        Investment__DataJsonFile         = Join-Path $SideFolder 'data-investment.json'
+        FxRates__Repository__Provider    = 'LocalJson'
+        FxRates__DataJsonFile            = Join-Path $SideFolder 'data-fx-rates.json'
+        Observability__Enabled           = 'false'
     }
     $process = Start-Process -FilePath 'dotnet' -ArgumentList 'Financial.Api.dll' -WorkingDirectory $AppFolder -Environment $environment `
         -RedirectStandardOutput $log -RedirectStandardError (Join-Path $SideFolder 'api.err.log') -NoNewWindow -PassThru
@@ -93,7 +93,9 @@ function Start-ParityApi([string]$Side, [string]$SideFolder, [string]$AppFolder,
     while ((Get-Date) -lt $deadline -and -not $process.HasExited) {
         try {
             $health = Invoke-RestMethod -Uri "$baseUrl/health" -TimeoutSec 5
-            if ($health.contexts.cashFlow.provider -eq 'LocalJson' -and $health.contexts.investment.provider -eq 'LocalJson') { return $baseUrl }
+            if ($health.contexts.cashFlow.provider -eq 'LocalJson' -and $health.contexts.investment.provider -eq 'LocalJson') {
+                return [pscustomobject]@{ Process = $process; BaseUrl = $baseUrl }
+            }
             break
         }
         catch { Start-Sleep -Milliseconds 500 }
@@ -107,55 +109,68 @@ function Stop-ParityApi([System.Diagnostics.Process]$Process) {
     [void]$startedProcesses.Remove($Process)
 }
 
-function Export-ParitySide([string]$Side, [string]$Folder, [string]$SourceRoot, [int]$Port, $RunInfo) {
-    $sideFolder = Join-Path $Folder $Side.ToLowerInvariant()
+function New-ParitySideCopy([string]$Folder, [string]$SideKey, [string]$LiveCopy) {
+    $sideFolder = Join-Path $Folder $SideKey
+    New-Item -ItemType Directory -Path $sideFolder -Force | Out-Null
+    Copy-Item -LiteralPath $LiveCopy -Destination (Join-Path $sideFolder 'data-cashflow.json') -Force
+    $sideFolder
+}
+
+function Export-ParitySide([string]$Side, [string]$Folder, [string]$AppFolder, [int]$Port, $RunInfo) {
+    $sideKey = $Side.ToLowerInvariant()
+    $sideFolder = Join-Path $Folder $sideKey
     $dataFile = Join-Path $sideFolder 'data-cashflow.json'
-    $appFolder = Publish-ParityApi $Side $SourceRoot $sideFolder
-    if ($script:worktreePath) {
-        git -C $RepoRoot worktree remove --force $script:worktreePath *>> (Join-Path $sideFolder 'build.log')
-        $script:worktreePath = $null
+    $api = Start-ParityApi $Side $sideFolder $AppFolder $Port
+    $client = [System.Net.Http.HttpClient]::new()
+    try {
+        $hashBeforeRead = Get-ParitySha256 $dataFile
+        $baseUrl = $api.BaseUrl
+        $fetch = { param($path) ConvertFrom-ParityJson $client.GetStringAsync("$baseUrl/$path").GetAwaiter().GetResult() }.GetNewClosure()
+        $report = Get-ParityReport -Fetch $fetch -First $RunInfo.range.first -Last $RunInfo.range.last -Side $sideKey
     }
-    $baseUrl = Start-ParityApi $Side $sideFolder $appFolder $Port
-    $hashBeforeRead = Get-ParitySha256 $dataFile
-    $fetch = { param($path) ConvertFrom-ParityJson (Invoke-WebRequest -Uri "$baseUrl/$path" -TimeoutSec 60).Content }.GetNewClosure()
-    $report = Get-ParityReport -Fetch $fetch -First $RunInfo.range.first -Last $RunInfo.range.last -Side $Side.ToLowerInvariant()
-    Set-Content -LiteralPath (Join-Path $Folder "$($Side.ToLowerInvariant())-report.json") -Value (ConvertTo-ParityReportJson $report) -NoNewline -Encoding utf8
-    $RunInfo[$Side.ToLowerInvariant()] = [ordered]@{
+    finally { $client.Dispose() }
+    Set-Content -LiteralPath (Join-Path $Folder "$sideKey-report.json") -Value (ConvertTo-ParityReportJson $report) -NoNewline -Encoding utf8
+    $RunInfo[$sideKey] = [ordered]@{
         copyChangedDuringRead = (Get-ParitySha256 $dataFile) -ne $hashBeforeRead
         figures               = $report.Count
-        url                   = "http://localhost:$Port"
     }
-    if (-not $KeepRunning) { Stop-ParityApi $startedProcesses[$startedProcesses.Count - 1] }
+    if ($KeepRunning) { Write-Host "$Side running at http://localhost:$Port" }
+    else { Stop-ParityApi $api.Process }
 }
 
 function Invoke-BaselineStep([string]$Folder, $RunInfo) {
     Write-Host "[1/4] Baseline: building $BaselineTag..."
-    $sideFolder = Join-Path $Folder 'before'
-    New-Item -ItemType Directory -Path $sideFolder -Force | Out-Null
-    Copy-Item -LiteralPath $RunInfo.liveCopy -Destination (Join-Path $sideFolder 'data-cashflow.json') -Force
-    $script:worktreePath = Join-Path $Folder 'baseline-src'
-    Invoke-Logged (Join-Path $sideFolder 'build.log') "Before build failed; see $(Join-Path $sideFolder 'build.log')" {
-        git -C $RepoRoot worktree add --detach $script:worktreePath $BaselineTag
+    $sideFolder = New-ParitySideCopy $Folder 'before' $RunInfo.liveCopy
+    $log = Join-Path $sideFolder 'build.log'
+    $worktree = Join-Path $Folder 'baseline-src'
+    try {
+        Invoke-Logged $log "Before build failed; see $log" { git -C $RepoRoot worktree add --detach $worktree $BaselineTag }
+        $appFolder = Publish-ParityApi 'Before' $worktree $sideFolder
+    }
+    finally {
+        git -C $RepoRoot worktree remove --force $worktree *>> $log
+        if (Test-Path -LiteralPath $worktree) { Remove-Item -LiteralPath $worktree -Recurse -Force -ErrorAction SilentlyContinue }
+        git -C $RepoRoot worktree prune *>> $log
     }
     $RunInfo.baseline = [ordered]@{ tag = $BaselineTag; commit = (git -C $RepoRoot rev-parse "$BaselineTag^{commit}") }
-    Export-ParitySide 'Before' $Folder $script:worktreePath $BeforePort $RunInfo
+    Export-ParitySide 'Before' $Folder $appFolder $BeforePort $RunInfo
 }
 
 function Invoke-MigrateStep([string]$Folder, $RunInfo) {
     Write-Host '[2/4] Migrate...'
-    $sideFolder = Join-Path $Folder 'after'
-    New-Item -ItemType Directory -Path $sideFolder -Force | Out-Null
-    Copy-Item -LiteralPath $RunInfo.liveCopy -Destination (Join-Path $sideFolder 'data-cashflow.json') -Force
+    New-ParitySideCopy $Folder 'after' $RunInfo.liveCopy | Out-Null
 }
 
 function Invoke-AfterStep([string]$Folder, $RunInfo) {
     Write-Host '[3/4] After: building the working tree...'
-    if (-not (Test-Path -LiteralPath (Join-Path $Folder 'after/data-cashflow.json'))) { throw "No migrated copy in $Folder. Run -Step Migrate first." }
+    $sideFolder = Join-Path $Folder 'after'
+    if (-not (Test-Path -LiteralPath (Join-Path $sideFolder 'data-cashflow.json'))) { throw "No migrated copy in $Folder. Run -Step Migrate first." }
     $RunInfo.afterBuild = [ordered]@{
         commit = (git -C $RepoRoot rev-parse HEAD)
         dirty  = [bool](git -C $RepoRoot status --porcelain)
     }
-    Export-ParitySide 'After' $Folder $RepoRoot $AfterPort $RunInfo
+    $appFolder = Publish-ParityApi 'After' $RepoRoot $sideFolder
+    Export-ParitySide 'After' $Folder $appFolder $AfterPort $RunInfo
 }
 
 function Invoke-CompareStep([string]$Folder, $RunInfo) {
@@ -177,8 +192,7 @@ try {
     if ($Step -ne 'Compare') {
         if (-not $LiveCopy) { throw "-LiveCopy is required for -Step $Step." }
         $liveCopyPath = Assert-ParityLiveCopy $LiveCopy $RepoRoot
-        $ports = switch ($Step) { 'All' { $BeforePort, $AfterPort } 'Baseline' { $BeforePort } 'After' { $AfterPort } default { @() } }
-        if (@($ports).Count -gt 0) { Assert-ParityPorts @($ports) }
+        Assert-ParityPorts @(switch ($Step) { 'All' { $BeforePort, $AfterPort } 'Baseline' { $BeforePort } 'After' { $AfterPort } })
         if ($Step -in 'All', 'Baseline') {
             git -C $RepoRoot rev-parse --verify --quiet "$BaselineTag^{commit}" *> $null
             if ($LASTEXITCODE -ne 0) { throw "Tag $BaselineTag not found. Create it on main before the first run." }
@@ -211,12 +225,9 @@ try {
         $runInfo.liveCopySha256End = Get-ParitySha256 $runInfo.liveCopy
     }
     if ($Step -in 'All', 'Compare') { $passed = Invoke-CompareStep $folder $runInfo }
-    if ($runInfo.Count -gt 0) { Save-RunInfo $folder $runInfo }
+    Save-RunInfo $folder $runInfo
 
     if ($KeepRunning -and $startedProcesses.Count -gt 0) {
-        foreach ($side in 'before', 'after') {
-            if ($runInfo.Contains($side) -and $runInfo[$side].Contains('url')) { Write-Host "$side`: $($runInfo[$side].url)" }
-        }
         Write-Host "Stop them with: Stop-Process -Id $(($startedProcesses | ForEach-Object Id) -join ',')"
     }
     $succeeded = $true
@@ -224,16 +235,10 @@ try {
 }
 catch {
     Write-Host $_.Exception.Message -ForegroundColor Red
-    $exitCode = 1
 }
 finally {
     if (-not ($succeeded -and $KeepRunning)) {
         foreach ($process in @($startedProcesses)) { Stop-ParityApi $process }
-    }
-    if ($worktreePath) {
-        git -C $RepoRoot worktree remove --force $worktreePath *> $null
-        if (Test-Path -LiteralPath $worktreePath) { Remove-Item -LiteralPath $worktreePath -Recurse -Force -ErrorAction SilentlyContinue }
-        git -C $RepoRoot worktree prune *> $null
     }
 }
 exit $exitCode

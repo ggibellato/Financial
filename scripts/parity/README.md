@@ -88,7 +88,7 @@ Two figures with the same key stop the run.
 ## Extending it
 
 - **New figure:** add it to the report builder in `Parity.psm1` (`Add-ParityMonthFigures`,
-  `Add-ParityYearFigures` or `Get-ParityReport`), add the family to `Get-ParityFigureFamilies` and
+  `Add-ParityYearFigures` or `Get-ParityReport`), add the family to `$figureFamilies` in `Parity.test.ps1` and
   the table above, and add a case to `Parity.test.ps1`.
 - **Figure moved to a new source:** when a feature serves a figure from a new endpoint or key, add
   a mapping to `figure-map.json`. The compare then checks the new key against the old one:

@@ -27,6 +27,7 @@ function Get-Error([scriptblock]$action) {
     try { $null = & $action; return '' } catch { return $_.Exception.Message }
 }
 
+$figureFamilies = @('banks', 'cards', 'categories', 'incomes', 'tithe', 'snapshots', 'monthly', 'pots', 'current', 'annual', 'averages', 'investment')
 $barclaysId = '11111111-1111-1111-1111-111111111111'
 $chaseId = '22222222-2222-2222-2222-222222222222'
 $responses = @{
@@ -70,7 +71,7 @@ try {
     foreach ($key in 'current/mae/totalBrl', 'current/pots/Casa/balance', '2026/annual/categories/Mercado/annualTotal', '2026/averages/2025/Mercado', '2026/investment/ISA/value/02', '2026/investment/net/fullYearNetChange') {
         if (-not $report.ContainsKey($key)) { $missing.Add($key) }
     }
-    foreach ($family in Get-ParityFigureFamilies) {
+    foreach ($family in $figureFamilies) {
         if (-not ($report.Keys | Where-Object { $_.Split('/')[1] -eq $family -or $_.Split('/')[0] -eq $family })) { $missing.Add("family $family") }
     }
     Check 'report contains every figure family for every month' ($missing.Count -eq 0) ($missing -join ', ')
@@ -92,8 +93,9 @@ try {
     $roundTrip = Read-ParityReport $reportPath
     Check 'report survives a write and read unchanged' ((Compare-ParityReport $report $roundTrip).Count -eq 0 -and $roundTrip.Count -eq $report.Count) ''
 
-    $before = New-Report @{ '2026-09/banks/Barclays/balance' = [decimal]'130.83'; '2026-09/cards/Amex/isPaid' = $false; 'current/mae/totalBrl' = [decimal]'167.88' }
-    Check 'compare identical reports passes' ((Compare-ParityReport $before (New-Report @{ '2026-09/banks/Barclays/balance' = [decimal]'130.83'; '2026-09/cards/Amex/isPaid' = $false; 'current/mae/totalBrl' = [decimal]'167.88' })).Count -eq 0) ''
+    $beforeFigures = @{ '2026-09/banks/Barclays/balance' = [decimal]'130.83'; '2026-09/cards/Amex/isPaid' = $false; 'current/mae/totalBrl' = [decimal]'167.88' }
+    $before = New-Report $beforeFigures
+    Check 'compare identical reports passes' ((Compare-ParityReport $before (New-Report $beforeFigures)).Count -eq 0) ''
 
     $changed = New-Report @{ '2026-09/banks/Barclays/balance' = [decimal]'131.83'; '2026-09/cards/Amex/isPaid' = $false; 'current/mae/totalBrl' = [decimal]'167.88' }
     $differences = Compare-ParityReport $before $changed
@@ -173,7 +175,7 @@ try {
     Check 'entry script refuses the live data file before anything runs' ($LASTEXITCODE -eq 1 -and $output -match [regex]::Escape($expected) -and $output -notmatch '\[1/4\]') $output
 
     $readme = Get-Content -LiteralPath (Join-Path $here 'README.md') -Raw
-    $undocumented = @(Get-ParityFigureFamilies) + @('Baseline', 'Migrate', 'After', 'Compare', 'All', 'KeepRunning') | Where-Object { $readme -notmatch "\b$_\b" }
+    $undocumented = $figureFamilies + @('Baseline', 'Migrate', 'After', 'Compare', 'All', 'KeepRunning') | Where-Object { $readme -notmatch "\b$_\b" }
     Check 'readme documents every catalogue family and step' (@($undocumented).Count -eq 0 -and (Test-Path (Join-Path $here 'screen-checklist.md'))) ($undocumented -join ', ')
 }
 finally {

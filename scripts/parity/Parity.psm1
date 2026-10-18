@@ -4,12 +4,6 @@ $script:Invariant = [System.Globalization.CultureInfo]::InvariantCulture
 $script:JsonWriteOptions = [System.Text.Json.JsonSerializerOptions]::new()
 $script:JsonWriteOptions.Encoder = [System.Text.Encodings.Web.JavaScriptEncoder]::UnsafeRelaxedJsonEscaping
 
-$script:FigureFamilies = @(
-    'banks', 'cards', 'categories', 'incomes', 'tithe', 'snapshots', 'monthly', 'pots', 'current', 'annual', 'averages', 'investment'
-)
-
-function Get-ParityFigureFamilies { $script:FigureFamilies }
-
 function ConvertFrom-ParityJsonElement([System.Text.Json.JsonElement]$Element) {
     switch ($Element.ValueKind) {
         'Object' {
@@ -42,17 +36,17 @@ function New-ParityReport {
     , [System.Collections.Generic.SortedDictionary[string, object]]::new([System.StringComparer]::Ordinal)
 }
 
-function Add-ParityFigure($Report, [string]$Key, $Value, [string]$Side = 'report') {
-    if ($Report.ContainsKey($Key)) { throw "Duplicate figure key $Key on the $Side side" }
+function Add-ParityFigure($Report, [string]$Key, $Value) {
+    if ($Report.ContainsKey($Key)) { throw "Duplicate figure key $Key" }
     $Report[$Key] = $Value
 }
 
 function Get-ParitySum($Items, [scriptblock]$Selector) {
     $total = [decimal]0
-    foreach ($item in @($Items)) {
-        if ($null -eq $item) { continue }
+    foreach ($item in $Items) {
         $value = & $Selector $item
-        if ($null -ne $value) { $total += [decimal]$value }
+        if ($null -eq $value) { throw 'A summed figure is null.' }
+        $total += $value
     }
     $total
 }
@@ -66,134 +60,135 @@ function Get-ParityMonthKeys([string]$First, [string]$Last) {
     }
 }
 
-function Add-ParitySeries($Report, [string]$Prefix, $Values, [string]$Side) {
-    for ($index = 0; $index -lt @($Values).Count; $index++) {
-        Add-ParityFigure $Report ('{0}/{1:00}' -f $Prefix, ($index + 1)) @($Values)[$index] $Side
+function Add-ParitySeries($Report, [string]$Prefix, $Values) {
+    $series = @($Values)
+    for ($index = 0; $index -lt $series.Count; $index++) {
+        Add-ParityFigure $Report ('{0}/{1:00}' -f $Prefix, ($index + 1)) $series[$index]
     }
 }
 
-function Add-ParityScalarsAndSeries($Report, [string]$Prefix, $Object, [string[]]$Skip, [string]$Side) {
+function Add-ParityScalarsAndSeries($Report, [string]$Prefix, $Object, [string[]]$Skip = @()) {
+    if ($null -eq $Object) {
+        Add-ParityFigure $Report $Prefix $null
+        return
+    }
     foreach ($name in $Object.Keys) {
         if ($Skip -contains $name) { continue }
         $value = $Object[$name]
-        if ($value -is [array]) { Add-ParitySeries $Report "$Prefix/$name" $value $Side }
-        else { Add-ParityFigure $Report "$Prefix/$name" $value $Side }
+        if ($value -is [array]) { Add-ParitySeries $Report "$Prefix/$name" $value }
+        else { Add-ParityFigure $Report "$Prefix/$name" $value }
     }
 }
 
-function Add-ParityMonthFigures($Report, [string]$Month, [scriptblock]$Fetch, $Banks, $Movements, [string]$Side) {
-    $year = [int]$Month.Substring(0, 4)
-    $monthNumber = [int]$Month.Substring(5, 2)
-    $route = "$year/$monthNumber"
+function Add-ParityMonthFigures($Report, [string]$Month, [scriptblock]$Fetch, $Banks, $PotBalances) {
+    $route = '{0}/{1}' -f [int]$Month.Substring(0, 4), [int]$Month.Substring(5, 2)
 
     $balances = & $Fetch "banks/month/$route/balances"
-    foreach ($balance in $balances) { Add-ParityFigure $Report "$Month/banks/$($balance.bank)/balance" $balance.balance $Side }
+    $balanceByBank = @{}
+    foreach ($balance in $balances) {
+        Add-ParityFigure $Report "$Month/banks/$($balance.bank)/balance" $balance.balance
+        $balanceByBank[$balance.bank] = $balance.balance
+    }
 
-    $expenses = & $Fetch "expenses/month/$route"
+    $roundUpByBankId = @{}
+    foreach ($expense in (& $Fetch "expenses/month/$route")) {
+        if ($null -eq $expense.paymentSourceBankId -or $null -eq $expense.roundUpAmount) { continue }
+        $roundUpByBankId[$expense.paymentSourceBankId] = [decimal]$roundUpByBankId[$expense.paymentSourceBankId] + $expense.roundUpAmount
+    }
     $bankTotalsSum = [decimal]0
     $roundUpTotalsSum = [decimal]0
     foreach ($bank in $Banks) {
-        $roundUp = Get-ParitySum ($expenses | Where-Object { $_.paymentSourceBankId -eq $bank.id }) { param($e) $e.roundUpAmount }
-        Add-ParityFigure $Report "$Month/banks/$($bank.name)/roundUpTotal" $roundUp $Side
+        $roundUp = [decimal]$roundUpByBankId[$bank.id]
+        Add-ParityFigure $Report "$Month/banks/$($bank.name)/roundUpTotal" $roundUp
         $roundUpTotalsSum += $roundUp
-        $match = @($balances | Where-Object { $_.bank -eq $bank.name } | Select-Object -First 1)
-        if ($match.Count -gt 0) { $bankTotalsSum += [decimal]$match[0].balance }
+        $bankTotalsSum += [decimal]$balanceByBank[$bank.name]
     }
 
     $statements = & $Fetch "card-statements/$route"
     foreach ($statement in $statements) {
         $prefix = "$Month/cards/$($statement.creditCardName)"
-        Add-ParityFigure $Report "$prefix/outstandingTotal" $statement.outstandingTotal $Side
-        Add-ParityFigure $Report "$prefix/accumulatedOutstandingTotal" $statement.accumulatedOutstandingTotal $Side
-        Add-ParityFigure $Report "$prefix/isPaid" $statement.isPaid $Side
-        Add-ParityFigure $Report "$prefix/warning" $statement.warning $Side
+        Add-ParityFigure $Report "$prefix/outstandingTotal" $statement.outstandingTotal
+        Add-ParityFigure $Report "$prefix/accumulatedOutstandingTotal" $statement.accumulatedOutstandingTotal
+        Add-ParityFigure $Report "$prefix/isPaid" $statement.isPaid
+        Add-ParityFigure $Report "$prefix/warning" $statement.warning
     }
 
     $unpaid = & $Fetch "expenses/month/$route/unpaid-card-charges"
-    Add-ParityFigure $Report "$Month/cards/unpaidChargesTotal" (Get-ParitySum $unpaid { param($e) $e.value }) $Side
+    Add-ParityFigure $Report "$Month/cards/unpaidChargesTotal" (Get-ParitySum $unpaid { param($e) $e.value })
 
     $categoryTotals = & $Fetch "expenses/month/$route/category-totals"
-    foreach ($category in $categoryTotals) { Add-ParityFigure $Report "$Month/categories/$($category.category)/total" $category.totalValue $Side }
+    foreach ($category in $categoryTotals) { Add-ParityFigure $Report "$Month/categories/$($category.category)/total" $category.totalValue }
 
-    $incomes = & $Fetch "incomes/month/$route"
     $bySource = [ordered]@{}
-    foreach ($income in $incomes) {
+    foreach ($income in (& $Fetch "incomes/month/$route")) {
         if (-not $bySource.Contains($income.incomeSourceName)) {
             $bySource[$income.incomeSourceName] = [ordered]@{ net = [decimal]0; gross = $null }
         }
         $entry = $bySource[$income.incomeSourceName]
-        $entry.net += [decimal]$income.netValue
-        if ($null -ne $income.grossValue) {
-            $grossSoFar = if ($null -eq $entry.gross) { [decimal]0 } else { $entry.gross }
-            $entry.gross = $grossSoFar + [decimal]$income.grossValue
-        }
+        $entry.net += $income.netValue
+        if ($null -ne $income.grossValue) { $entry.gross += $income.grossValue }
     }
     foreach ($source in $bySource.Keys) {
-        Add-ParityFigure $Report "$Month/incomes/$source/net" $bySource[$source].net $Side
-        Add-ParityFigure $Report "$Month/incomes/$source/gross" $bySource[$source].gross $Side
+        Add-ParityFigure $Report "$Month/incomes/$source/net" $bySource[$source].net
+        Add-ParityFigure $Report "$Month/incomes/$source/gross" $bySource[$source].gross
     }
-    Add-ParityFigure $Report "$Month/incomes/totalIncoming" (Get-ParitySum $bySource.Values { param($e) $e.net }) $Side
+    Add-ParityFigure $Report "$Month/incomes/totalIncoming" (Get-ParitySum $bySource.Values { param($e) $e.net })
 
     $tithe = & $Fetch "tithe/month/$route"
-    Add-ParityFigure $Report "$Month/tithe/calculatedTithe" $tithe.calculatedTithe $Side
-    Add-ParityFigure $Report "$Month/tithe/titheBalance" $tithe.titheBalance $Side
-    if ($null -eq $tithe.carryForward) { Add-ParityFigure $Report "$Month/tithe/carryForward" $null $Side }
-    else { Add-ParityScalarsAndSeries $Report "$Month/tithe/carryForward" $tithe.carryForward @() $Side }
+    Add-ParityFigure $Report "$Month/tithe/calculatedTithe" $tithe.calculatedTithe
+    Add-ParityFigure $Report "$Month/tithe/titheBalance" $tithe.titheBalance
+    Add-ParityScalarsAndSeries $Report "$Month/tithe/carryForward" $tithe.carryForward
 
     $suggestions = & $Fetch "investment-snapshots/$route/suggestions"
     foreach ($suggestion in $suggestions.suggestions) {
         $prefix = "$Month/snapshots/$($suggestion.accountName)"
-        Add-ParityFigure $Report "$prefix/suggestedValue" $suggestion.suggestedValue $Side
-        Add-ParityFigure $Report "$prefix/currentValue" $suggestion.currentValue $Side
-        Add-ParityFigure $Report "$prefix/source" $suggestion.sourceDescription $Side
+        Add-ParityFigure $Report "$prefix/suggestedValue" $suggestion.suggestedValue
+        Add-ParityFigure $Report "$prefix/currentValue" $suggestion.currentValue
+        Add-ParityFigure $Report "$prefix/source" $suggestion.sourceDescription
     }
     foreach ($skipped in $suggestions.notUpdated) {
-        Add-ParityFigure $Report "$Month/snapshots/$($skipped.accountName)/skippedReason" $skipped.reason $Side
+        Add-ParityFigure $Report "$Month/snapshots/$($skipped.accountName)/skippedReason" $skipped.reason
     }
 
-    Add-ParityFigure $Report "$Month/monthly/bankTotalsSum" $bankTotalsSum $Side
-    Add-ParityFigure $Report "$Month/monthly/roundUpTotalsSum" $roundUpTotalsSum $Side
-    Add-ParityFigure $Report "$Month/monthly/cardOutstandingTotal" (Get-ParitySum $statements { param($s) $s.outstandingTotal }) $Side
-    Add-ParityFigure $Report "$Month/monthly/categoryTotalsSum" (Get-ParitySum $categoryTotals { param($c) $c.totalValue }) $Side
+    Add-ParityFigure $Report "$Month/monthly/bankTotalsSum" $bankTotalsSum
+    Add-ParityFigure $Report "$Month/monthly/roundUpTotalsSum" $roundUpTotalsSum
+    Add-ParityFigure $Report "$Month/monthly/cardOutstandingTotal" (Get-ParitySum $statements { param($s) $s.outstandingTotal })
+    Add-ParityFigure $Report "$Month/monthly/categoryTotalsSum" (Get-ParitySum $categoryTotals { param($c) $c.totalValue })
 
-    $monthEnd = [datetime]::ParseExact($Month, 'yyyy-MM', $script:Invariant).AddMonths(1)
-    $potsTotal = [decimal]0
-    foreach ($bucketName in @($Movements | ForEach-Object { $_.bucketName } | Sort-Object -Unique)) {
-        $balance = Get-ParitySum ($Movements | Where-Object { $_.bucketName -eq $bucketName -and [datetime]::Parse($_.date, $script:Invariant) -lt $monthEnd }) { param($m) $m.amount }
-        Add-ParityFigure $Report "$Month/pots/$bucketName/balance" $balance $Side
-        $potsTotal += $balance
+    foreach ($bucketName in $PotBalances.Keys) {
+        Add-ParityFigure $Report "$Month/pots/$bucketName/balance" $PotBalances[$bucketName]
     }
-    Add-ParityFigure $Report "$Month/pots/total" $potsTotal $Side
+    Add-ParityFigure $Report "$Month/pots/total" (Get-ParitySum $PotBalances.Values { param($b) $b })
 }
 
-function Add-ParityYearFigures($Report, [int]$Year, [scriptblock]$Fetch, [string]$Side) {
+function Add-ParityYearFigures($Report, [int]$Year, [scriptblock]$Fetch) {
     $annual = & $Fetch "annual-summary/$Year/category-totals"
     foreach ($category in $annual.categoryTotals) {
         $prefix = "$Year/annual/categories/$($category.category)"
-        Add-ParityFigure $Report "$prefix/annualTotal" $category.annualTotal $Side
-        Add-ParityFigure $Report "$prefix/average" $category.average $Side
-        Add-ParitySeries $Report "$prefix/monthly" $category.monthlyTotals $Side
+        Add-ParityFigure $Report "$prefix/annualTotal" $category.annualTotal
+        Add-ParityFigure $Report "$prefix/average" $category.average
+        Add-ParitySeries $Report "$prefix/monthly" $category.monthlyTotals
     }
-    Add-ParityScalarsAndSeries $Report "$Year/annual/income" $annual.incomeSummary @() $Side
-    Add-ParityScalarsAndSeries $Report "$Year/annual/totals" $annual @('categoryTotals', 'incomeSummary') $Side
+    Add-ParityScalarsAndSeries $Report "$Year/annual/income" $annual.incomeSummary
+    Add-ParityScalarsAndSeries $Report "$Year/annual/totals" $annual @('categoryTotals', 'incomeSummary')
 
     foreach ($row in (& $Fetch "annual-summary/$Year/historic-summary-averages")) {
         foreach ($average in $row.annualAverages) {
-            Add-ParityFigure $Report "$Year/averages/$($row.year)/$($average.category)" $average.value $Side
+            Add-ParityFigure $Report "$Year/averages/$($row.year)/$($average.category)" $average.value
         }
     }
 
     $investment = & $Fetch "annual-summary/$Year/investment-annual-result"
     foreach ($account in $investment.accounts) {
         $prefix = "$Year/investment/$($account.account)"
-        Add-ParityFigure $Report "$prefix/isLiability" $account.isLiability $Side
-        Add-ParitySeries $Report "$prefix/value" $account.monthlyValues $Side
-        Add-ParitySeries $Report "$prefix/diff" $account.monthlyDiffs $Side
+        Add-ParityFigure $Report "$prefix/isLiability" $account.isLiability
+        Add-ParitySeries $Report "$prefix/value" $account.monthlyValues
+        Add-ParitySeries $Report "$prefix/diff" $account.monthlyDiffs
     }
     $net = $investment.netPosition
-    Add-ParitySeries $Report "$Year/investment/net/value" $net.monthlyValues $Side
-    Add-ParitySeries $Report "$Year/investment/net/diff" $net.monthlyDiffs $Side
-    Add-ParityScalarsAndSeries $Report "$Year/investment/net" $net @('monthlyValues', 'monthlyDiffs') $Side
+    Add-ParitySeries $Report "$Year/investment/net/value" $net.monthlyValues
+    Add-ParitySeries $Report "$Year/investment/net/diff" $net.monthlyDiffs
+    Add-ParityScalarsAndSeries $Report "$Year/investment/net" $net @('monthlyValues', 'monthlyDiffs')
 }
 
 function Get-ParityReport {
@@ -203,23 +198,36 @@ function Get-ParityReport {
         [Parameter(Mandatory)][string]$Last,
         [string]$Side = 'report'
     )
-    $report = New-ParityReport
-    $banks = & $Fetch 'banks'
-    $movements = & $Fetch 'reserve/movements'
-    foreach ($month in Get-ParityMonthKeys $First $Last) {
-        Add-ParityMonthFigures $report $month $Fetch $banks $movements $Side
-    }
+    try {
+        $report = New-ParityReport
+        $banks = & $Fetch 'banks'
+        $movements = @(@(foreach ($movement in (& $Fetch 'reserve/movements')) {
+                [pscustomobject]@{ Bucket = $movement.bucketName; Date = [datetime]::Parse($movement.date, $script:Invariant); Amount = $movement.amount }
+            }) | Sort-Object Date)
+        $potBalances = [ordered]@{}
+        foreach ($bucketName in @($movements | ForEach-Object Bucket | Sort-Object -Unique)) { $potBalances[$bucketName] = [decimal]0 }
+        $nextMovement = 0
+        foreach ($month in Get-ParityMonthKeys $First $Last) {
+            $monthEnd = [datetime]::ParseExact($month, 'yyyy-MM', $script:Invariant).AddMonths(1)
+            while ($nextMovement -lt $movements.Count -and $movements[$nextMovement].Date -lt $monthEnd) {
+                $potBalances[$movements[$nextMovement].Bucket] += $movements[$nextMovement].Amount
+                $nextMovement++
+            }
+            Add-ParityMonthFigures $report $month $Fetch $banks $potBalances
+        }
 
-    foreach ($balance in (& $Fetch 'reserve/balances')) {
-        Add-ParityFigure $report "current/pots/$($balance.bucketName)/balance" $balance.balance $Side
-    }
-    $mae = & $Fetch 'controle-mae/entries/totals'
-    Add-ParityFigure $report 'current/mae/totalBrl' $mae.totalBrlValue $Side
-    Add-ParityFigure $report 'current/mae/totalGbp' $mae.totalGbpValue $Side
+        foreach ($balance in (& $Fetch 'reserve/balances')) {
+            Add-ParityFigure $report "current/pots/$($balance.bucketName)/balance" $balance.balance
+        }
+        $mae = & $Fetch 'controle-mae/entries/totals'
+        Add-ParityFigure $report 'current/mae/totalBrl' $mae.totalBrlValue
+        Add-ParityFigure $report 'current/mae/totalGbp' $mae.totalGbpValue
 
-    for ($year = [int]$First.Substring(0, 4); $year -le [int]$Last.Substring(0, 4); $year++) {
-        Add-ParityYearFigures $report $year $Fetch $Side
+        for ($year = [int]$First.Substring(0, 4); $year -le [int]$Last.Substring(0, 4); $year++) {
+            Add-ParityYearFigures $report $year $Fetch
+        }
     }
+    catch { throw "$($_.Exception.Message) on the $Side side" }
     , $report
 }
 
@@ -254,30 +262,34 @@ function Read-ParityFigureMap([string]$Path) {
     , @($parsed.mappings)
 }
 
-function ConvertTo-ParityPatternRegex([string]$Pattern) {
-    $segments = foreach ($segment in $Pattern.Split('/')) {
+function ConvertTo-ParityMappingRule($Mapping) {
+    $segments = foreach ($segment in $Mapping.after.Split('/')) {
         switch ($segment) {
             '*' { '([^/]+)' }
             '{month}' { '(\d{4}-\d{2})' }
             default { [regex]::Escape($segment) }
         }
     }
-    '^' + ($segments -join '/') + '$'
+    [pscustomobject]@{
+        Regex  = [regex]::new('^' + ($segments -join '/') + '$')
+        Before = $Mapping.before.Split('/')
+        Negate = [bool]$Mapping['negate']
+    }
 }
 
-function Resolve-ParityBeforeKey([string]$AfterKey, $Mappings) {
-    foreach ($mapping in @($Mappings)) {
-        $match = [regex]::Match($AfterKey, (ConvertTo-ParityPatternRegex $mapping.after))
+function Resolve-ParityBeforeKey([string]$AfterKey, $Rules) {
+    foreach ($rule in $Rules) {
+        $match = $rule.Regex.Match($AfterKey)
         if (-not $match.Success) { continue }
         $captureIndex = 0
-        $segments = foreach ($segment in $mapping.before.Split('/')) {
+        $segments = foreach ($segment in $rule.Before) {
             if ($segment -eq '*' -or $segment -eq '{month}') {
                 $captureIndex++
                 $match.Groups[$captureIndex].Value
             }
             else { $segment }
         }
-        return [pscustomobject]@{ Key = ($segments -join '/'); Negate = [bool]$mapping['negate'] }
+        return [pscustomobject]@{ Key = ($segments -join '/'); Negate = $rule.Negate }
     }
     [pscustomobject]@{ Key = $AfterKey; Negate = $false }
 }
@@ -288,15 +300,15 @@ function Test-ParityValuesEqual($Before, $After, [bool]$Negate) {
         $expected = if ($Negate) { -$Before } else { $Before }
         return $After -eq $expected
     }
-    if ($Before.GetType() -ne $After.GetType()) { return $false }
-    [string]::Equals([string]$Before, [string]$After, [System.StringComparison]::Ordinal)
+    $Before.GetType() -eq $After.GetType() -and $Before -ceq $After
 }
 
 function Compare-ParityReport($Before, $After, $Mappings = @()) {
+    $rules = @($Mappings | ForEach-Object { ConvertTo-ParityMappingRule $_ })
     $differences = [System.Collections.Generic.List[object]]::new()
     $reached = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
     foreach ($afterKey in $After.Keys) {
-        $resolved = Resolve-ParityBeforeKey $afterKey $Mappings
+        $resolved = Resolve-ParityBeforeKey $afterKey $rules
         if (-not $Before.ContainsKey($resolved.Key)) {
             $differences.Add([pscustomobject]@{ Key = $afterKey; Before = '(missing)'; After = Format-ParityValue $After[$afterKey] })
             continue
@@ -319,7 +331,9 @@ function Format-ParityDifference($Difference) {
 }
 
 function Get-ParityMonthCount($Report) {
-    @($Report.Keys | Where-Object { $_ -match '^\d{4}-\d{2}/' } | ForEach-Object { $_.Substring(0, 7) } | Sort-Object -Unique).Count
+    $months = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+    foreach ($key in $Report.Keys) { if ($key -match '^\d{4}-\d{2}/') { [void]$months.Add($key.Substring(0, 7)) } }
+    $months.Count
 }
 
 function Format-ParitySummary([int]$DifferenceCount, [int]$FigureCount, [int]$MonthCount) {
