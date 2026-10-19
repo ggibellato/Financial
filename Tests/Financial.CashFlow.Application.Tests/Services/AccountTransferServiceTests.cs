@@ -41,12 +41,12 @@ public class AccountTransferServiceTests
     private Guid IdOf(string name) => Named(name).Id;
 
     private AccountTransferCreateDTO CreateRequest(
-        string source = "Barclays", string destination = "Chase", decimal amount = 100m, decimal? destinationAmount = null) => new()
+        string source = "Barclays", string destination = "Chase", decimal? destinationAmount = null, DateOnly? date = null) => new()
     {
-        Date = Date,
+        Date = date ?? Date,
         SourceAccountId = IdOf(source),
         DestinationAccountId = IdOf(destination),
-        Amount = amount,
+        Amount = 100m,
         DestinationAmount = destinationAmount,
         Note = "Top-up"
     };
@@ -185,15 +185,7 @@ public class AccountTransferServiceTests
     [Fact]
     public async Task AddAsync_DatedAfterToday_RejectedAndNothingSaved()
     {
-        var request = new AccountTransferCreateDTO
-        {
-            Date = TestClock.Today.AddDays(1),
-            SourceAccountId = IdOf("Barclays"),
-            DestinationAccountId = IdOf("Chase"),
-            Amount = 100m
-        };
-
-        var act = () => _sut.AddAsync(request);
+        var act = () => _sut.AddAsync(CreateRequest(date: TestClock.Today.AddDays(1)));
 
         await act.Should().ThrowAsync<ArgumentException>().WithMessage("Date must not be in the future.");
         ShouldHaveRejected("AddTransfer");

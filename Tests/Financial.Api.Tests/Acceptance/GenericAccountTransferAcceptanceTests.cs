@@ -44,7 +44,7 @@ public class GenericAccountTransferAcceptanceTests : ApiEndpointTests
         var septemberBefore = await BalancesAsync(9);
         var octoberBefore = await BalancesAsync(10);
 
-        var response = await PostAccountTransferAsync(BarclaysId, ChaseId, destinationAmount: null);
+        var response = await PostAccountTransferAsync(BarclaysId, ChaseId);
 
         var septemberAfter = await BalancesAsync(9);
         var octoberAfter = await BalancesAsync(10);
@@ -61,7 +61,7 @@ public class GenericAccountTransferAcceptanceTests : ApiEndpointTests
     [Trait("AC", "P60-F03-generic-account-to-account-transfer-03")]
     public async Task PostAccountTransfer_SameAccount_Returns400()
     {
-        var response = await PostAccountTransferAsync(BarclaysId, BarclaysId, destinationAmount: null);
+        var response = await PostAccountTransferAsync(BarclaysId, BarclaysId);
 
         await ShouldBeRejectedAsync(response, "Source and destination must be different accounts.");
     }
@@ -70,7 +70,7 @@ public class GenericAccountTransferAcceptanceTests : ApiEndpointTests
     [Trait("AC", "P60-F03-generic-account-to-account-transfer-04")]
     public async Task PostAccountTransfer_DifferentCurrenciesWithoutDestinationAmount_Returns400()
     {
-        var response = await PostAccountTransferAsync(BarclaysId, ItauId, destinationAmount: null);
+        var response = await PostAccountTransferAsync(BarclaysId, ItauId);
 
         await ShouldBeRejectedAsync(response, "Enter the amount received in BRL.");
     }
@@ -253,7 +253,7 @@ public class GenericAccountTransferAcceptanceTests : ApiEndpointTests
             Note = note
         });
 
-    private Task<HttpResponseMessage> PostAccountTransferAsync(string sourceId, string destinationId, decimal? destinationAmount) =>
+    private Task<HttpResponseMessage> PostAccountTransferAsync(string sourceId, string destinationId, decimal? destinationAmount = null) =>
         Client.PostAsJsonAsync("/api/v1/financial/accounts/transfers", new AccountTransferCreateDTO
         {
             Date = new DateOnly(2026, 10, 12),

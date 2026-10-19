@@ -171,7 +171,7 @@ public sealed class AccountTransferService : IAccountTransferService
         DestinationAccountName = transfer.DestinationAccount.Name,
         DestinationCurrency = transfer.DestinationAccount.Currency.ToString(),
         Amount = transfer.Amount,
-        DestinationAmount = transfer.DestinationAmount ?? transfer.Amount,
+        DestinationAmount = transfer.AmountReceived(),
         Note = transfer.Note
     };
 
