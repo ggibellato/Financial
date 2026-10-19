@@ -262,9 +262,9 @@ Rules that apply to every feature:
 **Capabilities:**
 - A transfer moves money from a source account with `CanSendTransfers` to a destination account the **pair rules** allow; it has no category. In this stage the only pair is `CanSendTransfers` → `CanReceiveTransfers` (bank → bank, as today). F08 adds bank → card for statement payments only.
 - Fields: date (not in the future), source account, destination account (different from source), amount > 0 in the source currency, destination amount > 0 in the destination currency (required and editable only when the currencies differ; equal to the amount otherwise), optional FX rate shown as destination amount ÷ amount, note (optional, up to 200 characters).
-- Stored as one Transfer record contributing −amount to the source and +destination amount to the destination. Existing transfers migrate unchanged (destination amount = amount).
+- Stored as one Transfer record contributing −amount to the source and +destination amount to the destination. The destination amount is stored only when the currencies differ; when it is absent it equals the amount. *Why:* it is fully derivable for same-currency transfers, so existing transfers need no migration and the data file version stays 2 (F07 keeps the V2 → V3 step).
 - The pair rules are a Domain table with their own contract tests; a newly allowed pair is one entry plus a test, and the destination list in the UI follows it with no front-end change.
-- New endpoints under `accounts`: `POST accounts/transfers`, `PUT accounts/transfers/{id}`, `DELETE accounts/transfers/{id}`, `GET accounts/{id}/transfer-destinations`, `GET accounts/{id}/transfer-sources`. `/transfers` keeps working (same records) until F13.
+- New endpoints under `accounts`: `POST accounts/transfers`, `PUT accounts/transfers/{id}`, `DELETE accounts/transfers/{id}`, `GET accounts/{id}/transfer-destinations`, `GET accounts/{id}/transfer-sources`. `/transfers` keeps working (same records) until F13, and follows the same rules and error messages, because they live in the Transfer entity.
 - Can be started from either side: from the sending account ("Transfer to…", destination list from `transfer-destinations`) or the receiving account ("Transfer from…", source list from `transfer-sources`). *Why:* the user decided that actions spanning accounts start from both accounts.
 
 **Experience:**
@@ -688,11 +688,13 @@ graph TD
 
 ### F03. Generic Account-to-Account Transfer
 - [ ] A bank → bank transfer through `POST accounts/transfers` lowers the source and raises the destination balance by the amount on its date
-- [ ] Card, Pots or Settlement as source or destination is rejected with 400 and nothing saved
+- [ ] An account the pair rules don't allow as source or destination (a test account without the capability in F03; Card, Pots and Settlement once F07, F09 and F11 add them) is rejected with 400 and nothing saved
 - [ ] Same account on both sides is rejected with 400
 - [ ] Different currencies without a destination amount are rejected with 400; with it, each side moves by its own amount
 - [ ] `transfer-destinations` for a bank lists the other active banks only; `transfer-sources` the same for the receiving side
 - [ ] Existing transfers keep their amounts; `/transfers` returns the same data as before
+- [ ] A same-currency transfer stores no destination amount; loading and saving a file with only such transfers leaves it byte-for-byte unchanged
+- [ ] `/transfers` rejects a future date, a note over 200 characters, an inactive account and a pair not allowed, with the same messages as `accounts/transfers`
 - [ ] Contract tests cover the pair rules table; adding a pair in a test changes the destination list with no other code change
 - [ ] Parity: 0 differences; `/simplify` run; architecture-reviewer passed
 
