@@ -207,7 +207,7 @@ Exit codes and console output:
 | Live file as input or output | 1 | `Refusing to migrate the live data file. Pass a copy.` | none |
 | Output same as input | 1 | `--output must be a different file from --input.` | none |
 | Input missing | 1 | `Input file not found: <input>` | none |
-| Version above current | 1 | `<input> is version 3; this build supports up to version 2.` | none |
+| Version above current | 1 | `<input> is version 3; this build needs version 2.` | none |
 | Step failure (e.g. unknown bank) | 1 | `Migration step V1ToV2BanksToAccounts failed: Expense <id> references unknown bank <id>` | none written; input and backup untouched |
 
 ## 6. Data Model
