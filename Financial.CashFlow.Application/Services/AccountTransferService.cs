@@ -13,6 +13,7 @@ namespace Financial.CashFlow.Application.Services;
 public sealed class AccountTransferService : IAccountTransferService
 {
     private const string EntityType = "Transfer";
+    private const string AccountEntityType = "Account";
 
     private readonly ICashFlowRepository _repository;
     private readonly TimeProvider _timeProvider;
@@ -125,7 +126,7 @@ public sealed class AccountTransferService : IAccountTransferService
         try
         {
             var accounts = _repository.GetAccounts().ToList();
-            var account = accounts.FirstOrThrow(a => a.Id == accountId, "Account", accountId);
+            var account = accounts.FirstOrThrow(a => a.Id == accountId, AccountEntityType, accountId);
             var result = counterparts(account, accounts).Select(ToOptionDto).ToList();
 
             span.MarkSuccess();
@@ -146,7 +147,7 @@ public sealed class AccountTransferService : IAccountTransferService
     }
 
     private Transfer FindTransferOrThrow(Guid id) =>
-        _repository.GetTransfers().FirstOrThrow(t => t.Id == id, "Transfer", id);
+        _repository.GetTransfers().FirstOrThrow(t => t.Id == id, EntityType, id);
 
     private (Account Source, Account Destination) ResolveAccounts(Guid sourceAccountId, Guid destinationAccountId)
     {
@@ -157,7 +158,7 @@ public sealed class AccountTransferService : IAccountTransferService
     private static Account ResolveAccount(IEnumerable<Account> accounts, Guid accountId) =>
         EntityIdResolver.TryResolve(accountId, accounts, a => a.Id, out var account)
             ? account
-            : throw new ArgumentException($"Account '{accountId}' was not found.");
+            : throw new ArgumentException($"{AccountEntityType} '{accountId}' was not found.");
 
     private static AccountTransferDTO ToDto(Transfer transfer) => new()
     {

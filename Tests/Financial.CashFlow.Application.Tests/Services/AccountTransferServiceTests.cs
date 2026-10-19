@@ -200,6 +200,17 @@ public class AccountTransferServiceTests
     }
 
     [Fact]
+    public async Task AddAsync_WhenSaveFails_RecordsFailedSpanAndRethrows()
+    {
+        _repository.ThrowOnNextSave = true;
+
+        var act = () => _sut.AddAsync(CreateRequest());
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.AccountTransferService.AddTransfer");
+    }
+
+    [Fact]
     public async Task AddAsync_NullRequest_ThrowsAndRecordsFailedSpan()
     {
         var act = () => _sut.AddAsync(null!);

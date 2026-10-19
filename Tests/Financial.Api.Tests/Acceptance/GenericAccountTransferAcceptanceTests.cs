@@ -41,17 +41,19 @@ public class GenericAccountTransferAcceptanceTests : ApiEndpointTests
     [Trait("AC", "P60-F03-generic-account-to-account-transfer-01")]
     public async Task PostAccountTransfer_BankToBank_MovesBothBalancesOnItsDate()
     {
+        var septemberBefore = await BalancesAsync(9);
+        var octoberBefore = await BalancesAsync(10);
+
         var response = await PostAccountTransferAsync(BarclaysId, ChaseId, destinationAmount: null);
 
-        var september = await BalancesAsync(9);
-        var october = await BalancesAsync(10);
+        var septemberAfter = await BalancesAsync(9);
+        var octoberAfter = await BalancesAsync(10);
         using (new AssertionScope())
         {
             response.StatusCode.Should().Be(HttpStatusCode.OK);
-            october.Should().ContainSingle(b => b.Bank == "Barclays").Which.Balance.Should().Be(-175.25m);
-            october.Should().ContainSingle(b => b.Bank == "Chase").Which.Balance.Should().Be(175.25m);
-            september.Should().ContainSingle(b => b.Bank == "Barclays").Which.Balance.Should().Be(0m);
-            september.Should().ContainSingle(b => b.Bank == "Chase").Which.Balance.Should().Be(0m);
+            (octoberAfter["Barclays"] - octoberBefore["Barclays"]).Should().Be(-100m);
+            (octoberAfter["Chase"] - octoberBefore["Chase"]).Should().Be(100m);
+            septemberAfter.Should().Equal(septemberBefore);
         }
     }
 
@@ -77,10 +79,12 @@ public class GenericAccountTransferAcceptanceTests : ApiEndpointTests
     [Trait("AC", "P60-F03-generic-account-to-account-transfer-04")]
     public async Task PostAccountTransfer_DifferentCurrenciesWithDestinationAmount_EachSideMovesByItsOwnAmount()
     {
+        var before = await BalancesAsync(10);
+
         var response = await PostAccountTransferAsync(BarclaysId, ItauId, destinationAmount: 640.50m);
 
         var transfer = await response.Content.ReadFromJsonAsync<AccountTransferDTO>();
-        var october = await BalancesAsync(10);
+        var after = await BalancesAsync(10);
         using (new AssertionScope())
         {
             response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -88,8 +92,8 @@ public class GenericAccountTransferAcceptanceTests : ApiEndpointTests
             transfer.DestinationCurrency.Should().Be("BRL");
             transfer.Amount.Should().Be(100m);
             transfer.DestinationAmount.Should().Be(640.50m);
-            october.Should().ContainSingle(b => b.Bank == "Barclays").Which.Balance.Should().Be(-175.25m);
-            october.Should().ContainSingle(b => b.Bank == "Itaú").Which.Balance.Should().Be(640.50m);
+            (after["Barclays"] - before["Barclays"]).Should().Be(-100m);
+            (after["Itaú"] - before["Itaú"]).Should().Be(640.50m);
         }
     }
 
@@ -260,8 +264,9 @@ public class GenericAccountTransferAcceptanceTests : ApiEndpointTests
             Note = "Send"
         });
 
-    private async Task<List<BankBalanceDTO>> BalancesAsync(int month) =>
-        (await Client.GetFromJsonAsync<List<BankBalanceDTO>>($"/api/v1/financial/banks/month/2026/{month}/balances"))!;
+    private async Task<Dictionary<string, decimal>> BalancesAsync(int month) =>
+        (await Client.GetFromJsonAsync<List<BankBalanceDTO>>($"/api/v1/financial/banks/month/2026/{month}/balances"))!
+            .ToDictionary(balance => balance.Bank, balance => balance.Balance);
 
     private async Task<List<TransferDTO>> ShouldBeRejectedAsync(HttpResponseMessage response, string message)
     {
