@@ -159,7 +159,7 @@ public sealed class MigrateCommandTests : IDisposable
         using (new AssertionScope())
         {
             exitCode.Should().Be(1);
-            _error.ToString().Trim().Should().Be($"{_inputPath} is version 3; this build supports up to version 2.");
+            _error.ToString().Trim().Should().Be($"{_inputPath} is version 3; this build needs version 2.");
             File.Exists(_outputPath).Should().BeFalse();
         }
     }

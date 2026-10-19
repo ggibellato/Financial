@@ -33,7 +33,7 @@ public sealed class DataFileMigrator
 
         if (storedVersion > _currentVersion)
         {
-            throw new InvalidDataException($"{sourceName} is version {storedVersion}; this build supports up to version {_currentVersion}.");
+            throw new InvalidDataException(CashFlowSerializerAdapter.VersionRefusal(sourceName, storedVersion, _currentVersion));
         }
 
         if (storedVersion == _currentVersion)
@@ -46,7 +46,7 @@ public sealed class DataFileMigrator
         {
             var step = StepFrom(version);
             summaries.Add(ApplyStep(step, root));
-            root["Version"] = version + 1;
+            root[CashFlowSerializerAdapter.VersionProperty] = version + 1;
         }
 
         return new DataFileMigrationResult(storedVersion, _currentVersion, LoadAndSave(root), summaries);

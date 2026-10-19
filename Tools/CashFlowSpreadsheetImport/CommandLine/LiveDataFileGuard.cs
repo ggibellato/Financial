@@ -13,9 +13,11 @@ public static class LiveDataFileGuard
             return false;
         }
 
-        var liveFile = Path.GetFullPath(Path.Combine(repositoryRoot, LiveDataRelativePath));
-        return string.Equals(Path.GetFullPath(outputPath), liveFile, StringComparison.OrdinalIgnoreCase);
+        return IsSamePath(outputPath, Path.Combine(repositoryRoot, LiveDataRelativePath));
     }
+
+    public static bool IsSamePath(string path, string otherPath) =>
+        string.Equals(Path.GetFullPath(path), Path.GetFullPath(otherPath), StringComparison.OrdinalIgnoreCase);
 
     private static string? FindRepositoryRoot(string startDirectory)
     {

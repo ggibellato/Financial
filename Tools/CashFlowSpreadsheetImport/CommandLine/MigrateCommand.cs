@@ -28,7 +28,7 @@ public static class MigrateCommand
             return 1;
         }
 
-        if (string.Equals(Path.GetFullPath(inputPath), Path.GetFullPath(outputPath), StringComparison.OrdinalIgnoreCase))
+        if (LiveDataFileGuard.IsSamePath(inputPath, outputPath))
         {
             error.WriteLine(SameFileRefusal);
             return 1;
@@ -39,8 +39,6 @@ public static class MigrateCommand
             error.WriteLine($"Input file not found: {inputPath}");
             return 1;
         }
-
-        var inputBytes = File.ReadAllBytes(inputPath);
 
         DataFileMigrationResult result;
         try
@@ -60,7 +58,7 @@ public static class MigrateCommand
 
         if (result.WasAlreadyCurrent)
         {
-            File.WriteAllBytes(outputPath, inputBytes);
+            File.Copy(inputPath, outputPath, overwrite: true);
             output.WriteLine($"{inputPath} is already version {result.ToVersion}; copied unchanged to {outputPath}.");
             return 0;
         }

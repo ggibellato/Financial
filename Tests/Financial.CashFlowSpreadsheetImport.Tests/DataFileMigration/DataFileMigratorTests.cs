@@ -87,7 +87,7 @@ public class DataFileMigratorTests
         var act = () => DataFileMigrator.CreateDefault().Migrate("""{ "Version": 3 }""", SourceName);
 
         act.Should().Throw<InvalidDataException>()
-            .WithMessage("copy.json is version 3; this build supports up to version 2.");
+            .WithMessage("copy.json is version 3; this build needs version 2.");
     }
 
     [Fact]

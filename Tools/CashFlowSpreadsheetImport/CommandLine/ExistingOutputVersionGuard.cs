@@ -13,30 +13,15 @@ public static class ExistingOutputVersionGuard
             return null;
         }
 
-        JsonObject? root;
         try
         {
-            root = JsonNode.Parse(File.ReadAllText(outputPath)) as JsonObject;
+            return JsonNode.Parse(File.ReadAllText(outputPath)) is JsonObject root
+                ? CashFlowSerializerAdapter.VersionRefusal(outputPath, CashFlowSerializerAdapter.StoredVersion(root))
+                : null;
         }
         catch (JsonException)
         {
             return null;
         }
-
-        if (root is null)
-        {
-            return null;
-        }
-
-        var storedVersion = CashFlowSerializerAdapter.StoredVersion(root);
-        if (storedVersion == CashFlowSerializerAdapter.CurrentVersion)
-        {
-            return null;
-        }
-
-        var refusal = $"{outputPath} is version {storedVersion}; this build needs version {CashFlowSerializerAdapter.CurrentVersion}.";
-        return storedVersion < CashFlowSerializerAdapter.CurrentVersion
-            ? $"{refusal} Run the migrate command first."
-            : refusal;
     }
 }

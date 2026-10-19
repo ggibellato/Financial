@@ -8,8 +8,9 @@ namespace Financial.CashFlow.Infrastructure.Persistence;
 public sealed class CashFlowSerializerAdapter : ICashFlowSerializer
 {
     public const int CurrentVersion = 2;
+    public const string VersionProperty = "Version";
 
-    private const string VersionProperty = "Version";
+    private const string DataFileName = "data-cashflow.json";
 
     private static readonly JsonSerializerOptions Options = new()
     {
@@ -28,7 +29,12 @@ public sealed class CashFlowSerializerAdapter : ICashFlowSerializer
     public CashFlowData Deserialize(string json)
     {
         var root = JsonNode.Parse(json)!.AsObject();
-        EnsureCurrentVersion(StoredVersion(root));
+
+        if (VersionRefusal(DataFileName, StoredVersion(root)) is { } refusal)
+        {
+            throw new InvalidDataException(refusal);
+        }
+
         return root.Deserialize<CashFlowData>(Options)!;
     }
 
@@ -38,18 +44,14 @@ public sealed class CashFlowSerializerAdapter : ICashFlowSerializer
         return root[VersionProperty]?.GetValue<int>() ?? 1;
     }
 
-    private static void EnsureCurrentVersion(int storedVersion)
+    public static string? VersionRefusal(string sourceName, int storedVersion, int currentVersion = CurrentVersion)
     {
-        if (storedVersion < CurrentVersion)
+        if (storedVersion == currentVersion)
         {
-            throw new InvalidDataException(
-                $"data-cashflow.json is version {storedVersion}; this build needs version {CurrentVersion}. Run the migrate command first.");
+            return null;
         }
 
-        if (storedVersion > CurrentVersion)
-        {
-            throw new InvalidDataException(
-                $"data-cashflow.json is version {storedVersion}; this build needs version {CurrentVersion}.");
-        }
+        var refusal = $"{sourceName} is version {storedVersion}; this build needs version {currentVersion}.";
+        return storedVersion < currentVersion ? $"{refusal} Run the migrate command first." : refusal;
     }
 }
