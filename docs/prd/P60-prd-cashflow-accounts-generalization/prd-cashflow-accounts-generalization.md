@@ -274,6 +274,7 @@ Rules that apply to every feature:
 - Pair not allowed (e.g. card → bank): 400 `Transfers from <source> to <destination> are not allowed.` nothing saved.
 - Same account on both sides: 400 `Source and destination must be different accounts.`
 - Different currencies without a destination amount: 400 `Enter the amount received in <currency>.`
+- Same currency with a destination amount: 400 `Destination amount only applies when the currencies differ.`
 - Inactive destination or source: 400 `<account> is inactive.` When editing, this applies only to an account the edit moves the transfer onto, so an older transfer on an account deactivated later can still be corrected.
 - Save failure: nothing persisted (single save).
 
