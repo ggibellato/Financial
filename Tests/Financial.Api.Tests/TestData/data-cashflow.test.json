@@ -1,6 +1,6 @@
 {
-  "Banks": [
-    { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-100000000001", "Name": "Barclays", "RoundUpEnabled": false }
+  "Accounts": [
+    { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-100000000001", "Name": "Barclays", "Template": "Bank", "Currency": "GBP", "IsActive": true, "OpeningBalance": { "Amount": 0, "StartDate": "0001-01-01" }, "RoundUp": { "Enabled": false } }
   ],
   "ReserveBuckets": [
     { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-200000000001", "Name": "Investimento", "IsActive": true, "SplitPercentage": 33.33 },
@@ -24,5 +24,6 @@
     { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-600000000013", "Name": "Investimento", "Active": true, "IsInvestment": true, "IsTithe": false },
     { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-600000000014", "Name": "Reserva", "Active": true, "IsInvestment": false, "IsTithe": false },
     { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-600000000015", "Name": "E2E-TEST-DATA", "Active": false, "IsInvestment": false, "IsTithe": false }
-  ]
+  ],
+  "Version": 2
 }

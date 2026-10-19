@@ -115,9 +115,14 @@ function Stop-ParityApi([System.Diagnostics.Process]$Process) {
     [void]$startedProcesses.Remove($Process)
 }
 
-function New-ParitySideCopy([string]$Folder, [string]$SideKey, [string]$LiveCopy) {
+function New-ParitySideFolder([string]$Folder, [string]$SideKey) {
     $sideFolder = Join-Path $Folder $SideKey
     New-Item -ItemType Directory -Path $sideFolder -Force | Out-Null
+    $sideFolder
+}
+
+function New-ParitySideCopy([string]$Folder, [string]$SideKey, [string]$LiveCopy) {
+    $sideFolder = New-ParitySideFolder $Folder $SideKey
     Copy-Item -LiteralPath $LiveCopy -Destination (Join-Path $sideFolder 'data-cashflow.json') -Force
     $sideFolder
 }
@@ -164,7 +169,11 @@ function Invoke-BaselineStep([string]$Folder, $RunInfo) {
 
 function Invoke-MigrateStep([string]$Folder, $RunInfo) {
     Write-Host '[2/4] Migrate...'
-    New-ParitySideCopy $Folder 'after' $RunInfo.liveCopy | Out-Null
+    $sideFolder = New-ParitySideFolder $Folder 'after'
+    $log = Join-Path $sideFolder 'migrate.log'
+    $tool = Join-Path $RepoRoot 'Tools/CashFlowSpreadsheetImport/CashFlowSpreadsheetImport.csproj'
+    $output = Join-Path $sideFolder 'data-cashflow.json'
+    Invoke-Logged $log "Migrate failed; see $log" { dotnet run --project $tool -c Release -- migrate --input $RunInfo.liveCopy --output $output }
 }
 
 function Invoke-AfterStep([string]$Folder, $RunInfo) {

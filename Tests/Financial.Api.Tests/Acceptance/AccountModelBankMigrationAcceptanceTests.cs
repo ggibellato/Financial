@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Financial.CashFlow.Application.DTOs;
+using Financial.CashFlow.Infrastructure.Persistence;
 using FluentAssertions;
 using FluentAssertions.Execution;
 
@@ -60,6 +61,45 @@ public class AccountModelBankMigrationAcceptanceTests : ApiEndpointTests
                 $$"""[{"id":"{{transferId}}","date":"2026-09-04","sourceBankId":"{{BarclaysId}}","sourceBankName":"Barclays","destinationBankId":"{{Trading212Id}}","destinationBankName":"Trading212","amount":25,"note":null}]""");
             balances.Should().Be(
                 """[{"bank":"Barclays","balance":-25},{"bank":"Trading212","balance":25},{"bank":"Chase","balance":98.20}]""");
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F02-account-model-and-bank-migration-05")]
+    public void ApiHost_Version1File_FailsToStart()
+    {
+        ReplaceCashFlowDataBeforeStart(
+            $$"""{"Banks":[{"Id":"{{BarclaysId}}","Name":"Barclays","RoundUpEnabled":false,"OpeningBalance":0,"OpeningBalanceDate":"0001-01-01"}],"Version":1}""");
+
+        var act = () => Services;
+
+        act.Should().Throw<InvalidDataException>()
+            .WithMessage("data-cashflow.json is version 1; this build needs version 2. Run the migrate command first.");
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F02-account-model-and-bank-migration-05")]
+    public async Task ApiHost_Version2File_Starts()
+    {
+        var response = await Client.GetAsync("/api/v1/financial/banks");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Theory]
+    [Trait("AC", "P60-F02-account-model-and-bank-migration-11")]
+    [InlineData("TestData", "data-cashflow.test.json")]
+    [InlineData("ExampleData", "data-cashflow.example.json")]
+    public void SeedAndExampleData_AreVersion2(string folder, string fileName)
+    {
+        var json = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, folder, fileName));
+
+        var act = () => new CashFlowSerializerAdapter().Deserialize(json);
+
+        using (new AssertionScope())
+        {
+            JsonDocument.Parse(json).RootElement.GetProperty("Version").GetInt32().Should().Be(2);
+            act.Should().NotThrow();
         }
     }
 

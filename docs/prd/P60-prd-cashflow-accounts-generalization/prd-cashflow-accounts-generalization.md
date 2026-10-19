@@ -673,18 +673,18 @@ graph TD
 - [x] `scripts/parity/README.md` and `screen-checklist.md` exist and describe every command and figure
 
 ### F02. Account Model and Bank Migration
-- [ ] `migrate` upgrades a V1 copy of the live data to V2: 3 bank accounts with the same Ids, names, opening balances, start dates and round-up settings; `Version` = 2
-- [ ] Running `migrate` on a V2 file leaves it byte-for-byte unchanged
-- [ ] `migrate` refuses `data/data-cashflow.json` as input or output and writes nothing
-- [ ] A fresh spreadsheet import writes the current version with the banks as Bank-template accounts (same names and opening balances as before F02), and the API starts on it
-- [ ] The API refuses to start on a V1 file with the version message; it starts on a V2 file
-- [ ] The shared balance calculation returns the same balance as today for every bank and month, including months before the 2026-09-01 start date (opening amount only)
-- [ ] Records dated before the balance start date still count in category totals and history
-- [ ] A Unit test per Bank capability runs against a minimal account with only that capability; one combination test covers the Bank template
-- [ ] The architecture test fails when a production type outside the allow-list reads `Account.Template`, and passes on the feature's code; only its adapter class references ArchUnitNET
-- [ ] `/banks`, `/transfers` and `/expenses` return the same shapes and values as before (OpenAPI diff limited to intended additions)
-- [ ] Test seed and example data are V2 and the full test suite passes
-- [ ] Parity run on the latest live copy: 0 differences; `/simplify` run; architecture-reviewer passed
+- [x] `migrate` upgrades a V1 copy of the live data to V2: 3 bank accounts with the same Ids, names, opening balances, start dates and round-up settings; `Version` = 2
+- [x] Running `migrate` on a V2 file leaves it byte-for-byte unchanged
+- [x] `migrate` refuses `data/data-cashflow.json` as input or output and writes nothing
+- [x] A fresh spreadsheet import writes the current version with the banks as Bank-template accounts (same names and opening balances as before F02), and the API starts on it
+- [x] The API refuses to start on a V1 file with the version message; it starts on a V2 file
+- [x] The shared balance calculation returns the same balance as today for every bank and month, including months before the 2026-09-01 start date (opening amount only)
+- [x] Records dated before the balance start date still count in category totals and history
+- [x] A Unit test per Bank capability runs against a minimal account with only that capability; one combination test covers the Bank template
+- [x] The architecture test fails when a production type outside the allow-list reads `Account.Template`, and passes on the feature's code; only its adapter class references ArchUnitNET
+- [x] `/banks`, `/transfers` and `/expenses` return the same shapes and values as before (OpenAPI diff limited to intended additions)
+- [x] Test seed and example data are V2 and the full test suite passes
+- [x] Parity run on the latest live copy: 0 differences; `/simplify` run; architecture-reviewer passed
 
 ### F03. Generic Account-to-Account Transfer
 - [ ] A bank → bank transfer through `POST accounts/transfers` lowers the source and raises the destination balance by the amount on its date

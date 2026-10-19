@@ -1,6 +1,7 @@
 using System.Text.Json;
 using ClosedXML.Excel;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.CommandLine;
+using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.DataFileMigration;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.Banks;
@@ -10,10 +11,6 @@ using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migratio
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.Incomes;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.IncomeSources;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.ReserveBuckets;
-using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.ReserveBucketReferences;
-using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.CreditCardReferences;
-using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.CategoryReferences;
-using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.EntityReferences;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.ExpenseChargeDate;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.InvestmentAccounts;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Parsing;
@@ -27,6 +24,11 @@ const string ReservasSheetName = "Reservas";
 const string MensaisSheetName = "Mensais";
 const string ControleMaeSheetName = "Controle mae";
 const string ResumoSheetPrefix = "Resumo";
+
+if (args.Length > 0 && args[0] == MigrateArguments.CommandName)
+{
+    return MigrateCommand.Run(args[1..], AppContext.BaseDirectory, DataFileMigrator.CreateDefault(), Console.Out, Console.Error);
+}
 
 if (!ImportArguments.TryParse(args, out var arguments, out var refusal))
 {
@@ -48,6 +50,12 @@ if (!File.Exists(workbookPath))
     return 1;
 }
 
+if (ExistingOutputVersionGuard.RefusalFor(outputPath) is { } versionRefusal)
+{
+    Console.Error.WriteLine(versionRefusal);
+    return 1;
+}
+
 if (!mensaisOnly && File.Exists(outputPath))
 {
     try
@@ -62,10 +70,6 @@ if (!mensaisOnly && File.Exists(outputPath))
 }
 
 string? legacyRawJson = null;
-EntityReferenceMigrationSummary? entityReferenceSummary = null;
-ReserveBucketReferenceMigrationSummary? reserveBucketReferenceSummary = null;
-CreditCardReferenceMigrationSummary? creditCardReferenceSummary = null;
-CategoryReferenceMigrationSummary? categoryReferenceSummary = null;
 if (File.Exists(outputPath))
 {
     var backupPath = MigrationBackup.Create(outputPath);
@@ -74,15 +78,6 @@ if (File.Exists(outputPath))
     // settled expense's SettledAt value can still be read from, since Expense no longer
     // declares that property and a normal deserialization silently drops it.
     legacyRawJson = File.ReadAllText(backupPath);
-
-    // All four must run before CashFlowLoader.LoadSync below: the typed deserializer throws on
-    // a file still carrying any legacy shape, so every rewrite has to happen on the raw file
-    // first. Each runs in the order its own reference transition landed, since a file could in
-    // principle need all four rewrites at once (an old file that predates every migration).
-    entityReferenceSummary = EntityReferenceMigrator.Migrate(outputPath);
-    reserveBucketReferenceSummary = ReserveBucketReferenceMigrator.Migrate(outputPath);
-    creditCardReferenceSummary = CreditCardReferenceMigrator.Migrate(outputPath);
-    categoryReferenceSummary = CategoryReferenceMigrator.Migrate(outputPath);
 }
 
 var report = new ImportReport();
@@ -188,22 +183,6 @@ await repository.ApplyAndSaveAsync(() => true);
 
 Console.WriteLine($"Wrote imported data to '{outputPath}'.");
 Console.WriteLine();
-if (entityReferenceSummary is not null)
-{
-    Console.WriteLine(entityReferenceSummary.Render());
-}
-if (reserveBucketReferenceSummary is not null)
-{
-    Console.WriteLine(reserveBucketReferenceSummary.Render());
-}
-if (creditCardReferenceSummary is not null)
-{
-    Console.WriteLine(creditCardReferenceSummary.Render());
-}
-if (categoryReferenceSummary is not null)
-{
-    Console.WriteLine(categoryReferenceSummary.Render());
-}
 Console.WriteLine(report.Render());
 Console.WriteLine(bankSummary.Render());
 Console.WriteLine(bankOpeningBalanceSummary.Render());

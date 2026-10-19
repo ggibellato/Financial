@@ -25,7 +25,7 @@ with **0 differences** on the latest copy of the live data.
 | Step | What it does |
 |------|--------------|
 | `Baseline` | Creates a new work folder and a temp worktree at `-BaselineTag`. Publishes the API, removes the worktree, starts the API on `-BeforePort` with `before\data-cashflow.json` and writes `before-report.json`. |
-| `Migrate` | Copies the input to `after\data-cashflow.json` and runs the migration chain on it. Until the first migration exists this is a plain copy. |
+| `Migrate` | Runs `CashFlowSpreadsheetImport migrate --input <live copy> --output after\data-cashflow.json`, logged to `after\migrate.log`. A failure stops the run with `Migrate failed; see <log>`. |
 | `After` | Publishes the working tree, starts it on `-AfterPort` with the migrated copy and writes `after-report.json`. |
 | `Compare` | Compares both reports through `figure-map.json`. Prints `key \| before \| after` for each difference and writes `differences.txt`. Exits 1 if there is any difference. |
 | `All` | The four steps in order. |
@@ -102,8 +102,8 @@ key segments; none do in the live data.
   `*` matches one key segment and `{month}` matches a `yyyy-MM` segment; their values fill the
   `before` pattern in order. `negate` compares `after = -before`. A mapping only renames. It
   never lets a value differ, and an unmapped key that exists on only one side is a difference.
-- **Migration:** from the first migration feature on, the Migrate step runs the migration command
-  on `after\data-cashflow.json`.
+- **Migration:** a feature that changes the data file format adds its step to the `migrate` chain;
+  the Migrate step already runs the whole chain on the live copy.
 - **Screens:** each UI feature adds its rows to [screen-checklist.md](screen-checklist.md).
 
 ## Self-test

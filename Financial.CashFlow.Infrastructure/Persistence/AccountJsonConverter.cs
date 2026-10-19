@@ -9,6 +9,11 @@ namespace Financial.CashFlow.Infrastructure.Persistence;
 
 public sealed class AccountJsonConverter : JsonConverter<Account>
 {
+    private static readonly JsonSerializerOptions RecordOptions = new()
+    {
+        Converters = { new JsonStringEnumConverter() }
+    };
+
     private static readonly JsonSerializerOptions AccountOptions = new()
     {
         Converters = { new JsonStringEnumConverter() },
@@ -17,34 +22,56 @@ public sealed class AccountJsonConverter : JsonConverter<Account>
 
     public override Account Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        var bank = JsonSerializer.Deserialize<BankRecord>(ref reader)!;
+        var record = JsonSerializer.Deserialize<AccountRecord>(ref reader, RecordOptions)!;
 
         var identity = new JsonObject
         {
-            [nameof(Account.Id)] = bank.Id,
-            [nameof(Account.Name)] = bank.Name,
-            [nameof(Account.Template)] = nameof(AccountTemplate.Bank),
-            [nameof(Account.Currency)] = nameof(Currency.GBP),
-            [nameof(Account.IsActive)] = true
+            [nameof(Account.Id)] = record.Id,
+            [nameof(Account.Name)] = record.Name,
+            [nameof(Account.Template)] = record.Template.ToString(),
+            [nameof(Account.Currency)] = record.Currency.ToString(),
+            [nameof(Account.IsActive)] = record.IsActive
         };
 
         var account = identity.Deserialize<Account>(AccountOptions)!;
-        account.SetRoundUp(bank.RoundUpEnabled);
-        account.SetOpeningBalance(bank.OpeningBalance, bank.OpeningBalanceDate);
+
+        if (record.OpeningBalance is { } openingBalance)
+        {
+            account.SetOpeningBalance(openingBalance.Amount, openingBalance.StartDate);
+        }
+
+        if (record.RoundUp is { } roundUp)
+        {
+            account.SetRoundUp(roundUp.Enabled);
+        }
+
         return account;
     }
 
     public override void Write(Utf8JsonWriter writer, Account value, JsonSerializerOptions options)
     {
-        var bank = new BankRecord(
+        var record = new AccountRecord(
             value.Id,
             value.Name,
-            value.RoundUp?.Enabled ?? false,
-            value.OpeningBalance?.Amount ?? 0m,
-            value.OpeningBalance?.StartDate ?? default);
+            value.Template,
+            value.Currency,
+            value.IsActive,
+            value.OpeningBalance is { } openingBalance ? new OpeningBalanceRecord(openingBalance.Amount, openingBalance.StartDate) : null,
+            value.RoundUp is { } roundUp ? new RoundUpRecord(roundUp.Enabled) : null);
 
-        JsonSerializer.Serialize(writer, bank);
+        JsonSerializer.Serialize(writer, record, RecordOptions);
     }
 
-    private sealed record BankRecord(Guid Id, string Name, bool RoundUpEnabled, decimal OpeningBalance, DateOnly OpeningBalanceDate);
+    private sealed record AccountRecord(
+        Guid Id,
+        string Name,
+        AccountTemplate Template,
+        Currency Currency,
+        bool IsActive,
+        OpeningBalanceRecord? OpeningBalance,
+        RoundUpRecord? RoundUp);
+
+    private sealed record OpeningBalanceRecord(decimal Amount, DateOnly StartDate);
+
+    private sealed record RoundUpRecord(bool Enabled);
 }

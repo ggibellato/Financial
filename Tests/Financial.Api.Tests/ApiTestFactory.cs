@@ -49,6 +49,8 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
         _calendarProviderOverride = calendarProviderOverride;
     }
 
+    public void ReplaceCashFlowData(string json) => File.WriteAllText(_cashFlowDataFilePath, json);
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         if (_webRootPath is not null)
@@ -121,7 +123,7 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
     private static string CreateTempCashFlowDataFilePath()
     {
         var tempPath = Path.Combine(Path.GetTempPath(), $"financial-api-cashflow-{Guid.NewGuid():N}.json");
-        File.WriteAllText(tempPath, SeededBanksJson);
+        File.WriteAllText(tempPath, SeededCashFlowJson);
         return tempPath;
     }
 
@@ -129,12 +131,12 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
     // real deployment would have after running the CashFlowSpreadsheetImport migration tool once
     // (see BankMigrator / CreditCardMigrator / IncomeSourceMigrator / ReserveBucketMigrator /
     // InvestmentAccountMigrator).
-    private const string SeededBanksJson = """
+    private const string SeededCashFlowJson = """
         {
-          "Banks": [
-            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-100000000001", "Name": "Barclays", "RoundUpEnabled": false },
-            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-100000000002", "Name": "Trading212", "RoundUpEnabled": true },
-            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-100000000003", "Name": "Chase", "RoundUpEnabled": true }
+          "Accounts": [
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-100000000001", "Name": "Barclays", "Template": "Bank", "Currency": "GBP", "IsActive": true, "OpeningBalance": { "Amount": 0, "StartDate": "0001-01-01" }, "RoundUp": { "Enabled": false } },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-100000000002", "Name": "Trading212", "Template": "Bank", "Currency": "GBP", "IsActive": true, "OpeningBalance": { "Amount": 0, "StartDate": "0001-01-01" }, "RoundUp": { "Enabled": true } },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-100000000003", "Name": "Chase", "Template": "Bank", "Currency": "GBP", "IsActive": true, "OpeningBalance": { "Amount": 0, "StartDate": "0001-01-01" }, "RoundUp": { "Enabled": true } }
           ],
           "CreditCards": [
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-500000000001", "Name": "BarclaysPlatinumVisa8003", "IsActive": true },
@@ -184,7 +186,8 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-600000000012", "Name": "Dizimo", "Active": true, "IsInvestment": false, "IsTithe": true },
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-600000000013", "Name": "Investimento", "Active": true, "IsInvestment": true, "IsTithe": false },
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-600000000014", "Name": "Reserva", "Active": true, "IsInvestment": false, "IsTithe": false }
-          ]
+          ],
+          "Version": 2
         }
         """;
 

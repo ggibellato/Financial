@@ -24,7 +24,7 @@ public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
         var root = document.RootElement;
 
         var unresolvedOptions = UnresolvedOptions;
-        var accounts = DeserializeCollection<Account>(root, "Banks", unresolvedOptions);
+        var accounts = DeserializeCollection<Account>(root, "Accounts", unresolvedOptions);
         var incomeSources = DeserializeCollection<IncomeSource>(root, "IncomeSources", unresolvedOptions);
         var reserveBuckets = DeserializeCollection<ReserveBucket>(root, "ReserveBuckets", unresolvedOptions);
         var creditCards = DeserializeCollection<CreditCard>(root, "CreditCards", unresolvedOptions);
@@ -94,7 +94,7 @@ public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
         WriteCollection(writer, "MaeLedgerEntries", value.MaeLedgerEntries, elementOptions);
         WriteCollection(writer, "InvestmentSnapshots", value.InvestmentSnapshots, elementOptions);
         WriteCollection(writer, "InvestmentAccounts", value.InvestmentAccounts, elementOptions);
-        WriteCollection(writer, "Banks", value.Accounts, elementOptions);
+        WriteCollection(writer, "Accounts", value.Accounts, elementOptions);
         WriteCollection(writer, "IncomeSources", value.IncomeSources, elementOptions);
         WriteCollection(writer, "Incomes", value.Incomes, elementOptions);
         WriteCollection(writer, "CreditCards", value.CreditCards, elementOptions);
