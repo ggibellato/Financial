@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Tools\CashFlowSpreadsheetImport\CashFlowSpreadsheetImport.csproj" />
+    <ProjectReference Include="..\Financial.TestUtilities\Financial.TestUtilities.csproj" />
   </ItemGroup>
 
 </Project>

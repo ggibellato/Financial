@@ -1,5 +1,6 @@
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.Shared.Abstractions.Sync;
 
 namespace Financial.TestUtilities;
@@ -45,9 +46,9 @@ public sealed class SyncStatusCashFlowRepositoryStub : ICashFlowRepository, ISyn
     public IEnumerable<InvestmentAccount> GetInvestmentAccounts() => throw new NotImplementedException();
     public void DeleteInvestmentAccount(Guid id) => throw new NotImplementedException();
     public void AddInvestmentAccount(InvestmentAccount account) => throw new NotImplementedException();
-    public IEnumerable<Bank> GetBanks() => throw new NotImplementedException();
-    public void AddBank(Bank bank) => throw new NotImplementedException();
-    public void DeleteBank(Guid id) => throw new NotImplementedException();
+    public IEnumerable<Account> GetAccounts() => throw new NotImplementedException();
+    public void AddAccount(Account account) => throw new NotImplementedException();
+    public void DeleteAccount(Guid id) => throw new NotImplementedException();
     public IEnumerable<IncomeSource> GetIncomeSources() => throw new NotImplementedException();
     public void AddIncomeSource(IncomeSource incomeSource) => throw new NotImplementedException();
     public void DeleteIncomeSource(Guid id) => throw new NotImplementedException();

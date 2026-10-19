@@ -1,5 +1,7 @@
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Domain.Enums;
+using Financial.TestUtilities;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using System.Globalization;
@@ -11,9 +13,9 @@ namespace Financial.CashFlow.Domain.Tests;
 [Trait("Category", "Unit")]
 public class ExpenseTests
 {
-    private static readonly Bank Chase = Bank.Create("Chase", roundUpEnabled: true);
-    private static readonly Bank Barclays = Bank.Create("Barclays", roundUpEnabled: false);
-    private static readonly Bank Trading212 = Bank.Create("Trading212", roundUpEnabled: true);
+    private static readonly Account Chase = TestAccounts.Bank("Chase", roundUpEnabled: true);
+    private static readonly Account Barclays = TestAccounts.Bank("Barclays", roundUpEnabled: false);
+    private static readonly Account Trading212 = TestAccounts.Bank("Trading212", roundUpEnabled: true);
     private static readonly CreditCard ChaseMaster4023 = CreditCard.Create("ChaseMaster4023");
     private static readonly CreditCard BarclaysPlatinumVisa8003 = CreditCard.Create("BarclaysPlatinumVisa8003");
     private static readonly CreditCard BaAmex = CreditCard.Create("BaAmex");
@@ -61,7 +63,7 @@ public class ExpenseTests
             expense.Description.Should().Be("Weekly groceries");
             expense.Value.Should().Be(54.32m);
             expense.Category.Should().Be(Mercado);
-            expense.PaymentSourceBank.Should().Be(Barclays);
+            expense.PaymentSourceAccount.Should().Be(Barclays);
             expense.CreditCard.Should().BeNull();
             expense.ChargeDate.Should().BeNull();
             expense.InvoiceDate.Should().BeNull();
@@ -83,7 +85,7 @@ public class ExpenseTests
         var expense = CreateCardCharge();
 
         expense.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
-        expense.PaymentSourceBank.Should().BeNull();
+        expense.PaymentSourceAccount.Should().BeNull();
         expense.ChargeDate.Should().Be(expense.Date);
         expense.InvoiceDate.Should().Be(new DateOnly(expense.Date.Year, expense.Date.Month, 1));
     }
@@ -186,7 +188,7 @@ public class ExpenseTests
             expense.Description.Should().Be("Updated");
             expense.Value.Should().Be(20m);
             expense.Category.Should().Be(Mercado);
-            expense.PaymentSourceBank.Should().BeNull();
+            expense.PaymentSourceAccount.Should().BeNull();
             expense.CreditCard.Should().Be(ChaseMaster4023);
             expense.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
             expense.ChargeDate.Should().Be(newDate);
@@ -251,7 +253,7 @@ public class ExpenseTests
 
         expense.UpdateDetails(
             correctedPaymentDate, expense.Description, expense.Value, expense.Category,
-            expense.PaymentSourceBank, expense.CreditCard);
+            expense.PaymentSourceAccount, expense.CreditCard);
 
         using (new AssertionScope())
         {
@@ -386,13 +388,13 @@ public class ExpenseTests
     {
         var expense = CreateSettledExpense();
 
-        expense.UpdateDetails(expense.Date, "Renamed", 25m, Mercado, expense.PaymentSourceBank, expense.CreditCard);
+        expense.UpdateDetails(expense.Date, "Renamed", 25m, Mercado, expense.PaymentSourceAccount, expense.CreditCard);
 
         using (new AssertionScope())
         {
             expense.Description.Should().Be("Renamed");
             expense.Value.Should().Be(25m);
-            expense.PaymentSourceBank.Should().Be(Barclays);
+            expense.PaymentSourceAccount.Should().Be(Barclays);
             expense.CreditCard.Should().Be(ChaseMaster4023);
             expense.Date.Should().Be(new DateOnly(2026, 7, 31));
             expense.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardSettled);
@@ -421,7 +423,7 @@ public class ExpenseTests
 
         using (new AssertionScope())
         {
-            expense.PaymentSourceBank.Should().Be(Trading212);
+            expense.PaymentSourceAccount.Should().Be(Trading212);
             expense.Date.Should().Be(paymentDate);
             expense.ChargeDate.Should().Be(originalChargeDate);
             expense.InvoiceDate.Should().Be(originalInvoiceDate);
@@ -456,7 +458,7 @@ public class ExpenseTests
 
         expense.Unsettle();
 
-        expense.PaymentSourceBank.Should().BeNull();
+        expense.PaymentSourceAccount.Should().BeNull();
         expense.Date.Should().Be(expense.ChargeDate);
         expense.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
     }
@@ -522,7 +524,7 @@ public class ExpenseTests
     {
         var expense = SimulateLegacyCardExpense(CreateCardCharge());
         var originalChargeDate = expense.Date;
-        typeof(Expense).GetProperty(nameof(Expense.PaymentSourceBank))!.SetMethod!.Invoke(expense, new object?[] { Barclays });
+        typeof(Expense).GetProperty(nameof(Expense.PaymentSourceAccount))!.SetMethod!.Invoke(expense, new object?[] { Barclays });
         var recoveredSettledAt = new DateOnly(2026, 8, 3);
 
         expense.MigrateLegacyDates(chargeDate: originalChargeDate, invoiceDate: new DateOnly(2026, 8, 1), settledDate: recoveredSettledAt);
@@ -700,7 +702,7 @@ public class ExpenseTests
         var expense = CreateImmediateExpense();
         expense.SetRoundUpAmount(0.60m);
 
-        expense.UpdateDetails(expense.Date, expense.Description, 20m, expense.Category, expense.PaymentSourceBank, expense.CreditCard);
+        expense.UpdateDetails(expense.Date, expense.Description, 20m, expense.Category, expense.PaymentSourceAccount, expense.CreditCard);
 
         expense.RoundUpAmount.Should().Be(0.60m);
     }

@@ -2,6 +2,7 @@ using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Domain.Enums;
 using Financial.Shared.Abstractions.Observability;
 using CreditCardEntity = Financial.CashFlow.Domain.Entities.CreditCard;
@@ -231,7 +232,7 @@ public sealed class ExpenseService : IExpenseService
     private Expense FindExpenseOrThrow(Guid id) =>
         _repository.GetExpenses().FirstOrThrow(e => e.Id == id, "Expense", id);
 
-    private (Category Category, Bank? PaymentSourceBank, CreditCardEntity? CreditCard) ValidateFields(
+    private (Category Category, Account? PaymentSourceAccount, CreditCardEntity? CreditCard) ValidateFields(
         string description, Guid categoryId, Guid? paymentSourceBankId, Guid? creditCardId)
     {
         DescriptionValidator.EnsureWithinLimit(description);
@@ -239,7 +240,7 @@ public sealed class ExpenseService : IExpenseService
         var category = CashFlowReferenceResolver.ResolveActiveCategory(_repository.GetCategories(), categoryId);
 
         var parsedPaymentSourceBank = paymentSourceBankId is { } bankId
-            ? CashFlowReferenceResolver.ResolvePaymentSource(_repository.GetBanks(), bankId)
+            ? CashFlowReferenceResolver.ResolvePaymentSource(_repository.GetAccounts(), bankId)
             : null;
 
         CreditCardEntity? parsedCreditCard = null;
@@ -264,8 +265,8 @@ public sealed class ExpenseService : IExpenseService
         Value = expense.Value,
         CategoryId = expense.Category.Id,
         CategoryName = expense.Category.Name,
-        PaymentSourceBankId = expense.PaymentSourceBank?.Id,
-        PaymentSourceBankName = expense.PaymentSourceBank?.Name,
+        PaymentSourceBankId = expense.PaymentSourceAccount?.Id,
+        PaymentSourceBankName = expense.PaymentSourceAccount?.Name,
         CreditCardId = expense.CreditCard?.Id,
         CreditCardName = expense.CreditCard?.Name,
         ChargeDate = expense.ChargeDate,

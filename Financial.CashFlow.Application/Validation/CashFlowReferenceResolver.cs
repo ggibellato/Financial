@@ -19,13 +19,13 @@ public static class CashFlowReferenceResolver
         return category;
     }
 
-    public static Bank ResolvePaymentSource(IEnumerable<Bank> banks, Guid bankId)
+    public static Account ResolvePaymentSource(IEnumerable<Account> accounts, Guid accountId)
     {
-        if (!EntityIdResolver.TryResolve(bankId, banks, b => b.Id, out var bank))
+        if (!EntityIdResolver.TryResolve(accountId, accounts, a => a.Id, out var account))
         {
-            throw new ArgumentException($"Payment source '{bankId}' is not recognized.");
+            throw new ArgumentException($"Payment source '{accountId}' is not recognized.");
         }
 
-        return bank;
+        return account;
     }
 }

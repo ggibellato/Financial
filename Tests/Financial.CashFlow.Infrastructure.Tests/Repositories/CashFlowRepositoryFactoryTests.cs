@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Infrastructure.Persistence;
 using Financial.CashFlow.Infrastructure.Repositories;
 using Financial.Shared.Abstractions.Configuration;
@@ -173,7 +174,7 @@ public class CashFlowRepositoryFactoryTests
 
             var repository = factory.Create(options);
             repository.AddExpense(Expense.Create(
-                new DateOnly(2026, 7, 1), "Test expense", 10m, Category.Create("Casa"), Bank.Create("Chase", roundUpEnabled: true), null));
+                new DateOnly(2026, 7, 1), "Test expense", 10m, Category.Create("Casa"), TestAccounts.Bank("Chase", roundUpEnabled: true), null));
 
             var stopwatch = Stopwatch.StartNew();
             await repository.ApplyAndSaveAsync(() => true);
@@ -206,7 +207,7 @@ public class CashFlowRepositoryFactoryTests
 
             var repository = factory.Create(options);
             repository.AddExpense(Expense.Create(
-                new DateOnly(2026, 7, 1), "Test expense", 10m, Category.Create("Casa"), Bank.Create("Chase", roundUpEnabled: true), null));
+                new DateOnly(2026, 7, 1), "Test expense", 10m, Category.Create("Casa"), TestAccounts.Bank("Chase", roundUpEnabled: true), null));
 
             await repository.ApplyAndSaveAsync(() => true);
 
@@ -235,7 +236,7 @@ public class CashFlowRepositoryFactoryTests
 
             var repository = factory.Create(options);
             repository.AddExpense(Expense.Create(
-                new DateOnly(2026, 7, 1), "Debounced upload test expense", 10m, Category.Create("Casa"), Bank.Create("Chase", roundUpEnabled: true), null));
+                new DateOnly(2026, 7, 1), "Debounced upload test expense", 10m, Category.Create("Casa"), TestAccounts.Bank("Chase", roundUpEnabled: true), null));
 
             await repository.ApplyAndSaveAsync(() => true);
 
@@ -277,7 +278,7 @@ public class CashFlowRepositoryFactoryTests
 
             var repository = factory.Create(options);
             repository.AddExpense(Expense.Create(
-                new DateOnly(2026, 7, 1), "Tracer test expense", 10m, Category.Create("Casa"), Bank.Create("Chase", roundUpEnabled: true), null));
+                new DateOnly(2026, 7, 1), "Tracer test expense", 10m, Category.Create("Casa"), TestAccounts.Bank("Chase", roundUpEnabled: true), null));
 
             await repository.ApplyAndSaveAsync(() => true);
 

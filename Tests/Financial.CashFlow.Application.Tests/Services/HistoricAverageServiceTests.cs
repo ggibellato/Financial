@@ -1,6 +1,7 @@
 using Financial.CashFlow.Application.Services;
 using Financial.CashFlow.Application.Tests.TestHelpers;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Domain.Enums;
 using Financial.TestUtilities;
 using Microsoft.Extensions.Time.Testing;
@@ -16,7 +17,7 @@ public class HistoricAverageServiceTests
     private static readonly int CurrentYear = TestClock.Today.Year;
     private static readonly Microsoft.Extensions.Logging.ILogger<HistoricAverageService> Logger = NullLogger<HistoricAverageService>.Instance;
 
-    private static readonly Bank Barclays = Bank.Create("Barclays", roundUpEnabled: false);
+    private static readonly Account Barclays = TestAccounts.Bank("Barclays", roundUpEnabled: false);
 
     private static IncomeSource Source(string name) => IncomeSource.Create(name, IncomeGroup.NonReportable);
 

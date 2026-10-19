@@ -2,6 +2,7 @@ using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Domain.Enums;
 using Financial.Shared.Abstractions.Observability;
 using Financial.Shared.Abstractions.Time;
@@ -105,7 +106,7 @@ public sealed class CardStatementService : ICardStatementService
                 return ToDto(statement, "This statement was already marked paid; nothing changed.");
             }
 
-            if (!EntityIdResolver.TryResolve(request.PaymentSourceBankId, _repository.GetBanks(), b => b.Id, out var bank))
+            if (!EntityIdResolver.TryResolve(request.PaymentSourceBankId, _repository.GetAccounts(), b => b.Id, out var bank))
             {
                 throw new ArgumentException($"Payment source '{request.PaymentSourceBankId}' is not recognized.");
             }

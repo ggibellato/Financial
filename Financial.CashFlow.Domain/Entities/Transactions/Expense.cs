@@ -1,9 +1,9 @@
 using System;
 using Financial.CashFlow.Domain.Enums;
 
-namespace Financial.CashFlow.Domain.Entities;
+namespace Financial.CashFlow.Domain.Entities.Transactions;
 
-public class Expense
+public class Expense : IAccountTransaction
 {
     public const decimal MinRoundUpAmount = 0.00m;
     public const decimal MaxRoundUpAmount = 0.99m;
@@ -13,7 +13,7 @@ public class Expense
     public string Description { get; private set; } = string.Empty;
     public decimal Value { get; private set; }
     public Category Category { get; private set; } = null!;
-    public Bank? PaymentSourceBank { get; private set; }
+    public Account? PaymentSourceAccount { get; private set; }
     public CreditCard? CreditCard { get; private set; }
     public DateOnly? ChargeDate { get; private set; }
     public DateOnly? InvoiceDate { get; private set; }
@@ -22,7 +22,7 @@ public class Expense
 
     public ExpensePaymentStatus PaymentStatus =>
         CreditCard is null ? ExpensePaymentStatus.ImmediatePayment
-        : PaymentSourceBank is null ? ExpensePaymentStatus.CreditCardCharge
+        : PaymentSourceAccount is null ? ExpensePaymentStatus.CreditCardCharge
         : ExpensePaymentStatus.CreditCardSettled;
 
     public decimal RoundUpSuggestion => ComputeRoundUpSuggestion(Value);
@@ -39,7 +39,7 @@ public class Expense
         RoundUpAmount is not null
         || PaymentStatus != ExpensePaymentStatus.ImmediatePayment
         || Value <= 0
-        || PaymentSourceBank?.RoundUpEnabled != true
+        || PaymentSourceAccount?.RoundsUp != true
             ? null
             : RoundUpSuggestion;
 
@@ -64,13 +64,13 @@ public class Expense
         string description,
         decimal value,
         Category category,
-        Bank? paymentSourceBank,
+        Account? paymentSourceAccount,
         CreditCard? creditCard,
         DateOnly? invoiceDate = null,
         bool countsAsTithe = true)
     {
         ValidateFields(description, value);
-        ValidatePaymentShape(paymentSourceBank, creditCard);
+        ValidatePaymentShape(paymentSourceAccount, creditCard);
 
         return new()
         {
@@ -79,7 +79,7 @@ public class Expense
             Description = description,
             Value = value,
             Category = category,
-            PaymentSourceBank = paymentSourceBank,
+            PaymentSourceAccount = paymentSourceAccount,
             CreditCard = creditCard,
             ChargeDate = creditCard is not null ? date : null,
             InvoiceDate = creditCard is not null ? FirstOfMonth(invoiceDate ?? date) : null,
@@ -92,7 +92,7 @@ public class Expense
         string description,
         decimal value,
         Category category,
-        Bank? paymentSourceBank,
+        Account? paymentSourceAccount,
         CreditCard? creditCard,
         bool countsAsTithe = true)
     {
@@ -100,7 +100,7 @@ public class Expense
 
         if (PaymentStatus == ExpensePaymentStatus.CreditCardSettled)
         {
-            if (paymentSourceBank?.Id != PaymentSourceBank?.Id || creditCard?.Id != CreditCard?.Id)
+            if (paymentSourceAccount?.Id != PaymentSourceAccount?.Id || creditCard?.Id != CreditCard?.Id)
             {
                 throw new ArgumentException(
                     "A settled expense's payment fields cannot be changed; unmark its card statement paid first.");
@@ -108,7 +108,7 @@ public class Expense
         }
         else
         {
-            ValidatePaymentShape(paymentSourceBank, creditCard);
+            ValidatePaymentShape(paymentSourceAccount, creditCard);
 
             var wasCardCharge = PaymentStatus == ExpensePaymentStatus.CreditCardCharge;
 
@@ -129,7 +129,7 @@ public class Expense
                 InvoiceDate = null;
             }
 
-            PaymentSourceBank = paymentSourceBank;
+            PaymentSourceAccount = paymentSourceAccount;
             CreditCard = creditCard;
         }
 
@@ -140,14 +140,15 @@ public class Expense
         CountsAsTithe = countsAsTithe;
     }
 
-    public void Settle(Bank paymentSourceBank, DateOnly paymentDate)
+    public void Settle(Account paymentSourceAccount, DateOnly paymentDate)
     {
         if (PaymentStatus != ExpensePaymentStatus.CreditCardCharge)
         {
             throw new ArgumentException("Only an unsettled credit card charge can be settled.");
         }
 
-        PaymentSourceBank = paymentSourceBank;
+        EnsureCanBePaymentSource(paymentSourceAccount);
+        PaymentSourceAccount = paymentSourceAccount;
         Date = paymentDate;
     }
 
@@ -158,7 +159,7 @@ public class Expense
             throw new ArgumentException("Only a settled credit card expense can be unsettled.");
         }
 
-        PaymentSourceBank = null;
+        PaymentSourceAccount = null;
         Date = ChargeDate!.Value;
     }
 
@@ -218,9 +219,9 @@ public class Expense
                 "Round-up only applies to an expense paid directly from a bank, not a credit-card charge.");
         }
 
-        if (!PaymentSourceBank!.RoundUpEnabled)
+        if (!PaymentSourceAccount!.RoundsUp)
         {
-            throw new ArgumentException($"Bank '{PaymentSourceBank.Name}' does not support round-up.");
+            throw new ArgumentException($"Bank '{PaymentSourceAccount!.Name}' does not support round-up.");
         }
 
         if (Value <= 0)
@@ -237,6 +238,9 @@ public class Expense
         RoundUpAmount = amount;
     }
 
+    public decimal ContributionTo(Account account) =>
+        PaymentSourceAccount?.Id == account.Id ? -(Value + (RoundUpAmount ?? 0)) : 0m;
+
     private static DateOnly FirstOfMonth(DateOnly date) => new(date.Year, date.Month, 1);
 
     private static void ValidateFields(string description, decimal value)
@@ -252,14 +256,14 @@ public class Expense
         }
     }
 
-    private static void ValidatePaymentShape(Bank? paymentSourceBank, CreditCard? creditCard)
+    private static void ValidatePaymentShape(Account? paymentSourceAccount, CreditCard? creditCard)
     {
-        if (paymentSourceBank is null && creditCard is null)
+        if (paymentSourceAccount is null && creditCard is null)
         {
             throw new ArgumentException("An expense requires either a payment source or a card tag.");
         }
 
-        if (paymentSourceBank is not null && creditCard is not null)
+        if (paymentSourceAccount is not null && creditCard is not null)
         {
             throw new ArgumentException(
                 "An expense cannot have both a payment source and a card tag; a settled expense is only produced by marking its card statement paid.");
@@ -269,6 +273,19 @@ public class Expense
         {
             throw new ArgumentException(
                 $"Credit card '{creditCard.Name}' is inactive and cannot be used for new entries.");
+        }
+
+        if (paymentSourceAccount is not null)
+        {
+            EnsureCanBePaymentSource(paymentSourceAccount);
+        }
+    }
+
+    private static void EnsureCanBePaymentSource(Account account)
+    {
+        if (!account.Has(Capability.HasCategories))
+        {
+            throw new ArgumentException($"Account '{account.Name}' cannot be a payment source.");
         }
     }
 }

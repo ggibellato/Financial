@@ -1,6 +1,7 @@
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Services;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.Shared.Abstractions.Observability;
 using Financial.TestUtilities;
 using Financial.CashFlow.Domain.Entities;
@@ -15,7 +16,7 @@ namespace Financial.CashFlow.Application.Tests.Services;
 [Trait("Category", "Unit")]
 public class ExpenseServiceTests
 {
-    private static readonly Bank ChaseFixture = Bank.Create("Chase", roundUpEnabled: true);
+    private static readonly Account ChaseFixture = TestAccounts.Bank("Chase", roundUpEnabled: true);
     private static readonly CreditCard BarclaysPlatinumVisa8003Fixture = CreditCard.Create("BarclaysPlatinumVisa8003");
     private static readonly CreditCard BaAmexFixture = CreditCard.Create("BaAmex");
     private static readonly Category MercadoFixture = Category.Create("Mercado");
@@ -316,7 +317,7 @@ public class ExpenseServiceTests
             Description = "Weekly groceries",
             Value = 54.32m,
             CategoryId = inactiveCategory.Id,
-            PaymentSourceBankId = repository.Banks.First(b => b.Name == "Barclays").Id
+            PaymentSourceBankId = repository.Accounts.First(b => b.Name == "Barclays").Id
         };
 
         var act = async () => await service.AddExpenseAsync(request);
@@ -336,7 +337,7 @@ public class ExpenseServiceTests
             Description = "Weekly groceries",
             Value = 54.32m,
             CategoryId = inactiveCategory.Id,
-            PaymentSourceBankId = _repository.Banks.First(b => b.Name == "Barclays").Id
+            PaymentSourceBankId = _repository.Accounts.First(b => b.Name == "Barclays").Id
         };
 
         var act = async () => await _sut.UpdateExpenseAsync(added.Id, updateRequest);
@@ -386,7 +387,7 @@ public class ExpenseServiceTests
             Description = "Updated",
             Value = 10m,
             CategoryId = ResolveCategoryId(_repository, "Casa"),
-            PaymentSourceBankId = _repository.Banks.First(b => b.Name == "Chase").Id,
+            PaymentSourceBankId = _repository.Accounts.First(b => b.Name == "Chase").Id,
             CreditCardId = null
         };
         var result = await _sut.UpdateExpenseAsync(added.Id, updateRequest);
@@ -888,7 +889,7 @@ public class ExpenseServiceTests
 
     /// <summary>An unresolvable name maps to a random, never-seeded Guid so tests exercising an unrecognized reference still hit the "not found" path rather than the "omitted" path.</summary>
     private static Guid? ResolveBankId(StubCashFlowRepository _repository, string? bankName) =>
-        bankName is null ? null : _repository.Banks.FirstOrDefault(b => b.Name == bankName)?.Id ?? Guid.NewGuid();
+        bankName is null ? null : _repository.Accounts.FirstOrDefault(b => b.Name == bankName)?.Id ?? Guid.NewGuid();
 
     /// <summary>An unresolvable name maps to a random, never-seeded Guid so tests exercising an unrecognized reference still hit the "not found" path rather than the "omitted" path.</summary>
     private static Guid? ResolveCreditCardId(StubCashFlowRepository _repository, string? cardName) =>
@@ -977,7 +978,7 @@ public class ExpenseServiceTests
     {
         var added = await _sut.AddExpenseAsync(ToCreateDto(_repository, 
             ValidCreateRequest() with { PaymentSource = null, CardTag = "ChaseMaster4023" }));
-        _repository.Expenses.Single(e => e.Id == added.Id).Settle(_repository.Banks.First(b => b.Name == "Barclays"), new DateOnly(2026, 7, 31));
+        _repository.Expenses.Single(e => e.Id == added.Id).Settle(_repository.Accounts.First(b => b.Name == "Barclays"), new DateOnly(2026, 7, 31));
         var updateRequest = ToUpdateDto(_repository, ValidCreateRequest() with
         {
             Description = "Renamed", PaymentSource = "Barclays", CardTag = "ChaseMaster4023", InvoiceDate = added.InvoiceDate
@@ -993,7 +994,7 @@ public class ExpenseServiceTests
     {
         var added = await _sut.AddExpenseAsync(ToCreateDto(_repository, 
             ValidCreateRequest() with { PaymentSource = null, CardTag = "ChaseMaster4023" }));
-        _repository.Expenses.Single(e => e.Id == added.Id).Settle(_repository.Banks.First(b => b.Name == "Barclays"), new DateOnly(2026, 7, 31));
+        _repository.Expenses.Single(e => e.Id == added.Id).Settle(_repository.Accounts.First(b => b.Name == "Barclays"), new DateOnly(2026, 7, 31));
         var updateRequest = ToUpdateDto(_repository, ValidCreateRequest() with
         {
             PaymentSource = "Barclays", CardTag = "ChaseMaster4023", InvoiceDate = new DateOnly(2026, 9, 1)

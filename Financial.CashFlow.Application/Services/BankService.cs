@@ -3,6 +3,10 @@ using Financial.CashFlow.Application.Exceptions;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
+using Financial.CashFlow.Domain.Enums;
+using Financial.CashFlow.Domain.Rules;
+using Financial.Shared.Abstractions.Currencies;
 using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.Logging;
 
@@ -28,8 +32,8 @@ public sealed class BankService : IBankService
         using var span = StartSpan("GetBanks");
         try
         {
-            var referencedBankIds = BuildReferencedBankIds();
-            var result = _repository.GetBanks().Select(bank => ToDto(bank, referencedBankIds.Contains(bank.Id))).ToList();
+            var referencedAccountIds = BuildReferencedAccountIds();
+            var result = BankAccounts().Select(bank => ToDto(bank, referencedAccountIds.Contains(bank.Id))).ToList();
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetBanks");
@@ -54,13 +58,14 @@ public sealed class BankService : IBankService
                 throw new ArgumentException("Bank name is required.", nameof(request));
             }
 
-            _repository.GetBanks().EnsureNameIsUnique(request.Name, null, b => b.Name, b => b.Id, "A bank");
+            _repository.GetAccounts().EnsureNameIsUnique(request.Name, null, a => a.Name, a => a.Id, "A bank");
 
-            var bank = Bank.Create(request.Name, request.RoundUpEnabled);
+            var bank = Account.Create(request.Name, AccountTemplate.Bank, Currency.GBP);
+            bank.SetRoundUp(request.RoundUpEnabled);
 
             await _repository.ApplyAndSaveAsync(() =>
             {
-                _repository.AddBank(bank);
+                _repository.AddAccount(bank);
                 return true;
             }).ConfigureAwait(false);
 
@@ -89,13 +94,14 @@ public sealed class BankService : IBankService
                 throw new ArgumentException("Bank name is required.", nameof(request));
             }
 
-            var bank = _repository.GetBanks().FirstOrThrow(b => b.Id == id, "Bank", id);
+            var bank = FindBankOrThrow(id);
 
-            _repository.GetBanks().EnsureNameIsUnique(request.Name, id, b => b.Name, b => b.Id, "A bank");
+            _repository.GetAccounts().EnsureNameIsUnique(request.Name, id, a => a.Name, a => a.Id, "A bank");
 
             await _repository.ApplyAndSaveAsync(() =>
             {
-                bank.Update(request.Name, request.RoundUpEnabled);
+                bank.Update(request.Name);
+                bank.SetRoundUp(request.RoundUpEnabled);
                 return true;
             }).ConfigureAwait(false);
 
@@ -116,13 +122,13 @@ public sealed class BankService : IBankService
         span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());
         try
         {
-            _ = _repository.GetBanks().FirstOrThrow(b => b.Id == id, "Bank", id);
+            _ = FindBankOrThrow(id);
 
             EnsureNotReferenced(id);
 
             await _repository.ApplyAndSaveAsync(() =>
             {
-                _repository.DeleteBank(id);
+                _repository.DeleteAccount(id);
                 return true;
             }).ConfigureAwait(false);
 
@@ -144,7 +150,7 @@ public sealed class BankService : IBankService
         {
             ArgumentNullException.ThrowIfNull(request);
 
-            var bank = _repository.GetBanks().FirstOrThrow(b => b.Id == id, "Bank", id);
+            var bank = FindBankOrThrow(id);
 
             await _repository.ApplyAndSaveAsync(() =>
             {
@@ -169,16 +175,13 @@ public sealed class BankService : IBankService
         try
         {
             var endOfMonth = new DateOnly(year, month, DateTime.DaysInMonth(year, month));
-            var incomes = _repository.GetIncomes().ToList();
-            var expenses = _repository.GetExpenses().ToList();
-            var transfers = _repository.GetTransfers().ToList();
-            var adjustments = _repository.GetBalanceAdjustments().ToList();
+            var records = ReadAccountTransactions(excludingAdjustmentId: null);
 
-            var result = _repository.GetBanks()
+            var result = BankAccounts()
                 .Select(bank => new BankBalanceDTO
                 {
                     Bank = bank.Name,
-                    Balance = ComputeBalance(bank, endOfMonth, incomes, expenses, transfers, adjustments, excludingAdjustmentId: null)
+                    Balance = AccountBalanceRule.Balance(bank, endOfMonth, records)
                 })
                 .ToList();
 
@@ -199,16 +202,9 @@ public sealed class BankService : IBankService
         span.SetAttribute(TelemetryAttributeKeys.EntityId, bankId.ToString());
         try
         {
-            var bank = _repository.GetBanks().FirstOrThrow(b => b.Id == bankId, "Bank", bankId);
+            var bank = FindBankOrThrow(bankId);
 
-            var result = ComputeBalance(
-                bank,
-                asOfDate,
-                _repository.GetIncomes(),
-                _repository.GetExpenses(),
-                _repository.GetTransfers(),
-                _repository.GetBalanceAdjustments(),
-                excludingAdjustmentId);
+            var result = AccountBalanceRule.Balance(bank, asOfDate, ReadAccountTransactions(excludingAdjustmentId));
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetBankBalanceAsOf");
@@ -221,39 +217,43 @@ public sealed class BankService : IBankService
         }
     }
 
-    private void EnsureNotReferenced(Guid bankId)
+    private IEnumerable<Account> BankAccounts() =>
+        _repository.GetAccounts().Where(account => account.Template == AccountTemplate.Bank);
+
+    private Account FindBankOrThrow(Guid id) => BankAccounts().FirstOrThrow(b => b.Id == id, "Bank", id);
+
+    private List<IAccountTransaction> ReadAccountTransactions(Guid? excludingAdjustmentId) =>
+    [
+        .. _repository.GetIncomes(),
+        .. _repository.GetExpenses(),
+        .. _repository.GetTransfers(),
+        .. _repository.GetBalanceAdjustments().Where(a => a.Id != excludingAdjustmentId)
+    ];
+
+    private void EnsureNotReferenced(Guid accountId)
     {
-        if (IsReferenced(bankId))
+        if (IsReferenced(accountId))
         {
             throw new EntityInUseException("Cannot delete a bank that still has balance history or transactions.");
         }
     }
 
-    /// <summary>
-    /// Scans the same four collections <see cref="ComputeBalance"/> already reads (Income, Expense,
-    /// Transfer, BalanceAdjustment) - every relationship that can hold a reference to a Bank. Also
-    /// drives <see cref="BankDTO.HasReferences"/>, so the client can disable Delete before attempting
-    /// it rather than only learning about the guard from a failed request.
-    /// </summary>
-    private bool IsReferenced(Guid bankId) =>
-        _repository.GetBalanceAdjustments().Any(a => a.Bank.Id == bankId) ||
-        _repository.GetIncomes().Any(i => i.Bank?.Id == bankId) ||
-        _repository.GetExpenses().Any(e => e.PaymentSourceBank?.Id == bankId) ||
-        _repository.GetTransfers().Any(t => t.SourceBank.Id == bankId || t.DestinationBank.Id == bankId);
+    private bool IsReferenced(Guid accountId) =>
+        _repository.GetBalanceAdjustments().Any(a => a.Account.Id == accountId) ||
+        _repository.GetIncomes().Any(i => i.Account?.Id == accountId) ||
+        _repository.GetExpenses().Any(e => e.PaymentSourceAccount?.Id == accountId) ||
+        _repository.GetTransfers().Any(t => t.SourceAccount.Id == accountId || t.DestinationAccount.Id == accountId);
 
-    /// <summary>Every bank id referenced by any balance-affecting record, built once so
-    /// <see cref="GetBanks"/> can look up each bank's <see cref="BankDTO.HasReferences"/> in O(1)
-    /// instead of re-scanning all four collections per bank.</summary>
-    private HashSet<Guid> BuildReferencedBankIds()
+    private HashSet<Guid> BuildReferencedAccountIds()
     {
         var ids = new HashSet<Guid>();
-        foreach (var adjustment in _repository.GetBalanceAdjustments()) ids.Add(adjustment.Bank.Id);
-        foreach (var income in _repository.GetIncomes()) if (income.Bank is not null) ids.Add(income.Bank.Id);
-        foreach (var expense in _repository.GetExpenses()) if (expense.PaymentSourceBank is not null) ids.Add(expense.PaymentSourceBank.Id);
+        foreach (var adjustment in _repository.GetBalanceAdjustments()) ids.Add(adjustment.Account.Id);
+        foreach (var income in _repository.GetIncomes()) if (income.Account is not null) ids.Add(income.Account.Id);
+        foreach (var expense in _repository.GetExpenses()) if (expense.PaymentSourceAccount is not null) ids.Add(expense.PaymentSourceAccount.Id);
         foreach (var transfer in _repository.GetTransfers())
         {
-            ids.Add(transfer.SourceBank.Id);
-            ids.Add(transfer.DestinationBank.Id);
+            ids.Add(transfer.SourceAccount.Id);
+            ids.Add(transfer.DestinationAccount.Id);
         }
         return ids;
     }
@@ -264,49 +264,15 @@ public sealed class BankService : IBankService
         return _tracer.StartServiceSpan("CashFlow", nameof(BankService), operationName, EntityType);
     }
 
-    private static decimal ComputeBalance(
-        Bank bank,
-        DateOnly asOfDate,
-        IEnumerable<Income> incomes,
-        IEnumerable<Expense> expenses,
-        IEnumerable<Transfer> transfers,
-        IEnumerable<BalanceAdjustment> adjustments,
-        Guid? excludingAdjustmentId)
-    {
-        bool InWindow(DateOnly date) => date >= bank.OpeningBalanceDate && date <= asOfDate;
+    private BankDTO ToDto(Account bank) => ToDto(bank, IsReferenced(bank.Id));
 
-        var incomeTotal = incomes
-            .Where(i => i.Bank?.Id == bank.Id && InWindow(i.Date))
-            .Sum(i => i.NetValue);
-
-        var expenseTotal = expenses
-            .Where(e => e.PaymentSourceBank?.Id == bank.Id && InWindow(e.Date))
-            .Sum(e => e.Value + (e.RoundUpAmount ?? 0));
-
-        var transferInTotal = transfers
-            .Where(t => t.DestinationBank.Id == bank.Id && InWindow(t.Date))
-            .Sum(t => t.Amount);
-
-        var transferOutTotal = transfers
-            .Where(t => t.SourceBank.Id == bank.Id && InWindow(t.Date))
-            .Sum(t => t.Amount);
-
-        var adjustmentTotal = adjustments
-            .Where(a => a.Bank.Id == bank.Id && InWindow(a.Date) && a.Id != excludingAdjustmentId)
-            .Sum(a => a.Delta);
-
-        return bank.OpeningBalance + incomeTotal - expenseTotal + transferInTotal - transferOutTotal + adjustmentTotal;
-    }
-
-    private BankDTO ToDto(Bank bank) => ToDto(bank, IsReferenced(bank.Id));
-
-    private static BankDTO ToDto(Bank bank, bool hasReferences) => new()
+    private static BankDTO ToDto(Account bank, bool hasReferences) => new()
     {
         Id = bank.Id,
         Name = bank.Name,
-        RoundUpEnabled = bank.RoundUpEnabled,
-        OpeningBalance = bank.OpeningBalance,
-        OpeningBalanceDate = bank.OpeningBalanceDate,
+        RoundUpEnabled = bank.RoundsUp,
+        OpeningBalance = bank.OpeningBalance?.Amount ?? 0m,
+        OpeningBalanceDate = bank.OpeningBalance?.StartDate ?? default,
         HasReferences = hasReferences
     };
 }

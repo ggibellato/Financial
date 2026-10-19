@@ -1,4 +1,5 @@
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -6,7 +7,7 @@ namespace Financial.CashFlow.Infrastructure.Persistence;
 
 /// <summary>
 /// Top-level (de)serializer for <see cref="CashFlowData"/>. On read, resolves the seeded
-/// Bank/IncomeSource/ReserveBucket/CreditCard/Category collections first - regardless of their
+/// Account/IncomeSource/ReserveBucket/CreditCard/Category collections first - regardless of their
 /// position in the JSON text - since none of them reference each other. InvestmentAccount is
 /// resolved next, since its optional CreditCard link depends on the CreditCards lookup already
 /// being built. Every other collection then deserializes through reference converters bound to
@@ -15,7 +16,7 @@ namespace Financial.CashFlow.Infrastructure.Persistence;
 /// </summary>
 public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
 {
-    private static readonly JsonSerializerOptions UnresolvedOptions = CreateElementOptions(context: null);
+    private static readonly JsonSerializerOptions UnresolvedOptions = CashFlowElementOptions.Create(context: null);
 
     public override CashFlowData Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
@@ -23,14 +24,14 @@ public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
         var root = document.RootElement;
 
         var unresolvedOptions = UnresolvedOptions;
-        var banks = DeserializeCollection<Bank>(root, "Banks", unresolvedOptions);
+        var accounts = DeserializeCollection<Account>(root, "Banks", unresolvedOptions);
         var incomeSources = DeserializeCollection<IncomeSource>(root, "IncomeSources", unresolvedOptions);
         var reserveBuckets = DeserializeCollection<ReserveBucket>(root, "ReserveBuckets", unresolvedOptions);
         var creditCards = DeserializeCollection<CreditCard>(root, "CreditCards", unresolvedOptions);
         var categories = DeserializeCollection<Category>(root, "Categories", unresolvedOptions);
 
         var context = new ReferenceResolutionContext();
-        foreach (var bank in banks) context.Banks[bank.Id] = bank;
+        foreach (var account in accounts) context.Accounts[account.Id] = account;
         foreach (var incomeSource in incomeSources) context.IncomeSources[incomeSource.Id] = incomeSource;
         foreach (var bucket in reserveBuckets) context.ReserveBuckets[bucket.Id] = bucket;
         foreach (var card in creditCards) context.CreditCards[card.Id] = card;
@@ -42,14 +43,14 @@ public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
         // System.Text.Json resolves and caches each type's JsonTypeInfo on first use, and nothing
         // deserialized so far touches a type other than InvestmentAccount/CreditCard, so every
         // later type still resolves its reference converters against the fully-populated context.
-        var resolvedOptions = CreateElementOptions(context);
+        var resolvedOptions = CashFlowElementOptions.Create(context);
         var investmentAccounts = DeserializeCollection<InvestmentAccount>(root, "InvestmentAccounts", resolvedOptions);
-        foreach (var account in investmentAccounts) context.InvestmentAccounts[account.Id] = account;
+        foreach (var investmentAccount in investmentAccounts) context.InvestmentAccounts[investmentAccount.Id] = investmentAccount;
 
         var data = CashFlowData.Create();
-        foreach (var bank in banks) data.AddBank(bank);
+        foreach (var account in accounts) data.AddAccount(account);
         foreach (var incomeSource in incomeSources) data.AddIncomeSource(incomeSource);
-        foreach (var account in investmentAccounts) data.AddInvestmentAccount(account);
+        foreach (var investmentAccount in investmentAccounts) data.AddInvestmentAccount(investmentAccount);
         foreach (var bucket in reserveBuckets) data.AddReserveBucket(bucket);
         foreach (var card in creditCards) data.AddCreditCard(card);
         foreach (var category in categories) data.AddCategory(category);
@@ -93,7 +94,7 @@ public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
         WriteCollection(writer, "MaeLedgerEntries", value.MaeLedgerEntries, elementOptions);
         WriteCollection(writer, "InvestmentSnapshots", value.InvestmentSnapshots, elementOptions);
         WriteCollection(writer, "InvestmentAccounts", value.InvestmentAccounts, elementOptions);
-        WriteCollection(writer, "Banks", value.Banks, elementOptions);
+        WriteCollection(writer, "Banks", value.Accounts, elementOptions);
         WriteCollection(writer, "IncomeSources", value.IncomeSources, elementOptions);
         WriteCollection(writer, "Incomes", value.Incomes, elementOptions);
         WriteCollection(writer, "CreditCards", value.CreditCards, elementOptions);
@@ -114,12 +115,6 @@ public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
 
         writer.WriteEndObject();
     }
-
-    private static JsonSerializerOptions CreateElementOptions(ReferenceResolutionContext? context) => new()
-    {
-        Converters = { new JsonStringEnumConverter() },
-        TypeInfoResolver = new CashFlowTypeInfoResolver(context)
-    };
 
     private static List<T> DeserializeCollection<T>(JsonElement root, string propertyName, JsonSerializerOptions options)
     {

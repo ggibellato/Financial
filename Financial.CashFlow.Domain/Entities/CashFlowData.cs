@@ -1,4 +1,5 @@
 using Financial.CashFlow.Domain.Entities.Collections;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using System;
 using System.Collections.Generic;
 
@@ -24,8 +25,8 @@ public class CashFlowData
     private readonly ItemCollection<InvestmentSnapshot> _investmentSnapshots = new();
     public IReadOnlyCollection<InvestmentSnapshot> InvestmentSnapshots => _investmentSnapshots;
 
-    private readonly IdCollection<Bank> _banks = new(i => i.Id);
-    public IReadOnlyCollection<Bank> Banks => _banks;
+    private readonly IdCollection<Account> _accounts = new(i => i.Id);
+    public IReadOnlyCollection<Account> Accounts => _accounts;
 
     private readonly IdCollection<IncomeSource> _incomeSources = new(i => i.Id);
     public IReadOnlyCollection<IncomeSource> IncomeSources => _incomeSources;
@@ -80,9 +81,9 @@ public class CashFlowData
 
     public void AddInvestmentSnapshot(InvestmentSnapshot snapshot) => _investmentSnapshots.Add(snapshot);
 
-    public void AddBank(Bank bank) => _banks.Add(bank);
+    public void AddAccount(Account account) => _accounts.Add(account);
 
-    public void RemoveBank(Guid id) => _banks.RemoveById(id);
+    public void RemoveAccount(Guid id) => _accounts.RemoveById(id);
 
     public void AddIncomeSource(IncomeSource incomeSource) => _incomeSources.Add(incomeSource);
 

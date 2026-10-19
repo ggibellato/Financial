@@ -1,5 +1,6 @@
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
+using Financial.TestUtilities;
 using FluentAssertions;
 
 namespace Financial.CashFlow.Application.Tests.Validation;
@@ -7,11 +8,11 @@ namespace Financial.CashFlow.Application.Tests.Validation;
 [Trait("Category", "Unit")]
 public class EntityIdResolverTests
 {
-    private static readonly Bank[] Banks =
+    private static readonly Account[] Banks =
     [
-        Bank.Create("Barclays", roundUpEnabled: false),
-        Bank.Create("Trading212", roundUpEnabled: true),
-        Bank.Create("Chase", roundUpEnabled: true)
+        TestAccounts.Bank("Barclays", roundUpEnabled: false),
+        TestAccounts.Bank("Trading212", roundUpEnabled: true),
+        TestAccounts.Bank("Chase", roundUpEnabled: true)
     ];
 
     [Fact]
@@ -24,7 +25,7 @@ public class EntityIdResolverTests
         result.Should().BeTrue();
         bank.Should().NotBeNull();
         bank!.Name.Should().Be("Trading212");
-        bank.RoundUpEnabled.Should().BeTrue();
+        bank.RoundUp!.Enabled.Should().BeTrue();
     }
 
     [Fact]

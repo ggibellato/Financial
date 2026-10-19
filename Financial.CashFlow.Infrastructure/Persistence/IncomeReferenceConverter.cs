@@ -1,4 +1,5 @@
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
 
 namespace Financial.CashFlow.Infrastructure.Persistence;
 

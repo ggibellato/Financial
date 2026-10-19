@@ -1,4 +1,5 @@
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Enums;
 
 namespace Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.BankOpeningBalance;
 
@@ -16,9 +17,9 @@ public static class BankOpeningBalanceMigrator
 
         var summary = new BankOpeningBalanceMigrationSummary();
 
-        foreach (var bank in data.Banks)
+        foreach (var bank in data.Accounts.Where(account => account.Has(Capability.HasOpeningBalance)))
         {
-            if (bank.OpeningBalanceDate == default)
+            if (bank.OpeningBalance!.StartDate == default)
             {
                 bank.SetOpeningBalance(0m, runDate);
                 summary.CountBankDefaulted();

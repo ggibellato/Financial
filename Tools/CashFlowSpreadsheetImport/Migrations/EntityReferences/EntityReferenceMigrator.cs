@@ -1,6 +1,9 @@
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
+using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations;
 using Financial.CashFlow.Infrastructure.Persistence;
+using Financial.Shared.Abstractions.Currencies;
 using System.Text.Json;
 using static Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.RawJsonMigrationHelpers;
 using CreditCardEntity = Financial.CashFlow.Domain.Entities.CreditCard;
@@ -38,7 +41,7 @@ public static class EntityReferenceMigrator
         }
 
         var summary = new EntityReferenceMigrationSummary();
-        var elementOptions = CreateElementOptions();
+        var elementOptions = CashFlowElementOptions.Create();
 
         var banks = ReadLegacyBanks(root, summary);
         var banksByName = banks.ToDictionary(b => b.Name, b => b, StringComparer.OrdinalIgnoreCase);
@@ -62,7 +65,7 @@ public static class EntityReferenceMigrator
         var categories = ResolveCategories(root, elementOptions);
         var categoriesByName = categories.ToDictionary(c => c.Name, c => c, StringComparer.OrdinalIgnoreCase);
         var referenceContext = BuildContext([], [], [], reserveBuckets, creditCards, categories);
-        var resolvedOptions = CreateElementOptions(referenceContext);
+        var resolvedOptions = CashFlowElementOptions.Create(referenceContext);
 
         var data = CashFlowData.Create();
         AddBaseCollections(data, banks, incomeSources, investmentAccounts, reserveBuckets, creditCards, categories);
@@ -112,9 +115,9 @@ public static class EntityReferenceMigrator
         return collection.EnumerateArray().Any(item => item.TryGetProperty(legacyFieldName, out _));
     }
 
-    private static List<Bank> ReadLegacyBanks(JsonElement root, EntityReferenceMigrationSummary summary)
+    private static List<Account> ReadLegacyBanks(JsonElement root, EntityReferenceMigrationSummary summary)
     {
-        var banks = new List<Bank>();
+        var banks = new List<Account>();
 
         if (!root.TryGetProperty("Banks", out var banksElement) || banksElement.ValueKind != JsonValueKind.Array)
         {
@@ -126,7 +129,8 @@ public static class EntityReferenceMigrator
             var name = item.GetProperty("Name").GetString()!;
             var roundUpEnabled = item.GetProperty("RoundUpEnabled").GetBoolean();
 
-            var bank = Bank.Create(name, roundUpEnabled);
+            var bank = Account.Create(name, AccountTemplate.Bank, Currency.GBP);
+            bank.SetRoundUp(roundUpEnabled);
             summary.CountBankIdAssigned();
 
             if (item.TryGetProperty("OpeningBalance", out var openingBalanceElement)
@@ -149,7 +153,7 @@ public static class EntityReferenceMigrator
 
     private static void MigrateIncomes(
         JsonElement root,
-        IReadOnlyDictionary<string, Bank> banksByName,
+        IReadOnlyDictionary<string, Account> banksByName,
         IReadOnlyDictionary<string, IncomeSource> incomeSourcesByName,
         CashFlowData data,
         EntityReferenceMigrationSummary summary)
@@ -197,7 +201,7 @@ public static class EntityReferenceMigrator
 
     private static void MigrateExpenses(
         JsonElement root,
-        IReadOnlyDictionary<string, Bank> banksByName,
+        IReadOnlyDictionary<string, Account> banksByName,
         IReadOnlyDictionary<string, CreditCardEntity> cardsByName,
         IReadOnlyDictionary<string, Category> categoriesByName,
         CashFlowData data,
@@ -212,7 +216,7 @@ public static class EntityReferenceMigrator
         {
             var id = item.GetProperty("Id").GetGuid();
             var paymentSourceName = ReadNullableString(item, "PaymentSource");
-            Bank? paymentSourceBank = null;
+            Account? paymentSourceBank = null;
             if (paymentSourceName is not null && !banksByName.TryGetValue(paymentSourceName, out paymentSourceBank))
             {
                 summary.FlagUnresolvedExpense(id, $"PaymentSource='{paymentSourceName}'");
@@ -248,7 +252,7 @@ public static class EntityReferenceMigrator
 
     private static void MigrateTransfers(
         JsonElement root,
-        IReadOnlyDictionary<string, Bank> banksByName,
+        IReadOnlyDictionary<string, Account> banksByName,
         CashFlowData data,
         EntityReferenceMigrationSummary summary)
     {
@@ -283,7 +287,7 @@ public static class EntityReferenceMigrator
 
     private static void MigrateBalanceAdjustments(
         JsonElement root,
-        IReadOnlyDictionary<string, Bank> banksByName,
+        IReadOnlyDictionary<string, Account> banksByName,
         CashFlowData data,
         EntityReferenceMigrationSummary summary)
     {

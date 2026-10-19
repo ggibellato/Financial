@@ -8,7 +8,7 @@
   rejects a zero/negative value, a blank description, a missing category — every guard clause
   gets its own test, and the accepted boundary (`0.01m`) gets one too.
 - **State transitions and derived values**: `Asset.Create(...)` then `UpdateIdentity(...)`
-  normalises `LocalTypeCode`; `Bank.SetOpeningBalance(amount, date)`; `Expense.SetRoundUpAmount`
+  normalises `LocalTypeCode`; `Account.SetOpeningBalance(amount, startDate)`; `Expense.SetRoundUpAmount`
   enforces `Expense.MinRoundUpAmount` / `Expense.MaxRoundUpAmount` (`0.00m` – `0.99m`) — test
   both inside-range and both out-of-range sides.
 - **Rules/calculators**: `XirrCalculator.Calculate(IReadOnlyList<(DateTime Date, decimal Amount)>)`
@@ -43,7 +43,7 @@ namespace Financial.CashFlow.Domain.Tests.Entities;
 
 public class ExpenseTests
 {
-    private static readonly Bank Barclays = Bank.Create("Barclays", roundUpEnabled: false);
+    private static readonly Account Barclays = TestAccounts.Bank("Barclays", roundUpEnabled: false);
     private static readonly Category Mercado = Category.Create("Mercado");
 
     private static Expense CreateExpense(decimal value = 54.32m) =>
@@ -74,7 +74,7 @@ public class ExpenseTests
 (`SetRoundUpAmount` throws `ArgumentException` for both the negative-expense and the
 out-of-range case — `Financial.CashFlow.Domain/Entities/Expense.cs:190-199`.)
 
-`Bank.Create(name, roundUpEnabled:)`, `Category.Create(name)` and the six-argument
+`TestAccounts.Bank(name, roundUpEnabled:)`, `Category.Create(name)` and the six-argument
 `Expense.Create` are the real factory signatures used throughout
 `Tests/Financial.CashFlow.Domain.Tests`. Static fixtures for immutable entities are fine; a
 fixture the test mutates must be built per test. Use `AssertionScope` when one factory sets

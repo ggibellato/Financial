@@ -1,4 +1,5 @@
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Infrastructure.Persistence;
 using Financial.CashFlow.Infrastructure.Repositories;
 using Financial.Shared.Abstractions.Persistence;
@@ -98,9 +99,9 @@ public class CashFlowJsonRepositoryConcurrencyTests
     private static (CashFlowJsonRepository Repository, BlockingJsonStorage Storage) CreateRepositoryWithExpenses(int count)
     {
         var data = CashFlowData.Create();
-        var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        var bank = TestAccounts.Bank("Barclays", roundUpEnabled: false);
         var category = Category.Create("Mercado");
-        data.AddBank(bank);
+        data.AddAccount(bank);
         data.AddCategory(category);
         for (var i = 0; i < count; i++)
         {
@@ -117,7 +118,7 @@ public class CashFlowJsonRepositoryConcurrencyTests
             description,
             5m,
             repository.GetCategories().First(),
-            repository.GetBanks().First(),
+            repository.GetAccounts().First(),
             creditCard: null);
 
     private sealed class BlockingJsonStorage : IJsonStorage

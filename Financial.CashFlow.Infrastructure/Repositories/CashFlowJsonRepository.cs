@@ -1,5 +1,6 @@
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Infrastructure.Persistence;
 using Financial.Shared.Abstractions.Persistence;
 using Financial.Shared.Abstractions.Sync;
@@ -51,9 +52,9 @@ public sealed class CashFlowJsonRepository : ICashFlowRepository, ISyncStatusPro
     public void AddInvestmentAccount(InvestmentAccount account) => _data.AddInvestmentAccount(account);
     public void DeleteInvestmentAccount(Guid id) => _data.RemoveInvestmentAccount(id);
 
-    public IEnumerable<Bank> GetBanks() => _data.Banks;
-    public void AddBank(Bank bank) => _data.AddBank(bank);
-    public void DeleteBank(Guid id) => _data.RemoveBank(id);
+    public IEnumerable<Account> GetAccounts() => _data.Accounts;
+    public void AddAccount(Account account) => _data.AddAccount(account);
+    public void DeleteAccount(Guid id) => _data.RemoveAccount(id);
 
     public IEnumerable<IncomeSource> GetIncomeSources() => _data.IncomeSources;
     public void AddIncomeSource(IncomeSource incomeSource) => _data.AddIncomeSource(incomeSource);

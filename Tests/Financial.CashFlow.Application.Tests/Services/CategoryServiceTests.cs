@@ -2,6 +2,7 @@ using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Exceptions;
 using Financial.CashFlow.Application.Services;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.Shared.Abstractions.Observability;
 using Financial.TestUtilities;
 using FluentAssertions;
@@ -205,7 +206,7 @@ public class CategoryServiceTests
     {
         var repository = new StubCashFlowRepository();
         var category = Category.Create("Mercado");
-        var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        var bank = TestAccounts.Bank("Barclays", roundUpEnabled: false);
         repository.Categories.Add(category);
         repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 5), "Groceries", 50m, category, bank, null));
         var sut = CreateService(repository);
@@ -225,7 +226,7 @@ public class CategoryServiceTests
     {
         var repository = new StubCashFlowRepository();
         var category = Category.Create("Mercado");
-        var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        var bank = TestAccounts.Bank("Barclays", roundUpEnabled: false);
         repository.Categories.Add(category);
         repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 5), "Groceries", 50m, category, bank, null));
         var sut = CreateService(repository);

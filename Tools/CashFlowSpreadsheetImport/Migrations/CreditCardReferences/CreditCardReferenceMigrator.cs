@@ -1,4 +1,5 @@
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations;
 using Financial.CashFlow.Infrastructure.Persistence;
 using System.Text.Json;
@@ -40,9 +41,9 @@ public static class CreditCardReferenceMigrator
         }
 
         var summary = new CreditCardReferenceMigrationSummary();
-        var unresolvedOptions = CreateElementOptions(context: null);
+        var unresolvedOptions = CashFlowElementOptions.Create(context: null);
 
-        var banks = DeserializeCollection<Bank>(root, "Banks", unresolvedOptions);
+        var banks = DeserializeCollection<Account>(root, "Banks", unresolvedOptions);
         var incomeSources = DeserializeCollection<IncomeSource>(root, "IncomeSources", unresolvedOptions);
         var investmentAccounts = DeserializeCollection<InvestmentAccount>(root, "InvestmentAccounts", unresolvedOptions);
         var reserveBuckets = DeserializeCollection<ReserveBucket>(root, "ReserveBuckets", unresolvedOptions);
@@ -56,7 +57,7 @@ public static class CreditCardReferenceMigrator
 
         var context = BuildContext(banks, incomeSources, investmentAccounts, reserveBuckets, creditCards, categories);
 
-        var resolvedOptions = CreateElementOptions(context);
+        var resolvedOptions = CashFlowElementOptions.Create(context);
 
         var data = CashFlowData.Create();
         AddBaseCollections(data, banks, incomeSources, investmentAccounts, reserveBuckets, creditCards, categories);

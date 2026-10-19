@@ -1,4 +1,5 @@
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations;
 using Financial.CashFlow.Infrastructure.Persistence;
 using System.Text.Json;
@@ -39,9 +40,9 @@ public static class ReserveBucketReferenceMigrator
         }
 
         var summary = new ReserveBucketReferenceMigrationSummary();
-        var unresolvedOptions = CreateElementOptions(context: null);
+        var unresolvedOptions = CashFlowElementOptions.Create(context: null);
 
-        var banks = DeserializeCollection<Bank>(root, "Banks", unresolvedOptions);
+        var banks = DeserializeCollection<Account>(root, "Banks", unresolvedOptions);
         var incomeSources = DeserializeCollection<IncomeSource>(root, "IncomeSources", unresolvedOptions);
         var investmentAccounts = DeserializeCollection<InvestmentAccount>(root, "InvestmentAccounts", unresolvedOptions);
         var reserveBuckets = ResolveReserveBuckets(root, unresolvedOptions, summary);
@@ -52,7 +53,7 @@ public static class ReserveBucketReferenceMigrator
 
         var context = BuildContext(banks, incomeSources, investmentAccounts, reserveBuckets, [], categories);
 
-        var resolvedOptions = CreateElementOptions(context);
+        var resolvedOptions = CashFlowElementOptions.Create(context);
 
         var data = CashFlowData.Create();
         AddBaseCollections(data, banks, incomeSources, investmentAccounts, reserveBuckets, [], categories);

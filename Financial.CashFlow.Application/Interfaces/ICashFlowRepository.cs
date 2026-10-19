@@ -1,4 +1,5 @@
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
 
 namespace Financial.CashFlow.Application.Interfaces;
 
@@ -30,9 +31,9 @@ public interface ICashFlowRepository
     void AddInvestmentAccount(InvestmentAccount account);
     void DeleteInvestmentAccount(Guid id);
 
-    IEnumerable<Bank> GetBanks();
-    void AddBank(Bank bank);
-    void DeleteBank(Guid id);
+    IEnumerable<Account> GetAccounts();
+    void AddAccount(Account account);
+    void DeleteAccount(Guid id);
 
     IEnumerable<IncomeSource> GetIncomeSources();
     void AddIncomeSource(IncomeSource incomeSource);

@@ -1,6 +1,8 @@
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.Banks;
+using Financial.TestUtilities;
 using FluentAssertions;
 using CreditCardEntity = Financial.CashFlow.Domain.Entities.CreditCard;
 
@@ -18,9 +20,9 @@ public class BankMigratorTests
 
         summary.BanksSeededCount.Should().Be(3);
         summary.BanksAlreadyPresentCount.Should().Be(0);
-        data.Banks.Should().ContainSingle(b => b.Name == "Barclays" && !b.RoundUpEnabled);
-        data.Banks.Should().ContainSingle(b => b.Name == "Trading212" && b.RoundUpEnabled);
-        data.Banks.Should().ContainSingle(b => b.Name == "Chase" && b.RoundUpEnabled);
+        data.Accounts.Should().ContainSingle(b => b.Name == "Barclays" && !b.RoundUp!.Enabled);
+        data.Accounts.Should().ContainSingle(b => b.Name == "Trading212" && b.RoundUp!.Enabled);
+        data.Accounts.Should().ContainSingle(b => b.Name == "Chase" && b.RoundUp!.Enabled);
     }
 
     [Fact]
@@ -33,27 +35,27 @@ public class BankMigratorTests
 
         secondSummary.BanksSeededCount.Should().Be(0);
         secondSummary.BanksAlreadyPresentCount.Should().Be(3);
-        data.Banks.Should().HaveCount(3);
+        data.Accounts.Should().HaveCount(3);
     }
 
     [Fact]
     public void Migrate_WithSomeBanksAlreadySeeded_OnlySeedsTheMissingOnes()
     {
         var data = CashFlowData.Create();
-        data.AddBank(Bank.Create("Barclays", roundUpEnabled: false));
+        data.AddAccount(TestAccounts.Bank("Barclays", roundUpEnabled: false));
 
         var summary = BankMigrator.Migrate(data);
 
         summary.BanksSeededCount.Should().Be(2);
         summary.BanksAlreadyPresentCount.Should().Be(1);
-        data.Banks.Should().HaveCount(3);
+        data.Accounts.Should().HaveCount(3);
     }
 
     [Fact]
     public void Migrate_ExpenseWithBankTag_CountsAsResolvedAndLeavesValueUntouched()
     {
         var data = CashFlowData.Create();
-        var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        var bank = TestAccounts.Bank("Barclays", roundUpEnabled: false);
         var expense = Expense.Create(new DateOnly(2026, 7, 1), "Groceries", 20m, Category.Create("Mercado"), bank, null);
         data.AddExpense(expense);
 
@@ -61,7 +63,7 @@ public class BankMigratorTests
 
         summary.ExpensesResolvedCount.Should().Be(1);
         summary.UnresolvedExpenses.Should().BeEmpty();
-        expense.PaymentSourceBank.Should().Be(bank);
+        expense.PaymentSourceAccount.Should().Be(bank);
     }
 
     [Fact]
@@ -82,7 +84,7 @@ public class BankMigratorTests
     public void Migrate_SecondRunOverFirstRunsOutput_ChangesNothing()
     {
         var data = CashFlowData.Create();
-        var bank = Bank.Create("Chase", roundUpEnabled: true);
+        var bank = TestAccounts.Bank("Chase", roundUpEnabled: true);
         var resolved = Expense.Create(new DateOnly(2026, 7, 1), "Groceries", 20m, Category.Create("Mercado"), bank, null);
         var charge = Expense.Create(new DateOnly(2026, 7, 2), "Charge", 5m, Category.Create("Extras"), null, CreditCardEntity.Create("ChaseMaster4023"));
         data.AddExpense(resolved);
@@ -95,6 +97,6 @@ public class BankMigratorTests
         secondSummary.ExpensesResolvedCount.Should().Be(1);
         secondSummary.ExpensesNotApplicableCount.Should().Be(1);
         secondSummary.UnresolvedExpenses.Should().BeEmpty();
-        resolved.PaymentSourceBank.Should().Be(bank);
+        resolved.PaymentSourceAccount.Should().Be(bank);
     }
 }

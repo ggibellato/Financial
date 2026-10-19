@@ -1,5 +1,7 @@
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Domain.Enums;
+using Financial.TestUtilities;
 using FluentAssertions;
 using FluentAssertions.Execution;
 
@@ -12,9 +14,9 @@ public class IncomeTests
     private static IncomeSource Ariana => IncomeSource.Create("Ariana", IncomeGroup.Salary);
     private static IncomeSource Lottery => IncomeSource.Create("Lottery", IncomeGroup.NonReportable);
     private static IncomeSource DividendoJuros => IncomeSource.Create("DividendoJuros", IncomeGroup.DividendoJuros);
-    private static Bank Barclays => Bank.Create("Barclays", roundUpEnabled: false);
-    private static Bank Chase => Bank.Create("Chase", roundUpEnabled: true);
-    private static Bank Trading212 => Bank.Create("Trading212", roundUpEnabled: true);
+    private static Account Barclays => TestAccounts.Bank("Barclays", roundUpEnabled: false);
+    private static Account Chase => TestAccounts.Bank("Chase", roundUpEnabled: true);
+    private static Account Trading212 => TestAccounts.Bank("Trading212", roundUpEnabled: true);
 
     [Fact]
     public void Create_AssignsAllFieldsAndANewId()
@@ -32,7 +34,7 @@ public class IncomeTests
             income.IncomeSource.Should().Be(incomeSource);
             income.GrossValue.Should().Be(3200.00m);
             income.NetValue.Should().Be(2450.00m);
-            income.Bank.Should().Be(bank);
+            income.Account.Should().Be(bank);
         }
     }
 
@@ -66,7 +68,7 @@ public class IncomeTests
     {
         var income = Income.Create(new DateOnly(2026, 7, 1), Lottery, null, 10m, null);
 
-        income.Bank.Should().BeNull();
+        income.Account.Should().BeNull();
     }
 
     [Fact]
@@ -117,7 +119,7 @@ public class IncomeTests
             income.IncomeSource.Should().Be(ariana);
             income.GrossValue.Should().Be(500m);
             income.NetValue.Should().Be(400m);
-            income.Bank.Should().Be(chase);
+            income.Account.Should().Be(chase);
         }
     }
 
@@ -126,7 +128,7 @@ public class IncomeTests
     {
         var income = Income.Create(new DateOnly(2026, 7, 1), Gleison, 3000m, 2400m, Barclays);
 
-        var act = () => income.UpdateDetails(income.Date, income.IncomeSource, 100m, 200m, income.Bank);
+        var act = () => income.UpdateDetails(income.Date, income.IncomeSource, 100m, 200m, income.Account);
 
         act.Should().NotThrow();
     }
@@ -136,7 +138,7 @@ public class IncomeTests
     {
         var income = Income.Create(new DateOnly(2026, 7, 1), Gleison, 3000m, 2400m, Barclays);
 
-        var act = () => income.UpdateDetails(income.Date, income.IncomeSource, null, -5m, income.Bank);
+        var act = () => income.UpdateDetails(income.Date, income.IncomeSource, null, -5m, income.Account);
 
         act.Should().Throw<ArgumentException>();
     }
@@ -148,7 +150,7 @@ public class IncomeTests
 
         income.UpdateDetails(income.Date, income.IncomeSource, income.GrossValue, income.NetValue, null);
 
-        income.Bank.Should().BeNull();
+        income.Account.Should().BeNull();
     }
 
     [Fact]
@@ -156,7 +158,7 @@ public class IncomeTests
     {
         var income = Income.Create(new DateOnly(2026, 7, 1), Gleison, 3000m, 2400m, Barclays, "Original note");
 
-        income.UpdateDetails(income.Date, income.IncomeSource, income.GrossValue, income.NetValue, income.Bank, "Updated note");
+        income.UpdateDetails(income.Date, income.IncomeSource, income.GrossValue, income.NetValue, income.Account, "Updated note");
 
         income.Description.Should().Be("Updated note");
     }
@@ -182,7 +184,7 @@ public class IncomeTests
     {
         var income = Income.Create(new DateOnly(2026, 7, 1), Ariana, 3200m, 2450m, Barclays, splitToReserve: true);
 
-        income.UpdateDetails(income.Date, income.IncomeSource, income.GrossValue, income.NetValue, income.Bank, income.Description, splitToReserve: false);
+        income.UpdateDetails(income.Date, income.IncomeSource, income.GrossValue, income.NetValue, income.Account, income.Description, splitToReserve: false);
 
         income.SplitToReserve.Should().BeFalse();
     }

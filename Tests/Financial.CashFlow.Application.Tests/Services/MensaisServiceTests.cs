@@ -5,6 +5,7 @@ using Financial.Shared.Abstractions.Observability;
 using Financial.TestUtilities;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
+using Financial.Shared.Abstractions.Currencies;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -311,7 +312,7 @@ public class MensaisServiceTests
             expense.Value.Should().Be(120m);
             expense.Date.Should().Be(new DateOnly(2026, 10, 10));
             expense.Category.Name.Should().Be("Casa");
-            expense.PaymentSourceBank!.Name.Should().Be("Barclays");
+            expense.PaymentSourceAccount!.Name.Should().Be("Barclays");
             expense.CreditCard.Should().BeNull();
             repository.SaveChangesCallCount.Should().Be(1);
         }
@@ -399,6 +400,43 @@ public class MensaisServiceTests
     }
 
     [Fact]
+    public async Task MarkBillPaidAsync_PaymentSourceWithoutCanPayBills_ThrowsTheUnknownSourceMessageAndLeavesBillUnpaid()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCategories: true);
+        var sut = CreateService(repository);
+        var bill = AddUkBill(repository);
+        var account = Account.CreateWithCapabilities(
+            "No bills", Currency.GBP, Enum.GetValues<Capability>().Where(c => c != Capability.CanPayBills).ToHashSet());
+        repository.Accounts.Add(account);
+        var expense = PaymentExpense(repository, account.Id);
+
+        var act = async () => await sut.MarkBillPaidAsync(bill.Id, new RecurringBillMarkPaidDTO { Expense = expense });
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage($"Payment source '{account.Id}' is not recognized.");
+        using (new AssertionScope())
+        {
+            bill.Status.Should().Be(BillStatus.Unset);
+            repository.Expenses.Should().BeEmpty();
+        }
+    }
+
+    [Fact]
+    public async Task MarkBillPaidAsync_PaymentSourceWithOnlyPaymentCapabilities_RecordsTheExpense()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCategories: true);
+        var sut = CreateService(repository);
+        var bill = AddUkBill(repository);
+        var account = Account.CreateWithCapabilities(
+            "Bills only", Currency.GBP, new HashSet<Capability> { Capability.CanPayBills, Capability.HasCategories });
+        repository.Accounts.Add(account);
+        var expense = PaymentExpense(repository, account.Id);
+
+        await sut.MarkBillPaidAsync(bill.Id, new RecurringBillMarkPaidDTO { Expense = expense });
+
+        repository.Expenses.Should().ContainSingle().Which.PaymentSourceAccount.Should().BeSameAs(account);
+    }
+
+    [Fact]
     public async Task MarkBillPaidAsync_WhenSaveFails_RecordsFailedSpanAndRethrows()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCategories: true);
@@ -419,13 +457,13 @@ public class MensaisServiceTests
         return bill;
     }
 
-    private static RecurringBillPaymentExpenseDTO PaymentExpense(StubCashFlowRepository repository) => new()
+    private static RecurringBillPaymentExpenseDTO PaymentExpense(StubCashFlowRepository repository, Guid? paymentSourceId = null) => new()
     {
         Date = new DateOnly(2026, 10, 10),
         Description = "Council Tax",
         Value = 120m,
         CategoryId = repository.Categories.Single(c => c.Name == "Casa").Id,
-        PaymentSourceBankId = repository.Banks.Single(b => b.Name == "Barclays").Id
+        PaymentSourceBankId = paymentSourceId ?? repository.Accounts.Single(b => b.Name == "Barclays").Id
     };
 
     [Fact]

@@ -1,5 +1,6 @@
 using ClosedXML.Excel;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.Incomes.SpreadsheetImport;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Parsing;
 
@@ -52,7 +53,7 @@ public static class IncomeBackfillImporter
         }
 
         var incomeSource = data.IncomeSources.FirstOrDefault(s => string.Equals(s.Name, total.Source, StringComparison.OrdinalIgnoreCase));
-        var bank = data.Banks.FirstOrDefault(b => string.Equals(b.Name, TargetBankName, StringComparison.OrdinalIgnoreCase));
+        var bank = data.Accounts.FirstOrDefault(b => string.Equals(b.Name, TargetBankName, StringComparison.OrdinalIgnoreCase));
         if (incomeSource is null || bank is null)
         {
             return false;
@@ -66,5 +67,5 @@ public static class IncomeBackfillImporter
         data.Incomes.Any(income =>
             income.Date == date &&
             string.Equals(income.IncomeSource.Name, source, StringComparison.OrdinalIgnoreCase) &&
-            string.Equals(income.Bank?.Name, TargetBankName, StringComparison.OrdinalIgnoreCase));
+            string.Equals(income.Account?.Name, TargetBankName, StringComparison.OrdinalIgnoreCase));
 }

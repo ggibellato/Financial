@@ -28,7 +28,7 @@ public class CashFlowLoaderTests
         data.RecurringBills.Should().BeEmpty();
         data.MaeLedgerEntries.Should().BeEmpty();
         data.InvestmentSnapshots.Should().BeEmpty();
-        data.Banks.Should().BeEmpty();
+        data.Accounts.Should().BeEmpty();
     }
 
     [Fact]
@@ -55,11 +55,11 @@ public class CashFlowLoaderTests
     {
         var path = Path.Combine(Path.GetTempPath(), $"cashflow-valid-{Guid.NewGuid()}.json");
         var original = Financial.CashFlow.Domain.Entities.CashFlowData.Create();
-        var bank = Financial.CashFlow.Domain.Entities.Bank.Create("Chase", roundUpEnabled: true);
+        var bank = Financial.TestUtilities.TestAccounts.Bank("Chase", roundUpEnabled: true);
         var category = Financial.CashFlow.Domain.Entities.Category.Create("Casa");
-        original.AddBank(bank);
+        original.AddAccount(bank);
         original.AddCategory(category);
-        original.AddExpense(Financial.CashFlow.Domain.Entities.Expense.Create(
+        original.AddExpense(Financial.CashFlow.Domain.Entities.Transactions.Expense.Create(
             new DateOnly(2026, 7, 1),
             "Test expense",
             10m,

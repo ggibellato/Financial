@@ -10,8 +10,8 @@
 - **Rejected write**: `LocalJsonStorage` on a path whose directory does not exist →
   `DirectoryNotFoundException` propagates; `ReadAsync` on a missing file → `FileNotFoundException`.
 - **Serializer contract**: `CashFlowSerializerAdapter` / `InvestmentSerializerAdapter`
-  round-trip every collection and preserve reference identity (an expense's `Bank` is the same
-  instance as in `Banks`); a JSON id absent from the lookup → `JsonException` naming the id
+  round-trip every collection and preserve reference identity (an expense's `PaymentSourceAccount` is the same
+  instance as in `Accounts`); a JSON id absent from the lookup → `JsonException` naming the id
   (`*ReferenceConverter` tests); `CashFlowTypeInfoResolver` enables private constructors and
   leaves computed properties unwired.
 - **Loaders**: `CashFlowLoader.LoadSync(IJsonStorage storage, ICashFlowSerializer serializer)` /
@@ -63,9 +63,9 @@ public async Task ApplyAndSaveAsync_WritesSerializedDataThroughStorage()
 
     try
     {
-        var bank = Bank.Create("Chase", roundUpEnabled: true);
+        var bank = TestAccounts.Bank("Chase", roundUpEnabled: true);
         var category = Category.Create("Casa");
-        data.AddBank(bank);
+        data.AddAccount(bank);
         data.AddCategory(category);
         repository.AddExpense(Expense.Create(new DateOnly(2026, 7, 1), "Test expense", 10m, category, bank, null));
 

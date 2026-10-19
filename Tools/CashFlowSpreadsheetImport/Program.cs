@@ -113,7 +113,7 @@ if (!mensaisOnly)
 InvestmentAccountMigrator.Migrate(data);
 
 // Must also run before the expense sheets are imported below: MonthlyExpenseSheetImporter
-// resolves each row's payment source against data.Banks (F03), so the 3 tracked banks need to
+// resolves each row's payment source against data.Accounts (F03), so the 3 tracked banks need to
 // already exist even on a from-scratch run where no bank was carried over from an existing
 // file. Seeding is idempotent, so re-running it at the end (below) to audit the final
 // imported expense set is safe.
@@ -218,9 +218,9 @@ return 0;
 
 static void CarryOverDataTheSpreadsheetDoesNotOwn(CashFlowData existingData, CashFlowData data)
 {
-    foreach (var bank in existingData.Banks)
+    foreach (var bank in existingData.Accounts)
     {
-        data.AddBank(bank);
+        data.AddAccount(bank);
     }
 
     foreach (var incomeSource in existingData.IncomeSources)
@@ -263,7 +263,7 @@ static void ImportMonthlyExpenseSheets(XLWorkbook workbook, CashFlowData data, I
 
     foreach (var (sheet, _, year, month) in monthlySheets)
     {
-        var expenses = MonthlyExpenseSheetImporter.Import(sheet, year, month, today, report, data.Banks, data.CreditCards, data.Categories);
+        var expenses = MonthlyExpenseSheetImporter.Import(sheet, year, month, today, report, data.Accounts, data.CreditCards, data.Categories);
         foreach (var expense in expenses)
         {
             data.AddExpense(expense);

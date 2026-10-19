@@ -1,4 +1,5 @@
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Infrastructure.Persistence;
 using FluentAssertions;
@@ -65,10 +66,10 @@ public class CashFlowTypeInfoResolverTests
     [Fact]
     public void GetTypeInfo_RoundTripsExpenseThroughPrivateConstructor()
     {
-        var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        var bank = TestAccounts.Bank("Barclays", roundUpEnabled: false);
         var category = Category.Create("Mercado");
         var context = new ReferenceResolutionContext();
-        context.Banks[bank.Id] = bank;
+        context.Accounts[bank.Id] = bank;
         context.Categories[category.Id] = category;
         var options = CreateOptions(context);
         var expense = Expense.Create(new DateOnly(2026, 7, 1), "Weekly groceries", 54.32m, category, bank, null);
@@ -81,7 +82,7 @@ public class CashFlowTypeInfoResolverTests
         deserialized.Description.Should().Be("Weekly groceries");
         deserialized.Value.Should().Be(54.32m);
         deserialized.Category.Should().BeSameAs(category);
-        deserialized.PaymentSourceBank.Should().BeSameAs(bank);
+        deserialized.PaymentSourceAccount.Should().BeSameAs(bank);
     }
 
     [Fact]

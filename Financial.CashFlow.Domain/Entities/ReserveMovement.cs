@@ -1,4 +1,5 @@
 using System;
+using Financial.CashFlow.Domain.Entities.Transactions;
 
 namespace Financial.CashFlow.Domain.Entities;
 
