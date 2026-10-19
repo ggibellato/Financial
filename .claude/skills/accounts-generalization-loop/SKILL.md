@@ -17,7 +17,8 @@ This session is the **controller**. It reviews, writes documents, opens docs PRs
 
 ## Standing rules (apply at every step)
 
-- **Commit means local only.** Push and open a PR only when the user says "push".
+- **Commit means local only** for this session's own docs branches: push and open a PR only when the user says "push".
+- **The implementation session pushes and opens its own PR** (decided 2026-10-19). This session verifies the open PR before the user merges it.
 - **The user merges every PR.** Never self-approve, never use `--admin`, never use auto-merge.
 - After every push, run `gh pr checks <n> --watch` and report the result. Make sure the run belongs to the commit just pushed, not the previous one.
 - **PR titles** follow Conventional Commits (`docs(P60-F03): …`, `feat(P60-F03): …`).
@@ -82,7 +83,7 @@ Give the user the exact commands, one stage per session:
 git switch main && git pull --ff-only && git switch -c feature/P60-F<NN>-<short-name>
 ```
 ```
-/implement-feature docs/prd/P60-prd-cashflow-accounts-generalization/features/P60-F<NN>-<kebab-name> only stage <N> (PR <A/B>). Strict no-comments policy. Commit locally only; do not push. Parity run on a fresh live copy from Google Drive before finishing.
+/implement-feature docs/prd/P60-prd-cashflow-accounts-generalization/features/P60-F<NN>-<kebab-name> only stage <N> (PR <A/B>). Strict no-comments policy. When the stage is done and verified, push the branch and open the PR: Conventional Commits title, the PRD Section 9 checklist in the body, then run gh pr checks. Do not merge. Parity run on a fresh live copy from Google Drive before pushing.
 ```
 
 Remind the user:
@@ -91,12 +92,13 @@ Remind the user:
 
 ## Step 6 — Verify the implementation
 
-When the user brings the report back, verify everything independently. Never trust a "complete" claim. Implementation sessions have pushed and over-claimed before.
+When the user brings the report and the PR number back, verify the **open PR** independently, before the user merges it. Never trust a "complete" claim. Check out the PR branch in a worktree outside the repo (`git worktree add ../financial-wt-pr<n> <branch>`), so the main working tree is not disturbed.
 
 1. **Branch and scope:**
-   - `git log main..<branch>` shows only this stage's commits;
-   - nothing is pushed unless the user said so;
-   - the diff matches the stage's files in the spec.
+   - `git log origin/main..origin/<branch>` shows only this stage's commits;
+   - the PR is still open and not merged;
+   - the diff matches the stage's files in the spec;
+   - CI (`gh pr checks <n>`) is green on the PR's head commit.
 2. **Build and tests:**
    - `dotnet build --configuration Release`, then `dotnet test`;
    - `cd Financial.Web && npm run build` if the web app was touched.
@@ -105,12 +107,13 @@ When the user brings the report back, verify everything independently. Never tru
 5. **Parity:** check the report's run, or rerun `scripts/parity/Invoke-Parity.ps1 -Step All -LiveCopy <fresh copy>`. It must show 0 differences and an unchanged SHA-256 for the copy.
 6. **Reviews:** `/simplify` and the architecture-reviewer ran (plus the ui-reviewer for UI stages), with their findings applied or their skips justified.
 7. **PRD ticks:** only in the final stage's PR, in their own commit, and only for criteria actually verified. Cross-feature boxes are ticked only when every feature they name has shipped.
-8. **PRD drift:** for each deviation in the report, check whether it contradicts the PRD or the design doc. If it does, agree the fix with the user and commit it to the implementation branch before push (never a separate PRD-only PR after the merge).
+8. **PRD drift:** for each deviation in the report, check whether it contradicts the PRD or the design doc. If it does, agree the fix with the user and have it committed to the PR branch before the merge (never a separate PRD-only PR after the merge).
 9. **Size:** count the non-test code files. Report any stage over 8, unless the overage is an exempt repeated change.
-10. Report to the user: the status, the acceptance checklist (✓, ✗ or —), deviations and any problems. Then wait for "push", open the PR with the checklist and verification results, and run `gh pr checks`.
+10. **PR body:** Conventional Commits title, the Section 9 checklist with each ticked box naming its test, and the footer.
+11. Report to the user: the status, the acceptance checklist (✓, ✗ or —), deviations and any problems, and whether the PR is ready to merge. This session never implements: if something must change, give the user the exact fix request to paste into the implementation session, which pushes the fix to the same PR; then verify the new head commit again.
 
 ## Step 7 — After the merge
 
-1. Update `main` (`git fetch`, then `git merge --ff-only origin/main`) and remove any worktree whose PR merged.
+1. Update `main` (`git fetch`, then `git merge --ff-only origin/main`) and remove any worktree whose PR merged, including the PR verification worktree.
 2. Save follow-ups and non-obvious decisions in memory: one file per fact, plus a line in `MEMORY.md`.
 3. Continue with the next stage (Step 5) or the next feature (Step 1). Always ask before starting.
