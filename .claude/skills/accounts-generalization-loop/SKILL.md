@@ -27,6 +27,7 @@ This session is the **controller**. It reviews, writes documents, opens docs PRs
 - **No `git stash`.** Never run migrations against `data/data-cashflow.json`. Never smoke-test on port 8080. Never print values from `.env` or `scripts/deploy.local.json`.
 - **Strict no-comments policy** in all code, and it is stated in every hand-off prompt.
 - **Deploy only at the end of P60**, so the parity baseline stays the original pre-P60 app.
+- **The PRD stays the source of truth.** Whenever a decision at any step (feature review, spec review, implementation deviation) contradicts the PRD or the design doc, update them in the same PR as the change that made the decision. Later features are reviewed against the PRD, so drift there spreads.
 - **One question at a time.** For each one, offer options with a recommendation first. When the user asks to clarify, answer before asking again.
 
 ## Step 1 — Review the feature
@@ -70,7 +71,8 @@ This session is the **controller**. It reviews, writes documents, opens docs PRs
 
 1. Summarize the interview answers and the decisions the user should check: anything spec-writer chose on its own.
 2. Answer questions; apply changes as extra commits on the same branch.
-3. Wait for "push". Then open or update the PR, check CI, and wait for the merge.
+3. For each decision, grep the PRD (Capabilities, Error Handling, Section 9 criteria) and the design doc for wording it contradicts, and fix that wording in the same branch, as its own commit.
+4. Wait for "push". Then open or update the PR, check CI, and wait for the merge.
 
 ## Step 5 — Hand off to the implementation session
 
@@ -103,8 +105,9 @@ When the user brings the report back, verify everything independently. Never tru
 5. **Parity:** check the report's run, or rerun `scripts/parity/Invoke-Parity.ps1 -Step All -LiveCopy <fresh copy>`. It must show 0 differences and an unchanged SHA-256 for the copy.
 6. **Reviews:** `/simplify` and the architecture-reviewer ran (plus the ui-reviewer for UI stages), with their findings applied or their skips justified.
 7. **PRD ticks:** only in the final stage's PR, in their own commit, and only for criteria actually verified. Cross-feature boxes are ticked only when every feature they name has shipped.
-8. **Size:** count the non-test code files. Report any stage over 8, unless the overage is an exempt repeated change.
-9. Report to the user: the status, the acceptance checklist (✓, ✗ or —), deviations and any problems. Then wait for "push", open the PR with the checklist and verification results, and run `gh pr checks`.
+8. **PRD drift:** for each deviation in the report, check whether it contradicts the PRD or the design doc. If it does, agree the fix with the user and commit it to the implementation branch before push (never a separate PRD-only PR after the merge).
+9. **Size:** count the non-test code files. Report any stage over 8, unless the overage is an exempt repeated change.
+10. Report to the user: the status, the acceptance checklist (✓, ✗ or —), deviations and any problems. Then wait for "push", open the PR with the checklist and verification results, and run `gh pr checks`.
 
 ## Step 7 — After the merge
 
