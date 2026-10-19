@@ -1,6 +1,7 @@
 using System.Text.Json;
 using ClosedXML.Excel;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.CommandLine;
+using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.DataFileMigration;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.Banks;
@@ -23,6 +24,11 @@ const string ReservasSheetName = "Reservas";
 const string MensaisSheetName = "Mensais";
 const string ControleMaeSheetName = "Controle mae";
 const string ResumoSheetPrefix = "Resumo";
+
+if (args.Length > 0 && args[0] == MigrateArguments.CommandName)
+{
+    return MigrateCommand.Run(args[1..], AppContext.BaseDirectory, DataFileMigrator.CreateDefault(), Console.Out, Console.Error);
+}
 
 if (!ImportArguments.TryParse(args, out var arguments, out var refusal))
 {
