@@ -145,6 +145,14 @@ public class DataFileMigratorTests
     }
 
     [Fact]
+    public void Migrate_VersionThatIsNotAWholeNumber_Refused()
+    {
+        var act = () => DataFileMigrator.CreateDefault().Migrate("""{ "Version": "two" }""", SourceName);
+
+        act.Should().Throw<InvalidDataException>().WithMessage("""Version must be a whole number, but is "two".""");
+    }
+
+    [Fact]
     public void Migrate_InvalidJson_Refused()
     {
         var act = () => DataFileMigrator.CreateDefault().Migrate("{", SourceName);

@@ -16,12 +16,16 @@ public static class ExistingOutputVersionGuard
         try
         {
             return JsonNode.Parse(File.ReadAllText(outputPath)) is JsonObject root
-                ? CashFlowSerializerAdapter.VersionRefusal(outputPath, CashFlowSerializerAdapter.StoredVersion(root))
+                ? CashFlowDataFileVersion.Refusal(outputPath, CashFlowDataFileVersion.StoredIn(root))
                 : null;
         }
         catch (JsonException)
         {
             return null;
+        }
+        catch (InvalidDataException ex)
+        {
+            return $"{outputPath}: {ex.Message}";
         }
     }
 }

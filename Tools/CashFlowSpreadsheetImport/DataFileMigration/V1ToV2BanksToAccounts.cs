@@ -23,10 +23,12 @@ public sealed class V1ToV2BanksToAccounts : IDataFileMigrationStep
     {
         ArgumentNullException.ThrowIfNull(root);
 
-        var banks = root["Banks"] as JsonArray ?? [];
-        var bankIds = banks.Select(bank => (string?)bank!["Id"]).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var banks = (root["Banks"] as JsonArray ?? [])
+            .Select(bank => bank as JsonObject ?? throw new InvalidDataException($"Banks contains a value that is not an object: {bank?.ToJsonString() ?? "null"}"))
+            .ToList();
+        var bankIds = banks.Select(bank => IdText(bank["Id"], "Bank")).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        var accounts = new JsonArray([.. banks.Select(bank => (JsonNode?)ToAccount(bank!.AsObject()))]);
+        var accounts = new JsonArray([.. banks.Select(bank => (JsonNode?)ToAccount(bank))]);
         root.Remove("Banks");
         root["Accounts"] = accounts;
 
@@ -56,7 +58,7 @@ public sealed class V1ToV2BanksToAccounts : IDataFileMigrationStep
     private static int RenameReferences(
         JsonObject root,
         (string Collection, string Record, string V1Key, string V2Key) reference,
-        IReadOnlySet<string?> bankIds)
+        IReadOnlySet<string> bankIds)
     {
         if (root[reference.Collection] is not JsonArray records)
         {
@@ -79,7 +81,7 @@ public sealed class V1ToV2BanksToAccounts : IDataFileMigrationStep
                 continue;
             }
 
-            var bankId = (string?)value;
+            var bankId = IdText(value, $"{reference.Record} {record["Id"]} {reference.V1Key}");
             if (!bankIds.Contains(bankId))
             {
                 throw new InvalidDataException($"{reference.Record} {record["Id"]} references unknown bank {bankId}");
@@ -90,4 +92,9 @@ public sealed class V1ToV2BanksToAccounts : IDataFileMigrationStep
 
         return renamed;
     }
+
+    private static string IdText(JsonNode? id, string owner) =>
+        id is JsonValue value && value.TryGetValue<string>(out var text)
+            ? text
+            : throw new InvalidDataException($"{owner} has an Id that is not a string: {id?.ToJsonString() ?? "null"}");
 }

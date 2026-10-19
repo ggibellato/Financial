@@ -470,4 +470,12 @@ public class CashFlowSerializerAdapterTests
         act.Should().Throw<InvalidDataException>()
             .WithMessage("data-cashflow.json is version 3; this build needs version 2.");
     }
+
+    [Fact]
+    public void Deserialize_VersionThatIsNotAWholeNumber_Refused()
+    {
+        var act = () => _sut.Deserialize("""{ "Version": 2.5, "Accounts": [] }""");
+
+        act.Should().Throw<InvalidDataException>().WithMessage("Version must be a whole number, but is 2.5.");
+    }
 }

@@ -67,6 +67,19 @@ public class V1ToV2BanksToAccountsTests
             .WithMessage($"Expense {V1DataFile.BankExpenseId} references unknown bank {unknownBankId}");
     }
 
+    [Theory]
+    [InlineData("""{ "Banks": [null] }""", "Banks contains a value that is not an object: null")]
+    [InlineData("""{ "Banks": [{ "Id": 7, "Name": "Barclays" }] }""", "Bank has an Id that is not a string: 7")]
+    [InlineData("""{ "Banks": [], "Incomes": [{ "Id": "i1", "BankId": 7 }] }""", "Income i1 BankId has an Id that is not a string: 7")]
+    public void Apply_MalformedBankOrReference_ThrowsInvalidDataException(string json, string message)
+    {
+        var root = JsonNode.Parse(json)!.AsObject();
+
+        var act = () => _sut.Apply(root);
+
+        act.Should().Throw<InvalidDataException>().WithMessage(message);
+    }
+
     [Fact]
     public void Apply_FileWithoutBanks_WritesAnEmptyAccountsCollection()
     {

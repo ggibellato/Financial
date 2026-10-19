@@ -22,18 +22,18 @@ public sealed class DataFileMigrator
         var serializer = new CashFlowSerializerAdapter();
         return new DataFileMigrator(
             [new V1ToV2BanksToAccounts()],
-            CashFlowSerializerAdapter.CurrentVersion,
+            CashFlowDataFileVersion.Current,
             json => serializer.Serialize(serializer.Deserialize(json)));
     }
 
     public DataFileMigrationResult Migrate(string json, string sourceName)
     {
         var root = ParseRoot(json, sourceName);
-        var storedVersion = CashFlowSerializerAdapter.StoredVersion(root);
+        var storedVersion = CashFlowDataFileVersion.StoredIn(root);
 
         if (storedVersion > _currentVersion)
         {
-            throw new InvalidDataException(CashFlowSerializerAdapter.VersionRefusal(sourceName, storedVersion, _currentVersion));
+            throw new InvalidDataException(CashFlowDataFileVersion.Refusal(sourceName, storedVersion, _currentVersion));
         }
 
         if (storedVersion == _currentVersion)
@@ -46,7 +46,7 @@ public sealed class DataFileMigrator
         {
             var step = StepFrom(version);
             summaries.Add(ApplyStep(step, root));
-            root[CashFlowSerializerAdapter.VersionProperty] = version + 1;
+            CashFlowDataFileVersion.Stamp(root, version + 1);
         }
 
         return new DataFileMigrationResult(storedVersion, _currentVersion, LoadAndSave(root), summaries);
