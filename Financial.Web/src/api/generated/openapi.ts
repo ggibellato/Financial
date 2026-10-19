@@ -4,6 +4,237 @@
  */
 
 export interface paths {
+    "/accounts/transfers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/*+json": null | components["schemas"]["AccountTransferCreateDTO"];
+                    "application/json": null | components["schemas"]["AccountTransferCreateDTO"];
+                    "text/json": null | components["schemas"]["AccountTransferCreateDTO"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AccountTransferDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/accounts/transfers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/*+json": null | components["schemas"]["AccountTransferUpdateDTO"];
+                    "application/json": null | components["schemas"]["AccountTransferUpdateDTO"];
+                    "text/json": null | components["schemas"]["AccountTransferUpdateDTO"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AccountTransferDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/accounts/{id}/transfer-destinations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TransferAccountOptionDTO"][];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/accounts/{id}/transfer-sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TransferAccountOptionDTO"][];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/allocation-breakdown": {
         parameters: {
             query?: never;
@@ -6649,6 +6880,51 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AccountTransferCreateDTO: {
+            /** Format: double */
+            amount: number;
+            /** Format: date */
+            date: string;
+            /** Format: uuid */
+            destinationAccountId: string;
+            /** Format: double */
+            destinationAmount?: null | number;
+            note?: null | string;
+            /** Format: uuid */
+            sourceAccountId: string;
+        };
+        AccountTransferDTO: {
+            /** Format: double */
+            amount: number;
+            /** Format: date */
+            date: string;
+            /** Format: uuid */
+            destinationAccountId: string;
+            destinationAccountName: string;
+            /** Format: double */
+            destinationAmount: number;
+            destinationCurrency: string;
+            /** Format: uuid */
+            id: string;
+            note?: null | string;
+            /** Format: uuid */
+            sourceAccountId: string;
+            sourceAccountName: string;
+            sourceCurrency: string;
+        };
+        AccountTransferUpdateDTO: {
+            /** Format: double */
+            amount: number;
+            /** Format: date */
+            date: string;
+            /** Format: uuid */
+            destinationAccountId: string;
+            /** Format: double */
+            destinationAmount?: null | number;
+            note?: null | string;
+            /** Format: uuid */
+            sourceAccountId: string;
+        };
         AggregatedSummaryDTO: {
             /** Format: double */
             convertedInvested: null | number;
@@ -8268,6 +8544,12 @@ export interface components {
             unitPrice?: number;
             /** Format: double */
             withheld?: number;
+        };
+        TransferAccountOptionDTO: {
+            currency: string;
+            /** Format: uuid */
+            id: string;
+            name: string;
         };
         TransferCreateDTO: {
             /** Format: double */

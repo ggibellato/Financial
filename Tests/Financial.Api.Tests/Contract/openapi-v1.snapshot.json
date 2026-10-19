@@ -1,6 +1,145 @@
 ﻿{
   "components": {
     "schemas": {
+      "AccountTransferCreateDTO": {
+        "properties": {
+          "amount": {
+            "format": "double",
+            "type": "number"
+          },
+          "date": {
+            "format": "date",
+            "type": "string"
+          },
+          "destinationAccountId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "destinationAmount": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "sourceAccountId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "sourceAccountId",
+          "destinationAccountId",
+          "amount"
+        ],
+        "type": "object"
+      },
+      "AccountTransferDTO": {
+        "properties": {
+          "amount": {
+            "format": "double",
+            "type": "number"
+          },
+          "date": {
+            "format": "date",
+            "type": "string"
+          },
+          "destinationAccountId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "destinationAccountName": {
+            "type": "string"
+          },
+          "destinationAmount": {
+            "format": "double",
+            "type": "number"
+          },
+          "destinationCurrency": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "sourceAccountId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "sourceAccountName": {
+            "type": "string"
+          },
+          "sourceCurrency": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "date",
+          "sourceAccountId",
+          "sourceAccountName",
+          "sourceCurrency",
+          "destinationAccountId",
+          "destinationAccountName",
+          "destinationCurrency",
+          "amount",
+          "destinationAmount"
+        ],
+        "type": "object"
+      },
+      "AccountTransferUpdateDTO": {
+        "properties": {
+          "amount": {
+            "format": "double",
+            "type": "number"
+          },
+          "date": {
+            "format": "date",
+            "type": "string"
+          },
+          "destinationAccountId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "destinationAmount": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "sourceAccountId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "sourceAccountId",
+          "destinationAccountId",
+          "amount"
+        ],
+        "type": "object"
+      },
       "AggregatedSummaryDTO": {
         "properties": {
           "convertedInvested": {
@@ -5364,6 +5503,26 @@
         ],
         "type": "object"
       },
+      "TransferAccountOptionDTO": {
+        "properties": {
+          "currency": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "currency"
+        ],
+        "type": "object"
+      },
       "TransferCreateDTO": {
         "properties": {
           "amount": {
@@ -5683,6 +5842,291 @@
   },
   "openapi": "3.1.1",
   "paths": {
+    "/accounts/transfers": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/*\u002Bjson": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AccountTransferCreateDTO"
+                  }
+                ]
+              }
+            },
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AccountTransferCreateDTO"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AccountTransferCreateDTO"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountTransferDTO"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "AccountTransfers"
+        ]
+      }
+    },
+    "/accounts/transfers/{id}": {
+      "delete": {
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "AccountTransfers"
+        ]
+      },
+      "put": {
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/*\u002Bjson": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AccountTransferUpdateDTO"
+                  }
+                ]
+              }
+            },
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AccountTransferUpdateDTO"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AccountTransferUpdateDTO"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountTransferDTO"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "AccountTransfers"
+        ]
+      }
+    },
+    "/accounts/{id}/transfer-destinations": {
+      "get": {
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TransferAccountOptionDTO"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "AccountTransfers"
+        ]
+      }
+    },
+    "/accounts/{id}/transfer-sources": {
+      "get": {
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TransferAccountOptionDTO"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "AccountTransfers"
+        ]
+      }
+    },
     "/allocation-breakdown": {
       "get": {
         "parameters": [
@@ -13780,6 +14224,9 @@
     }
   ],
   "tags": [
+    {
+      "name": "AccountTransfers"
+    },
     {
       "name": "AllocationBreakdown"
     },
