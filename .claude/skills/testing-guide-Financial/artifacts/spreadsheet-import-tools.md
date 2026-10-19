@@ -18,7 +18,7 @@ scope by decision (2026-09-06). Both tested tools are excluded from the coverage
   records skipped/invalid rows with the reason, duplicate detection, a sheet with a missing
   column → report entry, not exception.
 - **Migrators** (`Migrations/`): idempotent (`Migrate_CalledTwice_ProducesTheSameResult`),
-  correct counts in the summary, references re-pointed to entities (`*ReferenceMigrator`),
+  correct counts in the summary,
   `MigrationBackup.Create` copies to a timestamped sibling and never overwrites.
 - **Sheets reader** (`GoogleSheetsAssetReader`): correct range requested, valid row → asset
   fields, malformed row → reported/skipped.
@@ -75,7 +75,6 @@ sibling exists with the `data-cashflow.backup-migration-` prefix, delete the dir
 ## When to skip
 
 - `Program.cs` argument plumbing of the console tool beyond one "unknown command" test.
-- `RawJsonMigrationHelpers` beyond its own branches.
 - Re-testing domain factories (`Expense.Create`) through the importer.
 
 ## Examples from project

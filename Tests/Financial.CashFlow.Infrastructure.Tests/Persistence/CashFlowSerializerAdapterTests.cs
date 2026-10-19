@@ -188,11 +188,11 @@ public class CashFlowSerializerAdapterTests
 
         using var document = JsonDocument.Parse(json);
         var income = document.RootElement.GetProperty("Incomes")[0];
-        income.GetProperty("BankId").ValueKind.Should().Be(JsonValueKind.String);
-        income.GetProperty("BankId").GetGuid().Should().Be(bank.Id);
+        income.GetProperty("AccountId").ValueKind.Should().Be(JsonValueKind.String);
+        income.GetProperty("AccountId").GetGuid().Should().Be(bank.Id);
         income.GetProperty("IncomeSourceId").ValueKind.Should().Be(JsonValueKind.String);
         income.GetProperty("IncomeSourceId").GetGuid().Should().Be(incomeSource.Id);
-        income.TryGetProperty("Bank", out _).Should().BeFalse();
+        income.TryGetProperty("Account", out _).Should().BeFalse();
         income.TryGetProperty("IncomeSource", out _).Should().BeFalse();
 
         var movement = document.RootElement.GetProperty("ReserveMovements")[0];
@@ -205,17 +205,17 @@ public class CashFlowSerializerAdapterTests
     public void Deserialize_RegardlessOfOwningCollectionPositionInJsonText_ResolvesTheSameReference()
     {
         var bank = TestAccounts.Bank("Barclays", roundUpEnabled: false);
-        var bankJson = JsonSerializer.Serialize(new { bank.Id, bank.Name, RoundUpEnabled = false, OpeningBalance = 0m, OpeningBalanceDate = "0001-01-01" });
-        // "Banks" appears AFTER "Incomes" in the text on purpose, to prove resolution doesn't
+        var bankJson = JsonSerializer.Serialize(bank, new JsonSerializerOptions { Converters = { new AccountJsonConverter() } });
+        // "Accounts" appears AFTER "Incomes" in the text on purpose, to prove resolution doesn't
         // depend on encountering the owning collection first.
         var json = $$"""
             {
               "Expenses": [], "ReserveMovements": [], "CardStatements": [], "RecurringBills": [],
               "MaeLedgerEntries": [], "InvestmentSnapshots": [], "InvestmentAccounts": [],
-              "Incomes": [{ "Id": "{{Guid.NewGuid()}}", "Date": "2026-07-01", "IncomeSourceId": "{{IncomeSourceIdForFixture}}", "GrossValue": 100, "NetValue": 90, "BankId": "{{bank.Id}}" }],
+              "Incomes": [{ "Id": "{{Guid.NewGuid()}}", "Date": "2026-07-01", "IncomeSourceId": "{{IncomeSourceIdForFixture}}", "GrossValue": 100, "NetValue": 90, "AccountId": "{{bank.Id}}" }],
               "IncomeSources": [{ "Id": "{{IncomeSourceIdForFixture}}", "Name": "Gleison", "IsActive": true, "Group": "Salary" }],
               "Transfers": [], "BalanceAdjustments": [],
-              "Banks": [{{bankJson}}]
+              "Accounts": [{{bankJson}}]
             }
             """;
 
@@ -235,9 +235,9 @@ public class CashFlowSerializerAdapterTests
             {
               "Expenses": [], "ReserveMovements": [], "CardStatements": [], "RecurringBills": [],
               "MaeLedgerEntries": [], "InvestmentSnapshots": [], "InvestmentAccounts": [],
-              "Incomes": [{ "Id": "{{incomeId}}", "Date": "2026-07-01", "IncomeSourceId": "{{IncomeSourceIdForFixture}}", "GrossValue": 100, "NetValue": 90, "BankId": "{{missingBankId}}" }],
+              "Incomes": [{ "Id": "{{incomeId}}", "Date": "2026-07-01", "IncomeSourceId": "{{IncomeSourceIdForFixture}}", "GrossValue": 100, "NetValue": 90, "AccountId": "{{missingBankId}}" }],
               "IncomeSources": [{ "Id": "{{IncomeSourceIdForFixture}}", "Name": "Gleison", "IsActive": true, "Group": "Salary" }],
-              "Transfers": [], "BalanceAdjustments": [], "Banks": []
+              "Transfers": [], "BalanceAdjustments": [], "Accounts": []
             }
             """;
 
@@ -254,7 +254,7 @@ public class CashFlowSerializerAdapterTests
               "Expenses": [], "CardStatements": [], "RecurringBills": [],
               "MaeLedgerEntries": [], "InvestmentSnapshots": [], "InvestmentAccounts": [],
               "Incomes": [], "IncomeSources": [], "Transfers": [], "BalanceAdjustments": [],
-              "Banks": [], "CreditCards": [], "Categories": [], "ReserveBuckets": [], "ReserveMovements": [],
+              "Accounts": [], "CreditCards": [], "Categories": [], "ReserveBuckets": [], "ReserveMovements": [],
               "TitheCarryForwards": [{ "Year": 2026, "Month": 10, "Amount": 219.078, "Included": false }]
             }
             """;
@@ -275,7 +275,7 @@ public class CashFlowSerializerAdapterTests
               "Expenses": [], "CardStatements": [], "RecurringBills": [],
               "MaeLedgerEntries": [], "InvestmentSnapshots": [], "InvestmentAccounts": [],
               "Incomes": [], "IncomeSources": [], "Transfers": [], "BalanceAdjustments": [],
-              "Banks": [], "CreditCards": [], "Categories": [],
+              "Accounts": [], "CreditCards": [], "Categories": [],
               "ReserveBuckets": [{ "Id": "{{bucketId}}", "Name": "Investimento", "IsActive": true, "SplitPercentage": 33.33 }],
               "ReserveMovements": [{ "Id": "{{Guid.NewGuid()}}", "BucketId": "{{bucketId}}", "Amount": 50, "Date": "2026-07-01", "Description": "Legacy manual movement" }]
             }
@@ -298,7 +298,7 @@ public class CashFlowSerializerAdapterTests
               "MaeLedgerEntries": [], "InvestmentSnapshots": [],
               "InvestmentAccounts": [{ "Id": "{{accountId}}", "Name": "ChaseSave", "IsActive": true, "IsLiability": false }],
               "Incomes": [], "IncomeSources": [], "Transfers": [], "BalanceAdjustments": [],
-              "Banks": [], "CreditCards": [], "Categories": [], "ReserveBuckets": []
+              "Accounts": [], "CreditCards": [], "Categories": [], "ReserveBuckets": []
             }
             """;
 
@@ -323,11 +323,11 @@ public class CashFlowSerializerAdapterTests
             {
               "Expenses": [], "CardStatements": [], "RecurringBills": [],
               "MaeLedgerEntries": [], "InvestmentSnapshots": [], "InvestmentAccounts": [],
-              "Transfers": [], "BalanceAdjustments": [], "Banks": [], "CreditCards": [], "Categories": [],
+              "Transfers": [], "BalanceAdjustments": [], "Accounts": [], "CreditCards": [], "Categories": [],
               "ReserveBuckets": [{ "Id": "{{bucketId}}", "Name": "Investimento", "IsActive": true, "SplitPercentage": 33.33 }],
               "ReserveMovements": [{ "Id": "{{Guid.NewGuid()}}", "BucketId": "{{bucketId}}", "Amount": 50, "Date": "2026-07-01", "Description": "August salary", "IncomeId": "{{incomeId}}" }],
               "IncomeSources": [{ "Id": "{{incomeSourceId}}", "Name": "Ariana", "IsActive": true, "Group": "Salary", "AutoSplitToReserve": true }],
-              "Incomes": [{ "Id": "{{incomeId}}", "Date": "2026-07-01", "IncomeSourceId": "{{incomeSourceId}}", "NetValue": 50, "BankId": null, "SplitToReserve": true }]
+              "Incomes": [{ "Id": "{{incomeId}}", "Date": "2026-07-01", "IncomeSourceId": "{{incomeSourceId}}", "NetValue": 50, "AccountId": null, "SplitToReserve": true }]
             }
             """;
 
@@ -344,7 +344,7 @@ public class CashFlowSerializerAdapterTests
               "Expenses": [], "ReserveMovements": [], "CardStatements": [], "RecurringBills": [],
               "MaeLedgerEntries": [], "InvestmentSnapshots": [], "InvestmentAccounts": [],
               "Incomes": [{ "Id": "11111111-1111-1111-1111-111111111111", "Date": "2026-07-01", "IncomeSource": "Gleison", "GrossValue": 100, "NetValue": 90, "Bank": "Barclays" }],
-              "IncomeSources": [], "Transfers": [], "BalanceAdjustments": [], "Banks": []
+              "IncomeSources": [], "Transfers": [], "BalanceAdjustments": [], "Accounts": []
             }
             """;
 
@@ -361,7 +361,7 @@ public class CashFlowSerializerAdapterTests
               "Expenses": [], "CardStatements": [], "RecurringBills": [],
               "MaeLedgerEntries": [], "InvestmentSnapshots": [], "InvestmentAccounts": [],
               "ReserveMovements": [{ "Id": "22222222-2222-2222-2222-222222222222", "Bucket": "Investimento", "Amount": 10, "Date": "2026-07-01", "Description": "Legacy" }],
-              "Incomes": [], "IncomeSources": [], "Transfers": [], "BalanceAdjustments": [], "Banks": [], "ReserveBuckets": []
+              "Incomes": [], "IncomeSources": [], "Transfers": [], "BalanceAdjustments": [], "Accounts": [], "ReserveBuckets": []
             }
             """;
 
@@ -414,7 +414,7 @@ public class CashFlowSerializerAdapterTests
             {
               "Expenses": [], "ReserveMovements": [], "CardStatements": [], "RecurringBills": [],
               "MaeLedgerEntries": [], "InvestmentSnapshots": [], "InvestmentAccounts": [],
-              "Incomes": [], "IncomeSources": [], "Transfers": [], "BalanceAdjustments": [], "Banks": [],
+              "Incomes": [], "IncomeSources": [], "Transfers": [], "BalanceAdjustments": [], "Accounts": [],
               "ReserveBuckets": [], "CreditCards": [], "Categories": []
             }
             """;

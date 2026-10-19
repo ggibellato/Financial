@@ -38,12 +38,12 @@ public class CashFlowTypeInfoResolver : DefaultJsonTypeInfoResolver
     // so an absent key must be tolerated (it just means "not linked") rather than rejected.
     private static readonly Dictionary<(Type OwningType, string PropertyName), (string WireName, bool IsRequired)> ReferenceProperties = new()
     {
-        [(typeof(Income), nameof(Income.Account))] = ("BankId", true),
+        [(typeof(Income), nameof(Income.Account))] = ("AccountId", true),
         [(typeof(Income), nameof(Income.IncomeSource))] = ("IncomeSourceId", true),
-        [(typeof(Expense), nameof(Expense.PaymentSourceAccount))] = ("PaymentSourceBankId", true),
-        [(typeof(Transfer), nameof(Transfer.SourceAccount))] = ("SourceBankId", true),
-        [(typeof(Transfer), nameof(Transfer.DestinationAccount))] = ("DestinationBankId", true),
-        [(typeof(BalanceAdjustment), nameof(BalanceAdjustment.Account))] = ("BankId", true),
+        [(typeof(Expense), nameof(Expense.PaymentSourceAccount))] = ("PaymentSourceAccountId", true),
+        [(typeof(Transfer), nameof(Transfer.SourceAccount))] = ("SourceAccountId", true),
+        [(typeof(Transfer), nameof(Transfer.DestinationAccount))] = ("DestinationAccountId", true),
+        [(typeof(BalanceAdjustment), nameof(BalanceAdjustment.Account))] = ("AccountId", true),
         [(typeof(InvestmentSnapshot), nameof(InvestmentSnapshot.Account))] = ("InvestmentAccountId", true),
         [(typeof(ReserveMovement), nameof(ReserveMovement.Bucket))] = ("BucketId", true),
         [(typeof(Expense), nameof(Expense.CreditCard))] = ("CreditCardId", true),
