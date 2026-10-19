@@ -50,6 +50,12 @@ if (!File.Exists(workbookPath))
     return 1;
 }
 
+if (ExistingOutputVersionGuard.RefusalFor(outputPath) is { } versionRefusal)
+{
+    Console.Error.WriteLine(versionRefusal);
+    return 1;
+}
+
 if (!mensaisOnly && File.Exists(outputPath))
 {
     try
