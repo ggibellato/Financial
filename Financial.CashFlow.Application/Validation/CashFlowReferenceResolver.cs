@@ -28,4 +28,9 @@ public static class CashFlowReferenceResolver
 
         return account;
     }
+
+    public static Account ResolveAccount(IEnumerable<Account> accounts, Guid accountId) =>
+        EntityIdResolver.TryResolve(accountId, accounts, a => a.Id, out var account)
+            ? account
+            : throw new ArgumentException($"Account '{accountId}' was not found.");
 }
