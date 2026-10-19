@@ -47,7 +47,7 @@ public class CashFlowSerializerAdapterTests
         var recurringBill = RecurringBill.Create(10, "INSS", 850m, Area.Brasil, "Direct debit", "12345678901", 1621m);
         var maeLedgerEntry = MaeLedgerEntry.Create(new DateOnly(2026, 7, 15), "School supplies", "Note", Currency.BRL, 350m, 51.23m);
         var investmentSnapshot = InvestmentSnapshot.Create(investmentAccount, 2026, 7, 1250.00m);
-        var transfer = Transfer.Create(new DateOnly(2026, 7, 25), bank, destinationBank, 500.00m, "Round-up top-up");
+        var transfer = Transfer.Create(new DateOnly(2026, 7, 25), bank, destinationBank, 500.00m, destinationAmount: null, "Round-up top-up", today: TestClock.Today);
         var balanceAdjustment = BalanceAdjustment.Create(new DateOnly(2026, 7, 25), bank, 2340.17m, -4.20m, "Matched against July statement");
         var titheCarryForward = TitheCarryForward.Create(2026, 8, false);
 
