@@ -225,9 +225,25 @@ A full rebuild does not carry over Transfers, BalanceAdjustments, Tithe carry-fo
 | Exit code | Meaning |
 |---|---|
 | 0 | Import written |
-| 1 | Workbook not found |
+| 1 | Workbook not found, or the existing output file is not the current data file version (run `migrate` on it first); nothing was written |
 | 2 | Missing or invalid arguments, or `--output` is the live data file |
 | 3 | Existing output file could not be read; nothing was written |
+
+#### migrate
+
+Upgrades a copy of `data-cashflow.json` to the data file version this build reads. The API refuses to start on an older file (`data-cashflow.json is version 1; this build needs version 2. Run the migrate command first.`), and restarting it never migrates anything.
+
+```bash
+dotnet run --project Tools/CashFlowSpreadsheetImport -- migrate --input <path> --output <path>
+```
+
+It runs every migration step the input still needs, in order, and writes the result to `--output`, backing up an existing output first. A file that is already current is copied unchanged. Both paths are required, must differ, and must not be the live `data/data-cashflow.json`.
+
+| Exit code | Meaning |
+|---|---|
+| 0 | Output written (migrated, or copied unchanged when already current) |
+| 1 | Live data file passed, same input and output, input missing, input newer than this build, or a step failed; nothing was written |
+| 2 | Missing or invalid arguments |
 
 ### ImportGoogleSpreadSheets
 
@@ -254,3 +270,10 @@ Re-run any time to refresh the deployed copies with whatever is currently on dis
 First run creates `scripts/deploy.local.json` from `scripts/deploy.local.example.json` (both git-ignored except the example) — edit it to set `GoogleDriveCredentialsPath` to your service-account credentials file before starting the deployed app. It runs against `GoogleDriveJson` storage, fixed via the checked-in `appsettings.Production.json`.
 
 After deploying, start it with `deploy/start-web.ps1`.
+
+When a release changes the data file version, migrate the Drive copy before starting it:
+
+1. Download `data-cashflow.json` from Google Drive and keep the download as the backup.
+2. Run `dotnet run --project Tools/CashFlowSpreadsheetImport -- migrate --input <download> --output <new>`.
+3. Upload `<new>` to Google Drive in place of `data-cashflow.json`.
+4. Run `./scripts/deploy.ps1` and start the app.

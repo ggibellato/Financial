@@ -164,7 +164,12 @@ function Invoke-BaselineStep([string]$Folder, $RunInfo) {
 
 function Invoke-MigrateStep([string]$Folder, $RunInfo) {
     Write-Host '[2/4] Migrate...'
-    New-ParitySideCopy $Folder 'after' $RunInfo.liveCopy | Out-Null
+    $sideFolder = Join-Path $Folder 'after'
+    New-Item -ItemType Directory -Path $sideFolder -Force | Out-Null
+    $log = Join-Path $sideFolder 'migrate.log'
+    $tool = Join-Path $RepoRoot 'Tools/CashFlowSpreadsheetImport/CashFlowSpreadsheetImport.csproj'
+    $output = Join-Path $sideFolder 'data-cashflow.json'
+    Invoke-Logged $log "Migrate failed; see $log" { dotnet run --project $tool -c Release -- migrate --input $RunInfo.liveCopy --output $output }
 }
 
 function Invoke-AfterStep([string]$Folder, $RunInfo) {
