@@ -234,7 +234,7 @@ public class BankServiceTests
         var destination = TestAccounts.Bank("Chase", roundUpEnabled: true);
         _repository.Accounts.Add(source);
         _repository.Accounts.Add(destination);
-        _repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 7, 1), source, destination, 50m, note: null));
+        _repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 7, 1), source, destination, 50m, destinationAmount: null, note: null, today: TestClock.Today));
 
         var act = async () => await _sut.DeleteBankAsync(source.Id);
 
@@ -376,7 +376,7 @@ public class BankServiceTests
         trading212.SetOpeningBalance(0m, new DateOnly(2026, 1, 1));
         _repository.Accounts.Add(barclays);
         _repository.Accounts.Add(trading212);
-        _repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 7, 5), barclays, trading212, 500m, null));
+        _repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 7, 5), barclays, trading212, 500m, destinationAmount: null, null, today: TestClock.Today));
 
         var result = _sut.GetBankBalancesByMonth(2026, 7);
 
@@ -392,7 +392,7 @@ public class BankServiceTests
         trading212.SetOpeningBalance(0m, new DateOnly(2026, 1, 1));
         _repository.Accounts.Add(barclays);
         _repository.Accounts.Add(trading212);
-        _repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 7, 5), barclays, trading212, 500m, null));
+        _repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 7, 5), barclays, trading212, 500m, destinationAmount: null, null, today: TestClock.Today));
 
         var result = _sut.GetBankBalancesByMonth(2026, 7);
 
@@ -409,7 +409,7 @@ public class BankServiceTests
         _repository.Accounts.Add(barclays);
         _repository.Accounts.Add(trading212);
         _repository.Accounts.Add(chase);
-        _repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 7, 5), trading212, chase, 500m, null));
+        _repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 7, 5), trading212, chase, 500m, destinationAmount: null, null, today: TestClock.Today));
 
         var result = _sut.GetBankBalancesByMonth(2026, 7);
 
@@ -437,7 +437,7 @@ public class BankServiceTests
         var trading212 = TestAccounts.Bank("Trading212", roundUpEnabled: false);
         _repository.Accounts.Add(bank);
         _repository.Accounts.Add(trading212);
-        _repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 8, 1), bank, trading212, 500m, null));
+        _repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 8, 1), bank, trading212, 500m, destinationAmount: null, null, today: TestClock.Today));
         _repository.BalanceAdjustments.Add(BalanceAdjustment.Create(new DateOnly(2026, 8, 1), bank, 999m, 899m, null));
 
         var result = _sut.GetBankBalancesByMonth(2026, 7);
@@ -453,7 +453,7 @@ public class BankServiceTests
         var trading212 = TestAccounts.Bank("Trading212", roundUpEnabled: false);
         _repository.Accounts.Add(bank);
         _repository.Accounts.Add(trading212);
-        _repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 6, 30), bank, trading212, 500m, null));
+        _repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 6, 30), bank, trading212, 500m, destinationAmount: null, null, today: TestClock.Today));
         _repository.BalanceAdjustments.Add(BalanceAdjustment.Create(new DateOnly(2026, 6, 30), bank, 999m, 899m, null));
 
         var result = _sut.GetBankBalancesByMonth(2026, 7);
@@ -482,7 +482,7 @@ public class BankServiceTests
         bank.SetOpeningBalance(100m, new DateOnly(2026, 1, 1));
         _repository.Accounts.Add(bank);
         var chase = TestAccounts.Bank("Chase", roundUpEnabled: false);
-        _repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 7, 1), bank, chase, 20m, null));
+        _repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 7, 1), bank, chase, 20m, destinationAmount: null, null, today: TestClock.Today));
         var excluded = BalanceAdjustment.Create(new DateOnly(2026, 7, 1), bank, 500m, 400m, null);
         var included = BalanceAdjustment.Create(new DateOnly(2026, 7, 2), bank, 50m, -30m, null);
         _repository.BalanceAdjustments.Add(excluded);
@@ -556,7 +556,7 @@ public class BankServiceTests
         var destination = TestAccounts.Bank("Chase", roundUpEnabled: true);
         _repository.Accounts.Add(source);
         _repository.Accounts.Add(destination);
-        _repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 7, 1), source, destination, 50m, note: null));
+        _repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 7, 1), source, destination, 50m, destinationAmount: null, note: null, today: TestClock.Today));
 
         var result = _sut.GetBanks();
 

@@ -4,9 +4,14 @@ using Financial.CashFlow.Application.Services;
 using Financial.Shared.Abstractions.Observability;
 using Financial.TestUtilities;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
+using Financial.CashFlow.Domain.Enums;
+using Financial.CashFlow.Domain.Rules;
+using Financial.Shared.Abstractions.Currencies;
 using FluentAssertions;
 using FluentAssertions.Execution;
-using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Time.Testing;
 
 namespace Financial.CashFlow.Application.Tests.Services;
 
@@ -14,18 +19,22 @@ namespace Financial.CashFlow.Application.Tests.Services;
 public class TransferServiceTests
 {
     private readonly StubCashFlowRepository _repository;
+    private readonly FakeTimeProvider _clock;
     private readonly RecordingTelemetryTracer _tracer;
+    private readonly RecordingLogger<TransferService> _logger;
     private readonly TransferService _sut;
 
     public TransferServiceTests()
     {
         _repository = new StubCashFlowRepository(seedDefaultBanks: true);
+        _clock = TestClock.At();
         _tracer = new RecordingTelemetryTracer();
+        _logger = new RecordingLogger<TransferService>();
         _sut = CreateService();
     }
 
     private TransferService CreateService(StubCashFlowRepository? repository = null) =>
-        new(repository ?? _repository, _tracer, NullLogger<TransferService>.Instance);
+        new(repository ?? _repository, _clock, _tracer, _logger);
 
     [Fact]
     public async Task AddTransferAsync_WithValidRequest_SavesAndReturnsTransfer()
@@ -61,7 +70,53 @@ public class TransferServiceTests
 
         var act = async () => await _sut.AddTransferAsync(request);
 
-        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*two different banks*");
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Source and destination must be different accounts.");
+    }
+
+    [Fact]
+    public async Task AddTransferAsync_DatedToday_Saves()
+    {
+        var result = await _sut.AddTransferAsync(ToCreateDto(_repository, ValidCreateRequest() with { Date = new DateOnly(2026, 10, 5) }));
+
+        result.Date.Should().Be(new DateOnly(2026, 10, 5));
+    }
+
+    [Fact]
+    public async Task AddTransferAsync_DatedTomorrow_RejectedAndNothingSaved()
+    {
+        var request = ToCreateDto(_repository, ValidCreateRequest() with { Date = new DateOnly(2026, 10, 6) });
+
+        var act = async () => await _sut.AddTransferAsync(request);
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Date must not be in the future.");
+        ShouldHaveRejectedAdd();
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F03-generic-account-to-account-transfer-08")]
+    public async Task AddTransferAsync_PairNotAllowed_RejectedWithSameMessage()
+    {
+        _repository.Accounts.Add(
+            Account.CreateWithCapabilities("Receiver", Currency.GBP, new HashSet<Capability> { Capability.CanReceiveTransfers }));
+        var request = ToCreateDto(_repository, ValidCreateRequest() with { SourceBank = "Receiver", DestinationBank = "Barclays" });
+
+        var act = async () => await _sut.AddTransferAsync(request);
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Transfers from Receiver to Barclays are not allowed.");
+        ShouldHaveRejectedAdd();
+    }
+
+    [Fact]
+    public async Task AddTransferAsync_InactiveDestination_RejectedAndNothingSaved()
+    {
+        _repository.Accounts.Add(Account.CreateWithCapabilities(
+            "Closed", Currency.GBP, AccountTemplates.CapabilitiesOf(AccountTemplate.Bank), isActive: false));
+        var request = ToCreateDto(_repository, ValidCreateRequest() with { DestinationBank = "Closed" });
+
+        var act = async () => await _sut.AddTransferAsync(request);
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Closed is inactive.");
+        ShouldHaveRejectedAdd();
     }
 
     [Fact]
@@ -136,6 +191,54 @@ public class TransferServiceTests
     }
 
     [Fact]
+    public async Task UpdateTransferAsync_AccountsUnchanged_KeepsStoredDestinationAmount()
+    {
+        var transfer = SeedCrossCurrencyTransfer();
+        var request = ToUpdateDto(_repository, ValidCreateRequest() with { DestinationBank = "Itaú", Amount = 120m, Note = "Corrected" });
+
+        await _sut.UpdateTransferAsync(transfer.Id, request);
+
+        using (new AssertionScope())
+        {
+            transfer.Amount.Should().Be(120m);
+            transfer.DestinationAmount.Should().Be(640.50m);
+            transfer.Note.Should().Be("Corrected");
+        }
+    }
+
+    [Fact]
+    public async Task UpdateTransferAsync_AccountChanged_PassesNone()
+    {
+        var transfer = SeedCrossCurrencyTransfer();
+        var request = ToUpdateDto(_repository, ValidCreateRequest() with { DestinationBank = "Chase", Amount = 100m });
+
+        await _sut.UpdateTransferAsync(transfer.Id, request);
+
+        using (new AssertionScope())
+        {
+            transfer.DestinationAccount.Name.Should().Be("Chase");
+            transfer.DestinationAmount.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public async Task UpdateTransferAsync_CrossCurrencyAccountChanged_RejectsMissingDestinationAmount()
+    {
+        var transfer = SeedCrossCurrencyTransfer();
+        var request = ToUpdateDto(_repository, ValidCreateRequest() with { SourceBank = "Chase", DestinationBank = "Itaú", Amount = 100m });
+
+        var act = async () => await _sut.UpdateTransferAsync(transfer.Id, request);
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Enter the amount received in BRL.");
+        using (new AssertionScope())
+        {
+            transfer.SourceAccount.Name.Should().Be("Barclays");
+            transfer.DestinationAmount.Should().Be(640.50m);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.TransferService.UpdateTransfer");
+        }
+    }
+
+    [Fact]
     public async Task UpdateTransferAsync_WithUnknownId_ThrowsKeyNotFoundException()
     {
         var act = async () => await _sut.UpdateTransferAsync(Guid.NewGuid(), ToUpdateDto(_repository, ValidCreateRequest()));
@@ -191,6 +294,27 @@ public class TransferServiceTests
         var result = _sut.GetTransfersByBank(Guid.NewGuid());
 
         result.Should().BeEmpty();
+    }
+
+    private void ShouldHaveRejectedAdd()
+    {
+        using (new AssertionScope())
+        {
+            _repository.Transfers.Should().BeEmpty();
+            _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.TransferService.AddTransfer");
+            _logger.Entries.Should().NotContain(entry => entry.Exception != null || entry.Level >= LogLevel.Warning);
+        }
+    }
+
+    private Transfer SeedCrossCurrencyTransfer()
+    {
+        var itau = TestAccounts.Bank("Itaú", currency: Currency.BRL);
+        _repository.Accounts.Add(itau);
+        var barclays = _repository.Accounts.First(b => b.Name == "Barclays");
+        var transfer = Transfer.Create(new DateOnly(2026, 7, 25), barclays, itau, 100m, destinationAmount: 640.50m, note: null, TestClock.Today);
+        _repository.Transfers.Add(transfer);
+        return transfer;
     }
 
     private static TransferCreateRequest ValidCreateRequest() => new(

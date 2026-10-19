@@ -113,7 +113,7 @@ public class CapabilityGuardTests
     {
         var source = Minimal(Capability.CanSendTransfers);
 
-        var transfer = Transfer.Create(Date, source, _bank, 10m, note: null);
+        var transfer = Transfer.Create(Date, source, _bank, 10m, destinationAmount: null, note: null, today: TestClock.Today);
 
         transfer.SourceAccount.Should().BeSameAs(source);
     }
@@ -121,9 +121,10 @@ public class CapabilityGuardTests
     [Fact]
     public void Transfer_Create_SourceWithoutCanSendTransfers_Throws()
     {
-        var act = () => Transfer.Create(Date, MinimalWithout(Capability.CanSendTransfers), _bank, 10m, note: null);
+        var act = () => Transfer.Create(
+            Date, MinimalWithout(Capability.CanSendTransfers), _bank, 10m, destinationAmount: null, note: null, today: TestClock.Today);
 
-        act.Should().Throw<ArgumentException>().WithMessage("Account 'Minimal' cannot send transfers.");
+        act.Should().Throw<ArgumentException>().WithMessage("Transfers from Minimal to Barclays are not allowed.");
     }
 
     [Fact]
@@ -131,7 +132,7 @@ public class CapabilityGuardTests
     {
         var destination = Minimal(Capability.CanReceiveTransfers);
 
-        var transfer = Transfer.Create(Date, _bank, destination, 10m, note: null);
+        var transfer = Transfer.Create(Date, _bank, destination, 10m, destinationAmount: null, note: null, today: TestClock.Today);
 
         transfer.DestinationAccount.Should().BeSameAs(destination);
     }
@@ -139,9 +140,10 @@ public class CapabilityGuardTests
     [Fact]
     public void Transfer_Create_DestinationWithoutCanReceiveTransfers_Throws()
     {
-        var act = () => Transfer.Create(Date, _bank, MinimalWithout(Capability.CanReceiveTransfers), 10m, note: null);
+        var act = () => Transfer.Create(
+            Date, _bank, MinimalWithout(Capability.CanReceiveTransfers), 10m, destinationAmount: null, note: null, today: TestClock.Today);
 
-        act.Should().Throw<ArgumentException>().WithMessage("Account 'Minimal' cannot receive transfers.");
+        act.Should().Throw<ArgumentException>().WithMessage("Transfers from Barclays to Minimal are not allowed.");
     }
 
     [Fact]
@@ -218,8 +220,8 @@ public class CapabilityGuardTests
         var expense = Expense.Create(Date, "Coffee", 2.30m, _groceries, chase, creditCard: null);
         expense.SetRoundUpAmount(0.70m);
         var income = Income.Create(Date, _salary, null, 1000m, chase);
-        var outgoing = Transfer.Create(Date, chase, _bank, 50m, note: null);
-        var incoming = Transfer.Create(Date, _bank, chase, 20m, note: null);
+        var outgoing = Transfer.Create(Date, chase, _bank, 50m, destinationAmount: null, note: null, today: TestClock.Today);
+        var incoming = Transfer.Create(Date, _bank, chase, 20m, destinationAmount: null, note: null, today: TestClock.Today);
         var adjustment = BalanceAdjustment.Create(Date, chase, 1067m, 0m, note: null);
 
         using (new AssertionScope())

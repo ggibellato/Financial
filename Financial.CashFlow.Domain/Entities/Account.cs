@@ -25,10 +25,12 @@ public class Account
     public static Account Create(string name, AccountTemplate template, Currency currency)
         => Build(name, template, currency, capabilitiesOverride: null);
 
-    internal static Account CreateWithCapabilities(string name, Currency currency, IReadOnlySet<Capability> capabilities)
+    internal static Account CreateWithCapabilities(string name, Currency currency, IReadOnlySet<Capability> capabilities, bool isActive = true)
     {
         ArgumentNullException.ThrowIfNull(capabilities);
-        return Build(name, AccountTemplate.Bank, currency, capabilities);
+        var account = Build(name, AccountTemplate.Bank, currency, capabilities);
+        account.IsActive = isActive;
+        return account;
     }
 
     public bool Has(Capability capability) =>

@@ -120,7 +120,7 @@ public class CashFlowDataTests
     {
         var transfer = CreateTransfer();
         _sut.AddTransfer(transfer);
-        transfer.UpdateDetails(new DateOnly(2026, 8, 1), Chase, Trading212, 250m, "Updated");
+        transfer.UpdateDetails(new DateOnly(2026, 8, 1), Chase, Trading212, 250m, destinationAmount: null, "Updated", today: TestClock.Today);
 
         _sut.UpdateTransfer(transfer);
 
@@ -183,7 +183,7 @@ public class CashFlowDataTests
         Income.Create(new DateOnly(2026, 7, 1), Lottery, null, 10m, Chase);
 
     private static Transfer CreateTransfer() =>
-        Transfer.Create(new DateOnly(2026, 7, 1), Barclays, Trading212, 500m, "Test transfer");
+        Transfer.Create(new DateOnly(2026, 7, 1), Barclays, Trading212, 500m, destinationAmount: null, "Test transfer", today: TestClock.Today);
 
     private static BalanceAdjustment CreateBalanceAdjustment() =>
         BalanceAdjustment.Create(new DateOnly(2026, 7, 1), Barclays, 100m, 0m, "Test adjustment");

@@ -85,11 +85,25 @@ public class AccountBalanceRuleTests
     {
         var records = new IAccountTransaction[]
         {
-            Transfer.Create(new DateOnly(2026, 9, 10), _barclays, _chase, 150m, note: null)
+            Transfer.Create(new DateOnly(2026, 9, 10), _barclays, _chase, 150m, destinationAmount: null, note: null, today: TestClock.Today)
         };
 
         AccountBalanceRule.Balance(_barclays, new DateOnly(2026, 9, 30), records).Should().Be(850m);
         AccountBalanceRule.Balance(_chase, new DateOnly(2026, 9, 30), records).Should().Be(350m);
+    }
+
+    [Fact]
+    public void Balance_CrossCurrencyTransfer_MovesDestinationByItsOwnAmount()
+    {
+        var itau = TestAccounts.Bank("Itaú", currency: Currency.BRL);
+        itau.SetOpeningBalance(0m, StartDate);
+        var records = new IAccountTransaction[]
+        {
+            Transfer.Create(new DateOnly(2026, 9, 10), _barclays, itau, 100m, destinationAmount: 640.50m, note: null, today: TestClock.Today)
+        };
+
+        AccountBalanceRule.Balance(_barclays, new DateOnly(2026, 9, 30), records).Should().Be(900m);
+        AccountBalanceRule.Balance(itau, new DateOnly(2026, 9, 30), records).Should().Be(640.50m);
     }
 
     [Fact]

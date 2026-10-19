@@ -4,6 +4,7 @@ using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.Shared.Abstractions.Observability;
+using Financial.Shared.Abstractions.Time;
 using Microsoft.Extensions.Logging;
 
 namespace Financial.CashFlow.Application.Services;
@@ -13,12 +14,14 @@ public sealed class TransferService : ITransferService
     private const string EntityType = "Transfer";
 
     private readonly ICashFlowRepository _repository;
+    private readonly TimeProvider _timeProvider;
     private readonly ITelemetryTracer _tracer;
     private readonly ILogger<TransferService> _logger;
 
-    public TransferService(ICashFlowRepository repository, ITelemetryTracer tracer, ILogger<TransferService> logger)
+    public TransferService(ICashFlowRepository repository, TimeProvider timeProvider, ITelemetryTracer tracer, ILogger<TransferService> logger)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -32,7 +35,8 @@ public sealed class TransferService : ITransferService
 
             var (sourceBank, destinationBank) = ResolveBanks(request.SourceBankId, request.DestinationBankId);
 
-            var transfer = Transfer.Create(request.Date, sourceBank, destinationBank, request.Amount, request.Note);
+            var transfer = Transfer.Create(
+                request.Date, sourceBank, destinationBank, request.Amount, destinationAmount: null, request.Note, _timeProvider.GetLocalToday());
             await _repository.ApplyAndSaveAsync(() =>
             {
                 _repository.AddTransfer(transfer);
@@ -61,10 +65,12 @@ public sealed class TransferService : ITransferService
 
             var transfer = FindTransferOrThrow(id);
             var (sourceBank, destinationBank) = ResolveBanks(request.SourceBankId, request.DestinationBankId);
+            var destinationAmount = KeepsBothAccounts(transfer, sourceBank, destinationBank) ? transfer.DestinationAmount : null;
 
             await _repository.ApplyAndSaveAsync(() =>
             {
-                transfer.UpdateDetails(request.Date, sourceBank, destinationBank, request.Amount, request.Note);
+                transfer.UpdateDetails(
+                    request.Date, sourceBank, destinationBank, request.Amount, destinationAmount, request.Note, _timeProvider.GetLocalToday());
                 _repository.UpdateTransfer(transfer);
                 return true;
             }).ConfigureAwait(false);
@@ -162,6 +168,9 @@ public sealed class TransferService : ITransferService
 
     private Transfer FindTransferOrThrow(Guid id) =>
         _repository.GetTransfers().FirstOrThrow(t => t.Id == id, "Transfer", id);
+
+    private static bool KeepsBothAccounts(Transfer transfer, Account sourceAccount, Account destinationAccount) =>
+        transfer.SourceAccount.Id == sourceAccount.Id && transfer.DestinationAccount.Id == destinationAccount.Id;
 
     private (Account SourceAccount, Account DestinationAccount) ResolveBanks(Guid sourceBankId, Guid destinationBankId)
     {

@@ -53,6 +53,11 @@ public class CashFlowTypeInfoResolver : DefaultJsonTypeInfoResolver
         [(typeof(InvestmentAccount), nameof(InvestmentAccount.CreditCard))] = ("CreditCardId", false),
     };
 
+    private static readonly HashSet<(Type OwningType, string PropertyName)> PropertiesOmittedWhenNull =
+    [
+        (typeof(Transfer), nameof(Transfer.DestinationAmount))
+    ];
+
     private readonly ReferenceResolutionContext? _context;
 
     public CashFlowTypeInfoResolver(ReferenceResolutionContext? context = null)
@@ -78,8 +83,15 @@ public class CashFlowTypeInfoResolver : DefaultJsonTypeInfoResolver
         foreach (var jsonProp in typeInfo.Properties)
         {
             ReflectionJsonTypeInfoHelpers.WirePropertySetter(type, jsonProp);
+            OmitWhenNull(type, jsonProp);
             ConfigureReferenceProperty(type, jsonProp);
         }
+    }
+
+    private static void OmitWhenNull(Type type, JsonPropertyInfo jsonProp)
+    {
+        if (PropertiesOmittedWhenNull.Contains((type, jsonProp.Name)))
+            jsonProp.ShouldSerialize = static (_, value) => value is not null;
     }
 
     private void ConfigureReferenceProperty(Type type, JsonPropertyInfo jsonProp)

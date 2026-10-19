@@ -1,5 +1,6 @@
 using Financial.CashFlow.Application.DTOs;
 using FluentAssertions;
+using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text;
@@ -65,6 +66,8 @@ public class TransfersEndpointsTests : ApiEndpointTests
         var response = await Client.PostAsJsonAsync("/api/v1/financial/transfers", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        problem!.Detail.Should().Be("Source and destination must be different accounts.");
     }
 
     [Fact]
