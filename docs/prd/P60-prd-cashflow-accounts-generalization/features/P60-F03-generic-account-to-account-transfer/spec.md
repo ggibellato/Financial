@@ -20,7 +20,7 @@ Complexity: **medium**. It touches Domain, Application, Infrastructure (one seri
 
 | PR | Content | Non-test code files |
 |---|---|---|
-| **A — rules** | Pair rules table; `DestinationAmount` on `Transfer` and its serializer rule; the full rule set and messages in the entity; `/transfers` passes today's date and keeps the stored destination amount on edit | 5 |
+| **A — rules** | Pair rules table; `DestinationAmount` on `Transfer` and its serializer rule; the full rule set and messages in the entity; `/transfers` passes today's date and, when an edit keeps both accounts, the stored destination amount | 5 |
 | **B — endpoints** | `accounts/transfers` POST, PUT, DELETE; `accounts/{id}/transfer-destinations` and `transfer-sources`; their service, DTOs and DI; OpenAPI snapshot and generated web types; PRD ticks | 8 |
 
 **Scope.**
@@ -68,7 +68,7 @@ Financial.CashFlow.Infrastructure
 | Decision | Choice | Why |
 |---|---|---|
 | Destination amount storage | `decimal? DestinationAmount`, stored only when the currencies differ; absent means equal to the amount | PRD review decision 1: derivable for same-currency transfers, so no migration; the file stays V2 |
-| Destination amount sent for a same-currency pair | Dropped; nothing stored | Interview Q2: the same-currency rule decides the value, so a stray field can't create a mismatched record |
+| Destination amount sent for a same-currency pair | 400 `Destination amount only applies when the currencies differ.`, on create and edit, through both routes; nothing saved | Interview Q2 (revised by the user): reject rather than silently drop, so the client always knows exactly what was stored. On an edit that moves a transfer onto a same-currency pair, the client must clear the field. |
 | Omitting the field on save | `CashFlowTypeInfoResolver` sets `ShouldSerialize` on `Transfer.DestinationAmount` only (written when not null) | Keeps same-currency files byte-identical. Other nullable properties such as `Note` keep writing `null` as today. |
 | One rule set for both routes | All checks in `Transfer.Create` / `UpdateDetails` | PRD review decision 2 |
 | Today's date | `Create` and `UpdateDetails` take a `today` parameter; services pass `TimeProvider.GetLocalToday()` | Domain can't read the clock; same message and source of today as `ControleMaeService` |
@@ -77,7 +77,7 @@ Financial.CashFlow.Infrastructure
 | Destination and source lists | On `TransferPairRules`: active accounts, not the account itself, allowed by the table, ordered by name | The list rule lives with the table, so the contract test covers it directly |
 | `/transfers` "not found" message | Unchanged: `Bank '<id>' was not found.` | It comes from the service lookup, not the entity, and Monthly's form maps it to a field |
 | `accounts/transfers` "not found" message | `Account '<id>' was not found.` (400), from `AccountTransferService` | Same behaviour as `/transfers`, with account wording |
-| `/transfers` edit of a cross-currency transfer | `TransferService.UpdateTransferAsync` passes the stored `DestinationAmount` through | `/transfers` has no destination-amount field; without this, editing the note of a transfer created through `accounts/transfers` would fail with "Enter the amount received…" |
+| `/transfers` edit of a cross-currency transfer | `TransferService.UpdateTransferAsync` passes the stored `DestinationAmount` only when the edit keeps both accounts; otherwise it passes null | `/transfers` has no destination-amount field. Keeping both accounts lets Monthly correct the date, amount or note of a transfer created through `accounts/transfers`. Changing an account of a cross-currency transfer from Monthly gets 400 "Enter the amount received in <currency>.", which is correct: the new pair needs a new amount that Monthly can't send. Passing null when an account changes also avoids a false "only applies" error when Monthly moves it onto a same-currency pair. |
 | `/transfers` DTOs | Unchanged; no destination amount | PRD: `/transfers` returns the same data; OpenAPI snapshot unchanged in PR A |
 | New controller | `AccountTransfersController`, routes `accounts/transfers` and `accounts/{id:guid}/transfer-…` | PRD review decision 4: F04 and F06 add their own `accounts/…` controllers without editing this file |
 | Create and update DTOs | Separate `AccountTransferCreateDTO` and `AccountTransferUpdateDTO` | Repository convention: every resource has separate create and update DTOs |
@@ -98,7 +98,7 @@ Paths are relative to the repo root.
 | `Financial.CashFlow.Domain/Rules/TransferPairRules.cs` | **New.** `public sealed class TransferPairRules`: constructor taking `IEnumerable<(Capability Source, Capability Destination)>`; `static Default` with `(CanSendTransfers, CanReceiveTransfers)`; `bool Allows(Account source, Account destination)`; `IReadOnlyList<Account> DestinationsFor(Account source, IEnumerable<Account> accounts)`; `IReadOnlyList<Account> SourcesFor(Account destination, IEnumerable<Account> accounts)` |
 | `Financial.CashFlow.Domain/Entities/Transactions/Transfer.cs` | `decimal? DestinationAmount { get; private set; }`. `Create(date, source, destination, amount, destinationAmount, note, today)` and `UpdateDetails(…same…)`. The rule set in §6 replaces `Validate`. `ContributionTo` credits the destination with `DestinationAmount ?? Amount`. |
 | `Financial.CashFlow.Domain/Entities/Account.cs` | `CreateWithCapabilities(name, currency, capabilities, bool isActive = true)` |
-| `Financial.CashFlow.Application/Services/TransferService.cs` | Injects `TimeProvider`. Create passes `destinationAmount: null` and today. Update passes the stored `DestinationAmount` and today. Lookup and messages otherwise unchanged. |
+| `Financial.CashFlow.Application/Services/TransferService.cs` | Injects `TimeProvider`. Create passes `destinationAmount: null` and today. Update passes the stored `DestinationAmount` when both accounts are unchanged (otherwise null) and today. Lookup and messages otherwise unchanged. |
 | `Financial.CashFlow.Infrastructure/Persistence/CashFlowTypeInfoResolver.cs` | For `(Transfer, DestinationAmount)`, set `ShouldSerialize = (_, value) => value is not null` |
 
 **PR B — endpoints**
@@ -148,7 +148,9 @@ Base path `/api/v1/financial`. `ArgumentException` → 400 and `KeyNotFoundExcep
 }
 ```
 
-For a same-currency pair the response's `destinationAmount` equals `amount`, whatever the request sent.
+`destinationAmount` must be absent (or null) for a same-currency pair and present for a cross-currency one; anything else is a 400 (§6 rules 7–9). For a same-currency pair the response's `destinationAmount` equals `amount`.
+
+The two currencies may produce any positive rate, including 1.00: `amount: 100` with `destinationAmount: 100` from Barclays (GBP) to Itaú (BRL) is valid and stores 100 as the destination amount, because the currencies differ. No plausibility check is made on the rate; F05 shows it next to the amounts.
 
 **`PUT accounts/transfers/{id}`** — same body as POST. 200 with `AccountTransferDTO`; 400 as above; 404 when the transfer doesn't exist.
 
@@ -191,10 +193,11 @@ The new key follows `Note`, in declaration order. A missing key loads as null. E
 | 6 | Amount > 0 | `Transfer amount must be greater than zero.` |
 | 7 | Currencies differ → destination amount present | `Enter the amount received in <destination currency code>.` |
 | 8 | Currencies differ → destination amount > 0 | `Destination amount must be greater than zero.` |
-| 9 | Date ≤ today | `Date must not be in the future.` |
-| 10 | Note ≤ 200 characters (`string.Length`; null allowed) | `Note must be 200 characters or fewer.` |
+| 9 | Currencies match → no destination amount | `Destination amount only applies when the currencies differ.` |
+| 10 | Date ≤ today | `Date must not be in the future.` |
+| 11 | Note ≤ 200 characters (`string.Length`; null allowed) | `Note must be 200 characters or fewer.` |
 
-When the currencies match, any destination amount is dropped and `DestinationAmount` is set to null, including on an edit that moves a transfer to a same-currency pair.
+`DestinationAmount` is therefore stored exactly when the currencies differ. An edit that moves a transfer onto a same-currency pair must send no destination amount, and the stored one is cleared.
 
 **Balance contribution.** `ContributionTo(account)` = (`DestinationAmount ?? Amount` if the account is the destination) − (`Amount` if the account is the source). `AccountBalanceRule` is unchanged.
 
@@ -227,7 +230,7 @@ Following the `testing-guide-Financial` skill:
 | Test file | PR | Type | Target | Coverage goal |
 |---|---|---|---|---|
 | `Tests/Financial.CashFlow.Domain.Tests/Rules/TransferPairRulesTests.cs` | A | Unit | Pair table | Default table; an extra pair changes `DestinationsFor`/`SourcesFor`; inactive and self excluded; ordering |
-| `Tests/Financial.CashFlow.Domain.Tests/Entities/TransferTests.cs` | A | Unit | `Transfer` | Each of the 10 rules, the boundaries (amount 0, note 200/201, date today/tomorrow), the same-currency drop, the edit-only-changed inactive rule, `ContributionTo` with and without a destination amount |
+| `Tests/Financial.CashFlow.Domain.Tests/Entities/TransferTests.cs` | A | Unit | `Transfer` | Each of the 11 rules, the boundaries (amount 0, note 200/201, date today/tomorrow), the same-currency rejection, the edit-only-changed inactive rule, `ContributionTo` with and without a destination amount |
 | `Tests/Financial.CashFlow.Domain.Tests/Entities/CapabilityGuardTests.cs` | A | Unit | Transfer guards | Updated to the pair message |
 | `Tests/Financial.CashFlow.Domain.Tests/Rules/AccountBalanceRuleTests.cs` | A | Unit | Balance | A cross-currency transfer moves the destination by its own amount |
 | `Tests/Financial.CashFlow.Application.Tests/Services/TransferServiceTests.cs` | A | Unit | `TransferService` | `FakeTimeProvider` today; stored destination amount kept on edit; pair-not-allowed rejected with nothing saved; failed span on each rejection |
@@ -257,7 +260,10 @@ The acceptance tests seed their own data with `ReplaceCashFlowDataBeforeStart`: 
 | `DestinationsFor_TableWithExtraPair_IncludesNewlyAllowedAccount` | 09 | Built with an extra pair; an account with only that pair's capability appears; with `Default` it doesn't |
 | `Allows_DefaultTable_BankToBankOnly` | 09 | Exact default pairs |
 | `UpdateDetails_UnchangedInactiveAccount_Succeeds` / `UpdateDetails_SwitchToInactiveAccount_Throws` | Q3 | As named |
-| `Create_SameCurrencyWithDestinationAmount_StoresNone` | Q2 | `DestinationAmount` is null; contribution equals the amount |
+| `Create_SameCurrencyWithDestinationAmount_Throws` | Q2 | `ArgumentException` with the "only applies" message |
+| `PostAccountTransfer_SameCurrencyWithDestinationAmount_Returns400` | Q2 | 400 with the same message; nothing saved |
+| `Create_CrossCurrencyEqualAmounts_StoresDestinationAmount` | §5 | Barclays → Itaú, 100 and 100: `DestinationAmount` is 100; Itaú moves by 100 BRL |
+| `UpdateTransferAsync_AccountsUnchanged_KeepsStoredDestinationAmount` / `…AccountChanged_PassesNone` | §3 | As named |
 
 **Proved by the Definition of Done rather than a test:**
 - **AC 06 and 07 on real data:** the parity run on the latest live copy shows 0 differences after PR A and after PR B, and the copy's SHA-256 is unchanged.

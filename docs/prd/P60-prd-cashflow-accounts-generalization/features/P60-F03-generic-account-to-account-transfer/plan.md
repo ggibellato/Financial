@@ -10,11 +10,11 @@
 
 **1. Pair rules table** - Add `TransferPairRules` in Domain `Rules/` with its default bank → bank pair, the `Allows` check and the destination and source lists. Write its contract tests first, including the extra-pair test. See spec §4 and §6.
 
-**2. Transfer rules and destination amount** - Give `Transfer` the optional destination amount, the `today` parameter and the ten rules in spec §6 order, with the same-currency drop and the edit-only-changed inactive check. Make `ContributionTo` credit the destination with its own amount. Extend the internal account test factory with an active flag, and update the Domain tests, the capability guard tests and the balance rule tests.
+**2. Transfer rules and destination amount** - Give `Transfer` the optional destination amount, the `today` parameter and the eleven rules in spec §6 order, including the same-currency rejection, and the edit-only-changed inactive check. Make `ContributionTo` credit the destination with its own amount. Extend the internal account test factory with an active flag, and update the Domain tests, the capability guard tests and the balance rule tests.
 
 **3. Persistence** - Make the CashFlow resolver omit a null transfer destination amount, and add the persistence tests: a same-currency file is byte-identical after load and save, and a cross-currency key round-trips.
 
-**4. `/transfers` on the shared rules** - Inject `TimeProvider` into `TransferService`, pass today, pass the stored destination amount on edit, and keep the "Bank … was not found." lookup. Update the service and endpoint tests for the new messages, and add the AC 06 and AC 08 acceptance tests.
+**4. `/transfers` on the shared rules** - Inject `TimeProvider` into `TransferService`, pass today, pass the stored destination amount on edit only when both accounts are unchanged, and keep the "Bank … was not found." lookup. Update the service and endpoint tests for the new messages, and add the AC 06 and AC 08 acceptance tests.
 
 **5. PR A verification and hand-off** - Run the full .NET suite and confirm the OpenAPI snapshot is unchanged. Run `Invoke-Parity.ps1 -Step All` on the fresh live copy, expecting 0 differences and an unchanged SHA-256 for the copy. Run `/simplify` and the architecture-reviewer, then push the branch and open the PR, without merging.
 
