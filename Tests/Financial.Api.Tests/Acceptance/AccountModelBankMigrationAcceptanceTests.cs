@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Financial.CashFlow.Application.DTOs;
+using Financial.CashFlow.Infrastructure.Persistence;
 using FluentAssertions;
 using FluentAssertions.Execution;
 
@@ -83,6 +84,23 @@ public class AccountModelBankMigrationAcceptanceTests : ApiEndpointTests
         var response = await Client.GetAsync("/api/v1/financial/banks");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Theory]
+    [Trait("AC", "P60-F02-account-model-and-bank-migration-11")]
+    [InlineData("TestData", "data-cashflow.test.json")]
+    [InlineData("ExampleData", "data-cashflow.example.json")]
+    public void SeedAndExampleData_AreVersion2(string folder, string fileName)
+    {
+        var json = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, folder, fileName));
+
+        var act = () => new CashFlowSerializerAdapter().Deserialize(json);
+
+        using (new AssertionScope())
+        {
+            JsonDocument.Parse(json).RootElement.GetProperty("Version").GetInt32().Should().Be(2);
+            act.Should().NotThrow();
+        }
     }
 
     private async Task SetOpeningBalanceAsync(string bankId, decimal amount, DateOnly startDate)
