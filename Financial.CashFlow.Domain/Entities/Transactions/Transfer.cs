@@ -1,5 +1,6 @@
 using System;
 using Financial.CashFlow.Domain.Rules;
+using Financial.Shared.Abstractions.Currencies;
 
 namespace Financial.CashFlow.Domain.Entities.Transactions;
 
@@ -26,21 +27,9 @@ public class Transfer : IAccountTransaction
         string? note,
         DateOnly today)
     {
-        EnsurePairIsValid(sourceAccount, destinationAccount);
-        EnsureIsActive(sourceAccount);
-        EnsureIsActive(destinationAccount);
-        EnsureDetailsAreValid(date, sourceAccount, destinationAccount, amount, destinationAmount, note, today);
-
-        return new()
-        {
-            Id = Guid.NewGuid(),
-            Date = date,
-            SourceAccount = sourceAccount,
-            DestinationAccount = destinationAccount,
-            Amount = amount,
-            DestinationAmount = destinationAmount,
-            Note = note
-        };
+        var transfer = new Transfer { Id = Guid.NewGuid() };
+        transfer.UpdateDetails(date, sourceAccount, destinationAccount, amount, destinationAmount, note, today);
+        return transfer;
     }
 
     public void UpdateDetails(
@@ -55,7 +44,8 @@ public class Transfer : IAccountTransaction
         EnsurePairIsValid(sourceAccount, destinationAccount);
         EnsureIsActiveWhenChanged(SourceAccount, sourceAccount);
         EnsureIsActiveWhenChanged(DestinationAccount, destinationAccount);
-        EnsureDetailsAreValid(date, sourceAccount, destinationAccount, amount, destinationAmount, note, today);
+        EnsureAmountsAreValid(amount, destinationAmount, sourceAccount.Currency, destinationAccount.Currency);
+        EnsureDateAndNoteAreValid(date, note, today);
 
         Date = date;
         SourceAccount = sourceAccount;
@@ -91,38 +81,41 @@ public class Transfer : IAccountTransaction
         }
     }
 
-    private static void EnsureIsActiveWhenChanged(Account currentAccount, Account newAccount)
+    private static void EnsureIsActiveWhenChanged(Account? currentAccount, Account newAccount)
     {
-        if (currentAccount.Id != newAccount.Id)
+        if (currentAccount?.Id != newAccount.Id && !newAccount.IsActive)
         {
-            EnsureIsActive(newAccount);
+            throw new ArgumentException($"{newAccount.Name} is inactive.");
         }
     }
 
-    private static void EnsureIsActive(Account account)
-    {
-        if (!account.IsActive)
-        {
-            throw new ArgumentException($"{account.Name} is inactive.");
-        }
-    }
-
-    private static void EnsureDetailsAreValid(
-        DateOnly date,
-        Account sourceAccount,
-        Account destinationAccount,
-        decimal amount,
-        decimal? destinationAmount,
-        string? note,
-        DateOnly today)
+    private static void EnsureAmountsAreValid(decimal amount, decimal? destinationAmount, Currency sourceCurrency, Currency destinationCurrency)
     {
         if (amount <= 0)
         {
             throw new ArgumentException("Transfer amount must be greater than zero.");
         }
 
-        EnsureDestinationAmountMatchesCurrencies(sourceAccount, destinationAccount, destinationAmount);
+        var crossCurrency = sourceCurrency != destinationCurrency;
 
+        if (!crossCurrency && destinationAmount is not null)
+        {
+            throw new ArgumentException("Destination amount only applies when the currencies differ.");
+        }
+
+        if (crossCurrency && destinationAmount is null)
+        {
+            throw new ArgumentException($"Enter the amount received in {destinationCurrency}.");
+        }
+
+        if (destinationAmount <= 0)
+        {
+            throw new ArgumentException("Destination amount must be greater than zero.");
+        }
+    }
+
+    private static void EnsureDateAndNoteAreValid(DateOnly date, string? note, DateOnly today)
+    {
         if (date > today)
         {
             throw new ArgumentException("Date must not be in the future.");
@@ -131,29 +124,6 @@ public class Transfer : IAccountTransaction
         if (note?.Length > MaxNoteLength)
         {
             throw new ArgumentException($"Note must be {MaxNoteLength} characters or fewer.");
-        }
-    }
-
-    private static void EnsureDestinationAmountMatchesCurrencies(Account sourceAccount, Account destinationAccount, decimal? destinationAmount)
-    {
-        if (sourceAccount.Currency == destinationAccount.Currency)
-        {
-            if (destinationAmount is not null)
-            {
-                throw new ArgumentException("Destination amount only applies when the currencies differ.");
-            }
-
-            return;
-        }
-
-        if (destinationAmount is null)
-        {
-            throw new ArgumentException($"Enter the amount received in {destinationAccount.Currency}.");
-        }
-
-        if (destinationAmount <= 0)
-        {
-            throw new ArgumentException("Destination amount must be greater than zero.");
         }
     }
 }

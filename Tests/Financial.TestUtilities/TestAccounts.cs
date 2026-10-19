@@ -6,9 +6,9 @@ namespace Financial.TestUtilities;
 
 public static class TestAccounts
 {
-    public static Account Bank(string name, bool roundUpEnabled = false)
+    public static Account Bank(string name, bool roundUpEnabled = false, Currency currency = Currency.GBP)
     {
-        var account = Account.Create(name, AccountTemplate.Bank, Currency.GBP);
+        var account = Account.Create(name, AccountTemplate.Bank, currency);
         account.SetRoundUp(roundUpEnabled);
         return account;
     }

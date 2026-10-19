@@ -12,13 +12,13 @@ namespace Financial.CashFlow.Domain.Tests;
 [Trait("Category", "Unit")]
 public class TransferTests
 {
-    private static readonly DateOnly Today = new(2026, 10, 15);
+    private static readonly DateOnly Today = TestClock.Today;
     private static readonly DateOnly Date = new(2026, 7, 25);
 
     private readonly Account _barclays = TestAccounts.Bank("Barclays", roundUpEnabled: false);
     private readonly Account _trading212 = TestAccounts.Bank("Trading212", roundUpEnabled: true);
     private readonly Account _chase = TestAccounts.Bank("Chase", roundUpEnabled: true);
-    private readonly Account _itau = Account.Create("Itaú", AccountTemplate.Bank, Currency.BRL);
+    private readonly Account _itau = TestAccounts.Bank("Itaú", currency: Currency.BRL);
     private readonly Account _closed = Account.CreateWithCapabilities(
         "Closed", Currency.GBP, AccountTemplates.CapabilitiesOf(AccountTemplate.Bank), isActive: false);
 
@@ -90,18 +90,14 @@ public class TransferTests
         act.Should().Throw<ArgumentException>().WithMessage("Transfers from Receiver to Barclays are not allowed.");
     }
 
-    [Fact]
-    public void Create_InactiveSource_Throws()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Create_InactiveAccount_Throws(bool inactiveSource)
     {
-        var act = () => Transfer.Create(Date, _closed, _barclays, 500m, destinationAmount: null, note: null, Today);
+        var (source, destination) = inactiveSource ? (_closed, _barclays) : (_barclays, _closed);
 
-        act.Should().Throw<ArgumentException>().WithMessage("Closed is inactive.");
-    }
-
-    [Fact]
-    public void Create_InactiveDestination_Throws()
-    {
-        var act = () => Transfer.Create(Date, _barclays, _closed, 500m, destinationAmount: null, note: null, Today);
+        var act = () => Transfer.Create(Date, source, destination, 500m, destinationAmount: null, note: null, Today);
 
         act.Should().Throw<ArgumentException>().WithMessage("Closed is inactive.");
     }
@@ -271,22 +267,15 @@ public class TransferTests
         transfer.Amount.Should().Be(250m);
     }
 
-    [Fact]
-    public void UpdateDetails_SwitchToInactiveAccount_Throws()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void UpdateDetails_SwitchToInactiveAccount_Throws(bool inactiveSource)
     {
         var transfer = CreateValidTransfer();
+        var (source, destination) = inactiveSource ? (_closed, _trading212) : (_barclays, _closed);
 
-        var act = () => transfer.UpdateDetails(Date, _barclays, _closed, 500m, destinationAmount: null, note: null, Today);
-
-        act.Should().Throw<ArgumentException>().WithMessage("Closed is inactive.");
-    }
-
-    [Fact]
-    public void UpdateDetails_SwitchSourceToInactiveAccount_Throws()
-    {
-        var transfer = CreateValidTransfer();
-
-        var act = () => transfer.UpdateDetails(Date, _closed, _trading212, 500m, destinationAmount: null, note: null, Today);
+        var act = () => transfer.UpdateDetails(Date, source, destination, 500m, destinationAmount: null, note: null, Today);
 
         act.Should().Throw<ArgumentException>().WithMessage("Closed is inactive.");
     }

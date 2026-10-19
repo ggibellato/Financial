@@ -10,7 +10,7 @@ using Financial.CashFlow.Domain.Rules;
 using Financial.Shared.Abstractions.Currencies;
 using FluentAssertions;
 using FluentAssertions.Execution;
-using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Time.Testing;
 
 namespace Financial.CashFlow.Application.Tests.Services;
@@ -21,6 +21,7 @@ public class TransferServiceTests
     private readonly StubCashFlowRepository _repository;
     private readonly FakeTimeProvider _clock;
     private readonly RecordingTelemetryTracer _tracer;
+    private readonly RecordingLogger<TransferService> _logger;
     private readonly TransferService _sut;
 
     public TransferServiceTests()
@@ -28,11 +29,12 @@ public class TransferServiceTests
         _repository = new StubCashFlowRepository(seedDefaultBanks: true);
         _clock = TestClock.At();
         _tracer = new RecordingTelemetryTracer();
+        _logger = new RecordingLogger<TransferService>();
         _sut = CreateService();
     }
 
     private TransferService CreateService(StubCashFlowRepository? repository = null) =>
-        new(repository ?? _repository, _clock, _tracer, NullLogger<TransferService>.Instance);
+        new(repository ?? _repository, _clock, _tracer, _logger);
 
     [Fact]
     public async Task AddTransferAsync_WithValidRequest_SavesAndReturnsTransfer()
@@ -87,12 +89,7 @@ public class TransferServiceTests
         var act = async () => await _sut.AddTransferAsync(request);
 
         await act.Should().ThrowAsync<ArgumentException>().WithMessage("Date must not be in the future.");
-        using (new AssertionScope())
-        {
-            _repository.Transfers.Should().BeEmpty();
-            _repository.SaveChangesCallCount.Should().Be(0);
-            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.TransferService.AddTransfer");
-        }
+        ShouldHaveRejectedAdd();
     }
 
     [Fact]
@@ -106,12 +103,7 @@ public class TransferServiceTests
         var act = async () => await _sut.AddTransferAsync(request);
 
         await act.Should().ThrowAsync<ArgumentException>().WithMessage("Transfers from Receiver to Barclays are not allowed.");
-        using (new AssertionScope())
-        {
-            _repository.Transfers.Should().BeEmpty();
-            _repository.SaveChangesCallCount.Should().Be(0);
-            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.TransferService.AddTransfer");
-        }
+        ShouldHaveRejectedAdd();
     }
 
     [Fact]
@@ -124,11 +116,7 @@ public class TransferServiceTests
         var act = async () => await _sut.AddTransferAsync(request);
 
         await act.Should().ThrowAsync<ArgumentException>().WithMessage("Closed is inactive.");
-        using (new AssertionScope())
-        {
-            _repository.Transfers.Should().BeEmpty();
-            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.TransferService.AddTransfer");
-        }
+        ShouldHaveRejectedAdd();
     }
 
     [Fact]
@@ -308,9 +296,20 @@ public class TransferServiceTests
         result.Should().BeEmpty();
     }
 
+    private void ShouldHaveRejectedAdd()
+    {
+        using (new AssertionScope())
+        {
+            _repository.Transfers.Should().BeEmpty();
+            _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.TransferService.AddTransfer");
+            _logger.Entries.Should().NotContain(entry => entry.Exception != null || entry.Level >= LogLevel.Warning);
+        }
+    }
+
     private Transfer SeedCrossCurrencyTransfer()
     {
-        var itau = Account.Create("Itaú", AccountTemplate.Bank, Currency.BRL);
+        var itau = TestAccounts.Bank("Itaú", currency: Currency.BRL);
         _repository.Accounts.Add(itau);
         var barclays = _repository.Accounts.First(b => b.Name == "Barclays");
         var transfer = Transfer.Create(new DateOnly(2026, 7, 25), barclays, itau, 100m, destinationAmount: 640.50m, note: null, TestClock.Today);

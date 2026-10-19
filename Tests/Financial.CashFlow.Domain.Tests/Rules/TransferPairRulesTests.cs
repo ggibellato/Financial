@@ -9,17 +9,17 @@ using FluentAssertions.Execution;
 namespace Financial.CashFlow.Domain.Tests.Rules;
 
 [Trait("Category", "Unit")]
-[Trait("AC", "P60-F03-generic-account-to-account-transfer-09")]
 public class TransferPairRulesTests
 {
     private readonly Account _barclays = TestAccounts.Bank("Barclays");
     private readonly Account _chase = TestAccounts.Bank("chase");
-    private readonly Account _itau = Account.Create("Itaú", AccountTemplate.Bank, Currency.BRL);
+    private readonly Account _itau = TestAccounts.Bank("Itaú", currency: Currency.BRL);
 
     private static Account Minimal(string name, params Capability[] capabilities) =>
         Account.CreateWithCapabilities(name, Currency.GBP, capabilities.ToHashSet());
 
     [Fact]
+    [Trait("AC", "P60-F03-generic-account-to-account-transfer-09")]
     public void Allows_DefaultTable_BankToBankOnly()
     {
         var sender = Minimal("Sender", Capability.CanSendTransfers);
@@ -36,6 +36,7 @@ public class TransferPairRulesTests
     }
 
     [Fact]
+    [Trait("AC", "P60-F03-generic-account-to-account-transfer-09")]
     public void DestinationsFor_TableWithExtraPair_IncludesNewlyAllowedAccount()
     {
         var billPayee = Minimal("Bill payee", Capability.CanPayBills);
@@ -54,6 +55,7 @@ public class TransferPairRulesTests
     }
 
     [Fact]
+    [Trait("AC", "P60-F03-generic-account-to-account-transfer-09")]
     public void SourcesFor_TableWithExtraPair_IncludesNewlyAllowedAccount()
     {
         var reconciler = Minimal("Reconciler", Capability.CanReconcile);

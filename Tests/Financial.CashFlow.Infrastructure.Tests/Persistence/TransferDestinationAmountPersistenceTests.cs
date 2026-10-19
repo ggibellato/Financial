@@ -15,7 +15,7 @@ public class TransferDestinationAmountPersistenceTests
     private readonly CashFlowSerializerAdapter _serializer = new();
     private readonly Account _barclays = TestAccounts.Bank("Barclays");
     private readonly Account _chase = TestAccounts.Bank("Chase", roundUpEnabled: true);
-    private readonly Account _itau = Account.Create("Itaú", AccountTemplate.Bank, Currency.BRL);
+    private readonly Account _itau = TestAccounts.Bank("Itaú", currency: Currency.BRL);
 
     private CashFlowData DataWith(params Transfer[] transfers)
     {

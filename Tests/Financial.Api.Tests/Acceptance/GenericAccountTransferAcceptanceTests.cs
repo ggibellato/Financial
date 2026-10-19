@@ -102,9 +102,9 @@ public class GenericAccountTransferAcceptanceTests : ApiEndpointTests
             Note = "Top-up"
         });
 
-        await ShouldBeRejectedAsync(response, "Date must not be in the future.");
-        var stored = await Client.GetFromJsonAsync<List<TransferDTO>>("/api/v1/financial/transfers/month/2026/10");
-        stored.Should().ContainSingle().Which.Date.Should().Be(new DateOnly(2026, 10, 3));
+        var stored = await ShouldBeRejectedAsync(response, "Date must not be in the future.");
+
+        stored.Single().Date.Should().Be(new DateOnly(2026, 10, 3));
     }
 
     private Task<HttpResponseMessage> PostTransferAsync(DateOnly date, string sourceId, string destinationId, string? note) =>
@@ -117,7 +117,7 @@ public class GenericAccountTransferAcceptanceTests : ApiEndpointTests
             Note = note
         });
 
-    private async Task ShouldBeRejectedAsync(HttpResponseMessage response, string message)
+    private async Task<List<TransferDTO>> ShouldBeRejectedAsync(HttpResponseMessage response, string message)
     {
         var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
         var stored = await Client.GetFromJsonAsync<List<TransferDTO>>("/api/v1/financial/transfers/month/2026/10");
@@ -128,5 +128,7 @@ public class GenericAccountTransferAcceptanceTests : ApiEndpointTests
             problem!.Detail.Should().Be(message);
             stored.Should().ContainSingle().Which.Id.Should().Be(Guid.Parse(ExistingTransferId));
         }
+
+        return stored!;
     }
 }

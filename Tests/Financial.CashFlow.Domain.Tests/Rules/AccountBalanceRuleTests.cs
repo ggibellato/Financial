@@ -95,7 +95,7 @@ public class AccountBalanceRuleTests
     [Fact]
     public void Balance_CrossCurrencyTransfer_MovesDestinationByItsOwnAmount()
     {
-        var itau = Account.Create("Itaú", AccountTemplate.Bank, Currency.BRL);
+        var itau = TestAccounts.Bank("Itaú", currency: Currency.BRL);
         itau.SetOpeningBalance(0m, StartDate);
         var records = new IAccountTransaction[]
         {
