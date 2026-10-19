@@ -5,16 +5,11 @@ using System.Text.Json.Serialization;
 
 namespace Financial.CashFlow.Infrastructure.Persistence;
 
-/// <summary>
-/// <see cref="CurrentVersion"/> has no predecessor to migrate from yet - it exists so the first
-/// future schema change has a stored <c>Version</c> to branch on instead of needing to add one
-/// retroactively. A document with no <c>Version</c> property (every file written before this) is
-/// treated as version 1, matching <see cref="CurrentVersion"/>, so nothing is rewritten on load.
-/// </summary>
 public sealed class CashFlowSerializerAdapter : ICashFlowSerializer
 {
+    public const int CurrentVersion = 2;
+
     private const string VersionProperty = "Version";
-    private const int CurrentVersion = 1;
 
     private static readonly JsonSerializerOptions Options = new()
     {
@@ -33,6 +28,28 @@ public sealed class CashFlowSerializerAdapter : ICashFlowSerializer
     public CashFlowData Deserialize(string json)
     {
         var root = JsonNode.Parse(json)!.AsObject();
+        EnsureCurrentVersion(StoredVersion(root));
         return root.Deserialize<CashFlowData>(Options)!;
+    }
+
+    public static int StoredVersion(JsonObject root)
+    {
+        ArgumentNullException.ThrowIfNull(root);
+        return root[VersionProperty]?.GetValue<int>() ?? 1;
+    }
+
+    private static void EnsureCurrentVersion(int storedVersion)
+    {
+        if (storedVersion < CurrentVersion)
+        {
+            throw new InvalidDataException(
+                $"data-cashflow.json is version {storedVersion}; this build needs version {CurrentVersion}. Run the migrate command first.");
+        }
+
+        if (storedVersion > CurrentVersion)
+        {
+            throw new InvalidDataException(
+                $"data-cashflow.json is version {storedVersion}; this build needs version {CurrentVersion}.");
+        }
     }
 }

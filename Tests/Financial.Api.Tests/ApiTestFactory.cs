@@ -49,6 +49,8 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
         _calendarProviderOverride = calendarProviderOverride;
     }
 
+    public void ReplaceCashFlowData(string json) => File.WriteAllText(_cashFlowDataFilePath, json);
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         if (_webRootPath is not null)

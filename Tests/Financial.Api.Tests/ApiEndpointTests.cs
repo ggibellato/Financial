@@ -35,6 +35,8 @@ public abstract class ApiEndpointTests : IAsyncLifetime
     /// <summary>The host's service provider, for the few tests that assert on resolved services.</summary>
     protected IServiceProvider Services => _factory.Services;
 
+    protected void ReplaceCashFlowDataBeforeStart(string json) => _factory.ReplaceCashFlowData(json);
+
     public virtual Task InitializeAsync() => Task.CompletedTask;
 
     public virtual async Task DisposeAsync()

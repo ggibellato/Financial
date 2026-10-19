@@ -63,6 +63,28 @@ public class AccountModelBankMigrationAcceptanceTests : ApiEndpointTests
         }
     }
 
+    [Fact]
+    [Trait("AC", "P60-F02-account-model-and-bank-migration-05")]
+    public void ApiHost_Version1File_FailsToStart()
+    {
+        ReplaceCashFlowDataBeforeStart(
+            $$"""{"Banks":[{"Id":"{{BarclaysId}}","Name":"Barclays","RoundUpEnabled":false,"OpeningBalance":0,"OpeningBalanceDate":"0001-01-01"}],"Version":1}""");
+
+        var act = () => Services;
+
+        act.Should().Throw<InvalidDataException>()
+            .WithMessage("data-cashflow.json is version 1; this build needs version 2. Run the migrate command first.");
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F02-account-model-and-bank-migration-05")]
+    public async Task ApiHost_Version2File_Starts()
+    {
+        var response = await Client.GetAsync("/api/v1/financial/banks");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
     private async Task SetOpeningBalanceAsync(string bankId, decimal amount, DateOnly startDate)
     {
         var response = await Client.PutAsJsonAsync(
