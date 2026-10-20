@@ -63,6 +63,26 @@ public class AccountTests
     }
 
     [Fact]
+    public void Create_WithBankTemplate_IsNamedBankAndJoinsTheDefaultGroup()
+    {
+        var account = CreateBank();
+
+        using (new AssertionScope())
+        {
+            account.TemplateName.Should().Be("Bank");
+            account.JoinsDefaultGroup.Should().BeTrue();
+        }
+    }
+
+    [Fact]
+    public void CreateWithCapabilities_WithTemplateOutsideTheDefaultGroup_DoesNotJoinIt()
+    {
+        var account = Account.CreateWithCapabilities("Pots", Currency.GBP, new HashSet<Capability>(), template: (AccountTemplate)99);
+
+        account.JoinsDefaultGroup.Should().BeFalse();
+    }
+
+    [Fact]
     public void CreateWithCapabilities_WithoutOpeningBalanceOrRoundUp_LeavesBothNull()
     {
         var account = CreateMinimal(Capability.ReceivesIncome);
