@@ -167,6 +167,7 @@ The core value is one place per account, a new account from an existing template
 Rules that apply to every feature:
 
 - **DDD placement.** Everything lives in the CashFlow bounded context; the Investment context is untouched. Domain owns `Account`, templates, capabilities, value objects, the balance rule, the transfer pair rules and the linked-operation rules (pure, no I/O). Application owns use cases and DTOs. Infrastructure owns JSON persistence and the migration steps. `Financial.Api` exposes controllers only. Domain never references Infrastructure; the repository interface stays declared in Application (`ICashFlowRepository`). *Why:* the CLAUDE.md architecture invariants, enforced by the architecture-reviewer agent.
+- **Account lists are ordered by name.** Every list of accounts a P60 feature returns or shows (group members, pickers, transfer destination and source lists, the Accounts page, Admin → Accounts) is ordered by account name, ordinal and ignoring case, as F03's transfer lists already are; equal names keep file order. *Why:* a stable order the user can scan, independent of when an account was created or migrated. `/banks` and the screens that still read it keep their current order until F13 retires them.
 - **Capabilities are the only thing code checks.** Services, validation and the allowed-actions API ask "does this account have `CanPayBills`?", never "is this a Bank?". *Why:* a new template made of existing capabilities then needs no behaviour code.
 - **Definition of Done for every feature:** (1) the parity check passes with 0 differences on the latest live copy, (2) `/simplify` has been run on the feature's diff and its findings applied or explicitly declined, (3) tests follow the `testing-guide-Financial` skill — Unit per capability rule and handler, Integration (`ApiEndpointTests`) for endpoints and AC-traced tests tagged `[Trait("AC", "P60-Fxx-...")]`, negative paths at every layer, (4) the architecture-reviewer agent has reviewed it, and the ui-reviewer agent for features with UI, (5) a changed API updates the OpenAPI snapshot and `Financial.Web/src/api/generated/openapi.ts`, (6) every PR stays within 8 non-test code files unless it is one change repeated, (7) no code comments beyond genuine non-obvious WHYs.
 - **Testing capabilities** (design doc, unchanged): each capability is its own unit tested against a minimal test account with only that capability; the balance calculation is tested once; linked operations and transfer pair rules have contract tests every capability plugs into; one combination test per built-in template; an architecture test forbids template-name checks.
@@ -284,10 +285,10 @@ Rules that apply to every feature:
 - F02: account model, shared balance calculation
 
 **Provides:**
-- Default account group (members derived from template and active flag, in file order) and the group summary for a month (used by F05, F07)
+- Default account group (members derived from template and active flag, ordered by name) and the group summary for a month (used by F05, F07)
 
 **Capabilities:**
-- **Default group** (Domain rule, derived, not stored): "Main" holds the accounts whose template joins the default group (Bank now, Credit card from F07), in file order. Pots and Settlement accounts never join it. For a given month the members are the active accounts, plus an inactive account only when it has a non-zero balance at month end or any record in that month, so a closed bank with a zero balance drops out while past months keep their totals. A new bank or card joins with no extra step. *Why:* nothing edits the group until the future group screens, so storing a member list would need a migration change, hand-edited V2 data and append logic in every create path for no behaviour; stored, user-chosen groups come with those screens. Group management screens are out of scope.
+- **Default group** (Domain rule, derived, not stored): "Main" holds the accounts whose template joins the default group (Bank now, Credit card from F07), ordered by account name. Pots and Settlement accounts never join it. For a given month the members are the active accounts, plus an inactive account only when it has a non-zero balance at month end or any record in that month, so a closed bank with a zero balance drops out while past months keep their totals. A new bank or card joins with no extra step. *Why:* nothing edits the group until the future group screens, so storing a member list would need a migration change, hand-edited V2 data and append logic in every create path for no behaviour; stored, user-chosen groups come with those screens. Group management screens are out of scope.
 - **Summary query** `GET accounts/groups/default/summary/{year}/{month}` returns:
   - members, in order: account Id, name, template name, currency, balance at month end (same as today's `banks/month/{y}/{m}/balances`), the month's round-up total for accounts with `SupportsRoundUp`, and from F07 the card's outstanding and statement status;
   - totals per currency (bank balances sum, round-up total sum, and from F07 card outstanding sum), never converted;
@@ -298,7 +299,7 @@ Rules that apply to every feature:
 - Delivered in two stages: (1) the summary endpoint and its parity mapping, (2) Monthly switching to it.
 
 **Experience:**
-- Monthly looks and behaves the same; the summary area loads from one request with the page's existing loading, error (with Retry) and empty states.
+- Monthly looks and behaves the same, except that its bank rows are listed by name; the summary area loads from one request with the page's existing loading, error (with Retry) and empty states.
 
 ### F05. Bank Account Screen
 
@@ -703,7 +704,7 @@ graph TD
 - [x] Parity: 0 differences; `/simplify` run; architecture-reviewer passed
 
 ### F04. Default Account Group and Summary Query
-- [ ] The default group lists the active Bank accounts in file order, plus an inactive one only for a month where it has a non-zero month-end balance or a record in that month
+- [ ] The default group lists the active Bank accounts ordered by name, plus an inactive one only for a month where it has a non-zero month-end balance or a record in that month
 - [ ] A newly created bank joins the default group with no other change; a Pots or Settlement account (from F09/F11) never does
 - [ ] The summary for any month returns each member's balance and round-up total equal to today's values
 - [ ] Totals are per currency; no figure in a different currency is added into another

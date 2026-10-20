@@ -5,7 +5,7 @@ Complexity: **medium**. It touches Domain, Application, the API, the parity scri
 ## 1. Technical Overview
 
 **What.**
-- A Domain rule, `DefaultAccountGroup`, works out the default group ("Main") for a month. Nothing is stored: members are the accounts whose template joins the default group, in file order, and an inactive account is included only in a month where it still matters.
+- A Domain rule, `DefaultAccountGroup`, works out the default group ("Main") for a month. Nothing is stored: members are the accounts whose template joins the default group, ordered by name, and an inactive account is included only in a month where it still matters.
 - One endpoint, `GET accounts/groups/default/summary/{year}/{month}`, returns:
   - the members with their balances and round-up totals;
   - totals per currency;
@@ -83,7 +83,7 @@ Financial.CashFlow.Domain
 | Group storage | None. `DefaultAccountGroup.MembersFor` derives the members on every call | Review decision 1: nothing edits the group before the future group screens |
 | Who joins | Accounts with `Account.JoinsDefaultGroup`, which is true when the template is in `AccountTemplates`' default-group set (Bank in F04) | Membership comes from the template without code outside `Account` reading the template enum. F07 adds Credit card to the set. |
 | Inactive accounts | Included in a month only when the balance at month end is not 0, or a record dated in that month has a non-zero contribution to the account | Review decision 1 (user): a closed bank with a zero balance drops out, while past months keep their totals, so F06's "figures stay unchanged" holds |
-| Member order | File order (`ICashFlowRepository.GetAccounts()`) | Same as Monthly's bank rows today (`BankService.BankAccounts()`) |
+| Member order | By account name, `StringComparer.OrdinalIgnoreCase`, stable (equal names keep file order) | User correction (2026-10-20): every account list is ordered by name, as F03's transfer lists are (PRD rule "Account lists are ordered by name"). Monthly's bank rows change from file order (Barclays, Trading212, Chase) to name order (Barclays, Chase, Trading212). Parity keys figures by name, so its result doesn't depend on order. |
 | Template name | `Account.TemplateName => Template.ToString()`; the wire value is `"Bank"` | Interview Q1: `Account` is already on the allow-list |
 | Route | `GET accounts/groups/default/summary/{year:int}/{month:int}` on a new `AccountGroupsController` (`[Route("accounts/groups")]`) | Review decision 1. A separate controller, so F05 and F06 never edit the same file. A route with an `{id}` comes with stored groups. |
 | Invalid month | `new DateOnly` throws `ArgumentOutOfRangeException`, which maps to 400 | Same behaviour as `banks/month/{y}/{m}/balances` |
@@ -98,6 +98,7 @@ Financial.CashFlow.Domain
 | Parity before/after | Only the "after" side fetches the summary. `Get-ParityReport` gains `-IncludeSummary`, which `Invoke-Parity.ps1` passes for the after side | The baseline build has no summary endpoint |
 | Parity keys | `{month}/summary/members/<name>/balance` and `/roundUpTotal`, `{month}/summary/totals/<currency>/balance` and `/roundUpTotal`, `{month}/summary/categoryTotalsSum`, `{month}/summary/incomes/<name>/net` and `/gross`, `{month}/summary/totalIncoming` | Names match the existing before-keys, so a mapping only renames them |
 | Monthly loading | The summary call replaces `getBankBalancesByMonth` in `fetchMonthlyData`'s `Promise.all` | Interview Q2: the page's loading, error-with-Retry and silent refresh cover it, and every save path already calls `refreshSilently` |
+| Bank grid order in Monthly | The rows arrive in name order; the grid's column sort still works as today | Follows the member order |
 | Bank rows in Monthly | `bankTotals` is mapped from the summary members: `bankId` = member account Id, `bank` = name, `balance`, `roundUpTotal` (null shows as 0.00, as today) | `useBalanceAdjustmentForm` uses `bankId` and `balance` from these rows (`useBalanceAdjustmentForm.ts:42–43, 81, 185`) |
 | Bank totals footer | One currency: "Bank Balance: X · Round-Up: Y", exactly as today. Several: one "Bank Balance <code>" and one "Round-Up <code>" pair per currency | Interview Q4 |
 | Empty states | `TotalsGrid` gains `emptyMessage`, shown in its existing message cell when there are no rows and no filter applies. Banks: "No accounts in the default group for this month". Category totals: "No expenses recorded for this month". Incoming: "No income recorded for this month". Footers still show 0.00. | Interview Q3 |
@@ -183,7 +184,7 @@ No other route changes. `banks/month/{y}/{m}/balances`, `expenses/month/{y}/{m}/
 
 **Default-group membership,** for a month with `start` = day 1 and `end` = its last day:
 
-1. Take the accounts in file order with `JoinsDefaultGroup`.
+1. Take the accounts with `JoinsDefaultGroup`, ordered by name (ordinal, ignoring case; stable).
 2. Keep an account when `IsActive` is true.
 3. Otherwise keep it when `AccountBalanceRule.Balance(account, end, records) != 0`, or some record with `start <= Date <= end` has `ContributionTo(account) != 0`.
 
@@ -219,7 +220,7 @@ Following the `testing-guide-Financial` skill:
 
 | Test file | PR | Type | Target | Coverage goal |
 |---|---|---|---|---|
-| `Tests/Financial.CashFlow.Domain.Tests/Rules/DefaultAccountGroupTests.cs` | A | Unit | Membership | File order; active kept; inactive with zero balance and no records dropped; inactive kept for non-zero month-end balance; inactive kept for a record in the month; an account not joining the group never included |
+| `Tests/Financial.CashFlow.Domain.Tests/Rules/DefaultAccountGroupTests.cs` | A | Unit | Membership | Name order, including a case-insensitive pair and two equal names keeping file order; active kept; inactive with zero balance and no records dropped; inactive kept for non-zero month-end balance; inactive kept for a record in the month; an account not joining the group never included |
 | `Tests/Financial.CashFlow.Domain.Tests/Entities/AccountTests.cs` | A | Unit | `Account` | `TemplateName` is `"Bank"`; `JoinsDefaultGroup` true for Bank |
 | `Tests/Financial.CashFlow.Domain.Tests/Entities/ExpenseTests.cs` | A | Unit | `Expense` | `ListingDate` prefers invoice, then charge, then date |
 | `Tests/Financial.CashFlow.Application.Tests/Services/AccountGroupSummaryServiceTests.cs` | A | Unit | Service | Each figure; currency totals; null round-up for an account without `SupportsRoundUp`; gross null when no gross; empty month; invalid month throws; failed span on exception |
@@ -241,9 +242,9 @@ The acceptance tests seed their own data with `ReplaceCashFlowDataBeforeStart`:
 
 | Test function | AC | Assertions |
 |---|---|---|
-| `GetDefaultGroupSummary_SeededBanks_ListsActiveBanksInFileOrderPlusInactiveWithMoney` | 01 | Barclays, Chase, Itaú, then the inactive bank with money; the zero-balance inactive bank absent |
+| `GetDefaultGroupSummary_SeededBanks_ListsActiveBanksByNamePlusInactiveWithMoney` | 01 | Seeded in the file order Itaú, Chase, Barclays: listed Barclays, Chase, Closed Savings (inactive, with money), Itaú; the zero-balance inactive bank absent |
 | `GetDefaultGroupSummary_InactiveBankWithRecordInMonth_IncludedThatMonthOnly` | 01 | Present in the month with the record, absent in a later month once its balance is 0 |
-| `GetDefaultGroupSummary_BankCreatedThroughBanks_JoinsWithNoOtherChange` | 02 | `POST banks`, then the summary lists it last |
+| `GetDefaultGroupSummary_BankCreatedThroughBanks_JoinsWithNoOtherChange` | 02 | `POST banks` "Halifax", then the summary lists it between Chase and Itaú |
 | `MembersFor_AccountNotJoiningTheGroup_IsNeverIncluded` | 02 | A test account whose template is outside the set (Pots and Settlement arrive in F09/F11) is excluded |
 | `GetDefaultGroupSummary_AnyMonth_BalancesAndRoundUpsEqualTodaysEndpoints` | 03 | Each member's balance equals `banks/month/{y}/{m}/balances`, and its round-up equals the sum over `expenses/month/{y}/{m}`, for two months |
 | `GetDefaultGroupSummary_MixedCurrencies_TotalsPerCurrencyNeverCombined` | 04 | GBP total = Barclays + Chase + inactive GBP; BRL total = Itaú; no total mixes them |
