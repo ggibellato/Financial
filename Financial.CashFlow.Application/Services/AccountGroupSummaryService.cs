@@ -30,8 +30,9 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
         try
         {
             var endOfMonth = new DateOnly(year, month, DateTime.DaysInMonth(year, month));
-            var records = ReadAccountTransactions();
-            var listedExpenses = _repository.GetExpenses().Where(e => IsInMonth(e.ListingDate, year, month)).ToList();
+            var expenses = _repository.GetExpenses().ToList();
+            var records = ReadAccountTransactions(expenses);
+            var listedExpenses = expenses.Where(e => IsInMonth(e.ListingDate, year, month)).ToList();
 
             var members = DefaultAccountGroup.MembersFor(_repository.GetAccounts(), year, month, records)
                 .Select(account => ToMemberDto(account, endOfMonth, records, listedExpenses))
@@ -44,7 +45,7 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
                 Month = month,
                 Members = members,
                 Totals = BuildCurrencyTotals(members),
-                CategoryTotalsSum = _repository.GetExpenses().Where(e => IsInMonth(e.ReportingDate, year, month)).Sum(e => e.Value),
+                CategoryTotalsSum = expenses.Where(e => IsInMonth(e.ReportingDate, year, month)).Sum(e => e.Value),
                 IncomeTotals = incomeTotals,
                 TotalIncoming = incomeTotals.Sum(income => income.NetValue)
             };
@@ -99,10 +100,10 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
 
     private static bool IsInMonth(DateOnly date, int year, int month) => date.Year == year && date.Month == month;
 
-    private List<IAccountTransaction> ReadAccountTransactions() =>
+    private List<IAccountTransaction> ReadAccountTransactions(IEnumerable<Expense> expenses) =>
     [
         .. _repository.GetIncomes(),
-        .. _repository.GetExpenses(),
+        .. expenses,
         .. _repository.GetTransfers(),
         .. _repository.GetBalanceAdjustments()
     ];

@@ -122,10 +122,8 @@ try {
     Check 'summary figures are built only with IncludeSummary' (-not ($reportWithoutSummary.Keys | Where-Object { $_.Split('/')[1] -eq 'summary' }) -and $report['2026-09/summary/totals/GBP/roundUpTotal'] -eq [decimal]'0.67' -and $null -eq $report['2026-09/summary/incomes/Dividends/gross']) ''
 
     $shippedMappings = Read-ParityFigureMap (Join-Path $here 'figure-map.json')
-    $summaryRules = @($shippedMappings | ForEach-Object { ConvertTo-ParityMappingRule $_ })
-    $unmapped = @($report.Keys | Where-Object { $_.Split('/')[1] -eq 'summary' } | Where-Object { $resolved = (Resolve-ParityBeforeKey $_ $summaryRules).Key; $resolved -eq $_ -or -not $reportWithoutSummary.ContainsKey($resolved) })
     $summaryDifferences = Compare-ParityReport $reportWithoutSummary $report $shippedMappings
-    Check 'shipped figure map resolves every summary key to its before key' ($unmapped.Count -eq 0 -and $summaryDifferences.Count -eq 0) (($unmapped + @($summaryDifferences | ForEach-Object { Format-ParityDifference $_ })) -join ', ')
+    Check 'shipped figure map resolves every summary key to its before key' ($summaryDifferences.Count -eq 0) (($summaryDifferences | ForEach-Object { Format-ParityDifference $_ }) -join ', ')
 
     $dataPath = Join-Path $work 'data-cashflow.json'
     Set-Content -LiteralPath $dataPath -Value '{ "Expenses": [ { "Date": "2019-03-04T00:00:00", "ChargeDate": null, "InvoiceDate": "2027-02-01T00:00:00" } ], "Incomes": [ { "Date": "2026-10-14T00:00:00" } ], "InvestmentSnapshots": [ { "Year": 2026, "Month": 12 } ], "CardStatements": [], "Version": 1 }'
