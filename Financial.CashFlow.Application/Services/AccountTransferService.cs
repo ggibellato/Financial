@@ -152,13 +152,10 @@ public sealed class AccountTransferService : IAccountTransferService
     private (Account Source, Account Destination) ResolveAccounts(Guid sourceAccountId, Guid destinationAccountId)
     {
         var accounts = _repository.GetAccounts();
-        return (ResolveAccount(accounts, sourceAccountId), ResolveAccount(accounts, destinationAccountId));
+        return (
+            CashFlowReferenceResolver.ResolveAccount(accounts, sourceAccountId),
+            CashFlowReferenceResolver.ResolveAccount(accounts, destinationAccountId));
     }
-
-    private static Account ResolveAccount(IEnumerable<Account> accounts, Guid accountId) =>
-        EntityIdResolver.TryResolve(accountId, accounts, a => a.Id, out var account)
-            ? account
-            : throw new ArgumentException($"{AccountEntityType} '{accountId}' was not found.");
 
     private static AccountTransferDTO ToDto(Transfer transfer) => new()
     {
