@@ -1,3 +1,12 @@
 {
-  "mappings": []
+  "mappings": [
+    { "after": "{month}/summary/members/*/balance", "before": "{month}/banks/*/balance", "negate": false, "reason": "F04 group summary" },
+    { "after": "{month}/summary/members/*/roundUpTotal", "before": "{month}/banks/*/roundUpTotal", "negate": false, "reason": "F04 group summary" },
+    { "after": "{month}/summary/totals/GBP/balance", "before": "{month}/monthly/bankTotalsSum", "negate": false, "reason": "F04 group summary" },
+    { "after": "{month}/summary/totals/GBP/roundUpTotal", "before": "{month}/monthly/roundUpTotalsSum", "negate": false, "reason": "F04 group summary" },
+    { "after": "{month}/summary/categoryTotalsSum", "before": "{month}/monthly/categoryTotalsSum", "negate": false, "reason": "F04 group summary" },
+    { "after": "{month}/summary/incomes/*/net", "before": "{month}/incomes/*/net", "negate": false, "reason": "F04 group summary" },
+    { "after": "{month}/summary/incomes/*/gross", "before": "{month}/incomes/*/gross", "negate": false, "reason": "F04 group summary" },
+    { "after": "{month}/summary/totalIncoming", "before": "{month}/incomes/totalIncoming", "negate": false, "reason": "F04 group summary" }
+  ]
 }

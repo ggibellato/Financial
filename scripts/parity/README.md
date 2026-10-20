@@ -80,6 +80,7 @@ key segments; none do in the live data.
 | `tithe` | `tithe/month/{y}/{m}` | `<yyyy-MM>/tithe/calculatedTithe`, `/titheBalance`, `/carryForward` (null) or `/carryForward/<field>` |
 | `snapshots` | `investment-snapshots/{y}/{m}/suggestions` | `<yyyy-MM>/snapshots/<account>/suggestedValue`, `/currentValue`, `/source`, `/skippedReason` |
 | `monthly` | Computed by the script from the responses above, as `useMonthly.ts` does, with exact decimals | `<yyyy-MM>/monthly/bankTotalsSum`, `/roundUpTotalsSum`, `/cardOutstandingTotal`, `/categoryTotalsSum` |
+| `summary` | `accounts/groups/default/summary/{y}/{m}`, after side only (`Get-ParityReport -IncludeSummary`; the baseline has no such endpoint). `figure-map.json` maps each key to its `banks`, `incomes` or `monthly` key | `<yyyy-MM>/summary/members/<account>/balance`, `/roundUpTotal`; `<yyyy-MM>/summary/totals/<currency>/balance`, `/roundUpTotal`; `<yyyy-MM>/summary/categoryTotalsSum`; `<yyyy-MM>/summary/incomes/<source>/net`, `/gross`; `<yyyy-MM>/summary/totalIncoming` |
 | `pots` | `reserve/movements` (no as-of endpoint exists) | `<yyyy-MM>/pots/<bucket>/balance` (movements dated up to the month's last day), `<yyyy-MM>/pots/total` |
 | `current` | `reserve/balances`; `controle-mae/entries/totals` | `current/pots/<bucket>/balance`; `current/mae/totalBrl`, `current/mae/totalGbp` |
 | `annual` | `annual-summary/{y}/category-totals` | `<yyyy>/annual/categories/<category>/annualTotal`, `/average`, `/monthly/<01-12>`; `<yyyy>/annual/income/<field>[/<01-12>]`; `<yyyy>/annual/totals/<field>[/<01-12>]` |
@@ -96,7 +97,7 @@ key segments; none do in the live data.
   a mapping to `figure-map.json`. The compare then checks the new key against the old one:
 
   ```json
-  { "mappings": [ { "after": "{month}/summary/banks/*/balance", "before": "{month}/banks/*/balance", "negate": false, "reason": "F04 group summary" } ] }
+  { "mappings": [ { "after": "{month}/summary/members/*/balance", "before": "{month}/banks/*/balance", "negate": false, "reason": "F04 group summary" } ] }
   ```
 
   `*` matches one key segment and `{month}` matches a `yyyy-MM` segment; their values fill the

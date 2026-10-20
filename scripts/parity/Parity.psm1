@@ -167,7 +167,25 @@ function Add-ParityPotFigures($Report, [string]$Month, $PotBalances) {
     Add-ParityFigure $Report "$Month/pots/total" (Get-ParitySum $PotBalances.Values { param($b) $b })
 }
 
-function Add-ParityMonthFigures($Report, [string]$Month, [scriptblock]$Fetch, $Banks, $PotBalances) {
+function Add-ParitySummaryFigures($Report, [string]$Month, [string]$Route, [scriptblock]$Fetch) {
+    $summary = & $Fetch "accounts/groups/default/summary/$Route"
+    foreach ($member in $summary.members) {
+        Add-ParityFigure $Report "$Month/summary/members/$($member.name)/balance" $member.balance
+        Add-ParityFigure $Report "$Month/summary/members/$($member.name)/roundUpTotal" $member.roundUpTotal
+    }
+    foreach ($total in $summary.totals) {
+        Add-ParityFigure $Report "$Month/summary/totals/$($total.currency)/balance" $total.balance
+        Add-ParityFigure $Report "$Month/summary/totals/$($total.currency)/roundUpTotal" $total.roundUpTotal
+    }
+    Add-ParityFigure $Report "$Month/summary/categoryTotalsSum" $summary.categoryTotalsSum
+    foreach ($income in $summary.incomeTotals) {
+        Add-ParityFigure $Report "$Month/summary/incomes/$($income.name)/net" $income.netValue
+        Add-ParityFigure $Report "$Month/summary/incomes/$($income.name)/gross" $income.grossValue
+    }
+    Add-ParityFigure $Report "$Month/summary/totalIncoming" $summary.totalIncoming
+}
+
+function Add-ParityMonthFigures($Report, [string]$Month, [scriptblock]$Fetch, $Banks, $PotBalances, [bool]$IncludeSummary) {
     $route = '{0}/{1}' -f [int]$Month.Substring(0, 4), [int]$Month.Substring(5, 2)
     $bankTotals = Add-ParityBankFigures $Report $Month $route $Fetch $Banks
     $cardOutstandingTotal = Add-ParityCardFigures $Report $Month $route $Fetch
@@ -180,6 +198,7 @@ function Add-ParityMonthFigures($Report, [string]$Month, [scriptblock]$Fetch, $B
     Add-ParityFigure $Report "$Month/monthly/cardOutstandingTotal" $cardOutstandingTotal
     Add-ParityFigure $Report "$Month/monthly/categoryTotalsSum" $categoryTotalsSum
     Add-ParityPotFigures $Report $Month $PotBalances
+    if ($IncludeSummary) { Add-ParitySummaryFigures $Report $Month $route $Fetch }
 }
 
 function Add-ParityYearFigures($Report, [int]$Year, [scriptblock]$Fetch) {
@@ -239,7 +258,8 @@ function Get-ParityReport {
         [Parameter(Mandatory)][scriptblock]$Fetch,
         [Parameter(Mandatory)][string]$First,
         [Parameter(Mandatory)][string]$Last,
-        [string]$Side = 'report'
+        [string]$Side = 'report',
+        [switch]$IncludeSummary
     )
     try {
         $report = New-ParityReport
@@ -247,7 +267,7 @@ function Get-ParityReport {
         $banks = & $Fetch 'banks'
         $potBalancesByMonth = Get-ParityPotBalancesByMonth (& $Fetch 'reserve/movements') $months
         foreach ($month in $months) {
-            Add-ParityMonthFigures $report $month $Fetch $banks $potBalancesByMonth[$month]
+            Add-ParityMonthFigures $report $month $Fetch $banks $potBalancesByMonth[$month] $IncludeSummary.IsPresent
         }
 
         foreach ($balance in (& $Fetch 'reserve/balances')) {
