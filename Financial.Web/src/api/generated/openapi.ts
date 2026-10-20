@@ -4,6 +4,53 @@
  */
 
 export interface paths {
+    "/accounts/groups/default/summary/{year}/{month}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    year: number;
+                    month: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AccountGroupSummaryDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/accounts/transfers": {
         parameters: {
             query?: never;
@@ -6880,6 +6927,30 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AccountGroupMemberDTO: {
+            /** Format: uuid */
+            accountId: string;
+            /** Format: double */
+            balance: number;
+            currency: string;
+            name: string;
+            /** Format: double */
+            roundUpTotal?: null | number;
+            templateName: string;
+        };
+        AccountGroupSummaryDTO: {
+            /** Format: double */
+            categoryTotalsSum: number;
+            incomeTotals: components["schemas"]["IncomeSourceTotalDTO"][];
+            members: components["schemas"]["AccountGroupMemberDTO"][];
+            /** Format: int32 */
+            month: number;
+            /** Format: double */
+            totalIncoming: number;
+            totals: components["schemas"]["CurrencyTotalDTO"][];
+            /** Format: int32 */
+            year: number;
+        };
         AccountTransferCreateDTO: {
             /** Format: double */
             amount: number;
@@ -7589,6 +7660,13 @@ export interface components {
             /** Format: double */
             percentage: number;
         };
+        CurrencyTotalDTO: {
+            /** Format: double */
+            balance: number;
+            currency: string;
+            /** Format: double */
+            roundUpTotal: number;
+        };
         DataQualityReportDTO: {
             corporateActionsAwaitingTaxReview: components["schemas"]["CorporateActionAwaitingTaxReviewFinding"][];
             historicHoldingsStillOpen: components["schemas"]["HistoricHoldingStillOpenFinding"][];
@@ -7871,6 +7949,15 @@ export interface components {
             id: string;
             isActive: boolean;
             name: string;
+        };
+        IncomeSourceTotalDTO: {
+            /** Format: double */
+            grossValue?: null | number;
+            /** Format: uuid */
+            incomeSourceId: string;
+            name: string;
+            /** Format: double */
+            netValue: number;
         };
         IncomeSourceUpdateDTO: {
             autoSplitToReserve: boolean;

@@ -1,6 +1,90 @@
 ﻿{
   "components": {
     "schemas": {
+      "AccountGroupMemberDTO": {
+        "properties": {
+          "accountId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "balance": {
+            "format": "double",
+            "type": "number"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "roundUpTotal": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "templateName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "accountId",
+          "name",
+          "templateName",
+          "currency",
+          "balance"
+        ],
+        "type": "object"
+      },
+      "AccountGroupSummaryDTO": {
+        "properties": {
+          "categoryTotalsSum": {
+            "format": "double",
+            "type": "number"
+          },
+          "incomeTotals": {
+            "items": {
+              "$ref": "#/components/schemas/IncomeSourceTotalDTO"
+            },
+            "type": "array"
+          },
+          "members": {
+            "items": {
+              "$ref": "#/components/schemas/AccountGroupMemberDTO"
+            },
+            "type": "array"
+          },
+          "month": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalIncoming": {
+            "format": "double",
+            "type": "number"
+          },
+          "totals": {
+            "items": {
+              "$ref": "#/components/schemas/CurrencyTotalDTO"
+            },
+            "type": "array"
+          },
+          "year": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "year",
+          "month",
+          "members",
+          "totals",
+          "categoryTotalsSum",
+          "incomeTotals",
+          "totalIncoming"
+        ],
+        "type": "object"
+      },
       "AccountTransferCreateDTO": {
         "properties": {
           "amount": {
@@ -2449,6 +2533,27 @@
         ],
         "type": "object"
       },
+      "CurrencyTotalDTO": {
+        "properties": {
+          "balance": {
+            "format": "double",
+            "type": "number"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "roundUpTotal": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "currency",
+          "balance",
+          "roundUpTotal"
+        ],
+        "type": "object"
+      },
       "DataQualityReportDTO": {
         "properties": {
           "corporateActionsAwaitingTaxReview": {
@@ -3306,6 +3411,34 @@
           "group",
           "autoSplitToReserve",
           "hasReferences"
+        ],
+        "type": "object"
+      },
+      "IncomeSourceTotalDTO": {
+        "properties": {
+          "grossValue": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "incomeSourceId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "netValue": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "incomeSourceId",
+          "name",
+          "netValue"
         ],
         "type": "object"
       },
@@ -5842,6 +5975,60 @@
   },
   "openapi": "3.1.1",
   "paths": {
+    "/accounts/groups/default/summary/{year}/{month}": {
+      "get": {
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "year",
+            "required": true,
+            "schema": {
+              "format": "int32",
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "",
+            "in": "path",
+            "name": "month",
+            "required": true,
+            "schema": {
+              "format": "int32",
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountGroupSummaryDTO"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "AccountGroups"
+        ]
+      }
+    },
     "/accounts/transfers": {
       "post": {
         "requestBody": {
@@ -14224,6 +14411,9 @@
     }
   ],
   "tags": [
+    {
+      "name": "AccountGroups"
+    },
     {
       "name": "AccountTransfers"
     },
