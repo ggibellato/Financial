@@ -258,7 +258,7 @@ Excluding F00, roughly the same amount of code overall, possibly slightly more d
   - **How actions open:** inline forms above the transactions grid; dialogs only for confirmations and Manage pots *(decided in P60: Fluent v9 says modal dialogs sparingly and never nested; ADR-003 and the forms rule put short, repeated entry inline)*.
   - **Transaction period:** one month at a time, as on Monthly today.
   - **Narrow screens:** browser first. Keep it simple: the layout only has to meet the existing UI rules at narrow widths, with no mobile-specific design, since a mobile version may come later with React Native (see Future features).
-- **Decided: groups.** For now there is one default group that reproduces today's main page: banks and cards join it automatically, Pots and Settlement accounts do not. Screens to create, edit and reorder groups are a future feature.
+- **Decided: groups.** For now there is one default group that reproduces today's main page: banks and cards join it automatically, Pots and Settlement accounts do not. Screens to create, edit and reorder groups are a future feature. The default group is derived from each account's template and active flag, in file order, not stored; stored groups arrive with those screens.
 - **Decided: actions that span accounts start from both accounts.** For example, adding an income with a split to pots can be started from the bank or from the Pots account.
 - **Decided: old pages stay reachable until F05.** During F01–F04 the per-type pages and the account screen coexist; F05 retires them (the exact retirement list is fixed in the PRD).
 - **Decided: Web UI telemetry is not part of this project.** It is its own slice or PRD (see Future features).

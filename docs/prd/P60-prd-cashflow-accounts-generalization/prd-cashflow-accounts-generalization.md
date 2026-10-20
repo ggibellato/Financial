@@ -80,7 +80,7 @@ The core value is one place per account, a new account from an existing template
 | Centralise tasks | 14 of 14 per-account tasks reachable from the account screen (bank: add expense, add income, transfer, pay recurring bill, reconcile; card: add charge, pay statement, move charge, unmark paid; Pots: deposit, withdraw, manage pots; Settlement: add entry, settle) | Task checklist ticked before F13 retires the old pages |
 | Unify | 4 old balance calculations deleted; 0 template-name checks in production code | Code review at F12; architecture test green |
 | Unify | 0 name-string joins between balances, accounts and the Reserva category | Grep at F13 of `useMonthly.ts`, `withdrawalExpenseCategories.ts`, `Category.ReservaName` (all removed) |
-| Server summary | Monthly summary area served by 1 call; 0 browser-side sums of balances, outstanding, category totals or income totals | F04 code review and network panel check |
+| Server summary | Monthly summary area served by 1 call; 0 browser-side sums of balances, outstanding, category totals or income totals | F04 code review and network panel check (bank balances, round-ups, category and income totals); F07 for card outstanding |
 
 ## 5. User Stories
 
@@ -284,16 +284,18 @@ Rules that apply to every feature:
 - F02: account model, shared balance calculation
 
 **Provides:**
-- Default account group (ordered members) and the group summary for a month (used by F05, F07)
+- Default account group (members derived from template and active flag, in file order) and the group summary for a month (used by F05, F07)
 
 **Capabilities:**
-- **AccountGroup** (Domain): `Id`, `Name`, `IsDefault`, ordered member account Ids. One default group, "Main", is created by migration step V2 with the banks in today's file order. A new account from a template that joins the default group (Bank now, Credit card from F07) is appended automatically on creation; Pots and Settlement accounts never join it. Group management screens are out of scope.
-- **Summary query** `GET accounts/groups/{id}/summary/{year}/{month}` returns:
+- **Default group** (Domain rule, derived, not stored): "Main" holds the accounts whose template joins the default group (Bank now, Credit card from F07), in file order. Pots and Settlement accounts never join it. For a given month the members are the active accounts, plus an inactive account only when it has a non-zero balance at month end or any record in that month, so a closed bank with a zero balance drops out while past months keep their totals. A new bank or card joins with no extra step. *Why:* nothing edits the group until the future group screens, so storing a member list would need a migration change, hand-edited V2 data and append logic in every create path for no behaviour; stored, user-chosen groups come with those screens. Group management screens are out of scope.
+- **Summary query** `GET accounts/groups/default/summary/{year}/{month}` returns:
   - members, in order: account Id, name, template name, currency, balance at month end (same as today's `banks/month/{y}/{m}/balances`), the month's round-up total for accounts with `SupportsRoundUp`, and from F07 the card's outstanding and statement status;
-  - totals per currency (bank balances sum, card outstanding sum), never converted;
-  - Monthly's totals: category totals sum, income totals per income source (net, gross or empty), total incoming.
-- **Monthly** switches its summary area (bank totals, card outstanding, category totals sum, income totals) to this one call; the browser no longer sums anything, and bank balances are matched by account Id, not name. Lists (expenses, incomes) and reference data keep their own endpoints. *Why:* removes the client-side arithmetic and name joins the design calls out without building one page-shaped endpoint.
+  - totals per currency (bank balances sum, round-up total sum, and from F07 card outstanding sum), never converted;
+  - Monthly's totals: category totals sum, income totals per income source (grouped by income source Id, in order of each source's first income that month; Id, name, net, gross or empty), total incoming.
+- **Monthly** switches its summary area (bank totals, round-up totals, category totals sum, income totals) to this one call; the browser no longer sums those, and bank balances are matched by account Id, not name. The card outstanding total stays a browser sum until F07 makes cards accounts and moves it into the summary. Lists (expenses, incomes) and reference data keep their own endpoints. *Why:* removes the client-side arithmetic and name joins the design calls out without building one page-shaped endpoint.
+- **Tithe** keeps its own endpoint (`tithe/month/{y}/{m}`) and is not part of the summary: it is already computed on the server, its first read saves the tithe start month, and its carry-forward toggle refreshes it on its own.
 - Parity: the report gains the summary figures, mapped to the script-computed Monthly figures from F01; they must match exactly.
+- Delivered in two stages: (1) the summary endpoint and its parity mapping, (2) Monthly switching to it.
 
 **Experience:**
 - Monthly looks and behaves the same; the summary area loads from one request with the page's existing loading, error (with Retry) and empty states.
@@ -377,10 +379,11 @@ Rules that apply to every feature:
 **Capabilities:**
 - **Credit card template** = `HasStatements`, `HasCategories`, `ReceivesPayments`. *Deviation from the design doc:* the doc also listed `CanPayBills` for cards; recurring bills are paid only from a bank today (`POST mensais/{id}/paid` takes a bank) and the card action list has no "pay bill", so the capability is left out.
 - **Value object** `CardTerms` (next invoice due date) behind `HasStatements`.
-- **Migration step V2 → V3:** `CreditCards` → accounts with template Credit card, same Ids, currency GBP, `IsActive` and due date copied; `Expense.CreditCard`, `CardStatement.CreditCard` and `InvestmentAccount.CreditCard` reference the card account; cards appended to the default group in file order; any (card, month) that has charges but no statement record gets one, paid when all its charges are already settled to a bank, unpaid otherwise; `Version` 3.
+- **Migration step V2 → V3:** `CreditCards` → accounts with template Credit card, same Ids, currency GBP, `IsActive` and due date copied; `Expense.CreditCard`, `CardStatement.CreditCard` and `InvestmentAccount.CreditCard` reference the card account; any (card, month) that has charges but no statement record gets one, paid when all its charges are already settled to a bank, unpaid otherwise; `Version` 3.
 - **Card balance** through the shared calculation: unpaid charges contribute −value to the card; charges settled the old way (re-pointed to a bank) contribute to the bank as today; F08 payments contribute +amount. Shown as "owed" (positive) in the UI. Parity maps the card balance (negated) to today's accumulated outstanding.
 - **One charge filter** (Domain rule): charges of a card for a statement month, with a parameter for whether paid charges count. Statements use unpaid only; snapshot suggestions keep paid + unpaid. *Why (deviation):* the doc called the copies duplicates, but they differ; merging them must keep both behaviours or the snapshot suggestions change.
 - `CardStatementService` outstanding logic is replaced by the shared calculation and the filter (second of the 4 calculations removed).
+- Cards join the default group through the Credit card template (F04's derived group); the group summary gains each card's outstanding and statement status and the card outstanding total per currency, and Monthly reads its card outstanding total from the summary instead of summing statements in the browser.
 - Calendar due-date sync, the payments-due banner and the Admin Credit cards page keep working against card accounts (same Ids); `/credit-cards` endpoints keep their shapes until F13.
 - Admin → Accounts gains the Credit card template (fields: next invoice due date, active).
 - Test and example data migrated to V3.
@@ -700,12 +703,12 @@ graph TD
 - [x] Parity: 0 differences; `/simplify` run; architecture-reviewer passed
 
 ### F04. Default Account Group and Summary Query
-- [ ] Migration creates one default group "Main" with the 3 banks in file order
-- [ ] Creating a bank appends it to the default group; creating a Pots or Settlement account (from F09/F11) does not
+- [ ] The default group lists the active Bank accounts in file order, plus an inactive one only for a month where it has a non-zero month-end balance or a record in that month
+- [ ] A newly created bank joins the default group with no other change; a Pots or Settlement account (from F09/F11) never does
 - [ ] The summary for any month returns each member's balance and round-up total equal to today's values
 - [ ] Totals are per currency; no figure in a different currency is added into another
-- [ ] Category totals sum, income totals per source and total incoming equal the values Monthly computes today
-- [ ] Monthly's summary area loads from one summary request and performs no client-side sums; bank rows match by account Id
+- [ ] Category totals sum, round-up total, income totals per source (grouped by income source Id) and total incoming equal the values Monthly computes today
+- [ ] Monthly's summary area loads from one summary request and performs no client-side sums of bank balances, round-ups, category totals or income totals (card outstanding moves in F07); bank rows match by account Id
 - [ ] Monthly's summary area shows loading, error with Retry and empty states
 - [ ] Parity: summary figures mapped to the F01 browser-computed figures, 0 differences; `/simplify` run; architecture-reviewer and ui-reviewer passed
 
@@ -735,11 +738,12 @@ graph TD
 - [ ] Parity: 0 differences; `/simplify` run; architecture-reviewer and ui-reviewer passed
 
 ### F07. Credit Card Template and Card Migration
-- [ ] `migrate` upgrades V2 to V3: 5 card accounts with the same Ids, active flags and due dates; charges, statements and investment accounts reference them; cards appended to the default group
+- [ ] `migrate` upgrades V2 to V3: 5 card accounts with the same Ids, active flags and due dates; charges, statements and investment accounts reference them; cards appear in the default group
 - [ ] Missing statements for months with charges are created, paid only when all their charges are settled
 - [ ] Statement totals, outstanding and paid status are identical to today for every card and month
 - [ ] Snapshot suggestions for card sources are identical (paid + unpaid charges of the month)
 - [ ] The default group summary includes each card's outstanding and status; card balance shown as owed
+- [ ] Monthly's card outstanding total comes from the summary; the browser no longer sums card statements
 - [ ] Calendar due-date sync and the payments-due banner work against card accounts
 - [ ] Creating a card in Admin → Accounts needs no code and adds it to the default group
 - [ ] `/credit-cards` and `/card-statements` return the same shapes and values
