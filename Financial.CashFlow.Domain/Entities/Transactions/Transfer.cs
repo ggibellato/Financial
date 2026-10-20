@@ -55,8 +55,10 @@ public class Transfer : IAccountTransaction
         Note = note;
     }
 
+    public decimal AmountReceived() => DestinationAmount ?? Amount;
+
     public decimal ContributionTo(Account account) =>
-        (DestinationAccount.Id == account.Id ? DestinationAmount ?? Amount : 0m) - (SourceAccount.Id == account.Id ? Amount : 0m);
+        (DestinationAccount.Id == account.Id ? AmountReceived() : 0m) - (SourceAccount.Id == account.Id ? Amount : 0m);
 
     private static void EnsurePairIsValid(Account sourceAccount, Account destinationAccount)
     {

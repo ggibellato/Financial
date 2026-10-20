@@ -301,6 +301,18 @@ public class TransferTests
     }
 
     [Fact]
+    public void AmountReceived_SameCurrencyTransfer_IsTheAmount()
+    {
+        CreateValidTransfer().AmountReceived().Should().Be(500m);
+    }
+
+    [Fact]
+    public void AmountReceived_CrossCurrencyTransfer_IsTheDestinationAmount()
+    {
+        CreateCrossCurrencyTransfer().AmountReceived().Should().Be(640.50m);
+    }
+
+    [Fact]
     public void ContributionTo_SameCurrencyTransfer_MovesBothSidesByTheAmount()
     {
         var transfer = CreateValidTransfer();

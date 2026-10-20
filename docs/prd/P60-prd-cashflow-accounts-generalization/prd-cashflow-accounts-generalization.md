@@ -688,16 +688,16 @@ graph TD
 - [x] Parity run on the latest live copy: 0 differences; `/simplify` run; architecture-reviewer passed
 
 ### F03. Generic Account-to-Account Transfer
-- [ ] A bank → bank transfer through `POST accounts/transfers` lowers the source and raises the destination balance by the amount on its date
-- [ ] An account the pair rules don't allow as source or destination (a test account without the capability in F03; Card, Pots and Settlement once F07, F09 and F11 add them) is rejected with 400 and nothing saved
-- [ ] Same account on both sides is rejected with 400
-- [ ] Different currencies without a destination amount are rejected with 400; with it, each side moves by its own amount
-- [ ] `transfer-destinations` for a bank lists the other active banks only; `transfer-sources` the same for the receiving side
-- [ ] Existing transfers keep their amounts; `/transfers` returns the same data as before
-- [ ] A same-currency transfer stores no destination amount; loading and saving a file with only such transfers leaves it byte-for-byte unchanged
-- [ ] `/transfers` rejects a future date, a note over 200 characters, an inactive account and a pair not allowed, with the same messages as `accounts/transfers`
-- [ ] Contract tests cover the pair rules table; adding a pair in a test changes the destination list with no other code change
-- [ ] Parity: 0 differences; `/simplify` run; architecture-reviewer passed
+- [x] A bank → bank transfer through `POST accounts/transfers` lowers the source and raises the destination balance by the amount on its date
+- [x] An account the pair rules don't allow as source or destination (a test account without the capability in F03; Card, Pots and Settlement once F07, F09 and F11 add them) is rejected with 400 and nothing saved
+- [x] Same account on both sides is rejected with 400
+- [x] Different currencies without a destination amount are rejected with 400; with it, each side moves by its own amount
+- [x] `transfer-destinations` for a bank lists the other active banks only; `transfer-sources` the same for the receiving side
+- [x] Existing transfers keep their amounts; `/transfers` returns the same data as before
+- [x] A same-currency transfer stores no destination amount; loading and saving a file with only such transfers leaves it byte-for-byte unchanged
+- [x] `/transfers` rejects a future date, a note over 200 characters, an inactive account and a pair not allowed, with the same messages as `accounts/transfers`
+- [x] Contract tests cover the pair rules table; adding a pair in a test changes the destination list with no other code change
+- [x] Parity: 0 differences; `/simplify` run; architecture-reviewer passed
 
 ### F04. Default Account Group and Summary Query
 - [ ] Migration creates one default group "Main" with the 3 banks in file order
